@@ -31,10 +31,16 @@
  *
  */
 
-var binary = require('node-pre-gyp/lib/pre-binding');
-var path = require('path');
-var binding_path =
-    binary.find(path.resolve(path.join(__dirname, '../../../package.json')));
-var binding = require(binding_path);
+#include <v8.h>
 
-module.exports = binding;
+namespace grpc {
+namespace node {
+
+grpc_completion_queue *GetCompletionQueue();
+
+void CompletionQueueNext();
+
+void CompletionQueueInit(v8::Local<v8::Object> exports);
+
+}  // namespace node
+}  // namespace grpc
