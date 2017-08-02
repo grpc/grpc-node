@@ -1,1 +1,1 @@
-
+Given the [community effort](https://github.com/nodejs/node/pull/14239) to bring an _experimental_ http2 stack for nodejs, the gRPC team decided to start exploring the feasibility of using it. The code you'll find in this repository is not meant for public consumption, and is by no means production-ready. Instead, the production-ready, generally available and maintained version of the gRPC Node.js module can be found [on npmjs](https://www.npmjs.com/package/grpc), or [on github](https://github.com/grpc/grpc/tree/master/src/node).
