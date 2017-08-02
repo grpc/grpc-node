@@ -1,8 +1,10 @@
 {
   "name": "grpc-js",
   "version": "0.1.0",
-  "description": "gRPC client implementation in Node.js",
+  "description": "gRPC Library for Node - pure JS",
+  "homepage": "https://grpc.io/",
   "main": "index.js",
+  "private": true,
   "engines": {
     "node": ">=8.3"
   },
