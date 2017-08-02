@@ -1,0 +1,22 @@
+{
+  "name": "grpc-js",
+  "version": "0.1.0",
+  "description": "gRPC client implementation in Node.js",
+  "main": "index.js",
+  "engines": {
+    "node": ">=8.3"
+  },
+  "keywords": [],
+  "author": "Google Inc.",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "^8.0.17",
+    "clang-format": "^1.0.53",
+    "gulp": "^3.9.1",
+    "gulp-sourcemaps": "^2.6.0",
+    "gulp-tslint": "^8.1.1",
+    "gulp-typescript": "^3.2.1",
+    "merge2": "^1.1.0",
+    "typescript": "^2.4.2"
+  }
+}
