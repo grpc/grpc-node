@@ -1,0 +1,12 @@
+{
+  "extends": "node_modules/google-ts-style/tsconfig-google.json",
+  "include": [
+    "src/*.ts",
+    "src/**/*.ts",
+    "test/*.ts",
+    "test/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
