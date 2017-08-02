@@ -6,7 +6,7 @@ import { CallCredentials } from './call-credentials';
 export class ChannelCredentials {
   private constructor() {}
 
-  static createSsl(rootCerts: Buffer, privateKey?: Buffer, certChain?: Buffer) : ChannelCredentials {
+  static createSsl(rootCerts?: Buffer, privateKey?: Buffer, certChain?: Buffer) : ChannelCredentials {
     throw new Error();
   }
 
