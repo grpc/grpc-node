@@ -9,7 +9,9 @@
     "node": ">=8.3"
   },
   "keywords": [],
-  "author": "Google Inc.",
+  "author": {
+    "name": "Google Inc."
+  },
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/node": "^8.0.17",
@@ -19,6 +21,21 @@
     "gulp-tslint": "^8.1.1",
     "gulp-typescript": "^3.2.1",
     "merge2": "^1.1.0",
-    "typescript": "^2.4.2"
+    "typescript": "^2.4.1",
+    "google-ts-style": "latest",
+    "tslint": "^5.5.0"
+  },
+  "contributors": [
+    {
+      "name": "Google Inc."
+    }
+  ],
+  "_id": "grpc-js@0.1.0",
+  "scripts": {
+    "build": "npm run compile",
+    "clean": "rm -rf ./build/",
+    "compile": "tsc -p . --rootDir . --outDir build/",
+    "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
+    "lint": "tslint -c node_modules/google-ts-style/tslint.json -p . -t codeFrame --type-check"
   }
 }
