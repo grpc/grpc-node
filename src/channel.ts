@@ -7,6 +7,10 @@ import { Metadata } from './metadata';
  */
 export interface ChannelOptions {}
 
+export class SubChannel {}
+
+// todo: maybe we want an interface for load balancing, but no implementation for anything complicated
+
 /**
  * A class that represents a communication channel to a server specified by a given address.
  */

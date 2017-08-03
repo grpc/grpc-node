@@ -1,4 +1,5 @@
 import { CallCredentials } from './call-credentials';
+import { SecureContext } from 'tls'; // or whatever it's actually called
 
 /**
  * A class that contains credentials for communicating over a channel.
@@ -15,6 +16,14 @@ export class ChannelCredentials {
   }
 
   compose(callCredentials: CallCredentials) : ChannelCredentials {
+    throw new Error();
+  }
+
+  getCallCredentials() : CallCredentials {
+    throw new Error();
+  }
+
+  getSecureContext() : SecureContext {
     throw new Error();
   }
 }
