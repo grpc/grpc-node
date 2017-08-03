@@ -1,3 +1,4 @@
+const { execFile } = require('child_process');
 const gulp = require('gulp');
 const merge2 = require('merge2');
 const path = require('path');
@@ -33,6 +34,24 @@ function makeCompileFn(dev) {
     ]);
   };
 }
+
+/**
+ * If process.env.NODE_H2 is defined and nvm is installed, uses nvm to set
+ * $NODE_H2 as the default node binary (with --expose-http2 included).
+ */
+gulp.task('h2-setup', () => {
+  return new Promise((resolve, reject) => {
+    execFile('./setup.sh', (err, stdout, stderr) => {
+      (stdout = stdout.trim()) && console.log(stdout);
+      (stderr = stderr.trim()) && console.error(stderr);
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+})
 
 /**
  * Runs tslint on files in src/, with linting rules defined in tslint.json.

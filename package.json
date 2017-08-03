@@ -14,16 +14,16 @@
   },
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/node": "^8.0.17",
+    "@types/node": "^8.0.19",
     "clang-format": "^1.0.53",
+    "google-ts-style": "latest",
     "gulp": "^3.9.1",
     "gulp-sourcemaps": "^2.6.0",
     "gulp-tslint": "^8.1.1",
     "gulp-typescript": "^3.2.1",
     "merge2": "^1.1.0",
-    "typescript": "^2.4.1",
-    "google-ts-style": "latest",
-    "tslint": "^5.5.0"
+    "tslint": "^5.5.0",
+    "typescript": "^2.4.1"
   },
   "contributors": [
     {
