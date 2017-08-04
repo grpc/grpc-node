@@ -1,3 +1,7 @@
-Given the [community effort](https://github.com/nodejs/node/pull/14239) to bring an _experimental_ http2 stack for nodejs, the gRPC team decided to start exploring the feasibility of using it. The code you'll find in this repository is not meant for public consumption, and is by no means production-ready. Ultimately, the goal for this repository is to provide a basic [gRPC](https://grpc.io) implementation, without the all of the rich features.
+# Pure JavaScript Node gRPC Client
 
-The production-ready, generally available, feature-rich and maintained version of the gRPC Node.js module can be found [on npmjs](https://www.npmjs.com/package/grpc), or [on github](https://github.com/grpc/grpc/tree/master/src/node).
+**This library is currently incomplete and experimental, built on the [upcoming experimental http2 Node module](https://github.com/nodejs/node/pull/14239).** The existing, working gRPC Node.js module can be found [on npm](https://www.npmjs.com/package/grpc) and [on github](https://github.com/grpc/grpc/tree/master/src/node).
+
+This library is a minimally-featured implementation of gRPC purely in JavaScript, without a C++ addon. It is intended for use in libraries that need complete platform support and only basic gRPC features.
+
+The existing gRPC Node.js module will continue to be the canonical, feature rich implementation of gRPC, with broad but incomplete platform support.
