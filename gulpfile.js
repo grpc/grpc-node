@@ -1,35 +1,43 @@
+const del = require('del');
 const gulp = require('gulp');
-const merge2 = require('merge2');
-const path = require('path');
+const mocha = require('gulp-mocha');
 const sourcemaps = require('gulp-sourcemaps');
 const tslint = require('gulp-tslint');
 const typescript = require('gulp-typescript');
+const util = require('gulp-util');
+const merge2 = require('merge2');
+const path = require('path');
+const through = require('through2');
 
 const tslintPath = './tslint.json'
 const tsconfigPath = './tsconfig.json';
 const outDir = 'build';
-const srcGlob = 'src/**/*.ts';
 
 function onError() {}
 
-function makeCompileFn(dev) {
-  const tsSettings = dev ? {
-    noEmitOnError: false,
-    noUnusedParameters: false
-  } : {};
+/**
+ * Helper function that creates a gulp task function that opens files in a
+ * directory that match a certain glob pattern, transpiles them, and writes them
+ * to an output directory.
+ * @param {*} baseDir The name of the directory containing the files.
+ * @param {*} glob The glob pattern to match.
+ * @return A gulp task function.
+ */
+function makeCompileFn(baseDir, glob) {
   return () => {
-    const { dts, js } = gulp.src(srcGlob)
+    const tsProject = typescript.createProject(tsconfigPath)();
+    const { dts, js } = gulp.src(`${baseDir}/**/*.ts`)
       .pipe(sourcemaps.init())
-      .pipe(typescript.createProject(tsconfigPath, tsSettings)())
+      .pipe(tsProject)
       .on('error', onError);
-    const jsMap = js.pipe(sourcemaps.write('.', {
+    const jsmap = js.pipe(sourcemaps.write('.', {
       includeContent: false,
-      sourceRoot: path.relative(outDir, 'src')
+      sourceRoot: path.relative(`${outDir}/${baseDir}`, baseDir)
     }));
     return merge2([
-      js.pipe(gulp.dest(`${outDir}/src`)),
+      js.pipe(gulp.dest(`${outDir}/${baseDir}`)),
       dts.pipe(gulp.dest(`${outDir}/types`)),
-      jsMap.pipe(gulp.dest(`${outDir}/src`))
+      jsmap.pipe(gulp.dest(`${outDir}/${baseDir}`))
     ]);
   };
 }
@@ -49,13 +57,22 @@ gulp.task('lint', () => {
     .on('warning', onError);
 });
 
+gulp.task('clean', () => {
+  return del(outDir);
+});
+
 /**
  * Transpiles TypeScript files in src/ to JavaScript according to the settings
  * found in tsconfig.json.
  * Currently, all errors are emitted twice. This is being tracked here:
  * https://github.com/ivogabe/gulp-typescript/issues/438
  */
-gulp.task('compile', makeCompileFn(false));
+gulp.task('compile', makeCompileFn('src', '**/*.js'));
+
+/**
+ * Transpiles TypeScript files in both src/ and test/.
+ */
+gulp.task('test.compile', ['compile'], makeCompileFn('test', '**/*.js'));
 
 /**
  * Starts watching files in src/, running the 'compile' step whenever a file
@@ -67,20 +84,57 @@ gulp.task('watch', () => {
 });
 
 /**
- * Transpiles source code with relaxed requirements:
- * - Emit output even if there are type-checking errors (this is a workaround
- *   for the twice-emitted errors in the 'compile' step)
- * - Do not emit errors for unused parameters
+ * Transpiles src/ and test/, and then runs all tests.
  */
-gulp.task('dev.compile', makeCompileFn(true));
+gulp.task('test', ['test.compile'], () => {
+  return gulp.src(`${outDir}/test/**/*.js`)
+    .pipe(mocha());
+});
 
 /**
- * Watches files similar to the 'watch' step, but runs the 'dev.compile' step
- * instead.
+ * Compiles a single test file. Only intended as a pre-requisite for
+ * 'test.single'.
+ * @private
  */
-gulp.task('dev.watch', () => {
-  gulp.start(['dev.compile']);
-  return gulp.watch(srcGlob, ['dev.compile']);
+gulp.task('.compileSingleTestFile', makeCompileFn('test', util.env.file));
+
+/**
+ * Run a single test, specified by its pre-transpiled source path (as supplied
+ * through the '--file' flag). This is intended to be used as part of a VS Code
+ * "Gulp task" launch configuration; setting the "args" field to
+ * ["test.single", "--file", "${file}"] makes it possible for one to debug the
+ * currently open TS mocha test file in one step.
+ */
+gulp.task('test.single', ['compile', '.compileSingleTestFile'], () => {
+  // util.env contains CLI arguments for the gulp task.
+  const { file } = util.env;
+  // Determine the path to the transpiled version of this TS file.
+  const dirWithinTest = path.dirname(path.relative('./test', file));
+  const basename = path.basename(file, '.ts');
+  const transpiledPath = `${outDir}/test/${dirWithinTest}/${basename}.js`;
+  // Construct an instance of Mocha's runner API and feed it the path to the
+  // transpiled source.
+  return gulp.src(transpiledPath)
+    .pipe(through.obj((file, enc, cb) => {
+      // Construct a new Mocha runner instance.
+      const Mocha = require('mocha');
+      const runner = new Mocha();
+      // Add the path to the test file to debug.
+      runner.addFile(file.path);
+      // "Load" the test file.
+      // This is a no-op hack so that VS Code is informed that breakpoints set
+      // in this file should be hit.
+      // Because mocha's global-scope variables aren't loaded, this will throw.
+      try { require(file.path); } catch (e) {};
+      // Run the test suite.
+      runner.run((failures) => {
+        if (failures > 0) {
+          cb(new Error(`Mocha: ${failures} failures in ${file.path}]`));
+        } else {
+          cb(null);
+        }
+      });
+    }));
 });
 
 gulp.task('default', ['compile']);
