@@ -19,14 +19,20 @@ function onError() {}
  * Helper function that creates a gulp task function that opens files in a
  * directory that match a certain glob pattern, transpiles them, and writes them
  * to an output directory.
- * @param {*} baseDir The name of the directory containing the files.
- * @param {*} glob The glob pattern to match.
+ * @param {string} baseDir The name of the directory containing the files.
+ * @param {Object} globs
+ * @param {string=} globs.transpile The glob pattern for files to transpile.
+ *   Defaults to match all *.ts files in baseDir (incl. subdirectories).
+ * @param {string=} globs.copy The glob pattern for files to transpile.
+ *   Defaults to match all but *.ts files in baseDir (incl. subdirectories).
  * @return A gulp task function.
  */
-function makeCompileFn(baseDir, glob) {
+function makeCompileFn(baseDir, globs) {
+  const transpileGlob = globs.transpile || '**/*.ts';
+  const copyGlob = globs.copy || '**/!(*.ts)';
   return () => {
     const tsProject = typescript.createProject(tsconfigPath)();
-    const { dts, js } = gulp.src(`${baseDir}/**/*.ts`)
+    const { dts, js } = gulp.src(`${baseDir}/${transpileGlob}`)
       .pipe(sourcemaps.init())
       .pipe(tsProject)
       .on('error', onError);
@@ -34,10 +40,12 @@ function makeCompileFn(baseDir, glob) {
       includeContent: false,
       sourceRoot: path.relative(`${outDir}/${baseDir}`, baseDir)
     }));
+    const copy = gulp.src(`${baseDir}/${copyGlob}`);
     return merge2([
       js.pipe(gulp.dest(`${outDir}/${baseDir}`)),
       dts.pipe(gulp.dest(`${outDir}/types`)),
-      jsmap.pipe(gulp.dest(`${outDir}/${baseDir}`))
+      jsmap.pipe(gulp.dest(`${outDir}/${baseDir}`)),
+      copy.pipe(gulp.dest(`${outDir}/${baseDir}`))
     ]);
   };
 }
@@ -67,12 +75,14 @@ gulp.task('clean', () => {
  * Currently, all errors are emitted twice. This is being tracked here:
  * https://github.com/ivogabe/gulp-typescript/issues/438
  */
-gulp.task('compile', makeCompileFn('src', '**/*.js'));
+gulp.task('compile', makeCompileFn('src',
+  { transpile: '**/*.ts' }));
 
 /**
  * Transpiles TypeScript files in both src/ and test/.
  */
-gulp.task('test.compile', ['compile'], makeCompileFn('test', '**/*.js'));
+gulp.task('test.compile', ['compile'],
+  makeCompileFn('test', { transpile: '**/*.ts' }));
 
 /**
  * Starts watching files in src/, running the 'compile' step whenever a file
@@ -96,7 +106,9 @@ gulp.task('test', ['test.compile'], () => {
  * 'test.single'.
  * @private
  */
-gulp.task('.compileSingleTestFile', makeCompileFn('test', util.env.file));
+gulp.task('.compileSingleTestFile', util.env.file ?
+  makeCompileFn('test', { transpile: path.relative('test', util.env.file) }) :
+  () => { throw new Error('No file specified'); });
 
 /**
  * Run a single test, specified by its pre-transpiled source path (as supplied
