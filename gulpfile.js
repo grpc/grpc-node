@@ -9,7 +9,7 @@ const merge2 = require('merge2');
 const path = require('path');
 const through = require('through2');
 
-const tslintPath = './tslint.json';
+const tslintPath = './node_modules/google-ts-style/tslint.json';
 const tsconfigPath = './tsconfig.json';
 const outDir = 'build';
 
@@ -64,7 +64,7 @@ function makeCompileFn(baseDir, globs) {
  */
 gulp.task('lint', () => {
   const program = require('tslint').Linter.createProgram(tsconfigPath);
-  gulp.src(srcGlob)
+  gulp.src(['src/**/*.ts', 'test/**/*.ts'])
     .pipe(tslint({
       configuration: tslintPath,
       formatter: 'prose',
@@ -163,7 +163,7 @@ gulp.task('help', () => {
 gulp help: Prints this message.
 gulp clean: Deletes transpiled code.
 gulp compile: Transpiles src.
-gulp lint: Lints src and test.
+gulp lint: Emits linting errors found in src/ and test/.
 gulp test.compile: Transpiles src and test.
 gulp test: Runs \`gulp test.compile\`, and then runs all tests.
 gulp test.single --file $FILE: Transpiles src and $FILE, and runs only the transpiled $FILE. (See also: #5)
