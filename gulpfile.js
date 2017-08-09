@@ -49,9 +49,9 @@ function makeCompileFn(globs) {
       .on('error', onError);
     const jsmap = js.pipe(sourcemaps.write('.', {
       includeContent: false,
-      sourceRoot: outDir
+      sourceRoot: '..'
     }));
-    const copy = gulp.src(copyGlob);
+    const copy = gulp.src(copyGlob, { base: '.' });
     return merge2([
       js.pipe(gulp.dest(`${outDir}`)),
       dts.pipe(gulp.dest(`${outDir}/types`)),
@@ -131,9 +131,9 @@ gulp.task('test.single', ['compile', '.compileSingleTestFile'], () => {
   // util.env contains CLI arguments for the gulp task.
   const { file } = util.env;
   // Determine the path to the transpiled version of this TS file.
-  const dirWithinTest = path.dirname(path.relative('./test', file));
+  const dir = path.dirname(path.relative('.', file));
   const basename = path.basename(file, '.ts');
-  const transpiledPath = `${outDir}/test/${dirWithinTest}/${basename}.js`;
+  const transpiledPath = `${outDir}/${dir}/${basename}.js`;
   // Construct an instance of Mocha's runner API and feed it the path to the
   // transpiled source.
   return gulp.src(transpiledPath)
@@ -143,11 +143,6 @@ gulp.task('test.single', ['compile', '.compileSingleTestFile'], () => {
       const runner = new Mocha();
       // Add the path to the test file to debug.
       runner.addFile(file.path);
-      // "Load" the test file.
-      // This is a no-op hack so that VS Code is informed that breakpoints set
-      // in this file should be hit.
-      // Because mocha's global-scope variables aren't loaded, this will throw.
-      try { require(file.path); } catch (e) {};
       // Run the test suite.
       runner.run((failures) => {
         if (failures > 0) {
