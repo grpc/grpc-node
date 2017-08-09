@@ -9,11 +9,20 @@ const merge2 = require('merge2');
 const path = require('path');
 const through = require('through2');
 
-const tslintPath = './tslint.json'
+const tslintPath = './tslint.json';
 const tsconfigPath = './tsconfig.json';
 const outDir = 'build';
 
 function onError() {}
+
+// If --dev is passed, override certain ts config options
+let tsDevOptions = {};
+if (util.env.dev) {
+  tsDevOptions = {
+    allowUnreachableCode: true,
+    noUnusedParameters: false
+  };
+}
 
 /**
  * Helper function that creates a gulp task function that opens files in a
@@ -31,7 +40,7 @@ function makeCompileFn(baseDir, globs) {
   const transpileGlob = globs.transpile || '**/*.ts';
   const copyGlob = globs.copy || '**/!(*.ts)';
   return () => {
-    const tsProject = typescript.createProject(tsconfigPath)();
+    const tsProject = typescript.createProject(tsconfigPath, tsDevOptions)();
     const { dts, js } = gulp.src(`${baseDir}/${transpileGlob}`)
       .pipe(sourcemaps.init())
       .pipe(tsProject)
@@ -149,4 +158,18 @@ gulp.task('test.single', ['compile', '.compileSingleTestFile'], () => {
     }));
 });
 
-gulp.task('default', ['compile']);
+gulp.task('help', () => {
+  console.log(`
+gulp help: Prints this message.
+gulp clean: Deletes transpiled code.
+gulp compile: Transpiles src.
+gulp lint: Lints src and test.
+gulp test.compile: Transpiles src and test.
+gulp test: Runs \`gulp test.compile\`, and then runs all tests.
+gulp test.single --file $FILE: Transpiles src and $FILE, and runs only the transpiled $FILE. (See also: #5)
+gulp * --color: Prints output in color; particularly useful for tests.
+gulp * --dev: Runs the task with relaxed TS compiler options.
+  `.trim());
+});
+
+gulp.task('default', ['help']);
