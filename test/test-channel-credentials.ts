@@ -62,9 +62,10 @@ describe('ChannelCredentials', () => {
 
   describe('createSsl', () => {
     it('should work when given no arguments', () => {
-      const creds = assertNoThrowAndReturn(
+      const creds: ChannelCredentials = assertNoThrowAndReturn(
         () => ChannelCredentials.createSsl());
       assert.ok(creds instanceof ChannelCredentials);
+      const secureContext = creds.getSecureContext();
       assert.ok(!!creds.getSecureContext());
       assert.ok(!!creds.getSecureContext().context);
     });
