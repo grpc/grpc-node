@@ -39,18 +39,19 @@ function assertNoThrowAndReturn(fn: (...args: any[]) => void): any {
 }
 
 const readFile: (...args: any[]) => Promise<Buffer> = pify(fs.readFile);
+// A promise which resolves to loaded files in the form { ca, key, cert }
 const pFixtures = Promise.all([
     'ca.pem',
     'server1.key',
     'server1.pem'
-  ].map((file) => readFile(`test/fixtures/${file}`)))
-  .then((result) => {
-    return {
-      ca: result[0],
-      key: result[1],
-      cert: result[2]
-    };
-  });
+  ].map((file) => readFile(`test/fixtures/${file}`))
+).then((result) => {
+  return {
+    ca: result[0],
+    key: result[1],
+    cert: result[2]
+  };
+});
 
 describe('ChannelCredentials', () => {
   describe('createInsecure', () => {
