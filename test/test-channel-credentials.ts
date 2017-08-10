@@ -1,19 +1,23 @@
-import { CallCredentials } from '../src/call-credentials';
+import { ICallCredentials } from '../src/call-credentials';
 import { ChannelCredentials } from '../src/channel-credentials';
+import { Metadata } from '../src/metadata';
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as pify from 'pify';
 
-class MockCallCredentials extends CallCredentials {
+class MockCallCredentials implements ICallCredentials {
   child: MockCallCredentials;
   constructor(child?: MockCallCredentials) {
-    super();
     if (child) {
       this.child = child;
     }
   }
 
-  compose(callCredentials: CallCredentials): MockCallCredentials {
+  call(_options: Object, _cb: (err: Error, metadata: Metadata) => void): void {
+    throw new Error('Not implemented');
+  }
+
+  compose(callCredentials: ICallCredentials): ICallCredentials {
     return new MockCallCredentials(callCredentials as MockCallCredentials);
   }
 
@@ -122,9 +126,10 @@ describe('ChannelCredentials', () => {
         .compose(callCreds1)
         .compose(callCreds2);
       // Build a mock object that should be an identical copy
-      const composedCallCreds = callCreds1.compose(callCreds2);
+      const composedCallCreds = 
+        callCreds1.compose(callCreds2) as MockCallCredentials;
       assert.ok(composedCallCreds.isEqual(
         composedChannelCreds.getCallCredentials() as MockCallCredentials));
     });
-  })
+  });
 });

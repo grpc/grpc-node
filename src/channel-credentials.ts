@@ -1,9 +1,9 @@
-import { CallCredentials } from './call-credentials';
+import { ICallCredentials } from './call-credentials';
 import { createSecureContext, SecureContext } from 'tls';
 
 export interface IChannelCredentials {
-  compose(callCredentials: CallCredentials) : ChannelCredentials;
-  getCallCredentials() : CallCredentials | null;
+  compose(callCredentials: ICallCredentials) : ChannelCredentials;
+  getCallCredentials() : ICallCredentials | null;
   getSecureContext() : SecureContext | null;
 }
 
@@ -13,9 +13,9 @@ export interface IChannelCredentials {
  * over a channel initialized with an instance of this class.
  */
 export abstract class ChannelCredentials implements IChannelCredentials {
-  protected callCredentials: CallCredentials | null;
+  protected callCredentials: ICallCredentials | null;
 
-  protected constructor(callCredentials?: CallCredentials) {
+  protected constructor(callCredentials?: ICallCredentials) {
     this.callCredentials = callCredentials || null;
   }
 
@@ -55,12 +55,12 @@ export abstract class ChannelCredentials implements IChannelCredentials {
    * @param callCredentials A CallCredentials object to associate with this
    * instance.
    */
-  abstract compose(callCredentials: CallCredentials) : ChannelCredentials;
+  abstract compose(callCredentials: ICallCredentials) : ChannelCredentials;
 
   /**
    * Gets the set of per-call credentials associated with this instance.
    */
-  getCallCredentials() : CallCredentials | null {
+  getCallCredentials() : ICallCredentials | null {
     return this.callCredentials;
   }
 
@@ -73,11 +73,11 @@ export abstract class ChannelCredentials implements IChannelCredentials {
 }
 
 class InsecureChannelCredentials extends ChannelCredentials {
-  constructor(callCredentials?: CallCredentials) {
+  constructor(callCredentials?: ICallCredentials) {
     super(callCredentials);
   }
 
-  compose(callCredentials: CallCredentials) : ChannelCredentials {
+  compose(callCredentials: ICallCredentials) : ChannelCredentials {
     const combinedCallCredentials = this.callCredentials ?
       this.callCredentials.compose(callCredentials) :
       callCredentials;
@@ -92,12 +92,15 @@ class InsecureChannelCredentials extends ChannelCredentials {
 class SecureChannelCredentials extends ChannelCredentials {
   secureContext: SecureContext;
 
-  constructor(secureContext: SecureContext, callCredentials?: CallCredentials) {
+  constructor(
+    secureContext: SecureContext,
+    callCredentials?: ICallCredentials
+  ) {
     super(callCredentials);
     this.secureContext = secureContext;
   }
 
-  compose(callCredentials: CallCredentials) : ChannelCredentials {
+  compose(callCredentials: ICallCredentials) : ChannelCredentials {
     const combinedCallCredentials = this.callCredentials ?
       this.callCredentials.compose(callCredentials) :
       callCredentials;
