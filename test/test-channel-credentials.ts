@@ -65,9 +65,7 @@ describe('ChannelCredentials', () => {
       const creds: ChannelCredentials = assertNoThrowAndReturn(
         () => ChannelCredentials.createSsl());
       assert.ok(creds instanceof ChannelCredentials);
-      const secureContext = creds.getSecureContext();
       assert.ok(!!creds.getSecureContext());
-      assert.ok(!!creds.getSecureContext().context);
     });
 
     it('should work with just a CA override', async () => {
@@ -76,7 +74,6 @@ describe('ChannelCredentials', () => {
         () => ChannelCredentials.createSsl(ca));
       assert.ok(creds instanceof ChannelCredentials);
       assert.ok(!!creds.getSecureContext());
-      assert.ok(!!creds.getSecureContext().context);
     });
 
     it('should work with just a private key and cert chain', async () => {
@@ -85,7 +82,6 @@ describe('ChannelCredentials', () => {
         () => ChannelCredentials.createSsl(null, key, cert));
       assert.ok(creds instanceof ChannelCredentials);
       assert.ok(!!creds.getSecureContext());
-      assert.ok(!!creds.getSecureContext().context);
     });
 
     it('should work with all three parameters specified', async () => {
@@ -94,7 +90,6 @@ describe('ChannelCredentials', () => {
         () => ChannelCredentials.createSsl(ca, key, cert));
       assert.ok(creds instanceof ChannelCredentials);
       assert.ok(!!creds.getSecureContext());
-      assert.ok(!!creds.getSecureContext().context);
     });
 
     it('should throw if just one of private key and cert chain are missing',
