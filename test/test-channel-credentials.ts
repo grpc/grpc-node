@@ -1,6 +1,6 @@
 import { ICallCredentials } from '../src/call-credentials';
 import { ChannelCredentials } from '../src/channel-credentials';
-import { Metadata } from '../src/metadata';
+import { mockFunction } from './common';
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as pify from 'pify';
@@ -13,9 +13,7 @@ class MockCallCredentials implements ICallCredentials {
     }
   }
 
-  call(_options: Object, _cb: (err: Error, metadata: Metadata) => void): void {
-    throw new Error('Not implemented');
-  }
+  generateMetadata = mockFunction;
 
   compose(callCredentials: ICallCredentials): ICallCredentials {
     return new MockCallCredentials(callCredentials as MockCallCredentials);
