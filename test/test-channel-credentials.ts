@@ -19,7 +19,7 @@ class CallCredentialsMock implements CallCredentials {
     return new CallCredentialsMock(callCredentials);
   }
 
-  isEqual(other: CallCredentialsMock | null): boolean {
+  isEqual(other: CallCredentialsMock): boolean {
     if (!this.child) {
       return this === other;
     } else if (!other || !other.child) {

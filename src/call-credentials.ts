@@ -14,7 +14,13 @@ export interface CallCredentials {
  * A class that represents a generic method of adding authentication-related
  * metadata on a per-request basis.
  */
-export abstract class CallCredentialsImpl {
+export class CallCredentialsImpl {
+  metadataGenerators: Array<CallMetadataGenerator>;
+
+  constructor(metadataGenerators: Array<CallMetadataGenerator>) {
+    this.metadataGenerators = metadataGenerators;
+  }
+
   /**
    * Creates a new CallCredentials object from a given function that generates
    * Metadata objects.
@@ -23,9 +29,9 @@ export abstract class CallCredentialsImpl {
    * to the caller via a supplied (err, metadata) callback.
    */
   static createFromMetadataGenerator(
-    _metadataGenerator: CallMetadataGenerator
-  ): CallCredentialsImpl {
-    throw new Error();
+    metadataGenerator: CallMetadataGenerator
+  ): CallCredentials {
+    return new CallCredentialsImpl([metadataGenerator]);
   }
 
   /**
@@ -34,15 +40,32 @@ export abstract class CallCredentialsImpl {
    * @param cb A callback of the form (err, metadata) which will be called with
    * either the generated metadata, or an error if one occurred.
    */
-  abstract generateMetadata(
+  generateMetadata(
     options: Object,
     cb: (err: Error | null, metadata?: Metadata) => void
-  ): void;
+  ): void {
+    this.metadataGenerators.reduce((prevCb, generator) => {
+      return (_err: Error, _metadata?: Metadata) => {
+        // TODO(kjin): Unsure whether we should fail fast or ignore errors
+        // TODO(kjin): Metadata interface isn't defined yet
+        generator(options, prevCb);
+      };
+    }, cb)(null);
+  }
 
   /**
    * Creates a new CallCredentials object from properties of both this and
-   * another CallCredentials object.
+   * another CallCredentials object. This object's metadata generator will be
+   * called first.
    * @param callCredentials The other CallCredentials object.
    */
-  abstract compose(callCredentials: CallCredentialsImpl): CallCredentialsImpl;
+  compose(callCredentials: CallCredentials): CallCredentials {
+    if (!(callCredentials instanceof CallCredentialsImpl)) {
+      throw new Error('Unknown CallCredentials implementation provided');
+    }
+    // Other object goes first, because generateMetadata iterates through
+    // generators in reverse order
+    return new CallCredentialsImpl((callCredentials as CallCredentialsImpl)
+      .metadataGenerators.concat(this.metadataGenerators));
+  }
 }
