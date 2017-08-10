@@ -15,14 +15,14 @@ class MockCallCredentials implements ICallCredentials {
 
   generateMetadata = mockFunction;
 
-  compose(callCredentials: ICallCredentials): ICallCredentials {
-    return new MockCallCredentials(callCredentials as MockCallCredentials);
+  compose(callCredentials: MockCallCredentials): MockCallCredentials {
+    return new MockCallCredentials(callCredentials);
   }
 
-  isEqual(other: MockCallCredentials): boolean {
+  isEqual(other: MockCallCredentials | null): boolean {
     if (!this.child) {
       return this === other;
-    } else if (!other.child) {
+    } else if (!other || !other.child) {
       return false;
     } else {
       return this.child.isEqual(other.child);
@@ -125,10 +125,9 @@ describe('ChannelCredentials', () => {
         .compose(callCreds1)
         .compose(callCreds2);
       // Build a mock object that should be an identical copy
-      const composedCallCreds = 
-        callCreds1.compose(callCreds2) as MockCallCredentials;
+      const composedCallCreds = callCreds1.compose(callCreds2);
       assert.ok(composedCallCreds.isEqual(
-        composedChannelCreds.getCallCredentials() as MockCallCredentials));
+        composedChannelCreds.getCallCredentials());
     });
   });
 });

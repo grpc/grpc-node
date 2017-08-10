@@ -2,12 +2,12 @@ import { Metadata } from './metadata';
 
 export type CallMetadataGenerator = (
   options: Object,
-  cb: (err: Error, metadata?: Metadata) => void
+  cb: (err: Error | null, metadata?: Metadata) => void
 ) => void
 
 export interface ICallCredentials {
   generateMetadata: CallMetadataGenerator;
-  compose: (callCredentials: CallCredentials) => CallCredentials;
+  compose: (callCredentials: ICallCredentials) => ICallCredentials;
 }
 
 /**
@@ -36,7 +36,7 @@ export abstract class CallCredentials {
    */
   abstract generateMetadata(
     options: Object,
-    cb: (err: Error, metadata?: Metadata) => void
+    cb: (err: Error | null, metadata?: Metadata) => void
   ): void;
 
   /**
