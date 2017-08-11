@@ -1,5 +1,6 @@
 const del = require('del');
-const gulp = require('gulp');
+const _gulp = require('gulp');
+const help = require('gulp-help');
 const mocha = require('gulp-mocha');
 const sourcemaps = require('gulp-sourcemaps');
 const tslint = require('gulp-tslint');
@@ -9,11 +10,18 @@ const merge2 = require('merge2');
 const path = require('path');
 const through = require('through2');
 
+// gulp-help monkeypatches tasks to have an additional description parameter
+const gulp = help(_gulp);
+
 const tslintPath = './node_modules/google-ts-style/tslint.json';
 const tsconfigPath = './tsconfig.json';
 const outDir = 'build';
 
 function onError() {}
+
+// Coalesces all specified --file parameters into a single array
+const files = !util.env.file ? [] :
+  Array.isArray(util.env.file) ? util.env.file : [util.env.file];
 
 // If --dev is passed, override certain ts config options
 let tsDevOptions = {};
@@ -64,7 +72,7 @@ function makeCompileFn(globs) {
 /**
  * Runs tslint on files in src/, with linting rules defined in tslint.json.
  */
-gulp.task('lint', () => {
+gulp.task('lint', 'Emits linting errors found in src/ and test/.', () => {
   const program = require('tslint').Linter.createProgram(tsconfigPath);
   gulp.src(['src/**/*.ts', 'test/**/*.ts'])
     .pipe(tslint({
@@ -76,7 +84,7 @@ gulp.task('lint', () => {
     .on('warning', onError);
 });
 
-gulp.task('clean', () => {
+gulp.task('clean', 'Deletes transpiled code.', () => {
   return del(outDir);
 });
 
@@ -86,86 +94,69 @@ gulp.task('clean', () => {
  * Currently, all errors are emitted twice. This is being tracked here:
  * https://github.com/ivogabe/gulp-typescript/issues/438
  */
-gulp.task('compile', makeCompileFn({ transpile: ['*.ts', 'src/**/*.ts'] }));
+gulp.task('compile', 'Transpiles src/.',
+  makeCompileFn({ transpile: ['*.ts', 'src/**/*.ts'] }));
 
 /**
  * Transpiles TypeScript files in both src/ and test/.
  */
-gulp.task('test.compile', ['compile'],
-  makeCompileFn({ transpile: '**/test/**/*.ts', copy: 'test/**/!(*.ts)' }));
-
-/**
- * Starts watching files in src/, running the 'compile' step whenever a file
- * changes.
- */
-gulp.task('watch', () => {
-  gulp.start(['compile']);
-  return gulp.watch(srcGlob, ['compile']);
-});
+gulp.task('test.compile', 'After dep tasks, transpiles test/.', ['compile'],
+  makeCompileFn({ transpile: ['test/**/*.ts'], copy: 'test/**/!(*.ts)' }));
 
 /**
  * Transpiles src/ and test/, and then runs all tests.
  */
-gulp.task('test', ['test.compile'], () => {
-  return gulp.src(`${outDir}/test/**/*.js`)
-    .pipe(mocha());
-});
+gulp.task('test', 'After dep tasks, runs all tests.',
+  ['test.compile'], () => {
+    return gulp.src(`${outDir}/test/**/*.js`)
+      .pipe(mocha());
+  }
+);
 
 /**
- * Compiles a single test file. Only intended as a pre-requisite for
- * 'test.single'.
- * @private
+ * Transpiles individual files, specified by the --file flag.
  */
-gulp.task('.compileSingleTestFile', util.env.file ?
-  makeCompileFn({ transpile: path.relative('.', util.env.file) }) :
-  () => { throw new Error('No file specified'); });
+gulp.task('compile.single', 'Transpiles individual files specified by --file.',
+  makeCompileFn({
+    transpile: files.map(f => path.relative('.', f))
+  })
+);
 
 /**
- * Run a single test, specified by its pre-transpiled source path (as supplied
- * through the '--file' flag). This is intended to be used as part of a VS Code
- * "Gulp task" launch configuration; setting the "args" field to
+ * Run individual tests, specified by their pre-transpiled source path (as
+ * supplied through the '--file' flag). This is intended to be used as part of a
+ * VS Code "Gulp task" launch configuration; setting the "args" field to
  * ["test.single", "--file", "${file}"] makes it possible for one to debug the
  * currently open TS mocha test file in one step.
  */
-gulp.task('test.single', ['compile', '.compileSingleTestFile'], () => {
-  // util.env contains CLI arguments for the gulp task.
-  const { file } = util.env;
-  // Determine the path to the transpiled version of this TS file.
-  const dir = path.dirname(path.relative('.', file));
-  const basename = path.basename(file, '.ts');
-  const transpiledPath = `${outDir}/${dir}/${basename}.js`;
-  // Construct an instance of Mocha's runner API and feed it the path to the
-  // transpiled source.
-  return gulp.src(transpiledPath)
-    .pipe(through.obj((file, enc, cb) => {
-      // Construct a new Mocha runner instance.
-      const Mocha = require('mocha');
-      const runner = new Mocha();
-      // Add the path to the test file to debug.
-      runner.addFile(file.path);
-      // Run the test suite.
-      runner.run((failures) => {
-        if (failures > 0) {
-          cb(new Error(`Mocha: ${failures} failures in ${file.path}]`));
-        } else {
-          cb(null);
-        }
-      });
-    }));
-});
-
-gulp.task('help', () => {
-  console.log(`
-gulp help: Prints this message.
-gulp clean: Deletes transpiled code.
-gulp compile: Transpiles src.
-gulp lint: Emits linting errors found in src/ and test/.
-gulp test.compile: Transpiles src and test.
-gulp test: Runs \`gulp test.compile\`, and then runs all tests.
-gulp test.single --file $FILE: Transpiles src and $FILE, and runs only the transpiled $FILE. (See also: #5)
-gulp * --color: Prints output in color; particularly useful for tests.
-gulp * --dev: Runs the task with relaxed TS compiler options.
-  `.trim());
-});
+gulp.task('test.single', 'After dep tasks, runs individual files specified ' +
+  'by --file.', ['compile', 'compile.single'], () => {
+    // util.env contains CLI arguments for the gulp task.
+    // Determine the path to the transpiled version of this TS file.
+    const getTranspiledPath = (file) => {
+      const dir = path.dirname(path.relative('.', file));
+      const basename = path.basename(file, '.ts');
+      return `${outDir}/${dir}/${basename}.js`;
+    };
+    // Construct an instance of Mocha's runner API and feed it the path to the
+    // transpiled source.
+    return gulp.src(files.map(getTranspiledPath))
+      .pipe(through.obj((file, enc, cb) => {
+        // Construct a new Mocha runner instance.
+        const Mocha = require('mocha');
+        const runner = new Mocha();
+        // Add the path to the test file to debug.
+        runner.addFile(file.path);
+        // Run the test suite.
+        runner.run((failures) => {
+          if (failures > 0) {
+            cb(new Error(`Mocha: ${failures} failures in ${file.path}]`));
+          } else {
+            cb(null);
+          }
+        });
+      }));
+  }
+);
 
 gulp.task('default', ['help']);
