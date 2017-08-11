@@ -5,16 +5,16 @@ export type CallMetadataGenerator = (
   cb: (err: Error | null, metadata?: Metadata) => void
 ) => void
 
-export interface ICallCredentials {
+export interface CallCredentials {
   generateMetadata: CallMetadataGenerator;
-  compose: (callCredentials: ICallCredentials) => ICallCredentials;
+  compose: (callCredentials: CallCredentials) => CallCredentials;
 }
 
 /**
  * A class that represents a generic method of adding authentication-related
  * metadata on a per-request basis.
  */
-export abstract class CallCredentials {
+export abstract class CallCredentialsImpl {
   /**
    * Creates a new CallCredentials object from a given function that generates
    * Metadata objects.
@@ -23,8 +23,8 @@ export abstract class CallCredentials {
    * to the caller via a supplied (err, metadata) callback.
    */
   static createFromMetadataGenerator(
-    metadataGenerator: CallMetadataGenerator
-  ): CallCredentials {
+    _metadataGenerator: CallMetadataGenerator
+  ): CallCredentialsImpl {
     throw new Error();
   }
 
@@ -44,5 +44,5 @@ export abstract class CallCredentials {
    * another CallCredentials object.
    * @param callCredentials The other CallCredentials object.
    */
-  abstract compose(callCredentials: CallCredentials): CallCredentials;
+  abstract compose(callCredentials: CallCredentialsImpl): CallCredentialsImpl;
 }

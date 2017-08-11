@@ -1,9 +1,9 @@
-import { ICallCredentials } from './call-credentials';
+import { CallCredentials } from './call-credentials';
 import { createSecureContext, SecureContext } from 'tls';
 
-export interface IChannelCredentials {
-  compose(callCredentials: ICallCredentials) : ChannelCredentials;
-  getCallCredentials() : ICallCredentials | null;
+export interface ChannelCredentials {
+  compose(callCredentials: CallCredentials) : ChannelCredentialsImpl;
+  getCallCredentials() : CallCredentials | null;
   getSecureContext() : SecureContext | null;
 }
 
@@ -12,10 +12,10 @@ export interface IChannelCredentials {
  * as a set of per-call credentials, which are applied to every method call made
  * over a channel initialized with an instance of this class.
  */
-export abstract class ChannelCredentials implements IChannelCredentials {
-  protected callCredentials: ICallCredentials | null;
+export abstract class ChannelCredentialsImpl implements ChannelCredentials {
+  protected callCredentials: CallCredentials | null;
 
-  protected constructor(callCredentials?: ICallCredentials) {
+  protected constructor(callCredentials?: CallCredentials) {
     this.callCredentials = callCredentials || null;
   }
 
@@ -27,7 +27,7 @@ export abstract class ChannelCredentials implements IChannelCredentials {
    * @param privateKey The client certificate private key, if available.
    * @param certChain The client certificate key chain, if available.
    */
-  static createSsl(rootCerts?: Buffer | null, privateKey?: Buffer | null, certChain?: Buffer | null) : ChannelCredentials {
+  static createSsl(rootCerts?: Buffer | null, privateKey?: Buffer | null, certChain?: Buffer | null) : ChannelCredentialsImpl {
     if (privateKey && !certChain) {
       throw new Error('Private key must be given with accompanying certificate chain');
     }
@@ -39,14 +39,14 @@ export abstract class ChannelCredentials implements IChannelCredentials {
       key: privateKey || undefined,
       cert: certChain || undefined
     });
-    return new SecureChannelCredentials(secureContext);
+    return new SecureChannelCredentialsImpl(secureContext);
   }
 
   /**
    * Return a new ChannelCredentials instance with no credentials.
    */
-  static createInsecure() : ChannelCredentials {
-    return new InsecureChannelCredentials();
+  static createInsecure() : ChannelCredentialsImpl {
+    return new InsecureChannelCredentialsImpl();
   }
 
   /**
@@ -55,12 +55,12 @@ export abstract class ChannelCredentials implements IChannelCredentials {
    * @param callCredentials A CallCredentials object to associate with this
    * instance.
    */
-  abstract compose(callCredentials: ICallCredentials) : ChannelCredentials;
+  abstract compose(callCredentials: CallCredentials) : ChannelCredentialsImpl;
 
   /**
    * Gets the set of per-call credentials associated with this instance.
    */
-  getCallCredentials() : ICallCredentials | null {
+  getCallCredentials() : CallCredentials | null {
     return this.callCredentials;
   }
 
@@ -72,16 +72,16 @@ export abstract class ChannelCredentials implements IChannelCredentials {
   abstract getSecureContext() : SecureContext | null;
 }
 
-class InsecureChannelCredentials extends ChannelCredentials {
-  constructor(callCredentials?: ICallCredentials) {
+class InsecureChannelCredentialsImpl extends ChannelCredentialsImpl {
+  constructor(callCredentials?: CallCredentials) {
     super(callCredentials);
   }
 
-  compose(callCredentials: ICallCredentials) : ChannelCredentials {
+  compose(callCredentials: CallCredentials) : ChannelCredentialsImpl {
     const combinedCallCredentials = this.callCredentials ?
       this.callCredentials.compose(callCredentials) :
       callCredentials;
-    return new InsecureChannelCredentials(combinedCallCredentials);
+    return new InsecureChannelCredentialsImpl(combinedCallCredentials);
   }
 
   getSecureContext() : SecureContext | null {
@@ -89,22 +89,22 @@ class InsecureChannelCredentials extends ChannelCredentials {
   }
 }
 
-class SecureChannelCredentials extends ChannelCredentials {
+class SecureChannelCredentialsImpl extends ChannelCredentialsImpl {
   secureContext: SecureContext;
 
   constructor(
     secureContext: SecureContext,
-    callCredentials?: ICallCredentials
+    callCredentials?: CallCredentials
   ) {
     super(callCredentials);
     this.secureContext = secureContext;
   }
 
-  compose(callCredentials: ICallCredentials) : ChannelCredentials {
+  compose(callCredentials: CallCredentials) : ChannelCredentialsImpl {
     const combinedCallCredentials = this.callCredentials ?
       this.callCredentials.compose(callCredentials) :
       callCredentials;
-    return new SecureChannelCredentials(this.secureContext,
+    return new SecureChannelCredentialsImpl(this.secureContext,
       combinedCallCredentials);
   }
 
