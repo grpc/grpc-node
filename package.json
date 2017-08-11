@@ -20,6 +20,7 @@
     "del": "^3.0.0",
     "google-ts-style": "latest",
     "gulp": "^3.9.1",
+    "gulp-help": "^1.6.1",
     "gulp-mocha": "^4.3.1",
     "gulp-sourcemaps": "^2.6.0",
     "gulp-tslint": "^8.1.1",
