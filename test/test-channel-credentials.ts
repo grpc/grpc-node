@@ -1,5 +1,5 @@
 import { CallCredentials } from '../src/call-credentials';
-import { ChannelCredentialsImpl } from '../src/channel-credentials';
+import { ChannelCredentials } from '../src/channel-credentials';
 import { mockFunction } from './common';
 import * as assert from 'assert';
 import * as fs from 'fs';
@@ -57,59 +57,54 @@ describe('ChannelCredentials Implementation', () => {
   describe('createInsecure', () => {
     it('should return a ChannelCredentials object with no associated secure context', () => {
       const creds = assertNoThrowAndReturn(
-        () => ChannelCredentialsImpl.createInsecure());
-      assert.ok(creds instanceof ChannelCredentialsImpl);
+        () => ChannelCredentials.createInsecure());
       assert.ok(!creds.getSecureContext());
     });
   });
 
   describe('createSsl', () => {
     it('should work when given no arguments', () => {
-      const creds: ChannelCredentialsImpl = assertNoThrowAndReturn(
-        () => ChannelCredentialsImpl.createSsl());
-      assert.ok(creds instanceof ChannelCredentialsImpl);
+      const creds: ChannelCredentials = assertNoThrowAndReturn(
+        () => ChannelCredentials.createSsl());
       assert.ok(!!creds.getSecureContext());
     });
 
     it('should work with just a CA override', async () => {
       const { ca } = await pFixtures;
       const creds = assertNoThrowAndReturn(
-        () => ChannelCredentialsImpl.createSsl(ca));
-      assert.ok(creds instanceof ChannelCredentialsImpl);
+        () => ChannelCredentials.createSsl(ca));
       assert.ok(!!creds.getSecureContext());
     });
 
     it('should work with just a private key and cert chain', async () => {
       const { key, cert } = await pFixtures;
       const creds = assertNoThrowAndReturn(
-        () => ChannelCredentialsImpl.createSsl(null, key, cert));
-      assert.ok(creds instanceof ChannelCredentialsImpl);
+        () => ChannelCredentials.createSsl(null, key, cert));
       assert.ok(!!creds.getSecureContext());
     });
 
     it('should work with all three parameters specified', async () => {
       const { ca, key, cert } = await pFixtures;
       const creds = assertNoThrowAndReturn(
-        () => ChannelCredentialsImpl.createSsl(ca, key, cert));
-      assert.ok(creds instanceof ChannelCredentialsImpl);
+        () => ChannelCredentials.createSsl(ca, key, cert));
       assert.ok(!!creds.getSecureContext());
     });
 
     it('should throw if just one of private key and cert chain are missing',
       async () => {
         const { ca, key, cert } = await pFixtures;
-        assert.throws(() => ChannelCredentialsImpl.createSsl(ca, key));
-        assert.throws(() => ChannelCredentialsImpl.createSsl(ca, key, null));
-        assert.throws(() => ChannelCredentialsImpl.createSsl(ca, null, cert));
-        assert.throws(() => ChannelCredentialsImpl.createSsl(null, key));
-        assert.throws(() => ChannelCredentialsImpl.createSsl(null, key, null));
-        assert.throws(() => ChannelCredentialsImpl.createSsl(null, null, cert));
+        assert.throws(() => ChannelCredentials.createSsl(ca, key));
+        assert.throws(() => ChannelCredentials.createSsl(ca, key, null));
+        assert.throws(() => ChannelCredentials.createSsl(ca, null, cert));
+        assert.throws(() => ChannelCredentials.createSsl(null, key));
+        assert.throws(() => ChannelCredentials.createSsl(null, key, null));
+        assert.throws(() => ChannelCredentials.createSsl(null, null, cert));
       });
   });
 
   describe('compose', () => {
     it('should return a ChannelCredentials object', () => {
-      const channelCreds = ChannelCredentialsImpl.createInsecure();
+      const channelCreds = ChannelCredentials.createInsecure();
       const callCreds = new CallCredentialsMock();
       const composedChannelCreds = channelCreds.compose(callCreds);
       assert.ok(!channelCreds.getCallCredentials());
@@ -121,7 +116,7 @@ describe('ChannelCredentials Implementation', () => {
       const callCreds1 = new CallCredentialsMock();
       const callCreds2 = new CallCredentialsMock();
       // Associate both call credentials with channelCreds
-      const composedChannelCreds = ChannelCredentialsImpl.createInsecure()
+      const composedChannelCreds = ChannelCredentials.createInsecure()
         .compose(callCreds1)
         .compose(callCreds2);
       // Build a mock object that should be an identical copy
