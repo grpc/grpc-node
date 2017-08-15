@@ -54,43 +54,36 @@ class CallCredentialsImpl {
       return;
     }
 
-    // getMetadata accepts a new Metadata object, runs each metadata generator
-    // in metadataGenerators in reverse order, eventually either calling cb
-    // with the first occurring error or the resulting merged Metadata object
-    const getMetadata = this.metadataGenerators.reduce(
-      (next: (metadata: Metadata) => void, generator) => {
-        return (accMetadata: Metadata) => {
-          // Run the metadata generator function
-          generator(options, (err, metadata?) => {
-            // Immediately bail and call cb(err) if there is an error
-            if (err || !metadata) {
-              cb(err);
-              return;
-            }
-            // Merge metadata with current accumulator value
-            const metadataObj = metadata.getMap();
-            Object.keys(metadataObj).forEach((key) => {
-              metadata.get(key).forEach((value) => {
-                accMetadata.add(key, value);
-              });
-            });
-            // Run the next 
-            next(accMetadata);
+    const that = this;
+    let result = Metadata.createMetadata();
+    const next = (index: number) => {
+      if (index === that.metadataGenerators.length) {
+        cb(null, result);
+        return;
+      }
+      that.metadataGenerators[index](options, (err, metadata) => {
+        if (err || !metadata) {
+          cb(err);
+          return;
+        }
+        // Merge metadata with result
+        const metadataObj = metadata.getMap();
+        Object.keys(metadataObj).forEach((key) => {
+          metadata.get(key).forEach((value) => {
+            result.add(key, value);
           });
-        };
-      },
-      (accMetadata: Metadata) => cb(null, accMetadata)
-    );
-    getMetadata(Metadata.createMetadata());
+        });
+        next(index + 1);
+      });
+    };
+    next(0);
   }
 
   compose(callCredentials: CallCredentials): CallCredentials {
     if (!(callCredentials instanceof CallCredentialsImpl)) {
       throw new Error('Unknown CallCredentials implementation provided');
     }
-    // Other object goes first, because generateMetadata iterates through
-    // generators in reverse order
-    return new CallCredentialsImpl((callCredentials as CallCredentialsImpl)
-      .metadataGenerators.concat(this.metadataGenerators));
+    return new CallCredentialsImpl(this.metadataGenerators.concat(
+      (callCredentials as CallCredentialsImpl).metadataGenerators));
   }
 }
