@@ -1,7 +1,7 @@
+import * as assert from 'assert';
 import { CallCredentials } from '../src/call-credentials';
 import { ChannelCredentials } from '../src/channel-credentials';
-import { mockFunction } from './common';
-import * as assert from 'assert';
+import { mockFunction, assert2 } from './common';
 import * as fs from 'fs';
 import * as pify from 'pify';
 
@@ -30,14 +30,6 @@ class CallCredentialsMock implements CallCredentials {
   }
 }
 
-function assertNoThrowAndReturn(fn: (...args: any[]) => void): any {
-  let returnValue;
-  assert.doesNotThrow(() => {
-    returnValue = fn();
-  });
-  return returnValue;
-}
-
 const readFile: (...args: any[]) => Promise<Buffer> = pify(fs.readFile);
 // A promise which resolves to loaded files in the form { ca, key, cert }
 const pFixtures = Promise.all([
@@ -56,7 +48,7 @@ const pFixtures = Promise.all([
 describe('ChannelCredentials Implementation', () => {
   describe('createInsecure', () => {
     it('should return a ChannelCredentials object with no associated secure context', () => {
-      const creds = assertNoThrowAndReturn(
+      const creds = assert2.noThrowAndReturn(
         () => ChannelCredentials.createInsecure());
       assert.ok(!creds.getSecureContext());
     });
@@ -64,28 +56,28 @@ describe('ChannelCredentials Implementation', () => {
 
   describe('createSsl', () => {
     it('should work when given no arguments', () => {
-      const creds: ChannelCredentials = assertNoThrowAndReturn(
+      const creds: ChannelCredentials = assert2.noThrowAndReturn(
         () => ChannelCredentials.createSsl());
       assert.ok(!!creds.getSecureContext());
     });
 
     it('should work with just a CA override', async () => {
       const { ca } = await pFixtures;
-      const creds = assertNoThrowAndReturn(
+      const creds = assert2.noThrowAndReturn(
         () => ChannelCredentials.createSsl(ca));
       assert.ok(!!creds.getSecureContext());
     });
 
     it('should work with just a private key and cert chain', async () => {
       const { key, cert } = await pFixtures;
-      const creds = assertNoThrowAndReturn(
+      const creds = assert2.noThrowAndReturn(
         () => ChannelCredentials.createSsl(null, key, cert));
       assert.ok(!!creds.getSecureContext());
     });
 
     it('should work with all three parameters specified', async () => {
       const { ca, key, cert } = await pFixtures;
-      const creds = assertNoThrowAndReturn(
+      const creds = assert2.noThrowAndReturn(
         () => ChannelCredentials.createSsl(ca, key, cert));
       assert.ok(!!creds.getSecureContext());
     });
