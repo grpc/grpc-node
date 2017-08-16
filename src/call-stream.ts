@@ -23,6 +23,9 @@ export interface WriteObject {
   flags?: number;
 }
 
+/**
+ * This interface represents a duplex stream associated with a single gRPC call.
+ */
 export interface CallStream extends ObjectDuplex<WriteObject, Buffer> {
   cancelWithStatus(status: Status, details: string): void;
   getPeer(): string;
@@ -58,10 +61,12 @@ export interface CallStream extends ObjectDuplex<WriteObject, Buffer> {
       this;
 }
 
-/**
- * This class represents a duplex stream associated with a single gRPC call.
- */
-export class CallStreamImpl extends stream.Duplex implements CallStream {
+export class Http2CallStream extends stream.Duplex implements CallStream {
+
+  attachHttp2Stream(stream: ClientHttp2Stream): void {
+    throw new Error('Not yet implemented');
+  }
+
   cancelWithStatus(status: Status, details: string): void {
     throw new Error('Not yet implemented');
   }
