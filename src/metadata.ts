@@ -81,15 +81,32 @@ function validate(key: string, value?: MetadataValue): void {
   }
 }
 
+/**
+ * A class for storing metadata. Keys are normalized to lowercase ASCII.
+ */
 export class Metadata {
   constructor(private readonly internalRepr: MetadataObject = {}) {}
 
+  /**
+   * Sets the given value for the given key by replacing any other values
+   * associated with that key. Normalizes the key.
+   * @param key The key to whose value should be set.
+   * @param value The value to set. Must be a buffer if and only
+   *   if the normalized key ends with '-bin'.
+   */
   set(key: string, value: MetadataValue): void {
     key = normalizeKey(key);
     validate(key, value);
     this.internalRepr[key] = [value];
   }
 
+  /**
+   * Adds the given value for the given key by appending to a list of previous
+   * values associated with that key. Normalizes the key.
+   * @param key The key for which a new value should be appended.
+   * @param value The value to add. Must be a buffer if and only
+   *   if the normalized key ends with '-bin'.
+   */
   add(key: string, value: MetadataValue): void {
     key = normalizeKey(key);
     validate(key, value);
@@ -100,6 +117,10 @@ export class Metadata {
     }
   }
 
+  /**
+   * Removes the given key and any associated values. Normalizes the key.
+   * @param key The key whose values should be removed.
+   */
   remove(key: string): void {
     key = normalizeKey(key);
     validate(key);
@@ -108,6 +129,11 @@ export class Metadata {
     }
   }
 
+  /**
+   * Gets a list of all values associated with the key. Normalizes the key.
+   * @param key The key whose value should be retrieved.
+   * @return A list of values associated with the given key.
+   */
   get(key: string): Array<MetadataValue> {
     key = normalizeKey(key);
     validate(key);
@@ -118,6 +144,11 @@ export class Metadata {
     }
   }
 
+  /**
+   * Gets a plain object mapping each key to the first value associated with it.
+   * This reflects the most common way that people will want to see metadata.
+   * @return A key/value mapping of the metadata.
+   */
   getMap(): { [key: string]: MetadataValue } {
     const result: { [key: string]: MetadataValue } = {};
     forOwn(this.internalRepr, function(values, key) {
@@ -129,6 +160,10 @@ export class Metadata {
     return result;
   }
 
+  /**
+   * Clones the metadata object.
+   * @return The newly cloned object.
+   */
   clone(): Metadata {
     return new Metadata(cloneMetadataObject(this.internalRepr));
   }
