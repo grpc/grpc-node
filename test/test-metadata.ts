@@ -1,5 +1,11 @@
 import * as assert from 'assert';
-import { Metadata } from '../src/metadata';
+import * as metadata from '../src/metadata';
+
+class Metadata extends metadata.Metadata {
+  getInternalRepresentation() {
+    return this.internalRepr;
+  }
+}
 
 describe('Metadata', () => {
   let metadata: Metadata;
@@ -150,11 +156,12 @@ describe('Metadata', () => {
     it('gets a map of keys to values', () => {
       metadata.add('key1', 'value1');
       metadata.add('Key2', 'value2');
-      metadata.add('KEY3', 'value3');
+      metadata.add('KEY3', 'value3a');
+      metadata.add('KEY3', 'value3b');
       assert.deepEqual(metadata.getMap(),
                        {key1: 'value1',
                         key2: 'value2',
-                        key3: 'value3'});
+                        key3: 'value3a'});
     });
   });
 
@@ -177,6 +184,30 @@ describe('Metadata', () => {
       const copy = metadata.clone();
       copy.add('key', 'value2');
       assert.deepEqual(metadata.get('key'), ['value1']);
+    });
+  });
+
+  describe('merge', () => {
+    it('appends values from a given metadata object', () => {
+      metadata.add('key1', 'value1');
+      metadata.add('Key2', 'value2a');
+      metadata.add('KEY3', 'value3a');
+      metadata.add('key4', 'value4');
+      const metadata2 = new Metadata();
+      metadata2.add('KEY1', 'value1');
+      metadata2.add('key2', 'value2b');
+      metadata2.add('key3', 'value3b');
+      metadata2.add('key5', 'value5a');
+      metadata2.add('key5', 'value5b');
+      const metadata2IR = metadata2.getInternalRepresentation();
+      metadata.merge(metadata2);
+      // Ensure metadata2 didn't change
+      assert.deepEqual(metadata2.getInternalRepresentation(), metadata2IR);
+      assert.deepEqual(metadata.get('key1'), ['value1', 'value1']);
+      assert.deepEqual(metadata.get('key2'), ['value2a', 'value2b']);
+      assert.deepEqual(metadata.get('key3'), ['value3a', 'value3b']);
+      assert.deepEqual(metadata.get('key4'), ['value4']);
+      assert.deepEqual(metadata.get('key5'), ['value5a', 'value5b']);
     });
   });
 });

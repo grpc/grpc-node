@@ -85,7 +85,7 @@ function validate(key: string, value?: MetadataValue): void {
  * A class for storing metadata. Keys are normalized to lowercase ASCII.
  */
 export class Metadata {
-  constructor(private readonly internalRepr: MetadataObject = {}) {}
+  constructor(protected readonly internalRepr: MetadataObject = {}) {}
 
   /**
    * Sets the given value for the given key by replacing any other values
@@ -151,7 +151,7 @@ export class Metadata {
    */
   getMap(): { [key: string]: MetadataValue } {
     const result: { [key: string]: MetadataValue } = {};
-    forOwn(this.internalRepr, function(values, key) {
+    forOwn(this.internalRepr, (values, key) => {
       if(values.length > 0) {
         const v = values[0];
         result[key] = v instanceof Buffer ? v.slice() : v;
@@ -166,5 +166,18 @@ export class Metadata {
    */
   clone(): Metadata {
     return new Metadata(cloneMetadataObject(this.internalRepr));
+  }
+
+  /**
+   * Merges all key-value pairs from a given Metadata object into this one.
+   * If both this object and the given object have values in the same key,
+   * values from the other Metadata object will be appended to this object's
+   * values.
+   * @param other A Metadata object.
+   */
+  merge(other: Metadata): void {
+    forOwn(other.internalRepr, (values, key) => {
+      this.internalRepr[key] = (this.internalRepr[key] || []).concat(values);
+    });
   }
 }
