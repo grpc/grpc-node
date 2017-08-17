@@ -1,27 +1,6 @@
 import { Metadata } from '../src/metadata';
 import { CallCredentials, CallMetadataGenerator } from '../src/call-credentials';
-import { mockFunction } from './common';
 import * as assert from 'assert';
-
-class MetadataMock extends Metadata {
-  constructor(private obj: { [propName: string]: Array<string> } = {}) {
-    super();
-  }
-
-  add(key: string, value: string) {
-    if (!this.obj[key]) {
-      this.obj[key] = [value];
-    } else {
-      this.obj[key].push(value);
-    }
-  }
-  clone() { return new MetadataMock(Object.create(this.obj)); };
-  get(key: string) { return this.obj[key]; }
-  getMap() { return this.obj; }
-  set() { mockFunction() }
-  remove() { mockFunction() }
-}
-Metadata.createMetadata = () => new MetadataMock();
 
 // Returns a Promise that resolves to an object containing either an error or
 // metadata
@@ -40,7 +19,7 @@ function generateMetadata(
 
 function makeGenerator(props: Array<string>): CallMetadataGenerator {
   return (options: { [propName: string]: string }, cb) => {
-    const metadata: Metadata = new MetadataMock();
+    const metadata: Metadata = new Metadata();
     props.forEach((prop) => {
       if (options[prop]) {
         metadata.add(prop, options[prop]);
@@ -52,7 +31,7 @@ function makeGenerator(props: Array<string>): CallMetadataGenerator {
 
 function makeAfterMsElapsedGenerator(ms: number): CallMetadataGenerator {
   return (_options, cb) => {
-    const metadata = new MetadataMock();
+    const metadata = new Metadata();
     metadata.add('msElapsed', `${ms}`);
     setTimeout(() => cb(null, metadata), ms);
   };
@@ -101,9 +80,7 @@ describe('CallCredentials', () => {
         assert.ok(!err);
         assert.ok(metadata);
         if (metadata) {
-          assert.deepEqual(metadata.getMap(), {
-            name: ['foo']
-          });
+          assert.deepEqual(metadata.get('name'), ['foo']);
         }
       }
     );
@@ -153,9 +130,7 @@ describe('CallCredentials', () => {
         assert.ok(!err);
         assert.ok(metadata);
         if (metadata) {
-          assert.deepEqual(metadata.getMap(), {
-            msElapsed: expected
-          });
+          assert.deepEqual(metadata.get('msElapsed'), expected);
         }
       }));
     });
