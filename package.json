@@ -45,5 +45,9 @@
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
     "lint": "tslint -c node_modules/google-ts-style/tslint.json -p . -t codeFrame --type-check",
     "test": "gulp test"
+  },
+  "dependencies": {
+    "@types/async": "^2.0.41",
+    "async": "^2.5.0"
   }
 }
