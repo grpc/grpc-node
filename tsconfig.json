@@ -1,7 +1,10 @@
 {
   "extends": "./node_modules/google-ts-style/tsconfig-google.json",
   "compilerOptions": {
-    "lib": [ "es6" ]
+    "lib": [ "es6" ],
+    "typeRoots": [
+      "node_modules/h2-types", "node_modules/@types"
+    ]
   },
   "include": [
     "src/**/*.ts",

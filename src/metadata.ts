@@ -1,4 +1,5 @@
 import { forOwn } from 'lodash';
+import * as http2 from 'http2';
 
 export type MetadataValue = string | Buffer;
 
@@ -158,5 +159,24 @@ export class Metadata {
     forOwn(other.internalRepr, (values, key) => {
       this.internalRepr[key] = (this.internalRepr[key] || []).concat(values);
     });
+  }
+
+  /**
+   * Creates an OutgoingHttpHeaders object that can be used with the http2 API.
+   */
+  toHttp2Headers(): http2.OutgoingHttpHeaders {
+    const result: http2.OutgoingHttpHeaders = {};
+    forOwn(this.internalRepr, (values, key) => {
+      // We assume that the user's interaction with this object is limited to
+      // through its public API (i.e. keys and values are already validated).
+      result[key] = values.map((value) => {
+        if (value instanceof Buffer) {
+          return value.toString('base64');
+        } else {
+          return value;
+        }
+      });
+    });
+    return result;
   }
 }

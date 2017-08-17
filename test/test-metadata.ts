@@ -222,4 +222,31 @@ describe('Metadata', () => {
       assert.deepEqual(metadata.get('key5'), ['value5a', 'value5b']);
     });
   });
+
+  describe('toHttp2Headers', () => {
+    it('creates an http2.OutgoingHttpHeaders object', () => {
+      metadata.add('key1', 'value1');
+      metadata.add('Key2', 'value2');
+      metadata.add('KEY3', 'value3a');
+      metadata.add('key3', 'value3b');
+      metadata.add('key-bin', Buffer.from(range(0, 16)));
+      metadata.add('key-bin', Buffer.from(range(16, 32)));
+      metadata.add('key-bin', Buffer.from(range(0, 32)));
+      const headers = metadata.toHttp2Headers();
+      assert.deepEqual(headers, {
+        key1: ['value1'],
+        key2: ['value2'],
+        key3: ['value3a', 'value3b'],
+        'key-bin': [
+          'AAECAwQFBgcICQoLDA0ODw==',
+          'EBESExQVFhcYGRobHB0eHw==',
+          'AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8='
+        ]
+      });
+    });
+
+    it('creates an empty header object from empty Metadata', () => {
+      assert.deepEqual(metadata.toHttp2Headers(), {});
+    });
+  });
 });
