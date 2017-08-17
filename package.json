@@ -16,7 +16,6 @@
   "devDependencies": {
     "@types/mocha": "^2.2.41",
     "@types/node": "^8.0.19",
-    "@types/pify": "0.0.28",
     "clang-format": "^1.0.53",
     "del": "^3.0.0",
     "google-ts-style": "latest",
@@ -29,7 +28,6 @@
     "gulp-util": "^3.0.8",
     "merge2": "^1.1.0",
     "mocha": "^3.5.0",
-    "pify": "^3.0.0",
     "through2": "^2.0.3",
     "tslint": "^5.5.0",
     "typescript": "^2.4.1"
@@ -47,5 +45,9 @@
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
     "lint": "tslint -c node_modules/google-ts-style/tslint.json -p . -t codeFrame --type-check",
     "test": "gulp test"
+  },
+  "dependencies": {
+    "@types/async": "^2.0.41",
+    "async": "^2.5.0"
   }
 }

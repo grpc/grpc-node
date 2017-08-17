@@ -3,7 +3,7 @@ import { CallCredentials } from '../src/call-credentials';
 import { ChannelCredentials } from '../src/channel-credentials';
 import { mockFunction, assert2 } from './common';
 import * as fs from 'fs';
-import * as pify from 'pify';
+import { promisify } from 'util';
 
 class CallCredentialsMock implements CallCredentials {
   child: CallCredentialsMock;
@@ -30,7 +30,7 @@ class CallCredentialsMock implements CallCredentials {
   }
 }
 
-const readFile: (...args: any[]) => Promise<Buffer> = pify(fs.readFile);
+const readFile: (...args: any[]) => Promise<Buffer> = promisify(fs.readFile);
 // A promise which resolves to loaded files in the form { ca, key, cert }
 const pFixtures = Promise.all([
     'ca.pem',

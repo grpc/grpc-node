@@ -1,4 +1,5 @@
 import { Metadata } from './metadata';
+import * as async from 'async';
 
 export type CallMetadataGenerator = (
   options: Object,
@@ -54,29 +55,29 @@ class CallCredentialsImpl {
       return;
     }
 
-    const that = this;
-    let result = Metadata.createMetadata();
-    const next = (index: number) => {
-      if (index === that.metadataGenerators.length) {
-        cb(null, result);
-        return;
-      }
-      that.metadataGenerators[index](options, (err, metadata) => {
-        if (err || !metadata) {
-          cb(err);
+    const tasks: Array<AsyncFunction<Metadata, Error>> =
+      this.metadataGenerators.map(fn => fn.bind(null, options));
+    const callback: AsyncResultArrayCallback<Metadata, Error> =
+      (err, metadataArray) => {
+        if (err || !metadataArray) {
+          cb(err || new Error('Unknown error'));
           return;
-        }
-        // Merge metadata with result
-        const metadataObj = metadata.getMap();
-        Object.keys(metadataObj).forEach((key) => {
-          metadata.get(key).forEach((value) => {
-            result.add(key, value);
+        } else {
+          const result = Metadata.createMetadata();
+          metadataArray.forEach((metadata) => {
+            if (metadata) {
+              const metadataObj = metadata.getMap();
+              Object.keys(metadataObj).forEach((key) => {
+                metadataObj[key].forEach((value) => {
+                  result.add(key, value);
+                });
+              });
+            }
           });
-        });
-        next(index + 1);
-      });
-    };
-    next(0);
+          cb(null, result);
+        }
+      };
+    async.parallel(tasks, callback);
   }
 
   compose(callCredentials: CallCredentials): CallCredentials {

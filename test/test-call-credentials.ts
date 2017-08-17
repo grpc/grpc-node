@@ -44,16 +44,25 @@ function makeGenerator(props: Array<string>): CallMetadataGenerator {
     props.forEach((prop) => {
       if (options[prop]) {
         metadata.add(prop, options[prop]);
-        metadata.add('allProps', options[prop]);
       }
     });
     cb(null, metadata);
   }
 }
 
+function makeAfterMsElapsedGenerator(ms: number): CallMetadataGenerator {
+  return (_options, cb) => {
+    const metadata = new MetadataMock();
+    metadata.add('msElapsed', `${ms}`);
+    setTimeout(() => cb(null, metadata), ms);
+  };
+};
+
 const generateFromName: CallMetadataGenerator = makeGenerator(['name']);
 const generateWithError: CallMetadataGenerator = (_options, cb) =>
   cb(new Error());
+
+// Tests
 
 describe('CallCredentials', () => {
   describe('createFromMetadataGenerator', () => {
@@ -93,8 +102,7 @@ describe('CallCredentials', () => {
         assert.ok(metadata);
         if (metadata) {
           assert.deepEqual(metadata.getMap(), {
-            name: ['foo'],
-            allProps: ['foo']
+            name: ['foo']
           });
         }
       }
@@ -112,89 +120,44 @@ describe('CallCredentials', () => {
 
     it('should combine metadata from multiple generators', async () => {
       const [callCreds1, callCreds2, callCreds3, callCreds4] =
-        ['a', 'b', 'c', 'd'].map((key) => {
-          const generator: CallMetadataGenerator = makeGenerator([key]);
+        [50, 100, 150, 200].map((ms) => {
+          const generator: CallMetadataGenerator =
+            makeAfterMsElapsedGenerator(ms);
           return CallCredentials.createFromMetadataGenerator(generator);
         });
-      const options = {
-        a: 'foo',
-        b: 'bar',
-        c: 'baz',
-        d: 'foobar'
-      };
-
-      { // two credentials
-        const callCreds12 = callCreds1.compose(callCreds2);
-        const { err, metadata } = await generateMetadata(callCreds12, options);
+      const testCases = [{
+          credentials: callCreds1
+            .compose(callCreds2)
+            .compose(callCreds3)
+            .compose(callCreds4),
+          expected: ['50', '100', '150', '200']
+        }, {
+          credentials: callCreds4
+            .compose(callCreds3
+              .compose(callCreds2
+                .compose(callCreds1))),
+          expected: ['200', '150', '100', '50']
+        }, {
+          credentials: callCreds3
+            .compose(callCreds4
+              .compose(callCreds1)
+              .compose(callCreds2)),
+          expected: ['150', '200', '50', '100']
+        }
+      ];
+      const options = {};
+      // Try each test case and make sure the msElapsed field is as expected
+      await Promise.all(testCases.map(async (testCase) => {
+        const { credentials, expected } = testCase;
+        const { err, metadata } = await generateMetadata(credentials, options);
         assert.ok(!err);
         assert.ok(metadata);
         if (metadata) {
           assert.deepEqual(metadata.getMap(), {
-            a: ['foo'],
-            b: ['bar'],
-            allProps: ['foo', 'bar']
+            msElapsed: expected
           });
         }
-      }
-
-      { // three credentials, chained
-        const callCreds123 = callCreds1.compose(callCreds2).compose(callCreds3);
-        const { err, metadata } = await generateMetadata(callCreds123, options);
-        assert.ok(!err);
-        assert.ok(metadata);
-        if (metadata) {
-          assert.deepEqual(metadata.getMap(), {
-            a: ['foo'],
-            b: ['bar'],
-            c: ['baz'],
-            allProps: ['foo', 'bar', 'baz']
-          });
-        }
-      }
-
-      { // four credentials
-        const callCreds1234 = callCreds1.compose(callCreds2)
-          .compose(callCreds3.compose(callCreds4));
-        const { err, metadata } = await generateMetadata(callCreds1234, options);
-        assert.ok(!err);
-        assert.ok(metadata);
-        if (metadata) {
-          assert.deepEqual(metadata.getMap(), {
-            a: ['foo'],
-            b: ['bar'],
-            c: ['baz'],
-            d: ['foobar'],
-            allProps: ['foo', 'bar', 'baz', 'foobar']
-          });
-        }
-      }
-
-      { // four credentials in a different order, completely nested
-        const callCreds4213 = callCreds4.compose(
-          callCreds2.compose(callCreds1.compose(callCreds3)));
-        const { err, metadata } = await generateMetadata(callCreds4213, options);
-        assert.ok(!err);
-        assert.ok(metadata);
-        if (metadata) {
-          assert.deepEqual(metadata.getMap(), {
-            a: ['foo'],
-            b: ['bar'],
-            c: ['baz'],
-            d: ['foobar'],
-            allProps: ['foobar', 'bar', 'foo', 'baz']
-          });
-        }
-      }
-
-      { // four credentials in a different order, completely nested
-        const errorCallCreds = CallCredentials.createFromMetadataGenerator(
-          generateWithError);
-        const callCreds123e = callCreds1.compose(callCreds2)
-          .compose(callCreds3).compose(errorCallCreds);
-        const { err, metadata } = await generateMetadata(callCreds123e, options);
-        assert.ok(err instanceof Error);
-        assert.ok(!metadata);
-      }
+      }));
     });
   });
 });
