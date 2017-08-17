@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import { range } from 'lodash';
 import * as metadata from '../src/metadata';
 
 class Metadata extends metadata.Metadata {
@@ -6,6 +7,11 @@ class Metadata extends metadata.Metadata {
     return this.internalRepr;
   }
 }
+
+const validKeyChars = '0123456789abcdefghijklmnopqrstuvwxyz_-.';
+const validNonBinValueChars = range(0x20, 0x7f)
+  .map(code => String.fromCharCode(code))
+  .join('');
 
 describe('Metadata', () => {
   let metadata: Metadata;
@@ -34,6 +40,9 @@ describe('Metadata', () => {
     });
 
     it('Rejects invalid keys', () => {
+      assert.doesNotThrow(() => {
+        metadata.set(validKeyChars, 'value');
+      });
       assert.throws(() => {
         metadata.set('key$', 'value');
       });
@@ -43,6 +52,9 @@ describe('Metadata', () => {
     });
 
     it('Rejects values with non-ASCII characters', () => {
+      assert.doesNotThrow(() => {
+        metadata.set('key', validNonBinValueChars);
+      });
       assert.throws(() => {
         metadata.set('key', 'résumé');
       });
