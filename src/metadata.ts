@@ -179,4 +179,33 @@ export class Metadata {
     });
     return result;
   }
+
+  /**
+   * Returns a new Metadata object based fields in a given IncomingHttpHeaders
+   * object.
+   * @param headers An IncomingHttpHeaders object.
+   */
+  static fromHttp2Headers(headers: http2.IncomingHttpHeaders): Metadata {
+    const result = new Metadata();
+    forOwn(headers, (values, key) => {
+      if (isBinaryKey(key)) {
+        if (Array.isArray(values)) {
+          values.forEach((value) => {
+            result.add(key, Buffer.from(value, 'base64'));
+          })
+        } else {
+          result.add(key, Buffer.from(values, 'base64'));
+        }
+      } else {
+        if (Array.isArray(values)) {
+          values.forEach((value) => {
+            result.add(key, value);
+          })
+        } else {
+          result.add(key, values);
+        }
+      }
+    });
+    return result;
+  }
 }

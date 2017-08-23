@@ -1,10 +1,18 @@
 import * as assert from 'assert';
+import * as http2 from 'http2';
 import { range } from 'lodash';
 import * as metadata from '../src/metadata';
 
 class Metadata extends metadata.Metadata {
   getInternalRepresentation() {
     return this.internalRepr;
+  }
+
+  static fromHttp2Headers(headers: http2.IncomingHttpHeaders): Metadata {
+    const result = metadata.Metadata.fromHttp2Headers(headers) as Metadata;
+    result.getInternalRepresentation =
+      Metadata.prototype.getInternalRepresentation;
+    return result;
   }
 }
 
@@ -224,7 +232,7 @@ describe('Metadata', () => {
   });
 
   describe('toHttp2Headers', () => {
-    it('creates an http2.OutgoingHttpHeaders object', () => {
+    it('creates an OutgoingHttpHeaders object with expected values', () => {
       metadata.add('key1', 'value1');
       metadata.add('Key2', 'value2');
       metadata.add('KEY3', 'value3a');
@@ -247,6 +255,39 @@ describe('Metadata', () => {
 
     it('creates an empty header object from empty Metadata', () => {
       assert.deepEqual(metadata.toHttp2Headers(), {});
+    });
+  });
+
+  describe('fromHttp2Headers', () => {
+    it('creates a Metadata object with expected values', () => {
+      const headers = {
+        key1: 'value1',
+        key2: ['value2'],
+        key3: ['value3a', 'value3b'],
+        'key-bin': [
+          'AAECAwQFBgcICQoLDA0ODw==',
+          'EBESExQVFhcYGRobHB0eHw==',
+          'AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8='
+        ]
+      };
+      const metadataFromHeaders = Metadata.fromHttp2Headers(headers);
+      const internalRepr = metadataFromHeaders.getInternalRepresentation();
+      assert.deepEqual(internalRepr, {
+        key1: ['value1'],
+        key2: ['value2'],
+        key3: ['value3a', 'value3b'],
+        'key-bin': [
+          Buffer.from(range(0, 16)),
+          Buffer.from(range(16, 32)),
+          Buffer.from(range(0, 32))
+        ]
+      });
+    });
+
+    it('creates an empty Metadata object from empty headers', () => {
+      const metadataFromHeaders = Metadata.fromHttp2Headers({});
+      const internalRepr = metadataFromHeaders.getInternalRepresentation();
+      assert.deepEqual(internalRepr, {});
     });
   });
 });
