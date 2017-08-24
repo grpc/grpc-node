@@ -63,15 +63,10 @@ class CallCredentialsImpl {
           cb(err || new Error('Unknown error'));
           return;
         } else {
-          const result = Metadata.createMetadata();
+          const result: Metadata = new Metadata();
           metadataArray.forEach((metadata) => {
             if (metadata) {
-              const metadataObj = metadata.getMap();
-              Object.keys(metadataObj).forEach((key) => {
-                metadataObj[key].forEach((value) => {
-                  result.add(key, value);
-                });
-              });
+              result.merge(metadata);
             }
           });
           cb(null, result);
