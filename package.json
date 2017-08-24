@@ -26,6 +26,7 @@
     "gulp-tslint": "^8.1.1",
     "gulp-typescript": "^3.2.1",
     "gulp-util": "^3.0.8",
+    "h2-types": "git+https://github.com/kjin/node-h2-types.git",
     "merge2": "^1.1.0",
     "mocha": "^3.5.0",
     "through2": "^2.0.3",
@@ -45,5 +46,11 @@
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
     "lint": "tslint -c node_modules/google-ts-style/tslint.json -p . -t codeFrame --type-check",
     "test": "gulp test"
+  },
+  "dependencies": {
+    "@types/async": "^2.0.41",
+    "@types/lodash": "^4.14.73",
+    "async": "^2.5.0",
+    "lodash": "^4.17.4"
   }
 }
