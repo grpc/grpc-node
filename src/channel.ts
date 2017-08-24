@@ -5,7 +5,13 @@ import {IncomingHttpHeaders, OutgoingHttpHeaders} from 'http';
 import * as url from 'url';
 import {CallOptions, CallStream} from './call-stream';
 import {ChannelCredentials} from './channel-credentials';
-import {Metadata} from './metadata';
+import {Metadata, MetadataObject} from './metadata';
+import {Status} from './constants'
+
+import {FilterStackFactory} from './filter-stack'
+import {DeadlineFilterFactory} from './deadline-filter'
+import {CallCredentialsFilterFactory} from './call-credentials-filter'
+import {Http2FilterFactory} from './http2-filter'
 
 const IDLE_TIMEOUT_MS = 300000;
 
@@ -39,7 +45,7 @@ export enum ConnectivityState {
  */
 export interface Channel extends EventEmitter {
   createStream(methodName: string, metadata: OutgoingHttp2Headers, options: CallOptions): CallStream;
-  connect(): void;
+  connect(() => void): void;
   getConnectivityState(): ConnectivityState;
   close(): void;
 
@@ -50,17 +56,6 @@ export interface Channel extends EventEmitter {
   prependListener(event: string, listener: Function): this;
   prependOnceListener(event: string, listener: Function): this;
   removeListener(event: string, listener: Function): this;
-
-  addListener(event: 'connectivity_state_changed', listener: (state: ConnectivityState) => void): this;
-  emit(event: 'connectivity_state_changed', state: ConnectivityState): boolean;
-  on(event: 'connectivity_state_changed', listener: (state: ConnectivityState) => void): this;
-  once(event: 'connectivity_state_changed', listener: (state: ConnectivityState) => void): this;
-  prependListener(event: 'connectivity_state_changed', listener: (state: ConnectivityState) => void):
-      this;
-  prependOnceListener(
-      event: 'connectivity_state_changed', listener: (state: ConnectivityState) => void): this;
-  removeListener(event: 'connectivity_state_changed', listener: (state: ConnectivityState) => void):
-      this;
 }
 
 export class Http2Channel extends EventEmitter implements Channel {
@@ -69,13 +64,13 @@ export class Http2Channel extends EventEmitter implements Channel {
   /* For now, we have up to one subchannel, which will exist as long as we are
    * connecting or trying to connect */
   private subChannel : Http2Session | null;
-  private secureContext : SecureContext | null;
   private address : url.Url;
+  private filterStackFactory : FilterStackFactory;
 
   private transitionToState(newState: ConnectivityState): void {
     if (newState !== this.connectivityState) {
       this.connectivityState = newState;
-      this.emit('connectivity_state_changed', newState);
+      this.emit('connectivityStateChanged', newState);
     }
   }
 
@@ -85,6 +80,9 @@ export class Http2Channel extends EventEmitter implements Channel {
     this.subChannel.on('connect', () => {
       this.transitionToState(ConnectivityState.READY);
     });
+    this.subChannel.setTimeout(IDLE_TIMEOUT_MS, () => {
+      this.goIdle();
+    });
   }
 
   private goIdle(): void {
@@ -92,59 +90,62 @@ export class Http2Channel extends EventEmitter implements Channel {
     this.transitionToState(ConnectivityState.IDLE);
   }
 
-  /* Reset the lastRpcActivity date to now, and kick the connectivity state
-   * machine out of idle */
   private kickConnectivityState(): void {
     if (this.connectivityState === ConnectivityState.IDLE) {
       this.startConnecting();
-    } else {
-      clearTimeout(this.idleTimeoutId);
     }
-    this.idleTimeoutId = setTimeout(() => {
-      this.goIdle();
-    }, IDLE_TIMEOUT_MS);
   }
 
-  constructor(address: url.Url,
-              credentials: ChannelCredentials,
+  constructor(private readonly address: url.Url,
+              public readonly credentials: ChannelCredentials,
               private readonly options: ChannelOptions) {
-    this.secureContext = credentials.getSecureContext();
-    if (this.secureContext === null) {
+    if (channelCredentials.getSecureContext() === null) {
       address.protocol = 'http';
     } else {
       address.protocol = 'https';
     }
-    this.address = address;
+    this.filterStackFactory = new FilterStackFactory([
+      new CompressionFilterFactory(this),
+      new CallCredentialsFilterFactory(this),
+      new DeadlineFilterFactory(this)
+    ]);
   }
 
-  createStream(methodName: string, metadata: OutgoingHttpHeaders, options: CallOptions): CallStream {
+  createStream(methodName: string, metadata: Metadata, options: CallOptions): CallStream {
     if (this.connectivityState === ConnectivityState.SHUTDOWN) {
       throw new Error('Channel has been shut down');
     }
-    this.kickConnectivityState();
-    let stream: Http2CallStream = new Http2CallStream();
-    metadata[HTTP2_HEADER_AUTHORITY] = this.address.hostname;
-    metadata[HTTP2_HEADER_METHOD] = 'POST';
-    metadata[HTTP2_HEADER_PATH] = methodName;
-    metadata[HTTP2_HEADER_TE] = 'trailers';
-    if (this.connectivityState === ConnectivityState.READY) {
-      stream.attachHttp2Stream(this.subchannel.request(metadata));
-    } else {
-      let connectCb = (state) => {
-        if (state === ConnectivityState.READY) {
-          stream.attachHttp2Stream(this.subchannel.request(metadata));
-          this.removeListener('connectivity_state_changed', connectCb);
+    let stream: Http2CallStream = new Http2CallStream(methodName, options, this.filterStackFactory);
+    let finalMetadata: Promise<Metadata> = stream.filterStack.sendMetadata(Promise.resolve(metadata));
+    this.connect(() => {
+      finalMetadata.then((metadataValue) => {
+        let headers = metadataValue.toHttp2Headers();
+        headers[HTTP2_HEADER_AUTHORITY] = this.address.hostname;
+        headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
+        headers[HTTP2_HEADER_METHOD] = 'POST';
+        headers[HTTP2_HEADER_PATH] = methodName;
+        headers[HTTP2_HEADER_TE] = 'trailers';
+        if (stream.isOpen()) {
+          stream.attachHttp2Stream(this.subchannel.request(headers));
         }
-      };
-      this.on('connectivity_state_changed', connectCb);
-    }
+      }, (error) => {
+        stream.cancelWithStatus(Status.UNKNOWN, "Failed to generate metadata");
+      });
+    });
+    return stream;
   }
 
-  connect(): void {
-    if (this.connectivityState === ConnectivityState.SHUTDOWN) {
-      throw new Error('Channel has been shut down');
-    }
+  connect(callback: () => void): void {
     this.kickConnectivityState();
+    if (this.connectivityState === ConnectivityState.READY) {
+      setImmediate(callback);
+    } else {
+      this.on('connectivityStateChanged', (newState) => {
+        if (newState === ConnectivityState.READY) {
+          callback();
+        }
+      });
+    }
   }
 
   getConnectivityState(): ConnectivityState{
