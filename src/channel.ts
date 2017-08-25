@@ -1,9 +1,9 @@
 import {EventEmitter} from 'events';
 import {SecureContext} from 'tls';
 import * as http2 from 'http2';
-import {IncomingHttpHeaders, OutgoingHttpHeaders} from 'http';
 import * as url from 'url';
-import {CallOptions, CallStream} from './call-stream';
+import {CallOptions, CallStreamOptions, CallStream, Http2CallStream} from './call-stream';
+import {CallCredentials} from './call-credentials';
 import {ChannelCredentials} from './channel-credentials';
 import {Metadata, MetadataObject} from './metadata';
 import {Status} from './constants'
@@ -11,12 +11,13 @@ import {Status} from './constants'
 import {FilterStackFactory} from './filter-stack'
 import {DeadlineFilterFactory} from './deadline-filter'
 import {CallCredentialsFilterFactory} from './call-credentials-filter'
-import {Http2FilterFactory} from './http2-filter'
+import {CompressionFilterFactory} from './compression-filter'
 
 const IDLE_TIMEOUT_MS = 300000;
 
 const {
   HTTP2_HEADER_AUTHORITY,
+  HTTP2_HEADER_CONTENT_TYPE,
   HTTP2_HEADER_METHOD,
   HTTP2_HEADER_PATH,
   HTTP2_HEADER_SCHEME,
@@ -44,8 +45,8 @@ export enum ConnectivityState {
  * by a given address.
  */
 export interface Channel extends EventEmitter {
-  createStream(methodName: string, metadata: OutgoingHttp2Headers, options: CallOptions): CallStream;
-  connect(() => void): void;
+  createStream(methodName: string, metadata: Metadata, options: CallOptions): CallStream;
+  connect(callback: () => void): void;
   getConnectivityState(): ConnectivityState;
   close(): void;
 
@@ -63,8 +64,7 @@ export class Http2Channel extends EventEmitter implements Channel {
   private idleTimerId: NodeJS.Timer | null = null;
   /* For now, we have up to one subchannel, which will exist as long as we are
    * connecting or trying to connect */
-  private subChannel : Http2Session | null;
-  private address : url.Url;
+  private subChannel : http2.ClientHttp2Session | null;
   private filterStackFactory : FilterStackFactory;
 
   private transitionToState(newState: ConnectivityState): void {
@@ -76,7 +76,12 @@ export class Http2Channel extends EventEmitter implements Channel {
 
   private startConnecting(): void {
     this.transitionToState(ConnectivityState.CONNECTING);
-    this.subChannel = http2.connect(address, { secureContext: this.secureContext });
+    let secureContext = this.credentials.getSecureContext();
+    if (secureContext === null) {
+      this.subChannel = http2.connect(this.address);
+    } else {
+      this.subChannel = http2.connect(this.address, {secureContext});
+    }
     this.subChannel.on('connect', () => {
       this.transitionToState(ConnectivityState.READY);
     });
@@ -86,7 +91,10 @@ export class Http2Channel extends EventEmitter implements Channel {
   }
 
   private goIdle(): void {
-    this.subChannel.shutdown({graceful: true});
+    if (this.subChannel !== null) {
+      this.subChannel.shutdown({graceful: true}, () => {});
+      this.subChannel = null;
+    }
     this.transitionToState(ConnectivityState.IDLE);
   }
 
@@ -96,10 +104,11 @@ export class Http2Channel extends EventEmitter implements Channel {
     }
   }
 
-  constructor(private readonly address: url.Url,
+  constructor(private readonly address: url.URL,
               public readonly credentials: ChannelCredentials,
               private readonly options: ChannelOptions) {
-    if (channelCredentials.getSecureContext() === null) {
+    super();
+    if (credentials.getSecureContext() === null) {
       address.protocol = 'http';
     } else {
       address.protocol = 'https';
@@ -111,11 +120,7 @@ export class Http2Channel extends EventEmitter implements Channel {
     ]);
   }
 
-  createStream(methodName: string, metadata: Metadata, options: CallOptions): CallStream {
-    if (this.connectivityState === ConnectivityState.SHUTDOWN) {
-      throw new Error('Channel has been shut down');
-    }
-    let stream: Http2CallStream = new Http2CallStream(methodName, options, this.filterStackFactory);
+  private startHttp2Stream(methodName: string, stream: Http2CallStream, metadata: Metadata) {
     let finalMetadata: Promise<Metadata> = stream.filterStack.sendMetadata(Promise.resolve(metadata));
     this.connect(() => {
       finalMetadata.then((metadataValue) => {
@@ -125,13 +130,37 @@ export class Http2Channel extends EventEmitter implements Channel {
         headers[HTTP2_HEADER_METHOD] = 'POST';
         headers[HTTP2_HEADER_PATH] = methodName;
         headers[HTTP2_HEADER_TE] = 'trailers';
-        if (stream.isOpen()) {
-          stream.attachHttp2Stream(this.subchannel.request(headers));
+        if (stream.getStatus() === null) {
+          if (this.connectivityState === ConnectivityState.READY) {
+            let session: http2.ClientHttp2Session =
+              (this.subChannel as http2.ClientHttp2Session);
+            stream.attachHttp2Stream(session.request(headers));
+          } else {
+            /* In this case, we lost the connection while finalizing metadata.
+             * That should be very unusual */
+            setImmediate(() => {
+              this.startHttp2Stream(methodName, stream, metadata);
+            });
+          }
         }
       }, (error) => {
         stream.cancelWithStatus(Status.UNKNOWN, "Failed to generate metadata");
       });
     });
+  }
+
+  createStream(methodName: string, metadata: Metadata, options: CallOptions): CallStream {
+    if (this.connectivityState === ConnectivityState.SHUTDOWN) {
+      throw new Error('Channel has been shut down');
+    }
+    let finalOptions: CallStreamOptions = {
+      deadline: options.deadline === undefined ? Infinity : options.deadline,
+      credentials: options.credentials === undefined ?
+        CallCredentials.createEmpty() : options.credentials,
+      flags: options.flags === undefined ? 0 : options.flags
+    }
+    let stream: Http2CallStream = new Http2CallStream(methodName, finalOptions, this.filterStackFactory);
+    this.startHttp2Stream(methodName, stream, metadata);
     return stream;
   }
 
@@ -157,6 +186,8 @@ export class Http2Channel extends EventEmitter implements Channel {
       throw new Error('Channel has been shut down');
     }
     this.transitionToState(ConnectivityState.SHUTDOWN);
-    this.subChannel.shutdown({graceful: true});
+    if (this.subChannel !== null) {
+      this.subChannel.shutdown({graceful: true});
+    }
   }
 }

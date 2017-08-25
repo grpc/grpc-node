@@ -1,7 +1,10 @@
-import {Filter} from './filter'
+import {CallStream} from './call-stream'
+import {Channel, Http2Channel} from './channel'
+import {Filter, BaseFilter, FilterFactory} from './filter'
 import {Status} from './constants'
+import {Metadata} from './metadata'
 
-const units = [
+const units: [string, number][] = [
   ['m', 1],
   ['S', 1000],
   ['M', 60 * 1000],
@@ -9,16 +12,21 @@ const units = [
 ]
 
 export class DeadlineFilter extends BaseFilter implements Filter {
-  private deadline;
-  constructor(private readonly channel: Channel, private readonly callStream: CallStream) {
-    let deadline = callStream.deadline;
-    this.deadline = deadline;
+  private deadline: number;
+  constructor(private readonly channel: Http2Channel, private readonly callStream: CallStream) {
+    super();
+    let callDeadline = callStream.getDeadline();
+    if (callDeadline instanceof Date) {
+      this.deadline = callDeadline.getTime();
+    } else {
+      this.deadline = callDeadline;
+    }
     let now: number = (new Date()).getTime();
-    let timeout = deadline - now;
+    let timeout = this.deadline - now;
     if (timeout < 0) {
       timeout = 0;
     }
-    if (deadline !== Infinity) {
+    if (this.deadline !== Infinity) {
       setTimeout(() => {
         callStream.cancelWithStatus(Status.DEADLINE_EXCEEDED, 'Deadline exceeded');
       }, timeout);
@@ -42,7 +50,9 @@ export class DeadlineFilter extends BaseFilter implements Filter {
         }
       });
     });
-    (await metadata).set('grpc-timeout', await timeoutString);
+    let finalMetadata = await metadata;
+    finalMetadata.set('grpc-timeout', await timeoutString);
+    return finalMetadata;
   }
 }
 

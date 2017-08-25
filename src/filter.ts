@@ -1,12 +1,12 @@
 import {Metadata} from './metadata'
-import {WriteObject, CallStream} from './call-stream'
+import {StatusObject, CallStream} from './call-stream'
 
 export interface Filter {
-  async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata>;
+  sendMetadata(metadata: Promise<Metadata>): Promise<Metadata>;
 
-  async receiveMetadata(metadata: Promise<Metadata>): Promise<Metadata>;
+  receiveMetadata(metadata: Promise<Metadata>): Promise<Metadata>;
 
-  async receiveTrailers(status: Promise<StatusObject>): Promise<StatusObject>;
+  receiveTrailers(status: Promise<StatusObject>): Promise<StatusObject>;
 }
 
 export abstract class BaseFilter {

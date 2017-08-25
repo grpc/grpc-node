@@ -18,8 +18,8 @@ export interface ChannelCredentials {
   /**
    * Gets the set of per-call credentials associated with this instance.
    */
-  getCallCredentials() : CallCredentials | null;
-  
+  getCallCredentials() : CallCredentials;
+
   /**
    * Gets a SecureContext object generated from input parameters if this
    * instance was created with createSsl, or null if this instance was created
@@ -62,15 +62,15 @@ export namespace ChannelCredentials {
 
 
 abstract class ChannelCredentialsImpl implements ChannelCredentials {
-  protected callCredentials: CallCredentials | null;
+  protected callCredentials: CallCredentials;
 
   protected constructor(callCredentials?: CallCredentials) {
-    this.callCredentials = callCredentials || null;
+    this.callCredentials = callCredentials || CallCredentials.createEmpty();
   }
 
   abstract compose(callCredentials: CallCredentials) : ChannelCredentialsImpl;
 
-  getCallCredentials() : CallCredentials | null {
+  getCallCredentials() : CallCredentials {
     return this.callCredentials;
   }
 
@@ -83,10 +83,7 @@ class InsecureChannelCredentialsImpl extends ChannelCredentialsImpl {
   }
 
   compose(callCredentials: CallCredentials) : ChannelCredentialsImpl {
-    const combinedCallCredentials = this.callCredentials ?
-      this.callCredentials.compose(callCredentials) :
-      callCredentials;
-    return new InsecureChannelCredentialsImpl(combinedCallCredentials);
+    throw new Error("Cannot compose insecure credentials");
   }
 
   getSecureContext() : SecureContext | null {
@@ -106,9 +103,8 @@ class SecureChannelCredentialsImpl extends ChannelCredentialsImpl {
   }
 
   compose(callCredentials: CallCredentials) : ChannelCredentialsImpl {
-    const combinedCallCredentials = this.callCredentials ?
-      this.callCredentials.compose(callCredentials) :
-      callCredentials;
+    const combinedCallCredentials =
+      this.callCredentials.compose(callCredentials);
     return new SecureChannelCredentialsImpl(this.secureContext,
       combinedCallCredentials);
   }

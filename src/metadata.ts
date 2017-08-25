@@ -65,7 +65,8 @@ function validate(key: string, value?: MetadataValue): void {
  * A class for storing metadata. Keys are normalized to lowercase ASCII.
  */
 export class Metadata {
-  constructor(protected readonly internalRepr: MetadataObject = {}) {}
+  private internalRepr: MetadataObject;
+  constructor() {}
 
   /**
    * Sets the given value for the given key by replacing any other values
@@ -145,7 +146,9 @@ export class Metadata {
    * @return The newly cloned object.
    */
   clone(): Metadata {
-    return new Metadata(cloneMetadataObject(this.internalRepr));
+    let newMetadata = new Metadata();
+    newMetadata.internalRepr = cloneMetadataObject(this.internalRepr);
+    return newMetadata;
   }
 
   /**
