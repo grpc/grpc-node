@@ -2,19 +2,6 @@ import { Metadata } from '../src/metadata';
 import { CallCredentials, CallMetadataGenerator } from '../src/call-credentials';
 import * as assert from 'assert';
 
-// Returns a Promise that resolves to an object containing either an error or
-// metadata
-function generateMetadata(
-  callCredentials: CallCredentials,
-  options: Object
-): Promise<{ err?: Error, metadata?: Metadata }> {
-  return new Promise((resolve) => {
-    callCredentials.generateMetadata(options, (err, metadata) => {
-      resolve({ err: err || undefined, metadata: metadata || undefined });
-    });
-  });
-}
-
 // Metadata generators
 
 function makeGenerator(props: Array<string>): CallMetadataGenerator {
@@ -75,13 +62,13 @@ describe('CallCredentials', () => {
     it('should call the function passed to createFromMetadataGenerator',
       async () => {
         const callCredentials = CallCredentials.createFromMetadataGenerator(generateFromName);
-        const { err, metadata } = await generateMetadata(callCredentials,
-          { name: 'foo' });
-        assert.ok(!err);
-        assert.ok(metadata);
-        if (metadata) {
-          assert.deepEqual(metadata.get('name'), ['foo']);
+        let metadata: Metadata;
+        try {
+          metadata = await callCredentials.generateMetadata({name: 'foo'});
+        } catch (err) {
+          throw err;
         }
+        assert.deepEqual(metadata.get('name'), ['foo']);
       }
     );
 
@@ -89,9 +76,13 @@ describe('CallCredentials', () => {
       async () => {
         const callCredentials = CallCredentials.createFromMetadataGenerator(
           generateWithError);
-        const { err, metadata } = await generateMetadata(callCredentials, {});
-        assert.ok(err instanceof Error);
-        assert.ok(!metadata);
+        let metadata: Metadata | null = null;
+        try {
+          metadata = await callCredentials.generateMetadata({});
+        } catch (err) {
+          assert.ok(err instanceof Error);
+        }
+        assert.strictEqual(metadata, null);
       }
     );
 
@@ -126,12 +117,13 @@ describe('CallCredentials', () => {
       // Try each test case and make sure the msElapsed field is as expected
       await Promise.all(testCases.map(async (testCase) => {
         const { credentials, expected } = testCase;
-        const { err, metadata } = await generateMetadata(credentials, options);
-        assert.ok(!err);
-        assert.ok(metadata);
-        if (metadata) {
-          assert.deepEqual(metadata.get('msElapsed'), expected);
+        let metadata: Metadata;
+        try {
+          metadata = await credentials.generateMetadata(options);
+        } catch (err) {
+          throw err;
         }
+        assert.deepEqual(metadata.get('msElapsed'), expected);
       }));
     });
   });

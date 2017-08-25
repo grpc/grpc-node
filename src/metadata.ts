@@ -65,7 +65,7 @@ function validate(key: string, value?: MetadataValue): void {
  * A class for storing metadata. Keys are normalized to lowercase ASCII.
  */
 export class Metadata {
-  private internalRepr: MetadataObject;
+  protected internalRepr: MetadataObject = {};
   constructor() {}
 
   /**

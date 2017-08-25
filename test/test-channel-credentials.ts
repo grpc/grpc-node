@@ -96,10 +96,9 @@ describe('ChannelCredentials Implementation', () => {
 
   describe('compose', () => {
     it('should return a ChannelCredentials object', () => {
-      const channelCreds = ChannelCredentials.createInsecure();
+      const channelCreds = ChannelCredentials.createSsl();
       const callCreds = new CallCredentialsMock();
       const composedChannelCreds = channelCreds.compose(callCreds);
-      assert.ok(!channelCreds.getCallCredentials());
       assert.strictEqual(composedChannelCreds.getCallCredentials(),
         callCreds);
     });
@@ -108,7 +107,7 @@ describe('ChannelCredentials Implementation', () => {
       const callCreds1 = new CallCredentialsMock();
       const callCreds2 = new CallCredentialsMock();
       // Associate both call credentials with channelCreds
-      const composedChannelCreds = ChannelCredentials.createInsecure()
+      const composedChannelCreds = ChannelCredentials.createSsl()
         .compose(callCreds1)
         .compose(callCreds2);
       // Build a mock object that should be an identical copy
