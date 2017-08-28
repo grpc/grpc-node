@@ -6,16 +6,16 @@ import {Filter, FilterFactory} from './filter';
 export class FilterStack implements Filter {
   constructor(private readonly filters: Filter[]) {}
 
-  async sendMetadata(metadata: Promise<Metadata>) {
-    return await flow(map(this.filters, (filter) => filter.sendMetadata.bind(filter)))(metadata);
+  sendMetadata(metadata: Promise<Metadata>) {
+    return flow(map(this.filters, (filter) => filter.sendMetadata.bind(filter)))(metadata);
   }
 
-  async receiveMetadata(metadata: Promise<Metadata>) {
-    return await flowRight(map(this.filters, (filter) => filter.receiveMetadata.bind(filter)))(metadata);
+  receiveMetadata(metadata: Promise<Metadata>) {
+    return flowRight(map(this.filters, (filter) => filter.receiveMetadata.bind(filter)))(metadata);
   }
 
-  async receiveTrailers(status: Promise<StatusObject>): Promise<StatusObject> {
-    return await flowRight(map(this.filters, (filter) => filter.receiveTrailers.bind(filter)))(status);
+  receiveTrailers(status: Promise<StatusObject>): Promise<StatusObject> {
+    return flowRight(map(this.filters, (filter) => filter.receiveTrailers.bind(filter)))(status);
   }
 }
 

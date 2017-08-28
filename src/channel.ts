@@ -82,12 +82,14 @@ export class Http2Channel extends EventEmitter implements Channel {
     } else {
       this.subChannel = http2.connect(this.address, {secureContext});
     }
-    this.subChannel.on('connect', () => {
+    this.subChannel.once('connect', () => {
       this.transitionToState(ConnectivityState.READY);
     });
     this.subChannel.setTimeout(IDLE_TIMEOUT_MS, () => {
       this.goIdle();
     });
+    /* TODO(murgatroid99): add connection-level error handling with exponential
+     * reconnection backoff */
   }
 
   private goIdle(): void {
@@ -155,9 +157,8 @@ export class Http2Channel extends EventEmitter implements Channel {
     }
     let finalOptions: CallStreamOptions = {
       deadline: options.deadline === undefined ? Infinity : options.deadline,
-      credentials: options.credentials === undefined ?
-        CallCredentials.createEmpty() : options.credentials,
-      flags: options.flags === undefined ? 0 : options.flags
+      credentials: options.credentials || CallCredentials.createEmpty(),
+      flags: options.flags || 0
     }
     let stream: Http2CallStream = new Http2CallStream(methodName, finalOptions, this.filterStackFactory);
     this.startHttp2Stream(methodName, stream, metadata);
@@ -169,7 +170,7 @@ export class Http2Channel extends EventEmitter implements Channel {
     if (this.connectivityState === ConnectivityState.READY) {
       setImmediate(callback);
     } else {
-      this.on('connectivityStateChanged', (newState) => {
+      this.once('connectivityStateChanged', (newState) => {
         if (newState === ConnectivityState.READY) {
           callback();
         }

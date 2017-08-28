@@ -1,6 +1,9 @@
 import {Metadata} from './metadata'
 import {StatusObject, CallStream} from './call-stream'
 
+/**
+ * Filter classes represent related per-call logic and state that is primarily
+ * used to modify incoming and outgoing data */
 export interface Filter {
   sendMetadata(metadata: Promise<Metadata>): Promise<Metadata>;
 

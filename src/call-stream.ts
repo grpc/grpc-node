@@ -7,7 +7,7 @@ import {Status} from './constants';
 import {Metadata} from './metadata';
 import {ObjectDuplex} from './object-stream';
 import {Filter} from './filter'
-import {FilterStackFactory} from './filter-stack'
+import {FilterStackFactory} from './filter-stack';
 
 const {
   HTTP2_HEADER_STATUS,
@@ -119,7 +119,7 @@ export class Http2CallStream extends stream.Duplex implements CallStream {
   }
 
   private endCall(status: StatusObject): void {
-    if (!this.finalStatus === null) {
+    if (this.finalStatus === null) {
       this.finalStatus = status;
       this.emit('status', status);
     }
@@ -190,11 +190,7 @@ export class Http2CallStream extends stream.Duplex implements CallStream {
         } catch (e) {
           metadata = new Metadata();
         }
-        let status: StatusObject = {
-          code: code,
-          details: details,
-          metadata: metadata
-        };
+        let status: StatusObject = { code, details, metadata };
         this.filterStack.receiveTrailers(Promise.resolve(status)).then((finalStatus) => {
           this.endCall(finalStatus);
         }, (error) => {
@@ -213,6 +209,7 @@ export class Http2CallStream extends stream.Duplex implements CallStream {
           switch(this.readState) {
           case ReadState.NO_DATA:
             this.readCompressFlag = (data.readUInt8(readHead) !== 0);
+            readHead += 1;
             this.readState = ReadState.READING_SIZE;
             this.readPartialSize.fill(0);
             this.readSizeRemaining = 4;
@@ -240,7 +237,7 @@ export class Http2CallStream extends stream.Duplex implements CallStream {
             // readMessageRemaining >=0 here
             if (this.readMessageRemaining === 0) {
               // At this point, we have read a full message
-              let messageBytes = Buffer.concat(this.readPartialMessage, this.readMessageSize);
+              const messageBytes = Buffer.concat(this.readPartialMessage, this.readMessageSize);
               // TODO(murgatroid99): Add receive message filters
               if (canPush) {
                 if (!this.push(messageBytes)) {
@@ -250,6 +247,7 @@ export class Http2CallStream extends stream.Duplex implements CallStream {
               } else {
                 this.unpushedReadMessages.push(messageBytes);
               }
+              this.readState = ReadState.NO_DATA;
             }
           }
         }
@@ -295,6 +293,18 @@ export class Http2CallStream extends stream.Duplex implements CallStream {
           metadata: new Metadata()
         });
       });
+      if (!this.pendingRead) {
+        stream.pause();
+      }
+      if (this.pendingWrite) {
+        if (!this.pendingWriteCallback) {
+          throw new Error('Invalid state in write handling code');
+        }
+        stream.write(this.pendingWrite, this.pendingWriteCallback);
+      }
+      if (this.pendingFinalCallback) {
+        stream.end(this.pendingFinalCallback);
+      }
     }
   }
 
@@ -328,8 +338,8 @@ export class Http2CallStream extends stream.Duplex implements CallStream {
       this.pendingRead = true;
     } else {
       while (this.unpushedReadMessages.length > 0) {
-        let nextMessage = this.unpushedReadMessages.shift();
-        let keepPushing = this.push(nextMessage);
+        const nextMessage = this.unpushedReadMessages.shift();
+        const keepPushing = this.push(nextMessage);
         if (nextMessage === null || (!keepPushing)) {
           return;
         }
@@ -345,7 +355,7 @@ export class Http2CallStream extends stream.Duplex implements CallStream {
   private encodeMessage(message: WriteObject): Buffer {
     /* allocUnsafe doesn't initiate the bytes in the buffer. We are explicitly
      * overwriting every single byte, so that should be fine */
-    let output: Buffer = Buffer.allocUnsafe(message.message.length + 5);
+    const output: Buffer = Buffer.allocUnsafe(message.message.length + 5);
     // TODO(murgatroid99): handle compressed flag appropriately
     output.writeUInt8(0, 0);
     output.writeUInt32BE(message.message.length, 1);
@@ -355,7 +365,7 @@ export class Http2CallStream extends stream.Duplex implements CallStream {
 
   _write(chunk: WriteObject, encoding: string, cb: Function) {
     // TODO(murgatroid99): Add send message filters
-    let encodedMessage = this.encodeMessage(chunk);
+    const encodedMessage = this.encodeMessage(chunk);
     if (this.http2Stream === null) {
       this.pendingWrite = encodedMessage;
       this.pendingWriteCallback = cb;
