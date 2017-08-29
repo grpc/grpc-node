@@ -203,7 +203,7 @@ export class Http2CallStream extends Duplex implements CallStream {
                   });
                 });
       });
-      stream.on('read', (data) => {
+      stream.on('data', (data) => {
         let readHead = 0;
         let canPush = true;
         let toRead: number;
