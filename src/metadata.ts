@@ -1,11 +1,9 @@
-import { forOwn } from 'lodash';
 import * as http2 from 'http2';
+import {forOwn} from 'lodash';
 
 export type MetadataValue = string | Buffer;
 
-export interface MetadataObject {
-  [key: string]: Array<MetadataValue>;
-}
+export interface MetadataObject { [key: string]: Array<MetadataValue>; }
 
 function cloneMetadataObject(repr: MetadataObject): MetadataObject {
   const result: MetadataObject = {};
@@ -54,8 +52,9 @@ function validate(key: string, value?: MetadataValue): void {
             'keys that don\'t end with \'-bin\' must have String values');
       }
       if (!isLegalNonBinaryValue(value)) {
-        throw new Error('Metadata string value "' + value +
-                        '" contains illegal characters');
+        throw new Error(
+            'Metadata string value "' + value +
+            '" contains illegal characters');
       }
     }
   }
@@ -66,7 +65,6 @@ function validate(key: string, value?: MetadataValue): void {
  */
 export class Metadata {
   protected internalRepr: MetadataObject = {};
-  constructor() {}
 
   /**
    * Sets the given value for the given key by replacing any other values
@@ -130,10 +128,10 @@ export class Metadata {
    * This reflects the most common way that people will want to see metadata.
    * @return A key/value mapping of the metadata.
    */
-  getMap(): { [key: string]: MetadataValue } {
-    const result: { [key: string]: MetadataValue } = {};
+  getMap(): {[key: string]: MetadataValue} {
+    const result: {[key: string]: MetadataValue} = {};
     forOwn(this.internalRepr, (values, key) => {
-      if(values.length > 0) {
+      if (values.length > 0) {
         const v = values[0];
         result[key] = v instanceof Buffer ? v.slice() : v;
       }
@@ -195,7 +193,7 @@ export class Metadata {
         if (Array.isArray(values)) {
           values.forEach((value) => {
             result.add(key, Buffer.from(value, 'base64'));
-          })
+          });
         } else {
           result.add(key, Buffer.from(values, 'base64'));
         }
@@ -203,7 +201,7 @@ export class Metadata {
         if (Array.isArray(values)) {
           values.forEach((value) => {
             result.add(key, value);
-          })
+          });
         } else {
           result.add(key, values);
         }

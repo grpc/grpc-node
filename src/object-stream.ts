@@ -1,14 +1,14 @@
-import { Readable, Writable, Duplex } from 'stream';
+import {Duplex, Readable, Writable} from 'stream';
 
 export interface IntermediateObjectReadable<T> extends Readable {
-  read(size?: number): any & T;
+  read(size?: number): any&T;
 }
 
 export interface ObjectReadable<T> extends IntermediateObjectReadable<T> {
   read(size?: number): T;
 
   addListener(event: string, listener: Function): this;
-  emit(event: string | symbol, ...args: any[]): boolean;
+  emit(event: string|symbol, ...args: any[]): boolean;
   on(event: string, listener: Function): this;
   once(event: string, listener: Function): this;
   prependListener(event: string, listener: Function): this;
@@ -25,13 +25,13 @@ export interface ObjectReadable<T> extends IntermediateObjectReadable<T> {
 }
 
 export interface IntermediateObjectWritable<T> extends Writable {
-  _write(chunk: any & T, encoding: string, callback: Function): void;
-  write(chunk: any & T, cb?: Function): boolean;
-  write(chunk: any & T, encoding?: any, cb?: Function): boolean;
+  _write(chunk: any&T, encoding: string, callback: Function): void;
+  write(chunk: any&T, cb?: Function): boolean;
+  write(chunk: any&T, encoding?: any, cb?: Function): boolean;
   setDefaultEncoding(encoding: string): this;
   end(): void;
-  end(chunk: any & T, cb?: Function): void;
-  end(chunk: any & T, encoding?: any, cb?: Function): void;
+  end(chunk: any&T, cb?: Function): void;
+  end(chunk: any&T, encoding?: any, cb?: Function): void;
 }
 
 export interface ObjectWritable<T> extends IntermediateObjectWritable<T> {
@@ -44,7 +44,8 @@ export interface ObjectWritable<T> extends IntermediateObjectWritable<T> {
   end(chunk: T, encoding?: any, cb?: Function): void;
 }
 
-export interface ObjectDuplex<T, U> extends Duplex, ObjectWritable<T>, ObjectReadable<U> {
+export interface ObjectDuplex<T, U> extends Duplex, ObjectWritable<T>,
+                                            ObjectReadable<U> {
   read(size?: number): U;
 
   _write(chunk: T, encoding: string, callback: Function): void;
@@ -56,7 +57,7 @@ export interface ObjectDuplex<T, U> extends Duplex, ObjectWritable<T>, ObjectRea
 
 
   addListener(event: string, listener: Function): this;
-  emit(event: string | symbol, ...args: any[]): boolean;
+  emit(event: string|symbol, ...args: any[]): boolean;
   on(event: string, listener: Function): this;
   once(event: string, listener: Function): this;
   prependListener(event: string, listener: Function): this;

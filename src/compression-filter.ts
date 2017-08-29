@@ -1,10 +1,9 @@
-import {CallStream} from './call-stream'
-import {Channel} from './channel'
-import {Filter, BaseFilter, FilterFactory} from './filter'
-import {Metadata} from './metadata'
+import {CallStream} from './call-stream';
+import {Channel} from './channel';
+import {BaseFilter, Filter, FilterFactory} from './filter';
+import {Metadata} from './metadata';
 
 export class CompressionFilter extends BaseFilter implements Filter {
-
   async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
     const headers: Metadata = await metadata;
     headers.set('grpc-encoding', 'identity');
@@ -20,8 +19,9 @@ export class CompressionFilter extends BaseFilter implements Filter {
   }
 }
 
-export class CompressionFilterFactory implements FilterFactory<CompressionFilter> {
-  constructor(channel: Channel) {}
+export class CompressionFilterFactory implements
+    FilterFactory<CompressionFilter> {
+  constructor(private readonly channel: Channel) {}
   createFilter(callStream: CallStream): CompressionFilter {
     return new CompressionFilter();
   }

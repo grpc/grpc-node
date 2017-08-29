@@ -3,7 +3,7 @@ import {URL} from 'url';
 
 import {ClientDuplexStream, ClientDuplexStreamImpl, ClientReadableStream, ClientReadableStreamImpl, ClientUnaryCall, ClientUnaryCallImpl, ClientWritableStream, ClientWritableStreamImpl, ServiceError, ServiceErrorImpl} from './call';
 import {CallOptions, CallStream, StatusObject, WriteObject} from './call-stream';
-import {Channel, Http2Channel, ChannelOptions} from './channel';
+import {Channel, ChannelOptions, Http2Channel} from './channel';
 import {ChannelCredentials} from './channel-credentials';
 import {Status} from './constants';
 import {Metadata} from './metadata';
@@ -32,13 +32,13 @@ export class Client {
   }
 
   waitForReady(deadline: Date|number, callback: (error: Error|null) => void):
-  void {
-    let cb : (error: Error|null) => void = once(callback);
-    let callbackCalled: boolean = false;
+      void {
+    let cb: (error: Error|null) => void = once(callback);
+    let callbackCalled = false;
     this.channel.connect(() => {
       cb(null);
     });
-    if (deadline != Infinity) {
+    if (deadline !== Infinity) {
       let timeout: number;
       let now: number = (new Date).getTime();
       if (deadline instanceof Date) {

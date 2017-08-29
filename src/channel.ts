@@ -1,17 +1,17 @@
 import {EventEmitter} from 'events';
-import {SecureContext} from 'tls';
 import * as http2 from 'http2';
+import {SecureContext} from 'tls';
 import * as url from 'url';
-import {CallOptions, CallStreamOptions, CallStream, Http2CallStream} from './call-stream';
-import {CallCredentials} from './call-credentials';
-import {ChannelCredentials} from './channel-credentials';
-import {Metadata, MetadataObject} from './metadata';
-import {Status} from './constants'
 
-import {FilterStackFactory} from './filter-stack'
-import {DeadlineFilterFactory} from './deadline-filter'
-import {CallCredentialsFilterFactory} from './call-credentials-filter'
-import {CompressionFilterFactory} from './compression-filter'
+import {CallCredentials} from './call-credentials';
+import {CallCredentialsFilterFactory} from './call-credentials-filter';
+import {CallOptions, CallStream, CallStreamOptions, Http2CallStream} from './call-stream';
+import {ChannelCredentials} from './channel-credentials';
+import {CompressionFilterFactory} from './compression-filter';
+import {Status} from './constants';
+import {DeadlineFilterFactory} from './deadline-filter';
+import {FilterStackFactory} from './filter-stack';
+import {Metadata, MetadataObject} from './metadata';
 
 const IDLE_TIMEOUT_MS = 300000;
 
@@ -45,7 +45,8 @@ export enum ConnectivityState {
  * by a given address.
  */
 export interface Channel extends EventEmitter {
-  createStream(methodName: string, metadata: Metadata, options: CallOptions): CallStream;
+  createStream(methodName: string, metadata: Metadata, options: CallOptions):
+      CallStream;
   connect(callback: () => void): void;
   getConnectivityState(): ConnectivityState;
   close(): void;
@@ -61,11 +62,11 @@ export interface Channel extends EventEmitter {
 
 export class Http2Channel extends EventEmitter implements Channel {
   private connectivityState: ConnectivityState = ConnectivityState.IDLE;
-  private idleTimerId: NodeJS.Timer | null = null;
+  private idleTimerId: NodeJS.Timer|null = null;
   /* For now, we have up to one subchannel, which will exist as long as we are
    * connecting or trying to connect */
-  private subChannel : http2.ClientHttp2Session | null;
-  private filterStackFactory : FilterStackFactory;
+  private subChannel: http2.ClientHttp2Session|null;
+  private filterStackFactory: FilterStackFactory;
 
   private transitionToState(newState: ConnectivityState): void {
     if (newState !== this.connectivityState) {
@@ -94,7 +95,7 @@ export class Http2Channel extends EventEmitter implements Channel {
 
   private goIdle(): void {
     if (this.subChannel !== null) {
-      this.subChannel.shutdown({graceful: true}, () => {});
+      this.subChannel.shutdown({graceful: true}, () => undefined);
       this.subChannel = null;
     }
     this.transitionToState(ConnectivityState.IDLE);
@@ -106,9 +107,10 @@ export class Http2Channel extends EventEmitter implements Channel {
     }
   }
 
-  constructor(private readonly address: url.URL,
-              public readonly credentials: ChannelCredentials,
-              private readonly options: ChannelOptions) {
+  constructor(
+      private readonly address: url.URL,
+      public readonly credentials: ChannelCredentials,
+      private readonly options: ChannelOptions) {
     super();
     if (credentials.getSecureContext() === null) {
       address.protocol = 'http';
@@ -117,41 +119,46 @@ export class Http2Channel extends EventEmitter implements Channel {
     }
     this.filterStackFactory = new FilterStackFactory([
       new CompressionFilterFactory(this),
-      new CallCredentialsFilterFactory(this),
-      new DeadlineFilterFactory(this)
+      new CallCredentialsFilterFactory(this), new DeadlineFilterFactory(this)
     ]);
   }
 
-  private startHttp2Stream(methodName: string, stream: Http2CallStream, metadata: Metadata) {
-    let finalMetadata: Promise<Metadata> = stream.filterStack.sendMetadata(Promise.resolve(metadata));
+  private startHttp2Stream(
+      methodName: string, stream: Http2CallStream, metadata: Metadata) {
+    let finalMetadata: Promise<Metadata> =
+        stream.filterStack.sendMetadata(Promise.resolve(metadata));
     this.connect(() => {
-      finalMetadata.then((metadataValue) => {
-        let headers = metadataValue.toHttp2Headers();
-        headers[HTTP2_HEADER_AUTHORITY] = this.address.hostname;
-        headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
-        headers[HTTP2_HEADER_METHOD] = 'POST';
-        headers[HTTP2_HEADER_PATH] = methodName;
-        headers[HTTP2_HEADER_TE] = 'trailers';
-        if (stream.getStatus() === null) {
-          if (this.connectivityState === ConnectivityState.READY) {
-            let session: http2.ClientHttp2Session =
-              (this.subChannel as http2.ClientHttp2Session);
-            stream.attachHttp2Stream(session.request(headers));
-          } else {
-            /* In this case, we lost the connection while finalizing metadata.
-             * That should be very unusual */
-            setImmediate(() => {
-              this.startHttp2Stream(methodName, stream, metadata);
-            });
-          }
-        }
-      }, (error) => {
-        stream.cancelWithStatus(Status.UNKNOWN, "Failed to generate metadata");
-      });
+      finalMetadata.then(
+          (metadataValue) => {
+            let headers = metadataValue.toHttp2Headers();
+            headers[HTTP2_HEADER_AUTHORITY] = this.address.hostname;
+            headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
+            headers[HTTP2_HEADER_METHOD] = 'POST';
+            headers[HTTP2_HEADER_PATH] = methodName;
+            headers[HTTP2_HEADER_TE] = 'trailers';
+            if (stream.getStatus() === null) {
+              if (this.connectivityState === ConnectivityState.READY) {
+                let session: http2.ClientHttp2Session =
+                    (this.subChannel as http2.ClientHttp2Session);
+                stream.attachHttp2Stream(session.request(headers));
+              } else {
+                /* In this case, we lost the connection while finalizing
+                 * metadata. That should be very unusual */
+                setImmediate(() => {
+                  this.startHttp2Stream(methodName, stream, metadata);
+                });
+              }
+            }
+          },
+          (error) => {
+            stream.cancelWithStatus(
+                Status.UNKNOWN, 'Failed to generate metadata');
+          });
     });
   }
 
-  createStream(methodName: string, metadata: Metadata, options: CallOptions): CallStream {
+  createStream(methodName: string, metadata: Metadata, options: CallOptions):
+      CallStream {
     if (this.connectivityState === ConnectivityState.SHUTDOWN) {
       throw new Error('Channel has been shut down');
     }
@@ -159,8 +166,9 @@ export class Http2Channel extends EventEmitter implements Channel {
       deadline: options.deadline === undefined ? Infinity : options.deadline,
       credentials: options.credentials || CallCredentials.createEmpty(),
       flags: options.flags || 0
-    }
-    let stream: Http2CallStream = new Http2CallStream(methodName, finalOptions, this.filterStackFactory);
+    };
+    let stream: Http2CallStream =
+        new Http2CallStream(methodName, finalOptions, this.filterStackFactory);
     this.startHttp2Stream(methodName, stream, metadata);
     return stream;
   }
@@ -178,7 +186,7 @@ export class Http2Channel extends EventEmitter implements Channel {
     }
   }
 
-  getConnectivityState(): ConnectivityState{
+  getConnectivityState(): ConnectivityState {
     return this.connectivityState;
   }
 
