@@ -1,6 +1,9 @@
+import {once} from 'lodash';
+import {URL} from 'url';
+
 import {ClientDuplexStream, ClientDuplexStreamImpl, ClientReadableStream, ClientReadableStreamImpl, ClientUnaryCall, ClientUnaryCallImpl, ClientWritableStream, ClientWritableStreamImpl, ServiceError, ServiceErrorImpl} from './call';
 import {CallOptions, CallStream, StatusObject, WriteObject} from './call-stream';
-import {Channel, ChannelOptions} from './channel';
+import {Channel, ChannelOptions, Http2Channel} from './channel';
 import {ChannelCredentials} from './channel-credentials';
 import {Status} from './constants';
 import {Metadata} from './metadata';
@@ -21,7 +24,7 @@ export class Client {
     }
     // TODO(murgatroid99): Figure out how to get version number
     // options['grpc.primary_user_agent'] += 'grpc-node/' + version;
-    this.channel = new Channel(address, credentials, options);
+    this.channel = new Http2Channel(new URL(address), credentials, options);
   }
 
   close(): void {
@@ -30,7 +33,26 @@ export class Client {
 
   waitForReady(deadline: Date|number, callback: (error: Error|null) => void):
       void {
-    throw new Error('waitForReady is not yet implemented');
+    let cb: (error: Error|null) => void = once(callback);
+    let callbackCalled = false;
+    this.channel.connect(() => {
+      cb(null);
+    });
+    if (deadline !== Infinity) {
+      let timeout: number;
+      let now: number = (new Date).getTime();
+      if (deadline instanceof Date) {
+        timeout = deadline.getTime() - now;
+      } else {
+        timeout = deadline - now;
+      }
+      if (timeout < 0) {
+        timeout = 0;
+      }
+      setTimeout(() => {
+        cb(new Error('Failed to connect before the deadline'));
+      }, timeout);
+    }
   }
 
   private handleUnaryResponse<ResponseType>(

@@ -9,8 +9,8 @@ export namespace assert2 {
     try {
       return fn();
     } catch (e) {
-      assert.throws(() => { throw e });
-      throw e; // for type safety only
+      assert.throws(() => {throw e});
+      throw e;  // for type safety only
     }
   }
 }
