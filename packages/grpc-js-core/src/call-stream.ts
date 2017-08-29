@@ -81,6 +81,8 @@ enum ReadState {
   READING_MESSAGE
 }
 
+const emptyBuffer = Buffer.alloc(0);
+
 export class Http2CallStream extends Duplex implements CallStream {
   public filterStack: Filter;
   private statusEmitted = false;
@@ -119,6 +121,19 @@ export class Http2CallStream extends Duplex implements CallStream {
       this.finalStatus = status;
       this.emit('status', status);
     }
+  }
+
+  private tryPush(messageBytes: Buffer, canPush: boolean): boolean {
+    if (canPush) {
+      if (!this.push(messageBytes)) {
+        canPush = false;
+        (this.http2Stream as http2.ClientHttp2Stream).pause();
+      }
+    } else {
+      this.unpushedReadMessages.push(messageBytes);
+    }
+    this.readState = ReadState.NO_DATA;
+    return canPush;
   }
 
   attachHttp2Stream(stream: http2.ClientHttp2Stream): void {
@@ -230,7 +245,11 @@ export class Http2CallStream extends Duplex implements CallStream {
               if (this.readSizeRemaining === 0) {
                 this.readMessageSize = this.readPartialSize.readUInt32BE(0);
                 this.readMessageRemaining = this.readMessageSize;
-                this.readState = ReadState.READING_MESSAGE;
+                if (this.readMessageRemaining > 0) {
+                  this.readState = ReadState.READING_MESSAGE;
+                } else {
+                  canPush = this.tryPush(emptyBuffer, canPush);
+                }
               }
               break;
             case ReadState.READING_MESSAGE:
@@ -246,15 +265,7 @@ export class Http2CallStream extends Duplex implements CallStream {
                 const messageBytes = Buffer.concat(
                     this.readPartialMessage, this.readMessageSize);
                 // TODO(murgatroid99): Add receive message filters
-                if (canPush) {
-                  if (!this.push(messageBytes)) {
-                    canPush = false;
-                    (this.http2Stream as http2.ClientHttp2Stream).pause();
-                  }
-                } else {
-                  this.unpushedReadMessages.push(messageBytes);
-                }
-                this.readState = ReadState.NO_DATA;
+                canPush = this.tryPush(messageBytes, canPush);
               }
           }
         }
