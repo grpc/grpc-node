@@ -12,6 +12,8 @@
   "author": {
     "name": "Google Inc."
   },
+  "main": "build/src/index.js",
+  "types": "src/index.ts",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/mocha": "^2.2.42",
