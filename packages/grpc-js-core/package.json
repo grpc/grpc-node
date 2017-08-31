@@ -1,0 +1,54 @@
+{
+  "name": "grpc-js-core",
+  "version": "0.1.0",
+  "description": "gRPC Library for Node - pure JS core",
+  "homepage": "https://grpc.io/",
+  "main": "build/src/index.js",
+  "private": true,
+  "engines": {
+    "node": ">=8.4"
+  },
+  "keywords": [],
+  "author": {
+    "name": "Google Inc."
+  },
+  "types": "src/index.ts",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/mocha": "^2.2.42",
+    "@types/node": "^8.0.25",
+    "clang-format": "^1.0.53",
+    "del": "^3.0.0",
+    "google-ts-style": "^0.2.0",
+    "gulp": "^3.9.1",
+    "gulp-help": "^1.6.1",
+    "gulp-mocha": "^4.3.1",
+    "gulp-sourcemaps": "^2.6.1",
+    "gulp-tslint": "^8.1.1",
+    "gulp-typescript": "^3.2.2",
+    "gulp-util": "^3.0.8",
+    "merge2": "^1.1.0",
+    "mocha": "^3.5.0",
+    "through2": "^2.0.3",
+    "tslint": "^5.5.0",
+    "typescript": "^2.5.1"
+  },
+  "contributors": [
+    {
+      "name": "Google Inc."
+    }
+  ],
+  "_id": "grpc-js-core@0.1.0",
+  "scripts": {
+    "build": "npm run compile",
+    "clean": "gulp clean",
+    "compile": "gulp compile",
+    "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
+    "lint": "tslint -c node_modules/google-ts-style/tslint.json -p . -t codeFrame --type-check",
+    "test": "gulp test"
+  },
+  "dependencies": {
+    "@types/lodash": "^4.14.73",
+    "lodash": "^4.17.4"
+  }
+}
