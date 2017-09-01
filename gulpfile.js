@@ -4,7 +4,7 @@ const help = require('gulp-help');
 // gulp-help monkeypatches tasks to have an additional description parameter
 const gulp = help(_gulp);
 
-require('./packages/grpc-js-core/gulpfile')(gulp);
+require('./packages/grpc-js-core/gulpfile');
 
 gulp.task('lint', 'Emit linting errors in source and test files', ['js.core.lint']);
 
