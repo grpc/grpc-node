@@ -132,7 +132,6 @@ export class Http2CallStream extends Duplex implements CallStream {
     } else {
       this.unpushedReadMessages.push(messageBytes);
     }
-    this.readState = ReadState.NO_DATA;
     return canPush;
   }
 
@@ -249,6 +248,7 @@ export class Http2CallStream extends Duplex implements CallStream {
                   this.readState = ReadState.READING_MESSAGE;
                 } else {
                   canPush = this.tryPush(emptyBuffer, canPush);
+                  this.readState = ReadState.NO_DATA;
                 }
               }
               break;
@@ -266,6 +266,7 @@ export class Http2CallStream extends Duplex implements CallStream {
                     this.readPartialMessage, this.readMessageSize);
                 // TODO(murgatroid99): Add receive message filters
                 canPush = this.tryPush(messageBytes, canPush);
+                this.readState = ReadState.NO_DATA;
               }
           }
         }

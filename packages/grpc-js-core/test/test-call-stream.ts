@@ -288,6 +288,9 @@ describe('CallStream', () => {
         payload: Buffer.alloc(0),
         frameLengths: []
       });
+      callStream.once('status', assert2.mustCall((status) => {
+        assert.strictEqual(status.code, Status.INTERNAL);
+      }));
       callStream.attachHttp2Stream(http2Stream);
       http2Stream.emit('error');
     });
