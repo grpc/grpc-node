@@ -80,7 +80,7 @@ function makeCompileFn(globs) {
  */
 gulp.task('js.core.lint', 'Emits linting errors found in src/ and test/.', () => {
   const program = require('tslint').Linter.createProgram(tsconfigPath);
-  gulp.src([`${srcDir}/**/*.ts`, `${srcDir}/**/*.ts`])
+  gulp.src([`${srcDir}/**/*.ts`, `${testDir}/**/*.ts`])
       .pipe(tslint({
         configuration: tslintPath,
         formatter: 'codeFrame',
