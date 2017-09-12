@@ -15,9 +15,12 @@
     }
   ],
   "dependencies": {
+    "google-protobuf": "^3.0.0",
     "grpc": "^1.7.0-dev",
-    "lodash": "^3.9.3",
-    "google-protobuf": "^3.0.0"
+    "gulp": "^3.9.1",
+    "gulp-help": "^1.6.1",
+    "gulp-run": "^1.7.1",
+    "lodash": "^3.9.3"
   },
   "files": [
     "LICENSE",
