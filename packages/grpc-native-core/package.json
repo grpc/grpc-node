@@ -6,9 +6,9 @@
   "homepage": "https://grpc.io/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/grpc/grpc.git"
+    "url": "https://github.com/grpc/grpc-node.git"
   },
-  "bugs": "https://github.com/grpc/grpc/issues",
+  "bugs": "https://github.com/grpc/grpc-node/issues",
   "contributors": [
     {
       "name": "Michael Lumish",
@@ -19,11 +19,11 @@
     "lib": "src/node/src"
   },
   "scripts": {
-    "lint": "node ./node_modules/jshint/bin/jshint src/node/src src/node/test src/node/interop src/node/index.js --exclude-path=src/node/.jshintignore",
-    "test": "./node_modules/.bin/mocha src/node/test && npm run-script lint",
+    "lint": "node ./node_modules/jshint/bin/jshint src test index.js --exclude-path=.jshintignore",
+    "test": "./node_modules/.bin/mocha test && npm run-script lint",
     "electron-build": "./node_modules/.bin/node-pre-gyp configure build --runtime=electron --disturl=https://atom.io/download/atom-shell",
-    "gen_docs": "./node_modules/.bin/jsdoc -c src/node/jsdoc_conf.json",
-    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha src/node/test",
+    "gen_docs": "./node_modules/.bin/jsdoc -c jsdoc_conf.json",
+    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test",
     "install": "./node_modules/.bin/node-pre-gyp install --fallback-to-build --library=static_library"
   },
   "bundledDependencies": [
@@ -63,22 +63,22 @@
   },
   "files": [
     "LICENSE",
-    "src/node/README.md",
-    "src/proto",
-    "etc",
-    "src/node/index.js",
-    "src/node/src",
-    "src/node/ext",
-    "include/grpc",
-    "src/core",
-    "src/boringssl",
-    "src/zlib",
-    "third_party/nanopb",
-    "third_party/zlib",
-    "third_party/boringssl",
+    "README.md",
+    "deps/grpc/src/proto",
+    "deps/grpc/etc",
+    "index.js",
+    "src",
+    "ext",
+    "deps/grpc/include/grpc",
+    "deps/grpc/src/core",
+    "deps/grpc/src/boringssl",
+    "deps/grpc/src/zlib",
+    "deps/grpc/third_party/nanopb",
+    "deps/grpc/third_party/zlib",
+    "deps/grpc/third_party/boringssl",
     "binding.gyp"
   ],
-  "main": "src/node/index.js",
+  "main": "index.js",
   "license": "Apache-2.0",
   "jshintConfig": {
     "bitwise": true,
