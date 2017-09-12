@@ -5,6 +5,7 @@ const help = require('gulp-help');
 const gulp = help(_gulp);
 
 require('./packages/grpc-js-core/gulpfile');
+require('./test/gulpfile');
 
 gulp.task('lint', 'Emit linting errors in source and test files', ['js.core.lint']);
 
