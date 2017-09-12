@@ -37,6 +37,7 @@ HealthImplementation.prototype.check = function(call, callback){
   var service = call.request.getService();
   var status = _.get(this.statusMap, service, null);
   if (status === null) {
+    // TODO(murgatroid99): Do this without an explicit reference to grpc.
     callback({code:grpc.status.NOT_FOUND});
   } else {
     var response = new health_messages.HealthCheckResponse();
