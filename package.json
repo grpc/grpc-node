@@ -10,7 +10,8 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "gulp": "^3.9.1",
-    "gulp-help": "^1.6.1"
+    "gulp-help": "^1.6.1",
+    "gulp-run": "^1.7.1"
   },
   "scripts": {
     "install": "cd packages/grpc-js-core && npm install"
