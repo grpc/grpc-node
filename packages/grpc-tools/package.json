@@ -6,9 +6,9 @@
   "homepage": "https://grpc.io/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/grpc/grpc.git"
+    "url": "https://github.com/grpc/grpc-node.git"
   },
-  "bugs": "https://github.com/grpc/grpc/issues",
+  "bugs": "https://github.com/grpc/grpc-node/issues",
   "contributors": [
     {
       "name": "Michael Lumish",

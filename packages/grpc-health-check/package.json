@@ -5,9 +5,9 @@
   "description": "Health check service for use with gRPC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/grpc/grpc.git"
+    "url": "https://github.com/grpc/grpc-node.git"
   },
-  "bugs": "https://github.com/grpc/grpc/issues",
+  "bugs": "https://github.com/grpc/grpc-node/issues",
   "contributors": [
     {
       "name": "Michael Lumish",
@@ -17,16 +17,18 @@
   "dependencies": {
     "google-protobuf": "^3.0.0",
     "grpc": "^1.7.0-dev",
+    "lodash": "^3.9.3"
+  },
+  "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-help": "^1.6.1",
-    "gulp-run": "^1.7.1",
-    "lodash": "^3.9.3"
+    "gulp-run": "^1.7.1"
   },
   "files": [
     "LICENSE",
     "health.js",
     "v1"
   ],
-  "main": "src/node/index.js",
+  "main": "health.js",
   "license": "Apache-2.0"
 }
