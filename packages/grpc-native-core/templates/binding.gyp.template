@@ -73,8 +73,8 @@
         '-std=c++11'
       ],
       'include_dirs': [
-        '.',
-        'include'
+        'deps/grpc',
+        'deps/grpc/include'
       ],
       'defines': [
         'GPR_BACKWARDS_COMPATIBILITY_MODE',
@@ -106,7 +106,7 @@
         # This is the condition for using boringssl
         ['OS=="win" or runtime=="electron"', {
           "include_dirs": [
-            "third_party/boringssl/include"
+            "deps/grpc/third_party/boringssl/include"
           ],
           "defines": [
             'OPENSSL_NO_ASM'
@@ -138,8 +138,8 @@
         }],
         ['OS == "win"', {
           "include_dirs": [
-            "third_party/zlib",
-            "third_party/cares/cares"
+            "deps/grpc/third_party/zlib",
+            "deps/grpc/third_party/cares/cares"
           ],
           "defines": [
             '_WIN32_WINNT=0x0600',
@@ -201,7 +201,7 @@
             ],
             'sources': [
               % for source in lib.src:
-              '${source}',
+              'deps/grpc/${source}',
               % endfor
             ],
             'conditions': [
@@ -264,7 +264,7 @@
             ],
             'sources': [
               % for source in lib.src:
-              '${source}',
+              'deps/grpc/${source}',
               % endfor
             ]
           },
@@ -289,7 +289,7 @@
         ],
         'sources': [
           % for source in lib.src:
-          '${source}',
+          'deps/grpc/${source}',
           % endfor
         ],
         'conditions': [
@@ -344,7 +344,8 @@
         "target_name": "${module.name}",
         "sources": [
           % for source in module.src:
-          "${source}",
+  ## temporary hack until we get the build.yaml out of grpc.
+          "${source[len('src/node/'):]}",
           % endfor
         ],
         "dependencies": [
