@@ -20,13 +20,13 @@
 
 var assert = require('assert');
 
-var health = require('../health_check/health');
+var health = require('../health');
 
-var health_messages = require('../health_check/v1/health_pb');
+var health_messages = require('../v1/health_pb');
 
 var ServingStatus = health_messages.HealthCheckResponse.ServingStatus;
 
-var grpc = require('../');
+var grpc = require('grpc');
 
 describe('Health Checking', function() {
   var statusMap = {

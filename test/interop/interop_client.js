@@ -23,7 +23,7 @@ var path = require('path');
 // TODO(murgatroid99): use multiple grpc implementations
 var grpc = require('grpc');
 var testProto = grpc.load({
-  root: __dirname + '/../packages/grpc-native-core/ext/grpc',
+  root: __dirname + '/../../packages/grpc-native-core/deps/grpc',
   file: 'src/proto/grpc/testing/test.proto'}).grpc.testing;
 var GoogleAuth = require('google-auth-library');
 
@@ -566,7 +566,7 @@ function runTest(address, host_override, test_case, tls, test_ca, done, extra) {
   if (tls) {
     var ca_path;
     if (test_ca) {
-      ca_path = path.join(__dirname, '../test/data/ca.pem');
+      ca_path = path.join(__dirname, '../data/ca.pem');
       var ca_data = fs.readFileSync(ca_path);
       creds = grpc.credentials.createSsl(ca_data);
     } else {

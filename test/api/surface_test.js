@@ -21,19 +21,13 @@
 var assert = require('assert');
 var _ = require('lodash');
 
-var surface_client = require('../src/client.js');
-var common = require('../src/common');
-
 var ProtoBuf = require('protobufjs');
 
-var grpc = require('..');
+var grpc = require('grpc');
 
-var math_proto = ProtoBuf.loadProtoFile(__dirname +
-    '/../../proto/math/math.proto');
-
-var mathService = math_proto.lookup('math.Math');
-var mathServiceAttrs = grpc.loadObject(
-    mathService, common.defaultGrpcOptions).service;
+var MathClient = grpc.load(
+    __dirname + '/../../packages/grpc-native-core/deps/grpc/src/proto/math/math.proto').math.Math;
+var mathServiceAttrs = MathClient.service;
 
 /**
  * This is used for testing functions with multiple asynchronous calls that
@@ -100,31 +94,6 @@ describe('surface Server', function() {
     server.tryShutdown(done);
   });
 });
-describe('Server.prototype.addProtoService', function() {
-  var server;
-  var dummyImpls = {
-    'div': function() {},
-    'divMany': function() {},
-    'fib': function() {},
-    'sum': function() {}
-  };
-  beforeEach(function() {
-    server = new grpc.Server();
-  });
-  afterEach(function() {
-    server.forceShutdown();
-  });
-  it('Should succeed with a single proto service', function() {
-    assert.doesNotThrow(function() {
-      server.addProtoService(mathService, dummyImpls);
-    });
-  });
-  it('Should succeed with a single service attributes object', function() {
-    assert.doesNotThrow(function() {
-      server.addProtoService(mathServiceAttrs, dummyImpls);
-    });
-  });
-});
 describe('Server.prototype.addService', function() {
   var server;
   var dummyImpls = {
@@ -158,7 +127,7 @@ describe('Server.prototype.addService', function() {
       'Sum': function() {}
     };
     assert.doesNotThrow(function() {
-      server.addProtoService(mathService, altDummyImpls);
+      server.addService(mathServiceAttrs, altDummyImpls);
     });
   });
   it('Should have a conflict between name variations', function() {
@@ -171,9 +140,9 @@ describe('Server.prototype.addService', function() {
       'Fib': function() {},
       'Sum': function() {}
     };
-    server.addProtoService(mathService, altDummyImpls);
+    server.addProtoService(mathServiceAttrs, altDummyImpls);
     assert.throws(function() {
-      server.addProtoService(mathService, dummyImpls);
+      server.addProtoService(mathServiceAttrs, dummyImpls);
     });
   });
   it('Should fail if the server has been started', function() {
@@ -187,9 +156,8 @@ describe('Server.prototype.addService', function() {
     beforeEach(function() {
       server.addService(mathServiceAttrs, {});
       var port = server.bind('localhost:0', server_insecure_creds);
-      var Client = grpc.loadObject(mathService);
-      client = new Client('localhost:' + port,
-                          grpc.credentials.createInsecure());
+      client = new MathClient('localhost:' + port,
+                              grpc.credentials.createInsecure());
       server.start();
     });
     it('should respond to a unary call with UNIMPLEMENTED', function(done) {
@@ -253,13 +221,12 @@ describe('Client constructor building', function() {
 describe('waitForClientReady', function() {
   var server;
   var port;
-  var Client;
+  var Client = MathClient;
   var client;
   before(function() {
     server = new grpc.Server();
     port = server.bind('localhost:0', grpc.ServerCredentials.createInsecure());
     server.start();
-    Client = grpc.loadObject(mathService);
   });
   beforeEach(function() {
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
@@ -520,7 +487,7 @@ describe('Echo metadata', function() {
     call.end();
   });
   it('shows the correct user-agent string', function(done) {
-    var version = require('../../../package.json').version;
+    var version = require('grpc/package.json').version;
     var call = client.unary({}, metadata,
                             function(err, data) { assert.ifError(err); });
     call.on('metadata', function(metadata) {
@@ -887,8 +854,8 @@ describe('Other conditions', function() {
           responseDeserialize: _.identity
         }
       };
-      var Client = surface_client.makeClientConstructor(test_service_attrs,
-                                                        'TestService');
+      var Client = grpc.makeGenericClientConstructor(test_service_attrs,
+                                                     'TestService');
       misbehavingClient = new Client('localhost:' + port,
                                      grpc.credentials.createInsecure());
     });
@@ -1310,7 +1277,7 @@ describe('Cancelling surface client', function() {
       'sum': function(stream) {}
     });
     var port = server.bind('localhost:0', server_insecure_creds);
-    var Client = surface_client.makeClientConstructor(mathServiceAttrs);
+    var Client = grpc.makeGenericClientConstructor(mathServiceAttrs);
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
