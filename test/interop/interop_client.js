@@ -20,9 +20,10 @@
 
 var fs = require('fs');
 var path = require('path');
-var grpc = require('..');
+// TODO(murgatroid99): use multiple grpc implementations
+var grpc = require('grpc');
 var testProto = grpc.load({
-  root: __dirname + '/../../..',
+  root: __dirname + '/../packages/grpc-native-core/ext/grpc',
   file: 'src/proto/grpc/testing/test.proto'}).grpc.testing;
 var GoogleAuth = require('google-auth-library');
 

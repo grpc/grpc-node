@@ -9,9 +9,16 @@
   },
   "license": "Apache-2.0",
   "devDependencies": {
+    "async": "^2.5.0",
+    "body-parser": "^1.18.0",
+    "express": "^4.15.4",
+    "google-auth-library": "^0.11.0",
+    "grpc": "^1.6.0",
     "gulp": "^3.9.1",
     "gulp-help": "^1.6.1",
-    "gulp-run": "^1.7.1"
+    "gulp-run": "^1.7.1",
+    "lodash": "^4.17.4",
+    "poisson-process": "^0.2.2"
   },
   "scripts": {
     "install": "cd packages/grpc-js-core && npm install"

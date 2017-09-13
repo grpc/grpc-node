@@ -20,7 +20,8 @@
 
 var _ = require('lodash');
 
-var grpc = require('../../..');
+// TODO(murgatroid99): use multiple grpc implementations
+var grpc = require('grpc');
 
 var interop_client = require('../interop/interop_client');
 var MetricsServer = require('./metrics_server');

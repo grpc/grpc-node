@@ -6,10 +6,13 @@ const gulp = help(_gulp);
 
 require('./packages/grpc-health-check/gulpfile');
 require('./packages/grpc-js-core/gulpfile');
+require('./test/gulpfile');
 
 gulp.task('lint', 'Emit linting errors in source and test files', ['js.core.lint']);
 
-gulp.task('build', 'Build packages', ['js.core.compile']);
+gulp.task('link', 'Link local packages together', ['internal.test.link']);
+
+gulp.task('build', 'Build packages', ['js.core.compile', 'link']);
 
 gulp.task('clean', 'Delete generated files', ['js.core.clean']);
 
