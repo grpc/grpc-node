@@ -4,7 +4,7 @@
 
 ### C-based Client and Server
 
-Directory: `packages/grpc-native-core`
+Directory: [`packages/grpc-native-core`](https://github.com/grpc/grpc-node/tree/master/packages/grpc-native-core)
 
 npm package: [grpc](https://www.npmjs.com/package/grpc).
 
@@ -12,7 +12,7 @@ This library will continue to be the canonical, feature rich implementation of g
 
 ### Pure JavaScript Client
 
-Directory: `packages/grpc-js-core`
+Directory: [`packages/grpc-js-core`](https://github.com/grpc/grpc-node/tree/master/packages/grpc-js-core)
 
 **This library is currently incomplete and experimental, built on the [experimental http2 Node module](https://nodejs.org/api/http2.html).**
 
