@@ -21,7 +21,7 @@
 var path = require('path');
 var fs = require('fs');
 
-var SSL_ROOTS_PATH = path.resolve(__dirname, '..', '..', 'etc', 'roots.pem');
+var SSL_ROOTS_PATH = path.resolve(__dirname, 'deps', 'grpc', 'etc', 'roots.pem');
 
 var _ = require('lodash');
 

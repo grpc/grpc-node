@@ -51,7 +51,7 @@ var Readable = stream.Readable;
 var Writable = stream.Writable;
 var Duplex = stream.Duplex;
 var util = require('util');
-var version = require('../../../package.json').version;
+var version = require('../package.json').version;
 
 /**
  * Initial response metadata sent by the server when it starts processing the
