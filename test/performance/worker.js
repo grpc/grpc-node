@@ -21,9 +21,10 @@
 var console = require('console');
 var WorkerServiceImpl = require('./worker_service_impl');
 
-var grpc = require('../../../');
+// TODO(murgatroid99): use multiple grpc implementations
+var grpc = require('grpc');
 var serviceProto = grpc.load({
-  root: __dirname + '/../../..',
+  root: __dirname + '/../packages/grpc-native-core/ext/grpc',
   file: 'src/proto/grpc/testing/services.proto'}).grpc.testing;
 
 function runServer(port, benchmark_impl) {

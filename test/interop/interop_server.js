@@ -22,9 +22,10 @@ var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
 var AsyncDelayQueue = require('./async_delay_queue');
-var grpc = require('..');
+// TODO(murgatroid99): use multiple grpc implementations
+var grpc = require('grpc');
 var testProto = grpc.load({
-  root: __dirname + '/../../..',
+  root: __dirname + '/../packages/grpc-native-core/ext/grpc',
   file: 'src/proto/grpc/testing/test.proto'}).grpc.testing;
 
 var ECHO_INITIAL_KEY = 'x-grpc-test-echo-initial';

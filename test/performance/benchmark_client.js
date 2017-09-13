@@ -35,9 +35,10 @@ var Histogram = require('./histogram');
 
 var genericService = require('./generic_service');
 
-var grpc = require('../../../');
+// TODO(murgatroid99): use multiple grpc implementations
+var grpc = require('grpc');
 var serviceProto = grpc.load({
-  root: __dirname + '/../../..',
+  root: __dirname + '/../packages/grpc-native-core/ext/grpc',
   file: 'src/proto/grpc/testing/services.proto'}).grpc.testing;
 
 /**
