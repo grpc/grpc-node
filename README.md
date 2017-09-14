@@ -4,11 +4,11 @@
 
 ### C-based Client and Server
 
-Directory: [`packages/grpc-native-core`](https://github.com/grpc/grpc-node/tree/master/packages/grpc-native-core)
+Directory: [`packages/grpc-native-core`](https://github.com/grpc/grpc-node/tree/master/packages/grpc-native-core) (see here for installation information)
 
 npm package: [grpc](https://www.npmjs.com/package/grpc).
 
-This library will continue to be the canonical, feature rich implementation of gRPC, with broad but incomplete platform support.
+This is the existing, feature-rich implementation of gRPC using a C++ addon. It works on all LTS versions of Node.js on most platforms that Node.js runs on.
 
 ### Pure JavaScript Client
 
@@ -16,7 +16,7 @@ Directory: [`packages/grpc-js-core`](https://github.com/grpc/grpc-node/tree/mast
 
 **This library is currently incomplete and experimental, built on the [experimental http2 Node module](https://nodejs.org/api/http2.html).**
 
-This library is a minimally-featured implementation of gRPC purely in JavaScript, without a C++ addon. It is intended for use in libraries that need complete platform support and only basic gRPC features.
+This library implements the core functionality of gRPC purely in JavaScript, without a C++ addon. It works on the latest version of Node.js (with the `--expose-http2` flag set) on all platforms that Node.js runs on.
 
 ## Other Packages
 
