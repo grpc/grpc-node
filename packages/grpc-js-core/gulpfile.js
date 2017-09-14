@@ -13,6 +13,7 @@ const util = require('gulp-util');
 const merge2 = require('merge2');
 const path = require('path');
 const through = require('through2');
+const execa = require('execa');
 
 Error.stackTraceLimit = Infinity;
 
@@ -74,6 +75,10 @@ function makeCompileFn(globs) {
     ]);
   };
 }
+
+gulp.task('js.core.install', 'Install native core dependencies', () => {
+  return execa('npm', ['install'], {cwd: jsCoreDir, stdio: 'inherit'});
+});
 
 /**
  * Runs tslint on files in src/, with linting rules defined in tslint.json.
