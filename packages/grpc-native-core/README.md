@@ -31,6 +31,9 @@ npm install grpc
 
     To fix this, you will have to delete the folder `C:\Users\<username>\.node-gyp\<node_version>\include\node\openssl` and retry `npm install`
 
+## API DOCUMENTATION
+
+See the [API Documentation](https://grpc.io/grpc/node/).
 
 ## TESTING
 To run the test suite, simply run `npm test` in the install location.
