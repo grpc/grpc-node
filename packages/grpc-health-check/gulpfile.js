@@ -6,15 +6,19 @@ const path = require('path');
 
 const gulp = help(_gulp);
 
-const hcCoreDir = __dirname;
-const baseDir = path.resolve(hcCoreDir, '..', '..');
-const testDir = path.resolve(hcCoreDir, 'test');
+const healthCheckDir = __dirname;
+const baseDir = path.resolve(healthCheckDir, '..', '..');
+const testDir = path.resolve(healthCheckDir, 'test');
 
-gulp.task('health-check.link', 'Link local copy of grpc', (cb) => {
-  return exec(`cd ${hcCoreDir} && npm link ${baseDir}/packages/grpc-native-core`, cb);
+gulp.task('health-check.install', 'Install health check dependencies', (cb) => {
+  return exec(`cd ${healthCheckDir} && npm install`, cb);
 });
 
-gulp.task('health-check.test', 'Run health check tests', ['health-check.link'],
+gulp.task('health-check.link.add', 'Link local copy of grpc', ['health-check.install'], (cb) => {
+  return exec(`cd ${healthCheckDir} && npm link grpc`, cb);
+});
+
+gulp.task('health-check.test', 'Run health check tests', ['health-check.install', 'health-check.link.add'],
           () => {
             return gulp.src(`${testDir}/*.js`).pipe(mocha());
           });

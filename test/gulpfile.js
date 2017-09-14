@@ -10,10 +10,10 @@ const gulp = help(_gulp);
 const testDir = __dirname;
 const apiTestDir = path.resolve(testDir, 'api');
 
-gulp.task('internal.test.link', 'Link local copies of grpc packages', (cb) => {
-  return exec(`npm link ${testDir}/../packages/grpc-native-core`, cb);
+gulp.task('internal.test.link.add', 'Link local copies of grpc packages', (cb) => {
+  return exec(`npm link grpc`, cb);
 });
 
-gulp.task('internal.test.test', 'Run API-level tests', ['internal.test.link'], () => {
+gulp.task('internal.test.test', 'Run API-level tests', ['internal.test.link.add'], () => {
   return gulp.src(`${apiTestDir}/*.js`).pipe(mocha());
 });

@@ -18,16 +18,7 @@
     "@types/mocha": "^2.2.42",
     "@types/node": "^8.0.25",
     "clang-format": "^1.0.53",
-    "del": "^3.0.0",
-    "google-ts-style": "^0.2.0",
-    "gulp-sourcemaps": "^2.6.1",
-    "gulp-tslint": "^8.1.1",
-    "gulp-typescript": "^3.2.2",
-    "gulp-util": "^3.0.8",
-    "merge2": "^1.1.0",
-    "through2": "^2.0.3",
-    "tslint": "^5.5.0",
-    "typescript": "^2.5.1"
+    "google-ts-style": "^0.2.0"
   },
   "contributors": [
     {

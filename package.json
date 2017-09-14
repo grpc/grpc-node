@@ -8,27 +8,34 @@
     "name": "Google Inc."
   },
   "license": "Apache-2.0",
-  "devDependencies": {
+  "dependencies": {
     "async": "^2.5.0",
     "body-parser": "^1.18.0",
     "express": "^4.15.4",
     "google-auth-library": "^0.11.0",
-    "grpc": "^1.6.0",
-    "gulp": "^3.9.1",
-    "gulp-help": "^1.6.1",
     "lodash": "^4.17.4",
     "poisson-process": "^0.2.2"
   },
-  "scripts": {
-    "install": "cd packages/grpc-js-core && npm install"
+  "devDependencies": {
+    "del": "^3.0.0",
+    "gulp": "^3.9.1",
+    "gulp-help": "^1.6.1",
+    "gulp-jshint": "^2.0.4",
+    "gulp-mocha": "^4.3.1",
+    "gulp-sourcemaps": "^2.6.1",
+    "gulp-tslint": "^8.1.1",
+    "gulp-typescript": "^3.2.2",
+    "gulp-util": "^3.0.8",
+    "jshint": "^2.9.5",
+    "merge2": "^1.1.0",
+    "mocha": "^3.5.3",
+    "through2": "^2.0.3",
+    "tslint": "^5.5.0",
+    "typescript": "^2.5.1"
   },
   "contributors": [
     {
       "name": "Google Inc."
     }
-  ],
-  "dependencies": {
-    "gulp-mocha": "^4.3.1",
-    "mocha": "^3.5.3"
-  }
+  ]
 }

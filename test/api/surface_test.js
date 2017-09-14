@@ -21,8 +21,6 @@
 var assert = require('assert');
 var _ = require('lodash');
 
-var ProtoBuf = require('protobufjs');
-
 var grpc = require('grpc');
 
 var MathClient = grpc.load(
@@ -283,9 +281,7 @@ describe('Echo service', function() {
   var server;
   var client;
   before(function() {
-    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/echo_service.proto');
-    var echo_service = test_proto.lookup('EchoService');
-    var Client = grpc.loadObject(echo_service);
+    var Client = grpc.load(__dirname + '/echo_service.proto').EchoService;
     server = new grpc.Server();
     server.addService(Client.service, {
       echo: function(call, callback) {
@@ -413,9 +409,7 @@ describe('Echo metadata', function() {
   var server;
   var metadata;
   before(function() {
-    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
-    var test_service = test_proto.lookup('TestService');
-    var Client = grpc.loadObject(test_service);
+    var Client = grpc.load(__dirname + '/test_service.proto').TestService;
     server = new grpc.Server();
     server.addService(Client.service, {
       unary: function(call, cb) {
@@ -514,8 +508,7 @@ describe('Client malformed response handling', function() {
   var client;
   var badArg = new Buffer([0xFF]);
   before(function() {
-    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
-    var test_service = test_proto.lookup('TestService');
+    var Client = grpc.load(__dirname + '/test_service.proto').TestService;
     var malformed_test_service = {
       unary: {
         path: '/TestService/Unary',
@@ -572,7 +565,6 @@ describe('Client malformed response handling', function() {
       }
     });
     var port = server.bind('localhost:0', server_insecure_creds);
-    var Client = grpc.loadObject(test_service);
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
@@ -621,8 +613,7 @@ describe('Server serialization failure handling', function() {
   var client;
   var server;
   before(function() {
-    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
-    var test_service = test_proto.lookup('TestService');
+    var Client = grpc.load(__dirname + '/test_service.proto').TestService;
     var malformed_test_service = {
       unary: {
         path: '/TestService/Unary',
@@ -679,7 +670,6 @@ describe('Server serialization failure handling', function() {
       }
     });
     var port = server.bind('localhost:0', server_insecure_creds);
-    var Client = grpc.loadObject(test_service);
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
@@ -727,9 +717,7 @@ describe('Other conditions', function() {
   var server;
   var port;
   before(function() {
-    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
-    var test_service = test_proto.lookup('TestService');
-    Client = grpc.loadObject(test_service);
+    Client = grpc.load(__dirname + '/test_service.proto').TestService;
     server = new grpc.Server();
     var trailer_metadata = new grpc.Metadata();
     trailer_metadata.add('trailer-present', 'yes');
@@ -1084,10 +1072,8 @@ describe('Call propagation', function() {
   var client;
   var server;
   before(function() {
-    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
-    var test_service = test_proto.lookup('TestService');
+    Client = grpc.load(__dirname + '/test_service.proto').TestService;
     server = new grpc.Server();
-    Client = grpc.loadObject(test_service);
     server.addService(Client.service, {
       unary: function(call) {},
       clientStream: function(stream) {},
@@ -1336,9 +1322,7 @@ describe('Client reconnect', function() {
   var client;
   var port;
   beforeEach(function() {
-    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/echo_service.proto');
-    var echo_service = test_proto.lookup('EchoService');
-    Client = grpc.loadObject(echo_service);
+    Client = grpc.load(__dirname + '/echo_service.proto').EchoService;
     server = new grpc.Server();
     server.addService(Client.service, {
       echo: function(call, callback) {

@@ -13,6 +13,7 @@ const util = require('gulp-util');
 const merge2 = require('merge2');
 const path = require('path');
 const through = require('through2');
+const exec = require('child_process').exec;
 
 Error.stackTraceLimit = Infinity;
 
@@ -75,10 +76,14 @@ function makeCompileFn(globs) {
   };
 }
 
+gulp.task('js.core.install', 'Install native core dependencies', (cb) => {
+  return exec(`cd ${jsCoreDir} && npm install`, cb);
+});
+
 /**
  * Runs tslint on files in src/, with linting rules defined in tslint.json.
  */
-gulp.task('js.core.lint', 'Emits linting errors found in src/ and test/.', () => {
+gulp.task('js.core.lint', 'Emits linting errors found in src/ and test/.', ['js.core.install'], () => {
   const program = require('tslint').Linter.createProgram(tsconfigPath);
   gulp.src([`${srcDir}/**/*.ts`, `${testDir}/**/*.ts`])
       .pipe(tslint({
@@ -100,13 +105,13 @@ gulp.task('js.core.clean', 'Deletes transpiled code.', () => {
  * Currently, all errors are emitted twice. This is being tracked here:
  * https://github.com/ivogabe/gulp-typescript/issues/438
  */
-gulp.task('js.core.compile', 'Transpiles src/.',
+gulp.task('js.core.compile', 'Transpiles src/.', ['js.core.install'],
           makeCompileFn({ transpile: [`${srcDir}/**/*.ts`] }));
 
 /**
  * Transpiles TypeScript files in both src/ and test/.
  */
-gulp.task('js.core.test.compile', 'After dep tasks, transpiles test/.', ['js.core.compile'],
+gulp.task('js.core.test.compile', 'After dep tasks, transpiles test/.', ['js.core.install', 'js.core.compile'],
           makeCompileFn({ transpile: [`${testDir}/**/*.ts`], copy: `${testDir}/**/!(*.ts)` }));
 
 /**
@@ -122,7 +127,7 @@ gulp.task('js.core.test', 'After dep tasks, runs all tests.',
 /**
  * Transpiles individual files, specified by the --file flag.
  */
-gulp.task('js.core.compile.single', 'Transpiles individual files specified by --file.',
+gulp.task('js.core.compile.single', 'Transpiles individual files specified by --file.', ['js.core.install'],
           makeCompileFn({
             transpile: files.map(f => path.relative('.', f))
           })
