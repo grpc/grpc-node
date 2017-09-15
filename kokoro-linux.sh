@@ -17,20 +17,32 @@
 curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.4/install.sh | bash
 
 # Load NVM
-source ~/.nvm/nvm.sh
+. ~/.nvm/nvm.sh
 
-node_versions=( 6 7 8 )
+set -e
+cd $(dirname $0)
+
+# Install gRPC and its submodules.
+git submodule update --init
+git submodule foreach --recursive git submodule update --init
+
+node_versions="6 7 8"
 
 # TODO(mlumish): Add electron tests
 
-# Install dependencies and link packages together
-npm install
-./node_modules/.bin/gulp setup
-
-for version in ${node_versions[@]}
+for version in ${node_versions}
 do
+  # Install and setup node for the version we want.
+  set +e
   nvm install $version
-  # Rebuild libraries and run tests
+  nvm use $version
+  set -e
+
+  # Install dependencies and link packages together.
+  npm install
+  ./node_modules/.bin/gulp setup
+
+  # Rebuild libraries and run tests.
   ./node_modules/.bin/gulp native.test || FAILED="true"
 done
 
