@@ -33,8 +33,10 @@ node_versions="6 7 8"
 for version in ${node_versions}
 do
   # Install and setup node for the version we want.
+  set +e
   nvm install $version
   nvm use $version
+  set -e
 
   # Install dependencies and link packages together.
   npm install
