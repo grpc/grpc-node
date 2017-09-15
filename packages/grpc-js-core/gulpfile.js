@@ -62,9 +62,9 @@ function makeCompileFn(globs) {
           .pipe(sourcemaps.init())
           .pipe(tsProject)
           .on('error', onError);
-    const jsmap = js.pipe(sourcemaps.write(jsCoreDir, {
+    const jsmap = js.pipe(sourcemaps.write('.', {
       includeContent: false,
-      sourceRoot: path.resolve(jsCoreDir, '..')
+      sourceRoot: '..'
     }));
     const copy = gulp.src(copyGlob, { base: jsCoreDir });
     return merge2([
@@ -145,9 +145,11 @@ gulp.task('js.core.test.single', 'After dep tasks, runs individual files specifi
             // util.env contains CLI arguments for the gulp task.
             // Determine the path to the transpiled version of this TS file.
             const getTranspiledPath = (file) => {
-              const dir = path.dirname(path.relative('.', file));
+              const dir = path.dirname(path.relative(jsCoreDir, file));
               const basename = path.basename(file, '.ts');
-              return `${outDir}/${dir}/${basename}.js`;
+              const result = `${outDir}/${dir}/${basename}.js`;
+              console.log(result);
+              return result;
             };
             // Construct an instance of Mocha's runner API and feed it the path to the
             // transpiled source.

@@ -15,6 +15,7 @@
   "types": "src/index.ts",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@types/lodash": "^4.14.73",
     "@types/mocha": "^2.2.42",
     "@types/node": "^8.0.25",
     "clang-format": "^1.0.53",
@@ -29,13 +30,16 @@
   "scripts": {
     "build": "npm run compile",
     "clean": "gulp clean",
-    "compile": "gulp compile",
+    "compile": "gulp js.core.compile",
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
     "lint": "tslint -c node_modules/google-ts-style/tslint.json -p . -t codeFrame --type-check",
+    "prepare": "npm run build",
     "test": "gulp test"
   },
   "dependencies": {
-    "@types/lodash": "^4.14.73",
     "lodash": "^4.17.4"
-  }
+  },
+  "files": [
+    "build/src/*.js"
+  ]
 }
