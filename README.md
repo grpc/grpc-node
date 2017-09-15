@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/grpc/grpc-node.svg?branch=master)](https://travis-ci.org/grpc/grpc-node)
 # gRPC on Node.js
 
 ## Implementations
