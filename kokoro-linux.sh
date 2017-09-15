@@ -22,6 +22,9 @@ curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.4/install.sh | b
 set -e
 cd $(dirname $0)
 
+git submodule update --init
+git submodule foreach --recursive git submodule update --init
+
 node_versions="6 7 8"
 
 # TODO(mlumish): Add electron tests
