@@ -19,6 +19,9 @@ curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.4/install.sh | b
 # Load NVM
 . ~/.nvm/nvm.sh
 
+set -e
+cd $(dirname $0)
+
 node_versions="6 7 8"
 
 # TODO(mlumish): Add electron tests
