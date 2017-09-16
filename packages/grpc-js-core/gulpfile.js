@@ -31,7 +31,7 @@ const files = !util.env.file ? [] :
       Array.isArray(util.env.file) ? util.env.file : [util.env.file];
 
 // If --dev is passed, override certain ts config options
-let tsDevOptions = {};
+var tsDevOptions = {};
 if (util.env.dev) {
   tsDevOptions = {
     allowUnreachableCode: true,
@@ -58,10 +58,12 @@ function makeCompileFn(globs) {
   const copyGlob = globs.copy || '!(**/*)';
   return () => {
     const tsProject = typescript.createProject(tsconfigPath, tsDevOptions)();
-    const { dts, js } = gulp.src(transpileGlob, { base: jsCoreDir })
+    const data = gulp.src(transpileGlob, { base: jsCoreDir })
           .pipe(sourcemaps.init())
           .pipe(tsProject)
           .on('error', onError);
+    const dts = data.dts
+    const js = data.js
     const jsmap = js.pipe(sourcemaps.write(jsCoreDir, {
       includeContent: false,
       sourceRoot: path.resolve(jsCoreDir, '..')
