@@ -32,6 +32,7 @@ for version in ${node_versions}
 do
   # Install and setup node for the version we want.
   set +e
+  echo "Switching to node version $version"
   nvm install $version
   nvm use $version
   set -e
