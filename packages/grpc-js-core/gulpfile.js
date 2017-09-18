@@ -1,3 +1,5 @@
+'use strict';
+
 const _gulp = require('gulp');
 const help = require('gulp-help');
 
@@ -31,7 +33,7 @@ const files = !util.env.file ? [] :
       Array.isArray(util.env.file) ? util.env.file : [util.env.file];
 
 // If --dev is passed, override certain ts config options
-var tsDevOptions = {};
+let tsDevOptions = {};
 if (util.env.dev) {
   tsDevOptions = {
     allowUnreachableCode: true,
@@ -62,8 +64,8 @@ function makeCompileFn(globs) {
           .pipe(sourcemaps.init())
           .pipe(tsProject)
           .on('error', onError);
-    const dts = data.dts
-    const js = data.js
+    const dts = data.dts;
+    const js = data.js;
     const jsmap = js.pipe(sourcemaps.write('.', {
       includeContent: false,
       sourceRoot: '..'
