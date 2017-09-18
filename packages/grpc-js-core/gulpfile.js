@@ -120,7 +120,7 @@ gulp.task('js.core.test.compile', 'After dep tasks, transpiles test/.', ['js.cor
 gulp.task('js.core.test', 'After dep tasks, runs all tests.',
           ['js.core.test.compile'], () => {
             return gulp.src(`${outDir}/test/**/*.js`)
-                .pipe(mocha());
+                .pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
           }
           );
 

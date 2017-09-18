@@ -15,5 +15,5 @@ gulp.task('internal.test.link.add', 'Link local copies of grpc packages', () => 
 });
 
 gulp.task('internal.test.test', 'Run API-level tests', () => {
-  return gulp.src(`${apiTestDir}/*.js`).pipe(mocha());
+  return gulp.src(`${apiTestDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
 });

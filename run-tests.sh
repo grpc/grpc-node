@@ -41,7 +41,8 @@ do
   ./node_modules/.bin/gulp setup
 
   # Rebuild libraries and run tests.
-  ./node_modules/.bin/gulp native.test || FAILED="true"
+  JUNIT_REPORT_PATH="node$version/" JUNIT_REPORT_STACK=1 ./node_modules/.bin/gulp native.test || FAILED="true"
+  rename 's/([^\/]+).xml/$1_sponge_log.xml/' "node$version"/*
 done
 
 if [ "$FAILED" != "" ]

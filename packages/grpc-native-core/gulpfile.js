@@ -36,5 +36,5 @@ gulp.task('native.core.build', 'Build native package', () => {
 });
 
 gulp.task('native.core.test', 'Run all tests', ['native.core.build'], () => {
-  return gulp.src(`${testDir}/*.js`).pipe(mocha());
+  return gulp.src(`${testDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
 });

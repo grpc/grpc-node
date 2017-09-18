@@ -20,5 +20,5 @@ gulp.task('health-check.link.add', 'Link local copy of grpc', ['health-check.ins
 
 gulp.task('health-check.test', 'Run health check tests',
           () => {
-            return gulp.src(`${testDir}/*.js`).pipe(mocha());
+            return gulp.src(`${testDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
           });
