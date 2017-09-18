@@ -1,3 +1,5 @@
+'use strict';
+
 const _gulp = require('gulp');
 const help = require('gulp-help');
 
@@ -58,10 +60,12 @@ function makeCompileFn(globs) {
   const copyGlob = globs.copy || '!(**/*)';
   return () => {
     const tsProject = typescript.createProject(tsconfigPath, tsDevOptions)();
-    const { dts, js } = gulp.src(transpileGlob, { base: jsCoreDir })
+    const data = gulp.src(transpileGlob, { base: jsCoreDir })
           .pipe(sourcemaps.init())
           .pipe(tsProject)
           .on('error', onError);
+    const dts = data.dts;
+    const js = data.js;
     const jsmap = js.pipe(sourcemaps.write('.', {
       includeContent: false,
       sourceRoot: '..'
