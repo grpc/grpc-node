@@ -14,13 +14,16 @@
 # limitations under the License.
 
 # Install NVM
+ROOT=`pwd`
+cd ~
+export NVM_DIR=`pwd`/.nvm
 curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.4/install.sh | bash
 
 # Load NVM
-. ~/.nvm/nvm.sh
+. $NVM_DIR/nvm.sh
 
-set -e
-cd $(dirname $0)
+set -ex
+cd $ROOT
 
 if [ ! -n "$node_versions" ] ; then
   node_versions="4 5 6 7 8"
@@ -30,12 +33,13 @@ fi
 
 for version in ${node_versions}
 do
+  git clean -f -d -x
   # Install and setup node for the version we want.
-  set +e
+  set +ex
   echo "Switching to node version $version"
   nvm install $version
   nvm use $version
-  set -e
+  set -ex
 
   # Install dependencies and link packages together.
   npm install
