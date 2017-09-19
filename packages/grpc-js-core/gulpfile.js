@@ -81,7 +81,7 @@ function makeCompileFn(globs) {
 }
 
 gulp.task('js.core.install', 'Install native core dependencies', () => {
-  return execa('npm', ['install'], {cwd: jsCoreDir, stdio: 'inherit'});
+  return execa('npm', ['install', '--unsafe-perm'], {cwd: jsCoreDir, stdio: 'inherit'});
 });
 
 /**

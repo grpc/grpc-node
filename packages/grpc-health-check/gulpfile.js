@@ -19,7 +19,7 @@ gulp.task('health-check.clean.all', 'Delete all code created by tasks',
 	  ['health-check.clean.links']);
 
 gulp.task('health-check.install', 'Install health check dependencies', () => {
-  return execa('npm', ['install'], {cwd: healthCheckDir, stdio: 'inherit'});
+  return execa('npm', ['install', '--unsafe-perm'], {cwd: healthCheckDir, stdio: 'inherit'});
 });
 
 gulp.task('health-check.link.add', 'Link local copy of grpc', ['health-check.install'], () => {

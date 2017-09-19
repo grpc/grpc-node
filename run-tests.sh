@@ -34,7 +34,7 @@ nvm install lts/*
 nvm use lts/*
 set -ex
 
-npm install
+npm install --unsafe-perm
 ./node_modules/.bin/gulp setup
 
 mkdir -p reports

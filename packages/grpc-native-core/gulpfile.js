@@ -26,7 +26,7 @@ gulp.task('native.core.clean.all', 'Delete all files created by tasks',
 	  ['native.core.clean']);
 
 gulp.task('native.core.install', 'Install native core dependencies', () => {
-  return execa('npm', ['install', '--build-from-source'],
+  return execa('npm', ['install', '--build-from-source', '--unsafe-perm'],
                {cwd: nativeCoreDir, stdio: 'inherit'});
 });
 
