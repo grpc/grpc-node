@@ -29,11 +29,12 @@ if [ ! -n "$node_versions" ] ; then
   node_versions="4 5 6 7 8"
 fi
 
+mkdir -p reports
+
 # TODO(mlumish): Add electron tests
 
 for version in ${node_versions}
 do
-  cd $ROOT
   # Install and setup node for the version we want.
   set +ex
   echo "Switching to node version $version"
@@ -41,16 +42,14 @@ do
   nvm use $version
   set -ex
 
+  mkdir p "reports/node$version"
+
   # Install dependencies and link packages together.
   npm install
   ./node_modules/.bin/gulp setup
 
   # Rebuild libraries and run tests.
-  JUNIT_REPORT_PATH="node$version/" JUNIT_REPORT_STACK=1 ./node_modules/.bin/gulp native.test || FAILED="true"
-  cd node$version
-  for file in * ; do
-    mv $f $(echo $f | sed 's/\(.*\)\.xml/\1_sponge_log.xml/')
-  done
+  JUNIT_REPORT_PATH="reports/node$version/" JUNIT_REPORT_STACK=1 ./node_modules/.bin/gulp native.test || FAILED="true"
 done
 
 if [ "$FAILED" != "" ]
