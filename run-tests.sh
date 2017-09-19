@@ -20,7 +20,8 @@ curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.4/install.sh | b
 . ~/.nvm/nvm.sh
 
 set -e
-cd $(dirname $0)
+repo_root=$(dirname $0)
+cd $repo_root
 
 if [ "x$node_versions" = "x" ] ; then
   node_versions="6 7 8"
@@ -30,6 +31,7 @@ fi
 
 for version in ${node_versions}
 do
+  cd $repo_root
   # Install and setup node for the version we want.
   set +e
   nvm install $version
@@ -42,7 +44,10 @@ do
 
   # Rebuild libraries and run tests.
   JUNIT_REPORT_PATH="node$version/" JUNIT_REPORT_STACK=1 ./node_modules/.bin/gulp native.test || FAILED="true"
-  rename 's/([^\/]+).xml/$1_sponge_log.xml/' "node$version"/*
+  cd node$version
+  for file in * ; do
+    mv $f $(echo $f | sed 's/\(.*\)\.xml/\1_sponge_log.xml/')
+  done
 done
 
 if [ "$FAILED" != "" ]
