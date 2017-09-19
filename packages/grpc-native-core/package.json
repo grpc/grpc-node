@@ -62,7 +62,6 @@
   "files": [
     "LICENSE",
     "README.md",
-    "deps/grpc/src/proto",
     "deps/grpc/etc",
     "index.js",
     "src",
@@ -71,9 +70,13 @@
     "deps/grpc/src/core",
     "deps/grpc/src/boringssl",
     "deps/grpc/src/zlib",
-    "deps/grpc/third_party/nanopb",
+    "deps/grpc/third_party/nanopb/pb_common.c",
+    "deps/grpc/third_party/nanopb/pb_decode.c",
+    "deps/grpc/third_party/nanopb/pb_encode.c",
     "deps/grpc/third_party/zlib",
-    "deps/grpc/third_party/boringssl",
+    "deps/grpc/third_party/boringssl/crypto",
+    "deps/grpc/third_party/boringssl/include",
+    "deps/grpc/third_party/boringssl/ssl",
     "binding.gyp"
   ],
   "main": "index.js",
