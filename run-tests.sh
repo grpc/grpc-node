@@ -29,6 +29,9 @@ if [ ! -n "$node_versions" ] ; then
   node_versions="4 5 6 7 8"
 fi
 
+npm install
+./node_modules/.bin/gulp setup
+
 mkdir -p reports
 
 # TODO(mlumish): Add electron tests
