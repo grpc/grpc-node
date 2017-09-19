@@ -42,7 +42,7 @@ do
   nvm use $version
   set -ex
 
-  mkdir p "reports/node$version"
+  mkdir -p "reports/node$version"
 
   # Install dependencies and link packages together.
   npm install
