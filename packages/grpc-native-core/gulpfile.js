@@ -17,7 +17,7 @@ const pkg = require('./package');
 const jshintConfig = pkg.jshintConfig;
 
 gulp.task('native.core.install', 'Install native core dependencies', () => {
-  return execa('npm', ['install', '--build-from-source'],
+  return execa('npm', ['install', '--build-from-source', '--unsafe-perm'],
                {cwd: nativeCoreDir, stdio: 'inherit'});
 });
 

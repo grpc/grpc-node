@@ -42,7 +42,7 @@ do
   set -ex
 
   # Install dependencies and link packages together.
-  npm install
+  npm install --unsafe-perm
   ./node_modules/.bin/gulp setup
 
   # Rebuild libraries and run tests.
