@@ -54,7 +54,7 @@ do
   cd "reports/node$version"
   for file in * ; do
     mv $f `echo $f | sed 's/\(.*\)\.xml/\1_sponge_log.xml/'`
-  fi
+  done
 done
 
 if [ "$FAILED" != "" ]
