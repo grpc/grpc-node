@@ -35,6 +35,7 @@ mkdir -p reports
 
 for version in ${node_versions}
 do
+  git clean -f -d -x
   # Install and setup node for the version we want.
   set +ex
   echo "Switching to node version $version"
