@@ -29,6 +29,11 @@ if [ ! -n "$node_versions" ] ; then
   node_versions="4 5 6 7 8"
 fi
 
+set +ex
+nvm install lts/*
+nvm use lts/*
+set -ex
+
 npm install
 ./node_modules/.bin/gulp setup
 
