@@ -103,6 +103,9 @@ gulp.task('js.core.clean', 'Deletes transpiled code.', () => {
   return del(outDir);
 });
 
+gulp.task('js.core.clean.all', 'Deletes all files added by targets',
+	  ['js.core.clean']);
+
 /**
  * Transpiles TypeScript files in src/ to JavaScript according to the settings
  * found in tsconfig.json.

@@ -35,7 +35,7 @@ mkdir -p reports
 
 for version in ${node_versions}
 do
-  git clean -f -d -x
+  cd $ROOT
   # Install and setup node for the version we want.
   set +ex
   echo "Switching to node version $version"
@@ -46,11 +46,15 @@ do
   mkdir -p "reports/node$version"
 
   # Install dependencies and link packages together.
-  npm install
-  ./node_modules/.bin/gulp setup
+  ./node_modules/.bin/gulp clean.all
+  ./node_modules/.bin/gulp link
 
   # Rebuild libraries and run tests.
   JUNIT_REPORT_PATH="reports/node$version/" JUNIT_REPORT_STACK=1 ./node_modules/.bin/gulp native.test || FAILED="true"
+  cd "reports/node$version"
+  for file in * ; do
+    mv $f `echo $f | sed 's/\(.*\)\.xml/\1_sponge_log.xml/'`
+  fi
 done
 
 if [ "$FAILED" != "" ]
