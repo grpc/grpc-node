@@ -103,6 +103,9 @@ gulp.task('js.core.clean', 'Deletes transpiled code.', () => {
   return del(outDir);
 });
 
+gulp.task('js.core.clean.all', 'Deletes all files added by targets',
+	  ['js.core.clean']);
+
 /**
  * Transpiles TypeScript files in src/ to JavaScript according to the settings
  * found in tsconfig.json.
@@ -124,7 +127,7 @@ gulp.task('js.core.test.compile', 'After dep tasks, transpiles test/.', ['js.cor
 gulp.task('js.core.test', 'After dep tasks, runs all tests.',
           ['js.core.test.compile'], () => {
             return gulp.src(`${outDir}/test/**/*.js`)
-                .pipe(mocha());
+                .pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
           }
           );
 
