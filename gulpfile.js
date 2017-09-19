@@ -32,7 +32,11 @@ gulp.task('link', 'Link local packages together after building',
 
 gulp.task('setup', 'One-time setup for a clean repository', ['install.all', 'link']);
 
-gulp.task('clean', 'Delete generated files', ['js.core.clean']);
+gulp.task('clean', 'Delete generated files', ['js.core.clean', 'native.core.clean']);
+
+gulp.task('clean.all', 'Delete all files created by tasks',
+	  ['js.core.clean.all', 'native.core.clean.all', 'health-check.clean.all',
+	   'internal.test.clean.all']);
 
 gulp.task('native.test.only', 'Run tests of native code without rebuilding anything',
           ['native.core.test', 'internal.test.test', 'health-check.test']);

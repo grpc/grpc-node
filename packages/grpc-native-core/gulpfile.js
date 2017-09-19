@@ -8,6 +8,7 @@ const jshint = require('gulp-jshint');
 const mocha = require('gulp-mocha');
 const execa = require('execa');
 const path = require('path');
+const del = require('del');
 
 const nativeCoreDir = __dirname;
 const srcDir = path.resolve(nativeCoreDir, 'src');
@@ -15,6 +16,14 @@ const testDir = path.resolve(nativeCoreDir, 'test');
 
 const pkg = require('./package');
 const jshintConfig = pkg.jshintConfig;
+
+gulp.task('native.core.clean', 'Delete generated files', () => {
+  return del([path.resolve(nativeCoreDir, 'build'),
+	      path.resolve(nativeCoreDir, 'ext/node')]);
+});
+
+gulp.task('native.core.clean.all', 'Delete all files created by tasks',
+	  ['native.core.clean']);
 
 gulp.task('native.core.install', 'Install native core dependencies', () => {
   return execa('npm', ['install', '--build-from-source'],
@@ -36,5 +45,5 @@ gulp.task('native.core.build', 'Build native package', () => {
 });
 
 gulp.task('native.core.test', 'Run all tests', ['native.core.build'], () => {
-  return gulp.src(`${testDir}/*.js`).pipe(mocha());
+  return gulp.src(`${testDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
 });
