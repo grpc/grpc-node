@@ -61,7 +61,7 @@ do
   JUNIT_REPORT_PATH="reports/node$version/" JUNIT_REPORT_STACK=1 ./node_modules/.bin/gulp native.test || FAILED="true"
   cd "reports/node$version"
   for file in * ; do
-    mv $f `echo $f | sed 's/\(.*\)\.xml/\1_sponge_log.xml/'`
+    mv $file $(echo $file | sed 's/\(.*\)\.xml/\1_sponge_log.xml/')
   done
 done
 
