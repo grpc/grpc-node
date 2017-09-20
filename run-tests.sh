@@ -29,11 +29,21 @@ if [ ! -n "$node_versions" ] ; then
   node_versions="4 5 6 7 8"
 fi
 
+set +ex
+nvm install lts/*
+nvm use lts/*
+set -ex
+
+npm install --unsafe-perm
+./node_modules/.bin/gulp setup
+
+mkdir -p reports
+
 # TODO(mlumish): Add electron tests
 
 for version in ${node_versions}
 do
-  git clean -f -d -x
+  cd $ROOT
   # Install and setup node for the version we want.
   set +ex
   echo "Switching to node version $version"
@@ -41,12 +51,18 @@ do
   nvm use $version
   set -ex
 
+  mkdir -p "reports/node$version"
+
   # Install dependencies and link packages together.
-  npm install
-  ./node_modules/.bin/gulp setup
+  ./node_modules/.bin/gulp clean.all
+  ./node_modules/.bin/gulp link
 
   # Rebuild libraries and run tests.
-  ./node_modules/.bin/gulp native.test || FAILED="true"
+  JUNIT_REPORT_PATH="reports/node$version/" JUNIT_REPORT_STACK=1 ./node_modules/.bin/gulp native.test || FAILED="true"
+  cd "reports/node$version"
+  for file in * ; do
+    mv $file $(echo $file | sed 's/\(.*\)\.xml/\1_sponge_log.xml/')
+  done
 done
 
 if [ "$FAILED" != "" ]
