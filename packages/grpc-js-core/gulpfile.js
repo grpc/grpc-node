@@ -81,7 +81,7 @@ function makeCompileFn(globs) {
 }
 
 gulp.task('js.core.install', 'Install native core dependencies', () => {
-  return execa('npm', ['install'], {cwd: jsCoreDir, stdio: 'inherit'});
+  return execa('npm', ['install', '--unsafe-perm'], {cwd: jsCoreDir, stdio: 'inherit'});
 });
 
 /**
@@ -102,6 +102,9 @@ gulp.task('js.core.lint', 'Emits linting errors found in src/ and test/.', () =>
 gulp.task('js.core.clean', 'Deletes transpiled code.', () => {
   return del(outDir);
 });
+
+gulp.task('js.core.clean.all', 'Deletes all files added by targets',
+	  ['js.core.clean']);
 
 /**
  * Transpiles TypeScript files in src/ to JavaScript according to the settings
@@ -124,7 +127,7 @@ gulp.task('js.core.test.compile', 'After dep tasks, transpiles test/.', ['js.cor
 gulp.task('js.core.test', 'After dep tasks, runs all tests.',
           ['js.core.test.compile'], () => {
             return gulp.src(`${outDir}/test/**/*.js`)
-                .pipe(mocha());
+                .pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
           }
           );
 

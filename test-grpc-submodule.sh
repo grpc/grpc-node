@@ -15,6 +15,9 @@
 #
 # This script updates the gRPC submodule to a given reference and run tests
 
+# cd to gRPC-node root directory
+cd $(dirname $0)
+
 cd packages/grpc-native-core/deps/grpc/
 
 # PR references are needed to test PRs from grpc/grpc

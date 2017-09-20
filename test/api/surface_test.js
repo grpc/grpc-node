@@ -215,6 +215,10 @@ describe('Client constructor building', function() {
       grpc.makeGenericClientConstructor(illegal_service_attrs);
     }, /\$/);
   });
+  it('Should add aliases for original names', function() {
+    var Client = grpc.makeGenericClientConstructor(mathServiceAttrs);
+    assert.strictEqual(Client.prototype.add, Client.prototype.Add);
+  });
 });
 describe('waitForClientReady', function() {
   var server;
