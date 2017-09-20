@@ -207,6 +207,9 @@
           'target_name': 'boringssl',
           'product_prefix': 'lib',
           'type': 'static_library',
+          'cflags': [
+            '-Wimplicit-fallthrough=0'
+          ],
           'dependencies': [
           ],
           'sources': [
