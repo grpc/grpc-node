@@ -12,11 +12,27 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
-@echo "Starting Windows test"
-
+SET ROOT=%~dp0
 cd /d %~dp0
 
-git submodule update --init
-git submodule foreach --recursive git submodule update --init
+PowerShell -Command .\install-nvm-windows.ps1
 
-.\run-tests.bat
+SET NVM_HOME=%ROOT%nvm
+SET NVM_SYMLINK=%ROOT%nvm\nodejs
+SET PATH=%NVM_HOME%;%NVM_SYMLINK%;%PATH%
+
+nvm version
+
+nvm install 8.5.0
+nvm use 8.5.0
+node -e console.log(process.versions)
+
+call npm install --build-from-source
+
+@rem delete the redundant openssl headers
+for /f "delims=v" %%v in ('node --version') do (
+  rmdir "%USERPROFILE%\.node-gyp\%%v\include\node\openssl" /S /Q
+)
+
+@rem rebuild, because it probably failed the first time
+call npm install --build-from-source %*
