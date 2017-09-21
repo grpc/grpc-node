@@ -30,7 +30,16 @@ gulp.task('native.core.install', 'Install native core dependencies', () => {
                {cwd: nativeCoreDir, stdio: 'inherit'});
 });
 
-gulp.task('native.core.link.create', 'Create npm link', ['native.core.install'], () => {
+gulp.task('native.core.install.windows', 'Install native core dependencies for MS Windows', () => {
+  return execa('npm', ['install', '--build-from-source'],
+               {cwd: nativeCoreDir, stdio: 'inherit'}).catch(() => 
+del(path.resolve(process.env.USERPROFILE, '.node-gyp', process.versions.node, 'include/node/openssl'), { force: true }).then(() =>
+execa('npm', ['install', '--build-from-source'],
+               {cwd: nativeCoreDir, stdio: 'inherit'})
+               ))
+});
+
+gulp.task('native.core.link.create', 'Create npm link', () => {
   return execa('npm', ['link'], {cwd: nativeCoreDir, stdio: 'inherit'});
 });
 
@@ -41,7 +50,7 @@ gulp.task('native.core.lint', 'Emits linting errors', () => {
 });
 
 gulp.task('native.core.build', 'Build native package', () => {
-  return execa('node-pre-gyp', ['build'], {cwd: nativeCoreDir, stdio: 'inherit'});
+  return execa('npm', ['run', 'build'], {cwd: nativeCoreDir, stdio: 'inherit'});
 });
 
 gulp.task('native.core.test', 'Run all tests', ['native.core.build'], () => {

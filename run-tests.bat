@@ -25,14 +25,22 @@ nvm version
 
 nvm install 8.5.0
 nvm use 8.5.0
-node -e console.log(process.versions)
 
-call npm install --build-from-source
+call npm install || goto :error
 
-@rem delete the redundant openssl headers
-for /f "delims=v" %%v in ('node --version') do (
-  rmdir "%USERPROFILE%\.node-gyp\%%v\include\node\openssl" /S /Q
+for %%v in (4.8.4 6.11.3 7.9.0 8.5.0) do (
+  nvm install %%v
+  nvm use %%v
+  node -e "console.log(process.versions)"
+
+  call .\node_modules\.bin\gulp clean.all || goto :error
+  call .\node_modules\.bin\gulp setup.windows || goto :error
+  call .\node_modules\.bin\gulp native.test || goto :error
 )
 
-@rem rebuild, because it probably failed the first time
-call npm install --build-from-source %*
+if %errorlevel% neq 0 exit /b %errorlevel%
+
+goto :EOF
+
+:error
+exit /b 1
