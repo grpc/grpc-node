@@ -30,6 +30,7 @@ if [ ! -n "$node_versions" ] ; then
 fi
 
 set +ex
+nvm install 8
 nvm install lts/*
 nvm use lts/*
 set -ex
@@ -43,7 +44,6 @@ mkdir -p reports
 
 for version in ${node_versions}
 do
-  cd $ROOT
   # Install and setup node for the version we want.
   set +ex
   echo "Switching to node version $version"
@@ -59,11 +59,13 @@ do
 
   # Rebuild libraries and run tests.
   JUNIT_REPORT_PATH="reports/node$version/" JUNIT_REPORT_STACK=1 ./node_modules/.bin/gulp native.test || FAILED="true"
-  cd "reports/node$version"
-  for file in * ; do
-    mv $file $(echo $file | sed 's/\(.*\)\.xml/\1_sponge_log.xml/')
-  done
 done
+
+set +ex
+nvm use 8
+set -ex
+
+node merge_kokoro_logs.js
 
 if [ "$FAILED" != "" ]
 then
