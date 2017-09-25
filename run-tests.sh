@@ -29,11 +29,20 @@ if [ ! -n "$node_versions" ] ; then
   node_versions="4 5 6 7 8"
 fi
 
+set +ex
+nvm install 8
+nvm install lts/*
+nvm use lts/*
+set -ex
+
+npm install --unsafe-perm
+
+mkdir -p reports
+
 # TODO(mlumish): Add electron tests
 
 for version in ${node_versions}
 do
-  git clean -f -d -x
   # Install and setup node for the version we want.
   set +ex
   echo "Switching to node version $version"
@@ -41,13 +50,21 @@ do
   nvm use $version
   set -ex
 
+  mkdir -p "reports/node$version"
+
   # Install dependencies and link packages together.
-  npm install
+  ./node_modules/.bin/gulp clean.all
   ./node_modules/.bin/gulp setup
 
   # Rebuild libraries and run tests.
-  ./node_modules/.bin/gulp native.test || FAILED="true"
+  JUNIT_REPORT_PATH="reports/node$version/" JUNIT_REPORT_STACK=1 ./node_modules/.bin/gulp native.test || FAILED="true"
 done
+
+set +ex
+nvm use 8
+set -ex
+
+node merge_kokoro_logs.js
 
 if [ "$FAILED" != "" ]
 then

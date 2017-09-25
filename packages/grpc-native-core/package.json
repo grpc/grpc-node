@@ -21,6 +21,7 @@
   "scripts": {
     "lint": "node ./node_modules/jshint/bin/jshint src test index.js --exclude-path=.jshintignore",
     "test": "./node_modules/.bin/mocha test && npm run-script lint",
+    "build": "./node_modules/.bin/node-pre-gyp build",
     "electron-build": "./node_modules/.bin/node-pre-gyp configure build --runtime=electron --disturl=https://atom.io/download/atom-shell",
     "gen_docs": "./node_modules/.bin/jsdoc -c jsdoc_conf.json",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test",
@@ -46,7 +47,6 @@
     "istanbul": "^0.4.4",
     "jsdoc": "^3.3.2",
     "minimist": "^1.1.0",
-    "mocha-jenkins-reporter": "^0.2.3",
     "poisson-process": "^0.2.1"
   },
   "engines": {
