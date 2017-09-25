@@ -36,7 +36,6 @@ nvm use lts/*
 set -ex
 
 npm install --unsafe-perm
-./node_modules/.bin/gulp setup
 
 mkdir -p reports
 
@@ -55,7 +54,7 @@ do
 
   # Install dependencies and link packages together.
   ./node_modules/.bin/gulp clean.all
-  ./node_modules/.bin/gulp link
+  ./node_modules/.bin/gulp setup
 
   # Rebuild libraries and run tests.
   JUNIT_REPORT_PATH="reports/node$version/" JUNIT_REPORT_STACK=1 ./node_modules/.bin/gulp native.test || FAILED="true"
