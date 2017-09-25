@@ -14,6 +14,9 @@ const root = __dirname;
 gulp.task('install.all', 'Install dependencies for all subdirectory packages',
           ['js.core.install', 'native.core.install', 'health-check.install', 'internal.test.install']);
 
+gulp.task('install.all.windows', 'Install dependencies for all subdirectory packages for MS Windows',
+          ['js.core.install', 'native.core.install.windows', 'health-check.install']);
+
 gulp.task('lint', 'Emit linting errors in source and test files',
           ['js.core.lint', 'native.core.lint']);
 
@@ -30,7 +33,12 @@ gulp.task('link', 'Link local packages together after building',
             gulp.start('link.only');
           });
 
-gulp.task('setup', 'One-time setup for a clean repository', ['install.all', 'link']);
+gulp.task('setup', 'One-time setup for a clean repository', ['install.all'], () => {
+        gulp.start('link');
+});
+gulp.task('setup.windows', 'One-time setup for a clean repository for MS Windows', ['install.all.windows'], () => {
+        gulp.start('link');
+});
 
 gulp.task('clean', 'Delete generated files', ['js.core.clean', 'native.core.clean']);
 
