@@ -800,7 +800,10 @@ Client.prototype.waitForReady = function(deadline, callback) {
       self.$channel.watchConnectivityState(new_state, deadline, checkState);
     }
   };
-  checkState();
+  /* Force a single round of polling to ensure that the channel state is up
+   * to date */
+  grpc.forcePoll();
+  setImmediate(checkState);
 };
 
 /**

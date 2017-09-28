@@ -265,6 +265,10 @@ NAN_METHOD(SetLogVerbosity) {
   gpr_set_log_verbosity(severity);
 }
 
+NAN_METHOD(ForcePoll) {
+  grpc::node::CompletionQueueForcePoll();
+}
+
 void init(Local<Object> exports) {
   Nan::HandleScope scope;
   grpc_init();
@@ -305,6 +309,9 @@ void init(Local<Object> exports) {
           .ToLocalChecked());
   Nan::Set(exports, Nan::New("setLogVerbosity").ToLocalChecked(),
            Nan::GetFunction(Nan::New<FunctionTemplate>(SetLogVerbosity))
+               .ToLocalChecked());
+  Nan::Set(exports, Nan::New("forcePoll").ToLocalChecked(),
+           Nan::GetFunction(Nan::New<FunctionTemplate>(ForcePoll))
                .ToLocalChecked());
 }
 
