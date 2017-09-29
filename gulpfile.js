@@ -32,7 +32,7 @@ gulp.task('install.all', 'Install dependencies for all subdirectory packages',
           ['js.core.install', 'native.core.install', 'health-check.install', 'internal.test.install']);
 
 gulp.task('install.all.windows', 'Install dependencies for all subdirectory packages for MS Windows',
-          ['js.core.install', 'native.core.install.windows', 'health-check.install']);
+          ['js.core.install', 'native.core.install.windows', 'health-check.install', 'internal.test.install']);
 
 gulp.task('lint', 'Emit linting errors in source and test files',
           ['js.core.lint', 'native.core.lint']);
