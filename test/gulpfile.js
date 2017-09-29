@@ -32,6 +32,10 @@ gulp.task('internal.test.clean.links', 'Delete npm links', () => {
   return del(path.resolve(testDir, 'node_modules/grpc'));
 });
 
+gulp.task('internal.test.install', 'Install test dependencies', () => {
+  return execa('npm', ['install'], {cwd: testDir, stdio: 'inherit'});
+});
+
 gulp.task('internal.test.clean.all', 'Delete all files created by tasks',
 	  ['internal.test.clean.links']);
 

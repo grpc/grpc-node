@@ -29,10 +29,10 @@ require('./test/gulpfile');
 const root = __dirname;
 
 gulp.task('install.all', 'Install dependencies for all subdirectory packages',
-          ['js.core.install', 'native.core.install', 'health-check.install']);
+          ['js.core.install', 'native.core.install', 'health-check.install', 'internal.test.install']);
 
 gulp.task('install.all.windows', 'Install dependencies for all subdirectory packages for MS Windows',
-          ['js.core.install', 'native.core.install.windows', 'health-check.install']);
+          ['js.core.install', 'native.core.install.windows', 'health-check.install', 'internal.test.install']);
 
 gulp.task('lint', 'Emit linting errors in source and test files',
           ['js.core.lint', 'native.core.lint']);
@@ -76,5 +76,7 @@ gulp.task('test.only', 'Run tests without rebuilding anything',
 gulp.task('test', 'Run all tests', ['build'], () => {
   gulp.start('test.only');
 });
+
+gulp.task('doc.gen', 'Generate documentation', ['native.core.doc.gen']);
 
 gulp.task('default', ['help']);
