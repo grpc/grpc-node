@@ -28,5 +28,7 @@ void CompletionQueueNext();
 
 void CompletionQueueInit(v8::Local<v8::Object> exports);
 
+void CompletionQueueForcePoll();
+
 }  // namespace node
 }  // namespace grpc

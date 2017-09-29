@@ -19,10 +19,8 @@
     "lib": "src/node/src"
   },
   "scripts": {
-    "lint": "node ./node_modules/jshint/bin/jshint src test index.js --exclude-path=.jshintignore",
-    "test": "./node_modules/.bin/mocha test && npm run-script lint",
+    "build": "./node_modules/.bin/node-pre-gyp build",
     "electron-build": "./node_modules/.bin/node-pre-gyp configure build --runtime=electron --disturl=https://atom.io/download/atom-shell",
-    "gen_docs": "./node_modules/.bin/jsdoc -c jsdoc_conf.json",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test",
     "install": "./node_modules/.bin/node-pre-gyp install --fallback-to-build --library=static_library"
   },
@@ -37,17 +35,9 @@
     "protobufjs": "^5.0.0"
   },
   "devDependencies": {
-    "async": "^2.0.1",
-    "body-parser": "^1.15.2",
     "electron-mocha": "^3.1.1",
-    "express": "^4.14.0",
-    "google-auth-library": "^0.9.2",
     "google-protobuf": "^3.0.0",
-    "istanbul": "^0.4.4",
-    "jsdoc": "^3.3.2",
-    "jshint": "^2.5.0",
-    "minimist": "^1.1.0",
-    "poisson-process": "^0.2.1"
+    "istanbul": "^0.4.4"
   },
   "engines": {
     "node": ">=4"
