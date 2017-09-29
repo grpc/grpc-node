@@ -145,7 +145,7 @@ exports.defaultGrpcOptions = {
  * a number of milliseconds since the Unix Epoch. If it is Infinity, the
  * deadline will never be reached. If it is -Infinity, the deadline has already
  * passed.
- * @typedef {(number|date)} grpc~Deadline
+ * @typedef {(number|Date)} grpc~Deadline
  */
 
 /**

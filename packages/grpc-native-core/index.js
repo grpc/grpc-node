@@ -213,7 +213,7 @@ exports.ServerCredentials = grpc.ServerCredentials;
  * Create insecure server credentials
  * @name grpc.ServerCredentials.createInsecure
  * @kind function
- * @return grpc.ServerCredentials
+ * @return {grpc.ServerCredentials}
  */
 
 /**
@@ -234,7 +234,7 @@ exports.ServerCredentials = grpc.ServerCredentials;
  *     the server
  * @param {boolean} [checkClientCertificate=false] Indicates that the server
  *     should request and verify the client's certificates
- * @return grpc.ServerCredentials
+ * @return {grpc.ServerCredentials}
  */
 
 exports.makeGenericClientConstructor = client.makeClientConstructor;
