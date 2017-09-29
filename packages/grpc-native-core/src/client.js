@@ -929,7 +929,7 @@ exports.makeClientConstructor = function(methods, serviceName,
  * Return the underlying channel object for the specified client
  * @memberof grpc
  * @alias grpc~getClientChannel
- * @param {Client} client
+ * @param {Client} client The client
  * @return {Channel} The channel
  * @see grpc.Client#getChannel
  */

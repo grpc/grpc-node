@@ -67,7 +67,7 @@ grpc.setDefaultRootsPem(fs.readFileSync(SSL_ROOTS_PATH, 'ascii'));
  * @param {(number|string)=} [options.protobufjsVersion='detect'] 5 and 6
  *     respectively indicate that an object from the corresponding version of
  *     Protobuf.js is provided in the value argument. If the option is 'detect',
- *     gRPC wll guess what the version is based on the structure of the value.
+ *     gRPC will guess what the version is based on the structure of the value.
  * @return {Object<string, *>} The resulting gRPC object.
  */
 exports.loadObject = function loadObject(value, options) {
