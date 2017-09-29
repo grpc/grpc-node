@@ -428,7 +428,7 @@ declare module "grpc" {
    * Callback function passed to server handlers that handle methods with
    * unary responses.
    */
-  type sendUnaryData = (error: ServiceError | null, value: any, trailer?: Metadata, flags?: number) => void;
+  type sendUnaryData = (error: ServiceError | null, value: any, trailer?: Metadata, flags?: number) => void;
 
   export class Metadata {
     /**
@@ -930,7 +930,7 @@ declare module "grpc" {
       serialize: serialize,
       deserialize: deserialize,
       argument: any | null,
-      metadata: Metadata | null,
+      metadata: Metadata | null,
       options: CallOptions | null,
       callback: requestCallback,
     ): ClientUnaryCall;
@@ -1015,7 +1015,7 @@ declare module "grpc" {
      * @param deadline When to stop waiting for a connection.
      * @param callback The callback to call when done attempting to connect.
      */
-    waitForReady(deadline: Deadline, callback: (error: Error | null) => void): void;
+    waitForReady(deadline: Deadline, callback: (error: Error | null) => void): void;
   }
 
   /**
@@ -1151,7 +1151,7 @@ declare module "grpc" {
      * @param serialize Serialization function for requests. Defaults to `identity`.
      * @param deserialize Deserialization function for responses. Defaults to `identity`.
      */
-    constructor(call: any, serialize?: serialize | null, deserialize?: deserialize | null);
+    constructor(call: any, serialize?: serialize | null, deserialize?: deserialize | null);
 
     /**
      * Write a message to the request stream. If serializing the argument fails,
