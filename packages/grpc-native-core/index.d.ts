@@ -1,5 +1,5 @@
 declare module "grpc" {
-  import { Service } from "protobufjs";
+  import { Message, Service } from "protobufjs";
 
   /**
    * Load a ProtoBuf.js object as a gRPC object.
@@ -64,9 +64,7 @@ declare module "grpc" {
    * - Anything else becomes the relevant reflection object that ProtoBuf.js would create
    */
   export interface GrpcObject {
-    [namespace: string]: {
-      [service: string]: typeof Client,
-    };
+    [name: string]: GrpcObject | typeof Client | Message<any>;
   }
 
   /**
@@ -130,7 +128,7 @@ declare module "grpc" {
    * of the grpc.logVerbosity map.
    * @param verbosity The minimum severity to log
    */
-  export function setLogVerbosity(verbosity: number): void;
+  export function setLogVerbosity(verbosity: logVerbosity): void;
 
   /**
    * Server object that stores request handlers and delegates incoming requests to those handlers
@@ -202,7 +200,7 @@ declare module "grpc" {
      * @param implementation Map of method names to method implementation
      * for the provided service.
      */
-    addProtoService(service: Service, implementation: { [name: string]: handleCall }): void;
+    addProtoService(service: Service | ServiceDefinition, implementation: { [name: string]: handleCall }): void;
 
     /**
      * Binds the server to the given port, with SSL disabled if creds is an
@@ -211,8 +209,9 @@ declare module "grpc" {
      * "address:port"
      * @param creds Server credential object to be used for SSL. Pass an
      * insecure credentials object for an insecure port.
+     * @return The bound port number or 0 if the opreation failed.
      */
-    bind(port: string, creds: ServerCredentials): void;
+    bind(port: string, creds: ServerCredentials): number;
   }
 
   /**
@@ -264,6 +263,9 @@ declare module "grpc" {
    */
   type handleUnaryCall = (call: ServerUnaryCall, callback: sendUnaryData) => void;
 
+  /**
+   * An EventEmitter. Used for unary calls.
+   */
   export class ServerUnaryCall {
     /**
      * Indicates if the call has been cancelled
@@ -279,13 +281,6 @@ declare module "grpc" {
      * The request message from the client
      */
     request: any;
-
-    /**
-     * An EventEmitter. Used for unary calls.
-     * @param call The call object associated with the request
-     * @param metadata The request metadata from the client
-     */
-    constructor(call: Call, metadata: Metadata);
 
     /**
      * Get the endpoint this call/stream is connected to.
@@ -305,6 +300,10 @@ declare module "grpc" {
    */
   type handleClientStreamingCall = (call: ServerReadableStream, callback: sendUnaryData) => void;
 
+  /**
+   * A stream that the server can read from. Used for calls that are streaming
+   * from the client side.
+   */
   export class ServerReadableStream {
     /**
      * Indicates if the call has been cancelled
@@ -315,15 +314,6 @@ declare module "grpc" {
      * The request metadata from the client
      */
     metadata: Metadata;
-
-    /**
-     * A stream that the server can read from. Used for calls that are streaming
-     * from the client side.
-     * @param call The call object to read data with
-     * @param metadata The request metadata from the client
-     * @param deserialize Deserialization function for reads
-     */
-    constructor(call: Call, metadata: Metadata, deserialize: deserialize);
 
     /**
      * Get the endpoint this call/stream is connected to.
@@ -343,6 +333,10 @@ declare module "grpc" {
    */
   type handleServerStreamingCall = (call: ServerWriteableStream) => void;
 
+  /**
+   * A stream that the server can write to. Used for calls that are streaming
+   * from the server side.
+   */
   export class ServerWriteableStream {
     /**
      * Indicates if the call has been cancelled
@@ -358,15 +352,6 @@ declare module "grpc" {
      * The request message from the client
      */
     request: any;
-
-    /**
-     * A stream that the server can write to. Used for calls that are streaming
-     * from the server side.
-     * @param call The call object to send data with
-     * @param metadata The request metadata from the client
-     * @param serialize Serialization function for writes
-     */
-    constructor(call: Call, metadata: Metadata, serialize: serialize);
 
     /**
      * Get the endpoint this call/stream is connected to.
@@ -386,17 +371,11 @@ declare module "grpc" {
    */
   type handleBidiStreamingCall = (call: ServerDuplexStream) => void;
 
+  /**
+   * A stream that the server can read from or write to. Used for calls
+   * with duplex streaming.
+   */
   export class ServerDuplexStream {
-    /**
-     * A stream that the server can read from or write to. Used for calls
-     * with duplex streaming.
-     * @param call Call object to proxy
-     * @param metadata The request metadata from the client
-     * @param serialize Serialization function for requests
-     * @param deserialize Deserialization function for requests
-     */
-    constructor(call: any, metadata: Metadata, serialize: serialize, deserialize: deserialize);
-
     /**
      * Get the endpoint this call/stream is connected to.
      * @return The URI of the endpoint
@@ -517,7 +496,7 @@ declare module "grpc" {
     /**
      * The error code, a key of {@link grpc.status} that is not `grpc.status.OK`
      */
-    code: number;
+    code: status;
     /**
      * Trailing metadata sent with the status, if applicable
      */
@@ -1067,14 +1046,11 @@ declare module "grpc" {
    */
   type Call = ClientUnaryCall | ClientReadableStream | ClientWritableStream | ClientDuplexStream;
 
+  /**
+   * An EventEmitter. Used for unary calls.
+   */
   export class ClientUnaryCall {
     /**
-     * An EventEmitter. Used for unary calls.
-     * @param call The call object associated with the request
-     */
-    constructor(call: any);
-
-    /**
      * Cancel the ongoing call. Results in the call ending with a CANCELLED status,
      * unless it has already ended with some other status.
      */
@@ -1087,16 +1063,12 @@ declare module "grpc" {
     getPeer(): string;
   }
 
+  /**
+   * A stream that the client can read from. Used for calls that are streaming
+   * from the server side.
+   */
   export class ClientReadableStream {
     /**
-     * A stream that the client can read from. Used for calls that are streaming
-     * from the server side.
-     * @param call The call object to read data with
-     * @param deserialize Deserialization function for reads. Defaults to `identity`.
-     */
-    constructor(call: any, deserialize?: deserialize);
-
-    /**
      * Cancel the ongoing call. Results in the call ending with a CANCELLED status,
      * unless it has already ended with some other status.
      */
@@ -1109,16 +1081,11 @@ declare module "grpc" {
     getPeer(): string;
   }
 
+  /**
+   * A stream that the client can write to. Used for calls that are streaming from
+   * the client side.
+   */
   export class ClientWritableStream {
-    /**
-     * A stream that the client can write to. Used for calls that are streaming from
-     * the client side.
-     * @param call The call object to send data with
-     * @param serialize Serialization
-     *     function for writes. Defaults to `identity`.
-     */
-    constructor(call: any, serialize?: serialize);
-
     /**
      * Write a message to the request stream. If serializing the argument fails,
      * the call will be cancelled and the stream will end with an error.
@@ -1143,16 +1110,11 @@ declare module "grpc" {
     getPeer(): string;
   }
 
+  /**
+   * A stream that the client can read from or write to. Used for calls with
+   * duplex streaming.
+   */
   export class ClientDuplexStream {
-    /**
-     * A stream that the client can read from or write to. Used for calls with
-     * duplex streaming.
-     * @param {grpc.internal~Call} call Call object to proxy
-     * @param serialize Serialization function for requests. Defaults to `identity`.
-     * @param deserialize Deserialization function for responses. Defaults to `identity`.
-     */
-    constructor(call: any, serialize?: serialize | null, deserialize?: deserialize | null);
-
     /**
      * Write a message to the request stream. If serializing the argument fails,
      * the call will be cancelled and the stream will end with an error.
