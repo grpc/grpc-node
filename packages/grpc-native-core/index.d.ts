@@ -476,7 +476,7 @@ declare module "grpc" {
     /**
      * The error code, a key of `grpc.status`
      */
-    code: number;
+    code: status;
     /**
      * Human-readable description of the status
      */
