@@ -670,6 +670,8 @@
         'deps/grpc/src/core/lib/compression/compression.c',
         'deps/grpc/src/core/lib/compression/message_compress.c',
         'deps/grpc/src/core/lib/compression/stream_compression.c',
+        'deps/grpc/src/core/lib/compression/stream_compression_gzip.c',
+        'deps/grpc/src/core/lib/compression/stream_compression_identity.c',
         'deps/grpc/src/core/lib/debug/stats.c',
         'deps/grpc/src/core/lib/debug/stats_data.c',
         'deps/grpc/src/core/lib/http/format_request.c',
