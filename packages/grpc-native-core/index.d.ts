@@ -1126,7 +1126,7 @@ declare module "grpc" {
    * A stream that the client can write to. Used for calls that are streaming from
    * the client side.
    */
-  export class ClientWritableStream {
+  export class ClientWritableStream extends Writable {
     private constructor();
 
     /**
@@ -1138,7 +1138,7 @@ declare module "grpc" {
      * @param callback Callback for when this chunk of data is flushed
      * @return As defined for [Writable]{@link external:Writable}
      */
-    write(message: any, flags: writeFlags, callback: Function): boolean;
+    write(message: any, flags?: any&writeFlags, callback?: Function): boolean;
 
     /**
      * Cancel the ongoing call. Results in the call ending with a CANCELLED status,
@@ -1157,7 +1157,7 @@ declare module "grpc" {
    * A stream that the client can read from or write to. Used for calls with
    * duplex streaming.
    */
-  export class ClientDuplexStream {
+  export class ClientDuplexStream extends Duplex {
     private constructor();
 
     /**
@@ -1169,7 +1169,7 @@ declare module "grpc" {
      * @param callback Callback for when this chunk of data is flushed
      * @return As defined for [Writable]{@link external:Writable}
      */
-    write(message: any, flags: writeFlags, callback: Function): boolean;
+    write(message: any, flags?: any&writeFlags, callback?: Function): boolean;
 
     /**
      * Cancel the ongoing call. Results in the call ending with a CANCELLED status,
