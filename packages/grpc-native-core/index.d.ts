@@ -1,7 +1,7 @@
 declare module "grpc" {
   import { Message, Service } from "protobufjs";
-  import { SecureContext } from "tls";
   import { Duplex, Readable, Writable } from "stream";
+  import { SecureContext } from "tls";
 
   /**
    * Load a ProtoBuf.js object as a gRPC object.
