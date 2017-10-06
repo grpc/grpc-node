@@ -1,5 +1,7 @@
 declare module "grpc" {
+  /// <reference types="node" />
   import { Message, Service } from "protobufjs";
+  import { SecureContext } from "tls";
 
   /**
    * Load a ProtoBuf.js object as a gRPC object.
@@ -282,6 +284,8 @@ declare module "grpc" {
      */
     request: any;
 
+    private constructor();
+
     /**
      * Get the endpoint this call/stream is connected to.
      * @return The URI of the endpoint
@@ -314,6 +318,8 @@ declare module "grpc" {
      * The request metadata from the client
      */
     metadata: Metadata;
+
+    private constructor();
 
     /**
      * Get the endpoint this call/stream is connected to.
@@ -353,6 +359,8 @@ declare module "grpc" {
      */
     request: any;
 
+    private constructor();
+
     /**
      * Get the endpoint this call/stream is connected to.
      * @return The URI of the endpoint
@@ -376,6 +384,8 @@ declare module "grpc" {
    * with duplex streaming.
    */
   export class ServerDuplexStream {
+    private constructor();
+
     /**
      * Get the endpoint this call/stream is connected to.
      * @return The URI of the endpoint
@@ -409,61 +419,56 @@ declare module "grpc" {
    */
   type sendUnaryData = (error: ServiceError | null, value: any, trailer?: Metadata, flags?: number) => void;
 
+  /**
+   * A class for storing metadata. Keys are normalized to lowercase ASCII.
+   */
   export class Metadata {
     /**
-     * Class for storing metadata. Keys are normalized to lowercase ASCII.
-     * ```
-     * var metadata = new metadata_module.Metadata();
-     * metadata.set('key1', 'value1');
-     * metadata.add('key1', 'value2');
-     * metadata.get('key1') // returns ['value1', 'value2']
-     * ```
-     */
-    constructor();
-
-    /**
-     * Sets the given value for the given key, replacing any other values associated
-     * with that key. Normalizes the key.
-     * @param key The key to set
+     * Sets the given value for the given key by replacing any other values
+     * associated with that key. Normalizes the key.
+     * @param key The key to whose value should be set.
      * @param value The value to set. Must be a buffer if and only
-     *     if the normalized key ends with '-bin'
+     *   if the normalized key ends with '-bin'.
      */
-    set(key: string, value: string | Buffer): void;
+    set(key: string, value: MetadataValue): void;
 
     /**
-     * Adds the given value for the given key. Normalizes the key.
-     * @param key The key to add to.
+     * Adds the given value for the given key by appending to a list of previous
+     * values associated with that key. Normalizes the key.
+     * @param key The key for which a new value should be appended.
      * @param value The value to add. Must be a buffer if and only
-     *     if the normalized key ends with '-bin'
+     *   if the normalized key ends with '-bin'.
      */
-    add(key: string, value: string | Buffer): void;
+    add(key: string, value: MetadataValue): void;
 
     /**
-     * Remove the given key and any associated values. Normalizes the key.
-     * @param key The key to remove
+     * Removes the given key and any associated values. Normalizes the key.
+     * @param key The key whose values should be removed.
      */
     remove(key: string): void;
 
     /**
      * Gets a list of all values associated with the key. Normalizes the key.
-     * @param key The key to get
-     * @return The values associated with that key
+     * @param key The key whose value should be retrieved.
+     * @return A list of values associated with the given key.
      */
-    get(key: string): Array<string | Buffer>;
+    get(key: string): MetadataValue[];
 
     /**
-     * Get a map of each key to a single associated value. This reflects the most
-     * common way that people will want to see metadata.
-     * @return A key/value mapping of the metadata
+     * Gets a plain object mapping each key to the first value associated with it.
+     * This reflects the most common way that people will want to see metadata.
+     * @return A key/value mapping of the metadata.
      */
-    getMap(): { [index: string]: string | Buffer };
+    getMap(): { [key: string]: MetadataValue };
 
     /**
-     * Clone the metadata object.
-     * @return {Metadata} The new cloned object
+     * Clones the metadata object.
+     * @return The newly cloned object.
      */
     clone(): Metadata;
   }
+
+  export type MetadataValue = string | Buffer;
 
   /**
    * Represents the status of a completed request. If `code` is
@@ -492,15 +497,15 @@ declare module "grpc" {
    * `details` in `StatusObject`, and `code` and `metadata` are the
    * same as in that object.
    */
-  export class ServiceError extends Error {
+  export interface ServiceError extends Error {
     /**
      * The error code, a key of {@link grpc.status} that is not `grpc.status.OK`
      */
-    code: status;
+    code?: status;
     /**
      * Trailing metadata sent with the status, if applicable
      */
-    metadata: Metadata;
+    metadata?: Metadata;
   }
 
   /**
@@ -828,13 +833,47 @@ declare module "grpc" {
    * This cannot be constructed directly. Instead, instances of this class should
    * be created using the factory functions in `grpc.credentials`
    */
-  export class ChannelCredentials {}
+  export interface ChannelCredentials {
+    /**
+     * Returns a copy of this object with the included set of per-call credentials
+     * expanded to include callCredentials.
+     * @param callCredentials A CallCredentials object to associate with this
+     * instance.
+     */
+    compose(callCredentials: CallCredentials): ChannelCredentials;
+
+    /**
+     * Gets the set of per-call credentials associated with this instance.
+     */
+    getCallCredentials(): CallCredentials;
+
+    /**
+     * Gets a SecureContext object generated from input parameters if this
+     * instance was created with createSsl, or null if this instance was created
+     * with createInsecure.
+     */
+    getSecureContext(): SecureContext | null;
+  }
 
   /**
    * This cannot be constructed directly. Instead, instances of this class should
    * be created using the factory functions in `grpc.credentials`
    */
-  export class CallCredentials {}
+  export interface CallCredentials {
+    /**
+     * Asynchronously generates a new Metadata object.
+     * @param options Options used in generating the Metadata object.
+     */
+    generateMetadata(options: object): Promise<Metadata>;
+
+    /**
+     * Creates a new CallCredentials object from properties of both this and
+     * another CallCredentials object. This object's metadata generator will be
+     * called first.
+     * @param callCredentials The other CallCredentials object.
+     */
+    compose(callCredentials: CallCredentials): CallCredentials;
+  }
 
   /**
    * Google credential from https://github.com/google/google-auth-library-nodejs lib.
@@ -887,7 +926,7 @@ declare module "grpc" {
      * A generic gRPC client. Primarily useful as a base class for generated clients
      * @param address Server address to connect to
      * @param credentials Credentials to use to connect to the server
-     * @param {Object} options Options to apply to channel creation
+     * @param options Options to apply to channel creation
      */
     constructor(address: string, credentials: ChannelCredentials, options?: object)
 
@@ -1050,6 +1089,8 @@ declare module "grpc" {
    * An EventEmitter. Used for unary calls.
    */
   export class ClientUnaryCall {
+    private constructor();
+
     /**
      * Cancel the ongoing call. Results in the call ending with a CANCELLED status,
      * unless it has already ended with some other status.
@@ -1068,6 +1109,8 @@ declare module "grpc" {
    * from the server side.
    */
   export class ClientReadableStream {
+    private constructor();
+
     /**
      * Cancel the ongoing call. Results in the call ending with a CANCELLED status,
      * unless it has already ended with some other status.
@@ -1086,6 +1129,8 @@ declare module "grpc" {
    * the client side.
    */
   export class ClientWritableStream {
+    private constructor();
+
     /**
      * Write a message to the request stream. If serializing the argument fails,
      * the call will be cancelled and the stream will end with an error.
@@ -1115,6 +1160,8 @@ declare module "grpc" {
    * duplex streaming.
    */
   export class ClientDuplexStream {
+    private constructor();
+
     /**
      * Write a message to the request stream. If serializing the argument fails,
      * the call will be cancelled and the stream will end with an error.
@@ -1144,7 +1191,7 @@ declare module "grpc" {
    * @param error The error, if the call failed
    * @param value The response value, if the call succeeded
    */
-  export type requestCallback = (error: Error | null, value: any) => void;
+  export type requestCallback = (error: ServiceError | null, value: any) => void;
 
   /**
    * Return the underlying channel object for the specified client
