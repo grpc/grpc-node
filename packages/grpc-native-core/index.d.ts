@@ -798,7 +798,7 @@ declare module "grpc" {
      * @param googleCredential The Google credential object to use
      * @return The resulting credentials object
      */
-    createFromGoogleCredential(googleCredential: GoogleCredential): CallCredentials;
+    createFromGoogleCredential(googleCredential: GoogleOAuth2Client): CallCredentials;
 
     /**
      * Combine a ChannelCredentials with any number of CallCredentials into a single
@@ -876,14 +876,12 @@ declare module "grpc" {
   }
 
   /**
-   * Google credential from https://github.com/google/google-auth-library-nodejs lib.
-   * The object definition is copied from `ts/lib/auth/credentials.ts`
+   * This is the required interface from the OAuth2Client object
+   * from https://github.com/google/google-auth-library-nodejs lib.
+   * The definition is copied from `ts/lib/auth/oauth2client.ts`
    */
-  export interface GoogleCredential {
-      refresh_token?: string;
-      expiry_date?: number;
-      access_token?: string;
-      token_type?: string;
+  export interface GoogleOAuth2Client {
+    getRequestMetadata(optUri: string, metadataCallback: (err: Error, headers: any) => void)
   }
 
   /**
