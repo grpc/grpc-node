@@ -1,7 +1,7 @@
 declare module "grpc" {
-  /// <reference types="node" />
   import { Message, Service } from "protobufjs";
   import { SecureContext } from "tls";
+  import { Duplex, Readable, Writable } from "stream";
 
   /**
    * Load a ProtoBuf.js object as a gRPC object.
@@ -308,7 +308,7 @@ declare module "grpc" {
    * A stream that the server can read from. Used for calls that are streaming
    * from the client side.
    */
-  export class ServerReadableStream {
+  export class ServerReadableStream extends Readable {
     /**
      * Indicates if the call has been cancelled
      */
@@ -343,7 +343,7 @@ declare module "grpc" {
    * A stream that the server can write to. Used for calls that are streaming
    * from the server side.
    */
-  export class ServerWriteableStream {
+  export class ServerWriteableStream extends Writable {
     /**
      * Indicates if the call has been cancelled
      */
@@ -383,7 +383,7 @@ declare module "grpc" {
    * A stream that the server can read from or write to. Used for calls
    * with duplex streaming.
    */
-  export class ServerDuplexStream {
+  export class ServerDuplexStream extends Duplex {
     private constructor();
 
     /**
@@ -1106,7 +1106,7 @@ declare module "grpc" {
    * A stream that the client can read from. Used for calls that are streaming
    * from the server side.
    */
-  export class ClientReadableStream {
+  export class ClientReadableStream extends Readable {
     private constructor();
 
     /**
