@@ -881,7 +881,7 @@ declare module "grpc" {
    * The definition is copied from `ts/lib/auth/oauth2client.ts`
    */
   export interface GoogleOAuth2Client {
-    getRequestMetadata(optUri: string, metadataCallback: (err: Error, headers: any) => void)
+    getRequestMetadata(optUri: string, metadataCallback: (err: Error, headers: any) => void): void;
   }
 
   /**
