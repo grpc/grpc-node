@@ -31,6 +31,7 @@ call npm install || goto :error
 for %%v in (4.8.4 6.11.3 7.9.0 8.5.0) do (
   nvm install %%v
   nvm use %%v
+  npm install -g npm
   node -e "console.log(process.versions)"
 
   call .\node_modules\.bin\gulp clean.all || goto :error
