@@ -9,6 +9,7 @@
   },
   "license": "Apache-2.0",
   "devDependencies": {
+    "@types/node": "^8.0.32",
     "del": "^3.0.0",
     "execa": "^0.8.0",
     "gulp": "^3.9.1",
