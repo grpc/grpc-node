@@ -18,7 +18,7 @@
 
 'use strict';
 
-var grpc = require('../..');
+var grpc = require('grpc');
 var grpcMath = require('./math_grpc_pb');
 var math = require('./math_pb');
 
