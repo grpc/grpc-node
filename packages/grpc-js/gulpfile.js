@@ -28,8 +28,8 @@ const del = require('del');
 const jsDir = __dirname;
 
 gulp.task('js.clean.links', 'Delete npm links', () => {
-  del(path.resolve(jsDir, 'node_modules/@grpc/js-core'));
-  del(path.resolve(jsDir, 'node_modules/@grpc/surface'));
+  return del([path.resolve(jsDir, 'node_modules/@grpc/js-core'),
+              path.resolve(jsDir, 'node_modules/@grpc/surface')]);
 });
 
 gulp.task('js.clean.all', 'Delete all files created by tasks',
