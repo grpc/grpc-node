@@ -1,5 +1,5 @@
 {
-  "name": "grpc-health-check",
+  "name": "@grpc/health-check",
   "version": "1.7.0-dev",
   "author": "Google Inc.",
   "description": "Health check service for use with gRPC",

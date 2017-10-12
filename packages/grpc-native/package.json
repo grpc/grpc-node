@@ -1,5 +1,5 @@
 {
-  "name": "grpc-native",
+  "name": "@grpc/native",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -18,6 +18,6 @@
   "homepage": "https://grpc.io",
   "dependencies": {
     "grpc": "^1.6.0",
-    "grpc-surface": "^1.0.0"
+    "@grpc/surface": "^0.1.0"
   }
 }

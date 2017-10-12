@@ -18,5 +18,5 @@
 
 'use strict';
 
-// TODO(mlumish): This should eventually be grpc-native-core instead of grpc
-module.exports = require('grpc-surface')(require('grpc'));
+// TODO(mlumish): This should eventually be @grpc/native-core instead of grpc
+module.exports = require('@grpc/surface')(require('grpc'));

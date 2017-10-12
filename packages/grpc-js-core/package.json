@@ -1,10 +1,9 @@
 {
-  "name": "grpc-js-core",
+  "name": "@grpc/js-core",
   "version": "0.1.0",
   "description": "gRPC Library for Node - pure JS core",
   "homepage": "https://grpc.io/",
   "main": "build/src/index.js",
-  "private": true,
   "engines": {
     "node": ">=8.4"
   },
@@ -26,7 +25,7 @@
       "name": "Google Inc."
     }
   ],
-  "_id": "grpc-js-core@0.1.0",
+  "_id": "@grpc/js-core@0.1.0",
   "scripts": {
     "build": "npm run compile",
     "clean": "gulp clean",

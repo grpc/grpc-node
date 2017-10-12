@@ -1,5 +1,4 @@
-/**
- * @license
+/*
  * Copyright 2017 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +15,16 @@
  *
  */
 
-'use strict';
+const _gulp = require('gulp');
+const help = require('gulp-help');
 
-module.exports = require('@grpc/surface')(require('@grpc/js-core'));
+// gulp-help monkeypatches tasks to have an additional description parameter
+const gulp = help(_gulp);
+
+const execa = require('execa');
+
+const surfaceDir = __dirname;
+
+gulp.task('surface.link.create', 'Create npm link', () => {
+  return execa('npm', ['link'], {cwd: surfaceDir, stdio: 'inherit'});
+});
