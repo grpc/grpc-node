@@ -1,6 +1,6 @@
 {
   "name": "grpc",
-  "version": "1.7.0-dev",
+  "version": "1.7.0-pre1",
   "author": "Google Inc.",
   "description": "gRPC Library for Node",
   "homepage": "https://grpc.io/",
@@ -36,7 +36,6 @@
   },
   "devDependencies": {
     "electron-mocha": "^3.1.1",
-    "google-protobuf": "^3.0.0",
     "istanbul": "^0.4.4"
   },
   "engines": {
