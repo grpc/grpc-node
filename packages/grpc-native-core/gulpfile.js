@@ -21,6 +21,7 @@ const help = require('gulp-help');
 // gulp-help monkeypatches tasks to have an additional description parameter
 const gulp = help(_gulp);
 
+const jsdoc = require('gulp-jsdoc3');
 const jshint = require('gulp-jshint');
 const mocha = require('gulp-mocha');
 const execa = require('execa');
@@ -72,4 +73,10 @@ gulp.task('native.core.build', 'Build native package', () => {
 
 gulp.task('native.core.test', 'Run all tests', ['native.core.build'], () => {
   return gulp.src(`${testDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
+});
+
+gulp.task('native.core.doc.gen', 'Generate docs', (cb) => {
+  var config = require('./jsdoc_conf.json');
+  gulp.src([`${nativeCoreDir}/README.md`, `${nativeCoreDir}/index.js`, `${srcDir}/*.js`], {read: false})
+      .pipe(jsdoc(config, cb));
 });

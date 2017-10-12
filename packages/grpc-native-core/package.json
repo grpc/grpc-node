@@ -19,11 +19,8 @@
     "lib": "src/node/src"
   },
   "scripts": {
-    "lint": "node ./node_modules/jshint/bin/jshint src test index.js --exclude-path=.jshintignore",
-    "test": "./node_modules/.bin/mocha test && npm run-script lint",
     "build": "./node_modules/.bin/node-pre-gyp build",
     "electron-build": "./node_modules/.bin/node-pre-gyp configure build --runtime=electron --disturl=https://atom.io/download/atom-shell",
-    "gen_docs": "./node_modules/.bin/jsdoc -c jsdoc_conf.json",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test",
     "install": "./node_modules/.bin/node-pre-gyp install --fallback-to-build --library=static_library"
   },
@@ -38,12 +35,9 @@
     "protobufjs": "^5.0.0"
   },
   "devDependencies": {
-    "async": "^2.0.1",
     "electron-mocha": "^3.1.1",
-    "google-auth-library": "^0.9.2",
     "google-protobuf": "^3.0.0",
-    "istanbul": "^0.4.4",
-    "jsdoc": "^3.3.2"
+    "istanbul": "^0.4.4"
   },
   "engines": {
     "node": ">=4"
@@ -58,18 +52,18 @@
   "files": [
     "LICENSE",
     "README.md",
-    "deps/grpc/src/proto",
-    "deps/grpc/etc",
+    "deps/grpc/etc/",
     "index.js",
-    "src",
-    "ext",
-    "deps/grpc/include/grpc",
-    "deps/grpc/src/core",
-    "deps/grpc/src/boringssl",
-    "deps/grpc/src/zlib",
-    "deps/grpc/third_party/nanopb",
-    "deps/grpc/third_party/zlib",
-    "deps/grpc/third_party/boringssl",
+    "src/*.js",
+    "ext/*.{cc,h}",
+    "deps/grpc/include/grpc/**/*.h",
+    "deps/grpc/src/core/**/*.{c,h}",
+    "deps/grpc/src/boringssl/*.{c,h}",
+    "deps/grpc/third_party/nanopb/*.{c,h}",
+    "deps/grpc/third_party/zlib/**/*.{c,h}",
+    "deps/grpc/third_party/boringssl/crypto/**/*.{c,h}",
+    "deps/grpc/third_party/boringssl/include/**/*.{c,h}",
+    "deps/grpc/third_party/boringssl/ssl/**/*.{c,h}",
     "binding.gyp"
   ],
   "main": "index.js",

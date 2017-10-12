@@ -393,8 +393,8 @@ ClientDuplexStream.prototype.getPeer = getPeer;
 
 /**
  * Any client call type
- * @typedef {(ClientUnaryCall|ClientReadableStream|
- *            ClientWritableStream|ClientDuplexStream)}
+ * @typedef {(grpc~ClientUnaryCall|grpc~ClientReadableStream|
+ *            grpc~ClientWritableStream|grpc~ClientDuplexStream)}
  *     grpc.Client~Call
  */
 
@@ -450,7 +450,7 @@ function getCall(channel, method, options) {
  * @memberof grpc
  * @constructor
  * @param {string} address Server address to connect to
- * @param {grpc~ChannelCredentials} credentials Credentials to use to connect to
+ * @param {grpc.credentials~ChannelCredentials} credentials Credentials to use to connect to
  *     the server
  * @param {Object} options Options to apply to channel creation
  */
@@ -929,7 +929,7 @@ exports.makeClientConstructor = function(methods, serviceName,
  * Return the underlying channel object for the specified client
  * @memberof grpc
  * @alias grpc~getClientChannel
- * @param {Client} client
+ * @param {grpc.Client} client The client
  * @return {Channel} The channel
  * @see grpc.Client#getChannel
  */
@@ -945,7 +945,7 @@ exports.getClientChannel = function(client) {
  * start connecting if it has not already done so.
  * @memberof grpc
  * @alias grpc~waitForClientReady
- * @param {Client} client The client to wait on
+ * @param {grpc.Client} client The client to wait on
  * @param {grpc~Deadline} deadline When to stop waiting for a connection. Pass
  *     Infinity to wait forever.
  * @param {function(Error)} callback The callback to call when done attempting
