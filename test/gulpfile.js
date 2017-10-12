@@ -22,6 +22,7 @@ const execa = require('execa');
 const path = require('path');
 const del = require('del');
 const linkSync = require('../util').linkSync;
+const merge = require('merge2');
 
 // gulp-help monkeypatches tasks to have an additional description parameter
 const gulp = help(_gulp);
@@ -49,5 +50,19 @@ gulp.task('internal.test.link.add', 'Link local copies of dependencies', () => {
 });
 
 gulp.task('internal.test.test', 'Run API-level tests', () => {
-  return gulp.src(`${apiTestDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
+  // run mocha tests matching a glob with a pre-required fixture,
+  // returning the associated gulp stream
+  const runTestsWithFixture = (glob, fixture) => gulp
+    .src(glob)
+    .pipe(mocha({
+      reporter: 'mocha-jenkins-reporter',
+      require: `${testDir}/fixtures/${fixture}.js`
+    }));
+  const interopTest = `${testDir}/interop/interop_test.js`;
+  const tasks = [].concat(
+    ['native_native'/*, 'js_js'*/]
+      .map((fixture) => runTestsWithFixture(`${apiTestDir}/*.js`, fixture)),
+    ['native_native', 'native_js'/*, 'js_native', 'js_js'*/]
+      .map((fixture) => runTestsWithFixture(interopTest, fixture)))
+  return merge(tasks);
 });

@@ -20,7 +20,7 @@
 
 var assert = require('assert');
 
-var grpc = require('grpc');
+var grpc = require('../any_grpc').all;
 var math = grpc.load(
     __dirname + '/../../packages/grpc-native-core/deps/grpc/src/proto/math/math.proto').math;
 

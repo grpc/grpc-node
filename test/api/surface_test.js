@@ -21,7 +21,7 @@
 var assert = require('assert');
 var _ = require('lodash');
 
-var grpc = require('grpc');
+var grpc = require('../any_grpc').all;
 
 var MathClient = grpc.load(
     __dirname + '/../../packages/grpc-native-core/deps/grpc/src/proto/math/math.proto').math.Math;
