@@ -17,6 +17,6 @@
   },
   "dependencies": {
     "lodash": "^4.17.4",
-    "protobufjs": "~6.8.0"
+    "protobufjs": "^6.8.0"
   }
 }

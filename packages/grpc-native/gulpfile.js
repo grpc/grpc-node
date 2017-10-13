@@ -28,7 +28,7 @@ const del = require('del');
 const nativeDir = __dirname;
 
 gulp.task('native.clean.links', 'Delete npm links', () => {
-  return del([path.resolve(nativeDir, 'node_modules/@grpc/native-core'),
+  return del([path.resolve(nativeDir, 'node_modules/grpc'),
               path.resolve(nativeDir, 'node_modules/@grpc/surface')]);
 });
 
