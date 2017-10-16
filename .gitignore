@@ -6,6 +6,9 @@ npm-debug.log
 yarn-error.log
 yarn.lock
 
+# Emacs temp files
 *~
+\#*\#
+.\#*
 
 packages/grpc-native-core/src/node/

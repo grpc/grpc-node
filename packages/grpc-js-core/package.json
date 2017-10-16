@@ -1,10 +1,9 @@
 {
-  "name": "grpc-js-core",
+  "name": "@grpc/js-core",
   "version": "0.1.0",
   "description": "gRPC Library for Node - pure JS core",
   "homepage": "https://grpc.io/",
   "main": "build/src/index.js",
-  "private": true,
   "engines": {
     "node": ">=8.4"
   },
@@ -15,10 +14,10 @@
   "types": "src/index.ts",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/lodash": "^4.14.73",
-    "@types/mocha": "^2.2.42",
-    "@types/node": "^8.0.25",
-    "clang-format": "^1.0.53",
+    "@types/lodash": "^4.14.77",
+    "@types/mocha": "^2.2.43",
+    "@types/node": "^8.0.34",
+    "clang-format": "^1.0.55",
     "google-ts-style": "^0.2.0"
   },
   "contributors": [
@@ -26,7 +25,7 @@
       "name": "Google Inc."
     }
   ],
-  "_id": "grpc-js-core@0.1.0",
+  "_id": "@grpc/js-core@0.1.0",
   "scripts": {
     "build": "npm run compile",
     "clean": "gulp clean",

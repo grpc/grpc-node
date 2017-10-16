@@ -1,0 +1,23 @@
+{
+  "name": "@grpc/native",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/grpc/grpc-node.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/grpc/grpc-node/issues"
+  },
+  "homepage": "https://grpc.io",
+  "dependencies": {
+    "grpc": "^1.6.0",
+    "@grpc/surface": "^0.1.0"
+  }
+}

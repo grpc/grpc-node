@@ -101,6 +101,10 @@ gulp.task('js.core.install', 'Install native core dependencies', () => {
   return execa('npm', ['install', '--unsafe-perm'], {cwd: jsCoreDir, stdio: 'inherit'});
 });
 
+gulp.task('js.core.link.create', 'Create npm link', () => {
+  return execa('npm', ['link'], {cwd: jsCoreDir, stdio: 'inherit'});
+});
+
 /**
  * Runs tslint on files in src/, with linting rules defined in tslint.json.
  */

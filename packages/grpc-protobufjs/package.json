@@ -1,0 +1,22 @@
+{
+  "name": "@grpc/protobufjs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/grpc/grpc-node.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/grpc/grpc-node/issues"
+  },
+  "dependencies": {
+    "lodash": "^4.17.4",
+    "protobufjs": "^6.8.0"
+  }
+}

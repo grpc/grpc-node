@@ -35,5 +35,9 @@
     {
       "name": "Google Inc."
     }
-  ]
+  ],
+  "dependencies": {
+    "run-sequence": "^2.2.0",
+    "symlink": "^2.1.0"
+  }
 }
