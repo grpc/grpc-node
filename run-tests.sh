@@ -48,7 +48,6 @@ do
   echo "Switching to node version $version"
   nvm install $version
   nvm use $version
-  npm install -g npm
   set -ex
 
   mkdir -p "reports/node$version"
