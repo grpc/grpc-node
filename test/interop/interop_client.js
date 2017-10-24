@@ -22,7 +22,7 @@ var fs = require('fs');
 var path = require('path');
 var grpc = require('../any_grpc').client;
 var testProto = grpc.load({
-  root: __dirname + '/../../../packages/grpc-native-core/deps/grpc',
+  root: __dirname + '/../../packages/grpc-native-core/deps/grpc',
   file: 'src/proto/grpc/testing/test.proto'}).grpc.testing;
 var GoogleAuth = require('google-auth-library');
 

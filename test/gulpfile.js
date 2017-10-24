@@ -68,11 +68,11 @@ gulp.task('internal.test.test', 'Run API-level tests', () => {
   const interopTestGlob = `${testDir}/interop/interop_sanity_test.js`;
   const runTestsArgPairs = [
     [apiTestGlob, 'native_native'],
-    [apiTestGlob, 'js_js'],
+    // [apiTestGlob, 'js_js'],
     [interopTestGlob, 'native_native'],
-    [interopTestGlob, 'native_js'],
-    [interopTestGlob, 'js_native'],
-    [interopTestGlob, 'js_js']
+    // [interopTestGlob, 'native_js'],
+    // [interopTestGlob, 'js_native'],
+    // [interopTestGlob, 'js_js']
   ];
   return runTestsArgPairs.reduce((previousPromise, argPair) => {
     return previousPromise.then(runTestsWithFixture.bind(null, argPair[0], argPair[1]));
