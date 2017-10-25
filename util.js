@@ -9,11 +9,11 @@ const linkSync = (base, from, to) => {
   to = path.resolve(base, to);
   try {
     fs.lstatSync(from);
-  } catch (e) {
     console.log('link: deleting', from);
     del.sync(from);
+  } catch (e) {
+    makeDir.sync(path.dirname(from));
   }
-  makeDir.sync(path.dirname(from));
   console.log('link: linking', from, '->', to);
   fs.symlinkSync(to, from, 'junction');
 };

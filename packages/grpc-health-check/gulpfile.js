@@ -41,7 +41,7 @@ gulp.task('health-check.install', 'Install health check dependencies', () => {
 });
 
 gulp.task('health-check.link.add', 'Link local copy of grpc', () => {
-  linkSync(healthCheckDir, './node_modules/@grpc/native', '../grpc-native');
+  linkSync(healthCheckDir, './node_modules/grpc', '../grpc-native-core');
 });
 
 gulp.task('health-check.test', 'Run health check tests',

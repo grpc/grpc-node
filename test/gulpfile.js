@@ -45,7 +45,7 @@ gulp.task('internal.test.clean.all', 'Delete all files created by tasks',
 
 gulp.task('internal.test.link.add', 'Link local copies of dependencies', () => {
   linkSync(testDir, './node_modules/@grpc/js', '../packages/grpc-js');
-  linkSync(testDir, './node_modules/@grpc/native', '../packages/grpc-native');
+  linkSync(testDir, './node_modules/grpc', '../packages/grpc-native-core');
 });
 
 gulp.task('internal.test.test', 'Run API-level tests', () => {
