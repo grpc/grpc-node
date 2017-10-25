@@ -48,7 +48,7 @@ gulp.task('core.link', 'Add links to core packages without rebuilding',
           ['js.link.add', 'native.link.add']);
 
 gulp.task('surface.link', 'Link to surface packages',
-          ['health-check.link.add', 'internal.test.link.add']);
+          ['health-check.link.add']);
 
 gulp.task('link', 'Link together packages', (callback) => {
   /* Currently, the target 'surface.link.create' doesn't work properly, and it

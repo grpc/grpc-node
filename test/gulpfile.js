@@ -29,24 +29,11 @@ const gulp = help(_gulp);
 const testDir = __dirname;
 const apiTestDir = path.resolve(testDir, 'api');
 
-gulp.task('internal.test.clean.links', 'Delete npm links', () => {
-  return del([
-    path.resolve(testDir, 'node_modules/@grpc/js'),
-    path.resolve(testDir, 'node_modules/@grpc/native')
-  ]);
-});
-
 gulp.task('internal.test.install', 'Install test dependencies', () => {
   return execa('npm', ['install'], {cwd: testDir, stdio: 'inherit'});
 });
 
-gulp.task('internal.test.clean.all', 'Delete all files created by tasks',
-	  ['internal.test.clean.links']);
-
-gulp.task('internal.test.link.add', 'Link local copies of dependencies', () => {
-  linkSync(testDir, './node_modules/@grpc/js', '../packages/grpc-js');
-  linkSync(testDir, './node_modules/grpc', '../packages/grpc-native-core');
-});
+gulp.task('internal.test.clean.all', 'Delete all files created by tasks', () => {});
 
 gulp.task('internal.test.test', 'Run API-level tests', () => {
   // run mocha tests matching a glob with a pre-required fixture,
