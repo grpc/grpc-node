@@ -24,6 +24,7 @@ const gulp = help(_gulp);
 const execa = require('execa');
 const path = require('path');
 const del = require('del');
+const linkSync = require('../../util').linkSync;
 
 const nativeDir = __dirname;
 
@@ -35,16 +36,11 @@ gulp.task('native.clean.links', 'Delete npm links', () => {
 gulp.task('native.clean.all', 'Delete all files created by tasks',
           ['native.clean.links']);
 
-gulp.task('native.link.create', 'Create npm link', () => {
-  return execa('npm', ['link'], {cwd: nativeDir, stdio: 'inherit'});
-});
-
 gulp.task('native.install', 'Install dependencies', () => {
   return execa('npm', ['install', '--unsafe-perm'], {cwd: nativeDir, stdio: 'inherit'});
 });
 
 gulp.task('native.link.add', 'Link local copies of dependencies', () => {
-  // Note: this should be 'grpc-native-core', when we change that package name
-  return execa('npm', ['link', 'grpc'], {cwd: nativeDir, stdio: 'inherit'}).then(
-      execa('npm', ['link', '@grpc/surface'], {cwd: nativeDir, stdio: 'inherit'}));
+  linkSync(nativeDir, './node_modules/grpc', '../grpc-native-core');
+  linkSync(nativeDir, './node_modules/@grpc/surface', '../grpc-surface');
 });

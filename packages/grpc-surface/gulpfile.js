@@ -25,6 +25,4 @@ const execa = require('execa');
 
 const surfaceDir = __dirname;
 
-gulp.task('surface.link.create', 'Create npm link', () => {
-  return execa('npm', ['link'], {cwd: surfaceDir, stdio: 'inherit'});
-});
+// more to come

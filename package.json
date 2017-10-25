@@ -23,6 +23,7 @@
     "gulp-util": "^3.0.8",
     "jsdoc": "^3.3.2",
     "jshint": "^2.9.5",
+    "make-dir": "^1.1.0",
     "merge2": "^1.1.0",
     "mocha": "^3.5.3",
     "mocha-jenkins-reporter": "^0.3.9",

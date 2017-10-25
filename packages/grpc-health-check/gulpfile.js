@@ -21,6 +21,7 @@ const mocha = require('gulp-mocha');
 const execa = require('execa');
 const path = require('path');
 const del = require('del');
+const linkSync = require('../../util').linkSync;
 
 const gulp = help(_gulp);
 
@@ -39,8 +40,8 @@ gulp.task('health-check.install', 'Install health check dependencies', () => {
   return execa('npm', ['install', '--unsafe-perm'], {cwd: healthCheckDir, stdio: 'inherit'});
 });
 
-gulp.task('health-check.link.add', 'Link local copy of grpc', ['health-check.install'], () => {
-  return execa('npm', ['link', 'grpc'], {cwd: healthCheckDir, stdio: 'inherit'});
+gulp.task('health-check.link.add', 'Link local copy of grpc', () => {
+  linkSync(healthCheckDir, './node_modules/grpc', '../grpc-native-core');
 });
 
 gulp.task('health-check.test', 'Run health check tests',
