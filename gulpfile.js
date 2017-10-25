@@ -44,14 +44,8 @@ gulp.task('lint', 'Emit linting errors in source and test files',
 
 gulp.task('build', 'Build packages', ['js.core.compile', 'native.core.build']);
 
-gulp.task('core.link.create', 'Initialize npm links to core packages',
-          ['native.core.link.create', 'js.core.link.create', 'surface.link.create']);
-
 gulp.task('core.link', 'Add links to core packages without rebuilding',
           ['js.link.add', 'native.link.add']);
-
-gulp.task('surface.link.create', 'Create links to surface packages',
-          ['js.link.create', 'native.link.create']);
 
 gulp.task('surface.link', 'Link to surface packages',
           ['health-check.link.add', 'internal.test.link.add']);
@@ -63,7 +57,7 @@ gulp.task('link', 'Link together packages', (callback) => {
    * This also means that 'core.link' is not needed, and the item
    * 'native.core.link.create' should actually be 'core.link.create'
    */
-  runSequence('native.core.link.create', /* 'core.link', 'surface.link.create', */ 'surface.link',
+  runSequence('core.link', 'surface.link',
               callback);
 });
 

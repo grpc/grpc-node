@@ -57,10 +57,6 @@ execa('npm', ['install', '--build-from-source'],
                ))
 });
 
-gulp.task('native.core.link.create', 'Create npm link', () => {
-  return execa('npm', ['link'], {cwd: nativeCoreDir, stdio: 'inherit'});
-});
-
 gulp.task('native.core.lint', 'Emits linting errors', () => {
   return gulp.src([`${nativeCoreDir}/index.js`, `${srcDir}/*.js`, `${testDir}/*.js`])
       .pipe(jshint(pkg.jshintConfig))

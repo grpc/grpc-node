@@ -24,6 +24,7 @@ const gulp = help(_gulp);
 const execa = require('execa');
 const path = require('path');
 const del = require('del');
+const linkSync = require('../../util').linkSync;
 
 const jsDir = __dirname;
 
@@ -39,11 +40,7 @@ gulp.task('js.install', 'Install dependencies', () => {
   return execa('npm', ['install', '--unsafe-perm'], {cwd: jsDir, stdio: 'inherit'});
 });
 
-gulp.task('js.link.create', 'Create npm link', () => {
-  return execa('npm', ['link'], {cwd: jsDir, stdio: 'inherit'});
-});
-
 gulp.task('js.link.add', 'Link local copies of dependencies', () => {
-  return execa('npm', ['link', '@grpc/js-core'], {cwd: jsDir, stdio: 'inherit'}).then(
-      execa('npm', ['link', '@grpc/surface'], {cwd: jsDir, stdio: 'inherit'}));
+  linkSync(jsDir, './node_modules/@grpc/js-core', '../grpc-js-core');
+  linkSync(jsDir, './node_modules/@grpc/surface', '../grpc-surface');
 });
