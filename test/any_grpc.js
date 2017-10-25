@@ -1,16 +1,26 @@
-module.exports = {};
+module.exports = {
+  packageJson: {},
+  core: {
+    packageJson: {}
+  }
+};
 
 function assignExportsFromGlobal(globalField, exportsField) {
-  if (global[globalField] === 'js') {
-    module.exports[exportsField] = require('../packages/grpc-js');
-  } else if (global[globalField] === 'native') {
-    module.exports[exportsField] = require('../packages/grpc-native');
-  } else {
+  if (global[globalField] !== 'js' && global[globalField] !== 'native') {
     throw new Error([
       `Invalid value for global.${globalField}: ${global.globalField}.`,
       'If running from the command line, please --require a fixture first.'
     ].join(' '));
   }
+  const impl = global[globalField];
+  // (1) set global field.
+  module.exports[exportsField] = require(`../packages/grpc-${impl}`);
+  // (2) make package's package.json file accessible thru packageJson path.
+  module.exports.packageJson[exportsField] = require(`../packages/grpc-${impl}/package.json`);
+  // (3) make package's underlying core dependency accessible thru core path.
+  module.exports.core[exportsField] = require(`../packages/grpc-${impl}-core`);
+  // (4) make (3) x (2) accessible thru core.packageJson path.
+  module.exports.core.packageJson[exportsField] = require(`../packages/grpc-${impl}-core/package.json`);
 }
 
 // Set 'server' and 'client' fields on this module's exports.
@@ -26,4 +36,7 @@ assignExportsFromGlobal('_client_implementation', 'client');
 // Increase clarity when there's no distinction between client/server
 if (module.exports.client === module.exports.server) {
   module.exports.all = module.exports.client;
+  module.exports.core.all = module.exports.core.client;
+  module.exports.packageJson.all = module.exports.packageJson.client;
+  module.exports.core.packageJson.all = module.exports.core.packageJson.client;
 }

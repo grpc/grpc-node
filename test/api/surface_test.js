@@ -485,10 +485,12 @@ describe('Echo metadata', function() {
     call.end();
   });
   it('shows the correct user-agent string', function(done) {
-    var version = require('grpc/package.json').version;
+    var version = require('../any_grpc').core.packageJson.all.version;
     var call = client.unary({}, metadata,
                             function(err, data) { assert.ifError(err); });
     call.on('metadata', function(metadata) {
+      console.log(version);
+      console.log(metadata.get('user-agent')[0]);
       assert(_.startsWith(metadata.get('user-agent')[0],
                           'grpc-node/' + version));
       done();
