@@ -25,4 +25,6 @@ const execa = require('execa');
 
 const surfaceDir = __dirname;
 
-// more to come
+gulp.task('surface.install', 'Install surface dependencies', () => {
+  return execa('npm', ['install', '--unsafe-perm'], {cwd: surfaceDir, stdio: 'inherit'});
+});
