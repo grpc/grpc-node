@@ -77,12 +77,10 @@ export class Http2Channel extends EventEmitter implements Channel {
   private subChannel: http2.ClientHttp2Session|null;
   private filterStackFactory: FilterStackFactory;
 
-  private idleTimerId: NodeJS.Timer|null = null;
-
   private subChannelConnectCallback: ()=>void = () => {};
   private subChannelCloseCallback: ()=>void = () => {};
 
-  private backoffTimerId: NodeJS.Timer|null = null;
+  private backoffTimerId: NodeJS.Timer;
   private currentBackoff: number = INITIAL_BACKOFF_MS;
   private currentBackoffDeadline: Date;
 
@@ -93,7 +91,7 @@ export class Http2Channel extends EventEmitter implements Channel {
       if (oldState === ConnectivityState.IDLE) {
         this.currentBackoff = INITIAL_BACKOFF_MS;
         this.currentBackoffDeadline = new Date(now.getTime() + INITIAL_BACKOFF_MS);
-      } else if (oldState == ConnectivityState.TRANSIENT_FAILURE) {
+      } else if (oldState === ConnectivityState.TRANSIENT_FAILURE) {
         this.currentBackoff = Math.min(this.currentBackoff * BACKOFF_MULTIPLIER, MAX_BACKOFF_MS);
         let jitterMagnitude: number = BACKOFF_JITTER * this.currentBackoff;
         this.currentBackoffDeadline = new Date(now.getTime() + this.currentBackoff + uniformRandom(-jitterMagnitude, jitterMagnitude));
@@ -116,6 +114,7 @@ export class Http2Channel extends EventEmitter implements Channel {
         this.subChannel.removeListener('connect', this.subChannelConnectCallback);
         this.subChannel.removeListener('close', this.subChannelCloseCallback);
         this.subChannel = null;
+        clearTimeout(this.backoffTimerId);
       }
       break;
     }
@@ -180,6 +179,10 @@ export class Http2Channel extends EventEmitter implements Channel {
       new CallCredentialsFilterFactory(this), new DeadlineFilterFactory(this)
     ]);
     this.currentBackoffDeadline = new Date();
+    /* The only purpose of these lines is to ensure that this.backoffTimerId has
+     * a value of type NodeJS.Timer. */
+    this.backoffTimerId = setTimeout(() => {}, 0);
+    clearTimeout(this.backoffTimerId);
   }
 
   private startHttp2Stream(
@@ -253,8 +256,5 @@ export class Http2Channel extends EventEmitter implements Channel {
                             ConnectivityState.READY,
                             ConnectivityState.TRANSIENT_FAILURE,
                             ConnectivityState.IDLE], ConnectivityState.SHUTDOWN);
-    if (this.subChannel !== null) {
-      this.subChannel.shutdown({graceful: true});
-    }
   }
 }
