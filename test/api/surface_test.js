@@ -21,7 +21,7 @@
 var assert = require('assert');
 var _ = require('lodash');
 
-var grpc = require('../any_grpc').all;
+var grpc = require('../any_grpc');
 
 var MathClient = grpc.load(
     __dirname + '/../../packages/grpc-native-core/deps/grpc/src/proto/math/math.proto').math.Math;
@@ -485,12 +485,10 @@ describe('Echo metadata', function() {
     call.end();
   });
   it('shows the correct user-agent string', function(done) {
-    var version = require('../any_grpc').core.packageJson.all.version;
+    var version = require('../any_grpc')['$implementationInfo'].server.corePjson.version;
     var call = client.unary({}, metadata,
                             function(err, data) { assert.ifError(err); });
     call.on('metadata', function(metadata) {
-      console.log(version);
-      console.log(metadata.get('user-agent')[0]);
       assert(_.startsWith(metadata.get('user-agent')[0],
                           'grpc-node/' + version));
       done();

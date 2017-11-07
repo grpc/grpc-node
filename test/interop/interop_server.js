@@ -22,7 +22,7 @@ var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
 var AsyncDelayQueue = require('./async_delay_queue');
-var grpc = require('../any_grpc').server;
+var grpc = require('../any_grpc')['$implementationInfo'].server.surface;
 var testProto = grpc.load({
   root: __dirname + '/../../packages/grpc-native-core/deps/grpc',
   file: 'src/proto/grpc/testing/test.proto'}).grpc.testing;

@@ -16,7 +16,7 @@
 // limitations under the License.
 //
 'use strict';
-var grpc = require('../../any_grpc.js').all;
+var grpc = require('../../any_grpc.js');
 var math_math_pb = require('../math/math_pb.js');
 
 function serialize_DivArgs(arg) {

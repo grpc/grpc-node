@@ -1,11 +1,6 @@
-module.exports = {
-  packageJson: {},
-  core: {
-    packageJson: {}
-  }
-};
+const _ = require('lodash');
 
-function assignExportsFromGlobal(globalField, exportsField) {
+function getImplementation(globalField) {
   if (global[globalField] !== 'js' && global[globalField] !== 'native') {
     throw new Error([
       `Invalid value for global.${globalField}: ${global.globalField}.`,
@@ -13,30 +8,28 @@ function assignExportsFromGlobal(globalField, exportsField) {
     ].join(' '));
   }
   const impl = global[globalField];
-  // (1) set global field.
-  module.exports[exportsField] = require(`../packages/grpc-${impl}`);
-  // (2) make package's package.json file accessible thru packageJson path.
-  module.exports.packageJson[exportsField] = require(`../packages/grpc-${impl}/package.json`);
-  // (3) make package's underlying core dependency accessible thru core path.
-  module.exports.core[exportsField] = require(`../packages/grpc-${impl}-core`);
-  // (4) make (3) x (2) accessible thru core.packageJson path.
-  module.exports.core.packageJson[exportsField] = require(`../packages/grpc-${impl}-core/package.json`);
+  return {
+    surface: require(`../packages/grpc-${impl}`),
+    pjson: require(`../packages/grpc-${impl}/package.json`),
+    core: require(`../packages/grpc-${impl}-core`),
+    corePjson: require(`../packages/grpc-${impl}-core/package.json`)
+  };
 }
 
-// Set 'server' and 'client' fields on this module's exports.
-// These don't refer to the portions of the gRPC interface that are
-// relevant to an application behaving as a server or a client respectively.
-// Instead, they refer to the entire gRPC module as it's visible to the
-// application.
-// In other words, a test that simulates a gRPC client should treat
-// require('any-grpc').client as the value of require('grpc'), and would simply
-// not be expected to use server components.
-assignExportsFromGlobal('_server_implementation', 'server');
-assignExportsFromGlobal('_client_implementation', 'client');
-// Increase clarity when there's no distinction between client/server
-if (module.exports.client === module.exports.server) {
-  module.exports.all = module.exports.client;
-  module.exports.core.all = module.exports.core.client;
-  module.exports.packageJson.all = module.exports.packageJson.client;
-  module.exports.core.packageJson.all = module.exports.core.packageJson.client;
-}
+const clientImpl = getImplementation('_client_implementation');
+const serverImpl = getImplementation('_server_implementation');
+
+// We export a "merged" gRPC API by merging client and server specified
+// APIs together. Any function that is unspecific to client/server defaults
+// to client-side implementation.
+// This object also has a test-only field from which details about the
+// modules may be read.
+module.exports = Object.assign({
+  '$implementationInfo': {
+    client: clientImpl,
+    server: serverImpl
+  }
+}, clientImpl.surface, _.pick(serverImpl.surface, [
+  'Server',
+  'ServerCredentials'
+]));

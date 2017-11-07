@@ -18,7 +18,7 @@
 
 'use strict';
 
-var Metadata = require('../any_grpc').all.Metadata;
+var Metadata = require('../any_grpc').Metadata;
 
 var assert = require('assert');
 

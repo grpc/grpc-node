@@ -18,8 +18,8 @@
 
 'use strict';
 
-var interop_server = require('./interop_server.js');
-var interop_client = require('./interop_client.js');
+var interop_server = require('../interop/interop_server.js');
+var interop_client = require('../interop/interop_client.js');
 
 var server;
 
