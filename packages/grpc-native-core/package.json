@@ -63,6 +63,7 @@
     "deps/grpc/third_party/boringssl/crypto/**/*.{c,h}",
     "deps/grpc/third_party/boringssl/include/**/*.{c,h}",
     "deps/grpc/third_party/boringssl/ssl/**/*.{c,h}",
+    "deps/grpc/third_party/abseil-cpp/absl/**/*.{h,hh}",
     "binding.gyp"
   ],
   "main": "index.js",
