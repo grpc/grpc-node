@@ -45,10 +45,10 @@
     },
     "binary": {
       "module_name": "grpc_node",
-      "module_path": "src/node/extension_binary/{node_abi}-{platform}-{arch}",
+      "module_path": "src/node/extension_binary/{node_abi}-{platform}-{arch}-{libc}",
       "host": "https://storage.googleapis.com/",
       "remote_path": "grpc-precompiled-binaries/node/{name}/v{version}",
-      "package_name": "{node_abi}-{platform}-{arch}.tar.gz"
+      "package_name": "{node_abi}-{platform}-{arch}-{libc}.tar.gz"
     },
     "files": [
       "LICENSE",
