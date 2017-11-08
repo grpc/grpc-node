@@ -132,7 +132,7 @@ declare module "grpc" {
    */
   export function setLogVerbosity(verbosity: logVerbosity): void;
 
-  export type Service<T> = ProtobufService;
+  export interface Service<T> extends ProtobufService {}
 
   /**
    * Server object that stores request handlers and delegates incoming requests to those handlers
