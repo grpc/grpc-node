@@ -527,7 +527,7 @@ declare module "grpc" {
      * Defaults to `false`.
      * @return The ServerCredentials
      */
-    static createInsecure(rootCerts: Buffer | null, keyCertPairs: KeyCertPair[], checkClientCertificate?: boolean): ServerCredentials;
+    static createSsl(rootCerts: Buffer | null, keyCertPairs: KeyCertPair[], checkClientCertificate?: boolean): ServerCredentials;
   }
 
   /**
