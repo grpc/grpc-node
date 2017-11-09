@@ -132,8 +132,6 @@ declare module "grpc" {
    */
   export function setLogVerbosity(verbosity: logVerbosity): void;
 
-  export interface Service<T> extends ProtobufService {}
-
   /**
    * Server object that stores request handlers and delegates incoming requests to those handlers
    */
@@ -195,7 +193,10 @@ declare module "grpc" {
      * @param implementation Map of method names to method implementation
      * for the provided service.
      */
-    addService<T>(service: Service<T>, implementation: T): void;
+    addService<ImplementationType = UntypedServiceImplementation>(
+      service: ServiceDefinition<ImplementationType>,
+      implementation: ImplementationType
+    ): void;
 
     /**
      * Add a proto service to the server, with a corresponding implementation
@@ -204,7 +205,10 @@ declare module "grpc" {
      * @param implementation Map of method names to method implementation
      * for the provided service.
      */
-    addProtoService<T>(service: Service<T> | ServiceDefinition, implementation: T): void;
+    addProtoService<ImplementationType = UntypedServiceImplementation>(
+      service: ServiceDefinition<ImplementationType>,
+      implementation: ImplementationType
+    ): void;
 
     /**
      * Binds the server to the given port, with SSL disabled if creds is an
@@ -219,10 +223,15 @@ declare module "grpc" {
   }
 
   /**
+   * A type that servers as a default for an untyped service.
+   */
+  type UntypedServiceImplementation = { [name: string]: handleCall<any, any> };
+
+  /**
    * An object that completely defines a service.
    * @typedef {Object.<string, grpc~MethodDefinition>} grpc~ServiceDefinition
    */
-  export interface ServiceDefinition {
+  export interface ServiceDefinition<ImplementationType> {
     [s: string]: MethodDefinition;
   }
 
@@ -904,7 +913,7 @@ declare module "grpc" {
    * has the same arguments as that constructor.
    */
   export function makeGenericClientConstructor(
-    methods: ServiceDefinition,
+    methods: ServiceDefinition<any>,
     serviceName: string,
     classOptions: GenericClientOptions,
   ): typeof Client;
