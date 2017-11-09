@@ -38,11 +38,11 @@ gulp.task('internal.test.clean.all', 'Delete all files created by tasks', () => 
 gulp.task('internal.test.test', 'Run API-level tests', () => {
   // run mocha tests matching a glob with a pre-required fixture,
   // returning the associated gulp stream
-  const runTestsWithFixture = (glob, fixture) => new Promise((resolve, reject) => {
-    const server = fixture.split('_')[0];
-    const client = fixture.split('_')[1];
-    console.log(`Running ${glob} with ${server} server + ${client} client`);
-    gulp.src(glob)
+  const apiTestGlob = `${apiTestDir}/*.js`;
+  const runTestsWithFixture = (server, client) => new Promise((resolve, reject) => {
+    const fixture = `${server}_${client}`;
+    console.log(`Running ${apiTestGlob} with ${server} server + ${client} client`);
+    gulp.src(apiTestGlob)
       .pipe(mocha({
         reporter: 'mocha-jenkins-reporter',
         require: `${testDir}/fixtures/${fixture}.js`
@@ -51,12 +51,11 @@ gulp.task('internal.test.test', 'Run API-level tests', () => {
       .on('end', resolve)
       .on('error', reject);
   });
-  const apiTestGlob = `${apiTestDir}/*.js`;
   const runTestsArgPairs = [
-    [apiTestGlob, 'native_native'],
-    // [apiTestGlob, 'native_js'],
-    // [apiTestGlob, 'js_native'],
-    // [apiTestGlob, 'js_js']
+    ['native', 'native'],
+    // ['native', 'js'],
+    // ['js', 'native'],
+    // ['js', 'js']
   ];
   return runTestsArgPairs.reduce((previousPromise, argPair) => {
     return previousPromise.then(runTestsWithFixture.bind(null, argPair[0], argPair[1]));

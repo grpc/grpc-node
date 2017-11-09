@@ -485,7 +485,7 @@ describe('Echo metadata', function() {
     call.end();
   });
   it('shows the correct user-agent string', function(done) {
-    var version = require('../any_grpc')['$implementationInfo'].server.corePjson.version;
+    var version = require('../any_grpc')['$implementationInfo'].client.corePjson.version;
     var call = client.unary({}, metadata,
                             function(err, data) { assert.ifError(err); });
     call.on('metadata', function(metadata) {

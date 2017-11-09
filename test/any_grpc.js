@@ -1,3 +1,7 @@
+// TODO: Instead of attempting to expose both implementations of gRPC in
+// a single object, the tests should be re-written in a way that makes it clear
+// that two separate implementations are being tested against one another.
+
 const _ = require('lodash');
 
 function getImplementation(globalField) {
