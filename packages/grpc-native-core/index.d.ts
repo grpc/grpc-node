@@ -1108,7 +1108,7 @@ declare module "grpc" {
    * Any client call type
    */
   type Call =
-    ClientUnaryCall<any> |
+    ClientUnaryCall |
     ClientReadableStream<any> |
     ClientWritableStream<any> |
     ClientDuplexStream<any, any>;
@@ -1116,7 +1116,7 @@ declare module "grpc" {
   /**
    * An EventEmitter. Used for unary calls.
    */
-  export class ClientUnaryCall<T> {
+  export class ClientUnaryCall {
     private constructor();
 
     /**
