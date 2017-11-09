@@ -443,7 +443,7 @@ declare module "grpc" {
    * unary responses.
    */
   type sendUnaryData<ResponseType> =
-    (error: ServiceError | null, value: ResponseType, trailer?: Metadata, flags?: number) => void;
+    (error: ServiceError | null, value: ResponseType | null, trailer?: Metadata, flags?: number) => void;
 
   /**
    * A class for storing metadata. Keys are normalized to lowercase ASCII.
@@ -1220,7 +1220,7 @@ declare module "grpc" {
    * @param value The response value, if the call succeeded
    */
   export type requestCallback<ResponseType> =
-    (error: ServiceError | null, value: ResponseType) => void;
+    (error: ServiceError | null, value: ResponseType | null) => void;
 
   /**
    * Return the underlying channel object for the specified client
