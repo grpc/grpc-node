@@ -170,7 +170,7 @@ declare module "grpc" {
      */
     register<RequestType, ResponseType>(
       name: string,
-      handler: handleCall,
+      handler: handleCall<RequestType, ResponseType>,
       serialize: serialize<ResponseType>,
       deserialize: deserialize<RequestType>,
       type: string
@@ -275,16 +275,17 @@ declare module "grpc" {
     responseDeserialize: deserialize<ResponseType>;
   }
 
-  type handleCall =
-    handleUnaryCall<any> |
-    handleClientStreamingCall<any> |
-    handleServerStreamingCall<any> |
-    handleBidiStreamingCall<any, any>;
+  type handleCall<RequestType, ResponseType> =
+    handleUnaryCall<RequestType, ResponseType> |
+    handleClientStreamingCall<RequestType, ResponseType> |
+    handleServerStreamingCall<RequestType, ResponseType> |
+    handleBidiStreamingCall<RequestType, ResponseType>;
 
   /**
    * User-provided method to handle unary requests on a server
    */
-  type handleUnaryCall<T> = (call: ServerUnaryCall<T>, callback: sendUnaryData<T>) => void;
+  type handleUnaryCall<RequestType, ResponseType> =
+    (call: ServerUnaryCall<RequestType>, callback: sendUnaryData<ResponseType>) => void;
 
   /**
    * An EventEmitter. Used for unary calls.
@@ -323,7 +324,8 @@ declare module "grpc" {
   /**
    * User provided method to handle client streaming methods on the server.
    */
-  type handleClientStreamingCall<T> = (call: ServerReadableStream<T>, callback: sendUnaryData<T>) => void;
+  type handleClientStreamingCall<RequestType, ResponseType> =
+    (call: ServerReadableStream<RequestType>, callback: sendUnaryData<ResponseType>) => void;
 
   /**
    * A stream that the server can read from. Used for calls that are streaming
@@ -358,7 +360,8 @@ declare module "grpc" {
   /**
    * User provided method to handle server streaming methods on the server.
    */
-  type handleServerStreamingCall<T> = (call: ServerWriteableStream<T>) => void;
+  type handleServerStreamingCall<RequestType, ResponseType> =
+    (call: ServerWriteableStream<RequestType>) => void;
 
   /**
    * A stream that the server can write to. Used for calls that are streaming
