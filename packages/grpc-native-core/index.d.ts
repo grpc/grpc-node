@@ -290,7 +290,7 @@ declare module "grpc" {
   /**
    * An EventEmitter. Used for unary calls.
    */
-  export class ServerUnaryCall<T> {
+  export class ServerUnaryCall<RequestType> {
     /**
      * Indicates if the call has been cancelled
      */
@@ -304,7 +304,7 @@ declare module "grpc" {
     /**
      * The request message from the client
      */
-    request: T;
+    request: RequestType;
 
     private constructor();
 
@@ -367,7 +367,7 @@ declare module "grpc" {
    * A stream that the server can write to. Used for calls that are streaming
    * from the server side.
    */
-  export class ServerWriteableStream<T> extends Writable {
+  export class ServerWriteableStream<RequestType> extends Writable {
     /**
      * Indicates if the call has been cancelled
      */
@@ -381,7 +381,7 @@ declare module "grpc" {
     /**
      * The request message from the client
      */
-    request: T;
+    request: RequestType;
 
     private constructor();
 
@@ -401,13 +401,14 @@ declare module "grpc" {
   /**
    * User provided method to handle bidirectional streaming calls on the server.
    */
-  type handleBidiStreamingCall<R, W> = (call: ServerDuplexStream<R, W>) => void;
+  type handleBidiStreamingCall<RequestType, ResponseType> =
+    (call: ServerDuplexStream<RequestType, ResponseType>) => void;
 
   /**
    * A stream that the server can read from or write to. Used for calls
    * with duplex streaming.
    */
-  export class ServerDuplexStream<R, W> extends Duplex {
+  export class ServerDuplexStream<RequestType, ResponseType> extends Duplex {
     private constructor();
 
     /**
@@ -441,7 +442,8 @@ declare module "grpc" {
    * Callback function passed to server handlers that handle methods with
    * unary responses.
    */
-  type sendUnaryData<T> = (error: ServiceError | null, value: T, trailer?: Metadata, flags?: number) => void;
+  type sendUnaryData<ResponseType> =
+    (error: ServiceError | null, value: ResponseType, trailer?: Metadata, flags?: number) => void;
 
   /**
    * A class for storing metadata. Keys are normalized to lowercase ASCII.
@@ -1134,7 +1136,7 @@ declare module "grpc" {
    * A stream that the client can read from. Used for calls that are streaming
    * from the server side.
    */
-  export class ClientReadableStream<T> extends Readable {
+  export class ClientReadableStream<ResponseType> extends Readable {
     private constructor();
 
     /**
@@ -1154,7 +1156,7 @@ declare module "grpc" {
    * A stream that the client can write to. Used for calls that are streaming from
    * the client side.
    */
-  export class ClientWritableStream<W> extends Writable {
+  export class ClientWritableStream<RequestType> extends Writable {
     private constructor();
 
     /**
@@ -1166,7 +1168,7 @@ declare module "grpc" {
      * @param callback Callback for when this chunk of data is flushed
      * @return As defined for [Writable]{@link external:Writable}
      */
-    write(message: W, flags?: any&writeFlags, callback?: Function): boolean;
+    write(message: RequestType, flags?: any&writeFlags, callback?: Function): boolean;
 
     /**
      * Cancel the ongoing call. Results in the call ending with a CANCELLED status,
@@ -1185,7 +1187,7 @@ declare module "grpc" {
    * A stream that the client can read from or write to. Used for calls with
    * duplex streaming.
    */
-  export class ClientDuplexStream<R, W> extends Duplex {
+  export class ClientDuplexStream<RequestType, ResponseType> extends Duplex {
     private constructor();
 
     /**
@@ -1197,7 +1199,7 @@ declare module "grpc" {
      * @param callback Callback for when this chunk of data is flushed
      * @return As defined for [Writable]{@link external:Writable}
      */
-    write(message: W, flags?: any&writeFlags, callback?: Function): boolean;
+    write(message: RequestType, flags?: any&writeFlags, callback?: Function): boolean;
 
     /**
      * Cancel the ongoing call. Results in the call ending with a CANCELLED status,
@@ -1217,7 +1219,8 @@ declare module "grpc" {
    * @param error The error, if the call failed
    * @param value The response value, if the call succeeded
    */
-  export type requestCallback<T> = (error: ServiceError | null, value: T) => void;
+  export type requestCallback<ResponseType> =
+    (error: ServiceError | null, value: ResponseType) => void;
 
   /**
    * Return the underlying channel object for the specified client
