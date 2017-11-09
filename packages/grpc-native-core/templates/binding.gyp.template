@@ -188,9 +188,8 @@
     'conditions': [
       ['OS=="win" or runtime=="electron"', {
         'targets': [
-          % for module in node_modules:
           % for lib in libs:
-          % if lib.name in module.transitive_deps and lib.name == 'boringssl':
+          % if lib.name == 'boringssl':
           {
             'target_name': '${lib.name}',
             'product_prefix': 'lib',
@@ -217,7 +216,6 @@
             ]
           },
           % endif
-          % endfor
           % endfor
         ],
       }],
@@ -254,9 +252,8 @@
       ['OS == "win"', {
         'targets': [
           # Only want to compile zlib under Windows
-          % for module in node_modules:
           % for lib in libs:
-          % if lib.name in module.transitive_deps and lib.name == 'z':
+          % if lib.name == 'z':
           {
             'target_name': '${lib.name}',
             'product_prefix': 'lib',
@@ -274,14 +271,14 @@
           },
           % endif
           % endfor
-          % endfor
         ]
       }]
     ],
     'targets': [
-      % for module in node_modules:
+      % for core in libs:
+      % if core.name == 'grpc':
       % for lib in libs:
-      % if lib.name in module.transitive_deps and lib.name not in ('boringssl', 'z'):
+      % if lib.name == core.name or (lib.name in core.transitive_deps and lib.name not in ('boringssl', 'z')):
       {
         'target_name': '${lib.name}',
         'product_prefix': 'lib',
@@ -306,6 +303,8 @@
       },
       % endif
       % endfor
+      % endif
+      % endfor
       {
         'include_dirs': [
           "<!(node -e \"require('nan')\")"
@@ -318,20 +317,12 @@
         "conditions": [
           ['OS=="win" or runtime=="electron"', {
             'dependencies': [
-              % for dep in getattr(module, 'deps', []):
-              % if dep == 'boringssl':
-              "${dep}",
-              % endif
-              % endfor
+              "boringssl",
             ]
           }],
           ['OS=="win"', {
             'dependencies': [
-              % for dep in getattr(module, 'deps', []):
-              % if dep == 'z':
-              "${dep}",
-              % endif
-              % endfor
+              "z",
             ]
           }],
           ['OS=="linux"', {
@@ -345,22 +336,15 @@
             }
           }]
         ],
-        "target_name": "${module.name}",
+        "target_name": "grpc_node",
         "sources": [
-          % for source in module.src:
-  ## temporary hack until we get the build.yaml out of grpc.
-          "${source[len('src/node/'):]}",
-          % endfor
+          "<!@(node -p \"require('fs').readdirSync('./ext').map(f=>'ext/'+f).join(' ')\")"
         ],
         "dependencies": [
-          % for dep in getattr(module, 'deps', []):
-          % if dep not in ('boringssl', 'z'):
-          "${dep}",
-          % endif
-          % endfor
+          "grpc",
+          "gpr",
         ]
       },
-      % endfor
       {
         "target_name": "action_after_build",
         "type": "none",
