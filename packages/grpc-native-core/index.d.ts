@@ -232,13 +232,13 @@ declare module "grpc" {
    * @typedef {Object.<string, grpc~MethodDefinition>} grpc~ServiceDefinition
    */
   export interface ServiceDefinition<ImplementationType> {
-    [s: string]: MethodDefinition;
+    [s: string]: MethodDefinition<any, any>;
   }
 
   /**
    * An object that completely defines a service method signature.
    */
-  export interface MethodDefinition {
+  export interface MethodDefinition<RequestType, ResponseType> {
     /**
      * The method's URL path
      */
