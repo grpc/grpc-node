@@ -168,7 +168,13 @@ declare module "grpc" {
      * @return True if the handler was set. False if a handler was already
      *     set for that name.
      */
-    register(name: string, handler: handleCall, serialize: serialize, deserialize: deserialize, type: string): boolean;
+    register<RequestType, ResponseType>(
+      name: string,
+      handler: handleCall,
+      serialize: serialize<ResponseType>,
+      deserialize: deserialize<RequestType>,
+      type: string
+    ): boolean;
 
     /**
      * Gracefully shuts down the server. The server will stop receiving new calls,
@@ -254,19 +260,19 @@ declare module "grpc" {
    /**
     * Serialization function for request values
     */
-    requestSerialize: serialize;
+    requestSerialize: serialize<RequestType>;
     /**
      * Serialization function for response values
      */
-    responseSerialize: serialize;
+    responseSerialize: serialize<ResponseType>;
     /**
      * Deserialization function for request data
      */
-    requestDeserialize: deserialize;
+    requestDeserialize: deserialize<RequestType>;
     /**
      * Deserialization function for repsonse data
      */
-    responseDeserialize: deserialize;
+    responseDeserialize: deserialize<ResponseType>;
   }
 
   type handleCall =
@@ -419,14 +425,14 @@ declare module "grpc" {
    * @param data The byte sequence to deserialize
    * @return The data deserialized as a value
    */
-  type deserialize = (data: Buffer) => any;
+  type deserialize<T> = (data: Buffer) => T;
 
   /**
    * A serialization function
    * @param value The value to serialize
    * @return The value serialized as a byte sequence
    */
-  type serialize = (value: any) => Buffer;
+  type serialize<T> = (value: T) => Buffer;
 
   /**
    * Callback function passed to server handlers that handle methods with
@@ -956,15 +962,15 @@ declare module "grpc" {
      * @param callback The callback to for when the response is received
      * @return An event emitter for stream related events
      */
-    makeUnaryRequest<T>(
+    makeUnaryRequest<RequestType, ResponseType>(
       method: string,
-      serialize: serialize,
-      deserialize: deserialize,
-      argument: T | null,
+      serialize: serialize<RequestType>,
+      deserialize: deserialize<ResponseType>,
+      argument: RequestType | null,
       metadata: Metadata | null,
       options: CallOptions | null,
-      callback: requestCallback<T>,
-    ): ClientUnaryCall<T>;
+      callback: requestCallback<ResponseType>,
+    ): ClientUnaryCall;
 
     /**
      * Make a client stream request to the given method, using the given serialize
@@ -977,14 +983,14 @@ declare module "grpc" {
      * @param callback The callback to for when the response is received
      * @return An event emitter for stream related events
      */
-    makeClientStreamRequest<W>(
+    makeClientStreamRequest<RequestType, ResponseType>(
       method: string,
-      serialize: serialize,
-      deserialize: deserialize,
+      serialize: serialize<RequestType>,
+      deserialize: deserialize<ResponseType>,
       metadata: Metadata | null,
       options: CallOptions | null,
-      callback: requestCallback<W>,
-    ): ClientWritableStream<W>;
+      callback: requestCallback<ResponseType>,
+    ): ClientWritableStream<RequestType>;
 
     /**
      * Make a server stream request to the given method, with the given serialize
@@ -998,14 +1004,14 @@ declare module "grpc" {
      * @param options Options map
      * @return An event emitter for stream related events
      */
-    makeServerStreamRequest<R>(
+    makeServerStreamRequest<RequestType, ResponseType>(
       method: string,
-      serialize: serialize,
-      deserialize: deserialize,
-      argument: R,
+      serialize: serialize<RequestType>,
+      deserialize: deserialize<ResponseType>,
+      argument: RequestType,
       metadata?: Metadata | null,
       options?: CallOptions | null,
-    ): ClientReadableStream<R>;
+    ): ClientReadableStream<RequestType>;
 
     /**
      * Make a bidirectional stream request with this method on the given channel.
@@ -1018,13 +1024,13 @@ declare module "grpc" {
      * @param options Options map
      * @return An event emitter for stream related events
      */
-    makeBidiStreamRequest<R, W>(
+    makeBidiStreamRequest<RequestType, ResponseType>(
       method: string,
-      serialize: serialize,
-      deserialize: deserialize,
+      serialize: serialize<RequestType>,
+      deserialize: deserialize<ResponseType>,
       metadata?: Metadata | null,
       options?: CallOptions | null,
-    ): ClientDuplexStream<R, W>;
+    ): ClientDuplexStream<RequestType, ResponseType>;
 
     /**
      * Close this client.
