@@ -225,7 +225,7 @@ exports.ServerCredentials = grpc.ServerCredentials;
 
 /**
  * Create SSL server credentials
- * @name grpc.ServerCredentials.createInsecure
+ * @name grpc.ServerCredentials.createSsl
  * @kind function
  * @param {?Buffer} rootCerts Root CA certificates for validating client
  *     certificates
