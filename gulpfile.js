@@ -75,7 +75,7 @@ gulp.task('clean.all', 'Delete all files created by tasks',
 	   'internal.test.clean.all', 'js.clean.all', 'native.clean.all']);
 
 gulp.task('native.test.only', 'Run tests of native code without rebuilding anything',
-          ['native.core.test', 'internal.test.test', 'health-check.test']);
+          ['native.core.test'/*, 'internal.test.test', 'health-check.test'*/]);
 
 gulp.task('native.test', 'Run tests of native code', (callback) => {
   runSequence('build', 'native.test.only', callback);
