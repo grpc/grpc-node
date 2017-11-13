@@ -20,8 +20,7 @@
 
 var fs = require('fs');
 var path = require('path');
-// TODO(murgatroid99): use multiple grpc implementations
-var grpc = require('grpc');
+var grpc = require('../any_grpc')['$implementationInfo'].client.surface;
 var testProto = grpc.load({
   root: __dirname + '/../../packages/grpc-native-core/deps/grpc',
   file: 'src/proto/grpc/testing/test.proto'}).grpc.testing;

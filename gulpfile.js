@@ -34,10 +34,10 @@ require('./test/gulpfile');
 const root = __dirname;
 
 gulp.task('install.all', 'Install dependencies for all subdirectory packages',
-          ['js.core.install', 'native.core.install', 'health-check.install', 'internal.test.install']);
+          ['js.core.install', 'native.core.install', 'surface.install', 'health-check.install', 'internal.test.install']);
 
 gulp.task('install.all.windows', 'Install dependencies for all subdirectory packages for MS Windows',
-          ['js.core.install', 'native.core.install.windows', 'health-check.install', 'internal.test.install']);
+          ['js.core.install', 'native.core.install.windows', 'surface.install', 'health-check.install', 'internal.test.install']);
 
 gulp.task('lint', 'Emit linting errors in source and test files',
           ['js.core.lint', 'native.core.lint']);
@@ -48,7 +48,7 @@ gulp.task('core.link', 'Add links to core packages without rebuilding',
           ['js.link.add', 'native.link.add']);
 
 gulp.task('surface.link', 'Link to surface packages',
-          ['health-check.link.add', 'internal.test.link.add']);
+          ['health-check.link.add']);
 
 gulp.task('link', 'Link together packages', (callback) => {
   /* Currently, the target 'surface.link.create' doesn't work properly, and it
