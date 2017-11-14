@@ -306,7 +306,7 @@ describe('client credentials', function() {
       done();
     });
   });
-  it('should propagate errors that the updater emits', function(done) {
+  it('should fail the call if the updater fails', function(done) {
     var metadataUpdater = function(service_url, callback) {
       var error = new Error('Authentication error');
       error.code = grpc.status.UNAUTHENTICATED;
@@ -322,7 +322,7 @@ describe('client credentials', function() {
       assert.strictEqual(err.message,
                          'Getting metadata from plugin failed with error: ' +
                          'Authentication error');
-      assert.strictEqual(err.code, grpc.status.UNAUTHENTICATED);
+      assert.notStrictEqual(err.code, grpc.status.OK);
       done();
     });
   });
