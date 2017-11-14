@@ -133,7 +133,7 @@ describe('channel', function() {
     });
   });
   // This suite test appears to be triggering grpc/grpc#12932; skipping for now
-  describe.skip('watchConnectivityState', function() {
+  describe('watchConnectivityState', function() {
     var channel;
     beforeEach(function() {
       channel = new grpc.Channel('localhost', insecureCreds, {});
@@ -150,7 +150,7 @@ describe('channel', function() {
         done();
       });
     });
-    it('should complete if a connection attempt is forced', function(done) {
+    it.only('should complete if a connection attempt is forced', function(done) {
       var old_state = channel.getConnectivityState();
       var deadline = new Date();
       deadline.setSeconds(deadline.getSeconds() + 1);

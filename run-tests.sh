@@ -25,8 +25,11 @@ curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.4/install.sh | b
 set -ex
 cd $ROOT
 
+export GRPC_TRACE=api
+export GRPC_VERBOSITY=debug
+
 if [ ! -n "$node_versions" ] ; then
-  node_versions="4 5 6 7 8"
+  node_versions="6 8"
 fi
 
 set +ex
