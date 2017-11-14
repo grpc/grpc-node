@@ -306,7 +306,7 @@ describe('client credentials', function() {
       done();
     });
   });
-  it('should propagate errors that the updater emits', function(done) {
+  it('should fail the call if the updater emits', function(done) {
     var metadataUpdater = function(service_url, callback) {
       var error = new Error('Authentication error');
       error.code = grpc.status.UNAUTHENTICATED;
@@ -322,7 +322,10 @@ describe('client credentials', function() {
       assert.strictEqual(err.message,
                          'Getting metadata from plugin failed with error: ' +
                          'Authentication error');
-      assert.strictEqual(err.code, grpc.status.UNAUTHENTICATED);
+      // TODO(jtattermusch): stop accepting UNAUTHENTICATED once
+      // https://github.com/grpc/grpc/pull/13322 has been merged for a while.
+      assert.ok(err.code === grpc.status.UNAUTHENTICATED ||
+                err.code === grpc.status.UNAVAILABLE);
       done();
     });
   });
