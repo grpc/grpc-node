@@ -132,8 +132,7 @@ describe('channel', function() {
                          grpc.connectivityState.IDLE);
     });
   });
-  // This suite test appears to be triggering grpc/grpc#12932; skipping for now
-  describe.skip('watchConnectivityState', function() {
+  describe('watchConnectivityState', function() {
     var channel;
     beforeEach(function() {
       channel = new grpc.Channel('localhost', insecureCreds, {});
