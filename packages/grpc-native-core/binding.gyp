@@ -683,7 +683,6 @@
         'deps/grpc/src/core/lib/http/httpcli.cc',
         'deps/grpc/src/core/lib/http/parser.cc',
         'deps/grpc/src/core/lib/iomgr/call_combiner.cc',
-        'deps/grpc/src/core/lib/iomgr/closure.cc',
         'deps/grpc/src/core/lib/iomgr/combiner.cc',
         'deps/grpc/src/core/lib/iomgr/endpoint.cc',
         'deps/grpc/src/core/lib/iomgr/endpoint_pair_posix.cc',
