@@ -64,7 +64,6 @@ grpc_completion_queue *GetCompletionQueue() { return queue; }
 
 void CompletionQueueNext() {
   if (pending_batches == 0) {
-    GPR_ASSERT(!uv_is_active((uv_handle_t *)&prepare));
     uv_prepare_start(&prepare, drain_completion_queue);
   }
   pending_batches++;

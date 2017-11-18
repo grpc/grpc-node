@@ -213,7 +213,7 @@
           'product_prefix': 'lib',
           'type': 'static_library',
           'cflags': [
-            '-Wimplicit-fallthrough=0'
+            '-Wno-implicit-fallthrough'
           ],
           'dependencies': [
           ],

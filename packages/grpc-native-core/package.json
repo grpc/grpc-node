@@ -16,7 +16,7 @@
     }
   ],
   "directories": {
-    "lib": "src/node/src"
+    "lib": "src"
   },
   "scripts": {
     "build": "./node_modules/.bin/node-pre-gyp build",
@@ -31,7 +31,7 @@
     "arguejs": "^0.2.3",
     "lodash": "^4.15.0",
     "nan": "^2.0.0",
-    "node-pre-gyp": "^0.6.35",
+    "node-pre-gyp": "^0.6.39",
     "protobufjs": "^5.0.0"
   },
   "devDependencies": {
@@ -53,6 +53,7 @@
     "README.md",
     "deps/grpc/etc/",
     "index.js",
+    "index.d.ts",
     "src/*.js",
     "ext/*.{cc,h}",
     "deps/grpc/include/grpc/**/*.h",
@@ -67,7 +68,7 @@
     "binding.gyp"
   ],
   "main": "index.js",
-  "typings": "src/index.d.ts",
+  "typings": "index.d.ts",
   "license": "Apache-2.0",
   "jshintConfig": {
     "bitwise": true,
