@@ -37,7 +37,7 @@ try {
   var foundNames = fs.readdirSync(searchPath);
   if (foundNames.indexOf(searchName) === -1) {
     var message = `Failed to load gRPC binary module because it was not installed for the current system
-Expected: ${searchName}
+Expected directory: ${searchName}
 Found: [${foundNames.join(', ')}]
 This problem can often be fixed by running "npm rebuild" on the current system
 Original error: ${e.message}`;
