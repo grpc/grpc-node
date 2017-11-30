@@ -27,6 +27,26 @@ var binary = require('node-pre-gyp/lib/pre-binding');
 var path = require('path');
 var binding_path =
     binary.find(path.resolve(path.join(__dirname, '../package.json')));
-var binding = require(binding_path);
+var binding;
+try {
+  binding = require(binding_path);
+} catch (e) {
+  var fs = require('fs');
+  var searchPath = path.dirname(path.dirname(binding_path));
+  var searchName = path.basename(path.dirname(binding_path));
+  var foundNames = fs.readdirSync(searchPath);
+  if (foundNames.indexOf(searchName) === -1) {
+    var message = `Failed to load gRPC binary module because it was not installed for the current system
+Expected directory: ${searchName}
+Found: [${foundNames.join(', ')}]
+This problem can often be fixed by running "npm rebuild" on the current system
+Original error: ${e.message}`;
+    var error = new Error(message);
+    error.code = e.code;
+    throw error;
+  } else {
+    throw e;
+  }
+}
 
 module.exports = binding;
