@@ -13,6 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+NODE_ALPINE_BUILD=false
+
+while true ; do
+  case $1 in
+  --with-alpine)
+    NODE_ALPINE_BUILD=true
+    ;;
+  "")
+    ;;
+  *)
+    echo "Unknown parameter: $1"
+    exit 1
+    ;;
+  esac
+  shift || break
+done
+
 NODE_ALPINE_BUILD=$1
 
 umask 022

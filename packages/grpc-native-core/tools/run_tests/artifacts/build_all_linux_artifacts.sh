@@ -31,8 +31,8 @@ mkdir -p "${ARTIFACTS_OUT}"
 
 docker build -t alpine_node_artifact $base_dir/tools/docker/alpine_artifact
 
-$tool_dir/build_artifact_node.sh false
+$tool_dir/build_artifact_node.sh
 
 $tool_dir/build_artifact_node_arm.sh
 
-docker run -e ARTIFACTS_OUT=/var/grpc/artifacts -v $base_dir:/var/grpc alpine_node_artifact bash -c /var/grpc/tools/run_tests/artifacts/build_artifact_node.sh true
+docker run -e ARTIFACTS_OUT=/var/grpc/artifacts -v $base_dir:/var/grpc alpine_node_artifact bash -c /var/grpc/tools/run_tests/artifacts/build_artifact_node.sh --with-alpine
