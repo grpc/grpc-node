@@ -28,9 +28,7 @@
 #include "grpc/support/time.h"
 
 // TODO(murgatroid99): Remove this when the endpoint API becomes public
-extern "C" {
 #include "src/core/lib/iomgr/pollset_uv.h"
-}
 
 #include "call.h"
 #include "call_credentials.h"
