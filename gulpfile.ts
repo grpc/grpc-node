@@ -15,26 +15,52 @@
  *
  */
 
-const _gulp = require('gulp');
-const help = require('gulp-help');
+import * as _gulp from 'gulp';
+import * as help from 'gulp-help';
 
 // gulp-help monkeypatches tasks to have an additional description parameter
 const gulp = help(_gulp);
 
-var runSequence = require('run-sequence');
+const runSequence = require('run-sequence');
 
-require('./packages/grpc-health-check/gulpfile');
-require('./packages/grpc-js/gulpfile');
-require('./packages/grpc-js-core/gulpfile');
-require('./packages/grpc-native/gulpfile');
-require('./packages/grpc-native-core/gulpfile');
-require('./packages/grpc-surface/gulpfile');
-require('./test/gulpfile');
+/**
+ * Require a module at the given path with a patched gulp object that prepends
+ * the given prefix to each task name.
+ * @param path The path to require.
+ * @param prefix The string to use as a prefix. This will be prepended to a task
+ *               name with a '.' separator.
+ */
+function loadGulpTasksWithPrefix(path: string, prefix: string) {
+  const gulpTask = gulp.task;
+  gulp.task = ((taskName: string, ...args: any[]) => {
+    // Don't create a task for ${prefix}.help
+    if (taskName === 'help') {
+      return;
+    }
+    // The only array passed to gulp.task must be a list of dependent tasks.
+    const newArgs = args.map(arg => Array.isArray(arg) ?
+      arg.map(dep => `${prefix}.${dep}`) : arg);
+    gulpTask(`${prefix}.${taskName}`, ...newArgs);
+  });
+  const result = require(path);
+  gulp.task = gulpTask;
+  return result;
+}
+
+[
+  ['./packages/grpc-health-check/gulpfile', 'health-check'],
+  ['./packages/grpc-js/gulpfile', 'js'],
+  ['./packages/grpc-js-core/gulpfile', 'js.core'],
+  ['./packages/grpc-native/gulpfile', 'native'],
+  ['./packages/grpc-native-core/gulpfile', 'native.core'],
+  ['./packages/grpc-surface/gulpfile', 'surface'],
+  ['./test/gulpfile', 'internal.test']
+].forEach((args) => loadGulpTasksWithPrefix(args[0], args[1]));
 
 const root = __dirname;
 
 gulp.task('install.all', 'Install dependencies for all subdirectory packages',
-          ['js.core.install', 'native.core.install', 'surface.install', 'health-check.install', 'internal.test.install']);
+          ['js.install', 'js.core.install', 'native.core.install', 'surface.install', 'health-check.install', 'internal.test.install']);
 
 gulp.task('install.all.windows', 'Install dependencies for all subdirectory packages for MS Windows',
           ['js.core.install', 'native.core.install.windows', 'surface.install', 'health-check.install', 'internal.test.install']);
@@ -42,22 +68,19 @@ gulp.task('install.all.windows', 'Install dependencies for all subdirectory pack
 gulp.task('lint', 'Emit linting errors in source and test files',
           ['js.core.lint', 'native.core.lint']);
 
-gulp.task('build', 'Build packages', ['js.core.compile', 'native.core.build']);
+gulp.task('build', 'Build packages', ['js.compile', 'js.core.compile', 'native.core.build']);
 
-gulp.task('core.link', 'Add links to core packages without rebuilding',
+gulp.task('link.core', 'Add links to core packages without rebuilding',
           ['js.link.add', 'native.link.add']);
 
-gulp.task('surface.link', 'Link to surface packages',
+gulp.task('link.surface', 'Link to surface packages',
           ['health-check.link.add']);
 
 gulp.task('link', 'Link together packages', (callback) => {
-  /* Currently, the target 'surface.link.create' doesn't work properly, and it
-   * is also not needed for the existing tests. The comment indicates where it
-   * belongs in the sequence. See npm/npm#18835 for the primary problem with it.
-   * This also means that 'core.link' is not needed, and the item
-   * 'native.core.link.create' should actually be 'core.link.create'
+  /**
+   * We use workarounds for linking in some modules. See npm/npm#18835
    */
-  runSequence('core.link', 'surface.link',
+  runSequence('link.core', 'link.surface',
               callback);
 });
 

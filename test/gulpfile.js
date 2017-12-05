@@ -29,13 +29,13 @@ const gulp = help(_gulp);
 const testDir = __dirname;
 const apiTestDir = path.resolve(testDir, 'api');
 
-gulp.task('internal.test.install', 'Install test dependencies', () => {
+gulp.task('install', 'Install test dependencies', () => {
   return execa('npm', ['install'], {cwd: testDir, stdio: 'inherit'});
 });
 
-gulp.task('internal.test.clean.all', 'Delete all files created by tasks', () => {});
+gulp.task('clean.all', 'Delete all files created by tasks', () => {});
 
-gulp.task('internal.test.test', 'Run API-level tests', () => {
+gulp.task('test', 'Run API-level tests', () => {
   // run mocha tests matching a glob with a pre-required fixture,
   // returning the associated gulp stream
   const apiTestGlob = `${apiTestDir}/*.js`;

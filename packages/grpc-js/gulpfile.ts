@@ -28,19 +28,26 @@ const linkSync = require('../../util').linkSync;
 
 const jsDir = __dirname;
 
-gulp.task('js.clean.links', 'Delete npm links', () => {
+const execNpmVerb = (verb: string, ...args: string[]) =>
+  execa('npm', [verb, ...args], {cwd: jsDir, stdio: 'inherit'});
+const execNpmCommand = execNpmVerb.bind(null, 'run');
+
+gulp.task('clean.links', 'Delete npm links', () => {
   return del([path.resolve(jsDir, 'node_modules/@grpc/js-core'),
               path.resolve(jsDir, 'node_modules/@grpc/surface')]);
 });
 
-gulp.task('js.clean.all', 'Delete all files created by tasks',
-          ['js.clean.links']);
+gulp.task('clean.all', 'Delete all files created by tasks', ['clean.links']);
 
-gulp.task('js.install', 'Install dependencies', () => {
-  return execa('npm', ['install', '--unsafe-perm'], {cwd: jsDir, stdio: 'inherit'});
-});
+/**
+ * Transpiles TypeScript files in src/ to JavaScript according to the settings
+ * found in tsconfig.json.
+ */
+gulp.task('compile', 'Transpiles src/.', () => execNpmCommand('compile'));
 
-gulp.task('js.link.add', 'Link local copies of dependencies', () => {
+gulp.task('install', 'Install dependencies', () => execNpmVerb('install'));
+
+gulp.task('link.add', 'Link local copies of dependencies', () => {
   linkSync(jsDir, './node_modules/@grpc/js-core', '../grpc-js-core');
   linkSync(jsDir, './node_modules/@grpc/surface', '../grpc-surface');
 });

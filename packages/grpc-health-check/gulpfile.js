@@ -29,22 +29,22 @@ const healthCheckDir = __dirname;
 const baseDir = path.resolve(healthCheckDir, '..', '..');
 const testDir = path.resolve(healthCheckDir, 'test');
 
-gulp.task('health-check.clean.links', 'Delete npm links', () => {
+gulp.task('clean.links', 'Delete npm links', () => {
   return del(path.resolve(healthCheckDir, 'node_modules/grpc'));
 });
 
-gulp.task('health-check.clean.all', 'Delete all code created by tasks',
-	  ['health-check.clean.links']);
+gulp.task('clean.all', 'Delete all code created by tasks',
+	  ['clean.links']);
 
-gulp.task('health-check.install', 'Install health check dependencies', () => {
+gulp.task('install', 'Install health check dependencies', () => {
   return execa('npm', ['install', '--unsafe-perm'], {cwd: healthCheckDir, stdio: 'inherit'});
 });
 
-gulp.task('health-check.link.add', 'Link local copy of grpc', () => {
+gulp.task('link.add', 'Link local copy of grpc', () => {
   linkSync(healthCheckDir, './node_modules/grpc', '../grpc-native-core');
 });
 
-gulp.task('health-check.test', 'Run health check tests',
+gulp.task('test', 'Run health check tests',
           () => {
             return gulp.src(`${testDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
           });
