@@ -256,8 +256,8 @@ declare module "grpc" {
     /**
      *  Indicates whether the method returns a stream of responses
      */
-   responseStream: boolean;
-   /**
+    responseStream: boolean;
+    /**
     * Serialization function for request values
     */
     requestSerialize: serialize<RequestType>;
@@ -777,7 +777,7 @@ declare module "grpc" {
    * This module contains factory methods for two different credential types:
    * CallCredentials and ChannelCredentials. ChannelCredentials are things like
    * SSL credentials that can be used to secure a connection, and are used to
-   * construct a Client object. CallCredentials genrally modify metadata, so they
+   * construct a Client object. CallCredentials generally modify metadata, so they
    * can be attached to an individual method call.
    *
    * CallCredentials can be composed with other CallCredentials to create
@@ -1233,7 +1233,7 @@ declare module "grpc" {
   /**
    * Wait for the client to be ready. The callback will be called when the
    * client has successfully connected to the server, and it will be called
-   * with an error if the attempt to connect to the server has unrecoverablly
+   * with an error if the attempt to connect to the server has unrecoverably
    * failed or if the deadline expires. This function will make the channel
    * start connecting if it has not already done so.
    * @see grpc.Client#waitForReady
