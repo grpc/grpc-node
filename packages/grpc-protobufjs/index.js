@@ -27,8 +27,8 @@ module.exports = function(grpc) {
 
   let exports = {};
 
-  const protobuf_js_5_common = require('protobuf_js_5_common')(grpc);
-  const protobuf_js_6_common = require('protobuf_js_6_common')(grpc);
+  const protobuf_js_5_common = require('./protobuf_js_5_common')(grpc);
+  const protobuf_js_6_common = require('./protobuf_js_6_common')(grpc);
 
   /**
    * Default options for loading proto files into gRPC
