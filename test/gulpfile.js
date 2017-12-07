@@ -21,6 +21,7 @@ const mocha = require('gulp-mocha');
 const execa = require('execa');
 const path = require('path');
 const del = require('del');
+const semver = require('semver');
 const linkSync = require('../util').linkSync;
 
 // gulp-help monkeypatches tasks to have an additional description parameter
@@ -51,12 +52,10 @@ gulp.task('test', 'Run API-level tests', () => {
       .on('end', resolve)
       .on('error', reject);
   });
-  const runTestsArgPairs = [
-    ['native', 'native'],
-    // ['native', 'js'],
-    // ['js', 'native'],
-    // ['js', 'js']
-  ];
+  const runTestsArgPairs = [['native', 'native']];
+  if (semver.satisfies(process.version, '8.x')) {
+    runTestsArgPairs.push(['native', 'js']);
+  }
   return runTestsArgPairs.reduce((previousPromise, argPair) => {
     return previousPromise.then(runTestsWithFixture.bind(null, argPair[0], argPair[1]));
   }, Promise.resolve());

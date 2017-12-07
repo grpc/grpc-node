@@ -22,7 +22,7 @@ var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
 
-var grpc = require('../any_grpc');
+var anyGrpc = require('../any_grpc');
 
 var key_data, pem_data, ca_data;
 
@@ -36,6 +36,7 @@ before(function() {
 });
 
 describe('channel credentials', function() {
+  var grpc = anyGrpc.requireAsClient('grpc');
   describe('#createSsl', function() {
     it('works with no arguments', function() {
       var creds;
@@ -92,6 +93,7 @@ describe('channel credentials', function() {
 });
 
 describe('server credentials', function() {
+  var grpc = anyGrpc.requireAsServer('grpc');
   describe('#createSsl', function() {
     it('accepts a buffer and array as the first 2 arguments', function() {
       var creds;

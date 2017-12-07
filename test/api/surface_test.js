@@ -21,11 +21,18 @@
 var assert = require('assert');
 var _ = require('lodash');
 
-var grpc = require('../any_grpc');
+var anyGrpc = require('../any_grpc');
+// TODO(kjin): Deadline propagation is not supported for the JS client.
+var maybeSkip = anyGrpc.skipIfJsClient;
+var grpc = anyGrpc.requireAsClient('grpc');
 
-var MathClient = grpc.load(
-    __dirname + '/../../packages/grpc-native-core/deps/grpc/src/proto/math/math.proto').math.Math;
+var mathProtoPath = __dirname +
+    '/../../packages/grpc-native-core/deps/grpc/src/proto/math/math.proto';
+
+var MathClient = grpc.load(mathProtoPath).math.Math;
 var mathServiceAttrs = MathClient.service;
+
+var server_insecure_creds = anyGrpc.server.ServerCredentials.createInsecure();
 
 /**
  * This is used for testing functions with multiple asynchronous calls that
@@ -48,156 +55,6 @@ function multiDone(done, count) {
   };
 }
 
-var server_insecure_creds = grpc.ServerCredentials.createInsecure();
-
-describe('File loader', function() {
-  it('Should load a proto file by default', function() {
-    assert.doesNotThrow(function() {
-      grpc.load(__dirname + '/test_service.proto');
-    });
-  });
-  it('Should load a proto file with the proto format', function() {
-    assert.doesNotThrow(function() {
-      grpc.load(__dirname + '/test_service.proto', 'proto');
-    });
-  });
-  it('Should load a json file with the json format', function() {
-    assert.doesNotThrow(function() {
-      grpc.load(__dirname + '/test_service.json', 'json');
-    });
-  });
-});
-describe('surface Server', function() {
-  var server;
-  beforeEach(function() {
-    server = new grpc.Server();
-  });
-  afterEach(function() {
-    server.forceShutdown();
-  });
-  it('should error if started twice', function() {
-    server.start();
-    assert.throws(function() {
-      server.start();
-    });
-  });
-  it('should error if a port is bound after the server starts', function() {
-    server.start();
-    assert.throws(function() {
-      server.bind('localhost:0', grpc.ServerCredentials.createInsecure());
-    });
-  });
-  it('should successfully shutdown if tryShutdown is called', function(done) {
-    server.start();
-    server.tryShutdown(done);
-  });
-});
-describe('Server.prototype.addService', function() {
-  var server;
-  var dummyImpls = {
-    'div': function() {},
-    'divMany': function() {},
-    'fib': function() {},
-    'sum': function() {}
-  };
-  beforeEach(function() {
-    server = new grpc.Server();
-  });
-  afterEach(function() {
-    server.forceShutdown();
-  });
-  it('Should succeed with a single service', function() {
-    assert.doesNotThrow(function() {
-      server.addService(mathServiceAttrs, dummyImpls);
-    });
-  });
-  it('Should fail with conflicting method names', function() {
-    server.addService(mathServiceAttrs, dummyImpls);
-    assert.throws(function() {
-      server.addService(mathServiceAttrs, dummyImpls);
-    });
-  });
-  it('Should allow method names as originally written', function() {
-    var altDummyImpls = {
-      'Div': function() {},
-      'DivMany': function() {},
-      'Fib': function() {},
-      'Sum': function() {}
-    };
-    assert.doesNotThrow(function() {
-      server.addService(mathServiceAttrs, altDummyImpls);
-    });
-  });
-  it('Should have a conflict between name variations', function() {
-    /* This is really testing that both name variations are actually used,
-       by checking that the method actually gets registered, for the
-       corresponding function, in both cases */
-    var altDummyImpls = {
-      'Div': function() {},
-      'DivMany': function() {},
-      'Fib': function() {},
-      'Sum': function() {}
-    };
-    server.addProtoService(mathServiceAttrs, altDummyImpls);
-    assert.throws(function() {
-      server.addProtoService(mathServiceAttrs, dummyImpls);
-    });
-  });
-  it('Should fail if the server has been started', function() {
-    server.start();
-    assert.throws(function() {
-      server.addService(mathServiceAttrs, dummyImpls);
-    });
-  });
-  describe('Default handlers', function() {
-    var client;
-    beforeEach(function() {
-      server.addService(mathServiceAttrs, {});
-      var port = server.bind('localhost:0', server_insecure_creds);
-      client = new MathClient('localhost:' + port,
-                              grpc.credentials.createInsecure());
-      server.start();
-    });
-    it('should respond to a unary call with UNIMPLEMENTED', function(done) {
-      client.div({divisor: 4, dividend: 3}, function(error, response) {
-        assert(error);
-        assert.strictEqual(error.code, grpc.status.UNIMPLEMENTED);
-        done();
-      });
-    });
-    it('should respond to a client stream with UNIMPLEMENTED', function(done) {
-      var call = client.sum(function(error, respones) {
-        assert(error);
-        assert.strictEqual(error.code, grpc.status.UNIMPLEMENTED);
-        done();
-      });
-      call.end();
-    });
-    it('should respond to a server stream with UNIMPLEMENTED', function(done) {
-      var call = client.fib({limit: 5});
-      call.on('data', function(value) {
-        assert.fail('No messages expected');
-      });
-      call.on('error', function(err) {
-        assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
-        done();
-      });
-      call.on('error', function(status) { /* Do nothing */ });
-    });
-    it('should respond to a bidi call with UNIMPLEMENTED', function(done) {
-      var call = client.divMany();
-      call.on('data', function(value) {
-        assert.fail('No messages expected');
-      });
-      call.on('error', function(err) {
-        assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
-        done();
-      });
-      call.on('error', function(status) { /* Do nothing */ });
-      call.end();
-    });
-  });
-});
 describe('Client constructor building', function() {
   var illegal_service_attrs = {
     $method : {
@@ -220,15 +77,18 @@ describe('Client constructor building', function() {
     assert.strictEqual(Client.prototype.add, Client.prototype.Add);
   });
 });
+
 describe('waitForClientReady', function() {
   var server;
   var port;
   var Client = MathClient;
   var client;
   before(function() {
-    server = new grpc.Server();
-    port = server.bind('localhost:0', grpc.ServerCredentials.createInsecure());
-    server.start();
+    anyGrpc.runAsServer((grpc) => {
+      server = new grpc.Server();
+      port = server.bind('localhost:0', grpc.ServerCredentials.createInsecure());
+      server.start();
+    });
   });
   beforeEach(function() {
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
@@ -281,20 +141,26 @@ describe('waitForClientReady', function() {
     });
   });
 });
+
 describe('Echo service', function() {
   var server;
   var client;
   before(function() {
-    var Client = grpc.load(__dirname + '/echo_service.proto').EchoService;
-    server = new grpc.Server();
-    server.addService(Client.service, {
-      echo: function(call, callback) {
-        callback(null, call.request);
-      }
+    var port;
+    anyGrpc.runAsServer((grpc) => {
+      var Client = grpc.load(__dirname + '/echo_service.proto').EchoService;
+      server = new grpc.Server();
+      server.addService(Client.service, {
+        echo: function(call, callback) {
+          callback(null, call.request);
+        }
+      });
+      port = server.bind('localhost:0', server_insecure_creds);
+      server.start();
     });
-    var port = server.bind('localhost:0', server_insecure_creds);
+
+    var Client = grpc.load(__dirname + '/echo_service.proto').EchoService;
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
-    server.start();
   });
   after(function() {
     server.forceShutdown();
@@ -314,6 +180,7 @@ describe('Echo service', function() {
     });
   });
 });
+
 describe('Generic client and server', function() {
   function toString(val) {
     return val.toString();
@@ -336,14 +203,18 @@ describe('Generic client and server', function() {
     var client;
     var server;
     before(function() {
-      server = new grpc.Server();
-      server.addService(string_service_attrs, {
-        capitalize: function(call, callback) {
-          callback(null, _.capitalize(call.request));
-        }
+      var port;
+      anyGrpc.runAsServer((grpc) => {
+        server = new grpc.Server();
+        server.addService(string_service_attrs, {
+          capitalize: function(call, callback) {
+            callback(null, _.capitalize(call.request));
+          }
+        });
+        port = server.bind('localhost:0', server_insecure_creds);
+        server.start();
       });
-      var port = server.bind('localhost:0', server_insecure_creds);
-      server.start();
+
       var Client = grpc.makeGenericClientConstructor(string_service_attrs);
       client = new Client('localhost:' + port,
                           grpc.credentials.createInsecure());
@@ -360,6 +231,7 @@ describe('Generic client and server', function() {
     });
   });
 });
+
 describe('Server-side getPeer', function() {
   function toString(val) {
     return val.toString();
@@ -381,18 +253,22 @@ describe('Server-side getPeer', function() {
   var client;
   var server;
   before(function() {
-    server = new grpc.Server();
-    server.addService(string_service_attrs, {
-      getPeer: function(call, callback) {
-        try {
-          callback(null, call.getPeer());
-        } catch (e) {
-          call.emit('error', e);
+    var port;
+    anyGrpc.runAsServer((grpc) => {
+      server = new grpc.Server();
+      server.addService(string_service_attrs, {
+        getPeer: function(call, callback) {
+          try {
+            callback(null, call.getPeer());
+          } catch (e) {
+            call.emit('error', e);
+          }
         }
-      }
+      });
+      port = server.bind('localhost:0', server_insecure_creds);
+      server.start();
     });
-    var port = server.bind('localhost:0', server_insecure_creds);
-    server.start();
+
     var Client = grpc.makeGenericClientConstructor(string_service_attrs);
     client = new Client('localhost:' + port,
                         grpc.credentials.createInsecure());
@@ -408,40 +284,46 @@ describe('Server-side getPeer', function() {
     });
   });
 });
+
 describe('Echo metadata', function() {
   var client;
   var server;
   var metadata;
   before(function() {
-    var Client = grpc.load(__dirname + '/test_service.proto').TestService;
-    server = new grpc.Server();
-    server.addService(Client.service, {
-      unary: function(call, cb) {
-        call.sendMetadata(call.metadata);
-        cb(null, {});
-      },
-      clientStream: function(stream, cb){
-        stream.on('data', function(data) {});
-        stream.on('end', function() {
-          stream.sendMetadata(stream.metadata);
+    var port;
+    anyGrpc.runAsServer((grpc) => {
+      var Client = grpc.load(__dirname + '/test_service.proto').TestService;
+      server = new grpc.Server();
+      server.addService(Client.service, {
+        unary: function(call, cb) {
+          call.sendMetadata(call.metadata);
           cb(null, {});
-        });
-      },
-      serverStream: function(stream) {
-        stream.sendMetadata(stream.metadata);
-        stream.end();
-      },
-      bidiStream: function(stream) {
-        stream.on('data', function(data) {});
-        stream.on('end', function() {
+        },
+        clientStream: function(stream, cb){
+          stream.on('data', function(data) {});
+          stream.on('end', function() {
+            stream.sendMetadata(stream.metadata);
+            cb(null, {});
+          });
+        },
+        serverStream: function(stream) {
           stream.sendMetadata(stream.metadata);
           stream.end();
-        });
-      }
+        },
+        bidiStream: function(stream) {
+          stream.on('data', function(data) {});
+          stream.on('end', function() {
+            stream.sendMetadata(stream.metadata);
+            stream.end();
+          });
+        }
+      });
+      port = server.bind('localhost:8080', server_insecure_creds);
+      server.start();
     });
-    var port = server.bind('localhost:0', server_insecure_creds);
+
+    var Client = grpc.load(__dirname + '/test_service.proto').TestService;
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
-    server.start();
     metadata = new grpc.Metadata();
     metadata.set('key', 'value');
   });
@@ -485,7 +367,7 @@ describe('Echo metadata', function() {
     call.end();
   });
   it('shows the correct user-agent string', function(done) {
-    var version = require('../any_grpc')['$implementationInfo'].client.corePjson.version;
+    var version = anyGrpc.clientVersion;
     var call = client.unary({}, metadata,
                             function(err, data) { assert.ifError(err); });
     call.on('metadata', function(metadata) {
@@ -507,70 +389,74 @@ describe('Echo metadata', function() {
     });
   });
 });
+
 describe('Client malformed response handling', function() {
   var server;
   var client;
   var badArg = new Buffer([0xFF]);
   before(function() {
-    var Client = grpc.load(__dirname + '/test_service.proto').TestService;
-    var malformed_test_service = {
-      unary: {
-        path: '/TestService/Unary',
-        requestStream: false,
-        responseStream: false,
-        requestDeserialize: _.identity,
-        responseSerialize: _.identity
-      },
-      clientStream: {
-        path: '/TestService/ClientStream',
-        requestStream: true,
-        responseStream: false,
-        requestDeserialize: _.identity,
-        responseSerialize: _.identity
-      },
-      serverStream: {
-        path: '/TestService/ServerStream',
-        requestStream: false,
-        responseStream: true,
-        requestDeserialize: _.identity,
-        responseSerialize: _.identity
-      },
-      bidiStream: {
-        path: '/TestService/BidiStream',
-        requestStream: true,
-        responseStream: true,
-        requestDeserialize: _.identity,
-        responseSerialize: _.identity
-      }
-    };
-    server = new grpc.Server();
-    server.addService(malformed_test_service, {
-      unary: function(call, cb) {
-        cb(null, badArg);
-      },
-      clientStream: function(stream, cb) {
-        stream.on('data', function() {/* Ignore requests */});
-        stream.on('end', function() {
+    var port;
+    anyGrpc.runAsServer((grpc) => {
+      var malformed_test_service = {
+        unary: {
+          path: '/TestService/Unary',
+          requestStream: false,
+          responseStream: false,
+          requestDeserialize: _.identity,
+          responseSerialize: _.identity
+        },
+        clientStream: {
+          path: '/TestService/ClientStream',
+          requestStream: true,
+          responseStream: false,
+          requestDeserialize: _.identity,
+          responseSerialize: _.identity
+        },
+        serverStream: {
+          path: '/TestService/ServerStream',
+          requestStream: false,
+          responseStream: true,
+          requestDeserialize: _.identity,
+          responseSerialize: _.identity
+        },
+        bidiStream: {
+          path: '/TestService/BidiStream',
+          requestStream: true,
+          responseStream: true,
+          requestDeserialize: _.identity,
+          responseSerialize: _.identity
+        }
+      };
+      server = new grpc.Server();
+      server.addService(malformed_test_service, {
+        unary: function(call, cb) {
           cb(null, badArg);
-        });
-      },
-      serverStream: function(stream) {
-        stream.write(badArg);
-        stream.end();
-      },
-      bidiStream: function(stream) {
-        stream.on('data', function() {
-          // Ignore requests
+        },
+        clientStream: function(stream, cb) {
+          stream.on('data', function() {/* Ignore requests */});
+          stream.on('end', function() {
+            cb(null, badArg);
+          });
+        },
+        serverStream: function(stream) {
           stream.write(badArg);
-        });
-        stream.on('end', function() {
           stream.end();
-        });
-      }
+        },
+        bidiStream: function(stream) {
+          stream.on('data', function() {
+            // Ignore requests
+            stream.write(badArg);
+          });
+          stream.on('end', function() {
+            stream.end();
+          });
+        }
+      });
+      port = server.bind('localhost:0', server_insecure_creds);
+      server.start();
     });
-    var port = server.bind('localhost:0', server_insecure_creds);
+    var Client = grpc.load(__dirname + '/test_service.proto').TestService;
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
-    server.start();
   });
   after(function() {
     server.forceShutdown();
@@ -610,6 +496,7 @@ describe('Client malformed response handling', function() {
     call.end();
   });
 });
+
 describe('Server serialization failure handling', function() {
   function serializeFail(obj) {
     throw new Error('Serialization failed');
@@ -617,65 +504,69 @@ describe('Server serialization failure handling', function() {
   var client;
   var server;
   before(function() {
-    var Client = grpc.load(__dirname + '/test_service.proto').TestService;
-    var malformed_test_service = {
-      unary: {
-        path: '/TestService/Unary',
-        requestStream: false,
-        responseStream: false,
-        requestDeserialize: _.identity,
-        responseSerialize: serializeFail
-      },
-      clientStream: {
-        path: '/TestService/ClientStream',
-        requestStream: true,
-        responseStream: false,
-        requestDeserialize: _.identity,
-        responseSerialize: serializeFail
-      },
-      serverStream: {
-        path: '/TestService/ServerStream',
-        requestStream: false,
-        responseStream: true,
-        requestDeserialize: _.identity,
-        responseSerialize: serializeFail
-      },
-      bidiStream: {
-        path: '/TestService/BidiStream',
-        requestStream: true,
-        responseStream: true,
-        requestDeserialize: _.identity,
-        responseSerialize: serializeFail
-      }
-    };
-    server = new grpc.Server();
-    server.addService(malformed_test_service, {
-      unary: function(call, cb) {
-        cb(null, {});
-      },
-      clientStream: function(stream, cb) {
-        stream.on('data', function() {/* Ignore requests */});
-        stream.on('end', function() {
+    var port;
+    anyGrpc.runAsServer((grpc) => {
+      var malformed_test_service = {
+        unary: {
+          path: '/TestService/Unary',
+          requestStream: false,
+          responseStream: false,
+          requestDeserialize: _.identity,
+          responseSerialize: serializeFail
+        },
+        clientStream: {
+          path: '/TestService/ClientStream',
+          requestStream: true,
+          responseStream: false,
+          requestDeserialize: _.identity,
+          responseSerialize: serializeFail
+        },
+        serverStream: {
+          path: '/TestService/ServerStream',
+          requestStream: false,
+          responseStream: true,
+          requestDeserialize: _.identity,
+          responseSerialize: serializeFail
+        },
+        bidiStream: {
+          path: '/TestService/BidiStream',
+          requestStream: true,
+          responseStream: true,
+          requestDeserialize: _.identity,
+          responseSerialize: serializeFail
+        }
+      };
+      server = new grpc.Server();
+      server.addService(malformed_test_service, {
+        unary: function(call, cb) {
           cb(null, {});
-        });
-      },
-      serverStream: function(stream) {
-        stream.write({});
-        stream.end();
-      },
-      bidiStream: function(stream) {
-        stream.on('data', function() {
-          // Ignore requests
+        },
+        clientStream: function(stream, cb) {
+          stream.on('data', function() {/* Ignore requests */});
+          stream.on('end', function() {
+            cb(null, {});
+          });
+        },
+        serverStream: function(stream) {
           stream.write({});
-        });
-        stream.on('end', function() {
           stream.end();
-        });
-      }
+        },
+        bidiStream: function(stream) {
+          stream.on('data', function() {
+            // Ignore requests
+            stream.write({});
+          });
+          stream.on('end', function() {
+            stream.end();
+          });
+        }
+      });
+      port = server.bind('localhost:0', server_insecure_creds);
+      server.start();
     });
-    var port = server.bind('localhost:0', server_insecure_creds);
+
+    var Client = grpc.load(__dirname + '/test_service.proto').TestService;
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
-    server.start();
   });
   after(function() {
     server.forceShutdown();
@@ -715,78 +606,82 @@ describe('Server serialization failure handling', function() {
     call.end();
   });
 });
+
 describe('Other conditions', function() {
-  var Client;
   var client;
   var server;
   var port;
   before(function() {
-    Client = grpc.load(__dirname + '/test_service.proto').TestService;
-    server = new grpc.Server();
-    var trailer_metadata = new grpc.Metadata();
-    trailer_metadata.add('trailer-present', 'yes');
-    server.addService(Client.service, {
-      unary: function(call, cb) {
-        var req = call.request;
-        if (req.error) {
-          cb({code: grpc.status.UNKNOWN,
-              details: 'Requested error'}, null, trailer_metadata);
-        } else {
-          cb(null, {count: 1}, trailer_metadata);
-        }
-      },
-      clientStream: function(stream, cb){
-        var count = 0;
-        var errored;
-        stream.on('data', function(data) {
-          if (data.error) {
-            errored = true;
-            cb(new Error('Requested error'), null, trailer_metadata);
+    anyGrpc.runAsServer((grpc) => {
+      var Client = grpc.load(__dirname + '/test_service.proto').TestService;
+      server = new grpc.Server();
+      var trailer_metadata = new grpc.Metadata();
+      trailer_metadata.add('trailer-present', 'yes');
+      server.addService(Client.service, {
+        unary: function(call, cb) {
+          var req = call.request;
+          if (req.error) {
+            cb({code: grpc.status.UNKNOWN,
+                details: 'Requested error'}, null, trailer_metadata);
           } else {
-            count += 1;
+            cb(null, {count: 1}, trailer_metadata);
           }
-        });
-        stream.on('end', function() {
-          if (!errored) {
-            cb(null, {count: count}, trailer_metadata);
-          }
-        });
-      },
-      serverStream: function(stream) {
-        var req = stream.request;
-        if (req.error) {
-          var err = {code: grpc.status.UNKNOWN,
-                     details: 'Requested error'};
-          err.metadata = trailer_metadata;
-          stream.emit('error', err);
-        } else {
-          for (var i = 0; i < 5; i++) {
-            stream.write({count: i});
-          }
-          stream.end(trailer_metadata);
-        }
-      },
-      bidiStream: function(stream) {
-        var count = 0;
-        stream.on('data', function(data) {
-          if (data.error) {
-            var err = new Error('Requested error');
-            err.metadata = trailer_metadata.clone();
-            err.metadata.add('count', '' + count);
+        },
+        clientStream: function(stream, cb){
+          var count = 0;
+          var errored;
+          stream.on('data', function(data) {
+            if (data.error) {
+              errored = true;
+              cb(new Error('Requested error'), null, trailer_metadata);
+            } else {
+              count += 1;
+            }
+          });
+          stream.on('end', function() {
+            if (!errored) {
+              cb(null, {count: count}, trailer_metadata);
+            }
+          });
+        },
+        serverStream: function(stream) {
+          var req = stream.request;
+          if (req.error) {
+            var err = {code: grpc.status.UNKNOWN,
+                       details: 'Requested error'};
+            err.metadata = trailer_metadata;
             stream.emit('error', err);
           } else {
-            stream.write({count: count});
-            count += 1;
+            for (var i = 0; i < 5; i++) {
+              stream.write({count: i});
+            }
+            stream.end(trailer_metadata);
           }
-        });
-        stream.on('end', function() {
-          stream.end(trailer_metadata);
-        });
-      }
+        },
+        bidiStream: function(stream) {
+          var count = 0;
+          stream.on('data', function(data) {
+            if (data.error) {
+              var err = new Error('Requested error');
+              err.metadata = trailer_metadata.clone();
+              err.metadata.add('count', '' + count);
+              stream.emit('error', err);
+            } else {
+              stream.write({count: count});
+              count += 1;
+            }
+          });
+          stream.on('end', function() {
+            stream.end(trailer_metadata);
+          });
+        }
+      });
+      port = server.bind('localhost:0', server_insecure_creds);
+      server.start();
     });
-    port = server.bind('localhost:0', server_insecure_creds);
+
+    var Client = grpc.load(__dirname + '/test_service.proto').TestService;
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
-    server.start();
   });
   after(function() {
     server.forceShutdown();
@@ -1068,37 +963,44 @@ describe('Other conditions', function() {
     });
   });
 });
+
 describe('Call propagation', function() {
   var proxy;
   var proxy_impl;
 
-  var Client;
+  var Client = grpc.load(__dirname + '/test_service.proto').TestService;
   var client;
   var server;
   before(function() {
-    Client = grpc.load(__dirname + '/test_service.proto').TestService;
-    server = new grpc.Server();
-    server.addService(Client.service, {
-      unary: function(call) {},
-      clientStream: function(stream) {},
-      serverStream: function(stream) {},
-      bidiStream: function(stream) {}
+    var port;
+    anyGrpc.runAsServer((grpc) => {
+      var Client = grpc.load(__dirname + '/test_service.proto').TestService;
+      server = new grpc.Server();
+      server.addService(Client.service, {
+        unary: function(call) {},
+        clientStream: function(stream) {},
+        serverStream: function(stream) {},
+        bidiStream: function(stream) {}
+      });
+      port = server.bind('localhost:0', server_insecure_creds);
+      server.start();
     });
-    var port = server.bind('localhost:0', server_insecure_creds);
+
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
-    server.start();
   });
   after(function() {
     server.forceShutdown();
   });
   beforeEach(function() {
-    proxy = new grpc.Server();
-    proxy_impl = {
-      unary: function(call) {},
-      clientStream: function(stream) {},
-      serverStream: function(stream) {},
-      bidiStream: function(stream) {}
-    };
+    anyGrpc.runAsServer((grpc) => {
+      proxy = new grpc.Server();
+      proxy_impl = {
+        unary: function(call) {},
+        clientStream: function(stream) {},
+        serverStream: function(stream) {},
+        bidiStream: function(stream) {}
+      };
+    });
   });
   afterEach(function() {
     proxy.forceShutdown();
@@ -1197,7 +1099,7 @@ describe('Call propagation', function() {
       });
     });
   });
-  describe('Deadline', function() {
+  maybeSkip(describe)('Deadline', function() {
     /* jshint bitwise:false */
     var deadline_flags = (grpc.propagate.DEFAULTS &
         ~grpc.propagate.CANCELLATION);
@@ -1255,21 +1157,29 @@ describe('Call propagation', function() {
     });
   });
 });
+
 describe('Cancelling surface client', function() {
   var client;
   var server;
   before(function() {
-    server = new grpc.Server();
-    server.addService(mathServiceAttrs, {
-      'div': function(stream) {},
-      'divMany': function(stream) {},
-      'fib': function(stream) {},
-      'sum': function(stream) {}
+    var port;
+    anyGrpc.runAsServer((grpc) => {
+      var MathClient = grpc.load(mathProtoPath).math.Math;
+      var mathServiceAttrs = MathClient.service;
+
+      server = new grpc.Server();
+      server.addService(mathServiceAttrs, {
+        'div': function(stream) {},
+        'divMany': function(stream) {},
+        'fib': function(stream) {},
+        'sum': function(stream) {}
+      });
+      port = server.bind('localhost:0', server_insecure_creds);
+      server.start();
     });
-    var port = server.bind('localhost:0', server_insecure_creds);
+
     var Client = grpc.makeGenericClientConstructor(mathServiceAttrs);
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
-    server.start();
   });
   after(function() {
     server.forceShutdown();
@@ -1320,22 +1230,27 @@ describe('Cancelling surface client', function() {
     call.cancel();
   });
 });
+
 describe('Client reconnect', function() {
   var server;
   var Client;
   var client;
   var port;
   beforeEach(function() {
-    Client = grpc.load(__dirname + '/echo_service.proto').EchoService;
-    server = new grpc.Server();
-    server.addService(Client.service, {
-      echo: function(call, callback) {
-        callback(null, call.request);
-      }
+    anyGrpc.runAsServer((grpc) => {
+      var Client = grpc.load(__dirname + '/echo_service.proto').EchoService;
+      server = new grpc.Server();
+      server.addService(Client.service, {
+        echo: function(call, callback) {
+          callback(null, call.request);
+        }
+      });
+      port = server.bind('localhost:0', server_insecure_creds);
+      server.start();
     });
-    port = server.bind('localhost:0', server_insecure_creds);
+
+    Client = grpc.load(__dirname + '/echo_service.proto').EchoService;
     client = new Client('localhost:' + port, grpc.credentials.createInsecure());
-    server.start();
   });
   afterEach(function() {
     server.forceShutdown();
@@ -1345,14 +1260,17 @@ describe('Client reconnect', function() {
       assert.ifError(error);
       assert.deepEqual(response, {value: 'test value', value2: 3});
       server.tryShutdown(function() {
-        server = new grpc.Server();
-        server.addService(Client.service, {
-          echo: function(call, callback) {
-            callback(null, call.request);
-          }
+        anyGrpc.runAsServer(grpc => {
+          var Client = grpc.load(__dirname + '/echo_service.proto').EchoService;
+          server = new grpc.Server();
+          server.addService(Client.service, {
+            echo: function(call, callback) {
+              callback(null, call.request);
+            }
+          });
+          server.bind('localhost:' + port, server_insecure_creds);
+          server.start();
         });
-        server.bind('localhost:' + port, server_insecure_creds);
-        server.start();
 
         /* We create a new client, that will not throw an error if the server
          * is not immediately available. Instead, it will wait for the server

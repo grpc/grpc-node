@@ -18,8 +18,9 @@
 
 'use strict';
 
-var interop_server = require('../interop/interop_server.js');
-var interop_client = require('../interop/interop_client.js');
+var anyGrpc = require('../any_grpc');
+var interop_server = anyGrpc.requireAsServer('../interop/interop_server.js');
+var interop_client = anyGrpc.requireAsClient('../interop/interop_client.js');
 
 var server;
 

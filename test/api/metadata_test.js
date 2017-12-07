@@ -18,7 +18,9 @@
 
 'use strict';
 
-var Metadata = require('../any_grpc').Metadata;
+var anyGrpc = require('../any_grpc');
+// require as client since grpc-js client was implemented first.
+var Metadata = anyGrpc.requireAsClient('grpc').Metadata;
 
 var assert = require('assert');
 

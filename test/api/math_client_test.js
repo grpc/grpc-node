@@ -20,9 +20,9 @@
 
 var assert = require('assert');
 
-var grpc = require('../any_grpc');
+var anyGrpc = require('../any_grpc');
 var math = require('./math/math_pb');
-var MathClient = require('./math/math_grpc_pb').MathClient;
+var MathClient = anyGrpc.requireAsClient('./math/math_grpc_pb').MathClient;
 
 /**
  * Client to use to make requests to a running server.
@@ -32,17 +32,17 @@ var math_client;
 /**
  * Server to test against
  */
-var getServer = require('./math/math_server.js');
+var getServer = anyGrpc.requireAsServer('./math/math_server.js');
 
 var server = getServer();
 
 describe('Math client', function() {
   before(function(done) {
     var port_num = server.bind('0.0.0.0:0',
-                               grpc.ServerCredentials.createInsecure());
+        anyGrpc.server.ServerCredentials.createInsecure());
     server.start();
     math_client = new MathClient('localhost:' + port_num,
-                                 grpc.credentials.createInsecure());
+        anyGrpc.client.credentials.createInsecure());
     done();
   });
   after(function() {
@@ -79,7 +79,7 @@ describe('Math client', function() {
       next_expected += 1;
     });
     call.on('status', function checkStatus(status) {
-      assert.strictEqual(status.code, grpc.status.OK);
+      assert.strictEqual(status.code, anyGrpc.client.status.OK);
       done();
     });
   });
@@ -95,7 +95,7 @@ describe('Math client', function() {
     }
     call.end();
     call.on('status', function checkStatus(status) {
-      assert.strictEqual(status.code, grpc.status.OK);
+      assert.strictEqual(status.code, anyGrpc.client.status.OK);
       done();
     });
   });
@@ -118,7 +118,7 @@ describe('Math client', function() {
     }
     call.end();
     call.on('status', function checkStatus(status) {
-      assert.strictEqual(status.code, grpc.status.OK);
+      assert.strictEqual(status.code, anyGrpc.client.status.OK);
       done();
     });
   });
