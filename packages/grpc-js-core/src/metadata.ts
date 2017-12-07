@@ -194,7 +194,7 @@ export class Metadata {
           values.forEach((value) => {
             result.add(key, Buffer.from(value, 'base64'));
           });
-        } else {
+        } else if (values !== undefined) {
           result.add(key, Buffer.from(values, 'base64'));
         }
       } else {
@@ -202,7 +202,7 @@ export class Metadata {
           values.forEach((value) => {
             result.add(key, value);
           });
-        } else {
+        } else if (values !== undefined) {
           result.add(key, values);
         }
       }
