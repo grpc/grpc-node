@@ -166,6 +166,7 @@ export class Metadata {
    * Creates an OutgoingHttpHeaders object that can be used with the http2 API.
    */
   toHttp2Headers(): http2.OutgoingHttpHeaders {
+    // NOTE: Node <8.9 formats http2 headers incorrectly.
     const result: http2.OutgoingHttpHeaders = {};
     forOwn(this.internalRepr, (values, key) => {
       // We assume that the user's interaction with this object is limited to
