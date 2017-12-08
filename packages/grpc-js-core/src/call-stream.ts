@@ -182,9 +182,10 @@ export class Http2CallStream extends Duplex implements CallStream {
                   this.cancelWithStatus(Status.UNKNOWN, error.message);
                 });
       });
-      stream.on('trailers', (headers) => {
+      stream.on('trailers', (headers: http2.IncomingHttpHeaders) => {
         let code: Status = this.mappedStatusCode;
-        if (headers.hasOwnProperty('grpc-status')) {
+        let details = '';
+        if (typeof headers['grpc-status'] === 'string') {
           let receivedCode = Number(headers['grpc-status']);
           if (receivedCode in Status) {
             code = receivedCode;
@@ -193,9 +194,8 @@ export class Http2CallStream extends Duplex implements CallStream {
           }
           delete headers['grpc-status'];
         }
-        let details = '';
-        if (headers.hasOwnProperty('grpc-message')) {
-          details = decodeURI(headers['grpc-message']);
+        if (typeof headers['grpc-message'] === 'string') {
+          details = decodeURI(headers['grpc-message'] as string);
         }
         let metadata: Metadata;
         try {
@@ -301,7 +301,7 @@ export class Http2CallStream extends Duplex implements CallStream {
         }
         this.endCall({code: code, details: details, metadata: new Metadata()});
       });
-      stream.on('error', () => {
+      stream.on('error', (err: Error) => {
         this.endCall({
           code: Status.INTERNAL,
           details: 'Internal HTTP2 error',
@@ -325,7 +325,9 @@ export class Http2CallStream extends Duplex implements CallStream {
 
   cancelWithStatus(status: Status, details: string): void {
     this.endCall({code: status, details: details, metadata: new Metadata()});
-    if (this.http2Stream !== null) {
+    // The http2 stream could already have been destroyed if cancelWithStatus
+    // is called in response to an internal http2 error.
+    if (this.http2Stream !== null && !this.http2Stream.destroyed) {
       /* TODO(murgatroid99): Determine if we want to send different RST_STREAM
        * codes based on the status code */
       this.http2Stream.rstWithCancel();

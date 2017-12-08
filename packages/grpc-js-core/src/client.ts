@@ -24,7 +24,7 @@ export class Client {
     }
     // TODO(murgatroid99): Figure out how to get version number
     // options['grpc.primary_user_agent'] += 'grpc-node/' + version;
-    this.channel = new Http2Channel(new URL(address), credentials, options);
+    this.channel = new Http2Channel(address, credentials, options);
   }
 
   close(): void {

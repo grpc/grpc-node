@@ -71,6 +71,7 @@ export interface Channel extends EventEmitter {
 }
 
 export class Http2Channel extends EventEmitter implements Channel {
+  private readonly authority: url.URL;
   private connectivityState: ConnectivityState = ConnectivityState.IDLE;
   /* For now, we have up to one subchannel, which will exist as long as we are
    * connecting or trying to connect */
@@ -134,9 +135,9 @@ export class Http2Channel extends EventEmitter implements Channel {
     let subChannel: http2.ClientHttp2Session;
     let secureContext = this.credentials.getSecureContext();
     if (secureContext === null) {
-      subChannel = http2.connect(this.address);
+      subChannel = http2.connect(this.authority);
     } else {
-      subChannel = http2.connect(this.address, {secureContext});
+      subChannel = http2.connect(this.authority, {secureContext});
     }
     this.subChannel = subChannel;
     let now = new Date();
@@ -165,14 +166,14 @@ export class Http2Channel extends EventEmitter implements Channel {
   }
 
   constructor(
-      private readonly address: url.URL,
+      address: string,
       public readonly credentials: ChannelCredentials,
       private readonly options: ChannelOptions) {
     super();
     if (credentials.getSecureContext() === null) {
-      address.protocol = 'http';
+      this.authority = new url.URL(`http://${address}`);
     } else {
-      address.protocol = 'https';
+      this.authority = new url.URL(`https://${address}`);
     }
     this.filterStackFactory = new FilterStackFactory([
       new CompressionFilterFactory(this),
@@ -193,7 +194,7 @@ export class Http2Channel extends EventEmitter implements Channel {
       finalMetadata.then(
           (metadataValue) => {
             let headers = metadataValue.toHttp2Headers();
-            headers[HTTP2_HEADER_AUTHORITY] = this.address.hostname;
+            headers[HTTP2_HEADER_AUTHORITY] = this.authority.hostname;
             headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
             headers[HTTP2_HEADER_METHOD] = 'POST';
             headers[HTTP2_HEADER_PATH] = methodName;
