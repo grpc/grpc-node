@@ -143,5 +143,7 @@ module.exports = function(grpc) {
     return ServiceClient;
   };
 
+  exports.makeGenericClientConstructor = exports.makeClientConstructor;
+
   return Object.assign(exports, grpc);
 };
