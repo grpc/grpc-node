@@ -110,7 +110,7 @@ export class Http2Channel extends EventEmitter implements Channel {
       break;
     case ConnectivityState.IDLE:
     case ConnectivityState.SHUTDOWN:
-      if (this.subChannel !== null) {
+      if (this.subChannel) {
         this.subChannel.shutdown({graceful: true});
         this.subChannel.removeListener('connect', this.subChannelConnectCallback);
         this.subChannel.removeListener('close', this.subChannelCloseCallback);
@@ -201,8 +201,11 @@ export class Http2Channel extends EventEmitter implements Channel {
             headers[HTTP2_HEADER_TE] = 'trailers';
             if (stream.getStatus() === null) {
               if (this.connectivityState === ConnectivityState.READY) {
-                let session: http2.ClientHttp2Session =
-                    (this.subChannel as http2.ClientHttp2Session);
+                const session: http2.ClientHttp2Session = this.subChannel!;
+                // Prevent the HTTP/2 session from keeping the process alive.
+                // TODO(kjin): Monitor nodejs/node#17620, which adds unref
+                // directly to the Http2Session object.
+                session.socket.unref();
                 stream.attachHttp2Stream(session.request(headers));
               } else {
                 /* In this case, we lost the connection while finalizing
