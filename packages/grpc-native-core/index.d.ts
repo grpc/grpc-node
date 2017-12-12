@@ -231,7 +231,7 @@ declare module "grpc" {
   /**
    * A type that servers as a default for an untyped service.
    */
-  type UntypedServiceImplementation = { [name: string]: handleCall<any, any> };
+  export type UntypedServiceImplementation = { [name: string]: handleCall<any, any> };
 
   /**
    * An object that completely defines a service.
