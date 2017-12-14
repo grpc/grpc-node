@@ -409,6 +409,16 @@ declare module "grpc" {
    * with duplex streaming.
    */
   export class ServerDuplexStream<RequestType, ResponseType> extends Duplex {
+    /**
+     * Indicates if the call has been cancelled
+     */
+    cancelled: boolean;
+
+    /**
+     * The request metadata from the client
+     */
+    metadata: Metadata;
+
     private constructor();
 
     /**
@@ -1220,7 +1230,7 @@ declare module "grpc" {
    * @param value The response value, if the call succeeded
    */
   export type requestCallback<ResponseType> =
-    (error: ServiceError | null, value: ResponseType | null) => void;
+    (error: ServiceError | null, value: ResponseType | undefined) => void;
 
   /**
    * Return the underlying channel object for the specified client
