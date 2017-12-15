@@ -190,6 +190,9 @@ export class ClientWritableStreamImpl<RequestType> extends Writable implements
     call.on('metadata', (metadata: Metadata) => {
       this.emit('metadata', metadata);
     });
+    call.on('status', (status: StatusObject) => {
+      this.emit('status', status);
+    });
   }
 
   cancel(): void {
