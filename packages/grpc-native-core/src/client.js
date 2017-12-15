@@ -64,7 +64,7 @@ function createStatusError(status) {
   let message = `${status.code} ${status.name}: ${status.details}`;
   let error = new Error(message);
   error.code = status.code;
-  error.details = status.details;
+  error.metadata = status.metadata;
   return error;
 }
 
