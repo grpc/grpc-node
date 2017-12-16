@@ -35,7 +35,7 @@ export class Client {
       void {
     let cb: (error: Error|null) => void = once(callback);
     let callbackCalled = false;
-    this.channel.connect(() => {
+    this.channel.connect().then(() => {
       cb(null);
     });
     if (deadline !== Infinity) {

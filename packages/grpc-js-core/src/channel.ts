@@ -1,6 +1,6 @@
 import {EventEmitter} from 'events';
 import * as http2 from 'http2';
-import {SecureContext} from 'tls';
+import {checkServerIdentity, SecureContext, PeerCertificate} from 'tls';
 import * as url from 'url';
 
 import {CallCredentials} from './call-credentials';
@@ -57,7 +57,7 @@ function uniformRandom(min:number, max: number) {
 export interface Channel extends EventEmitter {
   createStream(methodName: string, metadata: Metadata, options: CallOptions):
       CallStream;
-  connect(callback: () => void): void;
+  connect(): Promise<void>;
   getConnectivityState(): ConnectivityState;
   close(): void;
 
@@ -137,7 +137,19 @@ export class Http2Channel extends EventEmitter implements Channel {
     if (secureContext === null) {
       subChannel = http2.connect(this.authority);
     } else {
-      subChannel = http2.connect(this.authority, {secureContext});
+      const connectionOptions: http2.SecureClientSessionOptions = {
+        secureContext,
+      }
+      // If provided, the value of grpc.ssl_target_name_override should be used
+      // to override the target hostname when checking server identity.
+      // This option is used for testing only.
+      if (this.options['grpc.ssl_target_name_override']) {
+        const sslTargetNameOverride = this.options['grpc.ssl_target_name_override'] as string;
+        connectionOptions.checkServerIdentity = (host: string, cert: PeerCertificate): Error | undefined => {
+          return checkServerIdentity(sslTargetNameOverride, cert);
+        }
+      }
+      subChannel = http2.connect(this.authority, connectionOptions);
     }
     this.subChannel = subChannel;
     let now = new Date();
@@ -190,37 +202,35 @@ export class Http2Channel extends EventEmitter implements Channel {
       methodName: string, stream: Http2CallStream, metadata: Metadata) {
     let finalMetadata: Promise<Metadata> =
         stream.filterStack.sendMetadata(Promise.resolve(metadata));
-    this.connect(() => {
-      finalMetadata.then(
-          (metadataValue) => {
-            let headers = metadataValue.toHttp2Headers();
-            headers[HTTP2_HEADER_AUTHORITY] = this.authority.hostname;
-            headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
-            headers[HTTP2_HEADER_METHOD] = 'POST';
-            headers[HTTP2_HEADER_PATH] = methodName;
-            headers[HTTP2_HEADER_TE] = 'trailers';
-            if (stream.getStatus() === null) {
-              if (this.connectivityState === ConnectivityState.READY) {
-                const session: http2.ClientHttp2Session = this.subChannel!;
-                // Prevent the HTTP/2 session from keeping the process alive.
-                // TODO(kjin): Monitor nodejs/node#17620, which adds unref
-                // directly to the Http2Session object.
-                session.socket.unref();
-                stream.attachHttp2Stream(session.request(headers));
-              } else {
-                /* In this case, we lost the connection while finalizing
-                 * metadata. That should be very unusual */
-                setImmediate(() => {
-                  this.startHttp2Stream(methodName, stream, metadata);
-                });
-              }
-            }
-          },
-          (error) => {
-            stream.cancelWithStatus(
-                Status.UNKNOWN, 'Failed to generate metadata');
-          });
-    });
+    Promise.all([finalMetadata, this.connect()])
+      .then(([metadataValue]) => {
+        let headers = metadataValue.toHttp2Headers();
+        headers[HTTP2_HEADER_AUTHORITY] = this.authority.hostname;
+        headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
+        headers[HTTP2_HEADER_METHOD] = 'POST';
+        headers[HTTP2_HEADER_PATH] = methodName;
+        headers[HTTP2_HEADER_TE] = 'trailers';
+        if (stream.getStatus() === null) {
+          if (this.connectivityState === ConnectivityState.READY) {
+            const session: http2.ClientHttp2Session = this.subChannel!;
+            // Prevent the HTTP/2 session from keeping the process alive.
+            // TODO(kjin): Monitor nodejs/node#17620, which adds unref
+            // directly to the Http2Session object.
+            session.socket.unref();
+            stream.attachHttp2Stream(session.request(headers));
+          } else {
+            /* In this case, we lost the connection while finalizing
+              * metadata. That should be very unusual */
+            setImmediate(() => {
+              this.startHttp2Stream(methodName, stream, metadata);
+            });
+          }
+        }
+      }).catch((error: Error & { code: number }) => {
+        // We assume the error code isn't 0 (Status.OK)
+        stream.cancelWithStatus(error.code || Status.UNKNOWN,
+          `Getting metadata from plugin failed with error: ${error.message}`);
+      });
   }
 
   createStream(methodName: string, metadata: Metadata, options: CallOptions):
@@ -239,13 +249,15 @@ export class Http2Channel extends EventEmitter implements Channel {
     return stream;
   }
 
-  connect(callback: () => void): void {
-    this.transitionToState([ConnectivityState.IDLE], ConnectivityState.CONNECTING);
-    if (this.connectivityState === ConnectivityState.READY) {
-      setImmediate(callback);
-    } else {
-      this.once('connect', callback);
-    }
+  connect(): Promise<void> {
+    return new Promise((resolve) => {
+      this.transitionToState([ConnectivityState.IDLE], ConnectivityState.CONNECTING);
+      if (this.connectivityState === ConnectivityState.READY) {
+        setImmediate(resolve);
+      } else {
+        this.once('connect', resolve);
+      }
+    });
   }
 
   getConnectivityState(): ConnectivityState {
