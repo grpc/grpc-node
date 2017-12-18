@@ -28,19 +28,19 @@ const linkSync = require('../../util').linkSync;
 
 const nativeDir = __dirname;
 
-gulp.task('native.clean.links', 'Delete npm links', () => {
+gulp.task('clean.links', 'Delete npm links', () => {
   return del([path.resolve(nativeDir, 'node_modules/grpc'),
               path.resolve(nativeDir, 'node_modules/@grpc/surface')]);
 });
 
-gulp.task('native.clean.all', 'Delete all files created by tasks',
-          ['native.clean.links']);
+gulp.task('clean.all', 'Delete all files created by tasks',
+          ['clean.links']);
 
-gulp.task('native.install', 'Install dependencies', () => {
+gulp.task('install', 'Install dependencies', () => {
   return execa('npm', ['install', '--unsafe-perm'], {cwd: nativeDir, stdio: 'inherit'});
 });
 
-gulp.task('native.link.add', 'Link local copies of dependencies', () => {
+gulp.task('link.add', 'Link local copies of dependencies', () => {
   linkSync(nativeDir, './node_modules/grpc', '../grpc-native-core');
   linkSync(nativeDir, './node_modules/@grpc/surface', '../grpc-surface');
 });
