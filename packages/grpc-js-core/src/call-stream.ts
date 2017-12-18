@@ -3,6 +3,7 @@ import {Duplex} from 'stream';
 
 import {CallCredentials} from './call-credentials';
 import {Status} from './constants';
+import {EmitterAugmentation1} from './events';
 import {Filter} from './filter';
 import {FilterStackFactory} from './filter-stack';
 import {Metadata} from './metadata';
@@ -34,7 +35,7 @@ export interface WriteObject {
 /**
  * This interface represents a duplex stream associated with a single gRPC call.
  */
-export interface CallStream extends ObjectDuplex<WriteObject, Buffer> {
+export type CallStream =  {
   cancelWithStatus(status: Status, details: string): void;
   getPeer(): string;
 
@@ -43,37 +44,9 @@ export interface CallStream extends ObjectDuplex<WriteObject, Buffer> {
   /* If the return value is null, the call has not ended yet. Otherwise, it has
    * ended with the specified status */
   getStatus(): StatusObject|null;
-
-  addListener(event: string, listener: Function): this;
-  emit(event: string|symbol, ...args: any[]): boolean;
-  on(event: string, listener: Function): this;
-  once(event: string, listener: Function): this;
-  prependListener(event: string, listener: Function): this;
-  prependOnceListener(event: string, listener: Function): this;
-  removeListener(event: string, listener: Function): this;
-
-  addListener(event: 'metadata', listener: (metadata: Metadata) => void): this;
-  emit(event: 'metadata', metadata: Metadata): boolean;
-  on(event: 'metadata', listener: (metadata: Metadata) => void): this;
-  once(event: 'metadata', listener: (metadata: Metadata) => void): this;
-  prependListener(event: 'metadata', listener: (metadata: Metadata) => void):
-      this;
-  prependOnceListener(
-      event: 'metadata', listener: (metadata: Metadata) => void): this;
-  removeListener(event: 'metadata', listener: (metadata: Metadata) => void):
-      this;
-
-  addListener(event: 'status', listener: (status: StatusObject) => void): this;
-  emit(event: 'status', status: StatusObject): boolean;
-  on(event: 'status', listener: (status: StatusObject) => void): this;
-  once(event: 'status', listener: (status: StatusObject) => void): this;
-  prependListener(event: 'status', listener: (status: StatusObject) => void):
-      this;
-  prependOnceListener(
-      event: 'status', listener: (status: StatusObject) => void): this;
-  removeListener(event: 'status', listener: (status: StatusObject) => void):
-      this;
-}
+} & EmitterAugmentation1<'metadata', Metadata>
+  & EmitterAugmentation1<'status', StatusObject>
+  & ObjectDuplex<WriteObject, Buffer>;
 
 enum ReadState {
   NO_DATA,

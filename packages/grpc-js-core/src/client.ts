@@ -135,7 +135,6 @@ export class Client {
       method: string, serialize: (value: RequestType) => Buffer,
       deserialize: (value: Buffer) => ResponseType, argument: RequestType,
       callback: UnaryCallback<ResponseType>): ClientUnaryCall;
-
   makeUnaryRequest<RequestType, ResponseType>(
       method: string, serialize: (value: RequestType) => Buffer,
       deserialize: (value: Buffer) => ResponseType, argument: RequestType,
@@ -147,13 +146,14 @@ export class Client {
              metadata, options, callback));
     const call: CallStream =
         this.channel.createStream(method, metadata, options);
-    const emitter: ClientUnaryCall = new ClientUnaryCallImpl(call);
     const message: Buffer = serialize(argument);
     const writeObj: WriteObject = {message: message};
     writeObj.flags = options.flags;
     call.write(writeObj);
     call.end();
     this.handleUnaryResponse<ResponseType>(call, deserialize, callback);
+
+    const emitter: ClientUnaryCall = new ClientUnaryCallImpl(call);
     return emitter;
   }
 
@@ -174,7 +174,6 @@ export class Client {
       method: string, serialize: (value: RequestType) => Buffer,
       deserialize: (value: Buffer) => ResponseType,
       callback: UnaryCallback<ResponseType>): ClientWritableStream<RequestType>;
-
   makeClientStreamRequest<RequestType, ResponseType>(
       method: string, serialize: (value: RequestType) => Buffer,
       deserialize: (value: Buffer) => ResponseType,
@@ -187,9 +186,10 @@ export class Client {
              metadata, options, callback));
     const call: CallStream =
         this.channel.createStream(method, metadata, options);
+    this.handleUnaryResponse<ResponseType>(call, deserialize, callback);
+
     const stream: ClientWritableStream<RequestType> =
         new ClientWritableStreamImpl<RequestType>(call, serialize);
-    this.handleUnaryResponse<ResponseType>(call, deserialize, callback);
     return stream;
   }
 
@@ -233,13 +233,14 @@ export class Client {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
     const call: CallStream =
         this.channel.createStream(method, metadata, options);
-    const stream: ClientReadableStream<ResponseType> =
-        new ClientReadableStreamImpl<ResponseType>(call, deserialize);
     const message: Buffer = serialize(argument);
     const writeObj: WriteObject = {message: message};
     writeObj.flags = options.flags;
     call.write(writeObj);
     call.end();
+
+    const stream: ClientReadableStream<ResponseType> =
+        new ClientReadableStreamImpl<ResponseType>(call, deserialize);
     return stream;
   }
 
@@ -259,6 +260,7 @@ export class Client {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
     const call: CallStream =
         this.channel.createStream(method, metadata, options);
+
     const stream: ClientDuplexStream<RequestType, ResponseType> =
         new ClientDuplexStreamImpl<RequestType, ResponseType>(
             call, serialize, deserialize);
