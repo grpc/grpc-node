@@ -152,9 +152,7 @@ export class Client {
     call.write(writeObj);
     call.end();
     this.handleUnaryResponse<ResponseType>(call, deserialize, callback);
-
-    const emitter: ClientUnaryCall = new ClientUnaryCallImpl(call);
-    return emitter;
+    return new ClientUnaryCallImpl(call);
   }
 
   makeClientStreamRequest<RequestType, ResponseType>(
@@ -187,10 +185,7 @@ export class Client {
     const call: CallStream =
         this.channel.createStream(method, metadata, options);
     this.handleUnaryResponse<ResponseType>(call, deserialize, callback);
-
-    const stream: ClientWritableStream<RequestType> =
-        new ClientWritableStreamImpl<RequestType>(call, serialize);
-    return stream;
+    return new ClientWritableStreamImpl<RequestType>(call, serialize);
   }
 
   private checkMetadataAndOptions(
@@ -238,10 +233,7 @@ export class Client {
     writeObj.flags = options.flags;
     call.write(writeObj);
     call.end();
-
-    const stream: ClientReadableStream<ResponseType> =
-        new ClientReadableStreamImpl<ResponseType>(call, deserialize);
-    return stream;
+    return new ClientReadableStreamImpl<ResponseType>(call, deserialize);
   }
 
   makeBidiStreamRequest<RequestType, ResponseType>(
@@ -260,10 +252,7 @@ export class Client {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
     const call: CallStream =
         this.channel.createStream(method, metadata, options);
-
-    const stream: ClientDuplexStream<RequestType, ResponseType> =
-        new ClientDuplexStreamImpl<RequestType, ResponseType>(
-            call, serialize, deserialize);
-    return stream;
+    return new ClientDuplexStreamImpl<RequestType, ResponseType>(
+        call, serialize, deserialize);
   }
 }
