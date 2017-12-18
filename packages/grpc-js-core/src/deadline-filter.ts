@@ -9,7 +9,7 @@ const units: [string, number][] =
 
 function getDeadline(deadline: number) {
   let now = (new Date()).getTime();
-  let timeoutMs = deadline - now;
+  let timeoutMs = Math.max(deadline - now, 0);
   for (let [unit, factor] of units) {
     let amount = timeoutMs / factor;
     if (amount < 1e8) {
