@@ -26,7 +26,7 @@ function isLegalKey(key: string): boolean {
 }
 
 function isLegalNonBinaryValue(value: string): boolean {
-  return !!value.match(/^[ -~]+$/);
+  return !!value.match(/^[ -~]*$/);
 }
 
 function isBinaryKey(key: string): boolean {
