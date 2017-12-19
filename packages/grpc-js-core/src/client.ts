@@ -1,7 +1,7 @@
 import {once} from 'lodash';
 import {URL} from 'url';
 
-import {ClientDuplexStream, ClientDuplexStreamImpl, ClientReadableStream, ClientReadableStreamImpl, ClientUnaryCall, ClientUnaryCallImpl, ClientWritableStream, ClientWritableStreamImpl, ServiceError, ServiceErrorImpl} from './call';
+import {ClientDuplexStream, ClientDuplexStreamImpl, ClientReadableStream, ClientReadableStreamImpl, ClientUnaryCall, ClientUnaryCallImpl, ClientWritableStream, ClientWritableStreamImpl, ServiceError} from './call';
 import {CallOptions, CallStream, StatusObject, WriteObject} from './call-stream';
 import {Channel, ChannelOptions, Http2Channel} from './channel';
 import {ChannelCredentials} from './channel-credentials';
@@ -83,7 +83,7 @@ export class Client {
       if (status.code === Status.OK) {
         callback(null, responseMessage as ResponseType);
       } else {
-        const error = new ServiceErrorImpl(status.details);
+        const error: ServiceError = new Error(status.details);
         error.code = status.code;
         error.metadata = status.metadata;
         callback(error);
