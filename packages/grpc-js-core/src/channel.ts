@@ -55,21 +55,14 @@ function uniformRandom(min:number, max: number) {
  * An interface that represents a communication channel to a server specified
  * by a given address.
  */
-export interface Channel extends EventEmitter {
+export type Channel = {
   createStream(methodName: string, metadata: Metadata, options: CallOptions):
       CallStream;
   connect(): Promise<void>;
   getConnectivityState(): ConnectivityState;
   close(): void;
-
-  addListener(event: string, listener: Function): this;
-  emit(event: string|symbol, ...args: any[]): boolean;
-  on(event: string, listener: Function): this;
-  once(event: string, listener: Function): this;
-  prependListener(event: string, listener: Function): this;
-  prependOnceListener(event: string, listener: Function): this;
-  removeListener(event: string, listener: Function): this;
-}
+  getTarget(): string;
+} & EventEmitter;
 
 export class Http2Channel extends EventEmitter implements Channel {
   private readonly authority: url.URL;
@@ -275,5 +268,9 @@ export class Http2Channel extends EventEmitter implements Channel {
                             ConnectivityState.READY,
                             ConnectivityState.TRANSIENT_FAILURE,
                             ConnectivityState.IDLE], ConnectivityState.SHUTDOWN);
+  }
+
+  getTarget() {
+    return `${this.authority.hostname}:${this.authority.port}`;
   }
 }

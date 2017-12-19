@@ -6,6 +6,7 @@ import {CallStream, StatusObject, WriteObject} from './call-stream';
 import {Status} from './constants';
 import {Metadata} from './metadata';
 import {ObjectReadable, ObjectWritable} from './object-stream';
+import { Channel } from './channel';
 
 export interface ServiceError extends Error {
   code?: number;
@@ -38,7 +39,9 @@ export type ClientDuplexStream<RequestType, ResponseType> =
   ClientWritableStream<RequestType> & ClientReadableStream<ResponseType>;
 
 export class ClientUnaryCallImpl extends EventEmitter implements ClientUnaryCall {
-  constructor(private readonly call: CallStream) {
+  constructor(
+      private readonly channel: Channel,
+      private readonly call: CallStream) {
     super();
     call.on('metadata', (metadata: Metadata) => {
       this.emit('metadata', metadata);
@@ -53,7 +56,7 @@ export class ClientUnaryCallImpl extends EventEmitter implements ClientUnaryCall
   }
 
   getPeer(): string {
-    return this.call.getPeer();
+    return this.channel.getTarget();
   }
 }
 
@@ -90,6 +93,7 @@ function setUpReadableStream<ResponseType>(
 export class ClientReadableStreamImpl<ResponseType> extends Readable implements
     ClientReadableStream<ResponseType> {
   constructor(
+      private readonly channel: Channel,
       private readonly call: CallStream,
       public readonly deserialize: (chunk: Buffer) => ResponseType) {
     super({objectMode: true});
@@ -104,7 +108,7 @@ export class ClientReadableStreamImpl<ResponseType> extends Readable implements
   }
 
   getPeer(): string {
-    return this.call.getPeer();
+    return this.channel.getTarget();
   }
 
   _read(_size: number): void {
@@ -134,6 +138,7 @@ function tryWrite<RequestType>(
 export class ClientWritableStreamImpl<RequestType> extends Writable implements
     ClientWritableStream<RequestType> {
   constructor(
+      private readonly channel: Channel,
       private readonly call: CallStream,
       public readonly serialize: (value: RequestType) => Buffer) {
     super({objectMode: true});
@@ -150,7 +155,7 @@ export class ClientWritableStreamImpl<RequestType> extends Writable implements
   }
 
   getPeer(): string {
-    return this.call.getPeer();
+    return this.channel.getTarget();
   }
 
   _write(chunk: RequestType, encoding: string, cb: Function) {
@@ -166,6 +171,7 @@ export class ClientWritableStreamImpl<RequestType> extends Writable implements
 export class ClientDuplexStreamImpl<RequestType, ResponseType> extends Duplex
     implements ClientDuplexStream<RequestType, ResponseType> {
   constructor(
+      private readonly channel: Channel,
       private readonly call: CallStream,
       public readonly serialize: (value: RequestType) => Buffer,
       public readonly deserialize: (chunk: Buffer) => ResponseType) {
@@ -181,7 +187,7 @@ export class ClientDuplexStreamImpl<RequestType, ResponseType> extends Duplex
   }
 
   getPeer(): string {
-    return this.call.getPeer();
+    return this.channel.getTarget();
   }
 
   _read(_size: number): void {

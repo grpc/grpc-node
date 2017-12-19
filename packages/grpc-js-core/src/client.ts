@@ -55,6 +55,10 @@ export class Client {
     }
   }
 
+  getChannel() {
+    return this.channel;
+  }
+
   private handleUnaryResponse<ResponseType>(
       call: CallStream, deserialize: (value: Buffer) => ResponseType,
       callback: UnaryCallback<ResponseType>): void {
@@ -152,7 +156,7 @@ export class Client {
     call.write(writeObj);
     call.end();
     this.handleUnaryResponse<ResponseType>(call, deserialize, callback);
-    return new ClientUnaryCallImpl(call);
+    return new ClientUnaryCallImpl(this.channel, call);
   }
 
   makeClientStreamRequest<RequestType, ResponseType>(
@@ -185,7 +189,8 @@ export class Client {
     const call: CallStream =
         this.channel.createStream(method, metadata, options);
     this.handleUnaryResponse<ResponseType>(call, deserialize, callback);
-    return new ClientWritableStreamImpl<RequestType>(call, serialize);
+    return new ClientWritableStreamImpl<RequestType>(
+        this.channel, call, serialize);
   }
 
   private checkMetadataAndOptions(
@@ -233,7 +238,8 @@ export class Client {
     writeObj.flags = options.flags;
     call.write(writeObj);
     call.end();
-    return new ClientReadableStreamImpl<ResponseType>(call, deserialize);
+    return new ClientReadableStreamImpl<ResponseType>(
+        this.channel, call, deserialize);
   }
 
   makeBidiStreamRequest<RequestType, ResponseType>(
@@ -253,6 +259,6 @@ export class Client {
     const call: CallStream =
         this.channel.createStream(method, metadata, options);
     return new ClientDuplexStreamImpl<RequestType, ResponseType>(
-        call, serialize, deserialize);
+        this.channel, call, serialize, deserialize);
   }
 }
