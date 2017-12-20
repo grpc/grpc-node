@@ -115,7 +115,7 @@ export class Http2Channel extends EventEmitter implements Channel {
     case ConnectivityState.IDLE:
     case ConnectivityState.SHUTDOWN:
       if (this.subChannel) {
-        this.subChannel.shutdown({graceful: true});
+        (this.subChannel as any).close({graceful: true});
         this.subChannel.removeListener('connect', this.subChannelConnectCallback);
         this.subChannel.removeListener('close', this.subChannelCloseCallback);
         this.subChannel = null;
@@ -153,7 +153,7 @@ export class Http2Channel extends EventEmitter implements Channel {
           return checkServerIdentity(sslTargetNameOverride, cert);
         }
       }
-      subChannel = http2.connect(this.authority, connectionOptions);
+      subChannel = http2.connect(this.authority, connectionOptions) as typeof subChannel;
     }
     this.subChannel = subChannel;
     let now = new Date();
@@ -162,7 +162,7 @@ export class Http2Channel extends EventEmitter implements Channel {
       MIN_CONNECT_TIMEOUT_MS);
     let connectionTimerId: NodeJS.Timer = setTimeout(() => {
       // This should trigger the 'close' event, which will send us back to TRANSIENT_FAILURE
-      subChannel.shutdown();
+      (subChannel as any).close();
     }, connectionTimeout);
     this.subChannelConnectCallback = () => {
       // Connection succeeded
@@ -221,9 +221,7 @@ export class Http2Channel extends EventEmitter implements Channel {
           if (this.connectivityState === ConnectivityState.READY) {
             const session: http2.ClientHttp2Session = this.subChannel!;
             // Prevent the HTTP/2 session from keeping the process alive.
-            // TODO(kjin): Monitor nodejs/node#17620, which adds unref
-            // directly to the Http2Session object.
-            session.socket.unref();
+            (session as any).unref();
             stream.attachHttp2Stream(session.request(headers));
           } else {
             /* In this case, we lost the connection while finalizing
