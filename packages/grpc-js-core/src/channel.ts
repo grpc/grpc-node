@@ -14,6 +14,8 @@ import {FilterStackFactory} from './filter-stack';
 import {Metadata, MetadataObject} from './metadata';
 import { MetadataStatusFilterFactory } from './metadata-status-filter';
 
+const { version: clientVersion } = require('../../package');
+
 const IDLE_TIMEOUT_MS = 300000;
 
 const MIN_CONNECT_TIMEOUT_MS = 20000;
@@ -28,7 +30,8 @@ const {
   HTTP2_HEADER_METHOD,
   HTTP2_HEADER_PATH,
   HTTP2_HEADER_SCHEME,
-  HTTP2_HEADER_TE
+  HTTP2_HEADER_TE,
+  HTTP2_HEADER_USER_AGENT
 } = http2.constants;
 
 /**
@@ -209,6 +212,7 @@ export class Http2Channel extends EventEmitter implements Channel {
       .then(([metadataValue]) => {
         let headers = metadataValue.toHttp2Headers();
         headers[HTTP2_HEADER_AUTHORITY] = this.authority.hostname;
+        headers[HTTP2_HEADER_USER_AGENT] = `grpc-node/${clientVersion}`;
         headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
         headers[HTTP2_HEADER_METHOD] = 'POST';
         headers[HTTP2_HEADER_PATH] = methodName;
