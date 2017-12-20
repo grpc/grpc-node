@@ -38,6 +38,17 @@ export interface Call extends EventEmitter {
       event: 'metadata', listener: (metadata: Metadata) => void): this;
   removeListener(event: 'metadata', listener: (metadata: Metadata) => void):
       this;
+
+  addListener(event: 'status', listener: (status: StatusObject) => void): this;
+  emit(event: 'status', status: StatusObject): boolean;
+  on(event: 'status', listener: (status: StatusObject) => void): this;
+  once(event: 'status', listener: (status: StatusObject) => void): this;
+  prependListener(event: 'status', listener: (status: StatusObject) => void):
+      this;
+  prependOnceListener(
+      event: 'status', listener: (status: StatusObject) => void): this;
+  removeListener(event: 'status', listener: (status: StatusObject) => void):
+      this;
 }
 
 export interface ClientUnaryCall extends Call {}
@@ -47,6 +58,9 @@ export class ClientUnaryCallImpl extends EventEmitter implements Call {
     super();
     call.on('metadata', (metadata: Metadata) => {
       this.emit('metadata', metadata);
+    });
+    call.on('status', (status: StatusObject) => {
+      this.emit('status', status);
     });
   }
 
@@ -70,17 +84,6 @@ export interface ClientReadableStream<ResponseType> extends
   prependListener(event: string, listener: Function): this;
   prependOnceListener(event: string, listener: Function): this;
   removeListener(event: string, listener: Function): this;
-
-  addListener(event: 'status', listener: (status: StatusObject) => void): this;
-  emit(event: 'status', status: StatusObject): boolean;
-  on(event: 'status', listener: (status: StatusObject) => void): this;
-  once(event: 'status', listener: (status: StatusObject) => void): this;
-  prependListener(event: 'status', listener: (status: StatusObject) => void):
-      this;
-  prependOnceListener(
-      event: 'status', listener: (status: StatusObject) => void): this;
-  removeListener(event: 'status', listener: (status: StatusObject) => void):
-      this;
 }
 
 export interface ClientWritableStream<RequestType> extends
@@ -189,6 +192,9 @@ export class ClientWritableStreamImpl<RequestType> extends Writable implements
     super({objectMode: true});
     call.on('metadata', (metadata: Metadata) => {
       this.emit('metadata', metadata);
+    });
+    call.on('status', (status: StatusObject) => {
+      this.emit('status', status);
     });
   }
 

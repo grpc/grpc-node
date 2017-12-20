@@ -13,7 +13,7 @@ export class CallCredentialsFilter extends BaseFilter implements Filter {
 
   async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
     // TODO(murgatroid99): pass real options to generateMetadata
-    let credsMetadata = this.credentials.generateMetadata.bind({});
+    let credsMetadata = this.credentials.generateMetadata({});
     let resultMetadata = await metadata;
     resultMetadata.merge(await credsMetadata);
     return resultMetadata;

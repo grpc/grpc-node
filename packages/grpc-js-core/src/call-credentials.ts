@@ -46,7 +46,7 @@ class ComposedCallCredentials implements CallCredentials {
 class SingleCallCredentials implements CallCredentials {
   constructor(private metadataGenerator: CallMetadataGenerator) {}
 
-  async generateMetadata(options: {}): Promise<Metadata> {
+  generateMetadata(options: {}): Promise<Metadata> {
     return new Promise<Metadata>((resolve, reject) => {
       this.metadataGenerator(options, (err, metadata) => {
         if (metadata !== undefined) {
@@ -64,8 +64,8 @@ class SingleCallCredentials implements CallCredentials {
 }
 
 class EmptyCallCredentials implements CallCredentials {
-  async generateMetadata(options: {}): Promise<Metadata> {
-    return new Metadata();
+  generateMetadata(options: {}): Promise<Metadata> {
+    return Promise.resolve(new Metadata());
   }
 
   compose(other: CallCredentials): CallCredentials {

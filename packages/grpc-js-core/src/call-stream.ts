@@ -282,6 +282,9 @@ export class Http2CallStream extends Duplex implements CallStream {
         let code: Status;
         let details = '';
         switch (errorCode) {
+          case http2.constants.NGHTTP2_NO_ERROR:
+            code = Status.OK;
+            break;
           case http2.constants.NGHTTP2_REFUSED_STREAM:
             code = Status.UNAVAILABLE;
             break;
