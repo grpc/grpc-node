@@ -294,7 +294,7 @@ export class Http2CallStream extends Duplex implements CallStream {
           this.unpushedReadMessages.push(null);
         }
       });
-      stream.on('streamClosed', async (errorCode) => {
+      stream.on('close', async (errorCode) => {
         let code: Status;
         let details = '';
         switch (errorCode) {
