@@ -70,7 +70,7 @@ module.exports = function(grpc) {
      * @return {Buffer} The serialized object
      */
     return function serialize(arg) {
-      var message = cls.fromObject(arg);
+      var message = arg ? cls.fromObject(arg) : {};
       return cls.encode(message).finish();
     };
   };
@@ -134,7 +134,7 @@ module.exports = function(grpc) {
     if (value.hasOwnProperty('methods')) {
       // It's a service object
       var service_attrs = getProtobufServiceAttrs(value, options);
-      return grpc..makeGenericClientConstructor(service_attrs);
+      return grpc.makeGenericClientConstructor(service_attrs);
     }
 
     if (value.hasOwnProperty('nested')) {
