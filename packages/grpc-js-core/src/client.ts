@@ -35,7 +35,11 @@ export class Client {
       void {
     let cb: (error: Error|null) => void = once(callback);
     let callbackCalled = false;
+    let timer: NodeJS.Timer | null = null;
     this.channel.connect().then(() => {
+      if (timer) {
+        clearTimeout(timer);
+      }
       cb(null);
     });
     if (deadline !== Infinity) {
@@ -49,7 +53,7 @@ export class Client {
       if (timeout < 0) {
         timeout = 0;
       }
-      setTimeout(() => {
+      timer = setTimeout(() => {
         cb(new Error('Failed to connect before the deadline'));
       }, timeout);
     }
