@@ -9,7 +9,7 @@ import {FilterStackFactory} from './filter-stack';
 import {Metadata} from './metadata';
 import {ObjectDuplex} from './object-stream';
 
-const {HTTP2_HEADER_STATUS, HTTP2_HEADER_CONTENT_TYPE} = http2.constants;
+const {HTTP2_HEADER_STATUS, HTTP2_HEADER_CONTENT_TYPE, NGHTTP2_CANCEL} = http2.constants;
 
 export type Deadline = Date | number;
 
@@ -156,7 +156,7 @@ export class Http2CallStream extends Duplex implements CallStream {
 
   attachHttp2Stream(stream: http2.ClientHttp2Stream): void {
     if (this.finalStatus !== null) {
-      stream.rstWithCancel();
+      (stream as any).close(NGHTTP2_CANCEL);
     } else {
       this.http2Stream = stream;
       stream.on('response', (headers, flags) => {
@@ -328,7 +328,7 @@ export class Http2CallStream extends Duplex implements CallStream {
     if (this.http2Stream !== null && !this.http2Stream.destroyed) {
       /* TODO(murgatroid99): Determine if we want to send different RST_STREAM
        * codes based on the status code */
-      this.http2Stream.rstWithCancel();
+      (this.http2Stream as any).close(NGHTTP2_CANCEL);
     }
   }
 
