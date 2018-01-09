@@ -1,28 +1,14 @@
 import {Duplex, Readable, Writable} from 'stream';
+import {EmitterAugmentation1} from './events';
 
 export interface IntermediateObjectReadable<T> extends Readable {
   read(size?: number): any&T;
 }
 
-export interface ObjectReadable<T> extends IntermediateObjectReadable<T> {
+export type ObjectReadable<T> = {
   read(size?: number): T;
-
-  addListener(event: string, listener: Function): this;
-  emit(event: string|symbol, ...args: any[]): boolean;
-  on(event: string, listener: Function): this;
-  once(event: string, listener: Function): this;
-  prependListener(event: string, listener: Function): this;
-  prependOnceListener(event: string, listener: Function): this;
-  removeListener(event: string, listener: Function): this;
-
-  addListener(event: 'data', listener: (chunk: T) => void): this;
-  emit(event: 'data', chunk: T): boolean;
-  on(event: 'data', listener: (chunk: T) => void): this;
-  once(event: 'data', listener: (chunk: T) => void): this;
-  prependListener(event: 'data', listener: (chunk: T) => void): this;
-  prependOnceListener(event: 'data', listener: (chunk: T) => void): this;
-  removeListener(event: 'data', listener: (chunk: T) => void): this;
-}
+} & EmitterAugmentation1<'data', T>
+  & IntermediateObjectReadable<T>;
 
 export interface IntermediateObjectWritable<T> extends Writable {
   _write(chunk: any&T, encoding: string, callback: Function): void;
@@ -44,8 +30,7 @@ export interface ObjectWritable<T> extends IntermediateObjectWritable<T> {
   end(chunk: T, encoding?: any, cb?: Function): void;
 }
 
-export interface ObjectDuplex<T, U> extends Duplex, ObjectWritable<T>,
-                                            ObjectReadable<U> {
+export type ObjectDuplex<T, U> = {
   read(size?: number): U;
 
   _write(chunk: T, encoding: string, callback: Function): void;
@@ -54,13 +39,4 @@ export interface ObjectDuplex<T, U> extends Duplex, ObjectWritable<T>,
   end(): void;
   end(chunk: T, cb?: Function): void;
   end(chunk: T, encoding?: any, cb?: Function): void;
-
-
-  addListener(event: string, listener: Function): this;
-  emit(event: string|symbol, ...args: any[]): boolean;
-  on(event: string, listener: Function): this;
-  once(event: string, listener: Function): this;
-  prependListener(event: string, listener: Function): this;
-  prependOnceListener(event: string, listener: Function): this;
-  removeListener(event: string, listener: Function): this;
-}
+} & Duplex & ObjectWritable<T> & ObjectReadable<U>;

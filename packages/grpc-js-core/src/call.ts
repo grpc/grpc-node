@@ -1,4 +1,5 @@
 import {EventEmitter} from 'events';
+import {EmitterAugmentation1} from './events';
 import {Duplex, Readable, Writable} from 'stream';
 
 import {CallStream, StatusObject, WriteObject} from './call-stream';
@@ -16,44 +17,27 @@ export class ServiceErrorImpl extends Error implements ServiceError {
   metadata?: Metadata;
 }
 
-export interface Call extends EventEmitter {
+export type Call = {
   cancel(): void;
   getPeer(): string;
+} & EmitterAugmentation1<'metadata', Metadata>
+  & EmitterAugmentation1<'status', StatusObject>
+  & EventEmitter;
 
-  addListener(event: string, listener: Function): this;
-  emit(event: string|symbol, ...args: any[]): boolean;
-  on(event: string, listener: Function): this;
-  once(event: string, listener: Function): this;
-  prependListener(event: string, listener: Function): this;
-  prependOnceListener(event: string, listener: Function): this;
-  removeListener(event: string, listener: Function): this;
+export type ClientUnaryCall = Call;
 
-  addListener(event: 'metadata', listener: (metadata: Metadata) => void): this;
-  emit(event: 'metadata', metadata: Metadata): boolean;
-  on(event: 'metadata', listener: (metadata: Metadata) => void): this;
-  once(event: 'metadata', listener: (metadata: Metadata) => void): this;
-  prependListener(event: 'metadata', listener: (metadata: Metadata) => void):
-      this;
-  prependOnceListener(
-      event: 'metadata', listener: (metadata: Metadata) => void): this;
-  removeListener(event: 'metadata', listener: (metadata: Metadata) => void):
-      this;
+export type ClientReadableStream<ResponseType> = {
+  deserialize: (chunk: Buffer) => ResponseType;
+} & Call & ObjectReadable<ResponseType>;
 
-  addListener(event: 'status', listener: (status: StatusObject) => void): this;
-  emit(event: 'status', status: StatusObject): boolean;
-  on(event: 'status', listener: (status: StatusObject) => void): this;
-  once(event: 'status', listener: (status: StatusObject) => void): this;
-  prependListener(event: 'status', listener: (status: StatusObject) => void):
-      this;
-  prependOnceListener(
-      event: 'status', listener: (status: StatusObject) => void): this;
-  removeListener(event: 'status', listener: (status: StatusObject) => void):
-      this;
-}
+export type ClientWritableStream<RequestType> = {
+  serialize: (value: RequestType) => Buffer;
+} & Call & ObjectWritable<RequestType>;
 
-export interface ClientUnaryCall extends Call {}
+export type ClientDuplexStream<RequestType, ResponseType> =
+  ClientWritableStream<RequestType> & ClientReadableStream<ResponseType>;
 
-export class ClientUnaryCallImpl extends EventEmitter implements Call {
+export class ClientUnaryCallImpl extends EventEmitter implements ClientUnaryCall {
   constructor(private readonly call: CallStream) {
     super();
     call.on('metadata', (metadata: Metadata) => {
@@ -71,43 +55,6 @@ export class ClientUnaryCallImpl extends EventEmitter implements Call {
   getPeer(): string {
     return this.call.getPeer();
   }
-}
-
-export interface ClientReadableStream<ResponseType> extends
-    Call, ObjectReadable<ResponseType> {
-  deserialize: (chunk: Buffer) => ResponseType;
-
-  addListener(event: string, listener: Function): this;
-  emit(event: string|symbol, ...args: any[]): boolean;
-  on(event: string, listener: Function): this;
-  once(event: string, listener: Function): this;
-  prependListener(event: string, listener: Function): this;
-  prependOnceListener(event: string, listener: Function): this;
-  removeListener(event: string, listener: Function): this;
-}
-
-export interface ClientWritableStream<RequestType> extends
-    Call, ObjectWritable<RequestType> {
-  serialize: (value: RequestType) => Buffer;
-
-  addListener(event: string, listener: Function): this;
-  emit(event: string|symbol, ...args: any[]): boolean;
-  on(event: string, listener: Function): this;
-  once(event: string, listener: Function): this;
-  prependListener(event: string, listener: Function): this;
-  prependOnceListener(event: string, listener: Function): this;
-  removeListener(event: string, listener: Function): this;
-}
-
-export interface ClientDuplexStream<RequestType, ResponseType> extends
-    ClientWritableStream<RequestType>, ClientReadableStream<ResponseType> {
-  addListener(event: string, listener: Function): this;
-  emit(event: string|symbol, ...args: any[]): boolean;
-  on(event: string, listener: Function): this;
-  once(event: string, listener: Function): this;
-  prependListener(event: string, listener: Function): this;
-  prependOnceListener(event: string, listener: Function): this;
-  removeListener(event: string, listener: Function): this;
 }
 
 function setUpReadableStream<ResponseType>(
