@@ -237,8 +237,8 @@ declare module "grpc" {
    * An object that completely defines a service.
    * @typedef {Object.<string, grpc~MethodDefinition>} grpc~ServiceDefinition
    */
-  export interface ServiceDefinition<ImplementationType> {
-    [s: string]: MethodDefinition<any, any>;
+  export type ServiceDefinition<ImplementationType> = {
+    readonly [I in keyof ImplementationType]: MethodDefinition<any, any>;
   }
 
   /**
