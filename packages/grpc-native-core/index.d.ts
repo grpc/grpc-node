@@ -331,7 +331,7 @@ declare module "grpc" {
    * A stream that the server can read from. Used for calls that are streaming
    * from the client side.
    */
-  export class ServerReadableStream<T> extends Readable {
+  export class ServerReadableStream<RequestType> extends Readable {
     /**
      * Indicates if the call has been cancelled
      */
