@@ -61,10 +61,11 @@ var version = require('../package.json').version;
  */
 function createStatusError(status) {
   let statusName = _.invert(constants.status)[status.code];
-  let message = `${status.code} ${status.name}: ${status.details}`;
+  let message = `${status.code} ${statusName}: ${status.details}`;
   let error = new Error(message);
   error.code = status.code;
   error.metadata = status.metadata;
+  error.details = status.details;
   return error;
 }
 

@@ -319,7 +319,7 @@ describe('client credentials', function() {
                             client_options);
     client.unary({}, function(err, data) {
       assert(err);
-      assert.strictEqual(err.message,
+      assert.strictEqual(err.details,
                          'Getting metadata from plugin failed with error: ' +
                          'Authentication error');
       assert.strictEqual(err.code, grpc.status.UNAUTHENTICATED);
@@ -369,7 +369,7 @@ describe('client credentials', function() {
                             client_options);
     client.unary({}, function(err, data) {
       assert(err);
-      assert.strictEqual(err.message,
+      assert.strictEqual(err.details,
                          'Getting metadata from plugin failed with error: ' +
                          'Authentication failure');
       done();
