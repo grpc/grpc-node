@@ -54,6 +54,22 @@ var util = require('util');
 var version = require('../package.json').version;
 
 /**
+ * Create an Error object from a status object
+ * @private
+ * @param {grpc~StatusObject} status The status object
+ * @return {Error} The resulting Error
+ */
+function createStatusError(status) {
+  let statusName = _.invert(constants.status)[status.code];
+  let message = `${status.code} ${statusName}: ${status.details}`;
+  let error = new Error(message);
+  error.code = status.code;
+  error.metadata = status.metadata;
+  error.details = status.details;
+  return error;
+}
+
+/**
  * Initial response metadata sent by the server when it starts processing the
  * call
  * @event grpc~ClientUnaryCall#metadata
@@ -252,9 +268,7 @@ function _emitStatusIfDone() {
     if (status.code === constants.status.OK) {
       this.push(null);
     } else {
-      var error = new Error(status.details);
-      error.code = status.code;
-      error.metadata = status.metadata;
+      var error = createStatusError(status);
       this.emit('error', error);
     }
     this.emit('status', status);
@@ -551,9 +565,7 @@ Client.prototype.makeUnaryRequest = function(method, serialize, deserialize,
       }
     }
     if (status.code !== constants.status.OK) {
-      error = new Error(status.details);
-      error.code = status.code;
-      error.metadata = status.metadata;
+      error = new createStatusError(status);
       args.callback(error);
     } else {
       args.callback(null, deserialized);
@@ -634,9 +646,7 @@ Client.prototype.makeClientStreamRequest = function(method, serialize,
       }
     }
     if (status.code !== constants.status.OK) {
-      error = new Error(response.status.details);
-      error.code = status.code;
-      error.metadata = status.metadata;
+      error = createStatusError(status);
       args.callback(error);
     } else {
       args.callback(null, deserialized);
