@@ -63,6 +63,7 @@
         '-Wno-long-long',
         '-Wno-unused-parameter',
         '-DOSATOMIC_USE_INLINED=1',
+        '-Wno-deprecated-declarations',
     ],
     'ldflags': [
         '-g',
@@ -185,6 +186,7 @@
               '-Wno-long-long',
               '-Wno-unused-parameter',
               '-DOSATOMIC_USE_INLINED=1',
+              '-Wno-deprecated-declarations',
           ],
           'OTHER_CPLUSPLUSFLAGS': [
               '-g',
@@ -194,6 +196,7 @@
               '-Wno-long-long',
               '-Wno-unused-parameter',
               '-DOSATOMIC_USE_INLINED=1',
+              '-Wno-deprecated-declarations',
             '-stdlib=libc++',
             '-std=c++11',
             '-Wno-error=deprecated-declarations'
@@ -613,7 +616,6 @@
         'deps/grpc/src/core/lib/support/env_posix.cc',
         'deps/grpc/src/core/lib/support/env_windows.cc',
         'deps/grpc/src/core/lib/support/fork.cc',
-        'deps/grpc/src/core/lib/support/histogram.cc',
         'deps/grpc/src/core/lib/support/host_port.cc',
         'deps/grpc/src/core/lib/support/log.cc',
         'deps/grpc/src/core/lib/support/log_android.cc',
