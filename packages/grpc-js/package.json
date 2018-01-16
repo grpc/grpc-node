@@ -2,9 +2,16 @@
   "name": "@grpc/js",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "build/src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "tsc -p .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check": "gts check",
+    "clean": "gts clean",
+    "fix": "gts fix",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "posttest": "npm run check"
   },
   "repository": {
     "type": "git",
@@ -19,5 +26,9 @@
   "dependencies": {
     "@grpc/js-core": "^0.1.0",
     "@grpc/surface": "^0.1.0"
+  },
+  "devDependencies": {
+    "gts": "^0.5.1",
+    "typescript": "^2.6.1"
   }
 }

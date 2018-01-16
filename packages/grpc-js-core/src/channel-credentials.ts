@@ -79,7 +79,14 @@ class SecureChannelCredentialsImpl extends ChannelCredentialsImpl {
   }
 }
 
+function verifyIsBufferOrNull(obj: any, friendlyName: string): void {
+  if (obj && !(obj instanceof Buffer)) {
+    throw new TypeError(`${friendlyName}, if provided, must be a Buffer.`);
+  }
+}
+
 export namespace ChannelCredentials {
+
   /**
    * Return a new ChannelCredentials instance with a given set of credentials.
    * The resulting instance can be used to construct a Channel that communicates
@@ -91,6 +98,9 @@ export namespace ChannelCredentials {
   export function createSsl(
       rootCerts?: Buffer|null, privateKey?: Buffer|null,
       certChain?: Buffer|null): ChannelCredentials {
+    verifyIsBufferOrNull(rootCerts, 'Root certificate');
+    verifyIsBufferOrNull(privateKey, 'Private key');
+    verifyIsBufferOrNull(certChain, 'Certificate chain');
     if (privateKey && !certChain) {
       throw new Error(
           'Private key must be given with accompanying certificate chain');

@@ -35,20 +35,20 @@ const testDir = path.resolve(nativeCoreDir, 'test');
 const pkg = require('./package');
 const jshintConfig = pkg.jshintConfig;
 
-gulp.task('native.core.clean', 'Delete generated files', () => {
+gulp.task('clean', 'Delete generated files', () => {
   return del([path.resolve(nativeCoreDir, 'build'),
 	      path.resolve(nativeCoreDir, 'ext/node')]);
 });
 
-gulp.task('native.core.clean.all', 'Delete all files created by tasks',
-	  ['native.core.clean']);
+gulp.task('clean.all', 'Delete all files created by tasks',
+	  ['clean']);
 
-gulp.task('native.core.install', 'Install native core dependencies', () => {
+gulp.task('install', 'Install native core dependencies', () => {
   return execa('npm', ['install', '--build-from-source', '--unsafe-perm'],
                {cwd: nativeCoreDir, stdio: 'inherit'});
 });
 
-gulp.task('native.core.install.windows', 'Install native core dependencies for MS Windows', () => {
+gulp.task('install.windows', 'Install native core dependencies for MS Windows', () => {
   return execa('npm', ['install', '--build-from-source'],
                {cwd: nativeCoreDir, stdio: 'inherit'}).catch(() => 
 del(path.resolve(process.env.USERPROFILE, '.node-gyp', process.versions.node, 'include/node/openssl'), { force: true }).then(() =>
@@ -57,21 +57,21 @@ execa('npm', ['install', '--build-from-source'],
                ))
 });
 
-gulp.task('native.core.lint', 'Emits linting errors', () => {
+gulp.task('lint', 'Emits linting errors', () => {
   return gulp.src([`${nativeCoreDir}/index.js`, `${srcDir}/*.js`, `${testDir}/*.js`])
       .pipe(jshint(pkg.jshintConfig))
       .pipe(jshint.reporter('default'));
 });
 
-gulp.task('native.core.build', 'Build native package', () => {
+gulp.task('build', 'Build native package', () => {
   return execa('npm', ['run', 'build'], {cwd: nativeCoreDir, stdio: 'inherit'});
 });
 
-gulp.task('native.core.test', 'Run all tests', ['native.core.build'], () => {
+gulp.task('test', 'Run all tests', ['build'], () => {
   return gulp.src(`${testDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
 });
 
-gulp.task('native.core.doc.gen', 'Generate docs', (cb) => {
+gulp.task('doc.gen', 'Generate docs', (cb) => {
   var config = require('./jsdoc_conf.json');
   gulp.src([`${nativeCoreDir}/README.md`, `${nativeCoreDir}/index.js`, `${srcDir}/*.js`], {read: false})
       .pipe(jsdoc(config, cb));

@@ -3,6 +3,7 @@ import {Duplex} from 'stream';
 
 import {CallCredentials} from './call-credentials';
 import {Status} from './constants';
+import {EmitterAugmentation1} from './events';
 import {Filter} from './filter';
 import {FilterStackFactory} from './filter-stack';
 import {Metadata} from './metadata';
@@ -34,7 +35,7 @@ export interface WriteObject {
 /**
  * This interface represents a duplex stream associated with a single gRPC call.
  */
-export interface CallStream extends ObjectDuplex<WriteObject, Buffer> {
+export type CallStream =  {
   cancelWithStatus(status: Status, details: string): void;
   getPeer(): string;
 
@@ -43,37 +44,9 @@ export interface CallStream extends ObjectDuplex<WriteObject, Buffer> {
   /* If the return value is null, the call has not ended yet. Otherwise, it has
    * ended with the specified status */
   getStatus(): StatusObject|null;
-
-  addListener(event: string, listener: Function): this;
-  emit(event: string|symbol, ...args: any[]): boolean;
-  on(event: string, listener: Function): this;
-  once(event: string, listener: Function): this;
-  prependListener(event: string, listener: Function): this;
-  prependOnceListener(event: string, listener: Function): this;
-  removeListener(event: string, listener: Function): this;
-
-  addListener(event: 'metadata', listener: (metadata: Metadata) => void): this;
-  emit(event: 'metadata', metadata: Metadata): boolean;
-  on(event: 'metadata', listener: (metadata: Metadata) => void): this;
-  once(event: 'metadata', listener: (metadata: Metadata) => void): this;
-  prependListener(event: 'metadata', listener: (metadata: Metadata) => void):
-      this;
-  prependOnceListener(
-      event: 'metadata', listener: (metadata: Metadata) => void): this;
-  removeListener(event: 'metadata', listener: (metadata: Metadata) => void):
-      this;
-
-  addListener(event: 'status', listener: (status: StatusObject) => void): this;
-  emit(event: 'status', status: StatusObject): boolean;
-  on(event: 'status', listener: (status: StatusObject) => void): this;
-  once(event: 'status', listener: (status: StatusObject) => void): this;
-  prependListener(event: 'status', listener: (status: StatusObject) => void):
-      this;
-  prependOnceListener(
-      event: 'status', listener: (status: StatusObject) => void): this;
-  removeListener(event: 'status', listener: (status: StatusObject) => void):
-      this;
-}
+} & EmitterAugmentation1<'metadata', Metadata>
+  & EmitterAugmentation1<'status', StatusObject>
+  & ObjectDuplex<WriteObject, Buffer>;
 
 enum ReadState {
   NO_DATA,
@@ -105,6 +78,13 @@ export class Http2CallStream extends Duplex implements CallStream {
   // Status code mapped from :status. To be used if grpc-status is not received
   private mappedStatusCode: Status = Status.UNKNOWN;
 
+  // Promise objects that are re-assigned to resolving promises when headers
+  // or trailers received. Processing headers/trailers is asynchronous, so we
+  // can use these objects to await their completion. This helps us establish
+  // order of precedence when obtaining the status of the call.
+  private handlingHeaders = Promise.resolve();
+  private handlingTrailers = Promise.resolve();
+
   // This is populated (non-null) if and only if the call has ended
   private finalStatus: StatusObject|null = null;
 
@@ -116,6 +96,11 @@ export class Http2CallStream extends Duplex implements CallStream {
     this.filterStack = filterStackFactory.createFilter(this);
   }
 
+  /**
+   * On first call, emits a 'status' event with the given StatusObject.
+   * Subsequent calls are no-ops.
+   * @param status The status of the call.
+   */
   private endCall(status: StatusObject): void {
     if (this.finalStatus === null) {
       this.finalStatus = status;
@@ -135,12 +120,46 @@ export class Http2CallStream extends Duplex implements CallStream {
     return canPush;
   }
 
+  private handleTrailers(headers: http2.IncomingHttpHeaders) {
+    let code: Status = this.mappedStatusCode;
+    let details = '';
+    let metadata: Metadata;
+    try {
+      metadata = Metadata.fromHttp2Headers(headers);
+    } catch (e) {
+      metadata = new Metadata();
+    }
+    let status: StatusObject = {code, details, metadata};
+    this.handlingTrailers = (async () => {
+      let finalStatus;
+      try {
+        // Attempt to assign final status.
+        finalStatus = await this.filterStack.receiveTrailers(Promise.resolve(status));
+      } catch (error) {
+        await this.handlingHeaders;
+        // This is a no-op if the call was already ended when handling headers.
+        this.endCall({
+          code: Status.INTERNAL,
+          details: 'Failed to process received status',
+          metadata: new Metadata()
+        });
+        return;
+      }
+      // It's possible that headers were received but not fully handled yet.
+      // Give the headers handler an opportunity to end the call first,
+      // if an error occurred.
+      await this.handlingHeaders;
+      // This is a no-op if the call was already ended when handling headers.
+      this.endCall(finalStatus);
+    })();
+  }
+
   attachHttp2Stream(stream: http2.ClientHttp2Stream): void {
     if (this.finalStatus !== null) {
       stream.rstWithCancel();
     } else {
       this.http2Stream = stream;
-      stream.on('response', (headers) => {
+      stream.on('response', (headers, flags) => {
         switch (headers[HTTP2_HEADER_STATUS]) {
           // TODO(murgatroid99): handle 100 and 101
           case '400':
@@ -166,57 +185,27 @@ export class Http2CallStream extends Duplex implements CallStream {
         }
         delete headers[HTTP2_HEADER_STATUS];
         delete headers[HTTP2_HEADER_CONTENT_TYPE];
-        let metadata: Metadata;
-        try {
-          metadata = Metadata.fromHttp2Headers(headers);
-        } catch (e) {
-          this.cancelWithStatus(Status.UNKNOWN, e.message);
-          return;
-        }
-        this.filterStack.receiveMetadata(Promise.resolve(metadata))
-            .then(
-                (finalMetadata) => {
-                  this.emit('metadata', finalMetadata);
-                },
-                (error) => {
-                  this.cancelWithStatus(Status.UNKNOWN, error.message);
-                });
-      });
-      stream.on('trailers', (headers) => {
-        let code: Status = this.mappedStatusCode;
-        if (headers.hasOwnProperty('grpc-status')) {
-          let receivedCode = Number(headers['grpc-status']);
-          if (receivedCode in Status) {
-            code = receivedCode;
-          } else {
-            code = Status.UNKNOWN;
+        if (flags & http2.constants.NGHTTP2_FLAG_END_STREAM) {
+          this.handleTrailers(headers);
+        } else {
+          let metadata: Metadata;
+          try {
+            metadata = Metadata.fromHttp2Headers(headers);
+          } catch (error) {
+            this.endCall({code: Status.UNKNOWN, details: error.message, metadata: new Metadata()});
+            return;
           }
-          delete headers['grpc-status'];
+          this.handlingHeaders =
+            this.filterStack.receiveMetadata(Promise.resolve(metadata))
+              .then((finalMetadata) => {
+                this.emit('metadata', finalMetadata);
+              }).catch((error) => {
+                this.destroyHttp2Stream();
+                this.endCall({code: Status.UNKNOWN, details: error.message, metadata: new Metadata()});
+              });
         }
-        let details = '';
-        if (headers.hasOwnProperty('grpc-message')) {
-          details = decodeURI(headers['grpc-message']);
-        }
-        let metadata: Metadata;
-        try {
-          metadata = Metadata.fromHttp2Headers(headers);
-        } catch (e) {
-          metadata = new Metadata();
-        }
-        let status: StatusObject = {code, details, metadata};
-        this.filterStack.receiveTrailers(Promise.resolve(status))
-            .then(
-                (finalStatus) => {
-                  this.endCall(finalStatus);
-                },
-                (error) => {
-                  this.endCall({
-                    code: Status.INTERNAL,
-                    details: 'Failed to process received status',
-                    metadata: new Metadata()
-                  });
-                });
       });
+      stream.on('trailers', this.handleTrailers.bind(this));
       stream.on('data', (data) => {
         let readHead = 0;
         let canPush = true;
@@ -278,10 +267,13 @@ export class Http2CallStream extends Duplex implements CallStream {
           this.unpushedReadMessages.push(null);
         }
       });
-      stream.on('streamClosed', (errorCode) => {
+      stream.on('close', async (errorCode) => {
         let code: Status;
         let details = '';
         switch (errorCode) {
+          case http2.constants.NGHTTP2_NO_ERROR:
+            code = Status.OK;
+            break;
           case http2.constants.NGHTTP2_REFUSED_STREAM:
             code = Status.UNAVAILABLE;
             break;
@@ -299,9 +291,16 @@ export class Http2CallStream extends Duplex implements CallStream {
           default:
             code = Status.INTERNAL;
         }
+        // This guarantees that if trailers were received, the value of the
+        // 'grpc-status' header takes precedence for emitted status data.
+        await this.handlingTrailers;
+        // This is a no-op if trailers were received at all.
+        // This is OK, because status codes emitted here correspond to more
+        // catastrophic issues that prevent us from receiving trailers in the
+        // first place.
         this.endCall({code: code, details: details, metadata: new Metadata()});
       });
-      stream.on('error', () => {
+      stream.on('error', (err: Error) => {
         this.endCall({
           code: Status.INTERNAL,
           details: 'Internal HTTP2 error',
@@ -323,13 +322,24 @@ export class Http2CallStream extends Duplex implements CallStream {
     }
   }
 
-  cancelWithStatus(status: Status, details: string): void {
-    this.endCall({code: status, details: details, metadata: new Metadata()});
-    if (this.http2Stream !== null) {
+  private destroyHttp2Stream() {
+    // The http2 stream could already have been destroyed if cancelWithStatus
+    // is called in response to an internal http2 error.
+    if (this.http2Stream !== null && !this.http2Stream.destroyed) {
       /* TODO(murgatroid99): Determine if we want to send different RST_STREAM
        * codes based on the status code */
       this.http2Stream.rstWithCancel();
     }
+  }
+
+  cancelWithStatus(status: Status, details: string): void {
+    this.destroyHttp2Stream();
+    (async () => {
+      // If trailers are currently being processed, the call should be ended
+      // by handleTrailers instead.
+      await this.handlingTrailers;
+      this.endCall({code: status, details: details, metadata: new Metadata()});
+    })();
   }
 
   getDeadline(): Deadline {

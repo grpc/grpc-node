@@ -3,7 +3,7 @@ import {map, reduce} from 'lodash';
 import {Metadata} from './metadata';
 
 export type CallMetadataGenerator =
-    (options: Object, cb: (err: Error|null, metadata?: Metadata) => void) =>
+    (options: {}, cb: (err: Error|null, metadata?: Metadata) => void) =>
         void;
 
 /**
@@ -15,7 +15,7 @@ export interface CallCredentials {
    * Asynchronously generates a new Metadata object.
    * @param options Options used in generating the Metadata object.
    */
-  generateMetadata(options: Object): Promise<Metadata>;
+  generateMetadata(options: {}): Promise<Metadata>;
   /**
    * Creates a new CallCredentials object from properties of both this and
    * another CallCredentials object. This object's metadata generator will be
@@ -28,7 +28,7 @@ export interface CallCredentials {
 class ComposedCallCredentials implements CallCredentials {
   constructor(private creds: CallCredentials[]) {}
 
-  async generateMetadata(options: Object): Promise<Metadata> {
+  async generateMetadata(options: {}): Promise<Metadata> {
     let base: Metadata = new Metadata();
     let generated: Metadata[] = await Promise.all(
         map(this.creds, (cred) => cred.generateMetadata(options)));
@@ -46,7 +46,7 @@ class ComposedCallCredentials implements CallCredentials {
 class SingleCallCredentials implements CallCredentials {
   constructor(private metadataGenerator: CallMetadataGenerator) {}
 
-  async generateMetadata(options: Object): Promise<Metadata> {
+  generateMetadata(options: {}): Promise<Metadata> {
     return new Promise<Metadata>((resolve, reject) => {
       this.metadataGenerator(options, (err, metadata) => {
         if (metadata !== undefined) {
@@ -64,8 +64,8 @@ class SingleCallCredentials implements CallCredentials {
 }
 
 class EmptyCallCredentials implements CallCredentials {
-  async generateMetadata(options: Object): Promise<Metadata> {
-    return new Metadata();
+  generateMetadata(options: {}): Promise<Metadata> {
+    return Promise.resolve(new Metadata());
   }
 
   compose(other: CallCredentials): CallCredentials {

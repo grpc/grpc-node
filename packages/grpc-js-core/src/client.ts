@@ -24,7 +24,7 @@ export class Client {
     }
     // TODO(murgatroid99): Figure out how to get version number
     // options['grpc.primary_user_agent'] += 'grpc-node/' + version;
-    this.channel = new Http2Channel(new URL(address), credentials, options);
+    this.channel = new Http2Channel(address, credentials, options);
   }
 
   close(): void {
@@ -35,7 +35,7 @@ export class Client {
       void {
     let cb: (error: Error|null) => void = once(callback);
     let callbackCalled = false;
-    this.channel.connect(() => {
+    this.channel.connect().then(() => {
       cb(null);
     });
     if (deadline !== Infinity) {
@@ -135,7 +135,6 @@ export class Client {
       method: string, serialize: (value: RequestType) => Buffer,
       deserialize: (value: Buffer) => ResponseType, argument: RequestType,
       callback: UnaryCallback<ResponseType>): ClientUnaryCall;
-
   makeUnaryRequest<RequestType, ResponseType>(
       method: string, serialize: (value: RequestType) => Buffer,
       deserialize: (value: Buffer) => ResponseType, argument: RequestType,
@@ -147,14 +146,13 @@ export class Client {
              metadata, options, callback));
     const call: CallStream =
         this.channel.createStream(method, metadata, options);
-    const emitter: ClientUnaryCall = new ClientUnaryCallImpl(call);
     const message: Buffer = serialize(argument);
     const writeObj: WriteObject = {message: message};
     writeObj.flags = options.flags;
     call.write(writeObj);
     call.end();
     this.handleUnaryResponse<ResponseType>(call, deserialize, callback);
-    return emitter;
+    return new ClientUnaryCallImpl(call);
   }
 
   makeClientStreamRequest<RequestType, ResponseType>(
@@ -174,7 +172,6 @@ export class Client {
       method: string, serialize: (value: RequestType) => Buffer,
       deserialize: (value: Buffer) => ResponseType,
       callback: UnaryCallback<ResponseType>): ClientWritableStream<RequestType>;
-
   makeClientStreamRequest<RequestType, ResponseType>(
       method: string, serialize: (value: RequestType) => Buffer,
       deserialize: (value: Buffer) => ResponseType,
@@ -187,10 +184,8 @@ export class Client {
              metadata, options, callback));
     const call: CallStream =
         this.channel.createStream(method, metadata, options);
-    const stream: ClientWritableStream<RequestType> =
-        new ClientWritableStreamImpl<RequestType>(call, serialize);
     this.handleUnaryResponse<ResponseType>(call, deserialize, callback);
-    return stream;
+    return new ClientWritableStreamImpl<RequestType>(call, serialize);
   }
 
   private checkMetadataAndOptions(
@@ -233,14 +228,12 @@ export class Client {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
     const call: CallStream =
         this.channel.createStream(method, metadata, options);
-    const stream: ClientReadableStream<ResponseType> =
-        new ClientReadableStreamImpl<ResponseType>(call, deserialize);
     const message: Buffer = serialize(argument);
     const writeObj: WriteObject = {message: message};
     writeObj.flags = options.flags;
     call.write(writeObj);
     call.end();
-    return stream;
+    return new ClientReadableStreamImpl<ResponseType>(call, deserialize);
   }
 
   makeBidiStreamRequest<RequestType, ResponseType>(
@@ -259,9 +252,7 @@ export class Client {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
     const call: CallStream =
         this.channel.createStream(method, metadata, options);
-    const stream: ClientDuplexStream<RequestType, ResponseType> =
-        new ClientDuplexStreamImpl<RequestType, ResponseType>(
-            call, serialize, deserialize);
-    return stream;
+    return new ClientDuplexStreamImpl<RequestType, ResponseType>(
+        call, serialize, deserialize);
   }
 }

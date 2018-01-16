@@ -1,6 +1,6 @@
 {
   "name": "grpc",
-  "version": "1.8.0-dev",
+  "version": "1.9.0-dev",
   "author": "Google Inc.",
   "description": "gRPC Library for Node",
   "homepage": "https://grpc.io/",
@@ -16,7 +16,7 @@
     }
   ],
   "directories": {
-    "lib": "src/node/src"
+    "lib": "src"
   },
   "scripts": {
     "build": "./node_modules/.bin/node-pre-gyp build",
@@ -53,6 +53,7 @@
     "README.md",
     "deps/grpc/etc/",
     "index.js",
+    "index.d.ts",
     "src/*.js",
     "ext/*.{cc,h}",
     "deps/grpc/include/grpc/**/*.h",
@@ -67,7 +68,7 @@
     "binding.gyp"
   ],
   "main": "index.js",
-  "typings": "src/index.d.ts",
+  "typings": "index.d.ts",
   "license": "Apache-2.0",
   "jshintConfig": {
     "bitwise": true,

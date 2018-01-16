@@ -63,7 +63,6 @@
         '-Wno-long-long',
         '-Wno-unused-parameter',
         '-DOSATOMIC_USE_INLINED=1',
-        '-Ithird_party/abseil-cpp',
     ],
     'ldflags': [
         '-g',
@@ -186,7 +185,6 @@
               '-Wno-long-long',
               '-Wno-unused-parameter',
               '-DOSATOMIC_USE_INLINED=1',
-              '-Ithird_party/abseil-cpp',
           ],
           'OTHER_CPLUSPLUSFLAGS': [
               '-g',
@@ -196,7 +194,6 @@
               '-Wno-long-long',
               '-Wno-unused-parameter',
               '-DOSATOMIC_USE_INLINED=1',
-              '-Ithird_party/abseil-cpp',
             '-stdlib=libc++',
             '-std=c++11',
             '-Wno-error=deprecated-declarations'
@@ -213,7 +210,7 @@
           'product_prefix': 'lib',
           'type': 'static_library',
           'cflags': [
-            '-Wimplicit-fallthrough=0'
+            '-Wno-implicit-fallthrough'
           ],
           'dependencies': [
           ],
@@ -615,6 +612,7 @@
         'deps/grpc/src/core/lib/support/env_linux.cc',
         'deps/grpc/src/core/lib/support/env_posix.cc',
         'deps/grpc/src/core/lib/support/env_windows.cc',
+        'deps/grpc/src/core/lib/support/fork.cc',
         'deps/grpc/src/core/lib/support/histogram.cc',
         'deps/grpc/src/core/lib/support/host_port.cc',
         'deps/grpc/src/core/lib/support/log.cc',
@@ -624,7 +622,6 @@
         'deps/grpc/src/core/lib/support/log_windows.cc',
         'deps/grpc/src/core/lib/support/mpscq.cc',
         'deps/grpc/src/core/lib/support/murmur_hash.cc',
-        'deps/grpc/src/core/lib/support/stack_lockfree.cc',
         'deps/grpc/src/core/lib/support/string.cc',
         'deps/grpc/src/core/lib/support/string_posix.cc',
         'deps/grpc/src/core/lib/support/string_util_windows.cc',
@@ -683,7 +680,6 @@
         'deps/grpc/src/core/lib/http/httpcli.cc',
         'deps/grpc/src/core/lib/http/parser.cc',
         'deps/grpc/src/core/lib/iomgr/call_combiner.cc',
-        'deps/grpc/src/core/lib/iomgr/closure.cc',
         'deps/grpc/src/core/lib/iomgr/combiner.cc',
         'deps/grpc/src/core/lib/iomgr/endpoint.cc',
         'deps/grpc/src/core/lib/iomgr/endpoint_pair_posix.cc',
@@ -698,6 +694,8 @@
         'deps/grpc/src/core/lib/iomgr/ev_windows.cc',
         'deps/grpc/src/core/lib/iomgr/exec_ctx.cc',
         'deps/grpc/src/core/lib/iomgr/executor.cc',
+        'deps/grpc/src/core/lib/iomgr/fork_posix.cc',
+        'deps/grpc/src/core/lib/iomgr/fork_windows.cc',
         'deps/grpc/src/core/lib/iomgr/gethostname_fallback.cc',
         'deps/grpc/src/core/lib/iomgr/gethostname_host_name_max.cc',
         'deps/grpc/src/core/lib/iomgr/gethostname_sysconf.cc',
