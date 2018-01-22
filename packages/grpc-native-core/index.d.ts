@@ -1,5 +1,5 @@
 declare module "grpc" {
-  import { Message, Service } from "protobufjs";
+  import { Message, Service as ProtobufService } from "protobufjs";
   import { Duplex, Readable, Writable } from "stream";
   import { SecureContext } from "tls";
 
@@ -9,7 +9,7 @@ declare module "grpc" {
    * @param options Options to apply to the loaded file
    * @return The resulting gRPC object.
    */
-  export function loadObject(value: object, options?: LoadObjectOptions): GrpcObject;
+  export function loadObject<T = GrpcObject>(value: object, options?: LoadObjectOptions): T;
 
   /**
    * Options for loading proto object as gRPC object
@@ -66,7 +66,7 @@ declare module "grpc" {
    * - Anything else becomes the relevant reflection object that ProtoBuf.js would create
    */
   export interface GrpcObject {
-    [name: string]: GrpcObject | typeof Client | Message<any>;
+    [name: string]: GrpcObject | typeof Client | Message;
   }
 
   /**
@@ -76,7 +76,7 @@ declare module "grpc" {
    * @param options Options to apply to the loaded file
    * @return The resulting gRPC object
    */
-  export function load(filename: Filename, format?: "proto" | "json", options?: LoadOptions): GrpcObject;
+  export function load<T = GrpcObject>(filename: Filename, format?: "proto" | "json", options?: LoadOptions): T;
 
   /**
    * A filename
@@ -168,7 +168,13 @@ declare module "grpc" {
      * @return True if the handler was set. False if a handler was already
      *     set for that name.
      */
-    register(name: string, handler: handleCall, serialize: serialize, deserialize: deserialize, type: string): boolean;
+    register<RequestType, ResponseType>(
+      name: string,
+      handler: handleCall<RequestType, ResponseType>,
+      serialize: serialize<ResponseType>,
+      deserialize: deserialize<RequestType>,
+      type: string
+    ): boolean;
 
     /**
      * Gracefully shuts down the server. The server will stop receiving new calls,
@@ -193,7 +199,10 @@ declare module "grpc" {
      * @param implementation Map of method names to method implementation
      * for the provided service.
      */
-    addService(service: Service, implementation: { [name: string]: handleCall }): void;
+    addService<ImplementationType = UntypedServiceImplementation>(
+      service: ServiceDefinition<ImplementationType>,
+      implementation: ImplementationType
+    ): void;
 
     /**
      * Add a proto service to the server, with a corresponding implementation
@@ -202,7 +211,10 @@ declare module "grpc" {
      * @param implementation Map of method names to method implementation
      * for the provided service.
      */
-    addProtoService(service: Service | ServiceDefinition, implementation: { [name: string]: handleCall }): void;
+    addProtoService<ImplementationType = UntypedServiceImplementation>(
+      service: ServiceDefinition<ImplementationType>,
+      implementation: ImplementationType
+    ): void;
 
     /**
      * Binds the server to the given port, with SSL disabled if creds is an
@@ -217,17 +229,22 @@ declare module "grpc" {
   }
 
   /**
+   * A type that servers as a default for an untyped service.
+   */
+  export type UntypedServiceImplementation = { [name: string]: handleCall<any, any> };
+
+  /**
    * An object that completely defines a service.
    * @typedef {Object.<string, grpc~MethodDefinition>} grpc~ServiceDefinition
    */
-  export interface ServiceDefinition {
-    [s: string]: MethodDefinition;
+  export type ServiceDefinition<ImplementationType> = {
+    readonly [I in keyof ImplementationType]: MethodDefinition<any, any>;
   }
 
   /**
    * An object that completely defines a service method signature.
    */
-  export interface MethodDefinition {
+  export interface MethodDefinition<RequestType, ResponseType> {
     /**
      * The method's URL path
      */
@@ -239,36 +256,41 @@ declare module "grpc" {
     /**
      *  Indicates whether the method returns a stream of responses
      */
-   responseStream: boolean;
-   /**
+    responseStream: boolean;
+    /**
     * Serialization function for request values
     */
-    requestSerialize: serialize;
+    requestSerialize: serialize<RequestType>;
     /**
      * Serialization function for response values
      */
-    responseSerialize: serialize;
+    responseSerialize: serialize<ResponseType>;
     /**
      * Deserialization function for request data
      */
-    requestDeserialize: deserialize;
+    requestDeserialize: deserialize<RequestType>;
     /**
      * Deserialization function for repsonse data
      */
-    responseDeserialize: deserialize;
+    responseDeserialize: deserialize<ResponseType>;
   }
 
-  type handleCall = handleUnaryCall | handleClientStreamingCall | handleServerStreamingCall | handleBidiStreamingCall;
+  type handleCall<RequestType, ResponseType> =
+    handleUnaryCall<RequestType, ResponseType> |
+    handleClientStreamingCall<RequestType, ResponseType> |
+    handleServerStreamingCall<RequestType, ResponseType> |
+    handleBidiStreamingCall<RequestType, ResponseType>;
 
   /**
    * User-provided method to handle unary requests on a server
    */
-  type handleUnaryCall = (call: ServerUnaryCall, callback: sendUnaryData) => void;
+  type handleUnaryCall<RequestType, ResponseType> =
+    (call: ServerUnaryCall<RequestType>, callback: sendUnaryData<ResponseType>) => void;
 
   /**
    * An EventEmitter. Used for unary calls.
    */
-  export class ServerUnaryCall {
+  export class ServerUnaryCall<RequestType> {
     /**
      * Indicates if the call has been cancelled
      */
@@ -282,7 +304,7 @@ declare module "grpc" {
     /**
      * The request message from the client
      */
-    request: any;
+    request: RequestType;
 
     private constructor();
 
@@ -302,13 +324,14 @@ declare module "grpc" {
   /**
    * User provided method to handle client streaming methods on the server.
    */
-  type handleClientStreamingCall = (call: ServerReadableStream, callback: sendUnaryData) => void;
+  type handleClientStreamingCall<RequestType, ResponseType> =
+    (call: ServerReadableStream<RequestType>, callback: sendUnaryData<ResponseType>) => void;
 
   /**
    * A stream that the server can read from. Used for calls that are streaming
    * from the client side.
    */
-  export class ServerReadableStream extends Readable {
+  export class ServerReadableStream<RequestType> extends Readable {
     /**
      * Indicates if the call has been cancelled
      */
@@ -337,13 +360,14 @@ declare module "grpc" {
   /**
    * User provided method to handle server streaming methods on the server.
    */
-  type handleServerStreamingCall = (call: ServerWriteableStream) => void;
+  type handleServerStreamingCall<RequestType, ResponseType> =
+    (call: ServerWriteableStream<RequestType>) => void;
 
   /**
    * A stream that the server can write to. Used for calls that are streaming
    * from the server side.
    */
-  export class ServerWriteableStream extends Writable {
+  export class ServerWriteableStream<RequestType> extends Writable {
     /**
      * Indicates if the call has been cancelled
      */
@@ -357,7 +381,7 @@ declare module "grpc" {
     /**
      * The request message from the client
      */
-    request: any;
+    request: RequestType;
 
     private constructor();
 
@@ -377,13 +401,24 @@ declare module "grpc" {
   /**
    * User provided method to handle bidirectional streaming calls on the server.
    */
-  type handleBidiStreamingCall = (call: ServerDuplexStream) => void;
+  type handleBidiStreamingCall<RequestType, ResponseType> =
+    (call: ServerDuplexStream<RequestType, ResponseType>) => void;
 
   /**
    * A stream that the server can read from or write to. Used for calls
    * with duplex streaming.
    */
-  export class ServerDuplexStream extends Duplex {
+  export class ServerDuplexStream<RequestType, ResponseType> extends Duplex {
+    /**
+     * Indicates if the call has been cancelled
+     */
+    cancelled: boolean;
+
+    /**
+     * The request metadata from the client
+     */
+    metadata: Metadata;
+
     private constructor();
 
     /**
@@ -404,20 +439,21 @@ declare module "grpc" {
    * @param data The byte sequence to deserialize
    * @return The data deserialized as a value
    */
-  type deserialize = (data: Buffer) => any;
+  type deserialize<T> = (data: Buffer) => T;
 
   /**
    * A serialization function
    * @param value The value to serialize
    * @return The value serialized as a byte sequence
    */
-  type serialize = (value: any) => Buffer;
+  type serialize<T> = (value: T) => Buffer;
 
   /**
    * Callback function passed to server handlers that handle methods with
    * unary responses.
    */
-  type sendUnaryData = (error: ServiceError | null, value: any, trailer?: Metadata, flags?: number) => void;
+  type sendUnaryData<ResponseType> =
+    (error: ServiceError | null, value: ResponseType | null, trailer?: Metadata, flags?: number) => void;
 
   /**
    * A class for storing metadata. Keys are normalized to lowercase ASCII.
@@ -751,7 +787,7 @@ declare module "grpc" {
    * This module contains factory methods for two different credential types:
    * CallCredentials and ChannelCredentials. ChannelCredentials are things like
    * SSL credentials that can be used to secure a connection, and are used to
-   * construct a Client object. CallCredentials genrally modify metadata, so they
+   * construct a Client object. CallCredentials generally modify metadata, so they
    * can be attached to an individual method call.
    *
    * CallCredentials can be composed with other CallCredentials to create
@@ -898,7 +934,7 @@ declare module "grpc" {
    * has the same arguments as that constructor.
    */
   export function makeGenericClientConstructor(
-    methods: ServiceDefinition,
+    methods: ServiceDefinition<any>,
     serviceName: string,
     classOptions: GenericClientOptions,
   ): typeof Client;
@@ -941,14 +977,14 @@ declare module "grpc" {
      * @param callback The callback to for when the response is received
      * @return An event emitter for stream related events
      */
-    makeUnaryRequest(
+    makeUnaryRequest<RequestType, ResponseType>(
       method: string,
-      serialize: serialize,
-      deserialize: deserialize,
-      argument: any | null,
+      serialize: serialize<RequestType>,
+      deserialize: deserialize<ResponseType>,
+      argument: RequestType | null,
       metadata: Metadata | null,
       options: CallOptions | null,
-      callback: requestCallback,
+      callback: requestCallback<ResponseType>,
     ): ClientUnaryCall;
 
     /**
@@ -962,14 +998,14 @@ declare module "grpc" {
      * @param callback The callback to for when the response is received
      * @return An event emitter for stream related events
      */
-    makeClientStreamRequest(
+    makeClientStreamRequest<RequestType, ResponseType>(
       method: string,
-      serialize: serialize,
-      deserialize: deserialize,
+      serialize: serialize<RequestType>,
+      deserialize: deserialize<ResponseType>,
       metadata: Metadata | null,
       options: CallOptions | null,
-      callback: requestCallback,
-    ): ClientWritableStream;
+      callback: requestCallback<ResponseType>,
+    ): ClientWritableStream<RequestType>;
 
     /**
      * Make a server stream request to the given method, with the given serialize
@@ -983,14 +1019,14 @@ declare module "grpc" {
      * @param options Options map
      * @return An event emitter for stream related events
      */
-    makeServerStreamRequest(
+    makeServerStreamRequest<RequestType, ResponseType>(
       method: string,
-      serialize: serialize,
-      deserialize: deserialize,
-      argument: any,
+      serialize: serialize<RequestType>,
+      deserialize: deserialize<ResponseType>,
+      argument: RequestType,
       metadata?: Metadata | null,
       options?: CallOptions | null,
-    ): ClientReadableStream;
+    ): ClientReadableStream<RequestType>;
 
     /**
      * Make a bidirectional stream request with this method on the given channel.
@@ -1003,13 +1039,13 @@ declare module "grpc" {
      * @param options Options map
      * @return An event emitter for stream related events
      */
-    makeBidiStreamRequest(
+    makeBidiStreamRequest<RequestType, ResponseType>(
       method: string,
-      serialize: serialize,
-      deserialize: deserialize,
+      serialize: serialize<RequestType>,
+      deserialize: deserialize<ResponseType>,
       metadata?: Metadata | null,
       options?: CallOptions | null,
-    ): ClientDuplexStream;
+    ): ClientDuplexStream<RequestType, ResponseType>;
 
     /**
      * Close this client.
@@ -1081,7 +1117,11 @@ declare module "grpc" {
   /**
    * Any client call type
    */
-  type Call = ClientUnaryCall | ClientReadableStream | ClientWritableStream | ClientDuplexStream;
+  type Call =
+    ClientUnaryCall |
+    ClientReadableStream<any> |
+    ClientWritableStream<any> |
+    ClientDuplexStream<any, any>;
 
   /**
    * An EventEmitter. Used for unary calls.
@@ -1106,7 +1146,7 @@ declare module "grpc" {
    * A stream that the client can read from. Used for calls that are streaming
    * from the server side.
    */
-  export class ClientReadableStream extends Readable {
+  export class ClientReadableStream<ResponseType> extends Readable {
     private constructor();
 
     /**
@@ -1126,7 +1166,7 @@ declare module "grpc" {
    * A stream that the client can write to. Used for calls that are streaming from
    * the client side.
    */
-  export class ClientWritableStream extends Writable {
+  export class ClientWritableStream<RequestType> extends Writable {
     private constructor();
 
     /**
@@ -1138,7 +1178,7 @@ declare module "grpc" {
      * @param callback Callback for when this chunk of data is flushed
      * @return As defined for [Writable]{@link external:Writable}
      */
-    write(message: any, flags?: any&writeFlags, callback?: Function): boolean;
+    write(message: RequestType, flags?: any&writeFlags, callback?: Function): boolean;
 
     /**
      * Cancel the ongoing call. Results in the call ending with a CANCELLED status,
@@ -1157,7 +1197,7 @@ declare module "grpc" {
    * A stream that the client can read from or write to. Used for calls with
    * duplex streaming.
    */
-  export class ClientDuplexStream extends Duplex {
+  export class ClientDuplexStream<RequestType, ResponseType> extends Duplex {
     private constructor();
 
     /**
@@ -1169,7 +1209,7 @@ declare module "grpc" {
      * @param callback Callback for when this chunk of data is flushed
      * @return As defined for [Writable]{@link external:Writable}
      */
-    write(message: any, flags?: any&writeFlags, callback?: Function): boolean;
+    write(message: RequestType, flags?: any&writeFlags, callback?: Function): boolean;
 
     /**
      * Cancel the ongoing call. Results in the call ending with a CANCELLED status,
@@ -1189,7 +1229,8 @@ declare module "grpc" {
    * @param error The error, if the call failed
    * @param value The response value, if the call succeeded
    */
-  export type requestCallback = (error: ServiceError | null, value: any) => void;
+  export type requestCallback<ResponseType> =
+    (error: ServiceError | null, value: ResponseType | undefined) => void;
 
   /**
    * Return the underlying channel object for the specified client
@@ -1202,7 +1243,7 @@ declare module "grpc" {
   /**
    * Wait for the client to be ready. The callback will be called when the
    * client has successfully connected to the server, and it will be called
-   * with an error if the attempt to connect to the server has unrecoverablly
+   * with an error if the attempt to connect to the server has unrecoverably
    * failed or if the deadline expires. This function will make the channel
    * start connecting if it has not already done so.
    * @see grpc.Client#waitForReady
