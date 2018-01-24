@@ -28,7 +28,6 @@
     "node-pre-gyp"
   ],
   "dependencies": {
-    "arguejs": "^0.2.3",
     "lodash": "^4.15.0",
     "nan": "^2.0.0",
     "node-pre-gyp": "^0.6.39",
