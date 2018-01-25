@@ -19,6 +19,8 @@ export interface CallStreamOptions {
   flags: number;
 }
 
+export type CallOptions = Partial<CallStreamOptions>;
+
 export interface StatusObject {
   code: Status;
   details: string;

@@ -17,11 +17,3 @@ export enum Status {
   DATA_LOSS,
   UNAUTHENTICATED
 }
-
-export enum PropagateFlags {
-  DEADLINE = 1,
-  CENSUS_STATS_CONTEXT = 2,
-  CENSUS_TRACING_CONTEXT = 4,
-  CANCELLATION = 8,
-  DEFAULTS = 65535
-}

@@ -3,26 +3,16 @@ import * as http2 from 'http2';
 import {checkServerIdentity, SecureContext, PeerCertificate} from 'tls';
 import * as url from 'url';
 
-import {Call} from './call';
 import {CallCredentials} from './call-credentials';
 import {CallCredentialsFilterFactory} from './call-credentials-filter';
-import {CallStream, CallStreamOptions, Http2CallStream} from './call-stream';
+import {CallOptions, CallStream, CallStreamOptions, Http2CallStream} from './call-stream';
 import {ChannelCredentials} from './channel-credentials';
 import {CompressionFilterFactory} from './compression-filter';
-import {EmitterAugmentation0} from './events';
 import {Status} from './constants';
 import {DeadlineFilterFactory} from './deadline-filter';
 import {FilterStackFactory} from './filter-stack';
 import {Metadata, MetadataObject} from './metadata';
 import { MetadataStatusFilterFactory } from './metadata-status-filter';
-import { PropagateFlags } from './index';
-
-export type CallOptions = {
-  // Represents a parent server call.
-  // For our purposes we only need to know of the 'cancelled' event.
-  parent?: EmitterAugmentation0<'cancelled'> & EventEmitter;
-  propagate_flags?: number;
-} & Partial<CallStreamOptions>;
 
 const IDLE_TIMEOUT_MS = 300000;
 
@@ -259,19 +249,6 @@ export class Http2Channel extends EventEmitter implements Channel {
     let stream: Http2CallStream =
         new Http2CallStream(methodName, finalOptions, this.filterStackFactory);
     this.startHttp2Stream(methodName, stream, metadata);
-
-    // handle propagation flags
-    const propagateFlags = typeof options.propagate_flags === 'number' ?
-        options.propagate_flags : PropagateFlags.DEFAULTS;
-    if (options.parent) {
-      // TODO(kjin): Implement other propagation flags.
-      if (propagateFlags & PropagateFlags.CANCELLATION) {
-        options.parent.on('cancelled', () => {
-          stream.cancelWithStatus(Status.CANCELLED, 'Cancellation propagated from parent call');
-        });
-      }
-    }
-
     return stream;
   }
 
