@@ -29,6 +29,6 @@
   },
   "devDependencies": {
     "gts": "^0.5.1",
-    "typescript": "^2.6.1"
+    "typescript": "~2.7.0"
   }
 }
