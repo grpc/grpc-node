@@ -16,14 +16,7 @@ export class Client {
   private readonly channel: Channel;
   constructor(
       address: string, credentials: ChannelCredentials,
-      options: ChannelOptions = {}) {
-    if (options['grpc.primary_user_agent']) {
-      options['grpc.primary_user_agent'] += ' ';
-    } else {
-      options['grpc.primary_user_agent'] = '';
-    }
-    // TODO(murgatroid99): Figure out how to get version number
-    // options['grpc.primary_user_agent'] += 'grpc-node/' + version;
+      options: Partial<ChannelOptions> = {}) {
     this.channel = new Http2Channel(address, credentials, options);
   }
 
@@ -87,9 +80,7 @@ export class Client {
       if (status.code === Status.OK) {
         callback(null, responseMessage as ResponseType);
       } else {
-        const error: ServiceError = new Error(status.details);
-        error.code = status.code;
-        error.metadata = status.metadata;
+        const error: ServiceError = Object.assign(new Error(status.details), status);
         callback(error);
       }
     });

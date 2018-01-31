@@ -37,7 +37,12 @@ const {
 /**
  * An interface that contains options used when initializing a Channel instance.
  */
-export interface ChannelOptions { [index: string]: string|number; }
+export interface ChannelOptions {
+  'grpc.ssl_target_name_override': string;
+  'grpc.primary_user_agent': string;
+  'grpc.secondary_user_agent': string;
+  [key: string]: string | number;
+}
 
 export enum ConnectivityState {
   CONNECTING,
@@ -75,6 +80,7 @@ export interface Channel extends EventEmitter {
 }
 
 export class Http2Channel extends EventEmitter implements Channel {
+  private readonly userAgent: string;
   private readonly authority: url.URL;
   private connectivityState: ConnectivityState = ConnectivityState.IDLE;
   /* For now, we have up to one subchannel, which will exist as long as we are
@@ -148,12 +154,12 @@ export class Http2Channel extends EventEmitter implements Channel {
       // to override the target hostname when checking server identity.
       // This option is used for testing only.
       if (this.options['grpc.ssl_target_name_override']) {
-        const sslTargetNameOverride = this.options['grpc.ssl_target_name_override'] as string;
+        const sslTargetNameOverride = this.options['grpc.ssl_target_name_override']!;
         connectionOptions.checkServerIdentity = (host: string, cert: PeerCertificate): Error | undefined => {
           return checkServerIdentity(sslTargetNameOverride, cert);
         }
       }
-      subChannel = http2.connect(this.authority, connectionOptions) as typeof subChannel;
+      subChannel = http2.connect(this.authority, connectionOptions);
     }
     this.subChannel = subChannel;
     let now = new Date();
@@ -184,7 +190,7 @@ export class Http2Channel extends EventEmitter implements Channel {
   constructor(
       address: string,
       public readonly credentials: ChannelCredentials,
-      private readonly options: ChannelOptions) {
+      private readonly options: Partial<ChannelOptions>) {
     super();
     if (credentials.getSecureContext() === null) {
       this.authority = new url.URL(`http://${address}`);
@@ -202,6 +208,13 @@ export class Http2Channel extends EventEmitter implements Channel {
      * a value of type NodeJS.Timer. */
     this.backoffTimerId = setTimeout(() => {}, 0);
     clearTimeout(this.backoffTimerId);
+
+    // Build user-agent string.
+    this.userAgent = [
+      options['grpc.primary_user_agent'],
+      `grpc-node-js/${clientVersion}`,
+      options['grpc.secondary_user_agent']
+    ].filter(e => e).join(' '); // remove falsey values first
   }
 
   private startHttp2Stream(
@@ -212,7 +225,7 @@ export class Http2Channel extends EventEmitter implements Channel {
       .then(([metadataValue]) => {
         let headers = metadataValue.toHttp2Headers();
         headers[HTTP2_HEADER_AUTHORITY] = this.authority.hostname;
-        headers[HTTP2_HEADER_USER_AGENT] = `grpc-node/${clientVersion}`;
+        headers[HTTP2_HEADER_USER_AGENT] = this.userAgent;
         headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
         headers[HTTP2_HEADER_METHOD] = 'POST';
         headers[HTTP2_HEADER_PATH] = methodName;

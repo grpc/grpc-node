@@ -6,14 +6,12 @@ import {CallStream, StatusObject, WriteObject} from './call-stream';
 import {Status} from './constants';
 import {Metadata} from './metadata';
 import {ObjectReadable, ObjectWritable} from './object-stream';
+import * as _ from 'lodash';
 
 /**
  * A type extending the built-in Error object with additional fields.
  */
-export type ServiceError = {
-  code?: number;
-  metadata?: Metadata;
-} & Error;
+export type ServiceError = StatusObject & Error;
 
 /**
  * A base type for all user-facing values returned by client-side method calls.
@@ -91,9 +89,9 @@ function setUpReadableStream<ResponseType>(
   call.on('status', (status: StatusObject) => {
     stream.emit('status', status);
     if (status.code !== Status.OK) {
-      const error: ServiceError = new Error(status.details);
-      error.code = status.code;
-      error.metadata = status.metadata;
+      const statusName = _.invert(Status)[status.code];
+      const message: string = `${status.code} ${statusName}: ${status.details}`;
+      const error: ServiceError = Object.assign(new Error(status.details), status);
       stream.emit('error', error);
     }
   });
