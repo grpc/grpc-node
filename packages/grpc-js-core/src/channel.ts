@@ -76,7 +76,7 @@ export class Http2Channel extends EventEmitter implements Channel {
   private connectivityState: ConnectivityState = ConnectivityState.IDLE;
   /* For now, we have up to one subchannel, which will exist as long as we are
    * connecting or trying to connect */
-  private subChannel: http2.ClientHttp2Session|null;
+  private subChannel: http2.ClientHttp2Session|null = null;
   private filterStackFactory: FilterStackFactory;
 
   private subChannelConnectCallback: ()=>void = () => {};
@@ -123,7 +123,7 @@ export class Http2Channel extends EventEmitter implements Channel {
   }
 
   // Transition from any of a set of oldStates to a specific newState
-  private transitionToState(oldStates: [ConnectivityState], newState: ConnectivityState): void {
+  private transitionToState(oldStates: ConnectivityState[], newState: ConnectivityState): void {
     if (oldStates.indexOf(this.connectivityState) > -1) {
       let oldState: ConnectivityState = this.connectivityState;
       this.connectivityState = newState;
