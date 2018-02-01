@@ -38,7 +38,7 @@
     "through2": "^2.0.3",
     "ts-node": "^3.3.0",
     "tslint": "^5.5.0",
-    "typescript": "^2.5.1",
+    "typescript": "~2.7.0",
     "xml2js": "^0.4.19"
   },
   "contributors": [

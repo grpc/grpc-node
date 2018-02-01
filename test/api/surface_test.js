@@ -981,7 +981,7 @@ describe('Other conditions', function() {
       client.unary({error: true}, function(err, data) {
         assert(err);
         assert.strictEqual(err.code, grpc.status.UNKNOWN);
-        assert.strictEqual(err.message, 'Requested error');
+        assert.strictEqual(err.details, 'Requested error');
         done();
       });
     });
@@ -989,7 +989,7 @@ describe('Other conditions', function() {
       var call = client.clientStream(function(err, data) {
         assert(err);
         assert.strictEqual(err.code, grpc.status.UNKNOWN);
-        assert.strictEqual(err.message, 'Requested error');
+        assert.strictEqual(err.details, 'Requested error');
         done();
       });
       call.write({error: false});
@@ -1001,7 +1001,7 @@ describe('Other conditions', function() {
       call.on('data', function(){});
       call.on('error', function(error) {
         assert.strictEqual(error.code, grpc.status.UNKNOWN);
-        assert.strictEqual(error.message, 'Requested error');
+        assert.strictEqual(error.details, 'Requested error');
         done();
       });
     });
@@ -1013,7 +1013,7 @@ describe('Other conditions', function() {
       call.on('data', function(){});
       call.on('error', function(error) {
         assert.strictEqual(error.code, grpc.status.UNKNOWN);
-        assert.strictEqual(error.message, 'Requested error');
+        assert.strictEqual(error.details, 'Requested error');
         done();
       });
     });

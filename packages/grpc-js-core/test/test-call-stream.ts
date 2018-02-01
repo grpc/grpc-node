@@ -38,11 +38,11 @@ class ClientHttp2StreamMock extends stream.Duplex implements http2.ClientHttp2St
   }
   bytesRead = 0;
   dataFrame = 0;
-  aborted: boolean;
-  destroyed: boolean;
-  rstCode: number;
-  session: http2.Http2Session;
-  state: http2.StreamState;
+  aborted: boolean = false;
+  destroyed: boolean = false;
+  rstCode: number = 0;
+  session: http2.Http2Session = {} as any;
+  state: http2.StreamState = {} as any;
   priority = mockFunction;
   rstStream = mockFunction;
   rstWithNoError = mockFunction;
