@@ -19,7 +19,7 @@
     "@types/node": "^8.0.55",
     "clang-format": "^1.0.55",
     "gts": "^0.5.1",
-    "typescript": "^2.6.1"
+    "typescript": "~2.7.0"
   },
   "contributors": [
     {

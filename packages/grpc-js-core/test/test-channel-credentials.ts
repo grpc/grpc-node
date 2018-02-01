@@ -8,7 +8,7 @@ import {ChannelCredentials} from '../src/channel-credentials';
 import {assert2, mockFunction} from './common';
 
 class CallCredentialsMock implements CallCredentials {
-  child: CallCredentialsMock;
+  child: CallCredentialsMock|null = null;
   constructor(child?: CallCredentialsMock) {
     if (child) {
       this.child = child;
