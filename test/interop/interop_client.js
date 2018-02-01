@@ -347,7 +347,7 @@ function statusCodeAndMessage(client, done) {
   client.unaryCall(arg, function(err, resp) {
     assert(err);
     assert.strictEqual(err.code, 2);
-    assert.strictEqual(err.message, 'test status message');
+    assert.strictEqual(err.details, 'test status message');
     done();
   });
   var duplex = client.fullDuplexCall();
