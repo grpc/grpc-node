@@ -31,16 +31,23 @@ var useAsyncHooks = semver.satisfies(process.version, '>=8');
  */
 
 if (useAsyncHooks) {
-  var asyncHooks = require('async_hooks');
-  module.exports = function createAsyncResourceWrapper(name) {
-    var resource = new asyncHooks.AsyncResource(name);
+  const asyncHooks = require('async_hooks');
+  class GrpcAsyncResource extends asyncHooks.AsyncResource {
+    constructor(name, handle) {
+      super(name);
+      this.handle = handle;
+    }
+  }
+  module.exports = function createAsyncResourceWrapper(name, handle) {
+    let resource = new GrpcAsyncResource(name, handle);
     return {
-      wrap: function(fn) {
+      wrap: (fn) => {
         return function() {
           if (resource) {
             resource.emitBefore();
+            let result;
             try {
-              var result = fn.apply(this, arguments);
+              result = fn.apply(this, arguments);
             } finally {
               resource.emitAfter();
             }
@@ -50,18 +57,20 @@ if (useAsyncHooks) {
           }
         }
       },
-      destroy: function() {
-        if (resource) {
-          resource.emitDestroy();
-          resource = null;
-        }
+      destroy: () => {
+        setImmediate(() => {
+            if (resource) {
+            resource.emitDestroy();
+            resource = null;
+          }
+        });
       }
     };
   }
 } else {
-  var noImpl = {
-    wrap: function(fn) { return fn; },
-    destroy: function() {}
+  const noImpl = {
+    wrap: fn => fn,
+    destroy: () => {}
   };
   module.exports = function createAsyncResourceWrapper() { return noImpl; }
 }

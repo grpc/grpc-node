@@ -576,10 +576,11 @@ ServerDuplexStream.prototype.waitForCancel = waitForCancel;
  * @param {grpc.Metadata} metadata Metadata from the client
  */
 function handleUnary(call, handler, metadata) {
-  var asyncResource = createAsyncResourceWrapper('GrpcServerRequest');
   var emitter = new ServerUnaryCall(call, metadata);
+  var asyncResource = createAsyncResourceWrapper('grpc.ServerRequest', emitter);
   emitter.on('error', function(error) {
     handleError(call, error);
+    asyncResource.destroy();
   });
   emitter.waitForCancel();
   var batch = {};
@@ -587,6 +588,7 @@ function handleUnary(call, handler, metadata) {
   call.startBatch(batch, asyncResource.wrap(function(err, result) {
     if (err) {
       handleError(call, err);
+      asyncResource.destroy();
       return;
     }
     try {
@@ -594,9 +596,11 @@ function handleUnary(call, handler, metadata) {
     } catch (e) {
       e.code = constants.status.INTERNAL;
       handleError(call, e);
+      asyncResource.destroy();
       return;
     }
     if (emitter.cancelled) {
+      asyncResource.destroy();
       return;
     }
     handler.func(emitter, function sendUnaryData(err, value, trailer, flags) {
@@ -633,8 +637,8 @@ function handleUnary(call, handler, metadata) {
  * @param {grpc.Metadata} metadata Metadata from the client
  */
 function handleServerStreaming(call, handler, metadata) {
-  var asyncResource = createAsyncResourceWrapper('GrpcServerRequest');
   var stream = new ServerWritableStream(call, metadata, handler.serialize);
+  var asyncResource = createAsyncResourceWrapper('grpc.ServerRequest', stream);
   stream.on('error', asyncResource.destroy);
   stream.on('finish', asyncResource.destroy);
   stream.waitForCancel();
@@ -677,10 +681,11 @@ function handleServerStreaming(call, handler, metadata) {
  * @param {grpc.Metadata} metadata Metadata from the client
  */
 function handleClientStreaming(call, handler, metadata) {
-  var asyncResource = createAsyncResourceWrapper('GrpcServerRequest');
   var stream = new ServerReadableStream(call, metadata, handler.deserialize);
+  var asyncResource = createAsyncResourceWrapper('grpc.ServerRequest', stream);
   stream.on('error', function(error) {
     handleError(call, error);
+    asyncResource.destroy();
   });
   stream.waitForCancel();
   asyncResource.wrap(function() {
@@ -719,9 +724,9 @@ function handleClientStreaming(call, handler, metadata) {
  * @param {Metadata} metadata Metadata from the client
  */
 function handleBidiStreaming(call, handler, metadata) {
-  var asyncResource = createAsyncResourceWrapper('GrpcServerRequest');
   var stream = new ServerDuplexStream(call, metadata, handler.serialize,
                                       handler.deserialize);
+  var asyncResource = createAsyncResourceWrapper('grpc.ServerRequest', stream);
   stream.on('error', asyncResource.destroy);
   stream.on('finish', asyncResource.destroy);
   stream.waitForCancel();
@@ -766,7 +771,7 @@ Server.prototype.start = function() {
   }
   var self = this;
   this.started = true;
-  this.asyncResourceWrap = createAsyncResourceWrapper('GrpcServer');
+  this.asyncResourceWrap = createAsyncResourceWrapper('grpc.Server', this);
   this._server.start();
   /**
    * Handles the SERVER_RPC_NEW event. If there is a handler associated with
