@@ -573,12 +573,12 @@ declare module "grpc" {
     /**
      * The server's private key
      */
-    privateKey: Buffer;
+    private_key: Buffer;
 
     /**
      * The server's certificate chain
      */
-    certChain: Buffer;
+    cert_chain: Buffer;
   }
 
   /**
