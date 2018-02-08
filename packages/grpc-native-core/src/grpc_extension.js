@@ -38,8 +38,7 @@ try {
   try {
     foundNames = fs.readdirSync(searchPath);
   } catch (readDirError) {
-    let message = `The gRPC binary module was not installed
-This may be fixed by running "npm rebuild"
+    let message = `The gRPC binary module was not installed. This may be fixed by running "npm rebuild"
 Original error: ${e.message}`;
     let error = new Error(message);
     error.code = e.code;
