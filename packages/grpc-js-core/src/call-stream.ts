@@ -156,7 +156,7 @@ export class Http2CallStream extends Duplex implements CallStream {
 
   attachHttp2Stream(stream: http2.ClientHttp2Stream): void {
     if (this.finalStatus !== null) {
-      (stream as any).close(NGHTTP2_CANCEL);
+      stream.close(NGHTTP2_CANCEL);
     } else {
       this.http2Stream = stream;
       stream.on('response', (headers, flags) => {
@@ -328,7 +328,7 @@ export class Http2CallStream extends Duplex implements CallStream {
     if (this.http2Stream !== null && !this.http2Stream.destroyed) {
       /* TODO(murgatroid99): Determine if we want to send different RST_STREAM
        * codes based on the status code */
-      (this.http2Stream as any).close(NGHTTP2_CANCEL);
+      this.http2Stream.close(NGHTTP2_CANCEL);
     }
   }
 

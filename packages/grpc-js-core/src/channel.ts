@@ -121,7 +121,7 @@ export class Http2Channel extends EventEmitter implements Channel {
     case ConnectivityState.IDLE:
     case ConnectivityState.SHUTDOWN:
       if (this.subChannel) {
-        (this.subChannel as any).close({graceful: true});
+        this.subChannel.close();
         this.subChannel.removeListener('connect', this.subChannelConnectCallback);
         this.subChannel.removeListener('close', this.subChannelCloseCallback);
         this.subChannel = null;
@@ -168,7 +168,7 @@ export class Http2Channel extends EventEmitter implements Channel {
       MIN_CONNECT_TIMEOUT_MS);
     let connectionTimerId: NodeJS.Timer = setTimeout(() => {
       // This should trigger the 'close' event, which will send us back to TRANSIENT_FAILURE
-      (subChannel as any).close();
+      subChannel.close();
     }, connectionTimeout);
     this.subChannelConnectCallback = () => {
       // Connection succeeded
@@ -234,7 +234,7 @@ export class Http2Channel extends EventEmitter implements Channel {
           if (this.connectivityState === ConnectivityState.READY) {
             const session: http2.ClientHttp2Session = this.subChannel!;
             // Prevent the HTTP/2 session from keeping the process alive.
-            (session as any).unref();
+            session.unref();
             stream.attachHttp2Stream(session.request(headers));
           } else {
             /* In this case, we lost the connection while finalizing
