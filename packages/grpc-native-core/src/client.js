@@ -513,13 +513,23 @@ exports.Client = Client;
 Client.prototype.makeUnaryRequest = function(method, serialize, deserialize,
                                              argument, metadata, options,
                                              callback) {
-  if (!(metadata instanceof Metadata)) {
-    callback = options;
-    options = metadata;
-    metadata = new Metadata();
-  }
   if (options instanceof Function) {
     callback = options;
+    if (metadata instanceof Metadata) {
+      options = {};
+    } else {
+      options = metadata;
+      metadata = new Metadata();
+    }
+  } else if (metadata instanceof Function) {
+    callback = metadata;
+    metadata = new Metadata();
+    options = {};
+  }
+  if (!metadata) {
+    metadata = new Metadata();
+  }
+  if (!options) {
     options = {};
   }
   if (!((metadata instanceof Metadata) &&
@@ -599,13 +609,23 @@ Client.prototype.makeUnaryRequest = function(method, serialize, deserialize,
 Client.prototype.makeClientStreamRequest = function(method, serialize,
                                                       deserialize, metadata,
                                                       options, callback) {
-  if (!(metadata instanceof Metadata)) {
-    callback = options;
-    options = metadata;
-    metadata = new Metadata();
-  }
   if (options instanceof Function) {
     callback = options;
+    if (metadata instanceof Metadata) {
+      options = {};
+    } else {
+      options = metadata;
+      metadata = new Metadata();
+    }
+  } else if (metadata instanceof Function) {
+    callback = metadata;
+    metadata = new Metadata();
+    options = {};
+  }
+  if (!metadata) {
+    metadata = new Metadata();
+  }
+  if (!options) {
     options = {};
   }
   if (!((metadata instanceof Metadata) &&

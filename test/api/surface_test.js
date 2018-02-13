@@ -506,6 +506,116 @@ describe('Echo metadata', function() {
       done();
     });
   });
+  describe('Call argument handling', function() {
+    describe('Unary call', function() {
+      it('Should handle undefined options', function(done) {
+        var call = client.unary({}, metadata, undefined, function(err, data) {
+          assert.ifError(err);
+        });
+        call.on('metadata', function(metadata) {
+          assert.deepEqual(metadata.get('key'), ['value']);
+          done();
+        });
+      });
+      it('Should handle two undefined arguments', function(done) {
+        var call = client.unary({}, undefined, undefined, function(err, data) {
+          assert.ifError(err);
+        });
+        call.on('metadata', function(metadata) {
+          done();
+        });
+      });
+      it('Should handle one undefined argument', function(done) {
+        var call = client.unary({}, undefined, function(err, data) {
+          assert.ifError(err);
+        });
+        call.on('metadata', function(metadata) {
+          done();
+        });
+      });
+    });
+    describe('Client stream call', function() {
+      it('Should handle undefined options', function(done) {
+        var call = client.clientStream(metadata, undefined, function(err, data) {
+          assert.ifError(err);
+        });
+        call.on('metadata', function(metadata) {
+          assert.deepEqual(metadata.get('key'), ['value']);
+          done();
+        });
+        call.end();
+      });
+      it('Should handle two undefined arguments', function(done) {
+        var call = client.clientStream(undefined, undefined, function(err, data) {
+          assert.ifError(err);
+        });
+        call.on('metadata', function(metadata) {
+          done();
+        });
+        call.end();
+      });
+      it('Should handle one undefined argument', function(done) {
+        var call = client.clientStream(undefined, function(err, data) {
+          assert.ifError(err);
+        });
+        call.on('metadata', function(metadata) {
+          done();
+        });
+        call.end();
+      });
+    });
+    describe('Server stream call', function() {
+      it('Should handle undefined options', function(done) {
+        var call = client.serverStream({}, metadata, undefined);
+        call.on('data', function() {});
+        call.on('metadata', function(metadata) {
+          assert.deepEqual(metadata.get('key'), ['value']);
+          done();
+        });
+      });
+      it('Should handle two undefined arguments', function(done) {
+        var call = client.serverStream({}, undefined, undefined);
+        call.on('data', function() {});
+        call.on('metadata', function(metadata) {
+          done();
+        });
+      });
+      it('Should handle one undefined argument', function(done) {
+        var call = client.serverStream({}, undefined);
+        call.on('data', function() {});
+        call.on('metadata', function(metadata) {
+          done();
+        });
+      });
+    });
+    describe('Bidi stream call', function() {
+      it('Should handle undefined options', function(done) {
+        var call = client.bidiStream(metadata, undefined);
+        call.on('data', function() {});
+        call.on('metadata', function(metadata) {
+          assert.deepEqual(metadata.get('key'), ['value']);
+          done();
+        });
+        call.end();
+      });
+      it('Should handle two undefined arguments', function(done) {
+        var call = client.bidiStream(undefined, undefined);
+        call.on('data', function() {});
+        call.on('metadata', function(metadata) {
+          done();
+        });
+        call.end();
+      });
+      it('Should handle one undefined argument', function(done) {
+        var call = client.bidiStream(undefined);
+        call.on('data', function() {});
+        call.on('metadata', function(metadata) {
+          done();
+        });
+        call.end();
+      });
+    });
+  });
 });
 describe('Client malformed response handling', function() {
   var server;
