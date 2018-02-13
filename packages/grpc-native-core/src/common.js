@@ -19,6 +19,8 @@
 'use strict';
 
 var _ = require('lodash');
+var constants = require('./constants');
+var grpc = require('./grpc_extension');
 
 /**
  * Wrap a function to pass null-like values through without calling it. If no
@@ -74,6 +76,73 @@ exports.defaultGrpcOptions = {
   enumsAsStrings: true,
   deprecatedArgumentOrder: false
 };
+
+/**
+ * Create an Error object from a status object
+ * @param {grpc~StatusObject} status The status object
+ * @return {Error} The resulting Error
+ */
+exports.createStatusError = function(status) {
+  let statusName = _.invert(constants.status)[status.code];
+  let message = `${status.code} ${statusName}: ${status.details}`;
+  let error = new Error(message);
+  error.code = status.code;
+  error.metadata = status.metadata;
+  error.details = status.details;
+  return error;
+};
+
+/**
+ * Get a method's type from its definition
+ * @param {grpc~MethodDefinition} method_definition
+ * @return {number}
+ */
+exports.getMethodType = function(method_definition) {
+  if (method_definition.requestStream) {
+    if (method_definition.responseStream) {
+      return constants.methodTypes.BIDI_STREAMING;
+    } else {
+      return constants.methodTypes.CLIENT_STREAMING;
+    }
+  } else {
+    if (method_definition.responseStream) {
+      return constants.methodTypes.SERVER_STREAMING;
+    } else {
+      return constants.methodTypes.UNARY;
+    }
+  }
+};
+
+/**
+ * Get a call object built with the provided options.
+ * @param {grpc.Channel} channel
+ * @param {string} path
+ * @param {grpc.Client~CallOptions=} options Options object.
+ */
+exports.getCall = function(channel, path, options) {
+  var deadline;
+  var host;
+  var parent;
+  var propagate_flags;
+  var credentials;
+  if (options) {
+    deadline = options.deadline;
+    host = options.host;
+    parent = _.get(options, 'parent.call');
+    propagate_flags = options.propagate_flags;
+    credentials = options.credentials;
+  }
+  if (deadline === undefined) {
+    deadline = Infinity;
+  }
+  var call = new grpc.Call(channel, path, deadline, host,
+                           parent, propagate_flags);
+  if (credentials) {
+    call.setCredentials(credentials);
+  }
+  return call;
+};
+
 
 // JSDoc definitions that are used in multiple other modules
 
@@ -167,6 +236,71 @@ exports.defaultGrpcOptions = {
  */
 
 /**
+ * @function MetadataListener
+ * @param {grpc.Metadata} metadata The response metadata.
+ * @param {function} next Passes metadata to the next interceptor.
+ */
+
+/**
+ * @function MessageListener
+ * @param {jspb.Message} message The response message.
+ * @param {function} next Passes a message to the next interceptor.
+ */
+
+/**
+ * @function StatusListener
+ * @param {grpc~StatusObject} status The response status.
+ * @param {function} next Passes a status to the next interceptor.
+ */
+
+/**
+ * A set of interceptor functions triggered by responses
+ * @typedef {object} grpc~Listener
+ * @property {MetadataListener=} onReceiveMetadata A function triggered by
+ *     response metadata.
+ * @property {MessageListener=} onReceiveMessage A function triggered by a
+ *     response message.
+ * @property {StatusListener=} onReceiveStatus A function triggered by a
+ *     response status.
+ */
+
+/**
+ * @function MetadataRequester
+ * @param {grpc.Metadata} metadata The request metadata.
+ * @param {grpc~Listener} listener A listener wired to the previous layers
+ *     in the interceptor stack.
+ * @param {function} next Passes metadata and a listener to the next
+ *      interceptor.
+ */
+
+/**
+ * @function MessageRequester
+ * @param {jspb.Message} message The request message.
+ * @param {function} next Passes a message to the next interceptor.
+ */
+
+/**
+ * @function CloseRequester
+ * @param {function} next Calls the next interceptor.
+ */
+
+/**
+ * @function CancelRequester
+ * @param {function} next Calls the next interceptor.
+ */
+
+/**
+ * @typedef {object} grpc~Requester
+ * @param {MetadataRequester=} start A function triggered when the call begins.
+ * @param {MessageRequester=} sendMessage A function triggered by the request
+ *     message.
+ * @param {CloseRequester=} halfClose A function triggered when the client
+ *     closes the call.
+ * @param {CancelRequester=} cancel A function triggered when the call is
+ *     cancelled.
+ */
+
+/**
  * An object that completely defines a service.
  * @typedef {Object.<string, grpc~MethodDefinition>} grpc~ServiceDefinition
  */
@@ -174,4 +308,28 @@ exports.defaultGrpcOptions = {
 /**
  * An object that defines a package hierarchy with multiple services
  * @typedef {Object.<string, grpc~ServiceDefinition>} grpc~PackageDefinition
+ */
+
+/**
+ * A function for dynamically assigning an interceptor to a call.
+ * @function InterceptorProvider
+ * @param {grpc~MethodDefinition} method_definition The method to provide
+ *     an interceptor for.
+ * @return {Interceptor|null} The interceptor to provide or nothing
+ */
+
+/**
+ * A function which can modify call options and produce methods to intercept
+ * RPC operations.
+ * @function Interceptor
+ * @param {object} options The grpc call options
+ * @param {NextCall} nextCall
+ * @return {InterceptingCall}
+ */
+
+/**
+ * A function which produces the next InterceptingCall.
+ * @function NextCall
+ * @param {object} options The grpc call options
+ * @return {InterceptingCall|null}
  */
