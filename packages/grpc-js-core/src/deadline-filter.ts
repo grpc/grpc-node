@@ -20,6 +20,7 @@ function getDeadline(deadline: number) {
 }
 
 export class DeadlineFilter extends BaseFilter implements Filter {
+  private timer: NodeJS.Timer | null = null;
   private deadline: number;
   constructor(
       private readonly channel: Http2Channel,
@@ -37,10 +38,11 @@ export class DeadlineFilter extends BaseFilter implements Filter {
       timeout = 0;
     }
     if (this.deadline !== Infinity) {
-      setTimeout(() => {
+      this.timer = setTimeout(() => {
         callStream.cancelWithStatus(
             Status.DEADLINE_EXCEEDED, 'Deadline exceeded');
       }, timeout);
+      callStream.on('status', () => clearTimeout(this.timer as NodeJS.Timer));
     }
   }
 

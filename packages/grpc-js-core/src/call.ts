@@ -6,17 +6,16 @@ import {CallStream, StatusObject, WriteObject} from './call-stream';
 import {Status} from './constants';
 import {Metadata} from './metadata';
 import {ObjectReadable, ObjectWritable} from './object-stream';
+import * as _ from 'lodash';
 
-export interface ServiceError extends Error {
-  code?: number;
-  metadata?: Metadata;
-}
+/**
+ * A type extending the built-in Error object with additional fields.
+ */
+export type ServiceError = StatusObject & Error;
 
-export class ServiceErrorImpl extends Error implements ServiceError {
-  code?: number;
-  metadata?: Metadata;
-}
-
+/**
+ * A base type for all user-facing values returned by client-side method calls.
+ */
 export type Call = {
   cancel(): void;
   getPeer(): string;
@@ -24,16 +23,28 @@ export type Call = {
   & EmitterAugmentation1<'status', StatusObject>
   & EventEmitter;
 
+/**
+ * A type representing the return value of a unary method call.
+ */
 export type ClientUnaryCall = Call;
 
+/**
+ * A type representing the return value of a server stream method call.
+ */
 export type ClientReadableStream<ResponseType> = {
   deserialize: (chunk: Buffer) => ResponseType;
 } & Call & ObjectReadable<ResponseType>;
 
+/**
+ * A type representing the return value of a client stream method call.
+ */
 export type ClientWritableStream<RequestType> = {
   serialize: (value: RequestType) => Buffer;
 } & Call & ObjectWritable<RequestType>;
 
+/**
+ * A type representing the return value of a bidirectional stream method call.
+ */
 export type ClientDuplexStream<RequestType, ResponseType> =
   ClientWritableStream<RequestType> & ClientReadableStream<ResponseType>;
 
@@ -78,9 +89,9 @@ function setUpReadableStream<ResponseType>(
   call.on('status', (status: StatusObject) => {
     stream.emit('status', status);
     if (status.code !== Status.OK) {
-      const error = new ServiceErrorImpl(status.details);
-      error.code = status.code;
-      error.metadata = status.metadata;
+      const statusName = _.invert(Status)[status.code];
+      const message: string = `${status.code} ${statusName}: ${status.details}`;
+      const error: ServiceError = Object.assign(new Error(status.details), status);
       stream.emit('error', error);
     }
   });

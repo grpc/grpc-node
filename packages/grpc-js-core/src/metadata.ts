@@ -181,6 +181,11 @@ export class Metadata {
     });
     return result;
   }
+  
+  // For compatibility with the other Metadata implementation
+  private _getCoreRepresentation() {
+    return this.internalRepr;
+  }
 
   /**
    * Returns a new Metadata object based fields in a given IncomingHttpHeaders
@@ -196,7 +201,8 @@ export class Metadata {
             result.add(key, Buffer.from(value, 'base64'));
           });
         } else if (values !== undefined) {
-          result.add(key, Buffer.from(values, 'base64'));
+          values.split(',').map(v => v.trim()).forEach(v =>
+            result.add(key, Buffer.from(v, 'base64')));
         }
       } else {
         if (Array.isArray(values)) {
@@ -204,7 +210,8 @@ export class Metadata {
             result.add(key, value);
           });
         } else if (values !== undefined) {
-          result.add(key, values);
+          values.split(',').map(v => v.trim()).forEach(v =>
+            result.add(key, v));
         }
       }
     });

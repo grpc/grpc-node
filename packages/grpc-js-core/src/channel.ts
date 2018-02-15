@@ -14,6 +14,8 @@ import {FilterStackFactory} from './filter-stack';
 import {Metadata, MetadataObject} from './metadata';
 import { MetadataStatusFilterFactory } from './metadata-status-filter';
 
+const { version: clientVersion } = require('../../package');
+
 const IDLE_TIMEOUT_MS = 300000;
 
 const MIN_CONNECT_TIMEOUT_MS = 20000;
@@ -28,13 +30,19 @@ const {
   HTTP2_HEADER_METHOD,
   HTTP2_HEADER_PATH,
   HTTP2_HEADER_SCHEME,
-  HTTP2_HEADER_TE
+  HTTP2_HEADER_TE,
+  HTTP2_HEADER_USER_AGENT
 } = http2.constants;
 
 /**
  * An interface that contains options used when initializing a Channel instance.
  */
-export interface ChannelOptions { [index: string]: string|number; }
+export interface ChannelOptions {
+  'grpc.ssl_target_name_override': string;
+  'grpc.primary_user_agent': string;
+  'grpc.secondary_user_agent': string;
+  [key: string]: string | number;
+}
 
 export enum ConnectivityState {
   CONNECTING,
@@ -72,6 +80,7 @@ export interface Channel extends EventEmitter {
 }
 
 export class Http2Channel extends EventEmitter implements Channel {
+  private readonly userAgent: string;
   private readonly authority: url.URL;
   private connectivityState: ConnectivityState = ConnectivityState.IDLE;
   /* For now, we have up to one subchannel, which will exist as long as we are
@@ -112,7 +121,7 @@ export class Http2Channel extends EventEmitter implements Channel {
     case ConnectivityState.IDLE:
     case ConnectivityState.SHUTDOWN:
       if (this.subChannel) {
-        this.subChannel.shutdown({graceful: true});
+        this.subChannel.close();
         this.subChannel.removeListener('connect', this.subChannelConnectCallback);
         this.subChannel.removeListener('close', this.subChannelCloseCallback);
         this.subChannel = null;
@@ -145,7 +154,7 @@ export class Http2Channel extends EventEmitter implements Channel {
       // to override the target hostname when checking server identity.
       // This option is used for testing only.
       if (this.options['grpc.ssl_target_name_override']) {
-        const sslTargetNameOverride = this.options['grpc.ssl_target_name_override'] as string;
+        const sslTargetNameOverride = this.options['grpc.ssl_target_name_override']!;
         connectionOptions.checkServerIdentity = (host: string, cert: PeerCertificate): Error | undefined => {
           return checkServerIdentity(sslTargetNameOverride, cert);
         }
@@ -159,7 +168,7 @@ export class Http2Channel extends EventEmitter implements Channel {
       MIN_CONNECT_TIMEOUT_MS);
     let connectionTimerId: NodeJS.Timer = setTimeout(() => {
       // This should trigger the 'close' event, which will send us back to TRANSIENT_FAILURE
-      subChannel.shutdown();
+      subChannel.close();
     }, connectionTimeout);
     this.subChannelConnectCallback = () => {
       // Connection succeeded
@@ -181,7 +190,7 @@ export class Http2Channel extends EventEmitter implements Channel {
   constructor(
       address: string,
       public readonly credentials: ChannelCredentials,
-      private readonly options: ChannelOptions) {
+      private readonly options: Partial<ChannelOptions>) {
     super();
     if (credentials.getSecureContext() === null) {
       this.authority = new url.URL(`http://${address}`);
@@ -199,16 +208,24 @@ export class Http2Channel extends EventEmitter implements Channel {
      * a value of type NodeJS.Timer. */
     this.backoffTimerId = setTimeout(() => {}, 0);
     clearTimeout(this.backoffTimerId);
+
+    // Build user-agent string.
+    this.userAgent = [
+      options['grpc.primary_user_agent'],
+      `grpc-node-js/${clientVersion}`,
+      options['grpc.secondary_user_agent']
+    ].filter(e => e).join(' '); // remove falsey values first
   }
 
   private startHttp2Stream(
       methodName: string, stream: Http2CallStream, metadata: Metadata) {
     let finalMetadata: Promise<Metadata> =
-        stream.filterStack.sendMetadata(Promise.resolve(metadata));
+        stream.filterStack.sendMetadata(Promise.resolve(metadata.clone()));
     Promise.all([finalMetadata, this.connect()])
       .then(([metadataValue]) => {
         let headers = metadataValue.toHttp2Headers();
         headers[HTTP2_HEADER_AUTHORITY] = this.authority.hostname;
+        headers[HTTP2_HEADER_USER_AGENT] = this.userAgent;
         headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
         headers[HTTP2_HEADER_METHOD] = 'POST';
         headers[HTTP2_HEADER_PATH] = methodName;
@@ -217,9 +234,7 @@ export class Http2Channel extends EventEmitter implements Channel {
           if (this.connectivityState === ConnectivityState.READY) {
             const session: http2.ClientHttp2Session = this.subChannel!;
             // Prevent the HTTP/2 session from keeping the process alive.
-            // TODO(kjin): Monitor nodejs/node#17620, which adds unref
-            // directly to the Http2Session object.
-            session.socket.unref();
+            session.unref();
             stream.attachHttp2Stream(session.request(headers));
           } else {
             /* In this case, we lost the connection while finalizing

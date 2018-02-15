@@ -1,7 +1,7 @@
 import {once} from 'lodash';
 import {URL} from 'url';
 
-import {ClientDuplexStream, ClientDuplexStreamImpl, ClientReadableStream, ClientReadableStreamImpl, ClientUnaryCall, ClientUnaryCallImpl, ClientWritableStream, ClientWritableStreamImpl, ServiceError, ServiceErrorImpl} from './call';
+import {ClientDuplexStream, ClientDuplexStreamImpl, ClientReadableStream, ClientReadableStreamImpl, ClientUnaryCall, ClientUnaryCallImpl, ClientWritableStream, ClientWritableStreamImpl, ServiceError} from './call';
 import {CallOptions, CallStream, StatusObject, WriteObject} from './call-stream';
 import {Channel, ChannelOptions, Http2Channel} from './channel';
 import {ChannelCredentials} from './channel-credentials';
@@ -16,14 +16,7 @@ export class Client {
   private readonly channel: Channel;
   constructor(
       address: string, credentials: ChannelCredentials,
-      options: ChannelOptions = {}) {
-    if (options['grpc.primary_user_agent']) {
-      options['grpc.primary_user_agent'] += ' ';
-    } else {
-      options['grpc.primary_user_agent'] = '';
-    }
-    // TODO(murgatroid99): Figure out how to get version number
-    // options['grpc.primary_user_agent'] += 'grpc-node/' + version;
+      options: Partial<ChannelOptions> = {}) {
     this.channel = new Http2Channel(address, credentials, options);
   }
 
@@ -35,7 +28,11 @@ export class Client {
       void {
     let cb: (error: Error|null) => void = once(callback);
     let callbackCalled = false;
+    let timer: NodeJS.Timer | null = null;
     this.channel.connect().then(() => {
+      if (timer) {
+        clearTimeout(timer);
+      }
       cb(null);
     });
     if (deadline !== Infinity) {
@@ -49,7 +46,7 @@ export class Client {
       if (timeout < 0) {
         timeout = 0;
       }
-      setTimeout(() => {
+      timer = setTimeout(() => {
         cb(new Error('Failed to connect before the deadline'));
       }, timeout);
     }
@@ -83,9 +80,7 @@ export class Client {
       if (status.code === Status.OK) {
         callback(null, responseMessage as ResponseType);
       } else {
-        const error = new ServiceErrorImpl(status.details);
-        error.code = status.code;
-        error.metadata = status.metadata;
+        const error: ServiceError = Object.assign(new Error(status.details), status);
         callback(error);
       }
     });
