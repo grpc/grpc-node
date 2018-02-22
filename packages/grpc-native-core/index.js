@@ -219,8 +219,8 @@ exports.ServerCredentials = grpc.ServerCredentials;
 /**
  * A private key and certificate pair
  * @typedef {Object} grpc.ServerCredentials~keyCertPair
- * @property {Buffer} privateKey The server's private key
- * @property {Buffer} certChain The server's certificate chain
+ * @property {Buffer} private_key The server's private key
+ * @property {Buffer} cert_chain The server's certificate chain
  */
 
 /**

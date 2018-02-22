@@ -66,7 +66,7 @@ declare module "grpc" {
    * - Anything else becomes the relevant reflection object that ProtoBuf.js would create
    */
   export interface GrpcObject {
-    [name: string]: GrpcObject | typeof Client | Message;
+    [name: string]: GrpcObject | typeof Client | Message<any>;
   }
 
   /**
@@ -573,12 +573,12 @@ declare module "grpc" {
     /**
      * The server's private key
      */
-    privateKey: Buffer;
+    private_key: Buffer;
 
     /**
      * The server's certificate chain
      */
-    certChain: Buffer;
+    cert_chain: Buffer;
   }
 
   /**
