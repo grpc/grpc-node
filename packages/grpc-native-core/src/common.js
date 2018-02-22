@@ -170,3 +170,8 @@ exports.defaultGrpcOptions = {
  * An object that completely defines a service.
  * @typedef {Object.<string, grpc~MethodDefinition>} grpc~ServiceDefinition
  */
+
+/**
+ * An object that defines a package hierarchy with multiple services
+ * @typedef {Object.<string, grpc~ServiceDefinition>} grpc~PackageDefinition
+ */
