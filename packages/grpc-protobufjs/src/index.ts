@@ -38,7 +38,7 @@ export interface MethodDefinition<RequestType, ResponseType> {
 }
 
 export interface ServiceDefinition {
-  [index: string]: MethodDefinition<any, any>;
+  [index: string]: MethodDefinition<object, object>;
 }
 
 export interface PackageDefinition {
@@ -137,9 +137,12 @@ function createPackageDefinition(root: Protobuf.Root, options: Options): Package
  *     name
  * @param options.include Paths to search for imported `.proto` files.
  */
-export async function load(filename: string, options: Options): Promise<PackageDefinition> {
+export function load(filename: string, options: Options): Promise<PackageDefinition> {
   const root: Protobuf.Root = new Protobuf.Root();
-  if (options.include !== undefined) {
+  if (!!options.include) {
+    if (!(options.include instanceof Array)) {
+      return Promise.reject(new Error('The include option must be an array'));
+    }
     root.resolvePath = (origin: string, target: string) => {
       for (const directory of options.include as string[]) {
         const fullPath: string = path.join(directory, target);
@@ -156,5 +159,5 @@ export async function load(filename: string, options: Options): Promise<PackageD
   return root.load(filename, options).then((loadedRoot) => {
     loadedRoot.resolveAll();
     return createPackageDefinition(root, options);
-  }, error => { throw error; });
+  });
 }
