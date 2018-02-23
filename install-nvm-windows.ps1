@@ -15,6 +15,9 @@
 # We're going to store nvm-windows in the .\nvm directory.
 $env:NVM_HOME = (Get-Item -Path ".\" -Verbose).FullName + "\nvm"
 
+# Switching to TLS/1.2 - see https://githubengineering.com/crypto-removal-notice/
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 # Downloading and unpacking nvm-windows
 Invoke-WebRequest -Uri https://github.com/coreybutler/nvm-windows/releases/download/1.1.5/nvm-noinstall.zip -OutFile nvm-noinstall.zip
 Add-Type -AssemblyName System.IO.Compression.FileSystem
