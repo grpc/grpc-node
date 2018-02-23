@@ -290,6 +290,12 @@ exports.getCall = function(channel, path, options) {
  */
 
 /**
+ * @function GetPeerRequester
+ * @param {function} next Calls the next interceptor.
+ * @return {string}
+ */
+
+/**
  * @typedef {object} grpc~Requester
  * @param {MetadataRequester=} start A function triggered when the call begins.
  * @param {MessageRequester=} sendMessage A function triggered by the request
@@ -298,6 +304,8 @@ exports.getCall = function(channel, path, options) {
  *     closes the call.
  * @param {CancelRequester=} cancel A function triggered when the call is
  *     cancelled.
+ * @param {GetPeerRequester=} getPeer A function triggered when the endpoint is
+ *     requested.
  */
 
 /**
