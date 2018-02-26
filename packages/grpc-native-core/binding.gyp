@@ -82,6 +82,7 @@
       'deps/grpc/third_party/abseil-cpp'
     ],
     'defines': [
+      'PB_FIELD_16BIT',
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=0',
       'GRPC_UV'
