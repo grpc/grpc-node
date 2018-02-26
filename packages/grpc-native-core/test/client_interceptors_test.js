@@ -1702,4 +1702,94 @@ describe('Client interceptors', function() {
       bidi_stream.end();
     });
   });
+
+  describe('order of operations enforced for async interceptors', function() {
+    it('with unary call', function(done) {
+      var expected_calls = [
+        'close_b',
+        'message_b',
+        'start_b',
+        'done'
+      ];
+      var registry = new CallRegistry(done, expected_calls, true);
+      var message = {value: 'foo'};
+      var interceptor_a = function(options, nextCall) {
+        return new InterceptingCall(nextCall(options), {
+          start: function(metadata, listener, next) {
+            setTimeout(function() { next(metadata, listener); }, 50);
+          },
+          sendMessage: function(message, next) {
+            setTimeout(function () { next(message); }, 10);
+          }
+        });
+      };
+      var interceptor_b = function(options, nextCall) {
+        return new InterceptingCall(nextCall(options), {
+          start: function(metadata, listener, next) {
+            registry.addCall('start_b');
+            next(metadata, listener);
+          },
+          sendMessage: function(message, next) {
+            registry.addCall('message_b');
+            next(message);
+          },
+          halfClose: function(next) {
+            registry.addCall('close_b');
+            next();
+          }
+        });
+      };
+      var options = {
+        interceptors: [interceptor_a, interceptor_b]
+      };
+      client.echo(message, options, function(err, response) {
+        assert.strictEqual(err, null);
+        registry.addCall('done');
+      });
+    });
+    it('with serverStreaming call', function(done) {
+      var expected_calls = [
+        'close_b',
+        'message_b',
+        'start_b',
+        'done'
+      ];
+      var registry = new CallRegistry(done, expected_calls, true);
+      var message = {value: 'foo'};
+      var interceptor_a = function(options, nextCall) {
+        return new InterceptingCall(nextCall(options), {
+          start: function(metadata, listener, next) {
+            setTimeout(function() { next(metadata, listener); }, 50);
+          },
+          sendMessage: function(message, next) {
+            setTimeout(function () { next(message); }, 10);
+          }
+        });
+      };
+      var interceptor_b = function(options, nextCall) {
+        return new InterceptingCall(nextCall(options), {
+          start: function(metadata, listener, next) {
+            registry.addCall('start_b');
+            next(metadata, listener);
+          },
+          sendMessage: function(message, next) {
+            registry.addCall('message_b');
+            next(message);
+          },
+          halfClose: function(next) {
+            registry.addCall('close_b');
+            next();
+          }
+        });
+      };
+      var options = {
+        interceptors: [interceptor_a, interceptor_b]
+      };
+      var stream = client.echoServerStream(message, options);
+      stream.on('data', function(response) {
+        assert.strictEqual(response.value, 'foo');
+        registry.addCall('done');
+      });
+    });
+  });
 });
