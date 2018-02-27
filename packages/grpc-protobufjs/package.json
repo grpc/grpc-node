@@ -2,9 +2,19 @@
   "name": "@grpc/protobufjs",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "build/src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npm run compile",
+    "clean": "gts clean",
+    "compile": "tsc -p .",
+    "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
+    "lint": "tslint -c node_modules/google-ts-style/tslint.json -p . -t codeFrame --type-check",
+    "prepare": "npm run compile",
+    "test": "gulp test",
+    "check": "gts check",
+    "fix": "gts fix",
+    "pretest": "npm run compile",
+    "posttest": "npm run check"
   },
   "repository": {
     "type": "git",
@@ -15,8 +25,15 @@
   "bugs": {
     "url": "https://github.com/grpc/grpc-node/issues"
   },
+  "files": [
+    "build/src/*.js"
+  ],
   "dependencies": {
+    "@types/node": "^9.4.6",
+    "clang-format": "^1.2.2",
+    "gts": "^0.5.3",
     "lodash": "^4.17.4",
-    "protobufjs": "^6.8.0"
+    "protobufjs": "^6.8.5",
+    "typescript": "~2.7.2"
   }
 }
