@@ -156,13 +156,13 @@ exports.loadPackageDefinition = function loadPackageDefintion(packageDef) {
   for (const serviceFqn in packageDef) {
     const service = packageDef[serviceFqn];
     const nameComponents = serviceFqn.split('.');
-    const serviceName = nameComponents[-1];
+    const serviceName = nameComponents[nameComponents.length-1];
     let current = result;
-    for (const package in nameComponents.slice(0, -1)) {
-      if (!current[package]) {
-        current[package] = {};
+    for (const packageName in nameComponents.slice(0, -1)) {
+      if (!current[packageName]) {
+        current[packageName] = {};
       }
-      current = current[package];
+      current = current[packageName];
     }
     current[serviceName] = client.makeClientConstructor(service, serviceName, {});
   }
