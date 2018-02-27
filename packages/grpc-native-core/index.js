@@ -146,6 +146,29 @@ exports.load = function load(filename, format, options) {
   return loadObject(builder.ns, options);
 };
 
+/**
+ * Load a gRPC package definition as a gRPC object hierarchy
+ * @param packageDef grpc~PackageDefinition The package definition object
+ * @return {Object<string, *>} The resulting gRPC object
+ */
+exports.loadPackageDefinition = function loadPackageDefintion(packageDef) {
+  const result = {};
+  for (const serviceFqn in packageDef) {
+    const service = packageDef[serviceFqn];
+    const nameComponents = serviceFqn.split('.');
+    const serviceName = nameComponents[nameComponents.length-1];
+    let current = result;
+    for (const packageName in nameComponents.slice(0, -1)) {
+      if (!current[packageName]) {
+        current[packageName] = {};
+      }
+      current = current[packageName];
+    }
+    current[serviceName] = client.makeClientConstructor(service, serviceName, {});
+  }
+  return result;
+};
+
 var log_template = _.template(
     '{severity} {timestamp}\t{file}:{line}]\t{message}',
     {interpolate: /{([\s\S]+?)}/g});
