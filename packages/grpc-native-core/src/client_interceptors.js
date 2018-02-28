@@ -652,6 +652,36 @@ EndListener.prototype.onReceiveMessage = function(){};
 EndListener.prototype.onReceiveStatus = function(){};
 EndListener.prototype.recvMessageWithContext = function(){};
 
+/**
+ * Get a call object built with the provided options.
+ * @param {grpc.Channel} channel
+ * @param {string} path
+ * @param {grpc.Client~CallOptions=} options Options object.
+ */
+function getCall(channel, path, options) {
+  var deadline;
+  var host;
+  var parent;
+  var propagate_flags;
+  var credentials;
+  if (options) {
+    deadline = options.deadline;
+    host = options.host;
+    parent = _.get(options, 'parent.call');
+    propagate_flags = options.propagate_flags;
+    credentials = options.credentials;
+  }
+  if (deadline === undefined) {
+    deadline = Infinity;
+  }
+  var call = new grpc.Call(channel, path, deadline, host,
+                           parent, propagate_flags);
+  if (credentials) {
+    call.setCredentials(credentials);
+  }
+  return call;
+}
+
 var OP_DEPENDENCIES = {
   [grpc.opType.SEND_MESSAGE]: [grpc.opType.SEND_INITIAL_METADATA],
   [grpc.opType.SEND_CLOSE_FROM_CLIENT]: [grpc.opType.SEND_MESSAGE],
@@ -772,7 +802,7 @@ function _getUnaryInterceptor(method_definition, channel, emitter, callback) {
   var serialize = method_definition.requestSerialize;
   var deserialize = method_definition.responseDeserialize;
   return function (options) {
-    var call = common.getCall(channel, method_definition.path, options);
+    var call = getCall(channel, method_definition.path, options);
     var first_listener;
     var final_requester = {};
     var batch_state = {
@@ -859,7 +889,7 @@ function _getClientStreamingInterceptor(method_definition, channel, emitter,
   var deserialize = method_definition.responseDeserialize;
   return function (options) {
     var first_listener;
-    var call = common.getCall(channel, method_definition.path, options);
+    var call = getCall(channel, method_definition.path, options);
     var final_requester = {};
     final_requester.start = function (metadata, listener) {
       var metadata_batch = {
@@ -973,7 +1003,7 @@ function _getServerStreamingInterceptor(method_definition, channel, emitter) {
       completed_ops: [],
       deferred_batches: []
     };
-    var call = common.getCall(channel, method_definition.path, options);
+    var call = getCall(channel, method_definition.path, options);
     var final_requester = {};
     var first_listener;
     var get_listener = function() {
@@ -1069,7 +1099,7 @@ function _getBidiStreamingInterceptor(method_definition, channel, emitter) {
     var get_listener = function() {
       return first_listener;
     };
-    var call = common.getCall(channel, method_definition.path, options);
+    var call = getCall(channel, method_definition.path, options);
     var final_requester = {};
     final_requester.start = function (metadata, listener) {
       var metadata_batch = {

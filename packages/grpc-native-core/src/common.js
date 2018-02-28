@@ -20,7 +20,6 @@
 
 var _ = require('lodash');
 var constants = require('./constants');
-var grpc = require('./grpc_extension');
 
 /**
  * Wrap a function to pass null-like values through without calling it. If no
@@ -112,37 +111,6 @@ exports.getMethodType = function(method_definition) {
     }
   }
 };
-
-/**
- * Get a call object built with the provided options.
- * @param {grpc.Channel} channel
- * @param {string} path
- * @param {grpc.Client~CallOptions=} options Options object.
- */
-exports.getCall = function(channel, path, options) {
-  var deadline;
-  var host;
-  var parent;
-  var propagate_flags;
-  var credentials;
-  if (options) {
-    deadline = options.deadline;
-    host = options.host;
-    parent = _.get(options, 'parent.call');
-    propagate_flags = options.propagate_flags;
-    credentials = options.credentials;
-  }
-  if (deadline === undefined) {
-    deadline = Infinity;
-  }
-  var call = new grpc.Call(channel, path, deadline, host,
-                           parent, propagate_flags);
-  if (credentials) {
-    call.setCredentials(credentials);
-  }
-  return call;
-};
-
 
 // JSDoc definitions that are used in multiple other modules
 
