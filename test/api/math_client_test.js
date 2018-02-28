@@ -20,7 +20,7 @@
 
 var assert = require('assert');
 
-var grpc = require('../any_grpc');
+var grpc = require('grpc');
 var math = require('./math/math_pb');
 var MathClient = require('./math/math_grpc_pb').MathClient;
 

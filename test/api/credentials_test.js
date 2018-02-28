@@ -22,7 +22,7 @@ var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
 
-var grpc = require('../any_grpc');
+var grpc = require('grpc');
 
 /**
  * This is used for testing functions with multiple asynchronous calls that
