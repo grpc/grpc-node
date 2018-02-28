@@ -223,6 +223,8 @@ exports.writeFlags = constants.writeFlags;
 
 exports.logVerbosity = constants.logVerbosity;
 
+exports.methodTypes = constants.methodTypes;
+
 exports.credentials = require('./src/credentials.js');
 
 /**
@@ -265,6 +267,11 @@ exports.makeGenericClientConstructor = client.makeClientConstructor;
 exports.getClientChannel = client.getClientChannel;
 
 exports.waitForClientReady = client.waitForClientReady;
+
+exports.StatusBuilder = client.StatusBuilder;
+exports.ListenerBuilder = client.ListenerBuilder;
+exports.RequesterBuilder = client.RequesterBuilder;
+exports.InterceptingCall = client.InterceptingCall;
 
 /**
  * @memberof grpc

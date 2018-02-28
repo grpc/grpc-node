@@ -235,3 +235,17 @@ exports.logVerbosity = {
   INFO: 1,
   ERROR: 2
 };
+
+/**
+ * Method types: the supported RPC types
+ * @memberof grpc
+ * @alias grpc.methodTypes
+ * @readonly
+ * @enum {number}
+ */
+exports.methodTypes = {
+  UNARY: 0,
+  CLIENT_STREAMING: 1,
+  SERVER_STREAMING: 2,
+  BIDI_STREAMING: 3
+};
