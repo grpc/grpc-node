@@ -19,7 +19,7 @@
 'use strict';
 
 var assert = require('assert');
-var grpc = require('../any_grpc');
+var grpc = require('../any_grpc').requireAsClient('grpc');
 
 describe('File loader', function() {
   it('Should load a proto file by default', function() {

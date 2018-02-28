@@ -20,8 +20,8 @@
 
 var assert = require('assert');
 
-var grpc = require('../any_grpc');
-var math = grpc.load(
+var anyGrpc = require('../any_grpc');
+var math = anyGrpc.client.load(
     __dirname + '/../../packages/grpc-native-core/deps/grpc/src/proto/math/math.proto').math;
 
 
@@ -33,21 +33,21 @@ var math_client;
 /**
  * Server to test against
  */
-var getServer = require('./math/math_server.js');
+var getServer = anyGrpc.requireAsServer('./math/math_server.js');
 
 var server = getServer();
 
 describe('Async functionality', function() {
   before(function(done) {
     var port_num = server.bind('0.0.0.0:0',
-                               grpc.ServerCredentials.createInsecure());
+                               anyGrpc.server.ServerCredentials.createInsecure());
     server.start();
     math_client = new math.Math('localhost:' + port_num,
-                                grpc.credentials.createInsecure());
+                                anyGrpc.client.credentials.createInsecure());
     done();
   });
   after(function() {
-    grpc.closeClient(math_client);
+    anyGrpc.client.closeClient(math_client);
     server.forceShutdown();
   });
   it('should not hang', function(done) {
@@ -77,7 +77,7 @@ describe('Async functionality', function() {
     });
 
     call.on('status', function checkStatus(status) {
-      assert.strictEqual(status.code, grpc.status.OK);
+      assert.strictEqual(status.code, anyGrpc.client.status.OK);
       done();
     });
   });

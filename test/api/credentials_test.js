@@ -22,7 +22,10 @@ var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
 
-var grpc = require('../any_grpc');
+var anyGrpc = require('../any_grpc');
+// TODO(kjin): Google credentials are currently not implemented in the
+// JS client.
+var maybeSkip = anyGrpc.skipIfJsClient;
 
 /**
  * This is used for testing functions with multiple asynchronous calls that
@@ -75,174 +78,48 @@ before(function() {
   ca_data = fs.readFileSync(ca_path);
 });
 
-describe('channel credentials', function() {
-  describe('#createSsl', function() {
-    it('works with no arguments', function() {
-      var creds;
-      assert.doesNotThrow(function() {
-        creds = grpc.credentials.createSsl();
-      });
-      assert.notEqual(creds, null);
-    });
-    it('works with just one Buffer argument', function() {
-      var creds;
-      assert.doesNotThrow(function() {
-        creds = grpc.credentials.createSsl(ca_data);
-      });
-      assert.notEqual(creds, null);
-    });
-    it('works with 3 Buffer arguments', function() {
-      var creds;
-      assert.doesNotThrow(function() {
-        creds = grpc.credentials.createSsl(ca_data, key_data, pem_data);
-      });
-      assert.notEqual(creds, null);
-    });
-    it('works if the first argument is null', function() {
-      var creds;
-      assert.doesNotThrow(function() {
-        creds = grpc.credentials.createSsl(null, key_data, pem_data);
-      });
-      assert.notEqual(creds, null);
-    });
-    it('fails if the first argument is a non-Buffer value', function() {
-      assert.throws(function() {
-        grpc.credentials.createSsl('test');
-      }, TypeError);
-    });
-    it('fails if the second argument is a non-Buffer value', function() {
-      assert.throws(function() {
-        grpc.credentials.createSsl(null, 'test', pem_data);
-      }, TypeError);
-    });
-    it('fails if the third argument is a non-Buffer value', function() {
-      assert.throws(function() {
-        grpc.credentials.createSsl(null, key_data, 'test');
-      }, TypeError);
-    });
-    it('fails if only 1 of the last 2 arguments is provided', function() {
-      assert.throws(function() {
-        grpc.credentials.createSsl(null, key_data);
-      });
-      assert.throws(function() {
-        grpc.credentials.createSsl(null, null, pem_data);
-      });
-    });
-  });
-});
-
-describe('server credentials', function() {
-  describe('#createSsl', function() {
-    it('accepts a buffer and array as the first 2 arguments', function() {
-      var creds;
-      assert.doesNotThrow(function() {
-        creds = grpc.ServerCredentials.createSsl(ca_data, []);
-      });
-      assert.notEqual(creds, null);
-    });
-    it('accepts a boolean as the third argument', function() {
-      var creds;
-      assert.doesNotThrow(function() {
-        creds = grpc.ServerCredentials.createSsl(ca_data, [], true);
-      });
-      assert.notEqual(creds, null);
-    });
-    it('accepts an object with two buffers in the second argument', function() {
-      var creds;
-      assert.doesNotThrow(function() {
-        creds = grpc.ServerCredentials.createSsl(null,
-                                                 [{private_key: key_data,
-                                                   cert_chain: pem_data}]);
-      });
-      assert.notEqual(creds, null);
-    });
-    it('accepts multiple objects in the second argument', function() {
-      var creds;
-      assert.doesNotThrow(function() {
-        creds = grpc.ServerCredentials.createSsl(null,
-                                                 [{private_key: key_data,
-                                                   cert_chain: pem_data},
-                                                  {private_key: key_data,
-                                                   cert_chain: pem_data}]);
-      });
-      assert.notEqual(creds, null);
-    });
-    it('fails if the second argument is not an Array', function() {
-      assert.throws(function() {
-        grpc.ServerCredentials.createSsl(ca_data, 'test');
-      }, TypeError);
-    });
-    it('fails if the first argument is a non-Buffer value', function() {
-      assert.throws(function() {
-        grpc.ServerCredentials.createSsl('test', []);
-      }, TypeError);
-    });
-    it('fails if the third argument is a non-boolean value', function() {
-      assert.throws(function() {
-        grpc.ServerCredentials.createSsl(ca_data, [], 'test');
-      }, TypeError);
-    });
-    it('fails if the array elements are not objects', function() {
-      assert.throws(function() {
-        grpc.ServerCredentials.createSsl(ca_data, 'test');
-      }, TypeError);
-    });
-    it('fails if the object does not have a Buffer private_key', function() {
-      assert.throws(function() {
-        grpc.ServerCredentials.createSsl(null,
-                                         [{private_key: 'test',
-                                           cert_chain: pem_data}]);
-      }, TypeError);
-    });
-    it('fails if the object does not have a Buffer cert_chain', function() {
-      assert.throws(function() {
-        grpc.ServerCredentials.createSsl(null,
-                                         [{private_key: key_data,
-                                           cert_chain: 'test'}]);
-      }, TypeError);
-    });
-  });
-});
-
 describe('client credentials', function() {
+  var grpc = anyGrpc.requireAsClient('grpc');
   var Client;
   var server;
   var port;
   var client_ssl_creds;
   var client_options = {};
   before(function() {
-    var proto = grpc.load(__dirname + '/test_service.proto');
-    server = new grpc.Server();
-    server.addService(proto.TestService.service, {
-      unary: function(call, cb) {
-        call.sendMetadata(call.metadata);
-        cb(null, {});
-      },
-      clientStream: function(stream, cb){
-        stream.on('data', function(data) {});
-        stream.on('end', function() {
-          stream.sendMetadata(stream.metadata);
+    anyGrpc.runAsServer((grpc) => {
+      var proto = grpc.load(__dirname + '/test_service.proto');
+      server = new grpc.Server();
+      server.addService(proto.TestService.service, {
+        unary: function(call, cb) {
+          call.sendMetadata(call.metadata);
           cb(null, {});
-        });
-      },
-      serverStream: function(stream) {
-        stream.sendMetadata(stream.metadata);
-        stream.end();
-      },
-      bidiStream: function(stream) {
-        stream.on('data', function(data) {});
-        stream.on('end', function() {
+        },
+        clientStream: function(stream, cb){
+          stream.on('data', function(data) {});
+          stream.on('end', function() {
+            stream.sendMetadata(stream.metadata);
+            cb(null, {});
+          });
+        },
+        serverStream: function(stream) {
           stream.sendMetadata(stream.metadata);
           stream.end();
-        });
-      }
+        },
+        bidiStream: function(stream) {
+          stream.on('data', function(data) {});
+          stream.on('end', function() {
+            stream.sendMetadata(stream.metadata);
+            stream.end();
+          });
+        }
+      });
+      var creds = grpc.ServerCredentials.createSsl(null,
+          [{private_key: key_data, cert_chain: pem_data}]);
+      port = server.bind('localhost:0', creds);
+      server.start();
     });
-    var creds = grpc.ServerCredentials.createSsl(null,
-                                                 [{private_key: key_data,
-                                                   cert_chain: pem_data}]);
-    port = server.bind('localhost:0', creds);
-    server.start();
 
+    var proto = grpc.load(__dirname + '/test_service.proto');
     Client = proto.TestService;
     client_ssl_creds = grpc.credentials.createSsl(ca_data);
     var host_override = 'foo.test.google.fr';
@@ -326,7 +203,7 @@ describe('client credentials', function() {
       done();
     });
   });
-  it('should successfully wrap a Google credential', function(done) {
+  maybeSkip(it)('should successfully wrap a Google credential', function(done) {
     var creds = grpc.credentials.createFromGoogleCredential(
         fakeSuccessfulGoogleCredentials);
     var combined_creds = grpc.credentials.combineChannelCredentials(
@@ -360,7 +237,7 @@ describe('client credentials', function() {
       done();
     });
   });
-  it('should get an error from a Google credential', function(done) {
+  maybeSkip(it)('should get an error from a Google credential', function(done) {
     var creds = grpc.credentials.createFromGoogleCredential(
         fakeFailingGoogleCredentials);
     var combined_creds = grpc.credentials.combineChannelCredentials(
