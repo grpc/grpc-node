@@ -55,16 +55,15 @@ function loadGulpTasksWithPrefix(path: string, prefix: string) {
   ['./packages/grpc-native-core/gulpfile', 'native.core'],
   ['./packages/grpc-surface/gulpfile', 'surface'],
   ['./packages/grpc-protobufjs/gulpfile', 'protobuf'],
-  ['./test/gulpfile', 'internal.test'],
 ].forEach((args) => loadGulpTasksWithPrefix(args[0], args[1]));
 
 const root = __dirname;
 
 gulp.task('install.all', 'Install dependencies for all subdirectory packages',
-          ['js.install', 'js.core.install', 'native.core.install', 'surface.install', 'health-check.install', 'protobuf.install', 'internal.test.install']);
+          ['js.install', 'js.core.install', 'native.core.install', 'surface.install', 'health-check.install', 'protobuf.install']);
 
 gulp.task('install.all.windows', 'Install dependencies for all subdirectory packages for MS Windows',
-          ['js.core.install', 'native.core.install.windows', 'surface.install', 'health-check.install', 'protobuf.install', 'internal.test.install']);
+          ['js.core.install', 'native.core.install.windows', 'surface.install', 'health-check.install', 'protobuf.install']);
 
 gulp.task('lint', 'Emit linting errors in source and test files',
           ['js.core.lint', 'native.core.lint']);
@@ -96,10 +95,10 @@ gulp.task('clean', 'Delete generated files', ['js.core.clean', 'native.core.clea
 
 gulp.task('clean.all', 'Delete all files created by tasks',
 	  ['js.core.clean.all', 'native.core.clean.all', 'health-check.clean.all',
-	   'internal.test.clean.all', 'js.clean.all', 'native.clean.all', 'protobuf.clean.all']);
+	   'js.clean.all', 'native.clean.all', 'protobuf.clean.all']);
 
 gulp.task('native.test.only', 'Run tests of native code without rebuilding anything',
-          ['native.core.test', 'internal.test.test', 'health-check.test']);
+          ['native.core.test', 'health-check.test']);
 
 gulp.task('native.test', 'Run tests of native code', (callback) => {
   runSequence('build', 'native.test.only', callback);
