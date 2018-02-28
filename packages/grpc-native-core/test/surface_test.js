@@ -21,10 +21,10 @@
 var assert = require('assert');
 var _ = require('lodash');
 
-var grpc = require('grpc');
+var grpc = require('..');
 
 var MathClient = grpc.load(
-    __dirname + '/../../packages/grpc-native-core/deps/grpc/src/proto/math/math.proto').math.Math;
+    __dirname + '/../deps/grpc/src/proto/math/math.proto').math.Math;
 var mathServiceAttrs = MathClient.service;
 
 /**
@@ -485,7 +485,7 @@ describe('Echo metadata', function() {
     call.end();
   });
   it('shows the correct user-agent string', function(done) {
-    var version = require('grpc/package.json').version;
+    var version = require('../package.json').version;
     var call = client.unary({}, metadata,
                             function(err, data) { assert.ifError(err); });
     call.on('metadata', function(metadata) {

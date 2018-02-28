@@ -22,7 +22,7 @@ var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
 
-var grpc = require('grpc');
+var grpc = require('..');
 
 /**
  * This is used for testing functions with multiple asynchronous calls that
@@ -67,9 +67,9 @@ var fakeFailingGoogleCredentials = {
 var key_data, pem_data, ca_data;
 
 before(function() {
-  var key_path = path.join(__dirname, '../data/server1.key');
-  var pem_path = path.join(__dirname, '../data/server1.pem');
-  var ca_path = path.join(__dirname, '../data/ca.pem');
+  var key_path = path.join(__dirname, '/data/server1.key');
+  var pem_path = path.join(__dirname, '/data/server1.pem');
+  var ca_path = path.join(__dirname, '/data/ca.pem');
   key_data = fs.readFileSync(key_path);
   pem_data = fs.readFileSync(pem_path);
   ca_data = fs.readFileSync(ca_path);
