@@ -1,6 +1,6 @@
 {
   "name": "@grpc/protobufjs",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "",
   "main": "build/src/index.js",
   "scripts": {
@@ -26,6 +26,7 @@
     "url": "https://github.com/grpc/grpc-node/issues"
   },
   "files": [
+    "build/src/*.d.ts",
     "build/src/*.js"
   ],
   "dependencies": {
