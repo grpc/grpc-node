@@ -22,10 +22,9 @@ var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
 var AsyncDelayQueue = require('./async_delay_queue');
-// TODO(murgatroid99): use multiple grpc implementations
-var grpc = require('..');
+var grpc = require('../../packages/grpc-native-core');
 var testProto = grpc.load({
-  root: __dirname + '/../deps/grpc',
+  root: __dirname + '/../../packages/grpc-native-core/deps/grpc',
   file: 'src/proto/grpc/testing/test.proto'}).grpc.testing;
 
 var ECHO_INITIAL_KEY = 'x-grpc-test-echo-initial';
@@ -202,8 +201,8 @@ function getServer(port, tls) {
   var options = {};
   var server_creds;
   if (tls) {
-    var key_path = path.join(__dirname, '../test/data/server1.key');
-    var pem_path = path.join(__dirname, '../test/data/server1.pem');
+    var key_path = path.join(__dirname, '../data/server1.key');
+    var pem_path = path.join(__dirname, '../data/server1.pem');
 
     var key_data = fs.readFileSync(key_path);
     var pem_data = fs.readFileSync(pem_path);
