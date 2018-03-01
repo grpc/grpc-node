@@ -20,7 +20,7 @@
 
 var fs = require('fs');
 var path = require('path');
-var grpc = require('../../packages/grpc-native-core');
+var grpc = require('../any_grpc')['$implementationInfo'].client.surface;
 var testProto = grpc.load({
   root: __dirname + '/../../packages/grpc-native-core/deps/grpc',
   file: 'src/proto/grpc/testing/test.proto'}).grpc.testing;
