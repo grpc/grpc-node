@@ -31,6 +31,8 @@ node_versions=( 4.0.0 5.0.0 6.0.0 7.0.0 8.0.0 9.0.0 )
 for version in ${node_versions[@]}
 do
   # Cross compile for ARM on x64
+  # Requires debian or ubuntu packages "g++-aarch64-linux-gnu" and "g++-arm-linux-gnueabihf".
   CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++ LD=arm-linux-gnueabihf-g++ ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=arm
+  CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ LD=aarch64-linux-gnu-g++ ./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$version --target_arch=arm64
   cp -r build/stage/* "${ARTIFACTS_OUT}"/
 done
