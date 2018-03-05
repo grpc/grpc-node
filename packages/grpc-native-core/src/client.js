@@ -429,7 +429,7 @@ exports.Client = Client;
 Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
                                              argument, metadata, options,
                                              callback) {
-  if (options instanceof Function) {
+  if (_.isFunction(options)) {
     callback = options;
     if (metadata instanceof Metadata) {
       options = {};
@@ -437,7 +437,7 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
       options = metadata;
       metadata = new Metadata();
     }
-  } else if (metadata instanceof Function) {
+  } else if (_.isFunction(metadata)) {
     callback = metadata;
     metadata = new Metadata();
     options = {};
@@ -450,7 +450,7 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
   }
   if (!((metadata instanceof Metadata) &&
         (options instanceof Object) &&
-        (callback instanceof Function))) {
+        (_.isFunction(callback)))) {
     throw new Error('Argument mismatch in makeUnaryRequest');
   }
 
@@ -508,7 +508,7 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
 Client.prototype.makeClientStreamRequest = function(path, serialize,
                                                     deserialize, metadata,
                                                     options, callback) {
-  if (options instanceof Function) {
+  if (_.isFunction(options)) {
     callback = options;
     if (metadata instanceof Metadata) {
       options = {};
@@ -516,7 +516,7 @@ Client.prototype.makeClientStreamRequest = function(path, serialize,
       options = metadata;
       metadata = new Metadata();
     }
-  } else if (metadata instanceof Function) {
+  } else if (_.isFunction(metadata)) {
     callback = metadata;
     metadata = new Metadata();
     options = {};
@@ -529,7 +529,7 @@ Client.prototype.makeClientStreamRequest = function(path, serialize,
   }
   if (!((metadata instanceof Metadata) &&
        (options instanceof Object) &&
-       (callback instanceof Function))) {
+       (_.isFunction(callback)))) {
     throw new Error('Argument mismatch in makeClientStreamRequest');
   }
 
