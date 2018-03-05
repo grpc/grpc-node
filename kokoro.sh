@@ -20,4 +20,6 @@ cd $(dirname $0)
 git submodule update --init
 git submodule foreach --recursive git submodule update --init
 
+./packages/grpc-native-core/tools/buildgen/generate_projects.sh
+
 ./run-tests.sh
