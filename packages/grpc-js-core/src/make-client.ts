@@ -2,6 +2,8 @@ import { Metadata } from "./metadata";
 import { Client, UnaryCallback } from "./client";
 import { CallOptions } from "./call-stream";
 import * as _ from 'lodash';
+import { ChannelCredentials } from "./channel-credentials";
+import { ChannelOptions } from "./channel";
 
 export interface Serialize<T> {
   (value: T): Buffer;
@@ -19,7 +21,7 @@ export interface MethodDefinition<RequestType, ResponseType> {
   responseSerialize: Serialize<ResponseType>;
   requestDeserialize: Deserialize<RequestType>;
   responseDeserialize: Deserialize<ResponseType>;
-  originalName: string;
+  originalName?: string;
 }
 
 export interface ServiceDefinition {
@@ -52,7 +54,13 @@ const requesterFuncs = {
   bidi: Client.prototype.makeBidiStreamRequest
 };
 
-export type ServiceClientConstructor = typeof Client & {
+export interface ServiceClient extends Client {
+  [methodName: string]: Function;
+}
+
+export interface ServiceClientConstructor {
+  new(address: string, credentials: ChannelCredentials,
+    options?: Partial<ChannelOptions>): ServiceClient;
   service: ServiceDefinition;
 };
 
@@ -77,7 +85,7 @@ export function makeClientConstructor(
     classOptions = {};
   }
 
-  class ServiceClient extends Client {
+  class ServiceClientImpl extends Client implements ServiceClient {
     static service: ServiceDefinition;
     [methodName: string]: Function;
   }
@@ -105,17 +113,17 @@ export function makeClientConstructor(
     const deserialize = attrs.responseDeserialize;
     const methodFunc = _.partial(requesterFuncs[methodType], attrs.path,
                                 serialize, deserialize);
-    ServiceClient.prototype[name] = methodFunc;
+    ServiceClientImpl.prototype[name] = methodFunc;
     // Associate all provided attributes with the method
-    _.assign(ServiceClient.prototype[name], attrs);
+    _.assign(ServiceClientImpl.prototype[name], attrs);
     if (attrs.originalName) {
-      ServiceClient.prototype[attrs.originalName] = ServiceClient.prototype[name];
+      ServiceClientImpl.prototype[attrs.originalName] = ServiceClientImpl.prototype[name];
     }
   });
 
-  ServiceClient.service = methods;
+  ServiceClientImpl.service = methods;
 
-  return ServiceClient;
+  return ServiceClientImpl;
 };
 
 export type GrpcObject = {
