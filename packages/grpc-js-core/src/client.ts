@@ -8,20 +8,24 @@ import {ChannelCredentials} from './channel-credentials';
 import {Status} from './constants';
 import {Metadata} from './metadata';
 
+// This symbol must be exported (for now).
+// See: https://github.com/Microsoft/TypeScript/issues/20080
+export const kChannel = Symbol();
+
 export interface UnaryCallback<ResponseType> {
   (err: ServiceError|null, value?: ResponseType): void;
 }
 
 export class Client {
-  private readonly channel: Channel;
+  private readonly [kChannel]: Channel;
   constructor(
       address: string, credentials: ChannelCredentials,
       options: Partial<ChannelOptions> = {}) {
-    this.channel = new Http2Channel(address, credentials, options);
+    this[kChannel] = new Http2Channel(address, credentials, options);
   }
 
   close(): void {
-    this.channel.close();
+    this[kChannel].close();
   }
 
   waitForReady(deadline: Date|number, callback: (error: Error|null) => void):
@@ -29,7 +33,7 @@ export class Client {
     let cb: (error: Error|null) => void = once(callback);
     let callbackCalled = false;
     let timer: NodeJS.Timer | null = null;
-    this.channel.connect().then(() => {
+    this[kChannel].connect().then(() => {
       if (timer) {
         clearTimeout(timer);
       }
@@ -140,7 +144,7 @@ export class Client {
          this.checkOptionalUnaryResponseArguments<ResponseType>(
              metadata, options, callback));
     const call: CallStream =
-        this.channel.createStream(method, metadata, options);
+        this[kChannel].createStream(method, metadata, options);
     const message: Buffer = serialize(argument);
     const writeObj: WriteObject = {message: message};
     writeObj.flags = options.flags;
@@ -178,7 +182,7 @@ export class Client {
          this.checkOptionalUnaryResponseArguments<ResponseType>(
              metadata, options, callback));
     const call: CallStream =
-        this.channel.createStream(method, metadata, options);
+        this[kChannel].createStream(method, metadata, options);
     this.handleUnaryResponse<ResponseType>(call, deserialize, callback);
     return new ClientWritableStreamImpl<RequestType>(call, serialize);
   }
@@ -222,7 +226,7 @@ export class Client {
       options?: CallOptions): ClientReadableStream<ResponseType> {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
     const call: CallStream =
-        this.channel.createStream(method, metadata, options);
+        this[kChannel].createStream(method, metadata, options);
     const message: Buffer = serialize(argument);
     const writeObj: WriteObject = {message: message};
     writeObj.flags = options.flags;
@@ -246,7 +250,7 @@ export class Client {
       options?: CallOptions): ClientDuplexStream<RequestType, ResponseType> {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
     const call: CallStream =
-        this.channel.createStream(method, metadata, options);
+        this[kChannel].createStream(method, metadata, options);
     return new ClientDuplexStreamImpl<RequestType, ResponseType>(
         call, serialize, deserialize);
   }
