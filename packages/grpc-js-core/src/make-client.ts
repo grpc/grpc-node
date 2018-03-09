@@ -137,7 +137,7 @@ export function loadPackageDefinition(packageDef: PackageDefinition) {
     const nameComponents = serviceFqn.split('.');
     const serviceName = nameComponents[nameComponents.length-1];
     let current = result;
-    for (const packageName in nameComponents.slice(0, -1)) {
+    for (const packageName of nameComponents.slice(0, -1)) {
       if (!current[packageName]) {
         current[packageName] = {};
       }

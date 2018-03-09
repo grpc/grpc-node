@@ -30,10 +30,11 @@
     "build/src/*.js"
   ],
   "dependencies": {
+    "@types/lodash": "^4.14.104",
     "@types/node": "^9.4.6",
     "clang-format": "^1.2.2",
     "gts": "^0.5.3",
-    "lodash": "^4.17.4",
+    "lodash": "^4.17.5",
     "protobufjs": "^6.8.5",
     "typescript": "~2.7.2"
   }

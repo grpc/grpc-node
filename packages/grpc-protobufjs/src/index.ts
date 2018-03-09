@@ -18,6 +18,7 @@
 import * as Protobuf from 'protobufjs';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as _ from 'lodash';
 
 export interface Serialize<T> {
   (value: T): Buffer;
@@ -35,6 +36,7 @@ export interface MethodDefinition<RequestType, ResponseType> {
   responseSerialize: Serialize<ResponseType>;
   requestDeserialize: Deserialize<RequestType>;
   responseDeserialize: Deserialize<ResponseType>;
+  originalName?: string;
 }
 
 export interface ServiceDefinition {
@@ -88,12 +90,14 @@ function createSerializer(cls: Protobuf.Type): Serialize<object> {
 function createMethodDefinition(method: Protobuf.Method, serviceName: string, options: Options): MethodDefinition<object, object> {
   return {
     path: '/' + serviceName + '/' + method.name,
-        requestStream: !!method.requestStream,
-        responseStream: !!method.responseStream,
-        requestSerialize: createSerializer(method.resolvedRequestType as Protobuf.Type),
-        requestDeserialize: createDeserializer(method.resolvedRequestType as Protobuf.Type, options),
-        responseSerialize: createSerializer(method.resolvedResponseType as Protobuf.Type),
-        responseDeserialize: createDeserializer(method.resolvedResponseType as Protobuf.Type, options)
+    requestStream: !!method.requestStream,
+    responseStream: !!method.responseStream,
+    requestSerialize: createSerializer(method.resolvedRequestType as Protobuf.Type),
+    requestDeserialize: createDeserializer(method.resolvedRequestType as Protobuf.Type, options),
+    responseSerialize: createSerializer(method.resolvedResponseType as Protobuf.Type),
+    responseDeserialize: createDeserializer(method.resolvedResponseType as Protobuf.Type, options),
+    // TODO(murgatroid99): Find a better way to handle this
+    originalName: _.camelCase(method.name)
   };
 }
 
@@ -111,6 +115,21 @@ function createPackageDefinition(root: Protobuf.Root, options: Options): Package
     def[name] = createServiceDefinition(service, name, options);
   }
   return def;
+}
+
+function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
+  root.resolvePath = (origin: string, target: string) => {
+    for (const directory of includePaths) {
+      const fullPath: string = path.join(directory, target);
+      try {
+        fs.accessSync(fullPath, fs.constants.R_OK);
+        return fullPath;
+      } catch (err) {
+        continue;
+      }
+    }
+    return null;
+  };
 }
 
 /**
@@ -143,21 +162,23 @@ export function load(filename: string, options: Options): Promise<PackageDefinit
     if (!(options.include instanceof Array)) {
       return Promise.reject(new Error('The include option must be an array'));
     }
-    root.resolvePath = (origin: string, target: string) => {
-      for (const directory of options.include as string[]) {
-        const fullPath: string = path.join(directory, target);
-        try {
-          fs.accessSync(fullPath, fs.constants.R_OK);
-          return fullPath;
-        } catch (err) {
-          continue;
-        }
-      }
-      return null;
-    };
+    addIncludePathResolver(root, options.include as string[]);
   }
   return root.load(filename, options).then((loadedRoot) => {
     loadedRoot.resolveAll();
     return createPackageDefinition(root, options);
   });
+}
+
+export function loadSync(filename: string, options: Options): PackageDefinition {
+  const root: Protobuf.Root = new Protobuf.Root();
+  if (!!options.include) {
+    if (!(options.include instanceof Array)) {
+      throw new Error('The include option must be an array');
+    }
+    addIncludePathResolver(root, options.include as string[]);
+  }
+  const loadedRoot = root.loadSync(filename, options);
+  loadedRoot.resolveAll();
+  return createPackageDefinition(root, options);
 }

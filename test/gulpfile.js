@@ -35,4 +35,29 @@ gulp.task('install', 'Install test dependencies', () => {
 
 gulp.task('clean.all', 'Delete all files created by tasks', () => {});
 
-gulp.task('test', 'Run API-level tests', () => {});
+gulp.task('test', 'Run API-level tests', () => {
+  // run mocha tests matching a glob with a pre-required fixture,
+  // returning the associated gulp stream
+  const apiTestGlob = `${apiTestDir}/*.js`;
+  const runTestsWithFixture = (server, client) => new Promise((resolve, reject) => {
+    const fixture = `${server}_${client}`;
+    console.log(`Running ${apiTestGlob} with ${server} server + ${client} client`);
+    gulp.src(apiTestGlob)
+      .pipe(mocha({
+        reporter: 'mocha-jenkins-reporter',
+        require: `${testDir}/fixtures/${fixture}.js`
+      }))
+      .resume() // put the stream in flowing mode
+      .on('end', resolve)
+      .on('error', reject);
+  });
+  const runTestsArgPairs = [
+    ['native', 'native'],
+    ['native', 'js'],
+    // ['js', 'native'],
+    // ['js', 'js']
+  ];
+  return runTestsArgPairs.reduce((previousPromise, argPair) => {
+    return previousPromise.then(runTestsWithFixture.bind(null, argPair[0], argPair[1]));
+  }, Promise.resolve());
+});
