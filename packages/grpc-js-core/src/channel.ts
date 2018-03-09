@@ -41,6 +41,7 @@ export interface ChannelOptions {
   'grpc.ssl_target_name_override': string;
   'grpc.primary_user_agent': string;
   'grpc.secondary_user_agent': string;
+  'grpc.default_authority': string;
   [key: string]: string | number;
 }
 
@@ -158,6 +159,7 @@ export class Http2Channel extends EventEmitter implements Channel {
         connectionOptions.checkServerIdentity = (host: string, cert: PeerCertificate): Error | undefined => {
           return checkServerIdentity(sslTargetNameOverride, cert);
         }
+        connectionOptions.servername = sslTargetNameOverride;
       }
       subChannel = http2.connect(this.authority, connectionOptions);
     }
@@ -224,7 +226,14 @@ export class Http2Channel extends EventEmitter implements Channel {
     Promise.all([finalMetadata, this.connect()])
       .then(([metadataValue]) => {
         let headers = metadataValue.toHttp2Headers();
-        headers[HTTP2_HEADER_AUTHORITY] = this.authority.hostname;
+        let host: string;
+        // TODO(murgatroid99): Add more centralized handling of channel options
+        if (this.options['grpc.default_authority']) {
+          host = this.options['grpc.default_authority'] as string;
+        } else {
+          host = this.authority.hostname;
+        }
+        headers[HTTP2_HEADER_AUTHORITY] = host;
         headers[HTTP2_HEADER_USER_AGENT] = this.userAgent;
         headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
         headers[HTTP2_HEADER_METHOD] = 'POST';
@@ -234,6 +243,7 @@ export class Http2Channel extends EventEmitter implements Channel {
           if (this.connectivityState === ConnectivityState.READY) {
             const session: http2.ClientHttp2Session = this.subChannel!;
             // Prevent the HTTP/2 session from keeping the process alive.
+            // Note: this function is only available in Node 9
             session.unref();
             stream.attachHttp2Stream(session.request(headers));
           } else {

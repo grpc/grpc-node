@@ -18,9 +18,8 @@
 
 'use strict';
 
-require('../../../test/fixtures/native_native.js');
-var interop_server = require('../../../test/interop/interop_server.js');
-var interop_client = require('../../../test/interop/interop_client.js');
+var interop_server = require('../interop/interop_server.js');
+var interop_client = require('../interop/interop_client.js');
 
 var server;
 
