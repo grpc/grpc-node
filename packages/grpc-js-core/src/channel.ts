@@ -41,6 +41,7 @@ export interface ChannelOptions {
   'grpc.ssl_target_name_override': string;
   'grpc.primary_user_agent': string;
   'grpc.secondary_user_agent': string;
+  'grpc.default_authority': string;
   [key: string]: string | number;
 }
 
