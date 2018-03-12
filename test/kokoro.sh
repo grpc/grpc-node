@@ -22,5 +22,4 @@ git submodule foreach --recursive git submodule update --init
 
 ./packages/grpc-native-core/tools/buildgen/generate_projects.sh
 
-./tools/release/kokoro.sh
 ./run-tests.sh
