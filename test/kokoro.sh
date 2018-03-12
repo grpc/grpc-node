@@ -1,3 +1,4 @@
+#!/bin/sh
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for Kokoro (in protobuf text format)
+set -e
+cd $(dirname $0)/..
 
-# Location of the continuous shell script in repository.
-build_file: "grpc-node/test/kokoro.bat"
-timeout_mins: 60
+# Install gRPC and its submodules.
+git submodule update --init
+git submodule foreach --recursive git submodule update --init
+
+./packages/grpc-native-core/tools/buildgen/generate_projects.sh
+
+./tools/release/kokoro.sh
+./run-tests.sh
