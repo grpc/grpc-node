@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright 2017 gRPC authors.
+# Copyright 2018 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,10 +14,24 @@
 # limitations under the License.
 
 set -e
-cd $(dirname $0)
+cd $(dirname $0)/../..
+base_dir=$(pwd)
 
 # Install gRPC and its submodules.
 git submodule update --init
 git submodule foreach --recursive git submodule update --init
 
-./run-tests.sh
+./packages/grpc-native-core/tools/buildgen/generate_projects.sh
+
+OS=`uname`
+
+case $OS in
+Linux)
+    ./packages/grpc-native-core/tools/run_tests/artifacts/build_all_linux_artifacts.sh
+    mv packages/grpc-native-core/artifacts .
+    ;;
+Darwin)
+    export ARTIFACTS_OUT=$(base_dir)/artifacts
+    ./packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_node.sh
+    ;;
+esac
