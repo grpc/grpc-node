@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,23 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set -e
+cd $(dirname $0)/..
 
-cd $(dirname $0)
-tool_dir=$(pwd)
-cd $tool_dir/../../..
-base_dir=$(pwd)
+# Install gRPC and its submodules.
+git submodule update --init
+git submodule foreach --recursive git submodule update --init
 
-export ARTIFACTS_OUT=$base_dir/artifacts
+./packages/grpc-native-core/tools/buildgen/generate_projects.sh
 
-rm -rf build || true
-
-mkdir -p "${ARTIFACTS_OUT}"
-
-docker build -t alpine_node_artifact $base_dir/tools/docker/alpine_artifact
-
-$tool_dir/build_artifact_node.sh
-
-$tool_dir/build_artifact_node_arm.sh
-
-docker run -e ARTIFACTS_OUT=/var/grpc/artifacts -v $base_dir:/var/grpc alpine_node_artifact bash -c /var/grpc/tools/run_tests/artifacts/build_artifact_node.sh --with-alpine
+./run-tests.sh
