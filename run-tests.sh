@@ -38,6 +38,7 @@ set -ex
 npm install --unsafe-perm
 
 mkdir -p reports
+export JOBS=8
 
 # TODO(mlumish): Add electron tests
 
