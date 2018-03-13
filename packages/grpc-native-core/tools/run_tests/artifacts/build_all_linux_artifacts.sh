@@ -21,6 +21,7 @@ cd $tool_dir/../../..
 base_dir=$(pwd)
 
 export ARTIFACTS_OUT=$base_dir/artifacts
+export JOBS=8
 
 rm -rf build || true
 
@@ -32,4 +33,4 @@ $tool_dir/build_artifact_node.sh
 
 $tool_dir/build_artifact_node_arm.sh
 
-docker run -e ARTIFACTS_OUT=/var/grpc/artifacts -v $base_dir:/var/grpc alpine_node_artifact bash -c /var/grpc/tools/run_tests/artifacts/build_artifact_node.sh --with-alpine
+docker run -e JOBS=8 -e ARTIFACTS_OUT=/var/grpc/artifacts -v $base_dir:/var/grpc alpine_node_artifact /var/grpc/tools/run_tests/artifacts/build_artifact_node.sh --with-alpine

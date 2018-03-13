@@ -16,12 +16,15 @@
 
 set -ex
 
-NODE_ALPINE_BUILD=false
+arch_list=( ia32 x64 )
+node_versions=( 4.0.0 5.0.0 6.0.0 7.0.0 8.0.0 9.0.0 )
+electron_versions=( 1.0.0 1.1.0 1.2.0 1.3.0 1.4.0 1.5.0 1.6.0 1.7.0 )
 
 while true ; do
   case $1 in
   --with-alpine)
-    NODE_ALPINE_BUILD=true
+    arch_list=( x64 )
+    electron_versions=( )
     ;;
   "")
     ;;
@@ -33,8 +36,6 @@ while true ; do
   shift || break
 done
 
-NODE_ALPINE_BUILD=$1
-
 umask 022
 
 cd $(dirname $0)/../../..
@@ -45,17 +46,11 @@ mkdir -p "${ARTIFACTS_OUT}"
 
 npm update
 
-arch_list=( ia32 x64 )
-
-node_versions=( 4.0.0 5.0.0 6.0.0 7.0.0 8.0.0 9.0.0 )
-
-electron_versions=( 1.0.0 1.1.0 1.2.0 1.3.0 1.4.0 1.5.0 1.6.0 1.7.0 )
-
 for arch in ${arch_list[@]}
 do
   for version in ${node_versions[@]}
   do
-    ./node_modules/.bin/node-pre-gyp configure rebuild package --target=$version --target_arch=$arch --grpc_alpine=$NODE_ALPINE_BUILD
+    ./node_modules/.bin/node-pre-gyp configure rebuild package --target=$version --target_arch=$arch
     cp -r build/stage/* "${ARTIFACTS_OUT}"/
   done
 
