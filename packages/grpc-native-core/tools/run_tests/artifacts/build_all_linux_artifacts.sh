@@ -13,9 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source ~/.nvm/nvm.sh
-
-nvm install 8
 set -ex
 
 cd $(dirname $0)

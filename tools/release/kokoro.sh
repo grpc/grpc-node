@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -ex
 cd $(dirname $0)/../..
 base_dir=$(pwd)
 
@@ -21,17 +21,19 @@ base_dir=$(pwd)
 git submodule update --init
 git submodule foreach --recursive git submodule update --init
 
+pip install mako
 ./packages/grpc-native-core/tools/buildgen/generate_projects.sh
 
 OS=`uname`
 
 case $OS in
 Linux)
+    sudo apt-get update
+    sudo apt-get install -y linux-libc-dev:i386 g++-aarch64-linux-gnu g++-arm-linux-gnueabihf
     ./packages/grpc-native-core/tools/run_tests/artifacts/build_all_linux_artifacts.sh
     mv packages/grpc-native-core/artifacts .
     ;;
 Darwin)
-    export ARTIFACTS_OUT=$(base_dir)/artifacts
-    ./packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_node.sh
+    ARTIFACTS_OUT=$base_dir/artifacts ./packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_node.sh
     ;;
 esac
