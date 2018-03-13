@@ -38,6 +38,8 @@ using Nan::ObjectWrap;
 using Nan::Persistent;
 using Nan::Utf8String;
 
+using v8::Array;
+using v8::Context;
 using v8::Exception;
 using v8::External;
 using v8::Function;
@@ -56,6 +58,43 @@ ChannelCredentials::ChannelCredentials(grpc_channel_credentials *credentials)
 
 ChannelCredentials::~ChannelCredentials() {
   grpc_channel_credentials_release(wrapped_credentials);
+}
+
+struct callback_md {
+    Nan::Callback *callback;
+};
+
+static int verify_peer_callback_wrapper(const char* servername, const char* cert, void* userdata) {
+  Nan::HandleScope scope;
+  Nan::TryCatch try_catch;
+  struct callback_md* md = (struct callback_md*)userdata;
+
+  const unsigned argc = 2;
+  Local<Value> argv[argc];
+  if (servername == NULL) {
+    argv[0] = Nan::Null();
+  } else {
+    argv[0] = Nan::New<v8::String>(servername).ToLocalChecked();
+  }
+  if (cert == NULL) {
+    argv[1] = Nan::Null();
+  } else {
+    argv[1] = Nan::New<v8::String>(cert).ToLocalChecked();
+  }
+
+  md->callback->Call(argc, argv);
+
+  if (try_catch.HasCaught()) {
+    return 1;
+  }
+
+  return 0;
+}
+
+static void verify_peer_callback_destruct(void *userdata) {
+  callback_md *md = (callback_md*)userdata;
+  delete md->callback;
+  delete md;
 }
 
 void ChannelCredentials::Init(Local<Object> exports) {
@@ -148,9 +187,42 @@ NAN_METHOD(ChannelCredentials::CreateSsl) {
         "createSsl's second and third arguments must be"
         " provided or omitted together");
   }
+
+  verify_peer_options verify_options = {NULL, NULL, NULL};
+  if (info.Length() >= 4 && info[3]->IsObject()) {
+    Local<Context> context = Nan::New<Context>();
+    Local<Object> object = info[3]->ToObject();
+    MaybeLocal<Array> maybe_props = object->GetOwnPropertyNames(context);
+    if (!maybe_props.IsEmpty()) {
+      Local<Array> props = maybe_props.ToLocalChecked();
+      for(uint32_t i=0; i < props->Length(); i++) {
+        Local<Value> key = props->Get(i);
+        Local<Value> value = object->Get(key);
+
+        if (key->IsString()) {
+          Nan::Utf8String keyStr(key->ToString());
+
+          if (strcmp("checkServerIdentity", (const char*)(*keyStr)) == 0) {
+
+            if (!value->IsFunction()) {
+                return Nan::ThrowError("Value of checkServerIdentity must be a function.");
+            }
+            struct callback_md *md = new struct callback_md;
+            md->callback = new Callback(Local<Function>::Cast(value));
+            verify_options.verify_peer_callback = verify_peer_callback_wrapper;
+            verify_options.verify_peer_callback_userdata = (void*)md;
+            verify_options.verify_peer_destruct = verify_peer_callback_destruct;
+
+          }
+        }
+        // do stuff with key / value
+      }
+    }
+  }
+
   grpc_channel_credentials *creds = grpc_ssl_credentials_create(
       root_certs.get(), private_key.isAssigned() ? &key_cert_pair : NULL,
-      NULL, NULL);
+      &verify_options, NULL);
   if (creds == NULL) {
     info.GetReturnValue().SetNull();
   } else {
