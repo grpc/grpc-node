@@ -20,6 +20,7 @@ PowerShell -Command .\install-nvm-windows.ps1
 SET NVM_HOME=%ROOT%nvm
 SET NVM_SYMLINK=%ROOT%nvm\nodejs
 SET PATH=%NVM_HOME%;%NVM_SYMLINK%;%PATH%
+SET JOBS=8
 
 nvm version
 
