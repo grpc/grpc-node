@@ -740,9 +740,14 @@ function _areBatchRequirementsMet(batch_ops, completed_ops) {
   var dependencies = _.flatMap(batch_ops, function(op) {
     return OP_DEPENDENCIES[op] || [];
   });
-  var dependencies_met = _.intersection(dependencies,
-                                        batch_ops.concat(completed_ops));
-  return _.isEqual(dependencies_met.sort(), dependencies.sort());
+  for (var i = 0; i < dependencies.length; i++) {
+    var required_dep = dependencies[i];
+    if (batch_ops.indexOf(required_dep) === -1 &&
+        completed_ops.indexOf(required_dep) === -1) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /**
