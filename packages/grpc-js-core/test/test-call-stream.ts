@@ -107,12 +107,12 @@ describe('CallStream', () => {
     const c = http2.constants;
     const s = Status;
     const errorCodeMapping = {
-      [c.NGHTTP2_NO_ERROR]: s.OK,
+      [c.NGHTTP2_NO_ERROR]: s.INTERNAL,
       [c.NGHTTP2_PROTOCOL_ERROR]: s.INTERNAL,
       [c.NGHTTP2_INTERNAL_ERROR]: s.INTERNAL,
       [c.NGHTTP2_FLOW_CONTROL_ERROR]: s.INTERNAL,
       [c.NGHTTP2_SETTINGS_TIMEOUT]: s.INTERNAL,
-      [c.NGHTTP2_STREAM_CLOSED]: s.INTERNAL,
+      [c.NGHTTP2_STREAM_CLOSED]: null,
       [c.NGHTTP2_FRAME_SIZE_ERROR]: s.INTERNAL,
       [c.NGHTTP2_REFUSED_STREAM]: s.UNAVAILABLE,
       [c.NGHTTP2_CANCEL]: s.CANCELLED,
@@ -124,23 +124,27 @@ describe('CallStream', () => {
     const keys = Object.keys(errorCodeMapping).map(key => Number(key));
     keys.forEach((key) => {
       const value = errorCodeMapping[key];
-      it(`for error code ${key}`, () => new Promise((resolve, reject) => {
-        const callStream = new Http2CallStream('foo', callStreamArgs, filterStackFactory);
-        const http2Stream = new ClientHttp2StreamMock({
-          payload: Buffer.alloc(0),
-          frameLengths: []
+      // A null value indicates: behavior isn't specified, so skip this test.
+      let maybeSkip = (fn: typeof it) => value ? fn : fn.skip;
+      maybeSkip(it)(`for error code ${key}`, () => {
+        return new Promise((resolve, reject) => {
+          const callStream = new Http2CallStream('foo', callStreamArgs, filterStackFactory);
+          const http2Stream = new ClientHttp2StreamMock({
+            payload: Buffer.alloc(0),
+            frameLengths: []
+          });
+          callStream.attachHttp2Stream(http2Stream);
+          callStream.once('status', (status) => {
+            try {
+              assert.strictEqual(status.code, value);
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          });
+          http2Stream.emit('close', Number(key));
         });
-        callStream.attachHttp2Stream(http2Stream);
-        callStream.once('status', (status) => {
-          try {
-            assert.strictEqual(status.code, value);
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
-        });
-        http2Stream.emit('close', Number(key));
-      }));
+      });
     });
   });
 
