@@ -7,19 +7,19 @@ import {CallCredentials} from './call-credentials';
  * as a set of per-call credentials, which are applied to every method call made
  * over a channel initialized with an instance of this class.
  */
-export interface ChannelCredentials<T extends {} = {}> {
+export interface ChannelCredentials {
   /**
    * Returns a copy of this object with the included set of per-call credentials
    * expanded to include callCredentials.
    * @param callCredentials A CallCredentials object to associate with this
    * instance.
    */
-  compose<S>(callCredentials: CallCredentials<S>): ChannelCredentials<S&T>;
+  compose(callCredentials: CallCredentials): ChannelCredentials;
 
   /**
    * Gets the set of per-call credentials associated with this instance.
    */
-  getCallCredentials(): CallCredentials<T>;
+  getCallCredentials(): CallCredentials;
 
   /**
    * Gets a SecureContext object generated from input parameters if this
@@ -29,28 +29,28 @@ export interface ChannelCredentials<T extends {} = {}> {
   getSecureContext(): SecureContext|null;
 }
 
-abstract class ChannelCredentialsImpl<T> implements ChannelCredentials<T> {
-  protected callCredentials: CallCredentials<T>;
+abstract class ChannelCredentialsImpl implements ChannelCredentials {
+  protected callCredentials: CallCredentials;
 
-  protected constructor(callCredentials?: CallCredentials<T>) {
+  protected constructor(callCredentials?: CallCredentials) {
     this.callCredentials = callCredentials || CallCredentials.createEmpty();
   }
 
-  abstract compose<S>(callCredentials: CallCredentials<S>): ChannelCredentialsImpl<S&T>;
+  abstract compose(callCredentials: CallCredentials): ChannelCredentialsImpl;
 
-  getCallCredentials(): CallCredentials<T> {
+  getCallCredentials(): CallCredentials {
     return this.callCredentials;
   }
 
   abstract getSecureContext(): SecureContext|null;
 }
 
-class InsecureChannelCredentialsImpl<T> extends ChannelCredentialsImpl<T> {
-  constructor(callCredentials?: CallCredentials<T>) {
+class InsecureChannelCredentialsImpl extends ChannelCredentialsImpl {
+  constructor(callCredentials?: CallCredentials) {
     super(callCredentials);
   }
 
-  compose<S>(callCredentials: CallCredentials<S>): ChannelCredentialsImpl<S&T> {
+  compose(callCredentials: CallCredentials): ChannelCredentialsImpl {
     throw new Error('Cannot compose insecure credentials');
   }
 
@@ -59,15 +59,15 @@ class InsecureChannelCredentialsImpl<T> extends ChannelCredentialsImpl<T> {
   }
 }
 
-class SecureChannelCredentialsImpl<T> extends ChannelCredentialsImpl<T> {
+class SecureChannelCredentialsImpl extends ChannelCredentialsImpl {
   secureContext: SecureContext;
 
-  constructor(secureContext: SecureContext, callCredentials?: CallCredentials<T>) {
+  constructor(secureContext: SecureContext, callCredentials?: CallCredentials) {
     super(callCredentials);
     this.secureContext = secureContext;
   }
 
-  compose<S>(callCredentials: CallCredentials<S>): ChannelCredentialsImpl<S&T> {
+  compose(callCredentials: CallCredentials): ChannelCredentialsImpl {
     const combinedCallCredentials =
         this.callCredentials.compose(callCredentials);
     return new SecureChannelCredentialsImpl(
@@ -86,6 +86,7 @@ function verifyIsBufferOrNull(obj: any, friendlyName: string): void {
 }
 
 export namespace ChannelCredentials {
+
   /**
    * Return a new ChannelCredentials instance with a given set of credentials.
    * The resulting instance can be used to construct a Channel that communicates
@@ -96,7 +97,7 @@ export namespace ChannelCredentials {
    */
   export function createSsl(
       rootCerts?: Buffer|null, privateKey?: Buffer|null,
-      certChain?: Buffer|null): ChannelCredentials<{}> {
+      certChain?: Buffer|null): ChannelCredentials {
     verifyIsBufferOrNull(rootCerts, 'Root certificate');
     verifyIsBufferOrNull(privateKey, 'Private key');
     verifyIsBufferOrNull(certChain, 'Certificate chain');
@@ -119,7 +120,7 @@ export namespace ChannelCredentials {
   /**
    * Return a new ChannelCredentials instance with no credentials.
    */
-  export function createInsecure(): ChannelCredentials<{}> {
+  export function createInsecure(): ChannelCredentials {
     return new InsecureChannelCredentialsImpl();
   }
 }

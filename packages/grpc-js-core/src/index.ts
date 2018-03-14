@@ -8,10 +8,8 @@ import { Metadata } from './metadata';
 import { IncomingHttpHeaders } from 'http';
 
 export interface OAuth2Client {
-  getRequestMetadata: (url: string) => Promise<{ Authorization: string }>;
+  getRequestMetadata: (url: string, callback: (err: Error|null, headers?: { Authorization: string }) => void) => void;
 }
-
-export type GoogleCallCredentials = CallCredentials<{ service_url: string }>;
 
 /**** Client Credentials ****/
 
@@ -22,18 +20,17 @@ export const credentials = Object.assign({
    * @param googleCredentials The authentication client to use.
    * @return The resulting CallCredentials object.
    */
-  createFromGoogleCredential: (googleCredentials: OAuth2Client): GoogleCallCredentials => {
-    return CallCredentials.createFromMetadataGenerator(async (options, callback) => {
-      let header;
-      try {
-        header = await googleCredentials.getRequestMetadata(options.service_url);
-      } catch (err) {
-        callback(err);
-        return;
-      }
-      const metadata = new Metadata();
-      metadata.add('authorization', header.Authorization);
-      callback(null, metadata);
+  createFromGoogleCredential: (googleCredentials: OAuth2Client): CallCredentials => {
+    return CallCredentials.createFromMetadataGenerator((options, callback) => {
+      googleCredentials.getRequestMetadata(options.service_url!, (err, headers) => {
+        if (err) {
+          callback(err);
+          return;
+        }
+        const metadata = new Metadata();
+        metadata.add('authorization', headers!.Authorization);
+        callback(null, metadata);
+      });
     });
   },
 
@@ -44,9 +41,9 @@ export const credentials = Object.assign({
    * @param callCredentials Any number of CallCredentials objects.
    * @return The resulting ChannelCredentials object.
    */
-  combineChannelCredentials: <S, T>(
-      channelCredentials: ChannelCredentials<S>,
-      ...callCredentials: CallCredentials<T>[]): ChannelCredentials<S&T> => {
+  combineChannelCredentials: (
+      channelCredentials: ChannelCredentials,
+      ...callCredentials: CallCredentials[]): ChannelCredentials => {
     return callCredentials.reduce((acc, other) => acc.compose(other), channelCredentials);
   },
 
@@ -56,9 +53,9 @@ export const credentials = Object.assign({
    * @param additional Any number of additional CallCredentials objects.
    * @return The resulting CallCredentials object.
    */
-  combineCallCredentials: <S, T>(
-      first: CallCredentials<S>,
-      ...additional: CallCredentials<T>[]): CallCredentials<S&T> => {
+  combineCallCredentials: (
+      first: CallCredentials,
+      ...additional: CallCredentials[]): CallCredentials => {
     return additional.reduce((acc, other) => acc.compose(other), first);
   }
 }, ChannelCredentials, CallCredentials);
