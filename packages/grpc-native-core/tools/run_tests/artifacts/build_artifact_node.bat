@@ -20,6 +20,8 @@ set electron_versions=1.0.0 1.1.0 1.2.0 1.3.0 1.4.0 1.5.0 1.6.0 1.7.0 1.8.0
 
 set PATH=%PATH%;C:\Program Files\nodejs\;%APPDATA%\npm
 
+set JOBS=8
+
 del /f /q BUILD || rmdir build /s /q
 
 call npm update || goto :error
