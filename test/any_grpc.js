@@ -11,7 +11,6 @@ function getImplementation(globalField) {
       'If running from the command line, please --require a fixture first.'
     ].join(' '));
   }
-  console.error(globalField, global[globalField]);
   const impl = global[globalField];
   return require(`../packages/grpc-${impl}-core`);
 }

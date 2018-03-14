@@ -239,20 +239,18 @@ export class Http2Channel extends EventEmitter implements Channel {
         headers[HTTP2_HEADER_METHOD] = 'POST';
         headers[HTTP2_HEADER_PATH] = methodName;
         headers[HTTP2_HEADER_TE] = 'trailers';
-        if (stream.getStatus() === null) {
-          if (this.connectivityState === ConnectivityState.READY) {
-            const session: http2.ClientHttp2Session = this.subChannel!;
-            // Prevent the HTTP/2 session from keeping the process alive.
-            // Note: this function is only available in Node 9
-            session.unref();
-            stream.attachHttp2Stream(session.request(headers));
-          } else {
-            /* In this case, we lost the connection while finalizing
-              * metadata. That should be very unusual */
-            setImmediate(() => {
-              this.startHttp2Stream(methodName, stream, metadata);
-            });
-          }
+        if (this.connectivityState === ConnectivityState.READY) {
+          const session: http2.ClientHttp2Session = this.subChannel!;
+          // Prevent the HTTP/2 session from keeping the process alive.
+          // Note: this function is only available in Node 9
+          session.unref();
+          stream.attachHttp2Stream(session.request(headers));
+        } else {
+          /* In this case, we lost the connection while finalizing
+           * metadata. That should be very unusual */
+          setImmediate(() => {
+            this.startHttp2Stream(methodName, stream, metadata);
+          });
         }
       }).catch((error: Error & { code: number }) => {
         // We assume the error code isn't 0 (Status.OK)
