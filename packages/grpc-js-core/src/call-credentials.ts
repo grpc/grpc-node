@@ -2,7 +2,7 @@ import {map, reduce} from 'lodash';
 
 import {Metadata} from './metadata';
 
-export type CallMetadataOptions = { service_url?: string; };
+export type CallMetadataOptions = { service_url: string; };
 
 export type CallMetadataGenerator =
     (options: CallMetadataOptions, cb: (err: Error|null, metadata?: Metadata) => void) =>

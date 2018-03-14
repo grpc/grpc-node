@@ -22,7 +22,7 @@ export const credentials = Object.assign({
    */
   createFromGoogleCredential: (googleCredentials: OAuth2Client): CallCredentials => {
     return CallCredentials.createFromMetadataGenerator((options, callback) => {
-      googleCredentials.getRequestMetadata(options.service_url!, (err, headers) => {
+      googleCredentials.getRequestMetadata(options.service_url, (err, headers) => {
         if (err) {
           callback(err);
           return;
