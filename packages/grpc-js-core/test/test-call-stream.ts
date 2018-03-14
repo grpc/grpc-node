@@ -103,16 +103,16 @@ describe('CallStream', () => {
     assert2.afterMustCallsSatisfied(done);
   });
 
-  it('should end a call with an error if a stream was closed', (done) => {
+  describe('should end a call with an error if a stream was closed', () => {
     const c = http2.constants;
     const s = Status;
     const errorCodeMapping = {
-      [c.NGHTTP2_NO_ERROR]: s.INTERNAL,
+      [c.NGHTTP2_NO_ERROR]: s.OK,
       [c.NGHTTP2_PROTOCOL_ERROR]: s.INTERNAL,
       [c.NGHTTP2_INTERNAL_ERROR]: s.INTERNAL,
       [c.NGHTTP2_FLOW_CONTROL_ERROR]: s.INTERNAL,
       [c.NGHTTP2_SETTINGS_TIMEOUT]: s.INTERNAL,
-      [c.NGHTTP2_STREAM_CLOSED]: null,
+      [c.NGHTTP2_STREAM_CLOSED]: s.INTERNAL,
       [c.NGHTTP2_FRAME_SIZE_ERROR]: s.INTERNAL,
       [c.NGHTTP2_REFUSED_STREAM]: s.UNAVAILABLE,
       [c.NGHTTP2_CANCEL]: s.CANCELLED,
@@ -121,21 +121,27 @@ describe('CallStream', () => {
       [c.NGHTTP2_ENHANCE_YOUR_CALM]: s.RESOURCE_EXHAUSTED,
       [c.NGHTTP2_INADEQUATE_SECURITY]: s.PERMISSION_DENIED
     };
-    forOwn(errorCodeMapping, (value: Status | null, key) => {
-      const callStream = new Http2CallStream('foo', callStreamArgs, filterStackFactory);
-      const http2Stream = new ClientHttp2StreamMock({
-        payload: Buffer.alloc(0),
-        frameLengths: []
-      });
-      callStream.attachHttp2Stream(http2Stream);
-      if (value !== null) {
-        callStream.once('status', assert2.mustCall((status) => {
-          assert.strictEqual(status.code, value);
-        }));
-      }
-      http2Stream.emit('streamClosed', Number(key));
+    const keys = Object.keys(errorCodeMapping).map(key => Number(key));
+    keys.forEach((key) => {
+      const value = errorCodeMapping[key];
+      it(`for error code ${key}`, () => new Promise((resolve, reject) => {
+        const callStream = new Http2CallStream('foo', callStreamArgs, filterStackFactory);
+        const http2Stream = new ClientHttp2StreamMock({
+          payload: Buffer.alloc(0),
+          frameLengths: []
+        });
+        callStream.attachHttp2Stream(http2Stream);
+        callStream.once('status', (status) => {
+          try {
+            assert.strictEqual(status.code, value);
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        });
+        http2Stream.emit('close', Number(key));
+      }));
     });
-    assert2.afterMustCallsSatisfied(done);
   });
 
   it('should have functioning getters', (done) => {
