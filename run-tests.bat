@@ -51,7 +51,7 @@ for %%v in (4 6 7 8 9) do (
 
   call .\node_modules\.bin\gulp clean.all || SET FAILED=1
   call .\node_modules\.bin\gulp setup.windows || SET FAILED=1
-  call .\node_modules\.bin\gulp native.test || SET FAILED=1
+  call .\node_modules\.bin\gulp test || SET FAILED=1
 )
 
 node merge_kokoro_logs.js
