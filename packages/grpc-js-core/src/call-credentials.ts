@@ -2,33 +2,33 @@ import {map, reduce} from 'lodash';
 
 import {Metadata} from './metadata';
 
-export type CallMetadataGenerator =
-    (options: {}, cb: (err: Error|null, metadata?: Metadata) => void) =>
+export type CallMetadataGenerator<T extends {} = {}> =
+    (options: T, cb: (err: Error|null, metadata?: Metadata) => void) =>
         void;
 
 /**
  * A class that represents a generic method of adding authentication-related
  * metadata on a per-request basis.
  */
-export interface CallCredentials {
+export interface CallCredentials<T extends {} = {}> {
   /**
    * Asynchronously generates a new Metadata object.
    * @param options Options used in generating the Metadata object.
    */
-  generateMetadata(options: {}): Promise<Metadata>;
+  generateMetadata(options: T): Promise<Metadata>;
   /**
    * Creates a new CallCredentials object from properties of both this and
    * another CallCredentials object. This object's metadata generator will be
    * called first.
    * @param callCredentials The other CallCredentials object.
    */
-  compose(callCredentials: CallCredentials): CallCredentials;
+  compose<S>(callCredentials: CallCredentials<S>): CallCredentials<S&T>;
 }
 
-class ComposedCallCredentials implements CallCredentials {
-  constructor(private creds: CallCredentials[]) {}
+class ComposedCallCredentials<T> implements CallCredentials<T> {
+  constructor(private creds: CallCredentials<T>[]) {}
 
-  async generateMetadata(options: {}): Promise<Metadata> {
+  async generateMetadata(options: T): Promise<Metadata> {
     let base: Metadata = new Metadata();
     let generated: Metadata[] = await Promise.all(
         map(this.creds, (cred) => cred.generateMetadata(options)));
@@ -38,15 +38,15 @@ class ComposedCallCredentials implements CallCredentials {
     return base;
   }
 
-  compose(other: CallCredentials): CallCredentials {
-    return new ComposedCallCredentials(this.creds.concat([other]));
+  compose<S>(other: CallCredentials<S>): CallCredentials<S&T> {
+    return new ComposedCallCredentials<S&T>([...this.creds, other]);
   }
 }
 
-class SingleCallCredentials implements CallCredentials {
-  constructor(private metadataGenerator: CallMetadataGenerator) {}
+class SingleCallCredentials<T> implements CallCredentials<T> {
+  constructor(private metadataGenerator: CallMetadataGenerator<T>) {}
 
-  generateMetadata(options: {}): Promise<Metadata> {
+  generateMetadata(options: T): Promise<Metadata> {
     return new Promise<Metadata>((resolve, reject) => {
       this.metadataGenerator(options, (err, metadata) => {
         if (metadata !== undefined) {
@@ -58,17 +58,17 @@ class SingleCallCredentials implements CallCredentials {
     });
   }
 
-  compose(other: CallCredentials): CallCredentials {
-    return new ComposedCallCredentials([this, other]);
+  compose<S>(other: CallCredentials<S>): CallCredentials<S&T> {
+    return new ComposedCallCredentials<S&T>([this, other]);
   }
 }
 
-class EmptyCallCredentials implements CallCredentials {
+class EmptyCallCredentials implements CallCredentials<{}> {
   generateMetadata(options: {}): Promise<Metadata> {
     return Promise.resolve(new Metadata());
   }
 
-  compose(other: CallCredentials): CallCredentials {
+  compose<S>(other: CallCredentials<S>): CallCredentials<S> {
     return other;
   }
 }
@@ -81,12 +81,12 @@ export namespace CallCredentials {
    * generates a Metadata object based on these options, which is passed back
    * to the caller via a supplied (err, metadata) callback.
    */
-  export function createFromMetadataGenerator(
-      metadataGenerator: CallMetadataGenerator): CallCredentials {
+  export function createFromMetadataGenerator<T>(
+      metadataGenerator: CallMetadataGenerator<T>): CallCredentials<T> {
     return new SingleCallCredentials(metadataGenerator);
   }
 
-  export function createEmpty(): CallCredentials {
+  export function createEmpty(): CallCredentials<{}> {
     return new EmptyCallCredentials();
   }
 }
