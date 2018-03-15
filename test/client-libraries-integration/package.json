@@ -1,0 +1,9 @@
+{
+  "name": "grpc-client-libraries-integration",
+  "version": "0.0.1",
+  "description": "",
+  "dependencies": {
+    "mocha": "^5.0.4",
+    "shimmer": "^1.2.0"
+  }
+}

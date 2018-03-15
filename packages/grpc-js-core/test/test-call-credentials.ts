@@ -5,18 +5,6 @@ import {Metadata} from '../src/metadata';
 
 // Metadata generators
 
-function makeGenerator(props: Array<string>): CallMetadataGenerator {
-  return (options: {[propName: string]: string}, cb) => {
-    const metadata: Metadata = new Metadata();
-    props.forEach((prop) => {
-      if (options[prop]) {
-        metadata.add(prop, options[prop]);
-      }
-    });
-    cb(null, metadata);
-  };
-}
-
 function makeAfterMsElapsedGenerator(ms: number): CallMetadataGenerator {
   return (options, cb) => {
     const metadata = new Metadata();
@@ -25,7 +13,11 @@ function makeAfterMsElapsedGenerator(ms: number): CallMetadataGenerator {
   };
 }
 
-const generateFromName: CallMetadataGenerator = makeGenerator(['name']);
+const generateFromServiceURL: CallMetadataGenerator = (options, cb) => {
+  const metadata: Metadata = new Metadata();
+  metadata.add('service_url', options.service_url);
+  cb(null, metadata);
+};
 const generateWithError: CallMetadataGenerator = (options, cb) =>
     cb(new Error());
 
@@ -35,16 +27,16 @@ describe('CallCredentials', () => {
   describe('createFromMetadataGenerator', () => {
     it('should accept a metadata generator', () => {
       assert.doesNotThrow(
-          () => CallCredentials.createFromMetadataGenerator(generateFromName));
+          () => CallCredentials.createFromMetadataGenerator(generateFromServiceURL));
     });
   });
 
   describe('compose', () => {
     it('should accept a CallCredentials object and return a new object', () => {
       const callCredentials1 =
-          CallCredentials.createFromMetadataGenerator(generateFromName);
+          CallCredentials.createFromMetadataGenerator(generateFromServiceURL);
       const callCredentials2 =
-          CallCredentials.createFromMetadataGenerator(generateFromName);
+          CallCredentials.createFromMetadataGenerator(generateFromServiceURL);
       const combinedCredentials = callCredentials1.compose(callCredentials2);
       assert.notEqual(combinedCredentials, callCredentials1);
       assert.notEqual(combinedCredentials, callCredentials2);
@@ -52,9 +44,9 @@ describe('CallCredentials', () => {
 
     it('should be chainable', () => {
       const callCredentials1 =
-          CallCredentials.createFromMetadataGenerator(generateFromName);
+          CallCredentials.createFromMetadataGenerator(generateFromServiceURL);
       const callCredentials2 =
-          CallCredentials.createFromMetadataGenerator(generateFromName);
+          CallCredentials.createFromMetadataGenerator(generateFromServiceURL);
       assert.doesNotThrow(() => {
         callCredentials1.compose(callCredentials2)
             .compose(callCredentials2)
@@ -67,14 +59,14 @@ describe('CallCredentials', () => {
     it('should call the function passed to createFromMetadataGenerator',
        async () => {
          const callCredentials =
-             CallCredentials.createFromMetadataGenerator(generateFromName);
+             CallCredentials.createFromMetadataGenerator(generateFromServiceURL);
          let metadata: Metadata;
          try {
-           metadata = await callCredentials.generateMetadata({name: 'foo'});
+           metadata = await callCredentials.generateMetadata({service_url: 'foo'});
          } catch (err) {
            throw err;
          }
-         assert.deepEqual(metadata.get('name'), ['foo']);
+         assert.deepEqual(metadata.get('service_url'), ['foo']);
        });
 
     it('should emit an error if the associated metadataGenerator does',
@@ -83,7 +75,7 @@ describe('CallCredentials', () => {
              CallCredentials.createFromMetadataGenerator(generateWithError);
          let metadata: Metadata|null = null;
          try {
-           metadata = await callCredentials.generateMetadata({});
+           metadata = await callCredentials.generateMetadata({service_url: ''});
          } catch (err) {
            assert.ok(err instanceof Error);
          }
@@ -115,13 +107,12 @@ describe('CallCredentials', () => {
           expected: ['150', '200', '50', '100']
         }
       ];
-      const options = {};
       // Try each test case and make sure the msElapsed field is as expected
       await Promise.all(testCases.map(async (testCase) => {
         const {credentials, expected} = testCase;
         let metadata: Metadata;
         try {
-          metadata = await credentials.generateMetadata(options);
+          metadata = await credentials.generateMetadata({service_url: ''});
         } catch (err) {
           throw err;
         }

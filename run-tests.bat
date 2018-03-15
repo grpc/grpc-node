@@ -20,6 +20,7 @@ PowerShell -Command .\install-nvm-windows.ps1
 SET NVM_HOME=%ROOT%nvm
 SET NVM_SYMLINK=%ROOT%nvm\nodejs
 SET PATH=%NVM_HOME%;%NVM_SYMLINK%;%PATH%
+SET JOBS=8
 
 nvm version
 
@@ -34,6 +35,7 @@ SET FAILED=0
 for %%v in (4.8.4 6.11.3 7.9.0 8.5.0) do (
   nvm install %%v
   nvm use %%v
+  npm install -g npm
   node -e "console.log(process.versions)"
 
   SET JUNIT_REPORT_PATH=reports/node%%v/

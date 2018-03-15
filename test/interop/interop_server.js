@@ -22,11 +22,16 @@ var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
 var AsyncDelayQueue = require('./async_delay_queue');
-// TODO(murgatroid99): use multiple grpc implementations
-var grpc = require('grpc');
-var testProto = grpc.load({
-  root: __dirname + '/../../packages/grpc-native-core/deps/grpc',
-  file: 'src/proto/grpc/testing/test.proto'}).grpc.testing;
+var grpc = require('../any_grpc').server;
+// TODO(murgatroid99): do this import more cleanly
+var protoLoader = require('../../packages/grpc-protobufjs');
+var protoPackage = protoLoader.loadSync(
+    'src/proto/grpc/testing/test.proto',
+    {keepCase: true,
+     defaults: true,
+     enums: String,
+     include: [__dirname + '/../../packages/grpc-native-core/deps/grpc']});
+var testProto = grpc.loadPackageDefinition(protoPackage).grpc.testing;
 
 var ECHO_INITIAL_KEY = 'x-grpc-test-echo-initial';
 var ECHO_TRAILING_KEY = 'x-grpc-test-echo-trailing-bin';

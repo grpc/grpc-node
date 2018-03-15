@@ -132,7 +132,7 @@ Metadata.prototype.getMap = function() {
 
 /**
  * Clone the metadata object.
- * @return {Metadata} The new cloned object
+ * @return {grpc.Metadata} The new cloned object
  */
 Metadata.prototype.clone = function() {
   var copy = new Metadata();

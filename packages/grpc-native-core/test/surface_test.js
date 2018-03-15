@@ -21,10 +21,10 @@
 var assert = require('assert');
 var _ = require('lodash');
 
-var grpc = require('grpc');
+var grpc = require('..');
 
 var MathClient = grpc.load(
-    __dirname + '/../../packages/grpc-native-core/deps/grpc/src/proto/math/math.proto').math.Math;
+    __dirname + '/../deps/grpc/src/proto/math/math.proto').math.Math;
 var mathServiceAttrs = MathClient.service;
 
 /**
@@ -485,7 +485,7 @@ describe('Echo metadata', function() {
     call.end();
   });
   it('shows the correct user-agent string', function(done) {
-    var version = require('grpc/package.json').version;
+    var version = require('../package.json').version;
     var call = client.unary({}, metadata,
                             function(err, data) { assert.ifError(err); });
     call.on('metadata', function(metadata) {
@@ -504,6 +504,116 @@ describe('Echo metadata', function() {
       assert.deepEqual(_.xor(dup_metadata.get('key'), resp_metadata.get('key')),
                        []);
       done();
+    });
+  });
+  describe('Call argument handling', function() {
+    describe('Unary call', function() {
+      it('Should handle undefined options', function(done) {
+        var call = client.unary({}, metadata, undefined, function(err, data) {
+          assert.ifError(err);
+        });
+        call.on('metadata', function(metadata) {
+          assert.deepEqual(metadata.get('key'), ['value']);
+          done();
+        });
+      });
+      it('Should handle two undefined arguments', function(done) {
+        var call = client.unary({}, undefined, undefined, function(err, data) {
+          assert.ifError(err);
+        });
+        call.on('metadata', function(metadata) {
+          done();
+        });
+      });
+      it('Should handle one undefined argument', function(done) {
+        var call = client.unary({}, undefined, function(err, data) {
+          assert.ifError(err);
+        });
+        call.on('metadata', function(metadata) {
+          done();
+        });
+      });
+    });
+    describe('Client stream call', function() {
+      it('Should handle undefined options', function(done) {
+        var call = client.clientStream(metadata, undefined, function(err, data) {
+          assert.ifError(err);
+        });
+        call.on('metadata', function(metadata) {
+          assert.deepEqual(metadata.get('key'), ['value']);
+          done();
+        });
+        call.end();
+      });
+      it('Should handle two undefined arguments', function(done) {
+        var call = client.clientStream(undefined, undefined, function(err, data) {
+          assert.ifError(err);
+        });
+        call.on('metadata', function(metadata) {
+          done();
+        });
+        call.end();
+      });
+      it('Should handle one undefined argument', function(done) {
+        var call = client.clientStream(undefined, function(err, data) {
+          assert.ifError(err);
+        });
+        call.on('metadata', function(metadata) {
+          done();
+        });
+        call.end();
+      });
+    });
+    describe('Server stream call', function() {
+      it('Should handle undefined options', function(done) {
+        var call = client.serverStream({}, metadata, undefined);
+        call.on('data', function() {});
+        call.on('metadata', function(metadata) {
+          assert.deepEqual(metadata.get('key'), ['value']);
+          done();
+        });
+      });
+      it('Should handle two undefined arguments', function(done) {
+        var call = client.serverStream({}, undefined, undefined);
+        call.on('data', function() {});
+        call.on('metadata', function(metadata) {
+          done();
+        });
+      });
+      it('Should handle one undefined argument', function(done) {
+        var call = client.serverStream({}, undefined);
+        call.on('data', function() {});
+        call.on('metadata', function(metadata) {
+          done();
+        });
+      });
+    });
+    describe('Bidi stream call', function() {
+      it('Should handle undefined options', function(done) {
+        var call = client.bidiStream(metadata, undefined);
+        call.on('data', function() {});
+        call.on('metadata', function(metadata) {
+          assert.deepEqual(metadata.get('key'), ['value']);
+          done();
+        });
+        call.end();
+      });
+      it('Should handle two undefined arguments', function(done) {
+        var call = client.bidiStream(undefined, undefined);
+        call.on('data', function() {});
+        call.on('metadata', function(metadata) {
+          done();
+        });
+        call.end();
+      });
+      it('Should handle one undefined argument', function(done) {
+        var call = client.bidiStream(undefined);
+        call.on('data', function() {});
+        call.on('metadata', function(metadata) {
+          done();
+        });
+        call.end();
+      });
     });
   });
 });
@@ -981,7 +1091,7 @@ describe('Other conditions', function() {
       client.unary({error: true}, function(err, data) {
         assert(err);
         assert.strictEqual(err.code, grpc.status.UNKNOWN);
-        assert.strictEqual(err.message, 'Requested error');
+        assert.strictEqual(err.details, 'Requested error');
         done();
       });
     });
@@ -989,7 +1099,7 @@ describe('Other conditions', function() {
       var call = client.clientStream(function(err, data) {
         assert(err);
         assert.strictEqual(err.code, grpc.status.UNKNOWN);
-        assert.strictEqual(err.message, 'Requested error');
+        assert.strictEqual(err.details, 'Requested error');
         done();
       });
       call.write({error: false});
@@ -1001,7 +1111,7 @@ describe('Other conditions', function() {
       call.on('data', function(){});
       call.on('error', function(error) {
         assert.strictEqual(error.code, grpc.status.UNKNOWN);
-        assert.strictEqual(error.message, 'Requested error');
+        assert.strictEqual(error.details, 'Requested error');
         done();
       });
     });
@@ -1013,7 +1123,7 @@ describe('Other conditions', function() {
       call.on('data', function(){});
       call.on('error', function(error) {
         assert.strictEqual(error.code, grpc.status.UNKNOWN);
-        assert.strictEqual(error.message, 'Requested error');
+        assert.strictEqual(error.details, 'Requested error');
         done();
       });
     });

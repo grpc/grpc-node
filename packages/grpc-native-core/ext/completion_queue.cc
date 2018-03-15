@@ -35,7 +35,7 @@ grpc_completion_queue *queue;
 uv_prepare_t prepare;
 int pending_batches;
 
-void drain_completion_queue(uv_prepare_t *handle) {
+static void drain_completion_queue(uv_prepare_t *handle) {
   Nan::HandleScope scope;
   grpc_event event;
   (void)handle;
@@ -53,9 +53,9 @@ void drain_completion_queue(uv_prepare_t *handle) {
       CompleteTag(event.tag, error_message);
       grpc::node::DestroyTag(event.tag);
       pending_batches--;
-      if (pending_batches == 0) {
-        uv_prepare_stop(&prepare);
-      }
+    }
+    if (pending_batches == 0) {
+      uv_prepare_stop(&prepare);
     }
   } while (event.type != GRPC_QUEUE_TIMEOUT);
 }
@@ -64,7 +64,6 @@ grpc_completion_queue *GetCompletionQueue() { return queue; }
 
 void CompletionQueueNext() {
   if (pending_batches == 0) {
-    GPR_ASSERT(!uv_is_active((uv_handle_t *)&prepare));
     uv_prepare_start(&prepare, drain_completion_queue);
   }
   pending_batches++;
@@ -74,6 +73,16 @@ void CompletionQueueInit(Local<Object> exports) {
   queue = grpc_completion_queue_create_for_next(NULL);
   uv_prepare_init(uv_default_loop(), &prepare);
   pending_batches = 0;
+}
+
+void CompletionQueueForcePoll() {
+  /* This sets the prepare object to poll on the completion queue the next time
+   * Node polls for IO. But it doesn't increment the number of pending batches,
+   * so it will immediately stop polling after that unless there is an
+   * intervening CompletionQueueNext call */
+  if (pending_batches == 0) {
+    uv_prepare_start(&prepare, drain_completion_queue);
+  }
 }
 
 }  // namespace node

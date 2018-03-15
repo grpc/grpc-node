@@ -2,7 +2,7 @@
 --- |
   {
     "name": "grpc",
-    "version": "${settings.node_version}",
+    "version": "${settings.get('node_version', settings.version)}",
     "author": "Google Inc.",
     "description": "gRPC Library for Node",
     "homepage": "https://grpc.io/",
@@ -18,13 +18,11 @@
       }
     ],
     "directories": {
-      "lib": "src/node/src"
+      "lib": "src"
     },
     "scripts": {
-      "lint": "node ./node_modules/jshint/bin/jshint src test index.js --exclude-path=.jshintignore",
-      "test": "./node_modules/.bin/mocha test && npm run-script lint",
+      "build": "./node_modules/.bin/node-pre-gyp build",
       "electron-build": "./node_modules/.bin/node-pre-gyp configure build --runtime=electron --disturl=https://atom.io/download/atom-shell",
-      "gen_docs": "./node_modules/.bin/jsdoc -c jsdoc_conf.json",
       "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test",
       "install": "./node_modules/.bin/node-pre-gyp install --fallback-to-build --library=static_library"
     },
@@ -32,10 +30,9 @@
       "node-pre-gyp"
     ],
     "dependencies": {
-      "arguejs": "^0.2.3",
       "lodash": "^4.15.0",
       "nan": "^2.0.0",
-      "node-pre-gyp": "^0.6.35",
+      "node-pre-gyp": "^0.9.0",
       "protobufjs": "^5.0.0"
     },
     "devDependencies": {
@@ -46,11 +43,8 @@
       "google-auth-library": "^0.9.2",
       "google-protobuf": "^3.0.0",
       "istanbul": "^0.4.4",
-      "jsdoc": "^3.3.2",
-      "jshint": "^2.5.0",
+      "lodash": "^4.17.4",
       "minimist": "^1.1.0",
-      "mocha": "^3.0.2",
-      "mocha-jenkins-reporter": "^0.2.3",
       "poisson-process": "^0.2.1"
     },
     "engines": {
@@ -58,29 +52,32 @@
     },
     "binary": {
       "module_name": "grpc_node",
-      "module_path": "src/node/extension_binary/{node_abi}-{platform}-{arch}",
+      "module_path": "src/node/extension_binary/{node_abi}-{platform}-{arch}-{libc}",
       "host": "https://storage.googleapis.com/",
       "remote_path": "grpc-precompiled-binaries/node/{name}/v{version}",
-      "package_name": "{node_abi}-{platform}-{arch}.tar.gz"
+      "package_name": "{node_abi}-{platform}-{arch}-{libc}.tar.gz"
     },
     "files": [
       "LICENSE",
       "README.md",
-      "deps/grpc/src/proto",
-      "deps/grpc/etc",
+      "deps/grpc/etc/",
       "index.js",
-      "src",
-      "ext",
-      "deps/grpc/include/grpc",
-      "deps/grpc/src/core",
-      "deps/grpc/src/boringssl",
-      "deps/grpc/src/zlib",
-      "deps/grpc/third_party/nanopb",
-      "deps/grpc/third_party/zlib",
-      "deps/grpc/third_party/boringssl",
+      "index.d.ts",
+      "src/*.js",
+      "ext/*.{cc,h}",
+      "deps/grpc/include/grpc/**/*.h",
+      "deps/grpc/src/core/**/*.{c,cc,h}",
+      "deps/grpc/src/boringssl/*.{c,cc,h}",
+      "deps/grpc/third_party/nanopb/*.{c,cc,h}",
+      "deps/grpc/third_party/zlib/**/*.{c,cc,h}",
+      "deps/grpc/third_party/boringssl/crypto/**/*.{c,cc,h}",
+      "deps/grpc/third_party/boringssl/include/**/*.{c,cc,h}",
+      "deps/grpc/third_party/boringssl/ssl/**/*.{c,cc,h}",
+      "deps/grpc/third_party/abseil-cpp/absl/**/*.{h,hh}",
       "binding.gyp"
     ],
     "main": "index.js",
+    "typings": "index.d.ts",
     "license": "Apache-2.0",
     "jshintConfig": {
       "bitwise": true,

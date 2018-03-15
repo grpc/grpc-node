@@ -22,7 +22,7 @@ var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
 
-var grpc = require('grpc');
+var grpc = require('..');
 
 /**
  * This is used for testing functions with multiple asynchronous calls that
@@ -67,9 +67,9 @@ var fakeFailingGoogleCredentials = {
 var key_data, pem_data, ca_data;
 
 before(function() {
-  var key_path = path.join(__dirname, '../data/server1.key');
-  var pem_path = path.join(__dirname, '../data/server1.pem');
-  var ca_path = path.join(__dirname, '../data/ca.pem');
+  var key_path = path.join(__dirname, '/data/server1.key');
+  var pem_path = path.join(__dirname, '/data/server1.pem');
+  var ca_path = path.join(__dirname, '/data/ca.pem');
   key_data = fs.readFileSync(key_path);
   pem_data = fs.readFileSync(pem_path);
   ca_data = fs.readFileSync(ca_path);
@@ -306,7 +306,7 @@ describe('client credentials', function() {
       done();
     });
   });
-  it('should propagate errors that the updater emits', function(done) {
+  it('should fail the call if the updater fails', function(done) {
     var metadataUpdater = function(service_url, callback) {
       var error = new Error('Authentication error');
       error.code = grpc.status.UNAUTHENTICATED;
@@ -319,10 +319,10 @@ describe('client credentials', function() {
                             client_options);
     client.unary({}, function(err, data) {
       assert(err);
-      assert.strictEqual(err.message,
+      assert.strictEqual(err.details,
                          'Getting metadata from plugin failed with error: ' +
                          'Authentication error');
-      assert.strictEqual(err.code, grpc.status.UNAUTHENTICATED);
+      assert.notStrictEqual(err.code, grpc.status.OK);
       done();
     });
   });
@@ -369,7 +369,7 @@ describe('client credentials', function() {
                             client_options);
     client.unary({}, function(err, data) {
       assert(err);
-      assert.strictEqual(err.message,
+      assert.strictEqual(err.details,
                          'Getting metadata from plugin failed with error: ' +
                          'Authentication failure');
       done();

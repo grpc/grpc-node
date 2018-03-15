@@ -1,6 +1,6 @@
-/*
- *
- * Copyright 2016 gRPC authors.
+/**
+ * @license
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,19 @@
  *
  */
 
-/* This exists solely to allow the generated code to import the grpc module
- * without using a relative path */
+syntax = "proto3";
 
-module.exports = require('../../..');
+message EchoMessage {
+  string value = 1;
+  int32 value2 = 2;
+}
+
+service EchoService {
+  rpc Echo (EchoMessage) returns (EchoMessage);
+
+  rpc EchoClientStream (stream EchoMessage) returns (EchoMessage);
+
+  rpc EchoServerStream (EchoMessage) returns (stream EchoMessage);
+
+  rpc EchoBidiStream (stream EchoMessage) returns (stream EchoMessage);
+}

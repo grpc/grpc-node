@@ -139,7 +139,8 @@ exports.status = {
    * a backoff.
    *
    * See litmus test above for deciding between FAILED_PRECONDITION,
-   * ABORTED, and UNAVAILABLE. */
+   * ABORTED, and UNAVAILABLE.
+   */
   UNAVAILABLE: 14,
   /** Unrecoverable data loss or corruption. */
   DATA_LOSS: 15,
@@ -150,7 +151,7 @@ exports.status = {
   UNAUTHENTICATED: 16
 };
 
-/* The comments about propagation bit flags are copied rom
+/* The comments about propagation bit flags are copied from
  * include/grpc/impl/codegen/propagation_bits.h for the purpose of including
  * them in generated documentation.
  */
@@ -233,4 +234,18 @@ exports.logVerbosity = {
   DEBUG: 0,
   INFO: 1,
   ERROR: 2
+};
+
+/**
+ * Method types: the supported RPC types
+ * @memberof grpc
+ * @alias grpc.methodTypes
+ * @readonly
+ * @enum {number}
+ */
+exports.methodTypes = {
+  UNARY: 0,
+  CLIENT_STREAMING: 1,
+  SERVER_STREAMING: 2,
+  BIDI_STREAMING: 3
 };

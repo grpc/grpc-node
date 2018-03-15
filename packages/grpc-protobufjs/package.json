@@ -1,0 +1,41 @@
+{
+  "name": "@grpc/protobufjs",
+  "version": "0.1.0",
+  "description": "",
+  "main": "build/src/index.js",
+  "scripts": {
+    "build": "npm run compile",
+    "clean": "gts clean",
+    "compile": "tsc -p .",
+    "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
+    "lint": "tslint -c node_modules/google-ts-style/tslint.json -p . -t codeFrame --type-check",
+    "prepare": "npm run compile",
+    "test": "gulp test",
+    "check": "gts check",
+    "fix": "gts fix",
+    "pretest": "npm run compile",
+    "posttest": "npm run check"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/grpc/grpc-node.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/grpc/grpc-node/issues"
+  },
+  "files": [
+    "build/src/*.d.ts",
+    "build/src/*.js"
+  ],
+  "dependencies": {
+    "@types/lodash": "^4.14.104",
+    "@types/node": "^9.4.6",
+    "clang-format": "^1.2.2",
+    "gts": "^0.5.3",
+    "lodash": "^4.17.5",
+    "protobufjs": "^6.8.5",
+    "typescript": "~2.7.2"
+  }
+}

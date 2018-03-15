@@ -1,52 +1,61 @@
 import {EventEmitter} from 'events';
+import {EmitterAugmentation1} from './events';
 import {Duplex, Readable, Writable} from 'stream';
 
 import {CallStream, StatusObject, WriteObject} from './call-stream';
 import {Status} from './constants';
 import {Metadata} from './metadata';
 import {ObjectReadable, ObjectWritable} from './object-stream';
+import * as _ from 'lodash';
 
-export interface ServiceError extends Error {
-  code?: number;
-  metadata?: Metadata;
-}
+/**
+ * A type extending the built-in Error object with additional fields.
+ */
+export type ServiceError = StatusObject & Error;
 
-export class ServiceErrorImpl extends Error implements ServiceError {
-  code?: number;
-  metadata?: Metadata;
-}
-
-export interface Call extends EventEmitter {
+/**
+ * A base type for all user-facing values returned by client-side method calls.
+ */
+export type Call = {
   cancel(): void;
   getPeer(): string;
+} & EmitterAugmentation1<'metadata', Metadata>
+  & EmitterAugmentation1<'status', StatusObject>
+  & EventEmitter;
 
-  addListener(event: string, listener: Function): this;
-  emit(event: string|symbol, ...args: any[]): boolean;
-  on(event: string, listener: Function): this;
-  once(event: string, listener: Function): this;
-  prependListener(event: string, listener: Function): this;
-  prependOnceListener(event: string, listener: Function): this;
-  removeListener(event: string, listener: Function): this;
+/**
+ * A type representing the return value of a unary method call.
+ */
+export type ClientUnaryCall = Call;
 
-  addListener(event: 'metadata', listener: (metadata: Metadata) => void): this;
-  emit(event: 'metadata', metadata: Metadata): boolean;
-  on(event: 'metadata', listener: (metadata: Metadata) => void): this;
-  once(event: 'metadata', listener: (metadata: Metadata) => void): this;
-  prependListener(event: 'metadata', listener: (metadata: Metadata) => void):
-      this;
-  prependOnceListener(
-      event: 'metadata', listener: (metadata: Metadata) => void): this;
-  removeListener(event: 'metadata', listener: (metadata: Metadata) => void):
-      this;
-}
+/**
+ * A type representing the return value of a server stream method call.
+ */
+export type ClientReadableStream<ResponseType> = {
+  deserialize: (chunk: Buffer) => ResponseType;
+} & Call & ObjectReadable<ResponseType>;
 
-export interface ClientUnaryCall extends Call {}
+/**
+ * A type representing the return value of a client stream method call.
+ */
+export type ClientWritableStream<RequestType> = {
+  serialize: (value: RequestType) => Buffer;
+} & Call & ObjectWritable<RequestType>;
 
-export class ClientUnaryCallImpl extends EventEmitter implements Call {
+/**
+ * A type representing the return value of a bidirectional stream method call.
+ */
+export type ClientDuplexStream<RequestType, ResponseType> =
+  ClientWritableStream<RequestType> & ClientReadableStream<ResponseType>;
+
+export class ClientUnaryCallImpl extends EventEmitter implements ClientUnaryCall {
   constructor(private readonly call: CallStream) {
     super();
     call.on('metadata', (metadata: Metadata) => {
       this.emit('metadata', metadata);
+    });
+    call.on('status', (status: StatusObject) => {
+      this.emit('status', status);
     });
   }
 
@@ -57,54 +66,6 @@ export class ClientUnaryCallImpl extends EventEmitter implements Call {
   getPeer(): string {
     return this.call.getPeer();
   }
-}
-
-export interface ClientReadableStream<ResponseType> extends
-    Call, ObjectReadable<ResponseType> {
-  deserialize: (chunk: Buffer) => ResponseType;
-
-  addListener(event: string, listener: Function): this;
-  emit(event: string|symbol, ...args: any[]): boolean;
-  on(event: string, listener: Function): this;
-  once(event: string, listener: Function): this;
-  prependListener(event: string, listener: Function): this;
-  prependOnceListener(event: string, listener: Function): this;
-  removeListener(event: string, listener: Function): this;
-
-  addListener(event: 'status', listener: (status: StatusObject) => void): this;
-  emit(event: 'status', status: StatusObject): boolean;
-  on(event: 'status', listener: (status: StatusObject) => void): this;
-  once(event: 'status', listener: (status: StatusObject) => void): this;
-  prependListener(event: 'status', listener: (status: StatusObject) => void):
-      this;
-  prependOnceListener(
-      event: 'status', listener: (status: StatusObject) => void): this;
-  removeListener(event: 'status', listener: (status: StatusObject) => void):
-      this;
-}
-
-export interface ClientWritableStream<RequestType> extends
-    Call, ObjectWritable<RequestType> {
-  serialize: (value: RequestType) => Buffer;
-
-  addListener(event: string, listener: Function): this;
-  emit(event: string|symbol, ...args: any[]): boolean;
-  on(event: string, listener: Function): this;
-  once(event: string, listener: Function): this;
-  prependListener(event: string, listener: Function): this;
-  prependOnceListener(event: string, listener: Function): this;
-  removeListener(event: string, listener: Function): this;
-}
-
-export interface ClientDuplexStream<RequestType, ResponseType> extends
-    ClientWritableStream<RequestType>, ClientReadableStream<ResponseType> {
-  addListener(event: string, listener: Function): this;
-  emit(event: string|symbol, ...args: any[]): boolean;
-  on(event: string, listener: Function): this;
-  once(event: string, listener: Function): this;
-  prependListener(event: string, listener: Function): this;
-  prependOnceListener(event: string, listener: Function): this;
-  removeListener(event: string, listener: Function): this;
 }
 
 function setUpReadableStream<ResponseType>(
@@ -128,9 +89,9 @@ function setUpReadableStream<ResponseType>(
   call.on('status', (status: StatusObject) => {
     stream.emit('status', status);
     if (status.code !== Status.OK) {
-      const error = new ServiceErrorImpl(status.details);
-      error.code = status.code;
-      error.metadata = status.metadata;
+      const statusName = _.invert(Status)[status.code];
+      const message: string = `${status.code} ${statusName}: ${status.details}`;
+      const error: ServiceError = Object.assign(new Error(status.details), status);
       stream.emit('error', error);
     }
   });
@@ -189,6 +150,9 @@ export class ClientWritableStreamImpl<RequestType> extends Writable implements
     super({objectMode: true});
     call.on('metadata', (metadata: Metadata) => {
       this.emit('metadata', metadata);
+    });
+    call.on('status', (status: StatusObject) => {
+      this.emit('status', status);
     });
   }
 

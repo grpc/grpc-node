@@ -86,7 +86,7 @@ var _ = require('lodash');
  * @param {Buffer=} private_key The client certificate private key, if
  *     applicable
  * @param {Buffer=} cert_chain The client certificate cert chain, if applicable
- * @return {grpc.credentials.ChannelCredentials} The SSL Credentials object
+ * @return {grpc.credentials~ChannelCredentials} The SSL Credentials object
  */
 exports.createSsl = ChannelCredentials.createSsl;
 
@@ -113,7 +113,7 @@ exports.createSsl = ChannelCredentials.createSsl;
  * @alias grpc.credentials.createFromMetadataGenerator
  * @param {grpc.credentials~generateMetadata} metadata_generator The function
  *     that generates metadata
- * @return {grpc.credentials.CallCredentials} The credentials object
+ * @return {grpc.credentials~CallCredentials} The credentials object
  */
 exports.createFromMetadataGenerator = function(metadata_generator) {
   return CallCredentials.createFromPlugin(function(service_url, cb_data,
@@ -143,7 +143,7 @@ exports.createFromMetadataGenerator = function(metadata_generator) {
  * @alias grpc.credentials.createFromGoogleCredential
  * @param {external:GoogleCredential} google_credential The Google credential
  *     object to use
- * @return {grpc.credentials.CallCredentials} The resulting credentials object
+ * @return {grpc.credentials~CallCredentials} The resulting credentials object
  */
 exports.createFromGoogleCredential = function(google_credential) {
   return exports.createFromMetadataGenerator(function(auth_context, callback) {
@@ -166,10 +166,10 @@ exports.createFromGoogleCredential = function(google_credential) {
  * ChannelCredentials object.
  * @memberof grpc.credentials
  * @alias grpc.credentials.combineChannelCredentials
- * @param {ChannelCredentials} channel_credential The ChannelCredentials to
+ * @param {grpc.credentials~ChannelCredentials} channel_credential The ChannelCredentials to
  *     start with
- * @param {...CallCredentials} credentials The CallCredentials to compose
- * @return ChannelCredentials A credentials object that combines all of the
+ * @param {...grpc.credentials~CallCredentials} credentials The CallCredentials to compose
+ * @return {grpc.credentials~ChannelCredentials} A credentials object that combines all of the
  *     input credentials
  */
 exports.combineChannelCredentials = function(channel_credential) {
@@ -184,8 +184,8 @@ exports.combineChannelCredentials = function(channel_credential) {
  * Combine any number of CallCredentials into a single CallCredentials object
  * @memberof grpc.credentials
  * @alias grpc.credentials.combineCallCredentials
- * @param {...CallCredentials} credentials the CallCredentials to compose
- * @return CallCredentials A credentials object that combines all of the input
+ * @param {...grpc.credentials~CallCredentials} credentials The CallCredentials to compose
+ * @return {grpc.credentials~CallCredentials} A credentials object that combines all of the input
  *     credentials
  */
 exports.combineCallCredentials = function() {
@@ -202,6 +202,6 @@ exports.combineCallCredentials = function() {
  * @memberof grpc.credentials
  * @alias grpc.credentials.createInsecure
  * @kind function
- * @return {ChannelCredentials} The insecure credentials object
+ * @return {grpc.credentials~ChannelCredentials} The insecure credentials object
  */
 exports.createInsecure = ChannelCredentials.createInsecure;

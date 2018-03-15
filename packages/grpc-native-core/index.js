@@ -67,7 +67,7 @@ grpc.setDefaultRootsPem(fs.readFileSync(SSL_ROOTS_PATH, 'ascii'));
  * @param {(number|string)=} [options.protobufjsVersion='detect'] 5 and 6
  *     respectively indicate that an object from the corresponding version of
  *     Protobuf.js is provided in the value argument. If the option is 'detect',
- *     gRPC wll guess what the version is based on the structure of the value.
+ *     gRPC will guess what the version is based on the structure of the value.
  * @return {Object<string, *>} The resulting gRPC object.
  */
 exports.loadObject = function loadObject(value, options) {
@@ -146,6 +146,29 @@ exports.load = function load(filename, format, options) {
   return loadObject(builder.ns, options);
 };
 
+/**
+ * Load a gRPC package definition as a gRPC object hierarchy
+ * @param packageDef grpc~PackageDefinition The package definition object
+ * @return {Object<string, *>} The resulting gRPC object
+ */
+exports.loadPackageDefinition = function loadPackageDefintion(packageDef) {
+  const result = {};
+  for (const serviceFqn in packageDef) {
+    const service = packageDef[serviceFqn];
+    const nameComponents = serviceFqn.split('.');
+    const serviceName = nameComponents[nameComponents.length-1];
+    let current = result;
+    for (const packageName of nameComponents.slice(0, -1)) {
+      if (!current[packageName]) {
+        current[packageName] = {};
+      }
+      current = current[packageName];
+    }
+    current[serviceName] = client.makeClientConstructor(service, serviceName, {});
+  }
+  return result;
+};
+
 var log_template = _.template(
     '{severity} {timestamp}\t{file}:{line}]\t{message}',
     {interpolate: /{([\s\S]+?)}/g});
@@ -200,6 +223,8 @@ exports.writeFlags = constants.writeFlags;
 
 exports.logVerbosity = constants.logVerbosity;
 
+exports.methodTypes = constants.methodTypes;
+
 exports.credentials = require('./src/credentials.js');
 
 /**
@@ -213,19 +238,19 @@ exports.ServerCredentials = grpc.ServerCredentials;
  * Create insecure server credentials
  * @name grpc.ServerCredentials.createInsecure
  * @kind function
- * @return grpc.ServerCredentials
+ * @return {grpc.ServerCredentials}
  */
 
 /**
  * A private key and certificate pair
  * @typedef {Object} grpc.ServerCredentials~keyCertPair
- * @property {Buffer} privateKey The server's private key
- * @property {Buffer} certChain The server's certificate chain
+ * @property {Buffer} private_key The server's private key
+ * @property {Buffer} cert_chain The server's certificate chain
  */
 
 /**
  * Create SSL server credentials
- * @name grpc.ServerCredentials.createInsecure
+ * @name grpc.ServerCredentials.createSsl
  * @kind function
  * @param {?Buffer} rootCerts Root CA certificates for validating client
  *     certificates
@@ -234,7 +259,7 @@ exports.ServerCredentials = grpc.ServerCredentials;
  *     the server
  * @param {boolean} [checkClientCertificate=false] Indicates that the server
  *     should request and verify the client's certificates
- * @return grpc.ServerCredentials
+ * @return {grpc.ServerCredentials}
  */
 
 exports.makeGenericClientConstructor = client.makeClientConstructor;
@@ -242,6 +267,11 @@ exports.makeGenericClientConstructor = client.makeClientConstructor;
 exports.getClientChannel = client.getClientChannel;
 
 exports.waitForClientReady = client.waitForClientReady;
+
+exports.StatusBuilder = client.StatusBuilder;
+exports.ListenerBuilder = client.ListenerBuilder;
+exports.RequesterBuilder = client.RequesterBuilder;
+exports.InterceptingCall = client.InterceptingCall;
 
 /**
  * @memberof grpc

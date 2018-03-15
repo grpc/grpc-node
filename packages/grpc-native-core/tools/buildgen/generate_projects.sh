@@ -18,4 +18,4 @@ set -e
 
 cd `dirname $0`/../..
 root=`pwd`
-./deps/grpc/tools/buildgen/generate_projects.sh --base=$root --templates `find templates -type f`
+./deps/grpc/tools/buildgen/generate_projects.sh $root/build.yaml --base=$root --templates `find templates -type f`

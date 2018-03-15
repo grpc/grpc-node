@@ -8,37 +8,46 @@
     "name": "Google Inc."
   },
   "license": "Apache-2.0",
-  "dependencies": {
-    "async": "^2.5.0",
-    "body-parser": "^1.18.0",
-    "execa": "^0.8.0",
-    "express": "^4.15.4",
-    "google-auth-library": "^0.11.0",
-    "lodash": "^4.17.4",
-    "mocha-jenkins-reporter": "^0.3.9",
-    "poisson-process": "^0.2.2"
-  },
   "devDependencies": {
+    "@types/execa": "^0.8.0",
+    "@types/gulp": "^4.0.5",
+    "@types/gulp-help": "0.0.34",
+    "@types/gulp-mocha": "0.0.31",
+    "@types/ncp": "^2.0.1",
+    "@types/node": "^8.0.32",
+    "@types/pify": "^3.0.0",
     "del": "^3.0.0",
+    "execa": "^0.8.0",
     "gulp": "^3.9.1",
     "gulp-help": "^1.6.1",
+    "gulp-jsdoc3": "^1.0.1",
     "gulp-jshint": "^2.0.4",
     "gulp-mocha": "^4.3.1",
     "gulp-sourcemaps": "^2.6.1",
     "gulp-tslint": "^8.1.1",
     "gulp-typescript": "^3.2.2",
     "gulp-util": "^3.0.8",
+    "jsdoc": "^3.3.2",
     "jshint": "^2.9.5",
+    "make-dir": "^1.1.0",
     "merge2": "^1.1.0",
     "mocha": "^3.5.3",
+    "mocha-jenkins-reporter": "^0.3.9",
+    "ncp": "^2.0.0",
+    "pify": "^3.0.0",
     "through2": "^2.0.3",
+    "ts-node": "^3.3.0",
     "tslint": "^5.5.0",
-    "typescript": "^2.5.1",
+    "typescript": "~2.7.0",
     "xml2js": "^0.4.19"
   },
   "contributors": [
     {
       "name": "Google Inc."
     }
-  ]
+  ],
+  "dependencies": {
+    "run-sequence": "^2.2.0",
+    "symlink": "^2.1.0"
+  }
 }

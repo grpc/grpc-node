@@ -1,0 +1,34 @@
+{
+  "name": "@grpc/js",
+  "version": "1.0.0",
+  "description": "",
+  "main": "build/src/index.js",
+  "scripts": {
+    "compile": "tsc -p .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check": "gts check",
+    "clean": "gts clean",
+    "fix": "gts fix",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "posttest": "npm run check"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/grpc/grpc-node.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/grpc/grpc-node/issues"
+  },
+  "homepage": "https://grpc.io",
+  "dependencies": {
+    "@grpc/js-core": "^0.1.0",
+    "@grpc/surface": "^0.1.0"
+  },
+  "devDependencies": {
+    "gts": "^0.5.1",
+    "typescript": "~2.7.0"
+  }
+}

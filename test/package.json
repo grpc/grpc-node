@@ -1,0 +1,20 @@
+{
+  "name": "grpc-node-test",
+  "version": "0.1.0",
+  "description": "Dummy package for the grpc-node repository tests",
+  "private": true,
+  "keywords": [],
+  "author": {
+    "name": "Google Inc."
+  },
+  "license": "Apache-2.0",
+  "contributors": [
+    {
+      "name": "Google Inc."
+    }
+  ],
+  "dependencies": {
+    "google-auth-library": "^0.9.2",
+    "lodash": "^4.17.4"
+  }
+}

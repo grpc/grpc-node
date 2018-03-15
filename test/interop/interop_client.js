@@ -20,12 +20,17 @@
 
 var fs = require('fs');
 var path = require('path');
-// TODO(murgatroid99): use multiple grpc implementations
-var grpc = require('grpc');
-var testProto = grpc.load({
-  root: __dirname + '/../../packages/grpc-native-core/deps/grpc',
-  file: 'src/proto/grpc/testing/test.proto'}).grpc.testing;
+var grpc = require('../any_grpc').client;
+var protoLoader = require('../../packages/grpc-protobufjs');
 var GoogleAuth = require('google-auth-library');
+
+var protoPackage = protoLoader.loadSync(
+    'src/proto/grpc/testing/test.proto',
+    {keepCase: true,
+     defaults: true,
+     enums: String,
+     include: [__dirname + '/../../packages/grpc-native-core/deps/grpc']});
+var testProto = grpc.loadPackageDefinition(protoPackage).grpc.testing;
 
 var assert = require('assert');
 
@@ -348,7 +353,7 @@ function statusCodeAndMessage(client, done) {
   client.unaryCall(arg, function(err, resp) {
     assert(err);
     assert.strictEqual(err.code, 2);
-    assert.strictEqual(err.message, 'test status message');
+    assert.strictEqual(err.details, 'test status message');
     done();
   });
   var duplex = client.fullDuplexCall();

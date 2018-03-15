@@ -1,6 +1,6 @@
 import {EventEmitter} from 'events';
 import * as http2 from 'http2';
-import {SecureContext} from 'tls';
+import {checkServerIdentity, SecureContext, PeerCertificate} from 'tls';
 import * as url from 'url';
 
 import {CallCredentials} from './call-credentials';
@@ -12,8 +12,17 @@ import {Status} from './constants';
 import {DeadlineFilterFactory} from './deadline-filter';
 import {FilterStackFactory} from './filter-stack';
 import {Metadata, MetadataObject} from './metadata';
+import { MetadataStatusFilterFactory } from './metadata-status-filter';
+
+const { version: clientVersion } = require('../../package');
 
 const IDLE_TIMEOUT_MS = 300000;
+
+const MIN_CONNECT_TIMEOUT_MS = 20000;
+const INITIAL_BACKOFF_MS = 1000;
+const BACKOFF_MULTIPLIER = 1.6;
+const MAX_BACKOFF_MS = 120000;
+const BACKOFF_JITTER = 0.2;
 
 const {
   HTTP2_HEADER_AUTHORITY,
@@ -21,13 +30,20 @@ const {
   HTTP2_HEADER_METHOD,
   HTTP2_HEADER_PATH,
   HTTP2_HEADER_SCHEME,
-  HTTP2_HEADER_TE
+  HTTP2_HEADER_TE,
+  HTTP2_HEADER_USER_AGENT
 } = http2.constants;
 
 /**
  * An interface that contains options used when initializing a Channel instance.
  */
-export interface ChannelOptions { [index: string]: string|number; }
+export interface ChannelOptions {
+  'grpc.ssl_target_name_override': string;
+  'grpc.primary_user_agent': string;
+  'grpc.secondary_user_agent': string;
+  'grpc.default_authority': string;
+  [key: string]: string | number;
+}
 
 export enum ConnectivityState {
   CONNECTING,
@@ -35,6 +51,10 @@ export enum ConnectivityState {
   TRANSIENT_FAILURE,
   IDLE,
   SHUTDOWN
+}
+
+function uniformRandom(min:number, max: number) {
+  return Math.random() * (max - min) + min;
 }
 
 // todo: maybe we want an interface for load balancing, but no implementation
@@ -47,7 +67,7 @@ export enum ConnectivityState {
 export interface Channel extends EventEmitter {
   createStream(methodName: string, metadata: Metadata, options: CallOptions):
       CallStream;
-  connect(callback: () => void): void;
+  connect(): Promise<void>;
   getConnectivityState(): ConnectivityState;
   close(): void;
 
@@ -61,104 +81,186 @@ export interface Channel extends EventEmitter {
 }
 
 export class Http2Channel extends EventEmitter implements Channel {
+  private readonly userAgent: string;
+  private readonly authority: url.URL;
   private connectivityState: ConnectivityState = ConnectivityState.IDLE;
-  private idleTimerId: NodeJS.Timer|null = null;
   /* For now, we have up to one subchannel, which will exist as long as we are
    * connecting or trying to connect */
-  private subChannel: http2.ClientHttp2Session|null;
+  private subChannel: http2.ClientHttp2Session|null = null;
   private filterStackFactory: FilterStackFactory;
 
-  private transitionToState(newState: ConnectivityState): void {
-    if (newState !== this.connectivityState) {
+  private subChannelConnectCallback: ()=>void = () => {};
+  private subChannelCloseCallback: ()=>void = () => {};
+
+  private backoffTimerId: NodeJS.Timer;
+  private currentBackoff: number = INITIAL_BACKOFF_MS;
+  private currentBackoffDeadline: Date;
+
+  private handleStateChange(oldState: ConnectivityState, newState: ConnectivityState): void {
+    let now: Date = new Date();
+    switch(newState) {
+    case ConnectivityState.CONNECTING:
+      if (oldState === ConnectivityState.IDLE) {
+        this.currentBackoff = INITIAL_BACKOFF_MS;
+        this.currentBackoffDeadline = new Date(now.getTime() + INITIAL_BACKOFF_MS);
+      } else if (oldState === ConnectivityState.TRANSIENT_FAILURE) {
+        this.currentBackoff = Math.min(this.currentBackoff * BACKOFF_MULTIPLIER, MAX_BACKOFF_MS);
+        let jitterMagnitude: number = BACKOFF_JITTER * this.currentBackoff;
+        this.currentBackoffDeadline = new Date(now.getTime() + this.currentBackoff + uniformRandom(-jitterMagnitude, jitterMagnitude));
+      }
+      this.startConnecting();
+      break;
+    case ConnectivityState.READY:
+      this.emit('connect');
+      break;
+    case ConnectivityState.TRANSIENT_FAILURE:
+      this.subChannel = null;
+      this.backoffTimerId = setTimeout(() => {
+        this.transitionToState([ConnectivityState.TRANSIENT_FAILURE], ConnectivityState.CONNECTING);
+      }, this.currentBackoffDeadline.getTime() - now.getTime());
+      break;
+    case ConnectivityState.IDLE:
+    case ConnectivityState.SHUTDOWN:
+      if (this.subChannel) {
+        this.subChannel.close();
+        this.subChannel.removeListener('connect', this.subChannelConnectCallback);
+        this.subChannel.removeListener('close', this.subChannelCloseCallback);
+        this.subChannel = null;
+        clearTimeout(this.backoffTimerId);
+      }
+      break;
+    }
+  }
+
+  // Transition from any of a set of oldStates to a specific newState
+  private transitionToState(oldStates: ConnectivityState[], newState: ConnectivityState): void {
+    if (oldStates.indexOf(this.connectivityState) > -1) {
+      let oldState: ConnectivityState = this.connectivityState;
       this.connectivityState = newState;
+      this.handleStateChange(oldState, newState);
       this.emit('connectivityStateChanged', newState);
     }
   }
 
   private startConnecting(): void {
-    this.transitionToState(ConnectivityState.CONNECTING);
+    let subChannel: http2.ClientHttp2Session;
     let secureContext = this.credentials.getSecureContext();
     if (secureContext === null) {
-      this.subChannel = http2.connect(this.address);
+      subChannel = http2.connect(this.authority);
     } else {
-      this.subChannel = http2.connect(this.address, {secureContext});
+      const connectionOptions: http2.SecureClientSessionOptions = {
+        secureContext,
+      }
+      // If provided, the value of grpc.ssl_target_name_override should be used
+      // to override the target hostname when checking server identity.
+      // This option is used for testing only.
+      if (this.options['grpc.ssl_target_name_override']) {
+        const sslTargetNameOverride = this.options['grpc.ssl_target_name_override']!;
+        connectionOptions.checkServerIdentity = (host: string, cert: PeerCertificate): Error | undefined => {
+          return checkServerIdentity(sslTargetNameOverride, cert);
+        }
+        connectionOptions.servername = sslTargetNameOverride;
+      }
+      subChannel = http2.connect(this.authority, connectionOptions);
     }
-    this.subChannel.once('connect', () => {
-      this.transitionToState(ConnectivityState.READY);
-    });
-    this.subChannel.setTimeout(IDLE_TIMEOUT_MS, () => {
-      this.goIdle();
-    });
-    /* TODO(murgatroid99): add connection-level error handling with exponential
-     * reconnection backoff */
-  }
-
-  private goIdle(): void {
-    if (this.subChannel !== null) {
-      this.subChannel.shutdown({graceful: true}, () => undefined);
-      this.subChannel = null;
-    }
-    this.transitionToState(ConnectivityState.IDLE);
-  }
-
-  private kickConnectivityState(): void {
-    if (this.connectivityState === ConnectivityState.IDLE) {
-      this.startConnecting();
-    }
+    this.subChannel = subChannel;
+    let now = new Date();
+    let connectionTimeout: number = Math.max(
+      this.currentBackoffDeadline.getTime() - now.getTime(),
+      MIN_CONNECT_TIMEOUT_MS);
+    let connectionTimerId: NodeJS.Timer = setTimeout(() => {
+      // This should trigger the 'close' event, which will send us back to TRANSIENT_FAILURE
+      subChannel.close();
+    }, connectionTimeout);
+    this.subChannelConnectCallback = () => {
+      // Connection succeeded
+      clearTimeout(connectionTimerId);
+      this.transitionToState([ConnectivityState.CONNECTING], ConnectivityState.READY);
+    };
+    subChannel.once('connect', this.subChannelConnectCallback);
+    this.subChannelCloseCallback = () => {
+      // Connection failed
+      clearTimeout(connectionTimerId);
+      /* TODO(murgatroid99): verify that this works for CONNECTING->TRANSITIVE_FAILURE
+       * see nodejs/node#16645 */
+      this.transitionToState([ConnectivityState.CONNECTING, ConnectivityState.READY],
+                             ConnectivityState.TRANSIENT_FAILURE);
+    };
+    subChannel.once('close', this.subChannelCloseCallback);
   }
 
   constructor(
-      private readonly address: url.URL,
+      address: string,
       public readonly credentials: ChannelCredentials,
-      private readonly options: ChannelOptions) {
+      private readonly options: Partial<ChannelOptions>) {
     super();
     if (credentials.getSecureContext() === null) {
-      address.protocol = 'http';
+      this.authority = new url.URL(`http://${address}`);
     } else {
-      address.protocol = 'https';
+      this.authority = new url.URL(`https://${address}`);
     }
     this.filterStackFactory = new FilterStackFactory([
       new CompressionFilterFactory(this),
-      new CallCredentialsFilterFactory(this), new DeadlineFilterFactory(this)
+      new CallCredentialsFilterFactory(this),
+      new DeadlineFilterFactory(this),
+      new MetadataStatusFilterFactory(this)
     ]);
+    this.currentBackoffDeadline = new Date();
+    /* The only purpose of these lines is to ensure that this.backoffTimerId has
+     * a value of type NodeJS.Timer. */
+    this.backoffTimerId = setTimeout(() => {}, 0);
+    clearTimeout(this.backoffTimerId);
+
+    // Build user-agent string.
+    this.userAgent = [
+      options['grpc.primary_user_agent'],
+      `grpc-node-js/${clientVersion}`,
+      options['grpc.secondary_user_agent']
+    ].filter(e => e).join(' '); // remove falsey values first
   }
 
   private startHttp2Stream(
       methodName: string, stream: Http2CallStream, metadata: Metadata) {
     let finalMetadata: Promise<Metadata> =
-        stream.filterStack.sendMetadata(Promise.resolve(metadata));
-    this.connect(() => {
-      finalMetadata.then(
-          (metadataValue) => {
-            let headers = metadataValue.toHttp2Headers();
-            headers[HTTP2_HEADER_AUTHORITY] = this.address.hostname;
-            headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
-            headers[HTTP2_HEADER_METHOD] = 'POST';
-            headers[HTTP2_HEADER_PATH] = methodName;
-            headers[HTTP2_HEADER_TE] = 'trailers';
-            if (stream.getStatus() === null) {
-              if (this.connectivityState === ConnectivityState.READY) {
-                let session: http2.ClientHttp2Session =
-                    (this.subChannel as http2.ClientHttp2Session);
-                stream.attachHttp2Stream(session.request(headers));
-              } else {
-                /* In this case, we lost the connection while finalizing
-                 * metadata. That should be very unusual */
-                setImmediate(() => {
-                  this.startHttp2Stream(methodName, stream, metadata);
-                });
-              }
-            }
-          },
-          (error) => {
-            stream.cancelWithStatus(
-                Status.UNKNOWN, 'Failed to generate metadata');
+        stream.filterStack.sendMetadata(Promise.resolve(metadata.clone()));
+    Promise.all([finalMetadata, this.connect()])
+      .then(([metadataValue]) => {
+        let headers = metadataValue.toHttp2Headers();
+        let host: string;
+        // TODO(murgatroid99): Add more centralized handling of channel options
+        if (this.options['grpc.default_authority']) {
+          host = this.options['grpc.default_authority'] as string;
+        } else {
+          host = this.authority.hostname;
+        }
+        headers[HTTP2_HEADER_AUTHORITY] = host;
+        headers[HTTP2_HEADER_USER_AGENT] = this.userAgent;
+        headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
+        headers[HTTP2_HEADER_METHOD] = 'POST';
+        headers[HTTP2_HEADER_PATH] = methodName;
+        headers[HTTP2_HEADER_TE] = 'trailers';
+        if (this.connectivityState === ConnectivityState.READY) {
+          const session: http2.ClientHttp2Session = this.subChannel!;
+          // Prevent the HTTP/2 session from keeping the process alive.
+          // Note: this function is only available in Node 9
+          session.unref();
+          stream.attachHttp2Stream(session.request(headers));
+        } else {
+          /* In this case, we lost the connection while finalizing
+           * metadata. That should be very unusual */
+          setImmediate(() => {
+            this.startHttp2Stream(methodName, stream, metadata);
           });
-    });
+        }
+      }).catch((error: Error & { code: number }) => {
+        // We assume the error code isn't 0 (Status.OK)
+        stream.cancelWithStatus(error.code || Status.UNKNOWN,
+          `Getting metadata from plugin failed with error: ${error.message}`);
+      });
   }
 
   createStream(methodName: string, metadata: Metadata, options: CallOptions):
-      CallStream {
+  CallStream {
     if (this.connectivityState === ConnectivityState.SHUTDOWN) {
       throw new Error('Channel has been shut down');
     }
@@ -173,17 +275,15 @@ export class Http2Channel extends EventEmitter implements Channel {
     return stream;
   }
 
-  connect(callback: () => void): void {
-    this.kickConnectivityState();
-    if (this.connectivityState === ConnectivityState.READY) {
-      setImmediate(callback);
-    } else {
-      this.once('connectivityStateChanged', (newState) => {
-        if (newState === ConnectivityState.READY) {
-          callback();
-        }
-      });
-    }
+  connect(): Promise<void> {
+    return new Promise((resolve) => {
+      this.transitionToState([ConnectivityState.IDLE], ConnectivityState.CONNECTING);
+      if (this.connectivityState === ConnectivityState.READY) {
+        setImmediate(resolve);
+      } else {
+        this.once('connect', resolve);
+      }
+    });
   }
 
   getConnectivityState(): ConnectivityState {
@@ -194,9 +294,9 @@ export class Http2Channel extends EventEmitter implements Channel {
     if (this.connectivityState === ConnectivityState.SHUTDOWN) {
       throw new Error('Channel has been shut down');
     }
-    this.transitionToState(ConnectivityState.SHUTDOWN);
-    if (this.subChannel !== null) {
-      this.subChannel.shutdown({graceful: true});
-    }
+    this.transitionToState([ConnectivityState.CONNECTING,
+                            ConnectivityState.READY,
+                            ConnectivityState.TRANSIENT_FAILURE,
+                            ConnectivityState.IDLE], ConnectivityState.SHUTDOWN);
   }
 }

@@ -7,7 +7,20 @@ import {Metadata} from './metadata';
 const units: [string, number][] =
     [['m', 1], ['S', 1000], ['M', 60 * 1000], ['H', 60 * 60 * 1000]];
 
+function getDeadline(deadline: number) {
+  let now = (new Date()).getTime();
+  let timeoutMs = Math.max(deadline - now, 0);
+  for (let [unit, factor] of units) {
+    let amount = timeoutMs / factor;
+    if (amount < 1e8) {
+      return String(Math.ceil(amount)) + unit;
+    }
+  }
+  throw new Error('Deadline is too far in the future');
+}
+
 export class DeadlineFilter extends BaseFilter implements Filter {
+  private timer: NodeJS.Timer | null = null;
   private deadline: number;
   constructor(
       private readonly channel: Http2Channel,
@@ -25,10 +38,11 @@ export class DeadlineFilter extends BaseFilter implements Filter {
       timeout = 0;
     }
     if (this.deadline !== Infinity) {
-      setTimeout(() => {
+      this.timer = setTimeout(() => {
         callStream.cancelWithStatus(
             Status.DEADLINE_EXCEEDED, 'Deadline exceeded');
       }, timeout);
+      callStream.on('status', () => clearTimeout(this.timer as NodeJS.Timer));
     }
   }
 
@@ -36,22 +50,10 @@ export class DeadlineFilter extends BaseFilter implements Filter {
     if (this.deadline === Infinity) {
       return await metadata;
     }
-    let timeoutString: Promise<string> =
-        new Promise<string>((resolve, reject) => {
-          this.channel.connect(() => {
-            let now = (new Date()).getTime();
-            let timeoutMs = this.deadline - now;
-            for (let [unit, factor] of units) {
-              let amount = timeoutMs / factor;
-              if (amount < 1e8) {
-                resolve(String(Math.ceil(amount)) + unit);
-                return;
-              }
-            }
-          });
-        });
-    let finalMetadata = await metadata;
-    finalMetadata.set('grpc-timeout', await timeoutString);
+    await this.channel.connect();
+    const timeoutString = getDeadline(this.deadline);
+    const finalMetadata = await metadata;
+    finalMetadata.set('grpc-timeout', timeoutString);
     return finalMetadata;
   }
 }
