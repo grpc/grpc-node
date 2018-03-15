@@ -130,7 +130,12 @@ export type GrpcObject = {
   [index: string]: GrpcObject | ServiceClientConstructor;
 };
 
-export function loadPackageDefinition(packageDef: PackageDefinition) {
+/**
+ * Load a gRPC package definition as a gRPC object hierarchy.
+ * @param packageDef The package definition object.
+ * @return The resulting gRPC object.
+ */
+export function loadPackageDefinition(packageDef: PackageDefinition): GrpcObject {
   const result: GrpcObject = {};
   for (const serviceFqn in packageDef) {
     const service = packageDef[serviceFqn];

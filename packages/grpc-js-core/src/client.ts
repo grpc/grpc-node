@@ -16,6 +16,10 @@ export interface UnaryCallback<ResponseType> {
   (err: ServiceError|null, value?: ResponseType): void;
 }
 
+/**
+ * A generic gRPC client. Primarily useful as a base class for all generated
+ * clients.
+ */
 export class Client {
   private readonly [kChannel]: Channel;
   constructor(
