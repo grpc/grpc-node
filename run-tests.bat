@@ -35,18 +35,19 @@ SET FAILED=0
 for %%v in (4.8.4 6.11.3 7.9.0 8.5.0) do (
   nvm install %%v
   nvm use %%v
-  npm install -g npm
+  call npm install -g npm
   node -e "console.log(process.versions)"
 
-  SET JUNIT_REPORT_PATH=reports/node%%v/
+  mkdir reports\node%%v
+  SET JUNIT_REPORT_PATH=reports/node%%v
 
   call .\node_modules\.bin\gulp clean.all || SET FAILED=1
   call .\node_modules\.bin\gulp setup.windows || SET FAILED=1
   call .\node_modules\.bin\gulp native.test || SET FAILED=1
 )
 
-if %FAILED% neq 0 exit /b 1
 node merge_kokoro_logs.js
+if %FAILED% neq 0 exit /b 1
 goto :EOF
 
 :error
