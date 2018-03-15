@@ -2,7 +2,7 @@
 --- |
   {
     "name": "grpc",
-    "version": "${settings.version}",
+    "version": "${settings.get('node_version', settings.version)}",
     "author": "Google Inc.",
     "description": "gRPC Library for Node",
     "homepage": "https://grpc.io/",
@@ -32,7 +32,7 @@
     "dependencies": {
       "lodash": "^4.15.0",
       "nan": "^2.0.0",
-      "node-pre-gyp": "^0.6.39",
+      "node-pre-gyp": "^0.9.0",
       "protobufjs": "^5.0.0"
     },
     "devDependencies": {
