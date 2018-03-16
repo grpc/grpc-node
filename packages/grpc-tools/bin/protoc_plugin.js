@@ -32,7 +32,7 @@ var exe_ext = process.platform === 'win32' ? '.exe' : '';
 
 var plugin = path.resolve(__dirname, 'grpc_node_plugin' + exe_ext);
 
-var child_process = execFile(plugin, process.argv.slice(2), {encoding: 'buffer'}, function(error, stdout, stderr) {
+var child_process = execFile(plugin, process.argv.slice(2), {encoding: 'buffer', maxBuffer: 1024 * 1000}, function(error, stdout, stderr) {
   if (error) {
     throw error;
   }
