@@ -15,6 +15,8 @@
 SET ROOT=%~dp0
 cd /d %~dp0
 
+powershell -c "Get-Host"
+powershell -c "$PSVersionTable"
 powershell -c "& { iwr https://raw.githubusercontent.com/grumpycoders/nvm-ps/master/nvm.ps1 | iex }"
 
 SET PATH=%APPDATA%\nvm-ps;%APPDATA%\nvm-ps\nodejs;%PATH%
