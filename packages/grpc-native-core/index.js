@@ -143,6 +143,11 @@ exports.load = function load(filename, format, options) {
   } finally {
     ProtoBuf.convertFieldsToCamelCase = convertFieldsToCamelCaseOriginal;
   }
+
+  if (!builder) {
+    throw new Error('Could not load file "' + filename + '"');
+  }
+
   return loadObject(builder.ns, options);
 };
 
