@@ -41,6 +41,8 @@ for %%v in (4.8.4 6.11.3 7.9.0 8.5.0) do (
   mkdir reports\node%%v
   SET JUNIT_REPORT_PATH=reports/node%%v
 
+  node -e "process.exit(process.version.startsWith('v%%v') ? 0 : -1)" || goto :error
+
   call .\node_modules\.bin\gulp clean.all || SET FAILED=1
   call .\node_modules\.bin\gulp setup.windows || SET FAILED=1
   call .\node_modules\.bin\gulp native.test || SET FAILED=1
