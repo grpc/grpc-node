@@ -17,6 +17,7 @@ export interface CallStreamOptions {
   deadline: Deadline;
   credentials: CallCredentials;
   flags: number;
+  host: string;
 }
 
 export type CallOptions = Partial<CallStreamOptions>;
@@ -353,6 +354,10 @@ export class Http2CallStream extends Duplex implements CallStream {
 
   getPeer(): string {
     throw new Error('Not yet implemented');
+  }
+
+  getMethod(): string {
+    return this.methodName;
   }
 
   _read(size: number) {

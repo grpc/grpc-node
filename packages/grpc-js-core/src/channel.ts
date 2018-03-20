@@ -82,7 +82,8 @@ export interface Channel extends EventEmitter {
 
 export class Http2Channel extends EventEmitter implements Channel {
   private readonly userAgent: string;
-  private readonly authority: url.URL;
+  private readonly target: url.URL;
+  private readonly defaultAuthority: string;
   private connectivityState: ConnectivityState = ConnectivityState.IDLE;
   /* For now, we have up to one subchannel, which will exist as long as we are
    * connecting or trying to connect */
@@ -146,7 +147,7 @@ export class Http2Channel extends EventEmitter implements Channel {
     let subChannel: http2.ClientHttp2Session;
     let secureContext = this.credentials.getSecureContext();
     if (secureContext === null) {
-      subChannel = http2.connect(this.authority);
+      subChannel = http2.connect(this.target);
     } else {
       const connectionOptions: http2.SecureClientSessionOptions = {
         secureContext,
@@ -161,7 +162,7 @@ export class Http2Channel extends EventEmitter implements Channel {
         }
         connectionOptions.servername = sslTargetNameOverride;
       }
-      subChannel = http2.connect(this.authority, connectionOptions);
+      subChannel = http2.connect(this.target, connectionOptions);
     }
     this.subChannel = subChannel;
     let now = new Date();
@@ -195,9 +196,15 @@ export class Http2Channel extends EventEmitter implements Channel {
       private readonly options: Partial<ChannelOptions>) {
     super();
     if (credentials.getSecureContext() === null) {
-      this.authority = new url.URL(`http://${address}`);
+      this.target = new url.URL(`http://${address}`);
     } else {
-      this.authority = new url.URL(`https://${address}`);
+      this.target = new url.URL(`https://${address}`);
+    }
+    // TODO(murgatroid99): Add more centralized handling of channel options
+    if (this.options['grpc.default_authority']) {
+      this.defaultAuthority = this.options['grpc.default_authority'];
+    } else {
+      this.defaultAuthority = this.target.host;
     }
     this.filterStackFactory = new FilterStackFactory([
       new CompressionFilterFactory(this),
@@ -220,20 +227,16 @@ export class Http2Channel extends EventEmitter implements Channel {
   }
 
   private startHttp2Stream(
-      methodName: string, stream: Http2CallStream, metadata: Metadata) {
+      authority: string,
+      methodName: string,
+      stream: Http2CallStream,
+      metadata: Metadata) {
     let finalMetadata: Promise<Metadata> =
         stream.filterStack.sendMetadata(Promise.resolve(metadata.clone()));
     Promise.all([finalMetadata, this.connect()])
       .then(([metadataValue]) => {
         let headers = metadataValue.toHttp2Headers();
-        let host: string;
-        // TODO(murgatroid99): Add more centralized handling of channel options
-        if (this.options['grpc.default_authority']) {
-          host = this.options['grpc.default_authority'] as string;
-        } else {
-          host = this.authority.hostname;
-        }
-        headers[HTTP2_HEADER_AUTHORITY] = host;
+        headers[HTTP2_HEADER_AUTHORITY] = authority;
         headers[HTTP2_HEADER_USER_AGENT] = this.userAgent;
         headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
         headers[HTTP2_HEADER_METHOD] = 'POST';
@@ -249,7 +252,7 @@ export class Http2Channel extends EventEmitter implements Channel {
           /* In this case, we lost the connection while finalizing
            * metadata. That should be very unusual */
           setImmediate(() => {
-            this.startHttp2Stream(methodName, stream, metadata);
+            this.startHttp2Stream(authority, methodName, stream, metadata);
           });
         }
       }).catch((error: Error & { code: number }) => {
@@ -267,11 +270,12 @@ export class Http2Channel extends EventEmitter implements Channel {
     let finalOptions: CallStreamOptions = {
       deadline: options.deadline === undefined ? Infinity : options.deadline,
       credentials: options.credentials || CallCredentials.createEmpty(),
-      flags: options.flags || 0
+      flags: options.flags || 0,
+      host: options.host || defaultAuthority
     };
     let stream: Http2CallStream =
         new Http2CallStream(methodName, finalOptions, this.filterStackFactory);
-    this.startHttp2Stream(methodName, stream, metadata);
+    this.startHttp2Stream(finalOptions.host, methodName, stream, metadata);
     return stream;
   }
 
