@@ -62,9 +62,24 @@ class CallCredentials : public Nan::ObjectWrap {
 /* Auth metadata plugin functionality */
 
 typedef struct plugin_callback_data {
+  plugin_callback_data(const char *service_url_,
+                       grpc_credentials_plugin_metadata_cb cb_,
+                       void *user_data_)
+      : service_url(service_url_),
+        cb(cb_),
+        user_data(user_data_),
+        async_resource(NULL) {
+    Nan::HandleScope scope;
+    async_resource = new Nan::AsyncResource("grpc:plugin_callback_data");
+  }
+  ~plugin_callback_data() {
+    delete async_resource;
+  }
+
   const char *service_url;
   grpc_credentials_plugin_metadata_cb cb;
   void *user_data;
+  Nan::AsyncResource *async_resource;
 } plugin_callback_data;
 
 typedef struct plugin_state {

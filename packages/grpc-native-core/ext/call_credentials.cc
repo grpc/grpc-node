@@ -233,7 +233,7 @@ NAUV_WORK_CB(SendPluginCallback) {
         // Get Local<Function> from Nan::Callback*
         **plugin_callback};
     Nan::Callback *callback = state->callback;
-    callback->Call(argc, argv);
+    callback->Call(argc, argv, data->async_resource);
     delete data;
   }
 }
@@ -245,11 +245,10 @@ int plugin_get_metadata(
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t *num_creds_md, grpc_status_code *status,
     const char **error_details) {
+  HandleScope scope;
   plugin_state *p_state = reinterpret_cast<plugin_state *>(state);
-  plugin_callback_data *data = new plugin_callback_data;
-  data->service_url = context.service_url;
-  data->cb = cb;
-  data->user_data = user_data;
+  plugin_callback_data *data =
+      new plugin_callback_data(context.service_url, cb, user_data);
 
   uv_mutex_lock(&p_state->plugin_mutex);
   p_state->pending_callbacks->push(data);

@@ -103,6 +103,7 @@ struct tag {
       v8::Local<v8::Value> call_value);
   ~tag();
   Nan::Callback *callback;
+  Nan::AsyncResource *async_resource;
   OpVec *ops;
   Call *call;
   Nan::Persistent<v8::Value, Nan::CopyablePersistentTraits<v8::Value>>
