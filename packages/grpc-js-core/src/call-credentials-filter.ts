@@ -9,7 +9,7 @@ import {Metadata} from './metadata';
 export class CallCredentialsFilter extends BaseFilter implements Filter {
   private serviceUrl: string;
   constructor(
-      private readonly channel: Http2Channel,
+      private readonly credentials: CallCredentials,
       private readonly host: string,
       private readonly path: string) {
     super();
@@ -27,7 +27,7 @@ export class CallCredentialsFilter extends BaseFilter implements Filter {
   }
 
   async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    let credsMetadata = this.credentials.generateMetadata({ service_url: serviceUrl });
+    let credsMetadata = this.credentials.generateMetadata({ service_url: this.serviceUrl });
     let resultMetadata = await metadata;
     resultMetadata.merge(await credsMetadata);
     return resultMetadata;
@@ -43,6 +43,8 @@ export class CallCredentialsFilterFactory implements
 
   createFilter(callStream: CallStream): CallCredentialsFilter {
     return new CallCredentialsFilter(
-        this.credentials.compose(callStream.getCredentials()));
+      this.credentials.compose(callStream.getCredentials()),
+      callStream.getHost(),
+      callStream.getMethod());
   }
 }

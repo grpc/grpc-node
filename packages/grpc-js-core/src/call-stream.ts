@@ -45,6 +45,8 @@ export type CallStream =  {
   /* If the return value is null, the call has not ended yet. Otherwise, it has
    * ended with the specified status */
   getStatus(): StatusObject|null;
+  getMethod(): string;
+  getHost(): string;
 } & EmitterAugmentation1<'metadata', Metadata>
   & EmitterAugmentation1<'status', StatusObject>
   & ObjectDuplex<WriteObject, Buffer>;
@@ -358,6 +360,10 @@ export class Http2CallStream extends Duplex implements CallStream {
 
   getMethod(): string {
     return this.methodName;
+  }
+
+  getHost(): string {
+    return this.options.host;
   }
 
   _read(size: number) {

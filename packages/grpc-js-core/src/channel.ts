@@ -202,7 +202,7 @@ export class Http2Channel extends EventEmitter implements Channel {
     }
     // TODO(murgatroid99): Add more centralized handling of channel options
     if (this.options['grpc.default_authority']) {
-      this.defaultAuthority = this.options['grpc.default_authority'];
+      this.defaultAuthority = this.options['grpc.default_authority'] as string;
     } else {
       this.defaultAuthority = this.target.host;
     }
@@ -271,7 +271,7 @@ export class Http2Channel extends EventEmitter implements Channel {
       deadline: options.deadline === undefined ? Infinity : options.deadline,
       credentials: options.credentials || CallCredentials.createEmpty(),
       flags: options.flags || 0,
-      host: options.host || defaultAuthority
+      host: options.host || this.defaultAuthority
     };
     let stream: Http2CallStream =
         new Http2CallStream(methodName, finalOptions, this.filterStackFactory);
