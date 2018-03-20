@@ -77,7 +77,8 @@ describe('CallStream', () => {
   const callStreamArgs = {
     deadline: Infinity,
     credentials: CallCredentials.createEmpty(),
-    flags: 0
+    flags: 0,
+    host: ''
   };
   const filterStackFactory = new FilterStackFactory([]);
   const message = 'eat this message'; // 16 bytes

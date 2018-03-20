@@ -17,6 +17,7 @@ export interface CallStreamOptions {
   deadline: Deadline;
   credentials: CallCredentials;
   flags: number;
+  host: string;
 }
 
 export type CallOptions = Partial<CallStreamOptions>;
@@ -44,6 +45,8 @@ export type CallStream =  {
   /* If the return value is null, the call has not ended yet. Otherwise, it has
    * ended with the specified status */
   getStatus(): StatusObject|null;
+  getMethod(): string;
+  getHost(): string;
 } & EmitterAugmentation1<'metadata', Metadata>
   & EmitterAugmentation1<'status', StatusObject>
   & ObjectDuplex<WriteObject, Buffer>;
@@ -353,6 +356,14 @@ export class Http2CallStream extends Duplex implements CallStream {
 
   getPeer(): string {
     throw new Error('Not yet implemented');
+  }
+
+  getMethod(): string {
+    return this.methodName;
+  }
+
+  getHost(): string {
+    return this.options.host;
   }
 
   _read(size: number) {
