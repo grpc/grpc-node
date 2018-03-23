@@ -1,5 +1,5 @@
 {
-  "name": "@grpc/protobufjs",
+  "name": "@grpc/proto-loader",
   "version": "0.1.0",
   "description": "",
   "main": "build/src/index.js",
