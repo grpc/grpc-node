@@ -1,5 +1,5 @@
 {
-  "name": "@grpc/js-core",
+  "name": "@grpc/grpc-js",
   "version": "0.1.0",
   "description": "gRPC Library for Node - pure JS core",
   "homepage": "https://grpc.io/",
