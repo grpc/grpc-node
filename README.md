@@ -21,6 +21,12 @@ This library implements the core functionality of gRPC purely in JavaScript, wit
 
 ## Other Packages
 
+### gRPC Protobuf Loader
+
+Directory: [`packages/grpc-protobufjs`](https://github.com/grpc/grpc-node/tree/master/packages/grpc-protobufjs)
+
+This library loads `.proto` files into objects that can be passed to the gRPC libraries.
+
 ### gRPC Tools
 
 Directory: `packages/grpc-tools`
