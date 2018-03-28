@@ -64,6 +64,7 @@
         '-Wno-unused-parameter',
         '-DOSATOMIC_USE_INLINED=1',
         '-Wno-deprecated-declarations',
+        '-fvisibility=hidden',
     ],
     'ldflags': [
         '-g',
@@ -188,6 +189,7 @@
               '-Wno-unused-parameter',
               '-DOSATOMIC_USE_INLINED=1',
               '-Wno-deprecated-declarations',
+              '-fvisibility=hidden',
           ],
           'OTHER_CPLUSPLUSFLAGS': [
               '-g',
@@ -198,6 +200,7 @@
               '-Wno-unused-parameter',
               '-DOSATOMIC_USE_INLINED=1',
               '-Wno-deprecated-declarations',
+              '-fvisibility=hidden',
             '-stdlib=libc++',
             '-std=c++11',
             '-Wno-error=deprecated-declarations'

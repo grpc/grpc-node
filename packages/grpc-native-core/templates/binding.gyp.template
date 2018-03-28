@@ -58,7 +58,7 @@
       % for arg, prop in [('CPPFLAGS', 'cflags'), ('LDFLAGS', 'ldflags')]:
       %  if defaults['global'].get(arg, None) is not None:
       '${prop}': [
-        % for item in defaults['global'].get(arg).split():
+        % for item in defaults['global'].get(arg).split() + (['-fvisibility=hidden'] if arg == 'CPPFLAGS' else []):
           '${item}',
         % endfor
       ],
@@ -169,12 +169,12 @@
           'xcode_settings': {
             % if defaults['global'].get('CPPFLAGS', None) is not None:
             'OTHER_CFLAGS': [
-              % for item in defaults['global'].get('CPPFLAGS').split():
+              % for item in defaults['global'].get('CPPFLAGS').split() + ['-fvisibility=hidden']:
                 '${item}',
               % endfor
             ],
             'OTHER_CPLUSPLUSFLAGS': [
-              % for item in defaults['global'].get('CPPFLAGS').split():
+              % for item in defaults['global'].get('CPPFLAGS').split() + ['-fvisibility=hidden']:
                 '${item}',
               % endfor
               '-stdlib=libc++',
