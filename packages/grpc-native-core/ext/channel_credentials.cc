@@ -21,6 +21,7 @@
 #include "call.h"
 #include "call_credentials.h"
 #include "channel_credentials.h"
+#include "util.h"
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
 #include "grpc/support/log.h"
@@ -120,33 +121,35 @@ NAN_METHOD(ChannelCredentials::New) {
 }
 
 NAN_METHOD(ChannelCredentials::CreateSsl) {
-  char *root_certs = NULL;
-  grpc_ssl_pem_key_cert_pair key_cert_pair = {NULL, NULL};
+  StringOrNull root_certs;
+  StringOrNull private_key;
+  StringOrNull cert_chain;
   if (::node::Buffer::HasInstance(info[0])) {
-    root_certs = ::node::Buffer::Data(info[0]);
+    root_certs.assign(info[0]);
   } else if (!(info[0]->IsNull() || info[0]->IsUndefined())) {
     return Nan::ThrowTypeError("createSsl's first argument must be a Buffer");
   }
   if (::node::Buffer::HasInstance(info[1])) {
-    key_cert_pair.private_key = ::node::Buffer::Data(info[1]);
+    private_key.assign(info[1]);
   } else if (!(info[1]->IsNull() || info[1]->IsUndefined())) {
     return Nan::ThrowTypeError(
         "createSSl's second argument must be a Buffer if provided");
   }
   if (::node::Buffer::HasInstance(info[2])) {
-    key_cert_pair.cert_chain = ::node::Buffer::Data(info[2]);
+    cert_chain.assign(info[2]);
   } else if (!(info[2]->IsNull() || info[2]->IsUndefined())) {
     return Nan::ThrowTypeError(
         "createSSl's third argument must be a Buffer if provided");
   }
-  if ((key_cert_pair.private_key == NULL) !=
-      (key_cert_pair.cert_chain == NULL)) {
+  grpc_ssl_pem_key_cert_pair key_cert_pair = {private_key.get(),
+                                              cert_chain.get()};
+  if (private_key.isAssigned() != cert_chain.isAssigned()) {
     return Nan::ThrowError(
         "createSsl's second and third arguments must be"
         " provided or omitted together");
   }
   grpc_channel_credentials *creds = grpc_ssl_credentials_create(
-      root_certs, key_cert_pair.private_key == NULL ? NULL : &key_cert_pair,
+      root_certs.get(), private_key.isAssigned() ? &key_cert_pair : NULL,
       NULL);
   if (creds == NULL) {
     info.GetReturnValue().SetNull();
