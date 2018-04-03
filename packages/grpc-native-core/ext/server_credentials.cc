@@ -16,12 +16,16 @@
  *
  */
 
+#include <vector>
+
+#include <nan.h>
 #include <node.h>
 
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
 #include "grpc/support/log.h"
 #include "server_credentials.h"
+#include "util.h"
 
 namespace grpc {
 namespace node {
@@ -119,9 +123,9 @@ NAN_METHOD(ServerCredentials::New) {
 
 NAN_METHOD(ServerCredentials::CreateSsl) {
   Nan::HandleScope scope;
-  char *root_certs = NULL;
+  StringOrNull root_certs;
   if (::node::Buffer::HasInstance(info[0])) {
-    root_certs = ::node::Buffer::Data(info[0]);
+    root_certs.assign(info[0]);
   } else if (!(info[0]->IsNull() || info[0]->IsUndefined())) {
     return Nan::ThrowTypeError(
         "createSSl's first argument must be a Buffer if provided");
@@ -145,36 +149,34 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
   }
   Local<Array> pair_list = Local<Array>::Cast(info[1]);
   uint32_t key_cert_pair_count = pair_list->Length();
-  grpc_ssl_pem_key_cert_pair *key_cert_pairs =
-      new grpc_ssl_pem_key_cert_pair[key_cert_pair_count];
-
+  std::vector<grpc_ssl_pem_key_cert_pair> key_cert_pairs(key_cert_pair_count);
+  std::vector<StringOrNull> key_strings(key_cert_pair_count);
+  std::vector<StringOrNull> cert_strings(key_cert_pair_count);
   Local<String> key_key = Nan::New("private_key").ToLocalChecked();
   Local<String> cert_key = Nan::New("cert_chain").ToLocalChecked();
 
   for (uint32_t i = 0; i < key_cert_pair_count; i++) {
     Local<Value> pair_val = Nan::Get(pair_list, i).ToLocalChecked();
     if (!pair_val->IsObject()) {
-      delete[] key_cert_pairs;
       return Nan::ThrowTypeError("Key/cert pairs must be objects");
     }
     Local<Object> pair_obj = Nan::To<Object>(pair_val).ToLocalChecked();
     Local<Value> maybe_key = Nan::Get(pair_obj, key_key).ToLocalChecked();
     Local<Value> maybe_cert = Nan::Get(pair_obj, cert_key).ToLocalChecked();
     if (!::node::Buffer::HasInstance(maybe_key)) {
-      delete[] key_cert_pairs;
       return Nan::ThrowTypeError("private_key must be a Buffer");
     }
     if (!::node::Buffer::HasInstance(maybe_cert)) {
-      delete[] key_cert_pairs;
       return Nan::ThrowTypeError("cert_chain must be a Buffer");
     }
-    key_cert_pairs[i].private_key = ::node::Buffer::Data(maybe_key);
-    key_cert_pairs[i].cert_chain = ::node::Buffer::Data(maybe_cert);
+    key_strings[i].assign(maybe_key);
+    cert_strings[i].assign(maybe_cert);
+    key_cert_pairs[i].private_key = key_strings[i].get();
+    key_cert_pairs[i].cert_chain = cert_strings[i].get();
   }
   grpc_server_credentials *creds = grpc_ssl_server_credentials_create_ex(
-      root_certs, key_cert_pairs, key_cert_pair_count,
+      root_certs.get(), key_cert_pairs.data(), key_cert_pair_count,
       client_certificate_request, NULL);
-  delete[] key_cert_pairs;
   if (creds == NULL) {
     info.GetReturnValue().SetNull();
   } else {

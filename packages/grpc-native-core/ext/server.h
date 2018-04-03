@@ -38,7 +38,7 @@ class Server : public Nan::ObjectWrap {
      JavaScript constructor */
   static bool HasInstance(v8::Local<v8::Value> val);
 
-  void DestroyWrappedServer();
+  void FinishShutdown();
 
  private:
   explicit Server(grpc_server *server);
@@ -58,9 +58,10 @@ class Server : public Nan::ObjectWrap {
   static NAN_METHOD(ForceShutdown);
   static Nan::Callback *constructor;
   static Nan::Persistent<v8::FunctionTemplate> fun_tpl;
+  Nan::Persistent<v8::Value> running_self_ref;
 
   grpc_server *wrapped_server;
-  grpc_completion_queue *shutdown_queue;
+  bool is_shutdown;
 };
 
 }  // namespace node

@@ -62,6 +62,10 @@ describe('server', function() {
     before(function() {
       server = new grpc.Server();
     });
+    after(function() {
+      server.start();
+      server.forceShutdown();
+    });
     it('should bind to an unused port', function() {
       var port;
       assert.doesNotThrow(function() {
@@ -83,12 +87,6 @@ describe('server', function() {
         port = server.addHttp2Port('0.0.0.0:0', creds);
       });
       assert(port > 0);
-    });
-  });
-  describe('addSecureHttp2Port', function() {
-    var server;
-    before(function() {
-      server = new grpc.Server();
     });
   });
   describe('start', function() {
