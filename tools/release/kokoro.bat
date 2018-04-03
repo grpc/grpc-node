@@ -22,7 +22,11 @@ git submodule foreach --recursive git submodule update --init
 
 set ARTIFACTS_OUT=artifacts
 cd packages\grpc-native-core
-call tools\run_tests\artifacts\build_artifact_node.bat
+call tools\run_tests\artifacts\build_artifact_node.bat || goto :error
 cd ..\..
 
 move packages\grpc-native-core\artifacts .
+goto :EOF
+
+:error
+exit /b 1
