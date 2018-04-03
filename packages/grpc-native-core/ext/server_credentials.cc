@@ -16,6 +16,8 @@
  *
  */
 
+#include <vector>
+
 #include <nan.h>
 #include <node.h>
 
@@ -148,8 +150,8 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
   Local<Array> pair_list = Local<Array>::Cast(info[1]);
   uint32_t key_cert_pair_count = pair_list->Length();
   grpc_ssl_pem_key_cert_pair key_cert_pairs[key_cert_pair_count];
-  StringOrNull key_strings[key_cert_pair_count];
-  StringOrNull cert_strings[key_cert_pair_count];
+  std::vector<StringOrNull> key_strings(key_cert_pair_count);
+  std::vector<StringOrNull> cert_strings(key_cert_pair_count);
   Local<String> key_key = Nan::New("private_key").ToLocalChecked();
   Local<String> cert_key = Nan::New("cert_chain").ToLocalChecked();
 
