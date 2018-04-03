@@ -57,6 +57,7 @@ typedef struct log_args {
 
 typedef struct logger_state {
   Nan::Callback *callback;
+  Nan::AsyncResource *async_resource;
   std::queue<log_args *> *pending_args;
   uv_mutex_t mutex;
   uv_async_t async;
@@ -202,7 +203,7 @@ NAUV_WORK_CB(LogMessagesCallback) {
             .ToLocalChecked();
     const int argc = 5;
     Local<Value> argv[argc] = {file, line, severity, message, timestamp};
-    grpc_logger_state.callback->Call(argc, argv);
+    grpc_logger_state.callback->Call(argc, argv, grpc_logger_state.async_resource);
     delete[] arg->core_args.message;
     delete arg;
   }
@@ -252,6 +253,7 @@ NAN_METHOD(SetDefaultLoggerCallback) {
     grpc_logger_state.logger_set = true;
   }
   grpc_logger_state.callback = new Nan::Callback(info[0].As<v8::Function>());
+  grpc_logger_state.async_resource = new Nan::AsyncResource("grpc:logger");
 }
 
 NAN_METHOD(SetLogVerbosity) {

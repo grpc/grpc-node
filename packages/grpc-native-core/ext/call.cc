@@ -446,13 +446,18 @@ class ServerCloseResponseOp : public Op {
 };
 
 tag::tag(Callback *callback, OpVec *ops, Call *call, Local<Value> call_value)
-    : callback(callback), ops(ops), call(call) {
+    : callback(callback),
+      async_resource(NULL),
+      ops(ops),
+      call(call) {
   HandleScope scope;
+  async_resource = new Nan::AsyncResource("grpc:tag");  // Needs handle scope.
   call_persist.Reset(call_value);
 }
 
 tag::~tag() {
   delete callback;
+  delete async_resource;
   delete ops;
 }
 
@@ -468,10 +473,10 @@ void CompleteTag(void *tag, const char *error_message) {
       Nan::Set(tag_obj, op_ptr->GetOpType(), op_ptr->GetNodeValue());
     }
     Local<Value> argv[] = {Nan::Null(), tag_obj};
-    callback->Call(2, argv);
+    callback->Call(2, argv, tag_struct->async_resource);
   } else {
     Local<Value> argv[] = {Nan::Error(error_message)};
-    callback->Call(1, argv);
+    callback->Call(1, argv, tag_struct->async_resource);
   }
   bool success = (error_message == NULL);
   bool is_final_op = false;
