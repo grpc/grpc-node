@@ -61,7 +61,6 @@ class Server : public Nan::ObjectWrap {
   Nan::Persistent<v8::Value> running_self_ref;
 
   grpc_server *wrapped_server;
-  grpc_completion_queue *shutdown_queue;
   bool is_shutdown;
 };
 
