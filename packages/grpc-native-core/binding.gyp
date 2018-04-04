@@ -879,7 +879,6 @@
       ],
       'cflags': [
         '-pthread',
-        '-zdefs',
         '-Wno-error=deprecated-declarations'
       ],
       "conditions": [
