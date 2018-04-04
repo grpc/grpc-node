@@ -81,7 +81,7 @@ exports.loadObject = function loadObject(value, options) {
       protobufjsVersion = 5;
     } else {
       var error_message = 'Could not detect ProtoBuf.js version. Please ' +
-          'specify the version number with the "protobufjs_version" option';
+          'specify the version number with the "protobufjsVersion" option';
       throw new Error(error_message);
     }
   } else {
