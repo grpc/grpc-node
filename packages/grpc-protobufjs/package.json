@@ -1,8 +1,17 @@
 {
   "name": "@grpc/proto-loader",
   "version": "0.1.0",
-  "description": "",
+  "author": "Google Inc.",
+  "contributors": [
+    {
+      "name": "Michael Lumish",
+      "email": "mlumish@google.com"
+    }
+  ],
+  "description": "gRPC utility library for loading .proto files",
+  "homepage": "https://grpc.io/",
   "main": "build/src/index.js",
+  "typings": "build/src/index.d.ts",
   "scripts": {
     "build": "npm run compile",
     "clean": "gts clean",
@@ -20,7 +29,6 @@
     "type": "git",
     "url": "https://github.com/grpc/grpc-node.git"
   },
-  "author": "",
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/grpc/grpc-node/issues"
@@ -32,10 +40,12 @@
   "dependencies": {
     "@types/lodash": "^4.14.104",
     "@types/node": "^9.4.6",
+    "lodash": "^4.17.5",
+    "protobufjs": "^6.8.5"
+  },
+  "devDependencies": {
     "clang-format": "^1.2.2",
     "gts": "^0.5.3",
-    "lodash": "^4.17.5",
-    "protobufjs": "^6.8.5",
     "typescript": "~2.7.2"
   }
 }
