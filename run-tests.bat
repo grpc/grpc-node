@@ -29,15 +29,19 @@ SET JOBS=8
 call nvm version
 
 call nvm install 8
+call nvm use 8
 
 call npm install || goto :error
 
 SET JUNIT_REPORT_STACK=1
 SET FAILED=0
 
-for %%v in (4 6 7 8) do (
+for %%v in (4 6 7 8 9) do (
   call nvm install %%v
+  call nvm use %%v
   call npm install -g npm
+  @rem https://github.com/mapbox/node-pre-gyp/issues/362
+  call npm install -g node-gyp
   node -e "console.log(process.versions)"
 
   mkdir reports\node%%v
