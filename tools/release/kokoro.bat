@@ -14,6 +14,9 @@
 
 @echo "Starting Windows build"
 
+@rem https://github.com/mapbox/node-pre-gyp/issues/362
+call npm install -g node-gyp
+
 cd /d %~dp0
 cd ..\..
 
