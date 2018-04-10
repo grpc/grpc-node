@@ -1,20 +1,14 @@
 [
+  "nodejs-bigtable",
   "nodejs-datastore",
-  "nodejs-language",
-  "nodejs-storage",
-  "nodejs-translate",
-  "nodejs-logging",
-  "nodejs-video-intelligence",
   "nodejs-dlp",
   "nodejs-firestore",
+  "nodejs-language",
+  "nodejs-logging",
+  "nodejs-monitoring",
   "nodejs-pubsub",
   "nodejs-spanner",
   "nodejs-speech",
-  "nodejs-vision",
-  "nodejs-bigquery",
-  "nodejs-monitoring",
-  "nodejs-bigtable",
-  "nodejs-dns",
-  "nodejs-resource",
-  "nodejs-compute"
+  "nodejs-video-intelligence",
+  "nodejs-vision"
 ]
