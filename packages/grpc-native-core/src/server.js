@@ -38,6 +38,15 @@ var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 
 /**
+ * Provides an API for integrating the async_hooks module with gRPC.
+ * Akin to Node HTTP servers, each incoming request is assigned a unique
+ * AsyncResource object with which continuation-local storage can be associated.
+ * All of these request-scoped AsyncResource objects share a common trigger:
+ * a long-lived AsyncResource assigned to the server.
+ */
+var createAsyncResourceWrapper = require('./async-hooks-integration');
+
+/**
  * Handle an error on a call by sending it as a status
  * @private
  * @param {grpc.internal~Call} call The call to send the error on
@@ -568,15 +577,18 @@ ServerDuplexStream.prototype.waitForCancel = waitForCancel;
  */
 function handleUnary(call, handler, metadata) {
   var emitter = new ServerUnaryCall(call, metadata);
+  var asyncResource = createAsyncResourceWrapper('grpc.ServerRequest', emitter);
   emitter.on('error', function(error) {
     handleError(call, error);
+    asyncResource.destroy();
   });
   emitter.waitForCancel();
   var batch = {};
   batch[grpc.opType.RECV_MESSAGE] = true;
-  call.startBatch(batch, function(err, result) {
+  call.startBatch(batch, asyncResource.wrap(function(err, result) {
     if (err) {
       handleError(call, err);
+      asyncResource.destroy();
       return;
     }
     try {
@@ -584,9 +596,11 @@ function handleUnary(call, handler, metadata) {
     } catch (e) {
       e.code = constants.status.INTERNAL;
       handleError(call, e);
+      asyncResource.destroy();
       return;
     }
     if (emitter.cancelled) {
+      asyncResource.destroy();
       return;
     }
     handler.func(emitter, function sendUnaryData(err, value, trailer, flags) {
@@ -598,8 +612,9 @@ function handleUnary(call, handler, metadata) {
       } else {
         sendUnaryResponse(call, value, handler.serialize, trailer, flags);
       }
+      asyncResource.destroy();
     });
-  });
+  }));
 }
 
 /**
@@ -623,13 +638,15 @@ function handleUnary(call, handler, metadata) {
  */
 function handleServerStreaming(call, handler, metadata) {
   var stream = new ServerWritableStream(call, metadata, handler.serialize);
+  var asyncResource = createAsyncResourceWrapper('grpc.ServerRequest', stream);
+  stream.on('error', asyncResource.destroy);
+  stream.on('finish', asyncResource.destroy);
   stream.waitForCancel();
   var batch = {};
   batch[grpc.opType.RECV_MESSAGE] = true;
-  call.startBatch(batch, function(err, result) {
+  call.startBatch(batch, asyncResource.wrap(function(err, result) {
     if (err) {
       stream.emit('error', err);
-      return;
     }
     try {
       stream.request = handler.deserialize(result.read);
@@ -639,7 +656,7 @@ function handleServerStreaming(call, handler, metadata) {
       return;
     }
     handler.func(stream);
-  });
+  }));
 }
 
 /**
@@ -665,21 +682,26 @@ function handleServerStreaming(call, handler, metadata) {
  */
 function handleClientStreaming(call, handler, metadata) {
   var stream = new ServerReadableStream(call, metadata, handler.deserialize);
+  var asyncResource = createAsyncResourceWrapper('grpc.ServerRequest', stream);
   stream.on('error', function(error) {
     handleError(call, error);
+    asyncResource.destroy();
   });
   stream.waitForCancel();
-  handler.func(stream, function(err, value, trailer, flags) {
-    stream.terminate();
-    if (err) {
-      if (trailer) {
-        err.metadata = trailer;
+  asyncResource.wrap(function() {
+    handler.func(stream, function(err, value, trailer, flags) {
+      stream.terminate();
+      if (err) {
+        if (trailer) {
+          err.metadata = trailer;
+        }
+        handleError(call, err);
+      } else {
+        sendUnaryResponse(call, value, handler.serialize, trailer, flags);
       }
-      handleError(call, err);
-    } else {
-      sendUnaryResponse(call, value, handler.serialize, trailer, flags);
-    }
-  });
+      asyncResource.destroy();
+    });
+  })();
 }
 
 /**
@@ -704,8 +726,13 @@ function handleClientStreaming(call, handler, metadata) {
 function handleBidiStreaming(call, handler, metadata) {
   var stream = new ServerDuplexStream(call, metadata, handler.serialize,
                                       handler.deserialize);
+  var asyncResource = createAsyncResourceWrapper('grpc.ServerRequest', stream);
+  stream.on('error', asyncResource.destroy);
+  stream.on('finish', asyncResource.destroy);
   stream.waitForCancel();
-  handler.func(stream);
+  asyncResource.wrap(function() {
+    handler.func(stream);
+  })();
 }
 
 var streamHandlers = {
@@ -744,6 +771,7 @@ Server.prototype.start = function() {
   }
   var self = this;
   this.started = true;
+  this.asyncResourceWrap = createAsyncResourceWrapper('grpc.Server', this);
   this._server.start();
   /**
    * Handles the SERVER_RPC_NEW event. If there is a handler associated with
@@ -752,7 +780,7 @@ Server.prototype.start = function() {
    * @param {grpc.internal~Event} event The event to handle with tag
    *     SERVER_RPC_NEW
    */
-  function handleNewCall(err, event) {
+  var handleNewCall = function (err, event) {
     if (err) {
       return;
     }
@@ -782,6 +810,7 @@ Server.prototype.start = function() {
     }
     streamHandlers[handler.type](call, handler, metadata);
   }
+  handleNewCall = this.asyncResourceWrap.wrap(handleNewCall);
   this._server.requestCall(handleNewCall);
 };
 
@@ -828,7 +857,11 @@ Server.prototype.register = function(name, handler, serialize, deserialize,
  * @param {function()} callback The shutdown complete callback
  */
 Server.prototype.tryShutdown = function(callback) {
-  this._server.tryShutdown(callback);
+  var self = this;
+  this._server.tryShutdown(function() {
+    self.asyncResourceWrap.destroy();
+    callback();
+  });
 };
 
 /**
@@ -839,6 +872,7 @@ Server.prototype.tryShutdown = function(callback) {
  */
 Server.prototype.forceShutdown = function() {
   this._server.forceShutdown();
+  this.asyncResourceWrap.destroy();
 };
 
 var unimplementedStatusResponse = {
