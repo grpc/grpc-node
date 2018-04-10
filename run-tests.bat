@@ -15,27 +15,33 @@
 SET ROOT=%~dp0
 cd /d %~dp0
 
-PowerShell -Command .\install-nvm-windows.ps1
+powershell -c "Get-Host"
+powershell -c "$PSVersionTable"
+powershell -c "[System.Environment]::OSVersion"
+powershell -c "Get-WmiObject -Class Win32_ComputerSystem"
+powershell -c "(Get-WmiObject -Class Win32_ComputerSystem).SystemType"
 
-SET NVM_HOME=%ROOT%nvm
-SET NVM_SYMLINK=%ROOT%nvm\nodejs
-SET PATH=%NVM_HOME%;%NVM_SYMLINK%;%PATH%
+powershell -c "& { iwr https://raw.githubusercontent.com/grumpycoders/nvm-ps/master/nvm.ps1 | iex }"
+
+SET PATH=%APPDATA%\nvm-ps;%APPDATA%\nvm-ps\nodejs;%PATH%
 SET JOBS=8
 
-nvm version
+call nvm version
 
-nvm install 8.5.0
-nvm use 8.5.0
+call nvm install 8
+call nvm use 8
 
 call npm install || goto :error
 
 SET JUNIT_REPORT_STACK=1
 SET FAILED=0
 
-for %%v in (4.8.4 6.11.3 7.9.0 8.5.0) do (
-  nvm install %%v
-  nvm use %%v
+for %%v in (4 6 7 8 9) do (
+  call nvm install %%v
+  call nvm use %%v
   call npm install -g npm
+  @rem https://github.com/mapbox/node-pre-gyp/issues/362
+  call npm install -g node-gyp
   node -e "console.log(process.versions)"
 
   mkdir reports\node%%v
