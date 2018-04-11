@@ -97,14 +97,14 @@ function createMethodDefinition(method: Protobuf.Method, serviceName: string, op
     responseSerialize: createSerializer(method.resolvedResponseType as Protobuf.Type),
     responseDeserialize: createDeserializer(method.resolvedResponseType as Protobuf.Type, options),
     // TODO(murgatroid99): Find a better way to handle this
-    originalName: _.camelCase(method.name)
+    originalName: method.name
   };
 }
 
 function createServiceDefinition(service: Protobuf.Service, name: string, options: Options): ServiceDefinition {
   const def: ServiceDefinition = {};
   for (const method of service.methodsArray) {
-    def[method.name] = createMethodDefinition(method, name, options);
+    def[_.camelCase(method.name)] = createMethodDefinition(method, name, options);
   }
   return def;
 }
