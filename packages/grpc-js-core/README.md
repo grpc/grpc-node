@@ -1,5 +1,7 @@
 # Pure JavaScript gRPC Client
 
+**Note: This is an alpha-level release. Some APIs may not yet be present and there may be bugs. Please report any that you encounter**
+
 ## Installation
 
 Node 9.x or greater is required.
