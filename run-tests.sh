@@ -26,7 +26,7 @@ set -ex
 cd $ROOT
 
 if [ ! -n "$node_versions" ] ; then
-  node_versions="4 5 6 7 8"
+  node_versions="4 5 6 7 8 9"
 fi
 
 set +ex
@@ -50,6 +50,9 @@ do
   nvm install $version
   nvm use $version
   set -ex
+
+  # https://github.com/mapbox/node-pre-gyp/issues/362
+  npm install -g node-gyp
 
   mkdir -p "reports/node$version"
 
