@@ -28,10 +28,19 @@ if (!process.env.USE_GRPC_NATIVE) {
                   options = filename[2];
                   filename = filename[0];
                 }
+                options = Object.assign({
+                  convertFieldsToCamelCase: true, // gax load uses hardcoded convertFieldsToCamelCase = true if it's not specified.
+                  binaryAsBase64: false, // gRPC default option
+                  longsAsStrings: true, // gRPC default option
+                  enumsAsStrings: true, // gRPC default option
+                }, options);
                 const packageDef = grpcProtobuf.loadSync(filename.file, {
-                  keepCase: false,
+                  keepCase: !options.convertFieldsToCamelCase,
                   defaults: true,
-                  enums: String,
+                  bytes: options.binaryAsBase64 ? String : Buffer,
+                  longs: options.longsAsString ? String : null,
+                  enums: options.enumsAsStrings ? String : null,
+                  oneofs: true,
                   include: [filename.root]
                 });
                 return grpcImpl.loadPackageDefinition(packageDef);
@@ -42,12 +51,16 @@ if (!process.env.USE_GRPC_NATIVE) {
             shimmer.wrap(result.grpc.prototype, 'loadProto', (gaxLoadProto) => {
               const path = require('path');
               const googleProtoFilesDir = require('google-proto-files')('..');
-
               return function (protoPath, filename) {
+                // loadProto does not accept options, so the options passed
+                // here correspond to defaultGrpcOptions.
                 const packageDef = grpcProtobuf.loadSync(filename, {
                   keepCase: false,
                   defaults: true,
+                  bytes: Buffer,
+                  longs: String,
                   enums: String,
+                  oneofs: true,
                   include: [protoPath, googleProtoFilesDir]
                 });
                 return grpcImpl.loadPackageDefinition(packageDef);
@@ -75,10 +88,12 @@ if (!process.env.USE_GRPC_NATIVE) {
 
                 if (!protoObjectCache[protoObjectCacheKey]) {
                   const services = grpcProtobuf.loadSync(protoConfig.path, {
-                    keepCase: false,
-                    bytes: 'string',
+                    keepCase: false, // loadProtoFile_ uses hardcoded convertFieldsToCamelCase = true
                     defaults: true,
+                    bytes: String, // loadProtoFile_ uses hardcoded binaryAsBase64 = true
+                    longs: String,
                     enums: String,
+                    oneofs: true,
                     include: [config.protosDir]
                   });
                   const service = dotProp.get(services.google, protoConfig.service);
