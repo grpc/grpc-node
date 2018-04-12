@@ -42,6 +42,12 @@ export class Client {
         clearTimeout(timer);
       }
       cb(null);
+    }, (err: Error) => {
+      // Rejection occurs if channel is shut down first.
+      if (timer) {
+        clearTimeout(timer);
+      }
+      cb(err);
     });
     if (deadline !== Infinity) {
       let timeout: number;
