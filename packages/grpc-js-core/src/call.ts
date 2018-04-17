@@ -87,13 +87,13 @@ function setUpReadableStream<ResponseType>(
     stream.push(null);
   });
   call.on('status', (status: StatusObject) => {
-    stream.emit('status', status);
     if (status.code !== Status.OK) {
       const statusName = _.invert(Status)[status.code];
       const message: string = `${status.code} ${statusName}: ${status.details}`;
       const error: ServiceError = Object.assign(new Error(status.details), status);
       stream.emit('error', error);
     }
+    stream.emit('status', status);
   });
   call.pause();
 }
