@@ -85,3 +85,48 @@ export {
  * @param client The client to close.
  */
 export const closeClient = (client: Client) => client.close();
+
+export const waitForClientReady = (client: Client, deadline: Date|number, callback: (error: Error | null) => void) => client.waitForReady(deadline, callback);
+
+/**** Unimplemented function stubs ****/
+
+export const loadObject = (value: any, options: any) => {
+  throw new Error('Not available in this library. Use @grpc/proto-loader and loadPackageDefinition instead');
+}
+
+export const load = (filename: any, format: any, options: any) => {
+  throw new Error('Not available in this library. Use @grpc/proto-loader and loadPackageDefinition instead');
+}
+
+export const setLogger = (logger: any) => {
+  throw new Error('Not yet implemented');
+}
+
+export const setLogVerbosity = (verbosity: any) => {
+  throw new Error('Not yet implemented');
+}
+
+export const Server = (options: any) => {
+  throw new Error('Not yet implemented');
+}
+
+export const ServerCredentials = {
+  createSsl: (rootCerts: any, keyCertPairs: any, checkClientCertificate: any) => {
+    throw new Error('Not yet implemented');
+  },
+  createInsecure: () => {
+    throw new Error('Not yet implemented');
+  }
+}
+
+export const getClientChannel = (client: any) => {
+  throw new Error('Not available in this library');
+}
+
+export const StatusBuilder = () => { throw new Error('Not yet implemented'); }
+
+export const ListenerBuilder = () => { throw new Error('Not yet implemented'); }
+
+export const InterceptorBuilder = () => { throw new Error('Not yet implemented'); }
+
+export const InterceptingCall = () => { throw new Error('Not yet implemented'); }
