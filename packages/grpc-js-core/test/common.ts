@@ -4,6 +4,7 @@ export function mockFunction(): never {
   throw new Error('Not implemented');
 }
 
+// tslint:disable-next-line:no-namespace
 export namespace assert2 {
   const toCall = new Map<() => void, number>();
   const afterCallsQueue: Array<() => void> = [];
@@ -17,7 +18,9 @@ export namespace assert2 {
     try {
       return fn();
     } catch (e) {
-      assert.throws(() => {throw e});
+      assert.throws(() => {
+        throw e;
+      });
       throw e;  // for type safety only
     }
   }
@@ -42,7 +45,9 @@ export namespace assert2 {
    * Wraps a function to keep track of whether it was called or not.
    * @param fn The function to wrap.
    */
-  export function mustCall<T>(fn: (...args: any[]) => T): (...args: any[]) => T {
+  // tslint:disable:no-any
+  export function mustCall<T>(fn: (...args: any[]) => T):
+      (...args: any[]) => T {
     const existingValue = toCall.get(fn);
     if (existingValue !== undefined) {
       toCall.set(fn, existingValue + 1);
@@ -62,6 +67,7 @@ export namespace assert2 {
       return result;
     };
   }
+  // tslint:enable:no-any
 
   /**
    * Calls the given function when every function that was wrapped with

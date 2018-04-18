@@ -1,9 +1,9 @@
 import * as http2 from 'http2';
 import {forOwn} from 'lodash';
 
-export type MetadataValue = string | Buffer;
+export type MetadataValue = string|Buffer;
 
-export interface MetadataObject { [key: string]: Array<MetadataValue>; }
+export interface MetadataObject { [key: string]: MetadataValue[]; }
 
 function cloneMetadataObject(repr: MetadataObject): MetadataObject {
   const result: MetadataObject = {};
@@ -113,7 +113,7 @@ export class Metadata {
    * @param key The key whose value should be retrieved.
    * @return A list of values associated with the given key.
    */
-  get(key: string): Array<MetadataValue> {
+  get(key: string): MetadataValue[] {
     key = normalizeKey(key);
     validate(key);
     if (Object.prototype.hasOwnProperty.call(this.internalRepr, key)) {
@@ -144,7 +144,7 @@ export class Metadata {
    * @return The newly cloned object.
    */
   clone(): Metadata {
-    let newMetadata = new Metadata();
+    const newMetadata = new Metadata();
     newMetadata.internalRepr = cloneMetadataObject(this.internalRepr);
     return newMetadata;
   }
@@ -181,7 +181,7 @@ export class Metadata {
     });
     return result;
   }
-  
+
   // For compatibility with the other Metadata implementation
   private _getCoreRepresentation() {
     return this.internalRepr;
@@ -201,8 +201,9 @@ export class Metadata {
             result.add(key, Buffer.from(value, 'base64'));
           });
         } else if (values !== undefined) {
-          values.split(',').map(v => v.trim()).forEach(v =>
-            result.add(key, Buffer.from(v, 'base64')));
+          values.split(',')
+              .map(v => v.trim())
+              .forEach(v => result.add(key, Buffer.from(v, 'base64')));
         }
       } else {
         if (Array.isArray(values)) {
@@ -210,8 +211,7 @@ export class Metadata {
             result.add(key, value);
           });
         } else if (values !== undefined) {
-          values.split(',').map(v => v.trim()).forEach(v =>
-            result.add(key, v));
+          values.split(',').map(v => v.trim()).forEach(v => result.add(key, v));
         }
       }
     });

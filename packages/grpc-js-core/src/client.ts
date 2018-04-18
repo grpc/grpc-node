@@ -21,7 +21,7 @@ export interface UnaryCallback<ResponseType> {
  * clients.
  */
 export class Client {
-  private readonly [kChannel]: Channel;
+  private readonly[kChannel]: Channel;
   constructor(
       address: string, credentials: ChannelCredentials,
       options: Partial<ChannelOptions> = {}) {
@@ -34,24 +34,26 @@ export class Client {
 
   waitForReady(deadline: Date|number, callback: (error: Error|null) => void):
       void {
-    let cb: (error: Error|null) => void = once(callback);
-    let callbackCalled = false;
-    let timer: NodeJS.Timer | null = null;
-    this[kChannel].connect().then(() => {
-      if (timer) {
-        clearTimeout(timer);
-      }
-      cb(null);
-    }, (err: Error) => {
-      // Rejection occurs if channel is shut down first.
-      if (timer) {
-        clearTimeout(timer);
-      }
-      cb(err);
-    });
+    const cb: (error: Error|null) => void = once(callback);
+    const callbackCalled = false;
+    let timer: NodeJS.Timer|null = null;
+    this[kChannel].connect().then(
+        () => {
+          if (timer) {
+            clearTimeout(timer);
+          }
+          cb(null);
+        },
+        (err: Error) => {
+          // Rejection occurs if channel is shut down first.
+          if (timer) {
+            clearTimeout(timer);
+          }
+          cb(err);
+        });
     if (deadline !== Infinity) {
       let timeout: number;
-      let now: number = (new Date).getTime();
+      const now: number = (new Date()).getTime();
       if (deadline instanceof Date) {
         timeout = deadline.getTime() - now;
       } else {
@@ -94,7 +96,8 @@ export class Client {
       if (status.code === Status.OK) {
         callback(null, responseMessage as ResponseType);
       } else {
-        const error: ServiceError = Object.assign(new Error(status.details), status);
+        const error: ServiceError =
+            Object.assign(new Error(status.details), status);
         callback(error);
       }
     });
@@ -156,7 +159,7 @@ export class Client {
     const call: CallStream =
         this[kChannel].createStream(method, metadata, options);
     const message: Buffer = serialize(argument);
-    const writeObj: WriteObject = {message: message};
+    const writeObj: WriteObject = {message};
     writeObj.flags = options.flags;
     call.write(writeObj);
     call.end();
@@ -238,7 +241,7 @@ export class Client {
     const call: CallStream =
         this[kChannel].createStream(method, metadata, options);
     const message: Buffer = serialize(argument);
-    const writeObj: WriteObject = {message: message};
+    const writeObj: WriteObject = {message};
     writeObj.flags = options.flags;
     call.write(writeObj);
     call.end();
