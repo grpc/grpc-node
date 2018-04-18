@@ -1,32 +1,33 @@
 import * as assert from 'assert';
-import { CallCredentials } from '../src/call-credentials';
-import { Http2CallStream } from '../src/call-stream';
-import { mockFunction, assert2 } from './common';
-import { Status } from '../src/constants';
-import { EventEmitter } from 'events';
-import { FilterStackFactory } from '../src/filter-stack';
+import {EventEmitter} from 'events';
 import * as http2 from 'http2';
-import { forOwn, range } from 'lodash';
-import { Metadata } from '../src/metadata';
+import {forOwn, range} from 'lodash';
 import * as stream from 'stream';
 
+import {CallCredentials} from '../src/call-credentials';
+import {Http2CallStream} from '../src/call-stream';
+import {Status} from '../src/constants';
+import {FilterStackFactory} from '../src/filter-stack';
+import {Metadata} from '../src/metadata';
+
+import {assert2, mockFunction} from './common';
+
 interface DataFrames {
-  payload: Buffer,
-  frameLengths: number[]
+  payload: Buffer;
+  frameLengths: number[];
 }
 
-const {
-  HTTP2_HEADER_STATUS
-} = http2.constants;
+const {HTTP2_HEADER_STATUS} = http2.constants;
 
 function serialize(data: string): Buffer {
   const header: Buffer = Buffer.alloc(5);
-  header.writeUInt8(0, 0); // TODO: Uncompressed only
+  header.writeUInt8(0, 0);  // TODO: Uncompressed only
   header.writeInt32BE(data.length, 1);
   return Buffer.concat([header, Buffer.from(data, 'utf8')]);
 }
 
-class ClientHttp2StreamMock extends stream.Duplex implements http2.ClientHttp2Stream {
+class ClientHttp2StreamMock extends stream.Duplex implements
+    http2.ClientHttp2Stream {
   constructor(private readonly dataFrames: DataFrames) {
     super();
   }
@@ -38,13 +39,15 @@ class ClientHttp2StreamMock extends stream.Duplex implements http2.ClientHttp2St
   }
   bytesRead = 0;
   dataFrame = 0;
-  aborted: boolean = false;
-  closed: boolean = false;
-  destroyed: boolean = false;
-  pending: boolean = false;
-  rstCode: number = 0;
+  aborted = false;
+  closed = false;
+  destroyed = false;
+  pending = false;
+  rstCode = 0;
+  // tslint:disable:no-any
   session: http2.Http2Session = {} as any;
   state: http2.StreamState = {} as any;
+  // tslint:enable:no-any
   close = mockFunction;
   priority = mockFunction;
   rstStream = mockFunction;
@@ -58,7 +61,7 @@ class ClientHttp2StreamMock extends stream.Duplex implements http2.ClientHttp2St
     if (this.dataFrame === this.dataFrames.frameLengths.length) {
       if (this.bytesRead < this.dataFrames.payload.length) {
         this.push(this.dataFrames.payload.slice(
-          this.bytesRead, this.dataFrames.payload.length));
+            this.bytesRead, this.dataFrames.payload.length));
       }
       this.push(null);
       return;
@@ -66,7 +69,7 @@ class ClientHttp2StreamMock extends stream.Duplex implements http2.ClientHttp2St
     const from = this.bytesRead;
     this.bytesRead += this.dataFrames.frameLengths[this.dataFrame++];
     this.push(this.dataFrames.payload.slice(from, this.bytesRead));
-  };
+  }
   _write(chunk: Buffer, encoding: string, cb: Function) {
     this.emit('write', chunk);
     cb();
@@ -81,28 +84,28 @@ describe('CallStream', () => {
     host: ''
   };
   const filterStackFactory = new FilterStackFactory([]);
-  const message = 'eat this message'; // 16 bytes
+  const message = 'eat this message';  // 16 bytes
 
   beforeEach(() => {
     assert2.clearMustCalls();
   });
 
-  it('should emit a metadata event when it receives a response event', (done) => {
-    const responseMetadata = new Metadata();
-    responseMetadata.add('key', 'value');
-    const callStream = new Http2CallStream('foo', callStreamArgs, filterStackFactory);
+  it('should emit a metadata event when it receives a response event',
+     (done) => {
+       const responseMetadata = new Metadata();
+       responseMetadata.add('key', 'value');
+       const callStream =
+           new Http2CallStream('foo', callStreamArgs, filterStackFactory);
 
-    const http2Stream = new ClientHttp2StreamMock({
-      payload: Buffer.alloc(0),
-      frameLengths: []
-    });
-    callStream.once('metadata', assert2.mustCall((metadata) => {
-      assert.deepStrictEqual(metadata.get('key'), ['value']);
-    }));
-    callStream.attachHttp2Stream(http2Stream);
-    http2Stream.emitResponse(200, responseMetadata);
-    assert2.afterMustCallsSatisfied(done);
-  });
+       const http2Stream = new ClientHttp2StreamMock(
+           {payload: Buffer.alloc(0), frameLengths: []});
+       callStream.once('metadata', assert2.mustCall((metadata) => {
+         assert.deepStrictEqual(metadata.get('key'), ['value']);
+       }));
+       callStream.attachHttp2Stream(http2Stream);
+       http2Stream.emitResponse(200, responseMetadata);
+       assert2.afterMustCallsSatisfied(done);
+     });
 
   describe('should end a call with an error if a stream was closed', () => {
     const c = http2.constants;
@@ -126,14 +129,13 @@ describe('CallStream', () => {
     keys.forEach((key) => {
       const value = errorCodeMapping[key];
       // A null value indicates: behavior isn't specified, so skip this test.
-      let maybeSkip = (fn: typeof it) => value ? fn : fn.skip;
+      const maybeSkip = (fn: typeof it) => value ? fn : fn.skip;
       maybeSkip(it)(`for error code ${key}`, () => {
         return new Promise((resolve, reject) => {
-          const callStream = new Http2CallStream('foo', callStreamArgs, filterStackFactory);
-          const http2Stream = new ClientHttp2StreamMock({
-            payload: Buffer.alloc(0),
-            frameLengths: []
-          });
+          const callStream =
+              new Http2CallStream('foo', callStreamArgs, filterStackFactory);
+          const http2Stream = new ClientHttp2StreamMock(
+              {payload: Buffer.alloc(0), frameLengths: []});
           callStream.attachHttp2Stream(http2Stream);
           callStream.once('status', (status) => {
             try {
@@ -150,7 +152,8 @@ describe('CallStream', () => {
   });
 
   it('should have functioning getters', (done) => {
-    const callStream = new Http2CallStream('foo', callStreamArgs, filterStackFactory);
+    const callStream =
+        new Http2CallStream('foo', callStreamArgs, filterStackFactory);
     assert.strictEqual(callStream.getDeadline(), callStreamArgs.deadline);
     assert.strictEqual(callStream.getCredentials(), callStreamArgs.credentials);
     assert.strictEqual(callStream.getStatus(), null);
@@ -166,11 +169,10 @@ describe('CallStream', () => {
 
   describe('attachHttp2Stream', () => {
     it('should handle an empty message', (done) => {
-      const callStream = new Http2CallStream('foo', callStreamArgs, filterStackFactory);
-      const http2Stream = new ClientHttp2StreamMock({
-        payload: serialize(''),
-        frameLengths: []
-      });
+      const callStream =
+          new Http2CallStream('foo', callStreamArgs, filterStackFactory);
+      const http2Stream =
+          new ClientHttp2StreamMock({payload: serialize(''), frameLengths: []});
       callStream.once('data', assert2.mustCall((buffer) => {
         assert.strictEqual(buffer.toString('utf8'), '');
       }));
@@ -178,65 +180,57 @@ describe('CallStream', () => {
       assert2.afterMustCallsSatisfied(done);
     });
 
-    [
-      {
-        description: 'all data is supplied in a single frame',
-        frameLengths: []
-      },
-      {
-        description: 'frames are split along header field delimiters',
-        frameLengths: [1, 4]
-      },
-      {
-        description: 'portions of header fields are split between different frames',
-        frameLengths: [2, 1, 1, 4]
-      },
-      {
-        description: 'frames are split into bytes',
-        frameLengths: range(0, 20).map(() => 1)
-      }
-    ].forEach((testCase: { description: string, frameLengths: number[] }) => {
-      it(`should handle a short message where ${testCase.description}`, (done) => {
-        const callStream = new Http2CallStream('foo', callStreamArgs, filterStackFactory);
-        const http2Stream = new ClientHttp2StreamMock({
-          payload: serialize(message), // 21 bytes
-          frameLengths: testCase.frameLengths
-        });
-        callStream.once('data', assert2.mustCall((buffer) => {
-          assert.strictEqual(buffer.toString('utf8'), message);
-        }));
-        callStream.once('end', assert2.mustCall(() => {}));
-        callStream.attachHttp2Stream(http2Stream);
-        assert2.afterMustCallsSatisfied(done);
-      });
+    [{description: 'all data is supplied in a single frame', frameLengths: []},
+     {
+       description: 'frames are split along header field delimiters',
+       frameLengths: [1, 4]
+     },
+     {
+       description:
+           'portions of header fields are split between different frames',
+       frameLengths: [2, 1, 1, 4]
+     },
+     {
+       description: 'frames are split into bytes',
+       frameLengths: range(0, 20).map(() => 1)
+     }].forEach((testCase: {description: string, frameLengths: number[]}) => {
+      it(`should handle a short message where ${testCase.description}`,
+         (done) => {
+           const callStream =
+               new Http2CallStream('foo', callStreamArgs, filterStackFactory);
+           const http2Stream = new ClientHttp2StreamMock({
+             payload: serialize(message),  // 21 bytes
+             frameLengths: testCase.frameLengths
+           });
+           callStream.once('data', assert2.mustCall((buffer) => {
+             assert.strictEqual(buffer.toString('utf8'), message);
+           }));
+           callStream.once('end', assert2.mustCall(() => {}));
+           callStream.attachHttp2Stream(http2Stream);
+           assert2.afterMustCallsSatisfied(done);
+         });
     });
 
-    [
-      {
-        description: 'all data is supplied in a single frame',
-        frameLengths: []
-      },
-      {
-        description: 'frames are split between delimited messages',
-        frameLengths: [21]
-      },
-      {
-        description: 'frames are split within messages',
-        frameLengths: [10, 22]
-      },
-      {
-        description: 'part of 2nd message\'s header is in first frame',
-        frameLengths: [24]
-      },
-      {
-        description: 'frames are split into bytes',
-        frameLengths: range(0, 41).map(() => 1)
-      }
-    ].forEach((testCase: { description: string, frameLengths: number[] }) => {
+    [{description: 'all data is supplied in a single frame', frameLengths: []},
+     {
+       description: 'frames are split between delimited messages',
+       frameLengths: [21]
+     },
+     {description: 'frames are split within messages', frameLengths: [10, 22]},
+     {
+       description: 'part of 2nd message\'s header is in first frame',
+       frameLengths: [24]
+     },
+     {
+       description: 'frames are split into bytes',
+       frameLengths: range(0, 41).map(() => 1)
+     }].forEach((testCase: {description: string, frameLengths: number[]}) => {
       it(`should handle two messages where ${testCase.description}`, (done) => {
-        const callStream = new Http2CallStream('foo', callStreamArgs, filterStackFactory);
+        const callStream =
+            new Http2CallStream('foo', callStreamArgs, filterStackFactory);
         const http2Stream = new ClientHttp2StreamMock({
-          payload: Buffer.concat([serialize(message), serialize(message)]), // 42 bytes
+          payload: Buffer.concat(
+              [serialize(message), serialize(message)]),  // 42 bytes
           frameLengths: testCase.frameLengths
         });
         callStream.once('data', assert2.mustCall((buffer) => {
@@ -252,11 +246,10 @@ describe('CallStream', () => {
     });
 
     it('should send buffered writes', (done) => {
-      const callStream = new Http2CallStream('foo', callStreamArgs, filterStackFactory);
-      const http2Stream = new ClientHttp2StreamMock({
-        payload: Buffer.alloc(0),
-        frameLengths: []
-      });
+      const callStream =
+          new Http2CallStream('foo', callStreamArgs, filterStackFactory);
+      const http2Stream = new ClientHttp2StreamMock(
+          {payload: Buffer.alloc(0), frameLengths: []});
       let streamFlushed = false;
       http2Stream.once('write', assert2.mustCall((chunk: Buffer) => {
         const dataLength = chunk.readInt32BE(1);
@@ -265,9 +258,7 @@ describe('CallStream', () => {
         assert.strictEqual(encodedMessage, message);
         streamFlushed = true;
       }));
-      callStream.write({
-        message: Buffer.from(message)
-      }, assert2.mustCall(() => {
+      callStream.write({message: Buffer.from(message)}, assert2.mustCall(() => {
         // Ensure this is called only after contents are written to http2Stream
         assert.ok(streamFlushed);
       }));
@@ -276,32 +267,30 @@ describe('CallStream', () => {
       assert2.afterMustCallsSatisfied(done);
     });
 
-    it('should cause data chunks in write calls afterward to be written to the given stream', (done) => {
-      const callStream = new Http2CallStream('foo', callStreamArgs, filterStackFactory);
-      const http2Stream = new ClientHttp2StreamMock({
-        payload: Buffer.alloc(0),
-        frameLengths: []
-      });
-      http2Stream.once('write', assert2.mustCall((chunk: Buffer) => {
-        const dataLength = chunk.readInt32BE(1);
-        const encodedMessage = chunk.slice(5).toString('utf8');
-        assert.strictEqual(dataLength, message.length);
-        assert.strictEqual(encodedMessage, message);
-      }));
-      callStream.attachHttp2Stream(http2Stream);
-      callStream.write({
-        message: Buffer.from(message)
-      }, assert2.mustCall(() => {}));
-      callStream.end(assert2.mustCall(() => {}));
-      assert2.afterMustCallsSatisfied(done);
-    });
+    it('should cause data chunks in write calls afterward to be written to the given stream',
+       (done) => {
+         const callStream =
+             new Http2CallStream('foo', callStreamArgs, filterStackFactory);
+         const http2Stream = new ClientHttp2StreamMock(
+             {payload: Buffer.alloc(0), frameLengths: []});
+         http2Stream.once('write', assert2.mustCall((chunk: Buffer) => {
+           const dataLength = chunk.readInt32BE(1);
+           const encodedMessage = chunk.slice(5).toString('utf8');
+           assert.strictEqual(dataLength, message.length);
+           assert.strictEqual(encodedMessage, message);
+         }));
+         callStream.attachHttp2Stream(http2Stream);
+         callStream.write(
+             {message: Buffer.from(message)}, assert2.mustCall(() => {}));
+         callStream.end(assert2.mustCall(() => {}));
+         assert2.afterMustCallsSatisfied(done);
+       });
 
     it('should handle underlying stream errors', () => {
-      const callStream = new Http2CallStream('foo', callStreamArgs, filterStackFactory);
-      const http2Stream = new ClientHttp2StreamMock({
-        payload: Buffer.alloc(0),
-        frameLengths: []
-      });
+      const callStream =
+          new Http2CallStream('foo', callStreamArgs, filterStackFactory);
+      const http2Stream = new ClientHttp2StreamMock(
+          {payload: Buffer.alloc(0), frameLengths: []});
       callStream.once('status', assert2.mustCall((status) => {
         assert.strictEqual(status.code, Status.INTERNAL);
       }));

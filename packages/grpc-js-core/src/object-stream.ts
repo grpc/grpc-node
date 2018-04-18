@@ -1,14 +1,15 @@
 import {Duplex, Readable, Writable} from 'stream';
 import {EmitterAugmentation1} from './events';
 
+// tslint:disable:no-any
+
 export interface IntermediateObjectReadable<T> extends Readable {
   read(size?: number): any&T;
 }
 
 export type ObjectReadable<T> = {
   read(size?: number): T;
-} & EmitterAugmentation1<'data', T>
-  & IntermediateObjectReadable<T>;
+}&EmitterAugmentation1<'data', T>&IntermediateObjectReadable<T>;
 
 export interface IntermediateObjectWritable<T> extends Writable {
   _write(chunk: any&T, encoding: string, callback: Function): void;
@@ -39,4 +40,4 @@ export type ObjectDuplex<T, U> = {
   end(): void;
   end(chunk: T, cb?: Function): void;
   end(chunk: T, encoding?: any, cb?: Function): void;
-} & Duplex & ObjectWritable<T> & ObjectReadable<U>;
+}&Duplex&ObjectWritable<T>&ObjectReadable<U>;

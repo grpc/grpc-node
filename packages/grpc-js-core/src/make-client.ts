@@ -1,17 +1,14 @@
-import { Metadata } from "./metadata";
-import { Client, UnaryCallback } from "./client";
-import { CallOptions } from "./call-stream";
 import * as _ from 'lodash';
-import { ChannelCredentials } from "./channel-credentials";
-import { ChannelOptions } from "./channel";
 
-export interface Serialize<T> {
-  (value: T): Buffer;
-}
+import {CallOptions} from './call-stream';
+import {ChannelOptions} from './channel';
+import {ChannelCredentials} from './channel-credentials';
+import {Client, UnaryCallback} from './client';
+import {Metadata} from './metadata';
 
-export interface Deserialize<T> {
-  (bytes: Buffer): T;
-}
+export interface Serialize<T> { (value: T): Buffer; }
+
+export interface Deserialize<T> { (bytes: Buffer): T; }
 
 export interface MethodDefinition<RequestType, ResponseType> {
   path: string;
@@ -28,18 +25,11 @@ export interface ServiceDefinition {
   [index: string]: MethodDefinition<object, object>;
 }
 
-export interface PackageDefinition {
-  [index: string]: ServiceDefinition;
-}
+export interface PackageDefinition { [index: string]: ServiceDefinition; }
 
-function getDefaultValues<T>(metadata?: Metadata, options?: T): {
-  metadata: Metadata;
-  options: Partial<T>;
-} {
-  return {
-    metadata: metadata || new Metadata(),
-    options: options || {}
-  };
+function getDefaultValues<T>(metadata?: Metadata, options?: T):
+    {metadata: Metadata; options: Partial<T>;} {
+  return {metadata: metadata || new Metadata(), options: options || {}};
 }
 
 /**
@@ -60,9 +50,9 @@ export interface ServiceClient extends Client {
 
 export interface ServiceClientConstructor {
   new(address: string, credentials: ChannelCredentials,
-    options?: Partial<ChannelOptions>): ServiceClient;
+      options?: Partial<ChannelOptions>): ServiceClient;
   service: ServiceDefinition;
-};
+}
 
 /**
  * Creates a constructor for a client with the given methods, as specified in
@@ -111,23 +101,24 @@ export function makeClientConstructor(
     }
     const serialize = attrs.requestSerialize;
     const deserialize = attrs.responseDeserialize;
-    const methodFunc = _.partial(requesterFuncs[methodType], attrs.path,
-                                serialize, deserialize);
+    const methodFunc = _.partial(
+        requesterFuncs[methodType], attrs.path, serialize, deserialize);
     ServiceClientImpl.prototype[name] = methodFunc;
     // Associate all provided attributes with the method
     _.assign(ServiceClientImpl.prototype[name], attrs);
     if (attrs.originalName) {
-      ServiceClientImpl.prototype[attrs.originalName] = ServiceClientImpl.prototype[name];
+      ServiceClientImpl.prototype[attrs.originalName] =
+          ServiceClientImpl.prototype[name];
     }
   });
 
   ServiceClientImpl.service = methods;
 
   return ServiceClientImpl;
-};
+}
 
 export type GrpcObject = {
-  [index: string]: GrpcObject | ServiceClientConstructor;
+  [index: string]: GrpcObject|ServiceClientConstructor;
 };
 
 /**
@@ -135,20 +126,23 @@ export type GrpcObject = {
  * @param packageDef The package definition object.
  * @return The resulting gRPC object.
  */
-export function loadPackageDefinition(packageDef: PackageDefinition): GrpcObject {
+export function loadPackageDefinition(packageDef: PackageDefinition):
+    GrpcObject {
   const result: GrpcObject = {};
   for (const serviceFqn in packageDef) {
-    const service = packageDef[serviceFqn];
-    const nameComponents = serviceFqn.split('.');
-    const serviceName = nameComponents[nameComponents.length-1];
-    let current = result;
-    for (const packageName of nameComponents.slice(0, -1)) {
-      if (!current[packageName]) {
-        current[packageName] = {};
+    if (packageDef.hasOwnProperty(serviceFqn)) {
+      const service = packageDef[serviceFqn];
+      const nameComponents = serviceFqn.split('.');
+      const serviceName = nameComponents[nameComponents.length - 1];
+      let current = result;
+      for (const packageName of nameComponents.slice(0, -1)) {
+        if (!current[packageName]) {
+          current[packageName] = {};
+        }
+        current = current[packageName] as GrpcObject;
       }
-      current = current[packageName] as GrpcObject;
+      current[serviceName] = makeClientConstructor(service, serviceName, {});
     }
-    current[serviceName] = makeClientConstructor(service, serviceName, {});
   }
   return result;
 }
