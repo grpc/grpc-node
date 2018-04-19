@@ -36,10 +36,16 @@ var Histogram = require('./histogram');
 var genericService = require('./generic_service');
 
 // TODO(murgatroid99): use multiple grpc implementations
-var grpc = require('grpc');
-var serviceProto = grpc.load({
-  root: __dirname + '/../packages/grpc-native-core/ext/grpc',
-  file: 'src/proto/grpc/testing/services.proto'}).grpc.testing;
+var grpc = require('../any_grpc').client;
+var protoLoader = require('../../packages/grpc-protobufjs');
+var protoPackage = protoLoader.loadSync(
+    'src/proto/grpc/testing/services.proto',
+    {keepCase: true,
+     defaults: true,
+     enums: String,
+     oneofs: true,
+     include: [__dirname + '/../../packages/grpc-native-core/deps/grpc']});
+var serviceProto = grpc.loadPackageDefinition(protoPackage).grpc.testing;
 
 /**
  * Create a buffer filled with size zeroes
@@ -82,7 +88,7 @@ function BenchmarkClient(server_targets, channels, histogram_params,
   if (security_params) {
     var ca_path;
     if (security_params.use_test_ca) {
-      ca_path = path.join(__dirname, '../test/data/ca.pem');
+      ca_path = path.join(__dirname, '../data/ca.pem');
       var ca_data = fs.readFileSync(ca_path);
       creds = grpc.credentials.createSsl(ca_data);
     } else {

@@ -30,11 +30,16 @@ var util = require('util');
 
 var genericService = require('./generic_service');
 
-// TODO(murgatroid99): use multiple grpc implementations
-var grpc = require('grpc');
-var serviceProto = grpc.load({
-  root: __dirname + '/../packages/grpc-native-core/ext/grpc',
-  file: 'src/proto/grpc/testing/services.proto'}).grpc.testing;
+var grpc = require('../any_grpc').server;
+var protoLoader = require('../../packages/grpc-protobufjs');
+var protoPackage = protoLoader.loadSync(
+    'src/proto/grpc/testing/services.proto',
+    {keepCase: true,
+     defaults: true,
+     enums: String,
+     oneofs: true,
+     include: [__dirname + '/../../packages/grpc-native-core/deps/grpc']});
+var serviceProto = grpc.loadPackageDefinition(protoPackage).grpc.testing;
 
 /**
  * Create a buffer filled with size zeroes
@@ -106,8 +111,8 @@ function BenchmarkServer(host, port, tls, generic, response_size) {
   var server_creds;
   var host_override;
   if (tls) {
-    var key_path = path.join(__dirname, '../test/data/server1.key');
-    var pem_path = path.join(__dirname, '../test/data/server1.pem');
+    var key_path = path.join(__dirname, '../data/server1.key');
+    var pem_path = path.join(__dirname, '../data/server1.pem');
 
     var key_data = fs.readFileSync(key_path);
     var pem_data = fs.readFileSync(pem_path);

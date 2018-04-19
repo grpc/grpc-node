@@ -47,8 +47,8 @@ function BenchmarkServer(host, port, tls, generic, response_size) {
   this.input_port = port;
   if (tls) {
     var credentials = {};
-    var key_path = path.join(__dirname, '../test/data/server1.key');
-    var pem_path = path.join(__dirname, '../test/data/server1.pem');
+    var key_path = path.join(__dirname, '../data/server1.key');
+    var pem_path = path.join(__dirname, '../data/server1.pem');
 
     var key_data = fs.readFileSync(key_path);
     var pem_data = fs.readFileSync(pem_path);
