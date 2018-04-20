@@ -85,3 +85,8 @@ export {
  * @param client The client to close.
  */
 export const closeClient = (client: Client) => client.close();
+
+export const waitForClientReady =
+    (client: Client, deadline: Date|number,
+     callback: (error: Error|null) => void) =>
+        client.waitForReady(deadline, callback);

@@ -191,6 +191,7 @@ export class Http2Channel extends EventEmitter implements Channel {
                              ConnectivityState.TRANSIENT_FAILURE);
     };
     subChannel.once('close', this.subChannelCloseCallback);
+    subChannel.once('error', this.subChannelCloseCallback);
   }
 
   constructor(

@@ -60,7 +60,7 @@ function BenchmarkClient(server_targets, channels, histogram_params,
     protocol = https;
     this.request = _.bind(https.request, https);
     if (security_params.use_test_ca) {
-      ca_path = path.join(__dirname, '../test/data/ca.pem');
+      ca_path = path.join(__dirname, '../data/ca.pem');
       var ca_data = fs.readFileSync(ca_path);
       options.ca = ca_data;
     }

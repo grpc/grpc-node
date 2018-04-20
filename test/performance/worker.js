@@ -21,11 +21,16 @@
 var console = require('console');
 var WorkerServiceImpl = require('./worker_service_impl');
 
-// TODO(murgatroid99): use multiple grpc implementations
-var grpc = require('grpc');
-var serviceProto = grpc.load({
-  root: __dirname + '/../packages/grpc-native-core/ext/grpc',
-  file: 'src/proto/grpc/testing/services.proto'}).grpc.testing;
+var grpc = require('../any_grpc').server;
+var protoLoader = require('../../packages/grpc-protobufjs');
+var protoPackage = protoLoader.loadSync(
+    'src/proto/grpc/testing/services.proto',
+    {keepCase: true,
+     defaults: true,
+     enums: String,
+     oneofs: true,
+     include: [__dirname + '/../../packages/grpc-native-core/deps/grpc']});
+var serviceProto = grpc.loadPackageDefinition(protoPackage).grpc.testing;
 
 function runServer(port, benchmark_impl) {
   var server_creds = grpc.ServerCredentials.createInsecure();
