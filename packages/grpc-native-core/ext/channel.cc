@@ -78,7 +78,7 @@ bool ParseChannelArgs(Local<Value> args_val,
     Local<Value> key = Nan::Get(keys, i).ToLocalChecked();
     Utf8String key_str(key);
     if (*key_str == NULL) {
-      // Key string onversion failed
+      // Key string conversion failed
       return false;
     }
     Local<Value> value = Nan::Get(args_hash, key).ToLocalChecked();
