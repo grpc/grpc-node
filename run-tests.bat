@@ -39,6 +39,9 @@ SET FAILED=0
 for %%v in (4 6 7 8 9) do (
   call nvm install %%v
   call nvm use %%v
+  if "%%v"=="4" (
+    npm install -g npm@5
+  )
   @rem https://github.com/mapbox/node-pre-gyp/issues/362
   call npm install -g node-gyp
   node -e "console.log(process.versions)"
