@@ -29,7 +29,7 @@ var protoPackage = protoLoader.loadSync(
     {keepCase: true,
      defaults: true,
      enums: String,
-     include: [__dirname + '/../../packages/grpc-native-core/deps/grpc']});
+     includeDirs: [__dirname + '/../../packages/grpc-native-core/deps/grpc']});
 var testProto = grpc.loadPackageDefinition(protoPackage).grpc.testing;
 
 var assert = require('assert');
