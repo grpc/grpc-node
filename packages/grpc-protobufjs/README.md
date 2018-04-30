@@ -36,7 +36,7 @@ The options parameter is an object that can have the following optional properti
 | `arrays` | `true` or `false` | Set empty arrays for missing array values even if `defaults` is `false` Defaults to `false`.
 | `objects` | `true` or `false` | Set empty objects for missing object values even if `defaults` is `false` Defaults to `false`.
 | `oneofs` | `true` or `false` | Set virtual oneof properties to the present field's name. Defaults to `false`.
-| `include` | An array of strings | A list of search paths for imported `.proto` files.
+| `includeDirs` | An array of strings | A list of search paths for imported `.proto` files.
 
 The following options object closely approximates the existing behavior of `grpc.load`:
 
