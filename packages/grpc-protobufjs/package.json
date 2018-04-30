@@ -41,7 +41,7 @@
     "@types/lodash": "^4.14.104",
     "@types/node": "^9.4.6",
     "lodash": "^4.17.5",
-    "protobufjs": "^6.8.5"
+    "protobufjs": "^6.8.6"
   },
   "devDependencies": {
     "clang-format": "^1.2.2",
