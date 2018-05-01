@@ -12,6 +12,13 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
+powershell -c "& { iwr https://raw.githubusercontent.com/grumpycoders/nvm-ps/master/nvm.ps1 | iex }"
+
+SET PATH=%APPDATA%\nvm-ps;%APPDATA%\nvm-ps\nodejs;%PATH%
+
+call nvm install 10
+call nvm use 10
+
 set arch_list=ia32 x64
 
 set node_versions=4.0.0 5.0.0 6.0.0 7.0.0 8.0.0 9.0.0 10.0.0
