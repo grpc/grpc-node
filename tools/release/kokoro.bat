@@ -14,8 +14,9 @@
 
 @echo "Starting Windows build"
 
-@rem https://github.com/mapbox/node-pre-gyp/issues/362
-call npm install -g node-gyp
+powershell -c "& { iwr https://raw.githubusercontent.com/grumpycoders/nvm-ps/master/nvm.ps1 | iex }"
+
+SET PATH=%APPDATA%\nvm-ps;%APPDATA%\nvm-ps\nodejs;%PATH%
 
 cd /d %~dp0
 cd ..\..
