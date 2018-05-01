@@ -1,6 +1,6 @@
 {
   "name": "grpc",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "author": "Google Inc.",
   "description": "gRPC Library for Node",
   "homepage": "https://grpc.io/",
@@ -30,7 +30,7 @@
   "dependencies": {
     "lodash": "^4.15.0",
     "nan": "^2.0.0",
-    "node-pre-gyp": "0.7.0",
+    "node-pre-gyp": "^0.10.0",
     "protobufjs": "^5.0.0"
   },
   "devDependencies": {
