@@ -13,9 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-nvm install 10
-nvm use 10
-
 set -ex
 
 arch_list=( ia32 x64 )
