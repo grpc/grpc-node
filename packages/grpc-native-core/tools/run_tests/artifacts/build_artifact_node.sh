@@ -13,14 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-
-nvm install 10
-nvm use 10
-npm install -g npm
-npm install -g node-gyp
-
 set -ex
 
 arch_list=( ia32 x64 )
