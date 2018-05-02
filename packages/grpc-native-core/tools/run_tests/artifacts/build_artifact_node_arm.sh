@@ -13,6 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+nvm install 10
+nvm use 10
+npm install -g npm
+npm install -g node-gyp
+
 set -ex
 
 # https://github.com/mapbox/node-pre-gyp/issues/362
