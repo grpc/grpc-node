@@ -1,6 +1,6 @@
 {
   "name": "grpc",
-  "version": "1.12.0-dev",
+  "version": "1.11.1",
   "author": "Google Inc.",
   "description": "gRPC Library for Node",
   "homepage": "https://grpc.io/",
@@ -30,7 +30,7 @@
   "dependencies": {
     "lodash": "^4.15.0",
     "nan": "^2.0.0",
-    "node-pre-gyp": "0.7.0",
+    "node-pre-gyp": "^0.10.0",
     "protobufjs": "^5.0.0"
   },
   "devDependencies": {
@@ -71,6 +71,7 @@
     "deps/grpc/third_party/boringssl/crypto/**/*.{c,cc,h}",
     "deps/grpc/third_party/boringssl/include/**/*.{c,cc,h}",
     "deps/grpc/third_party/boringssl/ssl/**/*.{c,cc,h}",
+    "deps/grpc/third_party/boringssl/third_party/**/*.{c,h}",
     "deps/grpc/third_party/abseil-cpp/absl/**/*.{h,hh}",
     "binding.gyp"
   ],

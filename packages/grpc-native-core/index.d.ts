@@ -79,6 +79,13 @@ declare module "grpc" {
   export function load<T = GrpcObject>(filename: Filename, format?: "proto" | "json", options?: LoadOptions): T;
 
   /**
+   * Load a gRPC package definition as a gRPC object hierarchy
+   * @param packageDef The package definition object
+   * @return The resulting gRPC object
+   */
+  export function loadPackageDefinition(packageDefinition: PackageDefinition): GrpcObject;
+
+  /**
    * A filename
    */
   export type Filename = string | { root: string, file: string };
@@ -235,10 +242,16 @@ declare module "grpc" {
 
   /**
    * An object that completely defines a service.
-   * @typedef {Object.<string, grpc~MethodDefinition>} grpc~ServiceDefinition
    */
   export type ServiceDefinition<ImplementationType> = {
     readonly [I in keyof ImplementationType]: MethodDefinition<any, any>;
+  }
+
+  /**
+   * An object that defines a package containing multiple services
+   */
+  export type PackageDefinition = {
+    readonly [fullyQualifiedName: string]: ServiceDefinition<any>;
   }
 
   /**
@@ -1259,4 +1272,197 @@ declare module "grpc" {
    * @param clientObj The client to close
    */
   export function closeClient(clientObj: Client): void;
+
+  /**
+   * A builder for gRPC status objects
+   */
+  export class StatusBuilder {
+    constructor()
+
+    /**
+     * Adds a status code to the builder
+     * @param code The status code
+     */
+    withCode(code: number): this;
+
+    /**
+     * Adds details to the builder
+     * @param details A status message
+     */
+    withDetails(details: string): this;
+
+    /**
+     * Adds metadata to the builder
+     * @param metadata The gRPC status metadata
+     */
+    withMetadata(metadata: Metadata): this;
+
+    /**
+     * Builds the status object
+     * @return A gRPC status
+     */
+    build(): StatusObject;
+  }
+
+  export type MetadataListener = (metadata: Metadata, next: Function) => void;
+
+  export type MessageListener = (message: any, next: Function) => void;
+
+  export type StatusListener = (status: StatusObject, next: Function) => void;
+
+  export interface Listener {
+    onReceiveMetadata?: MetadataListener;
+    onReceiveMessage?: MessageListener;
+    onReceiveStatus?: StatusListener;
+  }
+
+  /**
+   * A builder for listener interceptors
+   */
+  export class ListenerBuilder {
+    constructor();
+
+    /**
+     * Adds onReceiveMetadata method to the builder
+     * @param onReceiveMetadata A listener method for receiving metadata
+     */
+    withOnReceiveMetadata(onReceiveMetadata: MetadataListener): this;
+
+    /**
+     * Adds onReceiveMessage method to the builder
+     * @param onReceiveMessage A listener method for receiving message
+     */
+    withOnReceiveMessage(onReceiveMessage: MessageListener): this;
+
+    /**
+     * Adds onReceiveStatus method to the builder
+     * @param onReceiveStatus A listener method for receiving status
+     */
+    withOnReceiveStatus(onReceiveStatus: StatusListener): this;
+
+    /**
+     * Builds the call listener
+     */
+    build(): Listener;
+  }
+
+  export type MetadataRequester = (metadata: Metadata, listener: Listener, next: Function) => void;
+
+  export type MessageRequester = (message: any, next: Function) => void;
+
+  export type CloseRequester = (next: Function) => void;
+
+  export type CancelRequester = (next: Function) => void;
+
+  export type GetPeerRequester = (next: Function) => string;
+
+  export interface Requester {
+    start?: MetadataRequester;
+    sendMessage?: MessageRequester;
+    halfClose?: CloseRequester;
+    cancel?: CancelRequester;
+    getPeer?: GetPeerRequester;
+  }
+
+  /**
+   * A builder for the outbound methods of an interceptor
+   */
+  export class RequesterBuilder {
+    constructor();
+
+    /**
+     * Add a metadata requester to the builder
+     * @param start A requester method for handling metadata
+     */
+    withStart(start: MetadataRequester): this;
+
+    /**
+     * Add a message requester to the builder.
+     * @param sendMessage A requester method for handling
+     * messages.
+     */
+    withSendMessage(sendMessage: MessageRequester): this;
+
+    /**
+     * Add a close requester to the builder.
+     * @param halfClose A requester method for handling client
+     * close.
+     */
+    withHalfClose(halfClose: CloseRequester): this;
+
+    /**
+     * Add a cancel requester to the builder.
+     * @param cancel A requester method for handling `cancel`
+     */
+    withCancel(cancel: CancelRequester): this;
+
+    /**
+     * Builds the requester's interceptor methods.
+     */
+    build(): Requester;
+  }
+
+  /**
+   * A chainable gRPC call proxy which will delegate to an optional requester
+   * object. By default, interceptor methods will chain to nextCall. If a
+   * requester is provided which implements an interceptor method, that
+   * requester method will be executed as part of the chain.
+   * operations.
+   */
+  export class InterceptingCall {
+    /**
+     * @param next_Call The next call in the chain
+     * @param requester Interceptor methods to handle request
+     */
+    constructor(nextCall: InterceptingCall|null, requester?: Requester);
+
+    /**
+     * Starts a call through the outbound interceptor chain and adds an element to
+     * the reciprocal inbound listener chain.
+     */
+    start(metadata: Metadata, listener: Listener): void;
+
+    /**
+     * Pass a message through the interceptor chain.
+     */
+    sendMessage(message: any): void;
+
+    /**
+     * Run a close operation through the interceptor chain
+     */
+    halfClose(): void;
+
+    /**
+     * Run a cancel operation through the interceptor chain
+     */
+    cancel(): void;
+
+    /**
+     * Run a cancelWithStatus operation through the interceptor chain.
+     * @param status
+     * @param message
+     */
+    cancelWithStatus(status: StatusObject, message: string): void;
+
+    /**
+     * Pass a getPeer call down to the base gRPC call (should not be intercepted)
+     */
+    getPeer(): object;
+
+    /**
+     * For streaming calls, we need to transparently pass the stream's context
+     * through the interceptor chain. Passes the context between InterceptingCalls
+     * but hides it from any requester implementations.
+     * @param context Carries objects needed for streaming operations.
+     * @param message The message to send.
+     */
+    sendMessageWithContext(context: object, message: any): void;
+
+    /**
+     * For receiving streaming messages, we need to seed the base interceptor with
+     * the streaming context to create a RECV_MESSAGE batch.
+     * @param context Carries objects needed for streaming operations
+     */
+    recvMessageWithContext(context: object): void;
+  }
 }

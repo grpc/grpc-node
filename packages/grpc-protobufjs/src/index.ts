@@ -48,7 +48,7 @@ export interface PackageDefinition {
 }
 
 export type Options = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
-  include?: string[];
+  includeDirs?: string[];
 };
 
 function joinName(baseName: string, name: string): string {
@@ -154,15 +154,15 @@ function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
  *     `defaults` is `false`. Defaults to `false`.
  * @param options.oneofs Set virtual oneof properties to the present field's
  *     name
- * @param options.include Paths to search for imported `.proto` files.
+ * @param options.includeDirs Paths to search for imported `.proto` files.
  */
 export function load(filename: string, options: Options): Promise<PackageDefinition> {
   const root: Protobuf.Root = new Protobuf.Root();
-  if (!!options.include) {
-    if (!(options.include instanceof Array)) {
-      return Promise.reject(new Error('The include option must be an array'));
+  if (!!options.includeDirs) {
+    if (!(options.includeDirs instanceof Array)) {
+      return Promise.reject(new Error('The includeDirs option must be an array'));
     }
-    addIncludePathResolver(root, options.include as string[]);
+    addIncludePathResolver(root, options.includeDirs as string[]);
   }
   return root.load(filename, options).then((loadedRoot) => {
     loadedRoot.resolveAll();
@@ -172,11 +172,11 @@ export function load(filename: string, options: Options): Promise<PackageDefinit
 
 export function loadSync(filename: string, options: Options): PackageDefinition {
   const root: Protobuf.Root = new Protobuf.Root();
-  if (!!options.include) {
-    if (!(options.include instanceof Array)) {
+  if (!!options.includeDirs) {
+    if (!(options.includeDirs instanceof Array)) {
       throw new Error('The include option must be an array');
     }
-    addIncludePathResolver(root, options.include as string[]);
+    addIncludePathResolver(root, options.includeDirs as string[]);
   }
   const loadedRoot = root.loadSync(filename, options);
   loadedRoot.resolveAll();

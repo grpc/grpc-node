@@ -10,11 +10,10 @@ export class CallCredentialsFilter extends BaseFilter implements Filter {
   private serviceUrl: string;
   constructor(
       private readonly credentials: CallCredentials,
-      private readonly host: string,
-      private readonly path: string) {
+      private readonly host: string, private readonly path: string) {
     super();
-    let splitPath: string[] = path.split('/');
-    let serviceName: string = '';
+    const splitPath: string[] = path.split('/');
+    let serviceName = '';
     /* The standard path format is "/{serviceName}/{methodName}", so if we split
      * by '/', the first item should be empty and the second should be the
      * service name */
@@ -27,8 +26,9 @@ export class CallCredentialsFilter extends BaseFilter implements Filter {
   }
 
   async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    let credsMetadata = this.credentials.generateMetadata({ service_url: this.serviceUrl });
-    let resultMetadata = await metadata;
+    const credsMetadata =
+        this.credentials.generateMetadata({service_url: this.serviceUrl});
+    const resultMetadata = await metadata;
     resultMetadata.merge(await credsMetadata);
     return resultMetadata;
   }
@@ -43,8 +43,7 @@ export class CallCredentialsFilterFactory implements
 
   createFilter(callStream: CallStream): CallCredentialsFilter {
     return new CallCredentialsFilter(
-      this.credentials.compose(callStream.getCredentials()),
-      callStream.getHost(),
-      callStream.getMethod());
+        this.credentials.compose(callStream.getCredentials()),
+        callStream.getHost(), callStream.getMethod());
   }
 }
