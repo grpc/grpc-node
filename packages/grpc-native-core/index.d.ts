@@ -84,7 +84,7 @@ declare module "grpc" {
    * @return The resulting gRPC object
    */
   export function loadPackageDefinition(packageDefinition: PackageDefinition): GrpcObject;
-  
+
   /**
    * A filename
    */
@@ -1304,11 +1304,11 @@ declare module "grpc" {
     build(): StatusObject;
   }
 
-  export type MetadataListener = (metadata: Metadata, next: function) => void;
+  export type MetadataListener = (metadata: Metadata, next: Function) => void;
 
-  export type MessageListener = (message: any, next: function) => void;
+  export type MessageListener = (message: any, next: Function) => void;
 
-  export type StatusListener = (status: StatusObject, next: function) => void;
+  export type StatusListener = (status: StatusObject, next: Function) => void;
 
   export interface Listener {
     onReceiveMetadata?: MetadataListener;
@@ -1346,15 +1346,15 @@ declare module "grpc" {
     build(): Listener;
   }
 
-  export type MetadataRequester = (metadata: Metadata, listener: Listener, next: function) => void;
+  export type MetadataRequester = (metadata: Metadata, listener: Listener, next: Function) => void;
 
-  export type MessageRequester = (message: any, next: function) => void;
+  export type MessageRequester = (message: any, next: Function) => void;
 
-  export type CloseRequester = (next: function) => void;
+  export type CloseRequester = (next: Function) => void;
 
-  export type CancelRequester = (next: function) => void;
+  export type CancelRequester = (next: Function) => void;
 
-  export type GetPeerRequester = (next: function) => string;
+  export type GetPeerRequester = (next: Function) => string;
 
   export interface Requester {
     start?: MetadataRequester;
@@ -1443,7 +1443,7 @@ declare module "grpc" {
      * @param message
      */
     cancelWithStatus(status: StatusObject, message: string): void;
-    
+
     /**
      * Pass a getPeer call down to the base gRPC call (should not be intercepted)
      */
