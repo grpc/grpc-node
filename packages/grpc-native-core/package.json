@@ -4,6 +4,7 @@
   "author": "Google Inc.",
   "description": "gRPC Library for Node",
   "homepage": "https://grpc.io/",
+  "types": "./index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/grpc/grpc-node.git"
