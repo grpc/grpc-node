@@ -900,7 +900,6 @@
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc',
-        'deps/grpc/src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc',
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc',
