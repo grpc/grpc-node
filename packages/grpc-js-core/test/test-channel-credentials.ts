@@ -32,6 +32,7 @@ class CallCredentialsMock implements CallCredentials {
   }
 }
 
+// tslint:disable-next-line:no-any
 const readFile: (...args: any[]) => Promise<Buffer> = promisify(fs.readFile);
 // A promise which resolves to loaded files in the form { ca, key, cert }
 const pFixtures = Promise

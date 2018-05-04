@@ -15,6 +15,9 @@
 
 set -ex
 
+# https://github.com/mapbox/node-pre-gyp/issues/362
+npm install -g node-gyp
+
 cd $(dirname $0)/../../..
 
 rm -rf build || true
@@ -23,7 +26,7 @@ mkdir -p "${ARTIFACTS_OUT}"
 
 npm update
 
-node_versions=( 4.0.0 5.0.0 6.0.0 7.0.0 8.0.0 9.0.0 )
+node_versions=( 4.0.0 5.0.0 6.0.0 7.0.0 8.0.0 9.0.0 10.0.0 )
 
 for version in ${node_versions[@]}
 do

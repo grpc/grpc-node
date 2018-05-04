@@ -27,7 +27,8 @@ describe('CallCredentials', () => {
   describe('createFromMetadataGenerator', () => {
     it('should accept a metadata generator', () => {
       assert.doesNotThrow(
-          () => CallCredentials.createFromMetadataGenerator(generateFromServiceURL));
+          () => CallCredentials.createFromMetadataGenerator(
+              generateFromServiceURL));
     });
   });
 
@@ -58,11 +59,12 @@ describe('CallCredentials', () => {
   describe('generateMetadata', () => {
     it('should call the function passed to createFromMetadataGenerator',
        async () => {
-         const callCredentials =
-             CallCredentials.createFromMetadataGenerator(generateFromServiceURL);
+         const callCredentials = CallCredentials.createFromMetadataGenerator(
+             generateFromServiceURL);
          let metadata: Metadata;
          try {
-           metadata = await callCredentials.generateMetadata({service_url: 'foo'});
+           metadata =
+               await callCredentials.generateMetadata({service_url: 'foo'});
          } catch (err) {
            throw err;
          }

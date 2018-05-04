@@ -23,7 +23,9 @@ export interface EmitterAugmentation2<Name extends string|symbol, Arg1, Arg2> {
   emit(event: Name, arg1: Arg1, arg2: Arg2): boolean;
   on(event: Name, listener: (arg1: Arg1, arg2: Arg2) => void): this;
   once(event: Name, listener: (arg1: Arg1, arg2: Arg2) => void): this;
-  prependListener(event: Name, listener: (arg1: Arg1, arg2: Arg2) => void): this;
-  prependOnceListener(event: Name, listener: (arg1: Arg1, arg2: Arg2) => void): this;
+  prependListener(event: Name, listener: (arg1: Arg1, arg2: Arg2) => void):
+      this;
+  prependOnceListener(event: Name, listener: (arg1: Arg1, arg2: Arg2) => void):
+      this;
   removeListener(event: Name, listener: (arg1: Arg1, arg2: Arg2) => void): this;
 }

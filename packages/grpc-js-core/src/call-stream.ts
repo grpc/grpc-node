@@ -9,9 +9,10 @@ import {FilterStackFactory} from './filter-stack';
 import {Metadata} from './metadata';
 import {ObjectDuplex} from './object-stream';
 
-const {HTTP2_HEADER_STATUS, HTTP2_HEADER_CONTENT_TYPE, NGHTTP2_CANCEL} = http2.constants;
+const {HTTP2_HEADER_STATUS, HTTP2_HEADER_CONTENT_TYPE, NGHTTP2_CANCEL} =
+    http2.constants;
 
-export type Deadline = Date | number;
+export type Deadline = Date|number;
 
 export interface CallStreamOptions {
   deadline: Deadline;
@@ -36,20 +37,19 @@ export interface WriteObject {
 /**
  * This interface represents a duplex stream associated with a single gRPC call.
  */
-export type CallStream =  {
-  cancelWithStatus(status: Status, details: string): void;
-  getPeer(): string;
+export type CallStream = {
+  cancelWithStatus(status: Status, details: string): void; getPeer(): string;
 
   getDeadline(): Deadline;
   getCredentials(): CallCredentials;
   /* If the return value is null, the call has not ended yet. Otherwise, it has
    * ended with the specified status */
-  getStatus(): StatusObject|null;
+  getStatus(): StatusObject | null;
   getMethod(): string;
   getHost(): string;
-} & EmitterAugmentation1<'metadata', Metadata>
-  & EmitterAugmentation1<'status', StatusObject>
-  & ObjectDuplex<WriteObject, Buffer>;
+}&EmitterAugmentation1<'metadata', Metadata>&
+    EmitterAugmentation1<'status', StatusObject>&
+    ObjectDuplex<WriteObject, Buffer>;
 
 enum ReadState {
   NO_DATA,
@@ -60,7 +60,7 @@ enum ReadState {
 const emptyBuffer = Buffer.alloc(0);
 
 export class Http2CallStream extends Duplex implements CallStream {
-  public filterStack: Filter;
+  filterStack: Filter;
   private statusEmitted = false;
   private http2Stream: http2.ClientHttp2Stream|null = null;
   private pendingRead = false;
@@ -76,7 +76,7 @@ export class Http2CallStream extends Duplex implements CallStream {
   private readPartialMessage: Buffer[] = [];
   private readMessageRemaining = 0;
 
-  private unpushedReadMessages: (Buffer|null)[] = [];
+  private unpushedReadMessages: Array<Buffer|null> = [];
 
   // Status code mapped from :status. To be used if grpc-status is not received
   private mappedStatusCode: Status = Status.UNKNOWN;
@@ -124,20 +124,21 @@ export class Http2CallStream extends Duplex implements CallStream {
   }
 
   private handleTrailers(headers: http2.IncomingHttpHeaders) {
-    let code: Status = this.mappedStatusCode;
-    let details = '';
+    const code: Status = this.mappedStatusCode;
+    const details = '';
     let metadata: Metadata;
     try {
       metadata = Metadata.fromHttp2Headers(headers);
     } catch (e) {
       metadata = new Metadata();
     }
-    let status: StatusObject = {code, details, metadata};
+    const status: StatusObject = {code, details, metadata};
     this.handlingTrailers = (async () => {
       let finalStatus;
       try {
         // Attempt to assign final status.
-        finalStatus = await this.filterStack.receiveTrailers(Promise.resolve(status));
+        finalStatus =
+            await this.filterStack.receiveTrailers(Promise.resolve(status));
       } catch (error) {
         await this.handlingHeaders;
         // This is a no-op if the call was already ended when handling headers.
@@ -195,17 +196,26 @@ export class Http2CallStream extends Duplex implements CallStream {
           try {
             metadata = Metadata.fromHttp2Headers(headers);
           } catch (error) {
-            this.endCall({code: Status.UNKNOWN, details: error.message, metadata: new Metadata()});
+            this.endCall({
+              code: Status.UNKNOWN,
+              details: error.message,
+              metadata: new Metadata()
+            });
             return;
           }
           this.handlingHeaders =
-            this.filterStack.receiveMetadata(Promise.resolve(metadata))
-              .then((finalMetadata) => {
-                this.emit('metadata', finalMetadata);
-              }).catch((error) => {
-                this.destroyHttp2Stream();
-                this.endCall({code: Status.UNKNOWN, details: error.message, metadata: new Metadata()});
-              });
+              this.filterStack.receiveMetadata(Promise.resolve(metadata))
+                  .then((finalMetadata) => {
+                    this.emit('metadata', finalMetadata);
+                  })
+                  .catch((error) => {
+                    this.destroyHttp2Stream();
+                    this.endCall({
+                      code: Status.UNKNOWN,
+                      details: error.message,
+                      metadata: new Metadata()
+                    });
+                  });
         }
       });
       stream.on('trailers', this.handleTrailers.bind(this));
@@ -260,6 +270,9 @@ export class Http2CallStream extends Duplex implements CallStream {
                 canPush = this.tryPush(messageBytes, canPush);
                 this.readState = ReadState.NO_DATA;
               }
+              break;
+            default:
+              throw new Error('This should never happen');
           }
         }
       });
@@ -298,7 +311,7 @@ export class Http2CallStream extends Duplex implements CallStream {
         // This is OK, because status codes emitted here correspond to more
         // catastrophic issues that prevent us from receiving trailers in the
         // first place.
-        this.endCall({code: code, details: details, metadata: new Metadata()});
+        this.endCall({code, details, metadata: new Metadata()});
       });
       stream.on('error', (err: Error) => {
         this.endCall({
@@ -338,7 +351,7 @@ export class Http2CallStream extends Duplex implements CallStream {
       // If trailers are currently being processed, the call should be ended
       // by handleTrailers instead.
       await this.handlingTrailers;
-      this.endCall({code: status, details: details, metadata: new Metadata()});
+      this.endCall({code: status, details, metadata: new Metadata()});
     })();
   }
 

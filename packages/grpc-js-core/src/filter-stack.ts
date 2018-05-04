@@ -25,7 +25,7 @@ export class FilterStack implements Filter {
 }
 
 export class FilterStackFactory implements FilterFactory<FilterStack> {
-  constructor(private readonly factories: FilterFactory<any>[]) {}
+  constructor(private readonly factories: Array<FilterFactory<Filter>>) {}
 
   createFilter(callStream: CallStream): FilterStack {
     return new FilterStack(
