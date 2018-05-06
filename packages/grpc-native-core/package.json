@@ -31,7 +31,7 @@
     "lodash": "^4.15.0",
     "nan": "^2.0.0",
     "node-pre-gyp": "^0.10.0",
-    "protobufjs": "^5.0.0"
+    "protobufjs": "^6.8.6"
   },
   "devDependencies": {
     "async": "^2.0.1",
