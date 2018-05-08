@@ -263,7 +263,10 @@ export class Http2Channel extends EventEmitter implements Channel {
             const session: http2.ClientHttp2Session = this.subChannel!;
             // Prevent the HTTP/2 session from keeping the process alive.
             // Note: this function is only available in Node 9
-            session.unref();
+            // session.unref();
+            if (session.socket){
+              session.socket.unref();
+            }
             stream.attachHttp2Stream(session.request(headers));
           } else {
             /* In this case, we lost the connection while finalizing
