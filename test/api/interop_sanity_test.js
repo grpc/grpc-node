@@ -18,77 +18,86 @@
 
 'use strict';
 
-var interop_server = require('../interop/interop_server.js');
-var interop_client = require('../interop/interop_client.js');
-
-var server;
+var childProcess = require('child_process');
 
 var port;
 
 var name_override = 'foo.test.google.fr';
 
+var serverProcess;
+
+const testCases = [
+  'empty_unary',
+  'large_unary',
+  'client_streaming',
+  'server_streaming',
+  'ping_pong',
+  'empty_stream',
+  'cancel_after_begin',
+  'cancel_after_first_response',
+  'timeout_on_sleeping_server',
+  'custom_metadata',
+  'status_code_and_message',
+  'unimplemented_service',
+  'unimplemented_method'
+];
+
+var childExecArgv = [];
+
 describe('Interop tests', function() {
+  this.timeout(4000);
   before(function(done) {
-    var server_obj = interop_server.getServer(0, true);
-    server = server_obj.server;
-    server.start();
-    port = 'localhost:' + server_obj.port;
-    done();
+    for (let arg of process.argv) {
+      if (arg.startsWith('--require=')) {
+	childExecArgv.push('--require');
+	childExecArgv.push(arg.substring('--require='.length));
+      }
+    }
+    serverProcess = childProcess.fork(`${__dirname}/interop_helper/server.js`, {
+      execArgv: childExecArgv
+    });
+    serverProcess.on('message', (message) => {
+      port = message.port;
+      done();
+    });
+    serverProcess.on('exit', (code, signal) => {
+      if (code !== 0) {
+	if (code !== null) {
+	  throw new Error(`Server exited with error code ${code}`);
+	} else {
+	  throw new Error(`Server exited with signal ${signal}`);
+	}
+      }
+    })
   });
   after(function() {
-    server.forceShutdown();
+    serverProcess.send({});
   });
-  // This depends on not using a binary stream
-  it('should pass empty_unary', function(done) {
-    interop_client.runTest(port, name_override, 'empty_unary', true, true,
-                           done);
-  });
-  // This fails due to an unknown bug
-  it('should pass large_unary', function(done) {
-    interop_client.runTest(port, name_override, 'large_unary', true, true,
-                           done);
-  });
-  it('should pass client_streaming', function(done) {
-    interop_client.runTest(port, name_override, 'client_streaming', true, true,
-                           done);
-  });
-  it('should pass server_streaming', function(done) {
-    interop_client.runTest(port, name_override, 'server_streaming', true, true,
-                           done);
-  });
-  it('should pass ping_pong', function(done) {
-    interop_client.runTest(port, name_override, 'ping_pong', true, true, done);
-  });
-  it('should pass empty_stream', function(done) {
-    interop_client.runTest(port, name_override, 'empty_stream', true, true,
-                           done);
-  });
-  it('should pass cancel_after_begin', function(done) {
-    interop_client.runTest(port, name_override, 'cancel_after_begin', true,
-                           true, done);
-  });
-  it('should pass cancel_after_first_response', function(done) {
-    interop_client.runTest(port, name_override, 'cancel_after_first_response',
-                           true, true, done);
-  });
-  it('should pass timeout_on_sleeping_server', function(done) {
-    interop_client.runTest(port, name_override, 'timeout_on_sleeping_server',
-                           true, true, done);
-  });
-  it('should pass custom_metadata', function(done) {
-    interop_client.runTest(port, name_override, 'custom_metadata',
-                           true, true, done);
-  });
-  it('should pass status_code_and_message', function(done) {
-    interop_client.runTest(port, name_override, 'status_code_and_message',
-                           true, true, done);
-  });
-  it('should pass unimplemented_service', function(done) {
-    interop_client.runTest(port, name_override, 'unimplemented_service',
-                           true, true, done);
-  });
-  it('should pass unimplemented_method', function(done) {
-    interop_client.runTest(port, name_override, 'unimplemented_method',
-                           true, true, done);
-  });
+  for (let testName of testCases) {
+    it(`should pass ${testName}`, function(done) {
+      /* We need to run a client process per test to most closely match
+       * how the main interop test suite works */
+      let clientProcess = childProcess.fork(`${__dirname}/../interop/interop_client`, [
+	'--server_host=localhost',
+	`--server_port=${port}`,
+	`--server_host_override=${name_override}`,
+	`--test_case=${testName}`,
+	'--use_tls=true',
+	'--use_test_ca=true'
+      ], {
+	execArgv: childExecArgv
+      });
+      clientProcess.on('exit', (code, signal) => {
+	if (code === 0) {
+	  done();
+	} else {
+	  if (code !== null) {
+	    done(new Error(`Client exited with error code ${code}`));
+	  } else {
+	    done(new Error(`Client exited with signal ${signal}`));
+	  }
+	}
+      });
+    });
+  }
 });
