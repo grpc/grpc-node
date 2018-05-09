@@ -63,7 +63,7 @@ do
   ./node_modules/.bin/gulp setup
 
   # Rebuild libraries and run tests.
-  JUNIT_REPORT_PATH="reports/node$version/" JUNIT_REPORT_STACK=1 ./node_modules/.bin/gulp native.test || FAILED="true"
+  JUNIT_REPORT_PATH="reports/node$version/" JUNIT_REPORT_STACK=1 ./node_modules/.bin/gulp test || FAILED="true"
 done
 
 set +ex

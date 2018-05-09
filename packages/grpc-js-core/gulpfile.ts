@@ -23,6 +23,7 @@ import * as mocha from 'gulp-mocha';
 import * as path from 'path';
 import * as execa from 'execa';
 import * as pify from 'pify';
+import * as semver from 'semver';
 import { ncp } from 'ncp';
 
 // gulp-help monkeypatches tasks to have an additional description parameter
@@ -71,6 +72,10 @@ gulp.task('copy-test-fixtures', 'Copy test fixtures.', () => {
  * Transpiles src/ and test/, and then runs all tests.
  */
 gulp.task('test', 'Runs all tests.', ['copy-test-fixtures'], () => {
-  return gulp.src(`${outDir}/test/**/*.js`)
-    .pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
+  if (semver.satisfies(process.version, '>=9.4')) {
+    return gulp.src(`${outDir}/test/**/*.js`)
+      .pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
+  } else {
+    console.log(`Skipping grpc-js tests for Node ${process.version}`);
+  }
 });
