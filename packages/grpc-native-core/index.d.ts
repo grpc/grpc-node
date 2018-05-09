@@ -1243,7 +1243,7 @@ declare module "grpc" {
    * @param value The response value, if the call succeeded
    */
   export type requestCallback<ResponseType> =
-    (error: ServiceError | null, value: ResponseType | undefined) => void;
+    (error: ServiceError | null, value?: ResponseType) => void;
 
   /**
    * Return the underlying channel object for the specified client
