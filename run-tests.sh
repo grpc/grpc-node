@@ -39,6 +39,16 @@ npm install --unsafe-perm
 
 mkdir -p reports
 export JOBS=8
+export JUNIT_REPORT_PATH="reports/node$version/"
+export JUNIT_REPORT_STACK=1
+
+gsutil cp gs://grpc-testing-secrets/coveralls_credentials/grpc-node.rc .
+set +x
+. grpc-node.rc
+set -x
+export COVERALLS_REPO_TOKEN
+export COVERALLS_SERVICE_NAME=Kokoro
+export COVERALLS_SERVICE_JOB_ID=$KOKORO_BUILD_ID
 
 # TODO(mlumish): Add electron tests
 
@@ -62,8 +72,8 @@ do
   ./node_modules/.bin/gulp clean.all
   ./node_modules/.bin/gulp setup
 
-  # Rebuild libraries and run tests.
-  JUNIT_REPORT_PATH="reports/node$version/" JUNIT_REPORT_STACK=1 ./node_modules/.bin/gulp test || FAILED="true"
+  # npm test calls nyc gulp test
+  npm test || FAILED="true"
 done
 
 set +ex
@@ -72,7 +82,9 @@ set -ex
 
 node merge_kokoro_logs.js
 
-if [ "$FAILED" != "" ]
+if [ "$FAILED" == "" ]
 then
+  npm run coverage
+else
   exit 1
 fi
