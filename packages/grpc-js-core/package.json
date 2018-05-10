@@ -14,7 +14,7 @@
   "types": "build/src/index.d.ts",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/lodash": "^4.14.77",
+    "@types/lodash": "^4.14.108",
     "@types/mocha": "^2.2.43",
     "@types/node": "^9.4.6",
     "clang-format": "^1.0.55",
