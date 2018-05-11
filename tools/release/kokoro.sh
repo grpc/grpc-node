@@ -38,10 +38,9 @@ OS=`uname`
 
 case $OS in
 Linux)
-    sudo apt-get update
-    sudo apt-get install -y linux-libc-dev:i386 g++-aarch64-linux-gnu g++-arm-linux-gnueabihf
-    ./packages/grpc-native-core/tools/run_tests/artifacts/build_all_linux_artifacts.sh
-    mv packages/grpc-native-core/artifacts .
+    docker build -t kokoro-image tools/release/kokoro
+    docker run -v /var/run/docker.sock:/var/run/docker.sock -v $base_dir:$base_dir kokoro-image $base_dir/packages/grpc-native-core/tools/run_tests/artifacts/build_all_linux_artifacts.sh
+    cp -rv packages/grpc-native-core/artifacts .
     ;;
 Darwin)
     JOBS=8 ARTIFACTS_OUT=$base_dir/artifacts ./packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_node.sh
