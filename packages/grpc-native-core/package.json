@@ -28,7 +28,7 @@
     "node-pre-gyp"
   ],
   "dependencies": {
-    "lodash": "^4.15.0",
+    "lodash": "^4.17.5",
     "nan": "^2.0.0",
     "node-pre-gyp": "^0.10.0",
     "protobufjs": "^5.0.0"
