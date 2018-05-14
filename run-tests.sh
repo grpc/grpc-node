@@ -42,13 +42,18 @@ export JOBS=8
 export JUNIT_REPORT_PATH="reports/node$version/"
 export JUNIT_REPORT_STACK=1
 
-gsutil cp gs://grpc-testing-secrets/coveralls_credentials/grpc-node.rc .
-set +x
-. grpc-node.rc
-set -x
-export COVERALLS_REPO_TOKEN
-export COVERALLS_SERVICE_NAME=Kokoro
-export COVERALLS_SERVICE_JOB_ID=$KOKORO_BUILD_ID
+OS=$(uname)
+
+if [ "$OS" == "Linux" ]
+then
+  gsutil cp gs://grpc-testing-secrets/coveralls_credentials/grpc-node.rc /tmp
+  set +x
+  . /tmp/grpc-node.rc
+  set -x
+  export COVERALLS_REPO_TOKEN
+  export COVERALLS_SERVICE_NAME=Kokoro
+  export COVERALLS_SERVICE_JOB_ID=$KOKORO_BUILD_ID
+fi
 
 # TODO(mlumish): Add electron tests
 
@@ -84,7 +89,10 @@ node merge_kokoro_logs.js
 
 if [ "$FAILED" == "" ]
 then
-  npm run coverage
+  if [ "$OS" == "Linux" ]
+  then
+    npm run coverage
+  fi
 else
   exit 1
 fi
