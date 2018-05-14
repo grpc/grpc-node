@@ -39,6 +39,10 @@ gulp.task('clean.all', 'Delete all files created by tasks', () => {});
 gulp.task('test', 'Run API-level tests', () => {
   // run mocha tests matching a glob with a pre-required fixture,
   // returning the associated gulp stream
+  if (!semver.satisfies(process.version, '>=9.4')) {
+    console.log(`Skipping cross-implementation tests for Node ${process.version}`);
+    return;
+  }
   const apiTestGlob = `${apiTestDir}/*.js`;
   const runTestsWithFixture = (server, client) => new Promise((resolve, reject) => {
     const fixture = `${server}_${client}`;
