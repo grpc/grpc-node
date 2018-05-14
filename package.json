@@ -60,7 +60,11 @@
       "packages/grpc-native-core/src/*.js",
       "packages/grpc-protobufjs/build/src/*"
     ],
-    "cache": true
+    "cache": true,
+    "all": true,
+    "require": [
+      "ts-node/register"
+    ]
   },
   "scripts": {
     "test": "nyc gulp test",
