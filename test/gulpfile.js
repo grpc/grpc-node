@@ -52,7 +52,7 @@ gulp.task('test', 'Run API-level tests', () => {
       .on('end', resolve)
       .on('error', reject);
   });
-  let runTestsArgPairs;
+  var runTestsArgPairs;
   if (semver.satisfies(process.version, '>=9.4')) {
     runTestsArgPairs = [
       ['native', 'native'],
