@@ -61,10 +61,7 @@
       "packages/grpc-protobufjs/build/src/*"
     ],
     "cache": true,
-    "all": true,
-    "require": [
-      "ts-node/register"
-    ]
+    "all": true
   },
   "scripts": {
     "test": "nyc gulp test",
