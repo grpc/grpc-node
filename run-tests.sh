@@ -39,7 +39,6 @@ npm install --unsafe-perm
 
 mkdir -p reports
 export JOBS=8
-export JUNIT_REPORT_PATH="reports/node$version/"
 export JUNIT_REPORT_STACK=1
 
 OS=$(uname)
@@ -57,6 +56,8 @@ fi
 
 # TODO(mlumish): Add electron tests
 
+FAILED="false"
+
 for version in ${node_versions}
 do
   # Install and setup node for the version we want.
@@ -65,6 +66,8 @@ do
   nvm install $version
   nvm use $version
   set -ex
+
+  export JUNIT_REPORT_PATH="reports/node$version/"
 
   # https://github.com/mapbox/node-pre-gyp/issues/362
   npm install -g node-gyp
@@ -87,12 +90,12 @@ set -ex
 
 node merge_kokoro_logs.js
 
-if [ "$FAILED" == "" ]
+if [ "$FAILED" == "true" ]
 then
+  exit 1
+else
   if [ "$OS" == "Linux" ]
   then
     npm run coverage
   fi
-else
-  exit 1
 fi
