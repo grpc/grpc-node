@@ -43,7 +43,7 @@ export JUNIT_REPORT_STACK=1
 
 OS=$(uname)
 
-if [ "$OS" == "Linux" ]
+if [ "$OS" = "Linux" ]
 then
   gsutil cp gs://grpc-testing-secrets/coveralls_credentials/grpc-node.rc /tmp
   set +x
@@ -90,11 +90,11 @@ set -ex
 
 node merge_kokoro_logs.js
 
-if [ "$FAILED" == "true" ]
+if [ "$FAILED" = "true" ]
 then
   exit 1
 else
-  if [ "$OS" == "Linux" ]
+  if [ "$OS" = "Linux" ]
   then
     npm run coverage
   fi
