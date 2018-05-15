@@ -39,8 +39,24 @@ npm install --unsafe-perm
 
 mkdir -p reports
 export JOBS=8
+export JUNIT_REPORT_STACK=1
+
+OS=$(uname)
+
+if [ "$OS" = "Linux" ]
+then
+  gsutil cp gs://grpc-testing-secrets/coveralls_credentials/grpc-node.rc /tmp
+  set +x
+  . /tmp/grpc-node.rc
+  set -x
+  export COVERALLS_REPO_TOKEN
+  export COVERALLS_SERVICE_NAME=Kokoro
+  export COVERALLS_SERVICE_JOB_ID=$KOKORO_BUILD_ID
+fi
 
 # TODO(mlumish): Add electron tests
+
+FAILED="false"
 
 for version in ${node_versions}
 do
@@ -50,6 +66,8 @@ do
   nvm install $version
   nvm use $version
   set -ex
+
+  export JUNIT_REPORT_PATH="reports/node$version/"
 
   # https://github.com/mapbox/node-pre-gyp/issues/362
   npm install -g node-gyp
@@ -62,8 +80,8 @@ do
   ./node_modules/.bin/gulp clean.all
   ./node_modules/.bin/gulp setup
 
-  # Rebuild libraries and run tests.
-  JUNIT_REPORT_PATH="reports/node$version/" JUNIT_REPORT_STACK=1 ./node_modules/.bin/gulp test || FAILED="true"
+  # npm test calls nyc gulp test
+  npm test || FAILED="true"
 done
 
 set +ex
@@ -72,7 +90,12 @@ set -ex
 
 node merge_kokoro_logs.js
 
-if [ "$FAILED" != "" ]
+if [ "$FAILED" = "true" ]
 then
   exit 1
+else
+  if [ "$OS" = "Linux" ]
+  then
+    npm run coverage
+  fi
 fi
