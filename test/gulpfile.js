@@ -21,6 +21,7 @@ const mocha = require('gulp-mocha');
 const execa = require('execa');
 const path = require('path');
 const del = require('del');
+const semver = require('semver');
 const linkSync = require('../util').linkSync;
 
 // gulp-help monkeypatches tasks to have an additional description parameter
@@ -38,6 +39,10 @@ gulp.task('clean.all', 'Delete all files created by tasks', () => {});
 gulp.task('test', 'Run API-level tests', () => {
   // run mocha tests matching a glob with a pre-required fixture,
   // returning the associated gulp stream
+  if (!semver.satisfies(process.version, '>=9.4')) {
+    console.log(`Skipping cross-implementation tests for Node ${process.version}`);
+    return;
+  }
   const apiTestGlob = `${apiTestDir}/*.js`;
   const runTestsWithFixture = (server, client) => new Promise((resolve, reject) => {
     const fixture = `${server}_${client}`;
@@ -51,12 +56,19 @@ gulp.task('test', 'Run API-level tests', () => {
       .on('end', resolve)
       .on('error', reject);
   });
-  const runTestsArgPairs = [
-    ['native', 'native'],
-    ['native', 'js'],
-    // ['js', 'native'],
-    // ['js', 'js']
-  ];
+  var runTestsArgPairs;
+  if (semver.satisfies(process.version, '>=9.4')) {
+    runTestsArgPairs = [
+      ['native', 'native'],
+      ['native', 'js'],
+      // ['js', 'native'],
+      // ['js', 'js']
+    ];
+  } else {
+    runTestsArgPairs = [
+      ['native', 'native']
+    ];
+  }
   return runTestsArgPairs.reduce((previousPromise, argPair) => {
     return previousPromise.then(runTestsWithFixture.bind(null, argPair[0], argPair[1]));
   }, Promise.resolve());

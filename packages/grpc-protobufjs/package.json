@@ -1,6 +1,6 @@
 {
   "name": "@grpc/proto-loader",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Google Inc.",
   "contributors": [
     {
@@ -47,5 +47,8 @@
     "clang-format": "^1.2.2",
     "gts": "^0.5.3",
     "typescript": "~2.7.2"
+  },
+  "engines": {
+    "node": ">=6"
   }
 }
