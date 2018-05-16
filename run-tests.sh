@@ -43,17 +43,6 @@ export JUNIT_REPORT_STACK=1
 
 OS=$(uname)
 
-if [ "$OS" = "Linux" ]
-then
-  gsutil cp gs://grpc-testing-secrets/coveralls_credentials/grpc-node.rc /tmp
-  set +x
-  . /tmp/grpc-node.rc
-  set -x
-  export COVERALLS_REPO_TOKEN
-  export COVERALLS_SERVICE_NAME=Kokoro
-  export COVERALLS_SERVICE_JOB_ID=$KOKORO_BUILD_ID
-fi
-
 # TODO(mlumish): Add electron tests
 
 FAILED="false"
@@ -96,6 +85,14 @@ then
 else
   if [ "$OS" = "Linux" ]
   then
+    # If we can't download the token file, just skip reporting coverage
+    gsutil cp gs://grpc-testing-secrets/coveralls_credentials/grpc-node.rc /tmp || exit 0
+    set +x
+    . /tmp/grpc-node.rc
+    set -x
+    export COVERALLS_REPO_TOKEN
+    export COVERALLS_SERVICE_NAME=Kokoro
+    export COVERALLS_SERVICE_JOB_ID=$KOKORO_BUILD_ID
     npm run coverage
   fi
 fi
