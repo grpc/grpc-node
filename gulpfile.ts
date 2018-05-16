@@ -102,7 +102,7 @@ gulp.task('test.only', 'Run tests without rebuilding anything',
           ['js.core.test', 'native.test.only']);
 
 gulp.task('test', 'Run all tests', (callback) => {
-  runSequence('build', 'test.only', 'internal.test.test', callback);
+  runSequence('build', 'test.only', callback);
 });
 
 gulp.task('doc.gen', 'Generate documentation', ['native.core.doc.gen']);
