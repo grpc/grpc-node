@@ -68,7 +68,7 @@ describe('Interop tests', function() {
 	  throw new Error(`Server exited with signal ${signal}`);
 	}
       }
-    });
+    })
   });
   after(function() {
     serverProcess.send({});

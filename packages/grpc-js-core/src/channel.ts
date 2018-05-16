@@ -82,15 +82,6 @@ export interface Channel extends EventEmitter {
   /* tslint:enable:no-any */
 }
 
-/* This should be a real subchannel class that contains a ClientHttp2Session,
- * but for now this serves its purpose */
-type Http2SubChannel = http2.ClientHttp2Session & {
-  /* Count the number of currently active streams associated with the session.
-   * The purpose of this is to keep the session reffed if and only if there
-   * is at least one active stream */
-  streamCount?: number;
-};
-
 export class Http2Channel extends EventEmitter implements Channel {
   private readonly userAgent: string;
   private readonly target: url.URL;
@@ -100,7 +91,7 @@ export class Http2Channel extends EventEmitter implements Channel {
   private connecting: Promise<void>|null = null;
   /* For now, we have up to one subchannel, which will exist as long as we are
    * connecting or trying to connect */
-  private subChannel: Http2SubChannel|null = null;
+  private subChannel: http2.ClientHttp2Session|null = null;
   private filterStackFactory: FilterStackFactory;
 
   private subChannelConnectCallback: () => void = () => {};
@@ -169,7 +160,7 @@ export class Http2Channel extends EventEmitter implements Channel {
   }
 
   private startConnecting(): void {
-    let subChannel: Http2SubChannel;
+    let subChannel: http2.ClientHttp2Session;
     const secureContext = this.credentials.getSecureContext();
     if (secureContext === null) {
       subChannel = http2.connect(this.target);
@@ -269,25 +260,11 @@ export class Http2Channel extends EventEmitter implements Channel {
           headers[HTTP2_HEADER_PATH] = methodName;
           headers[HTTP2_HEADER_TE] = 'trailers';
           if (this.connectivityState === ConnectivityState.READY) {
-            const session: Http2SubChannel = this.subChannel!;
-            let http2Stream = session.request(headers);
-            /* This is a very ad-hoc reference counting scheme. This should be
-             * handled by a subchannel class */
-            session.ref();
-            if (!session.streamCount) {
-              session.streamCount = 0;
-            }
-            session.streamCount += 1;
-            http2Stream.on('close', () => {
-              if (!session.streamCount) {
-                session.streamCount = 0;
-              }
-              session.streamCount -= 1;
-              if (session.streamCount <= 0) {
-                session.unref();
-              }
-            });
-            stream.attachHttp2Stream(http2Stream);
+            const session: http2.ClientHttp2Session = this.subChannel!;
+            // Prevent the HTTP/2 session from keeping the process alive.
+            // Note: this function is only available in Node 9
+            session.unref();
+            stream.attachHttp2Stream(session.request(headers));
           } else {
             /* In this case, we lost the connection while finalizing
              * metadata. That should be very unusual */

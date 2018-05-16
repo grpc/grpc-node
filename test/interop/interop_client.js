@@ -616,12 +616,8 @@ if (require.main === module) {
   };
   runTest(argv.server_host + ':' + argv.server_port, argv.server_host_override,
           argv.test_case, argv.use_tls === 'true', argv.use_test_ca === 'true',
-          function (err) {
-            if (err) {
-              throw err;
-            } else {
-              console.log('OK:', argv.test_case);
-            }
+          function () {
+            console.log('OK:', argv.test_case);
           }, extra_args);
 }
 
