@@ -14,6 +14,7 @@ Give very precise steps you've discovered to reproduce your problem. If possible
  - OS name and version: [e.g. Linux Ubuntu 18.04]
  - Node version [e.g. 8.10.0]
  - Node installation method [e.g. nvm]
+ - Package name and version [e.g. gRPC@1.12.0]
 
 **Additional context**
 Add any other context about the problem here. If possible, attach full logs.
