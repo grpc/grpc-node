@@ -28,8 +28,8 @@ SET JOBS=8
 
 call nvm version
 
-call nvm install 8
-call nvm use 8
+call nvm install 8.10.0
+call nvm use 8.10.0
 
 call npm install || goto :error
 
