@@ -1,0 +1,8 @@
+---
+name: ReDoS vulnerability
+about: npm audit reports that protobufjs has a ReDoS vulnerability.
+
+---
+As I ran `npm install`, the tool told me that protobufjs has 1 moderate vulnerability, as described here: https://nodesecurity.io/advisories/605
+
+The gRPC team is aware of this, and this issue would be a duplicate of #277. The gRPC package can't upgrade the protobufjs dependency without proceeding with a breaking change, and the fix has been backported to protobufjs 5.0.3 already - it's simply the nodesecurity.io database that is outdated.
