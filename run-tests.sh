@@ -30,9 +30,8 @@ if [ ! -n "$node_versions" ] ; then
 fi
 
 set +ex
-nvm install 8
-nvm install lts/*
-nvm use lts/*
+nvm install 8.10.0
+nvm use 8.10.0
 set -ex
 
 npm install --unsafe-perm
