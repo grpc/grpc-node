@@ -20,6 +20,21 @@ npm install -g npm
 # https://github.com/mapbox/node-pre-gyp/issues/362
 npm install -g node-gyp
 
+DO_NATIVE=true
+DO_CROSS=true
+
+while [ $# -gt 0 ] ; do
+  case $1 in
+    --native-only)
+      DO_CROSS=false
+      ;;
+    --cross-only)
+      DO_NATIVE=false
+      ;;
+  esac
+  shift
+done
+
 set -ex
 
 cd $(dirname $0)
@@ -34,10 +49,13 @@ rm -rf build || true
 
 mkdir -p "${ARTIFACTS_OUT}"
 
-docker build -t alpine_node_artifact $base_dir/tools/docker/alpine_artifact
+if [ "$DO_NATIVE" = "true" ] ; then
+  $tool_dir/build_artifact_node.sh
+fi
 
-$tool_dir/build_artifact_node.sh
+if [ "$DO_CROSS" = "true" ] ; then
+  $tool_dir/build_artifact_node_arm.sh
 
-$tool_dir/build_artifact_node_arm.sh
-
-docker run -e JOBS=8 -e ARTIFACTS_OUT=/var/grpc/artifacts -v $base_dir:/var/grpc alpine_node_artifact /var/grpc/tools/run_tests/artifacts/build_artifact_node.sh --with-alpine
+  docker build -t alpine_node_artifact $base_dir/tools/docker/alpine_artifact
+  docker run -e JOBS=8 -e ARTIFACTS_OUT=/var/grpc/artifacts -v $base_dir:/var/grpc alpine_node_artifact /var/grpc/tools/run_tests/artifacts/build_artifact_node.sh --with-alpine
+fi
