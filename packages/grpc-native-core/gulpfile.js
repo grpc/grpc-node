@@ -68,7 +68,7 @@ gulp.task('build', 'Build native package', () => {
 });
 
 gulp.task('test', 'Run all tests', ['build'], () => {
-  return gulp.src(`${testDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
+  return gulp.src(`${testDir}/*.js`).pipe(mocha({timeout: 5000, reporter: 'mocha-jenkins-reporter'}));
 });
 
 gulp.task('doc.gen', 'Generate docs', (cb) => {
