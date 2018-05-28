@@ -32,6 +32,8 @@ export interface MethodDefinition<RequestType, ResponseType> {
   path: string;
   requestStream: boolean;
   responseStream: boolean;
+  requestType: Protobuf.Type;
+  responseType: Protobuf.Type;
   requestSerialize: Serialize<RequestType>;
   responseSerialize: Serialize<ResponseType>;
   requestDeserialize: Deserialize<RequestType>;
@@ -92,6 +94,8 @@ function createMethodDefinition(method: Protobuf.Method, serviceName: string, op
     path: '/' + serviceName + '/' + method.name,
     requestStream: !!method.requestStream,
     responseStream: !!method.responseStream,
+    requestType: method.resolvedRequestType as Protobuf.Type,
+    responseType: method.resolvedResponseType as Protobuf.Type,
     requestSerialize: createSerializer(method.resolvedRequestType as Protobuf.Type),
     requestDeserialize: createDeserializer(method.resolvedRequestType as Protobuf.Type, options),
     responseSerialize: createSerializer(method.resolvedResponseType as Protobuf.Type),
