@@ -29,6 +29,12 @@ export interface StatusObject {
   metadata: Metadata;
 }
 
+export const enum WriteFlags {
+  BufferHint = 1,
+  NoCompress = 2,
+  WriteThrough = 4
+}
+
 export interface WriteObject {
   message: Buffer;
   flags?: number;
@@ -69,14 +75,18 @@ export class Http2CallStream extends Duplex implements CallStream {
   private pendingFinalCallback: Function|null = null;
 
   private readState: ReadState = ReadState.NO_DATA;
-  private readCompressFlag = false;
+  private readCompressFlag: Buffer = Buffer.alloc(1);
   private readPartialSize: Buffer = Buffer.alloc(4);
   private readSizeRemaining = 4;
   private readMessageSize = 0;
   private readPartialMessage: Buffer[] = [];
   private readMessageRemaining = 0;
 
+  private isReadFilterPending = false;
+  private canPush = false;
+
   private unpushedReadMessages: Array<Buffer|null> = [];
+  private unfilteredReadMessages: Array<Buffer|null> = [];
 
   // Status code mapped from :status. To be used if grpc-status is not received
   private mappedStatusCode: Status = Status.UNKNOWN;
@@ -111,16 +121,49 @@ export class Http2CallStream extends Duplex implements CallStream {
     }
   }
 
-  private tryPush(messageBytes: Buffer, canPush: boolean): boolean {
-    if (canPush) {
-      if (!this.push(messageBytes)) {
-        canPush = false;
+  private handleFilterError(error: Error) {
+    this.cancelWithStatus(Status.INTERNAL, error.message);
+  }
+
+  private handleFilteredRead(message: Buffer) {
+    this.isReadFilterPending = false;
+    if (this.canPush) {
+      if (!this.push(message)) {
+        this.canPush = false;
         (this.http2Stream as http2.ClientHttp2Stream).pause();
       }
     } else {
-      this.unpushedReadMessages.push(messageBytes);
+      this.unpushedReadMessages.push(message);
     }
-    return canPush;
+    if (this.unfilteredReadMessages.length > 0) {
+      /* nextMessage is guaranteed not to be undefined because
+         unfilteredReadMessages is non-empty */
+      const nextMessage = this.unfilteredReadMessages.shift() as Buffer | null;
+      this.filterReceivedMessage(nextMessage);
+    }
+  }
+
+  private filterReceivedMessage(framedMessage: Buffer | null) {
+    if (framedMessage === null) {
+      if (this.canPush) {
+        this.push(null);
+      } else {
+        this.unpushedReadMessages.push(null);
+      }
+      return;
+    }
+    this.isReadFilterPending = true;
+    this.filterStack.receiveMessage(Promise.resolve(framedMessage)).then(
+      this.handleFilteredRead.bind(this),
+      this.handleFilterError.bind(this));
+  }
+
+  private tryPush(messageBytes: Buffer | null): void {
+    if (this.isReadFilterPending) {
+      this.unfilteredReadMessages.push(messageBytes);
+    } else {
+      this.filterReceivedMessage(messageBytes);
+    }
   }
 
   private handleTrailers(headers: http2.IncomingHttpHeaders) {
@@ -219,14 +262,13 @@ export class Http2CallStream extends Duplex implements CallStream {
         }
       });
       stream.on('trailers', this.handleTrailers.bind(this));
-      stream.on('data', (data) => {
+      stream.on('data', (data: Buffer) => {
         let readHead = 0;
-        let canPush = true;
         let toRead: number;
         while (readHead < data.length) {
           switch (this.readState) {
             case ReadState.NO_DATA:
-              this.readCompressFlag = (data.readUInt8(readHead) !== 0);
+              this.readCompressFlag = data.slice(readHead, readHead+1);
               readHead += 1;
               this.readState = ReadState.READING_SIZE;
               this.readPartialSize.fill(0);
@@ -249,7 +291,7 @@ export class Http2CallStream extends Duplex implements CallStream {
                 if (this.readMessageRemaining > 0) {
                   this.readState = ReadState.READING_MESSAGE;
                 } else {
-                  canPush = this.tryPush(emptyBuffer, canPush);
+                  this.tryPush(Buffer.concat([this.readCompressFlag, this.readPartialSize]));
                   this.readState = ReadState.NO_DATA;
                 }
               }
@@ -264,10 +306,9 @@ export class Http2CallStream extends Duplex implements CallStream {
               // readMessageRemaining >=0 here
               if (this.readMessageRemaining === 0) {
                 // At this point, we have read a full message
-                const messageBytes = Buffer.concat(
-                    this.readPartialMessage, this.readMessageSize);
-                // TODO(murgatroid99): Add receive message filters
-                canPush = this.tryPush(messageBytes, canPush);
+                const framedMessageBuffers = [this.readCompressFlag, this.readPartialSize].concat(this.readPartialMessage);
+                const framedMessage = Buffer.concat(framedMessageBuffers, this.readMessageSize + 5);
+                this.tryPush(framedMessage);
                 this.readState = ReadState.NO_DATA;
               }
               break;
@@ -277,11 +318,7 @@ export class Http2CallStream extends Duplex implements CallStream {
         }
       });
       stream.on('end', () => {
-        if (this.unpushedReadMessages.length === 0) {
-          this.push(null);
-        } else {
-          this.unpushedReadMessages.push(null);
-        }
+        this.tryPush(null);
       });
       stream.on('close', async (errorCode) => {
         let code: Status;
@@ -380,13 +417,15 @@ export class Http2CallStream extends Duplex implements CallStream {
   }
 
   _read(size: number) {
+    this.canPush = true;
     if (this.http2Stream === null) {
       this.pendingRead = true;
     } else {
       while (this.unpushedReadMessages.length > 0) {
         const nextMessage = this.unpushedReadMessages.shift();
-        const keepPushing = this.push(nextMessage);
-        if (nextMessage === null || (!keepPushing)) {
+        this.canPush = this.push(nextMessage);
+        if (nextMessage === null || (!this.canPush)) {
+          this.canPush = false;
           return;
         }
       }
@@ -397,27 +436,15 @@ export class Http2CallStream extends Duplex implements CallStream {
     }
   }
 
-  // Encode a message to the wire format
-  private encodeMessage(message: WriteObject): Buffer {
-    /* allocUnsafe doesn't initiate the bytes in the buffer. We are explicitly
-     * overwriting every single byte, so that should be fine */
-    const output: Buffer = Buffer.allocUnsafe(message.message.length + 5);
-    // TODO(murgatroid99): handle compressed flag appropriately
-    output.writeUInt8(0, 0);
-    output.writeUInt32BE(message.message.length, 1);
-    message.message.copy(output, 5);
-    return output;
-  }
-
   _write(chunk: WriteObject, encoding: string, cb: Function) {
-    // TODO(murgatroid99): Add send message filters
-    const encodedMessage = this.encodeMessage(chunk);
-    if (this.http2Stream === null) {
-      this.pendingWrite = encodedMessage;
-      this.pendingWriteCallback = cb;
-    } else {
-      this.http2Stream.write(encodedMessage, cb);
-    }
+    this.filterStack.sendMessage(Promise.resolve(chunk)).then((message) => {
+      if (this.http2Stream === null) {
+        this.pendingWrite = message.message;
+        this.pendingWriteCallback = cb;
+      } else {
+        this.http2Stream.write(message.message, cb);
+      }
+    }, this.handleFilterError.bind(this));
   }
 
   _final(cb: Function) {

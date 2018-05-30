@@ -237,9 +237,8 @@ export class Http2Channel extends EventEmitter implements Channel {
       this.defaultAuthority = this.target.host;
     }
     this.filterStackFactory = new FilterStackFactory([
-      new CompressionFilterFactory(this),
       new CallCredentialsFilterFactory(this), new DeadlineFilterFactory(this),
-      new MetadataStatusFilterFactory(this)
+      new MetadataStatusFilterFactory(this), new CompressionFilterFactory(this)
     ]);
     this.currentBackoffDeadline = new Date();
     /* The only purpose of these lines is to ensure that this.backoffTimerId has
