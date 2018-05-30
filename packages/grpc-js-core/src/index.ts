@@ -8,6 +8,24 @@ import {Status} from './constants';
 import {loadPackageDefinition, makeClientConstructor} from './make-client';
 import {Metadata} from './metadata';
 
+interface IndexedObject {
+  [key: string]: any;
+  [key: number]: any;
+}
+
+function mixin(...sources: IndexedObject[]) {
+  const result: {[key: string]: Function} = {};
+  for(const source of sources) {
+    for(const propName of Object.getOwnPropertyNames(source)) {
+      const property: any = source[propName];
+      if (typeof property === 'function') {
+        result[propName] = property;
+      }
+    }
+  }
+  return result;
+}
+
 export interface OAuth2Client {
   getRequestMetadata: (url: string, callback: (err: Error|null, headers?: {
                                       Authorization: string
@@ -17,8 +35,7 @@ export interface OAuth2Client {
 /**** Client Credentials ****/
 
 // Using assign only copies enumerable properties, which is what we want
-export const credentials = Object.assign(
-    {
+export const credentials = mixin({
       /**
        * Create a gRPC credential from a Google credential object.
        * @param googleCredentials The authentication client to use.
@@ -67,8 +84,7 @@ export const credentials = Object.assign(
           CallCredentials => {
             return additional.reduce((acc, other) => acc.compose(other), first);
           }
-    },
-    ChannelCredentials, CallCredentials);
+    }, ChannelCredentials, CallCredentials);
 
 /**** Metadata ****/
 
