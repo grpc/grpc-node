@@ -19,14 +19,13 @@ export class FilterStack implements Filter {
   }
 
   sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
-    return flow(map(
-        this.filters, (filter) => filter.sendMessage.bind(filter)))(message);
+    return flow(map(this.filters, (filter) => filter.sendMessage.bind(filter)))(
+        message);
   }
 
   receiveMessage(message: Promise<Buffer>): Promise<Buffer> {
-    return flowRight(
-        map(this.filters, (filter) => filter.receiveMessage.bind(filter)))(
-        message);
+    return flowRight(map(
+        this.filters, (filter) => filter.receiveMessage.bind(filter)))(message);
   }
 
   receiveTrailers(status: Promise<StatusObject>): Promise<StatusObject> {

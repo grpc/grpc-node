@@ -1,9 +1,10 @@
-import {CallStream, WriteObject, WriteFlags} from './call-stream';
+import * as zlib from 'zlib';
+
+import {CallStream, WriteFlags, WriteObject} from './call-stream';
 import {Channel} from './channel';
+import {Status} from './constants';
 import {BaseFilter, Filter, FilterFactory} from './filter';
 import {Metadata, MetadataValue} from './metadata';
-import {Status} from './constants';
-import * as zlib from 'zlib';
 
 abstract class CompressionHandler {
   protected abstract compressMessage(message: Buffer): Promise<Buffer>;
@@ -38,7 +39,7 @@ abstract class CompressionHandler {
   }
 }
 
-class IdentityHandler extends CompressionHandler{
+class IdentityHandler extends CompressionHandler {
   async compressMessage(message: Buffer) {
     return message;
   }
@@ -53,61 +54,57 @@ class IdentityHandler extends CompressionHandler{
     return output;
   }
 
-  decompressMessage(message: Buffer) : Promise<Buffer> {
+  decompressMessage(message: Buffer): Promise<Buffer> {
     return Promise.reject<Buffer>(new Error(
-      'Received compressed message but "grpc-encoding" header was identity'));
+        'Received compressed message but "grpc-encoding" header was identity'));
   }
 }
 
 class DeflateHandler extends CompressionHandler {
   compressMessage(message: Buffer) {
-    return new Promise<Buffer>((resolve, reject) => {
-      zlib.deflate(message, (err, output) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(output);
-        }
-      })
-    });
+    return new Promise<Buffer>(
+        (resolve, reject) => {zlib.deflate(message, (err, output) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(output);
+          }
+        })});
   }
 
   decompressMessage(message: Buffer) {
-    return new Promise<Buffer>((resolve, reject) => {
-      zlib.inflate(message, (err, output) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(output);
-        }
-      })
-    });
+    return new Promise<Buffer>(
+        (resolve, reject) => {zlib.inflate(message, (err, output) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(output);
+          }
+        })});
   }
 }
 
 class GzipHandler extends CompressionHandler {
   compressMessage(message: Buffer) {
-    return new Promise<Buffer>((resolve, reject) => {
-      zlib.gzip(message, (err, output) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(output);
-        }
-      })
-    });
+    return new Promise<Buffer>(
+        (resolve, reject) => {zlib.gzip(message, (err, output) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(output);
+          }
+        })});
   }
 
   decompressMessage(message: Buffer) {
-    return new Promise<Buffer>((resolve, reject) => {
-      zlib.unzip(message, (err, output) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(output);
-        }
-      })
-    });
+    return new Promise<Buffer>(
+        (resolve, reject) => {zlib.unzip(message, (err, output) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(output);
+          }
+        })});
   }
 }
 
@@ -117,26 +114,27 @@ class UnknownHandler extends CompressionHandler {
   }
   compressMessage(message: Buffer): Promise<Buffer> {
     return Promise.reject<Buffer>(new Error(
-      `Received message compressed wth unsupported compression method ${this.compressionName}`));
+        `Received message compressed wth unsupported compression method ${
+            this.compressionName}`));
   }
 
   decompressMessage(message: Buffer): Promise<Buffer> {
     // This should be unreachable
-    return Promise.reject<Buffer>(new Error(
-      `Compression method not supported: ${this.compressionName}`));
+    return Promise.reject<Buffer>(
+        new Error(`Compression method not supported: ${this.compressionName}`));
   }
 }
 
 function getCompressionHandler(compressionName: string): CompressionHandler {
   switch (compressionName) {
-  case 'identity':
-    return new IdentityHandler();
-  case 'deflate':
-    return new DeflateHandler();
-  case 'gzip':
-    return new GzipHandler();
-  default:
-    return new UnknownHandler(compressionName);
+    case 'identity':
+      return new IdentityHandler();
+    case 'deflate':
+      return new DeflateHandler();
+    case 'gzip':
+      return new GzipHandler();
+    default:
+      return new UnknownHandler(compressionName);
   }
 }
 
@@ -165,15 +163,16 @@ export class CompressionFilter extends BaseFilter implements Filter {
   }
 
   async sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
-    
     /* This filter is special. The input message is the bare message bytes,
      * and the output is a framed and possibly compressed message. For this
      * reason, this filter should be at the bottom of the filter stack */
     const resolvedMessage: WriteObject = await message;
-    const compress = resolvedMessage.flags === undefined ? false :
-      (resolvedMessage.flags & WriteFlags.NoCompress) === 0;
+    const compress = resolvedMessage.flags === undefined ?
+        false :
+        (resolvedMessage.flags & WriteFlags.NoCompress) === 0;
     return {
-      message: await this.sendCompression.writeMessage(resolvedMessage.message, compress),
+      message: await this.sendCompression.writeMessage(
+          resolvedMessage.message, compress),
       flags: resolvedMessage.flags
     };
   }

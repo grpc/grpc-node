@@ -6,13 +6,13 @@ import * as stream from 'stream';
 
 import {CallCredentials} from '../src/call-credentials';
 import {Http2CallStream} from '../src/call-stream';
+import {Channel} from '../src/channel';
 import {CompressionFilterFactory} from '../src/compression-filter';
 import {Status} from '../src/constants';
 import {FilterStackFactory} from '../src/filter-stack';
 import {Metadata} from '../src/metadata';
 
 import {assert2, mockFunction} from './common';
-import { Channel } from '../src/channel';
 
 interface DataFrames {
   payload: Buffer;
@@ -89,7 +89,8 @@ describe('CallStream', () => {
    * Currently the channel is unused, so we can replace it with an empty object,
    * but this might break if we start checking channel arguments, in which case
    * we will need a more sophisticated fake */
-  const filterStackFactory = new FilterStackFactory([new CompressionFilterFactory(<Channel>{})]);
+  const filterStackFactory =
+      new FilterStackFactory([new CompressionFilterFactory(<Channel>{})]);
   const message = 'eat this message';  // 16 bytes
 
   beforeEach(() => {

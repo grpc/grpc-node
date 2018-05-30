@@ -143,7 +143,7 @@ export class Http2CallStream extends Duplex implements CallStream {
     }
   }
 
-  private filterReceivedMessage(framedMessage: Buffer | null) {
+  private filterReceivedMessage(framedMessage: Buffer|null) {
     if (framedMessage === null) {
       if (this.canPush) {
         this.push(null);
@@ -153,12 +153,13 @@ export class Http2CallStream extends Duplex implements CallStream {
       return;
     }
     this.isReadFilterPending = true;
-    this.filterStack.receiveMessage(Promise.resolve(framedMessage)).then(
-      this.handleFilteredRead.bind(this),
-      this.handleFilterError.bind(this));
+    this.filterStack.receiveMessage(Promise.resolve(framedMessage))
+        .then(
+            this.handleFilteredRead.bind(this),
+            this.handleFilterError.bind(this));
   }
 
-  private tryPush(messageBytes: Buffer | null): void {
+  private tryPush(messageBytes: Buffer|null): void {
     if (this.isReadFilterPending) {
       this.unfilteredReadMessages.push(messageBytes);
     } else {
@@ -268,7 +269,7 @@ export class Http2CallStream extends Duplex implements CallStream {
         while (readHead < data.length) {
           switch (this.readState) {
             case ReadState.NO_DATA:
-              this.readCompressFlag = data.slice(readHead, readHead+1);
+              this.readCompressFlag = data.slice(readHead, readHead + 1);
               readHead += 1;
               this.readState = ReadState.READING_SIZE;
               this.readPartialSize.fill(0);
@@ -291,7 +292,8 @@ export class Http2CallStream extends Duplex implements CallStream {
                 if (this.readMessageRemaining > 0) {
                   this.readState = ReadState.READING_MESSAGE;
                 } else {
-                  this.tryPush(Buffer.concat([this.readCompressFlag, this.readPartialSize]));
+                  this.tryPush(Buffer.concat(
+                      [this.readCompressFlag, this.readPartialSize]));
                   this.readState = ReadState.NO_DATA;
                 }
               }
@@ -306,8 +308,11 @@ export class Http2CallStream extends Duplex implements CallStream {
               // readMessageRemaining >=0 here
               if (this.readMessageRemaining === 0) {
                 // At this point, we have read a full message
-                const framedMessageBuffers = [this.readCompressFlag, this.readPartialSize].concat(this.readPartialMessage);
-                const framedMessage = Buffer.concat(framedMessageBuffers, this.readMessageSize + 5);
+                const framedMessageBuffers = [
+                  this.readCompressFlag, this.readPartialSize
+                ].concat(this.readPartialMessage);
+                const framedMessage = Buffer.concat(
+                    framedMessageBuffers, this.readMessageSize + 5);
                 this.tryPush(framedMessage);
                 this.readState = ReadState.NO_DATA;
               }
