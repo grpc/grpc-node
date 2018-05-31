@@ -72,10 +72,12 @@ gulp.task('copy-test-fixtures', 'Copy test fixtures.', () => {
  * Transpiles src/ and test/, and then runs all tests.
  */
 gulp.task('test', 'Runs all tests.', ['copy-test-fixtures'], () => {
-  if (semver.satisfies(process.version, '>=9.4')) {
+  if (semver.satisfies(process.version, '^8.11.2 || >=9.4')) {
     return gulp.src(`${outDir}/test/**/*.js`)
-      .pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
+      .pipe(mocha({reporter: 'mocha-jenkins-reporter',
+                   require: ['ts-node/register']}));
   } else {
     console.log(`Skipping grpc-js tests for Node ${process.version}`);
+    return Promise.resolve(null);
   }
 });

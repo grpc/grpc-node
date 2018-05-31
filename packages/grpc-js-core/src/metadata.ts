@@ -3,7 +3,9 @@ import {forOwn} from 'lodash';
 
 export type MetadataValue = string|Buffer;
 
-export interface MetadataObject { [key: string]: MetadataValue[]; }
+export interface MetadataObject {
+  [key: string]: MetadataValue[];
+}
 
 function cloneMetadataObject(repr: MetadataObject): MetadataObject {
   const result: MetadataObject = {};

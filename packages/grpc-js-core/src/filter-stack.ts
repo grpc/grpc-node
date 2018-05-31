@@ -1,6 +1,6 @@
 import {flow, flowRight, map} from 'lodash';
 
-import {CallStream, StatusObject} from './call-stream';
+import {CallStream, StatusObject, WriteObject} from './call-stream';
 import {Filter, FilterFactory} from './filter';
 import {Metadata} from './metadata';
 
@@ -16,6 +16,16 @@ export class FilterStack implements Filter {
     return flowRight(
         map(this.filters, (filter) => filter.receiveMetadata.bind(filter)))(
         metadata);
+  }
+
+  sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
+    return flow(map(this.filters, (filter) => filter.sendMessage.bind(filter)))(
+        message);
+  }
+
+  receiveMessage(message: Promise<Buffer>): Promise<Buffer> {
+    return flowRight(map(
+        this.filters, (filter) => filter.receiveMessage.bind(filter)))(message);
   }
 
   receiveTrailers(status: Promise<StatusObject>): Promise<StatusObject> {

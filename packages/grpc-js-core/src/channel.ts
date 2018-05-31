@@ -84,7 +84,7 @@ export interface Channel extends EventEmitter {
 
 /* This should be a real subchannel class that contains a ClientHttp2Session,
  * but for now this serves its purpose */
-type Http2SubChannel = http2.ClientHttp2Session & {
+type Http2SubChannel = http2.ClientHttp2Session&{
   /* Count the number of currently active streams associated with the session.
    * The purpose of this is to keep the session reffed if and only if there
    * is at least one active stream */
@@ -237,9 +237,8 @@ export class Http2Channel extends EventEmitter implements Channel {
       this.defaultAuthority = this.target.host;
     }
     this.filterStackFactory = new FilterStackFactory([
-      new CompressionFilterFactory(this),
       new CallCredentialsFilterFactory(this), new DeadlineFilterFactory(this),
-      new MetadataStatusFilterFactory(this)
+      new MetadataStatusFilterFactory(this), new CompressionFilterFactory(this)
     ]);
     this.currentBackoffDeadline = new Date();
     /* The only purpose of these lines is to ensure that this.backoffTimerId has
