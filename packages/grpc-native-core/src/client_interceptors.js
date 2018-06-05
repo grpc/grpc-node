@@ -368,32 +368,6 @@ var resolveInterceptorProviders = function(providers, method_definition) {
 };
 
 /**
- * Resolves interceptor options at call invocation time
- * @param {grpc.Client~CallOptions} options The call options passed to a gRPC
- * call.
- * @param {Interceptor[]} [options.interceptors]
- * @param {InterceptorProvider[]} [options.interceptor_providers]
- * @param {grpc~MethodDefinition} method_definition
- * @return {null|function[]}
- */
-var resolveInterceptorOptions = function(options, method_definition) {
-  var provided = resolveInterceptorProviders(options.interceptor_providers,
-    method_definition);
-  if (_.isArray(options.interceptors) && _.isArray(provided)) {
-    throw new InterceptorConfigurationError(
-      'Both interceptors and interceptor_providers were passed as options ' +
-      'to the call invocation. Only one of these is allowed.');
-  }
-  if (_.isArray(options.interceptors)) {
-    return options.interceptors;
-  }
-  if (_.isArray(provided)) {
-    return provided;
-  }
-  return null;
-};
-
-/**
  * A chainable gRPC call proxy which will delegate to an optional requester
  * object. By default, interceptor methods will chain to next_call. If a
  * requester is provided which implements an interceptor method, that
@@ -1360,17 +1334,12 @@ function getLastListener(method_definition, emitter, callback) {
  *
  * @param {grpc~MethodDefinition} method_definition
  * @param {grpc.Client~CallOptions} options
- * @param {Interceptor[]} constructor_interceptors
+ * @param {Interceptor[]} interceptors
  * @param {grpc.Channel} channel
  * @param {function|EventEmitter} responder
  */
 function getInterceptingCall(method_definition, options,
-                             constructor_interceptors, channel, responder) {
-  var interceptors = _processInterceptorLayers(
-    options,
-    constructor_interceptors,
-    method_definition
-  );
+                             interceptors, channel, responder) {
   var last_interceptor = _getLastInterceptor(method_definition, channel,
                                             responder);
   var all_interceptors = interceptors.concat(last_interceptor);
@@ -1417,29 +1386,6 @@ function _buildChain(interceptors, options) {
 }
 
 /**
- * Process call options and the interceptor override layers to get the final set
- * of interceptors.
- * @private
- * @param {grpc.Client~CallOptions} call_options The options passed to the gRPC
- * call.
- * @param {Interceptor[]} constructor_interceptors Interceptors passed to the
- * client constructor.
- * @param {grpc~MethodDefinition} method_definition Details of the RPC method.
- * @return {Interceptor[]|null} The final set of interceptors.
- */
-function _processInterceptorLayers(call_options,
-                                   constructor_interceptors,
-                                   method_definition) {
-  var calltime_interceptors = resolveInterceptorOptions(call_options,
-    method_definition);
-  var interceptor_overrides = [
-    calltime_interceptors,
-    constructor_interceptors
-  ];
-  return _resolveInterceptorOverrides(interceptor_overrides);
-}
-
-/**
  * Wraps a plain listener object in an InterceptingListener if it isn't an
  * InterceptingListener already.
  * @param {InterceptingListener|object|null} current_listener
@@ -1462,23 +1408,6 @@ function _getInterceptingListener(current_listener, next_listener) {
  */
 function _isInterceptingListener(listener) {
   return listener && listener.constructor.name === 'InterceptingListener';
-}
-
-/**
- * Chooses the first valid array of interceptors or returns null.
- * @param {Interceptor[][]} interceptor_lists A list of interceptor lists in
- * descending override priority order.
- * @return {Interceptor[]|null} The resulting interceptors
- * @private
- */
-function _resolveInterceptorOverrides(interceptor_lists) {
-  for (var i = 0; i < interceptor_lists.length; i++) {
-    var interceptor_list = interceptor_lists[i];
-    if (_.isArray(interceptor_list)) {
-      return interceptor_list;
-    }
-  }
-  return null;
 }
 
 exports.resolveInterceptorProviders = resolveInterceptorProviders;

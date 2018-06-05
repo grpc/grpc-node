@@ -380,19 +380,18 @@ function Client(address, credentials, options) {
   options['grpc.primary_user_agent'] += 'grpc-node/' + version;
 
   // Resolve interceptor options and assign interceptors to each method
-  var interceptor_providers = options.interceptor_providers || [];
-  var interceptors = options.interceptors || [];
-  if (interceptor_providers.length && interceptors.length) {
+  if (_.isArray(options.interceptor_providers) && _.isArray(options.interceptors)) {
     throw new client_interceptors.InterceptorConfigurationError(
       'Both interceptors and interceptor_providers were passed as options ' +
       'to the client constructor. Only one of these is allowed.');
   }
+  self.$interceptors = options.interceptors || [];
+  self.$interceptor_providers = options.interceptor_providers || [];
   _.each(self.$method_definitions, function(method_definition, method_name) {
     self[method_name].interceptors = client_interceptors
-      .resolveInterceptorProviders(interceptor_providers, method_definition)
-      .concat(interceptors);
+      .resolveInterceptorProviders(self.$interceptor_providers, method_definition)
+      .concat(self.$interceptors);
   });
-
   // Exclude interceptor options which have already been consumed
   var channel_options = _.omit(options,
      ['interceptors', 'interceptor_providers']);
@@ -402,6 +401,21 @@ function Client(address, credentials, options) {
 }
 
 exports.Client = Client;
+
+Client.prototype.resolveCallInterceptors = function(method_definition, interceptors, interceptor_providers) {
+  if (_.isArray(interceptors) && _.isArray(interceptor_providers)) {
+    throw new client_interceptors.InterceptorConfigurationError(
+      'Both interceptors and interceptor_providers were passed as call ' +
+      'options. Only one of these is allowed.');
+  }
+  if (_.isArray(interceptors) || _.isArray(interceptor_providers)) {
+    interceptors = interceptors || [];
+    interceptor_providers = interceptor_providers || [];
+    return client_interceptors.resolveInterceptorProviders(interceptor_providers, method_definition).concat(interceptors);
+  } else {
+    return client_interceptors.resolveInterceptorProviders(this.$interceptor_providers, method_definition).concat(this.$interceptors);
+  }
+}
 
 /**
  * @callback grpc.Client~requestCallback
@@ -454,10 +468,6 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
     throw new Error('Argument mismatch in makeUnaryRequest');
   }
 
-  var method_name = this.$method_names[path];
-  var constructor_interceptors = this[method_name] ?
-    this[method_name].interceptors :
-    null;
   var method_definition = options.method_definition = {
     path: path,
     requestStream: false,
@@ -471,7 +481,7 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
   var intercepting_call = client_interceptors.getInterceptingCall(
     method_definition,
     options,
-    constructor_interceptors,
+    Client.prototype.resolveCallInterceptors.call(this, method_definition, options.interceptors, options.interceptor_providers),
     this.$channel,
     callback
   );
@@ -533,10 +543,6 @@ Client.prototype.makeClientStreamRequest = function(path, serialize,
     throw new Error('Argument mismatch in makeClientStreamRequest');
   }
 
-  var method_name = this.$method_names[path];
-  var constructor_interceptors = this[method_name] ?
-    this[method_name].interceptors :
-    null;
   var method_definition = options.method_definition = {
     path: path,
     requestStream: true,
@@ -550,7 +556,7 @@ Client.prototype.makeClientStreamRequest = function(path, serialize,
   var intercepting_call = client_interceptors.getInterceptingCall(
     method_definition,
     options,
-    constructor_interceptors,
+    Client.prototype.resolveCallInterceptors.call(this, method_definition, options.interceptors, options.interceptor_providers),
     this.$channel,
     callback
   );
@@ -595,10 +601,6 @@ Client.prototype.makeServerStreamRequest = function(path, serialize,
     throw new Error('Argument mismatch in makeServerStreamRequest');
   }
 
-  var method_name = this.$method_names[path];
-  var constructor_interceptors = this[method_name] ?
-    this[method_name].interceptors :
-    null;
   var method_definition = options.method_definition = {
     path: path,
     requestStream: false,
@@ -613,7 +615,7 @@ Client.prototype.makeServerStreamRequest = function(path, serialize,
   var intercepting_call = client_interceptors.getInterceptingCall(
     method_definition,
     options,
-    constructor_interceptors,
+    Client.prototype.resolveCallInterceptors.call(this, method_definition, options.interceptors, options.interceptor_providers),
     this.$channel,
     emitter
   );
@@ -655,10 +657,6 @@ Client.prototype.makeBidiStreamRequest = function(path, serialize,
     throw new Error('Argument mismatch in makeBidiStreamRequest');
   }
 
-  var method_name = this.$method_names[path];
-  var constructor_interceptors = this[method_name] ?
-    this[method_name].interceptors :
-    null;
   var method_definition = options.method_definition = {
     path: path,
     requestStream: true,
@@ -673,7 +671,7 @@ Client.prototype.makeBidiStreamRequest = function(path, serialize,
   var intercepting_call = client_interceptors.getInterceptingCall(
     method_definition,
     options,
-    constructor_interceptors,
+    Client.prototype.resolveCallInterceptors.call(this, method_definition, options.interceptors, options.interceptor_providers),
     this.$channel,
     emitter
   );
