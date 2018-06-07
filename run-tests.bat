@@ -31,6 +31,8 @@ call nvm version
 call nvm install 8
 call nvm use 8
 
+SET npm_config_fetch_retries=5
+
 call npm install || goto :error
 
 SET JUNIT_REPORT_STACK=1

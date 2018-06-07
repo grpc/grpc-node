@@ -35,6 +35,8 @@ nvm install lts/*
 nvm use lts/*
 set -ex
 
+npm_config_fetch_retries=5
+
 npm install --unsafe-perm
 
 mkdir -p reports
