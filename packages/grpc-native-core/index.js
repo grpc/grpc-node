@@ -20,6 +20,7 @@
 
 var path = require('path');
 var fs = require('fs');
+var util = require('util');
 
 var SSL_ROOTS_PATH = path.resolve(__dirname, 'deps', 'grpc', 'etc', 'roots.pem');
 
@@ -118,7 +119,7 @@ var loadObject = exports.loadObject;
  *     API breakage. It is deprecated, and new code should not use it.
  * @return {Object<string, *>} The resulting gRPC object
  */
-exports.load = function load(filename, format, options) {
+exports.load = util.deprecate(function load(filename, format, options) {
   options = _.defaults(options, common.defaultGrpcOptions);
   options.protobufjsVersion = 5;
   if (!format) {
@@ -149,7 +150,7 @@ exports.load = function load(filename, format, options) {
   }
 
   return loadObject(builder.ns, options);
-};
+}, 'grpc.load: Use the @grpc/proto-loader module with grpc.loadPackageDefinition instead');
 
 /**
  * Load a gRPC package definition as a gRPC object hierarchy
