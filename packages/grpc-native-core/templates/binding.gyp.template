@@ -75,10 +75,11 @@
       'include_dirs': [
         'deps/grpc',
         'deps/grpc/include',
-        'deps/grpc/third_party/abseil-cpp'
+        'deps/grpc/third_party/abseil-cpp',
+        'deps/grpc/third_party/nanopb'
       ],
       'defines': [
-        'PB_FIELD_16BIT',
+        'PB_FIELD_32BIT',
         'GPR_BACKWARDS_COMPATIBILITY_MODE',
         'GRPC_ARES=0',
         'GRPC_UV'
