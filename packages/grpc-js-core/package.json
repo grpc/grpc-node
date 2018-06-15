@@ -1,6 +1,6 @@
 {
   "name": "@grpc/grpc-js",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "gRPC Library for Node - pure JS core",
   "homepage": "https://grpc.io/",
   "repository": "https://github.com/grpc/grpc-node/tree/master/packages/grpc-js-core",
@@ -45,6 +45,6 @@
     "lodash": "^4.17.4"
   },
   "files": [
-    "build/src/*.js"
+    "build/src/*.{js,d.ts}"
   ]
 }
