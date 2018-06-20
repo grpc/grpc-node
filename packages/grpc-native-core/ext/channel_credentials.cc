@@ -60,14 +60,10 @@ ChannelCredentials::~ChannelCredentials() {
   grpc_channel_credentials_release(wrapped_credentials);
 }
 
-struct callback_md {
-    Nan::Callback *callback;
-};
-
 static int verify_peer_callback_wrapper(const char* servername, const char* cert, void* userdata) {
   Nan::HandleScope scope;
   Nan::TryCatch try_catch;
-  struct callback_md* md = (struct callback_md*)userdata;
+  Nan::Callback *callback = (Nan::Callback*)userdata;
 
   const unsigned argc = 2;
   Local<Value> argv[argc];
@@ -82,7 +78,7 @@ static int verify_peer_callback_wrapper(const char* servername, const char* cert
     argv[1] = Nan::New<v8::String>(cert).ToLocalChecked();
   }
 
-  md->callback->Call(argc, argv);
+  callback->Call(argc, argv);
 
   if (try_catch.HasCaught()) {
     return 1;
@@ -92,9 +88,8 @@ static int verify_peer_callback_wrapper(const char* servername, const char* cert
 }
 
 static void verify_peer_callback_destruct(void *userdata) {
-  callback_md *md = (callback_md*)userdata;
-  delete md->callback;
-  delete md;
+  Nan::Callback *callback = (Nan::Callback*)userdata;
+  delete callback;
 }
 
 void ChannelCredentials::Init(Local<Object> exports) {
@@ -211,10 +206,9 @@ NAN_METHOD(ChannelCredentials::CreateSsl) {
             if (!value->IsFunction()) {
                 return Nan::ThrowError("Value of checkServerIdentity must be a function.");
             }
-            struct callback_md *md = new struct callback_md;
-            md->callback = new Callback(Local<Function>::Cast(value));
+            Nan::Callback *callback = new Callback(Local<Function>::Cast(value));
             verify_options.verify_peer_callback = verify_peer_callback_wrapper;
-            verify_options.verify_peer_callback_userdata = (void*)md;
+            verify_options.verify_peer_callback_userdata = (void*)callback;
             verify_options.verify_peer_destruct = verify_peer_callback_destruct;
 
           }
