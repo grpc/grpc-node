@@ -150,7 +150,7 @@ NAN_METHOD(ChannelCredentials::CreateSsl) {
   }
   grpc_channel_credentials *creds = grpc_ssl_credentials_create(
       root_certs.get(), private_key.isAssigned() ? &key_cert_pair : NULL,
-      NULL);
+      NULL, NULL);
   if (creds == NULL) {
     info.GetReturnValue().SetNull();
   } else {
