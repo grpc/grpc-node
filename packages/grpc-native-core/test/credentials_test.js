@@ -260,6 +260,36 @@ describe('client credentials', function() {
       done();
     });
   });
+  it('Verify callback receives correct arguments', function(done) {
+    var callback_host, callback_cert;
+    var client_ssl_creds = grpc.credentials.createSsl(ca_data, null, null, {
+      "checkServerIdentity": function(host, cert) {
+        callback_host = host;
+        callback_cert = cert;
+      }
+    });
+    var client = new Client('localhost:' + port, client_ssl_creds,
+                            client_options);
+    client.unary({}, function(err, data) {
+      assert.ifError(err);
+      assert.equal(callback_host, 'foo.test.google.fr');
+      assert.equal(callback_cert, pem_data);
+      done();
+    });
+  });
+  it('Verify callback exception causes connection failure', function(done) {
+    var client_ssl_creds = grpc.credentials.createSsl(ca_data, null, null, {
+      "checkServerIdentity": function(host, cert) {
+        throw "Verification callback exception";
+      }
+    }); 
+    var client = new Client('localhost:' + port, client_ssl_creds,
+                            client_options);
+    client.unary({}, function(err, data) {
+      assert.ok(err, "Should have raised an error");
+      done();
+    });
+  });
   it('Should update metadata with SSL creds', function(done) {
     var metadataUpdater = function(service_url, callback) {
       var metadata = new grpc.Metadata();
