@@ -186,35 +186,21 @@ NAN_METHOD(ChannelCredentials::CreateSsl) {
   verify_peer_options verify_options = {NULL, NULL, NULL};
   if (!info[3]->IsUndefined()) {
     if (!info[3]->IsObject()) {
-      return Nan::ThrowTypeError("createSsl's fourth argument must be an "
-          "object");
+      return Nan::ThrowTypeError("createSsl's fourth argument must be an object");
     }
-    Local<Context> context = Nan::New<Context>();
     Local<Object> object = info[3]->ToObject();
-    MaybeLocal<Array> maybe_props = object->GetOwnPropertyNames(context);
-    if (!maybe_props.IsEmpty()) {
-      Local<Array> props = maybe_props.ToLocalChecked();
-      for(uint32_t i=0; i < props->Length(); i++) {
-        Local<Value> key = props->Get(i);
-        Local<Value> value = object->Get(key);
 
-        if (key->IsString()) {
-          Nan::Utf8String keyStr(key->ToString());
-
-          if (strcmp("checkServerIdentity", (const char*)(*keyStr)) == 0) {
-
-            if (!value->IsFunction()) {
-                return Nan::ThrowError("Value of checkServerIdentity must be a function.");
-            }
-            Nan::Callback *callback = new Callback(Local<Function>::Cast(value));
-            verify_options.verify_peer_callback = verify_peer_callback_wrapper;
-            verify_options.verify_peer_callback_userdata = (void*)callback;
-            verify_options.verify_peer_destruct = verify_peer_callback_destruct;
-
-          }
-        }
-        // do stuff with key / value
+    Local<Value> checkServerIdentityValue = Nan::Get(object,
+        Nan::New("checkServerIdentity").ToLocalChecked()).ToLocalChecked();
+    if (!checkServerIdentityValue->IsUndefined()) {
+      if (!checkServerIdentityValue->IsFunction()) {
+        return Nan::ThrowTypeError("Value of checkServerIdentity must be a function.");
       }
+      Nan::Callback *callback = new Callback(Local<Function>::Cast(
+        checkServerIdentityValue));
+      verify_options.verify_peer_callback = verify_peer_callback_wrapper;
+      verify_options.verify_peer_callback_userdata = (void*)callback;
+      verify_options.verify_peer_destruct = verify_peer_callback_destruct;
     }
   }
 

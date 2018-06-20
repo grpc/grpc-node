@@ -128,6 +128,25 @@ describe('channel credentials', function() {
         grpc.credentials.createSsl(null, null, pem_data);
       });
     });
+    it('works if the fourth argument is an empty object', function() {
+      var creds;
+      assert.doesNotThrow(function() {
+        creds = grpc.credentials.createSsl(ca_data, null, null, {});
+      });
+      assert.notEqual(creds, null);
+    });
+    it('fails if the fourth argument is a non-object value', function() {
+      assert.throws(function() {
+        grpc.credentials.createSsl(ca_data, null, null, 'test');
+      }, TypeError);
+    });
+    it('fails if the checkServerIdentity is a non-function', function() {
+      assert.throws(function() {
+        grpc.credentials.createSsl(ca_data, null, null, {
+          "checkServerIdentity": 'test'
+        });
+      }, TypeError);
+    });
   });
 });
 
