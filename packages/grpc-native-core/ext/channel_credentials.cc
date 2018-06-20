@@ -189,7 +189,11 @@ NAN_METHOD(ChannelCredentials::CreateSsl) {
   }
 
   verify_peer_options verify_options = {NULL, NULL, NULL};
-  if (info.Length() >= 4 && info[3]->IsObject()) {
+  if (!info[3]->IsUndefined()) {
+    if (!info[3]->IsObject()) {
+      return Nan::ThrowTypeError("createSsl's fourth argument must be an "
+          "object");
+    }
     Local<Context> context = Nan::New<Context>();
     Local<Object> object = info[3]->ToObject();
     MaybeLocal<Array> maybe_props = object->GetOwnPropertyNames(context);
