@@ -37,6 +37,8 @@ export interface MethodDefinition<RequestType, ResponseType> {
   requestDeserialize: Deserialize<RequestType>;
   responseDeserialize: Deserialize<ResponseType>;
   originalName?: string;
+  requestType: RequestType;
+  responseType: ResponseType;
 }
 
 export interface ServiceDefinition {
@@ -97,7 +99,9 @@ function createMethodDefinition(method: Protobuf.Method, serviceName: string, op
     responseSerialize: createSerializer(method.resolvedResponseType as Protobuf.Type),
     responseDeserialize: createDeserializer(method.resolvedResponseType as Protobuf.Type, options),
     // TODO(murgatroid99): Find a better way to handle this
-    originalName: _.camelCase(method.name)
+    originalName: _.camelCase(method.name),
+    requestType: method.resolvedRequestType,
+    responseType: method.resolvedResponseType,
   };
 }
 
