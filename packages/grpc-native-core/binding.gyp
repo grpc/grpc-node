@@ -85,6 +85,7 @@
     ],
     'defines': [
       'PB_FIELD_16BIT',
+      'PB_NO_PACKED_STRUCTS=1',
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=0',
       'GRPC_UV'
