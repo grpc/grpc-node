@@ -795,6 +795,25 @@ declare module "grpc" {
   }
 
   /**
+   * A callback that will receive the expected hostname and presented peer
+   * certificate as parameters. The callback should throw an error to
+   * indicate that the presented certificate is considered invalid.
+   */
+  export type CheckServerIdentityCallback = (hostname: string, cert: string) => void;
+
+  /**
+   * Additional peer verification options that can be set when creating
+   * SSL credentials.
+   */
+  export interface VerifyOptions: {
+    /**
+     * If set, this callback will be invoked after the usual hostname verification
+     * has been performed on the peer certificate.
+     */
+    checkServerIdentity?: CheckServerIdentityCallback;
+  }
+
+  /**
    * Credentials module
    *
    * This module contains factory methods for two different credential types:
@@ -828,9 +847,10 @@ declare module "grpc" {
      * @param rootCerts The root certificate data
      * @param privateKey The client certificate private key, if applicable
      * @param certChain The client certificate cert chain, if applicable
+     * @param verifyOptions Additional peer verification options, if desired
      * @return The SSL Credentials object
      */
-    createSsl(rootCerts?: Buffer, privateKey?: Buffer, certChain?: Buffer): ChannelCredentials;
+    createSsl(rootCerts?: Buffer, privateKey?: Buffer, certChain?: Buffer, verifyOptions?: VerifyOptions): ChannelCredentials;
 
     /**
      * Create a gRPC credentials object from a metadata generation function. This
