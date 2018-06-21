@@ -78,9 +78,15 @@ static int verify_peer_callback_wrapper(const char* servername, const char* cert
     argv[1] = Nan::New<v8::String>(cert).ToLocalChecked();
   }
 
-  callback->Call(argc, argv);
+  Local<Value> result = callback->Call(argc, argv);
 
+  // Catch any exception and return with a distinct status code which indicates this
   if (try_catch.HasCaught()) {
+    return 2;
+  }
+
+  // If the result is an error, return a failure
+  if (result->IsNativeError()) {
     return 1;
   }
 

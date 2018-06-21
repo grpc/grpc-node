@@ -309,6 +309,19 @@ describe('client credentials', function() {
       done();
     });
   });
+  it('Verify callback returning an Error causes connection failure', function(done) {
+    var client_ssl_creds = grpc.credentials.createSsl(ca_data, null, null, {
+      "checkServerIdentity": function(host, cert) {
+        return new Error("Verification error");
+      }
+    });
+    var client = new Client('localhost:' + port, client_ssl_creds,
+                            client_options);
+    client.unary({}, function(err, data) {
+      assert.ok(err, "Should have raised an error");
+      done();
+    });
+  });
   it('Should update metadata with SSL creds', function(done) {
     var metadataUpdater = function(service_url, callback) {
       var metadata = new grpc.Metadata();
