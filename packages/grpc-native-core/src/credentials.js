@@ -87,18 +87,10 @@ var _ = require('lodash');
  * @param {Buffer=} private_key The client certificate private key, if
  *     applicable
  * @param {Buffer=} cert_chain The client certificate cert chain, if applicable
- * @param {Object} verify_options Additional peer verification options. Can
- *     be undefined, in which case default behavior is preserved.
- *     Supported options are: "checkServerIdentity": (servername, cert) => {}
- *     The callback passed to checkServerIdentity will be invoked when the
- *     channel is opened in order to provide an opportunity to perform
- *     additional verification of the peer certificate as passed to the
- *     callback in the second parameter. The expected hostname is passed as
- *     the first parameter. If the callback considers the peer certificate
- *     invalid it should throw an error which will cause the handshake to
- *     be terminated. Note that supplying this callback does not disable
- *     the usual hostname verification which will also be performed on the
- *     certificate before this callback is invoked.
+ * @param {Function} verify_options.checkServerIdentity Optional callback
+ *     receiving the expected hostname and peer certificate for additional
+ *     verification. The callback should return an Error if verification
+ *     fails and otherwise return undefined.
  * @return {grpc.credentials~ChannelCredentials} The SSL Credentials object
  */
 exports.createSsl = ChannelCredentials.createSsl;

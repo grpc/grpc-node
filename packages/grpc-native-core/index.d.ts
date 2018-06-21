@@ -796,10 +796,11 @@ declare module "grpc" {
 
   /**
    * A callback that will receive the expected hostname and presented peer
-   * certificate as parameters. The callback should throw an error to
-   * indicate that the presented certificate is considered invalid.
+   * certificate as parameters. The callback should return an error to
+   * indicate that the presented certificate is considered invalid and
+   * otherwise returned undefined.
    */
-  export type CheckServerIdentityCallback = (hostname: string, cert: string) => void;
+  export type CheckServerIdentityCallback = (hostname: string, cert: string) => Error | undefined;
 
   /**
    * Additional peer verification options that can be set when creating
