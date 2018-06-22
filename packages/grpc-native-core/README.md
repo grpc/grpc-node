@@ -18,7 +18,7 @@ npm install grpc
 
 The official electron documentation recommends to [build all of your native packages from source](https://electronjs.org/docs/tutorial/using-native-node-modules#modules-that-rely-on-node-pre-gyp). While the reasons behind this are technically good - many native extensions won't be packaged to work properly with electron - the gRPC source code is fairly difficult to build from source due to its complex nature, and we're also providing working electron pre-built binaries. Therefore, we recommend that you do not follow this model for using gRPC with electron. Also, for the same reason, `electron-rebuild` will always build from source. We advise you to not use this tool if you are depending on gRPC, and use the following instructions instead.
 
-The best to get gRPC to work with electron is to do this, possibly in your postinstall script in your `package.json` file:
+The best to get gRPC to work with electron is to do this, possibly in your `postinstall` script of your `package.json` file:
 
 ```
 npm rebuild --target=2.0.0 --runtime=electron --dist-url=https://atom.io/download/electron
