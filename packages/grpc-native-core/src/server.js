@@ -504,7 +504,13 @@ function getPeer() {
   return this.call.getPeer();
 }
 
+function getAuthContext() {
+  /* jshint validthis: true */
+  return this.call.getAuthContext();
+}
+
 ServerUnaryCall.prototype.getPeer = getPeer;
+ServerUnaryCall.prototype.getAuthContext = getAuthContext;
 ServerReadableStream.prototype.getPeer = getPeer;
 ServerWritableStream.prototype.getPeer = getPeer;
 ServerDuplexStream.prototype.getPeer = getPeer;
