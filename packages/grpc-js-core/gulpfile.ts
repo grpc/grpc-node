@@ -64,14 +64,14 @@ gulp.task('clean.all', 'Deletes all files added by targets', ['clean']);
  */
 gulp.task('compile', 'Transpiles src/.', () => execNpmCommand('compile'));
 
-gulp.task('copy-test-fixtures', 'Copy test fixtures.', () => {
-  return ncpP(`${jsCoreDir}/test/fixtures`, `${outDir}/test/fixtures`);
+gulp.task('copy-test-certs', 'Copy test certs.', () => {
+  return ncpP(`${jsCoreDir}/test/certs`, `${outDir}/test/certs`);
 });
 
 /**
  * Transpiles src/ and test/, and then runs all tests.
  */
-gulp.task('test', 'Runs all tests.', ['copy-test-fixtures'], () => {
+gulp.task('test', 'Runs all tests.', ['copy-test-certs'], () => {
   if (semver.satisfies(process.version, '^8.11.2 || >=9.4')) {
     return gulp.src(`${outDir}/test/**/*.js`)
       .pipe(mocha({reporter: 'mocha-jenkins-reporter',

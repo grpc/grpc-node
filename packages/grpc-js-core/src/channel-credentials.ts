@@ -49,10 +49,11 @@ export abstract class ChannelCredentials {
    * @param rootCerts The root certificate data.
    * @param privateKey The client certificate private key, if available.
    * @param certChain The client certificate key chain, if available.
+   * @param passphrase The passphrase protecting the private key, if available.
    */
   static createSsl(
       rootCerts?: Buffer|null, privateKey?: Buffer|null,
-      certChain?: Buffer|null): ChannelCredentials {
+      certChain?: Buffer|null, passphrase?: string|null): ChannelCredentials {
     verifyIsBufferOrNull(rootCerts, 'Root certificate');
     verifyIsBufferOrNull(privateKey, 'Private key');
     verifyIsBufferOrNull(certChain, 'Certificate chain');
@@ -64,10 +65,16 @@ export abstract class ChannelCredentials {
       throw new Error(
           'Certificate chain must be given with accompanying private key');
     }
+    if (passphrase && !privateKey) {
+      throw new Error(
+          'Private key must be given with accompanying private key passphrase');
+    }
     const secureContext = createSecureContext({
       ca: rootCerts || undefined,
       key: privateKey || undefined,
-      cert: certChain || undefined
+      cert: certChain || undefined,
+      passphrase: passphrase || undefined,
+
     });
     return new SecureChannelCredentialsImpl(secureContext);
   }

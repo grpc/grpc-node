@@ -35,12 +35,27 @@ class CallCredentialsMock implements CallCredentials {
 // tslint:disable-next-line:no-any
 const readFile: (...args: any[]) => Promise<Buffer> = promisify(fs.readFile);
 // A promise which resolves to loaded files in the form { ca, key, cert }
-const pFixtures = Promise
-                      .all(['ca.pem', 'server1.key', 'server1.pem'].map(
-                          (file) => readFile(`${__dirname}/fixtures/${file}`)))
+const certFiles = [
+  'somename_ca.pem',
+  'somename_client.key',
+  'somename_client.pem',
+  'somename_usingpassphrase_client.key',
+  'somename_usingpassphrase_client.pem',
+  ]
+const pCerts = Promise
+                      .all(certFiles.map(
+                          (file) => readFile(`${__dirname}/certs/${file}`)))
                       .then((result) => {
-                        return {ca: result[0], key: result[1], cert: result[2]};
+                        return {
+                            ca: result[0],
+                            key: result[1],
+                            cert: result[2],
+                            usingPassphraseKey: result[3],
+                            usingPassphraseCert: result[4],
+                        };
                       });
+const passphrase = 'somepassphrase';
+const badPassphrase = 'this-is-not-the-correct-passphrase';
 
 describe('ChannelCredentials Implementation', () => {
   describe('createInsecure', () => {
@@ -60,36 +75,69 @@ describe('ChannelCredentials Implementation', () => {
     });
 
     it('should work with just a CA override', async () => {
-      const {ca} = await pFixtures;
+      const {ca} = await pCerts;
       const creds =
           assert2.noThrowAndReturn(() => ChannelCredentials.createSsl(ca));
       assert.ok(!!creds.getSecureContext());
     });
 
     it('should work with just a private key and cert chain', async () => {
-      const {key, cert} = await pFixtures;
+      const {key, cert} = await pCerts;
       const creds = assert2.noThrowAndReturn(
           () => ChannelCredentials.createSsl(null, key, cert));
       assert.ok(!!creds.getSecureContext());
     });
 
-    it('should work with all three parameters specified', async () => {
-      const {ca, key, cert} = await pFixtures;
+    it('should work with a CA, private key and cert chain', async () => {
+      const {ca, key, cert} = await pCerts;
       const creds = assert2.noThrowAndReturn(
           () => ChannelCredentials.createSsl(ca, key, cert));
       assert.ok(!!creds.getSecureContext());
     });
 
+    it('should work with a private key, cert chain, and private key passphrase', async () => {
+      const {usingPassphraseKey, usingPassphraseCert} = await pCerts;
+      const creds = assert2.noThrowAndReturn(
+          () => ChannelCredentials.createSsl(null, usingPassphraseKey, usingPassphraseCert, passphrase));
+      assert.ok(!!creds.getSecureContext());
+    });
+
+    it('should work with a CA, private key, cert chain, and private key passphrase', async () => {
+      const {ca, usingPassphraseKey, usingPassphraseCert} = await pCerts;
+      const creds = assert2.noThrowAndReturn(
+          () => ChannelCredentials.createSsl(ca, usingPassphraseKey, usingPassphraseCert, passphrase));
+      assert.ok(!!creds.getSecureContext());
+    });
+
+    it('should throw an error with a bad passphrase', async () => {
+      const {ca, usingPassphraseKey, usingPassphraseCert} = await pCerts;
+      assert.throws(() => ChannelCredentials.createSsl(ca, usingPassphraseKey, usingPassphraseCert, badPassphrase));
+    });
+
+    it('should work with a CA, private key, cert chain, and private key passphrase when key is not passphrase-protected', async () => {
+      const {ca, key, cert} = await pCerts;
+      const creds = assert2.noThrowAndReturn(
+          () => ChannelCredentials.createSsl(ca, key, cert, passphrase));
+      assert.ok(!!creds.getSecureContext());
+    });
+
     it('should throw if just one of private key and cert chain are missing',
        async () => {
-         const {ca, key, cert} = await pFixtures;
+         const {ca, key, cert} = await pCerts;
          assert.throws(() => ChannelCredentials.createSsl(ca, key));
          assert.throws(() => ChannelCredentials.createSsl(ca, key, null));
          assert.throws(() => ChannelCredentials.createSsl(ca, null, cert));
          assert.throws(() => ChannelCredentials.createSsl(null, key));
          assert.throws(() => ChannelCredentials.createSsl(null, key, null));
          assert.throws(() => ChannelCredentials.createSsl(null, null, cert));
-       });
+      });
+
+    it('should throw if passphrase is specified but key is missing', async () => {
+      const {ca, usingPassphraseKey, usingPassphraseCert} = await pCerts;
+      assert.throws(() => ChannelCredentials.createSsl(ca, null, null, passphrase));
+      assert.throws(() => ChannelCredentials.createSsl(null, null, null, passphrase));
+    });
+
   });
 
   describe('compose', () => {
