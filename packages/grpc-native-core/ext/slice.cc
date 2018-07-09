@@ -51,7 +51,7 @@ void buffer_destroy_func(void *user_data) {
 grpc_slice CreateSliceFromString(const Local<String> source) {
   Nan::HandleScope scope;
   Nan::Utf8String *utf8_value = new Nan::Utf8String(source);
-  return grpc_slice_new_with_user_data(**utf8_value, source->Length(),
+  return grpc_slice_new_with_user_data(**utf8_value, utf8_value->length(),
                                        string_destroy_func, utf8_value);
 }
 
