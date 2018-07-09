@@ -839,8 +839,12 @@ describe('Other conditions', function() {
       unary: function(call, cb) {
         var req = call.request;
         if (req.error) {
+          var message = 'Requested error';
+          if (req.message) {
+            message = req.message;
+          }
           cb({code: grpc.status.UNKNOWN,
-              details: 'Requested error'}, null, trailer_metadata);
+              details: message}, null, trailer_metadata);
         } else {
           cb(null, {count: 1}, trailer_metadata);
         }
@@ -850,8 +854,12 @@ describe('Other conditions', function() {
         var errored;
         stream.on('data', function(data) {
           if (data.error) {
+            var message = 'Requested error';
+            if (data.message) {
+              message = data.message;
+            }
             errored = true;
-            cb(new Error('Requested error'), null, trailer_metadata);
+            cb(new Error(message), null, trailer_metadata);
           } else {
             count += 1;
           }
@@ -865,8 +873,12 @@ describe('Other conditions', function() {
       serverStream: function(stream) {
         var req = stream.request;
         if (req.error) {
+          var message = 'Requested error';
+          if (req.message) {
+            message = req.message;
+          }
           var err = {code: grpc.status.UNKNOWN,
-                     details: 'Requested error'};
+                     details: message};
           err.metadata = trailer_metadata;
           stream.emit('error', err);
         } else {
@@ -880,7 +892,11 @@ describe('Other conditions', function() {
         var count = 0;
         stream.on('data', function(data) {
           if (data.error) {
-            var err = new Error('Requested error');
+            var message = 'Requested error';
+            if (data.message) {
+              message = data.message;
+            }
+            var err = new Error(message);
             err.metadata = trailer_metadata.clone();
             err.metadata.add('count', '' + count);
             stream.emit('error', err);
@@ -1124,6 +1140,14 @@ describe('Other conditions', function() {
       call.on('error', function(error) {
         assert.strictEqual(error.code, grpc.status.UNKNOWN);
         assert.strictEqual(error.details, 'Requested error');
+        done();
+      });
+    });
+    it('for a UTF-8 error message', function(done) {
+      client.unary({error: true, message: '測試字符串'}, function(err, data) {
+        assert(err);
+        assert.strictEqual(err.code, grpc.status.UNKNOWN);
+        assert.strictEqual(err.details, '測試字符串');
         done();
       });
     });
