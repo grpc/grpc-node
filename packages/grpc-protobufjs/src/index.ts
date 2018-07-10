@@ -156,8 +156,9 @@ function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
  *     name
  * @param options.includeDirs Paths to search for imported `.proto` files.
  */
-export function load(filename: string, options: Options): Promise<PackageDefinition> {
+export function load(filename: string, options?: Options): Promise<PackageDefinition> {
   const root: Protobuf.Root = new Protobuf.Root();
+  options = options || {};
   if (!!options.includeDirs) {
     if (!(options.includeDirs instanceof Array)) {
       return Promise.reject(new Error('The includeDirs option must be an array'));
@@ -166,12 +167,13 @@ export function load(filename: string, options: Options): Promise<PackageDefinit
   }
   return root.load(filename, options).then((loadedRoot) => {
     loadedRoot.resolveAll();
-    return createPackageDefinition(root, options);
+    return createPackageDefinition(root, options!);
   });
 }
 
-export function loadSync(filename: string, options: Options): PackageDefinition {
+export function loadSync(filename: string, options?: Options): PackageDefinition {
   const root: Protobuf.Root = new Protobuf.Root();
+  options = options || {};
   if (!!options.includeDirs) {
     if (!(options.includeDirs instanceof Array)) {
       throw new Error('The include option must be an array');
@@ -180,5 +182,5 @@ export function loadSync(filename: string, options: Options): PackageDefinition 
   }
   const loadedRoot = root.loadSync(filename, options);
   loadedRoot.resolveAll();
-  return createPackageDefinition(root, options);
+  return createPackageDefinition(root, options!);
 }

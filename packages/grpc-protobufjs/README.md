@@ -17,11 +17,11 @@ const grpcLibrary = require('grpc');
 const grpcLibrary = require('@grpc/grpc-js');
 
 protoLoader.load(protoFileName, options).then(packageDefinition => {
-  const package = grpcLibrary.loadPackageDefinition(packageDefinition);
+  const packageObject = grpcLibrary.loadPackageDefinition(packageDefinition);
 });
 // OR
 const packageDefinition = protoLoader.loadSync(protoFileName, options);
-const package = grpcLibrary.loadPackageDefinition(packageDefinition);
+const packageObject = grpcLibrary.loadPackageDefinition(packageDefinition);
 ```
 
 The options parameter is an object that can have the following optional properties:
