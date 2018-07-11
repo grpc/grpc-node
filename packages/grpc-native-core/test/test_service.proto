@@ -16,6 +16,7 @@ syntax = "proto3";
 
 message Request {
   bool error = 1;
+  string message = 2;
 }
 
 message Response {
