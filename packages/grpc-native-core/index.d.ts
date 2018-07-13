@@ -1116,6 +1116,11 @@ declare module "grpc" {
      * The credentials that should be used to make this particular call.
      */
     credentials: CallCredentials;
+    /**
+     * Additional custom call options. These can be used to pass additional
+     * data per-call to client interceptors
+     */
+    [key: string]: any;
   }
 
   /**
