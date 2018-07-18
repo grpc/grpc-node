@@ -51,6 +51,14 @@ This way, if you depend on both `grpc` and `sqlite3`, only the `sqlite3` package
 
     To fix this, you will have to delete the folder `C:\Users\<username>\.node-gyp\<node_version>\include\node\openssl` and retry `npm install`
 
+## CONFIGURE BINARIES' LOCATION
+
+You can configure the location from which the pre-compiled binaries are downloaded during installation.
+
+`npm install --grpc_node_binary_host_mirror=https://your-url.com`
+
+Or defining `grpc_node_binary_host_mirror` in your `.npmrc`.
+
 ## API DOCUMENTATION
 
 See the [API Documentation](https://grpc.io/grpc/node/).
