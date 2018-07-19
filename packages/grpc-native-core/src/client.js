@@ -369,15 +369,6 @@ function Client(address, credentials, options) {
   if (!options) {
     options = {};
   }
-  /* Append the grpc-node user agent string after the application user agent
-   * string, and put the combination at the beginning of the user agent string
-   */
-  if (options['grpc.primary_user_agent']) {
-    options['grpc.primary_user_agent'] += ' ';
-  } else {
-    options['grpc.primary_user_agent'] = '';
-  }
-  options['grpc.primary_user_agent'] += 'grpc-node/' + version;
 
   // Resolve interceptor options and assign interceptors to each method
   if (_.isArray(options.interceptor_providers) && _.isArray(options.interceptors)) {
@@ -392,12 +383,23 @@ function Client(address, credentials, options) {
       .resolveInterceptorProviders(self.$interceptor_providers, method_definition)
       .concat(self.$interceptors);
   });
-  // Exclude interceptor options which have already been consumed
+  let channelOverride = options.channelOverride;
+  let channelFactoryOverride = options.channelFactoryOverride;
+  // Exclude channel options which have already been consumed
   var channel_options = _.omit(options,
-     ['interceptors', 'interceptor_providers']);
+     ['interceptors', 'interceptor_providers',
+      'channelOverride', 'channelFactoryOverride']);
   /* Private fields use $ as a prefix instead of _ because it is an invalid
    * prefix of a method name */
-  this.$channel = new grpc.Channel(address, credentials, channel_options);
+  if (channelOverride) {
+    this.$channel = options.channelOverride;
+  } else {
+    if (channelFactoryOverride) {
+      this.$channel = channelFactoryOverride(address, credentials, channel_options);
+    } else {
+      this.$channel = new grpc.Channel(address, credentials, channel_options);
+    }
+  }
 }
 
 exports.Client = Client;
