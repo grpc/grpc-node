@@ -762,7 +762,7 @@ var deprecated_request_wrap = {
     return function makeWrappedUnaryRequest(argument, callback,
                                             metadata, options) {
       /* jshint validthis: true */
-      var opt_args = getDefaultValues(metadata, metadata);
+      var opt_args = getDefaultValues(metadata, options);
       return makeUnaryRequest.call(this, argument, opt_args.metadata,
                                    opt_args.options, callback);
     };
