@@ -794,7 +794,13 @@ declare module "grpc" {
     ERROR,
   }
 
+  /**
+   * A certificate as received by the checkServerIdentity callback.
+   */
   export interface Certificate {
+    /**
+     * The raw certificate in DER form.
+     */
     raw: Buffer;
   }
 
