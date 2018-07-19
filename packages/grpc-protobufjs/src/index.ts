@@ -59,9 +59,13 @@ function joinName(baseName: string, name: string): string {
   }
 }
 
+function isService(obj: Protobuf.NamespaceBase) {
+  return obj.hasOwnProperty('methods')
+}
+
 function getAllServices(obj: Protobuf.NamespaceBase, parentName: string): Array<[string, Protobuf.Service]> {
   const objName = joinName(parentName, obj.name);
-  if (obj.hasOwnProperty('methods')) {
+  if (isService(obj)) {
     return [[objName, obj as Protobuf.Service]];
   } else {
     return obj.nestedArray.map((child) => {
