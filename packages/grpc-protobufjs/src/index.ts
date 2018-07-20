@@ -44,7 +44,12 @@ export interface ServiceDefinition {
 }
 
 export interface PackageDefinition {
-  [index: string]: ServiceDefinition;
+  [index: string]: ServiceDefinition
+}
+
+export interface LoadResultType {
+  packageDefinition: PackageDefinition;
+  messageTypes: Array<[string, Protobuf.Type]>;
 }
 
 export type Options = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
@@ -130,7 +135,7 @@ function createServiceDefinition(service: Protobuf.Service, name: string, option
 function createPackageDefinition(
   root: Protobuf.Root,
   options: Options,
-  services: Array<[string, Protobuf.Service]>
+  services: Array<[string, Protobuf.Service]>,
 ): PackageDefinition {
   const def: PackageDefinition = {};
   for (const [name, service] of services) {
@@ -153,6 +158,34 @@ function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
     return null;
   };
 }
+
+export abstract class GrpcClient {};
+
+/* From grpc-native-core */
+export interface GrpcObject {
+  [name: string]: GrpcObject | typeof GrpcClient | Protobuf.Type;
+}
+
+/* mostly taken from grpc-native-core's loadPackageDefinition */
+export function addTypesToGrpcObject(obj: GrpcObject, types: Array<[string, Protobuf.Type]>) {
+  const result = obj;
+  for (const [name, aType] of types) {
+    console.log('adding to grpc object', name)
+    const nameComponents = name.split('.');
+    const typeName = nameComponents[nameComponents.length-1];
+    let current : GrpcObject = result;
+    for (const packageName of nameComponents.slice(0, -1)) {
+      console.log('>', packageName)
+      if (!current[packageName]) {
+        current[packageName] = {};
+      }
+      current = current[packageName] as GrpcObject;
+    }
+    console.log('>>', typeName)
+    current[typeName] = aType;
+  }
+  return result;
+};
 
 /**
  * Load a .proto file with the specified options.
@@ -178,7 +211,7 @@ function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
  *     name
  * @param options.includeDirs Paths to search for imported `.proto` files.
  */
-export function load(filename: string, options?: Options): Promise<PackageDefinition> {
+export function load(filename: string, options?: Options): Promise<LoadResultType> {
   const root: Protobuf.Root = new Protobuf.Root();
   options = options || {};
   if (!!options.includeDirs) {
@@ -191,11 +224,15 @@ export function load(filename: string, options?: Options): Promise<PackageDefini
     loadedRoot.resolveAll();
     const servicesAndMessages = getAllServicesAndMessages(root, '');
     console.log('found services and messages:', servicesAndMessages);
-    return createPackageDefinition(root, options!, servicesAndMessages.services);
+    const packageDefinition = createPackageDefinition(root, options!, servicesAndMessages.services);
+    return {
+      packageDefinition: packageDefinition,
+      messageTypes: servicesAndMessages.messages
+    }
   });
 }
 
-export function loadSync(filename: string, options?: Options): PackageDefinition {
+export function loadSync(filename: string, options?: Options): LoadResultType {
   const root: Protobuf.Root = new Protobuf.Root();
   options = options || {};
   if (!!options.includeDirs) {
@@ -208,5 +245,9 @@ export function loadSync(filename: string, options?: Options): PackageDefinition
   loadedRoot.resolveAll();
   const servicesAndMessages = getAllServicesAndMessages(root, '');
   console.log('found services and messages:', servicesAndMessages);
-  return createPackageDefinition(root, options!, servicesAndMessages.services);
+  const packageDefinition = createPackageDefinition(root, options!, servicesAndMessages.services)
+  return {
+    packageDefinition: packageDefinition,
+    messageTypes: servicesAndMessages.messages
+  }
 }
