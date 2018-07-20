@@ -59,22 +59,36 @@ function joinName(baseName: string, name: string): string {
   }
 }
 
-function isService(obj: Protobuf.NamespaceBase) {
-  return obj.hasOwnProperty('methods')
-}
+class ServicesAndMessages {
+  constructor (
+    public services: Array<[string, Protobuf.Service]>,
+    public messages: Array<[string, Protobuf.Type]>
+  ) {
+  }
 
-function getAllServices(obj: Protobuf.NamespaceBase, parentName: string): Array<[string, Protobuf.Service]> {
+  concat(that: ServicesAndMessages) {
+    return new ServicesAndMessages(
+      this.services.concat(that.services),
+      this.messages.concat(that.messages)
+    )
+  }
+};
+
+
+function getAllServicesAndMessages(obj: Protobuf.NamespaceBase, parentName: string): ServicesAndMessages {
   const objName = joinName(parentName, obj.name);
-  if (isService(obj)) {
-    return [[objName, obj as Protobuf.Service]];
+  if (obj instanceof Protobuf.Service) {
+    return new ServicesAndMessages([[objName, obj]], []);
+  } else if (obj instanceof Protobuf.Type) {
+    return new ServicesAndMessages([], [[objName, obj]]);
   } else {
     return obj.nestedArray.map((child) => {
       if (child.hasOwnProperty('nested')) {
-        return getAllServices(child as Protobuf.NamespaceBase, objName);
+        return getAllServicesAndMessages(child as Protobuf.NamespaceBase, objName);
       } else {
-        return [];
+        return new ServicesAndMessages([], []);
       }
-    }).reduce((accumulator, currentValue) => accumulator.concat(currentValue), []);
+    }).reduce((accumulator, currentValue) => accumulator.concat(currentValue), new ServicesAndMessages([], []));
   }
 }
 
@@ -115,7 +129,9 @@ function createServiceDefinition(service: Protobuf.Service, name: string, option
 
 function createPackageDefinition(root: Protobuf.Root, options: Options): PackageDefinition {
   const def: PackageDefinition = {};
-  for (const [name, service] of getAllServices(root, '')) {
+  const servicesAndMessages = getAllServicesAndMessages(root, '')
+  console.log('found services and messages:', servicesAndMessages)
+  for (const [name, service] of servicesAndMessages.services) {
     def[name] = createServiceDefinition(service, name, options);
   }
   return def;
