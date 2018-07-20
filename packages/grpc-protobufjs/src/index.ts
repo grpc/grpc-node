@@ -127,11 +127,13 @@ function createServiceDefinition(service: Protobuf.Service, name: string, option
   return def;
 }
 
-function createPackageDefinition(root: Protobuf.Root, options: Options): PackageDefinition {
+function createPackageDefinition(
+  root: Protobuf.Root,
+  options: Options,
+  services: Array<[string, Protobuf.Service]>
+): PackageDefinition {
   const def: PackageDefinition = {};
-  const servicesAndMessages = getAllServicesAndMessages(root, '')
-  console.log('found services and messages:', servicesAndMessages)
-  for (const [name, service] of servicesAndMessages.services) {
+  for (const [name, service] of services) {
     def[name] = createServiceDefinition(service, name, options);
   }
   return def;
@@ -187,7 +189,9 @@ export function load(filename: string, options?: Options): Promise<PackageDefini
   }
   return root.load(filename, options).then((loadedRoot) => {
     loadedRoot.resolveAll();
-    return createPackageDefinition(root, options!);
+    const servicesAndMessages = getAllServicesAndMessages(root, '');
+    console.log('found services and messages:', servicesAndMessages);
+    return createPackageDefinition(root, options!, servicesAndMessages.services);
   });
 }
 
@@ -202,5 +206,7 @@ export function loadSync(filename: string, options?: Options): PackageDefinition
   }
   const loadedRoot = root.loadSync(filename, options);
   loadedRoot.resolveAll();
-  return createPackageDefinition(root, options!);
+  const servicesAndMessages = getAllServicesAndMessages(root, '');
+  console.log('found services and messages:', servicesAndMessages);
+  return createPackageDefinition(root, options!, servicesAndMessages.services);
 }
