@@ -802,7 +802,7 @@ Server.prototype.start = function() {
  *     request values and returns a stream of response values
  * @param {grpc~serialize} serialize Serialization function for responses
  * @param {grpc~deserialize} deserialize Deserialization function for requests
- * @param {string} type The streaming type of method that this handles
+ * @param {('unary'|'client_stream'|'server_stream'|'bidi')} type The streaming type of method that this handles
  * @return {boolean} True if the handler was set. False if a handler was already
  *     set for that name.
  */
