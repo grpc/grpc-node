@@ -170,18 +170,15 @@ export interface GrpcObject {
 export function addTypesToGrpcObject(obj: GrpcObject, types: Array<[string, Protobuf.Type]>) {
   const result = obj;
   for (const [name, aType] of types) {
-    console.log('adding to grpc object', name)
     const nameComponents = name.split('.');
     const typeName = nameComponents[nameComponents.length-1];
     let current : GrpcObject = result;
     for (const packageName of nameComponents.slice(0, -1)) {
-      console.log('>', packageName)
       if (!current[packageName]) {
         current[packageName] = {};
       }
       current = current[packageName] as GrpcObject;
     }
-    console.log('>>', typeName)
     current[typeName] = aType;
   }
   return result;
@@ -223,7 +220,6 @@ export function load(filename: string, options?: Options): Promise<LoadResultTyp
   return root.load(filename, options).then((loadedRoot) => {
     loadedRoot.resolveAll();
     const servicesAndMessages = getAllServicesAndMessages(root, '');
-    console.log('found services and messages:', servicesAndMessages);
     const packageDefinition = createPackageDefinition(root, options!, servicesAndMessages.services);
     return {
       packageDefinition: packageDefinition,
@@ -244,7 +240,6 @@ export function loadSync(filename: string, options?: Options): LoadResultType {
   const loadedRoot = root.loadSync(filename, options);
   loadedRoot.resolveAll();
   const servicesAndMessages = getAllServicesAndMessages(root, '');
-  console.log('found services and messages:', servicesAndMessages);
   const packageDefinition = createPackageDefinition(root, options!, servicesAndMessages.services)
   return {
     packageDefinition: packageDefinition,
