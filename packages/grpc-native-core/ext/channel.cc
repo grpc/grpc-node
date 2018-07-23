@@ -90,7 +90,7 @@ bool ParseChannelArgs(Local<Value> args_val,
    * passed by the user */
   bool has_user_agent_arg = Nan::HasOwnProperty(
         args_hash, Nan::New(GRPC_ARG_PRIMARY_USER_AGENT_STRING).ToLocalChecked()
-  ).ToChecked();
+  ).FromJust();
   if (!has_user_agent_arg) {
     channel_args->num_args += 1;
   }
