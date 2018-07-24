@@ -175,9 +175,14 @@ exports.loadPackageDefinition = function loadPackageDefintion(packageDef) {
   return result;
 };
 
-var log_template = _.template(
-    '{severity} {timestamp}\t{file}:{line}]\t{message}',
-    {interpolate: /{([\s\S]+?)}/g});
+var log_template = function(args) {
+  var file = args.file;
+  var line = args.line;
+  var severity = args.severity;
+  var message = args.message;
+  var timestamp = args.timestamp;
+  return `${severity} ${timestamp}\t${file}:${line}]\t${message}`;
+};
 
 /**
  * Sets the logger function for the gRPC module. For debugging purposes, the C
