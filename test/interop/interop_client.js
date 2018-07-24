@@ -347,13 +347,13 @@ function statusCodeAndMessage(client, done) {
   var arg = {
     response_status: {
       code: 2,
-      message: 'test status message - 測試字符串'
+      message: 'test status message'
     }
   };
   client.unaryCall(arg, function(err, resp) {
     assert(err);
     assert.strictEqual(err.code, 2);
-    assert.strictEqual(err.details, 'test status message - 測試字符串');
+    assert.strictEqual(err.details, 'test status message');
     done();
   });
   var duplex = client.fullDuplexCall();
@@ -361,7 +361,7 @@ function statusCodeAndMessage(client, done) {
   duplex.on('status', function(status) {
     assert(status);
     assert.strictEqual(status.code, 2);
-    assert.strictEqual(status.details, 'test status message - 測試字符串');
+    assert.strictEqual(status.details, 'test status message');
     done();
   });
   duplex.on('error', function(){});
