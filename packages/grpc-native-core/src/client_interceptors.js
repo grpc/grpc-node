@@ -648,8 +648,8 @@ function getCall(channel, path, options) {
   if (deadline === undefined) {
     deadline = Infinity;
   }
-  var call = new grpc.Call(channel, path, deadline, host,
-                           parent, propagate_flags);
+  var call = channel.createCall(path, deadline, host,
+                                parent, propagate_flags);
   if (credentials) {
     call.setCredentials(credentials);
   }

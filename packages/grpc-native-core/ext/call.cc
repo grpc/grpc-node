@@ -537,6 +537,8 @@ bool Call::HasInstance(Local<Value> val) {
   return Nan::New(fun_tpl)->HasInstance(val);
 }
 
+grpc_call *Call::GetWrappedCall() { return this->wrapped_call; }
+
 Local<Value> Call::WrapStruct(grpc_call *call) {
   EscapableHandleScope scope;
   if (call == NULL) {
@@ -575,82 +577,20 @@ NAN_METHOD(Call::New) {
    */
   if (info.IsConstructCall()) {
     Call *call;
-    if (info[0]->IsExternal()) {
-      Local<External> ext = info[0].As<External>();
-      // This option is used for wrapping an existing call
-      grpc_call *call_value = reinterpret_cast<grpc_call *>(ext->Value());
-      call = new Call(call_value);
-    } else {
-      if (!Channel::HasInstance(info[0])) {
-        return Nan::ThrowTypeError("Call's first argument must be a Channel");
-      }
-      if (!info[1]->IsString()) {
-        return Nan::ThrowTypeError("Call's second argument must be a string");
-      }
-      if (!(info[2]->IsNumber() || info[2]->IsDate())) {
-        return Nan::ThrowTypeError(
-            "Call's third argument must be a date or a number");
-      }
-      // These arguments are at the end because they are optional
-      grpc_call *parent_call = NULL;
-      if (Call::HasInstance(info[4])) {
-        Call *parent_obj =
-            ObjectWrap::Unwrap<Call>(Nan::To<Object>(info[4]).ToLocalChecked());
-        parent_call = parent_obj->wrapped_call;
-      } else if (!(info[4]->IsUndefined() || info[4]->IsNull())) {
-        return Nan::ThrowTypeError(
-            "Call's fifth argument must be another call, if provided");
-      }
-      uint32_t propagate_flags = GRPC_PROPAGATE_DEFAULTS;
-      if (info[5]->IsUint32()) {
-        propagate_flags = Nan::To<uint32_t>(info[5]).FromJust();
-      } else if (!(info[5]->IsUndefined() || info[5]->IsNull())) {
-        return Nan::ThrowTypeError(
-            "Call's sixth argument must be propagate flags, if provided");
-      }
-      Local<Object> channel_object = Nan::To<Object>(info[0]).ToLocalChecked();
-      Channel *channel = ObjectWrap::Unwrap<Channel>(channel_object);
-      if (channel->GetWrappedChannel() == NULL) {
-        return Nan::ThrowError("Call cannot be created from a closed channel");
-      }
-      double deadline = Nan::To<double>(info[2]).FromJust();
-      grpc_channel *wrapped_channel = channel->GetWrappedChannel();
-      grpc_call *wrapped_call;
-      grpc_slice method =
-          CreateSliceFromString(Nan::To<String>(info[1]).ToLocalChecked());
-      if (info[3]->IsString()) {
-        grpc_slice *host = new grpc_slice;
-        *host =
-            CreateSliceFromString(Nan::To<String>(info[3]).ToLocalChecked());
-        wrapped_call = grpc_channel_create_call(
-            wrapped_channel, parent_call, propagate_flags, GetCompletionQueue(),
-            method, host, MillisecondsToTimespec(deadline), NULL);
-        delete host;
-      } else if (info[3]->IsUndefined() || info[3]->IsNull()) {
-        wrapped_call = grpc_channel_create_call(
-            wrapped_channel, parent_call, propagate_flags, GetCompletionQueue(),
-            method, NULL, MillisecondsToTimespec(deadline), NULL);
-      } else {
-        return Nan::ThrowTypeError("Call's fourth argument must be a string");
-      }
-      grpc_slice_unref(method);
-      call = new Call(wrapped_call);
-      Nan::Set(info.This(), Nan::New("channel_").ToLocalChecked(),
-               channel_object);
+    if (!info[0]->IsExternal()) {
+      return Nan::ThrowTypeError(
+        "Call can only be created with Channel.createCall");
     }
+    Local<External> ext = info[0].As<External>();
+    // This option is used for wrapping an existing call
+    grpc_call *call_value = reinterpret_cast<grpc_call *>(ext->Value());
+    call = new Call(call_value);
     call->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
+    return;
   } else {
-    const int argc = 4;
-    Local<Value> argv[argc] = {info[0], info[1], info[2], info[3]};
-    MaybeLocal<Object> maybe_instance =
-        Nan::NewInstance(constructor->GetFunction(), argc, argv);
-    if (maybe_instance.IsEmpty()) {
-      // There's probably a pending exception
-      return;
-    } else {
-      info.GetReturnValue().Set(maybe_instance.ToLocalChecked());
-    }
+    return Nan::ThrowTypeError(
+      "Call can only be created with Channel.createCall");
   }
 }
 

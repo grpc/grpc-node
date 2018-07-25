@@ -19,7 +19,7 @@
 'use strict';
 
 var assert = require('assert');
-var grpc = require('../src/grpc_extension');
+var grpc = require('..');
 
 /**
  * This is used for testing functions with multiple asynchronous calls that
@@ -41,7 +41,7 @@ function multiDone(done, count) {
     }
   };
 }
-var insecureCreds = grpc.ChannelCredentials.createInsecure();
+var insecureCreds = grpc.credentials.createInsecure();
 
 describe('channel', function() {
   describe('constructor', function() {

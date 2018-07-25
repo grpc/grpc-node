@@ -28,6 +28,7 @@
 #include "completion_queue.h"
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
+#include "slice.h"
 #include "timeval.h"
 
 namespace grpc {
@@ -56,11 +57,24 @@ using v8::Value;
 Callback *Channel::constructor;
 Persistent<FunctionTemplate> Channel::fun_tpl;
 
+static const char grpc_node_user_agent[] = "grpc-node/" GRPC_NODE_VERSION;
+
+void PopulateUserAgentChannelArg(grpc_arg *arg) {
+    size_t key_len = sizeof(GRPC_ARG_PRIMARY_USER_AGENT_STRING);
+    size_t val_len = sizeof(grpc_node_user_agent);
+    arg->key = reinterpret_cast<char *>(calloc(key_len, sizeof(char)));
+    memcpy(arg->key, GRPC_ARG_PRIMARY_USER_AGENT_STRING, key_len);
+    arg->type = GRPC_ARG_STRING;
+    arg->value.string = reinterpret_cast<char *>(calloc(val_len, sizeof(char)));
+    memcpy(arg->value.string, grpc_node_user_agent, val_len);
+
+}
+
 bool ParseChannelArgs(Local<Value> args_val,
                       grpc_channel_args **channel_args_ptr) {
   if (args_val->IsUndefined() || args_val->IsNull()) {
-    *channel_args_ptr = NULL;
-    return true;
+    // Treat null and undefined the same as an empty object
+    args_val = Nan::New<Object>();
   }
   if (!args_val->IsObject()) {
     *channel_args_ptr = NULL;
@@ -72,9 +86,17 @@ bool ParseChannelArgs(Local<Value> args_val,
   Local<Object> args_hash = Nan::To<Object>(args_val).ToLocalChecked();
   Local<Array> keys = Nan::GetOwnPropertyNames(args_hash).ToLocalChecked();
   channel_args->num_args = keys->Length();
+  /* This is an ugly hack to add in the user agent string argument if it wasn't
+   * passed by the user */
+  bool has_user_agent_arg = Nan::HasOwnProperty(
+        args_hash, Nan::New(GRPC_ARG_PRIMARY_USER_AGENT_STRING).ToLocalChecked()
+  ).FromJust();
+  if (!has_user_agent_arg) {
+    channel_args->num_args += 1;
+  }
   channel_args->args = reinterpret_cast<grpc_arg *>(
       calloc(channel_args->num_args, sizeof(grpc_arg)));
-  for (unsigned int i = 0; i < channel_args->num_args; i++) {
+  for (unsigned int i = 0; i < keys->Length(); i++) {
     Local<Value> key = Nan::Get(keys, i).ToLocalChecked();
     Utf8String key_str(key);
     if (*key_str == NULL) {
@@ -88,10 +110,31 @@ bool ParseChannelArgs(Local<Value> args_val,
     } else if (value->IsString()) {
       Utf8String val_str(value);
       channel_args->args[i].type = GRPC_ARG_STRING;
-      channel_args->args[i].value.string =
-          reinterpret_cast<char *>(calloc(val_str.length() + 1, sizeof(char)));
-      memcpy(channel_args->args[i].value.string, *val_str,
-             val_str.length() + 1);
+      /* Append the grpc-node user agent string after the application user agent
+       * string, and put the combination at the beginning of the user agent string
+       */
+      if (strcmp(*key_str, GRPC_ARG_PRIMARY_USER_AGENT_STRING) == 0) {
+        /* val_str.length() is the string length and does not include the
+         * trailing 0 byte. sizeof(grpc_node_user_agent) is the array length,
+         * so it does include the trailing 0 byte. */
+        size_t val_str_len = val_str.length();
+        size_t user_agent_len = sizeof(grpc_node_user_agent);
+        /* This is the length of the two parts of the string, plus the space in
+         * between, plus the 0 at the end, which is included in user_agent_len.
+         */
+        channel_args->args[i].value.string =
+            reinterpret_cast<char *>(calloc(val_str_len + user_agent_len + 1, sizeof(char)));
+        memcpy(channel_args->args[i].value.string, *val_str,
+               val_str.length());
+        channel_args->args[i].value.string[val_str_len] = ' ';
+        memcpy(channel_args->args[i].value.string + val_str_len + 1,
+               grpc_node_user_agent, user_agent_len);
+      } else {
+        channel_args->args[i].value.string =
+            reinterpret_cast<char *>(calloc(val_str.length() + 1, sizeof(char)));
+        memcpy(channel_args->args[i].value.string, *val_str,
+              val_str.length() + 1);
+      }
     } else {
       // The value does not match either of the accepted types
       return false;
@@ -99,6 +142,11 @@ bool ParseChannelArgs(Local<Value> args_val,
     channel_args->args[i].key =
         reinterpret_cast<char *>(calloc(key_str.length() + 1, sizeof(char)));
     memcpy(channel_args->args[i].key, *key_str, key_str.length() + 1);
+  }
+  /* Add a standard user agent string argument if none was provided */
+  if (!has_user_agent_arg) {
+    size_t index = channel_args->num_args - 1;
+    PopulateUserAgentChannelArg(&channel_args->args[index]);
   }
   return true;
 }
@@ -141,6 +189,7 @@ void Channel::Init(Local<Object> exports) {
   Nan::SetPrototypeMethod(tpl, "getConnectivityState", GetConnectivityState);
   Nan::SetPrototypeMethod(tpl, "watchConnectivityState",
                           WatchConnectivityState);
+  Nan::SetPrototypeMethod(tpl, "createCall", CreateCall);
   fun_tpl.Reset(tpl);
   Local<Function> ctr = Nan::GetFunction(tpl).ToLocalChecked();
   Nan::Set(exports, Nan::New("Channel").ToLocalChecked(), ctr);
@@ -266,6 +315,70 @@ NAN_METHOD(Channel::WatchConnectivityState) {
       GetCompletionQueue(),
       new struct tag(callback, ops.release(), NULL, Nan::Null()));
   CompletionQueueNext();
+}
+
+NAN_METHOD(Channel::CreateCall) {
+  /* Arguments:
+   * 0: Method
+   * 1: Deadline
+   * 2: host
+   * 3: parent Call
+   * 4: propagation flags
+   */
+  if (!HasInstance(info.This())) {
+    return Nan::ThrowTypeError(
+        "createCall can only be called on Channel objects");
+  }
+  if (!info[0]->IsString()){
+    return Nan::ThrowTypeError("createCall's first argument must be a string");
+  }
+  if (!(info[1]->IsNumber() || info[1]->IsDate())) {
+    return Nan::ThrowTypeError(
+      "createcall's second argument must be a date or a number");
+  }
+  // These arguments are at the end because they are optional
+  grpc_call *parent_call = NULL;
+  if (Call::HasInstance(info[3])) {
+    Call *parent_obj =
+        ObjectWrap::Unwrap<Call>(Nan::To<Object>(info[3]).ToLocalChecked());
+    parent_call = parent_obj->GetWrappedCall();
+  } else if (!(info[3]->IsUndefined() || info[3]->IsNull())) {
+    return Nan::ThrowTypeError(
+        "createCall's fourth argument must be another call, if provided");
+  }
+  uint32_t propagate_flags = GRPC_PROPAGATE_DEFAULTS;
+  if (info[4]->IsUint32()) {
+    propagate_flags = Nan::To<uint32_t>(info[4]).FromJust();
+  } else if (!(info[4]->IsUndefined() || info[4]->IsNull())) {
+    return Nan::ThrowTypeError(
+        "createCall's fifth argument must be propagate flags, if provided");
+  }
+  Channel *channel = ObjectWrap::Unwrap<Channel>(info.This());
+  grpc_channel *wrapped_channel = channel->GetWrappedChannel();
+  if (wrapped_channel == NULL) {
+    return Nan::ThrowError("Cannot createCall with a closed Channel");
+  }
+  grpc_slice method =
+      CreateSliceFromString(Nan::To<String>(info[0]).ToLocalChecked());
+  double deadline = Nan::To<double>(info[1]).FromJust();
+  grpc_call *wrapped_call = NULL;
+  if (info[2]->IsString()) {
+    grpc_slice *host = new grpc_slice;
+    *host =
+        CreateSliceFromString(Nan::To<String>(info[3]).ToLocalChecked());
+    wrapped_call = grpc_channel_create_call(
+        wrapped_channel, parent_call, propagate_flags, GetCompletionQueue(),
+        method, host, MillisecondsToTimespec(deadline), NULL);
+    delete host;
+  } else if (info[2]->IsUndefined() || info[2]->IsNull()) {
+    wrapped_call = grpc_channel_create_call(
+        wrapped_channel, parent_call, propagate_flags, GetCompletionQueue(),
+        method, NULL, MillisecondsToTimespec(deadline), NULL);
+  } else {
+    return Nan::ThrowTypeError("createCall's third argument must be a string");
+  }
+  grpc_slice_unref(method);
+  info.GetReturnValue().Set(Call::WrapStruct(wrapped_call));
 }
 
 }  // namespace node

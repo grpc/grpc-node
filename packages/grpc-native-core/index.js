@@ -236,6 +236,8 @@ exports.logVerbosity = constants.logVerbosity;
 
 exports.methodTypes = constants.methodTypes;
 
+exports.connectivityState = constants.connectivityState;
+
 exports.credentials = require('./src/credentials.js');
 
 /**
@@ -294,3 +296,84 @@ exports.closeClient = function closeClient(client_obj) {
 };
 
 exports.Client = client.Client;
+
+/**
+ * @typedef {Object.<string, string | number>} grpc~ChannelOptions
+ */
+
+/**
+ * This constructor API is almost identical to the Client constructor,
+ * except that some of the options for the Client constructor are not valid
+ * here.
+ * @constructor Channel
+ * @memberof grpc
+ * @param {string} target The address of the server to connect to
+ * @param {grpc.ChannelCredentials} credentials Channel credentials to use when connecting
+ * @param {grpc~ChannelOptions} options A map of channel options that will be passed to the core
+ */
+exports.Channel = grpc.Channel;
+
+/**
+ * Close the channel. This has the same functionality as the existing grpc.Client#close
+ * @name grpc.Channel#close
+ * @kind function
+ */
+
+/**
+ * Return the target that this channel connects to
+ * @name grpc.Channel#getTarget
+ * @kind function
+ * @return {string} The target
+ */
+
+/**
+ * Get the channel's current connectivity state.
+ * @name grpc.Channel#getConnectivityState
+ * @kind function
+ * @param {boolean} tryToConnect If true, the channel will start connecting if it is
+ *     idle. Otherwise, idle channels will only start connecting when a
+ *     call starts.
+ * @return {grpc.connectivityState} The current connectivity state
+ */
+
+/**
+ * @callback grpc.Channel~watchConnectivityStateCallback
+ * @param {Error?} error
+ */
+
+/**
+ * Watch for connectivity state changes.
+ * @name grpc.Channel#watchConnectivityState
+ * @kind function
+ * @param {grpc.ConnectivityState} currentState The state to watch for
+ *     transitions from. This should always be populated by calling
+ *     getConnectivityState immediately before.
+ * @param {grpc~Deadline} deadline A deadline for waiting for a state change
+ * @param {grpc.Channel~watchConnectivityStateCallback} callback Called with no
+ *     error when the state changes, or with an error if the deadline passes
+ *     without a state change
+ */
+
+/**
+ * @name grpc~Call
+ * @kind class
+ */
+
+/**
+ * Create a call object. Call is an opaque type used by the {@link grpc.Client}
+ * and {@link grpc.Server} classes. This function is called by the gRPC library
+ * when starting a request. Implementers should return an instance of Call that
+ * is returned from calling createCall on an instance of the provided Channel
+ * class.
+ * @name grpc.Channel#createCall
+ * @kind function
+ * @param {string} method The full method string to request
+ * @param {grpc~Deadline} deadline The call deadline
+ * @param {string|null} host A host string override for making the request
+ * @param {grpc~Call|null} parentCall A server call to propagate some
+ *     information from
+ * @param {number|null} propagateFlags A bitwise combination of elements of
+ *     {@link grpc.propagate} that indicates what information to propagate
+ *     from parentCall
+ * @return {grpc~Call}
+ */

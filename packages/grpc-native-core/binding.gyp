@@ -90,7 +90,8 @@
       'PB_FIELD_32BIT',
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=0',
-      'GRPC_UV'
+      'GRPC_UV',
+      'GRPC_NODE_VERSION="1.14.0-dev"'
     ],
     'conditions': [
       ['grpc_gcov=="true"', {

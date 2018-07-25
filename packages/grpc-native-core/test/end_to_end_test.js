@@ -61,7 +61,7 @@ describe('end-to-end', function() {
   it('should start and end a request without error', function(complete) {
     var done = multiDone(complete, 2);
     var status_text = 'xyz';
-    var call = new grpc.Call(channel,
+    var call = channel.createCall(
                              'dummy_method',
                              Infinity);
     var client_batch = {};
@@ -111,7 +111,7 @@ describe('end-to-end', function() {
   it('should successfully send and receive metadata', function(complete) {
     var done = multiDone(complete, 2);
     var status_text = 'xyz';
-    var call = new grpc.Call(channel,
+    var call = channel.createCall(
                              'dummy_method',
                              Infinity);
     var client_batch = {};
@@ -167,7 +167,7 @@ describe('end-to-end', function() {
     var reply_text = 'server_response';
     var done = multiDone(complete, 2);
     var status_text = 'success';
-    var call = new grpc.Call(channel,
+    var call = channel.createCall(
                              'dummy_method',
                              Infinity);
     var client_batch = {};
@@ -222,7 +222,7 @@ describe('end-to-end', function() {
     var done = multiDone(complete, 2);
     var requests = ['req1', 'req2'];
     var status_text = 'xyz';
-    var call = new grpc.Call(channel,
+    var call = channel.createCall(
                              'dummy_method',
                              Infinity);
     var client_batch = {};

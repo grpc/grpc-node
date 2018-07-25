@@ -49,60 +49,48 @@ describe('call', function() {
   after(function() {
     server.forceShutdown();
   });
-  describe('constructor', function() {
-    it('should reject anything less than 3 arguments', function() {
+  describe('factory', function() {
+    it('should reject anything less than 2 arguments', function() {
       assert.throws(function() {
-        new grpc.Call();
+        channel.createCall();
       }, TypeError);
       assert.throws(function() {
-        new grpc.Call(channel);
-      }, TypeError);
-      assert.throws(function() {
-        new grpc.Call(channel, 'method');
+        channel.createCall('method');
       }, TypeError);
     });
-    it('should succeed with a Channel, a string, and a date or number',
+    it('should succeed with a string and a date or number',
        function() {
          assert.doesNotThrow(function() {
-           new grpc.Call(channel, 'method', new Date());
+           channel.createCall('method', new Date());
          });
          assert.doesNotThrow(function() {
-           new grpc.Call(channel, 'method', 0);
+           channel.createCall('method', 0);
          });
        });
-    it('should accept an optional fourth string parameter', function() {
+    it('should accept an optional third string parameter', function() {
       assert.doesNotThrow(function() {
-        new grpc.Call(channel, 'method', new Date(), 'host_override');
+        channel.createCall('method', new Date(), 'host_override');
       });
     });
     it('should fail with a closed channel', function() {
       var local_channel = new grpc.Channel('hostname', insecureCreds);
       local_channel.close();
       assert.throws(function() {
-        new grpc.Call(channel, 'method');
+        local_channel.createCall('method', 0);
       });
     });
     it('should fail with other types', function() {
       assert.throws(function() {
-        new grpc.Call({}, 'method', 0);
+        channel.createCall(null, 0);
       }, TypeError);
       assert.throws(function() {
-        new grpc.Call(channel, null, 0);
+        channel.createCall('method', 'now');
       }, TypeError);
-      assert.throws(function() {
-        new grpc.Call(channel, 'method', 'now');
-      }, TypeError);
-    });
-    it('should succeed without the new keyword', function() {
-      assert.doesNotThrow(function() {
-        var call = grpc.Call(channel, 'method', new Date());
-        assert(call instanceof grpc.Call);
-      });
     });
   });
   describe('deadline', function() {
     it('should time out immediately with negative deadline', function(done) {
-      var call = new grpc.Call(channel, 'method', -Infinity);
+      var call = channel.createCall('method', -Infinity);
       var batch = {};
       batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
       call.startBatch(batch, function(err, response) {
@@ -114,7 +102,7 @@ describe('call', function() {
   });
   describe('startBatch', function() {
     it('should fail without an object and a function', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       assert.throws(function() {
         call.startBatch();
       });
@@ -126,7 +114,7 @@ describe('call', function() {
       });
     });
     it('should succeed with an empty object', function(done) {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       assert.doesNotThrow(function() {
         call.startBatch({}, function(err) {
           assert.ifError(err);
@@ -137,7 +125,7 @@ describe('call', function() {
   });
   describe('startBatch with metadata', function() {
     it('should succeed with a map of strings to string arrays', function(done) {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       assert.doesNotThrow(function() {
         var batch = {};
         batch[grpc.opType.SEND_INITIAL_METADATA] = {'key1': ['value1'],
@@ -150,7 +138,7 @@ describe('call', function() {
       });
     });
     it('should succeed with a map of strings to buffer arrays', function(done) {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       assert.doesNotThrow(function() {
         var batch = {};
         batch[grpc.opType.SEND_INITIAL_METADATA] = {
@@ -165,7 +153,7 @@ describe('call', function() {
       });
     });
     it('should fail with other parameter types', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       assert.throws(function() {
         var batch = {};
         batch[grpc.opType.SEND_INITIAL_METADATA] = undefined;
@@ -190,7 +178,7 @@ describe('call', function() {
   });
   describe('startBatch with message', function() {
     it('should fail with null argument', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       assert.throws(function() {
         var batch = {};
         batch[grpc.opType.SEND_MESSAGE] = null;
@@ -198,7 +186,7 @@ describe('call', function() {
       }, TypeError);
     });
     it('should fail with numeric argument', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       assert.throws(function() {
         var batch = {};
         batch[grpc.opType.SEND_MESSAGE] = 5;
@@ -206,7 +194,7 @@ describe('call', function() {
       }, TypeError);
     });
     it('should fail with string argument', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       assert.throws(function() {
         var batch = {};
         batch[grpc.opType.SEND_MESSAGE] = 'value';
@@ -216,7 +204,7 @@ describe('call', function() {
   });
   describe('startBatch with status', function() {
     it('should fail without a code', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       assert.throws(function() {
         var batch = {};
         batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
@@ -227,7 +215,7 @@ describe('call', function() {
       }, TypeError);
     });
     it('should fail without details', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       assert.throws(function() {
         var batch = {};
         batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
@@ -238,7 +226,7 @@ describe('call', function() {
       }, TypeError);
     });
     it('should fail without metadata', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       assert.throws(function() {
         var batch = {};
         batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
@@ -249,7 +237,7 @@ describe('call', function() {
       }, TypeError);
     });
     it('should fail with incorrectly typed code argument', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       assert.throws(function() {
         var batch = {};
         batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
@@ -261,7 +249,7 @@ describe('call', function() {
       }, TypeError);
     });
     it('should fail with incorrectly typed details argument', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       assert.throws(function() {
         var batch = {};
         batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
@@ -273,7 +261,7 @@ describe('call', function() {
       }, TypeError);
     });
     it('should fail with incorrectly typed metadata argument', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       assert.throws(function() {
         var batch = {};
         batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
@@ -287,7 +275,7 @@ describe('call', function() {
   });
   describe('cancel', function() {
     it('should succeed', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       assert.doesNotThrow(function() {
         call.cancel();
       });
@@ -296,30 +284,30 @@ describe('call', function() {
   describe('cancelWithStatus', function() {
     it('should reject anything other than an integer and a string', function() {
       assert.doesNotThrow(function() {
-        var call = new grpc.Call(channel, 'method', getDeadline(1));
+        var call = channel.createCall('method', getDeadline(1));
         call.cancelWithStatus(1, 'details');
       });
       assert.throws(function() {
-        var call = new grpc.Call(channel, 'method', getDeadline(1));
+        var call = channel.createCall('method', getDeadline(1));
         call.cancelWithStatus();
       });
       assert.throws(function() {
-        var call = new grpc.Call(channel, 'method', getDeadline(1));
+        var call = channel.createCall('method', getDeadline(1));
         call.cancelWithStatus('');
       });
       assert.throws(function() {
-        var call = new grpc.Call(channel, 'method', getDeadline(1));
+        var call = channel.createCall('method', getDeadline(1));
         call.cancelWithStatus(5, {});
       });
     });
     it('should reject the OK status code', function() {
       assert.throws(function() {
-        var call = new grpc.Call(channel, 'method', getDeadline(1));
+        var call = channel.createCall('method', getDeadline(1));
         call.cancelWithStatus(0, 'details');
       });
     });
     it('should result in the call ending with a status', function(done) {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       var batch = {};
       batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
       call.startBatch(batch, function(err, response) {
@@ -332,7 +320,7 @@ describe('call', function() {
   });
   describe('getPeer', function() {
     it('should return a string', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var call = channel.createCall('method', getDeadline(1));
       assert.strictEqual(typeof call.getPeer(), 'string');
     });
   });

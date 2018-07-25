@@ -52,6 +52,8 @@ class Call : public Nan::ObjectWrap {
   /* Wrap a grpc_call struct in a javascript object */
   static v8::Local<v8::Value> WrapStruct(grpc_call *call);
 
+  grpc_call *GetWrappedCall();
+
   void CompleteBatch(bool is_final_op);
 
  private:
