@@ -24,6 +24,9 @@ const BACKOFF_MULTIPLIER = 1.6;
 const MAX_BACKOFF_MS = 120000;
 const BACKOFF_JITTER = 0.2;
 
+const KEEPALIVE_TIME_MS = Number.MAX_VALUE;
+const KEEPALIVE_TIMEOUT_MS = 20000;
+
 const {
   HTTP2_HEADER_AUTHORITY,
   HTTP2_HEADER_CONTENT_TYPE,
@@ -110,6 +113,12 @@ export class Http2Channel extends EventEmitter implements Channel {
   private currentBackoff: number = INITIAL_BACKOFF_MS;
   private currentBackoffDeadline: Date;
 
+  private keepaliveTimeMs: number = KEEPALIVE_TIME_MS;
+  private keepaliveTimeoutMs: number = KEEPALIVE_TIMEOUT_MS;
+  private keepaliveIntervalId: NodeJS.Timer;
+  private keepaliveTimeoutId: NodeJS.Timer;
+
+
   private handleStateChange(
       oldState: ConnectivityState, newState: ConnectivityState): void {
     const now: Date = new Date();
@@ -134,6 +143,8 @@ export class Http2Channel extends EventEmitter implements Channel {
         break;
       case ConnectivityState.TRANSIENT_FAILURE:
         this.subChannel = null;
+        /* Stop keepalive pings when the subchannel disconnects */
+        this.stopKeepalivePings();
         this.backoffTimerId = setTimeout(() => {
           this.transitionToState(
               [ConnectivityState.TRANSIENT_FAILURE],
@@ -150,6 +161,7 @@ export class Http2Channel extends EventEmitter implements Channel {
           this.subChannel = null;
           this.emit('shutdown');
           clearTimeout(this.backoffTimerId);
+          this.stopKeepalivePings();
         }
         break;
       default:
@@ -221,6 +233,32 @@ export class Http2Channel extends EventEmitter implements Channel {
     subChannel.once('error', this.subChannelCloseCallback);
   }
 
+  private sendPing() {
+    this.keepaliveTimeoutId = setTimeout(() => {
+      this.transitionToState([ConnectivityState.READY], 
+                             ConnectivityState.TRANSIENT_FAILURE)
+    }, this.keepaliveTimeoutMs)
+    this.subChannel!.ping((err: Error | null, duration: number, payload: Buffer) => {
+      clearTimeout(this.keepaliveTimeoutId);
+    });
+  }
+
+  /* TODO(murgatroid99): refactor subchannels so that keepalives can be handled
+   * per subchannel */
+  private startKeepalivePings() {
+    this.keepaliveIntervalId = setInterval(() => {
+      if (this.subChannel) {
+        this.sendPing();
+      }
+    }, this.keepaliveTimeMs);
+    this.sendPing();
+  }
+
+  private stopKeepalivePings() {
+    clearInterval(this.keepaliveIntervalId);
+    clearTimeout(this.keepaliveTimeoutId);
+  }
+
   constructor(
       address: string, readonly credentials: ChannelCredentials,
       private readonly options: Partial<ChannelOptions>) {
@@ -240,11 +278,21 @@ export class Http2Channel extends EventEmitter implements Channel {
       new CallCredentialsFilterFactory(this), new DeadlineFilterFactory(this),
       new MetadataStatusFilterFactory(this), new CompressionFilterFactory(this)
     ]);
+    if (this.options['grpc.keepalive_time_ms']) {
+      this.keepaliveTimeMs = this.options['grpc.keepalive_time_ms'] as number;
+    }
+    if (this.options['grpc.keepalive_timeout_ms']) {
+      this.keepaliveTimeoutMs = this.options['grpc.keepalive_timeout_ms'] as number;
+    }
     this.currentBackoffDeadline = new Date();
     /* The only purpose of these lines is to ensure that this.backoffTimerId has
      * a value of type NodeJS.Timer. */
     this.backoffTimerId = setTimeout(() => {}, 0);
     clearTimeout(this.backoffTimerId);
+    this.keepaliveIntervalId = setTimeout(() => {}, 0);
+    clearTimeout(this.keepaliveIntervalId);
+    this.keepaliveTimeoutId = setTimeout(() => {}, 0);
+    clearTimeout(this.keepaliveTimeoutId);
 
     // Build user-agent string.
     this.userAgent = [
@@ -276,6 +324,11 @@ export class Http2Channel extends EventEmitter implements Channel {
             if (!session.streamCount) {
               session.streamCount = 0;
             }
+            if (session.streamCount == 0) {
+              /* Start keepalive pings when we start a stream on an empty
+               * session */
+              this.startKeepalivePings();
+            }
             session.streamCount += 1;
             http2Stream.on('close', () => {
               if (!session.streamCount) {
@@ -284,6 +337,9 @@ export class Http2Channel extends EventEmitter implements Channel {
               session.streamCount -= 1;
               if (session.streamCount <= 0) {
                 session.unref();
+                /* Stop keepalive pings when we end the last stream on a
+                 * session */
+                this.stopKeepalivePings();
               }
             });
             stream.attachHttp2Stream(http2Stream);

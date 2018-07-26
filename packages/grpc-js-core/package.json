@@ -17,7 +17,7 @@
   "devDependencies": {
     "@types/lodash": "^4.14.108",
     "@types/mocha": "^2.2.43",
-    "@types/node": "^9.4.6",
+    "@types/node": "^10.5.4",
     "clang-format": "^1.0.55",
     "gts": "^0.5.1",
     "typescript": "~2.7.0"
