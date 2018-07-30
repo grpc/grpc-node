@@ -21,10 +21,10 @@
       "lib": "src"
     },
     "scripts": {
-      "build": "./node_modules/.bin/node-pre-gyp build",
-      "electron-build": "./node_modules/.bin/node-pre-gyp configure build --runtime=electron --disturl=https://atom.io/download/atom-shell",
-      "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test",
-      "install": "./node_modules/.bin/node-pre-gyp install --fallback-to-build --library=static_library",
+      "build": "node-pre-gyp build",
+      "electron-build": "node-pre-gyp configure build --runtime=electron --disturl=https://atom.io/download/atom-shell",
+      "coverage": "istanbul cover ./node_modules/.bin/_mocha test",
+      "install": "node-pre-gyp install --fallback-to-build --library=static_library",
       "prepack": "git submodule update --init --recursive && npm install"
     },
     "bundledDependencies": [
