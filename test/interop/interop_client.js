@@ -369,6 +369,22 @@ function statusCodeAndMessage(client, done) {
   duplex.end();
 }
 
+function specialStatusMessage(client, done) {
+  let expectedMessage = '\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n';
+  let arg = {
+    response_status: {
+      code: 2,
+      message: expectedMessage
+    }
+  };
+  client.unaryCall(arg, function(err, resp) {
+    assert(err);
+    assert.strictEqual(err.code, 2);
+    assert.strictEqual(err.details, expectedMessage);
+    done();
+  });
+}
+
 // NOTE: the client param to this function is from UnimplementedService
 function unimplementedService(client, done) {
   client.unimplementedCall({}, function(err, resp) {
@@ -530,6 +546,8 @@ var test_cases = {
                     Client: testProto.TestService},
   status_code_and_message: {run: statusCodeAndMessage,
                             Client: testProto.TestService},
+  special_status_message: {run: specialStatusMessage,
+                           Client: testProto.TestService},
   unimplemented_service: {run: unimplementedService,
                          Client: testProto.UnimplementedService},
   unimplemented_method: {run: unimplementedMethod,
