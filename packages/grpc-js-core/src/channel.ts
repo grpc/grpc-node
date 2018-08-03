@@ -43,7 +43,7 @@ export interface ChannelOptions {
   'grpc.primary_user_agent': string;
   'grpc.secondary_user_agent': string;
   'grpc.default_authority': string;
-  'grpc.keealive_time_ms': number;
+  'grpc.keepalive_time_ms': number;
   'grpc.keepalive_timeout_ms': number;
   [key: string]: string|number;
 }

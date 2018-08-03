@@ -61,10 +61,10 @@ export class Http2SubChannel extends EventEmitter implements SubChannel {
     this.userAgent = userAgent;
 
     if (channelArgs['grpc.keepalive_time_ms']) {
-      this.keepaliveTimeMs = channelArgs['grpc.keepalive_time_ms'] as number;
+      this.keepaliveTimeMs = channelArgs['grpc.keepalive_time_ms']!;
     }
     if (channelArgs['grpc.keepalive_timeout_ms']) {
-      this.keepaliveTimeoutMs = channelArgs['grpc.keepalive_timeout_ms'] as number;
+      this.keepaliveTimeoutMs = channelArgs['grpc.keepalive_timeout_ms']!;
     }
     this.keepaliveIntervalId = setTimeout(() => {}, 0);
     clearTimeout(this.keepaliveIntervalId);
