@@ -7,7 +7,7 @@ import {EmitterAugmentation1} from './events';
 import {Filter} from './filter';
 import {FilterStackFactory} from './filter-stack';
 import {Metadata} from './metadata';
-import {ObjectDuplex} from './object-stream';
+import {ObjectDuplex, WriteCallback} from './object-stream';
 
 const {HTTP2_HEADER_STATUS, HTTP2_HEADER_CONTENT_TYPE, NGHTTP2_CANCEL} =
     http2.constants;
@@ -71,7 +71,7 @@ export class Http2CallStream extends Duplex implements CallStream {
   private http2Stream: http2.ClientHttp2Stream|null = null;
   private pendingRead = false;
   private pendingWrite: Buffer|null = null;
-  private pendingWriteCallback: Function|null = null;
+  private pendingWriteCallback: WriteCallback | null = null;
   private pendingFinalCallback: Function|null = null;
 
   private readState: ReadState = ReadState.NO_DATA;
@@ -441,7 +441,7 @@ export class Http2CallStream extends Duplex implements CallStream {
     }
   }
 
-  _write(chunk: WriteObject, encoding: string, cb: Function) {
+  _write(chunk: WriteObject, encoding: string, cb: WriteCallback) {
     this.filterStack.sendMessage(Promise.resolve(chunk)).then((message) => {
       if (this.http2Stream === null) {
         this.pendingWrite = message.message;
