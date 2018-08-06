@@ -3,6 +3,8 @@ import {EmitterAugmentation1} from './events';
 
 // tslint:disable:no-any
 
+export type WriteCallback = (error: Error | null | undefined) => void;
+
 export interface IntermediateObjectReadable<T> extends Readable {
   read(size?: number): any&T;
 }
@@ -13,8 +15,8 @@ export type ObjectReadable<T> = {
 
 export interface IntermediateObjectWritable<T> extends Writable {
   _write(chunk: any&T, encoding: string, callback: Function): void;
-  write(chunk: any&T, cb?: Function): boolean;
-  write(chunk: any&T, encoding?: any, cb?: Function): boolean;
+  write(chunk: any&T, cb?: WriteCallback): boolean;
+  write(chunk: any&T, encoding?: any, cb?: WriteCallback): boolean;
   setDefaultEncoding(encoding: string): this;
   end(): void;
   end(chunk: any&T, cb?: Function): void;
