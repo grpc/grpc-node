@@ -21,6 +21,7 @@
 var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
+var forge = require('node-forge');
 
 var grpc = require('..');
 
@@ -127,6 +128,25 @@ describe('channel credentials', function() {
       assert.throws(function() {
         grpc.credentials.createSsl(null, null, pem_data);
       });
+    });
+    it('works if the fourth argument is an empty object', function() {
+      var creds;
+      assert.doesNotThrow(function() {
+        creds = grpc.credentials.createSsl(ca_data, null, null, {});
+      });
+      assert.notEqual(creds, null);
+    });
+    it('fails if the fourth argument is a non-object value', function() {
+      assert.throws(function() {
+        grpc.credentials.createSsl(ca_data, null, null, 'test');
+      }, TypeError);
+    });
+    it('fails if the checkServerIdentity is a non-function', function() {
+      assert.throws(function() {
+        grpc.credentials.createSsl(ca_data, null, null, {
+          "checkServerIdentity": 'test'
+        });
+      }, TypeError);
     });
   });
 });
@@ -257,6 +277,58 @@ describe('client credentials', function() {
                             client_options);
     client.unary({}, function(err, data) {
       assert.ifError(err);
+      done();
+    });
+  });
+  it('Verify callback receives correct arguments', function(done) {
+    var callback_host, callback_cert;
+    var client_ssl_creds = grpc.credentials.createSsl(ca_data, null, null, {
+      "checkServerIdentity": function(host, cert) {
+        callback_host = host;
+        callback_cert = cert;
+      }
+    });
+    var client = new Client('localhost:' + port, client_ssl_creds,
+                            client_options);
+    client.unary({}, function(err, data) {
+      assert.ifError(err);
+      assert.equal(callback_host, 'foo.test.google.fr');
+
+      // The roundabout forge APIs for converting PEM to a node DER Buffer
+      var expected_der = new Buffer(forge.asn1.toDer(
+          forge.pki.certificateToAsn1(forge.pki.certificateFromPem(pem_data)))
+          .getBytes(), 'binary');
+
+      // Assert the buffers are equal by converting them to hex strings
+      assert.equal(callback_cert.raw.toString('hex'), expected_der.toString('hex'));
+      // Documented behavior of callback cert is that raw should be its only property
+      assert.equal(Object.keys(callback_cert).length, 1);
+      done();
+    });
+  });
+  it('Verify callback exception causes connection failure', function(done) {
+    var client_ssl_creds = grpc.credentials.createSsl(ca_data, null, null, {
+      "checkServerIdentity": function(host, cert) {
+        throw "Verification callback exception";
+      }
+    }); 
+    var client = new Client('localhost:' + port, client_ssl_creds,
+                            client_options);
+    client.unary({}, function(err, data) {
+      assert.ok(err, "Should have raised an error");
+      done();
+    });
+  });
+  it('Verify callback returning an Error causes connection failure', function(done) {
+    var client_ssl_creds = grpc.credentials.createSsl(ca_data, null, null, {
+      "checkServerIdentity": function(host, cert) {
+        return new Error("Verification error");
+      }
+    });
+    var client = new Client('localhost:' + port, client_ssl_creds,
+                            client_options);
+    client.unary({}, function(err, data) {
+      assert.ok(err, "Should have raised an error");
       done();
     });
   });
