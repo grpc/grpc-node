@@ -39,12 +39,12 @@ var genericService = require('./generic_service');
 var grpc = require('../any_grpc').client;
 var protoLoader = require('../../packages/grpc-protobufjs');
 var protoPackage = protoLoader.loadSync(
-    'src/proto/grpc/testing/services.proto',
+    'src/proto/grpc/testing/benchmark_service.proto',
     {keepCase: true,
      defaults: true,
      enums: String,
      oneofs: true,
-     include: [__dirname + '/../../packages/grpc-native-core/deps/grpc']});
+     includeDirs: [__dirname + '/../../packages/grpc-native-core/deps/grpc']});
 var serviceProto = grpc.loadPackageDefinition(protoPackage).grpc.testing;
 
 /**
