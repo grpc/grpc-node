@@ -19,6 +19,14 @@ Retries | :heavy_check_mark: | :x:
 Stats/tracing/monitoring | :heavy_check_mark: | :x:
 Load Balancing | :heavy_check_mark: | :x:
 
+Other Properties | `grpc` | `@grpc/grpc-js`
+-----------------|--------|----------------
+Binary Addon | :heavy_check_mark: | :x:
+Supported Node Versions | >= 4 | ^8.11.2 or >=9.4
+Supported Electron Versions | All | >= 3
+Supported Platforms | Linux, Windows, MacOS | All
+Supported Architectures | x86, x86-64, ARM | All
+
 In addition, all channel arguments defined in [this header file](https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/grpc_types.h) are handled by the `grpc` library. Of those, the following are handled by the `@grpc/grpc-js` library:
 
  - `grpc.ssl_target_name_override`
