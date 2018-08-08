@@ -21,11 +21,11 @@ Load Balancing | :heavy_check_mark: | :x:
 
 Other Properties | `grpc` | `@grpc/grpc-js`
 -----------------|--------|----------------
-Binary Addon | :heavy_check_mark: | :x:
+Pure JavaScript Code | :x: | :heavy_check_mark:
 Supported Node Versions | >= 4 | ^8.11.2 or >=9.4
 Supported Electron Versions | All | >= 3
 Supported Platforms | Linux, Windows, MacOS | All
-Supported Architectures | x86, x86-64, ARM | All
+Supported Architectures | x86, x86-64, ARM7+ | All
 
 In addition, all channel arguments defined in [this header file](https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/grpc_types.h) are handled by the `grpc` library. Of those, the following are handled by the `@grpc/grpc-js` library:
 
