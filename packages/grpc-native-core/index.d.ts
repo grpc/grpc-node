@@ -816,7 +816,7 @@ declare module "grpc" {
    * Additional peer verification options that can be set when creating
    * SSL credentials.
    */
-  export interface VerifyOptions: {
+  export interface VerifyOptions {
     /**
      * If set, this callback will be invoked after the usual hostname verification
      * has been performed on the peer certificate.
