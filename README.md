@@ -3,6 +3,8 @@
 
 ## Implementations
 
+For a comparison of the features available in these two libraries, see [this document](https://github.com/grpc/grpc-node/tree/master/PACKGE-COMPARISON.md)
+
 ### C-based Client and Server
 
 Directory: [`packages/grpc-native-core`](https://github.com/grpc/grpc-node/tree/master/packages/grpc-native-core) (see here for installation information)
@@ -15,15 +17,19 @@ This is the existing, feature-rich implementation of gRPC using a C++ addon. It 
 
 Directory: [`packages/grpc-js-core`](https://github.com/grpc/grpc-node/tree/master/packages/grpc-js-core)
 
+npm package: [@grpc/grpc-js](https://www.npmjs.com/package/@grpc/grpc-js)
+
 **This library is currently incomplete and experimental, built on the [experimental http2 Node module](https://nodejs.org/api/http2.html).**
 
-This library implements the core functionality of gRPC purely in JavaScript, without a C++ addon. It works on the latest version of Node.js (with the `--expose-http2` flag set) on all platforms that Node.js runs on.
+This library implements the core functionality of gRPC purely in JavaScript, without a C++ addon. It works on the latest version of Node.js on all platforms that Node.js runs on.
 
 ## Other Packages
 
 ### gRPC Protobuf Loader
 
 Directory: [`packages/grpc-protobufjs`](https://github.com/grpc/grpc-node/tree/master/packages/grpc-protobufjs)
+
+npm package: [@grpc/proto-loader](https://www.npmjs.com/package/@grpc/proto-loader)
 
 This library loads `.proto` files into objects that can be passed to the gRPC libraries.
 
