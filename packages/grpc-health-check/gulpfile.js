@@ -36,7 +36,7 @@ gulp.task('clean.links', 'Delete npm links', () => {
 gulp.task('clean.all', 'Delete all code created by tasks',
 	  ['clean.links']);
 
-gulp.task('install', 'Install health check dependencies', () => {
+gulp.task('install', 'Install health check dependencies', ['clean.links'], () => {
   return execa('npm', ['install', '--unsafe-perm'], {cwd: healthCheckDir, stdio: 'inherit'});
 });
 
