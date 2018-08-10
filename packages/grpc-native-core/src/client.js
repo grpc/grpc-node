@@ -693,6 +693,7 @@ Client.prototype.makeBidiStreamRequest = function(path, serialize,
  */
 Client.prototype.close = function() {
   this.$channel.close();
+  delete this.$channel;
 };
 
 /**
@@ -718,6 +719,10 @@ Client.prototype.waitForReady = function(deadline, callback) {
   var checkState = function(err) {
     if (err) {
       callback(new Error('Failed to connect before the deadline'));
+      return;
+    }
+    if (!self.$channel){
+      callback(new Error('Channel been closed'));
       return;
     }
     var new_state = self.$channel.getConnectivityState(true);
