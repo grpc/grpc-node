@@ -3,7 +3,7 @@
 
 ## Implementations
 
-For a comparison of the features available in these two libraries, see [this document](https://github.com/grpc/grpc-node/tree/master/PACKGE-COMPARISON.md)
+For a comparison of the features available in these two libraries, see [this document](https://github.com/grpc/grpc-node/tree/master/PACKAGE-COMPARISON.md)
 
 ### C-based Client and Server
 
