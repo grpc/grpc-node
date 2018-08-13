@@ -1,4 +1,4 @@
-import {createSecureContext, SecureContext} from 'tls';
+import {createSecureContext, SecureContext, TLSSocket, ConnectionOptions, PeerCertificate} from 'tls';
 
 import {CallCredentials} from './call-credentials';
 
@@ -7,6 +7,36 @@ function verifyIsBufferOrNull(obj: any, friendlyName: string): void {
   if (obj && !(obj instanceof Buffer)) {
     throw new TypeError(`${friendlyName}, if provided, must be a Buffer.`);
   }
+}
+
+/**
+ * A certificate as received by the checkServerIdentity callback.
+ */
+export interface Certificate {
+  /**
+   * The raw certificate in DER form.
+   */
+  raw: Buffer;
+}
+
+/**
+ * A callback that will receive the expected hostname and presented peer
+ * certificate as parameters. The callback should return an error to
+ * indicate that the presented certificate is considered invalid and
+ * otherwise returned undefined.
+ */
+export type CheckServerIdentityCallback = (hostname: string, cert: Certificate) => Error | undefined;
+
+/**
+ * Additional peer verification options that can be set when creating
+ * SSL credentials.
+ */
+export interface VerifyOptions {
+  /**
+   * If set, this callback will be invoked after the usual hostname verification
+   * has been performed on the peer certificate.
+   */
+  checkServerIdentity?: CheckServerIdentityCallback;
 }
 
 /**
@@ -40,7 +70,12 @@ export abstract class ChannelCredentials {
    * instance was created with createSsl, or null if this instance was created
    * with createInsecure.
    */
-  abstract getSecureContext(): SecureContext|null;
+  abstract getConnectionOptions(): ConnectionOptions|null;
+
+  /**
+   * Indicates whether this credentials object creates a secure channel.
+   */
+  abstract isSecure(): boolean;
 
   /**
    * Return a new ChannelCredentials instance with a given set of credentials.
@@ -52,7 +87,7 @@ export abstract class ChannelCredentials {
    */
   static createSsl(
       rootCerts?: Buffer|null, privateKey?: Buffer|null,
-      certChain?: Buffer|null): ChannelCredentials {
+      certChain?: Buffer|null, verifyOptions?: VerifyOptions): ChannelCredentials {
     verifyIsBufferOrNull(rootCerts, 'Root certificate');
     verifyIsBufferOrNull(privateKey, 'Private key');
     verifyIsBufferOrNull(certChain, 'Certificate chain');
@@ -69,7 +104,15 @@ export abstract class ChannelCredentials {
       key: privateKey || undefined,
       cert: certChain || undefined
     });
-    return new SecureChannelCredentialsImpl(secureContext);
+    let connectionOptions: ConnectionOptions = {
+      secureContext
+    };
+    if (verifyOptions && verifyOptions.checkServerIdentity) {
+      connectionOptions.checkServerIdentity = (host: string, cert: PeerCertificate) => {
+        return verifyOptions.checkServerIdentity!(host, {raw: cert.raw});
+      }
+    }
+    return new SecureChannelCredentialsImpl(connectionOptions);
   }
 
   /**
@@ -89,27 +132,33 @@ class InsecureChannelCredentialsImpl extends ChannelCredentials {
     throw new Error('Cannot compose insecure credentials');
   }
 
-  getSecureContext(): SecureContext|null {
+  getConnectionOptions(): ConnectionOptions|null {
     return null;
+  }
+  isSecure(): boolean {
+    return false;
   }
 }
 
 class SecureChannelCredentialsImpl extends ChannelCredentials {
-  secureContext: SecureContext;
+  connectionOptions: ConnectionOptions
 
-  constructor(secureContext: SecureContext, callCredentials?: CallCredentials) {
+  constructor(connectionOptions: ConnectionOptions, callCredentials?: CallCredentials) {
     super(callCredentials);
-    this.secureContext = secureContext;
+    this.connectionOptions = connectionOptions;
   }
 
   compose(callCredentials: CallCredentials): ChannelCredentials {
     const combinedCallCredentials =
         this.callCredentials.compose(callCredentials);
     return new SecureChannelCredentialsImpl(
-        this.secureContext, combinedCallCredentials);
+        this.connectionOptions, combinedCallCredentials);
   }
 
-  getSecureContext(): SecureContext|null {
-    return this.secureContext;
+  getConnectionOptions(): ConnectionOptions|null {
+    return this.connectionOptions;
+  }
+  isSecure(): boolean {
+    return true;
   }
 }
