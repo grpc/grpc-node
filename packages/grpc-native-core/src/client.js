@@ -720,13 +720,23 @@ Client.prototype.waitForReady = function(deadline, callback) {
       callback(new Error('Failed to connect before the deadline'));
       return;
     }
-    var new_state = self.$channel.getConnectivityState(true);
+    var new_state;
+    try {
+      new_state = self.$channel.getConnectivityState(true);
+    } catch (e) {
+      callback(new Error('The channel has been closed'));
+      return;
+    }
     if (new_state === grpc.connectivityState.READY) {
       callback();
     } else if (new_state === grpc.connectivityState.FATAL_FAILURE) {
       callback(new Error('Failed to connect to server'));
     } else {
-      self.$channel.watchConnectivityState(new_state, deadline, checkState);
+      try {
+        self.$channel.watchConnectivityState(new_state, deadline, checkState);
+      } catch (e) {
+        callback(new Error('The channel has been closed'));
+      }
     }
   };
   /* Force a single round of polling to ensure that the channel state is up
