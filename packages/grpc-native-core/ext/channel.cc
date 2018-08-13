@@ -270,6 +270,10 @@ NAN_METHOD(Channel::GetTarget) {
         "getTarget can only be called on Channel objects");
   }
   Channel *channel = ObjectWrap::Unwrap<Channel>(info.This());
+  if (channel->wrapped_channel == NULL) {
+    return Nan::ThrowError(
+        "Cannot call getTarget on a closed Channel");
+  }
   info.GetReturnValue().Set(
       Nan::New(grpc_channel_get_target(channel->wrapped_channel))
           .ToLocalChecked());
@@ -281,6 +285,10 @@ NAN_METHOD(Channel::GetConnectivityState) {
         "getConnectivityState can only be called on Channel objects");
   }
   Channel *channel = ObjectWrap::Unwrap<Channel>(info.This());
+  if (channel->wrapped_channel == NULL) {
+    return Nan::ThrowError(
+        "Cannot call getConnectivityState on a closed Channel");
+  }
   int try_to_connect = (int)info[0]->Equals(Nan::True());
   info.GetReturnValue().Set(grpc_channel_check_connectivity_state(
       channel->wrapped_channel, try_to_connect));
@@ -303,12 +311,16 @@ NAN_METHOD(Channel::WatchConnectivityState) {
     return Nan::ThrowTypeError(
         "watchConnectivityState's third argument must be a callback");
   }
+  Channel *channel = ObjectWrap::Unwrap<Channel>(info.This());
+  if (channel->wrapped_channel == NULL) {
+    return Nan::ThrowError(
+        "Cannot call watchConnectivityState on a closed Channel");
+  }
   grpc_connectivity_state last_state = static_cast<grpc_connectivity_state>(
       Nan::To<uint32_t>(info[0]).FromJust());
   double deadline = Nan::To<double>(info[1]).FromJust();
   Local<Function> callback_func = info[2].As<Function>();
   Nan::Callback *callback = new Callback(callback_func);
-  Channel *channel = ObjectWrap::Unwrap<Channel>(info.This());
   unique_ptr<OpVec> ops(new OpVec());
   grpc_channel_watch_connectivity_state(
       channel->wrapped_channel, last_state, MillisecondsToTimespec(deadline),
