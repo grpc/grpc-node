@@ -1538,7 +1538,7 @@ declare module "grpc" {
      * @param callback Called with no error when a state change, or with an
      *     error if the deadline passes without a state change.
      */
-    watchConnectivityState(currentState: connectivityState, deadline: Date|number, callback: (error?: Error) => void);
+    watchConnectivityState(currentState: connectivityState, deadline: Date|number, callback: (error?: Error) => void): void;
     /**
      * Create a call object. Call is an opaque type that is used by the Client
      * and Server classes. This function is called by the gRPC library when 
