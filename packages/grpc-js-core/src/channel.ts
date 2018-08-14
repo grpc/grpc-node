@@ -163,10 +163,8 @@ export class Http2Channel extends EventEmitter implements Channel {
   }
 
   private startConnecting(): void {
-    const secureContext = this.credentials.getSecureContext();
-    let connectionOptions: http2.SecureClientSessionOptions = {};
-    if (secureContext !== null) {
-      connectionOptions.secureContext = secureContext;
+    let connectionOptions: http2.SecureClientSessionOptions = this.credentials.getConnectionOptions() || {};
+    if (connectionOptions.secureContext !== null) {
       // If provided, the value of grpc.ssl_target_name_override should be used
       // to override the target hostname when checking server identity.
       // This option is used for testing only.
@@ -214,10 +212,10 @@ export class Http2Channel extends EventEmitter implements Channel {
       address: string, readonly credentials: ChannelCredentials,
       private readonly options: Partial<ChannelOptions>) {
     super();
-    if (credentials.getSecureContext() === null) {
-      this.target = new url.URL(`http://${address}`);
-    } else {
+    if (credentials.isSecure()) {
       this.target = new url.URL(`https://${address}`);
+    } else {
+      this.target = new url.URL(`http://${address}`);
     }
     // TODO(murgatroid99): Add more centralized handling of channel options
     if (this.options['grpc.default_authority']) {
