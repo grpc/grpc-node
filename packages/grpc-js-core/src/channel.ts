@@ -213,9 +213,9 @@ export class Http2Channel extends EventEmitter implements Channel {
       private readonly options: Partial<ChannelOptions>) {
     super();
     if (credentials.isSecure()) {
-      this.target = new url.URL(`http://${address}`);
-    } else {
       this.target = new url.URL(`https://${address}`);
+    } else {
+      this.target = new url.URL(`http://${address}`);
     }
     // TODO(murgatroid99): Add more centralized handling of channel options
     if (this.options['grpc.default_authority']) {
