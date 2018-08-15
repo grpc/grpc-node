@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 
 import {CallOptions} from './call-stream';
-import {ChannelOptions} from './channel';
+import {ChannelOptions} from './channel-options';
 import {ChannelCredentials} from './channel-credentials';
 import {Client, UnaryCallback} from './client';
 import {Metadata} from './metadata';

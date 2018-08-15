@@ -5,7 +5,7 @@ import { EventEmitter } from "events";
 import { Metadata } from "./metadata";
 import { CallStream, CallOptions, Http2CallStream } from "./call-stream";
 import { EmitterAugmentation1, EmitterAugmentation0 } from "./events";
-import { ChannelOptions } from './channel';
+import { ChannelOptions } from './channel-options';
 
 const {
   HTTP2_HEADER_AUTHORITY,
