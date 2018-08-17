@@ -1137,11 +1137,11 @@ declare module "grpc" {
      * Indicates which properties of a parent call should propagate to this
      * call. Bitwise combination of flags in `grpc.propagate`.
      */
-    propagate_flags: number;
+    propagate_flags?: number;
     /**
      * The credentials that should be used to make this particular call.
      */
-    credentials: CallCredentials;
+    credentials?: CallCredentials;
     /**
      * Additional custom call options. These can be used to pass additional
      * data per-call to client interceptors
