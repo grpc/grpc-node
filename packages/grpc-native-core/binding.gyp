@@ -91,7 +91,7 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=0',
       'GRPC_UV',
-      'GRPC_NODE_VERSION="1.15.0-dev"'
+      'GRPC_NODE_VERSION="1.14.1"'
     ],
     'conditions': [
       ['grpc_gcov=="true"', {
