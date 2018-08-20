@@ -3,10 +3,11 @@ import {URL} from 'url';
 
 import {ClientDuplexStream, ClientDuplexStreamImpl, ClientReadableStream, ClientReadableStreamImpl, ClientUnaryCall, ClientUnaryCallImpl, ClientWritableStream, ClientWritableStreamImpl, ServiceError} from './call';
 import {CallOptions, CallStream, StatusObject, WriteObject} from './call-stream';
-import {Channel, ChannelOptions, Http2Channel} from './channel';
+import {Channel, Http2Channel} from './channel';
 import {ChannelCredentials} from './channel-credentials';
 import {Status} from './constants';
 import {Metadata} from './metadata';
+import {ChannelOptions} from './channel-options';
 
 // This symbol must be exported (for now).
 // See: https://github.com/Microsoft/TypeScript/issues/20080

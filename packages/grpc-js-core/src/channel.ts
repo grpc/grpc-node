@@ -14,6 +14,7 @@ import {FilterStackFactory} from './filter-stack';
 import {Metadata, MetadataObject} from './metadata';
 import {MetadataStatusFilterFactory} from './metadata-status-filter';
 import { Http2SubChannel } from './subchannel';
+import {ChannelOptions, recognizedOptions} from './channel-options';
 
 const {version: clientVersion} = require('../../package');
 
@@ -34,19 +35,6 @@ const {
   HTTP2_HEADER_TE,
   HTTP2_HEADER_USER_AGENT
 } = http2.constants;
-
-/**
- * An interface that contains options used when initializing a Channel instance.
- */
-export interface ChannelOptions {
-  'grpc.ssl_target_name_override': string;
-  'grpc.primary_user_agent': string;
-  'grpc.secondary_user_agent': string;
-  'grpc.default_authority': string;
-  'grpc.keepalive_time_ms': number;
-  'grpc.keepalive_timeout_ms': number;
-  [key: string]: string|number;
-}
 
 export enum ConnectivityState {
   CONNECTING,
@@ -212,6 +200,13 @@ export class Http2Channel extends EventEmitter implements Channel {
       address: string, readonly credentials: ChannelCredentials,
       private readonly options: Partial<ChannelOptions>) {
     super();
+    for (let option in options) {
+      if (options.hasOwnProperty(option)) {
+        if (!recognizedOptions.hasOwnProperty(option)) {
+          console.warn(`Unrecognized channel argument '${option}' will be ignored.`);
+        }
+      }
+    }
     if (credentials.isSecure()) {
       this.target = new url.URL(`https://${address}`);
     } else {
