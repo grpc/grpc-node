@@ -462,7 +462,14 @@ describe('client credentials', function() {
     server_with_client_creds.addService(proto.TestService.service, {
       unary: function(call, cb) {
         var context = call.getAuthContext();
-        console.log(context);
+        assert.strictEqual(context.transportSecurityType, 'ssl');
+        var raw_certificate = context.sslPeerCertificate.raw;
+        var expected_der = new Buffer(forge.asn1.toDer(
+            forge.pki.certificateToAsn1(forge.pki.certificateFromPem(cpem_data)))
+            .getBytes(), 'binary');
+        assert.equal(raw_certificate.toString('hex'), expected_der.toString('hex'));
+        assert.equal(Object.keys(context).length, 2);
+        assert.equal(Object.keys(context.sslPeerCertificate).length, 1);
         cb(null, {});
       }
     });
