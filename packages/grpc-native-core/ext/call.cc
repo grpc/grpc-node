@@ -748,7 +748,15 @@ NAN_METHOD(Call::GetAuthContext) {
     while ((property = grpc_auth_property_iterator_next(&it))) {
       Local<String> name = Nan::New<String>(property->name).ToLocalChecked();
       Local<String> value = Nan::New<String>(property->value, property->value_length).ToLocalChecked();
-      obj->Set(name, value);
+      Local<Array> array;
+      MaybeLocal<Value> maybe_array = Nan::Get(obj, name);
+      if (maybe_array.IsEmpty() || !maybe_array.ToLocalChecked()->IsArray()) {
+        array = Nan::New<Array>(0);
+        Nan::Set(obj, name, array);
+      } else {
+        array = Local<Array>::Cast(maybe_array.ToLocalChecked());
+      }
+      Nan::Set(array, array->Length(), value);
     }
     info.GetReturnValue().Set(obj);
     grpc_auth_context_release(auth_ctx);
