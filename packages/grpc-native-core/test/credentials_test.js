@@ -65,14 +65,18 @@ var fakeFailingGoogleCredentials = {
   }
 };
 
-var key_data, pem_data, ca_data;
+var skey_data, spem_data, ckey_data, cpem_data, ca_data;
 
 before(function() {
-  var key_path = path.join(__dirname, '/data/server1.key');
-  var pem_path = path.join(__dirname, '/data/server1.pem');
+  var skey_path = path.join(__dirname, '/data/server1.key');
+  var spem_path = path.join(__dirname, '/data/server1.pem');
+  var ckey_path = path.join(__dirname, '/data/client.key');
+  var cpem_path = path.join(__dirname, '/data/client.pem');
   var ca_path = path.join(__dirname, '/data/ca.pem');
-  key_data = fs.readFileSync(key_path);
-  pem_data = fs.readFileSync(pem_path);
+  skey_data = fs.readFileSync(skey_path);
+  spem_data = fs.readFileSync(spem_path);
+  ckey_data = fs.readFileSync(ckey_path);
+  cpem_data = fs.readFileSync(cpem_path);
   ca_data = fs.readFileSync(ca_path);
 });
 
@@ -95,14 +99,14 @@ describe('channel credentials', function() {
     it('works with 3 Buffer arguments', function() {
       var creds;
       assert.doesNotThrow(function() {
-        creds = grpc.credentials.createSsl(ca_data, key_data, pem_data);
+        creds = grpc.credentials.createSsl(ca_data, skey_data, spem_data);
       });
       assert.notEqual(creds, null);
     });
     it('works if the first argument is null', function() {
       var creds;
       assert.doesNotThrow(function() {
-        creds = grpc.credentials.createSsl(null, key_data, pem_data);
+        creds = grpc.credentials.createSsl(null, skey_data, spem_data);
       });
       assert.notEqual(creds, null);
     });
@@ -113,20 +117,20 @@ describe('channel credentials', function() {
     });
     it('fails if the second argument is a non-Buffer value', function() {
       assert.throws(function() {
-        grpc.credentials.createSsl(null, 'test', pem_data);
+        grpc.credentials.createSsl(null, 'test', spem_data);
       }, TypeError);
     });
     it('fails if the third argument is a non-Buffer value', function() {
       assert.throws(function() {
-        grpc.credentials.createSsl(null, key_data, 'test');
+        grpc.credentials.createSsl(null, skey_data, 'test');
       }, TypeError);
     });
     it('fails if only 1 of the last 2 arguments is provided', function() {
       assert.throws(function() {
-        grpc.credentials.createSsl(null, key_data);
+        grpc.credentials.createSsl(null, skey_data);
       });
       assert.throws(function() {
-        grpc.credentials.createSsl(null, null, pem_data);
+        grpc.credentials.createSsl(null, null, spem_data);
       });
     });
     it('works if the fourth argument is an empty object', function() {
@@ -171,8 +175,8 @@ describe('server credentials', function() {
       var creds;
       assert.doesNotThrow(function() {
         creds = grpc.ServerCredentials.createSsl(null,
-                                                 [{private_key: key_data,
-                                                   cert_chain: pem_data}]);
+                                                 [{private_key: skey_data,
+                                                   cert_chain: spem_data}]);
       });
       assert.notEqual(creds, null);
     });
@@ -180,10 +184,10 @@ describe('server credentials', function() {
       var creds;
       assert.doesNotThrow(function() {
         creds = grpc.ServerCredentials.createSsl(null,
-                                                 [{private_key: key_data,
-                                                   cert_chain: pem_data},
-                                                  {private_key: key_data,
-                                                   cert_chain: pem_data}]);
+                                                 [{private_key: skey_data,
+                                                   cert_chain: spem_data},
+                                                  {private_key: skey_data,
+                                                   cert_chain: spem_data}]);
       });
       assert.notEqual(creds, null);
     });
@@ -211,13 +215,13 @@ describe('server credentials', function() {
       assert.throws(function() {
         grpc.ServerCredentials.createSsl(null,
                                          [{private_key: 'test',
-                                           cert_chain: pem_data}]);
+                                           cert_chain: spem_data}]);
       }, TypeError);
     });
     it('fails if the object does not have a Buffer cert_chain', function() {
       assert.throws(function() {
         grpc.ServerCredentials.createSsl(null,
-                                         [{private_key: key_data,
+                                         [{private_key: skey_data,
                                            cert_chain: 'test'}]);
       }, TypeError);
     });
@@ -230,8 +234,10 @@ describe('client credentials', function() {
   var port;
   var client_ssl_creds;
   var client_options = {};
+  var proto;
+  var server_creds;
   before(function() {
-    var proto = grpc.load(__dirname + '/test_service.proto');
+    proto = grpc.load(__dirname + '/test_service.proto');
     server = new grpc.Server();
     server.addService(proto.TestService.service, {
       unary: function(call, cb) {
@@ -257,10 +263,10 @@ describe('client credentials', function() {
         });
       }
     });
-    var creds = grpc.ServerCredentials.createSsl(null,
-                                                 [{private_key: key_data,
-                                                   cert_chain: pem_data}]);
-    port = server.bind('localhost:0', creds);
+    server_creds = grpc.ServerCredentials.createSsl(null,
+                                                    [{private_key: skey_data,
+                                                      cert_chain: spem_data}]);
+    port = server.bind('localhost:0', server_creds);
     server.start();
 
     Client = proto.TestService;
@@ -296,7 +302,7 @@ describe('client credentials', function() {
 
       // The roundabout forge APIs for converting PEM to a node DER Buffer
       var expected_der = new Buffer(forge.asn1.toDer(
-          forge.pki.certificateToAsn1(forge.pki.certificateFromPem(pem_data)))
+          forge.pki.certificateToAsn1(forge.pki.certificateFromPem(spem_data)))
           .getBytes(), 'binary');
 
       // Assert the buffers are equal by converting them to hex strings
@@ -444,6 +450,30 @@ describe('client credentials', function() {
       assert.strictEqual(err.details,
                          'Getting metadata from plugin failed with error: ' +
                          'Authentication failure');
+      done();
+    });
+  });
+  it('should be able to call getAuthContext on a call', function(done) {
+    var full_server_creds = grpc.ServerCredentials.createSsl(ca_data,
+                                                             [{private_key: skey_data,
+                                                               cert_chain: spem_data}],
+                                                             true);
+    var server_with_client_creds = new grpc.Server();
+    server_with_client_creds.addService(proto.TestService.service, {
+      unary: function(call, cb) {
+        var context = call.getAuthContext();
+        console.log(context);
+        cb(null, {});
+      }
+    });
+    var port = server_with_client_creds.bind('localhost:0', full_server_creds);
+    server_with_client_creds.start();
+
+    var full_client_creds = grpc.credentials.createSsl(ca_data, ckey_data, cpem_data);
+    var full_client = new Client('localhost:' + port, full_client_creds,
+                                 client_options);
+    full_client.unary({}, function(err, data) {
+      assert.ifError(err);
       done();
     });
   });
