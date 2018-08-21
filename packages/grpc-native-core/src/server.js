@@ -510,6 +510,21 @@ ServerWritableStream.prototype.getPeer = getPeer;
 ServerDuplexStream.prototype.getPeer = getPeer;
 
 /**
+ * Get the authentication context this call/stream currently has.
+ * @alias grpc~ServerUnaryCall#getAuthContext
+ * @return {(Object|Null)} The list of authentication properties
+ */
+function getAuthContext() {
+  /* jshint validthis: true */
+  return this.call.getAuthContext();
+}
+
+ServerUnaryCall.prototype.getAuthContext = getAuthContext;
+ServerReadableStream.prototype.getAuthContext = getAuthContext;
+ServerWritableStream.prototype.getAuthContext = getAuthContext;
+ServerDuplexStream.prototype.getAuthContext = getAuthContext;
+
+/**
  * Wait for the client to close, then emit a cancelled event if the client
  * cancelled.
  * @private

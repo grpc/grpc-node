@@ -525,6 +525,7 @@ void Call::Init(Local<Object> exports) {
   Nan::SetPrototypeMethod(tpl, "cancel", Cancel);
   Nan::SetPrototypeMethod(tpl, "cancelWithStatus", CancelWithStatus);
   Nan::SetPrototypeMethod(tpl, "getPeer", GetPeer);
+  Nan::SetPrototypeMethod(tpl, "getAuthContext", GetAuthContext);
   Nan::SetPrototypeMethod(tpl, "setCredentials", SetCredentials);
   fun_tpl.Reset(tpl);
   Local<Function> ctr = Nan::GetFunction(tpl).ToLocalChecked();
@@ -729,6 +730,31 @@ NAN_METHOD(Call::GetPeer) {
   Call *call = ObjectWrap::Unwrap<Call>(info.This());
   Local<Value> peer_value = Nan::New(call->peer).ToLocalChecked();
   info.GetReturnValue().Set(peer_value);
+}
+
+NAN_METHOD(Call::GetAuthContext) {
+  Nan::HandleScope scope;
+  if (!HasInstance(info.This())) {
+    return Nan::ThrowTypeError("getAuthContext can only be called on Call objects");
+  }
+
+  Call *call = ObjectWrap::Unwrap<Call>(info.This());
+  grpc_auth_context *auth_ctx = grpc_call_auth_context(call->wrapped_call);
+  if (auth_ctx) {
+    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+    grpc_auth_property_iterator it;
+    it = grpc_auth_context_property_iterator(auth_ctx);
+    const grpc_auth_property* property = NULL;
+    while ((property = grpc_auth_property_iterator_next(&it))) {
+      Local<String> name = Nan::New<String>(property->name).ToLocalChecked();
+      Local<String> value = Nan::New<String>(property->value, property->value_length).ToLocalChecked();
+      obj->Set(name, value);
+    }
+    info.GetReturnValue().Set(obj);
+    grpc_auth_context_release(auth_ctx);
+  } else {
+    info.GetReturnValue().Set(Nan::Null());
+  }
 }
 
 NAN_METHOD(Call::SetCredentials) {
