@@ -484,6 +484,27 @@ describe('client credentials', function() {
       done();
     });
   });
+  it('should be able to call getAuthContext on an insecure call', function(done) {
+    var insecure_server_creds = grpc.ServerCredentials.createInsecure();
+    var insecure_server = new grpc.Server();
+    insecure_server.addService(proto.TestService.service, {
+      unary: function(call, cb) {
+        var context = call.getAuthContext();
+        assert.equal(Object.keys(context).length, 0);
+        cb(null, {});
+      }
+    });
+    var port = insecure_server.bind('localhost:0', insecure_server_creds);
+    insecure_server.start();
+
+    var insecure_client_creds = grpc.credentials.createInsecure();
+    var insecure_client = new Client('localhost:' + port, insecure_client_creds,
+                                     client_options);
+    insecure_client.unary({}, function(err, data) {
+      assert.ifError(err);
+      done();
+    });
+  });
   describe('Per-rpc creds', function() {
     var client;
     var updater_creds;
