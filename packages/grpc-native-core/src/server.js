@@ -514,9 +514,34 @@ ServerDuplexStream.prototype.getPeer = getPeer;
  * @alias grpc~ServerUnaryCall#getAuthContext
  * @return {(Object|Null)} The list of authentication properties
  */
+function getAuthContextSingleton(property) {
+  if (property.value.length !== 1) {
+    throw new Error('property ' + property.name + ' isn\'t a singleton');
+  }
+  return { name: property.name, value: property.value[0] };
+}
+
+const getAuthContextMapping = {
+  transportSecurityType: getAuthContextSingleton,
+  x509PemCert: function(property) {
+    property = getAuthContextSingleton(property);
+    var cert = common.pemCertificateToRaw(property.value);
+    if (cert instanceof Error) throw cert;
+    return { name: 'sslPeerCertificate', value: { raw: cert } };
+  }
+}
+
 function getAuthContext() {
   /* jshint validthis: true */
-  return this.call.getAuthContext();
+  var authContext = this.call.getAuthContext();
+  return _.reduce(authContext, function(obj, value, key) {
+    key = _.camelCase(key);
+    var transform = getAuthContextMapping[key];
+    if (!transform) return obj;
+    var transformed = transform({ name: key, value: value });
+    obj[transformed.name] = transformed.value;
+    return obj;
+  }, {});
 }
 
 ServerUnaryCall.prototype.getAuthContext = getAuthContext;
