@@ -2,7 +2,7 @@ import {EventEmitter} from 'events';
 import * as _ from 'lodash';
 import {Duplex, Readable, Writable} from 'stream';
 
-import {CallStream, StatusObject, WriteObject} from './call-stream';
+import {Call, StatusObject, WriteObject} from './call-stream';
 import {Status} from './constants';
 import {EmitterAugmentation1} from './events';
 import {Metadata} from './metadata';
@@ -16,7 +16,7 @@ export type ServiceError = StatusObject&Error;
 /**
  * A base type for all user-facing values returned by client-side method calls.
  */
-export type Call = {
+export type SurfaceCall = {
   cancel(): void; getPeer(): string;
 }&EmitterAugmentation1<'metadata', Metadata>&
     EmitterAugmentation1<'status', StatusObject>&EventEmitter;
@@ -24,21 +24,21 @@ export type Call = {
 /**
  * A type representing the return value of a unary method call.
  */
-export type ClientUnaryCall = Call;
+export type ClientUnaryCall = SurfaceCall;
 
 /**
  * A type representing the return value of a server stream method call.
  */
 export type ClientReadableStream<ResponseType> = {
   deserialize: (chunk: Buffer) => ResponseType;
-}&Call&ObjectReadable<ResponseType>;
+}&SurfaceCall&ObjectReadable<ResponseType>;
 
 /**
  * A type representing the return value of a client stream method call.
  */
 export type ClientWritableStream<RequestType> = {
   serialize: (value: RequestType) => Buffer;
-}&Call&ObjectWritable<RequestType>;
+}&SurfaceCall&ObjectWritable<RequestType>;
 
 /**
  * A type representing the return value of a bidirectional stream method call.
@@ -48,7 +48,7 @@ export type ClientDuplexStream<RequestType, ResponseType> =
 
 export class ClientUnaryCallImpl extends EventEmitter implements
     ClientUnaryCall {
-  constructor(private readonly call: CallStream) {
+  constructor(private readonly call: Call) {
     super();
     call.on('metadata', (metadata: Metadata) => {
       this.emit('metadata', metadata);
@@ -68,7 +68,7 @@ export class ClientUnaryCallImpl extends EventEmitter implements
 }
 
 function setUpReadableStream<ResponseType>(
-    stream: ClientReadableStream<ResponseType>, call: CallStream,
+    stream: ClientReadableStream<ResponseType>, call: Call,
     deserialize: (chunk: Buffer) => ResponseType): void {
   call.on('data', (data: Buffer) => {
     let deserialized: ResponseType;
@@ -101,7 +101,7 @@ function setUpReadableStream<ResponseType>(
 export class ClientReadableStreamImpl<ResponseType> extends Readable implements
     ClientReadableStream<ResponseType> {
   constructor(
-      private readonly call: CallStream,
+      private readonly call: Call,
       readonly deserialize: (chunk: Buffer) => ResponseType) {
     super({objectMode: true});
     call.on('metadata', (metadata: Metadata) => {
@@ -124,7 +124,7 @@ export class ClientReadableStreamImpl<ResponseType> extends Readable implements
 }
 
 function tryWrite<RequestType>(
-    call: CallStream, serialize: (value: RequestType) => Buffer,
+    call: Call, serialize: (value: RequestType) => Buffer,
     chunk: RequestType, encoding: string, cb: Function) {
   let message: Buffer;
   const flags: number = Number(encoding);
@@ -145,7 +145,7 @@ function tryWrite<RequestType>(
 export class ClientWritableStreamImpl<RequestType> extends Writable implements
     ClientWritableStream<RequestType> {
   constructor(
-      private readonly call: CallStream,
+      private readonly call: Call,
       readonly serialize: (value: RequestType) => Buffer) {
     super({objectMode: true});
     call.on('metadata', (metadata: Metadata) => {
@@ -177,7 +177,7 @@ export class ClientWritableStreamImpl<RequestType> extends Writable implements
 export class ClientDuplexStreamImpl<RequestType, ResponseType> extends Duplex
     implements ClientDuplexStream<RequestType, ResponseType> {
   constructor(
-      private readonly call: CallStream,
+      private readonly call: Call,
       readonly serialize: (value: RequestType) => Buffer,
       readonly deserialize: (chunk: Buffer) => ResponseType) {
     super({objectMode: true});

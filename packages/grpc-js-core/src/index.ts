@@ -7,6 +7,7 @@ import {Client} from './client';
 import {Status} from './constants';
 import {loadPackageDefinition, makeClientConstructor} from './make-client';
 import {Metadata} from './metadata';
+import { Channel } from './channel';
 
 interface IndexedObject {
   [key: string]: any;
@@ -105,7 +106,8 @@ export {
   Client,
   loadPackageDefinition,
   makeClientConstructor,
-  makeClientConstructor as makeGenericClientConstructor
+  makeClientConstructor as makeGenericClientConstructor,
+  Channel
 };
 
 /**
@@ -116,7 +118,7 @@ export const closeClient = (client: Client) => client.close();
 
 export const waitForClientReady =
     (client: Client, deadline: Date|number,
-     callback: (error: Error|null) => void) =>
+     callback: (error?: Error) => void) =>
         client.waitForReady(deadline, callback);
 
 /**** Unimplemented function stubs ****/
@@ -155,8 +157,8 @@ export const ServerCredentials = {
   }
 };
 
-export const getClientChannel = (client: any) => {
-  throw new Error('Not available in this library');
+export const getClientChannel = (client: Client) => {
+  return Client.prototype.getChannel.call(client);
 };
 
 export const StatusBuilder = () => {

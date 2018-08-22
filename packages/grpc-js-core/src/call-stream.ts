@@ -8,6 +8,8 @@ import {Filter} from './filter';
 import {FilterStackFactory} from './filter-stack';
 import {Metadata} from './metadata';
 import {ObjectDuplex, WriteCallback} from './object-stream';
+import { Meta } from 'orchestrator';
+import { Channel, Http2Channel } from './channel';
 
 const {HTTP2_HEADER_STATUS, HTTP2_HEADER_CONTENT_TYPE, NGHTTP2_CANCEL} =
     http2.constants;
@@ -16,12 +18,12 @@ export type Deadline = Date|number;
 
 export interface CallStreamOptions {
   deadline: Deadline;
-  credentials: CallCredentials;
   flags: number;
   host: string;
+  parentCall: Call | null;
 }
 
-export type CallOptions = Partial<CallStreamOptions>;
+export type PartialCallStreamOptions = Partial<CallStreamOptions>;
 
 export interface StatusObject {
   code: Status;
@@ -43,11 +45,13 @@ export interface WriteObject {
 /**
  * This interface represents a duplex stream associated with a single gRPC call.
  */
-export type CallStream = {
+export type Call = {
   cancelWithStatus(status: Status, details: string): void; getPeer(): string;
+  sendMetadata(metadata: Metadata): void;
 
   getDeadline(): Deadline;
   getCredentials(): CallCredentials;
+  setCredentials(credentials: CallCredentials): void;
   /* If the return value is null, the call has not ended yet. Otherwise, it has
    * ended with the specified status */
   getStatus(): StatusObject | null;
@@ -65,7 +69,8 @@ enum ReadState {
 
 const emptyBuffer = Buffer.alloc(0);
 
-export class Http2CallStream extends Duplex implements CallStream {
+export class Http2CallStream extends Duplex implements Call {
+  credentials: CallCredentials = CallCredentials.createEmpty();
   filterStack: Filter;
   private statusEmitted = false;
   private http2Stream: http2.ClientHttp2Stream|null = null;
@@ -103,6 +108,7 @@ export class Http2CallStream extends Duplex implements CallStream {
 
   constructor(
       private readonly methodName: string,
+      private readonly channel: Http2Channel,
       private readonly options: CallStreamOptions,
       filterStackFactory: FilterStackFactory) {
     super({objectMode: true});
@@ -377,6 +383,10 @@ export class Http2CallStream extends Duplex implements CallStream {
     }
   }
 
+  sendMetadata(metadata: Metadata): void {
+    this.channel._startHttp2Stream(this.options.host, this.methodName, this, metadata);
+  }
+
   private destroyHttp2Stream() {
     // The http2 stream could already have been destroyed if cancelWithStatus
     // is called in response to an internal http2 error.
@@ -402,7 +412,11 @@ export class Http2CallStream extends Duplex implements CallStream {
   }
 
   getCredentials(): CallCredentials {
-    return this.options.credentials;
+    return this.credentials;
+  }
+
+  setCredentials(credentials: CallCredentials): void {
+    this.credentials = credentials;
   }
 
   getStatus(): StatusObject|null {

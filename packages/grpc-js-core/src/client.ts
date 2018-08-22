@@ -2,12 +2,13 @@ import {once} from 'lodash';
 import {URL} from 'url';
 
 import {ClientDuplexStream, ClientDuplexStreamImpl, ClientReadableStream, ClientReadableStreamImpl, ClientUnaryCall, ClientUnaryCallImpl, ClientWritableStream, ClientWritableStreamImpl, ServiceError} from './call';
-import {CallOptions, CallStream, StatusObject, WriteObject} from './call-stream';
-import {Channel, Http2Channel} from './channel';
+import {PartialCallStreamOptions, Call, StatusObject, WriteObject, Deadline} from './call-stream';
+import {Channel, Http2Channel, ConnectivityState} from './channel';
 import {ChannelCredentials} from './channel-credentials';
 import {Status} from './constants';
 import {Metadata} from './metadata';
 import {ChannelOptions} from './channel-options';
+import { CallCredentials } from './call-credentials';
 
 // This symbol must be exported (for now).
 // See: https://github.com/Microsoft/TypeScript/issues/20080
@@ -17,6 +18,19 @@ export interface UnaryCallback<ResponseType> {
   (err: ServiceError|null, value?: ResponseType): void;
 }
 
+export interface CallOptions {
+  deadline?: Deadline,
+  host?: string,
+  parent?: Call,
+  propagate_flags?: number,
+  credentials?: CallCredentials
+}
+
+export type ClientOptions = Partial<ChannelOptions> & {
+  channelOverride?: Channel,
+  channelFactoryOverride?: (address: string, credentials: ChannelCredentials, options: ClientOptions) => Channel
+};
+
 /**
  * A generic gRPC client. Primarily useful as a base class for all generated
  * clients.
@@ -25,52 +39,53 @@ export class Client {
   private readonly[kChannel]: Channel;
   constructor(
       address: string, credentials: ChannelCredentials,
-      options: Partial<ChannelOptions> = {}) {
-    this[kChannel] = new Http2Channel(address, credentials, options);
+      options: ClientOptions = {}) {
+    if (options.channelOverride) {
+      this[kChannel] = options.channelOverride;
+    } else if (options.channelFactoryOverride) {
+      this[kChannel] = options.channelFactoryOverride(address, credentials, options);
+    } else {
+      this[kChannel] = new Http2Channel(address, credentials, options);
+    }
   }
 
   close(): void {
     this[kChannel].close();
   }
 
-  waitForReady(deadline: Date|number, callback: (error: Error|null) => void):
-      void {
-    const cb: (error: Error|null) => void = once(callback);
-    const callbackCalled = false;
-    let timer: NodeJS.Timer|null = null;
-    this[kChannel].connect().then(
-        () => {
-          if (timer) {
-            clearTimeout(timer);
+  getChannel(): Channel {
+    return this[kChannel];
+  }
+
+  waitForReady(deadline: Deadline, callback: (error?: Error) => void):
+    void {
+      const checkState = (err?: Error) => {
+        if (err) {
+          callback(new Error('Failed to connect before the deadline'));
+          return;
+        }
+        var new_state;
+        try {
+          new_state = this[kChannel].getConnectivityState(true);
+        } catch (e) {
+          callback(new Error('The channel has been closed'));
+          return;
+        }
+        if (new_state === ConnectivityState.READY) {
+          callback();
+        } else {
+          try {
+            this[kChannel].watchConnectivityState(new_state, deadline, checkState);
+          } catch (e) {
+            callback(new Error('The channel has been closed'));
           }
-          cb(null);
-        },
-        (err: Error) => {
-          // Rejection occurs if channel is shut down first.
-          if (timer) {
-            clearTimeout(timer);
-          }
-          cb(err);
-        });
-    if (deadline !== Infinity) {
-      let timeout: number;
-      const now: number = (new Date()).getTime();
-      if (deadline instanceof Date) {
-        timeout = deadline.getTime() - now;
-      } else {
-        timeout = deadline - now;
-      }
-      if (timeout < 0) {
-        timeout = 0;
-      }
-      timer = setTimeout(() => {
-        cb(new Error('Failed to connect before the deadline'));
-      }, timeout);
-    }
+        }
+      };
+      setImmediate(checkState);
   }
 
   private handleUnaryResponse<ResponseType>(
-      call: CallStream, deserialize: (value: Buffer) => ResponseType,
+      call: Call, deserialize: (value: Buffer) => ResponseType,
       callback: UnaryCallback<ResponseType>): void {
     let responseMessage: ResponseType|null = null;
     call.on('data', (data: Buffer) => {
@@ -157,11 +172,14 @@ export class Client {
     ({metadata, options, callback} =
          this.checkOptionalUnaryResponseArguments<ResponseType>(
              metadata, options, callback));
-    const call: CallStream =
-        this[kChannel].createStream(method, metadata, options);
+    const call: Call =
+        this[kChannel].createCall(method, options.deadline, options.host, options.parent, options.propagate_flags);
+    if (options.credentials) {
+      call.setCredentials(options.credentials);
+    }
     const message: Buffer = serialize(argument);
     const writeObj: WriteObject = {message};
-    writeObj.flags = options.flags;
+    call.sendMetadata(metadata);
     call.write(writeObj);
     call.end();
     this.handleUnaryResponse<ResponseType>(call, deserialize, callback);
@@ -195,8 +213,12 @@ export class Client {
     ({metadata, options, callback} =
          this.checkOptionalUnaryResponseArguments<ResponseType>(
              metadata, options, callback));
-    const call: CallStream =
-        this[kChannel].createStream(method, metadata, options);
+    const call: Call =
+        this[kChannel].createCall(method, options.deadline, options.host, options.parent, options.propagate_flags);
+    if (options.credentials) {
+      call.setCredentials(options.credentials);
+    }
+    call.sendMetadata(metadata);
     this.handleUnaryResponse<ResponseType>(call, deserialize, callback);
     return new ClientWritableStreamImpl<RequestType>(call, serialize);
   }
@@ -239,11 +261,14 @@ export class Client {
       metadata?: Metadata|CallOptions,
       options?: CallOptions): ClientReadableStream<ResponseType> {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
-    const call: CallStream =
-        this[kChannel].createStream(method, metadata, options);
+    const call: Call =
+        this[kChannel].createCall(method, options.deadline, options.host, options.parent, options.propagate_flags);
+    if (options.credentials) {
+      call.setCredentials(options.credentials);
+    }
     const message: Buffer = serialize(argument);
     const writeObj: WriteObject = {message};
-    writeObj.flags = options.flags;
+    call.sendMetadata(metadata);
     call.write(writeObj);
     call.end();
     return new ClientReadableStreamImpl<ResponseType>(call, deserialize);
@@ -263,8 +288,12 @@ export class Client {
       metadata?: Metadata|CallOptions,
       options?: CallOptions): ClientDuplexStream<RequestType, ResponseType> {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
-    const call: CallStream =
-        this[kChannel].createStream(method, metadata, options);
+    const call: Call =
+        this[kChannel].createCall(method, options.deadline, options.host, options.parent, options.propagate_flags);
+    if (options.credentials) {
+      call.setCredentials(options.credentials);
+    }
+    call.sendMetadata(metadata);
     return new ClientDuplexStreamImpl<RequestType, ResponseType>(
         call, serialize, deserialize);
   }

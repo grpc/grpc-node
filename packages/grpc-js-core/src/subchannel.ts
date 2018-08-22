@@ -3,7 +3,7 @@ import * as url from 'url';
 
 import { EventEmitter } from "events";
 import { Metadata } from "./metadata";
-import { CallStream, CallOptions, Http2CallStream } from "./call-stream";
+import { Call, PartialCallStreamOptions, Http2CallStream } from "./call-stream";
 import { EmitterAugmentation1, EmitterAugmentation0 } from "./events";
 import { ChannelOptions } from './channel-options';
 
@@ -29,7 +29,7 @@ export interface SubChannel extends EventEmitter {
    * @param headers The headers to start the stream with
    * @param callStream The stream to start
    */
-  startCallStream(metadata: Metadata, callStream: CallStream): void;
+  startCallStream(metadata: Metadata, callStream: Call): void;
   close(): void;
 }
 
