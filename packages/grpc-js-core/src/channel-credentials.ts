@@ -61,7 +61,7 @@ export abstract class ChannelCredentials {
   /**
    * Gets the set of per-call credentials associated with this instance.
    */
-  getCallCredentials(): CallCredentials {
+  _getCallCredentials(): CallCredentials {
     return this.callCredentials;
   }
 
@@ -70,12 +70,12 @@ export abstract class ChannelCredentials {
    * instance was created with createSsl, or null if this instance was created
    * with createInsecure.
    */
-  abstract getConnectionOptions(): ConnectionOptions|null;
+  abstract _getConnectionOptions(): ConnectionOptions|null;
 
   /**
    * Indicates whether this credentials object creates a secure channel.
    */
-  abstract isSecure(): boolean;
+  abstract _isSecure(): boolean;
 
   /**
    * Return a new ChannelCredentials instance with a given set of credentials.
@@ -132,10 +132,10 @@ class InsecureChannelCredentialsImpl extends ChannelCredentials {
     throw new Error('Cannot compose insecure credentials');
   }
 
-  getConnectionOptions(): ConnectionOptions|null {
+  _getConnectionOptions(): ConnectionOptions|null {
     return null;
   }
-  isSecure(): boolean {
+  _isSecure(): boolean {
     return false;
   }
 }
@@ -155,10 +155,10 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
         this.connectionOptions, combinedCallCredentials);
   }
 
-  getConnectionOptions(): ConnectionOptions|null {
+  _getConnectionOptions(): ConnectionOptions|null {
     return this.connectionOptions;
   }
-  isSecure(): boolean {
+  _isSecure(): boolean {
     return true;
   }
 }

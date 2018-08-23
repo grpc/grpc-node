@@ -177,7 +177,7 @@ export class Http2Channel extends EventEmitter implements Channel {
   }
 
   private startConnecting(): void {
-    let connectionOptions: http2.SecureClientSessionOptions = this.credentials.getConnectionOptions() || {};
+    let connectionOptions: http2.SecureClientSessionOptions = this.credentials._getConnectionOptions() || {};
     if (connectionOptions.secureContext !== null) {
       // If provided, the value of grpc.ssl_target_name_override should be used
       // to override the target hostname when checking server identity.
@@ -233,7 +233,7 @@ export class Http2Channel extends EventEmitter implements Channel {
         }
       }
     }
-    if (credentials.isSecure()) {
+    if (credentials._isSecure()) {
       this.target = new url.URL(`https://${address}`);
     } else {
       this.target = new url.URL(`http://${address}`);

@@ -38,7 +38,7 @@ export class CallCredentialsFilterFactory implements
     FilterFactory<CallCredentialsFilter> {
   private readonly credentials: CallCredentials;
   constructor(channel: Http2Channel) {
-    this.credentials = channel.credentials.getCallCredentials();
+    this.credentials = channel.credentials._getCallCredentials();
   }
 
   createFilter(callStream: Call): CallCredentialsFilter {
