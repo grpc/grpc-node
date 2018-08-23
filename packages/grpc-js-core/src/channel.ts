@@ -5,7 +5,7 @@ import * as url from 'url';
 
 import {CallCredentials} from './call-credentials';
 import {CallCredentialsFilterFactory} from './call-credentials-filter';
-import {CallOptions, CallStream, CallStreamOptions, Http2CallStream} from './call-stream';
+import {PartialCallStreamOptions, Call, CallStreamOptions, Http2CallStream, Deadline} from './call-stream';
 import {ChannelCredentials} from './channel-credentials';
 import {CompressionFilterFactory} from './compression-filter';
 import {Status} from './constants';
@@ -55,22 +55,48 @@ function uniformRandom(min: number, max: number) {
  * An interface that represents a communication channel to a server specified
  * by a given address.
  */
-export interface Channel extends EventEmitter {
-  createStream(methodName: string, metadata: Metadata, options: CallOptions):
-      CallStream;
-  connect(): Promise<void>;
-  getConnectivityState(): ConnectivityState;
+export interface Channel {
+  /**
+   * Close the channel. This has the same functionality as the existing grpc.Client.prototype.close
+   */
   close(): void;
-
-  /* tslint:disable:no-any */
-  addListener(event: string, listener: Function): this;
-  emit(event: string|symbol, ...args: any[]): boolean;
-  on(event: string, listener: Function): this;
-  once(event: string, listener: Function): this;
-  prependListener(event: string, listener: Function): this;
-  prependOnceListener(event: string, listener: Function): this;
-  removeListener(event: string, listener: Function): this;
-  /* tslint:enable:no-any */
+  /**
+   * Return the target that this channel connects to
+   */
+  getTarget(): string;
+  /**
+   * Get the channel's current connectivity state. This method is here mainly
+   * because it is in the existing internal Channel class, and there isn't
+   * another good place to put it.
+   * @param tryToConnect If true, the channel will start connecting if it is
+   *     idle. Otherwise, idle channels will only start connecting when a
+   *     call starts.
+   */
+  getConnectivityState(tryToConnect: boolean): ConnectivityState;
+  /**
+   * Watch for connectivity state changes. This is also here mainly because
+   * it is in the existing external Channel class.
+   * @param currentState The state to watch for transitions from. This should
+   *     always be populated by calling getConnectivityState immediately
+   *     before.
+   * @param deadline A deadline for waiting for a state change
+   * @param callback Called with no error when a state change, or with an
+   *     error if the deadline passes without a state change.
+   */
+  watchConnectivityState(currentState: ConnectivityState, deadline: Date|number, callback: (error?: Error) => void): void;
+  /**
+   * Create a call object. Call is an opaque type that is used by the Client
+   * class. This function is called by the gRPC library when starting a
+   * request. Implementers should return an instance of Call that is returned
+   * from calling createCall on an instance of the provided Channel class.
+   * @param method The full method string to request.
+   * @param deadline The call deadline
+   * @param host A host string override for making the request
+   * @param parentCall A server call to propagate some information from
+   * @param propagateFlags A bitwise combination of elements of grpc.propagate
+   *     that indicates what information to propagate from parentCall.
+   */
+  createCall(method: string, deadline: Deadline|null|undefined, host: string|null|undefined, parentCall: Call|null|undefined, propagateFlags: number|null|undefined): Call;
 }
 
 export class Http2Channel extends EventEmitter implements Channel {
@@ -234,7 +260,7 @@ export class Http2Channel extends EventEmitter implements Channel {
     ].filter(e => e).join(' ');  // remove falsey values first
   }
 
-  private startHttp2Stream(
+  _startHttp2Stream(
       authority: string, methodName: string, stream: Http2CallStream,
       metadata: Metadata) {
     const finalMetadata: Promise<Metadata> =
@@ -255,7 +281,7 @@ export class Http2Channel extends EventEmitter implements Channel {
             /* In this case, we lost the connection while finalizing
              * metadata. That should be very unusual */
             setImmediate(() => {
-              this.startHttp2Stream(authority, methodName, stream, metadata);
+              this._startHttp2Stream(authority, methodName, stream, metadata);
             });
           }
         })
@@ -268,20 +294,19 @@ export class Http2Channel extends EventEmitter implements Channel {
         });
   }
 
-  createStream(methodName: string, metadata: Metadata, options: CallOptions):
-      CallStream {
+  createCall(method: string, deadline: Deadline|null|undefined, host: string|null|undefined, parentCall: Call|null|undefined, propagateFlags: number|null|undefined):
+      Call {
     if (this.connectivityState === ConnectivityState.SHUTDOWN) {
       throw new Error('Channel has been shut down');
     }
     const finalOptions: CallStreamOptions = {
-      deadline: options.deadline === undefined ? Infinity : options.deadline,
-      credentials: options.credentials || CallCredentials.createEmpty(),
-      flags: options.flags || 0,
-      host: options.host || this.defaultAuthority
+      deadline: (deadline === null || deadline == undefined) ? Infinity : deadline,
+      flags: propagateFlags || 0,
+      host: host || this.defaultAuthority,
+      parentCall: parentCall || null
     };
     const stream: Http2CallStream =
-        new Http2CallStream(methodName, finalOptions, this.filterStackFactory);
-    this.startHttp2Stream(finalOptions.host, methodName, stream, metadata);
+        new Http2CallStream(method, this, finalOptions, this.filterStackFactory);
     return stream;
   }
 
@@ -289,7 +314,7 @@ export class Http2Channel extends EventEmitter implements Channel {
    * Attempts to connect, returning a Promise that resolves when the connection
    * is successful, or rejects if the channel is shut down.
    */
-  connect(): Promise<void> {
+  private connect(): Promise<void> {
     if (this.connectivityState === ConnectivityState.READY) {
       return Promise.resolve();
     } else if (this.connectivityState === ConnectivityState.SHUTDOWN) {
@@ -320,8 +345,43 @@ export class Http2Channel extends EventEmitter implements Channel {
     }
   }
 
-  getConnectivityState(): ConnectivityState {
+  getConnectivityState(tryToConnect: boolean): ConnectivityState {
+    if (tryToConnect) {
+      this.transitionToState([ConnectivityState.IDLE], ConnectivityState.CONNECTING);
+    }
     return this.connectivityState;
+  }
+
+  watchConnectivityState(currentState: ConnectivityState, deadline: Date|number, callback: (error?: Error)=>void) {
+    if (this.connectivityState !== currentState) {
+      /* If the connectivity state is different from the provided currentState,
+       * we assume that a state change has successfully occurred */
+      setImmediate(callback);
+    } else {
+      let deadlineMs: number = 0;
+      if (deadline instanceof Date) {
+        deadlineMs = deadline.getTime();
+      } else {
+        deadlineMs = deadline;
+      }
+      let timeout: number = deadlineMs - Date.now();
+      if (timeout < 0) {
+        timeout = 0;
+      }
+      let timeoutId = setTimeout(() => {
+        this.removeListener('connectivityStateChanged', eventCb);
+        callback(new Error('Channel state did not change before deadline'));
+      }, timeout);
+      let eventCb = () => {
+        clearTimeout(timeoutId);
+        callback();
+      };
+      this.once('connectivityStateChanged', eventCb);
+    }
+  }
+
+  getTarget() {
+    return this.target.toString();
   }
 
   close() {

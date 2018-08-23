@@ -1,7 +1,7 @@
 import {promisify} from 'util';
 
 import {CallCredentials} from './call-credentials';
-import {CallStream} from './call-stream';
+import {Call} from './call-stream';
 import {Http2Channel} from './channel';
 import {BaseFilter, Filter, FilterFactory} from './filter';
 import {Metadata} from './metadata';
@@ -41,7 +41,7 @@ export class CallCredentialsFilterFactory implements
     this.credentials = channel.credentials.getCallCredentials();
   }
 
-  createFilter(callStream: CallStream): CallCredentialsFilter {
+  createFilter(callStream: Call): CallCredentialsFilter {
     return new CallCredentialsFilter(
         this.credentials.compose(callStream.getCredentials()),
         callStream.getHost(), callStream.getMethod());

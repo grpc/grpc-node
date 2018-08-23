@@ -1,4 +1,4 @@
-import {CallStream} from './call-stream';
+import {Call} from './call-stream';
 import {StatusObject} from './call-stream';
 import {Channel} from './channel';
 import {Status} from './constants';
@@ -31,7 +31,7 @@ export class MetadataStatusFilter extends BaseFilter implements Filter {
 export class MetadataStatusFilterFactory implements
     FilterFactory<MetadataStatusFilter> {
   constructor(private readonly channel: Channel) {}
-  createFilter(callStream: CallStream): MetadataStatusFilter {
+  createFilter(callStream: Call): MetadataStatusFilter {
     return new MetadataStatusFilter();
   }
 }

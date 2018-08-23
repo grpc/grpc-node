@@ -1,5 +1,5 @@
-import {CallStream} from './call-stream';
-import {Channel, Http2Channel} from './channel';
+import {Call} from './call-stream';
+import {Channel, Http2Channel, ConnectivityState} from './channel';
 import {Status} from './constants';
 import {BaseFilter, Filter, FilterFactory} from './filter';
 import {Metadata} from './metadata';
@@ -24,7 +24,7 @@ export class DeadlineFilter extends BaseFilter implements Filter {
   private deadline: number;
   constructor(
       private readonly channel: Http2Channel,
-      private readonly callStream: CallStream) {
+      private readonly callStream: Call) {
     super();
     const callDeadline = callStream.getDeadline();
     if (callDeadline instanceof Date) {
@@ -46,22 +46,34 @@ export class DeadlineFilter extends BaseFilter implements Filter {
     }
   }
 
-  async sendMetadata(metadata: Promise<Metadata>) {
+  sendMetadata(metadata: Promise<Metadata>) {
     if (this.deadline === Infinity) {
-      return await metadata;
+      return metadata;
     }
-    await this.channel.connect();
-    const timeoutString = getDeadline(this.deadline);
-    const finalMetadata = await metadata;
-    finalMetadata.set('grpc-timeout', timeoutString);
-    return finalMetadata;
+    return new Promise<Metadata>((resolve, reject) => {
+      if (this.channel.getConnectivityState(false) === ConnectivityState.READY) {
+        resolve(metadata);
+      } else {
+        const handleStateChange = (newState: ConnectivityState) => {
+          if (newState === ConnectivityState.READY) {
+            resolve(metadata);
+            this.channel.removeListener('connectivityStateChanged', handleStateChange);
+          }
+        };
+        this.channel.on('connectivityStateChanged', handleStateChange);
+      }
+    }).then((finalMetadata: Metadata) => {
+      const timeoutString = getDeadline(this.deadline);
+      finalMetadata.set('grpc-timeout', timeoutString);
+      return finalMetadata;
+    });
   }
 }
 
 export class DeadlineFilterFactory implements FilterFactory<DeadlineFilter> {
   constructor(private readonly channel: Http2Channel) {}
 
-  createFilter(callStream: CallStream): DeadlineFilter {
+  createFilter(callStream: Call): DeadlineFilter {
     return new DeadlineFilter(this.channel, callStream);
   }
 }

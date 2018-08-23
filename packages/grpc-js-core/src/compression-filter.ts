@@ -1,6 +1,6 @@
 import * as zlib from 'zlib';
 
-import {CallStream, WriteFlags, WriteObject} from './call-stream';
+import {Call, WriteFlags, WriteObject} from './call-stream';
 import {Channel} from './channel';
 import {Status} from './constants';
 import {BaseFilter, Filter, FilterFactory} from './filter';
@@ -189,7 +189,7 @@ export class CompressionFilter extends BaseFilter implements Filter {
 export class CompressionFilterFactory implements
     FilterFactory<CompressionFilter> {
   constructor(private readonly channel: Channel) {}
-  createFilter(callStream: CallStream): CompressionFilter {
+  createFilter(callStream: Call): CompressionFilter {
     return new CompressionFilter();
   }
 }

@@ -1,6 +1,6 @@
 import {flow, flowRight, map} from 'lodash';
 
-import {CallStream, StatusObject, WriteObject} from './call-stream';
+import {Call, StatusObject, WriteObject} from './call-stream';
 import {Filter, FilterFactory} from './filter';
 import {Metadata} from './metadata';
 
@@ -37,7 +37,7 @@ export class FilterStack implements Filter {
 export class FilterStackFactory implements FilterFactory<FilterStack> {
   constructor(private readonly factories: Array<FilterFactory<Filter>>) {}
 
-  createFilter(callStream: CallStream): FilterStack {
+  createFilter(callStream: Call): FilterStack {
     return new FilterStack(
         map(this.factories, (factory) => factory.createFilter(callStream)));
   }

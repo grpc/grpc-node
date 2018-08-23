@@ -1,4 +1,4 @@
-import {CallStream, StatusObject, WriteObject} from './call-stream';
+import {Call, StatusObject, WriteObject} from './call-stream';
 import {Metadata} from './metadata';
 
 /**
@@ -40,5 +40,5 @@ export abstract class BaseFilter {
 }
 
 export interface FilterFactory<T extends Filter> {
-  createFilter(callStream: CallStream): T;
+  createFilter(callStream: Call): T;
 }
