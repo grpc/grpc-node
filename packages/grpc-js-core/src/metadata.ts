@@ -1,5 +1,7 @@
 import * as http2 from 'http2';
 import {forOwn} from 'lodash';
+const LEGAL_KEY_REGEX = /^[0-9a-z_.-]+$/;
+const LEGAL_NON_BINARY_VALUE_REGEX = /^[ -~]*$/;
 
 export type MetadataValue = string|Buffer;
 
@@ -24,11 +26,11 @@ function cloneMetadataObject(repr: MetadataObject): MetadataObject {
 }
 
 function isLegalKey(key: string): boolean {
-  return !!key.match(/^[0-9a-z_.-]+$/);
+  return LEGAL_KEY_REGEX.test(key);
 }
 
 function isLegalNonBinaryValue(value: string): boolean {
-  return !!value.match(/^[ -~]*$/);
+  return LEGAL_NON_BINARY_VALUE_REGEX.test(value);
 }
 
 function isBinaryKey(key: string): boolean {
