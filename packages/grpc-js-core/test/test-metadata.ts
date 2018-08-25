@@ -30,7 +30,7 @@ describe('Metadata', () => {
   describe('set', () => {
     it('Only accepts string values for non "-bin" keys', () => {
       assert.throws(() => {
-        metadata.set('key', new Buffer('value'));
+        metadata.set('key', Buffer.from('value'));
       });
       assert.doesNotThrow(() => {
         metadata.set('key', 'value');
@@ -42,7 +42,7 @@ describe('Metadata', () => {
         metadata.set('key-bin', 'value');
       });
       assert.doesNotThrow(() => {
-        metadata.set('key-bin', new Buffer('value'));
+        metadata.set('key-bin', Buffer.from('value'));
       });
     });
 
@@ -89,7 +89,7 @@ describe('Metadata', () => {
   describe('add', () => {
     it('Only accepts string values for non "-bin" keys', () => {
       assert.throws(() => {
-        metadata.add('key', new Buffer('value'));
+        metadata.add('key', Buffer.from('value'));
       });
       assert.doesNotThrow(() => {
         metadata.add('key', 'value');
@@ -101,7 +101,7 @@ describe('Metadata', () => {
         metadata.add('key-bin', 'value');
       });
       assert.doesNotThrow(() => {
-        metadata.add('key-bin', new Buffer('value'));
+        metadata.add('key-bin', Buffer.from('value'));
       });
     });
 
@@ -151,7 +151,7 @@ describe('Metadata', () => {
     beforeEach(() => {
       metadata.add('key', 'value1');
       metadata.add('key', 'value2');
-      metadata.add('key-bin', new Buffer('value'));
+      metadata.add('key-bin', Buffer.from('value'));
     });
 
     it('gets all values associated with a key', () => {
