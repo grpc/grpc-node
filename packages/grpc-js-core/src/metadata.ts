@@ -205,9 +205,9 @@ export class Metadata {
             result.add(key, Buffer.from(value, 'base64'));
           });
         } else if (values !== undefined) {
-          values.split(',')
-              .map(v => v.trim())
-              .forEach(v => result.add(key, Buffer.from(v, 'base64')));
+          values.split(',').forEach(v => {
+            result.add(key, Buffer.from(v.trim(), 'base64'));
+          });
         }
       } else {
         if (Array.isArray(values)) {
@@ -215,7 +215,7 @@ export class Metadata {
             result.add(key, value);
           });
         } else if (values !== undefined) {
-          values.split(',').map(v => v.trim()).forEach(v => result.add(key, v));
+          values.split(',').forEach(v => result.add(key, v.trim()));
         }
       }
     });
