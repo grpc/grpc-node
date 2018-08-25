@@ -52,7 +52,7 @@ describe('Metadata', () => {
       });
       assert.throws(() => {
         metadata.set('key$', 'value');
-      });
+      }, /Error: Metadata key "key\$" contains illegal characters/);
       assert.throws(() => {
         metadata.set('', 'value');
       });

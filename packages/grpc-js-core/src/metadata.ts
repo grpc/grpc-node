@@ -43,7 +43,7 @@ function normalizeKey(key: string): string {
 
 function validate(key: string, value?: MetadataValue): void {
   if (!isLegalKey(key)) {
-    throw new Error('Metadata key"' + key + '" contains illegal characters');
+    throw new Error('Metadata key "' + key + '" contains illegal characters');
   }
   if (value != null) {
     if (isBinaryKey(key)) {
