@@ -17,3 +17,9 @@ export enum Status {
   DATA_LOSS,
   UNAUTHENTICATED
 }
+
+export enum LogVerbosity {
+  DEBUG = 0,
+  INFO,
+  ERROR
+}

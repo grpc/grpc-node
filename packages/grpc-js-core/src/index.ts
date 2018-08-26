@@ -4,10 +4,11 @@ import {IncomingHttpHeaders} from 'http';
 import {CallCredentials} from './call-credentials';
 import {ChannelCredentials} from './channel-credentials';
 import {Client} from './client';
-import {Status} from './constants';
+import {LogVerbosity, Status} from './constants';
 import {loadPackageDefinition, makeClientConstructor} from './make-client';
 import {Metadata} from './metadata';
 import { Channel } from './channel';
+import * as logging from './logging';
 
 interface IndexedObject {
   [key: string]: any;
@@ -96,6 +97,7 @@ export {Metadata};
 /**** Constants ****/
 
 export {
+  LogVerbosity as logVerbosity,
   Status as status
   // TODO: Other constants as well
 };
@@ -135,12 +137,12 @@ export const load = (filename: any, format: any, options: any) => {
       'Not available in this library. Use @grpc/proto-loader and loadPackageDefinition instead');
 };
 
-export const setLogger = (logger: any) => {
-  throw new Error('Not yet implemented');
+export const setLogger = (logger: Partial<Console>): void => {
+  logging.setLogger(logger);
 };
 
-export const setLogVerbosity = (verbosity: any) => {
-  throw new Error('Not yet implemented');
+export const setLogVerbosity = (verbosity: LogVerbosity): void => {
+  logging.setLoggerVerbosity(verbosity);
 };
 
 export const Server = (options: any) => {
