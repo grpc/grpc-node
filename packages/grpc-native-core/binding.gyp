@@ -91,7 +91,7 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=0',
       'GRPC_UV',
-      'GRPC_NODE_VERSION="1.15.0-dev"'
+      'GRPC_NODE_VERSION="1.15.0-pre1"'
     ],
     'conditions': [
       ['grpc_gcov=="true"', {
@@ -929,7 +929,7 @@
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
-        'deps/grpc/src/cpp/ext/filters/census/grpc_context.cc',
+        'deps/grpc/src/core/ext/filters/census/grpc_context.cc',
         'deps/grpc/src/core/ext/filters/max_age/max_age_filter.cc',
         'deps/grpc/src/core/ext/filters/message_size/message_size_filter.cc',
         'deps/grpc/src/core/ext/filters/http/client_authority_filter.cc',
