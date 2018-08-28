@@ -1,5 +1,7 @@
 import * as http2 from 'http2';
 import {forOwn} from 'lodash';
+const LEGAL_KEY_REGEX = /^[0-9a-z_.-]+$/;
+const LEGAL_NON_BINARY_VALUE_REGEX = /^[ -~]*$/;
 
 export type MetadataValue = string|Buffer;
 
@@ -24,11 +26,11 @@ function cloneMetadataObject(repr: MetadataObject): MetadataObject {
 }
 
 function isLegalKey(key: string): boolean {
-  return !!key.match(/^[0-9a-z_.-]+$/);
+  return LEGAL_KEY_REGEX.test(key);
 }
 
 function isLegalNonBinaryValue(value: string): boolean {
-  return !!value.match(/^[ -~]*$/);
+  return LEGAL_NON_BINARY_VALUE_REGEX.test(value);
 }
 
 function isBinaryKey(key: string): boolean {
@@ -41,7 +43,7 @@ function normalizeKey(key: string): string {
 
 function validate(key: string, value?: MetadataValue): void {
   if (!isLegalKey(key)) {
-    throw new Error('Metadata key"' + key + '" contains illegal characters');
+    throw new Error('Metadata key "' + key + '" contains illegal characters');
   }
   if (value != null) {
     if (isBinaryKey(key)) {
@@ -203,9 +205,9 @@ export class Metadata {
             result.add(key, Buffer.from(value, 'base64'));
           });
         } else if (values !== undefined) {
-          values.split(',')
-              .map(v => v.trim())
-              .forEach(v => result.add(key, Buffer.from(v, 'base64')));
+          values.split(',').forEach(v => {
+            result.add(key, Buffer.from(v.trim(), 'base64'));
+          });
         }
       } else {
         if (Array.isArray(values)) {
@@ -213,7 +215,7 @@ export class Metadata {
             result.add(key, value);
           });
         } else if (values !== undefined) {
-          values.split(',').map(v => v.trim()).forEach(v => result.add(key, v));
+          values.split(',').forEach(v => result.add(key, v.trim()));
         }
       }
     });
