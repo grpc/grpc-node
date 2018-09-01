@@ -1,5 +1,3 @@
-
-import {IncomingHttpHeaders} from 'http';
 import * as semver from 'semver';
 
 import {CallCredentials} from './call-credentials';

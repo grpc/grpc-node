@@ -1,4 +1,4 @@
-import {ConnectionOptions, createSecureContext, PeerCertificate, SecureContext, TLSSocket} from 'tls';
+import {ConnectionOptions, createSecureContext, PeerCertificate} from 'tls';
 
 import {CallCredentials} from './call-credentials';
 

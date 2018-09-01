@@ -1,9 +1,8 @@
 import * as http2 from 'http2';
-import {Meta} from 'orchestrator';
 import {Duplex} from 'stream';
 
 import {CallCredentials} from './call-credentials';
-import {Channel, Http2Channel} from './channel';
+import {Http2Channel} from './channel';
 import {Status} from './constants';
 import {EmitterAugmentation1} from './events';
 import {Filter} from './filter';
@@ -67,12 +66,9 @@ enum ReadState {
   READING_MESSAGE
 }
 
-const emptyBuffer = Buffer.alloc(0);
-
 export class Http2CallStream extends Duplex implements Call {
   credentials: CallCredentials = CallCredentials.createEmpty();
   filterStack: Filter;
-  private statusEmitted = false;
   private http2Stream: http2.ClientHttp2Stream|null = null;
   private pendingRead = false;
   private pendingWrite: Buffer|null = null;

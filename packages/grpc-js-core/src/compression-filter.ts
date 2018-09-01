@@ -2,7 +2,6 @@ import * as zlib from 'zlib';
 
 import {Call, WriteFlags, WriteObject} from './call-stream';
 import {Channel} from './channel';
-import {Status} from './constants';
 import {BaseFilter, Filter, FilterFactory} from './filter';
 import {Metadata, MetadataValue} from './metadata';
 

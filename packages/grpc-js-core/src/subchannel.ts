@@ -2,9 +2,8 @@ import {EventEmitter} from 'events';
 import * as http2 from 'http2';
 import * as url from 'url';
 
-import {Call, Http2CallStream, PartialCallStreamOptions} from './call-stream';
+import {Call, Http2CallStream} from './call-stream';
 import {ChannelOptions} from './channel-options';
-import {EmitterAugmentation0, EmitterAugmentation1} from './events';
 import {Metadata} from './metadata';
 
 const {
@@ -12,7 +11,6 @@ const {
   HTTP2_HEADER_CONTENT_TYPE,
   HTTP2_HEADER_METHOD,
   HTTP2_HEADER_PATH,
-  HTTP2_HEADER_SCHEME,
   HTTP2_HEADER_TE,
   HTTP2_HEADER_USER_AGENT
 } = http2.constants;

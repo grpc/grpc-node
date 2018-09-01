@@ -1,24 +1,21 @@
 import {EventEmitter} from 'events';
 import * as http2 from 'http2';
-import {checkServerIdentity, PeerCertificate, SecureContext} from 'tls';
+import {checkServerIdentity, PeerCertificate} from 'tls';
 import * as url from 'url';
 
-import {CallCredentials} from './call-credentials';
 import {CallCredentialsFilterFactory} from './call-credentials-filter';
-import {Call, CallStreamOptions, Deadline, Http2CallStream, PartialCallStreamOptions} from './call-stream';
+import {Call, CallStreamOptions, Deadline, Http2CallStream} from './call-stream';
 import {ChannelCredentials} from './channel-credentials';
 import {ChannelOptions, recognizedOptions} from './channel-options';
 import {CompressionFilterFactory} from './compression-filter';
 import {Status} from './constants';
 import {DeadlineFilterFactory} from './deadline-filter';
 import {FilterStackFactory} from './filter-stack';
-import {Metadata, MetadataObject} from './metadata';
+import {Metadata} from './metadata';
 import {MetadataStatusFilterFactory} from './metadata-status-filter';
 import {Http2SubChannel} from './subchannel';
 
 const {version: clientVersion} = require('../../package');
-
-const IDLE_TIMEOUT_MS = 300000;
 
 const MIN_CONNECT_TIMEOUT_MS = 20000;
 const INITIAL_BACKOFF_MS = 1000;
@@ -31,7 +28,6 @@ const {
   HTTP2_HEADER_CONTENT_TYPE,
   HTTP2_HEADER_METHOD,
   HTTP2_HEADER_PATH,
-  HTTP2_HEADER_SCHEME,
   HTTP2_HEADER_TE,
   HTTP2_HEADER_USER_AGENT
 } = http2.constants;

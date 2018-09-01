@@ -1,9 +1,6 @@
-import {once} from 'lodash';
-import {URL} from 'url';
-
 import {ClientDuplexStream, ClientDuplexStreamImpl, ClientReadableStream, ClientReadableStreamImpl, ClientUnaryCall, ClientUnaryCallImpl, ClientWritableStream, ClientWritableStreamImpl, ServiceError} from './call';
 import {CallCredentials} from './call-credentials';
-import {Call, Deadline, PartialCallStreamOptions, StatusObject, WriteObject} from './call-stream';
+import {Call, Deadline, StatusObject, WriteObject} from './call-stream';
 import {Channel, ConnectivityState, Http2Channel} from './channel';
 import {ChannelCredentials} from './channel-credentials';
 import {ChannelOptions} from './channel-options';

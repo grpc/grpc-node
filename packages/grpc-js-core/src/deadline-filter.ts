@@ -1,5 +1,5 @@
 import {Call} from './call-stream';
-import {Channel, ConnectivityState, Http2Channel} from './channel';
+import {ConnectivityState, Http2Channel} from './channel';
 import {Status} from './constants';
 import {BaseFilter, Filter, FilterFactory} from './filter';
 import {Metadata} from './metadata';

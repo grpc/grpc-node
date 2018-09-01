@@ -1,7 +1,6 @@
 import * as assert from 'assert';
-import {EventEmitter} from 'events';
 import * as http2 from 'http2';
-import {forOwn, range} from 'lodash';
+import {range} from 'lodash';
 import * as stream from 'stream';
 
 import {CallCredentials} from '../src/call-credentials';
