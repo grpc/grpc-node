@@ -2,13 +2,13 @@ import {once} from 'lodash';
 import {URL} from 'url';
 
 import {ClientDuplexStream, ClientDuplexStreamImpl, ClientReadableStream, ClientReadableStreamImpl, ClientUnaryCall, ClientUnaryCallImpl, ClientWritableStream, ClientWritableStreamImpl, ServiceError} from './call';
-import {PartialCallStreamOptions, Call, StatusObject, WriteObject, Deadline} from './call-stream';
-import {Channel, Http2Channel, ConnectivityState} from './channel';
+import {CallCredentials} from './call-credentials';
+import {Call, Deadline, PartialCallStreamOptions, StatusObject, WriteObject} from './call-stream';
+import {Channel, ConnectivityState, Http2Channel} from './channel';
 import {ChannelCredentials} from './channel-credentials';
+import {ChannelOptions} from './channel-options';
 import {Status} from './constants';
 import {Metadata} from './metadata';
-import {ChannelOptions} from './channel-options';
-import { CallCredentials } from './call-credentials';
 
 // This symbol must be exported (for now).
 // See: https://github.com/Microsoft/TypeScript/issues/20080
@@ -26,9 +26,10 @@ export interface CallOptions {
   credentials?: CallCredentials;
 }
 
-export type ClientOptions = Partial<ChannelOptions> & {
+export type ClientOptions = Partial<ChannelOptions>&{
   channelOverride?: Channel,
-  channelFactoryOverride?: (address: string, credentials: ChannelCredentials, options: ClientOptions) => Channel
+  channelFactoryOverride?: (address: string, credentials: ChannelCredentials,
+                            options: ClientOptions) => Channel
 };
 
 /**
@@ -43,7 +44,8 @@ export class Client {
     if (options.channelOverride) {
       this[kChannel] = options.channelOverride;
     } else if (options.channelFactoryOverride) {
-      this[kChannel] = options.channelFactoryOverride(address, credentials, options);
+      this[kChannel] =
+          options.channelFactoryOverride(address, credentials, options);
     } else {
       this[kChannel] = new Http2Channel(address, credentials, options);
     }
@@ -57,31 +59,30 @@ export class Client {
     return this[kChannel];
   }
 
-  waitForReady(deadline: Deadline, callback: (error?: Error) => void):
-    void {
-      const checkState = (err?: Error) => {
-        if (err) {
-          callback(new Error('Failed to connect before the deadline'));
-          return;
-        }
-        let newState;
+  waitForReady(deadline: Deadline, callback: (error?: Error) => void): void {
+    const checkState = (err?: Error) => {
+      if (err) {
+        callback(new Error('Failed to connect before the deadline'));
+        return;
+      }
+      let newState;
+      try {
+        newState = this[kChannel].getConnectivityState(true);
+      } catch (e) {
+        callback(new Error('The channel has been closed'));
+        return;
+      }
+      if (newState === ConnectivityState.READY) {
+        callback();
+      } else {
         try {
-          newState = this[kChannel].getConnectivityState(true);
+          this[kChannel].watchConnectivityState(newState, deadline, checkState);
         } catch (e) {
           callback(new Error('The channel has been closed'));
-          return;
         }
-        if (newState === ConnectivityState.READY) {
-          callback();
-        } else {
-          try {
-            this[kChannel].watchConnectivityState(newState, deadline, checkState);
-          } catch (e) {
-            callback(new Error('The channel has been closed'));
-          }
-        }
-      };
-      setImmediate(checkState);
+      }
+    };
+    setImmediate(checkState);
   }
 
   private handleUnaryResponse<ResponseType>(
@@ -172,8 +173,9 @@ export class Client {
     ({metadata, options, callback} =
          this.checkOptionalUnaryResponseArguments<ResponseType>(
              metadata, options, callback));
-    const call: Call =
-        this[kChannel].createCall(method, options.deadline, options.host, options.parent, options.propagate_flags);
+    const call: Call = this[kChannel].createCall(
+        method, options.deadline, options.host, options.parent,
+        options.propagate_flags);
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
@@ -213,8 +215,9 @@ export class Client {
     ({metadata, options, callback} =
          this.checkOptionalUnaryResponseArguments<ResponseType>(
              metadata, options, callback));
-    const call: Call =
-        this[kChannel].createCall(method, options.deadline, options.host, options.parent, options.propagate_flags);
+    const call: Call = this[kChannel].createCall(
+        method, options.deadline, options.host, options.parent,
+        options.propagate_flags);
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
@@ -261,8 +264,9 @@ export class Client {
       metadata?: Metadata|CallOptions,
       options?: CallOptions): ClientReadableStream<ResponseType> {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
-    const call: Call =
-        this[kChannel].createCall(method, options.deadline, options.host, options.parent, options.propagate_flags);
+    const call: Call = this[kChannel].createCall(
+        method, options.deadline, options.host, options.parent,
+        options.propagate_flags);
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
@@ -288,8 +292,9 @@ export class Client {
       metadata?: Metadata|CallOptions,
       options?: CallOptions): ClientDuplexStream<RequestType, ResponseType> {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
-    const call: Call =
-        this[kChannel].createCall(method, options.deadline, options.host, options.parent, options.propagate_flags);
+    const call: Call = this[kChannel].createCall(
+        method, options.deadline, options.host, options.parent,
+        options.propagate_flags);
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }

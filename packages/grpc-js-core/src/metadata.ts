@@ -5,9 +5,7 @@ const LEGAL_NON_BINARY_VALUE_REGEX = /^[ -~]*$/;
 
 export type MetadataValue = string|Buffer;
 
-export interface MetadataObject {
-  [key: string]: MetadataValue[];
-}
+export interface MetadataObject { [key: string]: MetadataValue[]; }
 
 function cloneMetadataObject(repr: MetadataObject): MetadataObject {
   const result: MetadataObject = {};

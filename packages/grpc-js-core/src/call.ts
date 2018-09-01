@@ -124,8 +124,8 @@ export class ClientReadableStreamImpl<ResponseType> extends Readable implements
 }
 
 function tryWrite<RequestType>(
-    call: Call, serialize: (value: RequestType) => Buffer,
-    chunk: RequestType, encoding: string, cb: Function) {
+    call: Call, serialize: (value: RequestType) => Buffer, chunk: RequestType,
+    encoding: string, cb: Function) {
   let message: Buffer;
   const flags: number = Number(encoding);
   try {

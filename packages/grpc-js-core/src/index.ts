@@ -1,16 +1,16 @@
 
 import {IncomingHttpHeaders} from 'http';
+import * as semver from 'semver';
 
 import {CallCredentials} from './call-credentials';
+import {Channel} from './channel';
 import {ChannelCredentials} from './channel-credentials';
 import {Client} from './client';
 import {LogVerbosity, Status} from './constants';
+import * as logging from './logging';
 import {loadPackageDefinition, makeClientConstructor} from './make-client';
 import {Metadata} from './metadata';
-import { Channel } from './channel';
 import {StatusBuilder} from './status-builder';
-import * as logging from './logging';
-import * as semver from 'semver';
 
 const supportedNodeVersions = '^8.11.2 || >=9.4';
 if (!semver.satisfies(process.version, supportedNodeVersions)) {
@@ -18,15 +18,15 @@ if (!semver.satisfies(process.version, supportedNodeVersions)) {
 }
 
 interface IndexedObject {
-  [key: string]: any; // tslint:disable-line no-any
-  [key: number]: any; // tslint:disable-line no-any
+  [key: string]: any;  // tslint:disable-line no-any
+  [key: number]: any;  // tslint:disable-line no-any
 }
 
 function mixin(...sources: IndexedObject[]) {
   const result: {[key: string]: Function} = {};
   for (const source of sources) {
     for (const propName of Object.getOwnPropertyNames(source)) {
-      const property: any = source[propName]; // tslint:disable-line no-any
+      const property: any = source[propName];  // tslint:disable-line no-any
       if (typeof property === 'function') {
         result[propName] = property;
       }

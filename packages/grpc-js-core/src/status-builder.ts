@@ -13,7 +13,7 @@ export class StatusBuilder {
   constructor() {
     this.code = null;
     this.details = null;
-    this.metadata = null;  
+    this.metadata = null;
   }
 
   /**

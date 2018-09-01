@@ -1,5 +1,5 @@
 import {Call} from './call-stream';
-import {Channel, Http2Channel, ConnectivityState} from './channel';
+import {Channel, ConnectivityState, Http2Channel} from './channel';
 import {Status} from './constants';
 import {BaseFilter, Filter, FilterFactory} from './filter';
 import {Metadata} from './metadata';
@@ -51,22 +51,25 @@ export class DeadlineFilter extends BaseFilter implements Filter {
       return metadata;
     }
     return new Promise<Metadata>((resolve, reject) => {
-      if (this.channel.getConnectivityState(false) === ConnectivityState.READY) {
-        resolve(metadata);
-      } else {
-        const handleStateChange = (newState: ConnectivityState) => {
-          if (newState === ConnectivityState.READY) {
-            resolve(metadata);
-            this.channel.removeListener('connectivityStateChanged', handleStateChange);
-          }
-        };
-        this.channel.on('connectivityStateChanged', handleStateChange);
-      }
-    }).then((finalMetadata: Metadata) => {
-      const timeoutString = getDeadline(this.deadline);
-      finalMetadata.set('grpc-timeout', timeoutString);
-      return finalMetadata;
-    });
+             if (this.channel.getConnectivityState(false) ===
+                 ConnectivityState.READY) {
+               resolve(metadata);
+             } else {
+               const handleStateChange = (newState: ConnectivityState) => {
+                 if (newState === ConnectivityState.READY) {
+                   resolve(metadata);
+                   this.channel.removeListener(
+                       'connectivityStateChanged', handleStateChange);
+                 }
+               };
+               this.channel.on('connectivityStateChanged', handleStateChange);
+             }
+           })
+        .then((finalMetadata: Metadata) => {
+          const timeoutString = getDeadline(this.deadline);
+          finalMetadata.set('grpc-timeout', timeoutString);
+          return finalMetadata;
+        });
   }
 }
 

@@ -1,18 +1,14 @@
 import * as _ from 'lodash';
 
 import {PartialCallStreamOptions} from './call-stream';
-import {ChannelOptions} from './channel-options';
 import {ChannelCredentials} from './channel-credentials';
+import {ChannelOptions} from './channel-options';
 import {Client, UnaryCallback} from './client';
 import {Metadata} from './metadata';
 
-export interface Serialize<T> {
-  (value: T): Buffer;
-}
+export interface Serialize<T> { (value: T): Buffer; }
 
-export interface Deserialize<T> {
-  (bytes: Buffer): T;
-}
+export interface Deserialize<T> { (bytes: Buffer): T; }
 
 export interface MethodDefinition<RequestType, ResponseType> {
   path: string;
@@ -29,9 +25,7 @@ export interface ServiceDefinition {
   [index: string]: MethodDefinition<object, object>;
 }
 
-export interface PackageDefinition {
-  [index: string]: ServiceDefinition;
-}
+export interface PackageDefinition { [index: string]: ServiceDefinition; }
 
 function getDefaultValues<T>(metadata?: Metadata, options?: T):
     {metadata: Metadata; options: Partial<T>;} {

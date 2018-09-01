@@ -1,15 +1,15 @@
 import * as http2 from 'http2';
+import {Meta} from 'orchestrator';
 import {Duplex} from 'stream';
 
 import {CallCredentials} from './call-credentials';
+import {Channel, Http2Channel} from './channel';
 import {Status} from './constants';
 import {EmitterAugmentation1} from './events';
 import {Filter} from './filter';
 import {FilterStackFactory} from './filter-stack';
 import {Metadata} from './metadata';
 import {ObjectDuplex, WriteCallback} from './object-stream';
-import { Meta } from 'orchestrator';
-import { Channel, Http2Channel } from './channel';
 
 const {HTTP2_HEADER_STATUS, HTTP2_HEADER_CONTENT_TYPE, NGHTTP2_CANCEL} =
     http2.constants;
@@ -20,7 +20,7 @@ export interface CallStreamOptions {
   deadline: Deadline;
   flags: number;
   host: string;
-  parentCall: Call | null;
+  parentCall: Call|null;
 }
 
 export type PartialCallStreamOptions = Partial<CallStreamOptions>;
@@ -76,7 +76,7 @@ export class Http2CallStream extends Duplex implements Call {
   private http2Stream: http2.ClientHttp2Stream|null = null;
   private pendingRead = false;
   private pendingWrite: Buffer|null = null;
-  private pendingWriteCallback: WriteCallback | null = null;
+  private pendingWriteCallback: WriteCallback|null = null;
   private pendingFinalCallback: Function|null = null;
 
   private readState: ReadState = ReadState.NO_DATA;
@@ -384,7 +384,8 @@ export class Http2CallStream extends Duplex implements Call {
   }
 
   sendMetadata(metadata: Metadata): void {
-    this.channel._startHttp2Stream(this.options.host, this.methodName, this, metadata);
+    this.channel._startHttp2Stream(
+        this.options.host, this.methodName, this, metadata);
   }
 
   private destroyHttp2Stream() {

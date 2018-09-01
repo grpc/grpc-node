@@ -5,16 +5,16 @@ import * as url from 'url';
 
 import {CallCredentials} from './call-credentials';
 import {CallCredentialsFilterFactory} from './call-credentials-filter';
-import {PartialCallStreamOptions, Call, CallStreamOptions, Http2CallStream, Deadline} from './call-stream';
+import {Call, CallStreamOptions, Deadline, Http2CallStream, PartialCallStreamOptions} from './call-stream';
 import {ChannelCredentials} from './channel-credentials';
+import {ChannelOptions, recognizedOptions} from './channel-options';
 import {CompressionFilterFactory} from './compression-filter';
 import {Status} from './constants';
 import {DeadlineFilterFactory} from './deadline-filter';
 import {FilterStackFactory} from './filter-stack';
 import {Metadata, MetadataObject} from './metadata';
 import {MetadataStatusFilterFactory} from './metadata-status-filter';
-import { Http2SubChannel } from './subchannel';
-import {ChannelOptions, recognizedOptions} from './channel-options';
+import {Http2SubChannel} from './subchannel';
 
 const {version: clientVersion} = require('../../package');
 
@@ -57,7 +57,8 @@ function uniformRandom(min: number, max: number) {
  */
 export interface Channel {
   /**
-   * Close the channel. This has the same functionality as the existing grpc.Client.prototype.close
+   * Close the channel. This has the same functionality as the existing
+   * grpc.Client.prototype.close
    */
   close(): void;
   /**
@@ -83,7 +84,9 @@ export interface Channel {
    * @param callback Called with no error when a state change, or with an
    *     error if the deadline passes without a state change.
    */
-  watchConnectivityState(currentState: ConnectivityState, deadline: Date|number, callback: (error?: Error) => void): void;
+  watchConnectivityState(
+      currentState: ConnectivityState, deadline: Date|number,
+      callback: (error?: Error) => void): void;
   /**
    * Create a call object. Call is an opaque type that is used by the Client
    * class. This function is called by the gRPC library when starting a
@@ -96,7 +99,10 @@ export interface Channel {
    * @param propagateFlags A bitwise combination of elements of grpc.propagate
    *     that indicates what information to propagate from parentCall.
    */
-  createCall(method: string, deadline: Deadline|null|undefined, host: string|null|undefined, parentCall: Call|null|undefined, propagateFlags: number|null|undefined): Call;
+  createCall(
+      method: string, deadline: Deadline|null|undefined,
+      host: string|null|undefined, parentCall: Call|null|undefined,
+      propagateFlags: number|null|undefined): Call;
 }
 
 export class Http2Channel extends EventEmitter implements Channel {
@@ -177,7 +183,8 @@ export class Http2Channel extends EventEmitter implements Channel {
   }
 
   private startConnecting(): void {
-    const connectionOptions: http2.SecureClientSessionOptions = this.credentials._getConnectionOptions() || {};
+    const connectionOptions: http2.SecureClientSessionOptions =
+        this.credentials._getConnectionOptions() || {};
     if (connectionOptions.secureContext !== null) {
       // If provided, the value of grpc.ssl_target_name_override should be used
       // to override the target hostname when checking server identity.
@@ -192,7 +199,8 @@ export class Http2Channel extends EventEmitter implements Channel {
         connectionOptions.servername = sslTargetNameOverride;
       }
     }
-    const subChannel: Http2SubChannel = new Http2SubChannel(this.target, connectionOptions, this.userAgent, this.options);
+    const subChannel: Http2SubChannel = new Http2SubChannel(
+        this.target, connectionOptions, this.userAgent, this.options);
     this.subChannel = subChannel;
     const now = new Date();
     const connectionTimeout: number = Math.max(
@@ -229,7 +237,8 @@ export class Http2Channel extends EventEmitter implements Channel {
     for (const option in options) {
       if (options.hasOwnProperty(option)) {
         if (!recognizedOptions.hasOwnProperty(option)) {
-          console.warn(`Unrecognized channel argument '${option}' will be ignored.`);
+          console.warn(
+              `Unrecognized channel argument '${option}' will be ignored.`);
         }
       }
     }
@@ -294,19 +303,22 @@ export class Http2Channel extends EventEmitter implements Channel {
         });
   }
 
-  createCall(method: string, deadline: Deadline|null|undefined, host: string|null|undefined, parentCall: Call|null|undefined, propagateFlags: number|null|undefined):
-      Call {
+  createCall(
+      method: string, deadline: Deadline|null|undefined,
+      host: string|null|undefined, parentCall: Call|null|undefined,
+      propagateFlags: number|null|undefined): Call {
     if (this.connectivityState === ConnectivityState.SHUTDOWN) {
       throw new Error('Channel has been shut down');
     }
     const finalOptions: CallStreamOptions = {
-      deadline: (deadline === null || deadline === undefined) ? Infinity : deadline,
+      deadline: (deadline === null || deadline === undefined) ? Infinity :
+                                                                deadline,
       flags: propagateFlags || 0,
       host: host || this.defaultAuthority,
       parentCall: parentCall || null
     };
-    const stream: Http2CallStream =
-        new Http2CallStream(method, this, finalOptions, this.filterStackFactory);
+    const stream: Http2CallStream = new Http2CallStream(
+        method, this, finalOptions, this.filterStackFactory);
     return stream;
   }
 
@@ -347,12 +359,15 @@ export class Http2Channel extends EventEmitter implements Channel {
 
   getConnectivityState(tryToConnect: boolean): ConnectivityState {
     if (tryToConnect) {
-      this.transitionToState([ConnectivityState.IDLE], ConnectivityState.CONNECTING);
+      this.transitionToState(
+          [ConnectivityState.IDLE], ConnectivityState.CONNECTING);
     }
     return this.connectivityState;
   }
 
-  watchConnectivityState(currentState: ConnectivityState, deadline: Date|number, callback: (error?: Error)=>void) {
+  watchConnectivityState(
+      currentState: ConnectivityState, deadline: Date|number,
+      callback: (error?: Error) => void) {
     if (this.connectivityState !== currentState) {
       /* If the connectivity state is different from the provided currentState,
        * we assume that a state change has successfully occurred */

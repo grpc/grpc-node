@@ -1,11 +1,11 @@
+import {EventEmitter} from 'events';
 import * as http2 from 'http2';
 import * as url from 'url';
 
-import { EventEmitter } from "events";
-import { Metadata } from "./metadata";
-import { Call, PartialCallStreamOptions, Http2CallStream } from "./call-stream";
-import { EmitterAugmentation1, EmitterAugmentation0 } from "./events";
-import { ChannelOptions } from './channel-options';
+import {Call, Http2CallStream, PartialCallStreamOptions} from './call-stream';
+import {ChannelOptions} from './channel-options';
+import {EmitterAugmentation0, EmitterAugmentation1} from './events';
+import {Metadata} from './metadata';
 
 const {
   HTTP2_HEADER_AUTHORITY,
@@ -43,8 +43,9 @@ export class Http2SubChannel extends EventEmitter implements SubChannel {
   private keepaliveIntervalId: NodeJS.Timer;
   private keepaliveTimeoutId: NodeJS.Timer;
 
-  constructor(target: url.URL, connectionOptions: http2.SecureClientSessionOptions,
-              userAgent: string, channelArgs: Partial<ChannelOptions>) {
+  constructor(
+      target: url.URL, connectionOptions: http2.SecureClientSessionOptions,
+      userAgent: string, channelArgs: Partial<ChannelOptions>) {
     super();
     this.session = http2.connect(target, connectionOptions);
     this.session.on('connect', () => {
@@ -92,7 +93,7 @@ export class Http2SubChannel extends EventEmitter implements SubChannel {
     this.keepaliveTimeoutId = setTimeout(() => {
       this.emit('close');
     }, this.keepaliveTimeoutMs);
-    this.session.ping((err: Error | null, duration: number, payload: Buffer) => {
+    this.session.ping((err: Error|null, duration: number, payload: Buffer) => {
       clearTimeout(this.keepaliveTimeoutId);
     });
   }
@@ -127,7 +128,7 @@ export class Http2SubChannel extends EventEmitter implements SubChannel {
     });
     callStream.attachHttp2Stream(http2Stream);
   }
-  
+
   close() {
     this.session.close();
   }

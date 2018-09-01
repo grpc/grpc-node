@@ -22,7 +22,7 @@ describe('Logging', () => {
   });
 
   it('gates logging based on severity', () => {
-    const output: Array<string | string[]> = [];
+    const output: Array<string|string[]> = [];
     const logger: Partial<Console> = {
       error(...args: string[]): void {
         output.push(args);
@@ -48,13 +48,8 @@ describe('Logging', () => {
     logging.log(grpc.logVerbosity.INFO, 7, 8);
     logging.log(grpc.logVerbosity.ERROR, 'j', 'k');
 
-    assert.deepStrictEqual(output, [
-      ['a', 'b', 'c'],
-      ['d', 'e'],
-      ['f'],
-      ['g'],
-      ['h', 'i'],
-      ['j', 'k']
-    ]);
+    assert.deepStrictEqual(
+        output,
+        [['a', 'b', 'c'], ['d', 'e'], ['f'], ['g'], ['h', 'i'], ['j', 'k']]);
   });
 });
