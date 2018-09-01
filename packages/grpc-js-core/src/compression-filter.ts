@@ -19,7 +19,7 @@ abstract class CompressionHandler {
     if (compress) {
       messageBuffer = await this.compressMessage(messageBuffer);
     }
-    let output = Buffer.allocUnsafe(messageBuffer.length + 5);
+    const output = Buffer.allocUnsafe(messageBuffer.length + 5);
     output.writeUInt8(compress ? 1 : 0, 0);
     output.writeUInt32BE(messageBuffer.length, 1);
     messageBuffer.copy(output, 5);
@@ -45,7 +45,7 @@ class IdentityHandler extends CompressionHandler {
   }
 
   async writeMessage(message: Buffer, compress: boolean): Promise<Buffer> {
-    let output = Buffer.allocUnsafe(message.length + 5);
+    const output = Buffer.allocUnsafe(message.length + 5);
     /* With "identity" compression, messages should always be marked as
      * uncompressed */
     output.writeUInt8(0, 0);
@@ -62,49 +62,53 @@ class IdentityHandler extends CompressionHandler {
 
 class DeflateHandler extends CompressionHandler {
   compressMessage(message: Buffer) {
-    return new Promise<Buffer>(
-        (resolve, reject) => {zlib.deflate(message, (err, output) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(output);
-          }
-        })});
+    return new Promise<Buffer>((resolve, reject) => {
+      zlib.deflate(message, (err, output) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(output);
+        }
+      });
+    });
   }
 
   decompressMessage(message: Buffer) {
-    return new Promise<Buffer>(
-        (resolve, reject) => {zlib.inflate(message, (err, output) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(output);
-          }
-        })});
+    return new Promise<Buffer>((resolve, reject) => {
+      zlib.inflate(message, (err, output) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(output);
+        }
+      });
+    });
   }
 }
 
 class GzipHandler extends CompressionHandler {
   compressMessage(message: Buffer) {
-    return new Promise<Buffer>(
-        (resolve, reject) => {zlib.gzip(message, (err, output) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(output);
-          }
-        })});
+    return new Promise<Buffer>((resolve, reject) => {
+      zlib.gzip(message, (err, output) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(output);
+        }
+      });
+    });
   }
 
   decompressMessage(message: Buffer) {
-    return new Promise<Buffer>(
-        (resolve, reject) => {zlib.unzip(message, (err, output) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(output);
-          }
-        })});
+    return new Promise<Buffer>((resolve, reject) => {
+      zlib.unzip(message, (err, output) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(output);
+        }
+      });
+    });
   }
 }
 
@@ -150,7 +154,7 @@ export class CompressionFilter extends BaseFilter implements Filter {
 
   async receiveMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
     const headers: Metadata = await metadata;
-    let receiveEncoding: MetadataValue[] = headers.get('grpc-encoding');
+    const receiveEncoding: MetadataValue[] = headers.get('grpc-encoding');
     if (receiveEncoding.length > 0) {
       const encoding: MetadataValue = receiveEncoding[0];
       if (typeof encoding === 'string') {

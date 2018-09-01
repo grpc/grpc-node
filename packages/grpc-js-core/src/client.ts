@@ -19,11 +19,11 @@ export interface UnaryCallback<ResponseType> {
 }
 
 export interface CallOptions {
-  deadline?: Deadline,
-  host?: string,
-  parent?: Call,
-  propagate_flags?: number,
-  credentials?: CallCredentials
+  deadline?: Deadline;
+  host?: string;
+  parent?: Call;
+  propagate_flags?: number;
+  credentials?: CallCredentials;
 }
 
 export type ClientOptions = Partial<ChannelOptions> & {
@@ -64,18 +64,18 @@ export class Client {
           callback(new Error('Failed to connect before the deadline'));
           return;
         }
-        var new_state;
+        let newState;
         try {
-          new_state = this[kChannel].getConnectivityState(true);
+          newState = this[kChannel].getConnectivityState(true);
         } catch (e) {
           callback(new Error('The channel has been closed'));
           return;
         }
-        if (new_state === ConnectivityState.READY) {
+        if (newState === ConnectivityState.READY) {
           callback();
         } else {
           try {
-            this[kChannel].watchConnectivityState(new_state, deadline, checkState);
+            this[kChannel].watchConnectivityState(newState, deadline, checkState);
           } catch (e) {
             callback(new Error('The channel has been closed'));
           }

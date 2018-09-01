@@ -90,7 +90,7 @@ describe('CallStream', () => {
    * but this might break if we start checking channel arguments, in which case
    * we will need a more sophisticated fake */
   const filterStackFactory =
-      new FilterStackFactory([new CompressionFilterFactory(<Channel>{})]);
+      new FilterStackFactory([new CompressionFilterFactory({} as Channel)]);
   const message = 'eat this message';  // 16 bytes
 
   beforeEach(() => {
@@ -102,7 +102,7 @@ describe('CallStream', () => {
        const responseMetadata = new Metadata();
        responseMetadata.add('key', 'value');
        const callStream =
-           new Http2CallStream('foo', <Http2Channel>{}, callStreamArgs, filterStackFactory);
+           new Http2CallStream('foo', {} as Http2Channel, callStreamArgs, filterStackFactory);
 
        const http2Stream = new ClientHttp2StreamMock(
            {payload: Buffer.alloc(0), frameLengths: []});
@@ -140,7 +140,7 @@ describe('CallStream', () => {
       maybeSkip(it)(`for error code ${key}`, () => {
         return new Promise((resolve, reject) => {
           const callStream =
-              new Http2CallStream('foo', <Http2Channel>{}, callStreamArgs, filterStackFactory);
+              new Http2CallStream('foo', {} as Http2Channel, callStreamArgs, filterStackFactory);
           const http2Stream = new ClientHttp2StreamMock(
               {payload: Buffer.alloc(0), frameLengths: []});
           callStream.attachHttp2Stream(http2Stream);
@@ -160,7 +160,7 @@ describe('CallStream', () => {
 
   it('should have functioning getters', (done) => {
     const callStream =
-        new Http2CallStream('foo', <Http2Channel>{}, callStreamArgs, filterStackFactory);
+        new Http2CallStream('foo', {} as Http2Channel, callStreamArgs, filterStackFactory);
     assert.strictEqual(callStream.getDeadline(), callStreamArgs.deadline);
     assert.strictEqual(callStream.getStatus(), null);
     const credentials = CallCredentials.createEmpty();
@@ -179,7 +179,7 @@ describe('CallStream', () => {
   describe('attachHttp2Stream', () => {
     it('should handle an empty message', (done) => {
       const callStream =
-          new Http2CallStream('foo', <Http2Channel>{}, callStreamArgs, filterStackFactory);
+          new Http2CallStream('foo', {} as Http2Channel, callStreamArgs, filterStackFactory);
       const http2Stream =
           new ClientHttp2StreamMock({payload: serialize(''), frameLengths: []});
       callStream.once('data', assert2.mustCall((buffer) => {
@@ -206,7 +206,7 @@ describe('CallStream', () => {
       it(`should handle a short message where ${testCase.description}`,
          (done) => {
            const callStream =
-               new Http2CallStream('foo', <Http2Channel>{}, callStreamArgs, filterStackFactory);
+               new Http2CallStream('foo', {} as Http2Channel, callStreamArgs, filterStackFactory);
            const http2Stream = new ClientHttp2StreamMock({
              payload: serialize(message),  // 21 bytes
              frameLengths: testCase.frameLengths
@@ -236,7 +236,7 @@ describe('CallStream', () => {
      }].forEach((testCase: {description: string, frameLengths: number[]}) => {
       it(`should handle two messages where ${testCase.description}`, (done) => {
         const callStream =
-            new Http2CallStream('foo', <Http2Channel>{}, callStreamArgs, filterStackFactory);
+            new Http2CallStream('foo', {} as Http2Channel, callStreamArgs, filterStackFactory);
         const http2Stream = new ClientHttp2StreamMock({
           payload: Buffer.concat(
               [serialize(message), serialize(message)]),  // 42 bytes
@@ -256,7 +256,7 @@ describe('CallStream', () => {
 
     it('should send buffered writes', (done) => {
       const callStream =
-          new Http2CallStream('foo', <Http2Channel>{}, callStreamArgs, filterStackFactory);
+          new Http2CallStream('foo', {} as Http2Channel, callStreamArgs, filterStackFactory);
       const http2Stream = new ClientHttp2StreamMock(
           {payload: Buffer.alloc(0), frameLengths: []});
       let streamFlushed = false;
@@ -279,7 +279,7 @@ describe('CallStream', () => {
     it('should cause data chunks in write calls afterward to be written to the given stream',
        (done) => {
          const callStream =
-             new Http2CallStream('foo', <Http2Channel>{}, callStreamArgs, filterStackFactory);
+             new Http2CallStream('foo', {} as Http2Channel, callStreamArgs, filterStackFactory);
          const http2Stream = new ClientHttp2StreamMock(
              {payload: Buffer.alloc(0), frameLengths: []});
          http2Stream.once('write', assert2.mustCall((chunk: Buffer) => {
@@ -297,7 +297,7 @@ describe('CallStream', () => {
 
     it('should handle underlying stream errors', () => {
       const callStream =
-          new Http2CallStream('foo', <Http2Channel>{}, callStreamArgs, filterStackFactory);
+          new Http2CallStream('foo', {} as Http2Channel, callStreamArgs, filterStackFactory);
       const http2Stream = new ClientHttp2StreamMock(
           {payload: Buffer.alloc(0), frameLengths: []});
       callStream.once('status', assert2.mustCall((status) => {

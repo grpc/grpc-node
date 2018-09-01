@@ -177,7 +177,7 @@ export class Http2Channel extends EventEmitter implements Channel {
   }
 
   private startConnecting(): void {
-    let connectionOptions: http2.SecureClientSessionOptions = this.credentials._getConnectionOptions() || {};
+    const connectionOptions: http2.SecureClientSessionOptions = this.credentials._getConnectionOptions() || {};
     if (connectionOptions.secureContext !== null) {
       // If provided, the value of grpc.ssl_target_name_override should be used
       // to override the target hostname when checking server identity.
@@ -226,7 +226,7 @@ export class Http2Channel extends EventEmitter implements Channel {
       address: string, readonly credentials: ChannelCredentials,
       private readonly options: Partial<ChannelOptions>) {
     super();
-    for (let option in options) {
+    for (const option in options) {
       if (options.hasOwnProperty(option)) {
         if (!recognizedOptions.hasOwnProperty(option)) {
           console.warn(`Unrecognized channel argument '${option}' will be ignored.`);
@@ -300,7 +300,7 @@ export class Http2Channel extends EventEmitter implements Channel {
       throw new Error('Channel has been shut down');
     }
     const finalOptions: CallStreamOptions = {
-      deadline: (deadline === null || deadline == undefined) ? Infinity : deadline,
+      deadline: (deadline === null || deadline === undefined) ? Infinity : deadline,
       flags: propagateFlags || 0,
       host: host || this.defaultAuthority,
       parentCall: parentCall || null
@@ -358,7 +358,7 @@ export class Http2Channel extends EventEmitter implements Channel {
        * we assume that a state change has successfully occurred */
       setImmediate(callback);
     } else {
-      let deadlineMs: number = 0;
+      let deadlineMs = 0;
       if (deadline instanceof Date) {
         deadlineMs = deadline.getTime();
       } else {
@@ -368,11 +368,11 @@ export class Http2Channel extends EventEmitter implements Channel {
       if (timeout < 0) {
         timeout = 0;
       }
-      let timeoutId = setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         this.removeListener('connectivityStateChanged', eventCb);
         callback(new Error('Channel state did not change before deadline'));
       }, timeout);
-      let eventCb = () => {
+      const eventCb = () => {
         clearTimeout(timeoutId);
         callback();
       };

@@ -35,7 +35,7 @@ export interface SubChannel extends EventEmitter {
 
 export class Http2SubChannel extends EventEmitter implements SubChannel {
   private session: http2.ClientHttp2Session;
-  private refCount: number = 0;
+  private refCount = 0;
   private userAgent: string;
 
   private keepaliveTimeMs: number = KEEPALIVE_TIME_MS;
@@ -57,7 +57,7 @@ export class Http2SubChannel extends EventEmitter implements SubChannel {
     this.session.on('error', () => {
       this.stopKeepalivePings();
       this.emit('close');
-    })
+    });
     this.userAgent = userAgent;
 
     if (channelArgs['grpc.keepalive_time_ms']) {
@@ -120,7 +120,7 @@ export class Http2SubChannel extends EventEmitter implements SubChannel {
     headers[HTTP2_HEADER_METHOD] = 'POST';
     headers[HTTP2_HEADER_PATH] = callStream.getMethod();
     headers[HTTP2_HEADER_TE] = 'trailers';
-    let http2Stream = this.session.request(headers);
+    const http2Stream = this.session.request(headers);
     this.ref();
     http2Stream.on('close', () => {
       this.unref();

@@ -104,13 +104,13 @@ export abstract class ChannelCredentials {
       key: privateKey || undefined,
       cert: certChain || undefined
     });
-    let connectionOptions: ConnectionOptions = {
+    const connectionOptions: ConnectionOptions = {
       secureContext
     };
     if (verifyOptions && verifyOptions.checkServerIdentity) {
       connectionOptions.checkServerIdentity = (host: string, cert: PeerCertificate) => {
         return verifyOptions.checkServerIdentity!(host, {raw: cert.raw});
-      }
+      };
     }
     return new SecureChannelCredentialsImpl(connectionOptions);
   }
@@ -141,7 +141,7 @@ class InsecureChannelCredentialsImpl extends ChannelCredentials {
 }
 
 class SecureChannelCredentialsImpl extends ChannelCredentials {
-  connectionOptions: ConnectionOptions
+  connectionOptions: ConnectionOptions;
 
   constructor(connectionOptions: ConnectionOptions, callCredentials?: CallCredentials) {
     super(callCredentials);

@@ -18,15 +18,15 @@ if (!semver.satisfies(process.version, supportedNodeVersions)) {
 }
 
 interface IndexedObject {
-  [key: string]: any;
-  [key: number]: any;
+  [key: string]: any; // tslint:disable-line no-any
+  [key: number]: any; // tslint:disable-line no-any
 }
 
 function mixin(...sources: IndexedObject[]) {
   const result: {[key: string]: Function} = {};
   for (const source of sources) {
     for (const propName of Object.getOwnPropertyNames(source)) {
-      const property: any = source[propName];
+      const property: any = source[propName]; // tslint:disable-line no-any
       if (typeof property === 'function') {
         result[propName] = property;
       }
