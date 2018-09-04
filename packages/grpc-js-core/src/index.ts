@@ -9,6 +9,12 @@ import {loadPackageDefinition, makeClientConstructor} from './make-client';
 import {Metadata} from './metadata';
 import { Channel } from './channel';
 import * as logging from './logging';
+import * as semver from 'semver';
+
+const supportedNodeVersions = '^8.11.2 || >=9.4';
+if (!semver.satisfies(process.version, supportedNodeVersions)) {
+  throw new Error(`@grpc/grpc-js only works on Node ${supportedNodeVersions}`);
+}
 
 interface IndexedObject {
   [key: string]: any;

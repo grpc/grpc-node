@@ -6,7 +6,7 @@
   "repository": "https://github.com/grpc/grpc-node/tree/master/packages/grpc-js-core",
   "main": "build/src/index.js",
   "engines": {
-    "node": ">=8.4"
+    "node": "^8.11.2 || >=9.4"
   },
   "keywords": [],
   "author": {
@@ -20,6 +20,7 @@
     "@types/node": "^10.5.4",
     "clang-format": "^1.0.55",
     "gts": "^0.5.1",
+    "semver": "^5.5.0",
     "typescript": "~2.7.0"
   },
   "contributors": [
