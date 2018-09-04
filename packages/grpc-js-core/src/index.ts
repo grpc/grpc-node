@@ -8,6 +8,7 @@ import {LogVerbosity, Status} from './constants';
 import {loadPackageDefinition, makeClientConstructor} from './make-client';
 import {Metadata} from './metadata';
 import { Channel } from './channel';
+import {StatusBuilder} from './status-builder';
 import * as logging from './logging';
 import * as semver from 'semver';
 
@@ -169,9 +170,7 @@ export const getClientChannel = (client: Client) => {
   return Client.prototype.getChannel.call(client);
 };
 
-export const StatusBuilder = () => {
-  throw new Error('Not yet implemented');
-};
+export {StatusBuilder};
 
 export const ListenerBuilder = () => {
   throw new Error('Not yet implemented');
