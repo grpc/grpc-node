@@ -4,7 +4,7 @@ import * as grpc from '../src';
 import * as logging from '../src/logging';
 
 describe('Logging', () => {
-  afterEach(function() {
+  afterEach(() => {
     // Ensure that the logger is restored to its defaults after each test.
     grpc.setLogger(console);
     grpc.setLogVerbosity(grpc.logVerbosity.DEBUG);
@@ -22,9 +22,9 @@ describe('Logging', () => {
   });
 
   it('gates logging based on severity', () => {
-    const output: any[] = [];
+    const output: Array<string|string[]> = [];
     const logger: Partial<Console> = {
-      error(...args: any[]): void {
+      error(...args: string[]): void {
         output.push(args);
       }
     };
@@ -48,13 +48,8 @@ describe('Logging', () => {
     logging.log(grpc.logVerbosity.INFO, 7, 8);
     logging.log(grpc.logVerbosity.ERROR, 'j', 'k');
 
-    assert.deepStrictEqual(output, [
-      ['a', 'b', 'c'],
-      ['d', 'e'],
-      ['f'],
-      ['g'],
-      ['h', 'i'],
-      ['j', 'k']
-    ]);
+    assert.deepStrictEqual(
+        output,
+        [['a', 'b', 'c'], ['d', 'e'], ['f'], ['g'], ['h', 'i'], ['j', 'k']]);
   });
 });

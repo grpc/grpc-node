@@ -15,6 +15,7 @@ export const setLoggerVerbosity = (verbosity: LogVerbosity): void => {
   _logVerbosity = verbosity;
 };
 
+// tslint:disable-next-line no-any
 export const log = (severity: LogVerbosity, ...args: any[]): void => {
   if (severity >= _logVerbosity && typeof _logger.error === 'function') {
     _logger.error(...args);

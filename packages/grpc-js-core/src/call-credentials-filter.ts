@@ -1,5 +1,3 @@
-import {promisify} from 'util';
-
 import {CallCredentials} from './call-credentials';
 import {Call} from './call-stream';
 import {Http2Channel} from './channel';

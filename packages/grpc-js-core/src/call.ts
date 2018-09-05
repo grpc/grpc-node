@@ -1,5 +1,4 @@
 import {EventEmitter} from 'events';
-import * as _ from 'lodash';
 import {Duplex, Readable, Writable} from 'stream';
 
 import {Call, StatusObject, WriteObject} from './call-stream';
@@ -87,8 +86,6 @@ function setUpReadableStream<ResponseType>(
   });
   call.on('status', (status: StatusObject) => {
     if (status.code !== Status.OK) {
-      const statusName = _.invert(Status)[status.code];
-      const message = `${status.code} ${statusName}: ${status.details}`;
       const error: ServiceError =
           Object.assign(new Error(status.details), status);
       stream.emit('error', error);
@@ -124,8 +121,8 @@ export class ClientReadableStreamImpl<ResponseType> extends Readable implements
 }
 
 function tryWrite<RequestType>(
-    call: Call, serialize: (value: RequestType) => Buffer,
-    chunk: RequestType, encoding: string, cb: Function) {
+    call: Call, serialize: (value: RequestType) => Buffer, chunk: RequestType,
+    encoding: string, cb: Function) {
   let message: Buffer;
   const flags: number = Number(encoding);
   try {

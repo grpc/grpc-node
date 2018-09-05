@@ -1,18 +1,12 @@
 import * as _ from 'lodash';
 
-import {PartialCallStreamOptions} from './call-stream';
-import {ChannelOptions} from './channel-options';
 import {ChannelCredentials} from './channel-credentials';
-import {Client, UnaryCallback} from './client';
-import {Metadata} from './metadata';
+import {ChannelOptions} from './channel-options';
+import {Client} from './client';
 
-export interface Serialize<T> {
-  (value: T): Buffer;
-}
+export interface Serialize<T> { (value: T): Buffer; }
 
-export interface Deserialize<T> {
-  (bytes: Buffer): T;
-}
+export interface Deserialize<T> { (bytes: Buffer): T; }
 
 export interface MethodDefinition<RequestType, ResponseType> {
   path: string;
@@ -29,14 +23,7 @@ export interface ServiceDefinition {
   [index: string]: MethodDefinition<object, object>;
 }
 
-export interface PackageDefinition {
-  [index: string]: ServiceDefinition;
-}
-
-function getDefaultValues<T>(metadata?: Metadata, options?: T):
-    {metadata: Metadata; options: Partial<T>;} {
-  return {metadata: metadata || new Metadata(), options: options || {}};
-}
+export interface PackageDefinition { [index: string]: ServiceDefinition; }
 
 /**
  * Map with short names for each of the requester maker functions. Used in

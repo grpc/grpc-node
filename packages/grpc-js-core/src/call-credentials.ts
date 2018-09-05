@@ -1,4 +1,4 @@
-import {map, reduce} from 'lodash';
+import {map} from 'lodash';
 
 import {Metadata} from './metadata';
 

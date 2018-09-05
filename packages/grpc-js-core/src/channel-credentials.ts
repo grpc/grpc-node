@@ -1,4 +1,4 @@
-import {createSecureContext, SecureContext, TLSSocket, ConnectionOptions, PeerCertificate} from 'tls';
+import {ConnectionOptions, createSecureContext, PeerCertificate} from 'tls';
 
 import {CallCredentials} from './call-credentials';
 
@@ -25,7 +25,8 @@ export interface Certificate {
  * indicate that the presented certificate is considered invalid and
  * otherwise returned undefined.
  */
-export type CheckServerIdentityCallback = (hostname: string, cert: Certificate) => Error | undefined;
+export type CheckServerIdentityCallback =
+    (hostname: string, cert: Certificate) => Error|undefined;
 
 /**
  * Additional peer verification options that can be set when creating
@@ -87,7 +88,8 @@ export abstract class ChannelCredentials {
    */
   static createSsl(
       rootCerts?: Buffer|null, privateKey?: Buffer|null,
-      certChain?: Buffer|null, verifyOptions?: VerifyOptions): ChannelCredentials {
+      certChain?: Buffer|null,
+      verifyOptions?: VerifyOptions): ChannelCredentials {
     verifyIsBufferOrNull(rootCerts, 'Root certificate');
     verifyIsBufferOrNull(privateKey, 'Private key');
     verifyIsBufferOrNull(certChain, 'Certificate chain');
@@ -104,13 +106,12 @@ export abstract class ChannelCredentials {
       key: privateKey || undefined,
       cert: certChain || undefined
     });
-    let connectionOptions: ConnectionOptions = {
-      secureContext
-    };
+    const connectionOptions: ConnectionOptions = {secureContext};
     if (verifyOptions && verifyOptions.checkServerIdentity) {
-      connectionOptions.checkServerIdentity = (host: string, cert: PeerCertificate) => {
-        return verifyOptions.checkServerIdentity!(host, {raw: cert.raw});
-      }
+      connectionOptions.checkServerIdentity =
+          (host: string, cert: PeerCertificate) => {
+            return verifyOptions.checkServerIdentity!(host, {raw: cert.raw});
+          };
     }
     return new SecureChannelCredentialsImpl(connectionOptions);
   }
@@ -141,9 +142,10 @@ class InsecureChannelCredentialsImpl extends ChannelCredentials {
 }
 
 class SecureChannelCredentialsImpl extends ChannelCredentials {
-  connectionOptions: ConnectionOptions
+  connectionOptions: ConnectionOptions;
 
-  constructor(connectionOptions: ConnectionOptions, callCredentials?: CallCredentials) {
+  constructor(
+      connectionOptions: ConnectionOptions, callCredentials?: CallCredentials) {
     super(callCredentials);
     this.connectionOptions = connectionOptions;
   }

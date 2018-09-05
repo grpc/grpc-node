@@ -1,18 +1,16 @@
+import {EventEmitter} from 'events';
 import * as http2 from 'http2';
 import * as url from 'url';
 
-import { EventEmitter } from "events";
-import { Metadata } from "./metadata";
-import { Call, PartialCallStreamOptions, Http2CallStream } from "./call-stream";
-import { EmitterAugmentation1, EmitterAugmentation0 } from "./events";
-import { ChannelOptions } from './channel-options';
+import {Call, Http2CallStream} from './call-stream';
+import {ChannelOptions} from './channel-options';
+import {Metadata} from './metadata';
 
 const {
   HTTP2_HEADER_AUTHORITY,
   HTTP2_HEADER_CONTENT_TYPE,
   HTTP2_HEADER_METHOD,
   HTTP2_HEADER_PATH,
-  HTTP2_HEADER_SCHEME,
   HTTP2_HEADER_TE,
   HTTP2_HEADER_USER_AGENT
 } = http2.constants;
@@ -35,7 +33,7 @@ export interface SubChannel extends EventEmitter {
 
 export class Http2SubChannel extends EventEmitter implements SubChannel {
   private session: http2.ClientHttp2Session;
-  private refCount: number = 0;
+  private refCount = 0;
   private userAgent: string;
 
   private keepaliveTimeMs: number = KEEPALIVE_TIME_MS;
@@ -43,8 +41,9 @@ export class Http2SubChannel extends EventEmitter implements SubChannel {
   private keepaliveIntervalId: NodeJS.Timer;
   private keepaliveTimeoutId: NodeJS.Timer;
 
-  constructor(target: url.URL, connectionOptions: http2.SecureClientSessionOptions,
-              userAgent: string, channelArgs: Partial<ChannelOptions>) {
+  constructor(
+      target: url.URL, connectionOptions: http2.SecureClientSessionOptions,
+      userAgent: string, channelArgs: Partial<ChannelOptions>) {
     super();
     this.session = http2.connect(target, connectionOptions);
     this.session.on('connect', () => {
@@ -57,7 +56,7 @@ export class Http2SubChannel extends EventEmitter implements SubChannel {
     this.session.on('error', () => {
       this.stopKeepalivePings();
       this.emit('close');
-    })
+    });
     this.userAgent = userAgent;
 
     if (channelArgs['grpc.keepalive_time_ms']) {
@@ -92,7 +91,7 @@ export class Http2SubChannel extends EventEmitter implements SubChannel {
     this.keepaliveTimeoutId = setTimeout(() => {
       this.emit('close');
     }, this.keepaliveTimeoutMs);
-    this.session.ping((err: Error | null, duration: number, payload: Buffer) => {
+    this.session.ping((err: Error|null, duration: number, payload: Buffer) => {
       clearTimeout(this.keepaliveTimeoutId);
     });
   }
@@ -120,14 +119,14 @@ export class Http2SubChannel extends EventEmitter implements SubChannel {
     headers[HTTP2_HEADER_METHOD] = 'POST';
     headers[HTTP2_HEADER_PATH] = callStream.getMethod();
     headers[HTTP2_HEADER_TE] = 'trailers';
-    let http2Stream = this.session.request(headers);
+    const http2Stream = this.session.request(headers);
     this.ref();
     http2Stream.on('close', () => {
       this.unref();
     });
     callStream.attachHttp2Stream(http2Stream);
   }
-  
+
   close() {
     this.session.close();
   }
