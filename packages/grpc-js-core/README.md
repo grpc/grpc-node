@@ -1,10 +1,10 @@
 # Pure JavaScript gRPC Client
 
-**Note: This is an alpha-level release. Some APIs may not yet be present and there may be bugs. Please report any that you encounter**
+**Note: This is an beta-level release. Some APIs may not yet be present and there may be bugs. Please report any that you encounter**
 
 ## Installation
 
-Node 9.x or greater is required.
+Node 10 is recommended. The exact set of compatible Node versions can be found in the `engines` field of the `package.json` file.
 
 ```sh
 npm install @grpc/grpc-js
