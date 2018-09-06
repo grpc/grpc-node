@@ -69,6 +69,7 @@ export class ClientUnaryCallImpl extends EventEmitter implements
 function setUpReadableStream<ResponseType>(
     stream: ClientReadableStream<ResponseType>, call: Call,
     deserialize: (chunk: Buffer) => ResponseType): void {
+  let statusEmitted = false;
   call.on('data', (data: Buffer) => {
     let deserialized: ResponseType;
     try {
@@ -82,7 +83,13 @@ function setUpReadableStream<ResponseType>(
     }
   });
   call.on('end', () => {
-    stream.push(null);
+    if (statusEmitted) {
+      stream.push(null);
+    } else {
+      call.once('status', () => {
+        stream.push(null);
+      });
+    }
   });
   call.on('status', (status: StatusObject) => {
     if (status.code !== Status.OK) {
@@ -91,6 +98,7 @@ function setUpReadableStream<ResponseType>(
       stream.emit('error', error);
     }
     stream.emit('status', status);
+    statusEmitted = true;
   });
   call.pause();
 }
