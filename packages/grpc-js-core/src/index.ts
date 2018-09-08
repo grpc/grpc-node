@@ -5,6 +5,7 @@ import {Channel} from './channel';
 import {ChannelCredentials} from './channel-credentials';
 import {Client} from './client';
 import {LogVerbosity, Status} from './constants';
+import {ListenerBuilder} from './listener-builder';
 import * as logging from './logging';
 import {loadPackageDefinition, makeClientConstructor} from './make-client';
 import {Metadata} from './metadata';
@@ -170,9 +171,7 @@ export const getClientChannel = (client: Client) => {
 
 export {StatusBuilder};
 
-export const ListenerBuilder = () => {
-  throw new Error('Not yet implemented');
-};
+export {ListenerBuilder};
 
 export const InterceptorBuilder = () => {
   throw new Error('Not yet implemented');
