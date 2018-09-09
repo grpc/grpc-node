@@ -23,12 +23,11 @@ export class CallCredentialsFilter extends BaseFilter implements Filter {
     this.serviceUrl = `https://${host}/${serviceName}`;
   }
 
-  async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
+  async sendMetadata(metadata: Metadata): Promise<Metadata> {
     const credsMetadata =
         this.credentials.generateMetadata({service_url: this.serviceUrl});
-    const resultMetadata = await metadata;
-    resultMetadata.merge(await credsMetadata);
-    return resultMetadata;
+    metadata.merge(await credsMetadata);
+    return metadata;
   }
 }
 

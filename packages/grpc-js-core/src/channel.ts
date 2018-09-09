@@ -269,7 +269,7 @@ export class Http2Channel extends EventEmitter implements Channel {
       authority: string, methodName: string, stream: Http2CallStream,
       metadata: Metadata) {
     const finalMetadata: Promise<Metadata> =
-        stream.filterStack.sendMetadata(Promise.resolve(metadata.clone()));
+        stream.filterStack.sendMetadata(metadata.clone());
     Promise.all([finalMetadata, this.connect()])
         .then(([metadataValue]) => {
           const headers = metadataValue.toHttp2Headers();

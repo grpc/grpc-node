@@ -7,28 +7,28 @@ import {Metadata} from './metadata';
 export class FilterStack implements Filter {
   constructor(private readonly filters: Filter[]) {}
 
-  sendMetadata(metadata: Promise<Metadata>) {
+  sendMetadata(metadata: Metadata) {
     return flow(map(
         this.filters, (filter) => filter.sendMetadata.bind(filter)))(metadata);
   }
 
-  receiveMetadata(metadata: Promise<Metadata>) {
+  receiveMetadata(metadata: Metadata) {
     return flowRight(
         map(this.filters, (filter) => filter.receiveMetadata.bind(filter)))(
         metadata);
   }
 
-  sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
+  sendMessage(message: WriteObject): Promise<WriteObject> {
     return flow(map(this.filters, (filter) => filter.sendMessage.bind(filter)))(
         message);
   }
 
-  receiveMessage(message: Promise<Buffer>): Promise<Buffer> {
+  receiveMessage(message: Buffer): Promise<Buffer> {
     return flowRight(map(
         this.filters, (filter) => filter.receiveMessage.bind(filter)))(message);
   }
 
-  receiveTrailers(status: Promise<StatusObject>): Promise<StatusObject> {
+  receiveTrailers(status: StatusObject): Promise<StatusObject> {
     return flowRight(map(
         this.filters, (filter) => filter.receiveTrailers.bind(filter)))(status);
   }

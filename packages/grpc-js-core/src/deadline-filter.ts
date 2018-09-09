@@ -46,10 +46,11 @@ export class DeadlineFilter extends BaseFilter implements Filter {
     }
   }
 
-  sendMetadata(metadata: Promise<Metadata>) {
+  async sendMetadata(metadata: Metadata): Promise<Metadata> {
     if (this.deadline === Infinity) {
       return metadata;
     }
+
     return new Promise<Metadata>((resolve, reject) => {
              if (this.channel.getConnectivityState(false) ===
                  ConnectivityState.READY) {
