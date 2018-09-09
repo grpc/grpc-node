@@ -10,11 +10,9 @@ export interface MetadataObject { [key: string]: MetadataValue[]; }
 function cloneMetadataObject(repr: MetadataObject): MetadataObject {
   const result: MetadataObject = {};
   forOwn(repr, (value, key) => {
-    // v.slice copies individual buffer values in value.
-    // TODO(kjin): Is this necessary
     result[key] = value.map(v => {
       if (v instanceof Buffer) {
-        return v.slice();
+        return Buffer.from(v);
       } else {
         return v;
       }

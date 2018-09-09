@@ -202,6 +202,16 @@ describe('Metadata', () => {
       copy.add('key', 'value2');
       assert.deepEqual(metadata.get('key'), ['value1']);
     });
+
+    it('Copy cannot modify binary values in the original', () => {
+      const buf = Buffer.from('value-bin');
+      metadata.add('key-bin', buf);
+      const copy = metadata.clone();
+      const copyBuf = copy.get('key-bin')[0] as Buffer;
+      assert.deepStrictEqual(copyBuf, buf);
+      copyBuf.fill(0);
+      assert.notDeepEqual(copyBuf, buf);
+    });
   });
 
   describe('merge', () => {
