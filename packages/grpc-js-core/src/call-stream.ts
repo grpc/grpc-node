@@ -155,7 +155,7 @@ export class Http2CallStream extends Duplex implements Call {
       return;
     }
     this.isReadFilterPending = true;
-    this.filterStack.receiveMessage(Promise.resolve(framedMessage))
+    this.filterStack.receiveMessage(framedMessage)
         .then(
             this.handleFilteredRead.bind(this),
             this.handleFilterError.bind(this));
@@ -183,8 +183,7 @@ export class Http2CallStream extends Duplex implements Call {
       let finalStatus;
       try {
         // Attempt to assign final status.
-        finalStatus =
-            await this.filterStack.receiveTrailers(Promise.resolve(status));
+        finalStatus = await this.filterStack.receiveTrailers(status);
       } catch (error) {
         await this.handlingHeaders;
         // This is a no-op if the call was already ended when handling headers.
@@ -249,19 +248,18 @@ export class Http2CallStream extends Duplex implements Call {
             });
             return;
           }
-          this.handlingHeaders =
-              this.filterStack.receiveMetadata(Promise.resolve(metadata))
-                  .then((finalMetadata) => {
-                    this.emit('metadata', finalMetadata);
-                  })
-                  .catch((error) => {
-                    this.destroyHttp2Stream();
-                    this.endCall({
-                      code: Status.UNKNOWN,
-                      details: error.message,
-                      metadata: new Metadata()
-                    });
-                  });
+          this.handlingHeaders = this.filterStack.receiveMetadata(metadata)
+                                     .then((finalMetadata) => {
+                                       this.emit('metadata', finalMetadata);
+                                     })
+                                     .catch((error) => {
+                                       this.destroyHttp2Stream();
+                                       this.endCall({
+                                         code: Status.UNKNOWN,
+                                         details: error.message,
+                                         metadata: new Metadata()
+                                       });
+                                     });
         }
       });
       stream.on('trailers', this.handleTrailers.bind(this));
@@ -453,7 +451,7 @@ export class Http2CallStream extends Duplex implements Call {
   }
 
   _write(chunk: WriteObject, encoding: string, cb: WriteCallback) {
-    this.filterStack.sendMessage(Promise.resolve(chunk)).then((message) => {
+    this.filterStack.sendMessage(chunk).then((message) => {
       if (this.http2Stream === null) {
         this.pendingWrite = message.message;
         this.pendingWriteCallback = cb;

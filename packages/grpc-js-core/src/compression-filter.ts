@@ -30,9 +30,9 @@ abstract class CompressionHandler {
    */
   async readMessage(data: Buffer): Promise<Buffer> {
     const compressed = data.readUInt8(1) === 1;
-    let messageBuffer = data.slice(5);
+    const messageBuffer = data.slice(5);
     if (compressed) {
-      messageBuffer = await this.decompressMessage(messageBuffer);
+      return this.decompressMessage(messageBuffer);
     }
     return messageBuffer;
   }
@@ -144,48 +144,45 @@ function getCompressionHandler(compressionName: string): CompressionHandler {
 export class CompressionFilter extends BaseFilter implements Filter {
   private sendCompression: CompressionHandler = new IdentityHandler();
   private receiveCompression: CompressionHandler = new IdentityHandler();
-  async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    const headers: Metadata = await metadata;
-    headers.set('grpc-encoding', 'identity');
-    headers.set('grpc-accept-encoding', 'identity,deflate,gzip');
-    return headers;
+  async sendMetadata(metadata: Metadata): Promise<Metadata> {
+    metadata.set('grpc-encoding', 'identity');
+    metadata.set('grpc-accept-encoding', 'identity,deflate,gzip');
+    return metadata;
   }
 
-  async receiveMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    const headers: Metadata = await metadata;
-    const receiveEncoding: MetadataValue[] = headers.get('grpc-encoding');
+  async receiveMetadata(metadata: Metadata): Promise<Metadata> {
+    const receiveEncoding: MetadataValue[] = metadata.get('grpc-encoding');
     if (receiveEncoding.length > 0) {
       const encoding: MetadataValue = receiveEncoding[0];
       if (typeof encoding === 'string') {
         this.receiveCompression = getCompressionHandler(encoding);
       }
     }
-    headers.remove('grpc-encoding');
-    headers.remove('grpc-accept-encoding');
-    return headers;
+    metadata.remove('grpc-encoding');
+    metadata.remove('grpc-accept-encoding');
+    return metadata;
   }
 
-  async sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
+  async sendMessage(message: WriteObject): Promise<WriteObject> {
     /* This filter is special. The input message is the bare message bytes,
      * and the output is a framed and possibly compressed message. For this
      * reason, this filter should be at the bottom of the filter stack */
-    const resolvedMessage: WriteObject = await message;
-    const compress = resolvedMessage.flags === undefined ?
+    const compress = message.flags === undefined ?
         false :
-        (resolvedMessage.flags & WriteFlags.NoCompress) === 0;
+        (message.flags & WriteFlags.NoCompress) === 0;
     return {
-      message: await this.sendCompression.writeMessage(
-          resolvedMessage.message, compress),
-      flags: resolvedMessage.flags
+      message:
+          await this.sendCompression.writeMessage(message.message, compress),
+      flags: message.flags
     };
   }
 
-  async receiveMessage(message: Promise<Buffer>) {
+  async receiveMessage(message: Buffer) {
     /* This filter is also special. The input message is framed and possibly
      * compressed, and the output message is deframed and uncompressed. So
      * this is another reason that this filter should be at the bottom of the
      * filter stack. */
-    return await this.receiveCompression.readMessage(await message);
+    return this.receiveCompression.readMessage(message);
   }
 }
 

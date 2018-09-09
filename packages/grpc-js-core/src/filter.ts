@@ -6,36 +6,36 @@ import {Metadata} from './metadata';
  * used to modify incoming and outgoing data
  */
 export interface Filter {
-  sendMetadata(metadata: Promise<Metadata>): Promise<Metadata>;
+  sendMetadata(metadata: Metadata): Promise<Metadata>;
 
-  receiveMetadata(metadata: Promise<Metadata>): Promise<Metadata>;
+  receiveMetadata(metadata: Metadata): Promise<Metadata>;
 
-  sendMessage(message: Promise<WriteObject>): Promise<WriteObject>;
+  sendMessage(message: WriteObject): Promise<WriteObject>;
 
-  receiveMessage(message: Promise<Buffer>): Promise<Buffer>;
+  receiveMessage(message: Buffer): Promise<Buffer>;
 
-  receiveTrailers(status: Promise<StatusObject>): Promise<StatusObject>;
+  receiveTrailers(status: StatusObject): Promise<StatusObject>;
 }
 
 export abstract class BaseFilter {
-  async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    return await metadata;
+  async sendMetadata(metadata: Metadata): Promise<Metadata> {
+    return metadata;
   }
 
-  async receiveMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    return await metadata;
+  async receiveMetadata(metadata: Metadata): Promise<Metadata> {
+    return metadata;
   }
 
-  async sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
-    return await message;
+  async sendMessage(message: WriteObject): Promise<WriteObject> {
+    return message;
   }
 
-  async receiveMessage(message: Promise<Buffer>): Promise<Buffer> {
-    return await message;
+  async receiveMessage(message: Buffer): Promise<Buffer> {
+    return message;
   }
 
-  async receiveTrailers(status: Promise<StatusObject>): Promise<StatusObject> {
-    return await status;
+  async receiveTrailers(status: StatusObject): Promise<StatusObject> {
+    return status;
   }
 }
 
