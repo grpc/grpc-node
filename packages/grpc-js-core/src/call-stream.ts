@@ -233,8 +233,7 @@ export class Http2CallStream extends Duplex implements Call {
           default:
             this.mappedStatusCode = Status.UNKNOWN;
         }
-        delete headers[HTTP2_HEADER_STATUS];
-        delete headers[HTTP2_HEADER_CONTENT_TYPE];
+
         if (flags & http2.constants.NGHTTP2_FLAG_END_STREAM) {
           this.handleTrailers(headers);
         } else {

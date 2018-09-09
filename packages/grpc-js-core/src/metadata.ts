@@ -197,6 +197,11 @@ export class Metadata {
   static fromHttp2Headers(headers: http2.IncomingHttpHeaders): Metadata {
     const result = new Metadata();
     forOwn(headers, (values, key) => {
+      // Reserved headers (beginning with `:`) are not valid keys.
+      if (key.charAt(0) === ':') {
+        return;
+      }
+
       if (isBinaryKey(key)) {
         if (Array.isArray(values)) {
           values.forEach((value) => {
