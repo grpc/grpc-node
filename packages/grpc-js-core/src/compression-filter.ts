@@ -185,7 +185,7 @@ export class CompressionFilter extends BaseFilter implements Filter {
      * compressed, and the output message is deframed and uncompressed. So
      * this is another reason that this filter should be at the bottom of the
      * filter stack. */
-    return await this.receiveCompression.readMessage(await message);
+    return this.receiveCompression.readMessage(await message);
   }
 }
 
