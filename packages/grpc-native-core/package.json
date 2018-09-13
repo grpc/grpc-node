@@ -39,7 +39,7 @@
     "body-parser": "^1.15.2",
     "electron-mocha": "^3.1.1",
     "express": "^4.14.0",
-    "google-auth-library": "^0.9.2",
+    "google-auth-library": "^2.0.0",
     "google-protobuf": "^3.0.0",
     "istanbul": "^0.4.4",
     "lodash": "^4.17.4",
