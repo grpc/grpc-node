@@ -196,8 +196,7 @@ function getAuthorizationHeaderFromGoogleCredential(google_credential, url, call
         callback(err);
         return;
       });
-  }
-  else {
+  } else {
     google_credential.getRequestMetadata(url, function(err, header) {
       if (err) {
         callback(err);
