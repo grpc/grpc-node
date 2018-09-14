@@ -184,6 +184,29 @@ exports.createFromMetadataGenerator = function(metadata_generator) {
   });
 };
 
+function getAuthorizationHeaderFromGoogleCredential(google_credential, url, callback) {
+  // google-auth-library pre-v2.0.0 does not have getRequestHeaders
+  // but has getRequestMetadata, which is deprecated in v2.0.0
+  if (typeof google_credential.getRequestHeaders === 'function') {
+    google_credential.getRequestHeaders(url)
+      .then(function(header) {
+        callback(null, header.Authorization);
+      })
+      .catch(function(err) {
+        callback(err);
+        return;
+      });
+  } else {
+    google_credential.getRequestMetadata(url, function(err, header) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      callback(null, header.Authorization);
+    });
+  }
+}
+
 /**
  * Create a gRPC credential from a Google credential object.
  * @memberof grpc.credentials
@@ -195,16 +218,17 @@ exports.createFromMetadataGenerator = function(metadata_generator) {
 exports.createFromGoogleCredential = function(google_credential) {
   return exports.createFromMetadataGenerator(function(auth_context, callback) {
     var service_url = auth_context.service_url;
-    google_credential.getRequestMetadata(service_url, function(err, header) {
-      if (err) {
-        common.log(constants.logVerbosity.INFO, 'Auth error:' + err);
-        callback(err);
-        return;
-      }
-      var metadata = new Metadata();
-      metadata.add('authorization', header.Authorization);
-      callback(null, metadata);
-    });
+    getAuthorizationHeaderFromGoogleCredential(google_credential, service_url,
+      function(err, authHeader) {
+        if (err) {
+          common.log(constants.logVerbosity.INFO, 'Auth error:' + err);
+          callback(err);
+          return;
+        }
+        var metadata = new Metadata();
+        metadata.add('authorization', authHeader);
+        callback(null, metadata);
+      });
   });
 };
 
