@@ -19,23 +19,23 @@ export interface Filter {
 
 export abstract class BaseFilter {
   async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    return await metadata;
+    return metadata;
   }
 
   async receiveMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    return await metadata;
+    return metadata;
   }
 
   async sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
-    return await message;
+    return message;
   }
 
   async receiveMessage(message: Promise<Buffer>): Promise<Buffer> {
-    return await message;
+    return message;
   }
 
   async receiveTrailers(status: Promise<StatusObject>): Promise<StatusObject> {
-    return await status;
+    return status;
   }
 }
 
