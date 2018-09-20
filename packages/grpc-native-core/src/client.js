@@ -480,22 +480,51 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
 
   metadata = metadata.clone();
 
-  var intercepting_call = client_interceptors.getInterceptingCall(
-    method_definition,
-    options,
-    Client.prototype.resolveCallInterceptors.call(this, method_definition, options.interceptors, options.interceptor_providers),
-    this.$channel,
-    callback
-  );
-  var emitter = new ClientUnaryCall(intercepting_call);
-  var last_listener = client_interceptors.getLastListener(
-    method_definition,
-    emitter,
-    callback
+  var callProperties = {
+    argument: argument,
+    metadata: metadata,
+    call: new ClientUnaryCall(),
+    channel: this.$channel,
+    methodDefinition: method_definition,
+    callOptions: options,
+    callback: callback
+  };
+
+  // Transform call properties if specified.
+  var callInvocationTransformer = options.callInvocationTransformer;
+  if (callInvocationTransformer) {
+    callProperties = callInvocationTransformer(callProperties);
+  }
+
+  var callOptions = callProperties.callOptions;
+  var methodDefinition = callProperties.methodDefinition;
+
+  var interceptors = Client.prototype.resolveCallInterceptors.call(
+    this,
+    methodDefinition,
+    callOptions.interceptors,
+    callOptions.interceptor_providers
   );
 
-  intercepting_call.start(metadata, last_listener);
-  intercepting_call.sendMessage(argument);
+  var intercepting_call = client_interceptors.getInterceptingCall(
+    methodDefinition,
+    callOptions,
+    interceptors,
+    callProperties.channel,
+    callProperties.callback
+  );
+
+  var emitter = callProperties.call;
+  emitter.call = intercepting_call;
+
+  var last_listener = client_interceptors.getLastListener(
+    methodDefinition,
+    emitter,
+    callProperties.callback
+  );
+
+  intercepting_call.start(callProperties.metadata, last_listener);
+  intercepting_call.sendMessage(callProperties.argument);
   intercepting_call.halfClose();
 
   return emitter;
@@ -555,21 +584,49 @@ Client.prototype.makeClientStreamRequest = function(path, serialize,
 
   metadata = metadata.clone();
 
-  var intercepting_call = client_interceptors.getInterceptingCall(
-    method_definition,
-    options,
-    Client.prototype.resolveCallInterceptors.call(this, method_definition, options.interceptors, options.interceptor_providers),
-    this.$channel,
-    callback
-  );
-  var emitter = new ClientWritableStream(intercepting_call);
-  var last_listener = client_interceptors.getLastListener(
-    method_definition,
-    emitter,
-    callback
+  var callProperties = {
+    metadata: metadata,
+    call: new ClientWritableStream(),
+    channel: this.$channel,
+    methodDefinition: method_definition,
+    callOptions: options,
+    callback: callback
+  };
+
+  // Transform call properties if specified.
+  var callInvocationTransformer = options.callInvocationTransformer;
+  if (callInvocationTransformer) {
+    callProperties = callInvocationTransformer(callProperties);
+  }
+
+  var callOptions = callProperties.callOptions;
+  var methodDefinition = callProperties.methodDefinition;
+
+  var interceptors = Client.prototype.resolveCallInterceptors.call(
+    this,
+    methodDefinition,
+    callOptions.interceptors,
+    callOptions.interceptor_providers
   );
 
-  intercepting_call.start(metadata, last_listener);
+  var intercepting_call = client_interceptors.getInterceptingCall(
+    methodDefinition,
+    callOptions,
+    interceptors,
+    callProperties.channel,
+    callProperties.callback
+  );
+
+  var emitter = callProperties.call;
+  emitter.call = intercepting_call;
+
+  var last_listener = client_interceptors.getLastListener(
+    methodDefinition,
+    emitter,
+    callProperties.callback
+  );
+
+  intercepting_call.start(callProperties.metadata, last_listener);
 
   return emitter;
 };
@@ -613,22 +670,47 @@ Client.prototype.makeServerStreamRequest = function(path, serialize,
 
   metadata = metadata.clone();
 
-  var emitter = new ClientReadableStream();
+  var callProperties = {
+    argument: argument,
+    metadata: metadata,
+    call: new ClientReadableStream(),
+    channel: this.$channel,
+    methodDefinition: method_definition,
+    callOptions: options,
+  };
+
+  // Transform call properties if specified.
+  var callInvocationTransformer = options.callInvocationTransformer;
+  if (callInvocationTransformer) {
+    callProperties = callInvocationTransformer(callProperties);
+  }
+
+  var callOptions = callProperties.callOptions;
+  var methodDefinition = callProperties.methodDefinition;
+
+  var interceptors = Client.prototype.resolveCallInterceptors.call(
+    this,
+    methodDefinition,
+    callOptions.interceptors,
+    callOptions.interceptor_providers
+  );
+
+  var emitter = callProperties.call;
   var intercepting_call = client_interceptors.getInterceptingCall(
-    method_definition,
-    options,
-    Client.prototype.resolveCallInterceptors.call(this, method_definition, options.interceptors, options.interceptor_providers),
-    this.$channel,
+    methodDefinition,
+    callOptions,
+    interceptors,
+    callProperties.channel,
     emitter
   );
   emitter.call = intercepting_call;
   var last_listener = client_interceptors.getLastListener(
-    method_definition,
+    methodDefinition,
     emitter
   );
 
-  intercepting_call.start(metadata, last_listener);
-  intercepting_call.sendMessage(argument);
+  intercepting_call.start(callProperties.metadata, last_listener);
+  intercepting_call.sendMessage(callProperties.argument);
   intercepting_call.halfClose();
 
   return emitter;
@@ -669,21 +751,46 @@ Client.prototype.makeBidiStreamRequest = function(path, serialize,
 
   metadata = metadata.clone();
 
-  var emitter = new ClientDuplexStream();
+  var callProperties = {
+    metadata: metadata,
+    call: new ClientDuplexStream(),
+    channel: this.$channel,
+    methodDefinition: method_definition,
+    callOptions: options,
+  };
+
+  // Transform call properties if specified.
+  var callInvocationTransformer = options.callInvocationTransformer;
+  if (callInvocationTransformer) {
+    callProperties = callInvocationTransformer(callProperties);
+  }
+
+  var callOptions = callProperties.callOptions;
+  var methodDefinition = callProperties.methodDefinition;
+
+  var interceptors = Client.prototype.resolveCallInterceptors.call(
+    this,
+    methodDefinition,
+    callOptions.interceptors,
+    callOptions.interceptor_providers
+  );
+
+
+  var emitter = callProperties.call;
   var intercepting_call = client_interceptors.getInterceptingCall(
-    method_definition,
-    options,
-    Client.prototype.resolveCallInterceptors.call(this, method_definition, options.interceptors, options.interceptor_providers),
-    this.$channel,
+    methodDefinition,
+    callOptions,
+    interceptors,
+    callProperties.channel,
     emitter
   );
   emitter.call = intercepting_call;
   var last_listener = client_interceptors.getLastListener(
-    method_definition,
+    methodDefinition,
     emitter
   );
 
-  intercepting_call.start(metadata, last_listener);
+  intercepting_call.start(callProperties.metadata, last_listener);
 
   return emitter;
 };
