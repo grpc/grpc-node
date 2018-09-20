@@ -21,8 +21,8 @@
 
 #include <algorithm>
 
-#include "src/compiler/config.h"
-#include "src/compiler/generator_helpers.h"
+#include "config.h"
+#include "generator_helpers.h"
 
 namespace grpc_node_generator {
 

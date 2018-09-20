@@ -19,7 +19,7 @@
 #ifndef GRPC_INTERNAL_COMPILER_NODE_GENERATOR_H
 #define GRPC_INTERNAL_COMPILER_NODE_GENERATOR_H
 
-#include "src/compiler/config.h"
+#include "config.h"
 
 namespace grpc_node_generator {
 

@@ -25,7 +25,7 @@
 #include <string>
 #include <vector>
 
-#include "src/compiler/config.h"
+#include "config.h"
 
 namespace grpc_generator {
 
