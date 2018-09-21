@@ -383,12 +383,16 @@ function Client(address, credentials, options) {
       .resolveInterceptorProviders(self.$interceptor_providers, method_definition)
       .concat(self.$interceptors);
   });
+
+  this.$callInvocationTransformer = options.callInvocationTransformer;
+
   let channelOverride = options.channelOverride;
   let channelFactoryOverride = options.channelFactoryOverride;
   // Exclude channel options which have already been consumed
   var channel_options = _.omit(options,
      ['interceptors', 'interceptor_providers',
-      'channelOverride', 'channelFactoryOverride']);
+      'channelOverride', 'channelFactoryOverride',
+      'callInvocationTransformer']);
   /* Private fields use $ as a prefix instead of _ because it is an invalid
    * prefix of a method name */
   if (channelOverride) {
@@ -491,9 +495,8 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
   };
 
   // Transform call properties if specified.
-  var callInvocationTransformer = options.callInvocationTransformer;
-  if (callInvocationTransformer) {
-    callProperties = callInvocationTransformer(callProperties);
+  if (this.$callInvocationTransformer) {
+    callProperties = this.$callInvocationTransformer(callProperties);
   }
 
   var callOptions = callProperties.callOptions;
@@ -594,9 +597,8 @@ Client.prototype.makeClientStreamRequest = function(path, serialize,
   };
 
   // Transform call properties if specified.
-  var callInvocationTransformer = options.callInvocationTransformer;
-  if (callInvocationTransformer) {
-    callProperties = callInvocationTransformer(callProperties);
+  if (this.$callInvocationTransformer) {
+    callProperties = this.$callInvocationTransformer(callProperties);
   }
 
   var callOptions = callProperties.callOptions;
@@ -680,9 +682,8 @@ Client.prototype.makeServerStreamRequest = function(path, serialize,
   };
 
   // Transform call properties if specified.
-  var callInvocationTransformer = options.callInvocationTransformer;
-  if (callInvocationTransformer) {
-    callProperties = callInvocationTransformer(callProperties);
+  if (this.$callInvocationTransformer) {
+    callProperties = this.$callInvocationTransformer(callProperties);
   }
 
   var callOptions = callProperties.callOptions;
@@ -760,9 +761,8 @@ Client.prototype.makeBidiStreamRequest = function(path, serialize,
   };
 
   // Transform call properties if specified.
-  var callInvocationTransformer = options.callInvocationTransformer;
-  if (callInvocationTransformer) {
-    callProperties = callInvocationTransformer(callProperties);
+  if (this.$callInvocationTransformer) {
+    callProperties = this.$callInvocationTransformer(callProperties);
   }
 
   var callOptions = callProperties.callOptions;
