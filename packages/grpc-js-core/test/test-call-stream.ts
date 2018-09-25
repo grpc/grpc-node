@@ -43,6 +43,7 @@ class ClientHttp2StreamMock extends stream.Duplex implements
   aborted = false;
   closed = false;
   destroyed = false;
+  endAfterHeaders = false;
   pending = false;
   rstCode = 0;
   // tslint:disable:no-any
