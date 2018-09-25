@@ -7,10 +7,11 @@ import {Metadata} from './metadata';
 export class CallCredentialsFilter extends BaseFilter implements Filter {
   private serviceUrl: string;
   constructor(
-      private readonly credentials: CallCredentials,
-      private readonly host: string, private readonly path: string) {
+      private readonly channel: Http2Channel, private readonly stream: Call) {
     super();
-    const splitPath: string[] = path.split('/');
+    this.channel = channel;
+    this.stream = stream;
+    const splitPath: string[] = stream.getMethod().split('/');
     let serviceName = '';
     /* The standard path format is "/{serviceName}/{methodName}", so if we split
      * by '/', the first item should be empty and the second should be the
@@ -20,12 +21,15 @@ export class CallCredentialsFilter extends BaseFilter implements Filter {
     }
     /* Currently, call credentials are only allowed on HTTPS connections, so we
      * can assume that the scheme is "https" */
-    this.serviceUrl = `https://${host}/${serviceName}`;
+    this.serviceUrl = `https://${stream.getHost()}/${serviceName}`;
   }
 
   async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
+    const channelCredentials = this.channel.credentials._getCallCredentials();
+    const streamCredentials = this.stream.getCredentials();
+    const credentials = channelCredentials.compose(streamCredentials);
     const credsMetadata =
-        this.credentials.generateMetadata({service_url: this.serviceUrl});
+        credentials.generateMetadata({service_url: this.serviceUrl});
     const resultMetadata = await metadata;
     resultMetadata.merge(await credsMetadata);
     return resultMetadata;
@@ -34,14 +38,12 @@ export class CallCredentialsFilter extends BaseFilter implements Filter {
 
 export class CallCredentialsFilterFactory implements
     FilterFactory<CallCredentialsFilter> {
-  private readonly credentials: CallCredentials;
+  private readonly channel: Http2Channel;
   constructor(channel: Http2Channel) {
-    this.credentials = channel.credentials._getCallCredentials();
+    this.channel = channel;
   }
 
   createFilter(callStream: Call): CallCredentialsFilter {
-    return new CallCredentialsFilter(
-        this.credentials.compose(callStream.getCredentials()),
-        callStream.getHost(), callStream.getMethod());
+    return new CallCredentialsFilter(this.channel, callStream);
   }
 }
