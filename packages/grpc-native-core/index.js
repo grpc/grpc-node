@@ -101,6 +101,8 @@ var loadObject = exports.loadObject;
 
 /**
  * Load a gRPC object from a .proto file.
+ * @deprecated Use the {@link https://www.npmjs.com/package/@grpc/proto-loader|proto-loader module}
+       with grpc.loadPackageDefinition instead.
  * @memberof grpc
  * @alias grpc.load
  * @param {string|{root: string, file: string}} filename The file to load

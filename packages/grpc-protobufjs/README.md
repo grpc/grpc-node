@@ -1,6 +1,8 @@
 # gRPC Protobuf Loader
 
 A utility package for loading `.proto` files for use with gRPC, using the latest Protobuf.js package.
+Please refer to [protobuf.js' documentation](https://github.com/dcodeIO/protobuf.js/blob/master/README.md)
+to understands its features and limitations.
 
 ## Installation
 
