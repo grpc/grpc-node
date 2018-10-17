@@ -119,6 +119,9 @@ function createPackageDefinition(root: Protobuf.Root, options: Options): Package
 
 function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
   root.resolvePath = (origin: string, target: string) => {
+    if (path.isAbsolute(target)) {
+      return target;
+    }
     for (const directory of includePaths) {
       const fullPath: string = path.join(directory, target);
       try {
@@ -128,7 +131,7 @@ function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
         continue;
       }
     }
-    return null;
+    throw new Error(`Could not find file ${target}`);
   };
 }
 
