@@ -37,14 +37,16 @@ var getServer = require('./math/math_server.js');
 
 var server = getServer();
 
+let serverCreds = grpc.ServerCredentials.createInsecure();
+
 describe('Async functionality', function() {
   before(function(done) {
-    var port_num = server.bind('0.0.0.0:0',
-                               grpc.ServerCredentials.createInsecure());
-    server.start();
-    math_client = new math.Math('localhost:' + port_num,
-                                grpc.credentials.createInsecure());
-    done();
+    server.bind('0.0.0.0:0', serverCreds, (error, port_num) => {
+      server.start();
+      math_client = new math.Math('localhost:' + port_num,
+                                  grpc.credentials.createInsecure());
+      done();
+    });
   });
   after(function() {
     grpc.closeClient(math_client);
