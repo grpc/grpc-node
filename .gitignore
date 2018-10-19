@@ -15,3 +15,8 @@ packages/grpc-native-core/src/node/
 
 .nyc_output/
 reports/
+
+package-lock.json
+
+# Test generated files
+coverage
