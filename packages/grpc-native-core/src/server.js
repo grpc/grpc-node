@@ -954,6 +954,7 @@ Server.prototype.addProtoService = util.deprecate(function(service,
  *     "address:port"
  * @param {grpc.ServerCredentials} creds Server credential object to be used for
  *     SSL. Pass an insecure credentials object for an insecure port.
+ * @return {number} The bound port number. Negative if binding the port failed.
  */
 Server.prototype.bind = function(port, creds) {
   if (this.started) {
@@ -961,5 +962,33 @@ Server.prototype.bind = function(port, creds) {
   }
   return this._server.addHttp2Port(port, creds);
 };
+
+/**
+ * Called with the result of attempting to bind a port
+ * @callback grpc.Server~bindCallback
+ * @param {Error=} error If non-null, indicates that binding the port failed.
+ * @param {number} port The bound port number. If binding the port fails, this
+ *     will be negative to match the output of bind.
+ */
+
+/**
+ * Binds the server to the given port, with SSL disabled if creds is an
+ * insecure credentials object. Provides the result asynchronously.
+ * @param {string} port The port that the server should bind on, in the format
+ *     "address:port"
+ * @param {grpc.ServerCredentials} creds Server credential object to be used for
+ *     SSL. Pass an insecure credentials object for an insecure port.
+ */
+Server.prototype.bindAsync = function(port, creds, callback) {
+  /* This can throw. We do not try to catch that error because it indicates an
+   * incorrect use of the function, which should not be surfaced asynchronously
+   */
+  const result = this.bind(port, creds)
+  if (result < 0) {
+    setImmediate(callback, new Error('Failed to bind port'), result);
+  } else {
+    setImmediate(callback, null, result);
+  }
+}
 
 exports.Server = Server;
