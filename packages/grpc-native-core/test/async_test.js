@@ -41,7 +41,7 @@ let serverCreds = grpc.ServerCredentials.createInsecure();
 
 describe('Async functionality', function() {
   before(function(done) {
-    server.bind('0.0.0.0:0', serverCreds, (error, port_num) => {
+    server.bindAsync('0.0.0.0:0', serverCreds, (error, port_num) => {
       server.start();
       math_client = new math.Math('localhost:' + port_num,
                                   grpc.credentials.createInsecure());
