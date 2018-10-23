@@ -91,7 +91,7 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=0',
       'GRPC_UV',
-      'GRPC_NODE_VERSION="1.16.0-pre1"'
+      'GRPC_NODE_VERSION="1.17.0-dev"'
     ],
     'conditions': [
       ['grpc_gcov=="true"', {
@@ -914,10 +914,14 @@
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc',
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc',
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c',
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c',
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
-        'deps/grpc/src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/lb_policy/xds/xds.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc',
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc',
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
