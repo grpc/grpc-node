@@ -5,23 +5,6 @@ const LEGAL_NON_BINARY_VALUE_REGEX = /^[ -~]*$/;
 export type MetadataValue = string|Buffer;
 export type MetadataObject = Map<string, MetadataValue[]>;
 
-function cloneMetadataObject(repr: MetadataObject): MetadataObject {
-  const result: MetadataObject = new Map<string, MetadataValue[]>();
-
-  repr.forEach((value, key) => {
-    const clonedValue: MetadataValue[] = value.map(v => {
-      if (v instanceof Buffer) {
-        return Buffer.from(v);
-      } else {
-        return v;
-      }
-    });
-
-    result.set(key, clonedValue);
-  });
-  return result;
-}
-
 function isLegalKey(key: string): boolean {
   return LEGAL_KEY_REGEX.test(key);
 }
@@ -144,7 +127,20 @@ export class Metadata {
    */
   clone(): Metadata {
     const newMetadata = new Metadata();
-    newMetadata.internalRepr = cloneMetadataObject(this.internalRepr);
+    const newInternalRepr = newMetadata.internalRepr;
+
+    this.internalRepr.forEach((value, key) => {
+      const clonedValue: MetadataValue[] = value.map(v => {
+        if (v instanceof Buffer) {
+          return Buffer.from(v);
+        } else {
+          return v;
+        }
+      });
+
+      newInternalRepr.set(key, clonedValue);
+    });
+
     return newMetadata;
   }
 
