@@ -91,7 +91,8 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=0',
       'GRPC_UV',
-      'GRPC_NODE_VERSION="1.16.0-pre1"'
+      'GRPC_NODE_VERSION="1.16.0-pre1"',
+      '_XOPEN_SOURCE=500'
     ],
     'conditions': [
       ['grpc_gcov=="true"', {
@@ -116,11 +117,6 @@
       ['grpc_alpine=="true"', {
         'defines': [
           'GPR_MUSL_LIBC_COMPAT'
-        ]
-      }],
-      ['OS!="win" and runtime=="electron"', {
-        "defines": [
-          'OPENSSL_NO_THREADS'
         ]
       }],
       # This is the condition for using boringssl
