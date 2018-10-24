@@ -52,7 +52,7 @@ function handleError(call, error) {
   if (error.hasOwnProperty('message')) {
     status.details = error.message;
   }
-  if (error.hasOwnProperty('code')) {
+  if (error.hasOwnProperty('code') && Number.isInteger(error.code)) {
     status.code = error.code;
     if (error.hasOwnProperty('details')) {
       status.details = error.details;
