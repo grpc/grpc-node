@@ -84,7 +84,7 @@
         'GRPC_ARES=0',
         'GRPC_UV',
         'GRPC_NODE_VERSION="${settings.get('node_version', settings.version)}"',
-        '_XOPEN_SOURCE=500'
+        '_XOPEN_SOURCE=700'
       ],
       'conditions': [
         ['grpc_gcov=="true"', {

@@ -92,7 +92,7 @@
       'GRPC_ARES=0',
       'GRPC_UV',
       'GRPC_NODE_VERSION="1.16.0-pre1"',
-      '_XOPEN_SOURCE=500'
+      '_XOPEN_SOURCE=700'
     ],
     'conditions': [
       ['grpc_gcov=="true"', {
