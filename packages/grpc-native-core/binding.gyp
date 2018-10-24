@@ -118,11 +118,6 @@
           'GPR_MUSL_LIBC_COMPAT'
         ]
       }],
-      ['OS!="win" and runtime=="electron"', {
-        "defines": [
-          'OPENSSL_NO_THREADS'
-        ]
-      }],
       # This is the condition for using boringssl
       ['OS=="win" or runtime=="electron"', {
         "include_dirs": [
@@ -227,6 +222,9 @@
           'type': 'static_library',
           'cflags': [
             '-Wno-implicit-fallthrough'
+          ],
+          'defines': [
+            '_XOPEN_SOURCE=700'
           ],
           'dependencies': [
           ],
