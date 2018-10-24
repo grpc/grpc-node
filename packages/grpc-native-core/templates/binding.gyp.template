@@ -197,7 +197,7 @@
             ],
             'defines': [
               '_XOPEN_SOURCE=700'
-            ]
+            ],
             'dependencies': [
               % for dep in getattr(lib, 'deps', []):
               '${dep}',

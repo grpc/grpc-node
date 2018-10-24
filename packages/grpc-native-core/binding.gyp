@@ -225,7 +225,7 @@
           ],
           'defines': [
             '_XOPEN_SOURCE=700'
-          ]
+          ],
           'dependencies': [
           ],
           'sources': [
