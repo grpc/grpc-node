@@ -83,8 +83,7 @@
         'GPR_BACKWARDS_COMPATIBILITY_MODE',
         'GRPC_ARES=0',
         'GRPC_UV',
-        'GRPC_NODE_VERSION="${settings.get('node_version', settings.version)}"',
-        '_XOPEN_SOURCE=700'
+        'GRPC_NODE_VERSION="${settings.get('node_version', settings.version)}"'
       ],
       'conditions': [
         ['grpc_gcov=="true"', {
@@ -196,6 +195,9 @@
             'cflags': [
               '-Wno-implicit-fallthrough'
             ],
+            'defines': [
+              '_XOPEN_SOURCE=700'
+            ]
             'dependencies': [
               % for dep in getattr(lib, 'deps', []):
               '${dep}',
