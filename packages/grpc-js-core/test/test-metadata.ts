@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as http2 from 'http2';
 import {range} from 'lodash';
-import {Metadata} from '../src/metadata';
+import {Metadata, MetadataObject, MetadataValue} from '../src/metadata';
 
 class TestMetadata extends Metadata {
   getInternalRepresentation() {
@@ -277,21 +277,24 @@ describe('Metadata', () => {
       };
       const metadataFromHeaders = TestMetadata.fromHttp2Headers(headers);
       const internalRepr = metadataFromHeaders.getInternalRepresentation();
-      assert.deepEqual(internalRepr, {
-        key1: ['value1'],
-        key2: ['value2'],
-        key3: ['value3a', 'value3b'],
-        'key-bin': [
-          Buffer.from(range(0, 16)), Buffer.from(range(16, 32)),
-          Buffer.from(range(0, 32))
+      const expected: MetadataObject = new Map<string, MetadataValue[]>([
+        ['key1', ['value1']], ['key2', ['value2']],
+        ['key3', ['value3a', 'value3b']],
+        [
+          'key-bin',
+          [
+            Buffer.from(range(0, 16)), Buffer.from(range(16, 32)),
+            Buffer.from(range(0, 32))
+          ]
         ]
-      });
+      ]);
+      assert.deepEqual(internalRepr, expected);
     });
 
     it('creates an empty Metadata object from empty headers', () => {
       const metadataFromHeaders = TestMetadata.fromHttp2Headers({});
       const internalRepr = metadataFromHeaders.getInternalRepresentation();
-      assert.deepEqual(internalRepr, {});
+      assert.deepEqual(internalRepr, new Map<string, MetadataValue[]>());
     });
   });
 });
