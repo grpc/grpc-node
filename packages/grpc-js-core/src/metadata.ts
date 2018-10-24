@@ -1,5 +1,4 @@
 import * as http2 from 'http2';
-import {forOwn} from 'lodash';
 const LEGAL_KEY_REGEX = /^[0-9a-z_.-]+$/;
 const LEGAL_NON_BINARY_VALUE_REGEX = /^[ -~]*$/;
 
@@ -197,11 +196,13 @@ export class Metadata {
    */
   static fromHttp2Headers(headers: http2.IncomingHttpHeaders): Metadata {
     const result = new Metadata();
-    forOwn(headers, (values, key) => {
+    Object.keys(headers).forEach((key) => {
       // Reserved headers (beginning with `:`) are not valid keys.
       if (key.charAt(0) === ':') {
         return;
       }
+
+      const values = headers[key];
 
       if (isBinaryKey(key)) {
         if (Array.isArray(values)) {
