@@ -1,25 +1,9 @@
 import * as http2 from 'http2';
-import {forOwn} from 'lodash';
 const LEGAL_KEY_REGEX = /^[0-9a-z_.-]+$/;
 const LEGAL_NON_BINARY_VALUE_REGEX = /^[ -~]*$/;
 
 export type MetadataValue = string|Buffer;
-
-export interface MetadataObject { [key: string]: MetadataValue[]; }
-
-function cloneMetadataObject(repr: MetadataObject): MetadataObject {
-  const result: MetadataObject = {};
-  forOwn(repr, (value, key) => {
-    result[key] = value.map(v => {
-      if (v instanceof Buffer) {
-        return Buffer.from(v);
-      } else {
-        return v;
-      }
-    });
-  });
-  return result;
-}
+export type MetadataObject = Map<string, MetadataValue[]>;
 
 function isLegalKey(key: string): boolean {
   return LEGAL_KEY_REGEX.test(key);
@@ -64,7 +48,7 @@ function validate(key: string, value?: MetadataValue): void {
  * A class for storing metadata. Keys are normalized to lowercase ASCII.
  */
 export class Metadata {
-  protected internalRepr: MetadataObject = {};
+  protected internalRepr: MetadataObject = new Map<string, MetadataValue[]>();
 
   /**
    * Sets the given value for the given key by replacing any other values
@@ -76,7 +60,7 @@ export class Metadata {
   set(key: string, value: MetadataValue): void {
     key = normalizeKey(key);
     validate(key, value);
-    this.internalRepr[key] = [value];
+    this.internalRepr.set(key, [value]);
   }
 
   /**
@@ -89,10 +73,13 @@ export class Metadata {
   add(key: string, value: MetadataValue): void {
     key = normalizeKey(key);
     validate(key, value);
-    if (!this.internalRepr[key]) {
-      this.internalRepr[key] = [value];
+
+    const existingValue: MetadataValue[]|undefined = this.internalRepr.get(key);
+
+    if (existingValue === undefined) {
+      this.internalRepr.set(key, [value]);
     } else {
-      this.internalRepr[key].push(value);
+      existingValue.push(value);
     }
   }
 
@@ -103,9 +90,7 @@ export class Metadata {
   remove(key: string): void {
     key = normalizeKey(key);
     validate(key);
-    if (Object.prototype.hasOwnProperty.call(this.internalRepr, key)) {
-      delete this.internalRepr[key];
-    }
+    this.internalRepr.delete(key);
   }
 
   /**
@@ -116,11 +101,7 @@ export class Metadata {
   get(key: string): MetadataValue[] {
     key = normalizeKey(key);
     validate(key);
-    if (Object.prototype.hasOwnProperty.call(this.internalRepr, key)) {
-      return this.internalRepr[key];
-    } else {
-      return [];
-    }
+    return this.internalRepr.get(key) || [];
   }
 
   /**
@@ -130,7 +111,8 @@ export class Metadata {
    */
   getMap(): {[key: string]: MetadataValue} {
     const result: {[key: string]: MetadataValue} = {};
-    forOwn(this.internalRepr, (values, key) => {
+
+    this.internalRepr.forEach((values, key) => {
       if (values.length > 0) {
         const v = values[0];
         result[key] = v instanceof Buffer ? v.slice() : v;
@@ -145,7 +127,20 @@ export class Metadata {
    */
   clone(): Metadata {
     const newMetadata = new Metadata();
-    newMetadata.internalRepr = cloneMetadataObject(this.internalRepr);
+    const newInternalRepr = newMetadata.internalRepr;
+
+    this.internalRepr.forEach((value, key) => {
+      const clonedValue: MetadataValue[] = value.map(v => {
+        if (v instanceof Buffer) {
+          return Buffer.from(v);
+        } else {
+          return v;
+        }
+      });
+
+      newInternalRepr.set(key, clonedValue);
+    });
+
     return newMetadata;
   }
 
@@ -157,8 +152,11 @@ export class Metadata {
    * @param other A Metadata object.
    */
   merge(other: Metadata): void {
-    forOwn(other.internalRepr, (values, key) => {
-      this.internalRepr[key] = (this.internalRepr[key] || []).concat(values);
+    other.internalRepr.forEach((values, key) => {
+      const mergedValue: MetadataValue[] =
+          (this.internalRepr.get(key) || []).concat(values);
+
+      this.internalRepr.set(key, mergedValue);
     });
   }
 
@@ -168,7 +166,7 @@ export class Metadata {
   toHttp2Headers(): http2.OutgoingHttpHeaders {
     // NOTE: Node <8.9 formats http2 headers incorrectly.
     const result: http2.OutgoingHttpHeaders = {};
-    forOwn(this.internalRepr, (values, key) => {
+    this.internalRepr.forEach((values, key) => {
       // We assume that the user's interaction with this object is limited to
       // through its public API (i.e. keys and values are already validated).
       result[key] = values.map((value) => {
@@ -194,11 +192,13 @@ export class Metadata {
    */
   static fromHttp2Headers(headers: http2.IncomingHttpHeaders): Metadata {
     const result = new Metadata();
-    forOwn(headers, (values, key) => {
+    Object.keys(headers).forEach((key) => {
       // Reserved headers (beginning with `:`) are not valid keys.
       if (key.charAt(0) === ':') {
         return;
       }
+
+      const values = headers[key];
 
       if (isBinaryKey(key)) {
         if (Array.isArray(values)) {
