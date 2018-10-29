@@ -666,15 +666,11 @@ describe('Client malformed response handling', function() {
       },
       serverStream: function(stream) {
         stream.write(badArg);
-        stream.end();
       },
       bidiStream: function(stream) {
         stream.on('data', function() {
           // Ignore requests
           stream.write(badArg);
-        });
-        stream.on('end', function() {
-          stream.end();
         });
       }
     });

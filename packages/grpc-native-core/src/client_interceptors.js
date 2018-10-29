@@ -382,6 +382,8 @@ function InterceptingCall(next_call, requester) {
   this.requester = requester;
 }
 
+const emptyNext = function() {};
+
 /**
  * Get the next method in the chain or a no-op function if we are at the end
  * of the chain
@@ -392,7 +394,7 @@ function InterceptingCall(next_call, requester) {
 InterceptingCall.prototype._getNextCall = function(method_name) {
   return this.next_call ?
     this.next_call[method_name].bind(this.next_call) :
-    function(){};
+    emptyNext;
 };
 
 /**
@@ -421,6 +423,9 @@ InterceptingCall.prototype._callNext = function(method_name, args, next) {
                                            next_call);
     }
   } else {
+    if (next_call === emptyNext) {
+      throw new Error('Interceptor call chain terminated unexpectedly');
+    }
     return next_call(args_array[0], args_array[1]);
   }
 };
@@ -476,11 +481,11 @@ InterceptingCall.prototype.cancel = function() {
 
 /**
  * Run a cancelWithStatus operation through the interceptor chain.
- * @param {grpc~StatusObject} status
- * @param {string} message
+ * @param {number} code
+ * @param {string} details
  */
-InterceptingCall.prototype.cancelWithStatus = function(status, message) {
-  this._callNext('cancelWithStatus', [status, message]);
+InterceptingCall.prototype.cancelWithStatus = function(code, details) {
+  this._callNext('cancelWithStatus', [code, details]);
 };
 
 /**
@@ -845,6 +850,9 @@ function _getUnaryInterceptor(method_definition, channel, emitter, callback) {
     final_requester.cancel = function () {
       call.cancel();
     };
+    final_requester.cancelWithStatus = function(code, details) {
+      call.cancelWithStatus(code, details)
+    };
     final_requester.getPeer = function () {
       return call.getPeer();
     };
@@ -957,6 +965,9 @@ function _getClientStreamingInterceptor(method_definition, channel, emitter,
     final_requester.cancel = function () {
       call.cancel();
     };
+    final_requester.cancelWithStatus = function(code, details) {
+      call.cancelWithStatus(code, details)
+    };
     final_requester.getPeer = function() {
       return call.getPeer();
     };
@@ -1052,6 +1063,9 @@ function _getServerStreamingInterceptor(method_definition, channel, emitter) {
     };
     final_requester.cancel = function() {
       call.cancel();
+    };
+    final_requester.cancelWithStatus = function(code, details) {
+      call.cancelWithStatus(code, details)
     };
     final_requester.getPeer = function() {
       return call.getPeer();
@@ -1158,6 +1172,9 @@ function _getBidiStreamingInterceptor(method_definition, channel, emitter) {
     };
     final_requester.cancel = function() {
       call.cancel();
+    };
+    final_requester.cancelWithStatus = function(code, details) {
+      call.cancelWithStatus(code, details)
     };
     final_requester.getPeer = function() {
       return call.getPeer();
