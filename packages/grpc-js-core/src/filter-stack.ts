@@ -1,4 +1,4 @@
-import {flow, flowRight, map} from 'lodash';
+import {map} from 'lodash';
 
 import {Call, StatusObject, WriteObject} from './call-stream';
 import {Filter, FilterFactory} from './filter';
@@ -8,29 +8,53 @@ export class FilterStack implements Filter {
   constructor(private readonly filters: Filter[]) {}
 
   sendMetadata(metadata: Promise<Metadata>) {
-    return flow(map(
-        this.filters, (filter) => filter.sendMetadata.bind(filter)))(metadata);
+    let result: Promise<Metadata> = metadata;
+
+    for (let i = 0; i < this.filters.length; i++) {
+      result = this.filters[i].sendMetadata(result);
+    }
+
+    return result;
   }
 
   receiveMetadata(metadata: Promise<Metadata>) {
-    return flowRight(
-        map(this.filters, (filter) => filter.receiveMetadata.bind(filter)))(
-        metadata);
+    let result: Promise<Metadata> = metadata;
+
+    for (let i = this.filters.length - 1; i >= 0; i--) {
+      result = this.filters[i].receiveMetadata(result);
+    }
+
+    return result;
   }
 
   sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
-    return flow(map(this.filters, (filter) => filter.sendMessage.bind(filter)))(
-        message);
+    let result: Promise<WriteObject> = message;
+
+    for (let i = 0; i < this.filters.length; i++) {
+      result = this.filters[i].sendMessage(result);
+    }
+
+    return result;
   }
 
   receiveMessage(message: Promise<Buffer>): Promise<Buffer> {
-    return flowRight(map(
-        this.filters, (filter) => filter.receiveMessage.bind(filter)))(message);
+    let result: Promise<Buffer> = message;
+
+    for (let i = this.filters.length - 1; i >= 0; i--) {
+      result = this.filters[i].receiveMessage(result);
+    }
+
+    return result;
   }
 
   receiveTrailers(status: Promise<StatusObject>): Promise<StatusObject> {
-    return flowRight(map(
-        this.filters, (filter) => filter.receiveTrailers.bind(filter)))(status);
+    let result: Promise<StatusObject> = status;
+
+    for (let i = this.filters.length - 1; i >= 0; i--) {
+      result = this.filters[i].receiveTrailers(result);
+    }
+
+    return result;
   }
 }
 
