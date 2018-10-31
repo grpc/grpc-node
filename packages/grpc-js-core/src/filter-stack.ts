@@ -1,5 +1,3 @@
-import {map} from 'lodash';
-
 import {Call, StatusObject, WriteObject} from './call-stream';
 import {Filter, FilterFactory} from './filter';
 import {Metadata} from './metadata';
@@ -63,6 +61,6 @@ export class FilterStackFactory implements FilterFactory<FilterStack> {
 
   createFilter(callStream: Call): FilterStack {
     return new FilterStack(
-        map(this.factories, (factory) => factory.createFilter(callStream)));
+        this.factories.map((factory) => factory.createFilter(callStream)));
   }
 }
