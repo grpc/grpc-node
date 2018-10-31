@@ -294,6 +294,8 @@ declare module "grpc" {
     handleServerStreamingCall<RequestType, ResponseType> |
     handleBidiStreamingCall<RequestType, ResponseType>;
 
+  type authContext = object | null;
+
   /**
    * User-provided method to handle unary requests on a server
    */
@@ -326,6 +328,12 @@ declare module "grpc" {
      * @return The URI of the endpoint
      */
     getPeer(): string;
+
+    /**
+     * Get the authentication context for this call/stream.
+     * @return The authentication context
+     */
+    getAuthContext(): authContext;
 
     /**
      * Send the initial metadata for a writable stream.
@@ -362,6 +370,12 @@ declare module "grpc" {
      * @return The URI of the endpoint
      */
     getPeer(): string;
+
+    /**
+     * Get the authentication context for this call/stream.
+     * @return The authentication context
+     */
+    getAuthContext(): authContext;
 
     /**
      * Send the initial metadata for a writable stream.
@@ -405,6 +419,12 @@ declare module "grpc" {
     getPeer(): string;
 
     /**
+     * Get the authentication context for this call/stream.
+     * @return The authentication context
+     */
+    getAuthContext(): authContext;
+
+    /**
      * Send the initial metadata for a writable stream.
      * @param responseMetadata Metadata to send
      */
@@ -439,6 +459,12 @@ declare module "grpc" {
      * @return The URI of the endpoint
      */
     getPeer(): string;
+
+    /**
+     * Get the authentication context for this call/stream.
+     * @return The authentication context
+     */
+    getAuthContext(): authContext;
 
     /**
      * Send the initial metadata for a writable stream.

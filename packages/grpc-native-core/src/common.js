@@ -112,6 +112,35 @@ exports.getMethodType = function(method_definition) {
   }
 };
 
+const PEM_CERT_HEADER = "-----BEGIN CERTIFICATE-----";
+const PEM_CERT_FOOTER = "-----END CERTIFICATE-----";
+
+/**
+ * Converts a certificate in ASCII PEM format to a byte buffer.
+ * @param {string} cert The certificate in PEM format
+ * @return {Buffer|Error} The certificate as a byte buffer.
+ */
+
+exports.pemCertificateToRaw = function(cert) {
+  // Parse cert from pem to a version that matches the tls.checkServerIdentity
+  // format and the tls.TLSSocket.getPeerCertificate format.
+  // https://nodejs.org/api/tls.html#tls_tls_checkserveridentity_hostname_cert
+  // https://nodejs.org/api/tls.html#tls_tlssocket_getpeercertificate_detailed
+
+  var pemHeaderIndex = cert.indexOf(PEM_CERT_HEADER);
+  if (pemHeaderIndex === -1) {
+    return new Error("Unable to parse certificate PEM.");
+  }
+  cert = cert.substring(pemHeaderIndex);
+  var pemFooterIndex = cert.indexOf(PEM_CERT_FOOTER);
+  if (pemFooterIndex === -1) {
+    return new Error("Unable to parse certificate PEM.");
+  }
+  cert = cert.substring(PEM_CERT_HEADER.length, pemFooterIndex);
+  return new Buffer(cert.replace("\n", "").replace(" ", ""), "base64");
+}
+
+
 // JSDoc definitions that are used in multiple other modules
 
 /**

@@ -76,27 +76,9 @@ var _ = require('lodash');
  * @see https://github.com/google/google-auth-library-nodejs
  */
 
-const PEM_CERT_HEADER = "-----BEGIN CERTIFICATE-----";
-const PEM_CERT_FOOTER = "-----END CERTIFICATE-----";
-
 function wrapCheckServerIdentityCallback(callback) {
   return function(hostname, cert) {
-    // Parse cert from pem to a version that matches the tls.checkServerIdentity
-    // format.
-    // https://nodejs.org/api/tls.html#tls_tls_checkserveridentity_hostname_cert
-
-    var pemHeaderIndex = cert.indexOf(PEM_CERT_HEADER);
-    if (pemHeaderIndex === -1) {
-      return new Error("Unable to parse certificate PEM.");
-    }
-    cert = cert.substring(pemHeaderIndex);
-    var pemFooterIndex = cert.indexOf(PEM_CERT_FOOTER);
-    if (pemFooterIndex === -1) {
-      return new Error("Unable to parse certificate PEM.");
-    }
-    cert = cert.substring(PEM_CERT_HEADER.length, pemFooterIndex);
-    var rawBuffer = new Buffer(cert.replace("\n", "").replace(" ", ""), "base64");
-
+    var rawBuffer = common.pemCertificateToRaw(cert)
     return callback(hostname, { raw: rawBuffer });
   }
 }
