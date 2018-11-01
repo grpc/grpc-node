@@ -15,7 +15,7 @@ This is the existing, feature-rich implementation of gRPC using a C++ addon. It 
 
 ### Pure JavaScript Client
 
-Directory: [`packages/grpc-js-core`](https://github.com/grpc/grpc-node/tree/master/packages/grpc-js-core)
+Directory: [`packages/grpc-js`](https://github.com/grpc/grpc-node/tree/master/packages/grpc-js)
 
 npm package: [@grpc/grpc-js](https://www.npmjs.com/package/@grpc/grpc-js)
 

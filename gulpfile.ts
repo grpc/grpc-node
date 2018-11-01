@@ -49,7 +49,7 @@ function loadGulpTasksWithPrefix(path: string, prefix: string) {
 
 [
   ['./packages/grpc-health-check/gulpfile', 'health-check'],
-  ['./packages/grpc-js-core/gulpfile', 'js.core'],
+  ['./packages/grpc-js/gulpfile', 'js.core'],
   ['./packages/grpc-native-core/gulpfile', 'native.core'],
   ['./packages/grpc-protobufjs/gulpfile', 'protobuf'],
   ['./test/gulpfile', 'internal.test'],

@@ -55,7 +55,7 @@
   "nyc": {
     "include": [
       "packages/grpc-health-check/health.js",
-      "packages/grpc-js-core/build/src/*",
+      "packages/grpc-js/build/src/*",
       "packages/grpc-native-core/index.js",
       "packages/grpc-native-core/src/*.js",
       "packages/grpc-protobufjs/build/src/*"
