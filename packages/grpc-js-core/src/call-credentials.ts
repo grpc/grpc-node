@@ -1,5 +1,3 @@
-import {map} from 'lodash';
-
 import {Metadata} from './metadata';
 
 export type CallMetadataOptions = {
@@ -53,7 +51,7 @@ class ComposedCallCredentials extends CallCredentials {
   async generateMetadata(options: CallMetadataOptions): Promise<Metadata> {
     const base: Metadata = new Metadata();
     const generated: Metadata[] = await Promise.all(
-        map(this.creds, (cred) => cred.generateMetadata(options)));
+        this.creds.map((cred) => cred.generateMetadata(options)));
     for (const gen of generated) {
       base.merge(gen);
     }

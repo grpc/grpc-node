@@ -1,5 +1,3 @@
-import * as _ from 'lodash';
-
 import {ChannelCredentials} from './channel-credentials';
 import {ChannelOptions} from './channel-options';
 import {Client} from './client';
@@ -73,10 +71,11 @@ export function makeClientConstructor(
     [methodName: string]: Function;
   }
 
-  _.each(methods, (attrs, name) => {
+  Object.keys(methods).forEach((name) => {
+    const attrs = methods[name];
     let methodType: keyof typeof requesterFuncs;
     // TODO(murgatroid99): Verify that we don't need this anymore
-    if (_.startsWith(name, '$')) {
+    if (typeof name === 'string' && name.charAt(0) === '$') {
       throw new Error('Method names cannot start with $');
     }
     if (attrs.requestStream) {
@@ -94,11 +93,11 @@ export function makeClientConstructor(
     }
     const serialize = attrs.requestSerialize;
     const deserialize = attrs.responseDeserialize;
-    const methodFunc = _.partial(
-        requesterFuncs[methodType], attrs.path, serialize, deserialize);
+    const methodFunc =
+        partial(requesterFuncs[methodType], attrs.path, serialize, deserialize);
     ServiceClientImpl.prototype[name] = methodFunc;
     // Associate all provided attributes with the method
-    _.assign(ServiceClientImpl.prototype[name], attrs);
+    Object.assign(ServiceClientImpl.prototype[name], attrs);
     if (attrs.originalName) {
       ServiceClientImpl.prototype[attrs.originalName] =
           ServiceClientImpl.prototype[name];
@@ -108,6 +107,15 @@ export function makeClientConstructor(
   ServiceClientImpl.service = methods;
 
   return ServiceClientImpl;
+}
+
+function partial(
+    fn: Function, path: string, serialize: Function,
+    deserialize: Function): Function {
+  // tslint:disable-next-line:no-any
+  return function(this: any, ...args: any[]) {
+    return fn.call(this, path, serialize, deserialize, ...args);
+  };
 }
 
 export type GrpcObject = {
