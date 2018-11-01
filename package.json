@@ -58,7 +58,7 @@
       "packages/grpc-js/build/src/*",
       "packages/grpc-native-core/index.js",
       "packages/grpc-native-core/src/*.js",
-      "packages/grpc-protobufjs/build/src/*"
+      "packages/proto-loader/build/src/*"
     ],
     "cache": true,
     "all": true

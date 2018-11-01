@@ -31,7 +31,7 @@ var util = require('util');
 var genericService = require('./generic_service');
 
 var grpc = require('../any_grpc').server;
-var protoLoader = require('../../packages/grpc-protobufjs');
+var protoLoader = require('../../packages/proto-loader');
 var protoPackage = protoLoader.loadSync(
     'src/proto/grpc/testing/benchmark_service.proto',
     {keepCase: true,
