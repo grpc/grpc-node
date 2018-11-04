@@ -5,14 +5,18 @@
 const _ = require('lodash');
 
 function getImplementation(globalField) {
-  if (global[globalField] !== 'js' && global[globalField] !== 'native') {
-    throw new Error([
-      `Invalid value for global.${globalField}: ${global.globalField}.`,
-      'If running from the command line, please --require a fixture first.'
-    ].join(' '));
-  }
   const impl = global[globalField];
-  return require(`../packages/grpc-${impl}-core`);
+
+  if (impl === 'js') {
+    return require(`../packages/grpc-${impl}`);
+  } else if (impl === 'native') {
+    return require(`../packages/grpc-${impl}-core`);
+  }
+
+  throw new Error([
+    `Invalid value for global.${globalField}: ${global.globalField}.`,
+    'If running from the command line, please --require a fixture first.'
+  ].join(' '));
 }
 
 const clientImpl = getImplementation('_client_implementation');
