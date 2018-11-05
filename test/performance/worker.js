@@ -22,7 +22,7 @@ var console = require('console');
 var WorkerServiceImpl = require('./worker_service_impl');
 
 var grpc = require('../any_grpc').server;
-var protoLoader = require('../../packages/grpc-protobufjs');
+var protoLoader = require('../../packages/proto-loader');
 var protoPackage = protoLoader.loadSync(
     'src/proto/grpc/testing/worker_service.proto',
     {keepCase: true,

@@ -21,7 +21,7 @@
 var fs = require('fs');
 var path = require('path');
 var grpc = require('../any_grpc').client;
-var protoLoader = require('../../packages/grpc-protobufjs');
+var protoLoader = require('../../packages/proto-loader');
 var GoogleAuth = require('google-auth-library');
 
 var protoPackage = protoLoader.loadSync(

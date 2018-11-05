@@ -2,9 +2,9 @@ require('source-map-support/register');
 const Module = require('module');
 const shimmer = require('shimmer');
 
-const grpcPJson = require('../../packages/grpc-js-core/package');
-const grpcImpl = require('../../packages/grpc-js-core');
-const grpcProtobuf = require('../../packages/grpc-protobufjs');
+const grpcPJson = require('../../packages/grpc-js/package');
+const grpcImpl = require('../../packages/grpc-js');
+const grpcProtobuf = require('../../packages/proto-loader');
 
 if (!process.env.USE_GRPC_NATIVE) {
   shimmer.wrap(Module, '_load', (moduleLoad) => {

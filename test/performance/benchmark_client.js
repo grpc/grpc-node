@@ -37,7 +37,7 @@ var genericService = require('./generic_service');
 
 // TODO(murgatroid99): use multiple grpc implementations
 var grpc = require('../any_grpc').client;
-var protoLoader = require('../../packages/grpc-protobufjs');
+var protoLoader = require('../../packages/proto-loader');
 var protoPackage = protoLoader.loadSync(
     'src/proto/grpc/testing/benchmark_service.proto',
     {keepCase: true,

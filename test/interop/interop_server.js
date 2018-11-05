@@ -24,7 +24,7 @@ var _ = require('lodash');
 var AsyncDelayQueue = require('./async_delay_queue');
 var grpc = require('../any_grpc').server;
 // TODO(murgatroid99): do this import more cleanly
-var protoLoader = require('../../packages/grpc-protobufjs');
+var protoLoader = require('../../packages/proto-loader');
 var protoPackage = protoLoader.loadSync(
     'src/proto/grpc/testing/test.proto',
     {keepCase: true,
