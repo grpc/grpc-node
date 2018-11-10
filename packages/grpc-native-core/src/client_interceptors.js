@@ -944,7 +944,7 @@ function _getClientStreamingInterceptor(method_definition, channel, emitter,
         callback(e);
         return;
       }
-      if (_.isFinite(encoding)) {
+      if (Number.isFinite(encoding)) {
         /* Attach the encoding if it is a finite number. This is the closest we
          * can get to checking that it is valid flags */
         message.grpcWriteFlags = encoding;
@@ -1145,7 +1145,7 @@ function _getBidiStreamingInterceptor(method_definition, channel, emitter) {
         callback(e);
         return;
       }
-      if (_.isFinite(encoding)) {
+      if (Number.isFinite(encoding)) {
         /* Attach the encoding if it is a finite number. This is the closest we
          * can get to checking that it is valid flags */
         message.grpcWriteFlags = encoding;

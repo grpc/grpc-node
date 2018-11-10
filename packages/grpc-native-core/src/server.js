@@ -318,7 +318,7 @@ function _write(chunk, encoding, callback) {
         (new Metadata())._getCoreRepresentation();
     this.call.metadataSent = true;
   }
-  if (_.isFinite(encoding)) {
+  if (Number.isFinite(encoding)) {
     /* Attach the encoding if it is a finite number. This is the closest we
      * can get to checking that it is valid flags */
     message.grpcWriteFlags = encoding;

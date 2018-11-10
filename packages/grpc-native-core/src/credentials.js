@@ -170,7 +170,7 @@ exports.createFromMetadataGenerator = function(metadata_generator) {
       var message = '';
       if (error) {
         message = error.message;
-        if (error.hasOwnProperty('code') && _.isFinite(error.code)) {
+        if (error.hasOwnProperty('code') && Number.isFinite(error.code)) {
           code = error.code;
         } else {
           code = constants.status.UNAUTHENTICATED;
