@@ -51,7 +51,7 @@ function validate(key, value) {
       throw new Error('keys that end with \'-bin\' must have Buffer values');
     }
   } else {
-    if (!_.isString(value)) {
+    if (typeof value !== 'string') {
       throw new Error(
           'keys that don\'t end with \'-bin\' must have String values');
     }
