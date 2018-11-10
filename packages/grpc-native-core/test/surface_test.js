@@ -489,8 +489,8 @@ describe('Echo metadata', function() {
     var call = client.unary({}, metadata,
                             function(err, data) { assert.ifError(err); });
     call.on('metadata', function(metadata) {
-      assert(_.startsWith(metadata.get('user-agent')[0],
-                          'grpc-node/' + version));
+      assert.strictEqual(0,
+        metadata.get('user-agent')[0].indexOf('grpc-node/' + version));
       done();
     });
   });
