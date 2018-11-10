@@ -17,7 +17,8 @@
   "dependencies": {
     "google-protobuf": "^3.4.0",
     "grpc": "^1.6.0",
-    "lodash": "^4.17.5"
+    "lodash.clone": "^4.5.0",
+    "lodash.get": "^4.4.2"
   },
   "files": [
     "LICENSE",

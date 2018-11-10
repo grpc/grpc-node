@@ -20,13 +20,14 @@
 
 var grpc = require('grpc');
 
-var _ = require('lodash');
+var _get = require('lodash.get');
+var _clone = require('lodash.clone')
 
 var health_messages = require('./v1/health_pb');
 var health_service = require('./v1/health_grpc_pb');
 
 function HealthImplementation(statusMap) {
-  this.statusMap = _.clone(statusMap);
+  this.statusMap = _clone(statusMap);
 }
 
 HealthImplementation.prototype.setStatus = function(service, status) {
@@ -35,7 +36,7 @@ HealthImplementation.prototype.setStatus = function(service, status) {
 
 HealthImplementation.prototype.check = function(call, callback){
   var service = call.request.getService();
-  var status = _.get(this.statusMap, service, null);
+  var status = _get(this.statusMap, service, null);
   if (status === null) {
     // TODO(murgatroid99): Do this without an explicit reference to grpc.
     callback({code:grpc.status.NOT_FOUND});
