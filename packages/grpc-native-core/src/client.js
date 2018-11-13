@@ -935,7 +935,7 @@ exports.makeClientConstructor = function(methods, serviceName,
   ServiceClient.prototype.$method_names = {};
 
   _.each(methods, function(attrs, name) {
-    if (_.startsWith(name, '$')) {
+    if (name.indexOf('$') === 0) {
       throw new Error('Method names cannot start with $');
     }
     var method_type = common.getMethodType(attrs);
