@@ -72,8 +72,8 @@ grpc.setDefaultRootsPem(fs.readFileSync(SSL_ROOTS_PATH, 'ascii'));
  * @return {Object<string, *>} The resulting gRPC object.
  */
 exports.loadObject = function loadObject(value, options) {
-  options = _.defaults(options, common.defaultGrpcOptions);
-  options = _.defaults(options, {'protobufjsVersion': 'detect'});
+  options = Object.assign(common.defaultGrpcOptions, options);
+  options = Object.assign({'protobufjsVersion': 'detect'}, options);
   var protobufjsVersion;
   if (options.protobufjsVersion === 'detect') {
     if (protobuf_js_6_common.isProbablyProtobufJs6(value)) {
@@ -122,7 +122,7 @@ var loadObject = exports.loadObject;
  * @return {Object<string, *>} The resulting gRPC object
  */
 exports.load = util.deprecate(function load(filename, format, options) {
-  options = _.defaults(options, common.defaultGrpcOptions);
+  options = Object.assign(common.defaultGrpcOptions, options);
   options.protobufjsVersion = 5;
   if (!format) {
     format = 'proto';
