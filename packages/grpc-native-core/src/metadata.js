@@ -122,7 +122,7 @@ Metadata.prototype.get = function(key) {
  */
 Metadata.prototype.getMap = function() {
   var result = {};
-  Object.getOwnPropertyNames(this._internal_repr).forEach(key => {
+  Object.keys(this._internal_repr).forEach(key => {
     const values = this._internal_repr[key];
     if(values.length > 0) {
       result[key] = values[0];
@@ -137,7 +137,7 @@ Metadata.prototype.getMap = function() {
  */
 Metadata.prototype.clone = function() {
   var copy = new Metadata();
-  Object.getOwnPropertyNames(this._internal_repr).forEach(key => {
+  Object.keys(this._internal_repr).forEach(key => {
     const value = this._internal_repr[key];
     copy._internal_repr[key] = _.clone(value);
   });
@@ -164,7 +164,7 @@ Metadata.prototype._getCoreRepresentation = function() {
 Metadata._fromCoreRepresentation = function(metadata) {
   var newMetadata = new Metadata();
   if (metadata) {
-    Object.getOwnPropertyNames(metadata).forEach(key => {
+    Object.keys(metadata).forEach(key => {
       const value = metadata[key];
       newMetadata._internal_repr[key] = _.clone(value);
     });
