@@ -871,15 +871,14 @@ Server.prototype.addService = function(service, implementation) {
   if (!_.isObject(service) || !_.isObject(implementation)) {
     throw new Error('addService requires two objects as arguments');
   }
-  if (Object.keys(service).length === 0) {
+  if (_.keys(service).length === 0) {
     throw new Error('Cannot add an empty service to a server');
   }
   if (this.started) {
     throw new Error('Can\'t add a service to a started server.');
   }
   var self = this;
-  Object.keys(service).forEach(key => {
-    const attrs = service[key];
+  _.forOwn(service, function(attrs, name) {
     var method_type;
     if (attrs.requestStream) {
       if (attrs.responseStream) {
