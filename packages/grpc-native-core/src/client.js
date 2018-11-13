@@ -371,7 +371,7 @@ function Client(address, credentials, options) {
   }
 
   // Resolve interceptor options and assign interceptors to each method
-  if (_.isArray(options.interceptor_providers) && _.isArray(options.interceptors)) {
+  if (Array.isArray(options.interceptor_providers) && Array.isArray(options.interceptors)) {
     throw new client_interceptors.InterceptorConfigurationError(
       'Both interceptors and interceptor_providers were passed as options ' +
       'to the client constructor. Only one of these is allowed.');
@@ -409,12 +409,12 @@ function Client(address, credentials, options) {
 exports.Client = Client;
 
 Client.prototype.resolveCallInterceptors = function(method_definition, interceptors, interceptor_providers) {
-  if (_.isArray(interceptors) && _.isArray(interceptor_providers)) {
+  if (Array.isArray(interceptors) && Array.isArray(interceptor_providers)) {
     throw new client_interceptors.InterceptorConfigurationError(
       'Both interceptors and interceptor_providers were passed as call ' +
       'options. Only one of these is allowed.');
   }
-  if (_.isArray(interceptors) || _.isArray(interceptor_providers)) {
+  if (Array.isArray(interceptors) || Array.isArray(interceptor_providers)) {
     interceptors = interceptors || [];
     interceptor_providers = interceptor_providers || [];
     return client_interceptors.resolveInterceptorProviders(interceptor_providers, method_definition).concat(interceptors);

@@ -39,7 +39,7 @@ var CallRegistry = function(done, expectation, is_ordered, is_verbose) {
   this.call_array = [];
   this.done = done;
   this.expectation = expectation;
-  this.expectation_is_array = _.isArray(this.expectation);
+  this.expectation_is_array = Array.isArray(this.expectation);
   this.is_ordered = is_ordered;
   this.is_verbose = is_verbose;
   if (is_verbose) {

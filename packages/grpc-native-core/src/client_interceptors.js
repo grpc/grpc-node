@@ -353,7 +353,7 @@ RequesterBuilder.prototype.build = function() {
  * @return {null|Interceptor[]}
  */
 var resolveInterceptorProviders = function(providers, method_definition) {
-  if (!_.isArray(providers)) {
+  if (!Array.isArray(providers)) {
     return null;
   }
   var interceptors = [];
