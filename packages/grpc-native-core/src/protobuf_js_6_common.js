@@ -103,9 +103,9 @@ exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service,
                                                                    options) {
   var prefix = '/' + fullyQualifiedName(service) + '/';
   service.resolveAll();
-  return _.zipObject(_.map(service.methods, function(method) {
+  return _.zipObject(service.methods.map(function(method) {
     return _.camelCase(method.name);
-  }), _.map(service.methods, function(method) {
+  }), service.methods.map(function(method) {
     return {
       originalName: method.name,
       path: prefix + method.name,

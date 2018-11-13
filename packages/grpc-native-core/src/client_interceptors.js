@@ -746,14 +746,14 @@ function _areBatchRequirementsMet(batch_ops, completed_ops) {
 function _startBatchIfReady(call, batch, batch_state, callback) {
   var completed_ops = batch_state.completed_ops;
   var deferred_batches = batch_state.deferred_batches;
-  var batch_ops = _.map(_.keys(batch), Number);
+  var batch_ops = _.keys(batch).map(Number);
   if (_areBatchRequirementsMet(batch_ops, completed_ops)) {
     // Dependencies are met, start the batch and any deferred batches whose
     // dependencies are met as a result.
     call.startBatch(batch, callback);
     completed_ops = _.union(completed_ops, batch_ops);
     deferred_batches = _.flatMap(deferred_batches, function(deferred_batch) {
-      var deferred_batch_ops = _.map(_.keys(deferred_batch), Number);
+      var deferred_batch_ops = _.keys(deferred_batch).map(Number);
       if (_areBatchRequirementsMet(deferred_batch_ops, completed_ops)) {
         call.startBatch(deferred_batch.batch, deferred_batch.callback);
         return [];
