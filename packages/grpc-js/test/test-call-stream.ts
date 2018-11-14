@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import {OutgoingHttpHeaders} from 'http';
 import * as http2 from 'http2';
 import {range} from 'lodash';
 import * as stream from 'stream';
@@ -46,6 +47,9 @@ class ClientHttp2StreamMock extends stream.Duplex implements
   endAfterHeaders = false;
   pending = false;
   rstCode = 0;
+  readonly sentHeaders: OutgoingHttpHeaders = {};
+  readonly sentInfoHeaders?: OutgoingHttpHeaders[] = [];
+  readonly sentTrailers?: OutgoingHttpHeaders = undefined;
   // tslint:disable:no-any
   session: http2.Http2Session = {} as any;
   state: http2.StreamState = {} as any;
@@ -75,6 +79,9 @@ class ClientHttp2StreamMock extends stream.Duplex implements
   _write(chunk: Buffer, encoding: string, cb: Function) {
     this.emit('write', chunk);
     cb();
+  }
+  sendTrailers(headers: OutgoingHttpHeaders) {
+    return this;
   }
 }
 
