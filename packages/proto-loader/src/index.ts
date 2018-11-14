@@ -18,7 +18,7 @@
 import * as Protobuf from 'protobufjs';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as _ from 'lodash';
+import camelCase = require('lodash.camelcase');
 
 export interface Serialize<T> {
   (value: T): Buffer;
@@ -97,7 +97,7 @@ function createMethodDefinition(method: Protobuf.Method, serviceName: string, op
     responseSerialize: createSerializer(method.resolvedResponseType as Protobuf.Type),
     responseDeserialize: createDeserializer(method.resolvedResponseType as Protobuf.Type, options),
     // TODO(murgatroid99): Find a better way to handle this
-    originalName: _.camelCase(method.name)
+    originalName: camelCase(method.name)
   };
 }
 
