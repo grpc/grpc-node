@@ -167,5 +167,5 @@ exports.loadObject = function loadObject(value, options) {
  *   ReflectionObject
  */
 exports.isProbablyProtobufJs5 = function isProbablyProtobufJs5(obj) {
-  return _.isArray(obj.children) && (typeof obj.build === 'function');
+  return Array.isArray(obj.children) && (typeof obj.build === 'function');
 };
