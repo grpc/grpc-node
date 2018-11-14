@@ -903,10 +903,10 @@ Server.prototype.addService = function(service, implementation) {
             ' for ' + attrs.path + ' expected but not provided');
         impl = defaultHandler[method_type];
       } else {
-        impl = _.bind(implementation[attrs.originalName], implementation);
+        impl = implementation[attrs.originalName].bind(implementation);
       }
     } else {
-      impl = _.bind(implementation[name], implementation);
+      impl = implementation[name].bind(implementation);
     }
     var serialize = attrs.responseSerialize;
     var deserialize = attrs.requestDeserialize;
