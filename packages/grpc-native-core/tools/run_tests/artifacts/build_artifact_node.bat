@@ -38,12 +38,14 @@ for %%a in (%arch_list%) do (
     call .\node_modules\.bin\node-pre-gyp.cmd build package --target=%%v --target_arch=%%a || goto :error
 
     xcopy /Y /I /S build\stage\* %ARTIFACTS_OUT%\ || goto :error
+    rmdir build /S /Q
   )
 
   for %%v in (%electron_versions%) do (
     cmd /V /C "set "HOME=%USERPROFILE%\electron-gyp" && call .\node_modules\.bin\node-pre-gyp.cmd configure rebuild package --runtime=electron --target=%%v --target_arch=%%a --disturl=https://atom.io/download/electron" || goto :error
 
     xcopy /Y /I /S build\stage\* %ARTIFACTS_OUT%\ || goto :error
+    rmdir build /S /Q
   )
 )
 if %errorlevel% neq 0 exit /b %errorlevel%
