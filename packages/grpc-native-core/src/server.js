@@ -861,6 +861,10 @@ var defaultHandler = {
   }
 };
 
+function isObject(thing) {
+  return (typeof thing === 'object' || typeof thing === 'function') && thing !== null;
+}
+
 /**
  * Add a service to the server, with a corresponding implementation.
  * @param {grpc~ServiceDefinition} service The service descriptor
@@ -868,7 +872,7 @@ var defaultHandler = {
  *     names to method implementation for the provided service.
  */
 Server.prototype.addService = function(service, implementation) {
-  if (typeof service !== 'object' || typeof implementation !== 'object') {
+  if (!isObject(service) || !isObject(implementation)) {
     throw new Error('addService requires two objects as arguments');
   }
   if (_.keys(service).length === 0) {
