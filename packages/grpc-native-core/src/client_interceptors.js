@@ -646,7 +646,7 @@ function getCall(channel, path, options) {
   if (options) {
     deadline = options.deadline;
     host = options.host;
-    parent = _.get(options, 'parent.call');
+    parent = options.parent ? options.parent.call : undefined;
     propagate_flags = options.propagate_flags;
     credentials = options.credentials;
   }
