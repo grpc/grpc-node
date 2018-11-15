@@ -25,6 +25,7 @@
 
 var _ = require('lodash');
 var client = require('./client');
+var common = require('./common');
 
 /**
  * Get a function that deserializes a specific type of protobuf.
@@ -103,7 +104,7 @@ exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service,
                                                                    options) {
   var prefix = '/' + fullyQualifiedName(service) + '/';
   service.resolveAll();
-  return _.zipObject(service.methods.map(function(method) {
+  return common.zipObject(service.methods.map(function(method) {
     return _.camelCase(method.name);
   }), service.methods.map(function(method) {
     return {

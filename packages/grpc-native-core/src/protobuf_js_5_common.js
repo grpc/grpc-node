@@ -25,6 +25,7 @@
 
 var _ = require('lodash');
 var client = require('./client');
+var common = require('./common');
 
 /**
  * Get a function that deserializes a specific type of protobuf.
@@ -106,7 +107,7 @@ exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service,
      lodash@3.10.1-compatible functions. A previous version used
      _.fromPairs, which would be cleaner, but was introduced in lodash
      version 4 */
-  return _.zipObject(service.children.map(function(method) {
+  return common.zipObject(service.children.map(function(method) {
     return _.camelCase(method.name);
   }), service.children.map(function(method) {
     return {
