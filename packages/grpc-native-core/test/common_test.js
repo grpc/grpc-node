@@ -81,7 +81,7 @@ describe('Proto message long int serialize and deserialize', function() {
                        neg_value);
   });
   it('should deserialize as a number with the right option set', function() {
-    var num_options = _.defaults({longsAsStrings: false}, default_options);
+    var num_options = Object.assign({}, default_options, {longsAsStrings: false});
     var longNumDeserialize = deserializeCls(messages_proto.LongValues,
                                             num_options);
     var serialized = longSerialize({int_64: pos_value});
@@ -95,7 +95,7 @@ describe('Proto message bytes serialize and deserialize', function() {
   var sequenceSerialize = serializeCls(messages_proto.SequenceValues);
   var sequenceDeserialize = deserializeCls(
       messages_proto.SequenceValues, default_options);
-  var b64_options = _.defaults({binaryAsBase64: true}, default_options);
+  var b64_options = Object.assign({}, default_options, {binaryAsBase64: true});
   var sequenceBase64Deserialize = deserializeCls(
       messages_proto.SequenceValues, b64_options);
   var buffer_val = new Buffer([0x69, 0xb7]);
@@ -169,7 +169,7 @@ describe('Proto message enum serialize and deserialize', function() {
   var enumSerialize = serializeCls(messages_proto.EnumValues);
   var enumDeserialize = deserializeCls(
       messages_proto.EnumValues, default_options);
-  var enumIntOptions = _.defaults({enumsAsStrings: false}, default_options);
+  var enumIntOptions = Object.assign({}, default_options, {enumsAsStrings: false});
   var enumIntDeserialize = deserializeCls(
       messages_proto.EnumValues, enumIntOptions);
   it('Should accept both names and numbers', function() {
