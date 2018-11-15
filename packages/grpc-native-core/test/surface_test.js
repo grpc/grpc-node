@@ -204,10 +204,10 @@ describe('Client constructor building', function() {
       path: '/illegal/$method',
       requestStream: false,
       responseStream: false,
-      requestSerialize: _.identity,
-      requestDeserialize: _.identity,
-      responseSerialize: _.identity,
-      responseDeserialize: _.identity
+      requestSerialize: x => x,
+      requestDeserialize: x => x,
+      responseSerialize: x => x,
+      responseDeserialize: x => x
     }
   };
   it('Should reject method names starting with $', function() {
@@ -628,29 +628,29 @@ describe('Client malformed response handling', function() {
         path: '/TestService/Unary',
         requestStream: false,
         responseStream: false,
-        requestDeserialize: _.identity,
-        responseSerialize: _.identity
+        requestDeserialize: x => x,
+        responseSerialize: x => x
       },
       clientStream: {
         path: '/TestService/ClientStream',
         requestStream: true,
         responseStream: false,
-        requestDeserialize: _.identity,
-        responseSerialize: _.identity
+        requestDeserialize: x => x,
+        responseSerialize: x => x
       },
       serverStream: {
         path: '/TestService/ServerStream',
         requestStream: false,
         responseStream: true,
-        requestDeserialize: _.identity,
-        responseSerialize: _.identity
+        requestDeserialize: x => x,
+        responseSerialize: x => x
       },
       bidiStream: {
         path: '/TestService/BidiStream',
         requestStream: true,
         responseStream: true,
-        requestDeserialize: _.identity,
-        responseSerialize: _.identity
+        requestDeserialize: x => x,
+        responseSerialize: x => x
       }
     };
     server = new grpc.Server();
@@ -729,28 +729,28 @@ describe('Server serialization failure handling', function() {
         path: '/TestService/Unary',
         requestStream: false,
         responseStream: false,
-        requestDeserialize: _.identity,
+        requestDeserialize: x => x,
         responseSerialize: serializeFail
       },
       clientStream: {
         path: '/TestService/ClientStream',
         requestStream: true,
         responseStream: false,
-        requestDeserialize: _.identity,
+        requestDeserialize: x => x,
         responseSerialize: serializeFail
       },
       serverStream: {
         path: '/TestService/ServerStream',
         requestStream: false,
         responseStream: true,
-        requestDeserialize: _.identity,
+        requestDeserialize: x => x,
         responseSerialize: serializeFail
       },
       bidiStream: {
         path: '/TestService/BidiStream',
         requestStream: true,
         responseStream: true,
-        requestDeserialize: _.identity,
+        requestDeserialize: x => x,
         responseSerialize: serializeFail
       }
     };
@@ -943,29 +943,29 @@ describe('Other conditions', function() {
           path: '/TestService/Unary',
           requestStream: false,
           responseStream: false,
-          requestSerialize: _.identity,
-          responseDeserialize: _.identity
+          requestSerialize: x => x,
+          responseDeserialize: x => x
         },
         clientStream: {
           path: '/TestService/ClientStream',
           requestStream: true,
           responseStream: false,
-          requestSerialize: _.identity,
-          responseDeserialize: _.identity
+          requestSerialize: x => x,
+          responseDeserialize: x => x
         },
         serverStream: {
           path: '/TestService/ServerStream',
           requestStream: false,
           responseStream: true,
-          requestSerialize: _.identity,
-          responseDeserialize: _.identity
+          requestSerialize: x => x,
+          responseDeserialize: x => x
         },
         bidiStream: {
           path: '/TestService/BidiStream',
           requestStream: true,
           responseStream: true,
-          requestSerialize: _.identity,
-          responseDeserialize: _.identity
+          requestSerialize: x => x,
+          responseDeserialize: x => x
         }
       };
       var Client = grpc.makeGenericClientConstructor(test_service_attrs,
