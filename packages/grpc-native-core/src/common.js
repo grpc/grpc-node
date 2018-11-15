@@ -112,6 +112,20 @@ exports.getMethodType = function(method_definition) {
   }
 };
 
+/**
+ * Given an array of property names and an array of values,
+ * combine the two into an object map.
+ * Equivalent to _.zipObject.
+ * @param props {Array<String>} Array of property names
+ * @param values {Array} Array of property values
+ * @return {Object} An object with the combined values
+ */
+exports.zipObject = function(props, values) {
+  return props.reduce((acc, curr, idx) => {
+    return Object.assign(acc, { [curr]: values[idx] });
+  }, {});
+}
+
 // JSDoc definitions that are used in multiple other modules
 
 /**
