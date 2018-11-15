@@ -878,7 +878,8 @@ Server.prototype.addService = function(service, implementation) {
     throw new Error('Can\'t add a service to a started server.');
   }
   var self = this;
-  _.forOwn(service, function(attrs, name) {
+  Object.keys(service).forEach(name => {
+    const attrs = service[name];
     var method_type;
     if (attrs.requestStream) {
       if (attrs.responseStream) {
