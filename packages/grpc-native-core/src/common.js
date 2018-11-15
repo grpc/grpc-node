@@ -30,7 +30,7 @@ var constants = require('./constants');
  */
 exports.wrapIgnoreNull = function wrapIgnoreNull(func) {
   if (!func) {
-    return _.identity;
+    return x => x;
   }
   return function(arg) {
     if (arg === null || arg === undefined) {

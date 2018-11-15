@@ -895,8 +895,8 @@ var deprecated_request_wrap = {
                                           opt_args.options, callback);
     };
   },
-  [methodTypes.SERVER_STREAMING]: _.identity,
-  [methodTypes.BIDI_STREAMING]: _.identity
+  [methodTypes.SERVER_STREAMING]: x => x,
+  [methodTypes.BIDI_STREAMING]: x => x
 };
 
 /**
