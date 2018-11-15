@@ -950,7 +950,7 @@ exports.makeClientConstructor = function(methods, serviceName,
     }
     ServiceClient.prototype.$method_names[attrs.path] = name;
     // Associate all provided attributes with the method
-    _.assign(ServiceClient.prototype[name], attrs);
+    Object.assign(ServiceClient.prototype[name], attrs);
     if (attrs.originalName) {
       ServiceClient.prototype[attrs.originalName] =
         ServiceClient.prototype[name];
