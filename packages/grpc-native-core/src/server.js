@@ -932,12 +932,12 @@ Server.prototype.addProtoService = util.deprecate(function(service,
   var protobuf_js_5_common = require('./protobuf_js_5_common');
   var protobuf_js_6_common = require('./protobuf_js_6_common');
   if (protobuf_js_5_common.isProbablyProtobufJs5(service)) {
-    options = Object.assign(common.defaultGrpcOptions, service.grpc_options);
+    options = Object.assign({}, common.defaultGrpcOptions, service.grpc_options);
     this.addService(
         protobuf_js_5_common.getProtobufServiceAttrs(service, options),
         implementation);
   } else if (protobuf_js_6_common.isProbablyProtobufJs6(service)) {
-    options = Object.assign(common.defaultGrpcOptions, service.grpc_options);
+    options = Object.assign({}, common.defaultGrpcOptions, service.grpc_options);
     this.addService(
         protobuf_js_6_common.getProtobufServiceAttrs(service, options),
         implementation);
