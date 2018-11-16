@@ -980,9 +980,10 @@ exports.getClientChannel = function(client) {
  * @returns {Object.<string, Interceptor[]>}
  */
 exports.getClientInterceptors = function(client) {
-  return _.mapValues(client.$method_definitions, function(def, name) {
-    return client[name].interceptors;
-  });
+  return Object.keys(client.$method_definitions)
+    .reduce((acc, key) => {
+      acc[key] = client[key].interceptors;
+    }, {});
 };
 
 /**
