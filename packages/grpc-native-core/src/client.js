@@ -982,7 +982,9 @@ exports.getClientChannel = function(client) {
 exports.getClientInterceptors = function(client) {
   return Object.keys(client.$method_definitions)
     .reduce((acc, key) => {
-      acc[key] = client[key].interceptors;
+      if (typeof key === 'string') {
+        acc[key] = client[key].interceptors;
+      }
       return acc;
     }, {});
 };
