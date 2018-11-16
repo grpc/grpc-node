@@ -983,6 +983,7 @@ exports.getClientInterceptors = function(client) {
   return Object.keys(client.$method_definitions)
     .reduce((acc, key) => {
       acc[key] = client[key].interceptors;
+      return acc;
     }, {});
 };
 
