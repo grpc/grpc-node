@@ -113,10 +113,25 @@ exports.getMethodType = function(method_definition) {
 };
 
 /**
+ * Iterate over a collection of items, and run the given handler.
+ * Return the results as a flattened array of values.
+ *
+ * @private
+ *
+ * @param {Array} collection Array of items to process
+ * @param {Function} handler The function to call on each element in the array
+ * @return {Array} A flattened array of results.
+ */
+exports.flatMap = function(collection, handler) {
+  const mapped = collection.map(handler);
+  return mapped.reduce((acc, curr) => acc.concat(curr), []);
+}
+
+/**
  * Given an array of property names and an array of values,
  * combine the two into an object map.
  * Equivalent to _.zipObject.
- * 
+ *
  * @private
  *
  * @param props {Array<String>} Array of property names

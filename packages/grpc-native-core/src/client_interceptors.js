@@ -716,7 +716,7 @@ function _getStreamReadCallback(emitter, call, get_listener, deserialize) {
  * @return {boolean}
  */
 function _areBatchRequirementsMet(batch_ops, completed_ops) {
-  var dependencies = _.flatMap(batch_ops, function(op) {
+  var dependencies = common.flatMap(batch_ops, function(op) {
     return OP_DEPENDENCIES[op] || [];
   });
   for (var i = 0; i < dependencies.length; i++) {
@@ -752,7 +752,7 @@ function _startBatchIfReady(call, batch, batch_state, callback) {
     // dependencies are met as a result.
     call.startBatch(batch, callback);
     completed_ops = Array.from(new Set(completed_ops.concat(batch_ops)));
-    deferred_batches = _.flatMap(deferred_batches, function(deferred_batch) {
+    deferred_batches = common.flatMap(deferred_batches, function(deferred_batch) {
       var deferred_batch_ops = Object.keys(deferred_batch).map(Number);
       if (_areBatchRequirementsMet(deferred_batch_ops, completed_ops)) {
         call.startBatch(deferred_batch.batch, deferred_batch.callback);
