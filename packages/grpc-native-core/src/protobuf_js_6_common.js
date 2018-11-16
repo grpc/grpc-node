@@ -137,7 +137,8 @@ exports.loadObject = function loadObject(value, options) {
 
   if (value.hasOwnProperty('nested')) {
     // It's a namespace or root object
-    _.each(value.nested, function(nested, name) {
+    Object.keys(value.nested).forEach(name => {
+      const nested = value.nested[name];
       result[name] = loadObject(nested, options);
     });
     return result;

@@ -144,7 +144,8 @@ exports.loadObject = function loadObject(value, options) {
     return loadObject(value.ns, options);
   }
   if (value.className === 'Namespace') {
-    _.each(value.children, function(child) {
+    Object.keys(value.children).forEach(key => {
+      const child = value.children[key];
       result[child.name] = loadObject(child, options);
     });
     return result;
