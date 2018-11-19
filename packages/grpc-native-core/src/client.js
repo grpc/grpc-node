@@ -940,10 +940,9 @@ exports.makeClientConstructor = function(methods, serviceName,
     }
     var method_type = common.getMethodType(attrs);
     var method_func = function() {
-      return requester_funcs[method_type].apply(this,
-        [].slice.call(arguments).concat([
-          attrs.path, attrs.requestSerialize, attrs.responseDeserialize
-        ])
+      return requester_funcs[method_type].apply(this, 
+        [ attrs.path, attrs.requestSerialize, attrs.responseDeserialize ]
+        .concat([].slice.call(arguments))
       );
     };
     if (class_options.deprecatedArgumentOrder) {
