@@ -378,7 +378,8 @@ function Client(address, credentials, options) {
   }
   self.$interceptors = options.interceptors || [];
   self.$interceptor_providers = options.interceptor_providers || [];
-  _.each(self.$method_definitions, function(method_definition, method_name) {
+  Object.keys(self.$method_definitions).forEach(method_name => {
+    const method_definition = self.$method_definitions[method_name];
     self[method_name].interceptors = client_interceptors
       .resolveInterceptorProviders(self.$interceptor_providers, method_definition)
       .concat(self.$interceptors);
@@ -934,7 +935,8 @@ exports.makeClientConstructor = function(methods, serviceName,
   ServiceClient.prototype.$method_definitions = methods;
   ServiceClient.prototype.$method_names = {};
 
-  _.each(methods, function(attrs, name) {
+  Object.keys(methods).forEach(name => {
+    const attrs = methods[name];
     if (name.indexOf('$') === 0) {
       throw new Error('Method names cannot start with $');
     }
