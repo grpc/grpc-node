@@ -32,8 +32,6 @@
 
 'use strict';
 
-var _ = require('lodash');
-
 var client_interceptors = require('./client_interceptors');
 var grpc = require('./grpc_extension');
 
@@ -949,7 +947,7 @@ exports.makeClientConstructor = function(methods, serviceName,
     }
     var method_type = common.getMethodType(attrs);
     var method_func = function() {
-      return requester_funcs[method_type].apply(this, 
+      return requester_funcs[method_type].apply(this,
         [ attrs.path, attrs.requestSerialize, attrs.responseDeserialize ]
         .concat([].slice.call(arguments))
       );

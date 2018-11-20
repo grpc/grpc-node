@@ -18,8 +18,6 @@
 
 'use strict';
 
-var _ = require('lodash');
-
 var grpc = require('./grpc_extension');
 
 var common = require('./common');

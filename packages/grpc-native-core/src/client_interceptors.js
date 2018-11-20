@@ -141,7 +141,6 @@
 
 'use strict';
 
-var _ = require('lodash');
 var grpc = require('./grpc_extension');
 var Metadata = require('./metadata');
 var constants = require('./constants');

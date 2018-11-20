@@ -19,7 +19,6 @@
 'use strict';
 
 var assert = require('assert');
-var _ = require('lodash');
 
 var common = require('../src/common');
 var protobuf_js_5_common = require('../src/protobuf_js_5_common');
