@@ -82,7 +82,12 @@ exports.defaultGrpcOptions = {
  * @return {Error} The resulting Error
  */
 exports.createStatusError = function(status) {
-  let statusName = _.invert(constants.status)[status.code];
+  let inverted = Object.keys(constants.status)
+    .reduce((acc, key) => {
+      acc[constants.status[key]] = key;
+      return acc;
+    }, {});
+  let statusName = inverted[status.code];
   let message = `${status.code} ${statusName}: ${status.details}`;
   let error = new Error(message);
   error.code = status.code;
