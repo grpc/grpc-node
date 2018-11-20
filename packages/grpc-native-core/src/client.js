@@ -948,9 +948,12 @@ exports.makeClientConstructor = function(methods, serviceName,
       throw new Error('Method names cannot start with $');
     }
     var method_type = common.getMethodType(attrs);
-    var method_func = _.partial(requester_funcs[method_type], attrs.path,
-                                attrs.requestSerialize,
-                                attrs.responseDeserialize);
+    var method_func = function() {
+      return requester_funcs[method_type].apply(this, 
+        [ attrs.path, attrs.requestSerialize, attrs.responseDeserialize ]
+        .concat([].slice.call(arguments))
+      );
+    };
     if (class_options.deprecatedArgumentOrder) {
       ServiceClient.prototype[name] =
         deprecated_request_wrap[method_type](method_func);
