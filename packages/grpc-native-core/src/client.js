@@ -390,10 +390,17 @@ function Client(address, credentials, options) {
   let channelOverride = options.channelOverride;
   let channelFactoryOverride = options.channelFactoryOverride;
   // Exclude channel options which have already been consumed
-  var channel_options = _.omit(options,
-     ['interceptors', 'interceptor_providers',
-      'channelOverride', 'channelFactoryOverride',
-      'callInvocationTransformer']);
+  const ignoredKeys = [
+    'interceptors', 'interceptor_providers', 'channelOverride',
+    'channelFactoryOverride', 'callInvocationTransformer'
+  ];
+  var channel_options = Object.getOwnPropertyNames(options)
+    .reduce((acc, key) => {
+      if (ignoredKeys.indexOf(key) === -1) {
+        acc[key] = options[key];
+      }
+      return acc;
+    }, {});
   /* Private fields use $ as a prefix instead of _ because it is an invalid
    * prefix of a method name */
   if (channelOverride) {
