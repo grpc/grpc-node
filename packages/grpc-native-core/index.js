@@ -24,8 +24,6 @@ var util = require('util');
 
 var SSL_ROOTS_PATH = path.resolve(__dirname, 'deps', 'grpc', 'etc', 'roots.pem');
 
-var ProtoBuf = require('protobufjs');
-
 var client = require('./src/client.js');
 
 var server = require('./src/server.js');
@@ -120,6 +118,7 @@ var loadObject = exports.loadObject;
  * @return {Object<string, *>} The resulting gRPC object
  */
 exports.load = util.deprecate(function load(filename, format, options) {
+  const ProtoBuf = require('protobufjs');
   options = Object.assign({}, common.defaultGrpcOptions, options);
   options.protobufjsVersion = 5;
   if (!format) {
