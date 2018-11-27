@@ -24,8 +24,6 @@ var util = require('util');
 
 var SSL_ROOTS_PATH = path.resolve(__dirname, 'deps', 'grpc', 'etc', 'roots.pem');
 
-var _ = require('lodash');
-
 var client = require('./src/client.js');
 
 var server = require('./src/server.js');

@@ -32,8 +32,6 @@
 
 'use strict';
 
-var _ = require('lodash');
-
 var client_interceptors = require('./client_interceptors');
 var grpc = require('./grpc_extension');
 
@@ -390,10 +388,17 @@ function Client(address, credentials, options) {
   let channelOverride = options.channelOverride;
   let channelFactoryOverride = options.channelFactoryOverride;
   // Exclude channel options which have already been consumed
-  var channel_options = _.omit(options,
-     ['interceptors', 'interceptor_providers',
-      'channelOverride', 'channelFactoryOverride',
-      'callInvocationTransformer']);
+  const ignoredKeys = [
+    'interceptors', 'interceptor_providers', 'channelOverride',
+    'channelFactoryOverride', 'callInvocationTransformer'
+  ];
+  var channel_options = Object.getOwnPropertyNames(options)
+    .reduce((acc, key) => {
+      if (ignoredKeys.indexOf(key) === -1) {
+        acc[key] = options[key];
+      }
+      return acc;
+    }, {});
   /* Private fields use $ as a prefix instead of _ because it is an invalid
    * prefix of a method name */
   if (channelOverride) {
@@ -941,9 +946,12 @@ exports.makeClientConstructor = function(methods, serviceName,
       throw new Error('Method names cannot start with $');
     }
     var method_type = common.getMethodType(attrs);
-    var method_func = _.partial(requester_funcs[method_type], attrs.path,
-                                attrs.requestSerialize,
-                                attrs.responseDeserialize);
+    var method_func = function() {
+      return requester_funcs[method_type].apply(this,
+        [ attrs.path, attrs.requestSerialize, attrs.responseDeserialize ]
+        .concat([].slice.call(arguments))
+      );
+    };
     if (class_options.deprecatedArgumentOrder) {
       ServiceClient.prototype[name] =
         deprecated_request_wrap[method_type](method_func);
