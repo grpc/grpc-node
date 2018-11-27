@@ -69,8 +69,6 @@ var common = require('./common.js');
 
 var constants = require('./constants');
 
-var _ = require('lodash');
-
 /**
  * @external GoogleCredential
  * @see https://github.com/google/google-auth-library-nodejs

@@ -23,7 +23,7 @@
 
 'use strict';
 
-var _ = require('lodash');
+var camelCase = require('lodash.camelcase');
 var client = require('./client');
 var common = require('./common');
 
@@ -105,7 +105,7 @@ exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service,
   var prefix = '/' + fullyQualifiedName(service) + '/';
   service.resolveAll();
   return common.zipObject(service.methods.map(function(method) {
-    return _.camelCase(method.name);
+    return camelCase(method.name);
   }), service.methods.map(function(method) {
     return {
       originalName: method.name,

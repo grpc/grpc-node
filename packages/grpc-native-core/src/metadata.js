@@ -18,7 +18,7 @@
 
 'use strict';
 
-var _ = require('lodash');
+var clone = require('lodash.clone');
 
 var grpc = require('./grpc_extension');
 
@@ -139,7 +139,7 @@ Metadata.prototype.clone = function() {
   var copy = new Metadata();
   Object.keys(this._internal_repr).forEach(key => {
     const value = this._internal_repr[key];
-    copy._internal_repr[key] = _.clone(value);
+    copy._internal_repr[key] = clone(value);
   });
   return copy;
 };
@@ -166,7 +166,7 @@ Metadata._fromCoreRepresentation = function(metadata) {
   if (metadata) {
     Object.keys(metadata).forEach(key => {
       const value = metadata[key];
-      newMetadata._internal_repr[key] = _.clone(value);
+      newMetadata._internal_repr[key] = clone(value);
     });
   }
   return newMetadata;
