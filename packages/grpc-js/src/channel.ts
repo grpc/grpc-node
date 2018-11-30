@@ -15,7 +15,7 @@ import {Metadata} from './metadata';
 import {MetadataStatusFilterFactory} from './metadata-status-filter';
 import {Http2SubChannel} from './subchannel';
 
-const {version: clientVersion} = require('../../package');
+const {version: clientVersion} = require('../../package.json');
 
 const MIN_CONNECT_TIMEOUT_MS = 20000;
 const INITIAL_BACKOFF_MS = 1000;
