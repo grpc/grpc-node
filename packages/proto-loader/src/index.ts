@@ -119,9 +119,15 @@ function createPackageDefinition(root: Protobuf.Root, options: Options): Package
 
 function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
   root.resolvePath = (origin: string, target: string) => {
+    const idx = target.lastIndexOf("google/protobuf/");
+    if (idx > -1 && target.substring(idx) in Protobuf.common) {
+      return target;
+    } 	
+
     if (path.isAbsolute(target)) {
       return target;
     }
+
     for (const directory of includePaths) {
       const fullPath: string = path.join(directory, target);
       try {
@@ -131,6 +137,7 @@ function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
         continue;
       }
     }
+
     throw new Error(`Could not find file ${target}`);
   };
 }
