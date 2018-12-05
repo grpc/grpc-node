@@ -230,9 +230,21 @@ declare module "grpc" {
      * "address:port"
      * @param creds Server credential object to be used for SSL. Pass an
      * insecure credentials object for an insecure port.
-     * @return The bound port number or 0 if the opreation failed.
+     * @return The bound port number or 0 if the operation failed.
      */
     bind(port: string, creds: ServerCredentials): number;
+
+    /**
+     * Binds the server to the given port, with SSL disabled if creds is an
+     * insecure credentials object. Provides the result asynchronously.
+     * @param port The port that the server should bind on, in the format "address:port"
+     * @param creds Server credential object to be used for
+     *     SSL. Pass an insecure credentials object for an insecure port.
+     * @param callback Called with the result of attempting to bind a port
+     *  	- error: If non-null, indicates that binding the port failed.
+     *  	- port: The bound port number. If binding the port fails, this will be negative to match the output of bind.
+     */
+    bindAsync(port: string, creds: ServerCredentials, callback: (error: Error | null, port: number) => void): void;
   }
 
   /**
