@@ -135,11 +135,10 @@ exports.loadObject = function loadObject(value, options) {
     return client.makeClientConstructor(service_attrs);
   }
 
-  if (value.hasOwnProperty('nested')) {
+  if (value.hasOwnProperty('nestedArray')) {
     // It's a namespace or root object
-    Object.keys(value.nested).forEach(name => {
-      const nested = value.nested[name];
-      result[name] = loadObject(nested, options);
+    value.nestedArray.forEach(nested => {
+      result[nested.name] = loadObject(nested, options);
     });
     return result;
   }
