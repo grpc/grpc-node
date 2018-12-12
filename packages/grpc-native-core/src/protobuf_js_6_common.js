@@ -138,8 +138,9 @@ exports.loadObject = function loadObject(value, options) {
   if (value.hasOwnProperty('nested')) {
     // It's a namespace or root object
     if (value.nested !== null && value.nested !== undefined) {
-      Object.values(value.nested).forEach(nested => {
-	result[nested.name] = loadObject(nested, options);
+      var values = Object.keys(value.nested).map(key => value.nested[key]);
+      values.forEach(nested => {
+        result[nested.name] = loadObject(nested, options);
       });
     }
     return result;
