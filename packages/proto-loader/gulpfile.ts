@@ -54,7 +54,16 @@ gulp.task('clean', 'Deletes transpiled code.', ['install'],
 gulp.task('clean.all', 'Deletes all files added by targets', ['clean']);
 
 /**
- * Transpiles TypeScript files in src/ to JavaScript according to the settings
+ * Transpiles TypeScript files in src/ and test/ to JavaScript according to the settings
  * found in tsconfig.json.
  */
-gulp.task('compile', 'Transpiles src/.', () => execNpmCommand('compile'));
+gulp.task('compile', 'Transpiles src/ and test/.', () => execNpmCommand('compile'));
+
+/**
+ * Transpiles src/ and test/, and then runs all tests.
+ */
+gulp.task('test', 'Runs all tests.', () => {
+  return gulp.src(`${outDir}/test/**/*.js`)
+    .pipe(mocha({reporter: 'mocha-jenkins-reporter',
+                  require: ['ts-node/register']}));
+});
