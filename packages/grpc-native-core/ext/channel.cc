@@ -377,7 +377,7 @@ NAN_METHOD(Channel::CreateCall) {
   if (info[2]->IsString()) {
     grpc_slice *host = new grpc_slice;
     *host =
-        CreateSliceFromString(Nan::To<String>(info[3]).ToLocalChecked());
+        CreateSliceFromString(Nan::To<String>(info[2]).ToLocalChecked());
     wrapped_call = grpc_channel_create_call(
         wrapped_channel, parent_call, propagate_flags, GetCompletionQueue(),
         method, host, MillisecondsToTimespec(deadline), NULL);
