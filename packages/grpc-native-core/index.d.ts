@@ -567,6 +567,10 @@ declare module "grpc" {
      * Trailing metadata sent with the status, if applicable
      */
     metadata?: Metadata;
+    /**
+     * Original status details string
+     */
+    details?: string;
   }
 
   /**
