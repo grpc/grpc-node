@@ -104,9 +104,9 @@ exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service,
                                                                    options) {
   var prefix = '/' + fullyQualifiedName(service) + '/';
   service.resolveAll();
-  return common.zipObject(service.methods.map(function(method) {
+  return common.zipObject(service.methodsArray.map(function(method) {
     return camelCase(method.name);
-  }), service.methods.map(function(method) {
+  }), service.methodsArray.map(function(method) {
     return {
       originalName: method.name,
       path: prefix + method.name,
@@ -137,10 +137,12 @@ exports.loadObject = function loadObject(value, options) {
 
   if (value.hasOwnProperty('nested')) {
     // It's a namespace or root object
-    Object.keys(value.nested).forEach(name => {
-      const nested = value.nested[name];
-      result[name] = loadObject(nested, options);
-    });
+    if (value.nested !== null && value.nested !== undefined) {
+      var values = Object.keys(value.nested).map(key => value.nested[key]);
+      values.forEach(nested => {
+        result[nested.name] = loadObject(nested, options);
+      });
+    }
     return result;
   }
 
