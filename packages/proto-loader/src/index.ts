@@ -97,7 +97,8 @@ function createMethodDefinition(method: Protobuf.Method, serviceName: string, op
     responseSerialize: createSerializer(method.resolvedResponseType as Protobuf.Type),
     responseDeserialize: createDeserializer(method.resolvedResponseType as Protobuf.Type, options),
     // TODO(murgatroid99): Find a better way to handle this
-    originalName: camelCase(method.name)
+    originalName: camelCase(method.name),
+    options: method.options
   };
 }
 
