@@ -22,6 +22,7 @@ import * as fs from 'fs';
 import * as mocha from 'gulp-mocha';
 import * as path from 'path';
 import * as execa from 'execa';
+import * as semver from 'semver';
 
 // gulp-help monkeypatches tasks to have an additional description parameter
 const gulp = help(_gulp);
@@ -63,7 +64,12 @@ gulp.task('compile', 'Transpiles src/ and test/.', () => execNpmCommand('compile
  * Transpiles src/ and test/, and then runs all tests.
  */
 gulp.task('test', 'Runs all tests.', () => {
-  return gulp.src(`${outDir}/test/**/*.js`)
-    .pipe(mocha({reporter: 'mocha-jenkins-reporter',
-                  require: ['ts-node/register']}));
+  if (semver.satisfies(process.version, ">=6")) {
+    return gulp.src(`${outDir}/test/**/*.js`)
+      .pipe(mocha({reporter: 'mocha-jenkins-reporter',
+                    require: ['ts-node/register']}));
+  } else {
+    console.log(`Skipping proto-loader tests for Node ${process.version}`);
+    return Promise.resolve(null);
+  }
 });
