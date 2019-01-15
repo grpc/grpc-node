@@ -27,7 +27,9 @@ export interface ProtobufTypeDefinition {
   fileDescriptorProtos: Buffer[];
 }
 
-export interface PackageDefinition { [index: string]: ServiceDefinition | ProtobufTypeDefinition; }
+export interface PackageDefinition {
+  [index: string]: ServiceDefinition|ProtobufTypeDefinition;
+}
 
 /**
  * Map with short names for each of the requester maker functions. Used in
@@ -128,7 +130,9 @@ export type GrpcObject = {
   [index: string]: GrpcObject|ServiceClientConstructor|ProtobufTypeDefinition;
 };
 
-function isProtobufTypeDefinition(obj: ServiceDefinition | ProtobufTypeDefinition): obj is ProtobufTypeDefinition {
+function isProtobufTypeDefinition(
+    obj: ServiceDefinition|
+    ProtobufTypeDefinition): obj is ProtobufTypeDefinition {
   return 'format' in obj;
 }
 
