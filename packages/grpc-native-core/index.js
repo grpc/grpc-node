@@ -169,7 +169,11 @@ exports.loadPackageDefinition = function loadPackageDefintion(packageDef) {
       }
       current = current[packageName];
     }
-    current[serviceName] = client.makeClientConstructor(service, serviceName, {});
+    if (service.hasOwnProperty('format')) {
+      current[serviceName] = service;
+    } else {
+      current[serviceName] = client.makeClientConstructor(service, serviceName, {});
+    }
   }
   return result;
 };
