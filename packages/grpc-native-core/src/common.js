@@ -317,9 +317,18 @@ exports.zipObject = function(props, values) {
  * @typedef {Object.<string, grpc~MethodDefinition>} grpc~ServiceDefinition
  */
 
+ /**
+  * An object that defines a protobuf type
+  * @typedef {object} grpc~ProtobufTypeDefinition
+  * @param {string} format The format of the type definition object
+  * @param {*} type The type definition object
+  * @param {Buffer[]} fileDescriptorProtos Binary protobuf file
+  *     descriptors for all files loaded to construct this type
+  */
+
 /**
  * An object that defines a package hierarchy with multiple services
- * @typedef {Object.<string, grpc~ServiceDefinition>} grpc~PackageDefinition
+ * @typedef {Object.<string, grpc~ServiceDefinition|grpc~ProtobufTypeDefinition>} grpc~PackageDefinition
  */
 
 /**

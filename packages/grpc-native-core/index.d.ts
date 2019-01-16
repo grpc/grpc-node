@@ -260,10 +260,19 @@ declare module "grpc" {
   }
 
   /**
+   * An object that defines a protobuf type
+   */
+  export interface ProtobufTypeDefinition {
+    format: string;
+    type: object;
+    fileDescriptorProtos: Buffer[];
+  }
+
+  /**
    * An object that defines a package containing multiple services
    */
   export type PackageDefinition = {
-    readonly [fullyQualifiedName: string]: ServiceDefinition<any>;
+    readonly [fullyQualifiedName: string]: ServiceDefinition<any> | ProtobufTypeDefinition;
   }
 
   /**
@@ -567,6 +576,10 @@ declare module "grpc" {
      * Trailing metadata sent with the status, if applicable
      */
     metadata?: Metadata;
+    /**
+     * Original status details string
+     */
+    details?: string;
   }
 
   /**

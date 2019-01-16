@@ -91,7 +91,7 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=0',
       'GRPC_UV',
-      'GRPC_NODE_VERSION="1.17.0"'
+      'GRPC_NODE_VERSION="1.18.0"'
     ],
     'conditions': [
       ['grpc_gcov=="true"', {
@@ -779,6 +779,7 @@
         'deps/grpc/src/core/ext/transport/chttp2/transport/bin_encoder.cc',
         'deps/grpc/src/core/ext/transport/chttp2/transport/chttp2_plugin.cc',
         'deps/grpc/src/core/ext/transport/chttp2/transport/chttp2_transport.cc',
+        'deps/grpc/src/core/ext/transport/chttp2/transport/context_list.cc',
         'deps/grpc/src/core/ext/transport/chttp2/transport/flow_control.cc',
         'deps/grpc/src/core/ext/transport/chttp2/transport/frame_data.cc',
         'deps/grpc/src/core/ext/transport/chttp2/transport/frame_goaway.cc',
@@ -885,15 +886,16 @@
         'deps/grpc/src/core/ext/filters/client_channel/http_connect_handshaker.cc',
         'deps/grpc/src/core/ext/filters/client_channel/http_proxy.cc',
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy.cc',
-        'deps/grpc/src/core/ext/filters/client_channel/lb_policy_factory.cc',
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy_registry.cc',
         'deps/grpc/src/core/ext/filters/client_channel/parse_address.cc',
         'deps/grpc/src/core/ext/filters/client_channel/proxy_mapper.cc',
         'deps/grpc/src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/request_routing.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver_registry.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver_result_parsing.cc',
         'deps/grpc/src/core/ext/filters/client_channel/retry_throttle.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/server_address.cc',
         'deps/grpc/src/core/ext/filters/client_channel/subchannel.cc',
         'deps/grpc/src/core/ext/filters/client_channel/subchannel_index.cc',
         'deps/grpc/src/core/ext/filters/deadline/deadline_filter.cc',
