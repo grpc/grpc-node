@@ -21,7 +21,15 @@ export interface ServiceDefinition {
   [index: string]: MethodDefinition<object, object>;
 }
 
-export interface PackageDefinition { [index: string]: ServiceDefinition; }
+export interface ProtobufTypeDefinition {
+  format: string;
+  type: object;
+  fileDescriptorProtos: Buffer[];
+}
+
+export interface PackageDefinition {
+  [index: string]: ServiceDefinition|ProtobufTypeDefinition;
+}
 
 /**
  * Map with short names for each of the requester maker functions. Used in
@@ -119,8 +127,14 @@ function partial(
 }
 
 export type GrpcObject = {
-  [index: string]: GrpcObject|ServiceClientConstructor;
+  [index: string]: GrpcObject|ServiceClientConstructor|ProtobufTypeDefinition;
 };
+
+function isProtobufTypeDefinition(
+    obj: ServiceDefinition|
+    ProtobufTypeDefinition): obj is ProtobufTypeDefinition {
+  return 'format' in obj;
+}
 
 /**
  * Load a gRPC package definition as a gRPC object hierarchy.
@@ -142,7 +156,11 @@ export function loadPackageDefinition(packageDef: PackageDefinition):
         }
         current = current[packageName] as GrpcObject;
       }
-      current[serviceName] = makeClientConstructor(service, serviceName, {});
+      if (isProtobufTypeDefinition(service)) {
+        current[serviceName] = service;
+      } else {
+        current[serviceName] = makeClientConstructor(service, serviceName, {});
+      }
     }
   }
   return result;
