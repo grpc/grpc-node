@@ -16,9 +16,24 @@
  *
  */
 import * as Protobuf from 'protobufjs';
+import * as descriptor from 'protobufjs/ext/descriptor';
 import * as fs from 'fs';
 import * as path from 'path';
 import camelCase = require('lodash.camelcase');
+
+declare module 'protobufjs' {
+  interface Type {
+    toDescriptor(protoVersion: string): Protobuf.Message<descriptor.IDescriptorProto> & descriptor.IDescriptorProto;
+  }
+
+  interface Root {
+    toDescriptor(protoVersion: string): Protobuf.Message<descriptor.IFileDescriptorSet> & descriptor.IFileDescriptorSet;
+  }
+
+  interface Enum {
+    toDescriptor(protoVersion: string): Protobuf.Message<descriptor.IEnumDescriptorProto> & descriptor.IEnumDescriptorProto;
+  }
+}
 
 export interface Serialize<T> {
   (value: T): Buffer;
@@ -26,6 +41,20 @@ export interface Serialize<T> {
 
 export interface Deserialize<T> {
   (bytes: Buffer): T;
+}
+
+export interface ProtobufTypeDefinition {
+  format: string;
+  type: object;
+  fileDescriptorProtos: Buffer[];
+}
+
+export interface MessageTypeDefinition extends ProtobufTypeDefinition {
+  format: 'Protocol Buffer 3 DescriptorProto';
+}
+
+export interface EnumTypeDefinition extends ProtobufTypeDefinition {
+  format: 'Protocol Buffer 3 EnumDescriptorProto';
 }
 
 export interface MethodDefinition<RequestType, ResponseType> {
@@ -37,18 +66,31 @@ export interface MethodDefinition<RequestType, ResponseType> {
   requestDeserialize: Deserialize<RequestType>;
   responseDeserialize: Deserialize<ResponseType>;
   originalName?: string;
+  requestType: MessageTypeDefinition;
+  responseType: MessageTypeDefinition;
 }
 
 export interface ServiceDefinition {
   [index: string]: MethodDefinition<object, object>;
 }
 
+export type AnyDefinition = ServiceDefinition | MessageTypeDefinition | EnumTypeDefinition;
+
 export interface PackageDefinition {
-  [index: string]: ServiceDefinition;
+  [index: string]: AnyDefinition;
 }
 
 export type Options = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
   includeDirs?: string[];
+};
+
+const descriptorOptions: Protobuf.IConversionOptions = {
+  longs: String,
+  enums: String,
+  bytes: String,
+  defaults: true,
+  oneofs: true,
+  json: true
 };
 
 function joinName(baseName: string, name: string): string {
@@ -59,19 +101,28 @@ function joinName(baseName: string, name: string): string {
   }
 }
 
-function getAllServices(obj: Protobuf.NamespaceBase, parentName: string): Array<[string, Protobuf.Service]> {
+type HandledReflectionObject = Protobuf.Service | Protobuf.Type | Protobuf.Enum;
+
+function isHandledReflectionObject(obj: Protobuf.ReflectionObject): obj is HandledReflectionObject {
+  return obj instanceof Protobuf.Service || obj instanceof Protobuf.Type || obj instanceof Protobuf.Enum;
+}
+
+function isNamespaceBase(obj: Protobuf.ReflectionObject): obj is Protobuf.NamespaceBase {
+  return obj instanceof Protobuf.Namespace || obj instanceof Protobuf.Root;
+}
+
+function getAllHandledReflectionObjects(obj: Protobuf.ReflectionObject, parentName: string): Array<[string, HandledReflectionObject]> {
   const objName = joinName(parentName, obj.name);
-  if (obj.hasOwnProperty('methods')) {
-    return [[objName, obj as Protobuf.Service]];
+  if (isHandledReflectionObject(obj)) {
+    return [[objName, obj]];
   } else {
-    return obj.nestedArray.map((child) => {
-      if (child.hasOwnProperty('nested')) {
-        return getAllServices(child as Protobuf.NamespaceBase, objName);
-      } else {
-        return [];
-      }
-    }).reduce((accumulator, currentValue) => accumulator.concat(currentValue), []);
+    if (isNamespaceBase(obj) && typeof obj.nested !== undefined) {
+      return Object.keys(obj.nested!).map((name) => {
+        return getAllHandledReflectionObjects(obj.nested![name], objName);
+      }).reduce((accumulator, currentValue) => accumulator.concat(currentValue), []);
+    }
   }
+  return [];
 }
 
 function createDeserializer(cls: Protobuf.Type, options: Options): Deserialize<object> {
@@ -88,16 +139,22 @@ function createSerializer(cls: Protobuf.Type): Serialize<object> {
 }
 
 function createMethodDefinition(method: Protobuf.Method, serviceName: string, options: Options): MethodDefinition<object, object> {
+  /* This is only ever called after the corresponding root.resolveAll(), so we
+   * can assume that the resolved request and response types are non-null */
+  const requestType: Protobuf.Type = method.resolvedRequestType!;
+  const responseType: Protobuf.Type = method.resolvedResponseType!;
   return {
     path: '/' + serviceName + '/' + method.name,
     requestStream: !!method.requestStream,
     responseStream: !!method.responseStream,
-    requestSerialize: createSerializer(method.resolvedRequestType as Protobuf.Type),
-    requestDeserialize: createDeserializer(method.resolvedRequestType as Protobuf.Type, options),
-    responseSerialize: createSerializer(method.resolvedResponseType as Protobuf.Type),
-    responseDeserialize: createDeserializer(method.resolvedResponseType as Protobuf.Type, options),
+    requestSerialize: createSerializer(requestType),
+    requestDeserialize: createDeserializer(requestType, options),
+    responseSerialize: createSerializer(responseType),
+    responseDeserialize: createDeserializer(responseType, options),
     // TODO(murgatroid99): Find a better way to handle this
-    originalName: camelCase(method.name)
+    originalName: camelCase(method.name),
+    requestType: createMessageDefinition(requestType),
+    responseType: createMessageDefinition(responseType)
   };
 }
 
@@ -109,10 +166,58 @@ function createServiceDefinition(service: Protobuf.Service, name: string, option
   return def;
 }
 
+const fileDescriptorCache: Map<Protobuf.Root, Buffer[]> = new Map<Protobuf.Root, Buffer[]>();
+function getFileDescriptors(root: Protobuf.Root): Buffer[] {
+  if (fileDescriptorCache.has(root)) {
+    return fileDescriptorCache.get(root)!;
+  } else {
+    const descriptorList: descriptor.IFileDescriptorProto[] = root.toDescriptor('proto3').file;
+    const bufferList: Buffer[] = descriptorList.map(value => Buffer.from(descriptor.FileDescriptorProto.encode(value).finish()));
+    fileDescriptorCache.set(root, bufferList);
+    return bufferList;
+  }
+}
+
+function createMessageDefinition(message: Protobuf.Type): MessageTypeDefinition {
+  const messageDescriptor: protobuf.Message<descriptor.IDescriptorProto> = message.toDescriptor('proto3');
+  return {
+    format: 'Protocol Buffer 3 DescriptorProto',
+    type: messageDescriptor.$type.toObject(messageDescriptor, descriptorOptions),
+    fileDescriptorProtos: getFileDescriptors(message.root)
+  };
+}
+
+function createEnumDefinition(enumType: Protobuf.Enum): EnumTypeDefinition {
+  const enumDescriptor: protobuf.Message<descriptor.IEnumDescriptorProto> = enumType.toDescriptor('proto3');
+  return {
+    format: 'Protocol Buffer 3 EnumDescriptorProto',
+    type: enumDescriptor.$type.toObject(enumDescriptor, descriptorOptions),
+    fileDescriptorProtos: getFileDescriptors(enumType.root)
+  };
+}
+
+/**
+ * function createDefinition(obj: Protobuf.Service, name: string, options: Options): ServiceDefinition;
+ * function createDefinition(obj: Protobuf.Type, name: string, options: Options): MessageTypeDefinition;
+ * function createDefinition(obj: Protobuf.Enum, name: string, options: Options): EnumTypeDefinition;
+ */
+function createDefinition(obj: HandledReflectionObject, name: string, options: Options): AnyDefinition {
+  if (obj instanceof Protobuf.Service) {
+    return createServiceDefinition(obj, name, options);
+  } else if (obj instanceof Protobuf.Type) {
+    return createMessageDefinition(obj);
+  } else if (obj instanceof Protobuf.Enum) {
+    return createEnumDefinition(obj);
+  } else {
+    throw new Error('Type mismatch in reflection object handling');
+  }
+}
+
 function createPackageDefinition(root: Protobuf.Root, options: Options): PackageDefinition {
   const def: PackageDefinition = {};
-  for (const [name, service] of getAllServices(root, '')) {
-    def[name] = createServiceDefinition(service, name, options);
+  root.resolveAll();
+  for (const [name, obj] of getAllHandledReflectionObjects(root, '')) {
+    def[name] = createDefinition(obj, name, options);
   }
   return def;
 }

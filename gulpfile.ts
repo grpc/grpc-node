@@ -99,7 +99,7 @@ gulp.task('native.test', 'Run tests of native code', (callback) => {
 });
 
 gulp.task('test.only', 'Run tests without rebuilding anything',
-          ['js.core.test', 'native.test.only']);
+          ['js.core.test', 'native.test.only', 'protobuf.test']);
 
 gulp.task('test', 'Run all tests', (callback) => {
   runSequence('build', 'test.only', 'internal.test.test', callback);
