@@ -16,22 +16,7 @@
 set -ex
 
 arch_list=( ia32 x64 )
-node_versions=( 4.0.0 5.0.0 6.0.0 7.0.0 8.0.0 9.0.0 10.0.0 11.0.0 )
-
-while true ; do
-  case $1 in
-  --with-alpine)
-    arch_list=( x64 )
-    ;;
-  "")
-    ;;
-  *)
-    echo "Unknown parameter: $1"
-    exit 1
-    ;;
-  esac
-  shift || break
-done
+electron_versions=( 1.0.0 1.1.0 1.2.0 1.3.0 1.4.0 1.5.0 1.6.0 1.7.0 1.8.0 2.0.0 3.0.0 4.0.0 )
 
 umask 022
 
@@ -45,9 +30,9 @@ npm update
 
 for arch in ${arch_list[@]}
 do
-  for version in ${node_versions[@]}
+  for version in ${electron_versions[@]}
   do
-    ./node_modules/.bin/node-pre-gyp configure rebuild package --target=$version --target_arch=$arch
+    HOME=~/.electron-gyp ./node_modules/.bin/node-pre-gyp configure rebuild package --runtime=electron --target=$version --target_arch=$arch --disturl=https://atom.io/download/electron
     cp -r build/stage/* "${ARTIFACTS_OUT}"/
   done
 done

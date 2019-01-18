@@ -22,6 +22,8 @@ npm install -g node-gyp
 
 DO_NATIVE=true
 DO_CROSS=true
+DO_ELECTRON=true
+DO_NODEJS=true
 
 while [ $# -gt 0 ] ; do
   case $1 in
@@ -30,6 +32,14 @@ while [ $# -gt 0 ] ; do
       ;;
     --cross-only)
       DO_NATIVE=false
+      DO_ELECTRON=false
+      ;;
+    --electron-only)
+      DO_NODEJS=false
+      DO_CROSS=false
+      ;;
+    --nodejs-only)
+      DO_ELECTRON=false
       ;;
   esac
   shift
@@ -50,7 +60,12 @@ rm -rf build || true
 mkdir -p "${ARTIFACTS_OUT}"
 
 if [ "$DO_NATIVE" = "true" ] ; then
-  $tool_dir/build_artifact_node.sh
+  if [ "$DO_ELECTRON" = "true" ] ; then
+    $tool_dir/build_artifact_electron.sh
+  fi
+  if [ "$DO_NODEJS" = "true" ] ; then
+    $tool_dir/build_artifact_node.sh
+  fi
 fi
 
 if [ "$DO_CROSS" = "true" ] ; then
