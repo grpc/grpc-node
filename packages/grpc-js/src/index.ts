@@ -37,6 +37,7 @@ export interface OAuth2Client {
   getRequestMetadata: (url: string, callback: (err: Error|null, headers?: {
                                       Authorization: string
                                     }) => void) => void;
+  getRequestHeaders: (url?: string) => Promise<{Authorization: string}>;
 }
 
 /**** Client Credentials ****/
@@ -49,22 +50,39 @@ export const credentials = mixin(
        * @param googleCredentials The authentication client to use.
        * @return The resulting CallCredentials object.
        */
-      createFromGoogleCredential: (googleCredentials: OAuth2Client):
-          CallCredentials => {
-            return CallCredentials.createFromMetadataGenerator(
-                (options, callback) => {
+      createFromGoogleCredential: (
+          googleCredentials: OAuth2Client): CallCredentials => {
+        return CallCredentials.createFromMetadataGenerator(
+            (options, callback) => {
+              // google-auth-library pre-v2.0.0 does not have getRequestHeaders
+              // but has getRequestMetadata, which is deprecated in v2.0.0
+              let getHeaders: Promise<{Authorization: string}>;
+              if (typeof googleCredentials.getRequestHeaders === 'function') {
+                getHeaders =
+                    googleCredentials.getRequestHeaders(options.service_url);
+              } else {
+                getHeaders = new Promise((resolve, reject) => {
                   googleCredentials.getRequestMetadata(
                       options.service_url, (err, headers) => {
                         if (err) {
-                          callback(err);
+                          reject(err);
                           return;
                         }
-                        const metadata = new Metadata();
-                        metadata.add('authorization', headers!.Authorization);
-                        callback(null, metadata);
+                        resolve(headers);
                       });
                 });
-          },
+              }
+              getHeaders.then(
+                  headers => {
+                    const metadata = new Metadata();
+                    metadata.add('authorization', headers.Authorization);
+                    callback(null, metadata);
+                  },
+                  err => {
+                    callback(err);
+                  });
+            });
+      },
 
       /**
        * Combine a ChannelCredentials with any number of CallCredentials into a
