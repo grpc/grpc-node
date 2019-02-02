@@ -319,7 +319,7 @@ describe('Generic client and server', function() {
     return val.toString();
   }
   function toBuffer(str) {
-    return new Buffer(str);
+    return Buffer.from(str);
   }
   var string_service_attrs = {
     'capitalize' : {
@@ -365,7 +365,7 @@ describe('Server-side getPeer', function() {
     return val.toString();
   }
   function toBuffer(str) {
-    return new Buffer(str);
+    return Buffer.from(str);
   }
   var string_service_attrs = {
     'getPeer' : {
@@ -620,7 +620,7 @@ describe('Echo metadata', function() {
 describe('Client malformed response handling', function() {
   var server;
   var client;
-  var badArg = new Buffer([0xFF]);
+  var badArg = Buffer.from([0xFF]);
   before(function() {
     var Client = grpc.load(__dirname + '/test_service.proto').TestService;
     var malformed_test_service = {
@@ -936,7 +936,7 @@ describe('Other conditions', function() {
   });
   describe('Server recieving bad input', function() {
     var misbehavingClient;
-    var badArg = new Buffer([0xFF]);
+    var badArg = Buffer.from([0xFF]);
     before(function() {
       var test_service_attrs = {
         unary: {

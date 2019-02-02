@@ -37,7 +37,7 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
                 grpc::protobuf::compiler::GeneratorContext* context,
                 grpc::string* error) const {
     grpc_node_generator::Parameters generator_parameters;
-    generator_parameters.minimum_node_version = 4;
+    generator_parameters.minimum_node_version = 6;
 
     if (!parameter.empty()) {
       std::vector<grpc::string> parameters_list =

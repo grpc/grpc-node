@@ -142,8 +142,8 @@ describe('call', function() {
       assert.doesNotThrow(function() {
         var batch = {};
         batch[grpc.opType.SEND_INITIAL_METADATA] = {
-          'key1-bin': [new Buffer('value1')],
-          'key2-bin': [new Buffer('value2')]
+          'key1-bin': [Buffer.from('value1')],
+          'key2-bin': [Buffer.from('value2')]
         };
         call.startBatch(batch, function(err, resp) {
           assert.ifError(err);

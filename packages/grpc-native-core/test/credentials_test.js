@@ -295,7 +295,7 @@ describe('client credentials', function() {
       assert.equal(callback_host, 'foo.test.google.fr');
 
       // The roundabout forge APIs for converting PEM to a node DER Buffer
-      var expected_der = new Buffer(forge.asn1.toDer(
+      var expected_der = Buffer.from(forge.asn1.toDer(
           forge.pki.certificateToAsn1(forge.pki.certificateFromPem(pem_data)))
           .getBytes(), 'binary');
 

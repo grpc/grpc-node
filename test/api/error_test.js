@@ -315,7 +315,7 @@ describe('Client malformed response handling', function() {
     });
     describe('Server recieving bad input', function() {
       var misbehavingClient;
-      var badArg = new Buffer([0xFF]);
+      var badArg = Buffer.from([0xFF]);
       before(function() {
         var test_service_attrs = {
           unary: {

@@ -23,7 +23,7 @@ function serialize_DivArgs(arg) {
   if (!(arg instanceof math_math_pb.DivArgs)) {
     throw new Error('Expected argument of type DivArgs');
   }
-  return new Buffer(arg.serializeBinary());
+  return Buffer.from(arg.serializeBinary());
 }
 
 function deserialize_DivArgs(buffer_arg) {
@@ -34,7 +34,7 @@ function serialize_DivReply(arg) {
   if (!(arg instanceof math_math_pb.DivReply)) {
     throw new Error('Expected argument of type DivReply');
   }
-  return new Buffer(arg.serializeBinary());
+  return Buffer.from(arg.serializeBinary());
 }
 
 function deserialize_DivReply(buffer_arg) {
@@ -45,7 +45,7 @@ function serialize_FibArgs(arg) {
   if (!(arg instanceof math_math_pb.FibArgs)) {
     throw new Error('Expected argument of type FibArgs');
   }
-  return new Buffer(arg.serializeBinary());
+  return Buffer.from(arg.serializeBinary());
 }
 
 function deserialize_FibArgs(buffer_arg) {
@@ -56,7 +56,7 @@ function serialize_Num(arg) {
   if (!(arg instanceof math_math_pb.Num)) {
     throw new Error('Expected argument of type Num');
   }
-  return new Buffer(arg.serializeBinary());
+  return Buffer.from(arg.serializeBinary());
 }
 
 function deserialize_Num(buffer_arg) {

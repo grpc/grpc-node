@@ -30,7 +30,7 @@ describe('Metadata', function() {
   describe('#set', function() {
     it('Only accepts string values for non "-bin" keys', function() {
       assert.throws(function() {
-        metadata.set('key', new Buffer('value'));
+        metadata.set('key', Buffer.from('value'));
       });
       assert.doesNotThrow(function() {
         metadata.set('key', 'value');
@@ -41,7 +41,7 @@ describe('Metadata', function() {
         metadata.set('key-bin', 'value');
       });
       assert.doesNotThrow(function() {
-        metadata.set('key-bin', new Buffer('value'));
+        metadata.set('key-bin', Buffer.from('value'));
       });
     });
     it('Rejects invalid keys', function() {
@@ -76,7 +76,7 @@ describe('Metadata', function() {
   describe('#add', function() {
     it('Only accepts string values for non "-bin" keys', function() {
       assert.throws(function() {
-        metadata.add('key', new Buffer('value'));
+        metadata.add('key', Buffer.from('value'));
       });
       assert.doesNotThrow(function() {
         metadata.add('key', 'value');
@@ -87,7 +87,7 @@ describe('Metadata', function() {
         metadata.add('key-bin', 'value');
       });
       assert.doesNotThrow(function() {
-        metadata.add('key-bin', new Buffer('value'));
+        metadata.add('key-bin', Buffer.from('value'));
       });
     });
     it('Rejects invalid keys', function() {
@@ -130,7 +130,7 @@ describe('Metadata', function() {
     beforeEach(function() {
       metadata.add('key', 'value1');
       metadata.add('key', 'value2');
-      metadata.add('key-bin', new Buffer('value'));
+      metadata.add('key-bin', Buffer.from('value'));
     });
     it('gets all values associated with a key', function() {
       assert.deepEqual(metadata.get('key'), ['value1', 'value2']);
