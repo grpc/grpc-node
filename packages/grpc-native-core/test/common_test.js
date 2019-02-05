@@ -122,7 +122,7 @@ describe('Proto message bytes serialize and deserialize', function() {
   // This tests a bug that was fixed in Protobuf.js 6
   it.skip('should deserialize packed or unpacked repeated', function() {
     var expectedDeserialize = {
-      bytes_field: Buffer.from(''),
+      bytes_field: Buffer.alloc(''),
       repeated_field: [10]
     };
     var packedSerialized = Buffer.from([0x12, 0x01, 0x0a]);
