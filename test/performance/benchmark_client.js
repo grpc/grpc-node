@@ -50,10 +50,10 @@ var serviceProto = grpc.loadPackageDefinition(protoPackage).grpc.testing;
 /**
  * Create a buffer filled with size zeroes
  * @param {number} size The length of the buffer
- * @return {Buffer} The Buffer.from
+ * @return {Buffer} The New Buffer
  */
 function zeroBuffer(size) {
-  var zeros = Buffer.from(size);
+  var zeros = Buffer.alloc(size);
   zeros.fill(0);
   return zeros;
 }
