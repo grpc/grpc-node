@@ -23,7 +23,7 @@ function serialize_HealthCheckRequest(arg) {
   if (!(arg instanceof v1_health_pb.HealthCheckRequest)) {
     throw new Error('Expected argument of type HealthCheckRequest');
   }
-  return new Buffer(arg.serializeBinary());
+  return Buffer.from(arg.serializeBinary());
 }
 
 function deserialize_HealthCheckRequest(buffer_arg) {
@@ -34,7 +34,7 @@ function serialize_HealthCheckResponse(arg) {
   if (!(arg instanceof v1_health_pb.HealthCheckResponse)) {
     throw new Error('Expected argument of type HealthCheckResponse');
   }
-  return new Buffer(arg.serializeBinary());
+  return Buffer.from(arg.serializeBinary());
 }
 
 function deserialize_HealthCheckResponse(buffer_arg) {

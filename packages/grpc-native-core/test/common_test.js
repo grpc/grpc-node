@@ -97,7 +97,7 @@ describe('Proto message bytes serialize and deserialize', function() {
   var b64_options = Object.assign({}, default_options, {binaryAsBase64: true});
   var sequenceBase64Deserialize = deserializeCls(
       messages_proto.SequenceValues, b64_options);
-  var buffer_val = new Buffer([0x69, 0xb7]);
+  var buffer_val = Buffer.from([0x69, 0xb7]);
   var base64_val = 'abc=';
   it('should preserve a buffer', function() {
     var serialized = sequenceSerialize({bytes_field: buffer_val});
@@ -115,18 +115,18 @@ describe('Proto message bytes serialize and deserialize', function() {
     assert.strictEqual(deserialized.bytes_field, base64_val);
   });
   it('should serialize a repeated field as packed by default', function() {
-    var expected_serialize = new Buffer([0x12, 0x01, 0x0a]);
+    var expected_serialize = Buffer.from([0x12, 0x01, 0x0a]);
     var serialized = sequenceSerialize({repeated_field: [10]});
     assert.strictEqual(expected_serialize.compare(serialized), 0);
   });
   // This tests a bug that was fixed in Protobuf.js 6
   it.skip('should deserialize packed or unpacked repeated', function() {
     var expectedDeserialize = {
-      bytes_field: new Buffer(''),
+      bytes_field: Buffer.alloc(''),
       repeated_field: [10]
     };
-    var packedSerialized = new Buffer([0x12, 0x01, 0x0a]);
-    var unpackedSerialized = new Buffer([0x10, 0x0a]);
+    var packedSerialized = Buffer.from([0x12, 0x01, 0x0a]);
+    var unpackedSerialized = Buffer.from([0x10, 0x0a]);
     var packedDeserialized;
     var unpackedDeserialized;
     assert.doesNotThrow(function() {

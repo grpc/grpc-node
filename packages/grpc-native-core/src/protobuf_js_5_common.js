@@ -64,7 +64,7 @@ exports.serializeCls = function serializeCls(Cls) {
    * @return {Buffer} The serialized object
    */
   return function serialize(arg) {
-    return new Buffer(new Cls(arg).encode().toBuffer());
+    return Buffer.from(new Cls(arg).encode().toBuffer());
   };
 };
 

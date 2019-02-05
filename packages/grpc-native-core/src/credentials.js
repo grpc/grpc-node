@@ -93,7 +93,7 @@ function wrapCheckServerIdentityCallback(callback) {
       return new Error("Unable to parse certificate PEM.");
     }
     cert = cert.substring(PEM_CERT_HEADER.length, pemFooterIndex);
-    var rawBuffer = new Buffer(cert.replace("\n", "").replace(" ", ""), "base64");
+    var rawBuffer = Buffer.from(cert.replace("\n", "").replace(" ", ""), "base64");
 
     return callback(hostname, { raw: rawBuffer });
   }

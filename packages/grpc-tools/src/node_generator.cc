@@ -136,12 +136,7 @@ void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
              "throw new Error('Expected argument of type $name$');\n");
   out->Outdent();
   out->Print("}\n");
-  if (params.minimum_node_version > 5) {
-    // Node version is > 5, we should use Buffer.from
-    out->Print("return Buffer.from(arg.serializeBinary());\n");
-  } else {
-    out->Print("return new Buffer(arg.serializeBinary());\n");
-  }
+  out->Print("return Buffer.from(arg.serializeBinary());\n");
   out->Outdent();
   out->Print("}\n\n");
 
