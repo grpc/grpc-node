@@ -17,7 +17,7 @@ MkDir-p $Base + "/build/bin"
 $PackageFile = $Base + "/package.json"
 $ToolsVersion = (Get-Content $PackageFile) -join "`n" | ConvertFrom-Json | Get-Member -Name version
 
-$OutDir = $ARTIFACTS_OUT + "/grpc-tools/v" + $ToolsVersion
+$OutDir = $Env:ARTIFACTS_OUT + "/grpc-tools/v" + $ToolsVersion
 Mkdir-p $OutDir
 
 foreach ($Proto in $WellKnownProtos) {
