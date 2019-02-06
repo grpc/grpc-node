@@ -91,7 +91,7 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=0',
       'GRPC_UV',
-      'GRPC_NODE_VERSION="1.18.0"'
+      'GRPC_NODE_VERSION="1.19.0-dev"'
     ],
     'conditions': [
       ['grpc_gcov=="true"', {
@@ -666,6 +666,8 @@
         'deps/grpc/src/core/lib/iomgr/gethostname_fallback.cc',
         'deps/grpc/src/core/lib/iomgr/gethostname_host_name_max.cc',
         'deps/grpc/src/core/lib/iomgr/gethostname_sysconf.cc',
+        'deps/grpc/src/core/lib/iomgr/grpc_if_nametoindex_posix.cc',
+        'deps/grpc/src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc',
         'deps/grpc/src/core/lib/iomgr/internal_errqueue.cc',
         'deps/grpc/src/core/lib/iomgr/iocp_windows.cc',
         'deps/grpc/src/core/lib/iomgr/iomgr.cc',
@@ -677,7 +679,6 @@
         'deps/grpc/src/core/lib/iomgr/is_epollexclusive_available.cc',
         'deps/grpc/src/core/lib/iomgr/load_file.cc',
         'deps/grpc/src/core/lib/iomgr/lockfree_event.cc',
-        'deps/grpc/src/core/lib/iomgr/network_status_tracker.cc',
         'deps/grpc/src/core/lib/iomgr/polling_entity.cc',
         'deps/grpc/src/core/lib/iomgr/pollset.cc',
         'deps/grpc/src/core/lib/iomgr/pollset_custom.cc',
@@ -882,11 +883,13 @@
         'deps/grpc/src/core/ext/filters/client_channel/client_channel_factory.cc',
         'deps/grpc/src/core/ext/filters/client_channel/client_channel_plugin.cc',
         'deps/grpc/src/core/ext/filters/client_channel/connector.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/global_subchannel_pool.cc',
         'deps/grpc/src/core/ext/filters/client_channel/health/health_check_client.cc',
         'deps/grpc/src/core/ext/filters/client_channel/http_connect_handshaker.cc',
         'deps/grpc/src/core/ext/filters/client_channel/http_proxy.cc',
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy.cc',
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy_registry.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/local_subchannel_pool.cc',
         'deps/grpc/src/core/ext/filters/client_channel/parse_address.cc',
         'deps/grpc/src/core/ext/filters/client_channel/proxy_mapper.cc',
         'deps/grpc/src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
@@ -897,7 +900,7 @@
         'deps/grpc/src/core/ext/filters/client_channel/retry_throttle.cc',
         'deps/grpc/src/core/ext/filters/client_channel/server_address.cc',
         'deps/grpc/src/core/ext/filters/client_channel/subchannel.cc',
-        'deps/grpc/src/core/ext/filters/client_channel/subchannel_index.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/subchannel_pool_interface.cc',
         'deps/grpc/src/core/ext/filters/deadline/deadline_filter.cc',
         'deps/grpc/src/core/ext/filters/client_channel/health/health.pb.c',
         'deps/grpc/src/core/tsi/fake_transport_security.cc',
