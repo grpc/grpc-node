@@ -1,6 +1,6 @@
 Install-PackageProvider -Name NuGet -RequiredVersion 2.8.5.201 -Force
 Import-PackageProvider -Name NuGet -RequiredVersion 2.8.5.201
-Install-Module -Name 7Zip4Powershell
+Install-Module -Force -Name 7Zip4Powershell
 
 function MkDir-p($Path) {
     $FullPath = "\\?\" + $Path
@@ -14,7 +14,7 @@ $WellKnownProtos = "any","api","compiler/plugin","descriptor","duration","empty"
 $Base = $PSScriptRoot
 cd $Base
 $ProtobufBase = $Base + "/deps/protobuf"
-MkDir-p ($Base + "/build/bin")
+MkDir-p ($Base + "/build/bin/google/protobuf/compiler")
 
 $PackageFile = $Base + "/package.json"
 $ToolsVersion = (Get-Content $PackageFile) -join "`n" | ConvertFrom-Json | Get-Member -Name version
