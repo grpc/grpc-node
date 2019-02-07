@@ -5,6 +5,7 @@ endif(COMMAND cmake_policy)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(PROTOBUF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/deps/protobuf)
 add_subdirectory(${PROTOBUF_ROOT_DIR}/cmake deps/protobuf)
