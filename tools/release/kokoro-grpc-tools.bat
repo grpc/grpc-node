@@ -1,5 +1,5 @@
 cd /d %~dp0
-cd ..
+cd ../..
 
 set ARTIFACTS_OUT=artifacts
 powershell -File ./packages/grpc-tools/build_binaries.ps1
