@@ -9,22 +9,16 @@ function MkDir-p($Path) {
     }
 }
 
-$WellKnownProtos = "any","api","compiler/plugin","descriptor","duration","empty","field_mask","source_context","struct","timestamp","type","wrappers"
-
 $Base = $PSScriptRoot
 cd $Base
 $ProtobufBase = $Base + "/deps/protobuf"
-MkDir-p ($Base + "/build/bin/google/protobuf/compiler")
+MkDir-p ($Base + "/build/bin")
 
 $PackageFile = $Base + "/package.json"
 $ToolsVersion = (Get-Content $PackageFile) -join "`n" | ConvertFrom-Json | Get-Member -Name version
 
 $OutDir = $Env:ARTIFACTS_OUT + "/grpc-tools/v" + $ToolsVersion
 Mkdir-p $OutDir
-
-foreach ($Proto in $WellKnownProtos) {
-  Copy-Item ($ProtobufBase + "/src/google/protobuf/" + $Proto + ".proto") -Destination ($Base + "/build/bin/google/protobuf/" + $Proto + ".proto")
-}
 
 $ArchList = "ia32","x64"
 
