@@ -120,8 +120,7 @@ grpc::string NodeObjectPath(const Descriptor* descriptor) {
 }
 
 // Prints out the message serializer and deserializer functions
-void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
-                             const Parameters& params) {
+void PrintMessageTransformer(const Descriptor* descriptor, Printer* out) {
   map<grpc::string, grpc::string> template_vars;
   grpc::string full_name = descriptor->full_name();
   template_vars["identifier_name"] = MessageIdentifierName(full_name);
@@ -221,13 +220,12 @@ void PrintImports(const FileDescriptor* file, Printer* out) {
   out->Print("\n");
 }
 
-void PrintTransformers(const FileDescriptor* file, Printer* out,
-                       const Parameters& params) {
+void PrintTransformers(const FileDescriptor* file, Printer* out) {
   map<grpc::string, const Descriptor*> messages = GetAllMessages(file);
   for (std::map<grpc::string, const Descriptor*>::iterator it =
            messages.begin();
        it != messages.end(); it++) {
-    PrintMessageTransformer(it->second, out, params);
+    PrintMessageTransformer(it->second, out);
   }
   out->Print("\n");
 }
@@ -239,8 +237,7 @@ void PrintServices(const FileDescriptor* file, Printer* out) {
 }
 }  // namespace
 
-grpc::string GenerateFile(const FileDescriptor* file,
-                          const Parameters& params) {
+grpc::string GenerateFile(const FileDescriptor* file) {
   grpc::string output;
   {
     StringOutputStream output_stream(&output);
@@ -262,7 +259,7 @@ grpc::string GenerateFile(const FileDescriptor* file,
 
     PrintImports(file, &out);
 
-    PrintTransformers(file, &out, params);
+    PrintTransformers(file, &out);
 
     PrintServices(file, &out);
 

@@ -2,8 +2,6 @@
 
 set -e
 
-well_known_protos=( any api compiler/plugin descriptor duration empty field_mask source_context struct timestamp type wrappers )
-
 cd $(dirname $0)
 base=$(pwd)
 protobuf_base=$base/deps/protobuf
@@ -13,10 +11,7 @@ tools_version=$(jq '.version' < package.json | tr -d '"')
 out_dir=$ARTIFACTS_OUT/grpc-tools/v$tools_version
 mkdir -p "$out_dir"
 
-mkdir -p "$base/build/bin/google/protobuf/compiler"
-for proto in "${well_known_protos[@]}"; do
-  cp "$protobuf_base/src/google/protobuf/$proto.proto" "$base/build/bin/google/protobuf/$proto.proto"
-done
+mkdir -p "$base/build/bin"
 
 case $(uname -s) in
   Linux)
