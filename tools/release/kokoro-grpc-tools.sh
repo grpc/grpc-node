@@ -4,6 +4,8 @@ base_dir=$(pwd)
 
 OS=$(uname)
 
+git submodule update --init --recursive
+
 case $OS in
 Linux)
   docker build -t kokoro-native-image tools/release/native
