@@ -33,8 +33,14 @@ foreach ($Arch in $ArchList) {
     $Generator = "Visual Studio 14 2015"
   }
 
-  & cmake.exe .
-  & cmake.exe --build .
+  & cmake.exe . --config Release
+  if ($LASTEXITCODE -ne 0) {
+    throw "cmake failed"
+  }
+  & cmake.exe --build . --config Release
+  if ($LASTEXITCODE -ne 0) {
+    throw "cmake build failed"
+  }
 
   Copy-Item ($ProtobufBase + "/protoc.exe") -Destination ($Base + "/build/bin/protoc.exe")
   Copy-Item ($Base + "/grpc_node_plugin.exe") -Destination ($Base + "/build/bin/grpc_node_plugin.exe")
