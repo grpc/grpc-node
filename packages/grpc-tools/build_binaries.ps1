@@ -1,11 +1,10 @@
 $ErrorActionPreference = "Stop"
 
-gci env:*
-ls Env:
-
 Install-PackageProvider -Name NuGet -RequiredVersion 2.8.5.201 -Force
 Import-PackageProvider -Name NuGet -RequiredVersion 2.8.5.201
 Install-Module -Force -Name 7Zip4Powershell
+
+$env:Path += ";C:\Program Files\CMake\bin"
 
 function MkDir-p($Path) {
     $FullPath = "\\?\" + $Path
