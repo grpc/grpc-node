@@ -19,7 +19,7 @@ add_executable(grpc_node_plugin
 )
 
 if (MSVC)
-  add_definitions(/MT)
+  add_definitions(/MTd)
 endif (MSVC)
 
 target_include_directories(grpc_node_plugin

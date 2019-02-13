@@ -33,11 +33,11 @@ foreach ($Arch in $ArchList) {
     $Generator = "Visual Studio 14 2015"
   }
 
-  & cmake.exe . --config Release
+  & cmake.exe .
   if ($LASTEXITCODE -ne 0) {
     throw "cmake failed"
   }
-  & cmake.exe --build . --config Release
+  & cmake.exe --build .
   if ($LASTEXITCODE -ne 0) {
     throw "cmake build failed"
   }
