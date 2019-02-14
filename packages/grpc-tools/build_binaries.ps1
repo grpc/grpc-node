@@ -42,8 +42,8 @@ foreach ($Arch in $ArchList) {
     throw "cmake build failed"
   }
 
-  Copy-Item ($ProtobufBase + "/protoc.exe") -Destination ($Base + "/build/bin/protoc.exe")
-  Copy-Item ($Base + "/grpc_node_plugin.exe") -Destination ($Base + "/build/bin/grpc_node_plugin.exe")
+  Copy-Item ($ProtobufBase + "/Debug/protoc.exe") -Destination ($Base + "/build/bin/protoc.exe")
+  Copy-Item ($Base + "/Debug/grpc_node_plugin.exe") -Destination ($Base + "/build/bin/grpc_node_plugin.exe")
 
   Compress-7Zip -Path ($Base + "/build") -Format Tar -ArchiveFileName ($Base + "/Archive.tar")
   Compress-7Zip -Path ($Base + "/Archive.tar") -Format GZip -ArchiveFileName ($OutDir + "/windows-x64.tar.gz")
