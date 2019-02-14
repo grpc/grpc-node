@@ -1,6 +1,10 @@
+$ErrorActionPreference = "Stop"
+
 Install-PackageProvider -Name NuGet -RequiredVersion 2.8.5.201 -Force
 Import-PackageProvider -Name NuGet -RequiredVersion 2.8.5.201
 Install-Module -Force -Name 7Zip4Powershell
+
+$env:Path += ";C:\Program Files\CMake\bin"
 
 function MkDir-p($Path) {
     $FullPath = "\\?\" + $Path
@@ -28,16 +32,23 @@ foreach ($Arch in $ArchList) {
   } else {
     $Generator = "Visual Studio 14 2015"
   }
-  Remove-Item ($Base + "/build/bin/protoc.exe")
-  Remove-Item ($Base + "/build/bin/grpc_node_plugin.exe")
-  Remove-Item ($Base + "CMakeCache.txt")
 
-  Invoke-Expression "cmake ."
-  Invoke-Expression "cmake --build ."
+  & cmake.exe .
+  if ($LASTEXITCODE -ne 0) {
+    throw "cmake failed"
+  }
+  & cmake.exe --build .
+  if ($LASTEXITCODE -ne 0) {
+    throw "cmake build failed"
+  }
 
-  Copy-Item ($ProtobufBase + "/protoc.exe") -Destination ($Base + "/build/bin/protoc.exe")
-  Copy-Item ($Base + "/grpc_node_plugin.exe") -Destination ($Base + "/build/bin/grpc_node_plugin.exe")
+  Copy-Item ($ProtobufBase + "/Debug/protoc.exe") -Destination ($Base + "/build/bin/protoc.exe")
+  Copy-Item ($Base + "/Debug/grpc_node_plugin.exe") -Destination ($Base + "/build/bin/grpc_node_plugin.exe")
 
   Compress-7Zip -Path ($Base + "/build") -Format Tar -ArchiveFileName ($Base + "/Archive.tar")
   Compress-7Zip -Path ($Base + "/Archive.tar") -Format GZip -ArchiveFileName ($OutDir + "/windows-x64.tar.gz")
+
+  Remove-Item ($Base + "/build/bin/protoc.exe")
+  Remove-Item ($Base + "/build/bin/grpc_node_plugin.exe")
+  Remove-Item ($Base + "/CMakeCache.txt")
 }

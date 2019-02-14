@@ -18,6 +18,9 @@ add_executable(grpc_node_plugin
   src/node_plugin.cc
 )
 
+if (MSVC)
+  add_definitions(/MTd)
+endif (MSVC)
 
 target_include_directories(grpc_node_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
