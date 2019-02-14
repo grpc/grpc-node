@@ -19,7 +19,7 @@ $ProtobufBase = $Base + "/deps/protobuf"
 MkDir-p ($Base + "/build/bin")
 
 $PackageFile = $Base + "/package.json"
-$ToolsVersion = (Get-Content $PackageFile) -join "`n" | ConvertFrom-Json | Get-Member -Name version
+$ToolsVersion = ((Get-Content $PackageFile) -join "`n" | ConvertFrom-Json).version
 
 $OutDir = $Env:ARTIFACTS_OUT + "/grpc-tools/v" + $ToolsVersion
 Mkdir-p $OutDir
@@ -46,7 +46,7 @@ foreach ($Arch in $ArchList) {
   Copy-Item ($Base + "/Debug/grpc_node_plugin.exe") -Destination ($Base + "/build/bin/grpc_node_plugin.exe")
 
   Compress-7Zip -Path ($Base + "/build") -Format Tar -ArchiveFileName ($Base + "/Archive.tar")
-  Compress-7Zip -Path ($Base + "/Archive.tar") -Format GZip -ArchiveFileName ($OutDir + "/windows-x64.tar.gz")
+  Compress-7Zip -Path ($Base + "/Archive.tar") -Format GZip -ArchiveFileName ($OutDir + "/windows-" + $Arch + ".tar.gz")
 
   Remove-Item ($Base + "/build/bin/protoc.exe")
   Remove-Item ($Base + "/build/bin/grpc_node_plugin.exe")
