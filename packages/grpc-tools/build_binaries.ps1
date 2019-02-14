@@ -50,5 +50,5 @@ foreach ($Arch in $ArchList) {
 
   Remove-Item ($Base + "/build/bin/protoc.exe")
   Remove-Item ($Base + "/build/bin/grpc_node_plugin.exe")
-  Remove-Item ($Base + "CMakeCache.txt")
+  Remove-Item ($Base + "/CMakeCache.txt")
 }
