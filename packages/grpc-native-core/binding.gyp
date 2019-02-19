@@ -91,7 +91,7 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=0',
       'GRPC_UV',
-      'GRPC_NODE_VERSION="1.19.0-dev"'
+      'GRPC_NODE_VERSION="1.20.0-dev"'
     ],
     'conditions': [
       ['grpc_gcov=="true"', {
@@ -632,7 +632,6 @@
         'deps/grpc/src/core/lib/channel/channelz_registry.cc',
         'deps/grpc/src/core/lib/channel/connected_channel.cc',
         'deps/grpc/src/core/lib/channel/handshaker.cc',
-        'deps/grpc/src/core/lib/channel/handshaker_factory.cc',
         'deps/grpc/src/core/lib/channel/handshaker_registry.cc',
         'deps/grpc/src/core/lib/channel/status_util.cc',
         'deps/grpc/src/core/lib/compression/compression.cc',
@@ -821,6 +820,7 @@
         'deps/grpc/src/core/lib/security/credentials/oauth2/oauth2_credentials.cc',
         'deps/grpc/src/core/lib/security/credentials/plugin/plugin_credentials.cc',
         'deps/grpc/src/core/lib/security/credentials/ssl/ssl_credentials.cc',
+        'deps/grpc/src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc',
         'deps/grpc/src/core/lib/security/security_connector/alts/alts_security_connector.cc',
         'deps/grpc/src/core/lib/security/security_connector/fake/fake_security_connector.cc',
         'deps/grpc/src/core/lib/security/security_connector/load_system_roots_fallback.cc',
@@ -893,10 +893,10 @@
         'deps/grpc/src/core/ext/filters/client_channel/parse_address.cc',
         'deps/grpc/src/core/ext/filters/client_channel/proxy_mapper.cc',
         'deps/grpc/src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
-        'deps/grpc/src/core/ext/filters/client_channel/request_routing.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver_registry.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver_result_parsing.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/resolving_lb_policy.cc',
         'deps/grpc/src/core/ext/filters/client_channel/retry_throttle.cc',
         'deps/grpc/src/core/ext/filters/client_channel/server_address.cc',
         'deps/grpc/src/core/ext/filters/client_channel/subchannel.cc',
