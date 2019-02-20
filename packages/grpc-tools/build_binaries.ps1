@@ -46,7 +46,7 @@ foreach ($Arch in $ArchList) {
   Copy-Item ($Base + "/Debug/grpc_node_plugin.exe") -Destination ($Base + "/build/bin/grpc_node_plugin.exe")
 
   Compress-7Zip -Path ($Base + "/build") -Format Tar -ArchiveFileName ($Base + "/Archive.tar")
-  Compress-7Zip -Path ($Base + "/Archive.tar") -Format GZip -ArchiveFileName ($OutDir + "/windows-" + $Arch + ".tar.gz")
+  Compress-7Zip -Path ($Base + "/Archive.tar") -Format GZip -ArchiveFileName ($OutDir + "/win32-" + $Arch + ".tar.gz")
 
   Remove-Item ($Base + "/build/bin/protoc.exe")
   Remove-Item ($Base + "/build/bin/grpc_node_plugin.exe")
