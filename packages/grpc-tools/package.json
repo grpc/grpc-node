@@ -20,7 +20,7 @@
     "grpc_tools_node_protoc_plugin": "./bin/protoc_plugin.js"
   },
   "scripts": {
-    "install": "./node_modules/.bin/node-pre-gyp install",
+    "install": "node-pre-gyp install",
     "prepublishOnly": "git submodule update --init --recursive && node copy_well_known_protos.js"
   },
   "bundledDependencies": ["node-pre-gyp"],
