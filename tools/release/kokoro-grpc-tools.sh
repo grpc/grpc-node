@@ -6,6 +6,8 @@ OS=$(uname)
 
 git submodule update --init --recursive
 
+uname -a
+
 case $OS in
 Linux)
   docker build -t kokoro-native-image tools/release/native
