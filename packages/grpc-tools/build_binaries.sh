@@ -10,10 +10,9 @@ protobuf_base=$base/deps/protobuf
 
 tools_version=$(jq '.version' < package.json | tr -d '"')
 
+# Note: $ARTIFACTS_OUT should not be in this directory
 out_dir=$ARTIFACTS_OUT/grpc-tools/v$tools_version
 mkdir -p "$out_dir"
-
-mkdir -p "$base/build/bin"
 
 case $(uname -s) in
   Linux)
@@ -38,6 +37,7 @@ for arch in "${arch_list[@]}"; do
   git clean -xdf
   git submodule foreach --recursive git clean -xdf;
   cmake $toolchain_flag . && cmake --build . --target clean && cmake --build . -- -j 12
+  mkdir -p "$base/build/bin"
   cp -L $protobuf_base/protoc $base/build/bin/protoc
   cp $base/grpc_node_plugin $base/build/bin/
   file $base/build/bin/*
