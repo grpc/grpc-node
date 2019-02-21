@@ -2,6 +2,8 @@
 
 set -e
 
+uname -a
+
 cd $(dirname $0)
 base=$(pwd)
 protobuf_base=$base/deps/protobuf
@@ -30,7 +32,7 @@ for arch in "${arch_list[@]}"; do
       toolchain_flag=-DCMAKE_TOOLCHAIN_FILE=linux_32bit.toolchain.cmake
       ;;
     *)
-      toolchain_flag=
+      toolchain_flag=-DCMAKE_TOOLCHAIN_FILE=linux_64bit.toolchain.cmake
       ;;
   esac
   rm -f $base/build/bin/protoc
@@ -39,6 +41,7 @@ for arch in "${arch_list[@]}"; do
   cmake $toolchain_flag . && cmake --build . --target clean && cmake --build . -- -j 12
   cp -L $protobuf_base/protoc $base/build/bin/protoc
   cp $base/grpc_node_plugin $base/build/bin/
+  file $base/build/bin/*
   cd $base/build
   tar -czf "$out_dir/$platform-$arch.tar.gz" bin/
   cd $base
