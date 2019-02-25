@@ -486,7 +486,7 @@ declare module "grpc" {
    * Callback function passed to server handlers that handle methods with
    * unary responses.
    */
-  type sendUnaryData<ResponseType> =
+  export type sendUnaryData<ResponseType> =
     (error: ServiceError | null, value: ResponseType | null, trailer?: Metadata, flags?: number) => void;
 
   /**
