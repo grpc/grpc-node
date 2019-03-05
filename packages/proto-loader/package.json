@@ -46,7 +46,7 @@
     "@types/node": "^10.12.5",
     "clang-format": "^1.2.2",
     "gts": "^0.5.3",
-    "typescript": "~2.7.2"
+    "typescript": "~3.3.3333"
   },
   "engines": {
     "node": ">=6"
