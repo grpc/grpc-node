@@ -34,6 +34,7 @@
     "url": "https://github.com/grpc/grpc-node/issues"
   },
   "files": [
+    "LICENSE",
     "build/src/*.d.ts",
     "build/src/*.js"
   ],
