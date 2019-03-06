@@ -1117,6 +1117,9 @@ function _getBidiStreamingInterceptor(method_definition, channel, emitter) {
             emitter.emit('error', err);
             return;
           }
+        } else if (!emitter.finished) {
+          // when bidistream is closed from server with error it doesnt have read_status
+          emitter._readsDone();
         }
         response.status.metadata = Metadata._fromCoreRepresentation(
           response.status.metadata);
