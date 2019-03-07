@@ -62,7 +62,13 @@ export class DeadlineFilter extends BaseFilter implements Filter {
                        'connectivityStateChanged', handleStateChange);
                  }
                };
+               const handleStatus = () => {
+                 reject(new Error('Call ended'));
+                 this.channel.removeListener(
+                     'connectivityStateChanged', handleStateChange);
+               };
                this.channel.on('connectivityStateChanged', handleStateChange);
+               this.callStream.once('status', handleStatus);
              }
            })
         .then((finalMetadata: Metadata) => {
