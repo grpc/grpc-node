@@ -128,6 +128,11 @@ export class Http2CallStream extends Duplex implements Call {
   }
 
   private handleFilteredRead(message: Buffer) {
+    /* If we the call has already ended, we don't want to do anything with
+     * this message. Dropping it on the floor is correct behavior */
+    if (this.finalStatus !== null) {
+      return;
+    }
     this.isReadFilterPending = false;
     if (this.canPush) {
       if (!this.push(message)) {
@@ -146,6 +151,11 @@ export class Http2CallStream extends Duplex implements Call {
   }
 
   private filterReceivedMessage(framedMessage: Buffer|null) {
+    /* If we the call has already ended, we don't want to do anything with
+     * this message. Dropping it on the floor is correct behavior */
+    if (this.finalStatus !== null) {
+      return;
+    }
     if (framedMessage === null) {
       if (this.canPush) {
         this.push(null);
@@ -432,6 +442,12 @@ export class Http2CallStream extends Duplex implements Call {
   }
 
   _read(size: number) {
+    /* If we have already emitted a status, we should not emit any more
+     * messages and we should communicate that the stream has ended */
+    if (this.finalStatus !== null) {
+      this.push(null);
+      return;
+    }
     this.canPush = true;
     if (this.http2Stream === null) {
       this.pendingRead = true;
