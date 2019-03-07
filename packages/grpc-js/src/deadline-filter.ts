@@ -60,6 +60,7 @@ export class DeadlineFilter extends BaseFilter implements Filter {
                    resolve(metadata);
                    this.channel.removeListener(
                        'connectivityStateChanged', handleStateChange);
+                   this.callStream.removeListener('status', handleStatus);
                  }
                };
                const handleStatus = () => {
