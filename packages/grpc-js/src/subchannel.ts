@@ -46,6 +46,7 @@ export class Http2SubChannel extends EventEmitter implements SubChannel {
       userAgent: string, channelArgs: Partial<ChannelOptions>) {
     super();
     this.session = http2.connect(target, connectionOptions);
+    this.session.unref();
     this.session.on('connect', () => {
       this.emit('connect');
     });
