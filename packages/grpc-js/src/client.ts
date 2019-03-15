@@ -172,8 +172,7 @@ export class Client {
          this.checkOptionalUnaryResponseArguments<ResponseType>(
              metadata, options, callback));
     const call: Call = this[kChannel].createCall(
-        method, options.deadline, options.host, null,
-        options.propagate_flags);
+        method, options.deadline, options.host, null, options.propagate_flags);
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
@@ -214,8 +213,7 @@ export class Client {
          this.checkOptionalUnaryResponseArguments<ResponseType>(
              metadata, options, callback));
     const call: Call = this[kChannel].createCall(
-        method, options.deadline, options.host, null,
-        options.propagate_flags);
+        method, options.deadline, options.host, null, options.propagate_flags);
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
@@ -263,8 +261,7 @@ export class Client {
       options?: CallOptions): ClientReadableStream<ResponseType> {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
     const call: Call = this[kChannel].createCall(
-        method, options.deadline, options.host, null,
-        options.propagate_flags);
+        method, options.deadline, options.host, null, options.propagate_flags);
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
@@ -291,8 +288,7 @@ export class Client {
       options?: CallOptions): ClientDuplexStream<RequestType, ResponseType> {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
     const call: Call = this[kChannel].createCall(
-        method, options.deadline, options.host, null,
-        options.propagate_flags);
+        method, options.deadline, options.host, null, options.propagate_flags);
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }

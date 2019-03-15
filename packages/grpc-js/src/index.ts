@@ -1,16 +1,16 @@
 import * as semver from 'semver';
 
+import {ClientDuplexStream, ClientReadableStream, ClientUnaryCall, ClientWritableStream} from './call';
 import {CallCredentials} from './call-credentials';
-import {Channel, Http2Channel, ConnectivityState} from './channel';
+import {Deadline, StatusObject} from './call-stream';
+import {Channel, ConnectivityState, Http2Channel} from './channel';
 import {ChannelCredentials} from './channel-credentials';
-import {Client, CallOptions} from './client';
+import {CallOptions, Client} from './client';
 import {LogVerbosity, Status} from './constants';
 import * as logging from './logging';
-import {loadPackageDefinition, makeClientConstructor, Serialize, Deserialize} from './make-client';
+import {Deserialize, loadPackageDefinition, makeClientConstructor, Serialize} from './make-client';
 import {Metadata} from './metadata';
 import {StatusBuilder} from './status-builder';
-import { Deadline, StatusObject } from './call-stream';
-import { ClientUnaryCall, ClientReadableStream, ClientWritableStream, ClientDuplexStream } from './call';
 
 const supportedNodeVersions = '^8.11.2 || >=9.4';
 if (!semver.satisfies(process.version, supportedNodeVersions)) {
@@ -163,16 +163,16 @@ export {
   ClientDuplexStream,
   CallOptions,
   StatusObject
-}
+};
 
-export type Call =
-    ClientUnaryCall |
-    ClientReadableStream<any> |
-    ClientWritableStream<any> |
-    ClientDuplexStream<any, any>;
+/* tslint:disable:no-any */
+export type Call = ClientUnaryCall|ClientReadableStream<any>|
+    ClientWritableStream<any>|ClientDuplexStream<any, any>;
+/* tslint:enable:no-any */
 
 export type MetadataListener = (metadata: Metadata, next: Function) => void;
 
+// tslint:disable-next-line:no-any
 export type MessageListener = (message: any, next: Function) => void;
 
 export type StatusListener = (status: StatusObject, next: Function) => void;
