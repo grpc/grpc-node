@@ -1,14 +1,16 @@
 import * as semver from 'semver';
 
 import {CallCredentials} from './call-credentials';
-import {Channel} from './channel';
+import {Channel, Http2Channel, ConnectivityState} from './channel';
 import {ChannelCredentials} from './channel-credentials';
-import {Client} from './client';
+import {Client, CallOptions} from './client';
 import {LogVerbosity, Status} from './constants';
 import * as logging from './logging';
-import {loadPackageDefinition, makeClientConstructor} from './make-client';
+import {loadPackageDefinition, makeClientConstructor, Serialize, Deserialize} from './make-client';
 import {Metadata} from './metadata';
 import {StatusBuilder} from './status-builder';
+import { Deadline, StatusObject } from './call-stream';
+import { ClientUnaryCall, ClientReadableStream, ClientWritableStream, ClientDuplexStream } from './call';
 
 const supportedNodeVersions = '^8.11.2 || >=9.4';
 if (!semver.satisfies(process.version, supportedNodeVersions)) {
@@ -121,7 +123,8 @@ export {Metadata};
 
 export {
   LogVerbosity as logVerbosity,
-  Status as status
+  Status as status,
+  ConnectivityState as connectivityState
   // TODO: Other constants as well
 };
 
@@ -132,7 +135,7 @@ export {
   loadPackageDefinition,
   makeClientConstructor,
   makeClientConstructor as makeGenericClientConstructor,
-  Channel
+  Http2Channel as Channel
 };
 
 /**
@@ -145,6 +148,40 @@ export const waitForClientReady =
     (client: Client, deadline: Date|number,
      callback: (error?: Error) => void) =>
         client.waitForReady(deadline, callback);
+
+/* Interfaces */
+
+export {
+  ChannelCredentials,
+  CallCredentials,
+  Deadline,
+  Serialize as serialize,
+  Deserialize as deserialize,
+  ClientUnaryCall,
+  ClientReadableStream,
+  ClientWritableStream,
+  ClientDuplexStream,
+  CallOptions,
+  StatusObject
+}
+
+export type Call =
+    ClientUnaryCall |
+    ClientReadableStream<any> |
+    ClientWritableStream<any> |
+    ClientDuplexStream<any, any>;
+
+export type MetadataListener = (metadata: Metadata, next: Function) => void;
+
+export type MessageListener = (message: any, next: Function) => void;
+
+export type StatusListener = (status: StatusObject, next: Function) => void;
+
+export interface Listener {
+  onReceiveMetadata?: MetadataListener;
+  onReceiveMessage?: MessageListener;
+  onReceiveStatus?: StatusListener;
+}
 
 /**** Unimplemented function stubs ****/
 

@@ -18,7 +18,8 @@ export interface UnaryCallback<ResponseType> {
 export interface CallOptions {
   deadline?: Deadline;
   host?: string;
-  parent?: Call;
+  /* There should be a parent option here that will accept a server call,
+   * but the server is not yet implemented so it makes no sense to have it */
   propagate_flags?: number;
   credentials?: CallCredentials;
 }
@@ -171,7 +172,7 @@ export class Client {
          this.checkOptionalUnaryResponseArguments<ResponseType>(
              metadata, options, callback));
     const call: Call = this[kChannel].createCall(
-        method, options.deadline, options.host, options.parent,
+        method, options.deadline, options.host, null,
         options.propagate_flags);
     if (options.credentials) {
       call.setCredentials(options.credentials);
@@ -213,7 +214,7 @@ export class Client {
          this.checkOptionalUnaryResponseArguments<ResponseType>(
              metadata, options, callback));
     const call: Call = this[kChannel].createCall(
-        method, options.deadline, options.host, options.parent,
+        method, options.deadline, options.host, null,
         options.propagate_flags);
     if (options.credentials) {
       call.setCredentials(options.credentials);
@@ -262,7 +263,7 @@ export class Client {
       options?: CallOptions): ClientReadableStream<ResponseType> {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
     const call: Call = this[kChannel].createCall(
-        method, options.deadline, options.host, options.parent,
+        method, options.deadline, options.host, null,
         options.propagate_flags);
     if (options.credentials) {
       call.setCredentials(options.credentials);
@@ -290,7 +291,7 @@ export class Client {
       options?: CallOptions): ClientDuplexStream<RequestType, ResponseType> {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
     const call: Call = this[kChannel].createCall(
-        method, options.deadline, options.host, options.parent,
+        method, options.deadline, options.host, null,
         options.propagate_flags);
     if (options.credentials) {
       call.setCredentials(options.credentials);
