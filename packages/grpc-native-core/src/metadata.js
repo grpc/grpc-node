@@ -22,18 +22,36 @@ var clone = require('lodash.clone');
 
 var grpc = require('./grpc_extension');
 
+const IDEMPOTENT_REQUEST_FLAG = 0x10;
+const WAIT_FOR_READY_FLAG = 0x20;
+const CACHEABLE_REQUEST_FLAG = 0x40;
+const WAIT_FOR_READY_EXPLICITLY_SET_FLAG = 0x80;
+const CORKED_FLAG = 0x100;
+
 /**
  * Class for storing metadata. Keys are normalized to lowercase ASCII.
  * @memberof grpc
  * @constructor
+ * @param {Object=} options Boolean options for the beginning of the call.
+ *     These options only have any effect when passed at the beginning of
+ *     a client request.
+ * @param {boolean=} [options.idempotentRequest=false] Signal that the request
+ *     is idempotent
+ * @param {boolean=} [options.waitForReady=true] Signal that the call should
+ *     not return UNAVAILABLE before it has started.
+ * @param {boolean=} [options.cacheableRequest=false] Signal that the call is
+ *     cacheable. GRPC is free to use GET verb.
+ * @param {boolean=} [options.corked=false] Signal that the initial metadata
+ *     should be corked.
  * @example
  * var metadata = new metadata_module.Metadata();
  * metadata.set('key1', 'value1');
  * metadata.add('key1', 'value2');
  * metadata.get('key1') // returns ['value1', 'value2']
  */
-function Metadata() {
+function Metadata(options) {
   this._internal_repr = {};
+  this.setOptions(options);
 }
 
 function normalizeKey(key) {
@@ -141,34 +159,82 @@ Metadata.prototype.clone = function() {
     const value = this._internal_repr[key];
     copy._internal_repr[key] = clone(value);
   });
+  copy.flags = this.flags;
   return copy;
 };
+
+/**
+ * Set options on the metadata object
+ * @param {Object} options Boolean options for the beginning of the call.
+ *     These options only have any effect when passed at the beginning of
+ *     a client request.
+ * @param {boolean=} [options.idempotentRequest=false] Signal that the request
+ *     is idempotent
+ * @param {boolean=} [options.waitForReady=true] Signal that the call should
+ *     not return UNAVAILABLE before it has started.
+ * @param {boolean=} [options.cacheableRequest=false] Signal that the call is
+ *     cacheable. GRPC is free to use GET verb.
+ * @param {boolean=} [options.corked=false] Signal that the initial metadata
+ *     should be corked.
+ */
+Metadata.prototype.setOptions = function(options) {
+  let flags = 0;
+  if (options) {
+    if (options.idempotentRequest) {
+      flags |= IDEMPOTENT_REQUEST_FLAG;
+    }
+    if (options.hasOwnProperty('waitForReady')) {
+      flags |= WAIT_FOR_READY_EXPLICITLY_SET_FLAG;
+      if (options.waitForReady) {
+        flags |= WAIT_FOR_READY_FLAG;
+      }
+    }
+    if (options.cacheableRequest) {
+      flags |= CACHEABLE_REQUEST_FLAG;
+    }
+    if (options.corked) {
+      flags |= CORKED_FLAG;
+    }
+  }
+  this.flags = flags;
+}
+
+/**
+ * Metadata representation as passed to and the native addon
+ * @typedef {object} grpc~CoreMetadata
+ * @param {Object.<String, Array.<String|Buffer>>} metadata The metadata
+ * @param {number} flags Metadata flags
+ */
 
 /**
  * Gets the metadata in the format used by interal code. Intended for internal
  * use only. API stability is not guaranteed.
  * @private
- * @return {Object.<String, Array.<String|Buffer>>} The metadata
+ * @return {grpc~CoreMetadata} The metadata
  */
 Metadata.prototype._getCoreRepresentation = function() {
-  return this._internal_repr;
+  return {
+    metadata: this._internal_repr,
+    flags: this.flags
+  };
 };
 
 /**
  * Creates a Metadata object from a metadata map in the internal format.
  * Intended for internal use only. API stability is not guaranteed.
  * @private
- * @param {Object.<String, Array.<String|Buffer>>} The metadata
+ * @param {grpc~CoreMetadata} metadata The metadata object from core
  * @return {Metadata} The new Metadata object
  */
 Metadata._fromCoreRepresentation = function(metadata) {
   var newMetadata = new Metadata();
   if (metadata) {
-    Object.keys(metadata).forEach(key => {
-      const value = metadata[key];
+    Object.keys(metadata.metadata).forEach(key => {
+      const value = metadata.metadata[key];
       newMetadata._internal_repr[key] = clone(value);
     });
   }
+  newMetadata.flags = metadata.flags;
   return newMetadata;
 };
 
