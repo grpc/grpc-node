@@ -285,7 +285,7 @@ export function loadSync(filename: string, options?: Options): PackageDefinition
   options = options || {};
   if (!!options.includeDirs) {
     if (!(Array.isArray(options.includeDirs))) {
-      throw new Error('The include option must be an array');
+      throw new Error('The includeDirs option must be an array');
     }
     addIncludePathResolver(root, options.includeDirs as string[]);
   }
