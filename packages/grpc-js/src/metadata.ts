@@ -44,11 +44,26 @@ function validate(key: string, value?: MetadataValue): void {
   }
 }
 
+interface MetadataOptions {
+  /* Signal that the request is idempotent. Defaults to false */
+  idempotentRequest?: boolean;
+  /* Signal that the call should not return UNAVAILABLE before it has
+   * started. Defaults to true. */
+  waitForReady?: boolean;
+  /* Signal that the call is cacheable. GRPC is free to use GET verb.
+   * Defaults to false */
+  cacheableRequest?: boolean;
+  /* Signal that the initial metadata should be corked. Defaults to false. */
+  corked?: boolean;
+}
+
 /**
  * A class for storing metadata. Keys are normalized to lowercase ASCII.
  */
 export class Metadata {
   protected internalRepr: MetadataObject = new Map<string, MetadataValue[]>();
+
+  constructor(private options?: MetadataOptions) {}
 
   /**
    * Sets the given value for the given key by replacing any other values
@@ -158,6 +173,10 @@ export class Metadata {
 
       this.internalRepr.set(key, mergedValue);
     });
+  }
+
+  setOptions(options: MetadataOptions) {
+    this.options = options;
   }
 
   /**
