@@ -269,7 +269,7 @@ export function load(filename: string, options?: Options): Promise<PackageDefini
   const root: Protobuf.Root = new Protobuf.Root();
   options = options || {};
   if (!!options.includeDirs) {
-    if (!(options.includeDirs instanceof Array)) {
+    if (!(Array.isArray(options.includeDirs))) {
       return Promise.reject(new Error('The includeDirs option must be an array'));
     }
     addIncludePathResolver(root, options.includeDirs as string[]);
@@ -284,8 +284,8 @@ export function loadSync(filename: string, options?: Options): PackageDefinition
   const root: Protobuf.Root = new Protobuf.Root();
   options = options || {};
   if (!!options.includeDirs) {
-    if (!(options.includeDirs instanceof Array)) {
-      throw new Error('The include option must be an array');
+    if (!(Array.isArray(options.includeDirs))) {
+      throw new Error('The includeDirs option must be an array');
     }
     addIncludePathResolver(root, options.includeDirs as string[]);
   }
