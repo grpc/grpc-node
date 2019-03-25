@@ -772,7 +772,7 @@ Server.prototype.start = function() {
       batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
         code: constants.status.UNIMPLEMENTED,
         details: 'RPC method not implemented ' + method,
-        metadata: {}
+        metadata: (new Metadata())._getCoreRepresentation()
       };
       batch[grpc.opType.RECV_CLOSE_ON_SERVER] = true;
       call.startBatch(batch, function() {});
