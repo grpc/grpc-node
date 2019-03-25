@@ -963,7 +963,8 @@
       ],
       'cflags': [
         '-pthread',
-        '-Wno-error=deprecated-declarations'
+        '-Wno-error=deprecated-declarations',
+        '-Wno-cast-function-type'
       ],
       "conditions": [
         ['OS=="win" or runtime=="electron"', {
