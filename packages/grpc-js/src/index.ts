@@ -17,13 +17,15 @@
 
 import * as semver from 'semver';
 
+import {ClientDuplexStream, ClientReadableStream, ClientUnaryCall, ClientWritableStream} from './call';
 import {CallCredentials} from './call-credentials';
-import {Channel} from './channel';
+import {Deadline, StatusObject} from './call-stream';
+import {Channel, ConnectivityState, Http2Channel} from './channel';
 import {ChannelCredentials} from './channel-credentials';
-import {Client} from './client';
+import {CallOptions, Client} from './client';
 import {LogVerbosity, Status} from './constants';
 import * as logging from './logging';
-import {loadPackageDefinition, makeClientConstructor} from './make-client';
+import {Deserialize, loadPackageDefinition, makeClientConstructor, Serialize} from './make-client';
 import {Metadata} from './metadata';
 import {StatusBuilder} from './status-builder';
 
@@ -138,7 +140,8 @@ export {Metadata};
 
 export {
   LogVerbosity as logVerbosity,
-  Status as status
+  Status as status,
+  ConnectivityState as connectivityState
   // TODO: Other constants as well
 };
 
@@ -149,7 +152,7 @@ export {
   loadPackageDefinition,
   makeClientConstructor,
   makeClientConstructor as makeGenericClientConstructor,
-  Channel
+  Http2Channel as Channel
 };
 
 /**
@@ -162,6 +165,40 @@ export const waitForClientReady =
     (client: Client, deadline: Date|number,
      callback: (error?: Error) => void) =>
         client.waitForReady(deadline, callback);
+
+/* Interfaces */
+
+export {
+  ChannelCredentials,
+  CallCredentials,
+  Deadline,
+  Serialize as serialize,
+  Deserialize as deserialize,
+  ClientUnaryCall,
+  ClientReadableStream,
+  ClientWritableStream,
+  ClientDuplexStream,
+  CallOptions,
+  StatusObject
+};
+
+/* tslint:disable:no-any */
+export type Call = ClientUnaryCall|ClientReadableStream<any>|
+    ClientWritableStream<any>|ClientDuplexStream<any, any>;
+/* tslint:enable:no-any */
+
+export type MetadataListener = (metadata: Metadata, next: Function) => void;
+
+// tslint:disable-next-line:no-any
+export type MessageListener = (message: any, next: Function) => void;
+
+export type StatusListener = (status: StatusObject, next: Function) => void;
+
+export interface Listener {
+  onReceiveMetadata?: MetadataListener;
+  onReceiveMessage?: MessageListener;
+  onReceiveStatus?: StatusListener;
+}
 
 /**** Unimplemented function stubs ****/
 
