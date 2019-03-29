@@ -243,8 +243,8 @@ function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
 
 /**
  * Load a .proto file with the specified options.
- * @param filename The file path to load. Can be an absolute path or relative to
- *     an include path.
+ * @param filename One or multiple file paths to load. Can be an absolute path
+ *     or relative to an include path.
  * @param options.keepCase Preserve field names. The default is to change them
  *     to camel case.
  * @param options.longs The type that should be used to represent `long` values.
@@ -265,7 +265,7 @@ function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
  *     name
  * @param options.includeDirs Paths to search for imported `.proto` files.
  */
-export function load(filename: string, options?: Options): Promise<PackageDefinition> {
+export function load(filename: string | string[], options?: Options): Promise<PackageDefinition> {
   const root: Protobuf.Root = new Protobuf.Root();
   options = options || {};
   if (!!options.includeDirs) {
@@ -280,7 +280,7 @@ export function load(filename: string, options?: Options): Promise<PackageDefini
   });
 }
 
-export function loadSync(filename: string, options?: Options): PackageDefinition {
+export function loadSync(filename: string | string[], options?: Options): PackageDefinition {
   const root: Protobuf.Root = new Protobuf.Root();
   options = options || {};
   if (!!options.includeDirs) {
