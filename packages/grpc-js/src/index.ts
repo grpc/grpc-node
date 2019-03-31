@@ -27,6 +27,7 @@ import {LogVerbosity, Status} from './constants';
 import * as logging from './logging';
 import {Deserialize, loadPackageDefinition, makeClientConstructor, Serialize} from './make-client';
 import {Metadata} from './metadata';
+import {KeyCertPair, ServerCredentials} from './server-credentials';
 import {StatusBuilder} from './status-builder';
 
 const supportedNodeVersions = '^8.11.2 || >=9.4';
@@ -226,15 +227,9 @@ export const Server = (options: any) => {
   throw new Error('Not yet implemented');
 };
 
-export const ServerCredentials = {
-  createSsl:
-      (rootCerts: any, keyCertPairs: any, checkClientCertificate: any) => {
-        throw new Error('Not yet implemented');
-      },
-  createInsecure: () => {
-    throw new Error('Not yet implemented');
-  }
-};
+export {ServerCredentials};
+export {KeyCertPair};
+
 
 export const getClientChannel = (client: Client) => {
   return Client.prototype.getChannel.call(client);
