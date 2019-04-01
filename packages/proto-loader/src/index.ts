@@ -293,3 +293,20 @@ export function loadSync(filename: string, options?: Options): PackageDefinition
   loadedRoot.resolveAll();
   return createPackageDefinition(root, options!);
 }
+
+// Load Google's well-known proto files that aren't exposed by Protobuf.js.
+{
+  // Protobuf.js exposes: any, duration, empty, field_mask, struct, timestamp,
+  // and wrappers. compiler/plugin is excluded in Protobuf.js and here.
+  const wellKnownProtos = ['api', 'descriptor', 'source_context', 'type'];
+  const sourceDir = path.join(path.dirname(require.resolve('protobufjs')),
+                              'google', 'protobuf');
+
+  for (const proto of wellKnownProtos) {
+    const file = path.join(sourceDir, `${proto}.proto`);
+    const descriptor = Protobuf.loadSync(file).toJSON();
+
+    // @ts-ignore
+    Protobuf.common(proto, descriptor.nested.google.nested);
+  }
+}
