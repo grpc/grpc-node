@@ -207,7 +207,8 @@
               '-fvisibility=hidden',
             '-stdlib=libc++',
             '-std=c++11',
-            '-Wno-error=deprecated-declarations'
+            '-Wno-error=deprecated-declarations',
+            '-Wno-error=class-memaccess'
           ],
         },
       }]
