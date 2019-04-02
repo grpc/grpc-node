@@ -220,6 +220,13 @@ describe('Client constructor building', function() {
     assert.strictEqual(Client.prototype.add, Client.prototype.Add);
   });
 });
+describe('Generic client', function() {
+  it('Should construct without error', function() {
+    assert.doesNotThrow(() => {
+      const client = new grpc.Client('localhost: 50051', grpc.credentials.createInsecure());
+    });
+  });
+});
 describe('waitForClientReady', function() {
   var server;
   var port;
@@ -314,7 +321,7 @@ describe('Echo service', function() {
     });
   });
 });
-describe('Generic client and server', function() {
+describe('Non-protobuf client and server', function() {
   function toString(val) {
     return val.toString();
   }

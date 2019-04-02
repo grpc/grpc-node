@@ -91,7 +91,7 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=0',
       'GRPC_UV',
-      'GRPC_NODE_VERSION="1.19.0-pre1"'
+      'GRPC_NODE_VERSION="1.19.0"'
     ],
     'conditions': [
       ['grpc_gcov=="true"', {
@@ -963,7 +963,8 @@
       ],
       'cflags': [
         '-pthread',
-        '-Wno-error=deprecated-declarations'
+        '-Wno-error=deprecated-declarations',
+        '-Wno-cast-function-type'
       ],
       "conditions": [
         ['OS=="win" or runtime=="electron"', {

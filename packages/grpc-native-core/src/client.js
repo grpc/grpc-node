@@ -376,12 +376,14 @@ function Client(address, credentials, options) {
   }
   self.$interceptors = options.interceptors || [];
   self.$interceptor_providers = options.interceptor_providers || [];
-  Object.keys(self.$method_definitions).forEach(method_name => {
-    const method_definition = self.$method_definitions[method_name];
-    self[method_name].interceptors = client_interceptors
-      .resolveInterceptorProviders(self.$interceptor_providers, method_definition)
-      .concat(self.$interceptors);
-  });
+  if (self.$method_definitions) {
+    Object.keys(self.$method_definitions).forEach(method_name => {
+      const method_definition = self.$method_definitions[method_name];
+      self[method_name].interceptors = client_interceptors
+        .resolveInterceptorProviders(self.$interceptor_providers, method_definition)
+        .concat(self.$interceptors);
+    });
+  }
 
   this.$callInvocationTransformer = options.callInvocationTransformer;
 
