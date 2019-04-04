@@ -941,7 +941,9 @@ describe('Other conditions', function() {
      * failure makes that transition very fast. */
     const disconnectedClient = new Client('nothing.invalid:50051', grpc.credentials.createInsecure());
     const metadata = new grpc.Metadata({waitForReady: false});
-    disconnectedClient.unary({}, metadata, (error, value) =>{
+    const deadline = new Date();
+    deadline.setSeconds(deadline.getSeconds() + 1);
+    disconnectedClient.unary({}, metadata, {deadline: deadline}, (error, value) =>{
       assert(error);
       assert.strictEqual(error.code, grpc.status.UNAVAILABLE);
       done();
