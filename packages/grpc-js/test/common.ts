@@ -15,7 +15,18 @@
  *
  */
 
+import * as loader from '@grpc/proto-loader';
 import * as assert from 'assert';
+
+import {GrpcObject, loadPackageDefinition} from '../src/make-client';
+
+const protoLoaderOptions = {
+  keepCase: true,
+  longs: String,
+  enums: String,
+  defaults: true,
+  oneofs: true
+};
 
 export function mockFunction(): never {
   throw new Error('Not implemented');
@@ -99,4 +110,9 @@ export namespace assert2 {
       fn();
     }
   }
+}
+
+export function loadProtoFile(file: string): GrpcObject {
+  const packageDefinition = loader.loadSync(file, protoLoaderOptions);
+  return loadPackageDefinition(packageDefinition);
 }
