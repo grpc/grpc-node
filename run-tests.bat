@@ -59,6 +59,9 @@ for %%v in (6 7 8 9 10 11) do (
 )
 
 node merge_kokoro_logs.js
+cd t:\src
+du -sh
+find . -type f | wc -l
 if %FAILED% neq 0 exit /b 1
 goto :EOF
 
