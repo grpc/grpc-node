@@ -59,6 +59,7 @@ for %%v in (6 7 8 9 10 11) do (
 )
 
 node merge_kokoro_logs.js
+git clean -xdf
 cd t:\src
 du -sh
 find . -type f | wc -l
