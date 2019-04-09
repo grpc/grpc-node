@@ -64,6 +64,7 @@ class ClientHttp2StreamMock extends stream.Duplex implements
   endAfterHeaders = false;
   pending = false;
   rstCode = 0;
+  readonly bufferSize: number = 0;
   readonly sentHeaders: OutgoingHttpHeaders = {};
   readonly sentInfoHeaders?: OutgoingHttpHeaders[] = [];
   readonly sentTrailers?: OutgoingHttpHeaders = undefined;
