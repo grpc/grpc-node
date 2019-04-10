@@ -13,6 +13,8 @@ add_subdirectory(${PROTOBUF_ROOT_DIR}/cmake deps/protobuf)
 set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
 set(protobuf_WITH_ZLIB OFF CACHE BOOL "Build protobuf with zlib.")
 
+set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++")
+
 add_executable(grpc_node_plugin
   src/node_generator.cc
   src/node_plugin.cc
