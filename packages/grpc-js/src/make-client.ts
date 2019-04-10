@@ -19,9 +19,13 @@ import {ChannelCredentials} from './channel-credentials';
 import {ChannelOptions} from './channel-options';
 import {Client} from './client';
 
-export interface Serialize<T> { (value: T): Buffer; }
+export interface Serialize<T> {
+  (value: T): Buffer;
+}
 
-export interface Deserialize<T> { (bytes: Buffer): T; }
+export interface Deserialize<T> {
+  (bytes: Buffer): T;
+}
 
 export interface MethodDefinition<RequestType, ResponseType> {
   path: string;
