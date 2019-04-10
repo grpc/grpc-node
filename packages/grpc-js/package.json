@@ -20,7 +20,8 @@
     "@types/node": "^11.13.2",
     "clang-format": "^1.0.55",
     "gts": "^0.9.0",
-    "lodash": "^4.17.4"
+    "lodash": "^4.17.4",
+    "typescript": "~3.3.3333"
   },
   "contributors": [
     {
