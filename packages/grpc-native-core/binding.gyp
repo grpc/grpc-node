@@ -83,13 +83,16 @@
     'include_dirs': [
       'deps/grpc',
       'deps/grpc/include',
+      'deps/grpc/third_party/address_sorting/include',
+      'deps/grpc/third_party/cares',
+      'deps/grpc/third_party/cares/cares',
       'deps/grpc/third_party/abseil-cpp',
-      'deps/grpc/third_party/nanopb'
+      'deps/grpc/third_party/nanopb',
     ],
     'defines': [
       'PB_FIELD_32BIT',
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
-      'GRPC_ARES=0',
+      'GRPC_ARES=1',
       'GRPC_UV',
       'GRPC_NODE_VERSION="1.21.0-dev"'
     ],
@@ -559,6 +562,114 @@
   ],
   'targets': [
     {
+      'target_name': 'ares',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'sources': [
+        'deps/grpc/third_party/cares/cares/ares__close_sockets.c',
+        'deps/grpc/third_party/cares/cares/ares__get_hostent.c',
+        'deps/grpc/third_party/cares/cares/ares__read_line.c',
+        'deps/grpc/third_party/cares/cares/ares__timeval.c',
+        'deps/grpc/third_party/cares/cares/ares_cancel.c',
+        'deps/grpc/third_party/cares/cares/ares_create_query.c',
+        'deps/grpc/third_party/cares/cares/ares_data.c',
+        'deps/grpc/third_party/cares/cares/ares_destroy.c',
+        'deps/grpc/third_party/cares/cares/ares_expand_name.c',
+        'deps/grpc/third_party/cares/cares/ares_expand_string.c',
+        'deps/grpc/third_party/cares/cares/ares_fds.c',
+        'deps/grpc/third_party/cares/cares/ares_free_hostent.c',
+        'deps/grpc/third_party/cares/cares/ares_free_string.c',
+        'deps/grpc/third_party/cares/cares/ares_getenv.c',
+        'deps/grpc/third_party/cares/cares/ares_gethostbyaddr.c',
+        'deps/grpc/third_party/cares/cares/ares_gethostbyname.c',
+        'deps/grpc/third_party/cares/cares/ares_getnameinfo.c',
+        'deps/grpc/third_party/cares/cares/ares_getopt.c',
+        'deps/grpc/third_party/cares/cares/ares_getsock.c',
+        'deps/grpc/third_party/cares/cares/ares_init.c',
+        'deps/grpc/third_party/cares/cares/ares_library_init.c',
+        'deps/grpc/third_party/cares/cares/ares_llist.c',
+        'deps/grpc/third_party/cares/cares/ares_mkquery.c',
+        'deps/grpc/third_party/cares/cares/ares_nowarn.c',
+        'deps/grpc/third_party/cares/cares/ares_options.c',
+        'deps/grpc/third_party/cares/cares/ares_parse_a_reply.c',
+        'deps/grpc/third_party/cares/cares/ares_parse_aaaa_reply.c',
+        'deps/grpc/third_party/cares/cares/ares_parse_mx_reply.c',
+        'deps/grpc/third_party/cares/cares/ares_parse_naptr_reply.c',
+        'deps/grpc/third_party/cares/cares/ares_parse_ns_reply.c',
+        'deps/grpc/third_party/cares/cares/ares_parse_ptr_reply.c',
+        'deps/grpc/third_party/cares/cares/ares_parse_soa_reply.c',
+        'deps/grpc/third_party/cares/cares/ares_parse_srv_reply.c',
+        'deps/grpc/third_party/cares/cares/ares_parse_txt_reply.c',
+        'deps/grpc/third_party/cares/cares/ares_platform.c',
+        'deps/grpc/third_party/cares/cares/ares_process.c',
+        'deps/grpc/third_party/cares/cares/ares_query.c',
+        'deps/grpc/third_party/cares/cares/ares_search.c',
+        'deps/grpc/third_party/cares/cares/ares_send.c',
+        'deps/grpc/third_party/cares/cares/ares_strcasecmp.c',
+        'deps/grpc/third_party/cares/cares/ares_strdup.c',
+        'deps/grpc/third_party/cares/cares/ares_strerror.c',
+        'deps/grpc/third_party/cares/cares/ares_strsplit.c',
+        'deps/grpc/third_party/cares/cares/ares_timeout.c',
+        'deps/grpc/third_party/cares/cares/ares_version.c',
+        'deps/grpc/third_party/cares/cares/ares_writev.c',
+        'deps/grpc/third_party/cares/cares/bitncmp.c',
+        'deps/grpc/third_party/cares/cares/inet_net_pton.c',
+        'deps/grpc/third_party/cares/cares/inet_ntop.c',
+        'deps/grpc/third_party/cares/cares/windows_port.c',
+      ],
+      'defines': [
+        '_GNU_SOURCE'
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          },
+          'include_dirs': [
+            'deps/grpc/third_party/cares/config_darwin'
+          ],
+          'defines': [
+            'HAVE_CONFIG_H'
+          ]
+        }],
+        ['OS == "linux"', {
+          'include_dirs': [
+            'deps/grpc/third_party/cares/config_linux'
+          ],
+          'defines': [
+            'HAVE_CONFIG_H'
+          ]
+        }],
+        ['OS == "win"', {
+          'include_dirs': [
+            'deps/grpc/third_party/cares/config_windows'
+          ],
+          'defines': [
+            'HAVE_CONFIG_H'
+          ]
+        }]
+      ]
+    },
+    {
+      'target_name': 'address_sorting',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
+        'deps/grpc/third_party/address_sorting/address_sorting.c',
+        'deps/grpc/third_party/address_sorting/address_sorting_posix.c',
+        'deps/grpc/third_party/address_sorting/address_sorting_windows.c',
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
       'target_name': 'gpr',
       'product_prefix': 'lib',
       'type': 'static_library',
@@ -566,7 +677,6 @@
       ],
       'sources': [
         'deps/grpc/src/core/lib/gpr/alloc.cc',
-        'deps/grpc/src/core/lib/gpr/arena.cc',
         'deps/grpc/src/core/lib/gpr/atm.cc',
         'deps/grpc/src/core/lib/gpr/cpu_iphone.cc',
         'deps/grpc/src/core/lib/gpr/cpu_linux.cc',
@@ -599,7 +709,9 @@
         'deps/grpc/src/core/lib/gpr/tmpfile_posix.cc',
         'deps/grpc/src/core/lib/gpr/tmpfile_windows.cc',
         'deps/grpc/src/core/lib/gpr/wrap_memcpy.cc',
+        'deps/grpc/src/core/lib/gprpp/arena.cc',
         'deps/grpc/src/core/lib/gprpp/fork.cc',
+        'deps/grpc/src/core/lib/gprpp/global_config_env.cc',
         'deps/grpc/src/core/lib/gprpp/thd_posix.cc',
         'deps/grpc/src/core/lib/gprpp/thd_windows.cc',
         'deps/grpc/src/core/lib/profiling/basic_timers.cc',
@@ -635,6 +747,7 @@
         'deps/grpc/src/core/lib/channel/handshaker_registry.cc',
         'deps/grpc/src/core/lib/channel/status_util.cc',
         'deps/grpc/src/core/lib/compression/compression.cc',
+        'deps/grpc/src/core/lib/compression/compression_args.cc',
         'deps/grpc/src/core/lib/compression/compression_internal.cc',
         'deps/grpc/src/core/lib/compression/message_compress.cc',
         'deps/grpc/src/core/lib/compression/stream_compression.cc',
@@ -647,12 +760,15 @@
         'deps/grpc/src/core/lib/http/parser.cc',
         'deps/grpc/src/core/lib/iomgr/buffer_list.cc',
         'deps/grpc/src/core/lib/iomgr/call_combiner.cc',
+        'deps/grpc/src/core/lib/iomgr/cfstream_handle.cc',
         'deps/grpc/src/core/lib/iomgr/combiner.cc',
         'deps/grpc/src/core/lib/iomgr/endpoint.cc',
+        'deps/grpc/src/core/lib/iomgr/endpoint_cfstream.cc',
         'deps/grpc/src/core/lib/iomgr/endpoint_pair_posix.cc',
         'deps/grpc/src/core/lib/iomgr/endpoint_pair_uv.cc',
         'deps/grpc/src/core/lib/iomgr/endpoint_pair_windows.cc',
         'deps/grpc/src/core/lib/iomgr/error.cc',
+        'deps/grpc/src/core/lib/iomgr/error_cfstream.cc',
         'deps/grpc/src/core/lib/iomgr/ev_epoll1_linux.cc',
         'deps/grpc/src/core/lib/iomgr/ev_epollex_linux.cc',
         'deps/grpc/src/core/lib/iomgr/ev_poll_posix.cc',
@@ -673,6 +789,7 @@
         'deps/grpc/src/core/lib/iomgr/iomgr_custom.cc',
         'deps/grpc/src/core/lib/iomgr/iomgr_internal.cc',
         'deps/grpc/src/core/lib/iomgr/iomgr_posix.cc',
+        'deps/grpc/src/core/lib/iomgr/iomgr_posix_cfstream.cc',
         'deps/grpc/src/core/lib/iomgr/iomgr_uv.cc',
         'deps/grpc/src/core/lib/iomgr/iomgr_windows.cc',
         'deps/grpc/src/core/lib/iomgr/is_epollexclusive_available.cc',
@@ -701,6 +818,7 @@
         'deps/grpc/src/core/lib/iomgr/socket_utils_windows.cc',
         'deps/grpc/src/core/lib/iomgr/socket_windows.cc',
         'deps/grpc/src/core/lib/iomgr/tcp_client.cc',
+        'deps/grpc/src/core/lib/iomgr/tcp_client_cfstream.cc',
         'deps/grpc/src/core/lib/iomgr/tcp_client_custom.cc',
         'deps/grpc/src/core/lib/iomgr/tcp_client_posix.cc',
         'deps/grpc/src/core/lib/iomgr/tcp_client_windows.cc',
@@ -934,10 +1052,13 @@
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc',
@@ -996,6 +1117,8 @@
       "dependencies": [
         "grpc",
         "gpr",
+        "ares",
+        "address_sorting"
       ]
     },
     {
