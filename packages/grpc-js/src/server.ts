@@ -22,12 +22,12 @@ import {URL} from 'url';
 import {ServiceError} from './call';
 import {Status} from './constants';
 import {Deserialize, Serialize, ServiceDefinition} from './make-client';
-import {HandleCall, Handler, HandlerType, sendUnaryData, ServerDuplexStream, ServerReadableStream, ServerUnaryCall, ServerWritableStream} from './server-call';
+import {Metadata} from './metadata';
+import {HandleCall, Handler, HandlerType, Http2ServerCallStream, PartialServiceError, sendUnaryData, ServerDuplexStream, ServerDuplexStreamImpl, ServerReadableStream, ServerReadableStreamImpl, ServerUnaryCall, ServerUnaryCallImpl, ServerWritableStream, ServerWritableStreamImpl} from './server-call';
 import {ServerCredentials} from './server-credentials';
 
 function noop(): void {}
 
-type PartialServiceError = Partial<ServiceError>;
 const unimplementedStatusResponse: PartialServiceError = {
   code: Status.UNIMPLEMENTED,
   details: 'The server does not implement this method',
@@ -41,10 +41,11 @@ type UntypedServiceImplementation = {
 };
 
 const defaultHandler = {
-  unary(call: ServerUnaryCall<any>, callback: sendUnaryData<any>): void {
+  unary(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>): void {
     callback(unimplementedStatusResponse as ServiceError, null);
   },
-  clientStream(call: ServerReadableStream<any>, callback: sendUnaryData<any>):
+  clientStream(
+      call: ServerReadableStream<any, any>, callback: sendUnaryData<any>):
       void {
         callback(unimplementedStatusResponse as ServiceError, null);
       },
@@ -120,8 +121,8 @@ export class Server {
       }
 
       const success = this.register(
-          attrs.path, impl, attrs.responseSerialize, attrs.requestDeserialize,
-          methodType);
+          attrs.path, impl as UntypedHandleCall, attrs.responseSerialize,
+          attrs.requestDeserialize, methodType);
 
       if (success === false) {
         throw new Error(`Method handler for ${attrs.path} already provided.`);
@@ -162,7 +163,7 @@ export class Server {
       this.http2Server = http2.createServer();
     }
 
-    // TODO(cjihrig): Set up the handlers, to allow requests to be processed.
+    this._setupHandlers();
 
     function onError(err: Error): void {
       callback(err, -1);
@@ -227,4 +228,107 @@ export class Server {
   addHttp2Port(): void {
     throw new Error('Not yet implemented');
   }
+
+  private _setupHandlers(): void {
+    if (this.http2Server === null) {
+      return;
+    }
+
+    this.http2Server.on(
+        'stream',
+        (stream: http2.ServerHttp2Stream,
+         headers: http2.IncomingHttpHeaders) => {
+          if (this.started !== true) {
+            stream.end();
+            return;
+          }
+
+          try {
+            const path = headers[http2.constants.HTTP2_HEADER_PATH] as string;
+            const handler = this.handlers.get(path);
+
+            if (handler === undefined) {
+              throw unimplementedStatusResponse;
+            }
+
+            const call = new Http2ServerCallStream(stream, handler);
+            const metadata: Metadata =
+                call.receiveMetadata(headers) as Metadata;
+
+            switch (handler.type) {
+              case 'unary':
+                handleUnary(call, handler, metadata);
+                break;
+              case 'clientStream':
+                handleClientStreaming(call, handler, metadata);
+                break;
+              case 'serverStream':
+                handleServerStreaming(call, handler, metadata);
+                break;
+              case 'bidi':
+                handleBidiStreaming(call, handler, metadata);
+                break;
+              default:
+                throw new Error(`Unknown handler type: ${handler.type}`);
+            }
+          } catch (err) {
+            const call = new Http2ServerCallStream(stream, null);
+            call.sendError(err, Status.INTERNAL);
+          }
+        });
+  }
+}
+
+
+async function handleUnary<RequestType, ResponseType>(
+    call: Http2ServerCallStream<RequestType, ResponseType>,
+    handler: Handler<RequestType, ResponseType>,
+    metadata: Metadata): Promise<void> {
+  const emitter =
+      new ServerUnaryCallImpl<RequestType, ResponseType>(call, metadata);
+  const request = await call.receiveUnaryMessage();
+
+  if (request === undefined || call.cancelled === true) {
+    return;
+  }
+
+  emitter.request = request;
+  handler.func(
+      emitter,
+      (err: ServiceError|null, value: ResponseType|null, trailer?: Metadata,
+       flags?: number) => {
+        call.sendUnaryMessage(err, value, trailer, flags);
+      });
+}
+
+
+function handleClientStreaming<RequestType, ResponseType>(
+    call: Http2ServerCallStream<RequestType, ResponseType>,
+    handler: Handler<RequestType, ResponseType>, metadata: Metadata): void {
+  throw new Error('not implemented yet');
+}
+
+
+async function handleServerStreaming<RequestType, ResponseType>(
+    call: Http2ServerCallStream<RequestType, ResponseType>,
+    handler: Handler<RequestType, ResponseType>,
+    metadata: Metadata): Promise<void> {
+  const request = await call.receiveUnaryMessage();
+
+  if (request === undefined || call.cancelled === true) {
+    return;
+  }
+
+  const stream = new ServerWritableStreamImpl<RequestType, ResponseType>(
+      call, metadata, handler.serialize);
+
+  stream.request = request;
+  handler.func(stream);
+}
+
+
+function handleBidiStreaming<RequestType, ResponseType>(
+    call: Http2ServerCallStream<RequestType, ResponseType>,
+    handler: Handler<RequestType, ResponseType>, metadata: Metadata): void {
+  throw new Error('not implemented yet');
 }
