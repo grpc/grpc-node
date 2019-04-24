@@ -53,8 +53,8 @@ for %%v in (6 7 8 9 10 11) do (
 
   node -e "process.exit(process.version.startsWith('v%%v') ? 0 : -1)" || goto :error
 
-  call .\node_modules\.bin\gulp clean.all || SET FAILED=1
-  call .\node_modules\.bin\gulp setup.windows || SET FAILED=1
+  call .\node_modules\.bin\gulp cleanAll || SET FAILED=1
+  call .\node_modules\.bin\gulp setupWindows || SET FAILED=1
   call .\node_modules\.bin\gulp test || SET FAILED=1
 )
 

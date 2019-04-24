@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,36 +15,41 @@
  *
  */
 
-const _gulp = require('gulp');
-const help = require('gulp-help');
-const mocha = require('gulp-mocha');
-const execa = require('execa');
-const path = require('path');
-const del = require('del');
-const linkSync = require('../../util').linkSync;
-
-const gulp = help(_gulp);
+import * as gulp from 'gulp';
+import * as mocha from 'gulp-mocha';
+import * as execa from 'execa';
+import * as path from 'path';
+import * as del from 'del';
+import linkSync from '../../util';
 
 const healthCheckDir = __dirname;
 const baseDir = path.resolve(healthCheckDir, '..', '..');
 const testDir = path.resolve(healthCheckDir, 'test');
 
-gulp.task('clean.links', 'Delete npm links', () => {
+const cleanLinks = () => {
   return del(path.resolve(healthCheckDir, 'node_modules/grpc'));
-});
+}
 
-gulp.task('clean.all', 'Delete all code created by tasks',
-	  ['clean.links']);
+const cleanAll = gulp.parallel(cleanLinks);
 
-gulp.task('install', 'Install health check dependencies', ['clean.links'], () => {
+const runInstall = () => {
   return execa('npm', ['install', '--unsafe-perm'], {cwd: healthCheckDir, stdio: 'inherit'});
-});
+};
 
-gulp.task('link.add', 'Link local copy of grpc', () => {
+const install = gulp.series(cleanLinks, runInstall);
+
+const linkAdd = () => {
   linkSync(healthCheckDir, './node_modules/grpc', '../grpc-native-core');
-});
+};
 
-gulp.task('test', 'Run health check tests',
-          () => {
-            return gulp.src(`${testDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
-          });
+const test = () => {
+  return gulp.src(`${testDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
+};
+
+export {
+  cleanLinks,
+  cleanAll,
+  install,
+  linkAdd,
+  test
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,28 +15,24 @@
  *
  */
 
-const _gulp = require('gulp');
-const help = require('gulp-help');
-const mocha = require('gulp-mocha');
-const execa = require('execa');
-const path = require('path');
-const del = require('del');
-const semver = require('semver');
-const linkSync = require('../util').linkSync;
-
-// gulp-help monkeypatches tasks to have an additional description parameter
-const gulp = help(_gulp);
+import * as gulp from 'gulp';
+import * as mocha from 'gulp-mocha';
+import * as execa from 'execa';
+import * as path from 'path';
+import * as del from 'del';
+import * as semver from 'semver';
+import linkSync from '../util';
 
 const testDir = __dirname;
 const apiTestDir = path.resolve(testDir, 'api');
 
-gulp.task('install', 'Install test dependencies', () => {
+const install = () => {
   return execa('npm', ['install'], {cwd: testDir, stdio: 'inherit'});
-});
+};
 
-gulp.task('clean.all', 'Delete all files created by tasks', () => {});
+const cleanAll = () => {};
 
-gulp.task('test', 'Run API-level tests', () => {
+const test = () => {
   // run mocha tests matching a glob with a pre-required fixture,
   // returning the associated gulp stream
   if (!semver.satisfies(process.version, '>=9.4')) {
@@ -50,7 +46,7 @@ gulp.task('test', 'Run API-level tests', () => {
     gulp.src(apiTestGlob)
       .pipe(mocha({
         reporter: 'mocha-jenkins-reporter',
-        require: `${testDir}/fixtures/${fixture}.js`
+        require: [`${testDir}/fixtures/${fixture}.js`]
       }))
       .resume() // put the stream in flowing mode
       .on('end', resolve)
@@ -72,4 +68,10 @@ gulp.task('test', 'Run API-level tests', () => {
   return runTestsArgPairs.reduce((previousPromise, argPair) => {
     return previousPromise.then(runTestsWithFixture.bind(null, argPair[0], argPair[1]));
   }, Promise.resolve());
-});
+};
+
+export {
+  install,
+  cleanAll,
+  test
+};
