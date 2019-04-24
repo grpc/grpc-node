@@ -30,10 +30,8 @@ const testDir = path.resolve(nativeCoreDir, 'test');
 const pkg = require('./package');
 const jshintConfig = pkg.jshintConfig;
 
-const clean = () => {
-  return del([path.resolve(nativeCoreDir, 'build'),
-	            path.resolve(nativeCoreDir, 'ext/node')]);
-};
+const clean = () => del([path.resolve(nativeCoreDir, 'build'),
+	                       path.resolve(nativeCoreDir, 'ext/node')]);
 
 const cleanAll = gulp.parallel(clean);
 
@@ -69,8 +67,8 @@ const test = gulp.series(build, runTests);
 
 const docGen = (cb) => {
   var config = require('./jsdoc_conf.json');
-  gulp.src([`${nativeCoreDir}/README.md`, `${nativeCoreDir}/index.js`, `${srcDir}/*.js`], {read: false})
-      .pipe(jsdoc(config, cb));
+  return gulp.src([`${nativeCoreDir}/README.md`, `${nativeCoreDir}/index.js`, `${srcDir}/*.js`], {read: false})
+             .pipe(jsdoc(config, cb));
 };
 
 export {

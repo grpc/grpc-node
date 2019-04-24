@@ -30,7 +30,7 @@ const install = () => {
   return execa('npm', ['install'], {cwd: testDir, stdio: 'inherit'});
 };
 
-const cleanAll = () => {};
+const cleanAll = () => Promise.resolve();
 
 const test = () => {
   // run mocha tests matching a glob with a pre-required fixture,

@@ -40,20 +40,14 @@ const execNpmVerb = (verb: string, ...args: string[]) =>
   execa('npm', [verb, ...args], {cwd: jsCoreDir, stdio: 'inherit'});
 const execNpmCommand = execNpmVerb.bind(null, 'run');
 
-const install = () => {
-  execNpmVerb('install', '--unsafe-perm');
-};
+const install = () => execNpmVerb('install', '--unsafe-perm');
 
 /**
  * Runs tslint on files in src/, with linting rules defined in tslint.json.
  */
-const lint = () => {
-  execNpmCommand('check');
-};
+const lint = () => execNpmCommand('check');
 
-const clean = () => {
-  execNpmCommand('clean');
-};
+const clean = () => execNpmCommand('clean');
 
 const cleanAll = gulp.parallel(clean);
 
@@ -61,13 +55,9 @@ const cleanAll = gulp.parallel(clean);
  * Transpiles TypeScript files in src/ to JavaScript according to the settings
  * found in tsconfig.json.
  */
-const compile = () => {
-  execNpmCommand('compile');
-}
+const compile = () => execNpmCommand('compile');
 
-const copyTestFixtures = () => {
-  return ncpP(`${jsCoreDir}/test/fixtures`, `${outDir}/test/fixtures`);
-}
+const copyTestFixtures = () => ncpP(`${jsCoreDir}/test/fixtures`, `${outDir}/test/fixtures`);
 
 const runTests = () => {
   if (semver.satisfies(process.version, '^8.11.2 || >=9.4')) {

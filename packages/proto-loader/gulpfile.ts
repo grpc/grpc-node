@@ -36,22 +36,14 @@ const execNpmVerb = (verb: string, ...args: string[]) =>
   execa('npm', [verb, ...args], {cwd: protojsDir, stdio: 'inherit'});
 const execNpmCommand = execNpmVerb.bind(null, 'run');
 
-const install = () => {
-  execNpmVerb('install', '--unsafe-perm');
-};
+const install = () => execNpmVerb('install', '--unsafe-perm');
 
 /**
  * Runs tslint on files in src/, with linting rules defined in tslint.json.
  */
-const lint = () => {
-  execNpmCommand('check');
-};
+const lint = () => execNpmCommand('check');
 
-const cleanFiles = () => {
-  execNpmCommand('clean');
-};
-
-const clean = gulp.series(install, cleanFiles);
+const clean = () => execNpmCommand('clean');
 
 const cleanAll = gulp.parallel(clean);
 
@@ -59,9 +51,7 @@ const cleanAll = gulp.parallel(clean);
  * Transpiles TypeScript files in src/ and test/ to JavaScript according to the settings
  * found in tsconfig.json.
  */
-const compile = () => {
-  execNpmCommand('compile');
-};
+const compile = () => execNpmCommand('compile');
 
 /**
  * Transpiles src/ and test/, and then runs all tests.
