@@ -194,7 +194,7 @@ NAN_METHOD(ChannelCredentials::CreateSsl) {
     if (!info[3]->IsObject()) {
       return Nan::ThrowTypeError("createSsl's fourth argument must be an object");
     }
-    Local<Object> object = info[3]->ToObject();
+    Local<Object> object = Nan::To<Object>(info[3]).ToLocalChecked();
 
     Local<Value> checkServerIdentityValue = Nan::Get(object,
         Nan::New("checkServerIdentity").ToLocalChecked()).ToLocalChecked();
