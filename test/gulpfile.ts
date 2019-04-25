@@ -36,7 +36,7 @@ const test = () => {
   // returning the associated gulp stream
   if (!semver.satisfies(process.version, '>=9.4')) {
     console.log(`Skipping cross-implementation tests for Node ${process.version}`);
-    return;
+    return Promise.resolve();
   }
   const apiTestGlob = `${apiTestDir}/*.js`;
   const runTestsWithFixture = (server, client) => new Promise((resolve, reject) => {
