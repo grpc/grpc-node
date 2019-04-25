@@ -47,7 +47,9 @@ const install = () => execNpmVerb('install', '--unsafe-perm');
  */
 const lint = () => execNpmCommand('check');
 
-const clean = () => execNpmCommand('clean');
+const cleanFiles = () => execNpmCommand('clean');
+
+const clean = gulp.series(install, cleanFiles);
 
 const cleanAll = gulp.parallel(clean);
 
