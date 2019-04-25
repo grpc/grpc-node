@@ -20,7 +20,7 @@ import * as mocha from 'gulp-mocha';
 import * as execa from 'execa';
 import * as path from 'path';
 import * as del from 'del';
-import linkSync from '../../util';
+import {linkSync} from '../../util';
 
 const healthCheckDir = __dirname;
 const baseDir = path.resolve(healthCheckDir, '..', '..');
