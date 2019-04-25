@@ -21,7 +21,6 @@ import * as execa from 'execa';
 import * as path from 'path';
 import * as del from 'del';
 import * as semver from 'semver';
-import {linkSync} from '../util';
 
 const testDir = __dirname;
 const apiTestDir = path.resolve(testDir, 'api');

@@ -34,7 +34,10 @@ const runInstall = () => execa('npm', ['install', '--unsafe-perm'], {cwd: health
 
 const install = gulp.series(cleanLinks, runInstall);
 
-const linkAdd = () => linkSync(healthCheckDir, './node_modules/grpc', '../grpc-native-core');
+const linkAdd = (callback) => {
+  linkSync(healthCheckDir, './node_modules/grpc', '../grpc-native-core');
+  callback();
+}
 
 const test = () => gulp.src(`${testDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
 
