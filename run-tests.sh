@@ -68,7 +68,7 @@ do
   node -e 'process.exit(process.version.startsWith("v'$version'") ? 0 : -1)'
 
   # Install dependencies and link packages together.
-  ./node_modules/.bin/gulp clean.all
+  ./node_modules/.bin/gulp cleanAll
   ./node_modules/.bin/gulp setup
 
   # npm test calls nyc gulp test
