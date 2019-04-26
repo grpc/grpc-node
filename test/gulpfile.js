@@ -39,7 +39,7 @@ gulp.task('clean.all', 'Delete all files created by tasks', () => {});
 gulp.task('test', 'Run API-level tests', () => {
   // run mocha tests matching a glob with a pre-required fixture,
   // returning the associated gulp stream
-  if (!semver.satisfies(process.version, '>=9.4')) {
+  if (!semver.satisfies(process.version, '>=10.10.0')) {
     console.log(`Skipping cross-implementation tests for Node ${process.version}`);
     return;
   }
@@ -57,7 +57,7 @@ gulp.task('test', 'Run API-level tests', () => {
       .on('error', reject);
   });
   var runTestsArgPairs;
-  if (semver.satisfies(process.version, '^ 8.11.2 || >=9.4')) {
+  if (semver.satisfies(process.version, '^8.13.0 || >=10.10.0')) {
     runTestsArgPairs = [
       ['native', 'native'],
       ['native', 'js'],
