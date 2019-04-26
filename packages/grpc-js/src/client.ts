@@ -24,9 +24,7 @@ import {ChannelOptions} from './channel-options';
 import {Status} from './constants';
 import {Metadata} from './metadata';
 
-// This symbol must be exported (for now).
-// See: https://github.com/Microsoft/TypeScript/issues/20080
-export const kChannel = Symbol();
+const kChannel = Symbol();
 
 export interface UnaryCallback<ResponseType> {
   (err: ServiceError|null, value?: ResponseType): void;
