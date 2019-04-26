@@ -24,7 +24,7 @@ import {ChannelOptions} from './channel-options';
 import {Status} from './constants';
 import {Metadata} from './metadata';
 
-const kChannel = Symbol();
+const CHANNEL_SYMBOL = Symbol();
 
 export interface UnaryCallback<ResponseType> {
   (err: ServiceError|null, value?: ResponseType): void;
@@ -50,26 +50,26 @@ export type ClientOptions = Partial<ChannelOptions>&{
  * clients.
  */
 export class Client {
-  private readonly[kChannel]: Channel;
+  private readonly[CHANNEL_SYMBOL]: Channel;
   constructor(
       address: string, credentials: ChannelCredentials,
       options: ClientOptions = {}) {
     if (options.channelOverride) {
-      this[kChannel] = options.channelOverride;
+      this[CHANNEL_SYMBOL] = options.channelOverride;
     } else if (options.channelFactoryOverride) {
-      this[kChannel] =
+      this[CHANNEL_SYMBOL] =
           options.channelFactoryOverride(address, credentials, options);
     } else {
-      this[kChannel] = new Http2Channel(address, credentials, options);
+      this[CHANNEL_SYMBOL] = new Http2Channel(address, credentials, options);
     }
   }
 
   close(): void {
-    this[kChannel].close();
+    this[CHANNEL_SYMBOL].close();
   }
 
   getChannel(): Channel {
-    return this[kChannel];
+    return this[CHANNEL_SYMBOL];
   }
 
   waitForReady(deadline: Deadline, callback: (error?: Error) => void): void {
@@ -80,7 +80,7 @@ export class Client {
       }
       let newState;
       try {
-        newState = this[kChannel].getConnectivityState(true);
+        newState = this[CHANNEL_SYMBOL].getConnectivityState(true);
       } catch (e) {
         callback(new Error('The channel has been closed'));
         return;
@@ -89,7 +89,8 @@ export class Client {
         callback();
       } else {
         try {
-          this[kChannel].watchConnectivityState(newState, deadline, checkState);
+          this[CHANNEL_SYMBOL].watchConnectivityState(
+              newState, deadline, checkState);
         } catch (e) {
           callback(new Error('The channel has been closed'));
         }
@@ -186,7 +187,7 @@ export class Client {
     ({metadata, options, callback} =
          this.checkOptionalUnaryResponseArguments<ResponseType>(
              metadata, options, callback));
-    const call: Call = this[kChannel].createCall(
+    const call: Call = this[CHANNEL_SYMBOL].createCall(
         method, options.deadline, options.host, null, options.propagate_flags);
     if (options.credentials) {
       call.setCredentials(options.credentials);
@@ -227,7 +228,7 @@ export class Client {
     ({metadata, options, callback} =
          this.checkOptionalUnaryResponseArguments<ResponseType>(
              metadata, options, callback));
-    const call: Call = this[kChannel].createCall(
+    const call: Call = this[CHANNEL_SYMBOL].createCall(
         method, options.deadline, options.host, null, options.propagate_flags);
     if (options.credentials) {
       call.setCredentials(options.credentials);
@@ -275,7 +276,7 @@ export class Client {
       metadata?: Metadata|CallOptions,
       options?: CallOptions): ClientReadableStream<ResponseType> {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
-    const call: Call = this[kChannel].createCall(
+    const call: Call = this[CHANNEL_SYMBOL].createCall(
         method, options.deadline, options.host, null, options.propagate_flags);
     if (options.credentials) {
       call.setCredentials(options.credentials);
@@ -302,7 +303,7 @@ export class Client {
       metadata?: Metadata|CallOptions,
       options?: CallOptions): ClientDuplexStream<RequestType, ResponseType> {
     ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
-    const call: Call = this[kChannel].createCall(
+    const call: Call = this[CHANNEL_SYMBOL].createCall(
         method, options.deadline, options.host, null, options.propagate_flags);
     if (options.credentials) {
       call.setCredentials(options.credentials);
