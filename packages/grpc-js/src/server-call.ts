@@ -150,16 +150,23 @@ export class ServerWritableStreamImpl<RequestType, ResponseType> extends
     this.call.sendMetadata(responseMetadata);
   }
 
-  async _write(chunk: ResponseType, encoding: string, callback: Function) {
+  async _write(
+      chunk: ResponseType, encoding: string,
+      // tslint:disable-next-line:no-any
+      callback: (...args: any[]) => void) {
     try {
       const response = await this.call.serializeMessage(chunk);
-      this.call.write(response);
+
+      if (!this.call.write(response)) {
+        this.call.once('drain', callback);
+        return;
+      }
     } catch (err) {
       err.code = Status.INTERNAL;
       this.emit('error', err);
     }
 
-    callback(null);
+    callback();
   }
 
   _final(callback: Function): void {
