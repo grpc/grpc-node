@@ -6,7 +6,7 @@
   "repository": "https://github.com/grpc/grpc-node/tree/master/packages/grpc-js",
   "main": "build/src/index.js",
   "engines": {
-    "node": "^8.11.2 || >=9.4"
+    "node": "^8.13.0 || >=10.10.0"
   },
   "keywords": [],
   "author": {

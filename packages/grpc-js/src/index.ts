@@ -30,7 +30,7 @@ import {Metadata} from './metadata';
 import {KeyCertPair, ServerCredentials} from './server-credentials';
 import {StatusBuilder} from './status-builder';
 
-const supportedNodeVersions = '^8.11.2 || >=9.4';
+const supportedNodeVersions = '^8.13.0 || >=10.10.0';
 if (!semver.satisfies(process.version, supportedNodeVersions)) {
   throw new Error(`@grpc/grpc-js only works on Node ${supportedNodeVersions}`);
 }

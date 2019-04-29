@@ -72,7 +72,7 @@ gulp.task('copy-test-fixtures', 'Copy test fixtures.', () => {
  * Transpiles src/ and test/, and then runs all tests.
  */
 gulp.task('test', 'Runs all tests.', ['lint', 'copy-test-fixtures'], () => {
-  if (semver.satisfies(process.version, '^8.11.2 || >=9.4')) {
+  if (semver.satisfies(process.version, '^8.13.0 || >=10.10.0')) {
     return gulp.src(`${outDir}/test/**/*.js`)
       .pipe(mocha({reporter: 'mocha-jenkins-reporter',
                    require: ['ts-node/register']}));
