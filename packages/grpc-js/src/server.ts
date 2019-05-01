@@ -20,6 +20,7 @@ import {AddressInfo, ListenOptions} from 'net';
 import {URL} from 'url';
 
 import {ServiceError} from './call';
+import {StatusObject} from './call-stream';
 import {Status} from './constants';
 import {Deserialize, Serialize, ServiceDefinition} from './make-client';
 import {Metadata} from './metadata';
@@ -273,7 +274,8 @@ export class Server {
             }
           } catch (err) {
             const call = new Http2ServerCallStream(stream, null);
-            call.sendError(err, Status.INTERNAL);
+            err.code = Status.INTERNAL;
+            call.sendError(err);
           }
         });
   }
