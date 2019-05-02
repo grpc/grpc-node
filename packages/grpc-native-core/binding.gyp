@@ -93,6 +93,9 @@
       'GRPC_UV',
       'GRPC_NODE_VERSION="1.20.2"'
     ],
+    'defines!': [
+      'OPENSSL_THREADS'
+    ],
     'conditions': [
       ['grpc_gcov=="true"', {
         'cflags': [
