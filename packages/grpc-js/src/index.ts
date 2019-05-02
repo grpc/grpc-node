@@ -249,5 +249,4 @@ export const InterceptingCall = () => {
   throw new Error('Not yet implemented');
 };
 
-export { ChannelCredentials } from './channel-credentials';
-export { GrpcObject } from './make-client';
+export {GrpcObject} from './make-client';
