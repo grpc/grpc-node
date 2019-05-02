@@ -248,3 +248,5 @@ export const InterceptorBuilder = () => {
 export const InterceptingCall = () => {
   throw new Error('Not yet implemented');
 };
+
+export {GrpcObject} from './make-client';
