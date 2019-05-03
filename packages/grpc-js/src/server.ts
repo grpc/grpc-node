@@ -24,7 +24,7 @@ import {StatusObject} from './call-stream';
 import {Status} from './constants';
 import {Deserialize, Serialize, ServiceDefinition} from './make-client';
 import {Metadata} from './metadata';
-import {HandleCall, Handler, HandlerType, Http2ServerCallStream, PartialServiceError, sendUnaryData, ServerDuplexStream, ServerDuplexStreamImpl, ServerReadableStream, ServerReadableStreamImpl, ServerUnaryCall, ServerUnaryCallImpl, ServerWritableStream, ServerWritableStreamImpl} from './server-call';
+import {BidiStreamingHandler, ClientStreamingHandler, HandleCall, Handler, HandlerType, Http2ServerCallStream, PartialServiceError, sendUnaryData, ServerDuplexStream, ServerDuplexStreamImpl, ServerReadableStream, ServerReadableStreamImpl, ServerStreamingHandler, ServerUnaryCall, ServerUnaryCallImpl, ServerWritableStream, ServerWritableStreamImpl, UnaryHandler} from './server-call';
 import {ServerCredentials} from './server-credentials';
 
 function noop(): void {}
@@ -35,6 +35,10 @@ const unimplementedStatusResponse: PartialServiceError = {
 };
 
 // tslint:disable:no-any
+type UntypedUnaryHandler = UnaryHandler<any, any>;
+type UntypedClientStreamingHandler = ClientStreamingHandler<any, any>;
+type UntypedServerStreamingHandler = ServerStreamingHandler<any, any>;
+type UntypedBidiStreamingHandler = BidiStreamingHandler<any, any>;
 type UntypedHandleCall = HandleCall<any, any>;
 type UntypedHandler = Handler<any, any>;
 type UntypedServiceImplementation = {
@@ -195,8 +199,7 @@ export class Server {
     }
 
     this.handlers.set(
-        name,
-        {func: handler, serialize, deserialize, type: type as HandlerType});
+        name, {func: handler, serialize, deserialize, type} as UntypedHandler);
     return true;
   }
 
@@ -258,16 +261,19 @@ export class Server {
 
             switch (handler.type) {
               case 'unary':
-                handleUnary(call, handler, metadata);
+                handleUnary(call, handler as UntypedUnaryHandler, metadata);
                 break;
               case 'clientStream':
-                handleClientStreaming(call, handler, metadata);
+                handleClientStreaming(
+                    call, handler as UntypedClientStreamingHandler, metadata);
                 break;
               case 'serverStream':
-                handleServerStreaming(call, handler, metadata);
+                handleServerStreaming(
+                    call, handler as UntypedServerStreamingHandler, metadata);
                 break;
               case 'bidi':
-                handleBidiStreaming(call, handler, metadata);
+                handleBidiStreaming(
+                    call, handler as UntypedBidiStreamingHandler, metadata);
                 break;
               default:
                 throw new Error(`Unknown handler type: ${handler.type}`);
@@ -284,7 +290,7 @@ export class Server {
 
 async function handleUnary<RequestType, ResponseType>(
     call: Http2ServerCallStream<RequestType, ResponseType>,
-    handler: Handler<RequestType, ResponseType>,
+    handler: UnaryHandler<RequestType, ResponseType>,
     metadata: Metadata): Promise<void> {
   const emitter =
       new ServerUnaryCallImpl<RequestType, ResponseType>(call, metadata);
@@ -306,14 +312,15 @@ async function handleUnary<RequestType, ResponseType>(
 
 function handleClientStreaming<RequestType, ResponseType>(
     call: Http2ServerCallStream<RequestType, ResponseType>,
-    handler: Handler<RequestType, ResponseType>, metadata: Metadata): void {
+    handler: ClientStreamingHandler<RequestType, ResponseType>,
+    metadata: Metadata): void {
   throw new Error('not implemented yet');
 }
 
 
 async function handleServerStreaming<RequestType, ResponseType>(
     call: Http2ServerCallStream<RequestType, ResponseType>,
-    handler: Handler<RequestType, ResponseType>,
+    handler: ServerStreamingHandler<RequestType, ResponseType>,
     metadata: Metadata): Promise<void> {
   const request = await call.receiveUnaryMessage();
 
@@ -331,6 +338,7 @@ async function handleServerStreaming<RequestType, ResponseType>(
 
 function handleBidiStreaming<RequestType, ResponseType>(
     call: Http2ServerCallStream<RequestType, ResponseType>,
-    handler: Handler<RequestType, ResponseType>, metadata: Metadata): void {
+    handler: BidiStreamingHandler<RequestType, ResponseType>,
+    metadata: Metadata): void {
   throw new Error('not implemented yet');
 }

@@ -237,17 +237,44 @@ export type handleBidiStreamingCall<RequestType, ResponseType> =
     (call: ServerDuplexStream<RequestType, ResponseType>) => void;
 
 export type HandleCall<RequestType, ResponseType> =
-    handleUnaryCall<RequestType, ResponseType>&
-    handleClientStreamingCall<RequestType, ResponseType>&
-    handleServerStreamingCall<RequestType, ResponseType>&
+    handleUnaryCall<RequestType, ResponseType>|
+    handleClientStreamingCall<RequestType, ResponseType>|
+    handleServerStreamingCall<RequestType, ResponseType>|
     handleBidiStreamingCall<RequestType, ResponseType>;
 
-export type Handler<RequestType, ResponseType> = {
-  func: HandleCall<RequestType, ResponseType>;
+export type UnaryHandler<RequestType, ResponseType> = {
+  func: handleUnaryCall<RequestType, ResponseType>;
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
   type: HandlerType;
 };
+
+export type ClientStreamingHandler<RequestType, ResponseType> = {
+  func: handleClientStreamingCall<RequestType, ResponseType>;
+  serialize: Serialize<ResponseType>;
+  deserialize: Deserialize<RequestType>;
+  type: HandlerType;
+};
+
+export type ServerStreamingHandler<RequestType, ResponseType> = {
+  func: handleServerStreamingCall<RequestType, ResponseType>;
+  serialize: Serialize<ResponseType>;
+  deserialize: Deserialize<RequestType>;
+  type: HandlerType;
+};
+
+export type BidiStreamingHandler<RequestType, ResponseType> = {
+  func: handleBidiStreamingCall<RequestType, ResponseType>;
+  serialize: Serialize<ResponseType>;
+  deserialize: Deserialize<RequestType>;
+  type: HandlerType;
+};
+
+export type Handler<RequestType, ResponseType> =
+    UnaryHandler<RequestType, ResponseType>|
+    ClientStreamingHandler<RequestType, ResponseType>|
+    ServerStreamingHandler<RequestType, ResponseType>|
+    BidiStreamingHandler<RequestType, ResponseType>;
 
 export type HandlerType = 'bidi'|'clientStream'|'serverStream'|'unary';
 
