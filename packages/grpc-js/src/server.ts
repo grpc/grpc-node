@@ -239,7 +239,7 @@ export class Server {
         'stream',
         (stream: http2.ServerHttp2Stream,
          headers: http2.IncomingHttpHeaders) => {
-          if (this.started !== true) {
+          if (!this.started) {
             stream.end();
             return;
           }
@@ -273,7 +273,7 @@ export class Server {
                 throw new Error(`Unknown handler type: ${handler.type}`);
             }
           } catch (err) {
-            const call = new Http2ServerCallStream(stream, null);
+            const call = new Http2ServerCallStream(stream, null!);
             err.code = Status.INTERNAL;
             call.sendError(err);
           }
@@ -290,7 +290,7 @@ async function handleUnary<RequestType, ResponseType>(
       new ServerUnaryCallImpl<RequestType, ResponseType>(call, metadata);
   const request = await call.receiveUnaryMessage();
 
-  if (request === undefined || call.cancelled === true) {
+  if (request === undefined || call.cancelled) {
     return;
   }
 
@@ -317,7 +317,7 @@ async function handleServerStreaming<RequestType, ResponseType>(
     metadata: Metadata): Promise<void> {
   const request = await call.receiveUnaryMessage();
 
-  if (request === undefined || call.cancelled === true) {
+  if (request === undefined || call.cancelled) {
     return;
   }
 
