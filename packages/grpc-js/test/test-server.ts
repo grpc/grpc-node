@@ -21,8 +21,12 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import * as grpc from '../src';
 import {ServerCredentials} from '../src';
+import {ServiceError} from '../src/call';
+import {ServiceClient, ServiceClientConstructor} from '../src/make-client';
 import {Server} from '../src/server';
+import {sendUnaryData, ServerDuplexStream, ServerReadableStream, ServerUnaryCall, ServerWritableStream} from '../src/server-call';
 
 import {loadProtoFile} from './common';
 
@@ -227,5 +231,159 @@ describe('Server', () => {
     assert.throws(() => {
       server.bind('localhost:0', ServerCredentials.createInsecure());
     }, /Not implemented. Use bindAsync\(\) instead/);
+  });
+
+  describe('Default handlers', () => {
+    let server: Server;
+    let client: ServiceClient;
+
+    const mathProtoFile = path.join(__dirname, 'fixtures', 'math.proto');
+    const mathClient = (loadProtoFile(mathProtoFile).math as any).Math;
+    const mathServiceAttrs = mathClient.service;
+
+    beforeEach((done) => {
+      server = new Server();
+      server.addService(mathServiceAttrs, {});
+      server.bindAsync(
+          'localhost:0', ServerCredentials.createInsecure(), (err, port) => {
+            assert.ifError(err);
+            client = new mathClient(
+                `localhost:${port}`, grpc.credentials.createInsecure());
+            server.start();
+            done();
+          });
+    });
+
+    it('should respond to a unary call with UNIMPLEMENTED', (done) => {
+      client.div(
+          {divisor: 4, dividend: 3}, (error: ServiceError, response: any) => {
+            assert(error);
+            assert.strictEqual(error.code, grpc.status.UNIMPLEMENTED);
+            done();
+          });
+    });
+
+    it('should respond to a server stream with UNIMPLEMENTED', (done) => {
+      const call = client.fib({limit: 5});
+
+      call.on('data', (value: any) => {
+        assert.fail('No messages expected');
+      });
+
+      call.on('error', (err: ServiceError) => {
+        assert(err);
+        assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
+        done();
+      });
+    });
+  });
+});
+
+describe('Echo service', () => {
+  let server: Server;
+  let client: ServiceClient;
+
+  before((done) => {
+    const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
+    const echoService =
+        loadProtoFile(protoFile).EchoService as ServiceClientConstructor;
+
+    server = new Server();
+    server.addService(echoService.service, {
+      echo(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
+        callback(null, call.request);
+      }
+    });
+
+    server.bindAsync(
+        'localhost:0', ServerCredentials.createInsecure(), (err, port) => {
+          assert.ifError(err);
+          client = new echoService(
+              `localhost:${port}`, grpc.credentials.createInsecure());
+          server.start();
+          done();
+        });
+  });
+
+  after((done) => {
+    client.close();
+    server.tryShutdown(done);
+  });
+
+  it('should echo the recieved message directly', (done) => {
+    client.echo(
+        {value: 'test value', value2: 3},
+        (error: ServiceError, response: any) => {
+          assert.ifError(error);
+          assert.deepStrictEqual(response, {value: 'test value', value2: 3});
+          done();
+        });
+  });
+});
+
+describe('Generic client and server', () => {
+  function toString(val: any) {
+    return val.toString();
+  }
+
+  function toBuffer(str: string) {
+    return Buffer.from(str);
+  }
+
+  function capitalize(str: string) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  const stringServiceAttrs = {
+    capitalize: {
+      path: '/string/capitalize',
+      requestStream: false,
+      responseStream: false,
+      requestSerialize: toBuffer,
+      requestDeserialize: toString,
+      responseSerialize: toBuffer,
+      responseDeserialize: toString
+    }
+  };
+
+  describe('String client and server', () => {
+    let client: ServiceClient;
+    let server: Server;
+
+    before((done) => {
+      server = new Server();
+
+      server.addService(stringServiceAttrs as any, {
+        capitalize(
+            call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
+          callback(null, capitalize(call.request));
+        }
+      });
+
+      server.bindAsync(
+          'localhost:0', ServerCredentials.createInsecure(), (err, port) => {
+            assert.ifError(err);
+            server.start();
+            const clientConstr = grpc.makeGenericClientConstructor(
+                stringServiceAttrs as any,
+                'unused_but_lets_appease_typescript_anyway');
+            client = new clientConstr(
+                `localhost:${port}`, grpc.credentials.createInsecure());
+            done();
+          });
+    });
+
+    after((done) => {
+      client.close();
+      server.tryShutdown(done);
+    });
+
+    it('Should respond with a capitalized string', (done) => {
+      client.capitalize('abc', (err: ServiceError, response: string) => {
+        assert.ifError(err);
+        assert.strictEqual(response, 'Abc');
+        done();
+      });
+    });
   });
 });
