@@ -17,7 +17,7 @@
 
 import * as semver from 'semver';
 
-import {ClientDuplexStream, ClientReadableStream, ClientUnaryCall, ClientWritableStream} from './call';
+import {ClientDuplexStream, ClientReadableStream, ClientUnaryCall, ClientWritableStream, ServiceError} from './call';
 import {CallCredentials} from './call-credentials';
 import {Deadline, StatusObject} from './call-stream';
 import {Channel, ConnectivityState, Http2Channel} from './channel';
@@ -180,7 +180,8 @@ export {
   ClientWritableStream,
   ClientDuplexStream,
   CallOptions,
-  StatusObject
+  StatusObject,
+  ServiceError
 };
 
 /* tslint:disable:no-any */
