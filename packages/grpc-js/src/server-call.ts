@@ -24,6 +24,7 @@ import {StatusObject} from './call-stream';
 import {Status} from './constants';
 import {Deserialize, Serialize} from './make-client';
 import {Metadata} from './metadata';
+import {StreamDecoder} from './stream-decoder';
 
 function noop(): void {}
 
@@ -100,6 +101,7 @@ export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
 export class ServerReadableStreamImpl<RequestType, ResponseType> extends
     Readable implements ServerReadableStream<RequestType, ResponseType> {
   cancelled: boolean;
+  private decoder: StreamDecoder;
 
   constructor(
       private call: Http2ServerCallStream<RequestType, ResponseType>,
@@ -107,6 +109,44 @@ export class ServerReadableStreamImpl<RequestType, ResponseType> extends
       private _deserialize: Deserialize<RequestType>) {
     super({objectMode: true});
     this.cancelled = false;
+    this.decoder = new StreamDecoder();
+
+    const http2Stream = this.call._getHttp2Stream();
+
+    http2Stream.on('data', async (data: Buffer) => {
+      const message = this.decoder.write(data);
+
+      if (message === null) {
+        return;
+      }
+
+      try {
+        const deserialized = await this.call.deserializeMessage(message);
+
+        if (!this.push(deserialized)) {
+          http2Stream.pause();
+        }
+      } catch (err) {
+        err.code = Status.INTERNAL;
+        this.emit('error', err);
+      }
+    });
+
+    http2Stream.once('end', () => {
+      this.push(null);
+    });
+  }
+
+  _read(size: number) {
+    this.call._getHttp2Stream().resume();
+  }
+
+  deserialize(input: Buffer): RequestType|null {
+    if (input === null || input === undefined) {
+      return null;
+    }
+
+    return this._deserialize(input);
   }
 
   getPeer(): string {
@@ -467,6 +507,10 @@ export class Http2ServerCallStream<RequestType, ResponseType> extends
 
     this.sendMetadata();
     return this.stream.write(chunk);
+  }
+
+  _getHttp2Stream(): http2.ServerHttp2Stream {
+    return this.stream;
   }
 }
 
