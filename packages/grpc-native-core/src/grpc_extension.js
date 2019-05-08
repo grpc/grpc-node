@@ -54,6 +54,7 @@ Original error: ${e.message}`;
     error.code = e.code;
     throw error;
   } else {
+    e.message = `Failed to load ${binding_path}. ${e.message}`;
     throw e;
   }
 }

@@ -15,8 +15,7 @@
  *
  */
 
-import * as _gulp from 'gulp';
-import * as help from 'gulp-help';
+import * as gulp from 'gulp';
 
 import * as fs from 'fs';
 import * as mocha from 'gulp-mocha';
@@ -25,9 +24,6 @@ import * as execa from 'execa';
 import * as pify from 'pify';
 import * as semver from 'semver';
 import { ncp } from 'ncp';
-
-// gulp-help monkeypatches tasks to have an additional description parameter
-const gulp = help(_gulp);
 
 const ncpP = pify(ncp);
 
@@ -44,34 +40,28 @@ const execNpmVerb = (verb: string, ...args: string[]) =>
   execa('npm', [verb, ...args], {cwd: jsCoreDir, stdio: 'inherit'});
 const execNpmCommand = execNpmVerb.bind(null, 'run');
 
-gulp.task('install', 'Install native core dependencies', () =>
-  execNpmVerb('install', '--unsafe-perm'));
+const install = () => execNpmVerb('install', '--unsafe-perm');
 
 /**
  * Runs tslint on files in src/, with linting rules defined in tslint.json.
  */
-gulp.task('lint', 'Emits linting errors found in src/ and test/.', () =>
-  execNpmCommand('check'));
+const lint = () => execNpmCommand('check');
 
-gulp.task('clean', 'Deletes transpiled code.', ['install'],
-  () => execNpmCommand('clean'));
+const cleanFiles = () => execNpmCommand('clean');
 
-gulp.task('clean.all', 'Deletes all files added by targets', ['clean']);
+const clean = gulp.series(install, cleanFiles);
+
+const cleanAll = gulp.parallel(clean);
 
 /**
  * Transpiles TypeScript files in src/ to JavaScript according to the settings
  * found in tsconfig.json.
  */
-gulp.task('compile', 'Transpiles src/.', () => execNpmCommand('compile'));
+const compile = () => execNpmCommand('compile');
 
-gulp.task('copy-test-fixtures', 'Copy test fixtures.', () => {
-  return ncpP(`${jsCoreDir}/test/fixtures`, `${outDir}/test/fixtures`);
-});
+const copyTestFixtures = () => ncpP(`${jsCoreDir}/test/fixtures`, `${outDir}/test/fixtures`);
 
-/**
- * Transpiles src/ and test/, and then runs all tests.
- */
-gulp.task('test', 'Runs all tests.', ['lint', 'copy-test-fixtures'], () => {
+const runTests = () => {
   if (semver.satisfies(process.version, '^8.13.0 || >=10.10.0')) {
     return gulp.src(`${outDir}/test/**/*.js`)
       .pipe(mocha({reporter: 'mocha-jenkins-reporter',
@@ -80,4 +70,15 @@ gulp.task('test', 'Runs all tests.', ['lint', 'copy-test-fixtures'], () => {
     console.log(`Skipping grpc-js tests for Node ${process.version}`);
     return Promise.resolve(null);
   }
-});
+};
+
+const test = gulp.series(install, copyTestFixtures, runTests);
+
+export {
+  install,
+  lint,
+  clean,
+  cleanAll,
+  compile,
+  test
+}
