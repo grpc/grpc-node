@@ -26,7 +26,7 @@ set -ex
 cd $ROOT
 
 if [ ! -n "$node_versions" ] ; then
-  node_versions="6 7 8 9 10 11"
+  node_versions="6 7 8 9 10 11 12"
 fi
 
 set +ex
@@ -68,7 +68,7 @@ do
   node -e 'process.exit(process.version.startsWith("v'$version'") ? 0 : -1)'
 
   # Install dependencies and link packages together.
-  ./node_modules/.bin/gulp clean.all
+  ./node_modules/.bin/gulp cleanAll
   ./node_modules/.bin/gulp setup
 
   # npm test calls nyc gulp test
