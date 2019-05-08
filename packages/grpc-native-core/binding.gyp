@@ -119,7 +119,7 @@
         ]
       }],
       # This is the condition for using boringssl
-      ['OS=="win" or runtime=="electron"', {
+      ['runtime=="electron"', {
         "include_dirs": [
           "deps/grpc/third_party/boringssl/include"
         ],
@@ -214,7 +214,7 @@
     ]
   },
   'conditions': [
-    ['OS=="win" or runtime=="electron"', {
+    ['runtime=="electron"', {
       'targets': [
         {
           'target_name': 'boringssl',
@@ -496,36 +496,6 @@
           ]
         },
       ],
-    }],
-    ['OS == "win" and runtime!="electron"', {
-      'targets': [
-        {
-          # IMPORTANT WINDOWS BUILD INFORMATION
-          # This library does not build on Windows without modifying the Node
-          # development packages that node-gyp downloads in order to build.
-          # Due to https://github.com/nodejs/node/issues/4932, the headers for
-          # BoringSSL conflict with the OpenSSL headers included by default
-          # when including the Node headers. The remedy for this is to remove
-          # the OpenSSL headers, from the downloaded Node development package,
-          # which is typically located in `.node-gyp` in your home directory.
-          #
-          # This is not true of Electron, which does not have OpenSSL headers.
-          'target_name': 'WINDOWS_BUILD_WARNING',
-          'rules': [
-            {
-              'rule_name': 'WINDOWS_BUILD_WARNING',
-              'extension': 'S',
-              'inputs': [
-                'package.json'
-              ],
-              'outputs': [
-                'ignore_this_part'
-              ],
-              'action': ['echo', 'IMPORTANT: Due to https://github.com/nodejs/node/issues/4932, to build this library on Windows, you must first remove <(node_root_dir)/include/node/openssl/']
-            }
-          ]
-        },
-      ]
     }],
     ['OS == "win"', {
       'targets': [
@@ -968,7 +938,7 @@
         '-Wno-cast-function-type'
       ],
       "conditions": [
-        ['OS=="win" or runtime=="electron"', {
+        ['runtime=="electron"', {
           'dependencies': [
             "boringssl",
           ]
