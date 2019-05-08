@@ -28,7 +28,7 @@ mkdir -p %ARTIFACTS_OUT%
 
 for %%a in (%arch_list%) do (
   for %%v in (%node_versions%) do (
-    call .\node_modules\.bin\node-pre-gyp.cmd build package --target=%%v --target_arch=%%a || goto :error
+    call .\node_modules\.bin\node-pre-gyp.cmd configure build package --target=%%v --target_arch=%%a || goto :error
 
     xcopy /Y /I /S build\stage\* %ARTIFACTS_OUT%\ || goto :error
     rmdir build /S /Q
