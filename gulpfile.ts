@@ -38,6 +38,8 @@ const setup = gulp.series(installAll, link);
 
 const setupWindows = gulp.series(installAllWindows, link);
 
+const setupPureJSInterop = gulp.parallel(jsCore.install, protobuf.install, internalTest.install);
+
 const clean = gulp.parallel(jsCore.clean, nativeCore.clean, protobuf.clean);
 
 const cleanAll = gulp.parallel(jsCore.cleanAll, nativeCore.cleanAll, healthCheck.cleanAll, internalTest.cleanAll, protobuf.cleanAll);
