@@ -62,7 +62,7 @@
     "all": true
   },
   "scripts": {
-    "test": "nyc gulp test",
+    "test": "nyc gulp test && GRPC_DNS_RESOLVER=ares nyc gulp nativeTestOnly",
     "coverage": "nyc report --reporter=text-lcov | coveralls"
   }
 }
