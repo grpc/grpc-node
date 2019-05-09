@@ -15,17 +15,13 @@
  *
  */
 
-import * as _gulp from 'gulp';
-import * as help from 'gulp-help';
+import * as gulp from 'gulp';
 
 import * as fs from 'fs';
 import * as mocha from 'gulp-mocha';
 import * as path from 'path';
 import * as execa from 'execa';
 import * as semver from 'semver';
-
-// gulp-help monkeypatches tasks to have an additional description parameter
-const gulp = help(_gulp);
 
 Error.stackTraceLimit = Infinity;
 
@@ -40,30 +36,29 @@ const execNpmVerb = (verb: string, ...args: string[]) =>
   execa('npm', [verb, ...args], {cwd: protojsDir, stdio: 'inherit'});
 const execNpmCommand = execNpmVerb.bind(null, 'run');
 
-gulp.task('install', 'Install native core dependencies', () =>
-          execNpmVerb('install', '--unsafe-perm'));
+const install = () => execNpmVerb('install', '--unsafe-perm');
 
 /**
  * Runs tslint on files in src/, with linting rules defined in tslint.json.
  */
-gulp.task('lint', 'Emits linting errors found in src/ and test/.', () =>
-          execNpmCommand('check'));
+const lint = () => execNpmCommand('check');
 
-gulp.task('clean', 'Deletes transpiled code.', ['install'],
-  () => execNpmCommand('clean'));
+const cleanFiles = () => execNpmCommand('clean');
 
-gulp.task('clean.all', 'Deletes all files added by targets', ['clean']);
+const clean = gulp.series(install, cleanFiles);
+
+const cleanAll = gulp.parallel(clean);
 
 /**
  * Transpiles TypeScript files in src/ and test/ to JavaScript according to the settings
  * found in tsconfig.json.
  */
-gulp.task('compile', 'Transpiles src/ and test/.', () => execNpmCommand('compile'));
+const compile = () => execNpmCommand('compile');
 
 /**
  * Transpiles src/ and test/, and then runs all tests.
  */
-gulp.task('test', 'Runs all tests.', () => {
+const runTests = () => {
   if (semver.satisfies(process.version, ">=6")) {
     return gulp.src(`${outDir}/test/**/*.js`)
       .pipe(mocha({reporter: 'mocha-jenkins-reporter',
@@ -72,4 +67,15 @@ gulp.task('test', 'Runs all tests.', () => {
     console.log(`Skipping proto-loader tests for Node ${process.version}`);
     return Promise.resolve(null);
   }
-});
+}
+
+const test = gulp.series(install, runTests);
+
+export {
+  install,
+  lint,
+  clean,
+  cleanAll,
+  compile,
+  test
+}

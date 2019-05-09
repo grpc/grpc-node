@@ -17,7 +17,7 @@
 
 import * as semver from 'semver';
 
-import {ClientDuplexStream, ClientReadableStream, ClientUnaryCall, ClientWritableStream} from './call';
+import {ClientDuplexStream, ClientReadableStream, ClientUnaryCall, ClientWritableStream, ServiceError} from './call';
 import {CallCredentials} from './call-credentials';
 import {Deadline, StatusObject} from './call-stream';
 import {Channel, ConnectivityState, Http2Channel} from './channel';
@@ -30,7 +30,7 @@ import {Metadata} from './metadata';
 import {KeyCertPair, ServerCredentials} from './server-credentials';
 import {StatusBuilder} from './status-builder';
 
-const supportedNodeVersions = '^8.11.2 || >=9.4';
+const supportedNodeVersions = '^8.13.0 || >=10.10.0';
 if (!semver.satisfies(process.version, supportedNodeVersions)) {
   throw new Error(`@grpc/grpc-js only works on Node ${supportedNodeVersions}`);
 }
@@ -180,7 +180,8 @@ export {
   ClientWritableStream,
   ClientDuplexStream,
   CallOptions,
-  StatusObject
+  StatusObject,
+  ServiceError
 };
 
 /* tslint:disable:no-any */
@@ -248,3 +249,5 @@ export const InterceptorBuilder = () => {
 export const InterceptingCall = () => {
   throw new Error('Not yet implemented');
 };
+
+export {GrpcObject} from './make-client';

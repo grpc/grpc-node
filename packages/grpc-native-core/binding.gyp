@@ -94,7 +94,10 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=1',
       'GRPC_UV',
-      'GRPC_NODE_VERSION="1.21.0-dev"'
+      'GRPC_NODE_VERSION="1.20.3"'
+    ],
+    'defines!': [
+      'OPENSSL_THREADS'
     ],
     'conditions': [
       ['grpc_gcov=="true"', {

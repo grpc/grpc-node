@@ -289,7 +289,7 @@ NAN_METHOD(Channel::GetConnectivityState) {
     return Nan::ThrowError(
         "Cannot call getConnectivityState on a closed Channel");
   }
-  int try_to_connect = (int)info[0]->Equals(Nan::True());
+  int try_to_connect = (int)info[0]->StrictEquals(Nan::True());
   info.GetReturnValue().Set(grpc_channel_check_connectivity_state(
       channel->wrapped_channel, try_to_connect));
 }

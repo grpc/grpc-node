@@ -963,18 +963,6 @@ declare module "grpc" {
      * instance.
      */
     compose(callCredentials: CallCredentials): ChannelCredentials;
-
-    /**
-     * Gets the set of per-call credentials associated with this instance.
-     */
-    getCallCredentials(): CallCredentials;
-
-    /**
-     * Gets a SecureContext object generated from input parameters if this
-     * instance was created with createSsl, or null if this instance was created
-     * with createInsecure.
-     */
-    getSecureContext(): SecureContext | null;
   }
 
   /**
@@ -1545,7 +1533,7 @@ declare module "grpc" {
     TRANSIENT_FAILURE = 3,
     SHUTDOWN = 4
   }
-  
+
   export class Channel {
     /**
      * This constructor API is almost identical to the Client constructor,
@@ -1583,8 +1571,8 @@ declare module "grpc" {
     watchConnectivityState(currentState: connectivityState, deadline: Date|number, callback: (error?: Error) => void): void;
     /**
      * Create a call object. Call is an opaque type that is used by the Client
-     * and Server classes. This function is called by the gRPC library when 
-     * starting a request. Implementers should return an instance of Call that 
+     * and Server classes. This function is called by the gRPC library when
+     * starting a request. Implementers should return an instance of Call that
      * is returned from calling createCall on an instance of the provided
      * Channel class.
      * @param method The full method string to request.
@@ -1595,5 +1583,5 @@ declare module "grpc" {
      *     that indicates what information to propagate from parentCall.
      */
     createCall(method: string, deadline: Date|number, host: string|null, parentCall: Call|null, propagateFlags: number|null): Call;
-  }  
+  }
 }

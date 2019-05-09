@@ -14,7 +14,7 @@
 
 set arch_list=ia32 x64
 
-set node_versions=4.0.0 5.0.0 6.0.0 7.0.0 8.0.0 9.0.0 10.0.0 11.0.0
+set node_versions=4.0.0 5.0.0 6.0.0 7.0.0 8.0.0 9.0.0 10.0.0 11.0.0 12.0.0
 
 set PATH=%PATH%;C:\Program Files\nodejs\;%APPDATA%\npm
 
