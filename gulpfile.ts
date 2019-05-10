@@ -62,6 +62,7 @@ export {
   link,
   setup,
   setupWindows,
+  setupPureJSInterop,
   clean,
   cleanAll,
   nativeTestOnly,
