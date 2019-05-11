@@ -250,3 +250,7 @@ export const InterceptingCall = () => {
 };
 
 export {GrpcObject} from './make-client';
+
+const packageJson = require('../../package.json');
+export const version =
+    `${packageJson.name.replace(/.*\//, '')}/${packageJson.version}`;

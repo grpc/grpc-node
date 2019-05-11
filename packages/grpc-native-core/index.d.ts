@@ -947,6 +947,11 @@ declare module "grpc" {
   };
 
   /**
+   * Package version.
+   */
+  export const version: string;
+
+  /**
    * Metadata generator function.
    */
   export type metadataGenerator = (params: { service_url: string }, callback: (error: Error | null, metadata?: Metadata) => void) => void;
