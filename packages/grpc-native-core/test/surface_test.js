@@ -939,7 +939,7 @@ describe('Other conditions', function() {
      * and go to TRANSIENT_FAILURE to confirm that the waitForReady option
      * makes it end the call instead of continuing to try. A DNS resolution
      * failure makes that transition very fast. */
-    const disconnectedClient = new Client('nothing.invalid:50051', grpc.credentials.createInsecure());
+    const disconnectedClient = new Client('foo.test.google.com:50051', grpc.credentials.createInsecure());
     const metadata = new grpc.Metadata({waitForReady: false});
     const deadline = new Date();
     deadline.setSeconds(deadline.getSeconds() + 1);
