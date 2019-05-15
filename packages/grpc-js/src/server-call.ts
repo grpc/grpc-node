@@ -24,6 +24,7 @@ import {StatusObject} from './call-stream';
 import {Status} from './constants';
 import {Deserialize, Serialize} from './make-client';
 import {Metadata} from './metadata';
+import {StreamDecoder} from './stream-decoder';
 
 function noop(): void {}
 
@@ -107,6 +108,15 @@ export class ServerReadableStreamImpl<RequestType, ResponseType> extends
       private _deserialize: Deserialize<RequestType>) {
     super({objectMode: true});
     this.cancelled = false;
+    this.call.setupReadable(this);
+  }
+
+  _read(size: number) {
+    this.call.resume();
+  }
+
+  deserialize(input: Buffer): RequestType {
+    return this._deserialize(input);
   }
 
   getPeer(): string {
@@ -467,6 +477,38 @@ export class Http2ServerCallStream<RequestType, ResponseType> extends
 
     this.sendMetadata();
     return this.stream.write(chunk);
+  }
+
+  resume() {
+    this.stream.resume();
+  }
+
+  setupReadable(readable: ServerReadableStream<RequestType, ResponseType>|
+                ServerDuplexStream<RequestType, ResponseType>) {
+    const decoder = new StreamDecoder();
+
+    this.stream.on('data', async (data: Buffer) => {
+      const message = decoder.write(data);
+
+      if (message === null) {
+        return;
+      }
+
+      try {
+        const deserialized = await this.deserializeMessage(message);
+
+        if (!readable.push(deserialized)) {
+          this.stream.pause();
+        }
+      } catch (err) {
+        err.code = Status.INTERNAL;
+        readable.emit('error', err);
+      }
+    });
+
+    this.stream.once('end', () => {
+      readable.push(null);
+    });
   }
 }
 

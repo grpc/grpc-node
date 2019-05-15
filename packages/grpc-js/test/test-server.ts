@@ -263,6 +263,16 @@ describe('Server', () => {
           });
     });
 
+    it('should respond to a client stream with UNIMPLEMENTED', (done) => {
+      const call = client.sum((error: ServiceError, response: any) => {
+        assert(error);
+        assert.strictEqual(error.code, grpc.status.UNIMPLEMENTED);
+        done();
+      });
+
+      call.end();
+    });
+
     it('should respond to a server stream with UNIMPLEMENTED', (done) => {
       const call = client.fib({limit: 5});
 

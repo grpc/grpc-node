@@ -126,6 +126,17 @@ describe('Client malformed response handling', () => {
     });
   });
 
+  it('should get an INTERNAL status with a client stream call', (done) => {
+    const call = client.clientStream((err: ServiceError, data: any) => {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.INTERNAL);
+      done();
+    });
+
+    call.write({});
+    call.end();
+  });
+
   it('should get an INTERNAL status with a server stream call', (done) => {
     const call = client.serverStream({});
 
@@ -227,6 +238,17 @@ describe('Server serialization failure handling', () => {
       assert.strictEqual(err.code, grpc.status.INTERNAL);
       done();
     });
+  });
+
+  it('should get an INTERNAL status with a client stream call', (done) => {
+    const call = client.clientStream((err: ServiceError, data: any) => {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.INTERNAL);
+      done();
+    });
+
+    call.write({});
+    call.end();
   });
 
   it('should get an INTERNAL status with a server stream call', (done) => {
@@ -397,6 +419,18 @@ describe('Other conditions', () => {
       });
     });
 
+    it('should respond correctly to a client stream', (done) => {
+      const call =
+          misbehavingClient.clientStream((err: ServiceError, data: any) => {
+            assert(err);
+            assert.strictEqual(err.code, grpc.status.INTERNAL);
+            done();
+          });
+
+      call.write(badArg);
+      call.end();
+    });
+
     it('should respond correctly to a server stream', (done) => {
       const call = misbehavingClient.serverStream(badArg);
 
@@ -457,6 +491,56 @@ describe('Other conditions', () => {
       });
     });
 
+    it('should be present when a client stream call succeeds', (done) => {
+      let count = 0;
+      const call = client.clientStream((err: ServiceError, data: any) => {
+        assert.ifError(err);
+
+        count++;
+        if (count === 2) {
+          done();
+        }
+      });
+
+      call.write({error: false});
+      call.write({error: false});
+      call.end();
+
+      call.on('status', (status: grpc.StatusObject) => {
+        assert.deepStrictEqual(status.metadata.get('trailer-present'), ['yes']);
+
+        count++;
+        if (count === 2) {
+          done();
+        }
+      });
+    });
+
+    it('should be present when a client stream call fails', (done) => {
+      let count = 0;
+      const call = client.clientStream((err: ServiceError, data: any) => {
+        assert(err);
+
+        count++;
+        if (count === 2) {
+          done();
+        }
+      });
+
+      call.write({error: false});
+      call.write({error: true});
+      call.end();
+
+      call.on('status', (status: grpc.StatusObject) => {
+        assert.deepStrictEqual(status.metadata.get('trailer-present'), ['yes']);
+
+        count++;
+        if (count === 2) {
+          done();
+        }
+      });
+    });
+
     it('should be present when a server stream call succeeds', (done) => {
       const call = client.serverStream({error: false});
 
@@ -487,6 +571,19 @@ describe('Other conditions', () => {
         assert.strictEqual(err.details, 'Requested error');
         done();
       });
+    });
+
+    it('for a client stream call', (done) => {
+      const call = client.clientStream((err: ServiceError, data: any) => {
+        assert(err);
+        assert.strictEqual(err.code, grpc.status.UNKNOWN);
+        assert.strictEqual(err.details, 'Requested error');
+        done();
+      });
+
+      call.write({error: false});
+      call.write({error: true});
+      call.end();
     });
 
     it('for a server stream call', (done) => {

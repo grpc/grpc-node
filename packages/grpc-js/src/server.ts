@@ -314,7 +314,22 @@ function handleClientStreaming<RequestType, ResponseType>(
     call: Http2ServerCallStream<RequestType, ResponseType>,
     handler: ClientStreamingHandler<RequestType, ResponseType>,
     metadata: Metadata): void {
-  throw new Error('not implemented yet');
+  const stream = new ServerReadableStreamImpl<RequestType, ResponseType>(
+      call, metadata, handler.deserialize);
+
+  function respond(
+      err: ServiceError|null, value: ResponseType|null, trailer?: Metadata,
+      flags?: number) {
+    stream.destroy();
+    call.sendUnaryMessage(err, value, trailer, flags);
+  }
+
+  if (call.cancelled) {
+    return;
+  }
+
+  stream.on('error', respond);
+  handler.func(stream, respond);
 }
 
 
