@@ -86,7 +86,9 @@
         'GPR_BACKWARDS_COMPATIBILITY_MODE',
         'GRPC_ARES=1',
         'GRPC_UV',
-        'GRPC_NODE_VERSION="${settings.get('node_version', settings.version)}"'
+        'GRPC_NODE_VERSION="${settings.get('node_version', settings.version)}"',
+        'CARES_STATICLIB',
+        'CARES_SYMBOL_HIDING'
       ],
       'defines!': [
         'OPENSSL_THREADS'
@@ -292,9 +294,7 @@
           % endfor
         ],
         'defines': [
-          '_GNU_SOURCE',
-          'CARES_STATICLIB',
-          'CARES_SYMBOL_HIDING'
+          '_GNU_SOURCE'
         ],
         'conditions': [
           ['OS == "mac"', {

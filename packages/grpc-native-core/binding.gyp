@@ -94,7 +94,9 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=1',
       'GRPC_UV',
-      'GRPC_NODE_VERSION="1.20.3"'
+      'GRPC_NODE_VERSION="1.20.3"',
+      'CARES_STATICLIB',
+      'CARES_SYMBOL_HIDING'
     ],
     'defines!': [
       'OPENSSL_THREADS'
@@ -619,9 +621,7 @@
         'deps/grpc/third_party/cares/cares/windows_port.c',
       ],
       'defines': [
-        '_GNU_SOURCE',
-        'CARES_STATICLIB',
-        'CARES_SYMBOL_HIDING'
+        '_GNU_SOURCE'
       ],
       'conditions': [
         ['OS == "mac"', {
