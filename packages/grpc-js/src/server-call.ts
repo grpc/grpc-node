@@ -115,11 +115,7 @@ export class ServerReadableStreamImpl<RequestType, ResponseType> extends
     this.call.resume();
   }
 
-  deserialize(input: Buffer): RequestType|null {
-    if (input === null || input === undefined) {
-      return null;
-    }
-
+  deserialize(input: Buffer): RequestType {
     return this._deserialize(input);
   }
 
