@@ -159,8 +159,7 @@
       }],
       ['OS == "win"', {
         "include_dirs": [
-          "deps/grpc/third_party/zlib",
-          "deps/grpc/third_party/cares/cares"
+          "deps/grpc/third_party/zlib"
         ],
         "defines": [
           '_WIN32_WINNT=0x0600',
@@ -180,8 +179,7 @@
         ]
       }, { # OS != "win"
         'include_dirs': [
-          '<(node_root_dir)/deps/zlib',
-          '<(node_root_dir)/deps/cares/include'
+          '<(node_root_dir)/deps/zlib'
         ]
       }],
       ['OS == "mac"', {
@@ -621,7 +619,9 @@
         'deps/grpc/third_party/cares/cares/windows_port.c',
       ],
       'defines': [
-        '_GNU_SOURCE'
+        '_GNU_SOURCE',
+        'CARES_STATICLIB',
+        'CARES_SYMBOL_HIDING'
       ],
       'conditions': [
         ['OS == "mac"', {
