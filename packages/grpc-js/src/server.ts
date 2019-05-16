@@ -355,5 +355,12 @@ function handleBidiStreaming<RequestType, ResponseType>(
     call: Http2ServerCallStream<RequestType, ResponseType>,
     handler: BidiStreamingHandler<RequestType, ResponseType>,
     metadata: Metadata): void {
-  throw new Error('not implemented yet');
+  const stream = new ServerDuplexStreamImpl<RequestType, ResponseType>(
+      call, metadata, handler.serialize, handler.deserialize);
+
+  if (call.cancelled) {
+    return;
+  }
+
+  handler.func(stream);
 }
