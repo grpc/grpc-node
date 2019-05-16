@@ -20,3 +20,6 @@ package-lock.json
 
 # Test generated files
 coverage
+
+# Node's bash completion file
+.node_bash_completion

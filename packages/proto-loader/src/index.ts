@@ -15,33 +15,34 @@
  * limitations under the License.
  *
  */
-import * as Protobuf from 'protobufjs';
-import * as descriptor from 'protobufjs/ext/descriptor';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as Protobuf from 'protobufjs';
+import * as descriptor from 'protobufjs/ext/descriptor';
+
 import camelCase = require('lodash.camelcase');
 
 declare module 'protobufjs' {
   interface Type {
-    toDescriptor(protoVersion: string): Protobuf.Message<descriptor.IDescriptorProto> & descriptor.IDescriptorProto;
+    toDescriptor(protoVersion: string): Protobuf
+        .Message<descriptor.IDescriptorProto>&descriptor.IDescriptorProto;
   }
 
   interface Root {
-    toDescriptor(protoVersion: string): Protobuf.Message<descriptor.IFileDescriptorSet> & descriptor.IFileDescriptorSet;
+    toDescriptor(protoVersion: string): Protobuf
+        .Message<descriptor.IFileDescriptorSet>&descriptor.IFileDescriptorSet;
   }
 
   interface Enum {
-    toDescriptor(protoVersion: string): Protobuf.Message<descriptor.IEnumDescriptorProto> & descriptor.IEnumDescriptorProto;
+    toDescriptor(protoVersion: string):
+        Protobuf.Message<descriptor.IEnumDescriptorProto>&
+        descriptor.IEnumDescriptorProto;
   }
 }
 
-export interface Serialize<T> {
-  (value: T): Buffer;
-}
+export interface Serialize<T> { (value: T): Buffer; }
 
-export interface Deserialize<T> {
-  (bytes: Buffer): T;
-}
+export interface Deserialize<T> { (bytes: Buffer): T; }
 
 export interface ProtobufTypeDefinition {
   format: string;
@@ -74,13 +75,12 @@ export interface ServiceDefinition {
   [index: string]: MethodDefinition<object, object>;
 }
 
-export type AnyDefinition = ServiceDefinition | MessageTypeDefinition | EnumTypeDefinition;
+export type AnyDefinition =
+    ServiceDefinition|MessageTypeDefinition|EnumTypeDefinition;
 
-export interface PackageDefinition {
-  [index: string]: AnyDefinition;
-}
+export interface PackageDefinition { [index: string]: AnyDefinition; }
 
-export type Options = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
+export type Options = Protobuf.IParseOptions&Protobuf.IConversionOptions&{
   includeDirs?: string[];
 };
 
@@ -101,31 +101,41 @@ function joinName(baseName: string, name: string): string {
   }
 }
 
-type HandledReflectionObject = Protobuf.Service | Protobuf.Type | Protobuf.Enum;
+type HandledReflectionObject = Protobuf.Service|Protobuf.Type|Protobuf.Enum;
 
-function isHandledReflectionObject(obj: Protobuf.ReflectionObject): obj is HandledReflectionObject {
-  return obj instanceof Protobuf.Service || obj instanceof Protobuf.Type || obj instanceof Protobuf.Enum;
+function isHandledReflectionObject(obj: Protobuf.ReflectionObject):
+    obj is HandledReflectionObject {
+  return obj instanceof Protobuf.Service || obj instanceof Protobuf.Type ||
+      obj instanceof Protobuf.Enum;
 }
 
-function isNamespaceBase(obj: Protobuf.ReflectionObject): obj is Protobuf.NamespaceBase {
+function isNamespaceBase(obj: Protobuf.ReflectionObject):
+    obj is Protobuf.NamespaceBase {
   return obj instanceof Protobuf.Namespace || obj instanceof Protobuf.Root;
 }
 
-function getAllHandledReflectionObjects(obj: Protobuf.ReflectionObject, parentName: string): Array<[string, HandledReflectionObject]> {
+function getAllHandledReflectionObjects(
+    obj: Protobuf.ReflectionObject,
+    parentName: string): Array<[string, HandledReflectionObject]> {
   const objName = joinName(parentName, obj.name);
   if (isHandledReflectionObject(obj)) {
     return [[objName, obj]];
   } else {
     if (isNamespaceBase(obj) && typeof obj.nested !== undefined) {
-      return Object.keys(obj.nested!).map((name) => {
-        return getAllHandledReflectionObjects(obj.nested![name], objName);
-      }).reduce((accumulator, currentValue) => accumulator.concat(currentValue), []);
+      return Object.keys(obj.nested!)
+          .map((name) => {
+            return getAllHandledReflectionObjects(obj.nested![name], objName);
+          })
+          .reduce(
+              (accumulator, currentValue) => accumulator.concat(currentValue),
+              []);
     }
   }
   return [];
 }
 
-function createDeserializer(cls: Protobuf.Type, options: Options): Deserialize<object> {
+function createDeserializer(
+    cls: Protobuf.Type, options: Options): Deserialize<object> {
   return function deserialize(argBuf: Buffer): object {
     return cls.toObject(cls.decode(argBuf), options);
   };
@@ -138,7 +148,9 @@ function createSerializer(cls: Protobuf.Type): Serialize<object> {
   };
 }
 
-function createMethodDefinition(method: Protobuf.Method, serviceName: string, options: Options): MethodDefinition<object, object> {
+function createMethodDefinition(
+    method: Protobuf.Method, serviceName: string,
+    options: Options): MethodDefinition<object, object> {
   /* This is only ever called after the corresponding root.resolveAll(), so we
    * can assume that the resolved request and response types are non-null */
   const requestType: Protobuf.Type = method.resolvedRequestType!;
@@ -158,7 +170,9 @@ function createMethodDefinition(method: Protobuf.Method, serviceName: string, op
   };
 }
 
-function createServiceDefinition(service: Protobuf.Service, name: string, options: Options): ServiceDefinition {
+function createServiceDefinition(
+    service: Protobuf.Service, name: string,
+    options: Options): ServiceDefinition {
   const def: ServiceDefinition = {};
   for (const method of service.methodsArray) {
     def[method.name] = createMethodDefinition(method, name, options);
@@ -166,29 +180,37 @@ function createServiceDefinition(service: Protobuf.Service, name: string, option
   return def;
 }
 
-const fileDescriptorCache: Map<Protobuf.Root, Buffer[]> = new Map<Protobuf.Root, Buffer[]>();
+const fileDescriptorCache: Map<Protobuf.Root, Buffer[]> =
+    new Map<Protobuf.Root, Buffer[]>();
 function getFileDescriptors(root: Protobuf.Root): Buffer[] {
   if (fileDescriptorCache.has(root)) {
     return fileDescriptorCache.get(root)!;
   } else {
-    const descriptorList: descriptor.IFileDescriptorProto[] = root.toDescriptor('proto3').file;
-    const bufferList: Buffer[] = descriptorList.map(value => Buffer.from(descriptor.FileDescriptorProto.encode(value).finish()));
+    const descriptorList: descriptor.IFileDescriptorProto[] =
+        root.toDescriptor('proto3').file;
+    const bufferList: Buffer[] = descriptorList.map(
+        value =>
+            Buffer.from(descriptor.FileDescriptorProto.encode(value).finish()));
     fileDescriptorCache.set(root, bufferList);
     return bufferList;
   }
 }
 
-function createMessageDefinition(message: Protobuf.Type): MessageTypeDefinition {
-  const messageDescriptor: protobuf.Message<descriptor.IDescriptorProto> = message.toDescriptor('proto3');
+function createMessageDefinition(message: Protobuf.Type):
+    MessageTypeDefinition {
+  const messageDescriptor: protobuf.Message<descriptor.IDescriptorProto> =
+      message.toDescriptor('proto3');
   return {
     format: 'Protocol Buffer 3 DescriptorProto',
-    type: messageDescriptor.$type.toObject(messageDescriptor, descriptorOptions),
+    type:
+        messageDescriptor.$type.toObject(messageDescriptor, descriptorOptions),
     fileDescriptorProtos: getFileDescriptors(message.root)
   };
 }
 
 function createEnumDefinition(enumType: Protobuf.Enum): EnumTypeDefinition {
-  const enumDescriptor: protobuf.Message<descriptor.IEnumDescriptorProto> = enumType.toDescriptor('proto3');
+  const enumDescriptor: protobuf.Message<descriptor.IEnumDescriptorProto> =
+      enumType.toDescriptor('proto3');
   return {
     format: 'Protocol Buffer 3 EnumDescriptorProto',
     type: enumDescriptor.$type.toObject(enumDescriptor, descriptorOptions),
@@ -197,11 +219,15 @@ function createEnumDefinition(enumType: Protobuf.Enum): EnumTypeDefinition {
 }
 
 /**
- * function createDefinition(obj: Protobuf.Service, name: string, options: Options): ServiceDefinition;
- * function createDefinition(obj: Protobuf.Type, name: string, options: Options): MessageTypeDefinition;
- * function createDefinition(obj: Protobuf.Enum, name: string, options: Options): EnumTypeDefinition;
+ * function createDefinition(obj: Protobuf.Service, name: string, options:
+ * Options): ServiceDefinition; function createDefinition(obj: Protobuf.Type,
+ * name: string, options: Options): MessageTypeDefinition; function
+ * createDefinition(obj: Protobuf.Enum, name: string, options: Options):
+ * EnumTypeDefinition;
  */
-function createDefinition(obj: HandledReflectionObject, name: string, options: Options): AnyDefinition {
+function createDefinition(
+    obj: HandledReflectionObject, name: string,
+    options: Options): AnyDefinition {
   if (obj instanceof Protobuf.Service) {
     return createServiceDefinition(obj, name, options);
   } else if (obj instanceof Protobuf.Type) {
@@ -213,7 +239,8 @@ function createDefinition(obj: HandledReflectionObject, name: string, options: O
   }
 }
 
-function createPackageDefinition(root: Protobuf.Root, options: Options): PackageDefinition {
+function createPackageDefinition(
+    root: Protobuf.Root, options: Options): PackageDefinition {
   const def: PackageDefinition = {};
   root.resolveAll();
   for (const [name, obj] of getAllHandledReflectionObjects(root, '')) {
@@ -265,12 +292,14 @@ function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
  *     name
  * @param options.includeDirs Paths to search for imported `.proto` files.
  */
-export function load(filename: string | string[], options?: Options): Promise<PackageDefinition> {
+export function load(
+    filename: string | string[], options?: Options): Promise<PackageDefinition> {
   const root: Protobuf.Root = new Protobuf.Root();
   options = options || {};
   if (!!options.includeDirs) {
     if (!(Array.isArray(options.includeDirs))) {
-      return Promise.reject(new Error('The includeDirs option must be an array'));
+      return Promise.reject(
+          new Error('The includeDirs option must be an array'));
     }
     addIncludePathResolver(root, options.includeDirs as string[]);
   }
@@ -280,7 +309,8 @@ export function load(filename: string | string[], options?: Options): Promise<Pa
   });
 }
 
-export function loadSync(filename: string | string[], options?: Options): PackageDefinition {
+export function loadSync(
+    filename: string | string[], options?: Options): PackageDefinition {
   const root: Protobuf.Root = new Protobuf.Root();
   options = options || {};
   if (!!options.includeDirs) {
@@ -292,4 +322,21 @@ export function loadSync(filename: string | string[], options?: Options): Packag
   const loadedRoot = root.loadSync(filename, options);
   loadedRoot.resolveAll();
   return createPackageDefinition(root, options!);
+}
+
+// Load Google's well-known proto files that aren't exposed by Protobuf.js.
+{
+  // Protobuf.js exposes: any, duration, empty, field_mask, struct, timestamp,
+  // and wrappers. compiler/plugin is excluded in Protobuf.js and here.
+  const wellKnownProtos = ['api', 'descriptor', 'source_context', 'type'];
+  const sourceDir = path.join(
+      path.dirname(require.resolve('protobufjs')), 'google', 'protobuf');
+
+  for (const proto of wellKnownProtos) {
+    const file = path.join(sourceDir, `${proto}.proto`);
+    const descriptor = Protobuf.loadSync(file).toJSON();
+
+    // @ts-ignore
+    Protobuf.common(proto, descriptor.nested.google.nested);
+  }
 }

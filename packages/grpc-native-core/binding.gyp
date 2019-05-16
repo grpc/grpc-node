@@ -91,7 +91,10 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=0',
       'GRPC_UV',
-      'GRPC_NODE_VERSION="1.19.0-pre1"'
+      'GRPC_NODE_VERSION="1.20.3"'
+    ],
+    'defines!': [
+      'OPENSSL_THREADS'
     ],
     'conditions': [
       ['grpc_gcov=="true"', {
@@ -725,7 +728,6 @@
         'deps/grpc/src/core/lib/iomgr/udp_server.cc',
         'deps/grpc/src/core/lib/iomgr/unix_sockets_posix.cc',
         'deps/grpc/src/core/lib/iomgr/unix_sockets_posix_noop.cc',
-        'deps/grpc/src/core/lib/iomgr/wakeup_fd_cv.cc',
         'deps/grpc/src/core/lib/iomgr/wakeup_fd_eventfd.cc',
         'deps/grpc/src/core/lib/iomgr/wakeup_fd_nospecial.cc',
         'deps/grpc/src/core/lib/iomgr/wakeup_fd_pipe.cc',
@@ -765,7 +767,6 @@
         'deps/grpc/src/core/lib/transport/metadata.cc',
         'deps/grpc/src/core/lib/transport/metadata_batch.cc',
         'deps/grpc/src/core/lib/transport/pid_controller.cc',
-        'deps/grpc/src/core/lib/transport/service_config.cc',
         'deps/grpc/src/core/lib/transport/static_metadata.cc',
         'deps/grpc/src/core/lib/transport/status_conversion.cc',
         'deps/grpc/src/core/lib/transport/status_metadata.cc',
@@ -821,6 +822,7 @@
         'deps/grpc/src/core/lib/security/credentials/plugin/plugin_credentials.cc',
         'deps/grpc/src/core/lib/security/credentials/ssl/ssl_credentials.cc',
         'deps/grpc/src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc',
+        'deps/grpc/src/core/lib/security/credentials/tls/spiffe_credentials.cc',
         'deps/grpc/src/core/lib/security/security_connector/alts/alts_security_connector.cc',
         'deps/grpc/src/core/lib/security/security_connector/fake/fake_security_connector.cc',
         'deps/grpc/src/core/lib/security/security_connector/load_system_roots_fallback.cc',
@@ -829,6 +831,7 @@
         'deps/grpc/src/core/lib/security/security_connector/security_connector.cc',
         'deps/grpc/src/core/lib/security/security_connector/ssl/ssl_security_connector.cc',
         'deps/grpc/src/core/lib/security/security_connector/ssl_utils.cc',
+        'deps/grpc/src/core/lib/security/security_connector/tls/spiffe_security_connector.cc',
         'deps/grpc/src/core/lib/security/transport/client_auth_filter.cc',
         'deps/grpc/src/core/lib/security/transport/secure_endpoint.cc',
         'deps/grpc/src/core/lib/security/transport/security_handshaker.cc',
@@ -893,12 +896,13 @@
         'deps/grpc/src/core/ext/filters/client_channel/parse_address.cc',
         'deps/grpc/src/core/ext/filters/client_channel/proxy_mapper.cc',
         'deps/grpc/src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
-        'deps/grpc/src/core/ext/filters/client_channel/request_routing.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver_registry.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver_result_parsing.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/resolving_lb_policy.cc',
         'deps/grpc/src/core/ext/filters/client_channel/retry_throttle.cc',
         'deps/grpc/src/core/ext/filters/client_channel/server_address.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/service_config.cc',
         'deps/grpc/src/core/ext/filters/client_channel/subchannel.cc',
         'deps/grpc/src/core/ext/filters/client_channel/subchannel_pool_interface.cc',
         'deps/grpc/src/core/ext/filters/deadline/deadline_filter.cc',
@@ -963,7 +967,8 @@
       ],
       'cflags': [
         '-pthread',
-        '-Wno-error=deprecated-declarations'
+        '-Wno-error=deprecated-declarations',
+        '-Wno-cast-function-type'
       ],
       "conditions": [
         ['OS=="win" or runtime=="electron"', {

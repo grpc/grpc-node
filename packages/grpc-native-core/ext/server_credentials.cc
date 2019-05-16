@@ -66,7 +66,7 @@ void ServerCredentials::Init(Local<Object> exports) {
   Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
   tpl->SetClassName(Nan::New("ServerCredentials").ToLocalChecked());
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
-  Local<Function> ctr = tpl->GetFunction();
+  Local<Function> ctr = Nan::GetFunction(tpl).ToLocalChecked();
   Nan::Set(
       ctr, Nan::New("createSsl").ToLocalChecked(),
       Nan::GetFunction(Nan::New<FunctionTemplate>(CreateSsl)).ToLocalChecked());

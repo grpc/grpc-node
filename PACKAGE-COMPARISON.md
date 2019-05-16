@@ -22,7 +22,7 @@ Load Balancing | :heavy_check_mark: | :x:
 Other Properties | `grpc` | `@grpc/grpc-js`
 -----------------|--------|----------------
 Pure JavaScript Code | :x: | :heavy_check_mark:
-Supported Node Versions | >= 4 | ^8.11.2 or >=9.4
+Supported Node Versions | >= 4 | ^8.13.0 or >=10.10.0
 Supported Electron Versions | All | >= 3
 Supported Platforms | Linux, Windows, MacOS | All
 Supported Architectures | x86, x86-64, ARM7+ | All

@@ -85,6 +85,9 @@
         'GRPC_UV',
         'GRPC_NODE_VERSION="${settings.get('node_version', settings.version)}"'
       ],
+      'defines!': [
+        'OPENSSL_THREADS'
+      ],
       'conditions': [
         ['grpc_gcov=="true"', {
           % for arg, prop in [('CPPFLAGS', 'cflags'), ('DEFINES', 'defines'), ('LDFLAGS', 'ldflags')]:
@@ -312,7 +315,8 @@
         ],
         'cflags': [
           '-pthread',
-          '-Wno-error=deprecated-declarations'
+          '-Wno-error=deprecated-declarations',
+          '-Wno-cast-function-type'
         ],
         "conditions": [
           ['OS=="win" or runtime=="electron"', {

@@ -15,96 +15,58 @@
  *
  */
 
-import * as _gulp from 'gulp';
-import * as help from 'gulp-help';
-
-// gulp-help monkeypatches tasks to have an additional description parameter
-const gulp = help(_gulp);
-
-const runSequence = require('run-sequence');
-
-/**
- * Require a module at the given path with a patched gulp object that prepends
- * the given prefix to each task name.
- * @param path The path to require.
- * @param prefix The string to use as a prefix. This will be prepended to a task
- *               name with a '.' separator.
- */
-function loadGulpTasksWithPrefix(path: string, prefix: string) {
-  const gulpTask = gulp.task;
-  gulp.task = ((taskName: string, ...args: any[]) => {
-    // Don't create a task for ${prefix}.help
-    if (taskName === 'help') {
-      return;
-    }
-    // The only array passed to gulp.task must be a list of dependent tasks.
-    const newArgs = args.map(arg => Array.isArray(arg) ?
-      arg.map(dep => `${prefix}.${dep}`) : arg);
-    gulpTask(`${prefix}.${taskName}`, ...newArgs);
-  });
-  const result = require(path);
-  gulp.task = gulpTask;
-  return result;
-}
-
-[
-  ['./packages/grpc-health-check/gulpfile', 'health-check'],
-  ['./packages/grpc-js/gulpfile', 'js.core'],
-  ['./packages/grpc-native-core/gulpfile', 'native.core'],
-  ['./packages/proto-loader/gulpfile', 'protobuf'],
-  ['./test/gulpfile', 'internal.test'],
-].forEach((args) => loadGulpTasksWithPrefix(args[0], args[1]));
+import * as gulp from 'gulp';
+import * as healthCheck from './packages/grpc-health-check/gulpfile';
+import * as jsCore from './packages/grpc-js/gulpfile';
+import * as nativeCore from './packages/grpc-native-core/gulpfile';
+import * as protobuf from './packages/proto-loader/gulpfile';
+import * as internalTest from './test/gulpfile';
 
 const root = __dirname;
 
-gulp.task('install.all', 'Install dependencies for all subdirectory packages',
-          ['js.core.install', 'native.core.install', 'health-check.install', 'protobuf.install', 'internal.test.install']);
+const installAll = gulp.parallel(jsCore.install, nativeCore.install, healthCheck.install, protobuf.install, internalTest.install);
 
-gulp.task('install.all.windows', 'Install dependencies for all subdirectory packages for MS Windows',
-          ['js.core.install', 'native.core.install.windows', 'health-check.install', 'protobuf.install', 'internal.test.install']);
+const installAllWindows = gulp.parallel(jsCore.install, nativeCore.installWindows, healthCheck.install, protobuf.install, internalTest.install);
 
-gulp.task('lint', 'Emit linting errors in source and test files',
-          ['js.core.lint', 'native.core.lint']);
+const lint = gulp.parallel(jsCore.lint, nativeCore.lint);
 
-gulp.task('build', 'Build packages', ['js.core.compile', 'native.core.build', 'protobuf.compile']);
+const build = gulp.parallel(jsCore.compile, nativeCore.build, protobuf.compile);
 
-gulp.task('link.surface', 'Link to surface packages',
-          ['health-check.link.add']);
+const link = gulp.series(healthCheck.linkAdd);
 
-gulp.task('link', 'Link together packages', (callback) => {
-  /**
-   * We use workarounds for linking in some modules. See npm/npm#18835
-   */
-  runSequence('link.surface', callback);
-});
+const setup = gulp.series(installAll, link);
 
-gulp.task('setup', 'One-time setup for a clean repository', (callback) => {
-  runSequence('install.all', 'link', callback);
-});
-gulp.task('setup.windows', 'One-time setup for a clean repository for MS Windows', (callback) => {
-  runSequence('install.all.windows', 'link', callback);
-});
+const setupWindows = gulp.series(installAllWindows, link);
 
-gulp.task('clean', 'Delete generated files', ['js.core.clean', 'native.core.clean', 'protobuf.clean']);
+const setupPureJSInterop = gulp.parallel(jsCore.install, protobuf.install, internalTest.install);
 
-gulp.task('clean.all', 'Delete all files created by tasks',
-	  ['js.core.clean.all', 'native.core.clean.all', 'health-check.clean.all',
-	   'internal.test.clean.all', 'protobuf.clean.all']);
+const clean = gulp.parallel(jsCore.clean, nativeCore.clean, protobuf.clean);
 
-gulp.task('native.test.only', 'Run tests of native code without rebuilding anything',
-          ['native.core.test', 'health-check.test']);
+const cleanAll = gulp.parallel(jsCore.cleanAll, nativeCore.cleanAll, healthCheck.cleanAll, internalTest.cleanAll, protobuf.cleanAll);
 
-gulp.task('native.test', 'Run tests of native code', (callback) => {
-  runSequence('build', 'native.test.only', callback);
-});
+const nativeTestOnly = gulp.parallel(nativeCore.test, healthCheck.test);
 
-gulp.task('test.only', 'Run tests without rebuilding anything',
-          ['js.core.test', 'native.test.only', 'protobuf.test']);
+const nativeTest = gulp.series(build, nativeTestOnly);
 
-gulp.task('test', 'Run all tests', (callback) => {
-  runSequence('build', 'test.only', 'internal.test.test', callback);
-});
+const testOnly = gulp.parallel(jsCore.test, nativeTestOnly, protobuf.test);
 
-gulp.task('doc.gen', 'Generate documentation', ['native.core.doc.gen']);
+const test = gulp.series(build, testOnly, internalTest.test);
 
-gulp.task('default', ['help']);
+const docGen = gulp.series(nativeCore.docGen);
+
+export {
+  installAll,
+  installAllWindows,
+  lint,
+  build,
+  link,
+  setup,
+  setupWindows,
+  setupPureJSInterop,
+  clean,
+  cleanAll,
+  nativeTestOnly,
+  nativeTest,
+  test,
+  docGen
+};

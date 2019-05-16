@@ -14,7 +14,7 @@
 
 set arch_list=ia32 x64
 
-set electron_versions=1.0.0 1.1.0 1.2.0 1.3.0 1.4.0 1.5.0 1.6.0 1.7.0 1.8.0 2.0.0 3.0.0 4.0.0
+set electron_versions=1.0.0 1.1.0 1.2.0 1.3.0 1.4.0 1.5.0 1.6.0 1.7.0 1.8.0 2.0.0 3.0.0 3.1.0 4.1.0 5.0.0
 
 set PATH=%PATH%;C:\Program Files\nodejs\;%APPDATA%\npm
 
