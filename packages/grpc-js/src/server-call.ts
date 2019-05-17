@@ -26,10 +26,6 @@ import {Deserialize, Serialize} from './make-client';
 import {Metadata} from './metadata';
 import {StreamDecoder} from './stream-decoder';
 
-function noop(): void {}
-
-export type PartialServiceError = Partial<ServiceError>;
-
 type DeadlineUnitIndexSignature = {
   [name: string]: number
 };

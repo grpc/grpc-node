@@ -26,7 +26,7 @@ import {ServerCredentials} from '../src';
 import {ServiceError} from '../src/call';
 import {ServiceClient, ServiceClientConstructor} from '../src/make-client';
 import {Server} from '../src/server';
-import {sendUnaryData, ServerDuplexStream, ServerReadableStream, ServerUnaryCall, ServerWritableStream} from '../src/server-call';
+import {sendUnaryData, ServerUnaryCall} from '../src/server-call';
 
 import {loadProtoFile} from './common';
 
