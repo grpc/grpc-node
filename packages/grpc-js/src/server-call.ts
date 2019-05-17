@@ -26,10 +26,6 @@ import {Deserialize, Serialize} from './make-client';
 import {Metadata} from './metadata';
 import {StreamDecoder} from './stream-decoder';
 
-function noop(): void {}
-
-export type PartialServiceError = Partial<ServiceError>;
-
 type DeadlineUnitIndexSignature = {
   [name: string]: number
 };
@@ -104,8 +100,7 @@ export class ServerReadableStreamImpl<RequestType, ResponseType> extends
 
   constructor(
       private call: Http2ServerCallStream<RequestType, ResponseType>,
-      public metadata: Metadata,
-      private _deserialize: Deserialize<RequestType>) {
+      public metadata: Metadata, public deserialize: Deserialize<RequestType>) {
     super({objectMode: true});
     this.cancelled = false;
     this.call.setupReadable(this);
@@ -113,10 +108,6 @@ export class ServerReadableStreamImpl<RequestType, ResponseType> extends
 
   _read(size: number) {
     this.call.resume();
-  }
-
-  deserialize(input: Buffer): RequestType {
-    return this._deserialize(input);
   }
 
   getPeer(): string {
@@ -137,7 +128,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType> extends
 
   constructor(
       private call: Http2ServerCallStream<RequestType, ResponseType>,
-      public metadata: Metadata, private _serialize: Serialize<ResponseType>) {
+      public metadata: Metadata, public serialize: Serialize<ResponseType>) {
     super({objectMode: true});
     this.cancelled = false;
     this.request = null;
@@ -189,14 +180,6 @@ export class ServerWritableStreamImpl<RequestType, ResponseType> extends
     }
 
     super.end();
-  }
-
-  serialize(input: ResponseType): Buffer|null {
-    if (input === null || input === undefined) {
-      return null;
-    }
-
-    return this._serialize(input);
   }
 }
 

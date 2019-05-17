@@ -20,18 +20,18 @@ import {AddressInfo, ListenOptions} from 'net';
 import {URL} from 'url';
 
 import {ServiceError} from './call';
-import {StatusObject} from './call-stream';
 import {Status} from './constants';
 import {Deserialize, Serialize, ServiceDefinition} from './make-client';
 import {Metadata} from './metadata';
-import {BidiStreamingHandler, ClientStreamingHandler, HandleCall, Handler, HandlerType, Http2ServerCallStream, PartialServiceError, sendUnaryData, ServerDuplexStream, ServerDuplexStreamImpl, ServerReadableStream, ServerReadableStreamImpl, ServerStreamingHandler, ServerUnaryCall, ServerUnaryCallImpl, ServerWritableStream, ServerWritableStreamImpl, UnaryHandler} from './server-call';
+import {BidiStreamingHandler, ClientStreamingHandler, HandleCall, Handler, HandlerType, Http2ServerCallStream, sendUnaryData, ServerDuplexStream, ServerDuplexStreamImpl, ServerReadableStream, ServerReadableStreamImpl, ServerStreamingHandler, ServerUnaryCall, ServerUnaryCallImpl, ServerWritableStream, ServerWritableStreamImpl, UnaryHandler} from './server-call';
 import {ServerCredentials} from './server-credentials';
 
 function noop(): void {}
 
-const unimplementedStatusResponse: PartialServiceError = {
+const unimplementedStatusResponse: Partial<ServiceError> = {
   code: Status.UNIMPLEMENTED,
   details: 'The server does not implement this method',
+  metadata: new Metadata()
 };
 
 // tslint:disable:no-any
