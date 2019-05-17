@@ -56,11 +56,11 @@ const defaultResponseOptions = {
   waitForTrailers: true,
 } as http2.ServerStreamResponseOptions;
 
-export interface ServerSurfaceCall {
+export type ServerSurfaceCall = {
   cancelled: boolean;
   getPeer(): string;
   sendMetadata(responseMetadata: Metadata): void;
-}
+} & EventEmitter;
 
 export type ServerUnaryCall<RequestType, ResponseType> = ServerSurfaceCall & {
   request: RequestType | null;
@@ -88,6 +88,7 @@ export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
     super();
     this.cancelled = false;
     this.request = null;
+    this.call.setupSurfaceCall(this);
   }
 
   getPeer(): string {
@@ -111,6 +112,7 @@ export class ServerReadableStreamImpl<RequestType, ResponseType>
   ) {
     super({ objectMode: true });
     this.cancelled = false;
+    this.call.setupSurfaceCall(this);
     this.call.setupReadable(this);
   }
 
@@ -143,6 +145,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
     this.cancelled = false;
     this.request = null;
     this.trailingMetadata = new Metadata();
+    this.call.setupSurfaceCall(this);
 
     this.on('error', err => {
       this.call.sendError(err as ServiceError);
@@ -212,6 +215,7 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
     super({ objectMode: true });
     this.cancelled = false;
     this.trailingMetadata = new Metadata();
+    this.call.setupSurfaceCall(this);
     this.call.setupReadable(this);
 
     this.on('error', err => {
@@ -511,6 +515,13 @@ export class Http2ServerCallStream<
 
   resume() {
     this.stream.resume();
+  }
+
+  setupSurfaceCall(call: ServerSurfaceCall) {
+    this.once('cancelled', reason => {
+      call.cancelled = true;
+      call.emit('cancelled', reason);
+    });
   }
 
   setupReadable(
