@@ -22,31 +22,30 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import * as grpc from '../src';
-import {ServerCredentials} from '../src';
-import {ServiceError} from '../src/call';
-import {ServiceClient, ServiceClientConstructor} from '../src/make-client';
-import {Server} from '../src/server';
-import {sendUnaryData, ServerUnaryCall} from '../src/server-call';
+import { ServerCredentials } from '../src';
+import { ServiceError } from '../src/call';
+import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
+import { Server } from '../src/server';
+import { sendUnaryData, ServerUnaryCall } from '../src/server-call';
 
-import {loadProtoFile} from './common';
+import { loadProtoFile } from './common';
 
 const ca = fs.readFileSync(path.join(__dirname, 'fixtures', 'ca.pem'));
 const key = fs.readFileSync(path.join(__dirname, 'fixtures', 'server1.key'));
 const cert = fs.readFileSync(path.join(__dirname, 'fixtures', 'server1.pem'));
 function noop(): void {}
 
-
 describe('Server', () => {
   describe('constructor', () => {
     it('should work with no arguments', () => {
       assert.doesNotThrow(() => {
-        new Server();  // tslint:disable-line:no-unused-expression
+        new Server(); // tslint:disable-line:no-unused-expression
       });
     });
 
     it('should work with an empty object argument', () => {
       assert.doesNotThrow(() => {
-        new Server({});  // tslint:disable-line:no-unused-expression
+        new Server({}); // tslint:disable-line:no-unused-expression
       });
     });
 
@@ -58,21 +57,27 @@ describe('Server', () => {
   });
 
   describe('bindAsync', () => {
-    it('binds with insecure credentials', (done) => {
+    it('binds with insecure credentials', done => {
       const server = new Server();
 
       server.bindAsync(
-          'localhost:0', ServerCredentials.createInsecure(), (err, port) => {
-            assert.ifError(err);
-            assert(typeof port === 'number' && port > 0);
-            server.tryShutdown(done);
-          });
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert.ifError(err);
+          assert(typeof port === 'number' && port > 0);
+          server.tryShutdown(done);
+        }
+      );
     });
 
-    it('binds with secure credentials', (done) => {
+    it('binds with secure credentials', done => {
       const server = new Server();
       const creds = ServerCredentials.createSsl(
-          ca, [{private_key: key, cert_chain: cert}], true);
+        ca,
+        [{ private_key: key, cert_chain: cert }],
+        true
+      );
 
       server.bindAsync('localhost:0', creds, (err, port) => {
         assert.ifError(err);
@@ -85,14 +90,20 @@ describe('Server', () => {
       const server = new Server();
 
       server.bindAsync(
-          'localhost:0', ServerCredentials.createInsecure(), (err, port) => {
-            assert.ifError(err);
-            server.start();
-            assert.throws(() => {
-              server.bindAsync(
-                  'localhost:0', ServerCredentials.createInsecure(), noop);
-            }, /server is already started/);
-          });
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert.ifError(err);
+          server.start();
+          assert.throws(() => {
+            server.bindAsync(
+              'localhost:0',
+              ServerCredentials.createInsecure(),
+              noop
+            );
+          }, /server is already started/);
+        }
+      );
     });
 
     it('throws on invalid inputs', () => {
@@ -108,16 +119,19 @@ describe('Server', () => {
 
       assert.throws(() => {
         server.bindAsync(
-            'localhost:0', ServerCredentials.createInsecure(), null as any);
+          'localhost:0',
+          ServerCredentials.createInsecure(),
+          null as any
+        );
       }, /callback must be a function/);
     });
   });
 
   describe('tryShutdown', () => {
-    it('calls back with an error if the server is not running', (done) => {
+    it('calls back with an error if the server is not running', done => {
       const server = new Server();
 
-      server.tryShutdown((err) => {
+      server.tryShutdown(err => {
         assert(err !== undefined && err.message === 'server is not running');
         done();
       });
@@ -127,12 +141,12 @@ describe('Server', () => {
   describe('start', () => {
     let server: Server;
 
-    beforeEach((done) => {
+    beforeEach(done => {
       server = new Server();
       server.bindAsync('localhost:0', ServerCredentials.createInsecure(), done);
     });
 
-    afterEach((done) => {
+    afterEach(done => {
       server.tryShutdown(done);
     });
 
@@ -162,8 +176,8 @@ describe('Server', () => {
     const mathProtoFile = path.join(__dirname, 'fixtures', 'math.proto');
     const mathClient = (loadProtoFile(mathProtoFile).math as any).Math;
     const mathServiceAttrs = mathClient.service;
-    const dummyImpls = {div() {}, divMany() {}, fib() {}, sum() {}};
-    const altDummyImpls = {Div() {}, DivMany() {}, Fib() {}, Sum() {}};
+    const dummyImpls = { div() {}, divMany() {}, fib() {}, sum() {} };
+    const altDummyImpls = { Div() {}, DivMany() {}, Fib() {}, Sum() {} };
 
     it('succeeds with a single service', () => {
       const server = new Server();
@@ -198,18 +212,21 @@ describe('Server', () => {
       });
     });
 
-    it('fails if the server has been started', (done) => {
+    it('fails if the server has been started', done => {
       const server = new Server();
 
       server.bindAsync(
-          'localhost:0', ServerCredentials.createInsecure(), (err, port) => {
-            assert.ifError(err);
-            server.start();
-            assert.throws(() => {
-              server.addService(mathServiceAttrs, dummyImpls);
-            }, /Can't add a service to a started server\./);
-            server.tryShutdown(done);
-          });
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert.ifError(err);
+          server.start();
+          assert.throws(() => {
+            server.addService(mathServiceAttrs, dummyImpls);
+          }, /Can't add a service to a started server\./);
+          server.tryShutdown(done);
+        }
+      );
     });
   });
 
@@ -241,29 +258,36 @@ describe('Server', () => {
     const mathClient = (loadProtoFile(mathProtoFile).math as any).Math;
     const mathServiceAttrs = mathClient.service;
 
-    beforeEach((done) => {
+    beforeEach(done => {
       server = new Server();
       server.addService(mathServiceAttrs, {});
       server.bindAsync(
-          'localhost:0', ServerCredentials.createInsecure(), (err, port) => {
-            assert.ifError(err);
-            client = new mathClient(
-                `localhost:${port}`, grpc.credentials.createInsecure());
-            server.start();
-            done();
-          });
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert.ifError(err);
+          client = new mathClient(
+            `localhost:${port}`,
+            grpc.credentials.createInsecure()
+          );
+          server.start();
+          done();
+        }
+      );
     });
 
-    it('should respond to a unary call with UNIMPLEMENTED', (done) => {
+    it('should respond to a unary call with UNIMPLEMENTED', done => {
       client.div(
-          {divisor: 4, dividend: 3}, (error: ServiceError, response: any) => {
-            assert(error);
-            assert.strictEqual(error.code, grpc.status.UNIMPLEMENTED);
-            done();
-          });
+        { divisor: 4, dividend: 3 },
+        (error: ServiceError, response: any) => {
+          assert(error);
+          assert.strictEqual(error.code, grpc.status.UNIMPLEMENTED);
+          done();
+        }
+      );
     });
 
-    it('should respond to a client stream with UNIMPLEMENTED', (done) => {
+    it('should respond to a client stream with UNIMPLEMENTED', done => {
       const call = client.sum((error: ServiceError, response: any) => {
         assert(error);
         assert.strictEqual(error.code, grpc.status.UNIMPLEMENTED);
@@ -273,8 +297,8 @@ describe('Server', () => {
       call.end();
     });
 
-    it('should respond to a server stream with UNIMPLEMENTED', (done) => {
-      const call = client.fib({limit: 5});
+    it('should respond to a server stream with UNIMPLEMENTED', done => {
+      const call = client.fib({ limit: 5 });
 
       call.on('data', (value: any) => {
         assert.fail('No messages expected');
@@ -287,7 +311,7 @@ describe('Server', () => {
       });
     });
 
-    it('should respond to a bidi call with UNIMPLEMENTED', (done) => {
+    it('should respond to a bidi call with UNIMPLEMENTED', done => {
       const call = client.divMany();
 
       call.on('data', (value: any) => {
@@ -309,41 +333,47 @@ describe('Echo service', () => {
   let server: Server;
   let client: ServiceClient;
 
-  before((done) => {
+  before(done => {
     const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
-    const echoService =
-        loadProtoFile(protoFile).EchoService as ServiceClientConstructor;
+    const echoService = loadProtoFile(protoFile)
+      .EchoService as ServiceClientConstructor;
 
     server = new Server();
     server.addService(echoService.service, {
       echo(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
         callback(null, call.request);
-      }
+      },
     });
 
     server.bindAsync(
-        'localhost:0', ServerCredentials.createInsecure(), (err, port) => {
-          assert.ifError(err);
-          client = new echoService(
-              `localhost:${port}`, grpc.credentials.createInsecure());
-          server.start();
-          done();
-        });
+      'localhost:0',
+      ServerCredentials.createInsecure(),
+      (err, port) => {
+        assert.ifError(err);
+        client = new echoService(
+          `localhost:${port}`,
+          grpc.credentials.createInsecure()
+        );
+        server.start();
+        done();
+      }
+    );
   });
 
-  after((done) => {
+  after(done => {
     client.close();
     server.tryShutdown(done);
   });
 
-  it('should echo the recieved message directly', (done) => {
+  it('should echo the recieved message directly', done => {
     client.echo(
-        {value: 'test value', value2: 3},
-        (error: ServiceError, response: any) => {
-          assert.ifError(error);
-          assert.deepStrictEqual(response, {value: 'test value', value2: 3});
-          done();
-        });
+      { value: 'test value', value2: 3 },
+      (error: ServiceError, response: any) => {
+        assert.ifError(error);
+        assert.deepStrictEqual(response, { value: 'test value', value2: 3 });
+        done();
+      }
+    );
   });
 });
 
@@ -368,43 +398,51 @@ describe('Generic client and server', () => {
       requestSerialize: toBuffer,
       requestDeserialize: toString,
       responseSerialize: toBuffer,
-      responseDeserialize: toString
-    }
+      responseDeserialize: toString,
+    },
   };
 
   describe('String client and server', () => {
     let client: ServiceClient;
     let server: Server;
 
-    before((done) => {
+    before(done => {
       server = new Server();
 
       server.addService(stringServiceAttrs as any, {
         capitalize(
-            call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
+          call: ServerUnaryCall<any, any>,
+          callback: sendUnaryData<any>
+        ) {
           callback(null, capitalize(call.request));
-        }
+        },
       });
 
       server.bindAsync(
-          'localhost:0', ServerCredentials.createInsecure(), (err, port) => {
-            assert.ifError(err);
-            server.start();
-            const clientConstr = grpc.makeGenericClientConstructor(
-                stringServiceAttrs as any,
-                'unused_but_lets_appease_typescript_anyway');
-            client = new clientConstr(
-                `localhost:${port}`, grpc.credentials.createInsecure());
-            done();
-          });
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert.ifError(err);
+          server.start();
+          const clientConstr = grpc.makeGenericClientConstructor(
+            stringServiceAttrs as any,
+            'unused_but_lets_appease_typescript_anyway'
+          );
+          client = new clientConstr(
+            `localhost:${port}`,
+            grpc.credentials.createInsecure()
+          );
+          done();
+        }
+      );
     });
 
-    after((done) => {
+    after(done => {
       client.close();
       server.tryShutdown(done);
     });
 
-    it('Should respond with a capitalized string', (done) => {
+    it('Should respond with a capitalized string', done => {
       client.capitalize('abc', (err: ServiceError, response: string) => {
         assert.ifError(err);
         assert.strictEqual(response, 'Abc');

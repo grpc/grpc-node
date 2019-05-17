@@ -15,16 +15,18 @@
  *
  */
 
-import {CallCredentials} from './call-credentials';
-import {Call} from './call-stream';
-import {Http2Channel} from './channel';
-import {BaseFilter, Filter, FilterFactory} from './filter';
-import {Metadata} from './metadata';
+import { CallCredentials } from './call-credentials';
+import { Call } from './call-stream';
+import { Http2Channel } from './channel';
+import { BaseFilter, Filter, FilterFactory } from './filter';
+import { Metadata } from './metadata';
 
 export class CallCredentialsFilter extends BaseFilter implements Filter {
   private serviceUrl: string;
   constructor(
-      private readonly channel: Http2Channel, private readonly stream: Call) {
+    private readonly channel: Http2Channel,
+    private readonly stream: Call
+  ) {
     super();
     this.channel = channel;
     this.stream = stream;
@@ -45,16 +47,17 @@ export class CallCredentialsFilter extends BaseFilter implements Filter {
     const channelCredentials = this.channel.credentials._getCallCredentials();
     const streamCredentials = this.stream.getCredentials();
     const credentials = channelCredentials.compose(streamCredentials);
-    const credsMetadata =
-        credentials.generateMetadata({service_url: this.serviceUrl});
+    const credsMetadata = credentials.generateMetadata({
+      service_url: this.serviceUrl,
+    });
     const resultMetadata = await metadata;
     resultMetadata.merge(await credsMetadata);
     return resultMetadata;
   }
 }
 
-export class CallCredentialsFilterFactory implements
-    FilterFactory<CallCredentialsFilter> {
+export class CallCredentialsFilterFactory
+  implements FilterFactory<CallCredentialsFilter> {
   private readonly channel: Http2Channel;
   constructor(channel: Http2Channel) {
     this.channel = channel;

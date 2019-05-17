@@ -15,20 +15,20 @@
  *
  */
 
-import {EventEmitter} from 'events';
+import { EventEmitter } from 'events';
 import * as http2 from 'http2';
-import {Duplex, Readable, Writable} from 'stream';
+import { Duplex, Readable, Writable } from 'stream';
 
-import {ServiceError} from './call';
-import {StatusObject} from './call-stream';
-import {Status} from './constants';
-import {Deserialize, Serialize} from './make-client';
-import {Metadata} from './metadata';
-import {StreamDecoder} from './stream-decoder';
+import { ServiceError } from './call';
+import { StatusObject } from './call-stream';
+import { Status } from './constants';
+import { Deserialize, Serialize } from './make-client';
+import { Metadata } from './metadata';
+import { StreamDecoder } from './stream-decoder';
 
-type DeadlineUnitIndexSignature = {
-  [name: string]: number
-};
+interface DeadlineUnitIndexSignature {
+  [name: string]: number;
+}
 
 const GRPC_ACCEPT_ENCODING_HEADER = 'grpc-accept-encoding';
 const GRPC_ENCODING_HEADER = 'grpc-encoding';
@@ -42,7 +42,7 @@ const deadlineUnitsToMs: DeadlineUnitIndexSignature = {
   S: 1000,
   m: 1,
   u: 0.001,
-  n: 0.000001
+  n: 0.000001,
 };
 const defaultResponseHeaders = {
   // TODO(cjihrig): Remove these encoding headers from the default response
@@ -50,35 +50,41 @@ const defaultResponseHeaders = {
   [GRPC_ACCEPT_ENCODING_HEADER]: 'identity',
   [GRPC_ENCODING_HEADER]: 'identity',
   [http2.constants.HTTP2_HEADER_STATUS]: http2.constants.HTTP_STATUS_OK,
-  [http2.constants.HTTP2_HEADER_CONTENT_TYPE]: 'application/grpc+proto'
+  [http2.constants.HTTP2_HEADER_CONTENT_TYPE]: 'application/grpc+proto',
 };
 const defaultResponseOptions = {
-  waitForTrailers: true
+  waitForTrailers: true,
 } as http2.ServerStreamResponseOptions;
 
+export interface ServerSurfaceCall {
+  cancelled: boolean;
+  getPeer(): string;
+  sendMetadata(responseMetadata: Metadata): void;
+}
 
-export type ServerSurfaceCall = {
-  cancelled: boolean; getPeer(): string;
-  sendMetadata(responseMetadata: Metadata): void
+export type ServerUnaryCall<RequestType, ResponseType> = ServerSurfaceCall & {
+  request: RequestType | null;
 };
-
-export type ServerUnaryCall<RequestType, ResponseType> =
-    ServerSurfaceCall&{request: RequestType | null};
-export type ServerReadableStream<RequestType, ResponseType> =
-    ServerSurfaceCall&Readable;
-export type ServerWritableStream<RequestType, ResponseType> =
-    ServerSurfaceCall&Writable&{request: RequestType | null};
-export type ServerDuplexStream<RequestType, ResponseType> =
-    ServerSurfaceCall&Duplex;
+export type ServerReadableStream<
+  RequestType,
+  ResponseType
+> = ServerSurfaceCall & Readable;
+export type ServerWritableStream<
+  RequestType,
+  ResponseType
+> = ServerSurfaceCall & Writable & { request: RequestType | null };
+export type ServerDuplexStream<RequestType, ResponseType> = ServerSurfaceCall &
+  Duplex;
 
 export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
-    implements ServerUnaryCall<RequestType, ResponseType> {
+  implements ServerUnaryCall<RequestType, ResponseType> {
   cancelled: boolean;
-  request: RequestType|null;
+  request: RequestType | null;
 
   constructor(
-      private call: Http2ServerCallStream<RequestType, ResponseType>,
-      public metadata: Metadata) {
+    private call: Http2ServerCallStream<RequestType, ResponseType>,
+    public metadata: Metadata
+  ) {
     super();
     this.cancelled = false;
     this.request = null;
@@ -93,15 +99,17 @@ export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
   }
 }
 
-
-export class ServerReadableStreamImpl<RequestType, ResponseType> extends
-    Readable implements ServerReadableStream<RequestType, ResponseType> {
+export class ServerReadableStreamImpl<RequestType, ResponseType>
+  extends Readable
+  implements ServerReadableStream<RequestType, ResponseType> {
   cancelled: boolean;
 
   constructor(
-      private call: Http2ServerCallStream<RequestType, ResponseType>,
-      public metadata: Metadata, public deserialize: Deserialize<RequestType>) {
-    super({objectMode: true});
+    private call: Http2ServerCallStream<RequestType, ResponseType>,
+    public metadata: Metadata,
+    public deserialize: Deserialize<RequestType>
+  ) {
+    super({ objectMode: true });
     this.cancelled = false;
     this.call.setupReadable(this);
   }
@@ -119,22 +127,24 @@ export class ServerReadableStreamImpl<RequestType, ResponseType> extends
   }
 }
 
-
-export class ServerWritableStreamImpl<RequestType, ResponseType> extends
-    Writable implements ServerWritableStream<RequestType, ResponseType> {
+export class ServerWritableStreamImpl<RequestType, ResponseType>
+  extends Writable
+  implements ServerWritableStream<RequestType, ResponseType> {
   cancelled: boolean;
-  request: RequestType|null;
+  request: RequestType | null;
   private trailingMetadata: Metadata;
 
   constructor(
-      private call: Http2ServerCallStream<RequestType, ResponseType>,
-      public metadata: Metadata, public serialize: Serialize<ResponseType>) {
-    super({objectMode: true});
+    private call: Http2ServerCallStream<RequestType, ResponseType>,
+    public metadata: Metadata,
+    public serialize: Serialize<ResponseType>
+  ) {
+    super({ objectMode: true });
     this.cancelled = false;
     this.request = null;
     this.trailingMetadata = new Metadata();
 
-    this.on('error', (err) => {
+    this.on('error', err => {
       this.call.sendError(err as ServiceError);
       this.end();
     });
@@ -149,9 +159,11 @@ export class ServerWritableStreamImpl<RequestType, ResponseType> extends
   }
 
   async _write(
-      chunk: ResponseType, encoding: string,
-      // tslint:disable-next-line:no-any
-      callback: (...args: any[]) => void) {
+    chunk: ResponseType,
+    encoding: string,
+    // tslint:disable-next-line:no-any
+    callback: (...args: any[]) => void
+  ) {
     try {
       const response = await this.call.serializeMessage(chunk);
 
@@ -168,8 +180,11 @@ export class ServerWritableStreamImpl<RequestType, ResponseType> extends
   }
 
   _final(callback: Function): void {
-    this.call.sendStatus(
-        {code: Status.OK, details: 'OK', metadata: this.trailingMetadata});
+    this.call.sendStatus({
+      code: Status.OK,
+      details: 'OK',
+      metadata: this.trailingMetadata,
+    });
     callback(null);
   }
 
@@ -183,22 +198,23 @@ export class ServerWritableStreamImpl<RequestType, ResponseType> extends
   }
 }
 
-
 export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
-    implements ServerDuplexStream<RequestType, ResponseType> {
+  implements ServerDuplexStream<RequestType, ResponseType> {
   cancelled: boolean;
   private trailingMetadata: Metadata;
 
   constructor(
-      private call: Http2ServerCallStream<RequestType, ResponseType>,
-      public metadata: Metadata, public serialize: Serialize<ResponseType>,
-      public deserialize: Deserialize<RequestType>) {
-    super({objectMode: true});
+    private call: Http2ServerCallStream<RequestType, ResponseType>,
+    public metadata: Metadata,
+    public serialize: Serialize<ResponseType>,
+    public deserialize: Deserialize<RequestType>
+  ) {
+    super({ objectMode: true });
     this.cancelled = false;
     this.trailingMetadata = new Metadata();
     this.call.setupReadable(this);
 
-    this.on('error', (err) => {
+    this.on('error', err => {
       this.call.sendError(err as ServiceError);
       this.end();
     });
@@ -214,92 +230,101 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
 }
 
 ServerDuplexStreamImpl.prototype._read =
-    ServerReadableStreamImpl.prototype._read;
+  ServerReadableStreamImpl.prototype._read;
 ServerDuplexStreamImpl.prototype._write =
-    ServerWritableStreamImpl.prototype._write;
+  ServerWritableStreamImpl.prototype._write;
 ServerDuplexStreamImpl.prototype._final =
-    ServerWritableStreamImpl.prototype._final;
+  ServerWritableStreamImpl.prototype._final;
 ServerDuplexStreamImpl.prototype.end = ServerWritableStreamImpl.prototype.end;
 
-
 // Unary response callback signature.
-export type sendUnaryData<ResponseType> =
-    (error: ServiceError|null, value: ResponseType|null, trailer?: Metadata,
-     flags?: number) => void;
+export type sendUnaryData<ResponseType> = (
+  error: ServiceError | null,
+  value: ResponseType | null,
+  trailer?: Metadata,
+  flags?: number
+) => void;
 
 // User provided handler for unary calls.
-export type handleUnaryCall<RequestType, ResponseType> =
-    (call: ServerUnaryCall<RequestType, ResponseType>,
-     callback: sendUnaryData<ResponseType>) => void;
+export type handleUnaryCall<RequestType, ResponseType> = (
+  call: ServerUnaryCall<RequestType, ResponseType>,
+  callback: sendUnaryData<ResponseType>
+) => void;
 
 // User provided handler for client streaming calls.
-export type handleClientStreamingCall<RequestType, ResponseType> =
-    (call: ServerReadableStream<RequestType, ResponseType>,
-     callback: sendUnaryData<ResponseType>) => void;
+export type handleClientStreamingCall<RequestType, ResponseType> = (
+  call: ServerReadableStream<RequestType, ResponseType>,
+  callback: sendUnaryData<ResponseType>
+) => void;
 
 // User provided handler for server streaming calls.
-export type handleServerStreamingCall<RequestType, ResponseType> =
-    (call: ServerWritableStream<RequestType, ResponseType>) => void;
+export type handleServerStreamingCall<RequestType, ResponseType> = (
+  call: ServerWritableStream<RequestType, ResponseType>
+) => void;
 
 // User provided handler for bidirectional streaming calls.
-export type handleBidiStreamingCall<RequestType, ResponseType> =
-    (call: ServerDuplexStream<RequestType, ResponseType>) => void;
+export type handleBidiStreamingCall<RequestType, ResponseType> = (
+  call: ServerDuplexStream<RequestType, ResponseType>
+) => void;
 
 export type HandleCall<RequestType, ResponseType> =
-    handleUnaryCall<RequestType, ResponseType>|
-    handleClientStreamingCall<RequestType, ResponseType>|
-    handleServerStreamingCall<RequestType, ResponseType>|
-    handleBidiStreamingCall<RequestType, ResponseType>;
+  | handleUnaryCall<RequestType, ResponseType>
+  | handleClientStreamingCall<RequestType, ResponseType>
+  | handleServerStreamingCall<RequestType, ResponseType>
+  | handleBidiStreamingCall<RequestType, ResponseType>;
 
-export type UnaryHandler<RequestType, ResponseType> = {
+export interface UnaryHandler<RequestType, ResponseType> {
   func: handleUnaryCall<RequestType, ResponseType>;
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
   type: HandlerType;
-};
+}
 
-export type ClientStreamingHandler<RequestType, ResponseType> = {
+export interface ClientStreamingHandler<RequestType, ResponseType> {
   func: handleClientStreamingCall<RequestType, ResponseType>;
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
   type: HandlerType;
-};
+}
 
-export type ServerStreamingHandler<RequestType, ResponseType> = {
+export interface ServerStreamingHandler<RequestType, ResponseType> {
   func: handleServerStreamingCall<RequestType, ResponseType>;
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
   type: HandlerType;
-};
+}
 
-export type BidiStreamingHandler<RequestType, ResponseType> = {
+export interface BidiStreamingHandler<RequestType, ResponseType> {
   func: handleBidiStreamingCall<RequestType, ResponseType>;
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
   type: HandlerType;
-};
+}
 
 export type Handler<RequestType, ResponseType> =
-    UnaryHandler<RequestType, ResponseType>|
-    ClientStreamingHandler<RequestType, ResponseType>|
-    ServerStreamingHandler<RequestType, ResponseType>|
-    BidiStreamingHandler<RequestType, ResponseType>;
+  | UnaryHandler<RequestType, ResponseType>
+  | ClientStreamingHandler<RequestType, ResponseType>
+  | ServerStreamingHandler<RequestType, ResponseType>
+  | BidiStreamingHandler<RequestType, ResponseType>;
 
-export type HandlerType = 'bidi'|'clientStream'|'serverStream'|'unary';
+export type HandlerType = 'bidi' | 'clientStream' | 'serverStream' | 'unary';
 
 const noopTimer: NodeJS.Timer = setTimeout(() => {}, 0);
 
 // Internal class that wraps the HTTP2 request.
-export class Http2ServerCallStream<RequestType, ResponseType> extends
-    EventEmitter {
+export class Http2ServerCallStream<
+  RequestType,
+  ResponseType
+> extends EventEmitter {
   cancelled = false;
   deadline: NodeJS.Timer = noopTimer;
   private wantTrailers = false;
   private metadataSent = false;
 
   constructor(
-      private stream: http2.ServerHttp2Stream,
-      private handler: Handler<RequestType, ResponseType>) {
+    private stream: http2.ServerHttp2Stream,
+    private handler: Handler<RequestType, ResponseType>
+  ) {
     super();
 
     this.stream.once('error', (err: ServiceError) => {
@@ -402,8 +427,11 @@ export class Http2ServerCallStream<RequestType, ResponseType> extends
   }
 
   async sendUnaryMessage(
-      err: ServiceError|null, value: ResponseType|null, metadata?: Metadata,
-      flags?: number) {
+    err: ServiceError | null,
+    value: ResponseType | null,
+    metadata?: Metadata,
+    flags?: number
+  ) {
     if (!metadata) {
       metadata = new Metadata();
     }
@@ -418,7 +446,7 @@ export class Http2ServerCallStream<RequestType, ResponseType> extends
       const response = await this.serializeMessage(value!);
 
       this.write(response);
-      this.sendStatus({code: Status.OK, details: 'OK', metadata});
+      this.sendStatus({ code: Status.OK, details: 'OK', metadata });
     } catch (err) {
       err.code = Status.INTERNAL;
       this.sendError(err);
@@ -436,11 +464,12 @@ export class Http2ServerCallStream<RequestType, ResponseType> extends
       this.wantTrailers = true;
       this.stream.once('wantTrailers', () => {
         const trailersToSend = Object.assign(
-            {
-              [GRPC_STATUS_HEADER]: statusObj.code,
-              [GRPC_MESSAGE_HEADER]: encodeURI(statusObj.details as string)
-            },
-            statusObj.metadata.toHttp2Headers());
+          {
+            [GRPC_STATUS_HEADER]: statusObj.code,
+            [GRPC_MESSAGE_HEADER]: encodeURI(statusObj.details as string),
+          },
+          statusObj.metadata.toHttp2Headers()
+        );
 
         this.stream.sendTrailers(trailersToSend);
       });
@@ -452,10 +481,12 @@ export class Http2ServerCallStream<RequestType, ResponseType> extends
   sendError(error: ServiceError) {
     const status: StatusObject = {
       code: Status.UNKNOWN,
-      details: error.hasOwnProperty('message') ? error.message :
-                                                 'Unknown Error',
-      metadata: error.hasOwnProperty('metadata') ? error.metadata :
-                                                   new Metadata()
+      details: error.hasOwnProperty('message')
+        ? error.message
+        : 'Unknown Error',
+      metadata: error.hasOwnProperty('metadata')
+        ? error.metadata
+        : new Metadata(),
     };
 
     if (error.hasOwnProperty('code') && Number.isInteger(error.code)) {
@@ -482,8 +513,11 @@ export class Http2ServerCallStream<RequestType, ResponseType> extends
     this.stream.resume();
   }
 
-  setupReadable(readable: ServerReadableStream<RequestType, ResponseType>|
-                ServerDuplexStream<RequestType, ResponseType>) {
+  setupReadable(
+    readable:
+      | ServerReadableStream<RequestType, ResponseType>
+      | ServerDuplexStream<RequestType, ResponseType>
+  ) {
     const decoder = new StreamDecoder();
 
     this.stream.on('data', async (data: Buffer) => {

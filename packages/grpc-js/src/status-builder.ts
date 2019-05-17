@@ -15,17 +15,17 @@
  *
  */
 
-import {StatusObject} from './call-stream';
-import {Status} from './constants';
-import {Metadata} from './metadata';
+import { StatusObject } from './call-stream';
+import { Status } from './constants';
+import { Metadata } from './metadata';
 
 /**
  * A builder for gRPC status objects.
  */
 export class StatusBuilder {
-  private code: Status|null;
-  private details: string|null;
-  private metadata: Metadata|null;
+  private code: Status | null;
+  private details: string | null;
+  private metadata: Metadata | null;
 
   constructor() {
     this.code = null;

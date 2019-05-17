@@ -15,8 +15,8 @@
  *
  */
 
-import {Call, StatusObject, WriteObject} from './call-stream';
-import {Metadata} from './metadata';
+import { Call, StatusObject, WriteObject } from './call-stream';
+import { Metadata } from './metadata';
 
 /**
  * Filter classes represent related per-call logic and state that is primarily

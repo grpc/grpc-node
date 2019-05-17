@@ -15,26 +15,26 @@
  *
  */
 
-import {SecureServerOptions} from 'http2';
+import { SecureServerOptions } from 'http2';
 
-
-export type KeyCertPair = {
-  private_key: Buffer,
-  cert_chain: Buffer
-};
-
+export interface KeyCertPair {
+  private_key: Buffer;
+  cert_chain: Buffer;
+}
 
 export abstract class ServerCredentials {
   abstract _isSecure(): boolean;
-  abstract _getSettings(): SecureServerOptions|null;
+  abstract _getSettings(): SecureServerOptions | null;
 
   static createInsecure(): ServerCredentials {
     return new InsecureServerCredentials();
   }
 
   static createSsl(
-      rootCerts: Buffer|null, keyCertPairs: KeyCertPair[],
-      checkClientCertificate = false): ServerCredentials {
+    rootCerts: Buffer | null,
+    keyCertPairs: KeyCertPair[],
+    checkClientCertificate = false
+  ): ServerCredentials {
     if (rootCerts !== null && !Buffer.isBuffer(rootCerts)) {
       throw new TypeError('rootCerts must be null or a Buffer');
     }
@@ -73,11 +73,10 @@ export abstract class ServerCredentials {
       ca: rootCerts || undefined,
       cert,
       key,
-      requestCert: checkClientCertificate
+      requestCert: checkClientCertificate,
     });
   }
 }
-
 
 class InsecureServerCredentials extends ServerCredentials {
   _isSecure(): boolean {
@@ -88,7 +87,6 @@ class InsecureServerCredentials extends ServerCredentials {
     return null;
   }
 }
-
 
 class SecureServerCredentials extends ServerCredentials {
   private options: SecureServerOptions;

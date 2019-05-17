@@ -32,11 +32,11 @@ export enum Status {
   INTERNAL,
   UNAVAILABLE,
   DATA_LOSS,
-  UNAUTHENTICATED
+  UNAUTHENTICATED,
 }
 
 export enum LogVerbosity {
   DEBUG = 0,
   INFO,
-  ERROR
+  ERROR,
 }

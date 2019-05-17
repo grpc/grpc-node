@@ -15,9 +15,9 @@
  *
  */
 
-import {Call, StatusObject, WriteObject} from './call-stream';
-import {Filter, FilterFactory} from './filter';
-import {Metadata} from './metadata';
+import { Call, StatusObject, WriteObject } from './call-stream';
+import { Filter, FilterFactory } from './filter';
+import { Metadata } from './metadata';
 
 export class FilterStack implements Filter {
   constructor(private readonly filters: Filter[]) {}
@@ -78,6 +78,7 @@ export class FilterStackFactory implements FilterFactory<FilterStack> {
 
   createFilter(callStream: Call): FilterStack {
     return new FilterStack(
-        this.factories.map((factory) => factory.createFilter(callStream)));
+      this.factories.map(factory => factory.createFilter(callStream))
+    );
   }
 }
