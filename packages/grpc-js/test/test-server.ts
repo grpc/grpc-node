@@ -286,6 +286,22 @@ describe('Server', () => {
         done();
       });
     });
+
+    it('should respond to a bidi call with UNIMPLEMENTED', (done) => {
+      const call = client.divMany();
+
+      call.on('data', (value: any) => {
+        assert.fail('No messages expected');
+      });
+
+      call.on('error', (err: ServiceError) => {
+        assert(err);
+        assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
+        done();
+      });
+
+      call.end();
+    });
   });
 });
 

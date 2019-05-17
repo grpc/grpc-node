@@ -147,6 +147,20 @@ describe('Client malformed response handling', () => {
       done();
     });
   });
+
+  it('should get an INTERNAL status with a bidi stream call', (done) => {
+    const call = client.bidiStream();
+
+    call.on('data', noop);
+    call.on('error', (err: ServiceError) => {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.INTERNAL);
+      done();
+    });
+
+    call.write({});
+    call.end();
+  });
 });
 
 describe('Server serialization failure handling', () => {
@@ -444,6 +458,23 @@ describe('Other conditions', () => {
         done();
       });
     });
+
+    it('should respond correctly to a bidi stream', (done) => {
+      const call = misbehavingClient.bidiStream();
+
+      call.on('data', (data: any) => {
+        assert.fail(data);
+      });
+
+      call.on('error', (err: ServiceError) => {
+        assert(err);
+        assert.strictEqual(err.code, grpc.status.INTERNAL);
+        done();
+      });
+
+      call.write(badArg);
+      call.end();
+    });
   });
 
   describe('Trailing metadata', () => {
@@ -561,6 +592,33 @@ describe('Other conditions', () => {
         done();
       });
     });
+
+    it('should be present when a bidi stream succeeds', (done) => {
+      const call = client.bidiStream();
+
+      call.write({error: false});
+      call.write({error: false});
+      call.end();
+      call.on('data', noop);
+      call.on('status', (status: grpc.StatusObject) => {
+        assert.strictEqual(status.code, grpc.status.OK);
+        assert.deepStrictEqual(status.metadata.get('trailer-present'), ['yes']);
+        done();
+      });
+    });
+
+    it('should be present when a bidi stream fails', (done) => {
+      const call = client.bidiStream();
+
+      call.write({error: false});
+      call.write({error: true});
+      call.end();
+      call.on('data', noop);
+      call.on('error', (error: ServiceError) => {
+        assert.deepStrictEqual(error.metadata.get('trailer-present'), ['yes']);
+        done();
+      });
+    });
   });
 
   describe('Error object should contain the status', () => {
@@ -589,6 +647,20 @@ describe('Other conditions', () => {
     it('for a server stream call', (done) => {
       const call = client.serverStream({error: true});
 
+      call.on('data', noop);
+      call.on('error', (error: ServiceError) => {
+        assert.strictEqual(error.code, grpc.status.UNKNOWN);
+        assert.strictEqual(error.details, 'Requested error');
+        done();
+      });
+    });
+
+    it('for a bidi stream call', (done) => {
+      const call = client.bidiStream();
+
+      call.write({error: false});
+      call.write({error: true});
+      call.end();
       call.on('data', noop);
       call.on('error', (error: ServiceError) => {
         assert.strictEqual(error.code, grpc.status.UNKNOWN);

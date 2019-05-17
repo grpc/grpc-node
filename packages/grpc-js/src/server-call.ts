@@ -204,13 +204,21 @@ export class ServerWritableStreamImpl<RequestType, ResponseType> extends
 export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
     implements ServerDuplexStream<RequestType, ResponseType> {
   cancelled: boolean;
+  private trailingMetadata: Metadata;
 
   constructor(
       private call: Http2ServerCallStream<RequestType, ResponseType>,
-      public metadata: Metadata, private _serialize: Serialize<ResponseType>,
-      private _deserialize: Deserialize<RequestType>) {
+      public metadata: Metadata, public serialize: Serialize<ResponseType>,
+      public deserialize: Deserialize<RequestType>) {
     super({objectMode: true});
     this.cancelled = false;
+    this.trailingMetadata = new Metadata();
+    this.call.setupReadable(this);
+
+    this.on('error', (err) => {
+      this.call.sendError(err as ServiceError);
+      this.end();
+    });
   }
 
   getPeer(): string {
@@ -221,6 +229,14 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
     this.call.sendMetadata(responseMetadata);
   }
 }
+
+ServerDuplexStreamImpl.prototype._read =
+    ServerReadableStreamImpl.prototype._read;
+ServerDuplexStreamImpl.prototype._write =
+    ServerWritableStreamImpl.prototype._write;
+ServerDuplexStreamImpl.prototype._final =
+    ServerWritableStreamImpl.prototype._final;
+ServerDuplexStreamImpl.prototype.end = ServerWritableStreamImpl.prototype.end;
 
 
 // Unary response callback signature.
