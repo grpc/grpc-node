@@ -17,7 +17,6 @@
 
 import * as gulp from 'gulp';
 
-import * as fs from 'fs';
 import * as mocha from 'gulp-mocha';
 import * as path from 'path';
 import * as execa from 'execa';
@@ -30,24 +29,30 @@ const ncpP = pify(ncp);
 Error.stackTraceLimit = Infinity;
 
 const jsCoreDir = __dirname;
-const tslintPath = path.resolve(jsCoreDir, 'node_modules/google-ts-style/tslint.json');
-const tsconfigPath = path.resolve(jsCoreDir, 'tsconfig.json');
 const outDir = path.resolve(jsCoreDir, 'build');
-const srcDir = path.resolve(jsCoreDir, 'src');
-const testDir = path.resolve(jsCoreDir, 'test');
+
+const pkgPath = path.resolve(jsCoreDir, 'package.json');
+const supportedVersionRange = require(pkgPath).engines.node;
+const versionNotSupported = () => {
+  console.log(`Skipping grpc-js task for Node ${process.version}`);
+  return () => { return Promise.resolve(); };
+};
+const identity = (value: any): any => value;
+const checkTask = semver.satisfies(process.version, supportedVersionRange) ?
+    identity : versionNotSupported;
 
 const execNpmVerb = (verb: string, ...args: string[]) =>
   execa('npm', [verb, ...args], {cwd: jsCoreDir, stdio: 'inherit'});
 const execNpmCommand = execNpmVerb.bind(null, 'run');
 
-const install = () => execNpmVerb('install', '--unsafe-perm');
+const install = checkTask(() => execNpmVerb('install', '--unsafe-perm'));
 
 /**
  * Runs tslint on files in src/, with linting rules defined in tslint.json.
  */
-const lint = () => execNpmCommand('check');
+const lint = checkTask(() => execNpmCommand('check'));
 
-const cleanFiles = () => execNpmCommand('clean');
+const cleanFiles = checkTask(() => execNpmCommand('clean'));
 
 const clean = gulp.series(install, cleanFiles);
 
@@ -57,20 +62,15 @@ const cleanAll = gulp.parallel(clean);
  * Transpiles TypeScript files in src/ to JavaScript according to the settings
  * found in tsconfig.json.
  */
-const compile = () => execNpmCommand('compile');
+const compile = checkTask(() => execNpmCommand('compile'));
 
-const copyTestFixtures = () => ncpP(`${jsCoreDir}/test/fixtures`, `${outDir}/test/fixtures`);
+const copyTestFixtures = checkTask(() => ncpP(`${jsCoreDir}/test/fixtures`, `${outDir}/test/fixtures`));
 
-const runTests = () => {
-  if (semver.satisfies(process.version, '^8.13.0 || >=10.10.0')) {
-    return gulp.src(`${outDir}/test/**/*.js`)
-      .pipe(mocha({reporter: 'mocha-jenkins-reporter',
-                   require: ['ts-node/register']}));
-  } else {
-    console.log(`Skipping grpc-js tests for Node ${process.version}`);
-    return Promise.resolve(null);
-  }
-};
+const runTests = checkTask(() => {
+  return gulp.src(`${outDir}/test/**/*.js`)
+    .pipe(mocha({reporter: 'mocha-jenkins-reporter',
+                 require: ['ts-node/register']}));
+});
 
 const test = gulp.series(install, copyTestFixtures, runTests);
 
