@@ -243,6 +243,10 @@ exports.connectivityState = constants.connectivityState;
 
 exports.credentials = require('./src/credentials.js');
 
+const packageJson = require('./package.json');
+exports.version =
+    `${packageJson.name.replace(/.*\//, '')}/${packageJson.version}`;
+
 /**
  * ServerCredentials factories
  * @constructor ServerCredentials
