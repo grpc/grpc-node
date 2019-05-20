@@ -18,9 +18,9 @@
 // Allow `any` data type for testing runtime type checking.
 // tslint:disable no-any
 import * as assert from 'assert';
-import {readFileSync} from 'fs';
-import {join} from 'path';
-import {ServerCredentials} from '../src';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { ServerCredentials } from '../src';
 
 const ca = readFileSync(join(__dirname, 'fixtures', 'ca.pem'));
 const key = readFileSync(join(__dirname, 'fixtures', 'server1.key'));
@@ -41,32 +41,43 @@ describe('Server Credentials', () => {
       const creds = ServerCredentials.createSsl(ca, []);
 
       assert.strictEqual(creds._isSecure(), true);
-      assert.deepStrictEqual(
-          creds._getSettings(), {ca, cert: [], key: [], requestCert: false});
+      assert.deepStrictEqual(creds._getSettings(), {
+        ca,
+        cert: [],
+        key: [],
+        requestCert: false,
+      });
     });
 
     it('accepts a boolean as the third argument', () => {
       const creds = ServerCredentials.createSsl(ca, [], true);
 
       assert.strictEqual(creds._isSecure(), true);
-      assert.deepStrictEqual(
-          creds._getSettings(), {ca, cert: [], key: [], requestCert: true});
+      assert.deepStrictEqual(creds._getSettings(), {
+        ca,
+        cert: [],
+        key: [],
+        requestCert: true,
+      });
     });
 
     it('accepts an object with two buffers in the second argument', () => {
-      const keyCertPairs = [{private_key: key, cert_chain: cert}];
+      const keyCertPairs = [{ private_key: key, cert_chain: cert }];
       const creds = ServerCredentials.createSsl(null, keyCertPairs);
 
       assert.strictEqual(creds._isSecure(), true);
-      assert.deepStrictEqual(
-          creds._getSettings(),
-          {ca: undefined, cert: [cert], key: [key], requestCert: false});
+      assert.deepStrictEqual(creds._getSettings(), {
+        ca: undefined,
+        cert: [cert],
+        key: [key],
+        requestCert: false,
+      });
     });
 
     it('accepts multiple objects in the second argument', () => {
       const keyCertPairs = [
-        {private_key: key, cert_chain: cert},
-        {private_key: key, cert_chain: cert}
+        { private_key: key, cert_chain: cert },
+        { private_key: key, cert_chain: cert },
       ];
       const creds = ServerCredentials.createSsl(null, keyCertPairs, false);
 
@@ -75,7 +86,7 @@ describe('Server Credentials', () => {
         ca: undefined,
         cert: [cert, cert],
         key: [key, key],
-        requestCert: false
+        requestCert: false,
       });
     });
 
@@ -108,7 +119,7 @@ describe('Server Credentials', () => {
     });
 
     it('fails if the object does not have a Buffer private key', () => {
-      const keyCertPairs: any = [{private_key: 'test', cert_chain: cert}];
+      const keyCertPairs: any = [{ private_key: 'test', cert_chain: cert }];
 
       assert.throws(() => {
         ServerCredentials.createSsl(null, keyCertPairs);
@@ -116,7 +127,7 @@ describe('Server Credentials', () => {
     });
 
     it('fails if the object does not have a Buffer cert chain', () => {
-      const keyCertPairs: any = [{private_key: key, cert_chain: 'test'}];
+      const keyCertPairs: any = [{ private_key: key, cert_chain: 'test' }];
 
       assert.throws(() => {
         ServerCredentials.createSsl(null, keyCertPairs);

@@ -18,9 +18,8 @@
 enum ReadState {
   NO_DATA,
   READING_SIZE,
-  READING_MESSAGE
+  READING_MESSAGE,
 }
-
 
 export class StreamDecoder {
   private readState: ReadState = ReadState.NO_DATA;
@@ -31,8 +30,7 @@ export class StreamDecoder {
   private readPartialMessage: Buffer[] = [];
   private readMessageRemaining = 0;
 
-
-  write(data: Buffer): Buffer|null {
+  write(data: Buffer): Buffer | null {
     let readHead = 0;
     let toRead: number;
 
@@ -51,8 +49,11 @@ export class StreamDecoder {
         case ReadState.READING_SIZE:
           toRead = Math.min(data.length - readHead, this.readSizeRemaining);
           data.copy(
-              this.readPartialSize, 4 - this.readSizeRemaining, readHead,
-              readHead + toRead);
+            this.readPartialSize,
+            4 - this.readSizeRemaining,
+            readHead,
+            readHead + toRead
+          );
           this.readSizeRemaining -= toRead;
           readHead += toRead;
           // readSizeRemaining >=0 here
@@ -63,7 +64,9 @@ export class StreamDecoder {
               this.readState = ReadState.READING_MESSAGE;
             } else {
               const message = Buffer.concat(
-                  [this.readCompressFlag, this.readPartialSize], 5);
+                [this.readCompressFlag, this.readPartialSize],
+                5
+              );
 
               this.readState = ReadState.NO_DATA;
               return message;
@@ -79,10 +82,13 @@ export class StreamDecoder {
           if (this.readMessageRemaining === 0) {
             // At this point, we have read a full message
             const framedMessageBuffers = [
-              this.readCompressFlag, this.readPartialSize
+              this.readCompressFlag,
+              this.readPartialSize,
             ].concat(this.readPartialMessage);
-            const framedMessage =
-                Buffer.concat(framedMessageBuffers, this.readMessageSize + 5);
+            const framedMessage = Buffer.concat(
+              framedMessageBuffers,
+              this.readMessageSize + 5
+            );
 
             this.readState = ReadState.NO_DATA;
             return framedMessage;

@@ -15,15 +15,16 @@
  *
  */
 
-import {Metadata} from './metadata';
+import { Metadata } from './metadata';
 
-export type CallMetadataOptions = {
+export interface CallMetadataOptions {
   service_url: string;
-};
+}
 
-export type CallMetadataGenerator =
-    (options: CallMetadataOptions,
-     cb: (err: Error|null, metadata?: Metadata) => void) => void;
+export type CallMetadataGenerator = (
+  options: CallMetadataOptions,
+  cb: (err: Error | null, metadata?: Metadata) => void
+) => void;
 
 /**
  * A class that represents a generic method of adding authentication-related
@@ -50,8 +51,9 @@ export abstract class CallCredentials {
    * generates a Metadata object based on these options, which is passed back
    * to the caller via a supplied (err, metadata) callback.
    */
-  static createFromMetadataGenerator(metadataGenerator: CallMetadataGenerator):
-      CallCredentials {
+  static createFromMetadataGenerator(
+    metadataGenerator: CallMetadataGenerator
+  ): CallCredentials {
     return new SingleCallCredentials(metadataGenerator);
   }
 
@@ -68,7 +70,8 @@ class ComposedCallCredentials extends CallCredentials {
   async generateMetadata(options: CallMetadataOptions): Promise<Metadata> {
     const base: Metadata = new Metadata();
     const generated: Metadata[] = await Promise.all(
-        this.creds.map((cred) => cred.generateMetadata(options)));
+      this.creds.map(cred => cred.generateMetadata(options))
+    );
     for (const gen of generated) {
       base.merge(gen);
     }
