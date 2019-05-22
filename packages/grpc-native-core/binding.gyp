@@ -91,7 +91,7 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=0',
       'GRPC_UV',
-      'GRPC_NODE_VERSION="1.21.0-pre1"'
+      'GRPC_NODE_VERSION="1.21.0"'
     ],
     'defines!': [
       'OPENSSL_THREADS'
@@ -950,7 +950,6 @@
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc',
-        'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc',
