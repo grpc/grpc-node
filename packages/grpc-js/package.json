@@ -22,7 +22,7 @@
     "clang-format": "^1.0.55",
     "gts": "^1.0.0",
     "lodash": "^4.17.4",
-    "typescript": "~3.4.5"
+    "typescript": "~3.5.1"
   },
   "contributors": [
     {
