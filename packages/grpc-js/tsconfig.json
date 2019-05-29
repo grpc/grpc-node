@@ -5,7 +5,8 @@
     "rootDir": ".",
     "outDir": "build",
     "target": "es2017",
-    "module": "commonjs"
+    "module": "commonjs",
+    "incremental": true
   },
   "include": [
     "src/*.ts",
