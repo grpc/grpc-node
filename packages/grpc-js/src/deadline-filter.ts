@@ -70,41 +70,17 @@ export class DeadlineFilter extends BaseFilter implements Filter {
     }
   }
 
-  sendMetadata(metadata: Promise<Metadata>) {
+  async sendMetadata(metadata: Promise<Metadata>) {
     if (this.deadline === Infinity) {
       return metadata;
     }
-    return new Promise<Metadata>((resolve, reject) => {
-      if (
-        this.channel.getConnectivityState(false) === ConnectivityState.READY
-      ) {
-        resolve(metadata);
-      } else {
-        const handleStateChange = (newState: ConnectivityState) => {
-          if (newState === ConnectivityState.READY) {
-            resolve(metadata);
-            this.channel.removeListener(
-              'connectivityStateChanged',
-              handleStateChange
-            );
-            this.callStream.removeListener('status', handleStatus);
-          }
-        };
-        const handleStatus = () => {
-          reject(new Error('Call ended'));
-          this.channel.removeListener(
-            'connectivityStateChanged',
-            handleStateChange
-          );
-        };
-        this.channel.on('connectivityStateChanged', handleStateChange);
-        this.callStream.once('status', handleStatus);
-      }
-    }).then((finalMetadata: Metadata) => {
-      const timeoutString = getDeadline(this.deadline);
-      finalMetadata.set('grpc-timeout', timeoutString);
-      return finalMetadata;
-    });
+    /* The input metadata promise depends on the original channel.connect()
+     * promise, so when it is complete that implies that the channel is
+     * connected */
+    const finalMetadata = await metadata;
+    const timeoutString = getDeadline(this.deadline);
+    finalMetadata.set('grpc-timeout', timeoutString);
+    return finalMetadata;
   }
 }
 
