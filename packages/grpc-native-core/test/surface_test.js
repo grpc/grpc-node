@@ -941,6 +941,18 @@ describe('Other conditions', function() {
     call.write({});
     call.end();
   });
+  it('client should not wait for ready by default', function(done) {
+    this.timeout(15000);
+    const disconnectedClient = new Client('foo.test.google.com:50051', grpc.credentials.createInsecure());
+    const metadata = new grpc.Metadata({waitForReady: false});
+    const deadline = new Date();
+    deadline.setSeconds(deadline.getSeconds() + 10);
+    disconnectedClient.unary({}, metadata, {deadline: deadline}, (error, value) =>{
+      assert(error);
+      assert.strictEqual(error.code, grpc.status.UNAVAILABLE);
+      done();
+    });
+  });
   it('client should wait for a connection with waitForReady on', function(done) {
     /* We have to wait for the client to reach the first connection timeout
      * and go to TRANSIENT_FAILURE to confirm that the waitForReady option
