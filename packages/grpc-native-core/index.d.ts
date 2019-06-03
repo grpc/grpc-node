@@ -506,10 +506,29 @@ declare module "grpc" {
   type sendUnaryData<ResponseType> =
     (error: ServiceError | null, value: ResponseType | null, trailer?: Metadata, flags?: number) => void;
 
+  interface MetadataOptions {
+    /* Signal that the request is idempotent. Defaults to false */
+    idempotentRequest?: boolean;
+    /* Signal that the call should not return UNAVAILABLE before it has
+     * started. Defaults to true. */
+    waitForReady?: boolean;
+    /* Signal that the call is cacheable. GRPC is free to use GET verb.
+     * Defaults to false */
+    cacheableRequest?: boolean;
+    /* Signal that the initial metadata should be corked. Defaults to false. */
+    corked?: boolean;
+  }
+
   /**
    * A class for storing metadata. Keys are normalized to lowercase ASCII.
    */
   export class Metadata {
+    /**
+     * @param options Boolean options for the beginning of the call.
+     *   These options only have any effect when passed at the beginning of
+     *   a client request.
+     */
+    constructor(options?: MetadataOptions);
     /**
      * Sets the given value for the given key by replacing any other values
      * associated with that key. Normalizes the key.
@@ -553,6 +572,14 @@ declare module "grpc" {
      * @return The newly cloned object.
      */
     clone(): Metadata;
+
+    /**
+     * Set options on the metadata object
+     * @param options Boolean options for the beginning of the call.
+     *   These options only have any effect when passed at the beginning of
+     *   a client request.
+     */
+    setOptions(options: MetadataOptions);
   }
 
   export type MetadataValue = string | Buffer;

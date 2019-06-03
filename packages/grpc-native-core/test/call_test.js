@@ -128,8 +128,9 @@ describe('call', function() {
       var call = channel.createCall('method', getDeadline(1));
       assert.doesNotThrow(function() {
         var batch = {};
-        batch[grpc.opType.SEND_INITIAL_METADATA] = {'key1': ['value1'],
-                                                    'key2': ['value2']};
+        batch[grpc.opType.SEND_INITIAL_METADATA] = {
+          metadata: {'key1': ['value1'], 'key2': ['value2']}
+        };
         call.startBatch(batch, function(err, resp) {
           assert.ifError(err);
           assert.deepEqual(resp, {'send_metadata': true});
@@ -142,8 +143,10 @@ describe('call', function() {
       assert.doesNotThrow(function() {
         var batch = {};
         batch[grpc.opType.SEND_INITIAL_METADATA] = {
-          'key1-bin': [Buffer.from('value1')],
-          'key2-bin': [Buffer.from('value2')]
+          metadata: {
+            'key1-bin': [Buffer.from('value1')],
+            'key2-bin': [Buffer.from('value2')]
+          }
         };
         call.startBatch(batch, function(err, resp) {
           assert.ifError(err);
@@ -172,6 +175,11 @@ describe('call', function() {
       assert.throws(function() {
         var batch = {};
         batch[grpc.opType.SEND_INITIAL_METADATA] = 5;
+        call.startBatch(batch, function(){});
+      }, TypeError);
+      assert.throws(function() {
+        var batch = {};
+        batch[grpc.opType.SEND_INITIAL_METADATA] = {};
         call.startBatch(batch, function(){});
       }, TypeError);
     });

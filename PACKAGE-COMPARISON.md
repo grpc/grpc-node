@@ -18,6 +18,7 @@ HTTP Connect Support | :heavy_check_mark: | :x:
 Retries | :heavy_check_mark: | :x:
 Stats/tracing/monitoring | :heavy_check_mark: | :x:
 Load Balancing | :heavy_check_mark: | :x:
+Initial Metadata Options | :heavy_check_mark: | :x:
 
 Other Properties | `grpc` | `@grpc/grpc-js`
 -----------------|--------|----------------
