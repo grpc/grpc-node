@@ -64,13 +64,16 @@ readDir(rootDir + '/reports')
                                                                   ))
                                         )
                                    .then((objects) => {
-                                     let merged = objects[0];
-                                     merged.testsuites.testsuite = Array.prototype.concat.apply([], objects.map((obj) => {
-                                                                                                                if (obj) {
-                                                                                                                  return obj.testsuites.testsuite;
-                                                                                                                } else {
-                                                                                                                  return parseFailureLog;
-                                                                                                                }}));
+                                     const merged = {
+                                       testsuites: {
+                                          testsuite: Array.prototype.concat.apply([], objects.map((obj) => {
+                                            if (obj) {
+                                              return obj.testsuites.testsuite;
+                                            } else {
+                                              return parseFailureLog;
+                                            }}))
+                                       }
+                                     }
                                      let builder = new xml2js.Builder();
                                      let xml = builder.buildObject(merged);
                                      let resultName = path.resolve(rootDir, 'reports', dirName, 'sponge_log.xml');
