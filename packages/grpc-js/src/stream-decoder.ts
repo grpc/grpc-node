@@ -30,9 +30,10 @@ export class StreamDecoder {
   private readPartialMessage: Buffer[] = [];
   private readMessageRemaining = 0;
 
-  write(data: Buffer): Buffer | null {
+  write(data: Buffer): Buffer[] {
     let readHead = 0;
     let toRead: number;
+    let result: Buffer[] = [];
 
     while (readHead < data.length) {
       switch (this.readState) {
@@ -69,7 +70,7 @@ export class StreamDecoder {
               );
 
               this.readState = ReadState.NO_DATA;
-              return message;
+              result.push(message);
             }
           }
           break;
@@ -91,7 +92,7 @@ export class StreamDecoder {
             );
 
             this.readState = ReadState.NO_DATA;
-            return framedMessage;
+            result.push(framedMessage);
           }
           break;
         default:
@@ -99,6 +100,6 @@ export class StreamDecoder {
       }
     }
 
-    return null;
+    return result;
   }
 }

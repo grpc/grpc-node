@@ -531,22 +531,31 @@ export class Http2ServerCallStream<
   ) {
     const decoder = new StreamDecoder();
 
+    /* This code here is wrong but getting the client working is the priority
+     * right now and I'm not going to block that on fixing what is currently
+     * unused code. If multiple messages come in with a single frame, this will
+     * keep calling readable.push after it has returned false, which should not
+     * happen. Independent of that, deserializeMessage is asynchronous, which
+     * means that incoming messages could be reordered when emitted to the
+     * application. That effect will become more pronounced when compression
+     * support is added and deserializeMessage takes longer by an amount of
+     * time dependent on the size of the message. A system like the one in
+     * call-stream.ts should be added to buffer incoming messages and
+     * preserve ordering more strongly */
+
     this.stream.on('data', async (data: Buffer) => {
-      const message = decoder.write(data);
+      const messages = decoder.write(data);
+      for (const message of messages) {
+        try {
+          const deserialized = await this.deserializeMessage(message);
 
-      if (message === null) {
-        return;
-      }
-
-      try {
-        const deserialized = await this.deserializeMessage(message);
-
-        if (!readable.push(deserialized)) {
-          this.stream.pause();
+          if (!readable.push(deserialized)) {
+            this.stream.pause();
+          }
+        } catch (err) {
+          err.code = Status.INTERNAL;
+          readable.emit('error', err);
         }
-      } catch (err) {
-        err.code = Status.INTERNAL;
-        readable.emit('error', err);
       }
     });
 
