@@ -19,6 +19,7 @@
 // tslint:disable no-any
 import * as assert from 'assert';
 import * as fs from 'fs';
+import * as http2 from 'http2';
 import * as path from 'path';
 
 import * as grpc from '../src';
@@ -448,6 +449,48 @@ describe('Generic client and server', () => {
         assert.strictEqual(response, 'Abc');
         done();
       });
+    });
+  });
+
+  it('responds with HTTP status of 415 on invalid content-type', done => {
+    const server = new Server();
+    const creds = ServerCredentials.createInsecure();
+
+    server.bindAsync('localhost:0', creds, (err, port) => {
+      assert.ifError(err);
+      const client = http2.connect(`http://localhost:${port}`);
+      let count = 0;
+
+      function makeRequest(headers: http2.IncomingHttpHeaders) {
+        const req = client.request(headers);
+        let statusCode: string;
+
+        req.on('response', headers => {
+          statusCode = headers[http2.constants.HTTP2_HEADER_STATUS] as string;
+          assert.strictEqual(
+            statusCode,
+            http2.constants.HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE
+          );
+        });
+
+        req.on('end', () => {
+          assert(statusCode);
+          count++;
+          if (count === 2) {
+            client.close();
+            server.tryShutdown(done);
+          }
+        });
+
+        req.end();
+      }
+
+      server.start();
+
+      // Missing Content-Type header.
+      makeRequest({ ':path': '/' });
+      // Invalid Content-Type header.
+      makeRequest({ ':path': '/', 'content-type': 'application/not-grpc' });
     });
   });
 });
