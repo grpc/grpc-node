@@ -78,7 +78,7 @@
     ],
     'cflags_cc': [
       '-Werror',
-      '-std=c++11'
+      '-std=c++1y'
     ],
     'include_dirs': [
       'deps/grpc',
@@ -209,7 +209,7 @@
               '-DPB_FIELD_32BIT',
               '-fvisibility=hidden',
             '-stdlib=libc++',
-            '-std=c++11',
+            '-std=c++1y',
             '-Wno-error=deprecated-declarations'
           ],
         },
