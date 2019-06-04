@@ -202,6 +202,7 @@ export class Server {
       this.http2Server = http2.createServer();
     }
 
+    this.http2Server.setTimeout(0, noop);
     this._setupHandlers();
 
     function onError(err: Error): void {
