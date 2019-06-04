@@ -288,6 +288,22 @@ export class Server {
           return;
         }
 
+        const contentType = headers[http2.constants.HTTP2_HEADER_CONTENT_TYPE];
+
+        if (
+          typeof contentType !== 'string' ||
+          !contentType.startsWith('application/grpc')
+        ) {
+          stream.respond(
+            {
+              [http2.constants.HTTP2_HEADER_STATUS]:
+                http2.constants.HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE,
+            },
+            { endStream: true }
+          );
+          return;
+        }
+
         try {
           const path = headers[http2.constants.HTTP2_HEADER_PATH] as string;
           const handler = this.handlers.get(path);
