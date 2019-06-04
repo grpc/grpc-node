@@ -289,9 +289,9 @@ export class Http2CallStream extends Duplex implements Call {
       });
       stream.on('trailers', this.handleTrailers.bind(this));
       stream.on('data', (data: Buffer) => {
-        const message = this.decoder.write(data);
+        const messages = this.decoder.write(data);
 
-        if (message !== null) {
+        for (const message of messages) {
           this.tryPush(message);
         }
       });
