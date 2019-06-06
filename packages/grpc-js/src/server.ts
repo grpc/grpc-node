@@ -284,11 +284,6 @@ export class Server {
     this.http2Server.on(
       'stream',
       (stream: http2.ServerHttp2Stream, headers: http2.IncomingHttpHeaders) => {
-        if (!this.started) {
-          stream.end();
-          return;
-        }
-
         const contentType = headers[http2.constants.HTTP2_HEADER_CONTENT_TYPE];
 
         if (
@@ -351,6 +346,13 @@ export class Server {
         }
       }
     );
+
+    this.http2Server.on('session', session => {
+      if (!this.started) {
+        session.destroy();
+        return;
+      }
+    });
   }
 }
 

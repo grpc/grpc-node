@@ -33,7 +33,7 @@ export class StreamDecoder {
   write(data: Buffer): Buffer[] {
     let readHead = 0;
     let toRead: number;
-    let result: Buffer[] = [];
+    const result: Buffer[] = [];
 
     while (readHead < data.length) {
       switch (this.readState) {
