@@ -130,7 +130,16 @@ export class Http2CallStream extends Duplex implements Call {
   private endCall(status: StatusObject): void {
     if (this.finalStatus === null) {
       this.finalStatus = status;
-      this.emit('status', status);
+      /* We do this asynchronously to ensure that no async function is in the
+       * call stack when we return control to the application. If an async
+       * function is in the call stack, any exception thrown by the application
+       * (or our tests) will bubble up and turn into promise rejection, which
+       * will result in an UnhandledPromiseRejectionWarning. Because that is
+       * a warning, the error will be effectively swallowed and execution will
+       * continue */
+      process.nextTick(() => {
+        this.emit('status', status);
+      });
     }
   }
 

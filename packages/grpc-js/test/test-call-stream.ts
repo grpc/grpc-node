@@ -196,7 +196,8 @@ describe('CallStream', () => {
               reject(e);
             }
           });
-          http2Stream.emit('close', Number(key));
+          http2Stream.rstCode = Number(key);
+          http2Stream.emit('close');
         });
       });
     });
