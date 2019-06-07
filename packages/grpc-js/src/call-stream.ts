@@ -130,7 +130,16 @@ export class Http2CallStream extends Duplex implements Call {
   private endCall(status: StatusObject): void {
     if (this.finalStatus === null) {
       this.finalStatus = status;
-      this.emit('status', status);
+      /* We do this asynchronously to ensure that no async function is in the
+       * call stack when we return control to the application. If an async
+       * function is in the call stack, any exception thrown by the application
+       * (or our tests) will bubble up and turn into promise rejection, which
+       * will result in an UnhandledPromiseRejectionWarning. Because that is
+       * a warning, the error will be effectively swallowed and execution will
+       * continue */
+      process.nextTick(() => {
+        this.emit('status', status);
+      });
     }
   }
 
@@ -298,10 +307,10 @@ export class Http2CallStream extends Duplex implements Call {
       stream.on('end', () => {
         this.tryPush(null);
       });
-      stream.on('close', async errorCode => {
+      stream.on('close', async () => {
         let code: Status;
         let details = '';
-        switch (errorCode) {
+        switch (stream.rstCode) {
           case http2.constants.NGHTTP2_REFUSED_STREAM:
             code = Status.UNAVAILABLE;
             break;
@@ -329,11 +338,9 @@ export class Http2CallStream extends Duplex implements Call {
         this.endCall({ code, details, metadata: new Metadata() });
       });
       stream.on('error', (err: Error) => {
-        this.endCall({
-          code: Status.INTERNAL,
-          details: 'Internal HTTP2 error',
-          metadata: new Metadata(),
-        });
+        /* We need an error handler here to stop "Uncaught Error" exceptions
+         * from bubbling up. However, errors here should all correspond to
+         * "close" events, where we will handle the error more granularly */
       });
       if (!this.pendingRead) {
         stream.pause();

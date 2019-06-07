@@ -78,6 +78,10 @@ export class Http2SubChannel extends EventEmitter implements SubChannel {
       this.stopKeepalivePings();
       this.emit('close');
     });
+    this.session.on('goaway', () => {
+      this.stopKeepalivePings();
+      this.emit('close');
+    });
     this.userAgent = userAgent;
 
     if (channelArgs['grpc.keepalive_time_ms']) {
