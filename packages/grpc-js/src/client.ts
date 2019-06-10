@@ -15,19 +15,29 @@
  *
  */
 
-import {ClientDuplexStream, ClientDuplexStreamImpl, ClientReadableStream, ClientReadableStreamImpl, ClientUnaryCall, ClientUnaryCallImpl, ClientWritableStream, ClientWritableStreamImpl, ServiceError} from './call';
-import {CallCredentials} from './call-credentials';
-import {Call, Deadline, StatusObject, WriteObject} from './call-stream';
-import {Channel, ConnectivityState, Http2Channel} from './channel';
-import {ChannelCredentials} from './channel-credentials';
-import {ChannelOptions} from './channel-options';
-import {Status} from './constants';
-import {Metadata} from './metadata';
+import {
+  ClientDuplexStream,
+  ClientDuplexStreamImpl,
+  ClientReadableStream,
+  ClientReadableStreamImpl,
+  ClientUnaryCall,
+  ClientUnaryCallImpl,
+  ClientWritableStream,
+  ClientWritableStreamImpl,
+  ServiceError,
+} from './call';
+import { CallCredentials } from './call-credentials';
+import { Call, Deadline, StatusObject, WriteObject } from './call-stream';
+import { Channel, ConnectivityState, Http2Channel } from './channel';
+import { ChannelCredentials } from './channel-credentials';
+import { ChannelOptions } from './channel-options';
+import { Status } from './constants';
+import { Metadata } from './metadata';
 
 const CHANNEL_SYMBOL = Symbol();
 
 export interface UnaryCallback<ResponseType> {
-  (err: ServiceError|null, value?: ResponseType): void;
+  (err: ServiceError | null, value?: ResponseType): void;
 }
 
 export interface CallOptions {
@@ -39,10 +49,13 @@ export interface CallOptions {
   credentials?: CallCredentials;
 }
 
-export type ClientOptions = Partial<ChannelOptions>&{
-  channelOverride?: Channel,
-  channelFactoryOverride?: (address: string, credentials: ChannelCredentials,
-                            options: ClientOptions) => Channel
+export type ClientOptions = Partial<ChannelOptions> & {
+  channelOverride?: Channel;
+  channelFactoryOverride?: (
+    address: string,
+    credentials: ChannelCredentials,
+    options: ClientOptions
+  ) => Channel;
 };
 
 /**
@@ -50,15 +63,20 @@ export type ClientOptions = Partial<ChannelOptions>&{
  * clients.
  */
 export class Client {
-  private readonly[CHANNEL_SYMBOL]: Channel;
+  private readonly [CHANNEL_SYMBOL]: Channel;
   constructor(
-      address: string, credentials: ChannelCredentials,
-      options: ClientOptions = {}) {
+    address: string,
+    credentials: ChannelCredentials,
+    options: ClientOptions = {}
+  ) {
     if (options.channelOverride) {
       this[CHANNEL_SYMBOL] = options.channelOverride;
     } else if (options.channelFactoryOverride) {
-      this[CHANNEL_SYMBOL] =
-          options.channelFactoryOverride(address, credentials, options);
+      this[CHANNEL_SYMBOL] = options.channelFactoryOverride(
+        address,
+        credentials,
+        options
+      );
     } else {
       this[CHANNEL_SYMBOL] = new Http2Channel(address, credentials, options);
     }
@@ -90,7 +108,10 @@ export class Client {
       } else {
         try {
           this[CHANNEL_SYMBOL].watchConnectivityState(
-              newState, deadline, checkState);
+            newState,
+            deadline,
+            checkState
+          );
         } catch (e) {
           callback(new Error('The channel has been closed'));
         }
@@ -100,9 +121,11 @@ export class Client {
   }
 
   private handleUnaryResponse<ResponseType>(
-      call: Call, deserialize: (value: Buffer) => ResponseType,
-      callback: UnaryCallback<ResponseType>): void {
-    let responseMessage: ResponseType|null = null;
+    call: Call,
+    deserialize: (value: Buffer) => ResponseType,
+    callback: UnaryCallback<ResponseType>
+  ): void {
+    let responseMessage: ResponseType | null = null;
     call.on('data', (data: Buffer) => {
       if (responseMessage != null) {
         call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
@@ -111,7 +134,9 @@ export class Client {
         responseMessage = deserialize(data);
       } catch (e) {
         call.cancelWithStatus(
-            Status.INTERNAL, 'Failed to parse server response');
+          Status.INTERNAL,
+          'Failed to parse server response'
+        );
       }
     });
     call.on('end', () => {
@@ -127,73 +152,102 @@ export class Client {
       if (status.code === Status.OK) {
         callback(null, responseMessage as ResponseType);
       } else {
-        const error: ServiceError =
-            Object.assign(new Error(status.details), status);
+        const error: ServiceError = Object.assign(
+          new Error(status.details),
+          status
+        );
         callback(error);
       }
     });
   }
 
   private checkOptionalUnaryResponseArguments<ResponseType>(
-      arg1: Metadata|CallOptions|UnaryCallback<ResponseType>,
-      arg2?: CallOptions|UnaryCallback<ResponseType>,
-      arg3?: UnaryCallback<ResponseType>): {
-    metadata: Metadata,
-    options: CallOptions,
-    callback: UnaryCallback<ResponseType>
+    arg1: Metadata | CallOptions | UnaryCallback<ResponseType>,
+    arg2?: CallOptions | UnaryCallback<ResponseType>,
+    arg3?: UnaryCallback<ResponseType>
+  ): {
+    metadata: Metadata;
+    options: CallOptions;
+    callback: UnaryCallback<ResponseType>;
   } {
     if (arg1 instanceof Function) {
-      return {metadata: new Metadata(), options: {}, callback: arg1};
+      return { metadata: new Metadata(), options: {}, callback: arg1 };
     } else if (arg2 instanceof Function) {
       if (arg1 instanceof Metadata) {
-        return {metadata: arg1, options: {}, callback: arg2};
+        return { metadata: arg1, options: {}, callback: arg2 };
       } else {
-        return {metadata: new Metadata(), options: arg1, callback: arg2};
+        return { metadata: new Metadata(), options: arg1, callback: arg2 };
       }
     } else {
-      if (!((arg1 instanceof Metadata) && (arg2 instanceof Object) &&
-            (arg3 instanceof Function))) {
+      if (
+        !(
+          arg1 instanceof Metadata &&
+          arg2 instanceof Object &&
+          arg3 instanceof Function
+        )
+      ) {
         throw new Error('Incorrect arguments passed');
       }
-      return {metadata: arg1, options: arg2, callback: arg3};
+      return { metadata: arg1, options: arg2, callback: arg3 };
     }
   }
 
   makeUnaryRequest<RequestType, ResponseType>(
-      method: string, serialize: (value: RequestType) => Buffer,
-      deserialize: (value: Buffer) => ResponseType, argument: RequestType,
-      metadata: Metadata, options: CallOptions,
-      callback: UnaryCallback<ResponseType>): ClientUnaryCall;
+    method: string,
+    serialize: (value: RequestType) => Buffer,
+    deserialize: (value: Buffer) => ResponseType,
+    argument: RequestType,
+    metadata: Metadata,
+    options: CallOptions,
+    callback: UnaryCallback<ResponseType>
+  ): ClientUnaryCall;
   makeUnaryRequest<RequestType, ResponseType>(
-      method: string, serialize: (value: RequestType) => Buffer,
-      deserialize: (value: Buffer) => ResponseType, argument: RequestType,
-      metadata: Metadata,
-      callback: UnaryCallback<ResponseType>): ClientUnaryCall;
+    method: string,
+    serialize: (value: RequestType) => Buffer,
+    deserialize: (value: Buffer) => ResponseType,
+    argument: RequestType,
+    metadata: Metadata,
+    callback: UnaryCallback<ResponseType>
+  ): ClientUnaryCall;
   makeUnaryRequest<RequestType, ResponseType>(
-      method: string, serialize: (value: RequestType) => Buffer,
-      deserialize: (value: Buffer) => ResponseType, argument: RequestType,
-      options: CallOptions,
-      callback: UnaryCallback<ResponseType>): ClientUnaryCall;
+    method: string,
+    serialize: (value: RequestType) => Buffer,
+    deserialize: (value: Buffer) => ResponseType,
+    argument: RequestType,
+    options: CallOptions,
+    callback: UnaryCallback<ResponseType>
+  ): ClientUnaryCall;
   makeUnaryRequest<RequestType, ResponseType>(
-      method: string, serialize: (value: RequestType) => Buffer,
-      deserialize: (value: Buffer) => ResponseType, argument: RequestType,
-      callback: UnaryCallback<ResponseType>): ClientUnaryCall;
+    method: string,
+    serialize: (value: RequestType) => Buffer,
+    deserialize: (value: Buffer) => ResponseType,
+    argument: RequestType,
+    callback: UnaryCallback<ResponseType>
+  ): ClientUnaryCall;
   makeUnaryRequest<RequestType, ResponseType>(
-      method: string, serialize: (value: RequestType) => Buffer,
-      deserialize: (value: Buffer) => ResponseType, argument: RequestType,
-      metadata: Metadata|CallOptions|UnaryCallback<ResponseType>,
-      options?: CallOptions|UnaryCallback<ResponseType>,
-      callback?: UnaryCallback<ResponseType>): ClientUnaryCall {
-    ({metadata, options, callback} =
-         this.checkOptionalUnaryResponseArguments<ResponseType>(
-             metadata, options, callback));
+    method: string,
+    serialize: (value: RequestType) => Buffer,
+    deserialize: (value: Buffer) => ResponseType,
+    argument: RequestType,
+    metadata: Metadata | CallOptions | UnaryCallback<ResponseType>,
+    options?: CallOptions | UnaryCallback<ResponseType>,
+    callback?: UnaryCallback<ResponseType>
+  ): ClientUnaryCall {
+    ({ metadata, options, callback } = this.checkOptionalUnaryResponseArguments<
+      ResponseType
+    >(metadata, options, callback));
     const call: Call = this[CHANNEL_SYMBOL].createCall(
-        method, options.deadline, options.host, null, options.propagate_flags);
+      method,
+      options.deadline,
+      options.host,
+      null,
+      options.propagate_flags
+    );
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
     const message: Buffer = serialize(argument);
-    const writeObj: WriteObject = {message};
+    const writeObj: WriteObject = { message };
     call.sendMetadata(metadata);
     call.write(writeObj);
     call.end();
@@ -202,34 +256,51 @@ export class Client {
   }
 
   makeClientStreamRequest<RequestType, ResponseType>(
-      method: string, serialize: (value: RequestType) => Buffer,
-      deserialize: (value: Buffer) => ResponseType, metadata: Metadata,
-      options: CallOptions,
-      callback: UnaryCallback<ResponseType>): ClientWritableStream<RequestType>;
+    method: string,
+    serialize: (value: RequestType) => Buffer,
+    deserialize: (value: Buffer) => ResponseType,
+    metadata: Metadata,
+    options: CallOptions,
+    callback: UnaryCallback<ResponseType>
+  ): ClientWritableStream<RequestType>;
   makeClientStreamRequest<RequestType, ResponseType>(
-      method: string, serialize: (value: RequestType) => Buffer,
-      deserialize: (value: Buffer) => ResponseType, metadata: Metadata,
-      callback: UnaryCallback<ResponseType>): ClientWritableStream<RequestType>;
+    method: string,
+    serialize: (value: RequestType) => Buffer,
+    deserialize: (value: Buffer) => ResponseType,
+    metadata: Metadata,
+    callback: UnaryCallback<ResponseType>
+  ): ClientWritableStream<RequestType>;
   makeClientStreamRequest<RequestType, ResponseType>(
-      method: string, serialize: (value: RequestType) => Buffer,
-      deserialize: (value: Buffer) => ResponseType, options: CallOptions,
-      callback: UnaryCallback<ResponseType>): ClientWritableStream<RequestType>;
+    method: string,
+    serialize: (value: RequestType) => Buffer,
+    deserialize: (value: Buffer) => ResponseType,
+    options: CallOptions,
+    callback: UnaryCallback<ResponseType>
+  ): ClientWritableStream<RequestType>;
   makeClientStreamRequest<RequestType, ResponseType>(
-      method: string, serialize: (value: RequestType) => Buffer,
-      deserialize: (value: Buffer) => ResponseType,
-      callback: UnaryCallback<ResponseType>): ClientWritableStream<RequestType>;
+    method: string,
+    serialize: (value: RequestType) => Buffer,
+    deserialize: (value: Buffer) => ResponseType,
+    callback: UnaryCallback<ResponseType>
+  ): ClientWritableStream<RequestType>;
   makeClientStreamRequest<RequestType, ResponseType>(
-      method: string, serialize: (value: RequestType) => Buffer,
-      deserialize: (value: Buffer) => ResponseType,
-      metadata: Metadata|CallOptions|UnaryCallback<ResponseType>,
-      options?: CallOptions|UnaryCallback<ResponseType>,
-      callback?: UnaryCallback<ResponseType>):
-      ClientWritableStream<RequestType> {
-    ({metadata, options, callback} =
-         this.checkOptionalUnaryResponseArguments<ResponseType>(
-             metadata, options, callback));
+    method: string,
+    serialize: (value: RequestType) => Buffer,
+    deserialize: (value: Buffer) => ResponseType,
+    metadata: Metadata | CallOptions | UnaryCallback<ResponseType>,
+    options?: CallOptions | UnaryCallback<ResponseType>,
+    callback?: UnaryCallback<ResponseType>
+  ): ClientWritableStream<RequestType> {
+    ({ metadata, options, callback } = this.checkOptionalUnaryResponseArguments<
+      ResponseType
+    >(metadata, options, callback));
     const call: Call = this[CHANNEL_SYMBOL].createCall(
-        method, options.deadline, options.host, null, options.propagate_flags);
+      method,
+      options.deadline,
+      options.host,
+      null,
+      options.propagate_flags
+    );
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
@@ -239,8 +310,9 @@ export class Client {
   }
 
   private checkMetadataAndOptions(
-      arg1?: Metadata|CallOptions,
-      arg2?: CallOptions): {metadata: Metadata, options: CallOptions} {
+    arg1?: Metadata | CallOptions,
+    arg2?: CallOptions
+  ): { metadata: Metadata; options: CallOptions } {
     let metadata: Metadata;
     let options: CallOptions;
     if (arg1 instanceof Metadata) {
@@ -258,31 +330,45 @@ export class Client {
       }
       metadata = new Metadata();
     }
-    return {metadata, options};
+    return { metadata, options };
   }
 
   makeServerStreamRequest<RequestType, ResponseType>(
-      method: string, serialize: (value: RequestType) => Buffer,
-      deserialize: (value: Buffer) => ResponseType, argument: RequestType,
-      metadata: Metadata,
-      options?: CallOptions): ClientReadableStream<ResponseType>;
+    method: string,
+    serialize: (value: RequestType) => Buffer,
+    deserialize: (value: Buffer) => ResponseType,
+    argument: RequestType,
+    metadata: Metadata,
+    options?: CallOptions
+  ): ClientReadableStream<ResponseType>;
   makeServerStreamRequest<RequestType, ResponseType>(
-      method: string, serialize: (value: RequestType) => Buffer,
-      deserialize: (value: Buffer) => ResponseType, argument: RequestType,
-      options?: CallOptions): ClientReadableStream<ResponseType>;
+    method: string,
+    serialize: (value: RequestType) => Buffer,
+    deserialize: (value: Buffer) => ResponseType,
+    argument: RequestType,
+    options?: CallOptions
+  ): ClientReadableStream<ResponseType>;
   makeServerStreamRequest<RequestType, ResponseType>(
-      method: string, serialize: (value: RequestType) => Buffer,
-      deserialize: (value: Buffer) => ResponseType, argument: RequestType,
-      metadata?: Metadata|CallOptions,
-      options?: CallOptions): ClientReadableStream<ResponseType> {
-    ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
+    method: string,
+    serialize: (value: RequestType) => Buffer,
+    deserialize: (value: Buffer) => ResponseType,
+    argument: RequestType,
+    metadata?: Metadata | CallOptions,
+    options?: CallOptions
+  ): ClientReadableStream<ResponseType> {
+    ({ metadata, options } = this.checkMetadataAndOptions(metadata, options));
     const call: Call = this[CHANNEL_SYMBOL].createCall(
-        method, options.deadline, options.host, null, options.propagate_flags);
+      method,
+      options.deadline,
+      options.host,
+      null,
+      options.propagate_flags
+    );
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
     const message: Buffer = serialize(argument);
-    const writeObj: WriteObject = {message};
+    const writeObj: WriteObject = { message };
     call.sendMetadata(metadata);
     call.write(writeObj);
     call.end();
@@ -290,26 +376,41 @@ export class Client {
   }
 
   makeBidiStreamRequest<RequestType, ResponseType>(
-      method: string, serialize: (value: RequestType) => Buffer,
-      deserialize: (value: Buffer) => ResponseType, metadata: Metadata,
-      options?: CallOptions): ClientDuplexStream<RequestType, ResponseType>;
+    method: string,
+    serialize: (value: RequestType) => Buffer,
+    deserialize: (value: Buffer) => ResponseType,
+    metadata: Metadata,
+    options?: CallOptions
+  ): ClientDuplexStream<RequestType, ResponseType>;
   makeBidiStreamRequest<RequestType, ResponseType>(
-      method: string, serialize: (value: RequestType) => Buffer,
-      deserialize: (value: Buffer) => ResponseType,
-      options?: CallOptions): ClientDuplexStream<RequestType, ResponseType>;
+    method: string,
+    serialize: (value: RequestType) => Buffer,
+    deserialize: (value: Buffer) => ResponseType,
+    options?: CallOptions
+  ): ClientDuplexStream<RequestType, ResponseType>;
   makeBidiStreamRequest<RequestType, ResponseType>(
-      method: string, serialize: (value: RequestType) => Buffer,
-      deserialize: (value: Buffer) => ResponseType,
-      metadata?: Metadata|CallOptions,
-      options?: CallOptions): ClientDuplexStream<RequestType, ResponseType> {
-    ({metadata, options} = this.checkMetadataAndOptions(metadata, options));
+    method: string,
+    serialize: (value: RequestType) => Buffer,
+    deserialize: (value: Buffer) => ResponseType,
+    metadata?: Metadata | CallOptions,
+    options?: CallOptions
+  ): ClientDuplexStream<RequestType, ResponseType> {
+    ({ metadata, options } = this.checkMetadataAndOptions(metadata, options));
     const call: Call = this[CHANNEL_SYMBOL].createCall(
-        method, options.deadline, options.host, null, options.propagate_flags);
+      method,
+      options.deadline,
+      options.host,
+      null,
+      options.propagate_flags
+    );
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
     call.sendMetadata(metadata);
     return new ClientDuplexStreamImpl<RequestType, ResponseType>(
-        call, serialize, deserialize);
+      call,
+      serialize,
+      deserialize
+    );
   }
 }

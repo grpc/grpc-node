@@ -15,13 +15,13 @@
  *
  */
 
-import {EventEmitter} from 'events';
+import { EventEmitter } from 'events';
 import * as http2 from 'http2';
 import * as url from 'url';
 
-import {Call, Http2CallStream} from './call-stream';
-import {ChannelOptions} from './channel-options';
-import {Metadata} from './metadata';
+import { Call, Http2CallStream } from './call-stream';
+import { ChannelOptions } from './channel-options';
+import { Metadata } from './metadata';
 
 const {
   HTTP2_HEADER_AUTHORITY,
@@ -29,7 +29,7 @@ const {
   HTTP2_HEADER_METHOD,
   HTTP2_HEADER_PATH,
   HTTP2_HEADER_TE,
-  HTTP2_HEADER_USER_AGENT
+  HTTP2_HEADER_USER_AGENT,
 } = http2.constants;
 
 /* setInterval and setTimeout only accept signed 32 bit integers. JS doesn't
@@ -59,8 +59,11 @@ export class Http2SubChannel extends EventEmitter implements SubChannel {
   private keepaliveTimeoutId: NodeJS.Timer;
 
   constructor(
-      target: url.URL, connectionOptions: http2.SecureClientSessionOptions,
-      userAgent: string, channelArgs: Partial<ChannelOptions>) {
+    target: url.URL,
+    connectionOptions: http2.SecureClientSessionOptions,
+    userAgent: string,
+    channelArgs: Partial<ChannelOptions>
+  ) {
     super();
     this.session = http2.connect(target, connectionOptions);
     this.session.unref();
@@ -72,6 +75,10 @@ export class Http2SubChannel extends EventEmitter implements SubChannel {
       this.emit('close');
     });
     this.session.on('error', () => {
+      this.stopKeepalivePings();
+      this.emit('close');
+    });
+    this.session.on('goaway', () => {
       this.stopKeepalivePings();
       this.emit('close');
     });
@@ -109,9 +116,11 @@ export class Http2SubChannel extends EventEmitter implements SubChannel {
     this.keepaliveTimeoutId = setTimeout(() => {
       this.emit('close');
     }, this.keepaliveTimeoutMs);
-    this.session.ping((err: Error|null, duration: number, payload: Buffer) => {
-      clearTimeout(this.keepaliveTimeoutId);
-    });
+    this.session.ping(
+      (err: Error | null, duration: number, payload: Buffer) => {
+        clearTimeout(this.keepaliveTimeoutId);
+      }
+    );
   }
 
   /* TODO(murgatroid99): refactor subchannels so that keepalives can be handled

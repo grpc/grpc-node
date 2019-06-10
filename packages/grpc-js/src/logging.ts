@@ -15,7 +15,7 @@
  *
  */
 
-import {LogVerbosity} from './constants';
+import { LogVerbosity } from './constants';
 
 let _logger: Partial<Console> = console;
 let _logVerbosity: LogVerbosity = LogVerbosity.DEBUG;

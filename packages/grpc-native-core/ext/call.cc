@@ -81,8 +81,13 @@ Local<Value> nanErrorWithCode(const char *msg, grpc_call_error code) {
   return scope.Escape(err);
 }
 
-bool CreateMetadataArray(Local<Object> metadata, grpc_metadata_array *array) {
+bool CreateMetadataArray(Local<Object> metadata_obj, grpc_metadata_array *array) {
   HandleScope scope;
+  Local<Value> metadata_value = (Nan::Get(metadata_obj, Nan::New("metadata").ToLocalChecked())).ToLocalChecked();
+  if (!metadata_value->IsObject()) {
+    return false;
+  }
+  Local<Object> metadata = Nan::To<Object>(metadata_value).ToLocalChecked();
   Local<Array> keys = Nan::GetOwnPropertyNames(metadata).ToLocalChecked();
   for (unsigned int i = 0; i < keys->Length(); i++) {
     Local<String> current_key =
@@ -159,7 +164,10 @@ Local<Value> ParseMetadata(const grpc_metadata_array *metadata_array) {
       Nan::Set(array, array->Length(), CopyStringFromSlice(elem->value));
     }
   }
-  return scope.Escape(metadata_object);
+  Local<Object> result = Nan::New<Object>();
+  Nan::Set(result, Nan::New("metadata").ToLocalChecked(), metadata_object);
+  Nan::Set(result, Nan::New("flags").ToLocalChecked(), Nan::New<v8::Uint32>(0));
+  return scope.Escape(result);
 }
 
 Local<Value> Op::GetOpType() const {
@@ -185,7 +193,17 @@ class SendMetadataOp : public Op {
     if (maybe_metadata.IsEmpty()) {
       return false;
     }
-    if (!CreateMetadataArray(maybe_metadata.ToLocalChecked(), &send_metadata)) {
+    Local<Object> metadata_object = maybe_metadata.ToLocalChecked();
+    MaybeLocal<Value> maybe_flag_value =
+        Nan::Get(metadata_object, Nan::New("flags").ToLocalChecked());
+    if (!maybe_flag_value.IsEmpty()) {
+      Local<Value> flag_value = maybe_flag_value.ToLocalChecked();
+      if (flag_value->IsUint32()) {
+        Maybe<uint32_t> maybe_flag = Nan::To<uint32_t>(flag_value);
+        out->flags |= maybe_flag.FromMaybe(0) & GRPC_INITIAL_METADATA_USED_MASK;
+      }
+    }
+    if (!CreateMetadataArray(metadata_object, &send_metadata)) {
       return false;
     }
     out->data.send_initial_metadata.count = send_metadata.count;
@@ -225,7 +243,7 @@ class SendMessageOp : public Op {
       Local<Value> flag_value = maybe_flag_value.ToLocalChecked();
       if (flag_value->IsUint32()) {
         Maybe<uint32_t> maybe_flag = Nan::To<uint32_t>(flag_value);
-        out->flags = maybe_flag.FromMaybe(0) & GRPC_WRITE_USED_MASK;
+        out->flags |= maybe_flag.FromMaybe(0) & GRPC_WRITE_USED_MASK;
       }
     }
     send_message = BufferToByteBuffer(value);

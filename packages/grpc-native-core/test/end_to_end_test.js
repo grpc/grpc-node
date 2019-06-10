@@ -65,7 +65,7 @@ describe('end-to-end', function() {
                              'dummy_method',
                              Infinity);
     var client_batch = {};
-    client_batch[grpc.opType.SEND_INITIAL_METADATA] = {};
+    client_batch[grpc.opType.SEND_INITIAL_METADATA] = {metadata: {}};
     client_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
     client_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
     client_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
@@ -74,11 +74,17 @@ describe('end-to-end', function() {
       assert.deepEqual(response, {
         send_metadata: true,
         client_close: true,
-        metadata: {},
+        metadata: {
+          metadata: {},
+          flags: 0
+        },
         status: {
           code: constants.status.OK,
           details: status_text,
-          metadata: {}
+          metadata: {
+            metadata: {},
+            flags: 0
+          }
         }
       });
       done();
@@ -90,9 +96,9 @@ describe('end-to-end', function() {
       var server_call = new_call.call;
       assert.notEqual(server_call, null);
       var server_batch = {};
-      server_batch[grpc.opType.SEND_INITIAL_METADATA] = {};
+      server_batch[grpc.opType.SEND_INITIAL_METADATA] = {metadata: {}};
       server_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
-        metadata: {},
+        metadata: {metadata: {}},
         code: constants.status.OK,
         details: status_text
       };
@@ -116,7 +122,9 @@ describe('end-to-end', function() {
                              Infinity);
     var client_batch = {};
     client_batch[grpc.opType.SEND_INITIAL_METADATA] = {
-      client_key: ['client_value']
+      metadata: {
+        client_key: ['client_value']
+      }
     };
     client_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
     client_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
@@ -126,10 +134,13 @@ describe('end-to-end', function() {
       assert.deepEqual(response,{
         send_metadata: true,
         client_close: true,
-        metadata: {server_key: ['server_value']},
+        metadata: {metadata: {
+          server_key: ['server_value']}, 
+          flags: 0
+        },
         status: {code: constants.status.OK,
                  details: status_text,
-                 metadata: {}}
+                 metadata: {metadata: {}, flags: 0}}
       });
       done();
     });
@@ -137,16 +148,18 @@ describe('end-to-end', function() {
     server.requestCall(function(err, call_details) {
       var new_call = call_details.new_call;
       assert.notEqual(new_call, null);
-      assert.strictEqual(new_call.metadata.client_key[0],
+      assert.strictEqual(new_call.metadata.metadata.client_key[0],
                          'client_value');
       var server_call = new_call.call;
       assert.notEqual(server_call, null);
       var server_batch = {};
       server_batch[grpc.opType.SEND_INITIAL_METADATA] = {
-        server_key: ['server_value']
+        metadata: {
+          server_key: ['server_value']
+        }
       };
       server_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
-        metadata: {},
+        metadata: {metadata: {}},
         code: constants.status.OK,
         details: status_text
       };
@@ -171,7 +184,7 @@ describe('end-to-end', function() {
                              'dummy_method',
                              Infinity);
     var client_batch = {};
-    client_batch[grpc.opType.SEND_INITIAL_METADATA] = {};
+    client_batch[grpc.opType.SEND_INITIAL_METADATA] = {metadata: {}};
     client_batch[grpc.opType.SEND_MESSAGE] = Buffer.from(req_text);
     client_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
     client_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
@@ -181,12 +194,12 @@ describe('end-to-end', function() {
       assert.ifError(err);
       assert(response.send_metadata);
       assert(response.client_close);
-      assert.deepEqual(response.metadata, {});
+      assert.deepEqual(response.metadata, {metadata: {}, flags: 0});
       assert(response.send_message);
       assert.strictEqual(response.read.toString(), reply_text);
       assert.deepEqual(response.status, {code: constants.status.OK,
                                          details: status_text,
-                                         metadata: {}});
+                                         metadata: {metadata: {}, flags: 0}});
       done();
     });
 
@@ -196,7 +209,7 @@ describe('end-to-end', function() {
       var server_call = new_call.call;
       assert.notEqual(server_call, null);
       var server_batch = {};
-      server_batch[grpc.opType.SEND_INITIAL_METADATA] = {};
+      server_batch[grpc.opType.SEND_INITIAL_METADATA] = {metadata: {}};
       server_batch[grpc.opType.RECV_MESSAGE] = true;
       server_call.startBatch(server_batch, function(err, response) {
         assert.ifError(err);
@@ -205,7 +218,7 @@ describe('end-to-end', function() {
         var response_batch = {};
         response_batch[grpc.opType.SEND_MESSAGE] = Buffer.from(reply_text);
         response_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
-          metadata: {},
+          metadata: {metadata: {}},
           code: constants.status.OK,
           details: status_text
         };
@@ -226,7 +239,7 @@ describe('end-to-end', function() {
                              'dummy_method',
                              Infinity);
     var client_batch = {};
-    client_batch[grpc.opType.SEND_INITIAL_METADATA] = {};
+    client_batch[grpc.opType.SEND_INITIAL_METADATA] = {metadata: {}};
     client_batch[grpc.opType.SEND_MESSAGE] = Buffer.from(requests[0]);
     client_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
     call.startBatch(client_batch, function(err, response) {
@@ -234,7 +247,7 @@ describe('end-to-end', function() {
       assert.deepEqual(response, {
         send_metadata: true,
         send_message: true,
-        metadata: {}
+        metadata: {metadata: {}, flags: 0}
       });
       var req2_batch = {};
       req2_batch[grpc.opType.SEND_MESSAGE] = Buffer.from(requests[1]);
@@ -248,7 +261,7 @@ describe('end-to-end', function() {
           status: {
             code: constants.status.OK,
             details: status_text,
-            metadata: {}
+            metadata: {metadata: {}, flags: 0}
           }
         });
         done();
@@ -261,7 +274,7 @@ describe('end-to-end', function() {
       var server_call = new_call.call;
       assert.notEqual(server_call, null);
       var server_batch = {};
-      server_batch[grpc.opType.SEND_INITIAL_METADATA] = {};
+      server_batch[grpc.opType.SEND_INITIAL_METADATA] = {metadata: {}};
       server_batch[grpc.opType.RECV_MESSAGE] = true;
       server_call.startBatch(server_batch, function(err, response) {
         assert.ifError(err);
@@ -275,7 +288,7 @@ describe('end-to-end', function() {
           var end_batch = {};
           end_batch[grpc.opType.RECV_CLOSE_ON_SERVER] = true;
           end_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
-            metadata: {},
+            metadata: {metadata: {}},
             code: constants.status.OK,
             details: status_text
           };

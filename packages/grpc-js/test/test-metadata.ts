@@ -17,8 +17,8 @@
 
 import * as assert from 'assert';
 import * as http2 from 'http2';
-import {range} from 'lodash';
-import {Metadata, MetadataObject, MetadataValue} from '../src/metadata';
+import { range } from 'lodash';
+import { Metadata, MetadataObject, MetadataValue } from '../src/metadata';
 
 class TestMetadata extends Metadata {
   getInternalRepresentation() {
@@ -28,14 +28,15 @@ class TestMetadata extends Metadata {
   static fromHttp2Headers(headers: http2.IncomingHttpHeaders): TestMetadata {
     const result = Metadata.fromHttp2Headers(headers) as TestMetadata;
     result.getInternalRepresentation =
-        TestMetadata.prototype.getInternalRepresentation;
+      TestMetadata.prototype.getInternalRepresentation;
     return result;
   }
 }
 
 const validKeyChars = '0123456789abcdefghijklmnopqrstuvwxyz_-.';
-const validNonBinValueChars =
-    range(0x20, 0x7f).map(code => String.fromCharCode(code)).join('');
+const validNonBinValueChars = range(0x20, 0x7f)
+  .map(code => String.fromCharCode(code))
+  .join('');
 
 describe('Metadata', () => {
   let metadata: TestMetadata;
@@ -86,20 +87,20 @@ describe('Metadata', () => {
 
     it('Saves values that can be retrieved', () => {
       metadata.set('key', 'value');
-      assert.deepEqual(metadata.get('key'), ['value']);
+      assert.deepStrictEqual(metadata.get('key'), ['value']);
     });
 
     it('Overwrites previous values', () => {
       metadata.set('key', 'value1');
       metadata.set('key', 'value2');
-      assert.deepEqual(metadata.get('key'), ['value2']);
+      assert.deepStrictEqual(metadata.get('key'), ['value2']);
     });
 
     it('Normalizes keys', () => {
       metadata.set('Key', 'value1');
-      assert.deepEqual(metadata.get('key'), ['value1']);
+      assert.deepStrictEqual(metadata.get('key'), ['value1']);
       metadata.set('KEY', 'value2');
-      assert.deepEqual(metadata.get('key'), ['value2']);
+      assert.deepStrictEqual(metadata.get('key'), ['value2']);
     });
   });
 
@@ -133,20 +134,20 @@ describe('Metadata', () => {
 
     it('Saves values that can be retrieved', () => {
       metadata.add('key', 'value');
-      assert.deepEqual(metadata.get('key'), ['value']);
+      assert.deepStrictEqual(metadata.get('key'), ['value']);
     });
 
     it('Combines with previous values', () => {
       metadata.add('key', 'value1');
       metadata.add('key', 'value2');
-      assert.deepEqual(metadata.get('key'), ['value1', 'value2']);
+      assert.deepStrictEqual(metadata.get('key'), ['value1', 'value2']);
     });
 
     it('Normalizes keys', () => {
       metadata.add('Key', 'value1');
-      assert.deepEqual(metadata.get('key'), ['value1']);
+      assert.deepStrictEqual(metadata.get('key'), ['value1']);
       metadata.add('KEY', 'value2');
-      assert.deepEqual(metadata.get('key'), ['value1', 'value2']);
+      assert.deepStrictEqual(metadata.get('key'), ['value1', 'value2']);
     });
   });
 
@@ -154,13 +155,13 @@ describe('Metadata', () => {
     it('clears values from a key', () => {
       metadata.add('key', 'value');
       metadata.remove('key');
-      assert.deepEqual(metadata.get('key'), []);
+      assert.deepStrictEqual(metadata.get('key'), []);
     });
 
     it('Normalizes keys', () => {
       metadata.add('key', 'value');
       metadata.remove('KEY');
-      assert.deepEqual(metadata.get('key'), []);
+      assert.deepStrictEqual(metadata.get('key'), []);
     });
   });
 
@@ -172,15 +173,15 @@ describe('Metadata', () => {
     });
 
     it('gets all values associated with a key', () => {
-      assert.deepEqual(metadata.get('key'), ['value1', 'value2']);
+      assert.deepStrictEqual(metadata.get('key'), ['value1', 'value2']);
     });
 
     it('Normalizes keys', () => {
-      assert.deepEqual(metadata.get('KEY'), ['value1', 'value2']);
+      assert.deepStrictEqual(metadata.get('KEY'), ['value1', 'value2']);
     });
 
     it('returns an empty list for non-existent keys', () => {
-      assert.deepEqual(metadata.get('non-existent-key'), []);
+      assert.deepStrictEqual(metadata.get('non-existent-key'), []);
     });
 
     it('returns Buffers for "-bin" keys', () => {
@@ -194,8 +195,11 @@ describe('Metadata', () => {
       metadata.add('Key2', 'value2');
       metadata.add('KEY3', 'value3a');
       metadata.add('KEY3', 'value3b');
-      assert.deepEqual(
-          metadata.getMap(), {key1: 'value1', key2: 'value2', key3: 'value3a'});
+      assert.deepStrictEqual(metadata.getMap(), {
+        key1: 'value1',
+        key2: 'value2',
+        key3: 'value3a',
+      });
     });
   });
 
@@ -203,21 +207,21 @@ describe('Metadata', () => {
     it('retains values from the original', () => {
       metadata.add('key', 'value');
       const copy = metadata.clone();
-      assert.deepEqual(copy.get('key'), ['value']);
+      assert.deepStrictEqual(copy.get('key'), ['value']);
     });
 
     it('Does not see newly added values', () => {
       metadata.add('key', 'value1');
       const copy = metadata.clone();
       metadata.add('key', 'value2');
-      assert.deepEqual(copy.get('key'), ['value1']);
+      assert.deepStrictEqual(copy.get('key'), ['value1']);
     });
 
     it('Does not add new values to the original', () => {
       metadata.add('key', 'value1');
       const copy = metadata.clone();
       copy.add('key', 'value2');
-      assert.deepEqual(metadata.get('key'), ['value1']);
+      assert.deepStrictEqual(metadata.get('key'), ['value1']);
     });
 
     it('Copy cannot modify binary values in the original', () => {
@@ -227,7 +231,7 @@ describe('Metadata', () => {
       const copyBuf = copy.get('key-bin')[0] as Buffer;
       assert.deepStrictEqual(copyBuf, buf);
       copyBuf.fill(0);
-      assert.notDeepEqual(copyBuf, buf);
+      assert.notDeepStrictEqual(copyBuf, buf);
     });
   });
 
@@ -246,12 +250,15 @@ describe('Metadata', () => {
       const metadata2IR = metadata2.getInternalRepresentation();
       metadata.merge(metadata2);
       // Ensure metadata2 didn't change
-      assert.deepEqual(metadata2.getInternalRepresentation(), metadata2IR);
-      assert.deepEqual(metadata.get('key1'), ['value1', 'value1']);
-      assert.deepEqual(metadata.get('key2'), ['value2a', 'value2b']);
-      assert.deepEqual(metadata.get('key3'), ['value3a', 'value3b']);
-      assert.deepEqual(metadata.get('key4'), ['value4']);
-      assert.deepEqual(metadata.get('key5'), ['value5a', 'value5b']);
+      assert.deepStrictEqual(
+        metadata2.getInternalRepresentation(),
+        metadata2IR
+      );
+      assert.deepStrictEqual(metadata.get('key1'), ['value1', 'value1']);
+      assert.deepStrictEqual(metadata.get('key2'), ['value2a', 'value2b']);
+      assert.deepStrictEqual(metadata.get('key3'), ['value3a', 'value3b']);
+      assert.deepStrictEqual(metadata.get('key4'), ['value4']);
+      assert.deepStrictEqual(metadata.get('key5'), ['value5a', 'value5b']);
     });
   });
 
@@ -265,19 +272,20 @@ describe('Metadata', () => {
       metadata.add('key-bin', Buffer.from(range(16, 32)));
       metadata.add('key-bin', Buffer.from(range(0, 32)));
       const headers = metadata.toHttp2Headers();
-      assert.deepEqual(headers, {
+      assert.deepStrictEqual(headers, {
         key1: ['value1'],
         key2: ['value2'],
         key3: ['value3a', 'value3b'],
         'key-bin': [
-          'AAECAwQFBgcICQoLDA0ODw==', 'EBESExQVFhcYGRobHB0eHw==',
-          'AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8='
-        ]
+          'AAECAwQFBgcICQoLDA0ODw==',
+          'EBESExQVFhcYGRobHB0eHw==',
+          'AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=',
+        ],
       });
     });
 
     it('creates an empty header object from empty Metadata', () => {
-      assert.deepEqual(metadata.toHttp2Headers(), {});
+      assert.deepStrictEqual(metadata.toHttp2Headers(), {});
     });
   });
 
@@ -288,30 +296,33 @@ describe('Metadata', () => {
         key2: ['value2'],
         key3: ['value3a', 'value3b'],
         'key-bin': [
-          'AAECAwQFBgcICQoLDA0ODw==', 'EBESExQVFhcYGRobHB0eHw==',
-          'AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8='
-        ]
+          'AAECAwQFBgcICQoLDA0ODw==',
+          'EBESExQVFhcYGRobHB0eHw==',
+          'AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=',
+        ],
       };
       const metadataFromHeaders = TestMetadata.fromHttp2Headers(headers);
       const internalRepr = metadataFromHeaders.getInternalRepresentation();
       const expected: MetadataObject = new Map<string, MetadataValue[]>([
-        ['key1', ['value1']], ['key2', ['value2']],
+        ['key1', ['value1']],
+        ['key2', ['value2']],
         ['key3', ['value3a', 'value3b']],
         [
           'key-bin',
           [
-            Buffer.from(range(0, 16)), Buffer.from(range(16, 32)),
-            Buffer.from(range(0, 32))
-          ]
-        ]
+            Buffer.from(range(0, 16)),
+            Buffer.from(range(16, 32)),
+            Buffer.from(range(0, 32)),
+          ],
+        ],
       ]);
-      assert.deepEqual(internalRepr, expected);
+      assert.deepStrictEqual(internalRepr, expected);
     });
 
     it('creates an empty Metadata object from empty headers', () => {
       const metadataFromHeaders = TestMetadata.fromHttp2Headers({});
       const internalRepr = metadataFromHeaders.getInternalRepresentation();
-      assert.deepEqual(internalRepr, new Map<string, MetadataValue[]>());
+      assert.deepStrictEqual(internalRepr, new Map<string, MetadataValue[]>());
     });
   });
 });

@@ -78,7 +78,7 @@
     ],
     'cflags_cc': [
       '-Werror',
-      '-std=c++11'
+      '-std=c++1y'
     ],
     'include_dirs': [
       'deps/grpc',
@@ -94,7 +94,7 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=1',
       'GRPC_UV',
-      'GRPC_NODE_VERSION="1.20.3"',
+      'GRPC_NODE_VERSION="1.22.0-dev"',
       'CARES_STATICLIB',
       'CARES_SYMBOL_HIDING'
     ],
@@ -212,7 +212,7 @@
               '-DPB_FIELD_32BIT',
               '-fvisibility=hidden',
             '-stdlib=libc++',
-            '-std=c++11',
+            '-std=c++1y',
             '-Wno-error=deprecated-declarations'
           ],
         },

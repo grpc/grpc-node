@@ -941,6 +941,22 @@ describe('Other conditions', function() {
     call.write({});
     call.end();
   });
+  it('client should wait for a connection with waitForReady on', function(done) {
+    /* We have to wait for the client to reach the first connection timeout
+     * and go to TRANSIENT_FAILURE to confirm that the waitForReady option
+     * makes it end the call instead of continuing to try. A DNS resolution
+     * failure makes that transition very fast. */
+    this.timeout(15000);
+    const disconnectedClient = new Client('foo.test.google.com:50051', grpc.credentials.createInsecure());
+    const metadata = new grpc.Metadata({waitForReady: true});
+    const deadline = new Date();
+    deadline.setSeconds(deadline.getSeconds() + 10);
+    disconnectedClient.unary({}, metadata, {deadline: deadline}, (error, value) =>{
+      assert(error);
+      assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
+      done();
+    });
+  });
   describe('Server recieving bad input', function() {
     var misbehavingClient;
     var badArg = Buffer.from([0xFF]);
