@@ -23,7 +23,13 @@
 
 namespace grpc_node_generator {
 
-grpc::string GenerateFile(const grpc::protobuf::FileDescriptor* file);
+struct Parameters {
+  // Generate a package definition object instead of Client classes
+  bool generate_package_definition;
+};
+
+grpc::string GenerateFile(const grpc::protobuf::FileDescriptor* file,
+                          const Parameters& params);
 
 }  // namespace grpc_node_generator
 

@@ -178,11 +178,17 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
 }
 
 // Prints out the service descriptor object
-void PrintService(const ServiceDescriptor* service, Printer* out) {
+void PrintService(const ServiceDescriptor* service, Printer* out,
+                  const Parameters& params) {
   map<grpc::string, grpc::string> template_vars;
   out->Print(GetNodeComments(service, true).c_str());
   template_vars["name"] = service->name();
-  out->Print(template_vars, "var $name$Service = exports.$name$Service = {\n");
+  template_vars["full_name"] = service->full_name();
+  if (params.generate_package_definition) {
+    out->Print(template_vars, "var $name$Service = exports['$full_name$'] = {\n");
+  } else {
+    out->Print(template_vars, "var $name$Service = exports.$name$Service = {\n");
+  }
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
     grpc::string method_name =
@@ -195,14 +201,19 @@ void PrintService(const ServiceDescriptor* service, Printer* out) {
   }
   out->Outdent();
   out->Print("};\n\n");
-  out->Print(template_vars,
-             "exports.$name$Client = "
-             "grpc.makeGenericClientConstructor($name$Service);\n");
+  if (!params.generate_package_definition) {
+    out->Print(template_vars,
+               "exports.$name$Client = "
+               "grpc.makeGenericClientConstructor($name$Service);\n");
+  }
   out->Print(GetNodeComments(service, false).c_str());
 }
 
-void PrintImports(const FileDescriptor* file, Printer* out) {
-  out->Print("var grpc = require('grpc');\n");
+void PrintImports(const FileDescriptor* file, Printer* out,
+                  const Parameters& params) {
+  if (!params.generate_package_definition) {
+    out->Print("var grpc = require('grpc');\n");
+  }
   if (file->message_type_count() > 0) {
     grpc::string file_path =
         GetRelativePath(file->name(), GetJSMessageFilename(file->name()));
@@ -230,14 +241,16 @@ void PrintTransformers(const FileDescriptor* file, Printer* out) {
   out->Print("\n");
 }
 
-void PrintServices(const FileDescriptor* file, Printer* out) {
+void PrintServices(const FileDescriptor* file, Printer* out,
+                   const Parameters& params) {
   for (int i = 0; i < file->service_count(); i++) {
-    PrintService(file->service(i), out);
+    PrintService(file->service(i), out, params);
   }
 }
 }  // namespace
 
-grpc::string GenerateFile(const FileDescriptor* file) {
+grpc::string GenerateFile(const FileDescriptor* file,
+                          const Parameters& params) {
   grpc::string output;
   {
     StringOutputStream output_stream(&output);
@@ -257,11 +270,11 @@ grpc::string GenerateFile(const FileDescriptor* file) {
 
     out.Print("'use strict';\n");
 
-    PrintImports(file, &out);
+    PrintImports(file, &out, params);
 
     PrintTransformers(file, &out);
 
-    PrintServices(file, &out);
+    PrintServices(file, &out, params);
 
     out.Print(GetNodeComments(file, false).c_str());
   }
