@@ -37,11 +37,11 @@ const parseFailureLog = [
       {
         $: {
           classname: 'Test Log Parsing',
-          name: 'Test Log Parsing',
-          failure: {
-            $: {
-              message: "Log parsing failed"
-            }
+          name: 'Test Log Parsing'
+        },
+        failure: {
+          $: {
+            message: "Log parsing failed"
           }
         }
       }
