@@ -26,6 +26,8 @@ call npm update || goto :error
 
 mkdir -p %ARTIFACTS_OUT%
 
+@echo on
+
 for %%a in (%arch_list%) do (
   for %%v in (%node_versions%) do (
     call .\node_modules\.bin\node-pre-gyp.cmd configure build --target=%%v --target_arch=%%a
