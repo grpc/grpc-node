@@ -33,6 +33,8 @@ for %%a in (%arch_list%) do (
   @rem Try again after removing openssl headers
     rmdir "%USERPROFILE%\.node-gyp\%%v\include\node\openssl" /S /Q
     rmdir "%USERPROFILE%\.node-gyp\iojs-%%v\include\node\openssl" /S /Q
+    rmdir "%CSIDL_LOCAL_APPDATA%\node-gyp\cache\%%v\include\node\openssl" /S /Q
+    rmdir "%CSIDL_LOCAL_APPDATA%\node-gyp\cache\iojs-%%v\include\node\openssl" /S /Q
     call .\node_modules\.bin\node-pre-gyp.cmd build package --target=%%v --target_arch=%%a || goto :error
 
     xcopy /Y /I /S build\stage\* %ARTIFACTS_OUT%\ || goto :error
