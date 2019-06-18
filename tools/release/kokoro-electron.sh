@@ -21,7 +21,7 @@ nvm install 10
 nvm use 10
 npm install -g npm
 # https://github.com/mapbox/node-pre-gyp/issues/362
-npm install -g node-gyp
+npm install -g node-gyp@4
 
 set -ex
 cd $(dirname $0)/../..
