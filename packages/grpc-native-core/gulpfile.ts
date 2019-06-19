@@ -44,6 +44,7 @@ const installWindows = () => {
   return execa('npm', ['install', '--build-from-source'],
                {cwd: nativeCoreDir, stdio: 'inherit'}).catch(() => 
 del(path.resolve(process.env.USERPROFILE, '.node-gyp', process.versions.node, 'include/node/openssl'), { force: true }).then(() =>
+del(path.resolve(process.env.USERPROFILE, 'AppData/Local/node-gyp/cache', process.versions.node, 'include/node/openssl'), { force: true })).then(() =>
 execa('npm', ['install', '--build-from-source'],
                {cwd: nativeCoreDir, stdio: 'inherit'})
                ));
