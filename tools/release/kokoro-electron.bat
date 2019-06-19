@@ -22,7 +22,7 @@ call nvm use 10
 
 call npm install -g npm
 @rem https://github.com/mapbox/node-pre-gyp/issues/362
-call npm install -g node-gyp@4
+call npm install -g node-gyp@3
 
 cd /d %~dp0
 cd ..\..
