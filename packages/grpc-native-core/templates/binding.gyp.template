@@ -75,15 +75,20 @@
       'include_dirs': [
         'deps/grpc',
         'deps/grpc/include',
+        'deps/grpc/third_party/address_sorting/include',
+        'deps/grpc/third_party/cares',
+        'deps/grpc/third_party/cares/cares',
         'deps/grpc/third_party/abseil-cpp',
-        'deps/grpc/third_party/nanopb'
+        'deps/grpc/third_party/nanopb',
       ],
       'defines': [
         'PB_FIELD_32BIT',
         'GPR_BACKWARDS_COMPATIBILITY_MODE',
-        'GRPC_ARES=0',
+        'GRPC_ARES=1',
         'GRPC_UV',
-        'GRPC_NODE_VERSION="${settings.get('node_version', settings.version)}"'
+        'GRPC_NODE_VERSION="${settings.get('node_version', settings.version)}"',
+        'CARES_STATICLIB',
+        'CARES_SYMBOL_HIDING'
       ],
       'defines!': [
         'OPENSSL_THREADS'
@@ -140,8 +145,7 @@
         }],
         ['OS == "win"', {
           "include_dirs": [
-            "deps/grpc/third_party/zlib",
-            "deps/grpc/third_party/cares/cares"
+            "deps/grpc/third_party/zlib"
           ],
           "defines": [
             '_WIN32_WINNT=0x0600',
@@ -161,8 +165,7 @@
           ]
         }, { # OS != "win"
           'include_dirs': [
-            '<(node_root_dir)/deps/zlib',
-            '<(node_root_dir)/deps/cares/include'
+            '<(node_root_dir)/deps/zlib'
           ]
         }],
         ['OS == "mac"', {
@@ -279,8 +282,54 @@
       }]
     ],
     'targets': [
+      % for lib in libs:
+      % if lib.name == 'ares':
+      {
+        'target_name': '${lib.name}',
+        'product_prefix': 'lib',
+        'type': 'static_library',
+        'sources': [
+          % for source in lib.src:
+          'deps/grpc/${source}',
+          % endfor
+        ],
+        'defines': [
+          '_GNU_SOURCE'
+        ],
+        'conditions': [
+          ['OS == "mac"', {
+            'xcode_settings': {
+              'MACOSX_DEPLOYMENT_TARGET': '10.9'
+            },
+            'include_dirs': [
+              'deps/grpc/third_party/cares/config_darwin'
+            ],
+            'defines': [
+              'HAVE_CONFIG_H'
+            ]
+          }],
+          ['OS == "linux"', {
+            'include_dirs': [
+              'deps/grpc/third_party/cares/config_linux'
+            ],
+            'defines': [
+              'HAVE_CONFIG_H'
+            ]
+          }],
+          ['OS == "win"', {
+            'include_dirs': [
+              'deps/grpc/third_party/cares/config_windows'
+            ],
+            'defines': [
+              'HAVE_CONFIG_H'
+            ]
+          }]
+        ]
+      },
+      % endif
+      % endfor
       % for core in libs:
-      % if core.name == 'grpc':
+      % if core.name == 'grpc' or core.name == 'address_sorting':
       % for lib in libs:
       % if lib.name == core.name or (lib.name in core.transitive_deps and lib.name not in ('boringssl', 'z')):
       {
@@ -347,6 +396,8 @@
         "dependencies": [
           "grpc",
           "gpr",
+          "ares",
+          "address_sorting"
         ]
       },
       {
