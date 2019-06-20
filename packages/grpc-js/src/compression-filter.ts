@@ -138,9 +138,7 @@ class UnknownHandler extends CompressionHandler {
   compressMessage(message: Buffer): Promise<Buffer> {
     return Promise.reject<Buffer>(
       new Error(
-        `Received message compressed wth unsupported compression method ${
-          this.compressionName
-        }`
+        `Received message compressed wth unsupported compression method ${this.compressionName}`
       )
     );
   }
