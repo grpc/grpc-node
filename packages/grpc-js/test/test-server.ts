@@ -23,10 +23,9 @@ import * as http2 from 'http2';
 import * as path from 'path';
 
 import * as grpc from '../src';
-import { ServerCredentials } from '../src';
+import { Server, ServerCredentials } from '../src';
 import { ServiceError } from '../src/call';
 import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
-import { Server } from '../src/server';
 import { sendUnaryData, ServerUnaryCall } from '../src/server-call';
 
 import { loadProtoFile } from './common';

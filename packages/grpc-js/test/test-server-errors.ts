@@ -21,9 +21,9 @@ import * as assert from 'assert';
 import { join } from 'path';
 
 import * as grpc from '../src';
+import { Server } from '../src';
 import { ServiceError } from '../src/call';
 import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
-import { Server } from '../src/server';
 import {
   sendUnaryData,
   ServerDuplexStream,
