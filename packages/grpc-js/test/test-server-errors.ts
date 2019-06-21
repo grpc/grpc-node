@@ -386,9 +386,9 @@ describe('Other conditions', () => {
     });
   });
 
-  after(done => {
+  after(() => {
     client.close();
-    server.tryShutdown(done);
+    server.forceShutdown();
   });
 
   describe('Server receiving bad input', () => {

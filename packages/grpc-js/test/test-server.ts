@@ -127,17 +127,6 @@ describe('Server', () => {
     });
   });
 
-  describe('tryShutdown', () => {
-    it('calls back with an error if the server is not running', done => {
-      const server = new Server();
-
-      server.tryShutdown(err => {
-        assert(err !== undefined && err.message === 'server is not running');
-        done();
-      });
-    });
-  });
-
   describe('start', () => {
     let server: Server;
 
@@ -236,10 +225,6 @@ describe('Server', () => {
     assert.throws(() => {
       server.addProtoService();
     }, /Not implemented. Use addService\(\) instead/);
-
-    assert.throws(() => {
-      server.forceShutdown();
-    }, /Not yet implemented/);
 
     assert.throws(() => {
       server.addHttp2Port();
