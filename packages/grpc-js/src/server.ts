@@ -374,7 +374,11 @@ export class Server {
           }
         } catch (err) {
           const call = new Http2ServerCallStream(stream, null!);
-          err.code = Status.INTERNAL;
+
+          if (err.code === undefined) {
+            err.code = Status.INTERNAL;
+          }
+
           call.sendError(err);
         }
       }
