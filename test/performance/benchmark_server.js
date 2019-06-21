@@ -23,6 +23,7 @@
 
 'use strict';
 
+var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
 var EventEmitter = require('events');
@@ -129,7 +130,7 @@ function BenchmarkServer(host, port, tls, generic, response_size) {
   };
 
   var server = new grpc.Server(options);
-  this.port = server.bind(host + ':' + port, server_creds);
+
   if (generic) {
     server.addService(genericService, {
       unaryCall: makeUnaryGenericCall(response_size),
@@ -142,6 +143,9 @@ function BenchmarkServer(host, port, tls, generic, response_size) {
     });
   }
   this.server = server;
+  this.host = host;
+  this.port = port;
+  this.creds = server_creds;
 }
 
 util.inherits(BenchmarkServer, EventEmitter);
@@ -150,10 +154,13 @@ util.inherits(BenchmarkServer, EventEmitter);
  * Start the benchmark server.
  */
 BenchmarkServer.prototype.start = function() {
-  this.server.start();
-  this.last_wall_time = process.hrtime();
-  this.last_usage = process.cpuUsage();
-  this.emit('started');
+  this.server.bindAsync(this.host + ':' + this.port, this.creds, (err) => {
+    assert.ifError(err);
+    this.server.start();
+    this.last_wall_time = process.hrtime();
+    this.last_usage = process.cpuUsage();
+    this.emit('started');
+  });
 };
 
 /**

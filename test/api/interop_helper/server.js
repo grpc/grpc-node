@@ -18,12 +18,15 @@
 
 'use strict';
 
+const assert = require('assert');
 const interopServer = require('../../interop/interop_server.js');
 
-const serverObj = interopServer.getServer(0, true);
-serverObj.server.start();
-process.send({port: serverObj.port});
-// The only message from the driver should be to stop the server
-process.on('message', (message) => {
-  serverObj.server.forceShutdown();
+interopServer.getServer(0, true, (err, serverObj) => {
+  assert.ifError(err);
+  serverObj.server.start();
+  process.send({port: serverObj.port});
+  // The only message from the driver should be to stop the server
+  process.on('message', (message) => {
+    serverObj.server.forceShutdown();
+  });
 });

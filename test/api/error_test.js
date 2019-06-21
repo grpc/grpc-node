@@ -37,7 +37,7 @@ describe('Client malformed response handling', function() {
     var server;
     var client;
     var badArg = Buffer.from([0xFF]);
-    before(function() {
+    before(function(done) {
       var malformed_test_service = {
         unary: {
           path: '/TestService/Unary',
@@ -93,9 +93,12 @@ describe('Client malformed response handling', function() {
           });
         }
       });
-      var port = server.bind('localhost:0', serverInsecureCreds);
-      client = new TestServiceClient('localhost:' + port, clientInsecureCreds);
-      server.start();
+      server.bindAsync('localhost:0', serverInsecureCreds, (err, port) => {
+        assert.ifError(err);
+        client = new TestServiceClient('localhost:' + port, clientInsecureCreds);
+        server.start();
+        done();
+      });
     });
     after(function() {
       server.forceShutdown();
@@ -141,7 +144,7 @@ describe('Client malformed response handling', function() {
     }
     var client;
     var server;
-    before(function() {
+    before(function(done) {
       var malformed_test_service = {
         unary: {
           path: '/TestService/Unary',
@@ -197,9 +200,12 @@ describe('Client malformed response handling', function() {
           });
         }
       });
-      var port = server.bind('localhost:0', serverInsecureCreds);
-      client = new TestServiceClient('localhost:' + port, clientInsecureCreds);
-      server.start();
+      server.bindAsync('localhost:0', serverInsecureCreds, (err, port) => {
+        assert.ifError(err);
+        client = new TestServiceClient('localhost:' + port, clientInsecureCreds);
+        server.start();
+        done();
+      });
     });
     after(function() {
       server.forceShutdown();
@@ -244,7 +250,7 @@ describe('Client malformed response handling', function() {
     var client;
     var server;
     var port;
-    before(function() {
+    before(function(done) {
       server = new serverGrpc.Server();
       var trailer_metadata = new serverGrpc.Metadata();
       trailer_metadata.add('trailer-present', 'yes');
@@ -323,9 +329,13 @@ describe('Client malformed response handling', function() {
           });
         }
       });
-      port = server.bind('localhost:0', serverInsecureCreds);
-      client = new TestServiceClient('localhost:' + port, clientInsecureCreds);
-      server.start();
+      server.bindAsync('localhost:0', serverInsecureCreds, (err, _port) => {
+        assert.ifError(err);
+        port = _port;
+        client = new TestServiceClient('localhost:' + port, clientInsecureCreds);
+        server.start();
+        done();
+      });
     });
     after(function() {
       server.forceShutdown();
