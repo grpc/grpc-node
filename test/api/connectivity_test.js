@@ -76,6 +76,13 @@ describe('Reconnection', function() {
     server2.forceShutdown();
   });
   it('Should end with either OK or UNAVAILABLE when querying a server that is shutting down', function(done) {
+    let pendingCalls = 0;
+    let testDone = false;
+    function maybeDone() {
+      if (testDone && pendingCalls == 0) {
+        done();
+      }
+    };
     client.unary({}, (err, data) => {
       assert.ifError(err);
       server1.tryShutdown(() => {
@@ -84,14 +91,18 @@ describe('Reconnection', function() {
         client.unary({}, (err, data) => {
           assert.ifError(err);
           clearInterval(callInterval);
-          done();
+          testDone = true;
+          maybeDone();
         });
       });
       let callInterval = setInterval(() => {
+        pendingCalls += 1;
         client.unary({}, (err, data) => {
+          pendingCalls -= 1;
           if (err) {
             assert.strictEqual(err.code, clientGrpc.status.UNAVAILABLE);
           }
+          maybeDone();
         });
       }, 0);
     });
