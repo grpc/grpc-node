@@ -79,7 +79,7 @@ describe('Reconnection', function() {
     let pendingCalls = 0;
     let testDone = false;
     function maybeDone() {
-      if (testDone && pendingCalls == 0) {
+      if (testDone && pendingCalls === 0) {
         done();
       }
     };
