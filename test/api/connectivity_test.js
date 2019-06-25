@@ -76,10 +76,12 @@ describe('Reconnection', function() {
     });
   });
   after(function() {
+    client.close();
     server1.forceShutdown();
     server2.forceShutdown();
   });
   it('Should end with either OK or UNAVAILABLE when querying a server that is shutting down', function(done) {
+    this.timeout(10000);
     let pendingCalls = 0;
     let testDone = false;
     let callInterval;
@@ -94,7 +96,8 @@ describe('Reconnection', function() {
         server2.bindAsync(`localhost:${port}`, serverCreds, (err) => {
           assert.ifError(err);
           server2.start();
-          client.unary({}, (err, data) => {
+          const metadata = new clientGrpc.Metadata({ waitForReady: true });
+          client.unary({}, metadata, (err, data) => {
             assert.ifError(err);
             clearInterval(callInterval);
             testDone = true;
@@ -103,6 +106,7 @@ describe('Reconnection', function() {
         });
       });
       callInterval = setInterval(() => {
+        assert.strictEqual(testDone, false);
         pendingCalls += 1;
         client.unary({}, (err, data) => {
           pendingCalls -= 1;
