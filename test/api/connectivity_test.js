@@ -80,7 +80,7 @@ describe('Reconnection', function() {
     server1.forceShutdown();
     server2.forceShutdown();
   });
-  it('Should end with either OK or UNAVAILABLE when querying a server that is shutting down', function(done) {
+  it.skip('Should end with either OK or UNAVAILABLE when querying a server that is shutting down', function(done) {
     this.timeout(10000);
     let pendingCalls = 0;
     let testDone = false;
