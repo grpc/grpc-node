@@ -61,7 +61,7 @@ describe('Name resolver', function() {
       done();
     });
   });
-  it('Should resolve a target to IPv4 and IPv6 addresses', function(done) {
+  it.skip('Should resolve a target to IPv4 and IPv6 addresses', function(done) {
     const client = new grpc.Client(`loopback46.unittest.grpc.io:${port}`, insecureCreds);
     let deadline = new Date();
     deadline.setSeconds(deadline.getSeconds() + 1);
