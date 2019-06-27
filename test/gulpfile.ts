@@ -56,8 +56,8 @@ const test = () => {
     runTestsArgPairs = [
       ['native', 'native'],
       ['native', 'js'],
-      // ['js', 'native'],
-      // ['js', 'js']
+      ['js', 'native'],
+      ['js', 'js']
     ];
   } else {
     runTestsArgPairs = [

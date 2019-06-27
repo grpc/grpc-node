@@ -58,8 +58,7 @@ const clientOptions = {
 
 describe('Sending metadata', function() {
   let server;
-  let port;
-  before(function() {
+  before(function(done) {
     server = new serverGrpc.Server();
     server.addService(TestService, {
       unary: function(call, cb) {
@@ -81,9 +80,12 @@ describe('Sending metadata', function() {
         });
       }
     });
-    port = server.bind('localhost:0', serverCreds);
-    server.start();
-    client = new TestServiceClient(`localhost:${port}`, combinedClientCreds, clientOptions);
+    server.bindAsync('localhost:0', serverCreds, (err, port) => {
+      assert.ifError(err);
+      server.start();
+      client = new TestServiceClient(`localhost:${port}`, combinedClientCreds, clientOptions);
+      done();
+    });
   });
   after(function() {
     server.forceShutdown();

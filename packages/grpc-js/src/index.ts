@@ -38,6 +38,7 @@ import {
   Serialize,
 } from './make-client';
 import { Metadata } from './metadata';
+import { Server } from './server';
 import { KeyCertPair, ServerCredentials } from './server-credentials';
 import { StatusBuilder } from './status-builder';
 
@@ -259,10 +260,7 @@ export const setLogVerbosity = (verbosity: LogVerbosity): void => {
   logging.setLoggerVerbosity(verbosity);
 };
 
-export const Server = (options: any) => {
-  throw new Error('Not yet implemented');
-};
-
+export { Server };
 export { ServerCredentials };
 export { KeyCertPair };
 

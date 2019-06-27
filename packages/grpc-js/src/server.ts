@@ -91,6 +91,7 @@ export class Server {
     string,
     UntypedHandler
   >();
+  private sessions = new Set<http2.ServerHttp2Session>();
   private started = false;
 
   constructor(options?: object) {}
@@ -223,7 +224,22 @@ export class Server {
   }
 
   forceShutdown(): void {
-    throw new Error('Not yet implemented');
+    // Close the server if it is still running.
+    if (this.http2Server && this.http2Server.listening) {
+      this.http2Server.close();
+    }
+
+    this.started = false;
+
+    // Always destroy any available sessions. It's possible that one or more
+    // tryShutdown() calls are in progress. Don't wait on them to finish.
+    this.sessions.forEach(session => {
+      // Cast NGHTTP2_CANCEL to any because TypeScript doesn't seem to
+      // recognize destroy(code) as a valid signature.
+      // tslint:disable-next-line:no-any
+      session.destroy(http2.constants.NGHTTP2_CANCEL as any);
+    });
+    this.sessions.clear();
   }
 
   register<RequestType, ResponseType>(
@@ -259,17 +275,34 @@ export class Server {
   }
 
   tryShutdown(callback: (error?: Error) => void): void {
-    callback = typeof callback === 'function' ? callback : noop;
+    let pendingChecks = 0;
 
-    if (this.http2Server === null) {
-      callback(new Error('server is not running'));
-      return;
+    function maybeCallback(): void {
+      pendingChecks--;
+
+      if (pendingChecks === 0) {
+        callback();
+      }
     }
 
-    this.http2Server.close((err?: Error) => {
-      this.started = false;
-      callback(err);
+    // Close the server if necessary.
+    this.started = false;
+
+    if (this.http2Server && this.http2Server.listening) {
+      pendingChecks++;
+      this.http2Server.close(maybeCallback);
+    }
+
+    // If any sessions are active, close them gracefully.
+    pendingChecks += this.sessions.size;
+    this.sessions.forEach(session => {
+      session.close(maybeCallback);
     });
+
+    // If the server is closed and there are no active sessions, just call back.
+    if (pendingChecks === 0) {
+      callback();
+    }
   }
 
   addHttp2Port(): void {
@@ -341,7 +374,11 @@ export class Server {
           }
         } catch (err) {
           const call = new Http2ServerCallStream(stream, null!);
-          err.code = Status.INTERNAL;
+
+          if (err.code === undefined) {
+            err.code = Status.INTERNAL;
+          }
+
           call.sendError(err);
         }
       }
@@ -352,6 +389,8 @@ export class Server {
         session.destroy();
         return;
       }
+
+      this.sessions.add(session);
     });
   }
 }

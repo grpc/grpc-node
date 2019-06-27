@@ -23,10 +23,9 @@ import * as http2 from 'http2';
 import * as path from 'path';
 
 import * as grpc from '../src';
-import { ServerCredentials } from '../src';
+import { Server, ServerCredentials } from '../src';
 import { ServiceError } from '../src/call';
 import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
-import { Server } from '../src/server';
 import { sendUnaryData, ServerUnaryCall } from '../src/server-call';
 
 import { loadProtoFile } from './common';
@@ -128,17 +127,6 @@ describe('Server', () => {
     });
   });
 
-  describe('tryShutdown', () => {
-    it('calls back with an error if the server is not running', done => {
-      const server = new Server();
-
-      server.tryShutdown(err => {
-        assert(err !== undefined && err.message === 'server is not running');
-        done();
-      });
-    });
-  });
-
   describe('start', () => {
     let server: Server;
 
@@ -237,10 +225,6 @@ describe('Server', () => {
     assert.throws(() => {
       server.addProtoService();
     }, /Not implemented. Use addService\(\) instead/);
-
-    assert.throws(() => {
-      server.forceShutdown();
-    }, /Not yet implemented/);
 
     assert.throws(() => {
       server.addHttp2Port();
