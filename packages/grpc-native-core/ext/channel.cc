@@ -207,7 +207,7 @@ NAN_METHOD(Channel::New) {
   if (info.IsConstructCall()) {
     if (!info[0]->IsString()) {
       return Nan::ThrowTypeError(
-          "Channel expects a string, a credential and an object");
+          "Channel's first argument (address) must be a string");
     }
     grpc_channel *wrapped_channel;
     // Owned by the Channel object
@@ -215,7 +215,7 @@ NAN_METHOD(Channel::New) {
     grpc_channel_credentials *creds;
     if (!ChannelCredentials::HasInstance(info[1])) {
       return Nan::ThrowTypeError(
-          "Channel's second argument must be a ChannelCredentials");
+          "Channel's second argument (credentials) must be a ChannelCredentials");
     }
     ChannelCredentials *creds_object = ObjectWrap::Unwrap<ChannelCredentials>(
         Nan::To<Object>(info[1]).ToLocalChecked());
@@ -224,7 +224,7 @@ NAN_METHOD(Channel::New) {
     if (!ParseChannelArgs(info[2], &channel_args_ptr)) {
       DeallocateChannelArgs(channel_args_ptr);
       return Nan::ThrowTypeError(
-          "Channel options must be an object with "
+          "Channel third argument (options) must be an object with "
           "string keys and integer or string values");
     }
     if (creds == NULL) {
