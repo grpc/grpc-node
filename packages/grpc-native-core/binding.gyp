@@ -94,7 +94,7 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=1',
       'GRPC_UV',
-      'GRPC_NODE_VERSION="1.22.0-pre1"',
+      'GRPC_NODE_VERSION="1.22.0"',
       'CARES_STATICLIB',
       'CARES_SYMBOL_HIDING'
     ],
