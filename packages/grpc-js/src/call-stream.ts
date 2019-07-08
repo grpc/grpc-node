@@ -243,24 +243,24 @@ export class Http2CallStream extends Duplex implements Call {
     } else {
       this.http2Stream = stream;
       stream.on('response', (headers, flags) => {
-        switch (headers[HTTP2_HEADER_STATUS]) {
+        switch (headers[':status']) {
           // TODO(murgatroid99): handle 100 and 101
-          case '400':
+          case 400:
             this.mappedStatusCode = Status.INTERNAL;
             break;
-          case '401':
+          case 401:
             this.mappedStatusCode = Status.UNAUTHENTICATED;
             break;
-          case '403':
+          case 403:
             this.mappedStatusCode = Status.PERMISSION_DENIED;
             break;
-          case '404':
+          case 404:
             this.mappedStatusCode = Status.UNIMPLEMENTED;
             break;
-          case '429':
-          case '502':
-          case '503':
-          case '504':
+          case 429:
+          case 502:
+          case 503:
+          case 504:
             this.mappedStatusCode = Status.UNAVAILABLE;
             break;
           default:
