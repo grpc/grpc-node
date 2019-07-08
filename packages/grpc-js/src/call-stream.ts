@@ -186,7 +186,7 @@ export class Http2CallStream extends Duplex implements Call {
     }
     this.isReadFilterPending = true;
     this.filterStack
-      .receiveMessage(Promise.resolve(framedMessage))
+      .receiveMessage(framedMessage)
       .then(
         this.handleFilteredRead.bind(this),
         this.handleFilterError.bind(this)
