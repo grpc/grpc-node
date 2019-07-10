@@ -29,7 +29,6 @@
     "node-pre-gyp"
   ],
   "dependencies": {
-    "@types/protobufjs": "^5.0.31",
     "lodash.camelcase": "^4.3.0",
     "lodash.clone": "^4.5.0",
     "nan": "^2.13.2",
