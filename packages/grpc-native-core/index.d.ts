@@ -579,7 +579,7 @@ declare module "grpc" {
      *   These options only have any effect when passed at the beginning of
      *   a client request.
      */
-    setOptions(options: MetadataOptions);
+    setOptions(options: MetadataOptions): void;
   }
 
   export type MetadataValue = string | Buffer;
