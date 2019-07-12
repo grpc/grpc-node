@@ -1,3 +1,5 @@
+import { EventEmitter } from "events";
+
 /*
  * Copyright 2019 gRPC authors.
  *
@@ -341,7 +343,7 @@ declare module "grpc" {
   /**
    * An EventEmitter. Used for unary calls.
    */
-  export class ServerUnaryCall<RequestType> {
+  export class ServerUnaryCall<RequestType> extends EventEmitter {
     /**
      * Indicates if the call has been cancelled
      */
@@ -1227,7 +1229,7 @@ declare module "grpc" {
   /**
    * An EventEmitter. Used for unary calls.
    */
-  export class ClientUnaryCall {
+  export class ClientUnaryCall extends EventEmitter {
     private constructor();
 
     /**
