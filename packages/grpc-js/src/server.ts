@@ -41,6 +41,8 @@ import {
   ServerWritableStream,
   ServerWritableStreamImpl,
   UnaryHandler,
+  ServerErrorResponse,
+  ServerStatusResponse,
 } from './server-call';
 import { ServerCredentials } from './server-credentials';
 
@@ -57,9 +59,9 @@ type UntypedUnaryHandler = UnaryHandler<any, any>;
 type UntypedClientStreamingHandler = ClientStreamingHandler<any, any>;
 type UntypedServerStreamingHandler = ServerStreamingHandler<any, any>;
 type UntypedBidiStreamingHandler = BidiStreamingHandler<any, any>;
-type UntypedHandleCall = HandleCall<any, any>;
+export type UntypedHandleCall = HandleCall<any, any>;
 type UntypedHandler = Handler<any, any>;
-interface UntypedServiceImplementation {
+export interface UntypedServiceImplementation {
   [name: string]: UntypedHandleCall;
 }
 
@@ -100,7 +102,7 @@ export class Server {
     throw new Error('Not implemented. Use addService() instead');
   }
 
-  addService(service: ServiceDefinition, implementation: object): void {
+  addService(service: ServiceDefinition, implementation: UntypedServiceImplementation): void {
     if (this.started === true) {
       throw new Error("Can't add a service to a started server.");
     }
@@ -120,8 +122,6 @@ export class Server {
       throw new Error('Cannot add an empty service to a server');
     }
 
-    const implMap: UntypedServiceImplementation = implementation as UntypedServiceImplementation;
-
     serviceKeys.forEach(name => {
       const attrs = service[name];
       let methodType: HandlerType;
@@ -140,11 +140,11 @@ export class Server {
         }
       }
 
-      let implFn = implMap[name];
+      let implFn = implementation[name];
       let impl;
 
       if (implFn === undefined && typeof attrs.originalName === 'string') {
-        implFn = implMap[attrs.originalName];
+        implFn = implementation[attrs.originalName];
       }
 
       if (implFn !== undefined) {
@@ -414,7 +414,7 @@ async function handleUnary<RequestType, ResponseType>(
   handler.func(
     emitter,
     (
-      err: ServiceError | null,
+      err: ServerErrorResponse | ServerStatusResponse | null,
       value: ResponseType | null,
       trailer?: Metadata,
       flags?: number
@@ -436,7 +436,7 @@ function handleClientStreaming<RequestType, ResponseType>(
   );
 
   function respond(
-    err: ServiceError | null,
+    err: ServerErrorResponse | ServerStatusResponse | null,
     value: ResponseType | null,
     trailer?: Metadata,
     flags?: number

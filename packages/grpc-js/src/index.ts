@@ -38,9 +38,10 @@ import {
   Serialize,
 } from './make-client';
 import { Metadata } from './metadata';
-import { Server } from './server';
+import { Server, UntypedHandleCall, UntypedServiceImplementation } from './server';
 import { KeyCertPair, ServerCredentials } from './server-credentials';
 import { StatusBuilder } from './status-builder';
+import { ServerUnaryCall, ServerReadableStream, ServerWritableStream, ServerDuplexStream } from './server-call';
 
 const supportedNodeVersions = require('../../package.json').engines.node;
 if (!semver.satisfies(process.version, supportedNodeVersions)) {
@@ -213,6 +214,12 @@ export {
   CallOptions,
   StatusObject,
   ServiceError,
+  ServerUnaryCall,
+  ServerReadableStream,
+  ServerWritableStream,
+  ServerDuplexStream,
+  UntypedHandleCall,
+  UntypedServiceImplementation
 };
 
 /* tslint:disable:no-any */
