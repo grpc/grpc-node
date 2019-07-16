@@ -399,8 +399,8 @@ ClientDuplexStream.prototype.getPeer = getPeer;
  * @param {Object} options Options to apply to channel creation. Any of
  *     [the channel arguments]{@link https://grpc.github.io/grpc/core/group__grpc__arg__keys.html}
  *     can be used here in addition to specific client options.
- * @param {grpc~Interceptor[]=} options.interceptors Interceptors to apply to each request
- * @param {grpc~InterceptorProvider[]=} options.interceptor_providers Interceptor providers
+ * @param {grpc~Interceptor[]} [options.interceptors] Interceptors to apply to each request
+ * @param {grpc~InterceptorProvider[]} [options.interceptor_providers] Interceptor providers
  *     to apply interceptors to each request depending on the method definition. At most
  *     one of the interceptors and interceptor_providers options may be set.
  * @param {grpc.Client~callInvocationTransformer=} options.callInvocationTransformer
