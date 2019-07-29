@@ -18,7 +18,6 @@
 import { EventEmitter } from 'events';
 import * as http2 from 'http2';
 import { Duplex, Readable, Writable } from 'stream';
-import * as util from 'util';
 
 import { StatusObject } from './call-stream';
 import { Status } from './constants';
@@ -506,11 +505,11 @@ export class Http2ServerCallStream<
         : new Metadata(),
     };
 
-    if ('code' in error && util.isNumber(error.code) && Number.isInteger(error.code)) {
+    if ('code' in error && typeof error.code === 'number' && Number.isInteger(error.code)) {
       status.code = error.code;
 
-      if ('details' in error && util.isString(error.details)) {
-        status.details = error.details;
+      if ('details' in error && typeof error.details === 'string') {
+        status.details = error.details!;
       }
     }
 
