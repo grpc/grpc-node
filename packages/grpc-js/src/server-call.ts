@@ -19,12 +19,12 @@ import { EventEmitter } from 'events';
 import * as http2 from 'http2';
 import { Duplex, Readable, Writable } from 'stream';
 
-import { ServiceError } from './call';
 import { StatusObject } from './call-stream';
 import { Status } from './constants';
 import { Deserialize, Serialize } from './make-client';
 import { Metadata } from './metadata';
 import { StreamDecoder } from './stream-decoder';
+import { ObjectReadable, ObjectWritable } from './object-stream';
 
 interface DeadlineUnitIndexSignature {
   [name: string]: number;
@@ -56,6 +56,10 @@ const defaultResponseOptions = {
   waitForTrailers: true,
 } as http2.ServerStreamResponseOptions;
 
+export type ServerStatusResponse = Partial<StatusObject>;
+
+export type ServerErrorResponse = ServerStatusResponse & Error;
+
 export type ServerSurfaceCall = {
   cancelled: boolean;
   getPeer(): string;
@@ -68,13 +72,13 @@ export type ServerUnaryCall<RequestType, ResponseType> = ServerSurfaceCall & {
 export type ServerReadableStream<
   RequestType,
   ResponseType
-> = ServerSurfaceCall & Readable;
+> = ServerSurfaceCall & ObjectReadable<RequestType>;
 export type ServerWritableStream<
   RequestType,
   ResponseType
-> = ServerSurfaceCall & Writable & { request: RequestType | null };
+> = ServerSurfaceCall & ObjectWritable<ResponseType> & { request: RequestType | null };
 export type ServerDuplexStream<RequestType, ResponseType> = ServerSurfaceCall &
-  Duplex;
+  ObjectReadable<RequestType> & ObjectWritable<ResponseType>;
 
 export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
   implements ServerUnaryCall<RequestType, ResponseType> {
@@ -152,7 +156,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
     this.call.setupSurfaceCall(this);
 
     this.on('error', err => {
-      this.call.sendError(err as ServiceError);
+      this.call.sendError(err);
       this.end();
     });
   }
@@ -223,7 +227,7 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
     this.call.setupReadable(this);
 
     this.on('error', err => {
-      this.call.sendError(err as ServiceError);
+      this.call.sendError(err);
       this.end();
     });
   }
@@ -247,7 +251,7 @@ ServerDuplexStreamImpl.prototype.end = ServerWritableStreamImpl.prototype.end;
 
 // Unary response callback signature.
 export type sendUnaryData<ResponseType> = (
-  error: ServiceError | null,
+  error: ServerErrorResponse | ServerStatusResponse | null,
   value: ResponseType | null,
   trailer?: Metadata,
   flags?: number
@@ -339,7 +343,7 @@ export class Http2ServerCallStream<
   ) {
     super();
 
-    this.stream.once('error', (err: ServiceError) => {
+    this.stream.once('error', (err: ServerErrorResponse) => {
       err.code = Status.INTERNAL;
       this.sendError(err);
     });
@@ -379,7 +383,7 @@ export class Http2ServerCallStream<
       const match = timeoutHeader[0].toString().match(DEADLINE_REGEX);
 
       if (match === null) {
-        const err = new Error('Invalid deadline') as ServiceError;
+        const err = new Error('Invalid deadline') as ServerErrorResponse;
         err.code = Status.OUT_OF_RANGE;
         this.sendError(err);
         return;
@@ -439,7 +443,7 @@ export class Http2ServerCallStream<
   }
 
   async sendUnaryMessage(
-    err: ServiceError | null,
+    err: ServerErrorResponse | ServerStatusResponse | null,
     value: ResponseType | null,
     metadata?: Metadata,
     flags?: number
@@ -490,22 +494,22 @@ export class Http2ServerCallStream<
     }
   }
 
-  sendError(error: ServiceError) {
+  sendError(error: ServerErrorResponse | ServerStatusResponse) {
     const status: StatusObject = {
       code: Status.UNKNOWN,
-      details: error.hasOwnProperty('message')
+      details: ('message' in error)
         ? error.message
         : 'Unknown Error',
-      metadata: error.hasOwnProperty('metadata')
+      metadata: ('metadata' in error && error.metadata !== undefined)
         ? error.metadata
         : new Metadata(),
     };
 
-    if (error.hasOwnProperty('code') && Number.isInteger(error.code)) {
+    if ('code' in error && typeof error.code === 'number' && Number.isInteger(error.code)) {
       status.code = error.code;
 
-      if (error.hasOwnProperty('details')) {
-        status.details = error.details;
+      if ('details' in error && typeof error.details === 'string') {
+        status.details = error.details!;
       }
     }
 
@@ -637,7 +641,7 @@ export class Http2ServerCallStream<
 type UntypedServerCall = Http2ServerCallStream<any, any>;
 
 function handleExpiredDeadline(call: UntypedServerCall) {
-  const err = new Error('Deadline exceeded') as ServiceError;
+  const err = new Error('Deadline exceeded') as ServerErrorResponse;
   err.code = Status.DEADLINE_EXCEEDED;
 
   call.sendError(err);

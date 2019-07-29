@@ -412,13 +412,13 @@ declare module "grpc" {
    * User provided method to handle server streaming methods on the server.
    */
   type handleServerStreamingCall<RequestType, ResponseType> =
-    (call: ServerWriteableStream<RequestType>) => void;
+    (call: ServerWritableStream<RequestType>) => void;
 
   /**
    * A stream that the server can write to. Used for calls that are streaming
    * from the server side.
    */
-  export class ServerWriteableStream<RequestType> extends Writable {
+  export class ServerWritableStream<RequestType> extends Writable {
     /**
      * Indicates if the call has been cancelled
      */
@@ -448,6 +448,10 @@ declare module "grpc" {
      */
     sendMetadata(responseMetadata: Metadata): void;
   }
+
+  /* This typo existed in previous versions of this file, so we provide this
+   * type alias for backwards compatibility. */
+  export type ServerWriteableStream<RequestType> = ServerWritableStream<RequestType>;
 
   /**
    * User provided method to handle bidirectional streaming calls on the server.
