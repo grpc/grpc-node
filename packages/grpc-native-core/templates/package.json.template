@@ -76,8 +76,7 @@
       "deps/grpc/third_party/boringssl/ssl/**/*.{c,cc,h}",
       "deps/grpc/third_party/boringssl/third_party/**/*.{c,h}",
       "deps/grpc/third_party/nanopb/*.{c,cc,h}",
-      "deps/grpc/third_party/upb/generated_for_cmake/google/protobuf/*.{c,h}",
-      "deps/grpc/third_party/upb/upb/*.{c,h}",
+      "deps/grpc/third_party/upb/**/*.{c,h}",
       "deps/grpc/third_party/zlib/**/*.{c,cc,h}",
       "binding.gyp"
     ],
