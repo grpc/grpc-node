@@ -196,8 +196,8 @@ export class Http2Channel extends EventEmitter implements Channel {
           this.subChannel.removeListener('close', this.subChannelCloseCallback);
           this.subChannel = null;
           this.emit('shutdown');
-          clearTimeout(this.backoffTimerId);
         }
+        clearTimeout(this.backoffTimerId);
         break;
       default:
         throw new Error('This should never happen');
