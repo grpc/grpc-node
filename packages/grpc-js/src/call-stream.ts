@@ -365,6 +365,12 @@ export class Http2CallStream extends Duplex implements Call {
       metadata
     );
   }
+  
+  private closeChannel() {
+    if (this.channel) {
+      this.channel.close();
+    }
+  }
 
   private destroyHttp2Stream() {
     // The http2 stream could already have been destroyed if cancelWithStatus
@@ -377,6 +383,7 @@ export class Http2CallStream extends Duplex implements Call {
   }
 
   cancelWithStatus(status: Status, details: string): void {
+    this.closeChannel();
     this.destroyHttp2Stream();
     (async () => {
       // If trailers are currently being processed, the call should be ended
