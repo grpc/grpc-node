@@ -559,8 +559,10 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
     intercepting_call.halfClose();
   });
 
-  // avoid UnhandledPromiseRejectionWarning
-  promise.catch(() => {});
+  if (typeof callProperties.callback === 'function') {
+    // avoid UnhandledPromiseRejectionWarning
+    promise.catch(() => {});
+  }
 
   emitter.then = promise.then.bind(promise);
 
@@ -685,8 +687,10 @@ Client.prototype.makeClientStreamRequest = function(path, serialize,
     intercepting_call.start(callProperties.metadata, last_listener);
   });
 
-  // avoid UnhandledPromiseRejectionWarning
-  promise.catch(() => {});
+  if (typeof callProperties.callback === 'function') {
+    // avoid UnhandledPromiseRejectionWarning
+    promise.catch(() => {});
+  }
 
   emitter.then = promise.then.bind(promise);
 
