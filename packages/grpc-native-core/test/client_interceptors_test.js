@@ -193,6 +193,21 @@ describe('Client interceptors', function() {
         echoBidiStream: []
       }));
     });
+    it('with unary call and promise', function(done) {
+      var expected_value = 'foo';
+      var message = {value: expected_value};
+      client.echo(message)
+        .then(function(response) {
+          assert.strictEqual(response.value, expected_value);
+          done();
+        });
+      assert(_.isEqual(grpc_client.getClientInterceptors(client), {
+        echo: [],
+        echoClientStream: [],
+        echoServerStream: [],
+        echoBidiStream: []
+      }));
+    });
   });
 
   describe('execute downstream interceptors when a new call is made outbound',
@@ -287,6 +302,16 @@ describe('Client interceptors', function() {
         });
         stream.write(message);
         stream.end();
+      });
+      it('with client streaming call with promise', function(done) {
+        registry = new CallRegistry(done, expected_calls, false);
+        var message = { value: 'foo' };
+        var stream = client.echoClientStream(options);
+        stream.write(message);
+        stream.end().then(function (res) {
+          assert.strictEqual(res.value, message.value);
+          registry.addCall('response');
+        });
       });
       it('with server streaming call', function(done) {
         registry = new CallRegistry(done, expected_calls, true);
