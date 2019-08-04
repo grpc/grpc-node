@@ -1131,7 +1131,7 @@ declare module "grpc" {
       argument: RequestType,
       metadata?: Metadata | null,
       options?: CallOptions | null,
-    ): ClientReadableStream<RequestType>;
+    ): ClientReadableStream<ResponseType>;
 
     /**
      * Make a bidirectional stream request with this method on the given channel.
