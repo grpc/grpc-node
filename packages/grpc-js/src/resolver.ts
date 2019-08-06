@@ -19,7 +19,7 @@ import { ServiceError } from "./call";
 import { ServiceConfig } from "./service-config";
 
 export interface ResolverListener {
-  onSuccessfulResolution(addressList: string[], serviceConfig: ServiceConfig | null, serviceConfigError: Error | null): void;
+  onSuccessfulResolution(addressList: string[], serviceConfig: ServiceConfig | null, serviceConfigError: ServiceError | null): void;
   onError(error: ServiceError): void;
 }
 

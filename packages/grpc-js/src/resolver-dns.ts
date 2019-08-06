@@ -18,6 +18,8 @@ import { Resolver, ResolverListener, registerResolver, registerDefaultResolver }
 import * as dns from 'dns';
 import * as util from 'util';
 import { extractAndSelectServiceConfig, ServiceConfig } from './service-config';
+import { ServiceError } from './call';
+import { Status } from './constants';
 
 /* These regular expressions match IP addresses with optional ports in different
  * formats. In each case, capture group 1 contains the address, and capture
@@ -113,14 +115,16 @@ class DnsResolver implements Resolver {
         this.pendingResultPromise = null;
         const allAddresses: string[] = mergeArrays(AAAArecord, Arecord);
         let serviceConfig: ServiceConfig | null = null;
-        let serviceConfigError: Error | null = null;
+        let serviceConfigError: ServiceError | null = null;
         if (TXTrecord instanceof Error) {
-          serviceConfigError = TXTrecord;
+          serviceConfigError = TXTrecord as ServiceError;
+          serviceConfigError.code = Status.UNAVAILABLE;
         } else {
           try {
             serviceConfig = extractAndSelectServiceConfig(TXTrecord, this.percentage);
           } catch (err) {
-            serviceConfigError = err;
+            serviceConfigError = err as ServiceError;
+            serviceConfigError.code = Status.UNAVAILABLE;
           }
         }
         this.listener.onSuccessfulResolution(allAddresses, serviceConfig, serviceConfigError);

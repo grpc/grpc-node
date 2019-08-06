@@ -16,6 +16,7 @@
  */
 
 import { Metadata } from './metadata';
+import { Call } from '.';
 
 export interface CallMetadataOptions {
   service_url: string;
@@ -43,6 +44,14 @@ export abstract class CallCredentials {
    * @param callCredentials The other CallCredentials object.
    */
   abstract compose(callCredentials: CallCredentials): CallCredentials;
+
+  /**
+   * Check whether two call credentials objects are equal. Separate
+   * SingleCallCredentials with identical metadata generator functions are
+   * equal.
+   * @param other The other CallCredentials object to compare with.
+   */
+  abstract _equals(other: CallCredentials): boolean;
 
   /**
    * Creates a new CallCredentials object from a given function that generates
@@ -81,6 +90,17 @@ class ComposedCallCredentials extends CallCredentials {
   compose(other: CallCredentials): CallCredentials {
     return new ComposedCallCredentials(this.creds.concat([other]));
   }
+
+  _equals(other: CallCredentials): boolean {
+    if (this === other) {
+      return true;
+    }
+    if (other instanceof ComposedCallCredentials) {
+      return this.creds.every((value, index) => value._equals(other.creds[index]));
+    } else {
+      return false;
+    }
+  }
 }
 
 class SingleCallCredentials extends CallCredentials {
@@ -103,7 +123,18 @@ class SingleCallCredentials extends CallCredentials {
   compose(other: CallCredentials): CallCredentials {
     return new ComposedCallCredentials([this, other]);
   }
-}
+
+  _equals(other: CallCredentials): boolean {
+    if (this === other) {
+      return true;
+    }
+    if (other instanceof SingleCallCredentials) {
+      return this.metadataGenerator === other.metadataGenerator;
+    } else {
+      return false;
+    }
+  }
+ }
 
 class EmptyCallCredentials extends CallCredentials {
   generateMetadata(options: CallMetadataOptions): Promise<Metadata> {
@@ -112,5 +143,9 @@ class EmptyCallCredentials extends CallCredentials {
 
   compose(other: CallCredentials): CallCredentials {
     return other;
+  }
+
+  _equals(other: CallCredentials): boolean {
+    return other instanceof EmptyCallCredentials;
   }
 }
