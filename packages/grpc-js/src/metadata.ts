@@ -62,7 +62,7 @@ function validate(key: string, value?: MetadataValue): void {
   }
 }
 
-interface MetadataOptions {
+export interface MetadataOptions {
   /* Signal that the request is idempotent. Defaults to false */
   idempotentRequest?: boolean;
   /* Signal that the call should not return UNAVAILABLE before it has
@@ -80,8 +80,15 @@ interface MetadataOptions {
  */
 export class Metadata {
   protected internalRepr: MetadataObject = new Map<string, MetadataValue[]>();
+  private options: MetadataOptions;
 
-  constructor(private options?: MetadataOptions) {}
+  constructor(options?: MetadataOptions) {
+    if (options === undefined) {
+      this.options = {};
+    } else {
+      this.options = options;
+    }
+  }
 
   /**
    * Sets the given value for the given key by replacing any other values
@@ -198,6 +205,10 @@ export class Metadata {
 
   setOptions(options: MetadataOptions) {
     this.options = options;
+  }
+
+  getOptions(): MetadataOptions {
+    return this.options;
   }
 
   /**

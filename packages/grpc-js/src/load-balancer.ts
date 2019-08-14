@@ -31,7 +31,7 @@ export interface ChannelControlHelper {
    * @param subchannelAddress The address to connect to
    * @param subchannelArgs Extra channel arguments specified by the load balancer
    */
-  createSubchannel(subchannelAddress: String, subchannelArgs: ChannelOptions): Subchannel;
+  createSubchannel(subchannelAddress: string, subchannelArgs: ChannelOptions): Subchannel;
   /**
    * Passes a new subchannel picker up to the channel. This is called if either
    * the connectivity state changes or if a different picker is needed for any
@@ -60,7 +60,7 @@ export interface LoadBalancer {
    * @param lbConfig The load balancing config object from the service config,
    *     if one was provided
    */
-  updateAddressList(addressList: string[], lbConfig?: LoadBalancingConfig): void;
+  updateAddressList(addressList: string[], lbConfig: LoadBalancingConfig | null): void;
   /**
    * If the load balancer is currently in the IDLE state, start connecting.
    */
@@ -82,6 +82,11 @@ export interface LoadBalancer {
    * balancer implementation class was registered with.
    */
   getTypeName(): string;
+  /**
+   * Replace the existing ChannelControlHelper with a new one
+   * @param channelControlHelper The new ChannelControlHelper to use from now on
+   */
+  replaceChannelControlHelper(channelControlHelper: ChannelControlHelper): void;
 }
 
 export interface LoadBalancerConstructor {

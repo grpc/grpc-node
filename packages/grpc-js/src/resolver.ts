@@ -29,6 +29,7 @@ export interface Resolver {
 
 export interface ResolverConstructor {
   new(target: string, listener: ResolverListener): Resolver;
+  getDefaultAuthority(target:string): string;
 }
 
 const registeredResolvers: {[prefix: string]: ResolverConstructor} = {};
@@ -52,4 +53,13 @@ export function createResolver(target: string, listener: ResolverListener): Reso
     return new defaultResolver(target, listener);
   }
   throw new Error('No resolver could be created for the provided target');
+}
+
+export function getDefaultAuthority(target: string): string {
+  for (const prefix of Object.keys(registerDefaultResolver)) {
+    if (target.startsWith(prefix)) {
+      return registeredResolvers[prefix].getDefaultAuthority(target);
+    }
+  }
+  throw new Error(`Invalid target "${target}"`);
 }

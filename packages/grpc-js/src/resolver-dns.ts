@@ -20,6 +20,7 @@ import * as util from 'util';
 import { extractAndSelectServiceConfig, ServiceConfig } from './service-config';
 import { ServiceError } from './call';
 import { Status } from './constants';
+import { URL } from 'url';
 
 /* These regular expressions match IP addresses with optional ports in different
  * formats. In each case, capture group 1 contains the address, and capture
@@ -87,7 +88,6 @@ class DnsResolver implements Resolver {
       }
     }
     this.percentage = Math.random() * 100;
-    this.startResolution();
   }
 
   private startResolution() {
@@ -139,6 +139,10 @@ class DnsResolver implements Resolver {
     if (this.pendingResultPromise === null) {
       this.startResolution();
     }
+  }
+
+  static getDefaultAuthority(target: string): string {
+    return new URL(target).hostname;
   }
 }
 

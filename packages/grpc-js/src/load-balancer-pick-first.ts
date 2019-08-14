@@ -162,7 +162,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     }
   }
 
-  updateAddressList(addressList: string[], lbConfig?: LoadBalancingConfig): void {
+  updateAddressList(addressList: string[], lbConfig: LoadBalancingConfig | null): void {
     // lbConfig has no useful information for pick first load balancing
     this.latestAddressList = addressList;
     this.connectToAddressList();
@@ -190,6 +190,10 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   getTypeName(): string {
     return TYPE_NAME;
+  }
+
+  replaceChannelControlHelper(channelControlHelper: ChannelControlHelper) {
+    this.channelControlHelper = channelControlHelper;
   }
 }
 

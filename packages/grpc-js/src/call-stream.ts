@@ -19,7 +19,6 @@ import * as http2 from 'http2';
 import { Duplex } from 'stream';
 
 import { CallCredentials } from './call-credentials';
-import { Http2Channel } from './channel';
 import { Status } from './constants';
 import { EmitterAugmentation1 } from './events';
 import { Filter } from './filter';
@@ -27,6 +26,7 @@ import { FilterStackFactory } from './filter-stack';
 import { Metadata } from './metadata';
 import { ObjectDuplex, WriteCallback } from './object-stream';
 import { StreamDecoder } from './stream-decoder';
+import { ChannelImplementation } from './channel';
 
 const {
   HTTP2_HEADER_STATUS,
@@ -83,7 +83,7 @@ export type Call = {
   ObjectDuplex<WriteObject, Buffer>;
 
 export class Http2CallStream extends Duplex implements Call {
-  credentials: CallCredentials = CallCredentials.createEmpty();
+  credentials: CallCredentials;
   filterStack: Filter;
   private http2Stream: http2.ClientHttp2Stream | null = null;
   private pendingRead = false;
@@ -114,12 +114,14 @@ export class Http2CallStream extends Duplex implements Call {
 
   constructor(
     private readonly methodName: string,
-    private readonly channel: Http2Channel,
+    private readonly channel: ChannelImplementation,
     private readonly options: CallStreamOptions,
-    filterStackFactory: FilterStackFactory
+    filterStackFactory: FilterStackFactory,
+    private readonly channelCallCredentials: CallCredentials
   ) {
     super({ objectMode: true });
     this.filterStack = filterStackFactory.createFilter(this);
+    this.credentials = channelCallCredentials;
   }
 
   /**
@@ -358,12 +360,7 @@ export class Http2CallStream extends Duplex implements Call {
   }
 
   sendMetadata(metadata: Metadata): void {
-    this.channel._startHttp2Stream(
-      this.options.host,
-      this.methodName,
-      this,
-      metadata
-    );
+    this.channel._startCallStream(this, metadata);
   }
 
   private destroyHttp2Stream() {
@@ -395,7 +392,7 @@ export class Http2CallStream extends Duplex implements Call {
   }
 
   setCredentials(credentials: CallCredentials): void {
-    this.credentials = credentials;
+    this.credentials = this.channelCallCredentials.compose(credentials);
   }
 
   getStatus(): StatusObject | null {

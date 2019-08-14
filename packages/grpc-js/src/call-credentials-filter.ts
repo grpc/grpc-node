@@ -17,14 +17,14 @@
 
 import { CallCredentials } from './call-credentials';
 import { Call } from './call-stream';
-import { Http2Channel } from './channel';
+import { Channel } from './channel';
 import { BaseFilter, Filter, FilterFactory } from './filter';
 import { Metadata } from './metadata';
 
 export class CallCredentialsFilter extends BaseFilter implements Filter {
   private serviceUrl: string;
   constructor(
-    private readonly channel: Http2Channel,
+    private readonly channel: Channel,
     private readonly stream: Call
   ) {
     super();
@@ -44,9 +44,7 @@ export class CallCredentialsFilter extends BaseFilter implements Filter {
   }
 
   async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    const channelCredentials = this.channel.credentials._getCallCredentials();
-    const streamCredentials = this.stream.getCredentials();
-    const credentials = channelCredentials.compose(streamCredentials);
+    const credentials = this.stream.getCredentials();
     const credsMetadata = credentials.generateMetadata({
       service_url: this.serviceUrl,
     });
@@ -58,8 +56,7 @@ export class CallCredentialsFilter extends BaseFilter implements Filter {
 
 export class CallCredentialsFilterFactory
   implements FilterFactory<CallCredentialsFilter> {
-  private readonly channel: Http2Channel;
-  constructor(channel: Http2Channel) {
+  constructor(private readonly channel: Channel) {
     this.channel = channel;
   }
 

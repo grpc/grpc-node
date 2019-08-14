@@ -73,6 +73,10 @@ export class SubchannelPool {
 
 const globalSubchannelPool = new SubchannelPool(true);
 
-export function getOrCreateSubchannel(channelTarget: string, subchannelTarget: string, channelArguments: ChannelOptions, channelCredentials: ChannelCredentials): Subchannel {
-  return globalSubchannelPool.getOrCreateSubchannel(channelTarget, subchannelTarget, channelArguments, channelCredentials);
+export function getSubchannelPool(global: boolean): SubchannelPool {
+  if (global) {
+    return globalSubchannelPool;
+  } else {
+    return new SubchannelPool(false);
+  }
 }
