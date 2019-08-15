@@ -20,11 +20,21 @@ import { Subchannel } from "./subchannel";
 import { ChannelCredentials } from "./channel-credentials";
 
 // 10 seconds in milliseconds. This value is arbitrary.
+/**
+ * The amount of time in between checks for dropping subchannels that have no
+ * other references
+ */
 const REF_CHECK_INTERVAL = 10_000;
 
 export class SubchannelPool {
   private pool: {[channelTarget: string]: {[subchannelTarget: string]: {channelArguments: ChannelOptions, channelCredentials: ChannelCredentials, subchannel: Subchannel}[]}} = Object.create(null);
 
+  /**
+   * A pool of subchannels use for making connections. Subchannels with the
+   * exact same parameters will be reused.
+   * @param global If true, this is the global subchannel pool. Otherwise, it
+   * is the pool for a single channel.
+   */
   constructor(private global: boolean) {
     if (global) {
       setInterval(() => {
@@ -44,6 +54,14 @@ export class SubchannelPool {
     }
   }
 
+  /**
+   * Get a subchannel if one already exists with exactly matching parameters.
+   * Otherwise, create and save a subchannel with those parameters.
+   * @param channelTarget 
+   * @param subchannelTarget 
+   * @param channelArguments 
+   * @param channelCredentials 
+   */
   getOrCreateSubchannel(channelTarget: string, subchannelTarget: string, channelArguments: ChannelOptions, channelCredentials: ChannelCredentials): Subchannel {
     if (channelTarget in this.pool) {
       if (subchannelTarget in this.pool[channelTarget]){
@@ -73,6 +91,10 @@ export class SubchannelPool {
 
 const globalSubchannelPool = new SubchannelPool(true);
 
+/**
+ * Get either the global subchannel pool, or a new subchannel pool.
+ * @param global 
+ */
 export function getSubchannelPool(global: boolean): SubchannelPool {
   if (global) {
     return globalSubchannelPool;

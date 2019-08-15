@@ -16,7 +16,10 @@
  */
 
 /* This file is an implementation of gRFC A24:
- * https://github.com/grpc/proposal/blob/master/A24-lb-policy-config.md */
+ * https://github.com/grpc/proposal/blob/master/A24-lb-policy-config.md. Each
+ * function here takes an object with unknown structure and returns its
+ * specific object type if the input has the right structure, and throws an
+ * error otherwise. */
 
 import { isString, isArray } from "util";
 

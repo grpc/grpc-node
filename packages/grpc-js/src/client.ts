@@ -28,7 +28,7 @@ import {
 } from './call';
 import { CallCredentials } from './call-credentials';
 import { Call, Deadline, StatusObject, WriteObject } from './call-stream';
-import { Channel, ConnectivityState, Http2Channel } from './channel';
+import { Channel, ConnectivityState, ChannelImplementation } from './channel';
 import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
 import { Status } from './constants';
@@ -78,7 +78,7 @@ export class Client {
         options
       );
     } else {
-      this[CHANNEL_SYMBOL] = new Http2Channel(address, credentials, options);
+      this[CHANNEL_SYMBOL] = new ChannelImplementation(address, credentials, options);
     }
   }
 

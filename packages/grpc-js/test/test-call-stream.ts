@@ -23,7 +23,7 @@ import * as stream from 'stream';
 
 import { CallCredentials } from '../src/call-credentials';
 import { Http2CallStream } from '../src/call-stream';
-import { Channel, Http2Channel } from '../src/channel';
+import { Channel, ChannelImplementation } from '../src/channel';
 import { CompressionFilterFactory } from '../src/compression-filter';
 import { Status } from '../src/constants';
 import { FilterStackFactory } from '../src/filter-stack';
@@ -132,9 +132,10 @@ describe('CallStream', () => {
     responseMetadata.add('key', 'value');
     const callStream = new Http2CallStream(
       'foo',
-      {} as Http2Channel,
+      {} as ChannelImplementation,
       callStreamArgs,
-      filterStackFactory
+      filterStackFactory,
+      CallCredentials.createEmpty()
     );
 
     const http2Stream = new ClientHttp2StreamMock({
@@ -179,9 +180,10 @@ describe('CallStream', () => {
         return new Promise((resolve, reject) => {
           const callStream = new Http2CallStream(
             'foo',
-            {} as Http2Channel,
+            {} as ChannelImplementation,
             callStreamArgs,
-            filterStackFactory
+            filterStackFactory,
+            CallCredentials.createEmpty()
           );
           const http2Stream = new ClientHttp2StreamMock({
             payload: Buffer.alloc(0),
@@ -206,9 +208,10 @@ describe('CallStream', () => {
   it('should have functioning getters', done => {
     const callStream = new Http2CallStream(
       'foo',
-      {} as Http2Channel,
+      {} as ChannelImplementation,
       callStreamArgs,
-      filterStackFactory
+      filterStackFactory,
+      CallCredentials.createEmpty()
     );
     assert.strictEqual(callStream.getDeadline(), callStreamArgs.deadline);
     assert.strictEqual(callStream.getStatus(), null);
@@ -232,9 +235,10 @@ describe('CallStream', () => {
     it('should handle an empty message', done => {
       const callStream = new Http2CallStream(
         'foo',
-        {} as Http2Channel,
+        {} as ChannelImplementation,
         callStreamArgs,
-        filterStackFactory
+        filterStackFactory,
+        CallCredentials.createEmpty()
       );
       const http2Stream = new ClientHttp2StreamMock({
         payload: serialize(''),
@@ -272,9 +276,10 @@ describe('CallStream', () => {
       it(`should handle a short message where ${testCase.description}`, done => {
         const callStream = new Http2CallStream(
           'foo',
-          {} as Http2Channel,
+          {} as ChannelImplementation,
           callStreamArgs,
-          filterStackFactory
+          filterStackFactory,
+          CallCredentials.createEmpty()
         );
         const http2Stream = new ClientHttp2StreamMock({
           payload: serialize(message), // 21 bytes
@@ -317,9 +322,10 @@ describe('CallStream', () => {
       it(`should handle two messages where ${testCase.description}`, done => {
         const callStream = new Http2CallStream(
           'foo',
-          {} as Http2Channel,
+          {} as ChannelImplementation,
           callStreamArgs,
-          filterStackFactory
+          filterStackFactory,
+          CallCredentials.createEmpty()
         );
         const http2Stream = new ClientHttp2StreamMock({
           payload: Buffer.concat([serialize(message), serialize(message)]), // 42 bytes
@@ -346,9 +352,10 @@ describe('CallStream', () => {
     it('should send buffered writes', done => {
       const callStream = new Http2CallStream(
         'foo',
-        {} as Http2Channel,
+        {} as ChannelImplementation,
         callStreamArgs,
-        filterStackFactory
+        filterStackFactory,
+        CallCredentials.createEmpty()
       );
       const http2Stream = new ClientHttp2StreamMock({
         payload: Buffer.alloc(0),
@@ -380,9 +387,10 @@ describe('CallStream', () => {
     it('should cause data chunks in write calls afterward to be written to the given stream', done => {
       const callStream = new Http2CallStream(
         'foo',
-        {} as Http2Channel,
+        {} as ChannelImplementation,
         callStreamArgs,
-        filterStackFactory
+        filterStackFactory,
+        CallCredentials.createEmpty()
       );
       const http2Stream = new ClientHttp2StreamMock({
         payload: Buffer.alloc(0),
@@ -409,9 +417,10 @@ describe('CallStream', () => {
     it('should handle underlying stream errors', () => {
       const callStream = new Http2CallStream(
         'foo',
-        {} as Http2Channel,
+        {} as ChannelImplementation,
         callStreamArgs,
-        filterStackFactory
+        filterStackFactory,
+        CallCredentials.createEmpty()
       );
       const http2Stream = new ClientHttp2StreamMock({
         payload: Buffer.alloc(0),

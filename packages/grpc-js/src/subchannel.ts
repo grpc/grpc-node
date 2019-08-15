@@ -21,6 +21,8 @@ import { Metadata } from './metadata';
 import { Http2CallStream } from './call-stream';
 import { ChannelOptions } from './channel-options';
 import { PeerCertificate, checkServerIdentity } from 'tls';
+import { ConnectivityState } from './channel';
+import { BackoffTimeout } from './backoff-timeout';
 
 const { version: clientVersion } = require('../../package.json');
 
@@ -36,14 +38,7 @@ const BACKOFF_JITTER = 0.2;
 const KEEPALIVE_TIME_MS = ~(1 << 31);
 const KEEPALIVE_TIMEOUT_MS = 20000;
 
-export enum SubchannelConnectivityState {
-  READY,
-  CONNECTING,
-  TRANSIENT_FAILURE,
-  IDLE
-};
-
-export type ConnectivityStateListener = (subchannel: Subchannel, previousState: SubchannelConnectivityState, newState: SubchannelConnectivityState) => void;
+export type ConnectivityStateListener = (subchannel: Subchannel, previousState: ConnectivityState, newState: ConnectivityState) => void;
 
 const {
   HTTP2_HEADER_AUTHORITY,
@@ -54,26 +49,59 @@ const {
   HTTP2_HEADER_USER_AGENT,
 } = http2.constants;
 
+/**
+ * Get a number uniformly at random in the range [min, max)
+ * @param min 
+ * @param max 
+ */
 function uniformRandom(min: number, max: number) {
   return Math.random() * (max - min) + min;
 }
 
 export class Subchannel {
-  private connectivityState: SubchannelConnectivityState = SubchannelConnectivityState.IDLE;
+  /**
+   * The subchannel's current connectivity state. Invariant: `session` === `null`
+   * if and only if `connectivityState` is IDLE or TRANSIENT_FAILURE.
+   */
+  private connectivityState: ConnectivityState = ConnectivityState.IDLE;
+  /**
+   * The underlying http2 session used to make requests.
+   */
   private session: http2.ClientHttp2Session | null = null;
-  // Indicates that we should continue conection attempts after backoff time ends
+  /**
+   * Indicates that the subchannel should transition from TRANSIENT_FAILURE to
+   * CONNECTING instead of IDLE when the backoff timeout ends.
+   */
   private continueConnecting: boolean = false;
+  /**
+   * A list of listener functions that will be called whenever the connectivity
+   * state changes. Will be modified by `addConnectivityStateListener` and
+   * `removeConnectivityStateListener`
+   */
   private stateListeners: ConnectivityStateListener[] = [];
 
-  private backoffTimerId: NodeJS.Timer;
-  // The backoff value that will be used the next time we try to connect
-  private nextBackoff: number = INITIAL_BACKOFF_MS;
+  private backoffTimeout: BackoffTimeout;
 
+  /**
+   * The complete user agent string constructed using channel args.
+   */
   private userAgent: string;
 
+  /**
+   * The amount of time in between sending pings
+   */
   private keepaliveTimeMs: number = KEEPALIVE_TIME_MS;
+  /**
+   * The amount of time to wait for an acknowledgement after sending a ping
+   */
   private keepaliveTimeoutMs: number = KEEPALIVE_TIMEOUT_MS;
+  /**
+   * Timer reference for timeout that indicates when to send the next ping
+   */
   private keepaliveIntervalId: NodeJS.Timer;
+  /**
+   * Timer reference tracking when the most recent ping will be considered lost
+   */
   private keepaliveTimeoutId: NodeJS.Timer;
 
   /**
@@ -85,6 +113,16 @@ export class Subchannel {
    */
   private refcount: number = 0;
 
+  /**
+   * A class representing a connection to a single backend.
+   * @param channelTarget The target string for the channel as a whole
+   * @param subchannelAddress The address for the backend that this subchannel
+   *     will connect to
+   * @param options The channel options, plus any specific subchannel options
+   *     for this subchannel
+   * @param credentials The channel credentials used to establish this
+   *     connection
+   */
   constructor(private channelTarget: string,
     private subchannelAddress: string,
     private options: ChannelOptions,
@@ -98,11 +136,6 @@ export class Subchannel {
         .filter(e => e)
         .join(' '); // remove falsey values first
 
-        /* The only purpose of these lines is to ensure that this.backoffTimerId has
-         * a value of type NodeJS.Timer. */
-        this.backoffTimerId = setTimeout(() => {}, 0);
-        clearTimeout(this.backoffTimerId);
-
       if ('grpc.keepalive_time_ms' in options) {
         this.keepaliveTimeMs = options['grpc.keepalive_time_ms']!;
       }
@@ -113,35 +146,33 @@ export class Subchannel {
       clearTimeout(this.keepaliveIntervalId);
       this.keepaliveTimeoutId = setTimeout(() => {}, 0);
       clearTimeout(this.keepaliveTimeoutId);
+      this.backoffTimeout = new BackoffTimeout(() => {
+      
+        if (this.continueConnecting) {
+          this.transitionToState([ConnectivityState.TRANSIENT_FAILURE, ConnectivityState.CONNECTING], 
+            ConnectivityState.CONNECTING);
+        } else {
+          this.transitionToState([ConnectivityState.TRANSIENT_FAILURE, ConnectivityState.CONNECTING],
+            ConnectivityState.IDLE);
+        }
+      });
     }
 
   /**
    * Start a backoff timer with the current nextBackoff timeout
    */
   private startBackoff() {
-    this.backoffTimerId = setTimeout(() => {
-      
-      if (this.continueConnecting) {
-        this.transitionToState([SubchannelConnectivityState.TRANSIENT_FAILURE, SubchannelConnectivityState.CONNECTING], 
-          SubchannelConnectivityState.CONNECTING);
-      } else {
-        this.transitionToState([SubchannelConnectivityState.TRANSIENT_FAILURE, SubchannelConnectivityState.CONNECTING],
-          SubchannelConnectivityState.IDLE);
-      }
-    }, this.nextBackoff)
-    const nextBackoff = Math.min(this.nextBackoff * BACKOFF_MULTIPLIER, MAX_BACKOFF_MS);
-    const jitterMagnitude = nextBackoff * BACKOFF_JITTER;
-    this.nextBackoff = nextBackoff + uniformRandom(-jitterMagnitude, jitterMagnitude);
+    this.backoffTimeout.runOnce();
   }
 
   private stopBackoff() {
-    clearTimeout(this.backoffTimerId);
-    this.nextBackoff = INITIAL_BACKOFF_MS;
+    this.backoffTimeout.stop();
+    this.backoffTimeout.reset();
   }
 
   private sendPing() {
     this.keepaliveTimeoutId = setTimeout(() => {
-      // Not sure what to do when keepalive pings fail
+      this.transitionToState([ConnectivityState.READY], ConnectivityState.IDLE);
     }, this.keepaliveTimeoutMs);
     this.session!.ping(
       (err: Error | null, duration: number, payload: Buffer) => {
@@ -164,36 +195,44 @@ export class Subchannel {
 
   private startConnectingInternal() {
     const connectionOptions: http2.SecureClientSessionOptions =
-      this.credentials._getConnectionOptions() || {};
-      if (connectionOptions.secureContext !== null) {
-        // If provided, the value of grpc.ssl_target_name_override should be used
-        // to override the target hostname when checking server identity.
-        // This option is used for testing only.
-        if (this.options['grpc.ssl_target_name_override']) {
-          const sslTargetNameOverride = this.options[
-            'grpc.ssl_target_name_override'
-          ]!;
-          connectionOptions.checkServerIdentity = (
-            host: string,
-            cert: PeerCertificate
-          ): Error | undefined => {
-            return checkServerIdentity(sslTargetNameOverride, cert);
-          };
-          connectionOptions.servername = sslTargetNameOverride;
-        }
+    this.credentials._getConnectionOptions() || {};
+    let addressScheme = 'http://';
+    if ('secureContext' in connectionOptions) {
+      addressScheme = 'https://';
+      // If provided, the value of grpc.ssl_target_name_override should be used
+      // to override the target hostname when checking server identity.
+      // This option is used for testing only.
+      if (this.options['grpc.ssl_target_name_override']) {
+        const sslTargetNameOverride = this.options[
+          'grpc.ssl_target_name_override'
+        ]!;
+        connectionOptions.checkServerIdentity = (
+          host: string,
+          cert: PeerCertificate
+        ): Error | undefined => {
+          return checkServerIdentity(sslTargetNameOverride, cert);
+        };
+        connectionOptions.servername = sslTargetNameOverride;
+      } else {
+        connectionOptions.servername = this.channelTarget;
       }
-    this.session = http2.connect(this.subchannelAddress, connectionOptions);
+    }
+    this.session = http2.connect(addressScheme + this.subchannelAddress, connectionOptions);
     this.session.unref();
     this.session.once('connect', () => {
-      this.transitionToState([SubchannelConnectivityState.CONNECTING], SubchannelConnectivityState.READY);
+      this.transitionToState([ConnectivityState.CONNECTING], ConnectivityState.READY);
     });
     this.session.once('close', () => {
-      this.transitionToState([SubchannelConnectivityState.CONNECTING, SubchannelConnectivityState.READY],
-        SubchannelConnectivityState.TRANSIENT_FAILURE);
+      this.transitionToState([ConnectivityState.CONNECTING, ConnectivityState.READY],
+        ConnectivityState.TRANSIENT_FAILURE);
     });
     this.session.once('goaway', () => {
-      this.transitionToState([SubchannelConnectivityState.CONNECTING, SubchannelConnectivityState.READY],
-        SubchannelConnectivityState.IDLE);
+      this.transitionToState([ConnectivityState.CONNECTING, ConnectivityState.READY],
+        ConnectivityState.IDLE);
+    });
+    this.session.once('error', (error) => {
+      /* Do nothing here. Any error should also trigger a close event, which is
+       * where we want to handle that. */
     });
   }
 
@@ -205,8 +244,8 @@ export class Subchannel {
    * @returns True if the state changed, false otherwise
    */
   private transitionToState(
-    oldStates: SubchannelConnectivityState[],
-    newState: SubchannelConnectivityState
+    oldStates: ConnectivityState[],
+    newState: ConnectivityState
   ): boolean {
     if (oldStates.indexOf(this.connectivityState) === -1) {
       return false;
@@ -214,23 +253,25 @@ export class Subchannel {
     let previousState = this.connectivityState;
     this.connectivityState = newState;
     switch (newState) {
-      case SubchannelConnectivityState.READY:
+      case ConnectivityState.READY:
         this.stopBackoff();
         break;
-      case SubchannelConnectivityState.CONNECTING:
+      case ConnectivityState.CONNECTING:
         this.startBackoff();
         this.startConnectingInternal();
         this.continueConnecting = false;
         break;
-      case SubchannelConnectivityState.TRANSIENT_FAILURE:
+      case ConnectivityState.TRANSIENT_FAILURE:
         this.session = null;
+        this.stopKeepalivePings();
         break;
-      case SubchannelConnectivityState.IDLE:
+      case ConnectivityState.IDLE:
         /* Stopping the backoff timer here is probably redundant because we
          * should only transition to the IDLE state as a result of the timer
          * ending, but we still want to reset the backoff timeout. */
         this.stopBackoff();
         this.session = null;
+        this.stopKeepalivePings();
     }
     /* We use a shallow copy of the stateListeners array in case a listener
      * is removed during this iteration */
@@ -240,14 +281,18 @@ export class Subchannel {
     return true;
   }
 
+  /**
+   * Check if the subchannel associated with zero calls and with zero channels.
+   * If so, shut it down.
+   */
   private checkBothRefcounts() {
     /* If no calls, channels, or subchannel pools have any more references to
      * this subchannel, we can be sure it will never be used again. */
     if (this.callRefcount === 0 && this.refcount === 0) {
-      this.transitionToState([SubchannelConnectivityState.CONNECTING, 
-                              SubchannelConnectivityState.IDLE,
-                              SubchannelConnectivityState.READY],
-                             SubchannelConnectivityState.TRANSIENT_FAILURE);
+      this.transitionToState([ConnectivityState.CONNECTING, 
+                              ConnectivityState.IDLE,
+                              ConnectivityState.READY],
+                             ConnectivityState.TRANSIENT_FAILURE);
     }
   }
 
@@ -289,6 +334,13 @@ export class Subchannel {
     return false;
   }
 
+  /**
+   * Start a stream on the current session with the given `metadata` as headers
+   * and then attach it to the `callStream`. Must only be called if the
+   * subchannel's current connectivity state is READY.
+   * @param metadata 
+   * @param callStream 
+   */
   startCallStream(metadata: Metadata, callStream: Http2CallStream) {
     const headers = metadata.toHttp2Headers();
     headers[HTTP2_HEADER_AUTHORITY] = callStream.getHost();
@@ -305,26 +357,45 @@ export class Subchannel {
     callStream.attachHttp2Stream(http2Stream);
   }
 
+  /**
+   * If the subchannel is currently IDLE, start connecting and switch to the
+   * CONNECTING state. If the subchannel is current in TRANSIENT_FAILURE,
+   * the next time it would transition to IDLE, start connecting again instead.
+   * Otherwise, do nothing.
+   */
   startConnecting() {
     /* First, try to transition from IDLE to connecting. If that doesn't happen
      * because the state is not currently IDLE, check if it is
      * TRANSIENT_FAILURE, and if so indicate that it should go back to
      * connecting after the backoff timer ends. Otherwise do nothing */
-    if (!this.transitionToState([SubchannelConnectivityState.IDLE], SubchannelConnectivityState.CONNECTING)) {
-      if (this.connectivityState === SubchannelConnectivityState.TRANSIENT_FAILURE) {
+    if (!this.transitionToState([ConnectivityState.IDLE], ConnectivityState.CONNECTING)) {
+      if (this.connectivityState === ConnectivityState.TRANSIENT_FAILURE) {
         this.continueConnecting = true;
       }
     }
   }
 
+  /**
+   * Get the subchannel's current connectivity state.
+   */
   getConnectivityState() {
     return this.connectivityState;
   }
 
+  /**
+   * Add a listener function to be called whenever the subchannel's
+   * connectivity state changes.
+   * @param listener 
+   */
   addConnectivityStateListener(listener: ConnectivityStateListener) {
     this.stateListeners.push(listener);
   }
 
+  /**
+   * Remove a listener previously added with `addConnectivityStateListener`
+   * @param listener A reference to a function previously passed to
+   *     `addConnectivityStateListener`
+   */
   removeConnectivityStateListener(listener: ConnectivityStateListener) {
     const listenerIndex = this.stateListeners.indexOf(listener);
     if (listenerIndex > -1) {
@@ -332,8 +403,11 @@ export class Subchannel {
     }
   }
 
+  /**
+   * Reset the backoff timeout, and immediately start connecting if in backoff.
+   */
   resetBackoff() {
-    this.nextBackoff = INITIAL_BACKOFF_MS;
-    this.transitionToState([SubchannelConnectivityState.TRANSIENT_FAILURE], SubchannelConnectivityState.CONNECTING);
+    this.backoffTimeout.reset();
+    this.transitionToState([ConnectivityState.TRANSIENT_FAILURE], ConnectivityState.CONNECTING);
   }
 }

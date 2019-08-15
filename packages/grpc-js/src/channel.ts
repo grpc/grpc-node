@@ -23,7 +23,6 @@ import { SubchannelPool, getSubchannelPool } from "./subchannel-pool";
 import { ChannelControlHelper } from "./load-balancer";
 import { UnavailablePicker, Picker, PickResultType } from "./picker";
 import { Metadata } from "./metadata";
-import { SubchannelConnectivityState } from "./subchannel";
 import { Status } from "./constants";
 import { FilterStackFactory } from "./filter-stack";
 import { CallCredentialsFilterFactory } from "./call-credentials-filter";
@@ -31,6 +30,8 @@ import { DeadlineFilterFactory } from "./deadline-filter";
 import { MetadataStatusFilterFactory } from "./metadata-status-filter";
 import { CompressionFilterFactory } from "./compression-filter";
 import { getDefaultAuthority } from "./resolver";
+import { LoadBalancingConfig } from "./load-balancing-config";
+import { ServiceConfig } from "./service-config";
 
 export enum ConnectivityState {
   CONNECTING,
@@ -136,7 +137,11 @@ export class ChannelImplementation implements Channel {
       }
     };
     // TODO: check channel arg for default service config
-    this.resolvingLoadBalancer = new ResolvingLoadBalancer(target, channelControlHelper, null);
+    const defaultServiceConfig: ServiceConfig = {
+      loadBalancingConfig: [],
+      methodConfig: []
+    }
+    this.resolvingLoadBalancer = new ResolvingLoadBalancer(target, channelControlHelper, defaultServiceConfig);
     this.filterStackFactory = new FilterStackFactory([
       new CallCredentialsFilterFactory(this),
       new DeadlineFilterFactory(this),
@@ -163,12 +168,13 @@ export class ChannelImplementation implements Channel {
     switch(pickResult.pickResultType) {
       case PickResultType.COMPLETE:
         if (pickResult.subchannel === null) {
+          callStream.cancelWithStatus(Status.UNAVAILABLE, "Request dropped by load balancing policy");
           // End the call with an error
         } else {
           /* If the subchannel disconnects between calling pick and getting
            * the filter stack metadata, the call will end with an error. */
           callStream.filterStack.sendMetadata(Promise.resolve(new Metadata())).then((finalMetadata) => {
-            if (pickResult.subchannel!.getConnectivityState() === SubchannelConnectivityState.READY) {
+            if (pickResult.subchannel!.getConnectivityState() === ConnectivityState.READY) {
               pickResult.subchannel!.startCallStream(callMetadata, callStream);
             } else {
               callStream.cancelWithStatus(Status.UNAVAILABLE, 'Connection dropped while starting call');

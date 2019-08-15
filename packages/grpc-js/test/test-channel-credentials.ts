@@ -38,13 +38,13 @@ class CallCredentialsMock implements CallCredentials {
     return new CallCredentialsMock(callCredentials);
   }
 
-  isEqual(other: CallCredentialsMock): boolean {
+  _equals(other: CallCredentialsMock): boolean {
     if (!this.child) {
       return this === other;
     } else if (!other || !other.child) {
       return false;
     } else {
-      return this.child.isEqual(other.child);
+      return this.child._equals(other.child);
     }
   }
 }
@@ -131,7 +131,7 @@ describe('ChannelCredentials Implementation', () => {
       // Build a mock object that should be an identical copy
       const composedCallCreds = callCreds1.compose(callCreds2);
       assert.ok(
-        composedCallCreds.isEqual(
+        composedCallCreds._equals(
           composedChannelCreds._getCallCredentials() as CallCredentialsMock
         )
       );

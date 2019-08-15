@@ -17,7 +17,10 @@
 
 /* This file implements gRFC A2 and the service config spec:
  * https://github.com/grpc/proposal/blob/master/A2-service-configs-in-dns.md
- * https://github.com/grpc/grpc/blob/master/doc/service_config.md */
+ * https://github.com/grpc/grpc/blob/master/doc/service_config.md. Each
+ * function here takes an object with unknown structure and returns its
+ * specific object type if the input has the right structure, and throws an
+ * error otherwise. */
 
 import * as lbconfig from './load-balancing-config';
 import { isString, isArray, isBoolean, isNumber } from 'util';
@@ -42,6 +45,7 @@ export interface ServiceConfig {
   methodConfig: MethodConfig[];
 }
 
+
 export interface ServiceConfigCanaryConfig {
   clientLanguage?: string[];
   percentage?: number;
@@ -49,8 +53,16 @@ export interface ServiceConfigCanaryConfig {
   serviceConfig: ServiceConfig;
 }
 
+/**
+ * Recognizes a number with up to 9 digits after the decimal point, followed by
+ * an "s", representing a number of seconds.
+ */
 const TIMEOUT_REGEX = /^\d+(\.\d{1,9})?s$/;
 
+/**
+ * Client language name used for determining whether this client matches a
+ * `ServiceConfigCanaryConfig`'s `clientLanguage` list.
+ */
 const CLIENT_LANGUAGE_STRING = 'node';
 
 function validateName(obj: any): MethodConfigName {
@@ -246,11 +258,15 @@ function validateAndSelectCanaryConfig(obj: any, percentage: number): ServiceCon
  * can fail with an error; the caller must handle any errors thrown this way.
  * @param txtRecord The TXT record array that is output from a successful call to dns.resolveTxt
  * @param percentage A number chosen from the range [0, 100) that is used to select which config to use
+ * @return The service configuration to use, given the percentage value, or null if the service config
+ *     data has a valid format but none of the options match the current client.
  */
 export function extractAndSelectServiceConfig(txtRecord: string[][], percentage: number): ServiceConfig | null {
   for (const record of txtRecord) {
     if (record.length > 0 && record[0].startsWith('grpc_config=')) {
-      const recordString = [record[0].substring('grpc_config='.length)].concat(record.slice(1)).join('');
+      /* Treat the list of strings in this record as a single string and remove
+       * "grpc_config=" from the beginning. The rest should be a JSON string */
+      const recordString = record.join('').substring('grpc_config='.length);
       const recordJson: any = JSON.parse(recordString);
       return validateAndSelectCanaryConfig(recordJson, percentage);
     }

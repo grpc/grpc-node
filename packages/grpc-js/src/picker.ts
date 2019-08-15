@@ -28,51 +28,84 @@ export enum PickResultType {
 }
 
 export interface PickResult {
-  pickResultType: PickResultType,
-  subchannel: Subchannel | null,
-  status: StatusObject | null
+  pickResultType: PickResultType;
+  /**
+   * The subchannel to use as the transport for the call. Only meaningful if
+   * `pickResultType` is COMPLETE. If null, indicates that the call should be
+   * dropped.
+   */
+  subchannel: Subchannel | null;
+  /**
+   * The status object to end the call with. Populated if and only if
+   * `pickResultType` is TRANSIENT_FAILURE.
+   */
+  status: StatusObject | null;
 }
 
 export interface CompletePickResult extends PickResult {
-  pickResultType: PickResultType.COMPLETE,
-  subchannel: Subchannel | null,
-  status: null
+  pickResultType: PickResultType.COMPLETE;
+  subchannel: Subchannel | null;
+  status: null;
 }
 
 export interface QueuePickResult extends PickResult {
-  pickResultType: PickResultType.QUEUE,
-  subchannel: null,
-  status: null
+  pickResultType: PickResultType.QUEUE;
+  subchannel: null;
+  status: null;
 }
 
 export interface TransientFailurePickResult extends PickResult {
-  pickResultType: PickResultType.TRANSIENT_FAILURE,
-  subchannel: null,
-  status: StatusObject
+  pickResultType: PickResultType.TRANSIENT_FAILURE;
+  subchannel: null;
+  status: StatusObject;
 }
 
 export interface PickArgs {
-  metadata: Metadata
+  metadata: Metadata;
 }
 
+/**
+ * A proxy object representing the momentary state of a load balancer. Picks
+ * subchannels or returns other information based on that state. Should be
+ * replaced every time the load balancer changes state.
+ */
 export interface Picker {
   pick(pickArgs: PickArgs): PickResult;
 }
 
+/**
+ * A standard picker representing a load balancer in the TRANSIENT_FAILURE
+ * state. Always responds to every pick request with an UNAVAILABLE status.
+ */
 export class UnavailablePicker implements Picker {
+  private status: StatusObject;
+  constructor(status?: StatusObject) {
+    if (status !== undefined) {
+      this.status = status;
+    } else {
+      this.status = {
+        code: Status.UNAVAILABLE,
+        details: "No connection established",
+        metadata: new Metadata()
+      };
+    }
+  }
   pick(pickArgs: PickArgs): TransientFailurePickResult {
     return {
       pickResultType: PickResultType.TRANSIENT_FAILURE,
       subchannel: null,
-      status: {
-        code: Status.UNAVAILABLE,
-        details: "No connection established",
-        metadata: new Metadata()
-      }
+      status: this.status
     };
   }
 }
 
+/**
+ * A standard picker representing a load balancer in the IDLE or CONNECTING
+ * state. Always responds to every pick request with a QUEUE pick result
+ * indicating that the pick should be tried again with the next `Picker`. Also
+ * reports back to the load balancer that a connection should be established
+ * once any pick is attempted.
+ */
 export class QueuePicker {
   private calledExitIdle: boolean = false;
   // Constructed with a load balancer. Calls exitIdle on it the first time pick is called

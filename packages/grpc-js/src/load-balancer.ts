@@ -20,6 +20,7 @@ import { Subchannel } from "./subchannel";
 import { ConnectivityState } from "./channel";
 import { Picker } from "./picker";
 import { LoadBalancingConfig } from "./load-balancing-config";
+import * as load_balancer_pick_first from './load-balancer-pick-first';
 
 /**
  * A collection of functions associated with a channel that a load balancer
@@ -109,4 +110,8 @@ export function createLoadBalancer(typeName: string, channelControlHelper: Chann
 
 export function isLoadBalancerNameRegistered(typeName: string): boolean {
   return typeName in registeredLoadBalancerTypes;
+}
+
+export function registerAll() {
+  load_balancer_pick_first.setup();
 }
