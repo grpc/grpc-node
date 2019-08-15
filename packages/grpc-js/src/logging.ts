@@ -18,7 +18,7 @@
 import { LogVerbosity } from './constants';
 
 let _logger: Partial<Console> = console;
-let _logVerbosity: LogVerbosity = LogVerbosity.DEBUG;
+let _logVerbosity: LogVerbosity = LogVerbosity.ERROR;
 
 export const getLogger = (): Partial<Console> => {
   return _logger;

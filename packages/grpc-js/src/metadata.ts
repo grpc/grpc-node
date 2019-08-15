@@ -19,6 +19,9 @@ import * as http2 from 'http2';
 const LEGAL_KEY_REGEX = /^[0-9a-z_.-]+$/;
 const LEGAL_NON_BINARY_VALUE_REGEX = /^[ -~]*$/;
 
+import {LogVerbosity} from './constants';
+import {log} from './logging';
+
 export type MetadataValue = string | Buffer;
 export type MetadataObject = Map<string, MetadataValue[]>;
 
@@ -39,6 +42,7 @@ function normalizeKey(key: string): string {
 }
 
 function validate(key: string, value?: MetadataValue): void {
+  log(LogVerbosity.DEBUG, `validate key = "${key}" value type = "${typeof value}"`);
   if (!isLegalKey(key)) {
     throw new Error('Metadata key "' + key + '" contains illegal characters');
   }
@@ -261,8 +265,7 @@ export class Metadata {
           }
         }
       } catch (error) {
-        error.message = `Failed to add metadata entry ${key}: ${values}. ${error.message}`;
-        process.emitWarning(error);
+        log(LogVerbosity.ERROR, `Failed to add metadata entry ${key}: ${values}. ${error.message}`);
       }
     });
     return result;
