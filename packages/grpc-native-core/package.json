@@ -75,6 +75,8 @@
     "deps/grpc/third_party/nanopb/*.{c,cc,h}",
     "deps/grpc/third_party/upb/**/*.{c,h}",
     "deps/grpc/third_party/zlib/**/*.{c,cc,h}",
+    "deps/grpc/third_party/address_sorting/**/*.{c,h}",
+    "deps/grpc/third_party/cares/**/*.{c,h}",
     "binding.gyp"
   ],
   "main": "index.js",

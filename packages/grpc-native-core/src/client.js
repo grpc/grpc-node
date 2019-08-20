@@ -354,13 +354,61 @@ ClientDuplexStream.prototype.getPeer = getPeer;
  */
 
 /**
+ * Properties of a call, for use with a {@link grpc.Client~callInvocationTransformer}.
+ * @typedef {Object} grpc.Client~CallProperties
+ * @property {*} argument The call argument. Only preset if the method is unary or server streaming.
+ * @property {grpc.Metadata} metadata The request metadata
+ * @property {grpc~Call} call The call object that will be returned by the client method
+ * @property {grpc.Channel} channel The channel that will be used to make a request
+ * @property {grpc~MethodDefinition} methodDefinition The MethodDefinition object that describes this method
+ * @property {grpc.Client~CallOptions} options The call options passed when making this request
+ * @property {grpc.Client~requestCallback} callback The callback that will handle the response.
+ *     Only present if this method is unary or client streaming.
+ */
+
+/**
+ * Call invocation transformer. Has access to the full call properties before a
+ * call is processed and can modify most of those properties. Some modifications
+ * will have no effect or may cause problems.
+ * @name grpc.Client~callInvocationTransformer
+ * @function
+ * @param {grpc.Client~CallProperties} callProperties The original call properties
+ * @return {grpc.Client~CallProperties} The modified call properties.
+ */
+
+/**
+ * A function that functionally replaces the Channel constructor.
+ * @name grpc.Client~channelFactory
+ * @function
+ * @param {string} target The address of the server to connect to
+ * @param {grpc.ChannelCredentials} credentials Channel credentials to use when connecting
+ * @param {grpc~ChannelOptions} options A map of channel options that will be passed to the core.
+ *     The available options are listed in
+ *     [this document]{@link https://grpc.github.io/grpc/core/group__grpc__arg__keys.html}.
+ * @returns {grpc.Channel} This can either be an actual channel object, or an object with the
+ *     same API.
+ */
+
+/**
  * A generic gRPC client. Primarily useful as a base class for generated clients
  * @memberof grpc
  * @constructor
  * @param {string} address Server address to connect to
  * @param {grpc.credentials~ChannelCredentials} credentials Credentials to use
  *     to connect to the server
- * @param {Object} options Options to apply to channel creation
+ * @param {Object} options Options to apply to channel creation. Any of
+ *     [the channel arguments]{@link https://grpc.github.io/grpc/core/group__grpc__arg__keys.html}
+ *     can be used here in addition to specific client options.
+ * @param {grpc~Interceptor[]} [options.interceptors] Interceptors to apply to each request
+ * @param {grpc~InterceptorProvider[]} [options.interceptor_providers] Interceptor providers
+ *     to apply interceptors to each request depending on the method definition. At most
+ *     one of the interceptors and interceptor_providers options may be set.
+ * @param {grpc.Client~callInvocationTransformer=} options.callInvocationTransformer
+ * @param {grpc.Channel=} options.channelOverride Channel to use instead of constructing a new one.
+ *     If set, the address, credentials, channel arguments options, and channelFactoryOverride
+ *     option will all be ignored.
+ * @param {grpc.Client~channelFactory} options.channelFactoryOverride Function to use instead of
+ *     the Channel constructor when creating the Client's channel.
  */
 function Client(address, credentials, options) {
   var self = this;
