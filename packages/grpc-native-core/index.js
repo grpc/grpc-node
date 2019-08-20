@@ -312,7 +312,9 @@ exports.Client = client.Client;
  * @memberof grpc
  * @param {string} target The address of the server to connect to
  * @param {grpc.ChannelCredentials} credentials Channel credentials to use when connecting
- * @param {grpc~ChannelOptions} options A map of channel options that will be passed to the core
+ * @param {grpc~ChannelOptions} options A map of channel options that will be passed to the core.
+ *     The available options are listed in
+ *     [this document]{@link https://grpc.github.io/grpc/core/group__grpc__arg__keys.html}.
  */
 exports.Channel = grpc.Channel;
 
