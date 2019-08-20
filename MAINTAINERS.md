@@ -10,8 +10,6 @@ for general contribution guidelines.
 ## Maintainers (in alphabetical order)
  - [jiangtaoli2016](https://github.com/jiangtaoli2016), Google Inc.
  - [jtattermusch](https://github.com/jtattermusch), Google Inc.
- - [kjin](https://github.com/kjin), Google Inc.
- - [matt-kwong](https://github.com/matt-kwong), Google Inc.
  - [murgatroid99](https://github.com/murgatroid99), Google Inc.
  - [nicolasnoble](https://github.com/nicolasnoble), Google Inc.
  - [ofrobots](https://github.com/ofrobots), Google Inc.
@@ -20,4 +18,6 @@ for general contribution guidelines.
  - [wenbozhu](https://github.com/wenbozhu), Google Inc.
 
  ## Emeritus Maintainers (in alphabetical order)
+ - [kjin](https://github.com/kjin), Google Inc.
+ - [matt-kwong](https://github.com/matt-kwong), Google Inc.
  
