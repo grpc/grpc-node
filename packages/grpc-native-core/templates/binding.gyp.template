@@ -23,6 +23,12 @@
 
   # Some of this file is built with the help of
   # https://n8.io/converting-a-c-library-to-gyp/
+  <%!
+    def filter_property(prop, item):
+      if prop == 'cflags' and item.startswith('$'):
+        return False
+      return True
+  %>
   {
     'variables': {
       'runtime%': 'node',
@@ -46,7 +52,9 @@
           %  if args.get(arg, None) is not None:
           '${prop}': [
             % for item in args.get(arg).split():
+              % if filter_property(prop, item):
               '${item}',
+              % endif
             % endfor
           ],
           %  endif
@@ -59,7 +67,9 @@
       %  if defaults['global'].get(arg, None) is not None:
       '${prop}': [
         % for item in defaults['global'].get(arg).split() + (['-fvisibility=hidden'] if arg == 'CPPFLAGS' else []):
+          % if filter_property(prop, item):
           '${item}',
+          % endif
         % endfor
       ],
       %  endif
@@ -102,7 +112,9 @@
           %  if configs['gcov'].get(arg, None) is not None:
           '${prop}': [
             % for item in configs['gcov'].get(arg).split():
+              % if filter_property(prop, item):
               '${item}',
+              % endif
             % endfor
           ],
           %  endif
@@ -176,12 +188,16 @@
             % if defaults['global'].get('CPPFLAGS', None) is not None:
             'OTHER_CFLAGS': [
               % for item in defaults['global'].get('CPPFLAGS').split() + ['-fvisibility=hidden']:
+                % if filter_property(prop, item):
                 '${item}',
+                % endif
               % endfor
             ],
             'OTHER_CPLUSPLUSFLAGS': [
               % for item in defaults['global'].get('CPPFLAGS').split() + ['-fvisibility=hidden']:
+                % if filter_property(prop, item):
                 '${item}',
+                % endif
               % endfor
               '-stdlib=libc++',
               '-std=c++1y',
