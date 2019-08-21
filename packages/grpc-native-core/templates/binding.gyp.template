@@ -188,14 +188,14 @@
             % if defaults['global'].get('CPPFLAGS', None) is not None:
             'OTHER_CFLAGS': [
               % for item in defaults['global'].get('CPPFLAGS').split() + ['-fvisibility=hidden']:
-                % if filter_property(prop, item):
+                % if filter_property('cflags', item):
                 '${item}',
                 % endif
               % endfor
             ],
             'OTHER_CPLUSPLUSFLAGS': [
               % for item in defaults['global'].get('CPPFLAGS').split() + ['-fvisibility=hidden']:
-                % if filter_property(prop, item):
+                % if filter_property('cflags', item):
                 '${item}',
                 % endif
               % endfor
