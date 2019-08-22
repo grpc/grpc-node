@@ -17,6 +17,7 @@
  */
 
 declare module "grpc" {
+  // add imports here, inside the "grpc" module, to keep it as an ambient module
   import { Message, Service as ProtobufService } from "protobufjs";
   import { EventEmitter } from "events";
   import { Duplex, Readable, Writable } from "stream";
