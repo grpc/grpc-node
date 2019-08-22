@@ -29,6 +29,7 @@
     "node-pre-gyp"
   ],
   "dependencies": {
+    "@types/bytebuffer": "^5.0.40",
     "lodash.camelcase": "^4.3.0",
     "lodash.clone": "^4.5.0",
     "nan": "^2.13.2",

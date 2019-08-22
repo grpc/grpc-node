@@ -16,12 +16,49 @@
  *
  */
 
+/// <reference types="bytebuffer" />
+
 declare module "grpc" {
   // add imports here, inside the "grpc" module, to keep it as an ambient module
-  import { Message, Service as ProtobufService } from "protobufjs";
   import { EventEmitter } from "events";
   import { Duplex, Readable, Writable } from "stream";
   import { SecureContext } from "tls";
+
+  /* The Message interface is copied and slightly modified from @types/protobuf
+   * version 5.0.31, which was distributed under the following license:
+   * 
+   * This project is licensed under the MIT license.
+   * Copyrights are respective of each contributor listed at the beginning of each definition file.
+   *
+   * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+   *
+   * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+   *
+   * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+   */
+  export interface ProtobufMessage {
+    $add(key: string, value: any, noAssert?: boolean): ProtobufMessage;
+    $get<T>(key: string): T;
+    $set(key: string | {[key: string]: any}, value?: any | boolean, noAssert?: boolean): void;
+    add(key: string, value: any, noAssert?: boolean): ProtobufMessage;
+    calculate(): number;
+    encode(buffer?: ByteBuffer | boolean, noVerify?: boolean): ByteBuffer;
+    encode64(): string;
+    encodeAB(): ArrayBuffer;
+    encodeNB(): Buffer;
+    encodeHex(): string;
+    encodeJSON(): string;
+    encodeDelimited(buffer?: ByteBuffer | boolean, noVerify?: boolean): ByteBuffer;
+    get<T>(key: string, noAssert?: boolean): T;
+    set(key: string | {[key: string]: any}, value?: any | boolean, noAssert?: boolean): void;
+    toArrayBuffer(): ArrayBuffer;
+    toBase64(): string;
+    toBuffer(): Buffer;
+    toHex(): string;
+    toRaw(binaryAsBase64?: boolean, longsAsStrings?: boolean): {[key: string]: any};
+    toString(): string;
+    [field: string]: any;
+  }
 
   /**
    * Load a ProtoBuf.js object as a gRPC object.
@@ -86,7 +123,7 @@ declare module "grpc" {
    * - Anything else becomes the relevant reflection object that ProtoBuf.js would create
    */
   export interface GrpcObject {
-    [name: string]: GrpcObject | typeof Client | Message;
+    [name: string]: GrpcObject | typeof Client | ProtobufMessage;
   }
 
   /**
