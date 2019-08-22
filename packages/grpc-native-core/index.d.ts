@@ -1,4 +1,3 @@
-import { EventEmitter } from "events";
 
 /*
  * Copyright 2019 gRPC authors.
@@ -19,6 +18,7 @@ import { EventEmitter } from "events";
 
 declare module "grpc" {
   import { Message, Service as ProtobufService } from "protobufjs";
+  import { EventEmitter } from "events";
   import { Duplex, Readable, Writable } from "stream";
   import { SecureContext } from "tls";
 
