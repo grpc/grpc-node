@@ -78,12 +78,10 @@
         'deps/grpc/third_party/address_sorting/include',
         'deps/grpc/third_party/cares',
         'deps/grpc/third_party/cares/cares',
-        'deps/grpc/third_party/nanopb',
         'deps/grpc/third_party/upb',
         'deps/grpc/third_party/upb/generated_for_cmake',
       ],
       'defines': [
-        'PB_FIELD_32BIT',
         'GPR_BACKWARDS_COMPATIBILITY_MODE',
         'GRPC_ARES=1',
         'GRPC_UV',
