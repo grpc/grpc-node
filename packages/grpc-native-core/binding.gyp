@@ -205,6 +205,11 @@
             '-Wno-error=deprecated-declarations'
           ],
         },
+      }],
+      ['OS == "linux"', {
+        'defines': [
+          '_GLIBCXX_USE_CXX11_ABI=0'
+        ]
       }]
     ]
   },

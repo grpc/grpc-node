@@ -38,11 +38,8 @@ OS=`uname`
 
 case $OS in
 Linux)
-    docker build -t kokoro-native-image tools/release/native
     docker build -t kokoro-cross-image tools/release/cross
-    docker run -v /var/run/docker.sock:/var/run/docker.sock -v $base_dir:$base_dir kokoro-native-image $base_dir/packages/grpc-native-core/tools/run_tests/artifacts/build_all_linux_artifacts.sh --native-only --nodejs-only
-    cp -rv packages/grpc-native-core/artifacts .
-    docker run -v /var/run/docker.sock:/var/run/docker.sock -v $base_dir:$base_dir kokoro-cross-image $base_dir/packages/grpc-native-core/tools/run_tests/artifacts/build_all_linux_artifacts.sh --cross-only --nodejs-only
+    docker run -v /var/run/docker.sock:/var/run/docker.sock -v $base_dir:$base_dir kokoro-cross-image $base_dir/packages/grpc-native-core/tools/run_tests/artifacts/build_all_linux_artifacts.sh --nodejs-only
     cp -rv packages/grpc-native-core/artifacts .
     ;;
 Darwin)
