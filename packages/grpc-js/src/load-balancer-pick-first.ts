@@ -117,6 +117,13 @@ export class PickFirstLoadBalancer implements LoadBalancer {
               subchannel.startConnecting();
             });
           }
+          /* If the subchannel we most recently attempted to start connecting
+           * to goes into TRANSIENT_FAILURE, immediately try to start
+           * connecting to the next one instead of waiting for the connection
+           * delay timer. */
+          if (subchannel === this.subchannels[this.currentSubchannelIndex] && newState === ConnectivityState.TRANSIENT_FAILURE) {
+            this.startNextSubchannelConnecting();
+          }
           if (this.triedAllSubchannels) {
             const newLBState = this.subchannelConnectingCount > 0 ? ConnectivityState.CONNECTING : ConnectivityState.TRANSIENT_FAILURE;
             if (newLBState !== this.currentState) {
@@ -153,6 +160,23 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     clearTimeout(this.connectionDelayTimeout);
   }
 
+
+  private startNextSubchannelConnecting() {
+    if (this.triedAllSubchannels) {
+      return;
+    }
+    for (const [index, subchannel] of this.subchannels.entries()) {
+      if (index > this.currentSubchannelIndex) {
+        const subchannelState = subchannel.getConnectivityState();
+        if (subchannelState === ConnectivityState.IDLE || subchannelState === ConnectivityState.CONNECTING) {
+          this.startConnecting(index);
+          return;
+        }
+      }
+    }
+    this.triedAllSubchannels = true;
+  }
+
   /**
    * Have a single subchannel in the `subchannels` list start connecting.
    * @param subchannelIndex The index into the `subchannels` list.
@@ -166,16 +190,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       });
     }
     this.connectionDelayTimeout = setTimeout(() => {
-      for (const [index, subchannel] of this.subchannels.entries()) {
-        if (index > subchannelIndex) {
-          const subchannelState = subchannel.getConnectivityState();
-          if (subchannelState === ConnectivityState.IDLE || subchannelState === ConnectivityState.CONNECTING) {
-            this.startConnecting(index);
-            return;
-          }
-        }
-      }
-      this.triedAllSubchannels = true;
+      this.startNextSubchannelConnecting();
     }, CONNECTION_DELAY_INTERVAL_MS)
   }
 
