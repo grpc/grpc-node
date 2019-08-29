@@ -15,9 +15,9 @@
  *
  */
 
-import { ChannelOptions, channelOptionsEqual } from "./channel-options";
-import { Subchannel } from "./subchannel";
-import { ChannelCredentials } from "./channel-credentials";
+import { ChannelOptions, channelOptionsEqual } from './channel-options';
+import { Subchannel } from './subchannel';
+import { ChannelCredentials } from './channel-credentials';
 
 // 10 seconds in milliseconds. This value is arbitrary.
 /**
@@ -27,7 +27,15 @@ import { ChannelCredentials } from "./channel-credentials";
 const REF_CHECK_INTERVAL = 10_000;
 
 export class SubchannelPool {
-  private pool: {[channelTarget: string]: {[subchannelTarget: string]: {channelArguments: ChannelOptions, channelCredentials: ChannelCredentials, subchannel: Subchannel}[]}} = Object.create(null);
+  private pool: {
+    [channelTarget: string]: {
+      [subchannelTarget: string]: Array<{
+        channelArguments: ChannelOptions;
+        channelCredentials: ChannelCredentials;
+        subchannel: Subchannel;
+      }>;
+    };
+  } = Object.create(null);
 
   /**
    * A pool of subchannels use for making connections. Subchannels with the
@@ -38,13 +46,24 @@ export class SubchannelPool {
   constructor(private global: boolean) {
     if (global) {
       setInterval(() => {
+        /* These objects are created with Object.create(null), so they do not
+         * have a prototype, which means that for (... in ...) loops over them
+         * do not need to be filtered */
+        // tslint:disable-next-line:forin
         for (const channelTarget in this.pool) {
+          // tslint:disable-next-line:forin
           for (const subchannelTarget in this.pool[channelTarget]) {
-            const subchannelObjArray = this.pool[channelTarget][subchannelTarget];
+            const subchannelObjArray = this.pool[channelTarget][
+              subchannelTarget
+            ];
             /* For each subchannel in the pool, try to unref it if it has
              * exactly one ref (which is the ref from the pool itself). If that
              * does happen, remove the subchannel from the pool */
-            this.pool[channelTarget][subchannelTarget] = subchannelObjArray.filter((value) => !value.subchannel.unrefIfOneRef());
+            this.pool[channelTarget][
+              subchannelTarget
+            ] = subchannelObjArray.filter(
+              value => !value.subchannel.unrefIfOneRef()
+            );
           }
         }
         /* Currently we do not delete keys with empty values. If that results
@@ -57,31 +76,51 @@ export class SubchannelPool {
   /**
    * Get a subchannel if one already exists with exactly matching parameters.
    * Otherwise, create and save a subchannel with those parameters.
-   * @param channelTarget 
-   * @param subchannelTarget 
-   * @param channelArguments 
-   * @param channelCredentials 
+   * @param channelTarget
+   * @param subchannelTarget
+   * @param channelArguments
+   * @param channelCredentials
    */
-  getOrCreateSubchannel(channelTarget: string, subchannelTarget: string, channelArguments: ChannelOptions, channelCredentials: ChannelCredentials): Subchannel {
+  getOrCreateSubchannel(
+    channelTarget: string,
+    subchannelTarget: string,
+    channelArguments: ChannelOptions,
+    channelCredentials: ChannelCredentials
+  ): Subchannel {
     if (channelTarget in this.pool) {
-      if (subchannelTarget in this.pool[channelTarget]){
+      if (subchannelTarget in this.pool[channelTarget]) {
         const subchannelObjArray = this.pool[channelTarget][subchannelTarget];
         for (const subchannelObj of subchannelObjArray) {
-          if (channelOptionsEqual(channelArguments, subchannelObj.channelArguments) && channelCredentials._equals(subchannelObj.channelCredentials)) {
+          if (
+            channelOptionsEqual(
+              channelArguments,
+              subchannelObj.channelArguments
+            ) &&
+            channelCredentials._equals(subchannelObj.channelCredentials)
+          ) {
             return subchannelObj.subchannel;
           }
         }
       }
     }
     // If we get here, no matching subchannel was found
-    const subchannel = new Subchannel(channelTarget, subchannelTarget, channelArguments, channelCredentials);
+    const subchannel = new Subchannel(
+      channelTarget,
+      subchannelTarget,
+      channelArguments,
+      channelCredentials
+    );
     if (!(channelTarget in this.pool)) {
       this.pool[channelTarget] = Object.create(null);
     }
     if (!(subchannelTarget in this.pool[channelTarget])) {
       this.pool[channelTarget][subchannelTarget] = [];
     }
-    this.pool[channelTarget][subchannelTarget].push({channelArguments, channelCredentials, subchannel});
+    this.pool[channelTarget][subchannelTarget].push({
+      channelArguments,
+      channelCredentials,
+      subchannel,
+    });
     if (this.global) {
       subchannel.ref();
     }
@@ -93,7 +132,7 @@ const globalSubchannelPool = new SubchannelPool(true);
 
 /**
  * Get either the global subchannel pool, or a new subchannel pool.
- * @param global 
+ * @param global
  */
 export function getSubchannelPool(global: boolean): SubchannelPool {
   if (global) {

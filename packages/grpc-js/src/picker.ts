@@ -15,16 +15,16 @@
  *
  */
 
-import { Subchannel } from "./subchannel";
-import { StatusObject } from "./call-stream";
-import { Metadata } from "./metadata";
-import { Status } from "./constants";
-import { LoadBalancer } from "./load-balancer";
+import { Subchannel } from './subchannel';
+import { StatusObject } from './call-stream';
+import { Metadata } from './metadata';
+import { Status } from './constants';
+import { LoadBalancer } from './load-balancer';
 
 export enum PickResultType {
   COMPLETE,
   QUEUE,
-  TRANSIENT_FAILURE
+  TRANSIENT_FAILURE,
 }
 
 export interface PickResult {
@@ -85,8 +85,8 @@ export class UnavailablePicker implements Picker {
     } else {
       this.status = {
         code: Status.UNAVAILABLE,
-        details: "No connection established",
-        metadata: new Metadata()
+        details: 'No connection established',
+        metadata: new Metadata(),
       };
     }
   }
@@ -94,7 +94,7 @@ export class UnavailablePicker implements Picker {
     return {
       pickResultType: PickResultType.TRANSIENT_FAILURE,
       subchannel: null,
-      status: this.status
+      status: this.status,
     };
   }
 }
@@ -107,7 +107,7 @@ export class UnavailablePicker implements Picker {
  * once any pick is attempted.
  */
 export class QueuePicker {
-  private calledExitIdle: boolean = false;
+  private calledExitIdle = false;
   // Constructed with a load balancer. Calls exitIdle on it the first time pick is called
   constructor(private loadBalancer: LoadBalancer) {}
 
@@ -119,7 +119,7 @@ export class QueuePicker {
     return {
       pickResultType: PickResultType.QUEUE,
       subchannel: null,
-      status: null
-    }
+      status: null,
+    };
   }
 }

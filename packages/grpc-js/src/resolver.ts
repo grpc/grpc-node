@@ -15,10 +15,10 @@
  *
  */
 
-import { ServiceError } from "./call";
-import { ServiceConfig } from "./service-config";
+import { ServiceError } from './call';
+import { ServiceConfig } from './service-config';
 import * as resolver_dns from './resolver-dns';
-import { StatusObject } from "./call-stream";
+import { StatusObject } from './call-stream';
 
 /**
  * A listener object passed to the resolver's constructor that provides name
@@ -34,7 +34,11 @@ export interface ResolverListener {
    * @param serviceConfigError If non-`null`, indicates that the retrieved
    *     service configuration was invalid
    */
-  onSuccessfulResolution(addressList: string[], serviceConfig: ServiceConfig | null, serviceConfigError: StatusObject | null): void;
+  onSuccessfulResolution(
+    addressList: string[],
+    serviceConfig: ServiceConfig | null,
+    serviceConfigError: StatusObject | null
+  ): void;
   /**
    * Called whenever a name resolution attempt fails.
    * @param error Describes how resolution failed
@@ -56,36 +60,38 @@ export interface Resolver {
   updateResolution(): void;
 }
 
-
 export interface ResolverConstructor {
-  new(target: string, listener: ResolverListener): Resolver;
+  new (target: string, listener: ResolverListener): Resolver;
   /**
    * Get the default authority for a target. This loosely corresponds to that
    * target's hostname. Throws an error if this resolver class cannot parse the
    * `target`.
    * @param target
    */
-  getDefaultAuthority(target:string): string;
+  getDefaultAuthority(target: string): string;
 }
 
-const registeredResolvers: {[prefix: string]: ResolverConstructor} = {};
+const registeredResolvers: { [prefix: string]: ResolverConstructor } = {};
 let defaultResolver: ResolverConstructor | null = null;
 
 /**
  * Register a resolver class to handle target names prefixed with the `prefix`
  * string. This prefix should correspond to a URI scheme name listed in the
  * [gRPC Name Resolution document](https://github.com/grpc/grpc/blob/master/doc/naming.md)
- * @param prefix 
- * @param resolverClass 
+ * @param prefix
+ * @param resolverClass
  */
-export function registerResolver(prefix: string, resolverClass: ResolverConstructor) {
+export function registerResolver(
+  prefix: string,
+  resolverClass: ResolverConstructor
+) {
   registeredResolvers[prefix] = resolverClass;
 }
 
 /**
  * Register a default resolver to handle target names that do not start with
  * any registered prefix.
- * @param resolverClass 
+ * @param resolverClass
  */
 export function registerDefaultResolver(resolverClass: ResolverConstructor) {
   defaultResolver = resolverClass;
@@ -94,10 +100,13 @@ export function registerDefaultResolver(resolverClass: ResolverConstructor) {
 /**
  * Create a name resolver for the specified target, if possible. Throws an
  * error if no such name resolver can be created.
- * @param target 
- * @param listener 
+ * @param target
+ * @param listener
  */
-export function createResolver(target: string, listener: ResolverListener): Resolver {
+export function createResolver(
+  target: string,
+  listener: ResolverListener
+): Resolver {
   for (const prefix of Object.keys(registeredResolvers)) {
     if (target.startsWith(prefix)) {
       return new registeredResolvers[prefix](target, listener);
@@ -112,7 +121,7 @@ export function createResolver(target: string, listener: ResolverListener): Reso
 /**
  * Get the default authority for the specified target, if possible. Throws an
  * error if no registered name resolver can parse that target string.
- * @param target 
+ * @param target
  */
 export function getDefaultAuthority(target: string): string {
   for (const prefix of Object.keys(registerDefaultResolver)) {

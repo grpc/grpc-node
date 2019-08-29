@@ -22,8 +22,8 @@ const BACKOFF_JITTER = 0.2;
 
 /**
  * Get a number uniformly at random in the range [min, max)
- * @param min 
- * @param max 
+ * @param min
+ * @param max
  */
 function uniformRandom(min: number, max: number) {
   return Math.random() * (max - min) + min;
@@ -43,7 +43,7 @@ export class BackoffTimeout {
   private jitter: number = BACKOFF_JITTER;
   private nextDelay: number;
   private timerId: NodeJS.Timer;
-  private running: boolean = false;
+  private running = false;
 
   constructor(private callback: () => void, options?: BackoffOptions) {
     if (options) {
@@ -74,9 +74,13 @@ export class BackoffTimeout {
       this.callback();
       this.running = false;
     }, this.nextDelay);
-    const nextBackoff = Math.min(this.nextDelay * this.multiplier, this.maxDelay);
+    const nextBackoff = Math.min(
+      this.nextDelay * this.multiplier,
+      this.maxDelay
+    );
     const jitterMagnitude = nextBackoff * this.jitter;
-    this.nextDelay = nextBackoff + uniformRandom(-jitterMagnitude, jitterMagnitude);
+    this.nextDelay =
+      nextBackoff + uniformRandom(-jitterMagnitude, jitterMagnitude);
   }
 
   /**

@@ -41,13 +41,16 @@ export const recognizedOptions = {
   'grpc.keepalive_timeout_ms': true,
 };
 
-export function channelOptionsEqual(options1: ChannelOptions, options2: ChannelOptions) {
+export function channelOptionsEqual(
+  options1: ChannelOptions,
+  options2: ChannelOptions
+) {
   const keys1 = Object.keys(options1).sort();
   const keys2 = Object.keys(options2).sort();
   if (keys1.length !== keys2.length) {
     return false;
   }
-  for (let i = 0; i < keys1.length; i+=1) {
+  for (let i = 0; i < keys1.length; i += 1) {
     if (keys1[i] !== keys2[i]) {
       return false;
     }

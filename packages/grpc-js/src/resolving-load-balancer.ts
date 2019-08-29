@@ -15,18 +15,23 @@
  *
  */
 
-import { ChannelControlHelper, LoadBalancer, isLoadBalancerNameRegistered, createLoadBalancer } from "./load-balancer";
-import { ServiceConfig } from "./service-config";
-import { ConnectivityState } from "./channel";
-import { createResolver, Resolver } from "./resolver";
-import { ServiceError } from "./call";
-import { ChannelOptions } from "./channel-options";
-import { Picker, UnavailablePicker, QueuePicker } from "./picker";
-import { LoadBalancingConfig } from "./load-balancing-config";
-import { BackoffTimeout } from "./backoff-timeout";
-import { Status } from "./constants";
-import { StatusObject } from "./call-stream";
-import { Metadata } from "./metadata";
+import {
+  ChannelControlHelper,
+  LoadBalancer,
+  isLoadBalancerNameRegistered,
+  createLoadBalancer,
+} from './load-balancer';
+import { ServiceConfig } from './service-config';
+import { ConnectivityState } from './channel';
+import { createResolver, Resolver } from './resolver';
+import { ServiceError } from './call';
+import { ChannelOptions } from './channel-options';
+import { Picker, UnavailablePicker, QueuePicker } from './picker';
+import { LoadBalancingConfig } from './load-balancing-config';
+import { BackoffTimeout } from './backoff-timeout';
+import { Status } from './constants';
+import { StatusObject } from './call-stream';
+import { Metadata } from './metadata';
 
 const DEFAULT_LOAD_BALANCER_NAME = 'pick_first';
 
@@ -103,10 +108,18 @@ export class ResolvingLoadBalancer implements LoadBalancer {
    *     In practice, that means using the "pick first" load balancer
    *     implmentation
    */
-  constructor (private target: string, private channelControlHelper: ChannelControlHelper, private defaultServiceConfig: ServiceConfig | null) {
+  constructor(
+    private target: string,
+    private channelControlHelper: ChannelControlHelper,
+    private defaultServiceConfig: ServiceConfig | null
+  ) {
     this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
     this.innerResolver = createResolver(target, {
-      onSuccessfulResolution: (addressList: string[], serviceConfig: ServiceConfig | null, serviceConfigError: ServiceError | null) => {
+      onSuccessfulResolution: (
+        addressList: string[],
+        serviceConfig: ServiceConfig | null,
+        serviceConfigError: ServiceError | null
+      ) => {
         let workingServiceConfig: ServiceConfig | null = null;
         /* This first group of conditionals implements the algorithm described
          * in https://github.com/grpc/proposal/blob/master/A21-service-config-error-handling.md
@@ -127,7 +140,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
                 this.handleResolutionFailure(serviceConfigError);
               } else {
                 // Step 4.ii.a
-                workingServiceConfig = this.defaultServiceConfig
+                workingServiceConfig = this.defaultServiceConfig;
               }
             } else {
               // Step 4.i
@@ -141,7 +154,10 @@ export class ResolvingLoadBalancer implements LoadBalancer {
         }
         let loadBalancerName: string | null = null;
         let loadBalancingConfig: LoadBalancingConfig | null = null;
-        if (workingServiceConfig === null || workingServiceConfig.loadBalancingConfig.length === 0) {
+        if (
+          workingServiceConfig === null ||
+          workingServiceConfig.loadBalancingConfig.length === 0
+        ) {
           loadBalancerName = DEFAULT_LOAD_BALANCER_NAME;
         } else {
           for (const lbConfig of workingServiceConfig.loadBalancingConfig) {
@@ -163,39 +179,68 @@ export class ResolvingLoadBalancer implements LoadBalancer {
             // There were load balancing configs but none are supported. This counts as a resolution failure
             this.handleResolutionFailure({
               code: Status.UNAVAILABLE,
-              details: 'All load balancer options in service config are not compatible',
-              metadata: new Metadata()
+              details:
+                'All load balancer options in service config are not compatible',
+              metadata: new Metadata(),
             });
             return;
           }
         }
         if (this.innerLoadBalancer === null) {
-          this.innerLoadBalancer = createLoadBalancer(loadBalancerName, this.innerChannelControlHelper)!;
-          this.innerLoadBalancer.updateAddressList(addressList, loadBalancingConfig);
+          this.innerLoadBalancer = createLoadBalancer(
+            loadBalancerName,
+            this.innerChannelControlHelper
+          )!;
+          this.innerLoadBalancer.updateAddressList(
+            addressList,
+            loadBalancingConfig
+          );
         } else if (this.innerLoadBalancer.getTypeName() === loadBalancerName) {
-          this.innerLoadBalancer.updateAddressList(addressList, loadBalancingConfig);
+          this.innerLoadBalancer.updateAddressList(
+            addressList,
+            loadBalancingConfig
+          );
         } else {
-          if (this.pendingReplacementLoadBalancer === null || this.pendingReplacementLoadBalancer.getTypeName() !== loadBalancerName) {
+          if (
+            this.pendingReplacementLoadBalancer === null ||
+            this.pendingReplacementLoadBalancer.getTypeName() !==
+              loadBalancerName
+          ) {
             if (this.pendingReplacementLoadBalancer !== null) {
               this.pendingReplacementLoadBalancer.destroy();
             }
-            this.pendingReplacementLoadBalancer = createLoadBalancer(loadBalancerName, this.replacementChannelControlHelper)!;
+            this.pendingReplacementLoadBalancer = createLoadBalancer(
+              loadBalancerName,
+              this.replacementChannelControlHelper
+            )!;
           }
-          this.pendingReplacementLoadBalancer.updateAddressList(addressList, loadBalancingConfig);
+          this.pendingReplacementLoadBalancer.updateAddressList(
+            addressList,
+            loadBalancingConfig
+          );
         }
       },
       onError: (error: StatusObject) => {
         this.handleResolutionFailure(error);
-      }
+      },
     });
 
     this.innerChannelControlHelper = {
-      createSubchannel: (subchannelAddress: string, subchannelArgs: ChannelOptions) => {
-        return this.channelControlHelper.createSubchannel(subchannelAddress, subchannelArgs);
+      createSubchannel: (
+        subchannelAddress: string,
+        subchannelArgs: ChannelOptions
+      ) => {
+        return this.channelControlHelper.createSubchannel(
+          subchannelAddress,
+          subchannelArgs
+        );
       },
       updateState: (connectivityState: ConnectivityState, picker: Picker) => {
         this.innerBalancerState = connectivityState;
-        if (connectivityState !== ConnectivityState.READY && this.pendingReplacementLoadBalancer !== null) {
+        if (
+          connectivityState !== ConnectivityState.READY &&
+          this.pendingReplacementLoadBalancer !== null
+        ) {
           this.switchOverReplacementBalancer();
         } else {
           this.updateState(connectivityState, picker);
@@ -211,12 +256,18 @@ export class ResolvingLoadBalancer implements LoadBalancer {
             this.innerResolver.updateResolution();
           }
         }
-      }
-    }
+      },
+    };
 
     this.replacementChannelControlHelper = {
-      createSubchannel: (subchannelAddress: string, subchannelArgs: ChannelOptions) => {
-        return this.channelControlHelper.createSubchannel(subchannelAddress, subchannelArgs);
+      createSubchannel: (
+        subchannelAddress: string,
+        subchannelArgs: ChannelOptions
+      ) => {
+        return this.channelControlHelper.createSubchannel(
+          subchannelAddress,
+          subchannelArgs
+        );
       },
       updateState: (connectivityState: ConnectivityState, picker: Picker) => {
         this.replacementBalancerState = connectivityState;
@@ -233,7 +284,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
            * updateResolution */
           this.innerResolver.updateResolution();
         }
-      }
+      },
     };
 
     this.backoffTimeout = new BackoffTimeout(() => {
@@ -258,15 +309,23 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   private switchOverReplacementBalancer() {
     this.innerLoadBalancer!.destroy();
     this.innerLoadBalancer = this.pendingReplacementLoadBalancer!;
-    this.innerLoadBalancer.replaceChannelControlHelper(this.innerChannelControlHelper);
+    this.innerLoadBalancer.replaceChannelControlHelper(
+      this.innerChannelControlHelper
+    );
     this.pendingReplacementLoadBalancer = null;
     this.innerBalancerState = this.replacementBalancerState;
-    this.updateState(this.replacementBalancerState, this.replacementBalancerPicker);
+    this.updateState(
+      this.replacementBalancerState,
+      this.replacementBalancerPicker
+    );
   }
 
   private handleResolutionFailure(error: StatusObject) {
     if (this.innerLoadBalancer === null) {
-      this.updateState(ConnectivityState.TRANSIENT_FAILURE, new UnavailablePicker(error));
+      this.updateState(
+        ConnectivityState.TRANSIENT_FAILURE,
+        new UnavailablePicker(error)
+      );
     }
     this.backoffTimeout.runOnce();
   }
@@ -276,10 +335,16 @@ export class ResolvingLoadBalancer implements LoadBalancer {
     if (this.innerLoadBalancer !== null) {
       this.innerLoadBalancer.exitIdle();
     }
-    this.channelControlHelper.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
+    this.channelControlHelper.updateState(
+      ConnectivityState.CONNECTING,
+      new QueuePicker(this)
+    );
   }
 
-  updateAddressList(addressList: string[], lbConfig: LoadBalancingConfig | null) {
+  updateAddressList(
+    addressList: string[],
+    lbConfig: LoadBalancingConfig | null
+  ) {
     throw new Error('updateAddressList not supported on ResolvingLoadBalancer');
   }
 

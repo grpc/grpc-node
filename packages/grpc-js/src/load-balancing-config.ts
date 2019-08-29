@@ -21,10 +21,11 @@
  * specific object type if the input has the right structure, and throws an
  * error otherwise. */
 
-import { isString, isArray } from "util";
+/* The any type is purposely used here. All functions validate their input at
+ * runtime */
+/* tslint:disable:no-any */
 
-export interface RoundRobinConfig {
-}
+export interface RoundRobinConfig {}
 
 export interface XdsConfig {
   balancerName: string;
@@ -48,16 +49,16 @@ export interface LoadBalancingConfig {
  * effectively */
 
 function validateXdsConfig(xds: any): XdsConfig {
-  if (!('balancerName' in xds) || !isString(xds.balancerName)) {
+  if (!('balancerName' in xds) || typeof xds.balancerName !== 'string') {
     throw new Error('Invalid xds config: invalid balancerName');
   }
   const xdsConfig: XdsConfig = {
     balancerName: xds.balancerName,
     childPolicy: [],
-    fallbackPolicy: []
+    fallbackPolicy: [],
   };
   if ('childPolicy' in xds) {
-    if (!isArray(xds.childPolicy)) {
+    if (!Array.isArray(xds.childPolicy)) {
       throw new Error('Invalid xds config: invalid childPolicy');
     }
     for (const policy of xds.childPolicy) {
@@ -65,7 +66,7 @@ function validateXdsConfig(xds: any): XdsConfig {
     }
   }
   if ('fallbackPolicy' in xds) {
-    if (!isArray(xds.fallbackPolicy)) {
+    if (!Array.isArray(xds.fallbackPolicy)) {
       throw new Error('Invalid xds config: invalid fallbackPolicy');
     }
     for (const policy of xds.fallbackPolicy) {
@@ -77,10 +78,10 @@ function validateXdsConfig(xds: any): XdsConfig {
 
 function validateGrpcLbConfig(grpclb: any): GrpcLbConfig {
   const grpcLbConfig: GrpcLbConfig = {
-    childPolicy: []
+    childPolicy: [],
   };
   if ('childPolicy' in grpclb) {
-    if (!isArray(grpclb.childPolicy)) {
+    if (!Array.isArray(grpclb.childPolicy)) {
       throw new Error('Invalid xds config: invalid childPolicy');
     }
     for (const policy of grpclb.childPolicy) {
@@ -96,17 +97,17 @@ export function validateConfig(obj: any): LoadBalancingConfig {
       throw new Error('Multiple load balancing policies configured');
     }
     if (obj['round_robin'] instanceof Object) {
-      return { round_robin: {} }
+      return { round_robin: {} };
     }
   }
   if ('xds' in obj) {
     if ('grpclb' in obj) {
       throw new Error('Multiple load balancing policies configured');
     }
-    return {xds: validateXdsConfig(obj.xds)};
+    return { xds: validateXdsConfig(obj.xds) };
   }
   if ('grpclb' in obj) {
-    return {grpclb: validateGrpcLbConfig(obj.grpclb)};
+    return { grpclb: validateGrpcLbConfig(obj.grpclb) };
   }
   throw new Error('No recognized load balancing policy configured');
 }

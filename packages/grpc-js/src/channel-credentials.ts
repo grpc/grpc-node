@@ -140,7 +140,12 @@ export abstract class ChannelCredentials {
         'Certificate chain must be given with accompanying private key'
       );
     }
-    return new SecureChannelCredentialsImpl(rootCerts || null, privateKey || null, certChain || null, verifyOptions || {});
+    return new SecureChannelCredentialsImpl(
+      rootCerts || null,
+      privateKey || null,
+      certChain || null,
+      verifyOptions || {}
+    );
   }
 
   /**
@@ -224,7 +229,10 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
       if (!bufferOrNullEqual(this.certChain, other.certChain)) {
         return false;
       }
-      return this.verifyOptions.checkServerIdentity === other.verifyOptions.checkServerIdentity;
+      return (
+        this.verifyOptions.checkServerIdentity ===
+        other.verifyOptions.checkServerIdentity
+      );
     } else {
       return false;
     }
@@ -232,12 +240,20 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
 }
 
 class ComposedChannelCredentialsImpl extends ChannelCredentials {
-  constructor (private channelCredentials: SecureChannelCredentialsImpl, callCreds: CallCredentials) {
+  constructor(
+    private channelCredentials: SecureChannelCredentialsImpl,
+    callCreds: CallCredentials
+  ) {
     super(callCreds);
   }
   compose(callCredentials: CallCredentials) {
-    const combinedCallCredentials = this.callCredentials.compose(callCredentials);
-    return new ComposedChannelCredentialsImpl(this.channelCredentials, combinedCallCredentials);
+    const combinedCallCredentials = this.callCredentials.compose(
+      callCredentials
+    );
+    return new ComposedChannelCredentialsImpl(
+      this.channelCredentials,
+      combinedCallCredentials
+    );
   }
 
   _getConnectionOptions(): ConnectionOptions | null {
@@ -251,7 +267,10 @@ class ComposedChannelCredentialsImpl extends ChannelCredentials {
       return true;
     }
     if (other instanceof ComposedChannelCredentialsImpl) {
-      return this.channelCredentials._equals(other.channelCredentials) && this.callCredentials._equals(other.callCredentials);
+      return (
+        this.channelCredentials._equals(other.channelCredentials) &&
+        this.callCredentials._equals(other.callCredentials)
+      );
     } else {
       return false;
     }

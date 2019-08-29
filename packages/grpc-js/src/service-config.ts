@@ -22,8 +22,11 @@
  * specific object type if the input has the right structure, and throws an
  * error otherwise. */
 
+/* The any type is purposely used here. All functions validate their input at
+ * runtime */
+/* tslint:disable:no-any */
+
 import * as lbconfig from './load-balancing-config';
-import { isString, isArray, isBoolean, isNumber } from 'util';
 import * as os from 'os';
 
 export interface MethodConfigName {
@@ -41,10 +44,9 @@ export interface MethodConfig {
 
 export interface ServiceConfig {
   loadBalancingPolicy?: string;
-  loadBalancingConfig: lbconfig.LoadBalancingConfig[]
+  loadBalancingConfig: lbconfig.LoadBalancingConfig[];
   methodConfig: MethodConfig[];
 }
-
 
 export interface ServiceConfigCanaryConfig {
   clientLanguage?: string[];
@@ -66,14 +68,14 @@ const TIMEOUT_REGEX = /^\d+(\.\d{1,9})?s$/;
 const CLIENT_LANGUAGE_STRING = 'node';
 
 function validateName(obj: any): MethodConfigName {
-  if (!('service' in obj) || !isString(obj.service)) {
+  if (!('service' in obj) || typeof obj.service !== 'string') {
     throw new Error('Invalid method config name: invalid service');
   }
   const result: MethodConfigName = {
-    service: obj.service
+    service: obj.service,
   };
   if ('method' in obj) {
-    if (isString(obj.method)) {
+    if (typeof obj.method === 'string') {
       result.method = obj.method;
     } else {
       throw new Error('Invalid method config name: invalid method');
@@ -84,34 +86,37 @@ function validateName(obj: any): MethodConfigName {
 
 function validateMethodConfig(obj: any): MethodConfig {
   const result: MethodConfig = {
-    name: []
+    name: [],
   };
-  if (!('name' in obj) || !isArray(obj.name)) {
+  if (!('name' in obj) || !Array.isArray(obj.name)) {
     throw new Error('Invalid method config: invalid name array');
   }
   for (const name of obj.name) {
     result.name.push(validateName(name));
   }
   if ('waitForReady' in obj) {
-    if (!isBoolean(obj.waitForReady)) {
+    if (typeof obj.waitForReady !== 'boolean') {
       throw new Error('Invalid method config: invalid waitForReady');
     }
     result.waitForReady = obj.waitForReady;
   }
   if ('timeout' in obj) {
-    if (!isString(obj.timeout) || !TIMEOUT_REGEX.test(obj.timeout)) {
+    if (
+      !(typeof obj.timeout === 'string') ||
+      !TIMEOUT_REGEX.test(obj.timeout)
+    ) {
       throw new Error('Invalid method config: invalid timeout');
     }
     result.timeout = obj.timeout;
   }
   if ('maxRequestBytes' in obj) {
-    if (!isNumber(obj.maxRequestBytes)) {
+    if (typeof obj.maxRequestBytes !== 'number') {
       throw new Error('Invalid method config: invalid maxRequestBytes');
     }
     result.maxRequestBytes = obj.maxRequestBytes;
   }
   if ('maxResponseBytes' in obj) {
-    if (!isNumber(obj.maxResponseBytes)) {
+    if (typeof obj.maxResponseBytes !== 'number') {
       throw new Error('Invalid method config: invalid maxRequestBytes');
     }
     result.maxResponseBytes = obj.maxResponseBytes;
@@ -122,17 +127,17 @@ function validateMethodConfig(obj: any): MethodConfig {
 function validateServiceConfig(obj: any): ServiceConfig {
   const result: ServiceConfig = {
     loadBalancingConfig: [],
-    methodConfig: []
+    methodConfig: [],
   };
   if ('loadBalancingPolicy' in obj) {
-    if (isString(obj.loadBalancingPolicy)) {
+    if (typeof obj.loadBalancingPolicy === 'string') {
       result.loadBalancingPolicy = obj.loadBalancingPolicy;
     } else {
       throw new Error('Invalid service config: invalid loadBalancingPolicy');
     }
   }
   if ('loadBalancingConfig' in obj) {
-    if (isArray(obj.loadBalancingConfig)) {
+    if (Array.isArray(obj.loadBalancingConfig)) {
       for (const config of obj.loadBalancingConfig) {
         result.loadBalancingConfig.push(lbconfig.validateConfig(config));
       }
@@ -141,7 +146,7 @@ function validateServiceConfig(obj: any): ServiceConfig {
     }
   }
   if ('methodConfig' in obj) {
-    if (isArray(obj.methodConfig)) {
+    if (Array.isArray(obj.methodConfig)) {
       for (const methodConfig of obj.methodConfig) {
         result.methodConfig.push(validateMethodConfig(methodConfig));
       }
@@ -152,8 +157,15 @@ function validateServiceConfig(obj: any): ServiceConfig {
   for (const methodConfig of result.methodConfig) {
     for (const name of methodConfig.name) {
       for (const seenName of seenMethodNames) {
-        if (name.service === seenName.service && name.method === seenName.method) {
-          throw new Error(`Invalid service config: duplicate name ${name.service}/${name.method}`);
+        if (
+          name.service === seenName.service &&
+          name.method === seenName.method
+        ) {
+          throw new Error(
+            `Invalid service config: duplicate name ${name.service}/${
+              name.method
+            }`
+          );
         }
       }
       seenMethodNames.push(name);
@@ -167,16 +179,18 @@ function validateCanaryConfig(obj: any): ServiceConfigCanaryConfig {
     throw new Error('Invalid service config choice: missing service config');
   }
   const result: ServiceConfigCanaryConfig = {
-    serviceConfig: validateServiceConfig(obj.serviceConfig)
-  }
+    serviceConfig: validateServiceConfig(obj.serviceConfig),
+  };
   if ('clientLanguage' in obj) {
-    if (isArray(obj.clientLanguage)) {
+    if (Array.isArray(obj.clientLanguage)) {
       result.clientLanguage = [];
       for (const lang of obj.clientLanguage) {
-        if (isString(lang)) {
+        if (typeof lang === 'string') {
           result.clientLanguage.push(lang);
         } else {
-          throw new Error('Invalid service config choice: invalid clientLanguage');
+          throw new Error(
+            'Invalid service config choice: invalid clientLanguage'
+          );
         }
       }
     } else {
@@ -184,13 +198,15 @@ function validateCanaryConfig(obj: any): ServiceConfigCanaryConfig {
     }
   }
   if ('clientHostname' in obj) {
-    if (isArray(obj.clientHostname)) {
+    if (Array.isArray(obj.clientHostname)) {
       result.clientHostname = [];
       for (const lang of obj.clientHostname) {
-        if (isString(lang)) {
+        if (typeof lang === 'string') {
           result.clientHostname.push(lang);
         } else {
-          throw new Error('Invalid service config choice: invalid clientHostname');
+          throw new Error(
+            'Invalid service config choice: invalid clientHostname'
+          );
         }
       }
     } else {
@@ -198,34 +214,51 @@ function validateCanaryConfig(obj: any): ServiceConfigCanaryConfig {
     }
   }
   if ('percentage' in obj) {
-    if (isNumber(obj.percentage) && 0 <= obj.percentage && obj.percentage <= 100) {
+    if (
+      typeof obj.percentage === 'number' &&
+      0 <= obj.percentage &&
+      obj.percentage <= 100
+    ) {
       result.percentage = obj.percentage;
     } else {
       throw new Error('Invalid service config choice: invalid percentage');
     }
   }
   // Validate that no unexpected fields are present
-  const allowedFields = ['clientLanguage', 'percentage', 'clientHostname', 'serviceConfig'];
+  const allowedFields = [
+    'clientLanguage',
+    'percentage',
+    'clientHostname',
+    'serviceConfig',
+  ];
   for (const field in obj) {
     if (!allowedFields.includes(field)) {
-      throw new Error(`Invalid service config choice: unexpected field ${field}`);
+      throw new Error(
+        `Invalid service config choice: unexpected field ${field}`
+      );
     }
   }
   return result;
 }
 
-function validateAndSelectCanaryConfig(obj: any, percentage: number): ServiceConfig {
-  if (!isArray(obj)) {
+function validateAndSelectCanaryConfig(
+  obj: any,
+  percentage: number
+): ServiceConfig {
+  if (!Array.isArray(obj)) {
     throw new Error('Invalid service config list');
   }
   for (const config of obj) {
     const validatedConfig = validateCanaryConfig(config);
     /* For each field, we check if it is present, then only discard the
      * config if the field value does not match the current client */
-    if (isNumber(validatedConfig.percentage) && percentage > validatedConfig.percentage) {
+    if (
+      typeof validatedConfig.percentage === 'number' &&
+      percentage > validatedConfig.percentage
+    ) {
       continue;
     }
-    if (isArray(validatedConfig.clientHostname)) {
+    if (Array.isArray(validatedConfig.clientHostname)) {
       let hostnameMatched = false;
       for (const hostname of validatedConfig.clientHostname) {
         if (hostname === os.hostname()) {
@@ -236,7 +269,7 @@ function validateAndSelectCanaryConfig(obj: any, percentage: number): ServiceCon
         continue;
       }
     }
-    if (isArray(validatedConfig.clientLanguage)) {
+    if (Array.isArray(validatedConfig.clientLanguage)) {
       let languageMatched = false;
       for (const language of validatedConfig.clientLanguage) {
         if (language === CLIENT_LANGUAGE_STRING) {
@@ -261,7 +294,10 @@ function validateAndSelectCanaryConfig(obj: any, percentage: number): ServiceCon
  * @return The service configuration to use, given the percentage value, or null if the service config
  *     data has a valid format but none of the options match the current client.
  */
-export function extractAndSelectServiceConfig(txtRecord: string[][], percentage: number): ServiceConfig | null {
+export function extractAndSelectServiceConfig(
+  txtRecord: string[][],
+  percentage: number
+): ServiceConfig | null {
   for (const record of txtRecord) {
     if (record.length > 0 && record[0].startsWith('grpc_config=')) {
       /* Treat the list of strings in this record as a single string and remove

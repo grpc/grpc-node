@@ -38,7 +38,11 @@ const BACKOFF_JITTER = 0.2;
 const KEEPALIVE_TIME_MS = ~(1 << 31);
 const KEEPALIVE_TIMEOUT_MS = 20000;
 
-export type ConnectivityStateListener = (subchannel: Subchannel, previousState: ConnectivityState, newState: ConnectivityState) => void;
+export type ConnectivityStateListener = (
+  subchannel: Subchannel,
+  previousState: ConnectivityState,
+  newState: ConnectivityState
+) => void;
 
 const {
   HTTP2_HEADER_AUTHORITY,
@@ -51,8 +55,8 @@ const {
 
 /**
  * Get a number uniformly at random in the range [min, max)
- * @param min 
- * @param max 
+ * @param min
+ * @param max
  */
 function uniformRandom(min: number, max: number) {
   return Math.random() * (max - min) + min;
@@ -72,7 +76,7 @@ export class Subchannel {
    * Indicates that the subchannel should transition from TRANSIENT_FAILURE to
    * CONNECTING instead of IDLE when the backoff timeout ends.
    */
-  private continueConnecting: boolean = false;
+  private continueConnecting = false;
   /**
    * A list of listener functions that will be called whenever the connectivity
    * state changes. Will be modified by `addConnectivityStateListener` and
@@ -107,11 +111,11 @@ export class Subchannel {
   /**
    * Tracks calls with references to this subchannel
    */
-  private callRefcount: number = 0;
+  private callRefcount = 0;
   /**
    * Tracks channels and subchannel pools with references to this subchannel
    */
-  private refcount: number = 0;
+  private refcount = 0;
 
   /**
    * A class representing a connection to a single backend.
@@ -123,40 +127,45 @@ export class Subchannel {
    * @param credentials The channel credentials used to establish this
    *     connection
    */
-  constructor(private channelTarget: string,
+  constructor(
+    private channelTarget: string,
     private subchannelAddress: string,
     private options: ChannelOptions,
-    private credentials: ChannelCredentials) {
-      // Build user-agent string.
-      this.userAgent = [
-        options['grpc.primary_user_agent'],
-        `grpc-node-js/${clientVersion}`,
-        options['grpc.secondary_user_agent'],
-      ]
-        .filter(e => e)
-        .join(' '); // remove falsey values first
+    private credentials: ChannelCredentials
+  ) {
+    // Build user-agent string.
+    this.userAgent = [
+      options['grpc.primary_user_agent'],
+      `grpc-node-js/${clientVersion}`,
+      options['grpc.secondary_user_agent'],
+    ]
+      .filter(e => e)
+      .join(' '); // remove falsey values first
 
-      if ('grpc.keepalive_time_ms' in options) {
-        this.keepaliveTimeMs = options['grpc.keepalive_time_ms']!;
-      }
-      if ('grpc.keepalive_timeout_ms' in options) {
-        this.keepaliveTimeoutMs = options['grpc.keepalive_timeout_ms']!;
-      }
-      this.keepaliveIntervalId = setTimeout(() => {}, 0);
-      clearTimeout(this.keepaliveIntervalId);
-      this.keepaliveTimeoutId = setTimeout(() => {}, 0);
-      clearTimeout(this.keepaliveTimeoutId);
-      this.backoffTimeout = new BackoffTimeout(() => {
-      
-        if (this.continueConnecting) {
-          this.transitionToState([ConnectivityState.TRANSIENT_FAILURE, ConnectivityState.CONNECTING], 
-            ConnectivityState.CONNECTING);
-        } else {
-          this.transitionToState([ConnectivityState.TRANSIENT_FAILURE, ConnectivityState.CONNECTING],
-            ConnectivityState.IDLE);
-        }
-      });
+    if ('grpc.keepalive_time_ms' in options) {
+      this.keepaliveTimeMs = options['grpc.keepalive_time_ms']!;
     }
+    if ('grpc.keepalive_timeout_ms' in options) {
+      this.keepaliveTimeoutMs = options['grpc.keepalive_timeout_ms']!;
+    }
+    this.keepaliveIntervalId = setTimeout(() => {}, 0);
+    clearTimeout(this.keepaliveIntervalId);
+    this.keepaliveTimeoutId = setTimeout(() => {}, 0);
+    clearTimeout(this.keepaliveTimeoutId);
+    this.backoffTimeout = new BackoffTimeout(() => {
+      if (this.continueConnecting) {
+        this.transitionToState(
+          [ConnectivityState.TRANSIENT_FAILURE, ConnectivityState.CONNECTING],
+          ConnectivityState.CONNECTING
+        );
+      } else {
+        this.transitionToState(
+          [ConnectivityState.TRANSIENT_FAILURE, ConnectivityState.CONNECTING],
+          ConnectivityState.IDLE
+        );
+      }
+    });
+  }
 
   /**
    * Start a backoff timer with the current nextBackoff timeout
@@ -195,7 +204,7 @@ export class Subchannel {
 
   private startConnectingInternal() {
     const connectionOptions: http2.SecureClientSessionOptions =
-    this.credentials._getConnectionOptions() || {};
+      this.credentials._getConnectionOptions() || {};
     let addressScheme = 'http://';
     if ('secureContext' in connectionOptions) {
       addressScheme = 'https://';
@@ -217,20 +226,30 @@ export class Subchannel {
         connectionOptions.servername = this.channelTarget;
       }
     }
-    this.session = http2.connect(addressScheme + this.subchannelAddress, connectionOptions);
+    this.session = http2.connect(
+      addressScheme + this.subchannelAddress,
+      connectionOptions
+    );
     this.session.unref();
     this.session.once('connect', () => {
-      this.transitionToState([ConnectivityState.CONNECTING], ConnectivityState.READY);
+      this.transitionToState(
+        [ConnectivityState.CONNECTING],
+        ConnectivityState.READY
+      );
     });
     this.session.once('close', () => {
-      this.transitionToState([ConnectivityState.CONNECTING, ConnectivityState.READY],
-        ConnectivityState.TRANSIENT_FAILURE);
+      this.transitionToState(
+        [ConnectivityState.CONNECTING, ConnectivityState.READY],
+        ConnectivityState.TRANSIENT_FAILURE
+      );
     });
     this.session.once('goaway', () => {
-      this.transitionToState([ConnectivityState.CONNECTING, ConnectivityState.READY],
-        ConnectivityState.IDLE);
+      this.transitionToState(
+        [ConnectivityState.CONNECTING, ConnectivityState.READY],
+        ConnectivityState.IDLE
+      );
     });
-    this.session.once('error', (error) => {
+    this.session.once('error', error => {
       /* Do nothing here. Any error should also trigger a close event, which is
        * where we want to handle that. */
     });
@@ -250,7 +269,7 @@ export class Subchannel {
     if (oldStates.indexOf(this.connectivityState) === -1) {
       return false;
     }
-    let previousState = this.connectivityState;
+    const previousState = this.connectivityState;
     this.connectivityState = newState;
     switch (newState) {
       case ConnectivityState.READY:
@@ -272,6 +291,9 @@ export class Subchannel {
         this.stopBackoff();
         this.session = null;
         this.stopKeepalivePings();
+        break;
+      default:
+        throw new Error(`Invalid state: unknown ConnectivityState ${newState}`);
     }
     /* We use a shallow copy of the stateListeners array in case a listener
      * is removed during this iteration */
@@ -289,10 +311,14 @@ export class Subchannel {
     /* If no calls, channels, or subchannel pools have any more references to
      * this subchannel, we can be sure it will never be used again. */
     if (this.callRefcount === 0 && this.refcount === 0) {
-      this.transitionToState([ConnectivityState.CONNECTING, 
-                              ConnectivityState.IDLE,
-                              ConnectivityState.READY],
-                             ConnectivityState.TRANSIENT_FAILURE);
+      this.transitionToState(
+        [
+          ConnectivityState.CONNECTING,
+          ConnectivityState.IDLE,
+          ConnectivityState.READY,
+        ],
+        ConnectivityState.TRANSIENT_FAILURE
+      );
     }
   }
 
@@ -338,8 +364,8 @@ export class Subchannel {
    * Start a stream on the current session with the given `metadata` as headers
    * and then attach it to the `callStream`. Must only be called if the
    * subchannel's current connectivity state is READY.
-   * @param metadata 
-   * @param callStream 
+   * @param metadata
+   * @param callStream
    */
   startCallStream(metadata: Metadata, callStream: Http2CallStream) {
     const headers = metadata.toHttp2Headers();
@@ -368,7 +394,12 @@ export class Subchannel {
      * because the state is not currently IDLE, check if it is
      * TRANSIENT_FAILURE, and if so indicate that it should go back to
      * connecting after the backoff timer ends. Otherwise do nothing */
-    if (!this.transitionToState([ConnectivityState.IDLE], ConnectivityState.CONNECTING)) {
+    if (
+      !this.transitionToState(
+        [ConnectivityState.IDLE],
+        ConnectivityState.CONNECTING
+      )
+    ) {
       if (this.connectivityState === ConnectivityState.TRANSIENT_FAILURE) {
         this.continueConnecting = true;
       }
@@ -385,7 +416,7 @@ export class Subchannel {
   /**
    * Add a listener function to be called whenever the subchannel's
    * connectivity state changes.
-   * @param listener 
+   * @param listener
    */
   addConnectivityStateListener(listener: ConnectivityStateListener) {
     this.stateListeners.push(listener);
@@ -408,6 +439,9 @@ export class Subchannel {
    */
   resetBackoff() {
     this.backoffTimeout.reset();
-    this.transitionToState([ConnectivityState.TRANSIENT_FAILURE], ConnectivityState.CONNECTING);
+    this.transitionToState(
+      [ConnectivityState.TRANSIENT_FAILURE],
+      ConnectivityState.CONNECTING
+    );
   }
 }

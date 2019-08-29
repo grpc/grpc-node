@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
-import { Resolver, ResolverListener, registerResolver, registerDefaultResolver } from './resolver';
+import {
+  Resolver,
+  ResolverListener,
+  registerResolver,
+  registerDefaultResolver,
+} from './resolver';
 import * as dns from 'dns';
 import * as util from 'util';
 import { extractAndSelectServiceConfig, ServiceConfig } from './service-config';
@@ -30,17 +35,17 @@ import { Metadata } from './metadata';
  * Matches 4 groups of up to 3 digits each, separated by periods, optionally
  * followed by a colon and a number.
  */
-const IPv4_REGEX = /^(\d{1,3}(?:\.\d{1,3}){3})(?::(\d+))?$/;
+const IPV4_REGEX = /^(\d{1,3}(?:\.\d{1,3}){3})(?::(\d+))?$/;
 /**
  * Matches any number of groups of up to 4 hex digits (case insensitive)
  * separated by 1 or more colons. This variant does not match a port number.
  */
-const IPv6_REGEX = /^([0-9a-f]{0,4}(?::{1,2}[0-9a-f]{0,4})+)$/i;
+const IPV6_REGEX = /^([0-9a-f]{0,4}(?::{1,2}[0-9a-f]{0,4})+)$/i;
 /**
  * Matches the same as the IPv6_REGEX, surrounded by square brackets, and
  * optionally followed by a colon and a number.
  */
-const IPv6_BRACKET_REGEX = /^\[([0-9a-f]{0,4}(?::{1,2}[0-9a-f]{0,4})+)\](?::(\d+))?$/i;
+const IPV6_BRACKET_REGEX = /^\[([0-9a-f]{0,4}(?::{1,2}[0-9a-f]{0,4})+)\](?::(\d+))?$/i;
 
 /**
  * Matches `[dns:][//authority/]host[:port]`, where `authority` and `host` are
@@ -60,13 +65,16 @@ const resolve6Promise = util.promisify(dns.resolve6);
 
 /**
  * Attempt to parse a target string as an IP address
- * @param target 
+ * @param target
  * @return An "IP:port" string if parsing was successful, `null` otherwise
  */
 function parseIP(target: string): string | null {
   /* These three regular expressions are all mutually exclusive, so we just
    * want the first one that matches the target string, if any do. */
-  const match = IPv4_REGEX.exec(target) || IPv6_REGEX.exec(target) || IPv6_BRACKET_REGEX.exec(target);
+  const match =
+    IPV4_REGEX.exec(target) ||
+    IPV6_REGEX.exec(target) ||
+    IPV6_BRACKET_REGEX.exec(target);
   if (match === null) {
     return null;
   }
@@ -82,13 +90,17 @@ function parseIP(target: string): string | null {
 
 /**
  * Merge any number of arrays into a single alternating array
- * @param arrays 
+ * @param arrays
  */
 function mergeArrays<T>(...arrays: T[][]): T[] {
   const result: T[] = [];
-  for(let i = 0; i<Math.max.apply(null, arrays.map((array)=> array.length)); i++) {
-    for(let array of arrays) {
-      if(i < array.length) {
+  for (
+    let i = 0;
+    i < Math.max.apply(null, arrays.map(array => array.length));
+    i++
+  ) {
+    for (const array of arrays) {
+      if (i < array.length) {
         result.push(array[i]);
       }
     }
@@ -105,7 +117,9 @@ class DnsResolver implements Resolver {
   private readonly port: string | null;
   /* The promise results here contain, in order, the A record, the AAAA record,
    * and either the TXT record or an error if TXT resolution failed */
-  pendingResultPromise: Promise<[string[], string[], string[][] | Error]> | null = null;
+  pendingResultPromise: Promise<
+    [string[], string[], string[][] | Error]
+  > | null = null;
   percentage: number;
   constructor(private target: string, private listener: ResolverListener) {
     this.ipResult = parseIP(target);
@@ -126,7 +140,7 @@ class DnsResolver implements Resolver {
 
   /**
    * If the target is an IP address, just provide that address as a result.
-   * Otherwise, initiate A, AAAA, and TXT 
+   * Otherwise, initiate A, AAAA, and TXT
    */
   private startResolution() {
     if (this.ipResult !== null) {
@@ -137,12 +151,12 @@ class DnsResolver implements Resolver {
     }
     if (this.dnsHostname !== null) {
       const hostname: string = this.dnsHostname;
-      const Aresult = resolve4Promise(hostname);
-      const AAAAresult = resolve6Promise(hostname);
+      const aResult = resolve4Promise(hostname);
+      const aaaaResult = resolve6Promise(hostname);
       /* We handle the TXT query promise differently than the others because
        * the name resolution attempt as a whole is a success even if the TXT
        * lookup fails */
-      const TXTresult = new Promise<string[][] | Error>((resolve, reject) => {
+      const txtResult = new Promise<string[][] | Error>((resolve, reject) => {
         dns.resolveTxt(hostname, (err, records) => {
           if (err) {
             resolve(err);
@@ -151,41 +165,51 @@ class DnsResolver implements Resolver {
           }
         });
       });
-      this.pendingResultPromise = Promise.all([Aresult, AAAAresult, TXTresult]);
-      this.pendingResultPromise.then(([Arecord, AAAArecord, TXTrecord]) => {
-        this.pendingResultPromise = null;
-        Arecord = Arecord.map((value) => `${value}:${this.port}`);
-        AAAArecord = AAAArecord.map((value) => `[${value}]:${this.port}`);
-        const allAddresses: string[] = mergeArrays(AAAArecord, Arecord);
-        let serviceConfig: ServiceConfig | null = null;
-        let serviceConfigError: StatusObject | null = null;
-        if (TXTrecord instanceof Error) {
-          serviceConfigError = {
-            code: Status.UNAVAILABLE,
-            details: 'TXT query failed',
-            metadata: new Metadata()
-          };
-        } else {
-          try {
-            serviceConfig = extractAndSelectServiceConfig(TXTrecord, this.percentage);
-          } catch (err) {
+      this.pendingResultPromise = Promise.all([aResult, aaaaResult, txtResult]);
+      this.pendingResultPromise.then(
+        ([aRecord, aaaaRecord, txtRecord]) => {
+          this.pendingResultPromise = null;
+          aRecord = aRecord.map(value => `${value}:${this.port}`);
+          aaaaRecord = aaaaRecord.map(value => `[${value}]:${this.port}`);
+          const allAddresses: string[] = mergeArrays(aaaaRecord, aRecord);
+          let serviceConfig: ServiceConfig | null = null;
+          let serviceConfigError: StatusObject | null = null;
+          if (txtRecord instanceof Error) {
             serviceConfigError = {
               code: Status.UNAVAILABLE,
-              details: 'Parsing service config failed',
-              metadata: new Metadata()
+              details: 'TXT query failed',
+              metadata: new Metadata(),
             };
+          } else {
+            try {
+              serviceConfig = extractAndSelectServiceConfig(
+                txtRecord,
+                this.percentage
+              );
+            } catch (err) {
+              serviceConfigError = {
+                code: Status.UNAVAILABLE,
+                details: 'Parsing service config failed',
+                metadata: new Metadata(),
+              };
+            }
           }
+          this.listener.onSuccessfulResolution(
+            allAddresses,
+            serviceConfig,
+            serviceConfigError
+          );
+        },
+        err => {
+          this.pendingResultPromise = null;
+          this.listener.onError({
+            code: Status.UNAVAILABLE,
+            details: 'Name resolution failed',
+            metadata: new Metadata(),
+          });
+          this.listener.onError(err);
         }
-        this.listener.onSuccessfulResolution(allAddresses, serviceConfig, serviceConfigError);
-      }, (err) => {
-        this.pendingResultPromise = null;
-        this.listener.onError({
-          code: Status.UNAVAILABLE,
-          details: 'Name resolution failed',
-          metadata: new Metadata()
-        });
-        this.listener.onError(err);
-      });
+      );
     }
   }
 
@@ -198,10 +222,13 @@ class DnsResolver implements Resolver {
   /**
    * Get the default authority for the given target. For IP targets, that is
    * the IP address. For DNS targets, it is the hostname.
-   * @param target 
+   * @param target
    */
   static getDefaultAuthority(target: string): string {
-    const ipMatch = IPv4_REGEX.exec(target) || IPv6_REGEX.exec(target) || IPv6_BRACKET_REGEX.exec(target);
+    const ipMatch =
+      IPV4_REGEX.exec(target) ||
+      IPV6_REGEX.exec(target) ||
+      IPV6_BRACKET_REGEX.exec(target);
     if (ipMatch) {
       return ipMatch[1];
     }

@@ -15,23 +15,28 @@
  *
  */
 
-import { Deadline, Call, Http2CallStream, CallStreamOptions } from "./call-stream";
-import { ChannelCredentials } from "./channel-credentials";
-import { ChannelOptions } from "./channel-options";
-import { ResolvingLoadBalancer } from "./resolving-load-balancer";
-import { SubchannelPool, getSubchannelPool } from "./subchannel-pool";
-import { ChannelControlHelper } from "./load-balancer";
-import { UnavailablePicker, Picker, PickResultType } from "./picker";
-import { Metadata } from "./metadata";
-import { Status } from "./constants";
-import { FilterStackFactory } from "./filter-stack";
-import { CallCredentialsFilterFactory } from "./call-credentials-filter";
-import { DeadlineFilterFactory } from "./deadline-filter";
-import { MetadataStatusFilterFactory } from "./metadata-status-filter";
-import { CompressionFilterFactory } from "./compression-filter";
-import { getDefaultAuthority } from "./resolver";
-import { LoadBalancingConfig } from "./load-balancing-config";
-import { ServiceConfig } from "./service-config";
+import {
+  Deadline,
+  Call,
+  Http2CallStream,
+  CallStreamOptions,
+} from './call-stream';
+import { ChannelCredentials } from './channel-credentials';
+import { ChannelOptions } from './channel-options';
+import { ResolvingLoadBalancer } from './resolving-load-balancer';
+import { SubchannelPool, getSubchannelPool } from './subchannel-pool';
+import { ChannelControlHelper } from './load-balancer';
+import { UnavailablePicker, Picker, PickResultType } from './picker';
+import { Metadata } from './metadata';
+import { Status } from './constants';
+import { FilterStackFactory } from './filter-stack';
+import { CallCredentialsFilterFactory } from './call-credentials-filter';
+import { DeadlineFilterFactory } from './deadline-filter';
+import { MetadataStatusFilterFactory } from './metadata-status-filter';
+import { CompressionFilterFactory } from './compression-filter';
+import { getDefaultAuthority } from './resolver';
+import { LoadBalancingConfig } from './load-balancing-config';
+import { ServiceConfig } from './service-config';
 
 export enum ConnectivityState {
   CONNECTING,
@@ -111,37 +116,58 @@ export class ChannelImplementation implements Channel {
   private subchannelPool: SubchannelPool;
   private connectivityState: ConnectivityState = ConnectivityState.IDLE;
   private currentPicker: Picker = new UnavailablePicker();
-  private pickQueue: {callStream: Http2CallStream, callMetadata: Metadata}[] = [];
+  private pickQueue: Array<{
+    callStream: Http2CallStream;
+    callMetadata: Metadata;
+  }> = [];
   private connectivityStateWatchers: ConnectivityStateWatcher[] = [];
   private defaultAuthority: string;
   private filterStackFactory: FilterStackFactory;
-  constructor(private target: string, private readonly credentials: ChannelCredentials, private readonly options: ChannelOptions) {
+  constructor(
+    private target: string,
+    private readonly credentials: ChannelCredentials,
+    private readonly options: ChannelOptions
+  ) {
     // TODO: check channel arg for getting a private pool
     this.subchannelPool = getSubchannelPool(true);
     const channelControlHelper: ChannelControlHelper = {
-      createSubchannel: (subchannelAddress: string, subchannelArgs: ChannelOptions) => {
-        return this.subchannelPool.getOrCreateSubchannel(this.target, subchannelAddress, Object.assign({}, this.options, subchannelArgs), this.credentials);
+      createSubchannel: (
+        subchannelAddress: string,
+        subchannelArgs: ChannelOptions
+      ) => {
+        return this.subchannelPool.getOrCreateSubchannel(
+          this.target,
+          subchannelAddress,
+          Object.assign({}, this.options, subchannelArgs),
+          this.credentials
+        );
       },
       updateState: (connectivityState: ConnectivityState, picker: Picker) => {
         this.currentPicker = picker;
         const queueCopy = this.pickQueue.slice();
         this.pickQueue = [];
-        for (const {callStream, callMetadata} of queueCopy) {
+        for (const { callStream, callMetadata } of queueCopy) {
           this.tryPick(callStream, callMetadata);
         }
         this.updateState(connectivityState);
       },
       requestReresolution: () => {
         // This should never be called.
-        throw new Error('Resolving load balancer should never call requestReresolution');
-      }
+        throw new Error(
+          'Resolving load balancer should never call requestReresolution'
+        );
+      },
     };
     // TODO: check channel arg for default service config
     const defaultServiceConfig: ServiceConfig = {
       loadBalancingConfig: [],
-      methodConfig: []
-    }
-    this.resolvingLoadBalancer = new ResolvingLoadBalancer(target, channelControlHelper, defaultServiceConfig);
+      methodConfig: [],
+    };
+    this.resolvingLoadBalancer = new ResolvingLoadBalancer(
+      target,
+      channelControlHelper,
+      defaultServiceConfig
+    );
     this.filterStackFactory = new FilterStackFactory([
       new CallCredentialsFilterFactory(this),
       new DeadlineFilterFactory(this),
@@ -160,50 +186,79 @@ export class ChannelImplementation implements Channel {
    * Check the picker output for the given call and corresponding metadata,
    * and take any relevant actions. Should not be called while iterating
    * over pickQueue.
-   * @param callStream 
-   * @param callMetadata 
+   * @param callStream
+   * @param callMetadata
    */
   private tryPick(callStream: Http2CallStream, callMetadata: Metadata) {
-    const pickResult = this.currentPicker.pick({metadata: callMetadata});
-    switch(pickResult.pickResultType) {
+    const pickResult = this.currentPicker.pick({ metadata: callMetadata });
+    switch (pickResult.pickResultType) {
       case PickResultType.COMPLETE:
         if (pickResult.subchannel === null) {
-          callStream.cancelWithStatus(Status.UNAVAILABLE, "Request dropped by load balancing policy");
+          callStream.cancelWithStatus(
+            Status.UNAVAILABLE,
+            'Request dropped by load balancing policy'
+          );
           // End the call with an error
         } else {
           /* If the subchannel disconnects between calling pick and getting
            * the filter stack metadata, the call will end with an error. */
-          callStream.filterStack.sendMetadata(Promise.resolve(new Metadata())).then((finalMetadata) => {
-            if (pickResult.subchannel!.getConnectivityState() === ConnectivityState.READY) {
-              pickResult.subchannel!.startCallStream(callMetadata, callStream);
-            } else {
-              callStream.cancelWithStatus(Status.UNAVAILABLE, 'Connection dropped while starting call');
-            }
-          },
-          (error: Error & { code: number }) => {
-            // We assume the error code isn't 0 (Status.OK)
-            callStream.cancelWithStatus(
-              error.code || Status.UNKNOWN,
-              `Getting metadata from plugin failed with error: ${error.message}`
+          callStream.filterStack
+            .sendMetadata(Promise.resolve(new Metadata()))
+            .then(
+              finalMetadata => {
+                if (
+                  pickResult.subchannel!.getConnectivityState() ===
+                  ConnectivityState.READY
+                ) {
+                  pickResult.subchannel!.startCallStream(
+                    callMetadata,
+                    callStream
+                  );
+                } else {
+                  callStream.cancelWithStatus(
+                    Status.UNAVAILABLE,
+                    'Connection dropped while starting call'
+                  );
+                }
+              },
+              (error: Error & { code: number }) => {
+                // We assume the error code isn't 0 (Status.OK)
+                callStream.cancelWithStatus(
+                  error.code || Status.UNKNOWN,
+                  `Getting metadata from plugin failed with error: ${
+                    error.message
+                  }`
+                );
+              }
             );
-          });
         }
         break;
       case PickResultType.QUEUE:
-        this.pickQueue.push({callStream, callMetadata});
+        this.pickQueue.push({ callStream, callMetadata });
         break;
       case PickResultType.TRANSIENT_FAILURE:
         if (callMetadata.getOptions().waitForReady) {
-          this.pickQueue.push({callStream, callMetadata});
+          this.pickQueue.push({ callStream, callMetadata });
         } else {
-          callStream.cancelWithStatus(pickResult.status!.code, pickResult.status!.details);
+          callStream.cancelWithStatus(
+            pickResult.status!.code,
+            pickResult.status!.details
+          );
         }
         break;
+      default:
+        throw new Error(
+          `Invalid state: unknown pickResultType ${pickResult.pickResultType}`
+        );
     }
   }
 
-  private removeConnectivityStateWatcher(watcherObject: ConnectivityStateWatcher) {
-    const watcherIndex = this.connectivityStateWatchers.findIndex((value) => value === watcherObject);
+  private removeConnectivityStateWatcher(
+    watcherObject: ConnectivityStateWatcher
+  ) {
+    const watcherIndex = this.connectivityStateWatchers.findIndex(
+      value => value === watcherObject
+    );
     if (watcherIndex >= 0) {
       this.connectivityStateWatchers.splice(watcherIndex, 1);
     }
@@ -237,25 +292,31 @@ export class ChannelImplementation implements Channel {
   getConnectivityState() {
     return this.connectivityState;
   }
-  
+
   watchConnectivityState(
     currentState: ConnectivityState,
     deadline: Date | number,
     callback: (error?: Error) => void
   ): void {
-    const deadlineDate: Date = deadline instanceof Date ? deadline : new Date(deadline);
+    const deadlineDate: Date =
+      deadline instanceof Date ? deadline : new Date(deadline);
     const now = new Date();
     if (deadlineDate <= now) {
-      process.nextTick(callback, new Error('Deadline passed without connectivity state change'));
+      process.nextTick(
+        callback,
+        new Error('Deadline passed without connectivity state change')
+      );
       return;
     }
     const watcherObject = {
-      currentState, 
+      currentState,
       callback,
       timer: setTimeout(() => {
         this.removeConnectivityStateWatcher(watcherObject);
-        callback(new Error('Deadline passed without connectivity state change'));
-      }, deadlineDate.getTime() - now.getTime())
+        callback(
+          new Error('Deadline passed without connectivity state change')
+        );
+      }, deadlineDate.getTime() - now.getTime()),
     };
     this.connectivityStateWatchers.push(watcherObject);
   }

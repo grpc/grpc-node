@@ -273,7 +273,9 @@ describe('CallStream', () => {
         frameLengths: range(0, 20).map(() => 1),
       },
     ].forEach((testCase: { description: string; frameLengths: number[] }) => {
-      it(`should handle a short message where ${testCase.description}`, done => {
+      it(`should handle a short message where ${
+        testCase.description
+      }`, done => {
         const callStream = new Http2CallStream(
           'foo',
           {} as ChannelImplementation,

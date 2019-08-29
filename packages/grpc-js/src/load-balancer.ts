@@ -15,11 +15,11 @@
  *
  */
 
-import { ChannelOptions } from "./channel-options";
-import { Subchannel } from "./subchannel";
-import { ConnectivityState } from "./channel";
-import { Picker } from "./picker";
-import { LoadBalancingConfig } from "./load-balancing-config";
+import { ChannelOptions } from './channel-options';
+import { Subchannel } from './subchannel';
+import { ConnectivityState } from './channel';
+import { Picker } from './picker';
+import { LoadBalancingConfig } from './load-balancing-config';
 import * as load_balancer_pick_first from './load-balancer-pick-first';
 
 /**
@@ -32,7 +32,10 @@ export interface ChannelControlHelper {
    * @param subchannelAddress The address to connect to
    * @param subchannelArgs Extra channel arguments specified by the load balancer
    */
-  createSubchannel(subchannelAddress: string, subchannelArgs: ChannelOptions): Subchannel;
+  createSubchannel(
+    subchannelAddress: string,
+    subchannelArgs: ChannelOptions
+  ): Subchannel;
   /**
    * Passes a new subchannel picker up to the channel. This is called if either
    * the connectivity state changes or if a different picker is needed for any
@@ -61,7 +64,10 @@ export interface LoadBalancer {
    * @param lbConfig The load balancing config object from the service config,
    *     if one was provided
    */
-  updateAddressList(addressList: string[], lbConfig: LoadBalancingConfig | null): void;
+  updateAddressList(
+    addressList: string[],
+    lbConfig: LoadBalancingConfig | null
+  ): void;
   /**
    * If the load balancer is currently in the IDLE state, start connecting.
    */
@@ -91,16 +97,24 @@ export interface LoadBalancer {
 }
 
 export interface LoadBalancerConstructor {
-  new(channelControlHelper: ChannelControlHelper): LoadBalancer;
+  new (channelControlHelper: ChannelControlHelper): LoadBalancer;
 }
 
-const registeredLoadBalancerTypes: {[name: string]: LoadBalancerConstructor} = {};
+const registeredLoadBalancerTypes: {
+  [name: string]: LoadBalancerConstructor;
+} = {};
 
-export function registerLoadBalancerType(typeName: string, loadBalancerType: LoadBalancerConstructor) {
+export function registerLoadBalancerType(
+  typeName: string,
+  loadBalancerType: LoadBalancerConstructor
+) {
   registeredLoadBalancerTypes[typeName] = loadBalancerType;
 }
 
-export function createLoadBalancer(typeName: string, channelControlHelper: ChannelControlHelper): LoadBalancer | null {
+export function createLoadBalancer(
+  typeName: string,
+  channelControlHelper: ChannelControlHelper
+): LoadBalancer | null {
   if (typeName in registeredLoadBalancerTypes) {
     return new registeredLoadBalancerTypes[typeName](channelControlHelper);
   } else {

@@ -78,7 +78,11 @@ export class Client {
         options
       );
     } else {
-      this[CHANNEL_SYMBOL] = new ChannelImplementation(address, credentials, options);
+      this[CHANNEL_SYMBOL] = new ChannelImplementation(
+        address,
+        credentials,
+        options
+      );
     }
   }
 

@@ -96,7 +96,9 @@ class ComposedCallCredentials extends CallCredentials {
       return true;
     }
     if (other instanceof ComposedCallCredentials) {
-      return this.creds.every((value, index) => value._equals(other.creds[index]));
+      return this.creds.every((value, index) =>
+        value._equals(other.creds[index])
+      );
     } else {
       return false;
     }
@@ -134,7 +136,7 @@ class SingleCallCredentials extends CallCredentials {
       return false;
     }
   }
- }
+}
 
 class EmptyCallCredentials extends CallCredentials {
   generateMetadata(options: CallMetadataOptions): Promise<Metadata> {
