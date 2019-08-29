@@ -122,29 +122,21 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       if (newState === ConnectivityState.CONNECTING) {
         this.subchannelConnectingCount += 1;
       }
+      /* If the subchannel we most recently attempted to start connecting
+       * to goes into TRANSIENT_FAILURE, immediately try to start
+       * connecting to the next one instead of waiting for the connection
+       * delay timer. */
+      if (
+        subchannel === this.subchannels[this.currentSubchannelIndex] &&
+        newState === ConnectivityState.TRANSIENT_FAILURE
+      ) {
+        this.startNextSubchannelConnecting();
+      }
       if (newState === ConnectivityState.READY) {
         this.pickSubchannel(subchannel);
         return;
       } else {
         if (this.currentPick === null) {
-          if (
-            newState === ConnectivityState.TRANSIENT_FAILURE ||
-            newState === ConnectivityState.IDLE
-          ) {
-            process.nextTick(() => {
-              subchannel.startConnecting();
-            });
-          }
-          /* If the subchannel we most recently attempted to start connecting
-           * to goes into TRANSIENT_FAILURE, immediately try to start
-           * connecting to the next one instead of waiting for the connection
-           * delay timer. */
-          if (
-            subchannel === this.subchannels[this.currentSubchannelIndex] &&
-            newState === ConnectivityState.TRANSIENT_FAILURE
-          ) {
-            this.startNextSubchannelConnecting();
-          }
           if (this.triedAllSubchannels) {
             const newLBState =
               this.subchannelConnectingCount > 0
@@ -318,6 +310,9 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   }
 
   exitIdle() {
+    for (const subchannel of this.subchannels) {
+      subchannel.startConnecting();
+    }
     if (this.currentState === ConnectivityState.IDLE) {
       if (this.latestAddressList.length > 0) {
         this.connectToAddressList();
