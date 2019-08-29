@@ -21,6 +21,7 @@ import {
   registerDefaultResolver,
 } from './resolver';
 import * as dns from 'dns';
+import * as semver from 'semver';
 import * as util from 'util';
 import { extractAndSelectServiceConfig, ServiceConfig } from './service-config';
 import { ServiceError } from './call';
@@ -59,6 +60,14 @@ const DNS_REGEX = /^(?:dns:)?(?:\/\/\w+\/)?(\w+)(?::(\d+))?$/;
  * The default TCP port to connect to if not explicitly specified in the target.
  */
 const DEFAULT_PORT = '443';
+
+/**
+ * The range of Node versions in which the Node issue
+ * https://github.com/nodejs/node/issues/28216 has been fixed. In other
+ * versions, IPv6 literal addresses cannot be used to establish HTTP/2
+ * connections.
+ */
+const IPV6_SUPPORT_RANGE = '>= 12.6';
 
 const resolve4Promise = util.promisify(dns.resolve4);
 const resolve6Promise = util.promisify(dns.resolve6);
@@ -152,7 +161,12 @@ class DnsResolver implements Resolver {
     if (this.dnsHostname !== null) {
       const hostname: string = this.dnsHostname;
       const aResult = resolve4Promise(hostname);
-      const aaaaResult = resolve6Promise(hostname);
+      let aaaaResult: Promise<string[]>;
+      if (semver.satisfies(process.version, IPV6_SUPPORT_RANGE)) {
+        aaaaResult = resolve6Promise(hostname);
+      } else {
+        aaaaResult = Promise.resolve<string[]>([]);
+      }
       /* We handle the TXT query promise differently than the others because
        * the name resolution attempt as a whole is a success even if the TXT
        * lookup fails */
