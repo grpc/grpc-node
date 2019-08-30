@@ -69,15 +69,46 @@ const DEFAULT_PORT = '443';
  */
 const IPV6_SUPPORT_RANGE = '>= 12.6';
 
-const resolve4Promise = util.promisify(dns.resolve4);
-const resolve6Promise = util.promisify(dns.resolve6);
+/**
+ * Get a promise that always resolves with either the result of the function
+ * or the error if it failed.
+ * @param fn
+ */
+function resolvePromisify<TArg, TResult, TError>(
+  fn: (
+    arg: TArg,
+    callback: (error: TError | null, result: TResult) => void
+  ) => void
+): (arg: TArg) => Promise<TResult | TError> {
+  return arg =>
+    new Promise<TResult | TError>((resolve, reject) => {
+      fn(arg, (error, result) => {
+        if (error) {
+          resolve(error);
+        } else {
+          resolve(result);
+        }
+      });
+    });
+}
+
+const resolve4Promise = resolvePromisify<
+  string,
+  string[],
+  NodeJS.ErrnoException
+>(dns.resolve4);
+const resolve6Promise = resolvePromisify<
+  string,
+  string[],
+  NodeJS.ErrnoException
+>(dns.resolve6);
 
 /**
  * Attempt to parse a target string as an IP address
  * @param target
- * @return An "IP:port" string if parsing was successful, `null` otherwise
+ * @return An "IP:port" string in an array if parsing was successful, `null` otherwise
  */
-function parseIP(target: string): string | null {
+function parseIP(target: string): string[] | null {
   /* These three regular expressions are all mutually exclusive, so we just
    * want the first one that matches the target string, if any do. */
   const match =
@@ -94,7 +125,7 @@ function parseIP(target: string): string | null {
   } else {
     port = DEFAULT_PORT;
   }
-  return `${addr}:${port}`;
+  return [`${addr}:${port}`];
 }
 
 /**
@@ -121,15 +152,20 @@ function mergeArrays<T>(...arrays: T[][]): T[] {
  * Resolver implementation that handles DNS names and IP addresses.
  */
 class DnsResolver implements Resolver {
-  private readonly ipResult: string | null;
+  private readonly ipResult: string[] | null;
   private readonly dnsHostname: string | null;
   private readonly port: string | null;
   /* The promise results here contain, in order, the A record, the AAAA record,
    * and either the TXT record or an error if TXT resolution failed */
-  pendingResultPromise: Promise<
-    [string[], string[], string[][] | Error]
+  private pendingResultPromise: Promise<
+    [
+      string[] | NodeJS.ErrnoException,
+      string[] | NodeJS.ErrnoException,
+      string[][] | NodeJS.ErrnoException
+    ]
   > | null = null;
-  percentage: number;
+  private percentage: number;
+  private defaultResolutionError: StatusObject;
   constructor(private target: string, private listener: ResolverListener) {
     this.ipResult = parseIP(target);
     const dnsMatch = DNS_REGEX.exec(target);
@@ -143,8 +179,21 @@ class DnsResolver implements Resolver {
       } else {
         this.port = DEFAULT_PORT;
       }
+      if (this.dnsHostname === 'localhost') {
+        if (semver.satisfies(process.version, IPV6_SUPPORT_RANGE)) {
+          this.ipResult = [`::1:${this.port}`, `127.0.0.1:${this.port}`];
+        } else {
+          this.ipResult = [`127.0.0.1:${this.port}`];
+        }
+      }
     }
     this.percentage = Math.random() * 100;
+
+    this.defaultResolutionError = {
+      code: Status.UNAVAILABLE,
+      details: `Name resolution failed for target ${this.target}`,
+      metadata: new Metadata(),
+    };
   }
 
   /**
@@ -154,14 +203,14 @@ class DnsResolver implements Resolver {
   private startResolution() {
     if (this.ipResult !== null) {
       setImmediate(() => {
-        this.listener.onSuccessfulResolution([this.ipResult!], null, null);
+        this.listener.onSuccessfulResolution(this.ipResult!, null, null);
       });
       return;
     }
     if (this.dnsHostname !== null) {
       const hostname: string = this.dnsHostname;
       const aResult = resolve4Promise(hostname);
-      let aaaaResult: Promise<string[]>;
+      let aaaaResult: Promise<string[] | Error>;
       if (semver.satisfies(process.version, IPV6_SUPPORT_RANGE)) {
         aaaaResult = resolve6Promise(hostname);
       } else {
@@ -183,9 +232,34 @@ class DnsResolver implements Resolver {
       this.pendingResultPromise.then(
         ([aRecord, aaaaRecord, txtRecord]) => {
           this.pendingResultPromise = null;
+          /* dns.resolve4 and resolve6 return an error if there are no
+           * addresses for that family. If there are addresses for the other
+           * family we want to use them instead of considering that an overall
+           * resolution failure. The error code that indicates this situation
+           * is ENODATA */
+          if (aRecord instanceof Error) {
+            if (aRecord.code === 'ENODATA') {
+              aRecord = [];
+            } else {
+              this.listener.onError(this.defaultResolutionError);
+              return;
+            }
+          }
+          if (aaaaRecord instanceof Error) {
+            if (aaaaRecord.code === 'ENODATA') {
+              aaaaRecord = [];
+            } else {
+              this.listener.onError(this.defaultResolutionError);
+              return;
+            }
+          }
           aRecord = aRecord.map(value => `${value}:${this.port}`);
           aaaaRecord = aaaaRecord.map(value => `[${value}]:${this.port}`);
           const allAddresses: string[] = mergeArrays(aaaaRecord, aRecord);
+          if (allAddresses.length === 0) {
+            this.listener.onError(this.defaultResolutionError);
+            return;
+          }
           let serviceConfig: ServiceConfig | null = null;
           let serviceConfigError: StatusObject | null = null;
           if (txtRecord instanceof Error) {
@@ -216,11 +290,7 @@ class DnsResolver implements Resolver {
         },
         err => {
           this.pendingResultPromise = null;
-          this.listener.onError({
-            code: Status.UNAVAILABLE,
-            details: `Name resolution failed for target ${this.target}`,
-            metadata: new Metadata(),
-          });
+          this.listener.onError(this.defaultResolutionError);
         }
       );
     }

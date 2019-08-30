@@ -158,7 +158,7 @@ export class ChannelImplementation implements Channel {
         );
       },
     };
-    // TODO: check channel arg for default service config
+    // TODO(murgatroid99): check channel arg for default service config
     const defaultServiceConfig: ServiceConfig = {
       loadBalancingConfig: [],
       methodConfig: [],
