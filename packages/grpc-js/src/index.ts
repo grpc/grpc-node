@@ -287,9 +287,7 @@ export { GrpcObject } from './make-client';
 import * as resolver from './resolver';
 import * as load_balancer from './load-balancer';
 
-function setup() {
+(() => {
   resolver.registerAll();
   load_balancer.registerAll();
-}
-
-setup();
+})();

@@ -128,7 +128,7 @@ export class ChannelImplementation implements Channel {
     private readonly credentials: ChannelCredentials,
     private readonly options: ChannelOptions
   ) {
-    // TODO: check channel arg for getting a private pool
+    // TODO(murgatroid99): check channel arg for getting a private pool
     this.subchannelPool = getSubchannelPool(true);
     const channelControlHelper: ChannelControlHelper = {
       createSubchannel: (
