@@ -218,10 +218,9 @@ class DnsResolver implements Resolver {
           this.pendingResultPromise = null;
           this.listener.onError({
             code: Status.UNAVAILABLE,
-            details: 'Name resolution failed',
+            details: `Name resolution failed for target ${this.target}`,
             metadata: new Metadata(),
           });
-          this.listener.onError(err);
         }
       );
     }
