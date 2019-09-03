@@ -181,7 +181,7 @@ class DnsResolver implements Resolver {
       }
       if (this.dnsHostname === 'localhost') {
         if (semver.satisfies(process.version, IPV6_SUPPORT_RANGE)) {
-          this.ipResult = [`::1:${this.port}`, `127.0.0.1:${this.port}`];
+          this.ipResult = [`[::1]:${this.port}`, `127.0.0.1:${this.port}`];
         } else {
           this.ipResult = [`127.0.0.1:${this.port}`];
         }
