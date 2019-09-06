@@ -342,14 +342,20 @@ export class Http2CallStream extends Duplex implements Call {
          * from bubbling up. However, errors here should all correspond to
          * "close" events, where we will handle the error more granularly */
       });
-      /* If the underlying TLS or TCP connection closes, we want to end the
-       * call with an UNAVAILABLE status to match the behavior of the other
-       * library. In this handler we don't wait for trailers before ending the
-       * call. This should ensure that this endCall happens sooner than the one
-       * in the stream.on('close', ...) handler. */
-      stream.session.socket.on('close', () => {
-        this.endCall({code: Status.UNAVAILABLE, details: 'Connection dropped', metadata: new Metadata()});
-      });
+      /* For some reason, stream.session.socket can sometimes be undefined.
+       * When that happens trying to add this event handler throws an error.
+       * This check is a stopgap measure to get this working sometimes until
+       * we understand/eliminate those cases. */
+      if (stream.session.socket) {
+        /* If the underlying TLS or TCP connection closes, we want to end the
+        * call with an UNAVAILABLE status to match the behavior of the other
+        * library. In this handler we don't wait for trailers before ending the
+        * call. This should ensure that this endCall happens sooner than the one
+        * in the stream.on('close', ...) handler. */
+        stream.session.socket.on('close', () => {
+          this.endCall({code: Status.UNAVAILABLE, details: 'Connection dropped', metadata: new Metadata()});
+        });
+      }
       if (!this.pendingRead) {
         stream.pause();
       }
