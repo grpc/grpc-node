@@ -688,6 +688,7 @@ function _getStreamReadCallback(emitter, call, get_listener, deserialize) {
     try {
       deserialized = deserialize(data);
     } catch (e) {
+      common.log(constants.logVerbosity.ERROR, `Response deserialization failed: ${e.message}`);
       emitter._readsDone({
         code: constants.status.INTERNAL,
         details: 'Failed to parse server response'
@@ -829,6 +830,7 @@ function _getUnaryInterceptor(method_definition, channel, emitter, callback) {
             try {
               deserialized = deserialize(response.read);
             } catch (e) {
+              common.log(constants.logVerbosity.ERROR, `Response deserialization failed: ${e.message}`);
               /* Change status to indicate bad server response. This
                * will result in passing an error to the callback */
               status = {
@@ -909,6 +911,7 @@ function _getClientStreamingInterceptor(method_definition, channel, emitter,
             try {
               deserialized = deserialize(response.read);
             } catch (e) {
+              common.log(constants.logVerbosity.ERROR, `Response deserialization failed: ${e.message}`);
               /* Change status to indicate bad server response. This will result
                * in passing an error to the callback */
               status = {
@@ -933,6 +936,7 @@ function _getClientStreamingInterceptor(method_definition, channel, emitter,
       try {
         message = serialize(chunk);
       } catch (e) {
+        common.log(constants.logVerbosity.ERROR, `Request serialization failed: ${e.message}`);
         /* Sending this error to the server and emitting it immediately on the
            client may put the call in a slightly weird state on the client side,
            but passing an object that causes a serialization failure is a misuse
@@ -1134,6 +1138,7 @@ function _getBidiStreamingInterceptor(method_definition, channel, emitter) {
       try {
         message = serialize(chunk);
       } catch (e) {
+        common.log(constants.logVerbosity.ERROR, `Request serialization failed: ${e.message}`);
         /* Sending this error to the server and emitting it immediately on the
            client may put the call in a slightly weird state on the client side,
            but passing an object that causes a serialization failure is a misuse
