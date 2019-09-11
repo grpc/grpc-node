@@ -49,37 +49,6 @@ Congrats! Your server now allows any client to run a health check against it.
 ### Client
 
 Any gRPC-node client can use `grpc-health-check` to run health checks against other servers that follow the protocol.
-The following shows how this package can be used by a pre-existing gRPC client.
-
-```javascript 1.8
-// Import package
-let grpc = require('grpc');
-let health = require('grpc-health-check');
-
-// Create the client
-let healthClient = new health.Client('localhost:8082', grpc.credentials.createInsecure());
-
-// Define the request, which contains the service to health check
-// By convention, the empty string "" key represents that status of the entire server.
-let request = {
-  service: "",
-};
-
-// Define the callback
-function callback (error, status) {
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  console.log(status);
-}
-
-// Make the request
-healthClient.check(request, callback);
-```
-
-This should print out "NOT_SERVING" if used with the server above.
 
 ## Contributing
 
