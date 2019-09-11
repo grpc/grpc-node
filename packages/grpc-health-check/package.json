@@ -1,8 +1,8 @@
 {
   "name": "grpc-health-check",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "author": "Google Inc.",
-  "description": "Health check service for use with gRPC",
+  "description": "Health check client and service for use with gRPC-node",
   "repository": {
     "type": "git",
     "url": "https://github.com/grpc/grpc-node.git"
@@ -22,6 +22,7 @@
   },
   "files": [
     "LICENSE",
+    "README.md",
     "health.js",
     "v1"
   ],
