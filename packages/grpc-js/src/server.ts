@@ -102,7 +102,10 @@ export class Server {
     throw new Error('Not implemented. Use addService() instead');
   }
 
-  addService(service: ServiceDefinition, implementation: UntypedServiceImplementation): void {
+  addService(
+    service: ServiceDefinition,
+    implementation: UntypedServiceImplementation
+  ): void {
     if (this.started === true) {
       throw new Error("Can't add a service to a started server.");
     }

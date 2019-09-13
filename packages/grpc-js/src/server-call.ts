@@ -76,9 +76,11 @@ export type ServerReadableStream<
 export type ServerWritableStream<
   RequestType,
   ResponseType
-> = ServerSurfaceCall & ObjectWritable<ResponseType> & { request: RequestType | null };
+> = ServerSurfaceCall &
+  ObjectWritable<ResponseType> & { request: RequestType | null };
 export type ServerDuplexStream<RequestType, ResponseType> = ServerSurfaceCall &
-  ObjectReadable<RequestType> & ObjectWritable<ResponseType>;
+  ObjectReadable<RequestType> &
+  ObjectWritable<ResponseType>;
 
 export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
   implements ServerUnaryCall<RequestType, ResponseType> {
@@ -497,15 +499,18 @@ export class Http2ServerCallStream<
   sendError(error: ServerErrorResponse | ServerStatusResponse) {
     const status: StatusObject = {
       code: Status.UNKNOWN,
-      details: ('message' in error)
-        ? error.message
-        : 'Unknown Error',
-      metadata: ('metadata' in error && error.metadata !== undefined)
-        ? error.metadata
-        : new Metadata(),
+      details: 'message' in error ? error.message : 'Unknown Error',
+      metadata:
+        'metadata' in error && error.metadata !== undefined
+          ? error.metadata
+          : new Metadata(),
     };
 
-    if ('code' in error && typeof error.code === 'number' && Number.isInteger(error.code)) {
+    if (
+      'code' in error &&
+      typeof error.code === 'number' &&
+      Number.isInteger(error.code)
+    ) {
       status.code = error.code;
 
       if ('details' in error && typeof error.details === 'string') {
