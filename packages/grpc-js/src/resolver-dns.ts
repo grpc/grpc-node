@@ -92,16 +92,12 @@ function resolvePromisify<TArg, TResult, TError>(
     });
 }
 
-const resolve4Promise = resolvePromisify<
+const resolveTxtPromise = resolvePromisify<
   string,
-  string[],
+  string[][],
   NodeJS.ErrnoException
->(dns.resolve4);
-const resolve6Promise = resolvePromisify<
-  string,
-  string[],
-  NodeJS.ErrnoException
->(dns.resolve6);
+>(dns.resolveTxt);
+const dnsLookupPromise = util.promisify(dns.lookup);
 
 /**
  * Attempt to parse a target string as an IP address
@@ -158,11 +154,7 @@ class DnsResolver implements Resolver {
   /* The promise results here contain, in order, the A record, the AAAA record,
    * and either the TXT record or an error if TXT resolution failed */
   private pendingResultPromise: Promise<
-    [
-      string[] | NodeJS.ErrnoException,
-      string[] | NodeJS.ErrnoException,
-      string[][] | NodeJS.ErrnoException
-    ]
+    [{ address: dns.LookupAddress[] }, string[][] | NodeJS.ErrnoException]
   > | null = null;
   private percentage: number;
   private defaultResolutionError: StatusObject;
@@ -178,13 +170,6 @@ class DnsResolver implements Resolver {
         this.port = dnsMatch[2];
       } else {
         this.port = DEFAULT_PORT;
-      }
-      if (this.dnsHostname === 'localhost') {
-        if (semver.satisfies(process.version, IPV6_SUPPORT_RANGE)) {
-          this.ipResult = [`[::1]:${this.port}`, `127.0.0.1:${this.port}`];
-        } else {
-          this.ipResult = [`127.0.0.1:${this.port}`];
-        }
       }
     }
     this.percentage = Math.random() * 100;
@@ -209,53 +194,34 @@ class DnsResolver implements Resolver {
     }
     if (this.dnsHostname !== null) {
       const hostname: string = this.dnsHostname;
-      const aResult = resolve4Promise(hostname);
-      let aaaaResult: Promise<string[] | Error>;
-      if (semver.satisfies(process.version, IPV6_SUPPORT_RANGE)) {
-        aaaaResult = resolve6Promise(hostname);
-      } else {
-        aaaaResult = Promise.resolve<string[]>([]);
-      }
+      /* We lookup both address families here and then split them up later
+       * because when looking up a single family, dns.lookup outputs an error
+       * if the name exists but there are no records for that family, and that
+       * error is indistinguishable from other kinds of errors */
+      const addressResult = dnsLookupPromise(hostname, { all: true });
       /* We handle the TXT query promise differently than the others because
        * the name resolution attempt as a whole is a success even if the TXT
        * lookup fails */
-      const txtResult = new Promise<string[][] | Error>((resolve, reject) => {
-        dns.resolveTxt(hostname, (err, records) => {
-          if (err) {
-            resolve(err);
-          } else {
-            resolve(records);
-          }
-        });
-      });
-      this.pendingResultPromise = Promise.all([aResult, aaaaResult, txtResult]);
+      const txtResult = resolveTxtPromise(hostname);
+      this.pendingResultPromise = Promise.all([addressResult, txtResult]);
       this.pendingResultPromise.then(
-        ([aRecord, aaaaRecord, txtRecord]) => {
+        ([addressList, txtRecord]) => {
           this.pendingResultPromise = null;
-          /* dns.resolve4 and resolve6 return an error if there are no
-           * addresses for that family. If there are addresses for the other
-           * family we want to use them instead of considering that an overall
-           * resolution failure. The error code that indicates this situation
-           * is ENODATA */
-          if (aRecord instanceof Error) {
-            if (aRecord.code === 'ENODATA') {
-              aRecord = [];
-            } else {
-              this.listener.onError(this.defaultResolutionError);
-              return;
-            }
+          const ip4Addresses: string[] = addressList.address
+            .filter(addr => addr.family === 4)
+            .map(addr => `${addr.address}:${this.port}`);
+          let ip6Addresses: string[];
+          if (semver.satisfies(process.version, IPV6_SUPPORT_RANGE)) {
+            ip6Addresses = addressList.address
+              .filter(addr => addr.family === 6)
+              .map(addr => `[${addr.address}]:${this.port}`);
+          } else {
+            ip6Addresses = [];
           }
-          if (aaaaRecord instanceof Error) {
-            if (aaaaRecord.code === 'ENODATA') {
-              aaaaRecord = [];
-            } else {
-              this.listener.onError(this.defaultResolutionError);
-              return;
-            }
-          }
-          aRecord = aRecord.map(value => `${value}:${this.port}`);
-          aaaaRecord = aaaaRecord.map(value => `[${value}]:${this.port}`);
-          const allAddresses: string[] = mergeArrays(aaaaRecord, aRecord);
+          const allAddresses: string[] = mergeArrays(
+            ip4Addresses,
+            ip6Addresses
+          );
           if (allAddresses.length === 0) {
             this.listener.onError(this.defaultResolutionError);
             return;
