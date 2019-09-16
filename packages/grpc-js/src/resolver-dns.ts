@@ -154,7 +154,7 @@ class DnsResolver implements Resolver {
   /* The promise results here contain, in order, the A record, the AAAA record,
    * and either the TXT record or an error if TXT resolution failed */
   private pendingResultPromise: Promise<
-    [{ address: dns.LookupAddress[] }, string[][] | NodeJS.ErrnoException]
+    [dns.LookupAddress[], string[][] | NodeJS.ErrnoException]
   > | null = null;
   private percentage: number;
   private defaultResolutionError: StatusObject;
@@ -207,12 +207,12 @@ class DnsResolver implements Resolver {
       this.pendingResultPromise.then(
         ([addressList, txtRecord]) => {
           this.pendingResultPromise = null;
-          const ip4Addresses: string[] = addressList.address
+          const ip4Addresses: string[] = addressList
             .filter(addr => addr.family === 4)
             .map(addr => `${addr.address}:${this.port}`);
           let ip6Addresses: string[];
           if (semver.satisfies(process.version, IPV6_SUPPORT_RANGE)) {
-            ip6Addresses = addressList.address
+            ip6Addresses = addressList
               .filter(addr => addr.family === 6)
               .map(addr => `[${addr.address}]:${this.port}`);
           } else {
