@@ -69,11 +69,9 @@
         '-g',
     ],
     'cflags_c': [
-      '-Werror',
       '-std=c99'
     ],
     'cflags_cc': [
-      '-Werror',
       '-std=c++1y'
     ],
     'include_dirs': [
