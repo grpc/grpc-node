@@ -112,6 +112,15 @@ export class Http2CallStream extends Duplex implements Call {
   // This is populated (non-null) if and only if the call has ended
   private finalStatus: StatusObject | null = null;
 
+  private socketCloseCallback: () => void = 
+    this.socketCloseCallback = () => {
+      this.endCall({
+        code: Status.UNAVAILABLE,
+        details: 'Connection dropped',
+        metadata: new Metadata(),
+      });
+    };
+
   constructor(
     private readonly methodName: string,
     private readonly channel: Http2Channel,
@@ -140,6 +149,9 @@ export class Http2CallStream extends Duplex implements Call {
       process.nextTick(() => {
         this.emit('status', status);
       });
+      if (this.http2Stream && this.http2Stream.session && this.http2Stream.session.socket) {
+        this.http2Stream.session.socket.removeListener('close', this.socketCloseCallback);
+      }
     }
   }
 
@@ -347,13 +359,7 @@ export class Http2CallStream extends Duplex implements Call {
        * library. In this handler we don't wait for trailers before ending the
        * call. This should ensure that this endCall happens sooner than the one
        * in the stream.on('close', ...) handler. */
-      stream.session.socket.on('close', () => {
-        this.endCall({
-          code: Status.UNAVAILABLE,
-          details: 'Connection dropped',
-          metadata: new Metadata(),
-        });
-      });
+      stream.session.socket.on('close', this.socketCloseCallback);
       if (!this.pendingRead) {
         stream.pause();
       }
