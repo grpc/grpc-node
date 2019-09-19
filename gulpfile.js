@@ -15,14 +15,12 @@
  *
  */
 
-import * as gulp from 'gulp';
-import * as healthCheck from './packages/grpc-health-check/gulpfile';
-import * as jsCore from './packages/grpc-js/gulpfile';
-import * as nativeCore from './packages/grpc-native-core/gulpfile';
-import * as protobuf from './packages/proto-loader/gulpfile';
-import * as internalTest from './test/gulpfile';
-
-const root = __dirname;
+const gulp = require('gulp');
+const healthCheck = require('./packages/grpc-health-check/gulpfile');
+const jsCore = require('./packages/grpc-js/gulpfile');
+const nativeCore = require('./packages/grpc-native-core/gulpfile');
+const protobuf = require('./packages/proto-loader/gulpfile');
+const internalTest = require('./test/gulpfile');
 
 const installAll = gulp.parallel(jsCore.install, nativeCore.install, healthCheck.install, protobuf.install, internalTest.install);
 
@@ -54,7 +52,7 @@ const test = gulp.series(build, testOnly, internalTest.test);
 
 const docGen = gulp.series(nativeCore.docGen);
 
-export {
+module.exports = {
   installAll,
   installAllWindows,
   lint,

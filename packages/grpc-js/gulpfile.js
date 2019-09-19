@@ -15,14 +15,13 @@
  *
  */
 
-import * as gulp from 'gulp';
-
-import * as mocha from 'gulp-mocha';
-import * as path from 'path';
-import * as execa from 'execa';
-import * as pify from 'pify';
-import * as semver from 'semver';
-import { ncp } from 'ncp';
+const gulp = require('gulp');
+const mocha = require('gulp-mocha');
+const path = require('path');
+const execa = require('execa');
+const pify = require('pify');
+const semver = require('semver');
+const ncp = require('ncp');
 
 const ncpP = pify(ncp);
 
@@ -37,11 +36,11 @@ const versionNotSupported = () => {
   console.log(`Skipping grpc-js task for Node ${process.version}`);
   return () => { return Promise.resolve(); };
 };
-const identity = (value: any): any => value;
+const identity = (value) => value;
 const checkTask = semver.satisfies(process.version, supportedVersionRange) ?
     identity : versionNotSupported;
 
-const execNpmVerb = (verb: string, ...args: string[]) =>
+const execNpmVerb = (verb, ...args) =>
   execa('npm', [verb, ...args], {cwd: jsCoreDir, stdio: 'inherit'});
 const execNpmCommand = execNpmVerb.bind(null, 'run');
 
@@ -74,11 +73,11 @@ const runTests = checkTask(() => {
 
 const test = gulp.series(install, copyTestFixtures, runTests);
 
-export {
+module.exports = {
   install,
   lint,
   clean,
   cleanAll,
   compile,
   test
-}
+};

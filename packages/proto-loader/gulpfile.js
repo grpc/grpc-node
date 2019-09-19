@@ -15,24 +15,18 @@
  *
  */
 
-import * as gulp from 'gulp';
-
-import * as fs from 'fs';
-import * as mocha from 'gulp-mocha';
-import * as path from 'path';
-import * as execa from 'execa';
-import * as semver from 'semver';
+const gulp = require('gulp');
+const mocha = require('gulp-mocha');
+const path = require('path');
+const execa = require('execa');
+const semver = require('semver');
 
 Error.stackTraceLimit = Infinity;
 
 const protojsDir = __dirname;
-const tslintPath = path.resolve(protojsDir, 'node_modules/google-ts-style/tslint.json');
-const tsconfigPath = path.resolve(protojsDir, 'tsconfig.json');
 const outDir = path.resolve(protojsDir, 'build');
-const srcDir = path.resolve(protojsDir, 'src');
-const testDir = path.resolve(protojsDir, 'test');
 
-const execNpmVerb = (verb: string, ...args: string[]) =>
+const execNpmVerb = (verb, ...args) =>
   execa('npm', [verb, ...args], {cwd: protojsDir, stdio: 'inherit'});
 const execNpmCommand = execNpmVerb.bind(null, 'run');
 
@@ -71,11 +65,11 @@ const runTests = () => {
 
 const test = gulp.series(install, runTests);
 
-export {
+module.exports = {
   install,
   lint,
   clean,
   cleanAll,
   compile,
   test
-}
+};

@@ -15,20 +15,19 @@
  *
  */
 
- import * as gulp from 'gulp';
- import * as jsdoc from 'gulp-jsdoc3';
- import * as jshint from 'gulp-jshint';
- import * as mocha from 'gulp-mocha';
- import * as execa from 'execa';
- import * as path from 'path';
- import * as del from 'del';
+const gulp = require('gulp');
+const jsdoc = require('gulp-jsdoc3');
+const jshint = require('gulp-jshint');
+const mocha = require('gulp-mocha');
+const execa = require('execa');
+const path = require('path');
+const del = require('del');
 
 const nativeCoreDir = __dirname;
 const srcDir = path.resolve(nativeCoreDir, 'src');
 const testDir = path.resolve(nativeCoreDir, 'test');
 
 const pkg = require('./package');
-const jshintConfig = pkg.jshintConfig;
 
 const clean = () => del([path.resolve(nativeCoreDir, 'build'),
 	                       path.resolve(nativeCoreDir, 'ext/node')]);
@@ -42,7 +41,7 @@ const install = () => {
 
 const installWindows = () => {
   return execa('npm', ['install', '--build-from-source'],
-               {cwd: nativeCoreDir, stdio: 'inherit'}).catch(() => 
+               {cwd: nativeCoreDir, stdio: 'inherit'}).catch(() =>
 del(path.resolve(process.env.USERPROFILE, '.node-gyp', process.versions.node, 'include/node/openssl'), { force: true }).then(() =>
 del(path.resolve(process.env.USERPROFILE, 'AppData/Local/node-gyp/cache', process.versions.node, 'include/node/openssl'), { force: true })).then(() =>
 execa('npm', ['install', '--build-from-source'],
@@ -72,7 +71,7 @@ const docGen = (cb) => {
              .pipe(jsdoc(config, cb));
 };
 
-export {
+module.exports = {
   clean,
   cleanAll,
   install,

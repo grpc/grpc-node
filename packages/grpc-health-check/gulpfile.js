@@ -15,15 +15,29 @@
  *
  */
 
-import * as gulp from 'gulp';
-import * as mocha from 'gulp-mocha';
-import * as execa from 'execa';
-import * as path from 'path';
-import * as del from 'del';
-import {linkSync} from '../../util';
+const gulp = require('gulp');
+const mocha = require('gulp-mocha');
+const execa = require('execa');
+const del = require('del');
+const fs = require('fs');
+const makeDir = require('make-dir');
+const path = require('path');
+
+const linkSync = (base, from, to) => {
+  from = path.resolve(base, from);
+  to = path.resolve(base, to);
+  try {
+    fs.lstatSync(from);
+    console.log('link: deleting', from);
+    del.sync(from);
+  } catch (e) {
+    makeDir.sync(path.dirname(from));
+  }
+  console.log('link: linking', from, '->', to);
+  fs.symlinkSync(to, from, 'junction');
+};
 
 const healthCheckDir = __dirname;
-const baseDir = path.resolve(healthCheckDir, '..', '..');
 const testDir = path.resolve(healthCheckDir, 'test');
 
 const cleanLinks = () => del(path.resolve(healthCheckDir, 'node_modules/grpc'));
@@ -41,10 +55,10 @@ const linkAdd = (callback) => {
 
 const test = () => gulp.src(`${testDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
 
-export {
+module.exports = {
   cleanLinks,
   cleanAll,
   install,
   linkAdd,
   test
-}
+};

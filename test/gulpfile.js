@@ -15,12 +15,11 @@
  *
  */
 
-import * as gulp from 'gulp';
-import * as mocha from 'gulp-mocha';
-import * as execa from 'execa';
-import * as path from 'path';
-import * as del from 'del';
-import * as semver from 'semver';
+const gulp = require('gulp');
+const mocha = require('gulp-mocha');
+const execa = require('execa');
+const path = require('path');
+const semver = require('semver');
 
 const testDir = __dirname;
 const apiTestDir = path.resolve(testDir, 'api');
@@ -69,7 +68,7 @@ const test = () => {
   }, Promise.resolve());
 };
 
-export {
+module.exports = {
   install,
   cleanAll,
   test

@@ -1,0 +1,15 @@
+{
+  "all": true,
+  "exclude": [
+    "**/test",
+    "**/gulpfile.js",
+    "merge_kokoro_logs.js",
+    "packages/grpc-native-core/deps",
+    "packages/grpc-tools/deps"
+  ],
+  "extension": [
+    ".js",
+    ".ts"
+  ],
+  "sourceMap": true
+}
