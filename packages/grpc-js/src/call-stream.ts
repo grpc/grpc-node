@@ -112,8 +112,7 @@ export class Http2CallStream extends Duplex implements Call {
   // This is populated (non-null) if and only if the call has ended
   private finalStatus: StatusObject | null = null;
 
-  private socketCloseCallback: () => void = 
-    this.socketCloseCallback = () => {
+  private socketCloseCallback: () => void = () => {
       this.endCall({
         code: Status.UNAVAILABLE,
         details: 'Connection dropped',
