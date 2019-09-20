@@ -25,6 +25,7 @@ import {
   ClientWritableStream,
   ClientWritableStreamImpl,
   ServiceError,
+  callErrorFromStatus,
 } from './call';
 import { CallCredentials } from './call-credentials';
 import { Call, Deadline, StatusObject, WriteObject } from './call-stream';
@@ -147,11 +148,7 @@ export class Client {
       if (status.code === Status.OK) {
         callback(null, responseMessage as ResponseType);
       } else {
-        const error: ServiceError = Object.assign(
-          new Error(status.details),
-          status
-        );
-        callback(error);
+        callback(callErrorFromStatus(status));
       }
     });
   }
