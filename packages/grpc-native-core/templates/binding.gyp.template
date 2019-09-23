@@ -65,21 +65,22 @@
       %  endif
       % endfor
       'cflags_c': [
-        '-Werror',
         '-std=c99'
       ],
       'cflags_cc': [
-        '-Werror',
         '-std=c++1y'
       ],
       'include_dirs': [
         'deps/grpc',
         'deps/grpc/include',
+        'deps/grpc/src/core/ext/upb-generated',
+        'deps/grpc/third_party/abseil-cpp',
         'deps/grpc/third_party/address_sorting/include',
         'deps/grpc/third_party/cares',
         'deps/grpc/third_party/cares/cares',
-        'deps/grpc/third_party/abseil-cpp',
         'deps/grpc/third_party/nanopb',
+        'deps/grpc/third_party/upb',
+        'deps/grpc/third_party/upb/generated_for_cmake',
       ],
       'defines': [
         'PB_FIELD_32BIT',

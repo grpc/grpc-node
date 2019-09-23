@@ -86,7 +86,7 @@ describe('Server', () => {
       });
     });
 
-    it('throws if bind is called after the server is started', () => {
+    it('throws if bind is called after the server is started', done => {
       const server = new Server();
 
       server.bindAsync(
@@ -102,6 +102,7 @@ describe('Server', () => {
               noop
             );
           }, /server is already started/);
+          server.tryShutdown(done);
         }
       );
     });
@@ -243,7 +244,7 @@ describe('Server', () => {
     const mathClient = (loadProtoFile(mathProtoFile).math as any).Math;
     const mathServiceAttrs = mathClient.service;
 
-    beforeEach(done => {
+    before(done => {
       server = new Server();
       server.addService(mathServiceAttrs, {});
       server.bindAsync(
@@ -259,6 +260,11 @@ describe('Server', () => {
           done();
         }
       );
+    });
+
+    after(done => {
+      client.close();
+      server.tryShutdown(done);
     });
 
     it('should respond to a unary call with UNIMPLEMENTED', done => {

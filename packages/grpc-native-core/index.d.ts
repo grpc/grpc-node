@@ -412,13 +412,13 @@ declare module "grpc" {
    * User provided method to handle server streaming methods on the server.
    */
   type handleServerStreamingCall<RequestType, ResponseType> =
-    (call: ServerWriteableStream<RequestType>) => void;
+    (call: ServerWritableStream<RequestType>) => void;
 
   /**
    * A stream that the server can write to. Used for calls that are streaming
    * from the server side.
    */
-  export class ServerWriteableStream<RequestType> extends Writable {
+  export class ServerWritableStream<RequestType> extends Writable {
     /**
      * Indicates if the call has been cancelled
      */
@@ -448,6 +448,10 @@ declare module "grpc" {
      */
     sendMetadata(responseMetadata: Metadata): void;
   }
+
+  /* This typo existed in previous versions of this file, so we provide this
+   * type alias for backwards compatibility. */
+  export type ServerWriteableStream<RequestType> = ServerWritableStream<RequestType>;
 
   /**
    * User provided method to handle bidirectional streaming calls on the server.
@@ -579,7 +583,7 @@ declare module "grpc" {
      *   These options only have any effect when passed at the beginning of
      *   a client request.
      */
-    setOptions(options: MetadataOptions);
+    setOptions(options: MetadataOptions): void;
   }
 
   export type MetadataValue = string | Buffer;
@@ -1127,7 +1131,7 @@ declare module "grpc" {
       argument: RequestType,
       metadata?: Metadata | null,
       options?: CallOptions | null,
-    ): ClientReadableStream<RequestType>;
+    ): ClientReadableStream<ResponseType>;
 
     /**
      * Make a bidirectional stream request with this method on the given channel.
@@ -1194,11 +1198,11 @@ declare module "grpc" {
      * Indicates which properties of a parent call should propagate to this
      * call. Bitwise combination of flags in `grpc.propagate`.
      */
-    propagate_flags: number;
+    propagate_flags?: number;
     /**
      * The credentials that should be used to make this particular call.
      */
-    credentials: CallCredentials;
+    credentials?: CallCredentials;
     /**
      * Additional custom call options. These can be used to pass additional
      * data per-call to client interceptors

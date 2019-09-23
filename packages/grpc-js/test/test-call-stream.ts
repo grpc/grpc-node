@@ -30,6 +30,7 @@ import { FilterStackFactory } from '../src/filter-stack';
 import { Metadata } from '../src/metadata';
 
 import { assert2, mockFunction } from './common';
+import { EventEmitter } from 'events';
 
 interface DataFrames {
   payload: Buffer;
@@ -69,7 +70,7 @@ class ClientHttp2StreamMock extends stream.Duplex
   readonly sentInfoHeaders?: OutgoingHttpHeaders[] = [];
   readonly sentTrailers?: OutgoingHttpHeaders = undefined;
   // tslint:disable:no-any
-  session: http2.Http2Session = {} as any;
+  session: http2.Http2Session = { socket: new EventEmitter() } as any;
   state: http2.StreamState = {} as any;
   // tslint:enable:no-any
   close = mockFunction;

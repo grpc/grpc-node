@@ -121,7 +121,7 @@ function getAllHandledReflectionObjects(
   if (isHandledReflectionObject(obj)) {
     return [[objName, obj]];
   } else {
-    if (isNamespaceBase(obj) && typeof obj.nested !== undefined) {
+    if (isNamespaceBase(obj) && typeof obj.nested !== 'undefined') {
       return Object.keys(obj.nested!)
           .map((name) => {
             return getAllHandledReflectionObjects(obj.nested![name], objName);

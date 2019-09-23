@@ -28,7 +28,7 @@ The `--build-from-source` option will work even when installing another package 
 
 The official electron documentation recommends to [build all of your native packages from source](https://electronjs.org/docs/tutorial/using-native-node-modules#modules-that-rely-on-node-pre-gyp). While the reasons behind this are technically good - many native extensions won't be packaged to work properly with electron - the gRPC source code is fairly difficult to build from source due to its complex nature, and we're also providing working electron pre-built binaries. Therefore, we recommend that you do not follow this model for using gRPC with electron. Also, for the same reason, `electron-rebuild` will always build from source. We advise you to not use this tool if you are depending on gRPC. Please note that there's not just one way to get native extensions running in electron, and that there's never any silver bullet for anything. The following instructions try to cater about some of the most generic ways, but different edge cases might require different methodologies.
 
-The best to get gRPC to work with electron is to do this, possibly in your `postinstall` script of your `package.json` file:
+The best way to get gRPC to work with electron is to do this, possibly in the `postinstall` script of your `package.json` file:
 
 ```
 npm rebuild --target=2.0.0 --runtime=electron --dist-url=https://atom.io/download/electron

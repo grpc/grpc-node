@@ -251,24 +251,29 @@ export class Metadata {
 
       const values = headers[key];
 
-      if (isBinaryKey(key)) {
-        if (Array.isArray(values)) {
-          values.forEach(value => {
-            result.add(key, Buffer.from(value, 'base64'));
-          });
-        } else if (values !== undefined) {
-          values.split(',').forEach(v => {
-            result.add(key, Buffer.from(v.trim(), 'base64'));
-          });
+      try {
+        if (isBinaryKey(key)) {
+          if (Array.isArray(values)) {
+            values.forEach(value => {
+              result.add(key, Buffer.from(value, 'base64'));
+            });
+          } else if (values !== undefined) {
+            values.split(',').forEach(v => {
+              result.add(key, Buffer.from(v.trim(), 'base64'));
+            });
+          }
+        } else {
+          if (Array.isArray(values)) {
+            values.forEach(value => {
+              result.add(key, value);
+            });
+          } else if (values !== undefined) {
+            values.split(',').forEach(v => result.add(key, v.trim()));
+          }
         }
-      } else {
-        if (Array.isArray(values)) {
-          values.forEach(value => {
-            result.add(key, value);
-          });
-        } else if (values !== undefined) {
-          values.split(',').forEach(v => result.add(key, v.trim()));
-        }
+      } catch (error) {
+        error.message = `Failed to add metadata entry ${key}: ${values}. ${error.message}`;
+        process.emitWarning(error);
       }
     });
     return result;

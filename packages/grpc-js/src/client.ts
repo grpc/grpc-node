@@ -143,11 +143,6 @@ export class Client {
         );
       }
     });
-    call.on('end', () => {
-      if (responseMessage == null) {
-        call.cancelWithStatus(Status.INTERNAL, 'Not enough responses received');
-      }
-    });
     call.on('status', (status: StatusObject) => {
       /* We assume that call emits status after it emits end, and that it
        * accounts for any cancelWithStatus calls up until it emits status.

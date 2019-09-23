@@ -55,6 +55,9 @@ function handleError(call, error) {
     if (error.hasOwnProperty('details')) {
       status.details = error.details;
     }
+    if (status.code == constants.status.INTERNAL) {
+      common.log(constants.logVerbosity.ERROR, error);
+    }
   }
   if (error.hasOwnProperty('metadata')) {
     statusMetadata = error.metadata;
