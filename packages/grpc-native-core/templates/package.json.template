@@ -31,7 +31,6 @@
       "node-pre-gyp"
     ],
     "dependencies": {
-      "@types/protobufjs": "^5.0.31",
       "lodash.camelcase": "^4.3.0",
       "lodash.clone": "^4.5.0",
       "nan": "^2.13.2",
@@ -70,13 +69,14 @@
       "deps/grpc/include/grpc/**/*.h",
       "deps/grpc/src/core/**/*.{c,cc,h}",
       "deps/grpc/src/boringssl/err_data.c",
-      "deps/grpc/third_party/nanopb/*.{c,cc,h}",
-      "deps/grpc/third_party/zlib/**/*.{c,cc,h}",
+      "deps/grpc/third_party/abseil-cpp/absl/**/*.{h,hh}",
       "deps/grpc/third_party/boringssl/crypto/**/*.{c,cc,h}",
       "deps/grpc/third_party/boringssl/include/**/*.{c,cc,h}",
       "deps/grpc/third_party/boringssl/ssl/**/*.{c,cc,h}",
       "deps/grpc/third_party/boringssl/third_party/**/*.{c,h}",
-      "deps/grpc/third_party/abseil-cpp/absl/**/*.{h,hh}",
+      "deps/grpc/third_party/nanopb/*.{c,cc,h}",
+      "deps/grpc/third_party/upb/**/*.{c,h}",
+      "deps/grpc/third_party/zlib/**/*.{c,cc,h}",
       "binding.gyp"
     ],
     "main": "index.js",
