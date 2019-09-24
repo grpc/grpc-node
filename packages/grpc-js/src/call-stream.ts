@@ -27,6 +27,7 @@ import { Metadata } from './metadata';
 import { ObjectDuplex, WriteCallback } from './object-stream';
 import { StreamDecoder } from './stream-decoder';
 import { ChannelImplementation } from './channel';
+import { Subchannel } from './subchannel';
 
 const {
   HTTP2_HEADER_STATUS,
@@ -112,6 +113,9 @@ export class Http2CallStream extends Duplex implements Call {
   // This is populated (non-null) if and only if the call has ended
   private finalStatus: StatusObject | null = null;
 
+  private subchannel: Subchannel | null = null;
+  private disconnectListener: () => void;
+
   constructor(
     private readonly methodName: string,
     private readonly channel: ChannelImplementation,
@@ -122,6 +126,9 @@ export class Http2CallStream extends Duplex implements Call {
     super({ objectMode: true });
     this.filterStack = filterStackFactory.createFilter(this);
     this.credentials = channelCallCredentials;
+    this.disconnectListener = () => {
+      this.endCall({code: Status.UNAVAILABLE, details: 'Connection dropped', metadata: new Metadata()});
+    };
   }
 
   /**
@@ -142,6 +149,10 @@ export class Http2CallStream extends Duplex implements Call {
       process.nextTick(() => {
         this.emit('status', status);
       });
+      if (this.subchannel) {
+        this.subchannel.callUnref();
+        this.subchannel.removeDisconnectListener(this.disconnectListener);
+      }
     }
   }
 
@@ -239,11 +250,14 @@ export class Http2CallStream extends Duplex implements Call {
     })();
   }
 
-  attachHttp2Stream(stream: http2.ClientHttp2Stream): void {
+  attachHttp2Stream(stream: http2.ClientHttp2Stream, subchannel: Subchannel): void {
     if (this.finalStatus !== null) {
       stream.close(NGHTTP2_CANCEL);
     } else {
       this.http2Stream = stream;
+      this.subchannel = subchannel;
+      subchannel.addDisconnectListener(this.disconnectListener);
+      subchannel.callRef();
       stream.on('response', (headers, flags) => {
         switch (headers[':status']) {
           // TODO(murgatroid99): handle 100 and 101

@@ -84,6 +84,13 @@ export class Subchannel {
    */
   private stateListeners: ConnectivityStateListener[] = [];
 
+  /**
+   * A list of listener functions that will be called when the underlying
+   * socket disconnects. Used for ending active calls with an UNAVAILABLE
+   * status.
+   */
+  private disconnectListeners: (() => void)[] = [];
+
   private backoffTimeout: BackoffTimeout;
 
   /**
@@ -274,6 +281,11 @@ export class Subchannel {
     switch (newState) {
       case ConnectivityState.READY:
         this.stopBackoff();
+        this.session!.socket.once('close', () => {
+          for (const listener of this.disconnectListeners) {
+            listener();
+          }
+        });
         break;
       case ConnectivityState.CONNECTING:
         this.startBackoff();
@@ -322,7 +334,7 @@ export class Subchannel {
     }
   }
 
-  private callRef() {
+  callRef() {
     if (this.callRefcount === 0) {
       if (this.session) {
         this.session.ref();
@@ -332,7 +344,7 @@ export class Subchannel {
     this.callRefcount += 1;
   }
 
-  private callUnref() {
+  callUnref() {
     this.callRefcount -= 1;
     if (this.callRefcount === 0) {
       if (this.session) {
@@ -376,11 +388,7 @@ export class Subchannel {
     headers[HTTP2_HEADER_PATH] = callStream.getMethod();
     headers[HTTP2_HEADER_TE] = 'trailers';
     const http2Stream = this.session!.request(headers);
-    this.callRef();
-    http2Stream.on('close', () => {
-      this.callUnref();
-    });
-    callStream.attachHttp2Stream(http2Stream);
+    callStream.attachHttp2Stream(http2Stream, this);
   }
 
   /**
@@ -431,6 +439,17 @@ export class Subchannel {
     const listenerIndex = this.stateListeners.indexOf(listener);
     if (listenerIndex > -1) {
       this.stateListeners.splice(listenerIndex, 1);
+    }
+  }
+
+  addDisconnectListener(listener: () => void) {
+    this.disconnectListeners.push(listener);
+  }
+
+  removeDisconnectListener(listener: () => void) {
+    const listenerIndex = this.disconnectListeners.indexOf(listener);
+    if (listenerIndex > -1) {
+      this.disconnectListeners.splice(listenerIndex, 1);
     }
   }
 
