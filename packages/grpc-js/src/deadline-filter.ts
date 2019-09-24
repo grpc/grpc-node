@@ -16,7 +16,7 @@
  */
 
 import { Call } from './call-stream';
-import { ConnectivityState, Http2Channel } from './channel';
+import { ConnectivityState, Channel } from './channel';
 import { Status } from './constants';
 import { BaseFilter, Filter, FilterFactory } from './filter';
 import { Metadata } from './metadata';
@@ -44,7 +44,7 @@ export class DeadlineFilter extends BaseFilter implements Filter {
   private timer: NodeJS.Timer | null = null;
   private deadline: number;
   constructor(
-    private readonly channel: Http2Channel,
+    private readonly channel: Channel,
     private readonly callStream: Call
   ) {
     super();
@@ -85,7 +85,7 @@ export class DeadlineFilter extends BaseFilter implements Filter {
 }
 
 export class DeadlineFilterFactory implements FilterFactory<DeadlineFilter> {
-  constructor(private readonly channel: Http2Channel) {}
+  constructor(private readonly channel: Channel) {}
 
   createFilter(callStream: Call): DeadlineFilter {
     return new DeadlineFilter(this.channel, callStream);

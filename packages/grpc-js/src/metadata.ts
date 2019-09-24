@@ -80,8 +80,15 @@ export interface MetadataOptions {
  */
 export class Metadata {
   protected internalRepr: MetadataObject = new Map<string, MetadataValue[]>();
+  private options: MetadataOptions;
 
-  constructor(private options?: MetadataOptions) {}
+  constructor(options?: MetadataOptions) {
+    if (options === undefined) {
+      this.options = {};
+    } else {
+      this.options = options;
+    }
+  }
 
   /**
    * Sets the given value for the given key by replacing any other values
@@ -198,6 +205,10 @@ export class Metadata {
 
   setOptions(options: MetadataOptions) {
     this.options = options;
+  }
+
+  getOptions(): MetadataOptions {
+    return this.options;
   }
 
   /**

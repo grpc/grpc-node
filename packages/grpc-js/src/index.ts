@@ -26,7 +26,7 @@ import {
 } from './call';
 import { CallCredentials } from './call-credentials';
 import { Deadline, StatusObject } from './call-stream';
-import { Channel, ConnectivityState, Http2Channel } from './channel';
+import { Channel, ConnectivityState, ChannelImplementation } from './channel';
 import { ChannelCredentials } from './channel-credentials';
 import { CallOptions, Client } from './client';
 import { LogVerbosity, Status } from './constants';
@@ -193,7 +193,7 @@ export {
   loadPackageDefinition,
   makeClientConstructor,
   makeClientConstructor as makeGenericClientConstructor,
-  Http2Channel as Channel,
+  ChannelImplementation as Channel,
 };
 
 /**
@@ -299,3 +299,11 @@ export const InterceptingCall = () => {
 };
 
 export { GrpcObject } from './make-client';
+
+import * as resolver from './resolver';
+import * as load_balancer from './load-balancer';
+
+(() => {
+  resolver.registerAll();
+  load_balancer.registerAll();
+})();

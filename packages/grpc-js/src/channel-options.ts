@@ -19,13 +19,13 @@
  * An interface that contains options used when initializing a Channel instance.
  */
 export interface ChannelOptions {
-  'grpc.ssl_target_name_override': string;
-  'grpc.primary_user_agent': string;
-  'grpc.secondary_user_agent': string;
-  'grpc.default_authority': string;
-  'grpc.keepalive_time_ms': number;
-  'grpc.keepalive_timeout_ms': number;
-  [key: string]: string | number;
+  'grpc.ssl_target_name_override'?: string;
+  'grpc.primary_user_agent'?: string;
+  'grpc.secondary_user_agent'?: string;
+  'grpc.default_authority'?: string;
+  'grpc.keepalive_time_ms'?: number;
+  'grpc.keepalive_timeout_ms'?: number;
+  [key: string]: string | number | undefined;
 }
 
 /**
@@ -40,3 +40,23 @@ export const recognizedOptions = {
   'grpc.keepalive_time_ms': true,
   'grpc.keepalive_timeout_ms': true,
 };
+
+export function channelOptionsEqual(
+  options1: ChannelOptions,
+  options2: ChannelOptions
+) {
+  const keys1 = Object.keys(options1).sort();
+  const keys2 = Object.keys(options2).sort();
+  if (keys1.length !== keys2.length) {
+    return false;
+  }
+  for (let i = 0; i < keys1.length; i += 1) {
+    if (keys1[i] !== keys2[i]) {
+      return false;
+    }
+    if (options1[keys1[i]] !== options2[keys2[i]]) {
+      return false;
+    }
+  }
+  return true;
+}
