@@ -50,11 +50,11 @@ const IPV6_BRACKET_REGEX = /^\[([0-9a-f]{0,4}(?::{1,2}[0-9a-f]{0,4})+)\](?::(\d+
 
 /**
  * Matches `[dns:][//authority/]host[:port]`, where `authority` and `host` are
- * both arbitrary sequences of alphanumeric characters and `port` is a sequence
- * of digits. Group 1 contains the hostname and group 2 contains the port
- * number if provided.
+ * both arbitrary sequences of dot-separated strings of alphanumeric characters
+ * and `port` is a sequence of digits. Group 1 contains the hostname and group
+ * 2 contains the port number if provided.
  */
-const DNS_REGEX = /^(?:dns:)?(?:\/\/\w+\/)?(\w+)(?::(\d+))?$/;
+const DNS_REGEX = /^(?:dns:)?(?:\/\/(?:[a-zA-Z0-9-]+\.?)+\/)?((?:[a-zA-Z0-9-]+\.?)+)(?::(\d+))?$/;
 
 /**
  * The default TCP port to connect to if not explicitly specified in the target.
