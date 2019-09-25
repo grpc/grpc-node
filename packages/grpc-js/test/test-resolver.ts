@@ -104,7 +104,7 @@ describe('Name Resolver', () => {
     it('Should resolve a name with a hyphen', done => {
       /* TODO(murgatroid99): Find or create a better domain name to test this with.
        * This is just the first one I found with a hyphen. */
-      const target = 'google-analytics.com';
+      const target = 'network-tools.com';
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: string[],
