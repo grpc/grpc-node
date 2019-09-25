@@ -1,6 +1,6 @@
 {
   "name": "@grpc/grpc-js",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "gRPC Library for Node - pure JS implementation",
   "homepage": "https://grpc.io/",
   "repository": "https://github.com/grpc/grpc-node/tree/master/packages/grpc-js",
@@ -22,7 +22,6 @@
     "@types/mocha": "^5.2.6",
     "@types/node": "^12.7.5",
     "@types/ncp": "^2.0.1",
-    "@types/node": "^12.7.5",
     "@types/pify": "^3.0.2",
     "@types/semver": "^6.0.1",
     "clang-format": "^1.0.55",
