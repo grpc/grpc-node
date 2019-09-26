@@ -18,6 +18,7 @@
 import { ServiceError } from './call';
 import { ServiceConfig } from './service-config';
 import * as resolver_dns from './resolver-dns';
+import * as resolver_uds from './resolver-uds';
 import { StatusObject } from './call-stream';
 
 /**
@@ -137,4 +138,5 @@ export function getDefaultAuthority(target: string): string {
 
 export function registerAll() {
   resolver_dns.setup();
+  resolver_uds.setup();
 }
