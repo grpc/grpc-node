@@ -121,5 +121,37 @@ describe('Name Resolver', () => {
       const resolver = resolverManager.createResolver(target, listener);
       resolver.updateResolution();
     });
+    it('Should resolve gRPC interop servers', done => {
+      let completeCount = 0;
+      function done2(error?: Error) {
+        if (error) {
+          done(error);
+        } else {
+          completeCount += 1;
+          if (completeCount === 2) {
+            done();
+          }
+        }
+      }
+      const target1 = 'grpc-test.sandbox.googleapis.com';
+      const target2 = 'grpc-test4.sandbox.googleapis.com';
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: string[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          assert(addressList.length > 0);
+          done2();
+        },
+        onError: (error: StatusObject) => {
+          done2(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver1 = resolverManager.createResolver(target1, listener);
+      resolver1.updateResolution();
+      const resolver2 = resolverManager.createResolver(target1, listener);
+      resolver2.updateResolution();
+    })
   });
 });

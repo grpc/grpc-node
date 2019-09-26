@@ -23,6 +23,7 @@ import { ChannelOptions } from './channel-options';
 import { PeerCertificate, checkServerIdentity } from 'tls';
 import { ConnectivityState } from './channel';
 import { BackoffTimeout } from './backoff-timeout';
+import { getDefaultAuthority } from './resolver';
 
 const { version: clientVersion } = require('../../package.json');
 
@@ -230,7 +231,7 @@ export class Subchannel {
         };
         connectionOptions.servername = sslTargetNameOverride;
       } else {
-        connectionOptions.servername = this.channelTarget;
+        connectionOptions.servername = getDefaultAuthority(this.channelTarget);
       }
     }
     this.session = http2.connect(
