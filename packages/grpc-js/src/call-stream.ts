@@ -329,9 +329,11 @@ export class Http2CallStream extends Duplex implements Call {
         switch (stream.rstCode) {
           case http2.constants.NGHTTP2_REFUSED_STREAM:
             code = Status.UNAVAILABLE;
+            details = 'Stream refused by server';
             break;
           case http2.constants.NGHTTP2_CANCEL:
             code = Status.CANCELLED;
+            details = 'Call cancelled';
             break;
           case http2.constants.NGHTTP2_ENHANCE_YOUR_CALM:
             code = Status.RESOURCE_EXHAUSTED;
