@@ -211,7 +211,7 @@ export class ChannelImplementation implements Channel {
                   ConnectivityState.READY
                 ) {
                   pickResult.subchannel!.startCallStream(
-                    callMetadata,
+                    finalMetadata,
                     callStream
                   );
                 } else {
