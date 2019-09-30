@@ -83,9 +83,9 @@ describe('Server deadlines', () => {
       metadata,
       {},
       (error: any, response: any) => {
+        assert(error);
         assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
         assert.strictEqual(error.details, 'Deadline exceeded');
-        assert.strictEqual(error.message, 'Deadline exceeded');
         done();
       }
     );
@@ -108,9 +108,9 @@ describe('Server deadlines', () => {
       metadata,
       {},
       (error: any, response: any) => {
+        assert(error);
         assert.strictEqual(error.code, grpc.status.OUT_OF_RANGE);
         assert.strictEqual(error.details, 'Invalid deadline');
-        assert.strictEqual(error.message, 'Invalid deadline');
         done();
       }
     );
