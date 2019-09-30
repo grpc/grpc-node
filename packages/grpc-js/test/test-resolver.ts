@@ -156,4 +156,42 @@ describe('Name Resolver', function() {
       resolver2.updateResolution();
     })
   });
+  describe('UDS Names', function() {
+    it('Should handle a relative Unix Domain Socket name', done => {
+      const target = 'unix:socket';
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: string[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          assert(addressList.includes('socket'));
+          done();
+        },
+        onError: (error: StatusObject) => {
+          done(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver = resolverManager.createResolver(target, listener);
+      resolver.updateResolution();
+    });
+    it('Should handle an absolute Unix Domain Socket name', done => {
+      const target = 'unix:///tmp/socket';
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: string[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          assert(addressList.includes('/tmp/socket'));
+          done();
+        },
+        onError: (error: StatusObject) => {
+          done(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver = resolverManager.createResolver(target, listener);
+      resolver.updateResolution();
+    });
+  });
 });
