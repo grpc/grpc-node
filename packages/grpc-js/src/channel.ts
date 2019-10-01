@@ -203,7 +203,7 @@ export class ChannelImplementation implements Channel {
           /* If the subchannel disconnects between calling pick and getting
            * the filter stack metadata, the call will end with an error. */
           callStream.filterStack
-            .sendMetadata(Promise.resolve(new Metadata()))
+            .sendMetadata(Promise.resolve(callMetadata))
             .then(
               finalMetadata => {
                 if (
@@ -211,7 +211,7 @@ export class ChannelImplementation implements Channel {
                   ConnectivityState.READY
                 ) {
                   pickResult.subchannel!.startCallStream(
-                    callMetadata,
+                    finalMetadata,
                     callStream
                   );
                 } else {
@@ -277,7 +277,7 @@ export class ChannelImplementation implements Channel {
   }
 
   _startCallStream(stream: Http2CallStream, metadata: Metadata) {
-    this.tryPick(stream, metadata);
+    this.tryPick(stream, metadata.clone());
   }
 
   close() {
