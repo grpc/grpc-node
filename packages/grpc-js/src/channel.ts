@@ -277,7 +277,7 @@ export class ChannelImplementation implements Channel {
   }
 
   _startCallStream(stream: Http2CallStream, metadata: Metadata) {
-    this.tryPick(stream, metadata);
+    this.tryPick(stream, metadata.clone());
   }
 
   close() {
