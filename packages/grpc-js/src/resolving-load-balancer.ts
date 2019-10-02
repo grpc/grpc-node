@@ -331,14 +331,16 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   }
 
   exitIdle() {
-    this.innerResolver.updateResolution();
     if (this.innerLoadBalancer !== null) {
       this.innerLoadBalancer.exitIdle();
     }
-    this.channelControlHelper.updateState(
-      ConnectivityState.CONNECTING,
-      new QueuePicker(this)
-    );
+    if (this.currentState === ConnectivityState.IDLE) {
+      this.innerResolver.updateResolution();
+      this.updateState(
+        ConnectivityState.CONNECTING,
+        new QueuePicker(this)
+      );
+    }
   }
 
   updateAddressList(

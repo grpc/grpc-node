@@ -113,7 +113,9 @@ export class QueuePicker {
 
   pick(pickArgs: PickArgs): QueuePickResult {
     if (!this.calledExitIdle) {
-      this.loadBalancer.exitIdle();
+      process.nextTick(() => {
+        this.loadBalancer.exitIdle();
+      });
       this.calledExitIdle = true;
     }
     return {
