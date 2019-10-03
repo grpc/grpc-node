@@ -124,7 +124,7 @@ function validateMethodConfig(obj: any): MethodConfig {
   return result;
 }
 
-function validateServiceConfig(obj: any): ServiceConfig {
+export function validateServiceConfig(obj: any): ServiceConfig {
   const result: ServiceConfig = {
     loadBalancingConfig: [],
     methodConfig: [],

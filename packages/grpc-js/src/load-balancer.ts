@@ -21,6 +21,7 @@ import { ConnectivityState } from './channel';
 import { Picker } from './picker';
 import { LoadBalancingConfig } from './load-balancing-config';
 import * as load_balancer_pick_first from './load-balancer-pick-first';
+import * as load_balancer_round_robin from './load-balancer-round-robin';
 
 /**
  * A collection of functions associated with a channel that a load balancer
@@ -128,4 +129,5 @@ export function isLoadBalancerNameRegistered(typeName: string): boolean {
 
 export function registerAll() {
   load_balancer_pick_first.setup();
+  load_balancer_round_robin.setup();
 }
