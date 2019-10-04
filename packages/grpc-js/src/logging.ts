@@ -18,7 +18,23 @@
 import { LogVerbosity } from './constants';
 
 let _logger: Partial<Console> = console;
-let _logVerbosity: LogVerbosity = LogVerbosity.DEBUG;
+let _logVerbosity: LogVerbosity = LogVerbosity.ERROR;
+
+if (process.env.GRPC_VERBOSITY) {
+  switch (process.env.GRPC_VERBOSITY) {
+    case 'DEBUG':
+      _logVerbosity = LogVerbosity.DEBUG;
+      break;
+    case 'INFO':
+      _logVerbosity = LogVerbosity.INFO;
+      break;
+    case 'ERROR':
+      _logVerbosity = LogVerbosity.ERROR;
+      break;
+    default:
+      // Ignore any other values
+  }
+}
 
 export const getLogger = (): Partial<Console> => {
   return _logger;
@@ -38,3 +54,12 @@ export const log = (severity: LogVerbosity, ...args: any[]): void => {
     _logger.error(...args);
   }
 };
+
+const enabledTracers = process.env.GRPC_TRACE ? process.env.GRPC_TRACE.split(',') : [];
+const allEnabled = enabledTracers.includes('all');
+
+export function trace(severity: LogVerbosity, tracer: string, text: string): void {
+  if (allEnabled || enabledTracers.includes(tracer)) {
+    log(severity, (new Date().toISOString() + ' | ' + tracer + ' | ' + text));
+  }
+}

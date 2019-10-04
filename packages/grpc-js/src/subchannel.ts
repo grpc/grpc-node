@@ -24,8 +24,16 @@ import { PeerCertificate, checkServerIdentity } from 'tls';
 import { ConnectivityState } from './channel';
 import { BackoffTimeout } from './backoff-timeout';
 import { getDefaultAuthority } from './resolver';
+import * as logging from './logging';
+import { LogVerbosity } from './constants';
 
 const { version: clientVersion } = require('../../package.json');
+
+const TRACER_NAME = 'subchannel';
+
+function trace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 const MIN_CONNECT_TIMEOUT_MS = 20000;
 const INITIAL_BACKOFF_MS = 1000;
@@ -277,6 +285,7 @@ export class Subchannel {
     if (oldStates.indexOf(this.connectivityState) === -1) {
       return false;
     }
+    trace(this.subchannelAddress + ' ' + ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[newState]);
     const previousState = this.connectivityState;
     this.connectivityState = newState;
     switch (newState) {
@@ -463,5 +472,9 @@ export class Subchannel {
       [ConnectivityState.TRANSIENT_FAILURE],
       ConnectivityState.CONNECTING
     );
+  }
+
+  getAddress(): string {
+    return this.subchannelAddress;
   }
 }

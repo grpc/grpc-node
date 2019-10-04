@@ -28,7 +28,7 @@ import { SubchannelPool, getSubchannelPool } from './subchannel-pool';
 import { ChannelControlHelper } from './load-balancer';
 import { UnavailablePicker, Picker, PickResultType } from './picker';
 import { Metadata } from './metadata';
-import { Status } from './constants';
+import { Status, LogVerbosity } from './constants';
 import { FilterStackFactory } from './filter-stack';
 import { CallCredentialsFilterFactory } from './call-credentials-filter';
 import { DeadlineFilterFactory } from './deadline-filter';
@@ -37,6 +37,7 @@ import { CompressionFilterFactory } from './compression-filter';
 import { getDefaultAuthority } from './resolver';
 import { LoadBalancingConfig } from './load-balancing-config';
 import { ServiceConfig } from './service-config';
+import { trace } from './logging';
 
 export enum ConnectivityState {
   CONNECTING,
@@ -265,6 +266,7 @@ export class ChannelImplementation implements Channel {
   }
 
   private updateState(newState: ConnectivityState): void {
+    trace(LogVerbosity.DEBUG, 'connectivity_state', this.target + ' ' + ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[newState]);
     this.connectivityState = newState;
     const watchersCopy = this.connectivityStateWatchers.slice();
     for (const watcherObject of watchersCopy) {
