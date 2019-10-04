@@ -31,6 +31,14 @@ import {
 } from './picker';
 import { LoadBalancingConfig } from './load-balancing-config';
 import { Subchannel, ConnectivityStateListener } from './subchannel';
+import * as logging from './logging';
+import { LogVerbosity } from './constants';
+
+const TRACER_NAME = 'pick_first';
+
+function trace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 const TYPE_NAME = 'pick_first';
 
@@ -218,6 +226,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       this.subchannels[subchannelIndex].getConnectivityState() ===
       ConnectivityState.IDLE
     ) {
+      trace('Start connecting to subchannel with address ' + this.subchannels[subchannelIndex].getAddress());
       process.nextTick(() => {
         this.subchannels[subchannelIndex].startConnecting();
       });
@@ -228,6 +237,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   }
 
   private pickSubchannel(subchannel: Subchannel) {
+    trace('Pick subchannel with address ' + subchannel.getAddress());
     if (this.currentPick !== null) {
       this.currentPick.unref();
       this.currentPick.removeConnectivityStateListener(
@@ -243,6 +253,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   }
 
   private updateState(newState: ConnectivityState, picker: Picker) {
+    trace(ConnectivityState[this.currentState] + ' -> ' + ConnectivityState[newState]);
     this.currentState = newState;
     this.channelControlHelper.updateState(newState, picker);
   }
@@ -264,6 +275,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    */
   private connectToAddressList(): void {
     this.resetSubchannelList();
+    trace('Connect to address list ' + this.latestAddressList);
     this.subchannels = this.latestAddressList.map(address =>
       this.channelControlHelper.createSubchannel(address, {})
     );

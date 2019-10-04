@@ -32,6 +32,14 @@ import { BackoffTimeout } from './backoff-timeout';
 import { Status } from './constants';
 import { StatusObject } from './call-stream';
 import { Metadata } from './metadata';
+import * as logging from './logging';
+import { LogVerbosity } from './constants';
+
+const TRACER_NAME = 'resolving_load_balancer';
+
+function trace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 const DEFAULT_LOAD_BALANCER_NAME = 'pick_first';
 
@@ -297,6 +305,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   }
 
   private updateState(connectivitystate: ConnectivityState, picker: Picker) {
+    trace(this.target + ' ' + ConnectivityState[this.currentState] + ' -> ' + ConnectivityState[connectivitystate]);
     this.currentState = connectivitystate;
     this.channelControlHelper.updateState(connectivitystate, picker);
   }
