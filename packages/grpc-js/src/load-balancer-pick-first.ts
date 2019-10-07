@@ -184,6 +184,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       newState: ConnectivityState
     ) => {
       if (newState !== ConnectivityState.READY) {
+        this.currentPick = null;
         subchannel.unref();
         subchannel.removeConnectivityStateListener(
           this.pickedSubchannelStateListener
@@ -203,8 +204,11 @@ export class PickFirstLoadBalancer implements LoadBalancer {
             this.updateState(newLBState, new QueuePicker(this));
           }
         } else {
-          this.connectToAddressList();
-          this.channelControlHelper.requestReresolution();
+          /* We don't need to backoff here because this only happens if a
+           * subchannel successfully connects then disconnects, so it will not
+           * create a loop of attempting to connect to an unreachable backend
+           */
+          this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
         }
       }
     };
@@ -348,6 +352,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       subchannel.startConnecting();
     }
     if (this.currentState === ConnectivityState.IDLE) {
+      this.channelControlHelper.requestReresolution();
       if (this.latestAddressList.length > 0) {
         this.connectToAddressList();
       }
