@@ -312,10 +312,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       subchannel.addConnectivityStateListener(this.subchannelStateListener);
       if (subchannel.getConnectivityState() === ConnectivityState.READY) {
         this.pickSubchannel(subchannel);
-        this.updateState(
-          ConnectivityState.READY,
-          new PickFirstPicker(subchannel)
-        );
         this.resetSubchannelList();
         return;
       }
@@ -327,15 +323,19 @@ export class PickFirstLoadBalancer implements LoadBalancer {
         subchannelState === ConnectivityState.CONNECTING
       ) {
         this.startConnecting(index);
-        this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
+        if (this.currentPick === null) {
+          this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
+        }
         return;
       }
     }
     // If the code reaches this point, every subchannel must be in TRANSIENT_FAILURE
-    this.updateState(
-      ConnectivityState.TRANSIENT_FAILURE,
-      new UnavailablePicker()
-    );
+    if (this.currentPick === null) {
+      this.updateState(
+        ConnectivityState.TRANSIENT_FAILURE,
+        new UnavailablePicker()
+      );
+    }
   }
 
   updateAddressList(
