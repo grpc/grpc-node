@@ -85,7 +85,6 @@ describe('Server deadlines', () => {
       (error: any, response: any) => {
         assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
         assert.strictEqual(error.details, 'Deadline exceeded');
-        assert.strictEqual(error.message, 'Deadline exceeded');
         done();
       }
     );
@@ -110,7 +109,6 @@ describe('Server deadlines', () => {
       (error: any, response: any) => {
         assert.strictEqual(error.code, grpc.status.OUT_OF_RANGE);
         assert.strictEqual(error.details, 'Invalid deadline');
-        assert.strictEqual(error.message, 'Invalid deadline');
         done();
       }
     );
@@ -160,7 +158,6 @@ describe('Cancellation', () => {
     call.on('error', (error: ServiceError) => {
       assert.strictEqual(error.code, grpc.status.CANCELLED);
       assert.strictEqual(error.details, 'Cancelled on client');
-      assert.strictEqual(error.message, 'Cancelled on client');
       waitForServerCancel();
     });
 
