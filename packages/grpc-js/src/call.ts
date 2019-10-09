@@ -75,8 +75,9 @@ export type ClientDuplexStream<
  * @param status 
  */
 export function callErrorFromStatus(status: StatusObject): ServiceError {
+  const message = `${status.code} ${Status[status.code]}: ${status.details}`;
   return Object.assign(
-    new Error(status.details),
+    new Error(message),
     status
   );
 }
