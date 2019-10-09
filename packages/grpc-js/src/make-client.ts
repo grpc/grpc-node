@@ -39,7 +39,7 @@ export interface MethodDefinition<RequestType, ResponseType> {
 }
 
 export interface ServiceDefinition {
-  [index: string]: MethodDefinition<object, object>;
+  [index: string]: MethodDefinition<any, any>;
 }
 
 export interface ProtobufTypeDefinition {

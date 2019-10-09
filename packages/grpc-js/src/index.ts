@@ -36,6 +36,7 @@ import {
   loadPackageDefinition,
   makeClientConstructor,
   Serialize,
+  ServiceDefinition
 } from './make-client';
 import { Metadata } from './metadata';
 import {
@@ -46,6 +47,9 @@ import {
 import { KeyCertPair, ServerCredentials } from './server-credentials';
 import { StatusBuilder } from './status-builder';
 import {
+  handleBidiStreamingCall,
+  handleServerStreamingCall,
+  handleUnaryCall,
   ServerUnaryCall,
   ServerReadableStream,
   ServerWritableStream,
@@ -227,8 +231,17 @@ export {
   ServerReadableStream,
   ServerWritableStream,
   ServerDuplexStream,
+  ServiceDefinition,
   UntypedHandleCall,
   UntypedServiceImplementation,
+};
+
+/**** Server ****/
+
+export {
+  handleBidiStreamingCall,
+  handleServerStreamingCall,
+  handleUnaryCall,
 };
 
 /* tslint:disable:no-any */
