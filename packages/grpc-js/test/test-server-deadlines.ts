@@ -160,7 +160,6 @@ describe('Cancellation', () => {
     call.on('error', (error: ServiceError) => {
       assert.strictEqual(error.code, grpc.status.CANCELLED);
       assert.strictEqual(error.details, 'Cancelled on client');
-      assert.strictEqual(error.message, 'Cancelled on client');
       waitForServerCancel();
     });
 
