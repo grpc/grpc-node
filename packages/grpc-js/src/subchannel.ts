@@ -242,32 +242,50 @@ export class Subchannel {
         connectionOptions.servername = getDefaultAuthority(this.channelTarget);
       }
     }
-    this.session = http2.connect(
+    const session = http2.connect(
       addressScheme + this.subchannelAddress,
       connectionOptions
     );
-    this.session.unref();
-    this.session.once('connect', () => {
-      this.transitionToState(
-        [ConnectivityState.CONNECTING],
-        ConnectivityState.READY
-      );
+    this.session = session;
+    session.unref();
+    /* For all of these events, check if the session at the time of the event
+     * is the same one currently attached to this subchannel, to ensure that
+     * old events from previous connection attempts cannot cause invalid state
+     * transitions. */
+    session.once('connect', () => {
+      if (this.session === session) {
+        this.transitionToState(
+          [ConnectivityState.CONNECTING],
+          ConnectivityState.READY
+        );
+      }
     });
-    this.session.once('close', () => {
-      this.transitionToState(
-        [ConnectivityState.CONNECTING, ConnectivityState.READY],
-        ConnectivityState.TRANSIENT_FAILURE
-      );
+    session.once('close', () => {
+      if (this.session === session) {
+        this.transitionToState(
+          [ConnectivityState.CONNECTING],
+          ConnectivityState.TRANSIENT_FAILURE
+        );
+        /* Transitioning directly to IDLE here should be OK because we are not
+         * doing any backoff, because a connection was established at some
+         * point */
+        this.transitionToState(
+          [ConnectivityState.READY],
+          ConnectivityState.IDLE
+        );
+      }
     });
-    this.session.once('goaway', () => {
-      this.transitionToState(
-        [ConnectivityState.CONNECTING, ConnectivityState.READY],
-        ConnectivityState.IDLE
-      );
+    session.once('goaway', () => {
+      if (this.session === session) {
+        this.transitionToState(
+          [ConnectivityState.CONNECTING, ConnectivityState.READY],
+          ConnectivityState.IDLE
+        );
+      }
     });
-    this.session.once('error', error => {
+    session.once('error', error => {
       /* Do nothing here. Any error should also trigger a close event, which is
-       * where we want to handle that. */
+       * where we want to handle that.  */
     });
   }
 
