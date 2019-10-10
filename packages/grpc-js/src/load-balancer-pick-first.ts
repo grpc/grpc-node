@@ -343,8 +343,13 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     lbConfig: LoadBalancingConfig | null
   ): void {
     // lbConfig has no useful information for pick first load balancing
-    this.latestAddressList = addressList;
-    this.connectToAddressList();
+    /* To avoid unnecessary churn, we only do something with this address list
+     * if we're not currently trying to establish a connection, or if the new
+     * address list is different from the existing one */
+    if (this.subchannels.length === 0 || !this.latestAddressList.every((value, index) => addressList[index] === value)) {
+      this.latestAddressList = addressList;
+      this.connectToAddressList();
+    }
   }
 
   exitIdle() {
@@ -352,10 +357,12 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       subchannel.startConnecting();
     }
     if (this.currentState === ConnectivityState.IDLE) {
-      this.channelControlHelper.requestReresolution();
       if (this.latestAddressList.length > 0) {
         this.connectToAddressList();
       }
+    }
+    if (this.currentState === ConnectivityState.IDLE || this.triedAllSubchannels) {
+      this.channelControlHelper.requestReresolution();
     }
   }
 
