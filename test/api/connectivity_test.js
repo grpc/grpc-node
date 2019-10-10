@@ -58,64 +58,66 @@ const serviceImpl = {
   }
 };
 
-describe('Reconnection', function() {
-  let server1;
-  let server2;
-  let port;
-  before(function(done) {
-    server1 = new serverGrpc.Server();
-    server1.addService(TestService, serviceImpl);
-    server2 = new serverGrpc.Server();
-    server2.addService(TestService, serviceImpl);
-    server1.bindAsync('localhost:0', serverCreds, (err, _port) => {
-      assert.ifError(err);
-      server1.start();
-      port = _port;
-      client = new TestServiceClient(`localhost:${port}`, clientCreds);
-      done();
-    });
-  });
-  after(function() {
-    client.close();
-    server1.forceShutdown();
-    server2.forceShutdown();
-  });
-  it.skip('Should end with either OK or UNAVAILABLE when querying a server that is shutting down', function(done) {
-    this.timeout(10000);
-    let pendingCalls = 0;
-    let testDone = false;
-    let callInterval;
-    function maybeDone() {
-      if (testDone && pendingCalls === 0) {
+describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, function() {
+  describe('Reconnection', function() {
+    let server1;
+    let server2;
+    let port;
+    before(function(done) {
+      server1 = new serverGrpc.Server();
+      server1.addService(TestService, serviceImpl);
+      server2 = new serverGrpc.Server();
+      server2.addService(TestService, serviceImpl);
+      server1.bindAsync('localhost:0', serverCreds, (err, _port) => {
+        assert.ifError(err);
+        server1.start();
+        port = _port;
+        client = new TestServiceClient(`localhost:${port}`, clientCreds);
         done();
-      }
-    };
-    client.unary({}, (err, data) => {
-      assert.ifError(err);
-      server1.tryShutdown(() => {
-        server2.bindAsync(`localhost:${port}`, serverCreds, (err) => {
-          assert.ifError(err);
-          server2.start();
-          const metadata = new clientGrpc.Metadata({ waitForReady: true });
-          client.unary({}, metadata, (err, data) => {
+      });
+    });
+    after(function() {
+      client.close();
+      server1.forceShutdown();
+      server2.forceShutdown();
+    });
+    it.skip('Should end with either OK or UNAVAILABLE when querying a server that is shutting down', function(done) {
+      this.timeout(10000);
+      let pendingCalls = 0;
+      let testDone = false;
+      let callInterval;
+      function maybeDone() {
+        if (testDone && pendingCalls === 0) {
+          done();
+        }
+      };
+      client.unary({}, (err, data) => {
+        assert.ifError(err);
+        server1.tryShutdown(() => {
+          server2.bindAsync(`localhost:${port}`, serverCreds, (err) => {
             assert.ifError(err);
-            clearInterval(callInterval);
-            testDone = true;
-            maybeDone();
+            server2.start();
+            const metadata = new clientGrpc.Metadata({ waitForReady: true });
+            client.unary({}, metadata, (err, data) => {
+              assert.ifError(err);
+              clearInterval(callInterval);
+              testDone = true;
+              maybeDone();
+            });
           });
         });
+        callInterval = setInterval(() => {
+          assert.strictEqual(testDone, false);
+          pendingCalls += 1;
+          client.unary({}, (err, data) => {
+            pendingCalls -= 1;
+            if (err) {
+              assert.strictEqual(err.code, clientGrpc.status.UNAVAILABLE);
+            }
+            maybeDone();
+          });
+        }, 0);
       });
-      callInterval = setInterval(() => {
-        assert.strictEqual(testDone, false);
-        pendingCalls += 1;
-        client.unary({}, (err, data) => {
-          pendingCalls -= 1;
-          if (err) {
-            assert.strictEqual(err.code, clientGrpc.status.UNAVAILABLE);
-          }
-          maybeDone();
-        });
-      }, 0);
     });
   });
 });
