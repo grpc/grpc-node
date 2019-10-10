@@ -19,6 +19,7 @@
 'use strict';
 
 var childProcess = require('child_process');
+const anyGrpc = require('../any_grpc');
 
 var port;
 

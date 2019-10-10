@@ -22,7 +22,8 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const interopServer = require('../interop/interop_server.js');
-const grpc = require('../any_grpc').client;
+const anyGrpc = require('../any_grpc');
+const grpc = anyGrpc.client;
 var protoLoader = require('../../packages/proto-loader');
 
 const protoPackage = protoLoader.loadSync(
