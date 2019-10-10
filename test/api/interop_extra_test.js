@@ -79,7 +79,7 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
       server.forceShutdown();
     });
     it('Should be able to start many concurrent calls', function(done) {
-      const callCount = 1000;
+      const callCount = 100;
       done = multiDone(done, callCount);
       for (let i = 0; i < callCount; i++) {
         client.unaryCall({}, (error, result) => {
