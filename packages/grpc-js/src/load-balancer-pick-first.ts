@@ -356,11 +356,13 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     for (const subchannel of this.subchannels) {
       subchannel.startConnecting();
     }
-    if (this.currentState === ConnectivityState.IDLE || this.triedAllSubchannels) {
-      this.channelControlHelper.requestReresolution();
+    if (this.currentState === ConnectivityState.IDLE) {
       if (this.latestAddressList.length > 0) {
         this.connectToAddressList();
       }
+    }
+    if (this.currentState === ConnectivityState.IDLE || this.triedAllSubchannels) {
+      this.channelControlHelper.requestReresolution();
     }
   }
 
