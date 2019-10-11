@@ -152,6 +152,12 @@ export class PickFirstLoadBalancer implements LoadBalancer {
         this.pickSubchannel(subchannel);
         return;
       } else {
+        if (this.triedAllSubchannels && this.subchannelStateCounts[ConnectivityState.IDLE] === this.subchannels.length) {
+          /* If all of the subchannels are IDLE we should go back to a
+           * basic IDLE state where there is no subchannel list to avoid
+           * holding unused resources */
+          this.resetSubchannelList();
+        }
         if (this.currentPick === null) {
           if (this.triedAllSubchannels) {
             let newLBState: ConnectivityState;
@@ -190,18 +196,25 @@ export class PickFirstLoadBalancer implements LoadBalancer {
           this.pickedSubchannelStateListener
         );
         if (this.subchannels.length > 0) {
-          let newLBState: ConnectivityState;
-          if (this.subchannelStateCounts[ConnectivityState.CONNECTING] > 0) {
-            newLBState = ConnectivityState.CONNECTING;
-          } else if (this.subchannelStateCounts[ConnectivityState.TRANSIENT_FAILURE] > 0) {
-            newLBState = ConnectivityState.TRANSIENT_FAILURE;
+          if (this.triedAllSubchannels) {
+            let newLBState: ConnectivityState;
+            if (this.subchannelStateCounts[ConnectivityState.CONNECTING] > 0) {
+              newLBState = ConnectivityState.CONNECTING;
+            } else if (this.subchannelStateCounts[ConnectivityState.TRANSIENT_FAILURE] > 0) {
+              newLBState = ConnectivityState.TRANSIENT_FAILURE;
+            } else {
+              newLBState = ConnectivityState.IDLE;
+            }
+            if (newLBState === ConnectivityState.TRANSIENT_FAILURE) {
+              this.updateState(newLBState, new UnavailablePicker());
+            } else {
+              this.updateState(newLBState, new QueuePicker(this));
+            }
           } else {
-            newLBState = ConnectivityState.IDLE;
-          }
-          if (newLBState === ConnectivityState.TRANSIENT_FAILURE) {
-            this.updateState(newLBState, new UnavailablePicker());
-          } else {
-            this.updateState(newLBState, new QueuePicker(this));
+            this.updateState(
+              ConnectivityState.CONNECTING,
+              new QueuePicker(this)
+            );
           }
         } else {
           /* We don't need to backoff here because this only happens if a
