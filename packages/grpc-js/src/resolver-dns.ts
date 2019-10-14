@@ -28,6 +28,14 @@ import { ServiceError } from './call';
 import { Status } from './constants';
 import { StatusObject } from './call-stream';
 import { Metadata } from './metadata';
+import * as logging from './logging';
+import { LogVerbosity } from './constants';
+
+const TRACER_NAME = 'dns_resolver';
+
+function trace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 /* These regular expressions match IP addresses with optional ports in different
  * formats. In each case, capture group 1 contains the address, and capture
@@ -159,6 +167,7 @@ class DnsResolver implements Resolver {
   private percentage: number;
   private defaultResolutionError: StatusObject;
   constructor(private target: string, private listener: ResolverListener) {
+    trace('Resolver constructed for target ' + target);
     this.ipResult = parseIP(target);
     const dnsMatch = DNS_REGEX.exec(target);
     if (dnsMatch === null) {
@@ -187,6 +196,7 @@ class DnsResolver implements Resolver {
    */
   private startResolution() {
     if (this.ipResult !== null) {
+      trace('Returning IP address for target ' + this.target);
       setImmediate(() => {
         this.listener.onSuccessfulResolution(this.ipResult!, null, null);
       });
@@ -222,6 +232,7 @@ class DnsResolver implements Resolver {
             ip4Addresses,
             ip6Addresses
           );
+          trace('Resolved addresses for target ' + this.target + ': ' + allAddresses);
           if (allAddresses.length === 0) {
             this.listener.onError(this.defaultResolutionError);
             return;
@@ -255,6 +266,7 @@ class DnsResolver implements Resolver {
           );
         },
         err => {
+          trace('Resolution error for target ' + this.target + ': ' + (err as Error).message);
           this.pendingResultPromise = null;
           this.listener.onError(this.defaultResolutionError);
         }
@@ -263,6 +275,7 @@ class DnsResolver implements Resolver {
   }
 
   updateResolution() {
+    trace('Resolution update requested for target ' + this.target);
     if (this.pendingResultPromise === null) {
       this.startResolution();
     }

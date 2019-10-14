@@ -32,6 +32,14 @@ import { BackoffTimeout } from './backoff-timeout';
 import { Status } from './constants';
 import { StatusObject } from './call-stream';
 import { Metadata } from './metadata';
+import * as logging from './logging';
+import { LogVerbosity } from './constants';
+
+const TRACER_NAME = 'resolving_load_balancer';
+
+function trace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 const DEFAULT_LOAD_BALANCER_NAME = 'pick_first';
 
@@ -69,6 +77,8 @@ export class ResolvingLoadBalancer implements LoadBalancer {
    */
   private innerBalancerState: ConnectivityState = ConnectivityState.IDLE;
 
+  private innerBalancerPicker: Picker = new UnavailablePicker();
+
   /**
    * The most recent reported state of the pendingReplacementLoadBalancer.
    * Starts at IDLE for type simplicity. This should get updated as soon as the
@@ -95,6 +105,12 @@ export class ResolvingLoadBalancer implements LoadBalancer {
    * The backoff timer for handling name resolution failures.
    */
   private readonly backoffTimeout: BackoffTimeout;
+
+  /**
+   * Indicates whether we should attempt to resolve again after the backoff
+   * timer runs out.
+   */
+  private continueResolving = false;
 
   /**
    * Wrapper class that behaves like a `LoadBalancer` and also handles name
@@ -237,12 +253,22 @@ export class ResolvingLoadBalancer implements LoadBalancer {
       },
       updateState: (connectivityState: ConnectivityState, picker: Picker) => {
         this.innerBalancerState = connectivityState;
+        if (connectivityState === ConnectivityState.IDLE) {
+          picker = new QueuePicker(this);
+        }
+        this.innerBalancerPicker = picker;
         if (
           connectivityState !== ConnectivityState.READY &&
           this.pendingReplacementLoadBalancer !== null
         ) {
           this.switchOverReplacementBalancer();
         } else {
+          if (connectivityState === ConnectivityState.IDLE) {
+            if (this.innerLoadBalancer) {
+              this.innerLoadBalancer.destroy();
+              this.innerLoadBalancer = null;
+            }
+          }
           this.updateState(connectivityState, picker);
         }
       },
@@ -252,8 +278,10 @@ export class ResolvingLoadBalancer implements LoadBalancer {
            * making resolve requests, so we shouldn't make another one here.
            * In that case, the backoff timer callback will call
            * updateResolution */
-          if (!this.backoffTimeout.isRunning()) {
-            this.innerResolver.updateResolution();
+          if (this.backoffTimeout.isRunning()) {
+            this.continueResolving = true;
+          } else {
+            this.updateResolution();
           }
         }
       },
@@ -270,33 +298,56 @@ export class ResolvingLoadBalancer implements LoadBalancer {
         );
       },
       updateState: (connectivityState: ConnectivityState, picker: Picker) => {
+        if (connectivityState === ConnectivityState.IDLE) {
+          picker = new QueuePicker(this);
+        }
         this.replacementBalancerState = connectivityState;
         this.replacementBalancerPicker = picker;
         if (connectivityState === ConnectivityState.READY) {
           this.switchOverReplacementBalancer();
+        } else if (connectivityState === ConnectivityState.IDLE) {
+          if (this.pendingReplacementLoadBalancer) {
+            this.pendingReplacementLoadBalancer.destroy();
+            this.pendingReplacementLoadBalancer = null;
+          }
         }
       },
       requestReresolution: () => {
-        if (!this.backoffTimeout.isRunning()) {
-          /* If the backoffTimeout is running, we're still backing off from
-           * making resolve requests, so we shouldn't make another one here.
-           * In that case, the backoff timer callback will call
-           * updateResolution */
-          this.innerResolver.updateResolution();
+        /* If the backoffTimeout is running, we're still backing off from
+         * making resolve requests, so we shouldn't make another one here.
+         * In that case, the backoff timer callback will call
+         * updateResolution */
+        if (this.backoffTimeout.isRunning()) {
+          this.continueResolving = true;
+        } else {
+          this.updateResolution();
         }
       },
     };
 
     this.backoffTimeout = new BackoffTimeout(() => {
-      if (this.innerLoadBalancer === null) {
-        this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
+      if (this.continueResolving) {
+        this.updateResolution();
+        this.continueResolving = false;
       } else {
-        this.innerResolver.updateResolution();
+        if (this.innerLoadBalancer === null) {
+          this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
+        } else {
+          this.updateState(this.innerBalancerState, this.innerBalancerPicker);
+        }
       }
     });
   }
 
+  private updateResolution() {
+    this.innerResolver.updateResolution();
+    if (this.innerLoadBalancer === null || this.innerBalancerState === ConnectivityState.IDLE) {
+      this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
+    }
+  }
+
   private updateState(connectivitystate: ConnectivityState, picker: Picker) {
+    trace(this.target + ' ' + ConnectivityState[this.currentState] + ' -> ' + ConnectivityState[connectivitystate]);
     this.currentState = connectivitystate;
     this.channelControlHelper.updateState(connectivitystate, picker);
   }
@@ -314,6 +365,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
     );
     this.pendingReplacementLoadBalancer = null;
     this.innerBalancerState = this.replacementBalancerState;
+    this.innerBalancerPicker = this.replacementBalancerPicker;
     this.updateState(
       this.replacementBalancerState,
       this.replacementBalancerPicker
@@ -321,7 +373,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   }
 
   private handleResolutionFailure(error: StatusObject) {
-    if (this.innerLoadBalancer === null) {
+    if (this.innerLoadBalancer === null || this.innerBalancerState === ConnectivityState.IDLE) {
       this.updateState(
         ConnectivityState.TRANSIENT_FAILURE,
         new UnavailablePicker(error)
@@ -335,7 +387,11 @@ export class ResolvingLoadBalancer implements LoadBalancer {
       this.innerLoadBalancer.exitIdle();
     }
     if (this.currentState === ConnectivityState.IDLE) {
-      this.innerResolver.updateResolution();
+      if (this.backoffTimeout.isRunning()) {
+        this.continueResolving = true;
+      } else {
+        this.updateResolution();
+      }
       this.updateState(
         ConnectivityState.CONNECTING,
         new QueuePicker(this)
