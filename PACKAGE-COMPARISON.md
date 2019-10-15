@@ -36,5 +36,6 @@ In addition, all channel arguments defined in [this header file](https://github.
  - `grpc.default_authority`
  - `grpc.keepalive_time_ms`
  - `grpc.keepalive_timeout_ms`
+ - `grpc.service_config`
  - `channelOverride`
  - `channelFactoryOverride`

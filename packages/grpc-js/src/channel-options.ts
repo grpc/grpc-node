@@ -25,6 +25,7 @@ export interface ChannelOptions {
   'grpc.default_authority'?: string;
   'grpc.keepalive_time_ms'?: number;
   'grpc.keepalive_timeout_ms'?: number;
+  'grpc.service_config'?: string;
   [key: string]: string | number | undefined;
 }
 
@@ -39,6 +40,7 @@ export const recognizedOptions = {
   'grpc.default_authority': true,
   'grpc.keepalive_time_ms': true,
   'grpc.keepalive_timeout_ms': true,
+  'grpc.service_config': true,
 };
 
 export function channelOptionsEqual(

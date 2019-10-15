@@ -36,7 +36,7 @@ import { MetadataStatusFilterFactory } from './metadata-status-filter';
 import { CompressionFilterFactory } from './compression-filter';
 import { getDefaultAuthority } from './resolver';
 import { LoadBalancingConfig } from './load-balancing-config';
-import { ServiceConfig } from './service-config';
+import { ServiceConfig, validateServiceConfig } from './service-config';
 import { trace } from './logging';
 
 export enum ConnectivityState {
@@ -160,10 +160,13 @@ export class ChannelImplementation implements Channel {
       },
     };
     // TODO(murgatroid99): check channel arg for default service config
-    const defaultServiceConfig: ServiceConfig = {
+    let defaultServiceConfig: ServiceConfig = {
       loadBalancingConfig: [],
       methodConfig: [],
     };
+    if (options['grpc.service_config']) {
+      defaultServiceConfig = validateServiceConfig(JSON.parse(options['grpc.service_config']!));
+    }
     this.resolvingLoadBalancer = new ResolvingLoadBalancer(
       target,
       channelControlHelper,
