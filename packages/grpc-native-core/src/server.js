@@ -722,7 +722,8 @@ var streamHandlers = {
  * @memberof grpc
  * @constructor
  * @param {Object=} options Options that should be passed to the internal server
- *     implementation
+ *     implementation. The available options are listed in
+ *     [this document]{@link https://grpc.github.io/grpc/core/group__grpc__arg__keys.html}.
  * @example
  * var server = new grpc.Server();
  * server.addProtoService(protobuf_service_descriptor, service_implementation);
