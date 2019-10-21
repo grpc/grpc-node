@@ -31,6 +31,7 @@
       "node-pre-gyp"
     ],
     "dependencies": {
+      "@types/bytebuffer": "^5.0.40",
       "lodash.camelcase": "^4.3.0",
       "lodash.clone": "^4.5.0",
       "nan": "^2.13.2",
@@ -77,6 +78,8 @@
       "deps/grpc/third_party/nanopb/*.{c,cc,h}",
       "deps/grpc/third_party/upb/**/*.{c,h,inc}",
       "deps/grpc/third_party/zlib/**/*.{c,cc,h}",
+      "deps/grpc/third_party/address_sorting/**/*.{c,h}",
+      "deps/grpc/third_party/cares/**/*.{c,h}",
       "binding.gyp"
     ],
     "main": "index.js",
