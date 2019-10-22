@@ -103,13 +103,6 @@ export class Http2CallStream extends Duplex implements Call {
   // Status code mapped from :status. To be used if grpc-status is not received
   private mappedStatusCode: Status = Status.UNKNOWN;
 
-  // Promise objects that are re-assigned to resolving promises when headers
-  // or trailers received. Processing headers/trailers is asynchronous, so we
-  // can use these objects to await their completion. This helps us establish
-  // order of precedence when obtaining the status of the call.
-  private handlingHeaders = Promise.resolve();
-  private handlingTrailers = Promise.resolve();
-
   // This is populated (non-null) if and only if the call has ended
   private finalStatus: StatusObject | null = null;
 
@@ -224,30 +217,21 @@ export class Http2CallStream extends Duplex implements Call {
       metadata = new Metadata();
     }
     const status: StatusObject = { code, details, metadata };
-    this.handlingTrailers = (async () => {
-      let finalStatus;
-      try {
-        // Attempt to assign final status.
-        finalStatus = await this.filterStack.receiveTrailers(
-          Promise.resolve(status)
-        );
-      } catch (error) {
-        await this.handlingHeaders;
-        // This is a no-op if the call was already ended when handling headers.
-        this.endCall({
-          code: Status.INTERNAL,
-          details: 'Failed to process received status',
-          metadata: new Metadata(),
-        });
-        return;
-      }
-      // It's possible that headers were received but not fully handled yet.
-      // Give the headers handler an opportunity to end the call first,
-      // if an error occurred.
-      await this.handlingHeaders;
+    let finalStatus;
+    try {
+      // Attempt to assign final status.
+      finalStatus = this.filterStack.receiveTrailers(status);
+    } catch (error) {
       // This is a no-op if the call was already ended when handling headers.
-      this.endCall(finalStatus);
-    })();
+      this.endCall({
+        code: Status.INTERNAL,
+        details: 'Failed to process received status',
+        metadata: new Metadata(),
+      });
+      return;
+    }
+    // This is a no-op if the call was already ended when handling headers.
+    this.endCall(finalStatus);
   }
 
   attachHttp2Stream(stream: http2.ClientHttp2Stream, subchannel: Subchannel): void {
@@ -297,19 +281,17 @@ export class Http2CallStream extends Duplex implements Call {
             });
             return;
           }
-          this.handlingHeaders = this.filterStack
-            .receiveMetadata(Promise.resolve(metadata))
-            .then(finalMetadata => {
-              this.emit('metadata', finalMetadata);
-            })
-            .catch(error => {
-              this.destroyHttp2Stream();
-              this.endCall({
-                code: Status.UNKNOWN,
-                details: error.message,
-                metadata: new Metadata(),
-              });
+          try {
+            const finalMetadata = this.filterStack.receiveMetadata(metadata);
+            this.emit('metadata', finalMetadata);
+          } catch (error) {
+            this.destroyHttp2Stream();
+            this.endCall({
+              code: Status.UNKNOWN,
+              details: error.message,
+              metadata: new Metadata(),
             });
+          }
         }
       });
       stream.on('trailers', this.handleTrailers.bind(this));
@@ -346,9 +328,6 @@ export class Http2CallStream extends Duplex implements Call {
           default:
             code = Status.INTERNAL;
         }
-        // This guarantees that if trailers were received, the value of the
-        // 'grpc-status' header takes precedence for emitted status data.
-        await this.handlingTrailers;
         // This is a no-op if trailers were received at all.
         // This is OK, because status codes emitted here correspond to more
         // catastrophic issues that prevent us from receiving trailers in the
@@ -392,9 +371,6 @@ export class Http2CallStream extends Duplex implements Call {
   cancelWithStatus(status: Status, details: string): void {
     this.destroyHttp2Stream();
     (async () => {
-      // If trailers are currently being processed, the call should be ended
-      // by handleTrailers instead.
-      await this.handlingTrailers;
       this.endCall({ code: status, details, metadata: new Metadata() });
     })();
   }
