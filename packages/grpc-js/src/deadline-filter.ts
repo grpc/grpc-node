@@ -66,7 +66,7 @@ export class DeadlineFilter extends BaseFilter implements Filter {
           'Deadline exceeded'
         );
       }, timeout);
-      callStream.on('status', () => clearTimeout(this.timer as NodeJS.Timer));
+      this.timer.unref();
     }
   }
 

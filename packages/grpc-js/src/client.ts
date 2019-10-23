@@ -26,9 +26,10 @@ import {
   ClientWritableStreamImpl,
   ServiceError,
   callErrorFromStatus,
+  SurfaceCall,
 } from './call';
 import { CallCredentials } from './call-credentials';
-import { Call, Deadline, StatusObject, WriteObject } from './call-stream';
+import { Call, Deadline, StatusObject, WriteObject, InterceptingListener } from './call-stream';
 import { Channel, ConnectivityState, ChannelImplementation } from './channel';
 import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
@@ -125,38 +126,6 @@ export class Client {
     setImmediate(checkState);
   }
 
-  private handleUnaryResponse<ResponseType>(
-    call: Call,
-    deserialize: (value: Buffer) => ResponseType,
-    callback: UnaryCallback<ResponseType>
-  ): void {
-    let responseMessage: ResponseType | null = null;
-    call.on('data', (data: Buffer) => {
-      if (responseMessage != null) {
-        call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
-      }
-      try {
-        responseMessage = deserialize(data);
-      } catch (e) {
-        call.cancelWithStatus(
-          Status.INTERNAL,
-          'Failed to parse server response'
-        );
-      }
-    });
-    call.on('status', (status: StatusObject) => {
-      /* We assume that call emits status after it emits end, and that it
-       * accounts for any cancelWithStatus calls up until it emits status.
-       * Therefore, considering the above event handlers, status.code should be
-       * OK if and only if we have a non-null responseMessage */
-      if (status.code === Status.OK) {
-        callback(null, responseMessage as ResponseType);
-      } else {
-        callback(callErrorFromStatus(status));
-      }
-    });
-  }
-
   private checkOptionalUnaryResponseArguments<ResponseType>(
     arg1: Metadata | CallOptions | UnaryCallback<ResponseType>,
     arg2?: CallOptions | UnaryCallback<ResponseType>,
@@ -244,11 +213,38 @@ export class Client {
     }
     const message: Buffer = serialize(argument);
     const writeObj: WriteObject = { message };
-    call.sendMetadata(metadata);
-    call.write(writeObj);
-    call.end();
-    this.handleUnaryResponse<ResponseType>(call, deserialize, callback);
-    return new ClientUnaryCallImpl(call);
+    const emitter = new ClientUnaryCallImpl(call);
+    let responseMessage: ResponseType | null = null;
+    call.start(metadata, {
+      onReceiveMetadata: (metadata) => {
+        emitter.emit('metadata', metadata);
+      },
+      onReceiveMessage(message: Buffer) {
+        if (responseMessage != null) {
+          call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
+        }
+        try {
+          responseMessage = deserialize(message);
+        } catch (e) {
+          call.cancelWithStatus(
+            Status.INTERNAL,
+            'Failed to parse server response'
+          );
+        }
+        call.startRead();
+      },
+      onReceiveStatus(status: StatusObject) {
+        if (status.code === Status.OK) {
+          callback!(null, responseMessage!);
+        } else {
+          callback!(callErrorFromStatus(status));
+        }
+        emitter.emit('status', status);
+      }
+    });
+    call.write(writeObj, () => {call.halfClose();});
+    call.startRead();
+    return emitter;
   }
 
   makeClientStreamRequest<RequestType, ResponseType>(
@@ -300,9 +296,37 @@ export class Client {
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
-    call.sendMetadata(metadata);
-    this.handleUnaryResponse<ResponseType>(call, deserialize, callback);
-    return new ClientWritableStreamImpl<RequestType>(call, serialize);
+    const emitter = new ClientWritableStreamImpl<RequestType>(call, serialize);
+    let responseMessage: ResponseType | null = null;
+    call.start(metadata, {
+      onReceiveMetadata: (metadata) => {
+        emitter.emit('metadata', metadata);
+      },
+      onReceiveMessage(message: Buffer) {
+        if (responseMessage != null) {
+          call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
+        }
+        try {
+          responseMessage = deserialize(message);
+        } catch (e) {
+          call.cancelWithStatus(
+            Status.INTERNAL,
+            'Failed to parse server response'
+          );
+        }
+        call.startRead();
+      },
+      onReceiveStatus(status: StatusObject) {
+        if (status.code === Status.OK) {
+          callback!(null, responseMessage!);
+        } else {
+          callback!(callErrorFromStatus(status));
+        }
+        emitter.emit('status', status);
+      }
+    });
+    call.startRead();
+    return emitter;
   }
 
   private checkMetadataAndOptions(
@@ -365,10 +389,33 @@ export class Client {
     }
     const message: Buffer = serialize(argument);
     const writeObj: WriteObject = { message };
-    call.sendMetadata(metadata);
-    call.write(writeObj);
-    call.end();
-    return new ClientReadableStreamImpl<ResponseType>(call, deserialize);
+    const stream = new ClientReadableStreamImpl<ResponseType>(call, deserialize);
+    call.start(metadata, {
+      onReceiveMetadata(metadata: Metadata) {
+        stream.emit('metadata', metadata);
+      },
+      onReceiveMessage(message: Buffer) {
+        let deserialized: ResponseType;
+        try {
+          deserialized = deserialize(message);
+        } catch (e) {
+          call.cancelWithStatus(Status.INTERNAL, 'Failed to parse server response');
+          return;
+        }
+        if (stream.push(deserialized)) {
+          call.startRead();
+        }
+      },
+      onReceiveStatus(status: StatusObject) {
+        stream.push(null);
+        if (status.code !== Status.OK) {
+          stream.emit('error', callErrorFromStatus(status));
+        }
+        stream.emit('status', status);
+      }
+    });
+    call.write(writeObj, () => {call.halfClose();});
+    return stream;
   }
 
   makeBidiStreamRequest<RequestType, ResponseType>(
@@ -402,11 +449,35 @@ export class Client {
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
-    call.sendMetadata(metadata);
-    return new ClientDuplexStreamImpl<RequestType, ResponseType>(
+    const stream = new ClientDuplexStreamImpl<RequestType, ResponseType>(
       call,
       serialize,
       deserialize
     );
+    call.start(metadata, {
+      onReceiveMetadata(metadata: Metadata) {
+        stream.emit('metadata', metadata);
+      },
+      onReceiveMessage(message: Buffer) {
+        let deserialized: ResponseType;
+        try {
+          deserialized = deserialize(message);
+        } catch (e) {
+          call.cancelWithStatus(Status.INTERNAL, 'Failed to parse server response');
+          return;
+        }
+        if (stream.push(deserialized)) {
+          call.startRead();
+        }
+      },
+      onReceiveStatus(status: StatusObject) {
+        stream.push(null);
+        if (status.code !== Status.OK) {
+          stream.emit('error', callErrorFromStatus(status));
+        }
+        stream.emit('status', status);
+      }
+    });
+    return stream;
   }
 }
