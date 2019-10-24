@@ -38,38 +38,80 @@ export class SubchannelPool {
   } = Object.create(null);
 
   /**
+   * A timer of a task performing a periodic subchannel cleanup.
+   */
+  private cleanupTimer: NodeJS.Timer | undefined;
+
+  /**
    * A pool of subchannels use for making connections. Subchannels with the
    * exact same parameters will be reused.
    * @param global If true, this is the global subchannel pool. Otherwise, it
    * is the pool for a single channel.
    */
-  constructor(private global: boolean) {
-    if (global) {
-      setInterval(() => {
-        /* These objects are created with Object.create(null), so they do not
-         * have a prototype, which means that for (... in ...) loops over them
-         * do not need to be filtered */
-        // tslint:disable-next-line:forin
-        for (const channelTarget in this.pool) {
-          // tslint:disable-next-line:forin
-          for (const subchannelTarget in this.pool[channelTarget]) {
-            const subchannelObjArray = this.pool[channelTarget][
-              subchannelTarget
-            ];
-            /* For each subchannel in the pool, try to unref it if it has
-             * exactly one ref (which is the ref from the pool itself). If that
-             * does happen, remove the subchannel from the pool */
-            this.pool[channelTarget][
-              subchannelTarget
-            ] = subchannelObjArray.filter(
-              value => !value.subchannel.unrefIfOneRef()
-            );
-          }
+  constructor(private global: boolean) {}
+
+  /**
+   * Unrefs all unused subchannels.
+   * 
+   * @returns `true` if all subchannels have been unrefed. `false` otherwise.
+   */
+  unrefUnusedSubchannels(): boolean {
+    let allSubchannelsUnrefed = true;
+
+    /* These objects are created with Object.create(null), so they do not
+     * have a prototype, which means that for (... in ...) loops over them
+     * do not need to be filtered */
+    // tslint:disable-next-line:forin
+    for (const channelTarget in this.pool) {
+      // tslint:disable-next-line:forin
+      for (const subchannelTarget in this.pool[channelTarget]) {
+        const subchannelObjArray = this.pool[channelTarget][
+          subchannelTarget
+        ];
+
+        const refedSubchannels = subchannelObjArray
+          .filter(value => !value.subchannel.unrefIfOneRef());
+
+        if (refedSubchannels.length > 0) {
+          allSubchannelsUnrefed = false;
         }
-        /* Currently we do not delete keys with empty values. If that results
-         * in significant memory usage we should change it. */
-      }, REF_CHECK_INTERVAL).unref();
-      // Unref because this timer should not keep the event loop running
+
+        /* For each subchannel in the pool, try to unref it if it has
+         * exactly one ref (which is the ref from the pool itself). If that
+         * does happen, remove the subchannel from the pool */
+        this.pool[channelTarget][subchannelTarget] = refedSubchannels;
+      }
+    }
+    /* Currently we do not delete keys with empty values. If that results
+     * in significant memory usage we should change it. */
+
+    return allSubchannelsUnrefed;
+  }
+
+  /**
+   * Ensure that the cleanup task is spawned.
+   */
+  ensureCleanupTask(): void {
+    if (this.global === true && this.cleanupTimer === undefined) {
+      this.cleanupTimer = setInterval(() => {
+        this.unrefUnusedSubchannels();
+      }, REF_CHECK_INTERVAL);
+
+      // Unref because this timer should not keep the event loop running.
+      this.cleanupTimer.unref();
+    }
+  }
+
+  /**
+   * Unrefs unused subchannels and cancels the cleanup task if all
+   * subchannels have been unrefed.
+   */
+  forceCleanup(): void {
+    const allSubchannelsUnrefed = this.unrefUnusedSubchannels();
+
+    if (allSubchannelsUnrefed && this.cleanupTimer !== undefined) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = undefined;
     }
   }
 
@@ -87,6 +129,8 @@ export class SubchannelPool {
     channelArguments: ChannelOptions,
     channelCredentials: ChannelCredentials
   ): Subchannel {
+    this.ensureCleanupTask();
+
     if (channelTarget in this.pool) {
       if (subchannelTarget in this.pool[channelTarget]) {
         const subchannelObjArray = this.pool[channelTarget][subchannelTarget];

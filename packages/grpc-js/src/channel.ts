@@ -288,6 +288,10 @@ export class ChannelImplementation implements Channel {
   close() {
     this.resolvingLoadBalancer.destroy();
     this.updateState(ConnectivityState.SHUTDOWN);
+
+    if (this.subchannelPool !== undefined) {
+      this.subchannelPool.forceCleanup();
+    }
   }
 
   getTarget() {
