@@ -35,8 +35,12 @@ import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
 import { Status } from './constants';
 import { Metadata } from './metadata';
+import { ClientMethodDefinition } from './make-client';
+import { getInterceptingCall, Interceptor, InterceptorProvider, InterceptorArguments } from './client-interceptors';
 
 const CHANNEL_SYMBOL = Symbol();
+const INTERCEPTOR_SYMBOL = Symbol();
+const INTERCEPTOR_PROVIDER_SYMBOL = Symbol();
 
 export interface UnaryCallback<ResponseType> {
   (err: ServiceError | null, value?: ResponseType): void;
@@ -49,6 +53,8 @@ export interface CallOptions {
    * but the server is not yet implemented so it makes no sense to have it */
   propagate_flags?: number;
   credentials?: CallCredentials;
+  interceptors?: Interceptor[],
+  interceptor_providers?: InterceptorProvider[]
 }
 
 export type ClientOptions = Partial<ChannelOptions> & {
@@ -58,6 +64,8 @@ export type ClientOptions = Partial<ChannelOptions> & {
     credentials: ChannelCredentials,
     options: ClientOptions
   ) => Channel;
+  interceptors?: Interceptor[],
+  interceptor_providers?: InterceptorProvider[]
 };
 
 /**
@@ -66,6 +74,8 @@ export type ClientOptions = Partial<ChannelOptions> & {
  */
 export class Client {
   private readonly [CHANNEL_SYMBOL]: Channel;
+  private readonly [INTERCEPTOR_SYMBOL]: Interceptor[];
+  private readonly [INTERCEPTOR_PROVIDER_SYMBOL]: InterceptorProvider[];
   constructor(
     address: string,
     credentials: ChannelCredentials,
@@ -85,6 +95,13 @@ export class Client {
         credentials,
         options
       );
+    }
+    this[INTERCEPTOR_SYMBOL] = options.interceptors || [];
+    this[INTERCEPTOR_PROVIDER_SYMBOL] = options.interceptor_providers || [];
+    if (this[INTERCEPTOR_SYMBOL].length > 0 && this[INTERCEPTOR_PROVIDER_SYMBOL].length > 0) {
+      throw new Error(
+        'Both interceptors and interceptor_providers were passed as options ' +
+        'to the client constructor. Only one of these is allowed.');
     }
   }
 
@@ -201,36 +218,35 @@ export class Client {
     ({ metadata, options, callback } = this.checkOptionalUnaryResponseArguments<
       ResponseType
     >(metadata, options, callback));
-    const call: Call = this[CHANNEL_SYMBOL].createCall(
-      method,
-      options.deadline,
-      options.host,
-      null,
-      options.propagate_flags
-    );
+    const methodDefinition: ClientMethodDefinition<RequestType, ResponseType> = {
+      path: method,
+      requestStream: false,
+      responseStream: false,
+      requestSerialize: serialize,
+      responseDeserialize: deserialize
+    };
+    const interceptorArgs: InterceptorArguments = {
+      clientInterceptors: this[INTERCEPTOR_SYMBOL],
+      clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
+      callInterceptors: options.interceptors || [],
+      callInterceptorProviders: options.interceptor_providers || []
+    };
+    const call: Call = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
-    const message: Buffer = serialize(argument);
-    const writeObj: WriteObject = { message };
+    const writeObj: WriteObject = { message: argument };
     const emitter = new ClientUnaryCallImpl(call);
     let responseMessage: ResponseType | null = null;
     call.start(metadata, {
       onReceiveMetadata: (metadata) => {
         emitter.emit('metadata', metadata);
       },
-      onReceiveMessage(message: Buffer) {
+      onReceiveMessage(message: any) {
         if (responseMessage != null) {
           call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
         }
-        try {
-          responseMessage = deserialize(message);
-        } catch (e) {
-          call.cancelWithStatus(
-            Status.INTERNAL,
-            'Failed to parse server response'
-          );
-        }
+        responseMessage = message;
         call.startRead();
       },
       onReceiveStatus(status: StatusObject) {
@@ -286,13 +302,20 @@ export class Client {
     ({ metadata, options, callback } = this.checkOptionalUnaryResponseArguments<
       ResponseType
     >(metadata, options, callback));
-    const call: Call = this[CHANNEL_SYMBOL].createCall(
-      method,
-      options.deadline,
-      options.host,
-      null,
-      options.propagate_flags
-    );
+    const methodDefinition: ClientMethodDefinition<RequestType, ResponseType> = {
+      path: method,
+      requestStream: true,
+      responseStream: false,
+      requestSerialize: serialize,
+      responseDeserialize: deserialize
+    };
+    const interceptorArgs: InterceptorArguments = {
+      clientInterceptors: this[INTERCEPTOR_SYMBOL],
+      clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
+      callInterceptors: options.interceptors || [],
+      callInterceptorProviders: options.interceptor_providers || []
+    };
+    const call: Call = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
@@ -302,18 +325,11 @@ export class Client {
       onReceiveMetadata: (metadata) => {
         emitter.emit('metadata', metadata);
       },
-      onReceiveMessage(message: Buffer) {
+      onReceiveMessage(message: any) {
         if (responseMessage != null) {
           call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
         }
-        try {
-          responseMessage = deserialize(message);
-        } catch (e) {
-          call.cancelWithStatus(
-            Status.INTERNAL,
-            'Failed to parse server response'
-          );
-        }
+        responseMessage = message;
         call.startRead();
       },
       onReceiveStatus(status: StatusObject) {
@@ -377,32 +393,31 @@ export class Client {
     options?: CallOptions
   ): ClientReadableStream<ResponseType> {
     ({ metadata, options } = this.checkMetadataAndOptions(metadata, options));
-    const call: Call = this[CHANNEL_SYMBOL].createCall(
-      method,
-      options.deadline,
-      options.host,
-      null,
-      options.propagate_flags
-    );
+    const methodDefinition: ClientMethodDefinition<RequestType, ResponseType> = {
+      path: method,
+      requestStream: false,
+      responseStream: true,
+      requestSerialize: serialize,
+      responseDeserialize: deserialize
+    };
+    const interceptorArgs: InterceptorArguments = {
+      clientInterceptors: this[INTERCEPTOR_SYMBOL],
+      clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
+      callInterceptors: options.interceptors || [],
+      callInterceptorProviders: options.interceptor_providers || []
+    };
+    const call: Call = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
-    const message: Buffer = serialize(argument);
-    const writeObj: WriteObject = { message };
+    const writeObj: WriteObject = { message: argument };
     const stream = new ClientReadableStreamImpl<ResponseType>(call, deserialize);
     call.start(metadata, {
       onReceiveMetadata(metadata: Metadata) {
         stream.emit('metadata', metadata);
       },
-      onReceiveMessage(message: Buffer) {
-        let deserialized: ResponseType;
-        try {
-          deserialized = deserialize(message);
-        } catch (e) {
-          call.cancelWithStatus(Status.INTERNAL, 'Failed to parse server response');
-          return;
-        }
-        if (stream.push(deserialized)) {
+      onReceiveMessage(message: any) {
+        if (stream.push(message)) {
           call.startRead();
         }
       },
@@ -439,13 +454,20 @@ export class Client {
     options?: CallOptions
   ): ClientDuplexStream<RequestType, ResponseType> {
     ({ metadata, options } = this.checkMetadataAndOptions(metadata, options));
-    const call: Call = this[CHANNEL_SYMBOL].createCall(
-      method,
-      options.deadline,
-      options.host,
-      null,
-      options.propagate_flags
-    );
+    const methodDefinition: ClientMethodDefinition<RequestType, ResponseType> = {
+      path: method,
+      requestStream: true,
+      responseStream: true,
+      requestSerialize: serialize,
+      responseDeserialize: deserialize
+    };
+    const interceptorArgs: InterceptorArguments = {
+      clientInterceptors: this[INTERCEPTOR_SYMBOL],
+      clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
+      callInterceptors: options.interceptors || [],
+      callInterceptorProviders: options.interceptor_providers || []
+    };
+    const call: Call = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
@@ -459,14 +481,7 @@ export class Client {
         stream.emit('metadata', metadata);
       },
       onReceiveMessage(message: Buffer) {
-        let deserialized: ResponseType;
-        try {
-          deserialized = deserialize(message);
-        } catch (e) {
-          call.cancelWithStatus(Status.INTERNAL, 'Failed to parse server response');
-          return;
-        }
-        if (stream.push(deserialized)) {
+        if (stream.push(message)) {
           call.startRead();
         }
       },

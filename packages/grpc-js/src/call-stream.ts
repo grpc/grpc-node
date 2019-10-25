@@ -86,20 +86,40 @@ export interface InterceptingListener {
   onReceiveStatus(status: StatusObject): void;
 }
 
-class InterceptingListenerImpl implements InterceptingListener {
+export function isInterceptingListener(listener: Listener | InterceptingListener): listener is InterceptingListener {
+  return listener.onReceiveMetadata !== undefined && listener.onReceiveMetadata.length === 1;
+}
+
+export class InterceptingListenerImpl implements InterceptingListener {
+  private processingMessage = false;
+  private pendingStatus: StatusObject | null = null;
   constructor(private listener: FullListener, private nextListener: InterceptingListener) {}
 
   onReceiveMetadata(metadata: Metadata): void {
-    const next = this.nextListener.onReceiveMetadata.bind(this.nextListener);
-    this.listener.onReceiveMetadata(metadata, next);
+    this.listener.onReceiveMetadata(metadata, (metadata) => {
+      this.nextListener.onReceiveMetadata(metadata);
+    });
   }
   onReceiveMessage(message: any): void {
-    const next = this.nextListener.onReceiveMessage.bind(this.nextListener);
-    this.listener.onReceiveMessage(message, next);
+    /* If this listener processes messages asynchronously, the last message may
+     * be reordered with respect to the status */
+    this.processingMessage = true;
+    this.listener.onReceiveMessage(message, (msg) => {
+      this.processingMessage = false;
+      this.nextListener.onReceiveMessage(msg);
+      if (this.pendingStatus) {
+        this.nextListener.onReceiveStatus(this.pendingStatus);
+      }
+    });
   }
   onReceiveStatus(status: StatusObject): void {
-    const next = this.nextListener.onReceiveStatus.bind(this.nextListener);
-    this.listener.onReceiveStatus(status, next);
+    this.listener.onReceiveStatus(status, (processedStatus) => {
+      if (this.processingMessage) {
+        this.pendingStatus = processedStatus;
+      } else {
+        this.nextListener.onReceiveStatus(processedStatus);
+      }
+    });
   }
 }
 
@@ -107,11 +127,16 @@ export interface WriteCallback {
   (error?: Error | null): void;
 }
 
-export type Call = {
+export interface MessageContext {
+  callback?: WriteCallback;
+  flags?: number;
+}
+
+export interface Call {
   cancelWithStatus(status: Status, details: string): void;
   getPeer(): string;
   start(metadata: Metadata, listener: InterceptingListener): void;
-  write(writeObj: WriteObject, callback: WriteCallback): void;
+  sendMessageWithContext(context: MessageContext, message: any): void;
   startRead(): void;
   halfClose(): void;
 
@@ -214,6 +239,13 @@ export class Http2CallStream implements Call {
       }
     } else {
       this.listener!.onReceiveMessage(message);
+      /* Don't wait for the upper layer to ask for a read before pushing null
+       * to close out the call, because pushing null doesn't actually push
+       * another message up to the upper layer */
+      if (this.unpushedReadMessages.length > 0 && this.unpushedReadMessages[0] === null) {
+        this.unpushedReadMessages.shift();
+        this.push(null);
+      }
     }
   }
 
@@ -495,7 +527,12 @@ export class Http2CallStream implements Call {
     }
   }
 
-  write(writeObj: WriteObject, cb: WriteCallback) {
+  sendMessageWithContext(context: MessageContext, message: Buffer) {
+    const writeObj: WriteObject = {
+      message: message,
+      flags: context.flags
+    };
+    const cb: WriteCallback = context.callback || (() => {});
     this.filterStack.sendMessage(Promise.resolve(writeObj)).then(message => {
       if (this.http2Stream === null) {
         this.pendingWrite = message.message;

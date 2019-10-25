@@ -160,7 +160,12 @@ export class ClientWritableStreamImpl<RequestType> extends Writable
   }
 
   _write(chunk: RequestType, encoding: string, cb: WriteCallback) {
-    tryWrite<RequestType>(this.call, this.serialize, chunk, encoding, cb);
+    const writeObj: WriteObject = { message: chunk };
+    const flags: number = Number(encoding);
+    if (!Number.isNaN(flags)) {
+      writeObj.flags = flags;
+    }
+    this.call.write(writeObj, cb);
   }
 
   _final(cb: Function) {
@@ -192,7 +197,12 @@ export class ClientDuplexStreamImpl<RequestType, ResponseType> extends Duplex
   }
 
   _write(chunk: RequestType, encoding: string, cb: WriteCallback) {
-    tryWrite<RequestType>(this.call, this.serialize, chunk, encoding, cb);
+    const writeObj: WriteObject = { message: chunk };
+    const flags: number = Number(encoding);
+    if (!Number.isNaN(flags)) {
+      writeObj.flags = flags;
+    }
+    this.call.write(writeObj, cb);
   }
 
   _final(cb: Function) {

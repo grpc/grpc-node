@@ -252,19 +252,6 @@ export type Call =
   | ClientDuplexStream<any, any>;
 /* tslint:enable:no-any */
 
-export type MetadataListener = (metadata: Metadata, next: Function) => void;
-
-// tslint:disable-next-line:no-any
-export type MessageListener = (message: any, next: Function) => void;
-
-export type StatusListener = (status: StatusObject, next: Function) => void;
-
-export interface Listener {
-  onReceiveMetadata?: MetadataListener;
-  onReceiveMessage?: MessageListener;
-  onReceiveStatus?: StatusListener;
-}
-
 /**** Unimplemented function stubs ****/
 
 /* tslint:disable:no-any variable-name */
@@ -299,17 +286,16 @@ export const getClientChannel = (client: Client) => {
 
 export { StatusBuilder };
 
-export const ListenerBuilder = () => {
-  throw new Error('Not yet implemented');
-};
+export { Listener } from './call-stream';
 
-export const InterceptorBuilder = () => {
-  throw new Error('Not yet implemented');
-};
-
-export const InterceptingCall = () => {
-  throw new Error('Not yet implemented');
-};
+export { 
+  Requester, 
+  ListenerBuilder, 
+  RequesterBuilder, 
+  Interceptor, 
+  InterceptorProvider, 
+  InterceptingCall,
+  InterceptorConfigurationError } from './client-interceptors';
 
 export { GrpcObject } from './make-client';
 

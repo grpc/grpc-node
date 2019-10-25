@@ -27,15 +27,25 @@ export interface Deserialize<T> {
   (bytes: Buffer): T;
 }
 
-export interface MethodDefinition<RequestType, ResponseType> {
+export interface ClientMethodDefinition<RequestType, ResponseType> {
   path: string;
   requestStream: boolean;
   responseStream: boolean;
   requestSerialize: Serialize<RequestType>;
-  responseSerialize: Serialize<ResponseType>;
-  requestDeserialize: Deserialize<RequestType>;
   responseDeserialize: Deserialize<ResponseType>;
   originalName?: string;
+}
+
+export interface ServerMethodDefinition<RequestType, ResponseType> {
+  path: string;
+  requestStream: boolean;
+  responseStream: boolean;
+  responseSerialize: Serialize<ResponseType>;
+  requestDeserialize: Deserialize<RequestType>;
+  originalName?: string;
+}
+
+export interface MethodDefinition<RequestType, ResponseType> extends ClientMethodDefinition<RequestType, ResponseType>, ServerMethodDefinition<RequestType, ResponseType> {
 }
 
 export interface ServiceDefinition {
