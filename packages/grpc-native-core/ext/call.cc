@@ -101,7 +101,7 @@ bool CreateMetadataArray(Local<Object> metadata_obj, grpc_metadata_array *array)
   array->metadata = reinterpret_cast<grpc_metadata *>(
       gpr_zalloc(array->capacity * sizeof(grpc_metadata)));
   for (unsigned int i = 0; i < keys->Length(); i++) {
-    Local<String> current_key(Nan::To<String>(keys->Get(i)).ToLocalChecked());
+    Local<String> current_key(Nan::To<String>(Nan::Get(keys, i).ToLocalChecked()).ToLocalChecked());
     Local<Array> values =
         Local<Array>::Cast(Nan::Get(metadata, current_key).ToLocalChecked());
     grpc_slice key_slice = CreateSliceFromString(current_key);
@@ -678,7 +678,7 @@ NAN_METHOD(Call::StartBatch) {
       default:
         return Nan::ThrowError("Argument object had an unrecognized key");
     }
-    if (!op->ParseOp(obj->Get(type), &ops[i])) {
+    if (!op->ParseOp(Nan::Get(obj, type).ToLocalChecked(), &ops[i])) {
       return Nan::ThrowTypeError("Incorrectly typed arguments to startBatch");
     }
     op_vector->push_back(std::move(op));
