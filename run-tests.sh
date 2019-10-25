@@ -26,7 +26,7 @@ set -ex
 cd $ROOT
 
 if [ ! -n "$node_versions" ] ; then
-  node_versions="8 10 12"
+  node_versions="8 10 12 13"
 fi
 
 set +ex
