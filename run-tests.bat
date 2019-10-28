@@ -38,7 +38,7 @@ call npm install || goto :error
 SET JUNIT_REPORT_STACK=1
 SET FAILED=0
 
-for %%v in (8 10 12 13) do (
+for %%v in (8 10 12) do (
   call nvm install %%v
   call nvm use %%v
   if "%%v"=="4" (
