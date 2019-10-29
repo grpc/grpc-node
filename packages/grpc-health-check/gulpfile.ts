@@ -39,7 +39,7 @@ const linkAdd = (callback) => {
   callback();
 }
 
-const test = () => gulp.src(`${testDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
+const test = () => gulp.src(`${testDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter', exit: true} as any));
 
 export {
   cleanLinks,
