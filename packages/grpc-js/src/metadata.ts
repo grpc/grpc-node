@@ -16,6 +16,7 @@
  */
 
 import * as http2 from 'http2';
+import * as http from 'http';
 const LEGAL_KEY_REGEX = /^[0-9a-z_.-]+$/;
 const LEGAL_NON_BINARY_VALUE_REGEX = /^[ -~]*$/;
 
@@ -214,9 +215,9 @@ export class Metadata {
   /**
    * Creates an OutgoingHttpHeaders object that can be used with the http2 API.
    */
-  toHttp2Headers(): http2.OutgoingHttpHeaders {
+  toHttp2Headers(): http.OutgoingHttpHeaders {
     // NOTE: Node <8.9 formats http2 headers incorrectly.
-    const result: http2.OutgoingHttpHeaders = {};
+    const result: http.OutgoingHttpHeaders = {};
     this.internalRepr.forEach((values, key) => {
       // We assume that the user's interaction with this object is limited to
       // through its public API (i.e. keys and values are already validated).
