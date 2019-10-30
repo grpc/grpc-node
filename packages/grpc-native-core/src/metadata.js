@@ -37,7 +37,7 @@ const CORKED_FLAG = 0x100;
  *     a client request.
  * @param {boolean=} [options.idempotentRequest=false] Signal that the request
  *     is idempotent
- * @param {boolean=} [options.waitForReady=true] Signal that the call should
+ * @param {boolean=} [options.waitForReady=false] Signal that the call should
  *     not return UNAVAILABLE before it has started.
  * @param {boolean=} [options.cacheableRequest=false] Signal that the call is
  *     cacheable. GRPC is free to use GET verb.
@@ -170,7 +170,7 @@ Metadata.prototype.clone = function() {
  *     a client request.
  * @param {boolean=} [options.idempotentRequest=false] Signal that the request
  *     is idempotent
- * @param {boolean=} [options.waitForReady=true] Signal that the call should
+ * @param {boolean=} [options.waitForReady=false] Signal that the call should
  *     not return UNAVAILABLE before it has started.
  * @param {boolean=} [options.cacheableRequest=false] Signal that the call is
  *     cacheable. GRPC is free to use GET verb.
