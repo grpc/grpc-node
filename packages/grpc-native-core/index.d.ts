@@ -554,7 +554,7 @@ declare module "grpc" {
     /* Signal that the request is idempotent. Defaults to false */
     idempotentRequest?: boolean;
     /* Signal that the call should not return UNAVAILABLE before it has
-     * started. Defaults to true. */
+     * started. Defaults to false. */
     waitForReady?: boolean;
     /* Signal that the call is cacheable. GRPC is free to use GET verb.
      * Defaults to false */
