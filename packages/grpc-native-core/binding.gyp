@@ -169,7 +169,6 @@
         "msvs_settings": {
           'VCCLCompilerTool': {
             'RuntimeLibrary': 1, # static debug
-            'RuntimeTypeInfo': 'true',
           }
         },
         "libraries": [
