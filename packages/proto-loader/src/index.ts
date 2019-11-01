@@ -149,8 +149,8 @@ function createSerializer(cls: Protobuf.Type): Serialize<object> {
 }
 
 function createMethodDefinition(
-    method: Protobuf.Method, serviceName: string,
-    options: Options): MethodDefinition<object, object> {
+    method: Protobuf.Method, serviceName: string, options: Options,
+    fileDescriptors: Buffer[]): MethodDefinition<object, object> {
   /* This is only ever called after the corresponding root.resolveAll(), so we
    * can assume that the resolved request and response types are non-null */
   const requestType: Protobuf.Type = method.resolvedRequestType!;
@@ -165,56 +165,42 @@ function createMethodDefinition(
     responseDeserialize: createDeserializer(responseType, options),
     // TODO(murgatroid99): Find a better way to handle this
     originalName: camelCase(method.name),
-    requestType: createMessageDefinition(requestType),
-    responseType: createMessageDefinition(responseType)
+    requestType: createMessageDefinition(requestType, fileDescriptors),
+    responseType: createMessageDefinition(responseType, fileDescriptors)
   };
 }
 
 function createServiceDefinition(
-    service: Protobuf.Service, name: string,
-    options: Options): ServiceDefinition {
+    service: Protobuf.Service, name: string, options: Options,
+    fileDescriptors: Buffer[]): ServiceDefinition {
   const def: ServiceDefinition = {};
   for (const method of service.methodsArray) {
-    def[method.name] = createMethodDefinition(method, name, options);
+    def[method.name] =
+        createMethodDefinition(method, name, options, fileDescriptors);
   }
   return def;
 }
 
-const fileDescriptorCache: Map<Protobuf.Root, Buffer[]> =
-    new Map<Protobuf.Root, Buffer[]>();
-function getFileDescriptors(root: Protobuf.Root): Buffer[] {
-  if (fileDescriptorCache.has(root)) {
-    return fileDescriptorCache.get(root)!;
-  } else {
-    const descriptorList: descriptor.IFileDescriptorProto[] =
-        root.toDescriptor('proto3').file;
-    const bufferList: Buffer[] = descriptorList.map(
-        value =>
-            Buffer.from(descriptor.FileDescriptorProto.encode(value).finish()));
-    fileDescriptorCache.set(root, bufferList);
-    return bufferList;
-  }
-}
-
-function createMessageDefinition(message: Protobuf.Type):
-    MessageTypeDefinition {
+function createMessageDefinition(
+    message: Protobuf.Type, fileDescriptors: Buffer[]): MessageTypeDefinition {
   const messageDescriptor: protobuf.Message<descriptor.IDescriptorProto> =
       message.toDescriptor('proto3');
   return {
     format: 'Protocol Buffer 3 DescriptorProto',
     type:
         messageDescriptor.$type.toObject(messageDescriptor, descriptorOptions),
-    fileDescriptorProtos: getFileDescriptors(message.root)
+    fileDescriptorProtos: fileDescriptors
   };
 }
 
-function createEnumDefinition(enumType: Protobuf.Enum): EnumTypeDefinition {
+function createEnumDefinition(
+    enumType: Protobuf.Enum, fileDescriptors: Buffer[]): EnumTypeDefinition {
   const enumDescriptor: protobuf.Message<descriptor.IEnumDescriptorProto> =
       enumType.toDescriptor('proto3');
   return {
     format: 'Protocol Buffer 3 EnumDescriptorProto',
     type: enumDescriptor.$type.toObject(enumDescriptor, descriptorOptions),
-    fileDescriptorProtos: getFileDescriptors(enumType.root)
+    fileDescriptorProtos: fileDescriptors
   };
 }
 
@@ -226,14 +212,14 @@ function createEnumDefinition(enumType: Protobuf.Enum): EnumTypeDefinition {
  * EnumTypeDefinition;
  */
 function createDefinition(
-    obj: HandledReflectionObject, name: string,
-    options: Options): AnyDefinition {
+    obj: HandledReflectionObject, name: string, options: Options,
+    fileDescriptors: Buffer[]): AnyDefinition {
   if (obj instanceof Protobuf.Service) {
-    return createServiceDefinition(obj, name, options);
+    return createServiceDefinition(obj, name, options, fileDescriptors);
   } else if (obj instanceof Protobuf.Type) {
-    return createMessageDefinition(obj);
+    return createMessageDefinition(obj, fileDescriptors);
   } else if (obj instanceof Protobuf.Enum) {
-    return createEnumDefinition(obj);
+    return createEnumDefinition(obj, fileDescriptors);
   } else {
     throw new Error('Type mismatch in reflection object handling');
   }
@@ -243,8 +229,13 @@ function createPackageDefinition(
     root: Protobuf.Root, options: Options): PackageDefinition {
   const def: PackageDefinition = {};
   root.resolveAll();
+  const descriptorList: descriptor.IFileDescriptorProto[] =
+      root.toDescriptor('proto3').file;
+  const bufferList: Buffer[] = descriptorList.map(
+      value =>
+          Buffer.from(descriptor.FileDescriptorProto.encode(value).finish()));
   for (const [name, obj] of getAllHandledReflectionObjects(root, '')) {
-    def[name] = createDefinition(obj, name, options);
+    def[name] = createDefinition(obj, name, options, bufferList);
   }
   return def;
 }
@@ -293,7 +284,7 @@ function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
  * @param options.includeDirs Paths to search for imported `.proto` files.
  */
 export function load(
-    filename: string | string[], options?: Options): Promise<PackageDefinition> {
+    filename: string|string[], options?: Options): Promise<PackageDefinition> {
   const root: Protobuf.Root = new Protobuf.Root();
   options = options || {};
   if (!!options.includeDirs) {
@@ -310,7 +301,7 @@ export function load(
 }
 
 export function loadSync(
-    filename: string | string[], options?: Options): PackageDefinition {
+    filename: string|string[], options?: Options): PackageDefinition {
   const root: Protobuf.Root = new Protobuf.Root();
   options = options || {};
   if (!!options.includeDirs) {
