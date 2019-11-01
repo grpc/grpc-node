@@ -154,10 +154,23 @@
             '_UNICODE',
             'NOMINMAX',
           ],
-          "msvs_settings": {
-            'VCCLCompilerTool': {
-              'RuntimeLibrary': 1, # static debug
-            }
+          "configurations": {
+            "Debug": {
+              "msvs_settings": {
+                'VCCLCompilerTool': {
+                  'RuntimeLibrary': 1, # static debug
+                  'RuntimeTypeInfo': 'true',
+                }
+              },
+            },
+            "Release": {
+              "msvs_settings": {
+                'VCCLCompilerTool': {
+                  'RuntimeLibrary': 1, # static debug
+                  'RuntimeTypeInfo': 'true',
+                }
+              },
+            },
           },
           "libraries": [
             "ws2_32"
