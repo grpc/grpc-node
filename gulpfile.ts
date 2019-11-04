@@ -24,13 +24,13 @@ import * as internalTest from './test/gulpfile';
 
 const root = __dirname;
 
-const installAll = gulp.parallel(jsCore.install, nativeCore.install, healthCheck.install, protobuf.install, internalTest.install);
+const installAll = gulp.series(jsCore.install, nativeCore.install, healthCheck.install, protobuf.install, internalTest.install);
 
-const installAllWindows = gulp.parallel(jsCore.install, nativeCore.installWindows, healthCheck.install, protobuf.install, internalTest.install);
+const installAllWindows = gulp.series(jsCore.install, nativeCore.installWindows, healthCheck.install, protobuf.install, internalTest.install);
 
-const lint = gulp.parallel(jsCore.lint, nativeCore.lint);
+const lint = gulp.series(jsCore.lint, nativeCore.lint);
 
-const build = gulp.parallel(jsCore.compile, nativeCore.build, protobuf.compile);
+const build = gulp.series(jsCore.compile, nativeCore.build, protobuf.compile);
 
 const link = gulp.series(healthCheck.linkAdd);
 
@@ -38,17 +38,17 @@ const setup = gulp.series(installAll, link);
 
 const setupWindows = gulp.series(installAllWindows, link);
 
-const setupPureJSInterop = gulp.parallel(jsCore.install, protobuf.install, internalTest.install);
+const setupPureJSInterop = gulp.series(jsCore.install, protobuf.install, internalTest.install);
 
-const clean = gulp.parallel(jsCore.clean, nativeCore.clean, protobuf.clean);
+const clean = gulp.series(jsCore.clean, nativeCore.clean, protobuf.clean);
 
-const cleanAll = gulp.parallel(jsCore.cleanAll, nativeCore.cleanAll, healthCheck.cleanAll, internalTest.cleanAll, protobuf.cleanAll);
+const cleanAll = gulp.series(jsCore.cleanAll, nativeCore.cleanAll, healthCheck.cleanAll, internalTest.cleanAll, protobuf.cleanAll);
 
-const nativeTestOnly = gulp.parallel(nativeCore.test, healthCheck.test);
+const nativeTestOnly = gulp.series(nativeCore.test, healthCheck.test);
 
 const nativeTest = gulp.series(build, nativeTestOnly);
 
-const testOnly = gulp.parallel(jsCore.test, nativeTestOnly, protobuf.test);
+const testOnly = gulp.series(jsCore.test, nativeTestOnly, protobuf.test);
 
 const test = gulp.series(build, testOnly, internalTest.test);
 
