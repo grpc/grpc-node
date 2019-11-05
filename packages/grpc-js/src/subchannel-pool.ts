@@ -92,7 +92,7 @@ export class SubchannelPool {
    * Ensure that the cleanup task is spawned.
    */
   ensureCleanupTask(): void {
-    if (this.global === true && this.cleanupTimer === undefined) {
+    if (this.global && this.cleanupTimer === undefined) {
       this.cleanupTimer = setInterval(() => {
         this.unrefUnusedSubchannels();
       }, REF_CHECK_INTERVAL);
