@@ -685,7 +685,7 @@ NAN_METHOD(Call::StartBatch) {
   }
   Callback *callback = new Callback(callback_func);
   grpc_call_error error = grpc_call_start_batch(
-      call->wrapped_call, &ops[0], nops,
+      call->wrapped_call, ops.data(), nops,
       new struct tag(callback, op_vector.release(), call, info.This()), NULL);
   if (error != GRPC_CALL_OK) {
     return Nan::ThrowError(nanErrorWithCode("startBatch failed", error));
