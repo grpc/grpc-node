@@ -71,6 +71,8 @@ function uniformRandom(min: number, max: number) {
   return Math.random() * (max - min) + min;
 }
 
+const tooManyPingsData: Buffer = Buffer.from('too_many_pings', 'ascii');
+
 export class Subchannel {
   /**
    * The subchannel's current connectivity state. Invariant: `session` === `null`
@@ -275,8 +277,14 @@ export class Subchannel {
         );
       }
     });
-    session.once('goaway', () => {
+    session.once('goaway', (errorCode: number, lastStreamID: number, opaqueData: Buffer) => {
       if (this.session === session) {
+        /* See the last paragraph of
+         * https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md#basic-keepalive */
+        if (errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM && opaqueData.equals(tooManyPingsData)) {
+          logging.log(LogVerbosity.ERROR, `Connection to ${this.channelTarget} rejected by server because of excess pings`);
+          this.keepaliveTimeMs *= 2;
+        }
         this.transitionToState(
           [ConnectivityState.CONNECTING, ConnectivityState.READY],
           ConnectivityState.IDLE
