@@ -321,6 +321,9 @@ export class Subchannel {
         this.continueConnecting = false;
         break;
       case ConnectivityState.TRANSIENT_FAILURE:
+        if (this.session) {
+          this.session.close();
+        }
         this.session = null;
         this.stopKeepalivePings();
         break;
@@ -329,6 +332,9 @@ export class Subchannel {
          * should only transition to the IDLE state as a result of the timer
          * ending, but we still want to reset the backoff timeout. */
         this.stopBackoff();
+        if (this.session) {
+          this.session.close();
+        }
         this.session = null;
         this.stopKeepalivePings();
         break;
