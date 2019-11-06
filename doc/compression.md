@@ -3,11 +3,11 @@
 ## Client side
 The preferred method for configuring message compression on a client is to pass `options` when the client object is instantiated.
 
-The two options need to be passed:
+These two options control compression behavior:
 
-**grpc.default_compression_algorithm** (integer)
+**grpc.default_compression_algorithm** (int)
 
-The option keeps the value of a compression algorithm.
+Default compression algorithm for the channel. 
 
 Possible values for this option are:
 - `0` - No compression
@@ -15,9 +15,9 @@ Possible values for this option are:
 - `2` - Compress with GZIP algorithm
 - `3` - Stream compression with GZIP algorithm
 
-**grpc.default_compression_level** (integer)
+**grpc.default_compression_level** (int)
 
-The option keeps the value for the level of compression.
+Default compression level for the channel.
 
 Possible values for this option are:
 - `0` - None
