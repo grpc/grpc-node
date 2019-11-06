@@ -55,7 +55,7 @@ export class SubchannelPool {
    * 
    * @returns `true` if all subchannels have been unrefed. `false` otherwise.
    */
-  unrefUnusedSubchannels(): boolean {
+  unrefUnusedSubchannels(): void {
     let allSubchannelsUnrefed = true;
 
     /* These objects are created with Object.create(null), so they do not
@@ -85,7 +85,11 @@ export class SubchannelPool {
     /* Currently we do not delete keys with empty values. If that results
      * in significant memory usage we should change it. */
 
-    return allSubchannelsUnrefed;
+    // Cancel the cleanup task if all subchannels have been unrefed.
+    if (allSubchannelsUnrefed && this.cleanupTimer !== undefined) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = undefined;
+    }
   }
 
   /**
@@ -99,19 +103,6 @@ export class SubchannelPool {
 
       // Unref because this timer should not keep the event loop running.
       this.cleanupTimer.unref();
-    }
-  }
-
-  /**
-   * Unrefs unused subchannels and cancels the cleanup task if all
-   * subchannels have been unrefed.
-   */
-  forceCleanup(): void {
-    const allSubchannelsUnrefed = this.unrefUnusedSubchannels();
-
-    if (allSubchannelsUnrefed && this.cleanupTimer !== undefined) {
-      clearInterval(this.cleanupTimer);
-      this.cleanupTimer = undefined;
     }
   }
 
