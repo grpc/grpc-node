@@ -40,7 +40,7 @@ export class SubchannelPool {
   /**
    * A timer of a task performing a periodic subchannel cleanup.
    */
-  private cleanupTimer: NodeJS.Timer | undefined;
+  private cleanupTimer: NodeJS.Timer | null;
 
   /**
    * A pool of subchannels use for making connections. Subchannels with the
@@ -85,9 +85,9 @@ export class SubchannelPool {
      * in significant memory usage we should change it. */
 
     // Cancel the cleanup task if all subchannels have been unrefed.
-    if (allSubchannelsUnrefed && this.cleanupTimer !== undefined) {
+    if (allSubchannelsUnrefed && this.cleanupTimer !== null) {
       clearInterval(this.cleanupTimer);
-      this.cleanupTimer = undefined;
+      this.cleanupTimer = null;
     }
   }
 
@@ -95,7 +95,7 @@ export class SubchannelPool {
    * Ensures that the cleanup task is spawned.
    */
   ensureCleanupTask(): void {
-    if (this.global && this.cleanupTimer === undefined) {
+    if (this.global && this.cleanupTimer === null) {
       this.cleanupTimer = setInterval(() => {
         this.unrefUnusedSubchannels();
       }, REF_CHECK_INTERVAL);
