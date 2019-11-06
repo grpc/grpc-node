@@ -51,9 +51,8 @@ export class SubchannelPool {
   constructor(private global: boolean) {}
 
   /**
-   * Unrefs all unused subchannels.
-   * 
-   * @returns `true` if all subchannels have been unrefed. `false` otherwise.
+   * Unrefs all unused subchannels and cancels the cleanup task if all
+   * subchannels have been unrefed.
    */
   unrefUnusedSubchannels(): void {
     let allSubchannelsUnrefed = true;
@@ -93,7 +92,7 @@ export class SubchannelPool {
   }
 
   /**
-   * Ensure that the cleanup task is spawned.
+   * Ensures that the cleanup task is spawned.
    */
   ensureCleanupTask(): void {
     if (this.global && this.cleanupTimer === undefined) {
