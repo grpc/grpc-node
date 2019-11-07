@@ -107,7 +107,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
   private calculateAndUpdateState() {
     if (this.subchannelStateCounts[ConnectivityState.READY] > 0) {
       const readySubchannels = this.subchannels.filter(subchannel => subchannel.getConnectivityState() === ConnectivityState.READY);
-      let index: number = 0;
+      let index = 0;
       if (this.currentReadyPicker !== null) {
         index = readySubchannels.indexOf(this.currentReadyPicker.peekNextSubchannel());
         if (index < 0) {

@@ -100,7 +100,7 @@ export class Subchannel {
    * socket disconnects. Used for ending active calls with an UNAVAILABLE
    * status.
    */
-  private disconnectListeners: (() => void)[] = [];
+  private disconnectListeners: Array<() => void> = [];
 
   private backoffTimeout: BackoffTimeout;
 
