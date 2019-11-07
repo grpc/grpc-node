@@ -44,7 +44,7 @@ const BACKOFF_JITTER = 0.2;
 /* setInterval and setTimeout only accept signed 32 bit integers. JS doesn't
  * have a constant for the max signed 32 bit integer, so this is a simple way
  * to calculate it */
-const KEEPALIVE_TIME_MS = ~(1 << 31);
+const KEEPALIVE_MAX_TIME_MS = ~(1 << 31);
 const KEEPALIVE_TIMEOUT_MS = 20000;
 
 export type ConnectivityStateListener = (
@@ -112,7 +112,7 @@ export class Subchannel {
   /**
    * The amount of time in between sending pings
    */
-  private keepaliveTimeMs: number = KEEPALIVE_TIME_MS;
+  private keepaliveTimeMs: number = KEEPALIVE_MAX_TIME_MS;
   /**
    * The amount of time to wait for an acknowledgement after sending a ping
    */
@@ -283,7 +283,7 @@ export class Subchannel {
          * https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md#basic-keepalive */
         if (errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM && opaqueData.equals(tooManyPingsData)) {
           logging.log(LogVerbosity.ERROR, `Connection to ${this.channelTarget} rejected by server because of excess pings`);
-          this.keepaliveTimeMs = Math.min(2 * this.keepaliveTimeMs, KEEPALIVE_TIME_MS);
+          this.keepaliveTimeMs = Math.min(2 * this.keepaliveTimeMs, KEEPALIVE_MAX_TIME_MS);
         }
         this.transitionToState(
           [ConnectivityState.CONNECTING, ConnectivityState.READY],
