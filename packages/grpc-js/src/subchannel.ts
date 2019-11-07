@@ -283,7 +283,7 @@ export class Subchannel {
          * https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md#basic-keepalive */
         if (errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM && opaqueData.equals(tooManyPingsData)) {
           logging.log(LogVerbosity.ERROR, `Connection to ${this.channelTarget} rejected by server because of excess pings`);
-          this.keepaliveTimeMs *= 2;
+          this.keepaliveTimeMs = Math.min(2 * this.keepaliveTimeMs, KEEPALIVE_TIME_MS);
         }
         this.transitionToState(
           [ConnectivityState.CONNECTING, ConnectivityState.READY],
