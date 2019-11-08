@@ -32,7 +32,7 @@ if (process.env.GRPC_VERBOSITY) {
       _logVerbosity = LogVerbosity.ERROR;
       break;
     default:
-      // Ignore any other values
+    // Ignore any other values
   }
 }
 
@@ -55,11 +55,17 @@ export const log = (severity: LogVerbosity, ...args: any[]): void => {
   }
 };
 
-const enabledTracers = process.env.GRPC_TRACE ? process.env.GRPC_TRACE.split(',') : [];
+const enabledTracers = process.env.GRPC_TRACE
+  ? process.env.GRPC_TRACE.split(',')
+  : [];
 const allEnabled = enabledTracers.includes('all');
 
-export function trace(severity: LogVerbosity, tracer: string, text: string): void {
+export function trace(
+  severity: LogVerbosity,
+  tracer: string,
+  text: string
+): void {
   if (allEnabled || enabledTracers.includes(tracer)) {
-    log(severity, (new Date().toISOString() + ' | ' + tracer + ' | ' + text));
+    log(severity, new Date().toISOString() + ' | ' + tracer + ' | ' + text);
   }
 }

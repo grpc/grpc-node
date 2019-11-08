@@ -41,5 +41,7 @@ const serverImpl = getImplementation('_server_implementation');
 
 module.exports = {
   client: clientImpl,
-  server: serverImpl
+  server: serverImpl,
+  clientName: global._client_implementation,
+  serverName: global._server_implementation
 };

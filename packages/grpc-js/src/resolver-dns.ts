@@ -232,7 +232,9 @@ class DnsResolver implements Resolver {
             ip4Addresses,
             ip6Addresses
           );
-          trace('Resolved addresses for target ' + this.target + ': ' + allAddresses);
+          trace(
+            'Resolved addresses for target ' + this.target + ': ' + allAddresses
+          );
           if (allAddresses.length === 0) {
             this.listener.onError(this.defaultResolutionError);
             return;
@@ -266,7 +268,12 @@ class DnsResolver implements Resolver {
           );
         },
         err => {
-          trace('Resolution error for target ' + this.target + ': ' + (err as Error).message);
+          trace(
+            'Resolution error for target ' +
+              this.target +
+              ': ' +
+              (err as Error).message
+          );
           this.pendingResultPromise = null;
           this.listener.onError(this.defaultResolutionError);
         }

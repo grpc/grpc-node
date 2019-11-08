@@ -31,10 +31,11 @@
       "node-pre-gyp"
     ],
     "dependencies": {
+      "@types/bytebuffer": "^5.0.40",
       "lodash.camelcase": "^4.3.0",
       "lodash.clone": "^4.5.0",
       "nan": "^2.13.2",
-      "node-pre-gyp": "^0.13.0",
+      "node-pre-gyp": "^0.14.0",
       "protobufjs": "^5.0.3"
     },
     "devDependencies": {
@@ -69,13 +70,15 @@
       "deps/grpc/include/grpc/**/*.h",
       "deps/grpc/src/core/**/*.{c,cc,h}",
       "deps/grpc/src/boringssl/err_data.c",
-      "deps/grpc/third_party/abseil-cpp/absl/**/*.{h,hh}",
+      "deps/grpc/third_party/abseil-cpp/absl/**/*.{h,hh,inc}",
       "deps/grpc/third_party/boringssl/crypto/**/*.{c,cc,h}",
       "deps/grpc/third_party/boringssl/include/**/*.{c,cc,h}",
       "deps/grpc/third_party/boringssl/ssl/**/*.{c,cc,h}",
       "deps/grpc/third_party/boringssl/third_party/**/*.{c,h}",
-      "deps/grpc/third_party/upb/**/*.{c,h}",
+      "deps/grpc/third_party/upb/**/*.{c,h,inc}",
       "deps/grpc/third_party/zlib/**/*.{c,cc,h}",
+      "deps/grpc/third_party/address_sorting/**/*.{c,h}",
+      "deps/grpc/third_party/cares/**/*.{c,h}",
       "binding.gyp"
     ],
     "main": "index.js",

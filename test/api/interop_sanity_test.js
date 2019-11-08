@@ -19,6 +19,7 @@
 'use strict';
 
 var childProcess = require('child_process');
+const anyGrpc = require('../any_grpc');
 
 var port;
 
@@ -45,60 +46,62 @@ const testCases = [
 
 var childExecArgv = [];
 
-describe('Interop tests', function() {
-  this.timeout(4000);
-  before(function(done) {
-    for (let arg of process.argv) {
-      if (arg.startsWith('--require=')) {
-	childExecArgv.push('--require');
-	childExecArgv.push(arg.substring('--require='.length));
+describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, function() {
+  describe('Interop tests', function() {
+    this.timeout(4000);
+    before(function(done) {
+      for (let arg of process.argv) {
+        if (arg.startsWith('--require=')) {
+    childExecArgv.push('--require');
+    childExecArgv.push(arg.substring('--require='.length));
+        }
+      }
+      serverProcess = childProcess.fork(`${__dirname}/interop_helper/server.js`, {
+        execArgv: childExecArgv
+      });
+      serverProcess.on('message', (message) => {
+        port = message.port;
+        done();
+      });
+      serverProcess.on('exit', (code, signal) => {
+        if (code !== 0) {
+    if (code !== null) {
+      throw new Error(`Server exited with error code ${code}`);
+    } else {
+      throw new Error(`Server exited with signal ${signal}`);
+    }
+        }
+      });
+    });
+    after(function() {
+      serverProcess.send({});
+    });
+    for (let testName of testCases) {
+      it(`should pass ${testName}`, function(done) {
+        /* We need to run a client process per test to most closely match
+        * how the main interop test suite works */
+        let clientProcess = childProcess.fork(`${__dirname}/../interop/interop_client`, [
+    '--server_host=localhost',
+    `--server_port=${port}`,
+    `--server_host_override=${name_override}`,
+    `--test_case=${testName}`,
+    '--use_tls=true',
+    '--use_test_ca=true'
+        ], {
+    execArgv: childExecArgv
+        });
+        clientProcess.on('exit', (code, signal) => {
+    if (code === 0) {
+      done();
+    } else {
+      if (code !== null) {
+        done(new Error(`Client exited with error code ${code}`));
+      } else {
+        done(new Error(`Client exited with signal ${signal}`));
       }
     }
-    serverProcess = childProcess.fork(`${__dirname}/interop_helper/server.js`, {
-      execArgv: childExecArgv
-    });
-    serverProcess.on('message', (message) => {
-      port = message.port;
-      done();
-    });
-    serverProcess.on('exit', (code, signal) => {
-      if (code !== 0) {
-	if (code !== null) {
-	  throw new Error(`Server exited with error code ${code}`);
-	} else {
-	  throw new Error(`Server exited with signal ${signal}`);
-	}
-      }
-    });
-  });
-  after(function() {
-    serverProcess.send({});
-  });
-  for (let testName of testCases) {
-    it(`should pass ${testName}`, function(done) {
-      /* We need to run a client process per test to most closely match
-       * how the main interop test suite works */
-      let clientProcess = childProcess.fork(`${__dirname}/../interop/interop_client`, [
-	'--server_host=localhost',
-	`--server_port=${port}`,
-	`--server_host_override=${name_override}`,
-	`--test_case=${testName}`,
-	'--use_tls=true',
-	'--use_test_ca=true'
-      ], {
-	execArgv: childExecArgv
+        });
       });
-      clientProcess.on('exit', (code, signal) => {
-	if (code === 0) {
-	  done();
-	} else {
-	  if (code !== null) {
-	    done(new Error(`Client exited with error code ${code}`));
-	  } else {
-	    done(new Error(`Client exited with signal ${signal}`));
-	  }
-	}
-      });
-    });
-  }
+    }
+  });
 });

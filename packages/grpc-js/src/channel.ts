@@ -165,7 +165,9 @@ export class ChannelImplementation implements Channel {
       methodConfig: [],
     };
     if (options['grpc.service_config']) {
-      defaultServiceConfig = validateServiceConfig(JSON.parse(options['grpc.service_config']!));
+      defaultServiceConfig = validateServiceConfig(
+        JSON.parse(options['grpc.service_config']!)
+      );
     }
     this.resolvingLoadBalancer = new ResolvingLoadBalancer(
       target,
@@ -229,9 +231,7 @@ export class ChannelImplementation implements Channel {
                 // We assume the error code isn't 0 (Status.OK)
                 callStream.cancelWithStatus(
                   error.code || Status.UNKNOWN,
-                  `Getting metadata from plugin failed with error: ${
-                    error.message
-                  }`
+                  `Getting metadata from plugin failed with error: ${error.message}`
                 );
               }
             );
@@ -269,7 +269,15 @@ export class ChannelImplementation implements Channel {
   }
 
   private updateState(newState: ConnectivityState): void {
-    trace(LogVerbosity.DEBUG, 'connectivity_state', this.target + ' ' + ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[newState]);
+    trace(
+      LogVerbosity.DEBUG,
+      'connectivity_state',
+      this.target +
+        ' ' +
+        ConnectivityState[this.connectivityState] +
+        ' -> ' +
+        ConnectivityState[newState]
+    );
     this.connectivityState = newState;
     const watchersCopy = this.connectivityStateWatchers.slice();
     for (const watcherObject of watchersCopy) {
@@ -288,6 +296,8 @@ export class ChannelImplementation implements Channel {
   close() {
     this.resolvingLoadBalancer.destroy();
     this.updateState(ConnectivityState.SHUTDOWN);
+
+    this.subchannelPool.unrefUnusedSubchannels();
   }
 
   getTarget() {

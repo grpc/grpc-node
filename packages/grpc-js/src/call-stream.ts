@@ -188,7 +188,11 @@ export class Http2CallStream implements Call {
     this.filterStack = filterStackFactory.createFilter(this);
     this.credentials = channelCallCredentials;
     this.disconnectListener = () => {
-      this.endCall({code: Status.UNAVAILABLE, details: 'Connection dropped', metadata: new Metadata()});
+      this.endCall({
+        code: Status.UNAVAILABLE,
+        details: 'Connection dropped',
+        metadata: new Metadata(),
+      });
     };
   }
 
@@ -335,7 +339,10 @@ export class Http2CallStream implements Call {
     this.endCall(finalStatus);
   }
 
-  attachHttp2Stream(stream: http2.ClientHttp2Stream, subchannel: Subchannel): void {
+  attachHttp2Stream(
+    stream: http2.ClientHttp2Stream,
+    subchannel: Subchannel
+  ): void {
     if (this.finalStatus !== null) {
       stream.close(NGHTTP2_CANCEL);
     } else {

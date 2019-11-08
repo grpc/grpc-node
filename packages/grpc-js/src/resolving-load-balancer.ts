@@ -341,13 +341,22 @@ export class ResolvingLoadBalancer implements LoadBalancer {
 
   private updateResolution() {
     this.innerResolver.updateResolution();
-    if (this.innerLoadBalancer === null || this.innerBalancerState === ConnectivityState.IDLE) {
+    if (
+      this.innerLoadBalancer === null ||
+      this.innerBalancerState === ConnectivityState.IDLE
+    ) {
       this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
     }
   }
 
   private updateState(connectivitystate: ConnectivityState, picker: Picker) {
-    trace(this.target + ' ' + ConnectivityState[this.currentState] + ' -> ' + ConnectivityState[connectivitystate]);
+    trace(
+      this.target +
+        ' ' +
+        ConnectivityState[this.currentState] +
+        ' -> ' +
+        ConnectivityState[connectivitystate]
+    );
     this.currentState = connectivitystate;
     this.channelControlHelper.updateState(connectivitystate, picker);
   }
@@ -373,7 +382,10 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   }
 
   private handleResolutionFailure(error: StatusObject) {
-    if (this.innerLoadBalancer === null || this.innerBalancerState === ConnectivityState.IDLE) {
+    if (
+      this.innerLoadBalancer === null ||
+      this.innerBalancerState === ConnectivityState.IDLE
+    ) {
       this.updateState(
         ConnectivityState.TRANSIENT_FAILURE,
         new UnavailablePicker(error)
@@ -392,10 +404,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
       } else {
         this.updateResolution();
       }
-      this.updateState(
-        ConnectivityState.CONNECTING,
-        new QueuePicker(this)
-      );
+      this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
     }
   }
 

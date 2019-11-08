@@ -1,6 +1,6 @@
 {
   "name": "@grpc/proto-loader",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "author": "Google Inc.",
   "contributors": [
     {
@@ -46,7 +46,7 @@
     "@types/lodash.camelcase": "^4.3.4",
     "@types/node": "^10.12.5",
     "clang-format": "^1.2.2",
-    "gts": "^0.5.3",
+    "gts": "^1.1.0",
     "typescript": "~3.3.3333"
   },
   "engines": {

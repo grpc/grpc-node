@@ -44,7 +44,7 @@ const BACKOFF_JITTER = 0.2;
 /* setInterval and setTimeout only accept signed 32 bit integers. JS doesn't
  * have a constant for the max signed 32 bit integer, so this is a simple way
  * to calculate it */
-const KEEPALIVE_TIME_MS = ~(1 << 31);
+const KEEPALIVE_MAX_TIME_MS = ~(1 << 31);
 const KEEPALIVE_TIMEOUT_MS = 20000;
 
 export type ConnectivityStateListener = (
@@ -70,6 +70,8 @@ const {
 function uniformRandom(min: number, max: number) {
   return Math.random() * (max - min) + min;
 }
+
+const tooManyPingsData: Buffer = Buffer.from('too_many_pings', 'ascii');
 
 export class Subchannel {
   /**
@@ -98,7 +100,7 @@ export class Subchannel {
    * socket disconnects. Used for ending active calls with an UNAVAILABLE
    * status.
    */
-  private disconnectListeners: (() => void)[] = [];
+  private disconnectListeners: Array<() => void> = [];
 
   private backoffTimeout: BackoffTimeout;
 
@@ -110,7 +112,7 @@ export class Subchannel {
   /**
    * The amount of time in between sending pings
    */
-  private keepaliveTimeMs: number = KEEPALIVE_TIME_MS;
+  private keepaliveTimeMs: number = KEEPALIVE_MAX_TIME_MS;
   /**
    * The amount of time to wait for an acknowledgement after sending a ping
    */
@@ -275,14 +277,32 @@ export class Subchannel {
         );
       }
     });
-    session.once('goaway', () => {
-      if (this.session === session) {
-        this.transitionToState(
-          [ConnectivityState.CONNECTING, ConnectivityState.READY],
-          ConnectivityState.IDLE
-        );
+    session.once(
+      'goaway',
+      (errorCode: number, lastStreamID: number, opaqueData: Buffer) => {
+        if (this.session === session) {
+          /* See the last paragraph of
+           * https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md#basic-keepalive */
+          if (
+            errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM &&
+            opaqueData.equals(tooManyPingsData)
+          ) {
+            logging.log(
+              LogVerbosity.ERROR,
+              `Connection to ${this.channelTarget} rejected by server because of excess pings`
+            );
+            this.keepaliveTimeMs = Math.min(
+              2 * this.keepaliveTimeMs,
+              KEEPALIVE_MAX_TIME_MS
+            );
+          }
+          this.transitionToState(
+            [ConnectivityState.CONNECTING, ConnectivityState.READY],
+            ConnectivityState.IDLE
+          );
+        }
       }
-    });
+    );
     session.once('error', error => {
       /* Do nothing here. Any error should also trigger a close event, which is
        * where we want to handle that.  */
@@ -303,7 +323,13 @@ export class Subchannel {
     if (oldStates.indexOf(this.connectivityState) === -1) {
       return false;
     }
-    trace(this.subchannelAddress + ' ' + ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[newState]);
+    trace(
+      this.subchannelAddress +
+        ' ' +
+        ConnectivityState[this.connectivityState] +
+        ' -> ' +
+        ConnectivityState[newState]
+    );
     const previousState = this.connectivityState;
     this.connectivityState = newState;
     switch (newState) {
@@ -321,6 +347,9 @@ export class Subchannel {
         this.continueConnecting = false;
         break;
       case ConnectivityState.TRANSIENT_FAILURE:
+        if (this.session) {
+          this.session.close();
+        }
         this.session = null;
         this.stopKeepalivePings();
         break;
@@ -329,6 +358,9 @@ export class Subchannel {
          * should only transition to the IDLE state as a result of the timer
          * ending, but we still want to reset the backoff timeout. */
         this.stopBackoff();
+        if (this.session) {
+          this.session.close();
+        }
         this.session = null;
         this.stopKeepalivePings();
         break;
