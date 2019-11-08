@@ -35,7 +35,10 @@ import { Subchannel, ConnectivityStateListener } from './subchannel';
 const TYPE_NAME = 'round_robin';
 
 class RoundRobinPicker implements Picker {
-  constructor(private readonly subchannelList: Subchannel[], private nextIndex = 0) {}
+  constructor(
+    private readonly subchannelList: Subchannel[],
+    private nextIndex = 0
+  ) {}
 
   pick(pickArgs: PickArgs): CompletePickResult {
     const pickedSubchannel = this.subchannelList[this.nextIndex];
@@ -43,7 +46,7 @@ class RoundRobinPicker implements Picker {
     return {
       pickResultType: PickResultType.COMPLETE,
       subchannel: pickedSubchannel,
-      status: null
+      status: null,
     };
   }
 
@@ -58,15 +61,14 @@ class RoundRobinPicker implements Picker {
 }
 
 interface ConnectivityStateCounts {
-  [ConnectivityState.CONNECTING]: number,
-  [ConnectivityState.IDLE]: number,
-  [ConnectivityState.READY]: number,
-  [ConnectivityState.SHUTDOWN]: number,
-  [ConnectivityState.TRANSIENT_FAILURE]: number
+  [ConnectivityState.CONNECTING]: number;
+  [ConnectivityState.IDLE]: number;
+  [ConnectivityState.READY]: number;
+  [ConnectivityState.SHUTDOWN]: number;
+  [ConnectivityState.TRANSIENT_FAILURE]: number;
 }
 
 export class RoundRobinLoadBalancer implements LoadBalancer {
-
   private subchannels: Subchannel[] = [];
 
   private currentState: ConnectivityState = ConnectivityState.IDLE;
@@ -84,7 +86,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
       [ConnectivityState.IDLE]: 0,
       [ConnectivityState.READY]: 0,
       [ConnectivityState.SHUTDOWN]: 0,
-      [ConnectivityState.TRANSIENT_FAILURE]: 0
+      [ConnectivityState.TRANSIENT_FAILURE]: 0,
     };
     this.subchannelStateListener = (
       subchannel: Subchannel,
@@ -98,27 +100,43 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
       if (newState === ConnectivityState.TRANSIENT_FAILURE) {
         this.channelControlHelper.requestReresolution();
       }
-      if (newState === ConnectivityState.TRANSIENT_FAILURE || newState === ConnectivityState.IDLE) {
+      if (
+        newState === ConnectivityState.TRANSIENT_FAILURE ||
+        newState === ConnectivityState.IDLE
+      ) {
         subchannel.startConnecting();
       }
-    }
+    };
   }
 
   private calculateAndUpdateState() {
     if (this.subchannelStateCounts[ConnectivityState.READY] > 0) {
-      const readySubchannels = this.subchannels.filter(subchannel => subchannel.getConnectivityState() === ConnectivityState.READY);
+      const readySubchannels = this.subchannels.filter(
+        subchannel =>
+          subchannel.getConnectivityState() === ConnectivityState.READY
+      );
       let index = 0;
       if (this.currentReadyPicker !== null) {
-        index = readySubchannels.indexOf(this.currentReadyPicker.peekNextSubchannel());
+        index = readySubchannels.indexOf(
+          this.currentReadyPicker.peekNextSubchannel()
+        );
         if (index < 0) {
           index = 0;
         }
       }
-      this.updateState(ConnectivityState.READY, new RoundRobinPicker(readySubchannels, index));
+      this.updateState(
+        ConnectivityState.READY,
+        new RoundRobinPicker(readySubchannels, index)
+      );
     } else if (this.subchannelStateCounts[ConnectivityState.CONNECTING] > 0) {
       this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
-    } else if (this.subchannelStateCounts[ConnectivityState.TRANSIENT_FAILURE] > 0) {
-      this.updateState(ConnectivityState.TRANSIENT_FAILURE, new UnavailablePicker());
+    } else if (
+      this.subchannelStateCounts[ConnectivityState.TRANSIENT_FAILURE] > 0
+    ) {
+      this.updateState(
+        ConnectivityState.TRANSIENT_FAILURE,
+        new UnavailablePicker()
+      );
     } else {
       this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
     }
@@ -144,18 +162,26 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
       [ConnectivityState.IDLE]: 0,
       [ConnectivityState.READY]: 0,
       [ConnectivityState.SHUTDOWN]: 0,
-      [ConnectivityState.TRANSIENT_FAILURE]: 0
+      [ConnectivityState.TRANSIENT_FAILURE]: 0,
     };
     this.subchannels = [];
   }
 
-  updateAddressList(addressList: string[], lbConfig: LoadBalancingConfig | null): void {
+  updateAddressList(
+    addressList: string[],
+    lbConfig: LoadBalancingConfig | null
+  ): void {
     this.resetSubchannelList();
-    this.subchannels = addressList.map(address => this.channelControlHelper.createSubchannel(address, {}));
+    this.subchannels = addressList.map(address =>
+      this.channelControlHelper.createSubchannel(address, {})
+    );
     for (const subchannel of this.subchannels) {
       const subchannelState = subchannel.getConnectivityState();
       this.subchannelStateCounts[subchannelState] += 1;
-      if (subchannelState === ConnectivityState.IDLE || subchannelState === ConnectivityState.TRANSIENT_FAILURE) {
+      if (
+        subchannelState === ConnectivityState.IDLE ||
+        subchannelState === ConnectivityState.TRANSIENT_FAILURE
+      ) {
         subchannel.startConnecting();
       }
     }
@@ -177,7 +203,9 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
   getTypeName(): string {
     return TYPE_NAME;
   }
-  replaceChannelControlHelper(channelControlHelper: ChannelControlHelper): void {
+  replaceChannelControlHelper(
+    channelControlHelper: ChannelControlHelper
+  ): void {
     this.channelControlHelper = channelControlHelper;
   }
 }

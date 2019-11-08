@@ -29,7 +29,7 @@ describe('Name Resolver', () => {
     before(() => {
       resolverManager.registerAll();
     });
-    it('Should resolve localhost properly', (done) => {
+    it('Should resolve localhost properly', done => {
       const target = 'localhost:50051';
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
@@ -48,7 +48,7 @@ describe('Name Resolver', () => {
       const resolver = resolverManager.createResolver(target, listener);
       resolver.updateResolution();
     });
-    it('Should default to port 443', (done) => {
+    it('Should default to port 443', done => {
       const target = 'localhost';
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
@@ -67,7 +67,7 @@ describe('Name Resolver', () => {
       const resolver = resolverManager.createResolver(target, listener);
       resolver.updateResolution();
     });
-    it('Should resolve a public address', (done) => {
+    it('Should resolve a public address', done => {
       const target = 'example.com';
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
@@ -85,7 +85,7 @@ describe('Name Resolver', () => {
       const resolver = resolverManager.createResolver(target, listener);
       resolver.updateResolution();
     });
-    it('Should resolve a name with multiple dots', (done) => {
+    it('Should resolve a name with multiple dots', done => {
       const target = 'loopback4.unittest.grpc.io';
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
@@ -103,7 +103,7 @@ describe('Name Resolver', () => {
       const resolver = resolverManager.createResolver(target, listener);
       resolver.updateResolution();
     });
-    it('Should resolve a name with a hyphen', (done) => {
+    it('Should resolve a name with a hyphen', done => {
       /* TODO(murgatroid99): Find or create a better domain name to test this with.
        * This is just the first one I found with a hyphen. */
       const target = 'network-tools.com';
@@ -123,7 +123,7 @@ describe('Name Resolver', () => {
       const resolver = resolverManager.createResolver(target, listener);
       resolver.updateResolution();
     });
-    it('Should resolve gRPC interop servers', (done) => {
+    it('Should resolve gRPC interop servers', done => {
       let completeCount = 0;
       function done2(error?: Error) {
         if (error) {
@@ -154,7 +154,7 @@ describe('Name Resolver', () => {
       resolver1.updateResolution();
       const resolver2 = resolverManager.createResolver(target1, listener);
       resolver2.updateResolution();
-    })
+    });
   });
   describe('UDS Names', () => {
     it('Should handle a relative Unix Domain Socket name', done => {

@@ -36,7 +36,7 @@ import {
   loadPackageDefinition,
   makeClientConstructor,
   Serialize,
-  ServiceDefinition
+  ServiceDefinition,
 } from './make-client';
 import { Metadata } from './metadata';
 import {
@@ -238,11 +238,7 @@ export {
 
 /**** Server ****/
 
-export {
-  handleBidiStreamingCall,
-  handleServerStreamingCall,
-  handleUnaryCall,
-};
+export { handleBidiStreamingCall, handleServerStreamingCall, handleUnaryCall };
 
 /* tslint:disable:no-any */
 export type Call =

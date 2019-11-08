@@ -162,9 +162,7 @@ export function validateServiceConfig(obj: any): ServiceConfig {
           name.method === seenName.method
         ) {
           throw new Error(
-            `Invalid service config: duplicate name ${name.service}/${
-              name.method
-            }`
+            `Invalid service config: duplicate name ${name.service}/${name.method}`
           );
         }
       }

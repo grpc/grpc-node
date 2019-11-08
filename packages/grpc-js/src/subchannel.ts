@@ -277,20 +277,32 @@ export class Subchannel {
         );
       }
     });
-    session.once('goaway', (errorCode: number, lastStreamID: number, opaqueData: Buffer) => {
-      if (this.session === session) {
-        /* See the last paragraph of
-         * https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md#basic-keepalive */
-        if (errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM && opaqueData.equals(tooManyPingsData)) {
-          logging.log(LogVerbosity.ERROR, `Connection to ${this.channelTarget} rejected by server because of excess pings`);
-          this.keepaliveTimeMs = Math.min(2 * this.keepaliveTimeMs, KEEPALIVE_MAX_TIME_MS);
+    session.once(
+      'goaway',
+      (errorCode: number, lastStreamID: number, opaqueData: Buffer) => {
+        if (this.session === session) {
+          /* See the last paragraph of
+           * https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md#basic-keepalive */
+          if (
+            errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM &&
+            opaqueData.equals(tooManyPingsData)
+          ) {
+            logging.log(
+              LogVerbosity.ERROR,
+              `Connection to ${this.channelTarget} rejected by server because of excess pings`
+            );
+            this.keepaliveTimeMs = Math.min(
+              2 * this.keepaliveTimeMs,
+              KEEPALIVE_MAX_TIME_MS
+            );
+          }
+          this.transitionToState(
+            [ConnectivityState.CONNECTING, ConnectivityState.READY],
+            ConnectivityState.IDLE
+          );
         }
-        this.transitionToState(
-          [ConnectivityState.CONNECTING, ConnectivityState.READY],
-          ConnectivityState.IDLE
-        );
       }
-    });
+    );
     session.once('error', error => {
       /* Do nothing here. Any error should also trigger a close event, which is
        * where we want to handle that.  */
@@ -311,7 +323,13 @@ export class Subchannel {
     if (oldStates.indexOf(this.connectivityState) === -1) {
       return false;
     }
-    trace(this.subchannelAddress + ' ' + ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[newState]);
+    trace(
+      this.subchannelAddress +
+        ' ' +
+        ConnectivityState[this.connectivityState] +
+        ' -> ' +
+        ConnectivityState[newState]
+    );
     const previousState = this.connectivityState;
     this.connectivityState = newState;
     switch (newState) {
