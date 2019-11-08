@@ -39,6 +39,7 @@ export interface MethodDefinition<RequestType, ResponseType> {
 }
 
 export interface ServiceDefinition {
+  // tslint:disable-next-line no-any
   [index: string]: MethodDefinition<any, any>;
 }
 
