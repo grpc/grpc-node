@@ -58,7 +58,8 @@
     "semver": "^6.2.0"
   },
   "files": [
-    "build/src/*.{js,d.ts}",
+    "src/*.ts",
+    "build/src/*.{js,d.ts,js.map}",
     "LICENSE"
   ]
 }
