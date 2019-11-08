@@ -16,6 +16,8 @@
  */
 
 import * as http2 from 'http2';
+import { log } from './logging';
+import { LogVerbosity } from './constants';
 const LEGAL_KEY_REGEX = /^[0-9a-z_.-]+$/;
 const LEGAL_NON_BINARY_VALUE_REGEX = /^[ -~]*$/;
 
@@ -272,8 +274,8 @@ export class Metadata {
           }
         }
       } catch (error) {
-        error.message = `Failed to add metadata entry ${key}: ${values}. ${error.message}`;
-        process.emitWarning(error);
+        const message = `Failed to add metadata entry ${key}: ${values}. ${error.message}. For more information see https://github.com/grpc/grpc-node/issues/1173`;
+        log(LogVerbosity.ERROR, message);
       }
     });
     return result;
