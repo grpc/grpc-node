@@ -64,12 +64,11 @@ export class SubchannelPool {
     for (const channelTarget in this.pool) {
       // tslint:disable-next-line:forin
       for (const subchannelTarget in this.pool[channelTarget]) {
-        const subchannelObjArray = this.pool[channelTarget][
-          subchannelTarget
-        ];
+        const subchannelObjArray = this.pool[channelTarget][subchannelTarget];
 
-        const refedSubchannels = subchannelObjArray
-          .filter(value => !value.subchannel.unrefIfOneRef());
+        const refedSubchannels = subchannelObjArray.filter(
+          value => !value.subchannel.unrefIfOneRef()
+        );
 
         if (refedSubchannels.length > 0) {
           allSubchannelsUnrefed = false;

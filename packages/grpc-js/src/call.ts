@@ -72,14 +72,11 @@ export type ClientDuplexStream<
  * Construct a ServiceError from a StatusObject. This function exists primarily
  * as an attempt to make the error stack trace clearly communicate that the
  * error is not necessarily a problem in gRPC itself.
- * @param status 
+ * @param status
  */
 export function callErrorFromStatus(status: StatusObject): ServiceError {
   const message = `${status.code} ${Status[status.code]}: ${status.details}`;
-  return Object.assign(
-    new Error(message),
-    status
-  );
+  return Object.assign(new Error(message), status);
 }
 
 export class ClientUnaryCallImpl extends EventEmitter
