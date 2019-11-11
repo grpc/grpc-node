@@ -140,7 +140,11 @@ function mergeArrays<T>(...arrays: T[][]): T[] {
   const result: T[] = [];
   for (
     let i = 0;
-    i < Math.max.apply(null, arrays.map(array => array.length));
+    i <
+    Math.max.apply(
+      null,
+      arrays.map(array => array.length)
+    );
     i++
   ) {
     for (const array of arrays) {

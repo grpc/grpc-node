@@ -125,7 +125,7 @@ export function createResolver(
  * @param target
  */
 export function getDefaultAuthority(target: string): string {
-  for (const prefix of Object.keys(registerDefaultResolver)) {
+  for (const prefix of Object.keys(registeredResolvers)) {
     if (target.startsWith(prefix)) {
       return registeredResolvers[prefix].getDefaultAuthority(target);
     }

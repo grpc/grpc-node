@@ -194,4 +194,23 @@ describe('Name Resolver', () => {
       resolver.updateResolution();
     });
   });
+  describe('getDefaultAuthority', () => {
+    class OtherResolver implements resolverManager.Resolver {
+      updateResolution() {
+        return [];
+      }
+
+      static getDefaultAuthority(target: string): string {
+        return 'other';
+      }
+    }
+
+    it('Should return the correct authority if a different resolver has been registered', () => {
+      const target = 'other://name';
+      resolverManager.registerResolver('other:', OtherResolver);
+
+      const authority = resolverManager.getDefaultAuthority(target);
+      assert.equal(authority, 'other');
+    });
+  });
 });
