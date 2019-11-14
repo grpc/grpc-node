@@ -93,7 +93,7 @@ CallRegistry.prototype.maybeCallDone = function() {
   }
 };
 
-describe.only(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, function() {
+describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, function() {
   describe('Client interceptors', function() {
     var echo_server;
     var echo_port;
@@ -996,12 +996,16 @@ describe.only(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, fu
       });
     });
 
-    it.skip('will reject conflicting interceptor options at invocation',
+    it('will reject conflicting interceptor options at invocation',
       function(done) {
+        const interceptor = (options, nextCall) => {
+          new InterceptingCall(nextCall(options));
+        };
+        const interceptorProvider = methodDefinition => interceptor
         try {
           client.echo('message', {
-            interceptors: [],
-            interceptor_providers: []
+            interceptors: [interceptor],
+            interceptor_providers: [interceptorProvider]
           }, function () {});
         } catch (e) {
           assert.equal(e.name, 'InterceptorConfigurationError');
@@ -1379,7 +1383,7 @@ describe.only(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, fu
         });
       });
       it('with client streaming call', function(done) {
-        registry = new CallRegistry(done, expected_calls, true, true);
+        registry = new CallRegistry(done, expected_calls, true);
         var message = {value: originalValue};
         var client_stream = client.echoClientStream(metadata, options,
           function (err, response) {
@@ -1815,96 +1819,6 @@ describe.only(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, fu
         });
         bidi_stream.write(message);
         bidi_stream.end();
-      });
-    });
-
-    describe.skip('order of operations enforced for async interceptors', function() {
-      it('with unary call', function(done) {
-        var expected_calls = [
-          'close_b',
-          'message_b',
-          'start_b',
-          'done'
-        ];
-        var registry = new CallRegistry(done, expected_calls, true);
-        var message = {value: 'foo'};
-        var interceptor_a = function(options, nextCall) {
-          return new InterceptingCall(nextCall(options), {
-            start: function(metadata, listener, next) {
-              setTimeout(function() { next(metadata, listener); }, 50);
-            },
-            sendMessage: function(message, next) {
-              setTimeout(function () { next(message); }, 10);
-            }
-          });
-        };
-        var interceptor_b = function(options, nextCall) {
-          return new InterceptingCall(nextCall(options), {
-            start: function(metadata, listener, next) {
-              registry.addCall('start_b');
-              next(metadata, listener);
-            },
-            sendMessage: function(message, next) {
-              registry.addCall('message_b');
-              next(message);
-            },
-            halfClose: function(next) {
-              registry.addCall('close_b');
-              next();
-            }
-          });
-        };
-        var options = {
-          interceptors: [interceptor_a, interceptor_b]
-        };
-        client.echo(message, options, function(err, response) {
-          assert.strictEqual(err, null);
-          registry.addCall('done');
-        });
-      });
-      it('with serverStreaming call', function(done) {
-        var expected_calls = [
-          'close_b',
-          'message_b',
-          'start_b',
-          'done'
-        ];
-        var registry = new CallRegistry(done, expected_calls, true);
-        var message = {value: 'foo'};
-        var interceptor_a = function(options, nextCall) {
-          return new InterceptingCall(nextCall(options), {
-            start: function(metadata, listener, next) {
-              setTimeout(function() { next(metadata, listener); }, 50);
-            },
-            sendMessage: function(message, next) {
-              setTimeout(function () { next(message); }, 10);
-            }
-          });
-        };
-        var interceptor_b = function(options, nextCall) {
-          return new InterceptingCall(nextCall(options), {
-            start: function(metadata, listener, next) {
-              registry.addCall('start_b');
-              next(metadata, listener);
-            },
-            sendMessage: function(message, next) {
-              registry.addCall('message_b');
-              next(message);
-            },
-            halfClose: function(next) {
-              registry.addCall('close_b');
-              next();
-            }
-          });
-        };
-        var options = {
-          interceptors: [interceptor_a, interceptor_b]
-        };
-        var stream = client.echoServerStream(message, options);
-        stream.on('data', function(response) {
-          assert.strictEqual(response.value, 'foo');
-          registry.addCall('done');
-        });
       });
     });
   });
