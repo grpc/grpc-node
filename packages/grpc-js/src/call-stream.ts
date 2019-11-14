@@ -152,6 +152,7 @@ export class Http2CallStream implements Call {
   filterStack: Filter;
   private http2Stream: http2.ClientHttp2Stream | null = null;
   private pendingRead = false;
+  private isWriteFilterPending = false;
   private pendingWrite: Buffer | null = null;
   private pendingWriteCallback: WriteCallback | null = null;
   private writesClosed = false;
@@ -160,12 +161,16 @@ export class Http2CallStream implements Call {
 
   private isReadFilterPending = false;
   private canPush = false;
+  /**
+   * Indicates that an 'end' event has come from the http2 stream, so there
+   * will be no more data events.
+   */
   private readsClosed = false;
 
   private statusOutput = false;
 
-  private unpushedReadMessages: Array<Buffer | null> = [];
-  private unfilteredReadMessages: Array<Buffer | null> = [];
+  private unpushedReadMessages: Buffer[] = [];
+  private unfilteredReadMessages: Buffer[] = [];
 
   // Status code mapped from :status. To be used if grpc-status is not received
   private mappedStatusCode: Status = Status.UNKNOWN;
@@ -200,16 +205,7 @@ export class Http2CallStream implements Call {
     /* Precondition: this.finalStatus !== null */
     if (!this.statusOutput) {
       this.statusOutput = true;
-      /* We do this asynchronously to ensure that no async function is in the
-       * call stack when we return control to the application. If an async
-       * function is in the call stack, any exception thrown by the application
-       * (or our tests) will bubble up and turn into promise rejection, which
-       * will result in an UnhandledPromiseRejectionWarning. Because that is
-       * a warning, the error will be effectively swallowed and execution will
-       * continue */
-      process.nextTick(() => {
-        this.listener!.onReceiveStatus(this.finalStatus!);
-      });
+      this.listener!.onReceiveStatus(this.finalStatus!);
       if (this.subchannel) {
         this.subchannel.callUnref();
         this.subchannel.removeDisconnectListener(this.disconnectListener);
@@ -227,30 +223,24 @@ export class Http2CallStream implements Call {
      * deserialization failure), that new status takes priority */
     if (this.finalStatus === null || this.finalStatus.code === Status.OK) {
       this.finalStatus = status;
-      /* Then, if an incoming message is still being handled or the status code
-       * is OK, hold off on emitting the status until that is done */
-      if (this.readsClosed || this.finalStatus.code !== Status.OK) {
+      this.maybeOutputStatus();
+    }
+  }
+
+  private maybeOutputStatus() {
+    if (this.finalStatus !== null) {
+      /* The combination check of readsClosed and that the two message buffer
+       * arrays are empty checks that there all incoming data has been fully
+       * processed */
+      if (this.finalStatus.code !== Status.OK || (this.readsClosed && this.unpushedReadMessages.length === 0 && this.unfilteredReadMessages.length === 0 && !this.isReadFilterPending)) {
         this.outputStatus();
       }
     }
   }
 
-  private push(message: Buffer | null): void {
-    if (message === null) {
-      this.readsClosed = true;
-      if (this.finalStatus) {
-        this.outputStatus();
-      }
-    } else {
-      this.listener!.onReceiveMessage(message);
-      /* Don't wait for the upper layer to ask for a read before pushing null
-       * to close out the call, because pushing null doesn't actually push
-       * another message up to the upper layer */
-      if (this.unpushedReadMessages.length > 0 && this.unpushedReadMessages[0] === null) {
-        this.unpushedReadMessages.shift();
-        this.push(null);
-      }
-    }
+  private push(message: Buffer): void {
+    this.listener!.onReceiveMessage(message);
+    this.maybeOutputStatus();
   }
 
   private handleFilterError(error: Error) {
@@ -261,7 +251,7 @@ export class Http2CallStream implements Call {
     /* If we the call has already ended, we don't want to do anything with
      * this message. Dropping it on the floor is correct behavior */
     if (this.finalStatus !== null) {
-      this.push(null);
+      this.maybeOutputStatus();
       return;
     }
     this.isReadFilterPending = false;
@@ -275,24 +265,16 @@ export class Http2CallStream implements Call {
     if (this.unfilteredReadMessages.length > 0) {
       /* nextMessage is guaranteed not to be undefined because
          unfilteredReadMessages is non-empty */
-      const nextMessage = this.unfilteredReadMessages.shift() as Buffer | null;
+      const nextMessage = this.unfilteredReadMessages.shift()!;
       this.filterReceivedMessage(nextMessage);
     }
   }
 
-  private filterReceivedMessage(framedMessage: Buffer | null) {
+  private filterReceivedMessage(framedMessage: Buffer) {
     /* If we the call has already ended, we don't want to do anything with
      * this message. Dropping it on the floor is correct behavior */
     if (this.finalStatus !== null) {
-      this.push(null);
-      return;
-    }
-    if (framedMessage === null) {
-      if (this.canPush) {
-        this.push(null);
-      } else {
-        this.unpushedReadMessages.push(null);
-      }
+      this.maybeOutputStatus();
       return;
     }
     this.isReadFilterPending = true;
@@ -304,7 +286,7 @@ export class Http2CallStream implements Call {
       );
   }
 
-  private tryPush(messageBytes: Buffer | null): void {
+  private tryPush(messageBytes: Buffer): void {
     if (this.isReadFilterPending) {
       this.unfilteredReadMessages.push(messageBytes);
     } else {
@@ -411,12 +393,23 @@ export class Http2CallStream implements Call {
         }
       });
       stream.on('end', () => {
-        this.tryPush(null);
+        this.readsClosed = true;
+        this.maybeOutputStatus();
       });
-      stream.on('close', async () => {
+      stream.on('close', () => {
         let code: Status;
         let details = '';
         switch (stream.rstCode) {
+          case http2.constants.NGHTTP2_NO_ERROR:
+            /* If we get a NO_ERROR code and we already have a status, the
+             * stream completed properly and we just haven't fully processed
+             * it yet */
+            if (this.finalStatus !== null) {
+              return;
+            }
+            code = Status.INTERNAL;
+            details = `Received RST_STREAM with code ${stream.rstCode}`;
+            break;
           case http2.constants.NGHTTP2_REFUSED_STREAM:
             code = Status.UNAVAILABLE;
             details = 'Stream refused by server';
@@ -435,6 +428,7 @@ export class Http2CallStream implements Call {
             break;
           default:
             code = Status.INTERNAL;
+            details = `Received RST_STREAM with code ${stream.rstCode}`;
         }
         // This is a no-op if trailers were received at all.
         // This is OK, because status codes emitted here correspond to more
@@ -456,9 +450,7 @@ export class Http2CallStream implements Call {
         }
         stream.write(this.pendingWrite, this.pendingWriteCallback);
       }
-      if (this.writesClosed) {
-        stream.end();
-      }
+      this.maybeCloseWrites();
     }
   }
 
@@ -514,7 +506,7 @@ export class Http2CallStream implements Call {
     /* If we have already emitted a status, we should not emit any more
      * messages and we should communicate that the stream has ended */
     if (this.finalStatus !== null) {
-      this.push(null);
+      this.maybeOutputStatus();
       return;
     }
     this.canPush = true;
@@ -522,7 +514,7 @@ export class Http2CallStream implements Call {
       this.pendingRead = true;
     } else {
       if (this.unpushedReadMessages.length > 0) {
-        const nextMessage: Buffer | null = this.unpushedReadMessages.shift() as Buffer | null;
+        const nextMessage: Buffer = this.unpushedReadMessages.shift()!;
         this.push(nextMessage);
         this.canPush = false;
         return;
@@ -534,26 +526,33 @@ export class Http2CallStream implements Call {
     }
   }
 
+  private maybeCloseWrites() {
+    if (this.writesClosed && !this.isWriteFilterPending && this.http2Stream !== null) {
+      this.http2Stream.end();
+    }
+  }
+
   sendMessageWithContext(context: MessageContext, message: Buffer) {
     const writeObj: WriteObject = {
       message: message,
       flags: context.flags
     };
     const cb: WriteCallback = context.callback || (() => {});
+    this.isWriteFilterPending = true;
     this.filterStack.sendMessage(Promise.resolve(writeObj)).then(message => {
+      this.isWriteFilterPending = false;
       if (this.http2Stream === null) {
         this.pendingWrite = message.message;
         this.pendingWriteCallback = cb;
       } else {
         this.http2Stream.write(message.message, cb);
+        this.maybeCloseWrites();
       }
     }, this.handleFilterError.bind(this));
   }
 
   halfClose() {
     this.writesClosed = true;
-    if (this.http2Stream !== null) {
-      this.http2Stream.end();
-    }
+    this.maybeCloseWrites();
   }
 }

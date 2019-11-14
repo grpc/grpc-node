@@ -346,7 +346,6 @@ export class Server {
 
           const call = new Http2ServerCallStream(stream, handler);
           const metadata: Metadata = call.receiveMetadata(headers) as Metadata;
-
           switch (handler.type) {
             case 'unary':
               handleUnary(call, handler as UntypedUnaryHandler, metadata);

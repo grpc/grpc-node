@@ -29,14 +29,14 @@ import {
   SurfaceCall,
 } from './call';
 import { CallCredentials } from './call-credentials';
-import { Call, Deadline, StatusObject, WriteObject, InterceptingListener } from './call-stream';
+import { Deadline, StatusObject, WriteObject, InterceptingListener } from './call-stream';
 import { Channel, ConnectivityState, ChannelImplementation } from './channel';
 import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
 import { Status } from './constants';
 import { Metadata } from './metadata';
 import { ClientMethodDefinition } from './make-client';
-import { getInterceptingCall, Interceptor, InterceptorProvider, InterceptorArguments } from './client-interceptors';
+import { getInterceptingCall, Interceptor, InterceptorProvider, InterceptorArguments, InterceptingCallInterface } from './client-interceptors';
 
 const CHANNEL_SYMBOL = Symbol();
 const INTERCEPTOR_SYMBOL = Symbol();
@@ -231,13 +231,13 @@ export class Client {
       callInterceptors: options.interceptors || [],
       callInterceptorProviders: options.interceptor_providers || []
     };
-    const call: Call = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
+    const call: InterceptingCallInterface = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
-    const writeObj: WriteObject = { message: argument };
     const emitter = new ClientUnaryCallImpl(call);
     let responseMessage: ResponseType | null = null;
+    let receivedStatus = false;
     call.start(metadata, {
       onReceiveMetadata: (metadata) => {
         emitter.emit('metadata', metadata);
@@ -247,9 +247,12 @@ export class Client {
           call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
         }
         responseMessage = message;
-        call.startRead();
       },
       onReceiveStatus(status: StatusObject) {
+        if (receivedStatus) {
+          return;
+        }
+        receivedStatus = true;
         if (status.code === Status.OK) {
           callback!(null, responseMessage!);
         } else {
@@ -258,8 +261,8 @@ export class Client {
         emitter.emit('status', status);
       }
     });
-    call.write(writeObj, () => {call.halfClose();});
-    call.startRead();
+    call.sendMessage(argument);
+    call.halfClose();
     return emitter;
   }
 
@@ -315,12 +318,13 @@ export class Client {
       callInterceptors: options.interceptors || [],
       callInterceptorProviders: options.interceptor_providers || []
     };
-    const call: Call = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
+    const call: InterceptingCallInterface = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
     const emitter = new ClientWritableStreamImpl<RequestType>(call, serialize);
     let responseMessage: ResponseType | null = null;
+    let receivedStatus = false;
     call.start(metadata, {
       onReceiveMetadata: (metadata) => {
         emitter.emit('metadata', metadata);
@@ -330,9 +334,12 @@ export class Client {
           call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
         }
         responseMessage = message;
-        call.startRead();
       },
       onReceiveStatus(status: StatusObject) {
+        if (receivedStatus) {
+          return;
+        }
+        receivedStatus = true;
         if (status.code === Status.OK) {
           callback!(null, responseMessage!);
         } else {
@@ -341,7 +348,6 @@ export class Client {
         emitter.emit('status', status);
       }
     });
-    call.startRead();
     return emitter;
   }
 
@@ -406,12 +412,12 @@ export class Client {
       callInterceptors: options.interceptors || [],
       callInterceptorProviders: options.interceptor_providers || []
     };
-    const call: Call = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
+    const call: InterceptingCallInterface = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
-    const writeObj: WriteObject = { message: argument };
     const stream = new ClientReadableStreamImpl<ResponseType>(call, deserialize);
+    let receivedStatus = false;
     call.start(metadata, {
       onReceiveMetadata(metadata: Metadata) {
         stream.emit('metadata', metadata);
@@ -422,6 +428,10 @@ export class Client {
         }
       },
       onReceiveStatus(status: StatusObject) {
+        if (receivedStatus) {
+          return;
+        }
+        receivedStatus = true;
         stream.push(null);
         if (status.code !== Status.OK) {
           stream.emit('error', callErrorFromStatus(status));
@@ -429,7 +439,8 @@ export class Client {
         stream.emit('status', status);
       }
     });
-    call.write(writeObj, () => {call.halfClose();});
+    call.sendMessage(argument);
+    call.halfClose();
     return stream;
   }
 
@@ -467,7 +478,7 @@ export class Client {
       callInterceptors: options.interceptors || [],
       callInterceptorProviders: options.interceptor_providers || []
     };
-    const call: Call = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
+    const call: InterceptingCallInterface = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
@@ -476,6 +487,7 @@ export class Client {
       serialize,
       deserialize
     );
+    let receivedStatus = false;
     call.start(metadata, {
       onReceiveMetadata(metadata: Metadata) {
         stream.emit('metadata', metadata);
@@ -486,6 +498,10 @@ export class Client {
         }
       },
       onReceiveStatus(status: StatusObject) {
+        if (receivedStatus) {
+          return;
+        }
+        receivedStatus = true;
         stream.push(null);
         if (status.code !== Status.OK) {
           stream.emit('error', callErrorFromStatus(status));

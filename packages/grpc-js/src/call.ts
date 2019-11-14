@@ -18,11 +18,12 @@
 import { EventEmitter } from 'events';
 import { Duplex, Readable, Writable } from 'stream';
 
-import { Call, StatusObject, WriteObject } from './call-stream';
+import { StatusObject, MessageContext } from './call-stream';
 import { Status } from './constants';
 import { EmitterAugmentation1 } from './events';
 import { Metadata } from './metadata';
 import { ObjectReadable, ObjectWritable, WriteCallback } from './object-stream';
+import { InterceptingCallInterface } from './client-interceptors';
 
 /**
  * A type extending the built-in Error object with additional fields.
@@ -81,7 +82,7 @@ export function callErrorFromStatus(status: StatusObject): ServiceError {
 
 export class ClientUnaryCallImpl extends EventEmitter
   implements ClientUnaryCall {
-  constructor(private readonly call: Call) {
+  constructor(private readonly call: InterceptingCallInterface) {
     super();
   }
 
@@ -97,7 +98,7 @@ export class ClientUnaryCallImpl extends EventEmitter
 export class ClientReadableStreamImpl<ResponseType> extends Readable
   implements ClientReadableStream<ResponseType> {
   constructor(
-    private readonly call: Call,
+    private readonly call: InterceptingCallInterface,
     readonly deserialize: (chunk: Buffer) => ResponseType
   ) {
     super({ objectMode: true });
@@ -116,33 +117,10 @@ export class ClientReadableStreamImpl<ResponseType> extends Readable
   }
 }
 
-function tryWrite<RequestType>(
-  call: Call,
-  serialize: (value: RequestType) => Buffer,
-  chunk: RequestType,
-  encoding: string,
-  cb: WriteCallback
-) {
-  let message: Buffer;
-  const flags: number = Number(encoding);
-  try {
-    message = serialize(chunk);
-  } catch (e) {
-    call.cancelWithStatus(Status.INTERNAL, 'Serialization failure');
-    cb(e);
-    return;
-  }
-  const writeObj: WriteObject = { message };
-  if (!Number.isNaN(flags)) {
-    writeObj.flags = flags;
-  }
-  call.write(writeObj, cb);
-}
-
 export class ClientWritableStreamImpl<RequestType> extends Writable
   implements ClientWritableStream<RequestType> {
   constructor(
-    private readonly call: Call,
+    private readonly call: InterceptingCallInterface,
     readonly serialize: (value: RequestType) => Buffer
   ) {
     super({ objectMode: true });
@@ -157,12 +135,14 @@ export class ClientWritableStreamImpl<RequestType> extends Writable
   }
 
   _write(chunk: RequestType, encoding: string, cb: WriteCallback) {
-    const writeObj: WriteObject = { message: chunk };
+    const context: MessageContext = {
+      callback: cb
+    }
     const flags: number = Number(encoding);
     if (!Number.isNaN(flags)) {
-      writeObj.flags = flags;
+      context.flags = flags;
     }
-    this.call.write(writeObj, cb);
+    this.call.sendMessageWithContext(context, chunk);
   }
 
   _final(cb: Function) {
@@ -174,7 +154,7 @@ export class ClientWritableStreamImpl<RequestType> extends Writable
 export class ClientDuplexStreamImpl<RequestType, ResponseType> extends Duplex
   implements ClientDuplexStream<RequestType, ResponseType> {
   constructor(
-    private readonly call: Call,
+    private readonly call: InterceptingCallInterface,
     readonly serialize: (value: RequestType) => Buffer,
     readonly deserialize: (chunk: Buffer) => ResponseType
   ) {
@@ -194,12 +174,14 @@ export class ClientDuplexStreamImpl<RequestType, ResponseType> extends Duplex
   }
 
   _write(chunk: RequestType, encoding: string, cb: WriteCallback) {
-    const writeObj: WriteObject = { message: chunk };
+    const context: MessageContext = {
+      callback: cb
+    }
     const flags: number = Number(encoding);
     if (!Number.isNaN(flags)) {
-      writeObj.flags = flags;
+      context.flags = flags;
     }
-    this.call.write(writeObj, cb);
+    this.call.sendMessageWithContext(context, chunk);
   }
 
   _final(cb: Function) {

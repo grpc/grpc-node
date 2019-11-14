@@ -351,10 +351,8 @@ export class Http2ServerCallStream<
     });
 
     this.stream.once('close', () => {
-      if (this.stream.rstCode === http2.constants.NGHTTP2_CANCEL) {
-        this.cancelled = true;
-        this.emit('cancelled', 'cancelled');
-      }
+      this.cancelled = true;
+      this.emit('cancelled', 'cancelled');
     });
 
     this.stream.on('drain', () => {
@@ -362,7 +360,20 @@ export class Http2ServerCallStream<
     });
   }
 
+  private checkCancelled(): boolean {
+    /* In some cases the stream can become destroyed before the close event
+     * fires. That creates a race condition that this check works around */
+    if (this.stream.destroyed) {
+      this.cancelled = true;
+    }
+    return this.cancelled;
+  }
+
   sendMetadata(customMetadata?: Metadata) {
+    if (this.checkCancelled()) {
+      return;
+    }
+
     if (this.metadataSent) {
       return;
     }
@@ -396,6 +407,13 @@ export class Http2ServerCallStream<
       this.deadline = setTimeout(handleExpiredDeadline, timeout, this);
       metadata.remove(GRPC_TIMEOUT_HEADER);
     }
+
+    // Remove several headers that should not be propagated to the application
+    metadata.remove(http2.constants.HTTP2_HEADER_ACCEPT_ENCODING);
+    metadata.remove(http2.constants.HTTP2_HEADER_TE);
+    metadata.remove(http2.constants.HTTP2_HEADER_CONTENT_TYPE);
+    metadata.remove('grpc-encoding');
+    metadata.remove('grpc-accept-encoding');
 
     return metadata;
   }
@@ -450,6 +468,9 @@ export class Http2ServerCallStream<
     metadata?: Metadata,
     flags?: number
   ) {
+    if (this.checkCancelled()) {
+      return;
+    }
     if (!metadata) {
       metadata = new Metadata();
     }
@@ -472,7 +493,7 @@ export class Http2ServerCallStream<
   }
 
   sendStatus(statusObj: StatusObject) {
-    if (this.cancelled) {
+    if (this.checkCancelled()) {
       return;
     }
 
@@ -497,6 +518,9 @@ export class Http2ServerCallStream<
   }
 
   sendError(error: ServerErrorResponse | ServerStatusResponse) {
+    if (this.checkCancelled()) {
+      return;
+    }
     const status: StatusObject = {
       code: Status.UNKNOWN,
       details: 'message' in error ? error.message : 'Unknown Error',
@@ -522,7 +546,7 @@ export class Http2ServerCallStream<
   }
 
   write(chunk: Buffer) {
-    if (this.cancelled) {
+    if (this.checkCancelled()) {
       return;
     }
 

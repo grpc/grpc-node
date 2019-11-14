@@ -155,8 +155,9 @@ export interface InterceptorOptions extends CallOptions {
 export interface InterceptingCallInterface {
   cancelWithStatus(status: Status, details: string): void;
   getPeer(): string;
-  start(metadata: Metadata, listener: InterceptingListener): void;
+  start(metadata: Metadata, listener?: Partial<InterceptingListener>): void;
   sendMessageWithContext(context: MessageContext, message: any): void;
+  sendMessage(message: any): void;
   startRead(): void;
   halfClose(): void;
 
@@ -194,18 +195,23 @@ export class InterceptingCall implements InterceptingCallInterface {
   getPeer() {
     return this.nextCall.getPeer();
   }
-  start(metadata: Metadata, interceptingListener: InterceptingListener): void {
-    this.requester.start(metadata, interceptingListener, (md, listener) => {
+  start(metadata: Metadata, interceptingListener?: Partial<InterceptingListener>): void {
+    const fullInterceptingListener: InterceptingListener = {
+      onReceiveMetadata: interceptingListener?.onReceiveMetadata?.bind(interceptingListener) ?? (metadata => {}),
+      onReceiveMessage: interceptingListener?.onReceiveMessage?.bind(interceptingListener) ?? (message => {}),
+      onReceiveStatus: interceptingListener?.onReceiveStatus?.bind(interceptingListener) ?? (status => {})
+    }
+    this.requester.start(metadata, fullInterceptingListener, (md, listener) => {
       let finalInterceptingListener: InterceptingListener;
       if (isInterceptingListener(listener)) {
         finalInterceptingListener = listener;
       } else {
         const fullListener: FullListener = {
-          onReceiveMetadata: listener.onReceiveMetadata || defaultListener.onReceiveMetadata,
-          onReceiveMessage: listener.onReceiveMessage || defaultListener.onReceiveMessage,
-          onReceiveStatus: listener.onReceiveStatus || defaultListener.onReceiveStatus
+          onReceiveMetadata: listener.onReceiveMetadata ?? defaultListener.onReceiveMetadata,
+          onReceiveMessage: listener.onReceiveMessage ?? defaultListener.onReceiveMessage,
+          onReceiveStatus: listener.onReceiveStatus ?? defaultListener.onReceiveStatus
         };
-        finalInterceptingListener = new InterceptingListenerImpl(fullListener, interceptingListener);
+        finalInterceptingListener = new InterceptingListenerImpl(fullListener, fullInterceptingListener);
       }
       this.nextCall.start(md, finalInterceptingListener);
     });
@@ -218,7 +224,7 @@ export class InterceptingCall implements InterceptingCallInterface {
       if (this.pendingHalfClose) {
         this.nextCall.halfClose();
       }
-    })
+    });
   }
   sendMessage(message: any): void {
     this.sendMessageWithContext({}, message);
@@ -308,17 +314,20 @@ class BaseInterceptingCall implements InterceptingCallInterface {
       this.call.cancelWithStatus(Status.INTERNAL, 'Serialization failure');
     }
   }
-  start(metadata: Metadata, listener: InterceptingListener): void {
+  sendMessage(message: any) {
+    this.sendMessageWithContext({}, message);
+  }
+  start(metadata: Metadata, interceptingListener?: Partial<InterceptingListener>): void {
     let readError: StatusObject | null = null;
     this.call.start(metadata, {
       onReceiveMetadata: (metadata) => {
-        listener.onReceiveMetadata(metadata);
+        interceptingListener?.onReceiveMetadata?.(metadata);
       },
       onReceiveMessage: (message) => {
         let deserialized: any;
         try {
           deserialized = this.methodDefinition.responseDeserialize(message);
-          listener.onReceiveMessage(deserialized);
+          interceptingListener?.onReceiveMessage?.(deserialized);
         } catch (e) {
           readError = {code: Status.INTERNAL, details: 'Failed to parse server response', metadata: new Metadata()};
           this.call.cancelWithStatus(readError.code, readError.details);
@@ -326,9 +335,9 @@ class BaseInterceptingCall implements InterceptingCallInterface {
       },
       onReceiveStatus: (status) => {
         if (readError) {
-          listener.onReceiveStatus(readError);
+          interceptingListener?.onReceiveStatus?.(readError);
         } else {
-          listener.onReceiveStatus(status);
+          interceptingListener?.onReceiveStatus?.(status);
         }
       }
     });
@@ -345,8 +354,22 @@ class BaseUnaryInterceptingCall extends BaseInterceptingCall implements Intercep
   constructor(call: Call, methodDefinition: ClientMethodDefinition<any, any>) {
     super(call, methodDefinition);
   }
-  start(metadata: Metadata, listener: InterceptingListener): void {
-    super.start(metadata, listener);
+  start(metadata: Metadata, listener?: Partial<InterceptingListener>): void {
+    let receivedMessage = false;
+    const wrapperListener: InterceptingListener = {
+      onReceiveMetadata: listener?.onReceiveMetadata?.bind(listener) ?? (metadata => {}),
+      onReceiveMessage: (message: any) => {
+        receivedMessage = true;
+        listener?.onReceiveMessage?.(message);
+      },
+      onReceiveStatus: (status: StatusObject) => {
+        if (!receivedMessage) {
+          listener?.onReceiveMessage?.(null);
+        }
+        listener?.onReceiveStatus?.(status);
+      }
+    }
+    super.start(metadata, wrapperListener);
     this.call.startRead();
   }
 }
@@ -416,8 +439,8 @@ export function getInterceptingCall(interceptorArgs: InterceptorArguments, metho
    * initialValue, which is effectively at the end of the list, is a nextCall
    * function that invokes getBottomInterceptingCall, which handles
    * (de)serialization and also gets the underlying call from the channel */
-  const getCall: NextCall = interceptors.reduceRight<NextCall>((previousValue: NextCall, currentValue: Interceptor) => {
-    return currentOptions => currentValue(currentOptions, previousValue);
+  const getCall: NextCall = interceptors.reduceRight<NextCall>((nextCall: NextCall, nextInterceptor: Interceptor) => {
+    return currentOptions => nextInterceptor(currentOptions, nextCall);
   }, (finalOptions: InterceptorOptions) => getBottomInterceptingCall(channel, methodDefinition.path, finalOptions, methodDefinition));
   return getCall(interceptorOptions);
 }
