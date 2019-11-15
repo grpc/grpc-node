@@ -304,8 +304,12 @@ export class ChannelImplementation implements Channel {
     return this.target;
   }
 
-  getConnectivityState() {
-    return this.connectivityState;
+  getConnectivityState(tryToConnect: boolean) {
+    const connectivityState = this.connectivityState;
+    if (tryToConnect) {
+      this.resolvingLoadBalancer.exitIdle();
+    }
+    return connectivityState;
   }
 
   watchConnectivityState(
