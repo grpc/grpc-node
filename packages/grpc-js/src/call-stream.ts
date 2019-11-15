@@ -315,6 +315,7 @@ export class Http2CallStream implements Call {
   }
 
   private handleTrailers(headers: http2.IncomingHttpHeaders) {
+    this.readsClosed = true;
     const code: Status = this.mappedStatusCode;
     const details = '';
     let metadata: Metadata;
