@@ -80,6 +80,9 @@ export interface FullListener {
 
 export type Listener = Partial<FullListener>;
 
+/**
+ * An object with methods for handling the responses to a call.
+ */
 export interface InterceptingListener {
   onReceiveMetadata(metadata: Metadata): void;
   onReceiveMessage(message: any): void;
@@ -537,7 +540,7 @@ export class Http2CallStream implements Call {
       message: message,
       flags: context.flags
     };
-    const cb: WriteCallback = context.callback || (() => {});
+    const cb: WriteCallback = context.callback ?? (() => {});
     this.isWriteFilterPending = true;
     this.filterStack.sendMessage(Promise.resolve(writeObj)).then(message => {
       this.isWriteFilterPending = false;

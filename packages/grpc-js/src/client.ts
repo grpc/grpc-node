@@ -96,8 +96,8 @@ export class Client {
         options
       );
     }
-    this[INTERCEPTOR_SYMBOL] = options.interceptors || [];
-    this[INTERCEPTOR_PROVIDER_SYMBOL] = options.interceptor_providers || [];
+    this[INTERCEPTOR_SYMBOL] = options.interceptors ?? [];
+    this[INTERCEPTOR_PROVIDER_SYMBOL] = options.interceptor_providers ?? [];
     if (this[INTERCEPTOR_SYMBOL].length > 0 && this[INTERCEPTOR_PROVIDER_SYMBOL].length > 0) {
       throw new Error(
         'Both interceptors and interceptor_providers were passed as options ' +
@@ -228,8 +228,8 @@ export class Client {
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
-      callInterceptors: options.interceptors || [],
-      callInterceptorProviders: options.interceptor_providers || []
+      callInterceptors: options.interceptors ?? [],
+      callInterceptorProviders: options.interceptor_providers ?? []
     };
     const call: InterceptingCallInterface = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
     if (options.credentials) {
@@ -315,8 +315,8 @@ export class Client {
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
-      callInterceptors: options.interceptors || [],
-      callInterceptorProviders: options.interceptor_providers || []
+      callInterceptors: options.interceptors ?? [],
+      callInterceptorProviders: options.interceptor_providers ?? []
     };
     const call: InterceptingCallInterface = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
     if (options.credentials) {
@@ -409,8 +409,8 @@ export class Client {
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
-      callInterceptors: options.interceptors || [],
-      callInterceptorProviders: options.interceptor_providers || []
+      callInterceptors: options.interceptors ?? [],
+      callInterceptorProviders: options.interceptor_providers ?? []
     };
     const call: InterceptingCallInterface = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
     if (options.credentials) {
@@ -475,8 +475,8 @@ export class Client {
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
-      callInterceptors: options.interceptors || [],
-      callInterceptorProviders: options.interceptor_providers || []
+      callInterceptors: options.interceptors ?? [],
+      callInterceptorProviders: options.interceptor_providers ?? []
     };
     const call: InterceptingCallInterface = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
     if (options.credentials) {

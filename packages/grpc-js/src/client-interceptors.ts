@@ -23,6 +23,10 @@ import { CallOptions } from './client';
 import { CallCredentials } from './call-credentials';
 import { ClientMethodDefinition, Serialize } from './make-client';
 
+/**
+ * Error class associated with passing both interceptors and interceptor
+ * providers to a client constructor or as call options.
+ */
 export class InterceptorConfigurationError extends Error {
   constructor(message: string) {
     super(message);
@@ -47,6 +51,9 @@ export interface CancelRequester {
   (next: () => void): void;
 }
 
+/**
+ * An object with methods for intercepting and modifying outgoing call operations.
+ */
 export interface FullRequester {
   start: MetadataRequester;
   sendMessage: MessageRequester;
@@ -121,6 +128,10 @@ export class RequesterBuilder {
   }
 }
 
+/**
+ * A Listener with a default pass-through implementation of each method. Used
+ * for filling out Listeners with some methods omitted.
+ */
 const defaultListener: FullListener = {
   onReceiveMetadata: (metadata, next) => {
     next(metadata);
@@ -133,6 +144,10 @@ const defaultListener: FullListener = {
   }
 };
 
+/**
+ * A Requester with a default pass-through implementation of each method. Used
+ * for filling out Requesters with some methods omitted.
+ */
 const defaultRequester: FullRequester = {
   start: (metadata, listener, next) => {
     next(metadata, listener);
@@ -161,25 +176,31 @@ export interface InterceptingCallInterface {
   startRead(): void;
   halfClose(): void;
 
-  getDeadline(): Deadline;
-  getCredentials(): CallCredentials;
   setCredentials(credentials: CallCredentials): void;
-  getMethod(): string;
-  getHost(): string;
 }
 
 export class InterceptingCall implements InterceptingCallInterface {
+  /**
+   * The requester that this InterceptingCall uses to modify outgoing operations
+   */
   private requester: FullRequester;
+  /**
+   * Indicates that a message has been passed to the listener's onReceiveMessage
+   * method it has not been passed to the corresponding next callback
+   */
   private processingMessage = false;
+  /**
+   * Indicates that a status was received but could not be propagated because
+   * a message was still being processed.
+   */
   private pendingHalfClose = false;
   constructor(private nextCall: InterceptingCallInterface, requester?: Requester) {
     if (requester) {
-      // Undefined elements overwrite, unset ones do not
       this.requester = {
-        start: requester.start || defaultRequester.start,
-        sendMessage: requester.sendMessage || defaultRequester.sendMessage,
-        halfClose: requester.halfClose || defaultRequester.halfClose,
-        cancel: requester.cancel || defaultRequester.cancel
+        start: requester.start ?? defaultRequester.start,
+        sendMessage: requester.sendMessage ?? defaultRequester.sendMessage,
+        halfClose: requester.halfClose ?? defaultRequester.halfClose,
+        cancel: requester.cancel ?? defaultRequester.cancel
       }
     } else {
       this.requester = defaultRequester;
@@ -241,20 +262,8 @@ export class InterceptingCall implements InterceptingCallInterface {
       }
     });
   }
-  getDeadline(): number | Date {
-    return this.nextCall.getDeadline();
-  }
-  getCredentials(): CallCredentials {
-    return this.nextCall.getCredentials();
-  }
   setCredentials(credentials: CallCredentials): void {
     this.nextCall.setCredentials(credentials);
-  }
-  getMethod(): string {
-    return this.nextCall.getHost();
-  }
-  getHost(): string {
-    return this.nextCall.getHost();
   }
 }
 
@@ -282,6 +291,10 @@ function getCall(channel: Channel, path: string, options: CallOptions): Call {
   return call;
 }
 
+/**
+ * InterceptingCall implementation that directly owns the underlying Call
+ * object and handles serialization and deseraizliation.
+ */
 class BaseInterceptingCall implements InterceptingCallInterface {
   constructor(protected call: Call, protected methodDefinition: ClientMethodDefinition<any, any>) {}
   cancelWithStatus(status: Status, details: string): void {
@@ -290,20 +303,8 @@ class BaseInterceptingCall implements InterceptingCallInterface {
   getPeer(): string {
     return this.call.getPeer();
   }
-  getDeadline(): number | Date {
-    return this.call.getDeadline();
-  }
-  getCredentials(): CallCredentials {
-    return this.call.getCredentials();
-  }
   setCredentials(credentials: CallCredentials): void {
     this.call.setCredentials(credentials);
-  }
-  getMethod(): string {
-    return this.call.getMethod();
-  }
-  getHost(): string {
-    return this.call.getHost();
   }
   sendMessageWithContext(context: MessageContext, message: any): void {
     let serialized: Buffer;
@@ -350,6 +351,10 @@ class BaseInterceptingCall implements InterceptingCallInterface {
   }
 }
 
+/**
+ * BaseInterceptingCall with special-cased behavior for methods with unary
+ * responses.
+ */
 class BaseUnaryInterceptingCall extends BaseInterceptingCall implements InterceptingCallInterface {
   constructor(call: Call, methodDefinition: ClientMethodDefinition<any, any>) {
     super(call, methodDefinition);
@@ -374,6 +379,10 @@ class BaseUnaryInterceptingCall extends BaseInterceptingCall implements Intercep
   }
 }
 
+/**
+ * BaseInterceptingCall with special-cased behavior for methods with streaming
+ * responses.
+ */
 class BaseStreamingInterceptingCall extends BaseInterceptingCall implements InterceptingCallInterface { }
 
 function getBottomInterceptingCall(channel: Channel, path: string, options: InterceptorOptions, methodDefinition: ClientMethodDefinition<any, any>) {
@@ -437,8 +446,9 @@ export function getInterceptingCall(interceptorArgs: InterceptorArguments, metho
    * based on the next interceptor in the list, using a nextCall function
    * constructed with the following interceptor in the list, and so on. The
    * initialValue, which is effectively at the end of the list, is a nextCall
-   * function that invokes getBottomInterceptingCall, which handles
-   * (de)serialization and also gets the underlying call from the channel */
+   * function that invokes getBottomInterceptingCall, the result of which
+   * handles (de)serialization and also gets the underlying call from the
+   * channel. */
   const getCall: NextCall = interceptors.reduceRight<NextCall>((nextCall: NextCall, nextInterceptor: Interceptor) => {
     return currentOptions => nextInterceptor(currentOptions, nextCall);
   }, (finalOptions: InterceptorOptions) => getBottomInterceptingCall(channel, methodDefinition.path, finalOptions, methodDefinition));
