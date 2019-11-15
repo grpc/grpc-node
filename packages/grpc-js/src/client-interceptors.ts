@@ -16,7 +16,24 @@
  */
 
 import { Metadata } from './metadata';
-import { StatusObject, CallStreamOptions, Listener, MetadataListener, MessageListener, StatusListener, FullListener, InterceptingListener, WriteObject, WriteCallback, InterceptingListenerImpl, isInterceptingListener, MessageContext, Http2CallStream, Deadline, Call } from './call-stream';
+import {
+  StatusObject,
+  CallStreamOptions,
+  Listener,
+  MetadataListener,
+  MessageListener,
+  StatusListener,
+  FullListener,
+  InterceptingListener,
+  WriteObject,
+  WriteCallback,
+  InterceptingListenerImpl,
+  isInterceptingListener,
+  MessageContext,
+  Http2CallStream,
+  Deadline,
+  Call,
+} from './call-stream';
 import { Status } from './constants';
 import { Channel } from './channel';
 import { CallOptions } from './client';
@@ -36,10 +53,18 @@ export class InterceptorConfigurationError extends Error {
 }
 
 export interface MetadataRequester {
-  (metadata: Metadata, listener: InterceptingListener, next: (metadata: Metadata, listener: InterceptingListener | Listener) => void): void;
+  (
+    metadata: Metadata,
+    listener: InterceptingListener,
+    next: (
+      metadata: Metadata,
+      listener: InterceptingListener | Listener
+    ) => void
+  ): void;
 }
 
 export interface MessageRequester {
+  // tslint:disable-next-line no-any
   (message: any, next: (message: any) => void): void;
 }
 
@@ -87,8 +112,8 @@ export class ListenerBuilder {
     return {
       onReceiveMetadata: this.metadata,
       onReceiveMessage: this.message,
-      onReceiveStatus: this.status
-    }
+      onReceiveStatus: this.status,
+    };
   }
 }
 
@@ -123,7 +148,7 @@ export class RequesterBuilder {
       start: this.start,
       sendMessage: this.message,
       halfClose: this.halfClose,
-      cancel: this.cancel
+      cancel: this.cancel,
     };
   }
 }
@@ -141,7 +166,7 @@ const defaultListener: FullListener = {
   },
   onReceiveStatus: (status, next) => {
     next(status);
-  }
+  },
 };
 
 /**
@@ -155,15 +180,16 @@ const defaultRequester: FullRequester = {
   sendMessage: (message, next) => {
     next(message);
   },
-  halfClose: (next) => {
+  halfClose: next => {
     next();
   },
-  cancel: (next) => {
+  cancel: next => {
     next();
-  }
-}
+  },
+};
 
 export interface InterceptorOptions extends CallOptions {
+  // tslint:disable-next-line no-any
   method_definition: ClientMethodDefinition<any, any>;
 }
 
@@ -171,7 +197,9 @@ export interface InterceptingCallInterface {
   cancelWithStatus(status: Status, details: string): void;
   getPeer(): string;
   start(metadata: Metadata, listener?: Partial<InterceptingListener>): void;
+  // tslint:disable-next-line no-any
   sendMessageWithContext(context: MessageContext, message: any): void;
+  // tslint:disable-next-line no-any
   sendMessage(message: any): void;
   startRead(): void;
   halfClose(): void;
@@ -194,14 +222,17 @@ export class InterceptingCall implements InterceptingCallInterface {
    * a message was still being processed.
    */
   private pendingHalfClose = false;
-  constructor(private nextCall: InterceptingCallInterface, requester?: Requester) {
+  constructor(
+    private nextCall: InterceptingCallInterface,
+    requester?: Requester
+  ) {
     if (requester) {
       this.requester = {
         start: requester.start ?? defaultRequester.start,
         sendMessage: requester.sendMessage ?? defaultRequester.sendMessage,
         halfClose: requester.halfClose ?? defaultRequester.halfClose,
-        cancel: requester.cancel ?? defaultRequester.cancel
-      }
+        cancel: requester.cancel ?? defaultRequester.cancel,
+      };
     } else {
       this.requester = defaultRequester;
     }
@@ -216,30 +247,46 @@ export class InterceptingCall implements InterceptingCallInterface {
   getPeer() {
     return this.nextCall.getPeer();
   }
-  start(metadata: Metadata, interceptingListener?: Partial<InterceptingListener>): void {
+  start(
+    metadata: Metadata,
+    interceptingListener?: Partial<InterceptingListener>
+  ): void {
     const fullInterceptingListener: InterceptingListener = {
-      onReceiveMetadata: interceptingListener?.onReceiveMetadata?.bind(interceptingListener) ?? (metadata => {}),
-      onReceiveMessage: interceptingListener?.onReceiveMessage?.bind(interceptingListener) ?? (message => {}),
-      onReceiveStatus: interceptingListener?.onReceiveStatus?.bind(interceptingListener) ?? (status => {})
-    }
+      onReceiveMetadata:
+        interceptingListener?.onReceiveMetadata?.bind(interceptingListener) ??
+        (metadata => {}),
+      onReceiveMessage:
+        interceptingListener?.onReceiveMessage?.bind(interceptingListener) ??
+        (message => {}),
+      onReceiveStatus:
+        interceptingListener?.onReceiveStatus?.bind(interceptingListener) ??
+        (status => {}),
+    };
     this.requester.start(metadata, fullInterceptingListener, (md, listener) => {
       let finalInterceptingListener: InterceptingListener;
       if (isInterceptingListener(listener)) {
         finalInterceptingListener = listener;
       } else {
         const fullListener: FullListener = {
-          onReceiveMetadata: listener.onReceiveMetadata ?? defaultListener.onReceiveMetadata,
-          onReceiveMessage: listener.onReceiveMessage ?? defaultListener.onReceiveMessage,
-          onReceiveStatus: listener.onReceiveStatus ?? defaultListener.onReceiveStatus
+          onReceiveMetadata:
+            listener.onReceiveMetadata ?? defaultListener.onReceiveMetadata,
+          onReceiveMessage:
+            listener.onReceiveMessage ?? defaultListener.onReceiveMessage,
+          onReceiveStatus:
+            listener.onReceiveStatus ?? defaultListener.onReceiveStatus,
         };
-        finalInterceptingListener = new InterceptingListenerImpl(fullListener, fullInterceptingListener);
+        finalInterceptingListener = new InterceptingListenerImpl(
+          fullListener,
+          fullInterceptingListener
+        );
       }
       this.nextCall.start(md, finalInterceptingListener);
     });
   }
+  // tslint:disable-next-line no-any
   sendMessageWithContext(context: MessageContext, message: any): void {
     this.processingMessage = true;
-    this.requester.sendMessage(message, (finalMessage) => {
+    this.requester.sendMessage(message, finalMessage => {
       this.processingMessage = false;
       this.nextCall.sendMessageWithContext(context, finalMessage);
       if (this.pendingHalfClose) {
@@ -247,6 +294,7 @@ export class InterceptingCall implements InterceptingCallInterface {
       }
     });
   }
+  // tslint:disable-next-line no-any
   sendMessage(message: any): void {
     this.sendMessageWithContext({}, message);
   }
@@ -268,23 +316,22 @@ export class InterceptingCall implements InterceptingCallInterface {
 }
 
 function getCall(channel: Channel, path: string, options: CallOptions): Call {
-  var deadline;
-  var host;
-  var parent;
-  var propagate_flags;
-  var credentials;
+  let deadline;
+  let host;
+  const parent = null;
+  let propagateFlags;
+  let credentials;
   if (options) {
     deadline = options.deadline;
     host = options.host;
 
-    propagate_flags = options.propagate_flags;
+    propagateFlags = options.propagate_flags;
     credentials = options.credentials;
   }
   if (deadline === undefined) {
     deadline = Infinity;
   }
-  var call = channel.createCall(path, deadline, host,
-                                parent, propagate_flags);
+  const call = channel.createCall(path, deadline, host, parent, propagateFlags);
   if (credentials) {
     call.setCredentials(credentials);
   }
@@ -296,7 +343,11 @@ function getCall(channel: Channel, path: string, options: CallOptions): Call {
  * object and handles serialization and deseraizliation.
  */
 class BaseInterceptingCall implements InterceptingCallInterface {
-  constructor(protected call: Call, protected methodDefinition: ClientMethodDefinition<any, any>) {}
+  // tslint:disable-next-line no-any
+  constructor(
+    protected call: Call,
+    protected methodDefinition: ClientMethodDefinition<any, any>
+  ) {}
   cancelWithStatus(status: Status, details: string): void {
     this.call.cancelWithStatus(status, details);
   }
@@ -306,6 +357,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
   setCredentials(credentials: CallCredentials): void {
     this.call.setCredentials(credentials);
   }
+  // tslint:disable-next-line no-any
   sendMessageWithContext(context: MessageContext, message: any): void {
     let serialized: Buffer;
     try {
@@ -315,32 +367,41 @@ class BaseInterceptingCall implements InterceptingCallInterface {
       this.call.cancelWithStatus(Status.INTERNAL, 'Serialization failure');
     }
   }
+  // tslint:disable-next-line no-any
   sendMessage(message: any) {
     this.sendMessageWithContext({}, message);
   }
-  start(metadata: Metadata, interceptingListener?: Partial<InterceptingListener>): void {
+  start(
+    metadata: Metadata,
+    interceptingListener?: Partial<InterceptingListener>
+  ): void {
     let readError: StatusObject | null = null;
     this.call.start(metadata, {
-      onReceiveMetadata: (metadata) => {
+      onReceiveMetadata: metadata => {
         interceptingListener?.onReceiveMetadata?.(metadata);
       },
-      onReceiveMessage: (message) => {
+      onReceiveMessage: message => {
+        // tslint:disable-next-line no-any
         let deserialized: any;
         try {
           deserialized = this.methodDefinition.responseDeserialize(message);
           interceptingListener?.onReceiveMessage?.(deserialized);
         } catch (e) {
-          readError = {code: Status.INTERNAL, details: 'Failed to parse server response', metadata: new Metadata()};
+          readError = {
+            code: Status.INTERNAL,
+            details: 'Failed to parse server response',
+            metadata: new Metadata(),
+          };
           this.call.cancelWithStatus(readError.code, readError.details);
         }
       },
-      onReceiveStatus: (status) => {
+      onReceiveStatus: status => {
         if (readError) {
           interceptingListener?.onReceiveStatus?.(readError);
         } else {
           interceptingListener?.onReceiveStatus?.(status);
         }
-      }
+      },
     });
   }
   startRead() {
@@ -355,14 +416,18 @@ class BaseInterceptingCall implements InterceptingCallInterface {
  * BaseInterceptingCall with special-cased behavior for methods with unary
  * responses.
  */
-class BaseUnaryInterceptingCall extends BaseInterceptingCall implements InterceptingCallInterface {
+class BaseUnaryInterceptingCall extends BaseInterceptingCall
+  implements InterceptingCallInterface {
+  // tslint:disable-next-line no-any
   constructor(call: Call, methodDefinition: ClientMethodDefinition<any, any>) {
     super(call, methodDefinition);
   }
   start(metadata: Metadata, listener?: Partial<InterceptingListener>): void {
     let receivedMessage = false;
     const wrapperListener: InterceptingListener = {
-      onReceiveMetadata: listener?.onReceiveMetadata?.bind(listener) ?? (metadata => {}),
+      onReceiveMetadata:
+        listener?.onReceiveMetadata?.bind(listener) ?? (metadata => {}),
+      // tslint:disable-next-line no-any
       onReceiveMessage: (message: any) => {
         receivedMessage = true;
         listener?.onReceiveMessage?.(message);
@@ -372,8 +437,8 @@ class BaseUnaryInterceptingCall extends BaseInterceptingCall implements Intercep
           listener?.onReceiveMessage?.(null);
         }
         listener?.onReceiveStatus?.(status);
-      }
-    }
+      },
+    };
     super.start(metadata, wrapperListener);
     this.call.startRead();
   }
@@ -383,9 +448,16 @@ class BaseUnaryInterceptingCall extends BaseInterceptingCall implements Intercep
  * BaseInterceptingCall with special-cased behavior for methods with streaming
  * responses.
  */
-class BaseStreamingInterceptingCall extends BaseInterceptingCall implements InterceptingCallInterface { }
+class BaseStreamingInterceptingCall extends BaseInterceptingCall
+  implements InterceptingCallInterface {}
 
-function getBottomInterceptingCall(channel: Channel, path: string, options: InterceptorOptions, methodDefinition: ClientMethodDefinition<any, any>) {
+// tslint:disable-next-line no-any
+function getBottomInterceptingCall(
+  channel: Channel,
+  path: string,
+  options: InterceptorOptions,
+  methodDefinition: ClientMethodDefinition<any, any>
+) {
   const call = getCall(channel, path, options);
   if (methodDefinition.responseStream) {
     return new BaseStreamingInterceptingCall(call, methodDefinition);
@@ -399,49 +471,75 @@ export interface NextCall {
 }
 
 export interface Interceptor {
-  (options: InterceptorOptions, nextCall: NextCall): InterceptingCall
+  (options: InterceptorOptions, nextCall: NextCall): InterceptingCall;
 }
 
 export interface InterceptorProvider {
+  // tslint:disable-next-line no-any
   (methodDefinition: ClientMethodDefinition<any, any>): Interceptor;
 }
 
 export interface InterceptorArguments {
-  clientInterceptors: Interceptor[],
-  clientInterceptorProviders: InterceptorProvider[],
-  callInterceptors: Interceptor[],
-  callInterceptorProviders: InterceptorProvider[]
+  clientInterceptors: Interceptor[];
+  clientInterceptorProviders: InterceptorProvider[];
+  callInterceptors: Interceptor[];
+  callInterceptorProviders: InterceptorProvider[];
 }
 
-export function getInterceptingCall(interceptorArgs: InterceptorArguments, methodDefinition: ClientMethodDefinition<any, any>, options: CallOptions, channel: Channel): InterceptingCallInterface {
-  if (interceptorArgs.clientInterceptors.length > 0 && interceptorArgs.clientInterceptorProviders.length > 0) {
+// tslint:disable-next-line no-any
+export function getInterceptingCall(
+  interceptorArgs: InterceptorArguments,
+  methodDefinition: ClientMethodDefinition<any, any>,
+  options: CallOptions,
+  channel: Channel
+): InterceptingCallInterface {
+  if (
+    interceptorArgs.clientInterceptors.length > 0 &&
+    interceptorArgs.clientInterceptorProviders.length > 0
+  ) {
     throw new InterceptorConfigurationError(
       'Both interceptors and interceptor_providers were passed as options ' +
-      'to the client constructor. Only one of these is allowed.'
+        'to the client constructor. Only one of these is allowed.'
     );
   }
-  if (interceptorArgs.callInterceptors.length > 0 && interceptorArgs.callInterceptorProviders.length > 0) {
+  if (
+    interceptorArgs.callInterceptors.length > 0 &&
+    interceptorArgs.callInterceptorProviders.length > 0
+  ) {
     throw new InterceptorConfigurationError(
       'Both interceptors and interceptor_providers were passed as call ' +
-      'options. Only one of these is allowed.'
+        'options. Only one of these is allowed.'
     );
   }
   let interceptors: Interceptor[] = [];
   // Interceptors passed to the call override interceptors passed to the client constructor
-  if (interceptorArgs.callInterceptors.length > 0 || interceptorArgs.callInterceptorProviders.length > 0) {
-    interceptors = ([] as Interceptor[]).concat(
-      interceptorArgs.callInterceptors,
-      interceptorArgs.callInterceptorProviders.map(provider => provider(methodDefinition))
-    ).filter(interceptor => interceptor);
+  if (
+    interceptorArgs.callInterceptors.length > 0 ||
+    interceptorArgs.callInterceptorProviders.length > 0
+  ) {
+    interceptors = ([] as Interceptor[])
+      .concat(
+        interceptorArgs.callInterceptors,
+        interceptorArgs.callInterceptorProviders.map(provider =>
+          provider(methodDefinition)
+        )
+      )
+      .filter(interceptor => interceptor);
     // Filter out falsy values when providers return nothing
   } else {
-    interceptors = ([] as Interceptor[]).concat(
-      interceptorArgs.clientInterceptors,
-      interceptorArgs.clientInterceptorProviders.map(provider => provider(methodDefinition))
-    ).filter(interceptor => interceptor);
+    interceptors = ([] as Interceptor[])
+      .concat(
+        interceptorArgs.clientInterceptors,
+        interceptorArgs.clientInterceptorProviders.map(provider =>
+          provider(methodDefinition)
+        )
+      )
+      .filter(interceptor => interceptor);
     // Filter out falsy values when providers return nothing
   }
-  const interceptorOptions = Object.assign({}, options, {method_definition: methodDefinition});
+  const interceptorOptions = Object.assign({}, options, {
+    method_definition: methodDefinition,
+  });
   /* For each interceptor in the list, the nextCall function passed to it is
    * based on the next interceptor in the list, using a nextCall function
    * constructed with the following interceptor in the list, and so on. The
@@ -449,8 +547,17 @@ export function getInterceptingCall(interceptorArgs: InterceptorArguments, metho
    * function that invokes getBottomInterceptingCall, the result of which
    * handles (de)serialization and also gets the underlying call from the
    * channel. */
-  const getCall: NextCall = interceptors.reduceRight<NextCall>((nextCall: NextCall, nextInterceptor: Interceptor) => {
-    return currentOptions => nextInterceptor(currentOptions, nextCall);
-  }, (finalOptions: InterceptorOptions) => getBottomInterceptingCall(channel, methodDefinition.path, finalOptions, methodDefinition));
+  const getCall: NextCall = interceptors.reduceRight<NextCall>(
+    (nextCall: NextCall, nextInterceptor: Interceptor) => {
+      return currentOptions => nextInterceptor(currentOptions, nextCall);
+    },
+    (finalOptions: InterceptorOptions) =>
+      getBottomInterceptingCall(
+        channel,
+        methodDefinition.path,
+        finalOptions,
+        methodDefinition
+      )
+  );
   return getCall(interceptorOptions);
 }

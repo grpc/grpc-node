@@ -136,8 +136,8 @@ export class ClientWritableStreamImpl<RequestType> extends Writable
 
   _write(chunk: RequestType, encoding: string, cb: WriteCallback) {
     const context: MessageContext = {
-      callback: cb
-    }
+      callback: cb,
+    };
     const flags: number = Number(encoding);
     if (!Number.isNaN(flags)) {
       context.flags = flags;
@@ -175,8 +175,8 @@ export class ClientDuplexStreamImpl<RequestType, ResponseType> extends Duplex
 
   _write(chunk: RequestType, encoding: string, cb: WriteCallback) {
     const context: MessageContext = {
-      callback: cb
-    }
+      callback: cb,
+    };
     const flags: number = Number(encoding);
     if (!Number.isNaN(flags)) {
       context.flags = flags;

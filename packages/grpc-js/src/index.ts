@@ -284,14 +284,15 @@ export { StatusBuilder };
 
 export { Listener } from './call-stream';
 
-export { 
-  Requester, 
-  ListenerBuilder, 
-  RequesterBuilder, 
-  Interceptor, 
-  InterceptorProvider, 
+export {
+  Requester,
+  ListenerBuilder,
+  RequesterBuilder,
+  Interceptor,
+  InterceptorProvider,
   InterceptingCall,
-  InterceptorConfigurationError } from './client-interceptors';
+  InterceptorConfigurationError,
+} from './client-interceptors';
 
 export { GrpcObject } from './make-client';
 

@@ -29,14 +29,25 @@ import {
   SurfaceCall,
 } from './call';
 import { CallCredentials } from './call-credentials';
-import { Deadline, StatusObject, WriteObject, InterceptingListener } from './call-stream';
+import {
+  Deadline,
+  StatusObject,
+  WriteObject,
+  InterceptingListener,
+} from './call-stream';
 import { Channel, ConnectivityState, ChannelImplementation } from './channel';
 import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
 import { Status } from './constants';
 import { Metadata } from './metadata';
 import { ClientMethodDefinition } from './make-client';
-import { getInterceptingCall, Interceptor, InterceptorProvider, InterceptorArguments, InterceptingCallInterface } from './client-interceptors';
+import {
+  getInterceptingCall,
+  Interceptor,
+  InterceptorProvider,
+  InterceptorArguments,
+  InterceptingCallInterface,
+} from './client-interceptors';
 
 const CHANNEL_SYMBOL = Symbol();
 const INTERCEPTOR_SYMBOL = Symbol();
@@ -53,8 +64,8 @@ export interface CallOptions {
    * but the server is not yet implemented so it makes no sense to have it */
   propagate_flags?: number;
   credentials?: CallCredentials;
-  interceptors?: Interceptor[],
-  interceptor_providers?: InterceptorProvider[]
+  interceptors?: Interceptor[];
+  interceptor_providers?: InterceptorProvider[];
 }
 
 export type ClientOptions = Partial<ChannelOptions> & {
@@ -64,8 +75,8 @@ export type ClientOptions = Partial<ChannelOptions> & {
     credentials: ChannelCredentials,
     options: ClientOptions
   ) => Channel;
-  interceptors?: Interceptor[],
-  interceptor_providers?: InterceptorProvider[]
+  interceptors?: Interceptor[];
+  interceptor_providers?: InterceptorProvider[];
 };
 
 /**
@@ -98,10 +109,14 @@ export class Client {
     }
     this[INTERCEPTOR_SYMBOL] = options.interceptors ?? [];
     this[INTERCEPTOR_PROVIDER_SYMBOL] = options.interceptor_providers ?? [];
-    if (this[INTERCEPTOR_SYMBOL].length > 0 && this[INTERCEPTOR_PROVIDER_SYMBOL].length > 0) {
+    if (
+      this[INTERCEPTOR_SYMBOL].length > 0 &&
+      this[INTERCEPTOR_PROVIDER_SYMBOL].length > 0
+    ) {
       throw new Error(
         'Both interceptors and interceptor_providers were passed as options ' +
-        'to the client constructor. Only one of these is allowed.');
+          'to the client constructor. Only one of these is allowed.'
+      );
     }
   }
 
@@ -218,20 +233,28 @@ export class Client {
     ({ metadata, options, callback } = this.checkOptionalUnaryResponseArguments<
       ResponseType
     >(metadata, options, callback));
-    const methodDefinition: ClientMethodDefinition<RequestType, ResponseType> = {
+    const methodDefinition: ClientMethodDefinition<
+      RequestType,
+      ResponseType
+    > = {
       path: method,
       requestStream: false,
       responseStream: false,
       requestSerialize: serialize,
-      responseDeserialize: deserialize
+      responseDeserialize: deserialize,
     };
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
       callInterceptors: options.interceptors ?? [],
-      callInterceptorProviders: options.interceptor_providers ?? []
+      callInterceptorProviders: options.interceptor_providers ?? [],
     };
-    const call: InterceptingCallInterface = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
+    const call: InterceptingCallInterface = getInterceptingCall(
+      interceptorArgs,
+      methodDefinition,
+      options,
+      this[CHANNEL_SYMBOL]
+    );
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
@@ -239,9 +262,10 @@ export class Client {
     let responseMessage: ResponseType | null = null;
     let receivedStatus = false;
     call.start(metadata, {
-      onReceiveMetadata: (metadata) => {
+      onReceiveMetadata: metadata => {
         emitter.emit('metadata', metadata);
       },
+      // tslint:disable-next-line no-any
       onReceiveMessage(message: any) {
         if (responseMessage != null) {
           call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
@@ -259,7 +283,7 @@ export class Client {
           callback!(callErrorFromStatus(status));
         }
         emitter.emit('status', status);
-      }
+      },
     });
     call.sendMessage(argument);
     call.halfClose();
@@ -305,20 +329,28 @@ export class Client {
     ({ metadata, options, callback } = this.checkOptionalUnaryResponseArguments<
       ResponseType
     >(metadata, options, callback));
-    const methodDefinition: ClientMethodDefinition<RequestType, ResponseType> = {
+    const methodDefinition: ClientMethodDefinition<
+      RequestType,
+      ResponseType
+    > = {
       path: method,
       requestStream: true,
       responseStream: false,
       requestSerialize: serialize,
-      responseDeserialize: deserialize
+      responseDeserialize: deserialize,
     };
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
       callInterceptors: options.interceptors ?? [],
-      callInterceptorProviders: options.interceptor_providers ?? []
+      callInterceptorProviders: options.interceptor_providers ?? [],
     };
-    const call: InterceptingCallInterface = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
+    const call: InterceptingCallInterface = getInterceptingCall(
+      interceptorArgs,
+      methodDefinition,
+      options,
+      this[CHANNEL_SYMBOL]
+    );
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
@@ -326,9 +358,10 @@ export class Client {
     let responseMessage: ResponseType | null = null;
     let receivedStatus = false;
     call.start(metadata, {
-      onReceiveMetadata: (metadata) => {
+      onReceiveMetadata: metadata => {
         emitter.emit('metadata', metadata);
       },
+      // tslint:disable-next-line no-any
       onReceiveMessage(message: any) {
         if (responseMessage != null) {
           call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
@@ -346,7 +379,7 @@ export class Client {
           callback!(callErrorFromStatus(status));
         }
         emitter.emit('status', status);
-      }
+      },
     });
     return emitter;
   }
@@ -399,29 +432,41 @@ export class Client {
     options?: CallOptions
   ): ClientReadableStream<ResponseType> {
     ({ metadata, options } = this.checkMetadataAndOptions(metadata, options));
-    const methodDefinition: ClientMethodDefinition<RequestType, ResponseType> = {
+    const methodDefinition: ClientMethodDefinition<
+      RequestType,
+      ResponseType
+    > = {
       path: method,
       requestStream: false,
       responseStream: true,
       requestSerialize: serialize,
-      responseDeserialize: deserialize
+      responseDeserialize: deserialize,
     };
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
       callInterceptors: options.interceptors ?? [],
-      callInterceptorProviders: options.interceptor_providers ?? []
+      callInterceptorProviders: options.interceptor_providers ?? [],
     };
-    const call: InterceptingCallInterface = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
+    const call: InterceptingCallInterface = getInterceptingCall(
+      interceptorArgs,
+      methodDefinition,
+      options,
+      this[CHANNEL_SYMBOL]
+    );
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
-    const stream = new ClientReadableStreamImpl<ResponseType>(call, deserialize);
+    const stream = new ClientReadableStreamImpl<ResponseType>(
+      call,
+      deserialize
+    );
     let receivedStatus = false;
     call.start(metadata, {
       onReceiveMetadata(metadata: Metadata) {
         stream.emit('metadata', metadata);
       },
+      // tslint:disable-next-line no-any
       onReceiveMessage(message: any) {
         if (stream.push(message)) {
           call.startRead();
@@ -437,7 +482,7 @@ export class Client {
           stream.emit('error', callErrorFromStatus(status));
         }
         stream.emit('status', status);
-      }
+      },
     });
     call.sendMessage(argument);
     call.halfClose();
@@ -465,20 +510,28 @@ export class Client {
     options?: CallOptions
   ): ClientDuplexStream<RequestType, ResponseType> {
     ({ metadata, options } = this.checkMetadataAndOptions(metadata, options));
-    const methodDefinition: ClientMethodDefinition<RequestType, ResponseType> = {
+    const methodDefinition: ClientMethodDefinition<
+      RequestType,
+      ResponseType
+    > = {
       path: method,
       requestStream: true,
       responseStream: true,
       requestSerialize: serialize,
-      responseDeserialize: deserialize
+      responseDeserialize: deserialize,
     };
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
       callInterceptors: options.interceptors ?? [],
-      callInterceptorProviders: options.interceptor_providers ?? []
+      callInterceptorProviders: options.interceptor_providers ?? [],
     };
-    const call: InterceptingCallInterface = getInterceptingCall(interceptorArgs, methodDefinition, options, this[CHANNEL_SYMBOL]);
+    const call: InterceptingCallInterface = getInterceptingCall(
+      interceptorArgs,
+      methodDefinition,
+      options,
+      this[CHANNEL_SYMBOL]
+    );
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
@@ -507,7 +560,7 @@ export class Client {
           stream.emit('error', callErrorFromStatus(status));
         }
         stream.emit('status', status);
-      }
+      },
     });
     return stream;
   }

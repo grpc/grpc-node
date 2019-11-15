@@ -65,6 +65,7 @@ export interface MetadataListener {
 }
 
 export interface MessageListener {
+  // tslint:disable-next-line no-any
   (message: any, next: (message: any) => void): void;
 }
 
@@ -85,29 +86,39 @@ export type Listener = Partial<FullListener>;
  */
 export interface InterceptingListener {
   onReceiveMetadata(metadata: Metadata): void;
+  // tslint:disable-next-line no-any
   onReceiveMessage(message: any): void;
   onReceiveStatus(status: StatusObject): void;
 }
 
-export function isInterceptingListener(listener: Listener | InterceptingListener): listener is InterceptingListener {
-  return listener.onReceiveMetadata !== undefined && listener.onReceiveMetadata.length === 1;
+export function isInterceptingListener(
+  listener: Listener | InterceptingListener
+): listener is InterceptingListener {
+  return (
+    listener.onReceiveMetadata !== undefined &&
+    listener.onReceiveMetadata.length === 1
+  );
 }
 
 export class InterceptingListenerImpl implements InterceptingListener {
   private processingMessage = false;
   private pendingStatus: StatusObject | null = null;
-  constructor(private listener: FullListener, private nextListener: InterceptingListener) {}
+  constructor(
+    private listener: FullListener,
+    private nextListener: InterceptingListener
+  ) {}
 
   onReceiveMetadata(metadata: Metadata): void {
-    this.listener.onReceiveMetadata(metadata, (metadata) => {
+    this.listener.onReceiveMetadata(metadata, metadata => {
       this.nextListener.onReceiveMetadata(metadata);
     });
   }
+  // tslint:disable-next-line no-any
   onReceiveMessage(message: any): void {
     /* If this listener processes messages asynchronously, the last message may
      * be reordered with respect to the status */
     this.processingMessage = true;
-    this.listener.onReceiveMessage(message, (msg) => {
+    this.listener.onReceiveMessage(message, msg => {
       this.processingMessage = false;
       this.nextListener.onReceiveMessage(msg);
       if (this.pendingStatus) {
@@ -116,7 +127,7 @@ export class InterceptingListenerImpl implements InterceptingListener {
     });
   }
   onReceiveStatus(status: StatusObject): void {
-    this.listener.onReceiveStatus(status, (processedStatus) => {
+    this.listener.onReceiveStatus(status, processedStatus => {
       if (this.processingMessage) {
         this.pendingStatus = processedStatus;
       } else {
@@ -139,7 +150,7 @@ export interface Call {
   cancelWithStatus(status: Status, details: string): void;
   getPeer(): string;
   start(metadata: Metadata, listener: InterceptingListener): void;
-  sendMessageWithContext(context: MessageContext, message: any): void;
+  sendMessageWithContext(context: MessageContext, message: Buffer): void;
   startRead(): void;
   halfClose(): void;
 
@@ -235,7 +246,13 @@ export class Http2CallStream implements Call {
       /* The combination check of readsClosed and that the two message buffer
        * arrays are empty checks that there all incoming data has been fully
        * processed */
-      if (this.finalStatus.code !== Status.OK || (this.readsClosed && this.unpushedReadMessages.length === 0 && this.unfilteredReadMessages.length === 0 && !this.isReadFilterPending)) {
+      if (
+        this.finalStatus.code !== Status.OK ||
+        (this.readsClosed &&
+          this.unpushedReadMessages.length === 0 &&
+          this.unfilteredReadMessages.length === 0 &&
+          !this.isReadFilterPending)
+      ) {
         this.outputStatus();
       }
     }
@@ -259,7 +276,7 @@ export class Http2CallStream implements Call {
     }
     this.isReadFilterPending = false;
     if (this.canPush) {
-      this.push(message)
+      this.push(message);
       this.canPush = false;
       this.http2Stream!.pause();
     } else {
@@ -530,15 +547,19 @@ export class Http2CallStream implements Call {
   }
 
   private maybeCloseWrites() {
-    if (this.writesClosed && !this.isWriteFilterPending && this.http2Stream !== null) {
+    if (
+      this.writesClosed &&
+      !this.isWriteFilterPending &&
+      this.http2Stream !== null
+    ) {
       this.http2Stream.end();
     }
   }
 
   sendMessageWithContext(context: MessageContext, message: Buffer) {
     const writeObj: WriteObject = {
-      message: message,
-      flags: context.flags
+      message,
+      flags: context.flags,
     };
     const cb: WriteCallback = context.callback ?? (() => {});
     this.isWriteFilterPending = true;

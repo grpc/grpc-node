@@ -45,8 +45,9 @@ export interface ServerMethodDefinition<RequestType, ResponseType> {
   originalName?: string;
 }
 
-export interface MethodDefinition<RequestType, ResponseType> extends ClientMethodDefinition<RequestType, ResponseType>, ServerMethodDefinition<RequestType, ResponseType> {
-}
+export interface MethodDefinition<RequestType, ResponseType>
+  extends ClientMethodDefinition<RequestType, ResponseType>,
+    ServerMethodDefinition<RequestType, ResponseType> {}
 
 export interface ServiceDefinition {
   // tslint:disable-next-line no-any
