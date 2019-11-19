@@ -28,8 +28,7 @@ cd $(dirname $0)/../..
 base_dir=$(pwd)
 
 # Install gRPC and its submodules.
-git submodule update --init
-git submodule foreach --recursive git submodule update --init
+git submodule update --init --recursive
 
 pip install mako
 ./packages/grpc-native-core/tools/buildgen/generate_projects.sh

@@ -17,8 +17,7 @@ set -e
 cd $(dirname $0)/..
 
 # Install gRPC and its submodules.
-git submodule update --init
-git submodule foreach --recursive git submodule update --init
+git submodule update --init --recursive
 
 ./packages/grpc-native-core/tools/buildgen/generate_projects.sh
 
