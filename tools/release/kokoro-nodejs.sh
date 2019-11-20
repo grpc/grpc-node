@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2018 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# Deleting Ruby.
+rm -rf ~/.rvm
 
 curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
 export NVM_DIR="$HOME/.nvm"
@@ -28,8 +31,7 @@ cd $(dirname $0)/../..
 base_dir=$(pwd)
 
 # Install gRPC and its submodules.
-git submodule update --init
-git submodule foreach --recursive git submodule update --init
+git submodule update --init --recursive
 
 pip install mako
 ./packages/grpc-native-core/tools/buildgen/generate_projects.sh
