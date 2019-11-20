@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,12 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Deleting Ruby.
+rm -rf ~/.rvm
+
 set -e
 cd $(dirname $0)/..
 
 # Install gRPC and its submodules.
-git submodule update --init
-git submodule foreach --recursive git submodule update --init
+git submodule update --init --recursive
 
 ./packages/grpc-native-core/tools/buildgen/generate_projects.sh
 

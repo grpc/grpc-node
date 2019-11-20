@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Deleting Ruby.
+rm -rf ~/.rvm
+
 set -e
 cd $(dirname $0)/../..
 base_dir=$(pwd)
