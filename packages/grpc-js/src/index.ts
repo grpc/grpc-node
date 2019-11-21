@@ -85,11 +85,11 @@ export interface OAuth2Client {
     callback: (
       err: Error | null,
       headers?: {
-        Authorization: string;
+        [index: string]: string;
       }
     ) => void
   ) => void;
-  getRequestHeaders: (url?: string) => Promise<{ Authorization: string }>;
+  getRequestHeaders: (url?: string) => Promise<{ [index: string]: string }>;
 }
 
 /**** Client Credentials ****/
@@ -109,7 +109,7 @@ export const credentials = mixin(
         (options, callback) => {
           // google-auth-library pre-v2.0.0 does not have getRequestHeaders
           // but has getRequestMetadata, which is deprecated in v2.0.0
-          let getHeaders: Promise<{ Authorization: string }>;
+          let getHeaders: Promise<{ [index: string]: string }>;
           if (typeof googleCredentials.getRequestHeaders === 'function') {
             getHeaders = googleCredentials.getRequestHeaders(
               options.service_url
@@ -131,7 +131,9 @@ export const credentials = mixin(
           getHeaders.then(
             headers => {
               const metadata = new Metadata();
-              metadata.add('authorization', headers.Authorization);
+              for (const key in headers) {
+                metadata.add(key, headers[key]);
+              }
               callback(null, metadata);
             },
             err => {
