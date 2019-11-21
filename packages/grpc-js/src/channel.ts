@@ -216,10 +216,17 @@ export class ChannelImplementation implements Channel {
                   pickResult.subchannel!.getConnectivityState() ===
                   ConnectivityState.READY
                 ) {
-                  pickResult.subchannel!.startCallStream(
-                    finalMetadata,
-                    callStream
-                  );
+                  try {
+                    pickResult.subchannel!.startCallStream(
+                      finalMetadata,
+                      callStream
+                    );
+                  } catch (error) {
+                    callStream.cancelWithStatus(
+                      Status.UNAVAILABLE,
+                      'Failed to start call on picked subchannel'
+                    );
+                  }
                 } else {
                   callStream.cancelWithStatus(
                     Status.UNAVAILABLE,
