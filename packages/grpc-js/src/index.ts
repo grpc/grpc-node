@@ -131,7 +131,7 @@ export const credentials = mixin(
           getHeaders.then(
             headers => {
               const metadata = new Metadata();
-              for (const key in headers) {
+              for (const key of Object.keys(headers)) {
                 metadata.add(key, headers[key]);
               }
               callback(null, metadata);
