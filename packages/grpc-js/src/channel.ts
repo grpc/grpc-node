@@ -129,8 +129,9 @@ export class ChannelImplementation implements Channel {
     private readonly credentials: ChannelCredentials,
     private readonly options: ChannelOptions
   ) {
-    // TODO(murgatroid99): check channel arg for getting a private pool
-    this.subchannelPool = getSubchannelPool(true);
+    /* The global boolean parameter to getSubchannelPool has the inverse meaning to what
+     * the grpc.use_local_subchannel_pool channel option means. */
+    this.subchannelPool = getSubchannelPool((options['grpc.use_local_subchannel_pool'] ?? 0) === 0);
     const channelControlHelper: ChannelControlHelper = {
       createSubchannel: (
         subchannelAddress: string,

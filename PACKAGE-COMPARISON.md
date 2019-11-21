@@ -3,7 +3,7 @@
 Feature | `grpc` | `@grpc/grpc-js`
 --------|--------|----------
 Client | :heavy_check_mark: | :heavy_check_mark:
-Server | :heavy_check_mark: | :x:
+Server | :heavy_check_mark: | :heavy_check_mark:
 Unary RPCs | :heavy_check_mark: | :heavy_check_mark:
 Streaming RPCs | :heavy_check_mark: | :heavy_check_mark:
 Deadlines | :heavy_check_mark: | :heavy_check_mark:
@@ -17,8 +17,8 @@ Connection Keepalives | :heavy_check_mark: | :heavy_check_mark:
 HTTP Connect Support | :heavy_check_mark: | :x:
 Retries | :heavy_check_mark: | :x:
 Stats/tracing/monitoring | :heavy_check_mark: | :x:
-Load Balancing | :heavy_check_mark: | :x:
-Initial Metadata Options | :heavy_check_mark: | :x:
+Load Balancing | :heavy_check_mark: | Pick first and round robin
+Initial Metadata Options | :heavy_check_mark: | only `waitForReady`
 
 Other Properties | `grpc` | `@grpc/grpc-js`
 -----------------|--------|----------------
@@ -37,5 +37,9 @@ In addition, all channel arguments defined in [this header file](https://github.
  - `grpc.keepalive_time_ms`
  - `grpc.keepalive_timeout_ms`
  - `grpc.service_config`
+ - `grpc.max_concurrent_streams`
+ - `grpc.initial_reconnect_backoff_ms`
+ - `grpc.max_reconnect_backoff_ms`
+ - `grpc.use_local_subchannel_pool`
  - `channelOverride`
  - `channelFactoryOverride`

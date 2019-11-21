@@ -26,6 +26,10 @@ export interface ChannelOptions {
   'grpc.keepalive_time_ms'?: number;
   'grpc.keepalive_timeout_ms'?: number;
   'grpc.service_config'?: string;
+  'grpc.max_concurrent_streams'?: number;
+  'grpc.initial_reconnect_backoff_ms'?: number;
+  'grpc.max_reconnect_backoff_ms'?: number;
+  'grpc.use_local_subchannel_pool'?: number;
   [key: string]: string | number | undefined;
 }
 
@@ -41,6 +45,10 @@ export const recognizedOptions = {
   'grpc.keepalive_time_ms': true,
   'grpc.keepalive_timeout_ms': true,
   'grpc.service_config': true,
+  'grpc.max_concurrent_streams': true,
+  'grpc.initial_reconnect_backoff_ms': true,
+  'grpc.max_reconnect_backoff_ms': true,
+  'grpc.use_local_subchannel_pool': true,
 };
 
 export function channelOptionsEqual(
