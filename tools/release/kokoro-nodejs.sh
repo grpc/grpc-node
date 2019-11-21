@@ -48,6 +48,6 @@ Linux)
     cp -rv packages/grpc-native-core/artifacts .
     ;;
 Darwin)
-    JOBS=8 ARTIFACTS_OUT=$base_dir/artifacts ./packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_node.sh
+    V=1 JOBS=8 ARTIFACTS_OUT=$base_dir/artifacts ./packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_node.sh
     ;;
 esac
