@@ -38,7 +38,7 @@ export class MetadataStatusFilter extends BaseFilter implements Filter {
       metadata.remove('grpc-status');
     }
     if (typeof metadataMap['grpc-message'] === 'string') {
-      details = decodeURIComponent(metadataMap['grpc-message'] as string);
+      details = decodeURI(metadataMap['grpc-message'] as string);
       metadata.remove('grpc-message');
     }
     return { code, details, metadata };

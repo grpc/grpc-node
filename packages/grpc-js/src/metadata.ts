@@ -36,6 +36,10 @@ function isBinaryKey(key: string): boolean {
   return key.endsWith('-bin');
 }
 
+function isCustomMetadata(key: string): boolean {
+  return !key.startsWith('grpc-');
+}
+
 function normalizeKey(key: string): string {
   return key.toLowerCase();
 }
@@ -260,9 +264,13 @@ export class Metadata {
               result.add(key, Buffer.from(value, 'base64'));
             });
           } else if (values !== undefined) {
-            values.split(',').forEach(v => {
-              result.add(key, Buffer.from(v.trim(), 'base64'));
-            });
+            if (isCustomMetadata(key)) {
+              values.split(',').forEach(v => {
+                result.add(key, Buffer.from(v.trim(), 'base64'));
+              });
+            } else {
+              result.add(key, Buffer.from(values, 'base64'));
+            }
           }
         } else {
           if (Array.isArray(values)) {
@@ -270,7 +278,11 @@ export class Metadata {
               result.add(key, value);
             });
           } else if (values !== undefined) {
-            values.split(',').forEach(v => result.add(key, v.trim()));
+            if (isCustomMetadata(key)) {
+              values.split(',').forEach(v => result.add(key, v.trim()));
+            } else {
+              result.add(key, values);
+            }
           }
         }
       } catch (error) {

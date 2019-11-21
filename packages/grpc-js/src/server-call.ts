@@ -484,9 +484,7 @@ export class Http2ServerCallStream<
         const trailersToSend = Object.assign(
           {
             [GRPC_STATUS_HEADER]: statusObj.code,
-            [GRPC_MESSAGE_HEADER]: encodeURIComponent(
-              statusObj.details as string
-            ),
+            [GRPC_MESSAGE_HEADER]: encodeURI(statusObj.details as string),
           },
           statusObj.metadata.toHttp2Headers()
         );

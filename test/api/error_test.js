@@ -553,6 +553,14 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
             done();
           });
         });
+        it('for an error message with a comma', function(done) {
+          client.unary({error: true, message: 'a message,  with a comma'}, function(err, data) {
+            assert(err);
+            assert.strictEqual(err.code, clientGrpc.status.UNKNOWN);
+            assert.strictEqual(err.details, 'a message,  with a comma');
+            done();
+          });
+        });
       });
   });
 });
