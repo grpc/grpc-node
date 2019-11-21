@@ -182,7 +182,7 @@ exports.createFromMetadataGenerator = function(metadata_generator) {
   });
 };
 
-function getAuthorizationHeaderFromGoogleCredential(google_credential, url, callback) {
+function getHeadersFromGoogleCredential(google_credential, url, callback) {
   // google-auth-library pre-v2.0.0 does not have getRequestHeaders
   // but has getRequestMetadata, which is deprecated in v2.0.0
   if (typeof google_credential.getRequestHeaders === 'function') {
@@ -216,7 +216,7 @@ function getAuthorizationHeaderFromGoogleCredential(google_credential, url, call
 exports.createFromGoogleCredential = function(google_credential) {
   return exports.createFromMetadataGenerator(function(auth_context, callback) {
     var service_url = auth_context.service_url;
-    getAuthorizationHeaderFromGoogleCredential(google_credential, service_url,
+    getHeadersFromGoogleCredential(google_credential, service_url,
       function(err, headers) {
         if (err) {
           common.log(constants.logVerbosity.INFO, 'Auth error:' + err);
