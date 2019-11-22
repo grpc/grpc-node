@@ -67,6 +67,63 @@ describe('Name Resolver', () => {
       const resolver = resolverManager.createResolver(target, listener);
       resolver.updateResolution();
     });
+    it('Should correctly represent an ipv4 address', done => {
+      const target = '1.2.3.4';
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: string[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          assert(addressList.includes('1.2.3.4:443'));
+          // We would check for the IPv6 address but it needs to be omitted on some Node versions
+          done();
+        },
+        onError: (error: StatusObject) => {
+          done(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver = resolverManager.createResolver(target, listener);
+      resolver.updateResolution();
+    });
+    it('Should correctly represent an ipv6 address', done => {
+      const target = '::1';
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: string[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          assert(addressList.includes('[::1]:443'));
+          // We would check for the IPv6 address but it needs to be omitted on some Node versions
+          done();
+        },
+        onError: (error: StatusObject) => {
+          done(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver = resolverManager.createResolver(target, listener);
+      resolver.updateResolution();
+    });
+    it('Should correctly represent a bracketed ipv6 address', done => {
+      const target = '[::1]:50051';
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: string[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          assert(addressList.includes('[::1]:50051'));
+          // We would check for the IPv6 address but it needs to be omitted on some Node versions
+          done();
+        },
+        onError: (error: StatusObject) => {
+          done(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver = resolverManager.createResolver(target, listener);
+      resolver.updateResolution();
+    });
     it('Should resolve a public address', done => {
       const target = 'example.com';
       const listener: resolverManager.ResolverListener = {

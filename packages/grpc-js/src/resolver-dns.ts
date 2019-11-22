@@ -115,14 +115,15 @@ const dnsLookupPromise = util.promisify(dns.lookup);
 function parseIP(target: string): string[] | null {
   /* These three regular expressions are all mutually exclusive, so we just
    * want the first one that matches the target string, if any do. */
+  const ipv4Match = IPV4_REGEX.exec(target);
   const match =
-    IPV4_REGEX.exec(target) ||
-    IPV6_REGEX.exec(target) ||
-    IPV6_BRACKET_REGEX.exec(target);
+    ipv4Match || IPV6_REGEX.exec(target) || IPV6_BRACKET_REGEX.exec(target);
   if (match === null) {
     return null;
   }
-  const addr = match[1];
+
+  // ipv6 addresses should be bracketed
+  const addr = ipv4Match ? match[1] : `[${match[1]}]`;
   let port: string;
   if (match[2]) {
     port = match[2];
