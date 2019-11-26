@@ -7,7 +7,7 @@ These two options control compression behavior:
 
 **grpc.default_compression_algorithm** (int)
 
-Default compression algorithm for the channel. 
+Default compression algorithm for the channel, applies to sending messages.
 
 Possible values for this option are:
 - `0` - No compression
@@ -17,7 +17,7 @@ Possible values for this option are:
 
 **grpc.default_compression_level** (int)
 
-Default compression level for the channel.
+Default compression level for the channel, applies to receiving messages.
 
 Possible values for this option are:
 - `0` - None
