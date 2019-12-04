@@ -16,6 +16,13 @@
 # Deleting Ruby.
 rm -rf ~/.rvm
 
+OS=`uname`
+case $OS in
+Darwin)
+    PATH=/bin:$PATH
+    ;;
+esac
+
 set -e
 cd $(dirname $0)/..
 

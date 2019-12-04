@@ -17,5 +17,12 @@ set -e
 cd $(dirname $0)/..
 base_dir=$(pwd)
 
+OS=`uname`
+case $OS in
+Darwin)
+    PATH=/bin:$PATH
+    ;;
+esac
+
 ./tools/release/kokoro-nodejs.sh
 ./tools/release/kokoro-grpc-tools.sh
