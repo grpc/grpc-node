@@ -395,6 +395,13 @@ export class Subchannel {
   }
 
   callRef() {
+    trace(
+      this.subchannelAddress +
+        ' callRefcount ' +
+        this.callRefcount +
+        ' -> ' +
+        (this.callRefcount + 1)
+    );
     if (this.callRefcount === 0) {
       if (this.session) {
         this.session.ref();
@@ -405,6 +412,13 @@ export class Subchannel {
   }
 
   callUnref() {
+    trace(
+      this.subchannelAddress +
+        ' callRefcount ' +
+        this.callRefcount +
+        ' -> ' +
+        (this.callRefcount - 1)
+    );
     this.callRefcount -= 1;
     if (this.callRefcount === 0) {
       if (this.session) {
@@ -416,10 +430,24 @@ export class Subchannel {
   }
 
   ref() {
+    trace(
+      this.subchannelAddress +
+        ' callRefcount ' +
+        this.refcount +
+        ' -> ' +
+        (this.refcount + 1)
+    );
     this.refcount += 1;
   }
 
   unref() {
+    trace(
+      this.subchannelAddress +
+        ' callRefcount ' +
+        this.refcount +
+        ' -> ' +
+        (this.refcount - 1)
+    );
     this.refcount -= 1;
     this.checkBothRefcounts();
   }

@@ -357,6 +357,11 @@ export class ChannelImplementation implements Channel {
     if (this.connectivityState === ConnectivityState.SHUTDOWN) {
       throw new Error('Channel has been shut down');
     }
+    trace(
+      LogVerbosity.DEBUG,
+      'channel',
+      'createCall(method="' + method + '", deadline=' + deadline + ')'
+    );
     const finalOptions: CallStreamOptions = {
       deadline:
         deadline === null || deadline === undefined ? Infinity : deadline,
