@@ -70,4 +70,14 @@ describe('Name resolver', function() {
       done();
     });
   });
+  /* This test will only work on GCE VMs in the grpc-testing project */
+  it('Should resolve a large DNS record', function(done) {
+    const client = new grpc.Client(`large-aaaa-record.apolcyn.exp-test-zone:${port}`, insecureCreds);
+    let deadline = new Date();
+    deadline.setSeconds(deadline.getSeconds() + 1);
+    client.waitForReady(deadline, (error) => {
+      assert.ifError(error);
+      done();
+    });
+  });
 });
