@@ -41,24 +41,16 @@ describe('Server Credentials', () => {
       const creds = ServerCredentials.createSsl(ca, []);
 
       assert.strictEqual(creds._isSecure(), true);
-      assert.deepStrictEqual(creds._getSettings(), {
-        ca,
-        cert: [],
-        key: [],
-        requestCert: false,
-      });
+      assert.strictEqual(creds._getSettings()?.ca, ca);
     });
 
     it('accepts a boolean as the third argument', () => {
       const creds = ServerCredentials.createSsl(ca, [], true);
 
       assert.strictEqual(creds._isSecure(), true);
-      assert.deepStrictEqual(creds._getSettings(), {
-        ca,
-        cert: [],
-        key: [],
-        requestCert: true,
-      });
+      const settings = creds._getSettings();
+      assert.strictEqual(settings?.ca, ca);
+      assert.strictEqual(settings?.requestCert, true);
     });
 
     it('accepts an object with two buffers in the second argument', () => {
@@ -66,12 +58,9 @@ describe('Server Credentials', () => {
       const creds = ServerCredentials.createSsl(null, keyCertPairs);
 
       assert.strictEqual(creds._isSecure(), true);
-      assert.deepStrictEqual(creds._getSettings(), {
-        ca: undefined,
-        cert: [cert],
-        key: [key],
-        requestCert: false,
-      });
+      const settings = creds._getSettings();
+      assert.deepStrictEqual(settings?.cert, [cert]);
+      assert.deepStrictEqual(settings?.key, [key]);
     });
 
     it('accepts multiple objects in the second argument', () => {
@@ -82,12 +71,9 @@ describe('Server Credentials', () => {
       const creds = ServerCredentials.createSsl(null, keyCertPairs, false);
 
       assert.strictEqual(creds._isSecure(), true);
-      assert.deepStrictEqual(creds._getSettings(), {
-        ca: undefined,
-        cert: [cert, cert],
-        key: [key, key],
-        requestCert: false,
-      });
+      const settings = creds._getSettings();
+      assert.deepStrictEqual(settings?.cert, [cert, cert]);
+      assert.deepStrictEqual(settings?.key, [key, key]);
     });
 
     it('fails if the second argument is not an Array', () => {
