@@ -47,6 +47,17 @@ export enum ConnectivityState {
   SHUTDOWN,
 }
 
+let nextCallNumber = 0;
+
+function getNewCallNumber(): number {
+  const callNumber = nextCallNumber;
+  nextCallNumber += 1;
+  if (nextCallNumber >= Number.MAX_SAFE_INTEGER) {
+    nextCallNumber = 0;
+  }
+  return callNumber;
+}
+
 /**
  * An interface that represents a communication channel to a server specified
  * by a given address.
@@ -358,10 +369,17 @@ export class ChannelImplementation implements Channel {
     if (this.connectivityState === ConnectivityState.SHUTDOWN) {
       throw new Error('Channel has been shut down');
     }
+    const callNumber = getNewCallNumber();
     trace(
       LogVerbosity.DEBUG,
       'channel',
-      'createCall(method="' + method + '", deadline=' + deadline + ')'
+      this.target +
+        ' createCall [' +
+        callNumber +
+        '] method="' +
+        method +
+        '", deadline=' +
+        deadline
     );
     const finalOptions: CallStreamOptions = {
       deadline:
@@ -375,7 +393,8 @@ export class ChannelImplementation implements Channel {
       this,
       finalOptions,
       this.filterStackFactory,
-      this.credentials._getCallCredentials()
+      this.credentials._getCallCredentials(),
+      callNumber
     );
     return stream;
   }
