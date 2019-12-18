@@ -45,6 +45,7 @@ import {
   ServerStatusResponse,
 } from './server-call';
 import { ServerCredentials } from './server-credentials';
+import { ChannelOptions } from './channel-options';
 
 function noop(): void {}
 
@@ -95,8 +96,11 @@ export class Server {
   >();
   private sessions = new Set<http2.ServerHttp2Session>();
   private started = false;
+  private options: ChannelOptions;
 
-  constructor(options?: object) {}
+  constructor(options?: ChannelOptions) {
+    this.options = options ?? {};
+  }
 
   addProtoService(): void {
     throw new Error('Not implemented. Use addService() instead');
@@ -197,13 +201,16 @@ export class Server {
 
     const url = new URL(`http://${port}`);
     const options: ListenOptions = { host: url.hostname, port: +url.port };
+    const serverOptions: http2.ServerOptions = {};
+    if ('grpc.max_concurrent_streams' in this.options) {
+      serverOptions.settings = {maxConcurrentStreams: this.options['grpc.max_concurrent_streams']};
+    }
 
     if (creds._isSecure()) {
-      this.http2Server = http2.createSecureServer(
-        creds._getSettings() as http2.SecureServerOptions
-      );
+      const secureServerOptions = Object.assign(serverOptions, creds._getSettings()!);
+      this.http2Server = http2.createSecureServer(secureServerOptions);
     } else {
-      this.http2Server = http2.createServer();
+      this.http2Server = http2.createServer(serverOptions);
     }
 
     this.http2Server.setTimeout(0, noop);
