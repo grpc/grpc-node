@@ -43,7 +43,6 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
           grpc_generator::tokenize(parameter, ",");	
       for (auto parameter_string = parameters_list.begin();	
            parameter_string != parameters_list.end(); parameter_string++) {
-        printf("%s", parameter_string);
         if (*parameter_string == "generate_package_definition") {
           generator_parameters.generate_package_definition = true;
         }
