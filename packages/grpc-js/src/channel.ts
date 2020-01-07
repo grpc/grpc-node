@@ -47,6 +47,17 @@ export enum ConnectivityState {
   SHUTDOWN,
 }
 
+let nextCallNumber = 0;
+
+function getNewCallNumber(): number {
+  const callNumber = nextCallNumber;
+  nextCallNumber += 1;
+  if (nextCallNumber >= Number.MAX_SAFE_INTEGER) {
+    nextCallNumber = 0;
+  }
+  return callNumber;
+}
+
 /**
  * An interface that represents a communication channel to a server specified
  * by a given address.
@@ -129,8 +140,9 @@ export class ChannelImplementation implements Channel {
     private readonly credentials: ChannelCredentials,
     private readonly options: ChannelOptions
   ) {
-    // TODO(murgatroid99): check channel arg for getting a private pool
-    this.subchannelPool = getSubchannelPool(true);
+    /* The global boolean parameter to getSubchannelPool has the inverse meaning to what
+     * the grpc.use_local_subchannel_pool channel option means. */
+    this.subchannelPool = getSubchannelPool((options['grpc.use_local_subchannel_pool'] ?? 0) === 0);
     const channelControlHelper: ChannelControlHelper = {
       createSubchannel: (
         subchannelAddress: string,
@@ -216,10 +228,17 @@ export class ChannelImplementation implements Channel {
                   pickResult.subchannel!.getConnectivityState() ===
                   ConnectivityState.READY
                 ) {
-                  pickResult.subchannel!.startCallStream(
-                    finalMetadata,
-                    callStream
-                  );
+                  try {
+                    pickResult.subchannel!.startCallStream(
+                      finalMetadata,
+                      callStream
+                    );
+                  } catch (error) {
+                    callStream.cancelWithStatus(
+                      Status.UNAVAILABLE,
+                      'Failed to start call on picked subchannel'
+                    );
+                  }
                 } else {
                   callStream.cancelWithStatus(
                     Status.UNAVAILABLE,
@@ -304,8 +323,12 @@ export class ChannelImplementation implements Channel {
     return this.target;
   }
 
-  getConnectivityState() {
-    return this.connectivityState;
+  getConnectivityState(tryToConnect: boolean) {
+    const connectivityState = this.connectivityState;
+    if (tryToConnect) {
+      this.resolvingLoadBalancer.exitIdle();
+    }
+    return connectivityState;
   }
 
   watchConnectivityState(
@@ -346,6 +369,18 @@ export class ChannelImplementation implements Channel {
     if (this.connectivityState === ConnectivityState.SHUTDOWN) {
       throw new Error('Channel has been shut down');
     }
+    const callNumber = getNewCallNumber();
+    trace(
+      LogVerbosity.DEBUG,
+      'channel',
+      this.target +
+        ' createCall [' +
+        callNumber +
+        '] method="' +
+        method +
+        '", deadline=' +
+        deadline
+    );
     const finalOptions: CallStreamOptions = {
       deadline:
         deadline === null || deadline === undefined ? Infinity : deadline,
@@ -358,7 +393,8 @@ export class ChannelImplementation implements Channel {
       this,
       finalOptions,
       this.filterStackFactory,
-      this.credentials._getCallCredentials()
+      this.credentials._getCallCredentials(),
+      callNumber
     );
     return stream;
   }

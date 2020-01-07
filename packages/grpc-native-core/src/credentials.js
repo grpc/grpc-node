@@ -182,25 +182,25 @@ exports.createFromMetadataGenerator = function(metadata_generator) {
   });
 };
 
-function getAuthorizationHeaderFromGoogleCredential(google_credential, url, callback) {
+function getHeadersFromGoogleCredential(google_credential, url, callback) {
   // google-auth-library pre-v2.0.0 does not have getRequestHeaders
   // but has getRequestMetadata, which is deprecated in v2.0.0
   if (typeof google_credential.getRequestHeaders === 'function') {
     google_credential.getRequestHeaders(url)
-      .then(function(header) {
-        callback(null, header.Authorization);
+      .then(function(headers) {
+        callback(null, headers);
       })
       .catch(function(err) {
         callback(err);
         return;
       });
   } else {
-    google_credential.getRequestMetadata(url, function(err, header) {
+    google_credential.getRequestMetadata(url, function(err, headers) {
       if (err) {
         callback(err);
         return;
       }
-      callback(null, header.Authorization);
+      callback(null, headers);
     });
   }
 }
@@ -216,15 +216,17 @@ function getAuthorizationHeaderFromGoogleCredential(google_credential, url, call
 exports.createFromGoogleCredential = function(google_credential) {
   return exports.createFromMetadataGenerator(function(auth_context, callback) {
     var service_url = auth_context.service_url;
-    getAuthorizationHeaderFromGoogleCredential(google_credential, service_url,
-      function(err, authHeader) {
+    getHeadersFromGoogleCredential(google_credential, service_url,
+      function(err, headers) {
         if (err) {
           common.log(constants.logVerbosity.INFO, 'Auth error:' + err);
           callback(err);
           return;
         }
         var metadata = new Metadata();
-        metadata.add('authorization', authHeader);
+        for (const key of Object.keys(headers)) {
+          metadata.add(key, headers[key]);
+        }
         callback(null, metadata);
       });
   });

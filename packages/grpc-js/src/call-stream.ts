@@ -25,6 +25,10 @@ import { Metadata } from './metadata';
 import { StreamDecoder } from './stream-decoder';
 import { ChannelImplementation } from './channel';
 import { Subchannel } from './subchannel';
+import * as logging from './logging';
+import { LogVerbosity } from './constants';
+
+const TRACER_NAME = 'call_stream';
 
 const {
   HTTP2_HEADER_STATUS,
@@ -202,7 +206,8 @@ export class Http2CallStream implements Call {
     private readonly channel: ChannelImplementation,
     private readonly options: CallStreamOptions,
     filterStackFactory: FilterStackFactory,
-    private readonly channelCallCredentials: CallCredentials
+    private readonly channelCallCredentials: CallCredentials,
+    private readonly callNumber: number
   ) {
     this.filterStack = filterStackFactory.createFilter(this);
     this.credentials = channelCallCredentials;
@@ -227,6 +232,14 @@ export class Http2CallStream implements Call {
     }
   }
 
+  private trace(text: string): void {
+    logging.trace(
+      LogVerbosity.DEBUG,
+      TRACER_NAME,
+      '[' + this.callNumber + '] ' + text
+    );
+  }
+
   /**
    * On first call, emits a 'status' event with the given StatusObject.
    * Subsequent calls are no-ops.
@@ -236,6 +249,13 @@ export class Http2CallStream implements Call {
     /* If the status is OK and a new status comes in (e.g. from a
      * deserialization failure), that new status takes priority */
     if (this.finalStatus === null || this.finalStatus.code === Status.OK) {
+      this.trace(
+        'ended with status: code=' +
+          status.code +
+          ' details="' +
+          status.details +
+          '"'
+      );
       this.finalStatus = status;
       this.maybeOutputStatus();
     }
@@ -259,6 +279,10 @@ export class Http2CallStream implements Call {
   }
 
   private push(message: Buffer): void {
+    this.trace(
+      'pushing to reader message of length ' +
+        (message instanceof Buffer ? message.length : null)
+    );
     this.canPush = false;
     process.nextTick(() => {
       this.listener!.onReceiveMessage(message);
@@ -282,6 +306,9 @@ export class Http2CallStream implements Call {
       this.http2Stream!.pause();
       this.push(message);
     } else {
+      this.trace(
+        'unpushedReadMessages.push message of length ' + message.length
+      );
       this.unpushedReadMessages.push(message);
     }
     if (this.unfilteredReadMessages.length > 0) {
@@ -299,6 +326,7 @@ export class Http2CallStream implements Call {
       this.maybeOutputStatus();
       return;
     }
+    this.trace('filterReceivedMessage of length ' + framedMessage.length);
     this.isReadFilterPending = true;
     this.filterStack
       .receiveMessage(Promise.resolve(framedMessage))
@@ -310,6 +338,12 @@ export class Http2CallStream implements Call {
 
   private tryPush(messageBytes: Buffer): void {
     if (this.isReadFilterPending) {
+      this.trace(
+        '[' +
+          this.callNumber +
+          '] unfilteredReadMessages.push message of length ' +
+          (messageBytes && messageBytes.length)
+      );
       this.unfilteredReadMessages.push(messageBytes);
     } else {
       this.filterReceivedMessage(messageBytes);
@@ -317,6 +351,7 @@ export class Http2CallStream implements Call {
   }
 
   private handleTrailers(headers: http2.IncomingHttpHeaders) {
+    this.trace('received HTTP/2 trailing headers frame');
     const code: Status = this.mappedStatusCode;
     const details = '';
     let metadata: Metadata;
@@ -350,11 +385,15 @@ export class Http2CallStream implements Call {
     if (this.finalStatus !== null) {
       stream.close(NGHTTP2_CANCEL);
     } else {
+      this.trace(
+        'attachHttp2Stream from subchannel ' + subchannel.getAddress()
+      );
       this.http2Stream = stream;
       this.subchannel = subchannel;
       subchannel.addDisconnectListener(this.disconnectListener);
       subchannel.callRef();
       stream.on('response', (headers, flags) => {
+        this.trace('received HTTP/2 headers frame');
         switch (headers[':status']) {
           // TODO(murgatroid99): handle 100 and 101
           case 400:
@@ -408,9 +447,11 @@ export class Http2CallStream implements Call {
       });
       stream.on('trailers', this.handleTrailers.bind(this));
       stream.on('data', (data: Buffer) => {
+        this.trace('receive HTTP/2 data frame of length ' + data.length);
         const messages = this.decoder.write(data);
 
         for (const message of messages) {
+          this.trace('parsed message of length ' + message.length);
           this.tryPush(message);
         }
       });
@@ -419,6 +460,7 @@ export class Http2CallStream implements Call {
         this.maybeOutputStatus();
       });
       stream.on('close', () => {
+        this.trace('HTTP/2 stream closed with code ' + stream.rstCode);
         let code: Status;
         let details = '';
         switch (stream.rstCode) {
@@ -477,6 +519,7 @@ export class Http2CallStream implements Call {
   }
 
   start(metadata: Metadata, listener: InterceptingListener) {
+    this.trace('Sending metadata');
     this.listener = listener;
     this.channel._startCallStream(this, metadata);
   }
@@ -553,11 +596,13 @@ export class Http2CallStream implements Call {
       !this.isWriteFilterPending &&
       this.http2Stream !== null
     ) {
+      this.trace('calling end() on HTTP/2 stream');
       this.http2Stream.end();
     }
   }
 
   sendMessageWithContext(context: MessageContext, message: Buffer) {
+    this.trace('write() called with message of length ' + message.length);
     const writeObj: WriteObject = {
       message,
       flags: context.flags,
@@ -577,6 +622,7 @@ export class Http2CallStream implements Call {
   }
 
   halfClose() {
+    this.trace('end() called');
     this.writesClosed = true;
     this.maybeCloseWrites();
   }

@@ -699,6 +699,18 @@ describe('Other conditions', () => {
         }
       );
     });
+
+    it('for an error message with a comma', done => {
+      client.unary(
+        { error: true, message: 'an error message, with a comma' },
+        (err: ServiceError, data: any) => {
+          assert(err);
+          assert.strictEqual(err.code, grpc.status.UNKNOWN);
+          assert.strictEqual(err.details, 'an error message, with a comma');
+          done();
+        }
+      );
+    });
   });
 });
 

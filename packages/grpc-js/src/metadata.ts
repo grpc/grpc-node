@@ -16,6 +16,8 @@
  */
 
 import * as http2 from 'http2';
+import { log } from './logging';
+import { LogVerbosity } from './constants';
 const LEGAL_KEY_REGEX = /^[0-9a-z_.-]+$/;
 const LEGAL_NON_BINARY_VALUE_REGEX = /^[ -~]*$/;
 
@@ -32,6 +34,10 @@ function isLegalNonBinaryValue(value: string): boolean {
 
 function isBinaryKey(key: string): boolean {
   return key.endsWith('-bin');
+}
+
+function isCustomMetadata(key: string): boolean {
+  return !key.startsWith('grpc-');
 }
 
 function normalizeKey(key: string): string {
@@ -258,9 +264,13 @@ export class Metadata {
               result.add(key, Buffer.from(value, 'base64'));
             });
           } else if (values !== undefined) {
-            values.split(',').forEach(v => {
-              result.add(key, Buffer.from(v.trim(), 'base64'));
-            });
+            if (isCustomMetadata(key)) {
+              values.split(',').forEach(v => {
+                result.add(key, Buffer.from(v.trim(), 'base64'));
+              });
+            } else {
+              result.add(key, Buffer.from(values, 'base64'));
+            }
           }
         } else {
           if (Array.isArray(values)) {
@@ -268,12 +278,16 @@ export class Metadata {
               result.add(key, value);
             });
           } else if (values !== undefined) {
-            values.split(',').forEach(v => result.add(key, v.trim()));
+            if (isCustomMetadata(key)) {
+              values.split(',').forEach(v => result.add(key, v.trim()));
+            } else {
+              result.add(key, values);
+            }
           }
         }
       } catch (error) {
-        error.message = `Failed to add metadata entry ${key}: ${values}. ${error.message}`;
-        process.emitWarning(error);
+        const message = `Failed to add metadata entry ${key}: ${values}. ${error.message}. For more information see https://github.com/grpc/grpc-node/issues/1173`;
+        log(LogVerbosity.ERROR, message);
       }
     });
     return result;

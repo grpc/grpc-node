@@ -22,7 +22,7 @@ import { Http2CallStream } from './call-stream';
 import { ChannelOptions } from './channel-options';
 import { PeerCertificate, checkServerIdentity } from 'tls';
 import { ConnectivityState } from './channel';
-import { BackoffTimeout } from './backoff-timeout';
+import { BackoffTimeout, BackoffOptions } from './backoff-timeout';
 import { getDefaultAuthority } from './resolver';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
@@ -170,6 +170,10 @@ export class Subchannel {
     clearTimeout(this.keepaliveIntervalId);
     this.keepaliveTimeoutId = setTimeout(() => {}, 0);
     clearTimeout(this.keepaliveTimeoutId);
+    const backoffOptions: BackoffOptions = {
+      initialDelay: options['grpc.initial_reconnect_backoff_ms'],
+      maxDelay: options['grpc.max_reconnect_backoff_ms']
+    };
     this.backoffTimeout = new BackoffTimeout(() => {
       if (this.continueConnecting) {
         this.transitionToState(
@@ -182,7 +186,7 @@ export class Subchannel {
           ConnectivityState.IDLE
         );
       }
-    });
+    }, backoffOptions);
   }
 
   /**
@@ -395,6 +399,13 @@ export class Subchannel {
   }
 
   callRef() {
+    trace(
+      this.subchannelAddress +
+        ' callRefcount ' +
+        this.callRefcount +
+        ' -> ' +
+        (this.callRefcount + 1)
+    );
     if (this.callRefcount === 0) {
       if (this.session) {
         this.session.ref();
@@ -405,6 +416,13 @@ export class Subchannel {
   }
 
   callUnref() {
+    trace(
+      this.subchannelAddress +
+        ' callRefcount ' +
+        this.callRefcount +
+        ' -> ' +
+        (this.callRefcount - 1)
+    );
     this.callRefcount -= 1;
     if (this.callRefcount === 0) {
       if (this.session) {
@@ -416,10 +434,24 @@ export class Subchannel {
   }
 
   ref() {
+    trace(
+      this.subchannelAddress +
+        ' callRefcount ' +
+        this.refcount +
+        ' -> ' +
+        (this.refcount + 1)
+    );
     this.refcount += 1;
   }
 
   unref() {
+    trace(
+      this.subchannelAddress +
+        ' callRefcount ' +
+        this.refcount +
+        ' -> ' +
+        (this.refcount - 1)
+    );
     this.refcount -= 1;
     this.checkBothRefcounts();
   }

@@ -27,8 +27,7 @@ call npm install -g node-gyp@3
 cd /d %~dp0
 cd ..\..
 
-git submodule update --init
-git submodule foreach --recursive git submodule update --init
+git submodule update --init --recursive
 
 set ARTIFACTS_OUT=artifacts
 cd packages\grpc-native-core
