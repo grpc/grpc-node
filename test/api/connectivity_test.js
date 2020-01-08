@@ -66,19 +66,19 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
     deadline.setSeconds(deadline.getSeconds() + 10);
     disconnectedClient.unary({}, {deadline: deadline}, (error, value) =>{
       assert(error);
-      assert.strictEqual(error.code, grpc.status.UNAVAILABLE);
+      assert.strictEqual(error.code, clientGrpc.status.UNAVAILABLE);
       done();
     });
   });
   it('client should wait for a connection with waitForReady on', function(done) {
     this.timeout(15000);
     const disconnectedClient = new TestServiceClient('foo.test.google.com:50051', clientGrpc.credentials.createInsecure());
-    const metadata = new grpc.Metadata({waitForReady: true});
+    const metadata = new clientGrpc.Metadata({waitForReady: true});
     const deadline = new Date();
     deadline.setSeconds(deadline.getSeconds() + 10);
     disconnectedClient.unary({}, metadata, {deadline: deadline}, (error, value) =>{
       assert(error);
-      assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
+      assert.strictEqual(error.code, clientGrpc.status.DEADLINE_EXCEEDED);
       done();
     });
   });
