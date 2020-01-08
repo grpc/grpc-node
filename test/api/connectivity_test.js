@@ -61,7 +61,7 @@ const serviceImpl = {
 describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, function() {
   it('client should not wait for ready by default', function(done) {
     this.timeout(15000);
-    const disconnectedClient = new TestServiceClient('foo.test.google.com:50051', grpc.credentials.createInsecure());
+    const disconnectedClient = new TestServiceClient('foo.test.google.com:50051', clientGrpc.credentials.createInsecure());
     const deadline = new Date();
     deadline.setSeconds(deadline.getSeconds() + 10);
     disconnectedClient.unary({}, {deadline: deadline}, (error, value) =>{
@@ -72,7 +72,7 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
   });
   it('client should wait for a connection with waitForReady on', function(done) {
     this.timeout(15000);
-    const disconnectedClient = new TestServiceClient('foo.test.google.com:50051', grpc.credentials.createInsecure());
+    const disconnectedClient = new TestServiceClient('foo.test.google.com:50051', clientGrpc.credentials.createInsecure());
     const metadata = new grpc.Metadata({waitForReady: true});
     const deadline = new Date();
     deadline.setSeconds(deadline.getSeconds() + 10);
