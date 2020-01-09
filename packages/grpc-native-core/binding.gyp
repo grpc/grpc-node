@@ -61,6 +61,7 @@
         '-Wall',
         '-Wextra',
         '-DOSATOMIC_USE_INLINED=1',
+        '-Ithird_party/abseil-cpp',
         '-Ithird_party/upb',
         '-Isrc/core/ext/upb-generated',
         '-fvisibility=hidden',
@@ -89,7 +90,7 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=1',
       'GRPC_UV',
-      'GRPC_NODE_VERSION="1.24.0-pre1"',
+      'GRPC_NODE_VERSION="1.27.0-dev"',
       'CARES_STATICLIB',
       'CARES_SYMBOL_HIDING'
     ],
@@ -186,6 +187,7 @@
               '-Wall',
               '-Wextra',
               '-DOSATOMIC_USE_INLINED=1',
+              '-Ithird_party/abseil-cpp',
               '-Ithird_party/upb',
               '-Isrc/core/ext/upb-generated',
               '-fvisibility=hidden',
@@ -195,6 +197,7 @@
               '-Wall',
               '-Wextra',
               '-DOSATOMIC_USE_INLINED=1',
+              '-Ithird_party/abseil-cpp',
               '-Ithird_party/upb',
               '-Isrc/core/ext/upb-generated',
               '-fvisibility=hidden',
@@ -271,6 +274,7 @@
             'deps/grpc/third_party/boringssl/crypto/bytestring/ber.c',
             'deps/grpc/third_party/boringssl/crypto/bytestring/cbb.c',
             'deps/grpc/third_party/boringssl/crypto/bytestring/cbs.c',
+            'deps/grpc/third_party/boringssl/crypto/bytestring/unicode.c',
             'deps/grpc/third_party/boringssl/crypto/chacha/chacha.c',
             'deps/grpc/third_party/boringssl/crypto/cipher_extra/cipher_extra.c',
             'deps/grpc/third_party/boringssl/crypto/cipher_extra/derive_key.c',
@@ -281,7 +285,6 @@
             'deps/grpc/third_party/boringssl/crypto/cipher_extra/e_null.c',
             'deps/grpc/third_party/boringssl/crypto/cipher_extra/e_rc2.c',
             'deps/grpc/third_party/boringssl/crypto/cipher_extra/e_rc4.c',
-            'deps/grpc/third_party/boringssl/crypto/cipher_extra/e_ssl3.c',
             'deps/grpc/third_party/boringssl/crypto/cipher_extra/e_tls.c',
             'deps/grpc/third_party/boringssl/crypto/cipher_extra/tls_cbc.c',
             'deps/grpc/third_party/boringssl/crypto/cmac/cmac.c',
@@ -302,7 +305,8 @@
             'deps/grpc/third_party/boringssl/crypto/dsa/dsa.c',
             'deps/grpc/third_party/boringssl/crypto/dsa/dsa_asn1.c',
             'deps/grpc/third_party/boringssl/crypto/ec_extra/ec_asn1.c',
-            'deps/grpc/third_party/boringssl/crypto/ecdh/ecdh.c',
+            'deps/grpc/third_party/boringssl/crypto/ec_extra/ec_derive.c',
+            'deps/grpc/third_party/boringssl/crypto/ecdh_extra/ecdh_extra.c',
             'deps/grpc/third_party/boringssl/crypto/ecdsa_extra/ecdsa_asn1.c',
             'deps/grpc/third_party/boringssl/crypto/engine/engine.c',
             'deps/grpc/third_party/boringssl/crypto/err/err.c',
@@ -317,14 +321,18 @@
             'deps/grpc/third_party/boringssl/crypto/evp/p_ed25519_asn1.c',
             'deps/grpc/third_party/boringssl/crypto/evp/p_rsa.c',
             'deps/grpc/third_party/boringssl/crypto/evp/p_rsa_asn1.c',
+            'deps/grpc/third_party/boringssl/crypto/evp/p_x25519.c',
+            'deps/grpc/third_party/boringssl/crypto/evp/p_x25519_asn1.c',
             'deps/grpc/third_party/boringssl/crypto/evp/pbkdf.c',
             'deps/grpc/third_party/boringssl/crypto/evp/print.c',
             'deps/grpc/third_party/boringssl/crypto/evp/scrypt.c',
             'deps/grpc/third_party/boringssl/crypto/evp/sign.c',
             'deps/grpc/third_party/boringssl/crypto/ex_data.c',
             'deps/grpc/third_party/boringssl/crypto/fipsmodule/bcm.c',
+            'deps/grpc/third_party/boringssl/crypto/fipsmodule/fips_shared_support.c',
             'deps/grpc/third_party/boringssl/crypto/fipsmodule/is_fips.c',
             'deps/grpc/third_party/boringssl/crypto/hkdf/hkdf.c',
+            'deps/grpc/third_party/boringssl/crypto/hrss/hrss.c',
             'deps/grpc/third_party/boringssl/crypto/lhash/lhash.c',
             'deps/grpc/third_party/boringssl/crypto/mem.c',
             'deps/grpc/third_party/boringssl/crypto/obj/obj.c',
@@ -355,6 +363,8 @@
             'deps/grpc/third_party/boringssl/crypto/refcount_c11.c',
             'deps/grpc/third_party/boringssl/crypto/refcount_lock.c',
             'deps/grpc/third_party/boringssl/crypto/rsa_extra/rsa_asn1.c',
+            'deps/grpc/third_party/boringssl/crypto/rsa_extra/rsa_print.c',
+            'deps/grpc/third_party/boringssl/crypto/siphash/siphash.c',
             'deps/grpc/third_party/boringssl/crypto/stack/stack.c',
             'deps/grpc/third_party/boringssl/crypto/thread.c',
             'deps/grpc/third_party/boringssl/crypto/thread_none.c',
@@ -431,6 +441,7 @@
             'deps/grpc/third_party/boringssl/crypto/x509v3/v3_int.c',
             'deps/grpc/third_party/boringssl/crypto/x509v3/v3_lib.c',
             'deps/grpc/third_party/boringssl/crypto/x509v3/v3_ncons.c',
+            'deps/grpc/third_party/boringssl/crypto/x509v3/v3_ocsp.c',
             'deps/grpc/third_party/boringssl/crypto/x509v3/v3_pci.c',
             'deps/grpc/third_party/boringssl/crypto/x509v3/v3_pcia.c',
             'deps/grpc/third_party/boringssl/crypto/x509v3/v3_pcons.c',
@@ -442,7 +453,6 @@
             'deps/grpc/third_party/boringssl/crypto/x509v3/v3_sxnet.c',
             'deps/grpc/third_party/boringssl/crypto/x509v3/v3_utl.c',
             'deps/grpc/third_party/boringssl/ssl/bio_ssl.cc',
-            'deps/grpc/third_party/boringssl/ssl/custom_extensions.cc',
             'deps/grpc/third_party/boringssl/ssl/d1_both.cc',
             'deps/grpc/third_party/boringssl/ssl/d1_lib.cc',
             'deps/grpc/third_party/boringssl/ssl/d1_pkt.cc',
@@ -664,6 +674,9 @@
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
+        'absl/container:inlined_vector',
+        'absl/strings:strings',
+        'absl/types:optional',
       ],
       'sources': [
         'deps/grpc/src/core/lib/gpr/alloc.cc',
@@ -680,7 +693,6 @@
         'deps/grpc/src/core/lib/gpr/log_linux.cc',
         'deps/grpc/src/core/lib/gpr/log_posix.cc',
         'deps/grpc/src/core/lib/gpr/log_windows.cc',
-        'deps/grpc/src/core/lib/gpr/mpscq.cc',
         'deps/grpc/src/core/lib/gpr/murmur_hash.cc',
         'deps/grpc/src/core/lib/gpr/string.cc',
         'deps/grpc/src/core/lib/gpr/string_posix.cc',
@@ -702,6 +714,7 @@
         'deps/grpc/src/core/lib/gprpp/fork.cc',
         'deps/grpc/src/core/lib/gprpp/global_config_env.cc',
         'deps/grpc/src/core/lib/gprpp/host_port.cc',
+        'deps/grpc/src/core/lib/gprpp/mpscq.cc',
         'deps/grpc/src/core/lib/gprpp/thd_posix.cc',
         'deps/grpc/src/core/lib/gprpp/thd_windows.cc',
         'deps/grpc/src/core/lib/profiling/basic_timers.cc',
@@ -721,6 +734,7 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
+        'upb',
       ],
       'sources': [
         'deps/grpc/src/core/lib/surface/init.cc',
@@ -787,6 +801,8 @@
         'deps/grpc/src/core/lib/iomgr/is_epollexclusive_available.cc',
         'deps/grpc/src/core/lib/iomgr/load_file.cc',
         'deps/grpc/src/core/lib/iomgr/lockfree_event.cc',
+        'deps/grpc/src/core/lib/iomgr/logical_thread.cc',
+        'deps/grpc/src/core/lib/iomgr/poller/eventmanager_libuv.cc',
         'deps/grpc/src/core/lib/iomgr/polling_entity.cc',
         'deps/grpc/src/core/lib/iomgr/pollset.cc',
         'deps/grpc/src/core/lib/iomgr/pollset_custom.cc',
@@ -841,7 +857,6 @@
         'deps/grpc/src/core/lib/iomgr/wakeup_fd_posix.cc',
         'deps/grpc/src/core/lib/json/json.cc',
         'deps/grpc/src/core/lib/json/json_reader.cc',
-        'deps/grpc/src/core/lib/json/json_string.cc',
         'deps/grpc/src/core/lib/json/json_writer.cc',
         'deps/grpc/src/core/lib/slice/b64.cc',
         'deps/grpc/src/core/lib/slice/percent_encoding.cc',
@@ -929,7 +944,7 @@
         'deps/grpc/src/core/lib/security/credentials/plugin/plugin_credentials.cc',
         'deps/grpc/src/core/lib/security/credentials/ssl/ssl_credentials.cc',
         'deps/grpc/src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc',
-        'deps/grpc/src/core/lib/security/credentials/tls/spiffe_credentials.cc',
+        'deps/grpc/src/core/lib/security/credentials/tls/tls_credentials.cc',
         'deps/grpc/src/core/lib/security/security_connector/alts/alts_security_connector.cc',
         'deps/grpc/src/core/lib/security/security_connector/fake/fake_security_connector.cc',
         'deps/grpc/src/core/lib/security/security_connector/load_system_roots_fallback.cc',
@@ -939,7 +954,7 @@
         'deps/grpc/src/core/lib/security/security_connector/ssl/ssl_security_connector.cc',
         'deps/grpc/src/core/lib/security/security_connector/ssl_utils.cc',
         'deps/grpc/src/core/lib/security/security_connector/ssl_utils_config.cc',
-        'deps/grpc/src/core/lib/security/security_connector/tls/spiffe_security_connector.cc',
+        'deps/grpc/src/core/lib/security/security_connector/tls/tls_security_connector.cc',
         'deps/grpc/src/core/lib/security/transport/client_auth_filter.cc',
         'deps/grpc/src/core/lib/security/transport/secure_endpoint.cc',
         'deps/grpc/src/core/lib/security/transport/security_handshaker.cc',
@@ -977,12 +992,6 @@
         'deps/grpc/src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c',
         'deps/grpc/src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c',
         'deps/grpc/src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c',
-        'deps/grpc/third_party/upb/upb/decode.c',
-        'deps/grpc/third_party/upb/upb/encode.c',
-        'deps/grpc/third_party/upb/upb/msg.c',
-        'deps/grpc/third_party/upb/upb/port.c',
-        'deps/grpc/third_party/upb/upb/table.c',
-        'deps/grpc/third_party/upb/upb/upb.c',
         'deps/grpc/src/core/tsi/transport_security.cc',
         'deps/grpc/src/core/ext/transport/chttp2/client/insecure/channel_create.cc',
         'deps/grpc/src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc',
@@ -995,7 +1004,6 @@
         'deps/grpc/src/core/ext/filters/client_channel/client_channel_channelz.cc',
         'deps/grpc/src/core/ext/filters/client_channel/client_channel_factory.cc',
         'deps/grpc/src/core/ext/filters/client_channel/client_channel_plugin.cc',
-        'deps/grpc/src/core/ext/filters/client_channel/connector.cc',
         'deps/grpc/src/core/ext/filters/client_channel/global_subchannel_pool.cc',
         'deps/grpc/src/core/ext/filters/client_channel/health/health_check_client.cc',
         'deps/grpc/src/core/ext/filters/client_channel/http_connect_handshaker.cc',
@@ -1004,7 +1012,6 @@
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy_registry.cc',
         'deps/grpc/src/core/ext/filters/client_channel/local_subchannel_pool.cc',
         'deps/grpc/src/core/ext/filters/client_channel/parse_address.cc',
-        'deps/grpc/src/core/ext/filters/client_channel/proxy_mapper.cc',
         'deps/grpc/src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver_registry.cc',
@@ -1050,10 +1057,12 @@
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc',
         'deps/grpc/src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
-        'deps/grpc/src/core/ext/filters/client_channel/lb_policy/xds/xds.cc',
-        'deps/grpc/src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc',
-        'deps/grpc/src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc',
-        'deps/grpc/src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/lb_policy/xds/cds.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/xds/xds_api.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/xds/xds_bootstrap.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/xds/xds_channel_secure.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/xds/xds_client.cc',
+        'deps/grpc/src/core/ext/filters/client_channel/xds/xds_client_stats.cc',
         'deps/grpc/src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c',
         'deps/grpc/src/core/ext/upb-generated/envoy/api/v2/cds.upb.c',
         'deps/grpc/src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c',
@@ -1072,8 +1081,10 @@
         'deps/grpc/src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c',
         'deps/grpc/src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c',
         'deps/grpc/src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c',
+        'deps/grpc/src/core/ext/upb-generated/envoy/type/http.upb.c',
         'deps/grpc/src/core/ext/upb-generated/envoy/type/percent.upb.c',
         'deps/grpc/src/core/ext/upb-generated/envoy/type/range.upb.c',
+        'deps/grpc/src/core/ext/filters/client_channel/lb_policy/xds/xds.cc',
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc',
         'deps/grpc/src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
         'deps/grpc/src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
@@ -1098,6 +1109,530 @@
         'deps/grpc/src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc',
         'deps/grpc/src/core/ext/filters/workarounds/workaround_utils.cc',
         'deps/grpc/src/core/plugin_registry/grpc_plugin_registry.cc',
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/algorithm:algorithm',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:config',
+      ],
+      'sources': [
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/base:atomic_hook',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:config',
+      ],
+      'sources': [
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/base:base',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:atomic_hook',
+        'absl/base:base_internal',
+        'absl/base:config',
+        'absl/base:core_headers',
+        'absl/base:dynamic_annotations',
+        'absl/base:log_severity',
+        'absl/base:raw_logging_internal',
+        'absl/base:spinlock_wait',
+        'absl/meta:type_traits',
+      ],
+      'sources': [
+        'deps/grpc/third_party/abseil-cpp/absl/base/internal/cycleclock.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/base/internal/spinlock.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/base/internal/sysinfo.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/base/internal/thread_identity.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc',
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/base:base_internal',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:config',
+        'absl/meta:type_traits',
+      ],
+      'sources': [
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/base:bits',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:config',
+        'absl/base:core_headers',
+      ],
+      'sources': [
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/base:config',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/base:core_headers',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:config',
+      ],
+      'sources': [
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/base:dynamic_annotations',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
+        'deps/grpc/third_party/abseil-cpp/absl/base/dynamic_annotations.cc',
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/base:endian',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:config',
+        'absl/base:core_headers',
+      ],
+      'sources': [
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/base:log_severity',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:config',
+        'absl/base:core_headers',
+      ],
+      'sources': [
+        'deps/grpc/third_party/abseil-cpp/absl/base/log_severity.cc',
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/base:raw_logging_internal',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:atomic_hook',
+        'absl/base:config',
+        'absl/base:core_headers',
+        'absl/base:log_severity',
+      ],
+      'sources': [
+        'deps/grpc/third_party/abseil-cpp/absl/base/internal/raw_logging.cc',
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/base:spinlock_wait',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:base_internal',
+        'absl/base:core_headers',
+      ],
+      'sources': [
+        'deps/grpc/third_party/abseil-cpp/absl/base/internal/spinlock_wait.cc',
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/base:throw_delegate',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:config',
+        'absl/base:raw_logging_internal',
+      ],
+      'sources': [
+        'deps/grpc/third_party/abseil-cpp/absl/base/internal/throw_delegate.cc',
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/container:compressed_tuple',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/utility:utility',
+      ],
+      'sources': [
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/container:inlined_vector',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/algorithm:algorithm',
+        'absl/base:core_headers',
+        'absl/base:throw_delegate',
+        'absl/container:inlined_vector_internal',
+        'absl/memory:memory',
+      ],
+      'sources': [
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/container:inlined_vector_internal',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:core_headers',
+        'absl/container:compressed_tuple',
+        'absl/memory:memory',
+        'absl/meta:type_traits',
+        'absl/types:span',
+      ],
+      'sources': [
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/memory:memory',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:core_headers',
+        'absl/meta:type_traits',
+      ],
+      'sources': [
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/meta:type_traits',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:config',
+      ],
+      'sources': [
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/numeric:int128',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:config',
+        'absl/base:core_headers',
+      ],
+      'sources': [
+        'deps/grpc/third_party/abseil-cpp/absl/numeric/int128.cc',
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/strings:internal',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:config',
+        'absl/base:core_headers',
+        'absl/base:endian',
+        'absl/meta:type_traits',
+      ],
+      'sources': [
+        'deps/grpc/third_party/abseil-cpp/absl/strings/internal/ostringstream.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/strings/internal/utf8.cc',
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/strings:strings',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:base',
+        'absl/base:bits',
+        'absl/base:config',
+        'absl/base:core_headers',
+        'absl/base:endian',
+        'absl/base:raw_logging_internal',
+        'absl/base:throw_delegate',
+        'absl/memory:memory',
+        'absl/meta:type_traits',
+        'absl/numeric:int128',
+        'absl/strings:internal',
+      ],
+      'sources': [
+        'deps/grpc/third_party/abseil-cpp/absl/strings/ascii.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/strings/charconv.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/strings/escaping.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/strings/internal/memutil.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/strings/match.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/strings/numbers.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/strings/str_cat.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/strings/str_replace.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/strings/str_split.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/strings/string_view.cc',
+        'deps/grpc/third_party/abseil-cpp/absl/strings/substitute.cc',
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/types:bad_optional_access',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:config',
+        'absl/base:raw_logging_internal',
+      ],
+      'sources': [
+        'deps/grpc/third_party/abseil-cpp/absl/types/bad_optional_access.cc',
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/types:optional',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:base_internal',
+        'absl/base:config',
+        'absl/base:core_headers',
+        'absl/memory:memory',
+        'absl/meta:type_traits',
+        'absl/types:bad_optional_access',
+        'absl/utility:utility',
+      ],
+      'sources': [
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/types:span',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/algorithm:algorithm',
+        'absl/base:core_headers',
+        'absl/base:throw_delegate',
+        'absl/meta:type_traits',
+      ],
+      'sources': [
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'absl/utility:utility',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'absl/base:base_internal',
+        'absl/base:config',
+        'absl/meta:type_traits',
+      ],
+      'sources': [
+      ],
+      'conditions': [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ]
+    },
+    {
+      'target_name': 'upb',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
+        'deps/grpc/third_party/upb/upb/decode.c',
+        'deps/grpc/third_party/upb/upb/encode.c',
+        'deps/grpc/third_party/upb/upb/msg.c',
+        'deps/grpc/third_party/upb/upb/port.c',
+        'deps/grpc/third_party/upb/upb/table.c',
+        'deps/grpc/third_party/upb/upb/upb.c',
       ],
       'conditions': [
         ['OS == "mac"', {
