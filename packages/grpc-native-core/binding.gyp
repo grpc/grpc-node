@@ -674,9 +674,9 @@
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/container:inlined_vector',
-        'absl/strings:strings',
-        'absl/types:optional',
+        'absl/container_inlined_vector',
+        'absl/strings_strings',
+        'absl/types_optional',
       ],
       'sources': [
         'deps/grpc/src/core/lib/gpr/alloc.cc',
@@ -1119,11 +1119,11 @@
       ]
     },
     {
-      'target_name': 'absl/algorithm:algorithm',
+      'target_name': 'absl/algorithm_algorithm',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:config',
+        'absl/base_config',
       ],
       'sources': [
       ],
@@ -1136,11 +1136,11 @@
       ]
     },
     {
-      'target_name': 'absl/base:atomic_hook',
+      'target_name': 'absl/base_atomic_hook',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:config',
+        'absl/base_config',
       ],
       'sources': [
       ],
@@ -1153,19 +1153,19 @@
       ]
     },
     {
-      'target_name': 'absl/base:base',
+      'target_name': 'absl/base_base',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:atomic_hook',
-        'absl/base:base_internal',
-        'absl/base:config',
-        'absl/base:core_headers',
-        'absl/base:dynamic_annotations',
-        'absl/base:log_severity',
-        'absl/base:raw_logging_internal',
-        'absl/base:spinlock_wait',
-        'absl/meta:type_traits',
+        'absl/base_atomic_hook',
+        'absl/base_base_internal',
+        'absl/base_config',
+        'absl/base_core_headers',
+        'absl/base_dynamic_annotations',
+        'absl/base_log_severity',
+        'absl/base_raw_logging_internal',
+        'absl/base_spinlock_wait',
+        'absl/meta_type_traits',
       ],
       'sources': [
         'deps/grpc/third_party/abseil-cpp/absl/base/internal/cycleclock.cc',
@@ -1183,12 +1183,12 @@
       ]
     },
     {
-      'target_name': 'absl/base:base_internal',
+      'target_name': 'absl/base_base_internal',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:config',
-        'absl/meta:type_traits',
+        'absl/base_config',
+        'absl/meta_type_traits',
       ],
       'sources': [
       ],
@@ -1201,12 +1201,12 @@
       ]
     },
     {
-      'target_name': 'absl/base:bits',
+      'target_name': 'absl/base_bits',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:config',
-        'absl/base:core_headers',
+        'absl/base_config',
+        'absl/base_core_headers',
       ],
       'sources': [
       ],
@@ -1219,7 +1219,7 @@
       ]
     },
     {
-      'target_name': 'absl/base:config',
+      'target_name': 'absl/base_config',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
@@ -1235,11 +1235,11 @@
       ]
     },
     {
-      'target_name': 'absl/base:core_headers',
+      'target_name': 'absl/base_core_headers',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:config',
+        'absl/base_config',
       ],
       'sources': [
       ],
@@ -1252,7 +1252,7 @@
       ]
     },
     {
-      'target_name': 'absl/base:dynamic_annotations',
+      'target_name': 'absl/base_dynamic_annotations',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
@@ -1269,12 +1269,12 @@
       ]
     },
     {
-      'target_name': 'absl/base:endian',
+      'target_name': 'absl/base_endian',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:config',
-        'absl/base:core_headers',
+        'absl/base_config',
+        'absl/base_core_headers',
       ],
       'sources': [
       ],
@@ -1287,12 +1287,12 @@
       ]
     },
     {
-      'target_name': 'absl/base:log_severity',
+      'target_name': 'absl/base_log_severity',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:config',
-        'absl/base:core_headers',
+        'absl/base_config',
+        'absl/base_core_headers',
       ],
       'sources': [
         'deps/grpc/third_party/abseil-cpp/absl/base/log_severity.cc',
@@ -1306,14 +1306,14 @@
       ]
     },
     {
-      'target_name': 'absl/base:raw_logging_internal',
+      'target_name': 'absl/base_raw_logging_internal',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:atomic_hook',
-        'absl/base:config',
-        'absl/base:core_headers',
-        'absl/base:log_severity',
+        'absl/base_atomic_hook',
+        'absl/base_config',
+        'absl/base_core_headers',
+        'absl/base_log_severity',
       ],
       'sources': [
         'deps/grpc/third_party/abseil-cpp/absl/base/internal/raw_logging.cc',
@@ -1327,12 +1327,12 @@
       ]
     },
     {
-      'target_name': 'absl/base:spinlock_wait',
+      'target_name': 'absl/base_spinlock_wait',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:base_internal',
-        'absl/base:core_headers',
+        'absl/base_base_internal',
+        'absl/base_core_headers',
       ],
       'sources': [
         'deps/grpc/third_party/abseil-cpp/absl/base/internal/spinlock_wait.cc',
@@ -1346,12 +1346,12 @@
       ]
     },
     {
-      'target_name': 'absl/base:throw_delegate',
+      'target_name': 'absl/base_throw_delegate',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:config',
-        'absl/base:raw_logging_internal',
+        'absl/base_config',
+        'absl/base_raw_logging_internal',
       ],
       'sources': [
         'deps/grpc/third_party/abseil-cpp/absl/base/internal/throw_delegate.cc',
@@ -1365,11 +1365,11 @@
       ]
     },
     {
-      'target_name': 'absl/container:compressed_tuple',
+      'target_name': 'absl/container_compressed_tuple',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/utility:utility',
+        'absl/utility_utility',
       ],
       'sources': [
       ],
@@ -1382,15 +1382,15 @@
       ]
     },
     {
-      'target_name': 'absl/container:inlined_vector',
+      'target_name': 'absl/container_inlined_vector',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/algorithm:algorithm',
-        'absl/base:core_headers',
-        'absl/base:throw_delegate',
-        'absl/container:inlined_vector_internal',
-        'absl/memory:memory',
+        'absl/algorithm_algorithm',
+        'absl/base_core_headers',
+        'absl/base_throw_delegate',
+        'absl/container_inlined_vector_internal',
+        'absl/memory_memory',
       ],
       'sources': [
       ],
@@ -1403,15 +1403,15 @@
       ]
     },
     {
-      'target_name': 'absl/container:inlined_vector_internal',
+      'target_name': 'absl/container_inlined_vector_internal',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:core_headers',
-        'absl/container:compressed_tuple',
-        'absl/memory:memory',
-        'absl/meta:type_traits',
-        'absl/types:span',
+        'absl/base_core_headers',
+        'absl/container_compressed_tuple',
+        'absl/memory_memory',
+        'absl/meta_type_traits',
+        'absl/types_span',
       ],
       'sources': [
       ],
@@ -1424,12 +1424,12 @@
       ]
     },
     {
-      'target_name': 'absl/memory:memory',
+      'target_name': 'absl/memory_memory',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:core_headers',
-        'absl/meta:type_traits',
+        'absl/base_core_headers',
+        'absl/meta_type_traits',
       ],
       'sources': [
       ],
@@ -1442,11 +1442,11 @@
       ]
     },
     {
-      'target_name': 'absl/meta:type_traits',
+      'target_name': 'absl/meta_type_traits',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:config',
+        'absl/base_config',
       ],
       'sources': [
       ],
@@ -1459,12 +1459,12 @@
       ]
     },
     {
-      'target_name': 'absl/numeric:int128',
+      'target_name': 'absl/numeric_int128',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:config',
-        'absl/base:core_headers',
+        'absl/base_config',
+        'absl/base_core_headers',
       ],
       'sources': [
         'deps/grpc/third_party/abseil-cpp/absl/numeric/int128.cc',
@@ -1478,14 +1478,14 @@
       ]
     },
     {
-      'target_name': 'absl/strings:internal',
+      'target_name': 'absl/strings_internal',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:config',
-        'absl/base:core_headers',
-        'absl/base:endian',
-        'absl/meta:type_traits',
+        'absl/base_config',
+        'absl/base_core_headers',
+        'absl/base_endian',
+        'absl/meta_type_traits',
       ],
       'sources': [
         'deps/grpc/third_party/abseil-cpp/absl/strings/internal/ostringstream.cc',
@@ -1500,21 +1500,21 @@
       ]
     },
     {
-      'target_name': 'absl/strings:strings',
+      'target_name': 'absl/strings_strings',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:base',
-        'absl/base:bits',
-        'absl/base:config',
-        'absl/base:core_headers',
-        'absl/base:endian',
-        'absl/base:raw_logging_internal',
-        'absl/base:throw_delegate',
-        'absl/memory:memory',
-        'absl/meta:type_traits',
-        'absl/numeric:int128',
-        'absl/strings:internal',
+        'absl/base_base',
+        'absl/base_bits',
+        'absl/base_config',
+        'absl/base_core_headers',
+        'absl/base_endian',
+        'absl/base_raw_logging_internal',
+        'absl/base_throw_delegate',
+        'absl/memory_memory',
+        'absl/meta_type_traits',
+        'absl/numeric_int128',
+        'absl/strings_internal',
       ],
       'sources': [
         'deps/grpc/third_party/abseil-cpp/absl/strings/ascii.cc',
@@ -1540,12 +1540,12 @@
       ]
     },
     {
-      'target_name': 'absl/types:bad_optional_access',
+      'target_name': 'absl/types_bad_optional_access',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:config',
-        'absl/base:raw_logging_internal',
+        'absl/base_config',
+        'absl/base_raw_logging_internal',
       ],
       'sources': [
         'deps/grpc/third_party/abseil-cpp/absl/types/bad_optional_access.cc',
@@ -1559,17 +1559,17 @@
       ]
     },
     {
-      'target_name': 'absl/types:optional',
+      'target_name': 'absl/types_optional',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:base_internal',
-        'absl/base:config',
-        'absl/base:core_headers',
-        'absl/memory:memory',
-        'absl/meta:type_traits',
-        'absl/types:bad_optional_access',
-        'absl/utility:utility',
+        'absl/base_base_internal',
+        'absl/base_config',
+        'absl/base_core_headers',
+        'absl/memory_memory',
+        'absl/meta_type_traits',
+        'absl/types_bad_optional_access',
+        'absl/utility_utility',
       ],
       'sources': [
       ],
@@ -1582,14 +1582,14 @@
       ]
     },
     {
-      'target_name': 'absl/types:span',
+      'target_name': 'absl/types_span',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/algorithm:algorithm',
-        'absl/base:core_headers',
-        'absl/base:throw_delegate',
-        'absl/meta:type_traits',
+        'absl/algorithm_algorithm',
+        'absl/base_core_headers',
+        'absl/base_throw_delegate',
+        'absl/meta_type_traits',
       ],
       'sources': [
       ],
@@ -1602,13 +1602,13 @@
       ]
     },
     {
-      'target_name': 'absl/utility:utility',
+      'target_name': 'absl/utility_utility',
       'product_prefix': 'lib',
       'type': 'static_library',
       'dependencies': [
-        'absl/base:base_internal',
-        'absl/base:config',
-        'absl/meta:type_traits',
+        'absl/base_base_internal',
+        'absl/base_config',
+        'absl/meta_type_traits',
       ],
       'sources': [
       ],

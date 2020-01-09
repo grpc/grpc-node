@@ -332,12 +332,12 @@
       % for lib in libs:
       % if lib.name == core.name or (lib.name in core.transitive_deps and lib.name not in ('boringssl', 'z')):
       {
-        'target_name': '${lib.name}',
+        'target_name': '${lib.name.replace(':', '_')}',
         'product_prefix': 'lib',
         'type': 'static_library',
         'dependencies': [
           % for dep in getattr(lib, 'deps', []):
-          '${dep}',
+          '${dep.replace(':', '_')}',
           % endfor
         ],
         'sources': [
