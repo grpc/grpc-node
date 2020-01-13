@@ -562,5 +562,131 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
           });
         });
       });
-  });
+    });
+    describe('Other conditions', function() {
+      var client;
+      var server;
+      var port;
+      before(function(done) {
+        server = new serverGrpc.Server();
+        var existing_metadata = new serverGrpc.Metadata();
+        existing_metadata.add('existing-metadata', 'yes');
+        server.addService(TestServiceClient.service, {
+          unary: function(call, cb) {
+            var req = call.request;
+            if (req.error) {
+              var message = 'Requested error';
+              if (req.message) {
+                message = req.message;
+              }
+              cb({code: serverGrpc.status.UNKNOWN,
+                  message: message,
+                  metadata: existing_metadata}, null, null);
+            } else {
+              cb(null, {count: 1});
+            }
+          }/*,
+          clientStream: function(stream, cb){
+            var count = 0;
+            var errored;
+            stream.on('data', function(data) {
+              if (data.error) {
+                var message = 'Requested error';
+                if (data.message) {
+                  message = data.message;
+                }
+                errored = true;
+                cb(new Error(message), null, trailer_metadata);
+              } else {
+                count += 1;
+              }
+            });
+            stream.on('end', function() {
+              if (!errored) {
+                cb(null, {count: count}, trailer_metadata);
+              }
+            });
+          },
+          serverStream: function(stream) {
+            var req = stream.request;
+            if (req.error) {
+              var message = 'Requested error';
+              if (req.message) {
+                message = req.message;
+              }
+              var err = {code: serverGrpc.status.UNKNOWN,
+                        details: message};
+              err.metadata = trailer_metadata;
+              stream.emit('error', err);
+            } else {
+              for (var i = 0; i < 5; i++) {
+                stream.write({count: i});
+              }
+              stream.end(trailer_metadata);
+            }
+          },
+          bidiStream: function(stream) {
+            var count = 0;
+            stream.on('data', function(data) {
+              if (data.error) {
+                var message = 'Requested error';
+                if (data.message) {
+                  message = data.message;
+                }
+                var err = new Error(message);
+                err.metadata = trailer_metadata.clone();
+                err.metadata.add('count', '' + count);
+                stream.emit('error', err);
+              } else {
+                stream.write({count: count});
+                count += 1;
+              }
+            });
+            stream.on('end', function() {
+              stream.end(trailer_metadata);
+            });
+          }
+        */});
+        server.bindAsync('localhost:0', serverInsecureCreds, (err, _port) => {
+          assert.ifError(err);
+          port = _port;
+          client = new TestServiceClient('localhost:' + port, clientInsecureCreds);
+          server.start();
+          done();
+        });
+      });
+      after(function() {
+        server.forceShutdown();
+      });
+      describe('Existing metadata', function() {
+        it('should not be present when a unary call succeeds', function(done) {
+          var call = client.unary({error: false}, function(err, data) {
+            assert.ifError(err);
+          });
+          call.on('status', function(status) {
+            assert.true(status.metadata.get('existing-metadata', []));
+            done();
+          });
+        });
+        it('should be present when a unary call fails', function(done) {
+          var call = client.unary({error: true}, function(err, data) {
+            assert(err);
+          });
+          call.on('status', function(status) {
+            assert.deepEqual(status.metadata.get('existing-metadata'), ['yes']);
+            done();
+          });
+        });
+      });
+      describe('Error object should contain the status', function() {
+        it('for a unary call', function(done) {
+          client.unary({error: true}, function(err, data) {
+            assert(err);
+            assert.strictEqual(err.code, clientGrpc.status.UNKNOWN);
+            assert.strictEqual(err.details, 'Requested error');
+            done();
+          });
+        });
+      });
+    });
 });
