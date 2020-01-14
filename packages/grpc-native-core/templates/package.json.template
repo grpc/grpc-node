@@ -24,7 +24,7 @@
       "build": "node-pre-gyp build",
       "electron-build": "node-pre-gyp configure build --runtime=electron --disturl=https://atom.io/download/atom-shell",
       "coverage": "istanbul cover ./node_modules/.bin/_mocha test",
-      "install": "node-pre-gyp install --fallback-to-build --library=static_library",
+      "install": "node-pre-gyp install --fallback-to-build --library=static_library --no-duplicate-basename-check",
       "prepack": "git submodule update --init --recursive && npm install"
     },
     "bundledDependencies": [
