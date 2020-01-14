@@ -664,7 +664,7 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
             assert.ifError(err);
           });
           call.on('status', function(status) {
-            assert.true(status.metadata.get('existing-metadata', []));
+            assert.deepStrictEqual(status.metadata.get('existing-metadata'), []);
             done();
           });
         });
