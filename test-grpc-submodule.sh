@@ -15,6 +15,8 @@
 #
 # This script updates the gRPC submodule to a given reference and run tests
 
+set -ex
+
 # cd to gRPC-node root directory
 cd $(dirname $0)
 
@@ -22,6 +24,7 @@ cd packages/grpc-native-core/deps/grpc/
 
 # PR references are needed to test PRs from grpc/grpc
 git fetch --tags --progress https://github.com/grpc/grpc.git +refs/pull/*:refs/remotes/origin/pr/*
+rm -rf third_party/upb
 git checkout $@
 git submodule update --init
 cd ../../../..
