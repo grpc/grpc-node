@@ -26,6 +26,8 @@ import { BackoffTimeout, BackoffOptions } from './backoff-timeout';
 import { getDefaultAuthority } from './resolver';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
+import { Socket } from 'net';
+import { shouldUseProxy, getProxiedConnection } from './http_proxy';
 
 const { version: clientVersion } = require('../../package.json');
 
@@ -224,9 +226,12 @@ export class Subchannel {
     clearTimeout(this.keepaliveTimeoutId);
   }
 
-  private startConnectingInternal() {
+  private createSession(socket?: Socket) {
     const connectionOptions: http2.SecureClientSessionOptions =
       this.credentials._getConnectionOptions() || {};
+    if (socket) {
+      connectionOptions.socket = socket;
+    }
     let addressScheme = 'http://';
     if ('secureContext' in connectionOptions) {
       addressScheme = 'https://';
@@ -311,6 +316,18 @@ export class Subchannel {
       /* Do nothing here. Any error should also trigger a close event, which is
        * where we want to handle that.  */
     });
+  }
+
+  private startConnectingInternal() {
+    if (shouldUseProxy(this.channelTarget)) {
+      getProxiedConnection(this.channelTarget, this.subchannelAddress).then((socket) => {
+        this.createSession(socket);
+      }, (reason) => {
+        this.transitionToState([ConnectivityState.CONNECTING], ConnectivityState.TRANSIENT_FAILURE);
+      });
+    } else {
+      this.createSession();
+    }
   }
 
   /**
