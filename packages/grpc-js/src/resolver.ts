@@ -19,6 +19,7 @@ import { ServiceError } from './call';
 import { ServiceConfig } from './service-config';
 import * as resolver_dns from './resolver-dns';
 import * as resolver_uds from './resolver-uds';
+import * as resolver_named_pipe from './resolver-named-pipe';
 import { StatusObject } from './call-stream';
 
 /**
@@ -162,4 +163,5 @@ export function isIPC(target: string): boolean {
 export function registerAll() {
   resolver_dns.setup();
   resolver_uds.setup();
+  resolver_named_pipe.setup();
 }
