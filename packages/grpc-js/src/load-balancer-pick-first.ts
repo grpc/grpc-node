@@ -30,7 +30,11 @@ import {
   UnavailablePicker,
 } from './picker';
 import { LoadBalancingConfig } from './load-balancing-config';
-import { Subchannel, ConnectivityStateListener, SubchannelAddress } from './subchannel';
+import {
+  Subchannel,
+  ConnectivityStateListener,
+  SubchannelAddress,
+} from './subchannel';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 

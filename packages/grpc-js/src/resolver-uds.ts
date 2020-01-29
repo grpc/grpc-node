@@ -37,7 +37,7 @@ function getUdsName(target: string): string {
 class UdsResolver implements Resolver {
   private addresses: SubchannelAddress[] = [];
   constructor(target: string, private listener: ResolverListener) {
-    this.addresses = [{path: getUdsName(target)}];
+    this.addresses = [{ path: getUdsName(target) }];
   }
   updateResolution(): void {
     process.nextTick(

@@ -131,7 +131,7 @@ function parseIP(target: string): SubchannelAddress[] | null {
   } else {
     port = DEFAULT_PORT;
   }
-  return [{host: addr, port: +port}];
+  return [{ host: addr, port: +port }];
 }
 
 /**
@@ -223,8 +223,9 @@ class DnsResolver implements Resolver {
       this.pendingResultPromise.then(
         ([addressList, txtRecord]) => {
           this.pendingResultPromise = null;
-          const ip4Addresses: dns.LookupAddress[] = addressList
-            .filter(addr => addr.family === 4);
+          const ip4Addresses: dns.LookupAddress[] = addressList.filter(
+            addr => addr.family === 4
+          );
           let ip6Addresses: dns.LookupAddress[];
           if (semver.satisfies(process.version, IPV6_SUPPORT_RANGE)) {
             ip6Addresses = addressList.filter(addr => addr.family === 6);
@@ -234,10 +235,16 @@ class DnsResolver implements Resolver {
           const allAddresses: SubchannelAddress[] = mergeArrays(
             ip4Addresses,
             ip6Addresses
-          ).map(addr => {return {host: addr.address, port: +this.port!};});
-          const allAddressesString: string = '[' + allAddresses.map(addr => addr.host + ':' + addr.port).join(',') + ']';
+          ).map(addr => ({ host: addr.address, port: +this.port! }));
+          const allAddressesString: string =
+            '[' +
+            allAddresses.map(addr => addr.host + ':' + addr.port).join(',') +
+            ']';
           trace(
-            'Resolved addresses for target ' + this.target + ': ' + allAddressesString
+            'Resolved addresses for target ' +
+              this.target +
+              ': ' +
+              allAddressesString
           );
           if (allAddresses.length === 0) {
             this.listener.onError(this.defaultResolutionError);

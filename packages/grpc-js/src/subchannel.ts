@@ -86,8 +86,15 @@ export interface SubchannelAddress {
   path?: string;
 }
 
-export function subchannelAddressEqual(address1: SubchannelAddress, address2: SubchannelAddress) : boolean {
-  return address1.port === address2.port && address1.host === address2.host && address1.path === address2.path;
+export function subchannelAddressEqual(
+  address1: SubchannelAddress,
+  address2: SubchannelAddress
+): boolean {
+  return (
+    address1.port === address2.port &&
+    address1.host === address2.host &&
+    address1.path === address2.path
+  );
 }
 
 export class Subchannel {
@@ -194,7 +201,7 @@ export class Subchannel {
     clearTimeout(this.keepaliveTimeoutId);
     const backoffOptions: BackoffOptions = {
       initialDelay: options['grpc.initial_reconnect_backoff_ms'],
-      maxDelay: options['grpc.max_reconnect_backoff_ms']
+      maxDelay: options['grpc.max_reconnect_backoff_ms'],
     };
     this.backoffTimeout = new BackoffTimeout(() => {
       if (this.continueConnecting) {
@@ -276,7 +283,10 @@ export class Subchannel {
         connectionOptions.servername = getDefaultAuthority(this.channelTarget);
       }
     }
-    connectionOptions = Object.assign(connectionOptions, this.subchannelAddress);
+    connectionOptions = Object.assign(
+      connectionOptions,
+      this.subchannelAddress
+    );
     /* http2.connect uses the options here:
      * https://github.com/nodejs/node/blob/70c32a6d190e2b5d7b9ff9d5b6a459d14e8b7d59/lib/internal/http2/core.js#L3028-L3036
      * The spread operator overides earlier values with later ones, so any port

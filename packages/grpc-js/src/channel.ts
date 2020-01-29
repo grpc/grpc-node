@@ -143,7 +143,9 @@ export class ChannelImplementation implements Channel {
   ) {
     /* The global boolean parameter to getSubchannelPool has the inverse meaning to what
      * the grpc.use_local_subchannel_pool channel option means. */
-    this.subchannelPool = getSubchannelPool((options['grpc.use_local_subchannel_pool'] ?? 0) === 0);
+    this.subchannelPool = getSubchannelPool(
+      (options['grpc.use_local_subchannel_pool'] ?? 0) === 0
+    );
     const channelControlHelper: ChannelControlHelper = {
       createSubchannel: (
         subchannelAddress: SubchannelAddress,

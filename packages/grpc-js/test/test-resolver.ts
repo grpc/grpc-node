@@ -38,7 +38,11 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
-          assert(addressList.some(addr => addr.host === '127.0.0.1' && addr.port === 50051));
+          assert(
+            addressList.some(
+              addr => addr.host === '127.0.0.1' && addr.port === 50051
+            )
+          );
           // We would check for the IPv6 address but it needs to be omitted on some Node versions
           done();
         },
@@ -57,7 +61,11 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
-          assert(addressList.some(addr => addr.host === '127.0.0.1' && addr.port === 443));
+          assert(
+            addressList.some(
+              addr => addr.host === '127.0.0.1' && addr.port === 443
+            )
+          );
           // We would check for the IPv6 address but it needs to be omitted on some Node versions
           done();
         },
@@ -76,7 +84,11 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
-          assert(addressList.some(addr => addr.host === '1.2.3.4' && addr.port === 443));
+          assert(
+            addressList.some(
+              addr => addr.host === '1.2.3.4' && addr.port === 443
+            )
+          );
           // We would check for the IPv6 address but it needs to be omitted on some Node versions
           done();
         },
@@ -95,7 +107,9 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
-          assert(addressList.some(addr => addr.host === '::1' && addr.port === 443));
+          assert(
+            addressList.some(addr => addr.host === '::1' && addr.port === 443)
+          );
           // We would check for the IPv6 address but it needs to be omitted on some Node versions
           done();
         },
@@ -114,7 +128,9 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
-          assert(addressList.some(addr => addr.host === '::1' && addr.port === 50051));
+          assert(
+            addressList.some(addr => addr.host === '::1' && addr.port === 50051)
+          );
           // We would check for the IPv6 address but it needs to be omitted on some Node versions
           done();
         },
@@ -223,7 +239,7 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
-          assert(addressList.some(addr => addr.path = 'socket'));
+          assert(addressList.some(addr => (addr.path = 'socket')));
           done();
         },
         onError: (error: StatusObject) => {
@@ -241,7 +257,7 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
-          assert(addressList.some(addr => addr.path = '/tmp/socket'));
+          assert(addressList.some(addr => (addr.path = '/tmp/socket')));
           done();
         },
         onError: (error: StatusObject) => {

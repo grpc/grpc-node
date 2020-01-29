@@ -30,7 +30,11 @@ import {
   UnavailablePicker,
 } from './picker';
 import { LoadBalancingConfig } from './load-balancing-config';
-import { Subchannel, ConnectivityStateListener, SubchannelAddress } from './subchannel';
+import {
+  Subchannel,
+  ConnectivityStateListener,
+  SubchannelAddress,
+} from './subchannel';
 
 const TYPE_NAME = 'round_robin';
 

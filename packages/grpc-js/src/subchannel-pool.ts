@@ -16,7 +16,11 @@
  */
 
 import { ChannelOptions, channelOptionsEqual } from './channel-options';
-import { Subchannel, SubchannelAddress, subchannelAddressEqual } from './subchannel';
+import {
+  Subchannel,
+  SubchannelAddress,
+  subchannelAddressEqual,
+} from './subchannel';
 import { ChannelCredentials } from './channel-credentials';
 
 // 10 seconds in milliseconds. This value is arbitrary.
@@ -72,8 +76,8 @@ export class SubchannelPool {
       }
 
       /* For each subchannel in the pool, try to unref it if it has
-        * exactly one ref (which is the ref from the pool itself). If that
-        * does happen, remove the subchannel from the pool */
+       * exactly one ref (which is the ref from the pool itself). If that
+       * does happen, remove the subchannel from the pool */
       this.pool[channelTarget] = refedSubchannels;
     }
     /* Currently we do not delete keys with empty values. If that results
@@ -120,7 +124,10 @@ export class SubchannelPool {
       const subchannelObjArray = this.pool[channelTarget];
       for (const subchannelObj of subchannelObjArray) {
         if (
-          subchannelAddressEqual(subchannelTarget, subchannelObj.subchannelAddress) &&
+          subchannelAddressEqual(
+            subchannelTarget,
+            subchannelObj.subchannelAddress
+          ) &&
           channelOptionsEqual(
             channelArguments,
             subchannelObj.channelArguments
