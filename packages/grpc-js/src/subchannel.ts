@@ -16,6 +16,7 @@
  */
 
 import * as http2 from 'http2';
+import * as net from 'net';
 import { ChannelCredentials } from './channel-credentials';
 import { Metadata } from './metadata';
 import { Http2CallStream } from './call-stream';
@@ -23,7 +24,7 @@ import { ChannelOptions } from './channel-options';
 import { PeerCertificate, checkServerIdentity } from 'tls';
 import { ConnectivityState } from './channel';
 import { BackoffTimeout, BackoffOptions } from './backoff-timeout';
-import { getDefaultAuthority } from './resolver';
+import { getDefaultAuthority, isIPC } from './resolver';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 
@@ -248,6 +249,13 @@ export class Subchannel {
         connectionOptions.servername = getDefaultAuthority(this.channelTarget);
       }
     }
+
+    const shouldCreateIPCConnection = isIPC(this.channelTarget);
+    if (shouldCreateIPCConnection) {
+      connectionOptions.createConnection = () =>
+        net.createConnection({ path: this.subchannelAddress });
+    }
+
     const session = http2.connect(
       addressScheme + this.subchannelAddress,
       connectionOptions

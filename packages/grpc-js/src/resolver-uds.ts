@@ -50,6 +50,10 @@ class UdsResolver implements Resolver {
   static getDefaultAuthority(target: string): string {
     return 'localhost';
   }
+
+  static isIPC(): boolean {
+    return true;
+  }
 }
 
 export function setup() {

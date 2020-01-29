@@ -260,6 +260,10 @@ describe('Name Resolver', () => {
       static getDefaultAuthority(target: string): string {
         return 'other';
       }
+
+      static isIPC(): boolean {
+        return false;
+      }
     }
 
     it('Should return the correct authority if a different resolver has been registered', () => {

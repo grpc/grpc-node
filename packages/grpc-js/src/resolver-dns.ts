@@ -312,6 +312,10 @@ class DnsResolver implements Resolver {
     }
     throw new Error(`Failed to parse target ${target}`);
   }
+
+  static isIPC(): boolean {
+    return false;
+  }
 }
 
 /**

@@ -70,6 +70,12 @@ export interface ResolverConstructor {
    * @param target
    */
   getDefaultAuthority(target: string): string;
+
+  /**
+   * Returns wheter or not the connection should be an IPC connection. Throws an error if
+   * no registered name resolver can parse that target string.
+   */
+  isIPC(): boolean;
 }
 
 const registeredResolvers: { [prefix: string]: ResolverConstructor } = {};
@@ -132,6 +138,23 @@ export function getDefaultAuthority(target: string): string {
   }
   if (defaultResolver !== null) {
     return defaultResolver.getDefaultAuthority(target);
+  }
+  throw new Error(`Invalid target ${target}`);
+}
+
+/**
+ * Returns wheter or not the connection should be an IPC connection. Throws an error if
+ * no registered name resolver can parse that target string.
+ * @param target
+ */
+export function isIPC(target: string): boolean {
+  for (const prefix of Object.keys(registeredResolvers)) {
+    if (target.startsWith(prefix)) {
+      return registeredResolvers[prefix].isIPC();
+    }
+  }
+  if (defaultResolver !== null) {
+    return defaultResolver.isIPC();
   }
   throw new Error(`Invalid target ${target}`);
 }
