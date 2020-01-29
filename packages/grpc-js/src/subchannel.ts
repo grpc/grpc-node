@@ -263,7 +263,6 @@ export class Subchannel {
       this.credentials._getConnectionOptions() || {};
     let addressScheme = 'http://';
     if ('secureContext' in connectionOptions) {
-      connectionOptions.protocol = 'https:';
       addressScheme = 'https://';
       // If provided, the value of grpc.ssl_target_name_override should be used
       // to override the target hostname when checking server identity.
