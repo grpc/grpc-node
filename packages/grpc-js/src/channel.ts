@@ -38,6 +38,7 @@ import { getDefaultAuthority } from './resolver';
 import { LoadBalancingConfig } from './load-balancing-config';
 import { ServiceConfig, validateServiceConfig } from './service-config';
 import { trace } from './logging';
+import { SubchannelAddress } from './subchannel';
 
 export enum ConnectivityState {
   CONNECTING,
@@ -145,7 +146,7 @@ export class ChannelImplementation implements Channel {
     this.subchannelPool = getSubchannelPool((options['grpc.use_local_subchannel_pool'] ?? 0) === 0);
     const channelControlHelper: ChannelControlHelper = {
       createSubchannel: (
-        subchannelAddress: string,
+        subchannelAddress: SubchannelAddress,
         subchannelArgs: ChannelOptions
       ) => {
         return this.subchannelPool.getOrCreateSubchannel(

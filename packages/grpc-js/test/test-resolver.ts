@@ -21,6 +21,7 @@ import * as assert from 'assert';
 import * as resolverManager from '../src/resolver';
 import { ServiceConfig } from '../src/service-config';
 import { StatusObject } from '../src/call-stream';
+import { SubchannelAddress } from '../src/subchannel';
 
 describe('Name Resolver', () => {
   describe('DNS Names', function() {
@@ -33,11 +34,11 @@ describe('Name Resolver', () => {
       const target = 'localhost:50051';
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: string[],
+          addressList: SubchannelAddress[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
-          assert(addressList.includes('127.0.0.1:50051'));
+          assert(addressList.some(addr => addr.host === '127.0.0.1' && addr.port === 50051));
           // We would check for the IPv6 address but it needs to be omitted on some Node versions
           done();
         },
@@ -52,11 +53,11 @@ describe('Name Resolver', () => {
       const target = 'localhost';
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: string[],
+          addressList: SubchannelAddress[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
-          assert(addressList.includes('127.0.0.1:443'));
+          assert(addressList.some(addr => addr.host === '127.0.0.1' && addr.port === 443));
           // We would check for the IPv6 address but it needs to be omitted on some Node versions
           done();
         },
@@ -71,11 +72,11 @@ describe('Name Resolver', () => {
       const target = '1.2.3.4';
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: string[],
+          addressList: SubchannelAddress[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
-          assert(addressList.includes('1.2.3.4:443'));
+          assert(addressList.some(addr => addr.host === '1.2.3.4' && addr.port === 443));
           // We would check for the IPv6 address but it needs to be omitted on some Node versions
           done();
         },
@@ -90,11 +91,11 @@ describe('Name Resolver', () => {
       const target = '::1';
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: string[],
+          addressList: SubchannelAddress[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
-          assert(addressList.includes('[::1]:443'));
+          assert(addressList.some(addr => addr.host === '::1' && addr.port === 443));
           // We would check for the IPv6 address but it needs to be omitted on some Node versions
           done();
         },
@@ -109,11 +110,11 @@ describe('Name Resolver', () => {
       const target = '[::1]:50051';
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: string[],
+          addressList: SubchannelAddress[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
-          assert(addressList.includes('[::1]:50051'));
+          assert(addressList.some(addr => addr.host === '::1' && addr.port === 50051));
           // We would check for the IPv6 address but it needs to be omitted on some Node versions
           done();
         },
@@ -128,7 +129,7 @@ describe('Name Resolver', () => {
       const target = 'example.com';
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: string[],
+          addressList: SubchannelAddress[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
@@ -146,7 +147,7 @@ describe('Name Resolver', () => {
       const target = 'loopback4.unittest.grpc.io';
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: string[],
+          addressList: SubchannelAddress[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
@@ -166,7 +167,7 @@ describe('Name Resolver', () => {
       const target = 'network-tools.com';
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: string[],
+          addressList: SubchannelAddress[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
@@ -196,7 +197,7 @@ describe('Name Resolver', () => {
       const target2 = 'grpc-test4.sandbox.googleapis.com';
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: string[],
+          addressList: SubchannelAddress[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
@@ -218,11 +219,11 @@ describe('Name Resolver', () => {
       const target = 'unix:socket';
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: string[],
+          addressList: SubchannelAddress[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
-          assert(addressList.includes('socket'));
+          assert(addressList.some(addr => addr.path = 'socket'));
           done();
         },
         onError: (error: StatusObject) => {
@@ -236,11 +237,11 @@ describe('Name Resolver', () => {
       const target = 'unix:///tmp/socket';
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: string[],
+          addressList: SubchannelAddress[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
-          assert(addressList.includes('/tmp/socket'));
+          assert(addressList.some(addr => addr.path = '/tmp/socket'));
           done();
         },
         onError: (error: StatusObject) => {

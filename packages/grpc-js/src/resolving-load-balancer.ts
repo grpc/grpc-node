@@ -34,6 +34,7 @@ import { StatusObject } from './call-stream';
 import { Metadata } from './metadata';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
+import { SubchannelAddress } from './subchannel';
 
 const TRACER_NAME = 'resolving_load_balancer';
 
@@ -132,7 +133,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
     this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
     this.innerResolver = createResolver(target, {
       onSuccessfulResolution: (
-        addressList: string[],
+        addressList: SubchannelAddress[],
         serviceConfig: ServiceConfig | null,
         serviceConfigError: ServiceError | null
       ) => {
@@ -243,7 +244,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
 
     this.innerChannelControlHelper = {
       createSubchannel: (
-        subchannelAddress: string,
+        subchannelAddress: SubchannelAddress,
         subchannelArgs: ChannelOptions
       ) => {
         return this.channelControlHelper.createSubchannel(
@@ -289,7 +290,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
 
     this.replacementChannelControlHelper = {
       createSubchannel: (
-        subchannelAddress: string,
+        subchannelAddress: SubchannelAddress,
         subchannelArgs: ChannelOptions
       ) => {
         return this.channelControlHelper.createSubchannel(
@@ -409,7 +410,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   }
 
   updateAddressList(
-    addressList: string[],
+    addressList: SubchannelAddress[],
     lbConfig: LoadBalancingConfig | null
   ) {
     throw new Error('updateAddressList not supported on ResolvingLoadBalancer');

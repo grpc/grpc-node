@@ -16,7 +16,7 @@
  */
 
 import { ChannelOptions } from './channel-options';
-import { Subchannel } from './subchannel';
+import { Subchannel, SubchannelAddress } from './subchannel';
 import { ConnectivityState } from './channel';
 import { Picker } from './picker';
 import { LoadBalancingConfig } from './load-balancing-config';
@@ -34,7 +34,7 @@ export interface ChannelControlHelper {
    * @param subchannelArgs Extra channel arguments specified by the load balancer
    */
   createSubchannel(
-    subchannelAddress: string,
+    subchannelAddress: SubchannelAddress,
     subchannelArgs: ChannelOptions
   ): Subchannel;
   /**
@@ -66,7 +66,7 @@ export interface LoadBalancer {
    *     if one was provided
    */
   updateAddressList(
-    addressList: string[],
+    addressList: SubchannelAddress[],
     lbConfig: LoadBalancingConfig | null
   ): void;
   /**

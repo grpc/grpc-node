@@ -30,7 +30,7 @@ import {
   UnavailablePicker,
 } from './picker';
 import { LoadBalancingConfig } from './load-balancing-config';
-import { Subchannel, ConnectivityStateListener } from './subchannel';
+import { Subchannel, ConnectivityStateListener, SubchannelAddress } from './subchannel';
 
 const TYPE_NAME = 'round_robin';
 
@@ -168,7 +168,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
   }
 
   updateAddressList(
-    addressList: string[],
+    addressList: SubchannelAddress[],
     lbConfig: LoadBalancingConfig | null
   ): void {
     this.resetSubchannelList();

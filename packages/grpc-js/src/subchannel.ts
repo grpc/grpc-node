@@ -20,12 +20,13 @@ import { ChannelCredentials } from './channel-credentials';
 import { Metadata } from './metadata';
 import { Http2CallStream } from './call-stream';
 import { ChannelOptions } from './channel-options';
-import { PeerCertificate, checkServerIdentity } from 'tls';
+import { PeerCertificate, checkServerIdentity, TLSSocket } from 'tls';
 import { ConnectivityState } from './channel';
 import { BackoffTimeout, BackoffOptions } from './backoff-timeout';
 import { getDefaultAuthority } from './resolver';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
+import { SocketConnectOpts } from 'net';
 
 const { version: clientVersion } = require('../../package.json');
 
@@ -72,6 +73,22 @@ function uniformRandom(min: number, max: number) {
 }
 
 const tooManyPingsData: Buffer = Buffer.from('too_many_pings', 'ascii');
+
+/**
+ * This represents a single backend address to connect to. This interface is a
+ * subset of net.SocketConnectOpts, i.e. the options described at
+ * https://nodejs.org/api/net.html#net_socket_connect_options_connectlistener.
+ * Those are in turn a subset of the options that can be passed to http2.connect.
+ */
+export interface SubchannelAddress {
+  port?: number;
+  host?: string;
+  path?: string;
+}
+
+export function subchannelAddressEqual(address1: SubchannelAddress, address2: SubchannelAddress) : boolean {
+  return address1.port === address2.port && address1.host === address2.host && address1.path === address2.path;
+}
 
 export class Subchannel {
   /**
@@ -136,6 +153,11 @@ export class Subchannel {
   private refcount = 0;
 
   /**
+   * A string representation of the subchannel address, for logging/tracing
+   */
+  private subchannelAddressString: string;
+
+  /**
    * A class representing a connection to a single backend.
    * @param channelTarget The target string for the channel as a whole
    * @param subchannelAddress The address for the backend that this subchannel
@@ -147,7 +169,7 @@ export class Subchannel {
    */
   constructor(
     private channelTarget: string,
-    private subchannelAddress: string,
+    private subchannelAddress: SubchannelAddress,
     private options: ChannelOptions,
     private credentials: ChannelCredentials
   ) {
@@ -187,6 +209,11 @@ export class Subchannel {
         );
       }
     }, backoffOptions);
+    if (subchannelAddress.host || subchannelAddress.port) {
+      this.subchannelAddressString = `${subchannelAddress.host}:${subchannelAddress.port}`;
+    } else {
+      this.subchannelAddressString = `${subchannelAddress.path}`;
+    }
   }
 
   /**
@@ -225,10 +252,11 @@ export class Subchannel {
   }
 
   private startConnectingInternal() {
-    const connectionOptions: http2.SecureClientSessionOptions =
+    let connectionOptions: http2.SecureClientSessionOptions =
       this.credentials._getConnectionOptions() || {};
     let addressScheme = 'http://';
     if ('secureContext' in connectionOptions) {
+      connectionOptions.protocol = 'https:';
       addressScheme = 'https://';
       // If provided, the value of grpc.ssl_target_name_override should be used
       // to override the target hostname when checking server identity.
@@ -248,8 +276,21 @@ export class Subchannel {
         connectionOptions.servername = getDefaultAuthority(this.channelTarget);
       }
     }
+    connectionOptions = Object.assign(connectionOptions, this.subchannelAddress);
+    /* http2.connect uses the options here:
+     * https://github.com/nodejs/node/blob/70c32a6d190e2b5d7b9ff9d5b6a459d14e8b7d59/lib/internal/http2/core.js#L3028-L3036
+     * The spread operator overides earlier values with later ones, so any port
+     * or host values in the options will be used rather than any values extracted
+     * from the first argument. In addition, the path overrides the host and port,
+     * as documented for plaintext connections here:
+     * https://nodejs.org/api/net.html#net_socket_connect_options_connectlistener
+     * and for TLS connections here:
+     * https://nodejs.org/api/tls.html#tls_tls_connect_options_callback.
+     * The first argument just needs to be parseable as a URL and the scheme
+     * determines whether the connection will be established over TLS or not.
+     */
     const session = http2.connect(
-      addressScheme + this.subchannelAddress,
+      addressScheme + getDefaultAuthority(this.channelTarget),
       connectionOptions
     );
     this.session = session;
@@ -328,7 +369,7 @@ export class Subchannel {
       return false;
     }
     trace(
-      this.subchannelAddress +
+      this.subchannelAddressString +
         ' ' +
         ConnectivityState[this.connectivityState] +
         ' -> ' +
@@ -400,7 +441,7 @@ export class Subchannel {
 
   callRef() {
     trace(
-      this.subchannelAddress +
+      this.subchannelAddressString +
         ' callRefcount ' +
         this.callRefcount +
         ' -> ' +
@@ -417,7 +458,7 @@ export class Subchannel {
 
   callUnref() {
     trace(
-      this.subchannelAddress +
+      this.subchannelAddressString +
         ' callRefcount ' +
         this.callRefcount +
         ' -> ' +
@@ -435,7 +476,7 @@ export class Subchannel {
 
   ref() {
     trace(
-      this.subchannelAddress +
+      this.subchannelAddressString +
         ' callRefcount ' +
         this.refcount +
         ' -> ' +
@@ -446,7 +487,7 @@ export class Subchannel {
 
   unref() {
     trace(
-      this.subchannelAddress +
+      this.subchannelAddressString +
         ' callRefcount ' +
         this.refcount +
         ' -> ' +
@@ -557,6 +598,6 @@ export class Subchannel {
   }
 
   getAddress(): string {
-    return this.subchannelAddress;
+    return this.subchannelAddressString;
   }
 }
