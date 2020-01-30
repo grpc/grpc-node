@@ -30,7 +30,7 @@ import { StatusObject } from './call-stream';
 import { Metadata } from './metadata';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
-import { SubchannelAddress } from './subchannel';
+import { SubchannelAddress, TcpSubchannelAddress } from './subchannel';
 
 const TRACER_NAME = 'dns_resolver';
 
@@ -232,7 +232,7 @@ class DnsResolver implements Resolver {
           } else {
             ip6Addresses = [];
           }
-          const allAddresses: SubchannelAddress[] = mergeArrays(
+          const allAddresses: TcpSubchannelAddress[] = mergeArrays(
             ip4Addresses,
             ip6Addresses
           ).map(addr => ({ host: addr.address, port: +this.port! }));

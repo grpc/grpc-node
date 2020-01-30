@@ -26,7 +26,7 @@ import { BackoffTimeout, BackoffOptions } from './backoff-timeout';
 import { getDefaultAuthority } from './resolver';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
-import { SocketConnectOpts } from 'net';
+import * as net from 'net';
 
 const { version: clientVersion } = require('../../package.json');
 
@@ -74,27 +74,42 @@ function uniformRandom(min: number, max: number) {
 
 const tooManyPingsData: Buffer = Buffer.from('too_many_pings', 'ascii');
 
+export interface TcpSubchannelAddress {
+  port: number;
+  host: string;
+}
+
+export interface IpcSubchannelAddress {
+  path: string;
+}
+
 /**
  * This represents a single backend address to connect to. This interface is a
  * subset of net.SocketConnectOpts, i.e. the options described at
  * https://nodejs.org/api/net.html#net_socket_connect_options_connectlistener.
  * Those are in turn a subset of the options that can be passed to http2.connect.
  */
-export interface SubchannelAddress {
-  port?: number;
-  host?: string;
-  path?: string;
+export type SubchannelAddress = TcpSubchannelAddress | IpcSubchannelAddress;
+
+export function isTcpSubchannelAddress(
+  address: SubchannelAddress
+): address is TcpSubchannelAddress {
+  return 'port' in address;
 }
 
 export function subchannelAddressEqual(
   address1: SubchannelAddress,
   address2: SubchannelAddress
 ): boolean {
-  return (
-    address1.port === address2.port &&
-    address1.host === address2.host &&
-    address1.path === address2.path
-  );
+  if (isTcpSubchannelAddress(address1)) {
+    return (
+      isTcpSubchannelAddress(address2) &&
+      address1.host === address2.host &&
+      address1.port === address2.port
+    );
+  } else {
+    return !isTcpSubchannelAddress(address2) && address1.path === address2.path;
+  }
 }
 
 export class Subchannel {
@@ -216,7 +231,7 @@ export class Subchannel {
         );
       }
     }, backoffOptions);
-    if (subchannelAddress.host || subchannelAddress.port) {
+    if (isTcpSubchannelAddress(subchannelAddress)) {
       this.subchannelAddressString = `${subchannelAddress.host}:${subchannelAddress.port}`;
     } else {
       this.subchannelAddressString = `${subchannelAddress.path}`;
@@ -281,6 +296,13 @@ export class Subchannel {
       } else {
         connectionOptions.servername = getDefaultAuthority(this.channelTarget);
       }
+    } else {
+      connectionOptions.createConnection = (authority, option) => {
+        /* net.NetConnectOpts is declared in a way that is more restrictive
+         * than what net.connect will actually accept, so we use the type
+         * assertion to work around that. */
+        return net.connect(this.subchannelAddress as net.NetConnectOpts);
+      };
     }
     connectionOptions = Object.assign(
       connectionOptions,
