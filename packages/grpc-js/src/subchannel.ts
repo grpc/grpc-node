@@ -297,6 +297,9 @@ export class Subchannel {
         connectionOptions.servername = getDefaultAuthority(this.channelTarget);
       }
     } else {
+      /* In all but the most recent versions of Node, http2.connect does not use
+       * the options when establishing plaintext connections, so we need to
+       * establish that connection explicitly. */
       connectionOptions.createConnection = (authority, option) => {
         /* net.NetConnectOpts is declared in a way that is more restrictive
          * than what net.connect will actually accept, so we use the type
@@ -316,7 +319,12 @@ export class Subchannel {
      * as documented for plaintext connections here:
      * https://nodejs.org/api/net.html#net_socket_connect_options_connectlistener
      * and for TLS connections here:
-     * https://nodejs.org/api/tls.html#tls_tls_connect_options_callback.
+     * https://nodejs.org/api/tls.html#tls_tls_connect_options_callback. In
+     * earlier versions of Node, http2.connect passes these options to
+     * tls.connect but not net.connect, so in the insecure case we still need
+     * to set the createConnection option above to create the connection
+     * explicitly. We cannot do that in the TLS case because http2.connect
+     * passes necessary additional options to tls.connect.
      * The first argument just needs to be parseable as a URL and the scheme
      * determines whether the connection will be established over TLS or not.
      */
