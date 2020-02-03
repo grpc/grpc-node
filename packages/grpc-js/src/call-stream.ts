@@ -246,9 +246,7 @@ export class Http2CallStream extends Duplex implements Call {
   private tryPush(messageBytes: Buffer | null): void {
     if (this.isReadFilterPending) {
       this.trace(
-        '[' +
-          this.callNumber +
-          '] unfilteredReadMessages.push message of length ' +
+        'unfilteredReadMessages.push message of length ' +
           (messageBytes && messageBytes.length)
       );
       this.unfilteredReadMessages.push(messageBytes);
@@ -422,10 +420,15 @@ export class Http2CallStream extends Duplex implements Call {
         if (!this.pendingWriteCallback) {
           throw new Error('Invalid state in write handling code');
         }
+        this.trace(
+          'sending data chunk of length ' +
+            this.pendingWrite.length +
+            ' (deferred)'
+        );
         stream.write(this.pendingWrite, this.pendingWriteCallback);
       }
       if (this.pendingFinalCallback) {
-        this.trace('calling end() on HTTP/2 stream');
+        this.trace('calling end() on HTTP/2 stream (deferred)');
         stream.end(this.pendingFinalCallback);
       }
     }
@@ -514,9 +517,13 @@ export class Http2CallStream extends Duplex implements Call {
     this.trace('write() called with message of length ' + chunk.message.length);
     this.filterStack.sendMessage(Promise.resolve(chunk)).then(message => {
       if (this.http2Stream === null) {
+        this.trace(
+          'deferring writing data chunk of length ' + message.message.length
+        );
         this.pendingWrite = message.message;
         this.pendingWriteCallback = cb;
       } else {
+        this.trace('sending data chunk of length ' + message.message.length);
         this.http2Stream.write(message.message, cb);
       }
     }, this.handleFilterError.bind(this));
@@ -525,6 +532,7 @@ export class Http2CallStream extends Duplex implements Call {
   _final(cb: Function) {
     this.trace('end() called');
     if (this.http2Stream === null) {
+      this.trace('deferring calling end() on HTTP/2 stream');
       this.pendingFinalCallback = cb;
     } else {
       this.trace('calling end() on HTTP/2 stream');
