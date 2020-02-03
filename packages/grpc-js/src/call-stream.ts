@@ -163,6 +163,9 @@ export class Http2CallStream extends Duplex implements Call {
    * @param status The status of the call.
    */
   private endCall(status: StatusObject): void {
+    /* Once endCall is called, we are definitely not using the http2 stream
+     * anymore, so we can always safely destroy it here */
+    this.destroyHttp2Stream();
     if (this.finalStatus === null) {
       this.trace(
         'ended with status: code=' +
