@@ -16,7 +16,7 @@
  */
 
 import { SecureServerOptions } from 'http2';
-import {CIPHER_SUITES, getDefaultRootsData} from './tls-helpers';
+import { CIPHER_SUITES, getDefaultRootsData } from './tls-helpers';
 
 export interface KeyCertPair {
   private_key: Buffer;
@@ -75,7 +75,7 @@ export abstract class ServerCredentials {
       cert,
       key,
       requestCert: checkClientCertificate,
-      ciphers: CIPHER_SUITES
+      ciphers: CIPHER_SUITES,
     });
   }
 }

@@ -20,6 +20,7 @@ import { ServiceConfig } from './service-config';
 import * as resolver_dns from './resolver-dns';
 import * as resolver_uds from './resolver-uds';
 import { StatusObject } from './call-stream';
+import { SubchannelAddress } from './subchannel';
 
 /**
  * A listener object passed to the resolver's constructor that provides name
@@ -36,7 +37,7 @@ export interface ResolverListener {
    *     service configuration was invalid
    */
   onSuccessfulResolution(
-    addressList: string[],
+    addressList: SubchannelAddress[],
     serviceConfig: ServiceConfig | null,
     serviceConfigError: StatusObject | null
   ): void;

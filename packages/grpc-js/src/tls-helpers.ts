@@ -17,7 +17,8 @@
 
 import * as fs from 'fs';
 
-export const CIPHER_SUITES: string | undefined = process.env.GRPC_SSL_CIPHER_SUITES;
+export const CIPHER_SUITES: string | undefined =
+  process.env.GRPC_SSL_CIPHER_SUITES;
 
 const DEFAULT_ROOTS_FILE_PATH = process.env.GRPC_DEFAULT_SSL_ROOTS_FILE_PATH;
 

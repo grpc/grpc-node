@@ -30,7 +30,11 @@ import {
   UnavailablePicker,
 } from './picker';
 import { LoadBalancingConfig } from './load-balancing-config';
-import { Subchannel, ConnectivityStateListener } from './subchannel';
+import {
+  Subchannel,
+  ConnectivityStateListener,
+  SubchannelAddress,
+} from './subchannel';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 
@@ -76,7 +80,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   /**
    * The list of backend addresses most recently passed to `updateAddressList`.
    */
-  private latestAddressList: string[] = [];
+  private latestAddressList: SubchannelAddress[] = [];
   /**
    * The list of subchannels this load balancer is currently attempting to
    * connect to.
@@ -369,7 +373,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   }
 
   updateAddressList(
-    addressList: string[],
+    addressList: SubchannelAddress[],
     lbConfig: LoadBalancingConfig | null
   ): void {
     // lbConfig has no useful information for pick first load balancing

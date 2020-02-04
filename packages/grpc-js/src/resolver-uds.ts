@@ -20,6 +20,7 @@ import {
   registerResolver,
   registerDefaultResolver,
 } from './resolver';
+import { SubchannelAddress } from './subchannel';
 
 function getUdsName(target: string): string {
   /* Due to how this resolver is registered, it should only be constructed
@@ -34,9 +35,9 @@ function getUdsName(target: string): string {
 }
 
 class UdsResolver implements Resolver {
-  private addresses: string[] = [];
+  private addresses: SubchannelAddress[] = [];
   constructor(target: string, private listener: ResolverListener) {
-    this.addresses = [getUdsName(target)];
+    this.addresses = [{ path: getUdsName(target) }];
   }
   updateResolution(): void {
     process.nextTick(
