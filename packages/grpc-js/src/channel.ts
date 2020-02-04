@@ -236,10 +236,10 @@ export class ChannelImplementation implements Channel {
                       callStream
                     );
                   } catch (error) {
-                    /* An error here indicates thaat something when wrong with
+                    /* An error here indicates that something went wrong with
                      * the picked subchannel's http2 stream right before we
                      * tried to start the stream. We are handling a promise
-                     * result here, so this asynchronous with respect to the
+                     * result here, so this is asynchronous with respect to the
                      * original tryPick call, so calling it again is not
                      * recursive. We call tryPick immediately instead of
                      * queueing this pick again because handling the queue is
