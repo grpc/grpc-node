@@ -237,16 +237,25 @@ export class ChannelImplementation implements Channel {
                       callStream
                     );
                   } catch (error) {
-                    callStream.cancelWithStatus(
-                      Status.UNAVAILABLE,
-                      'Failed to start call on picked subchannel'
-                    );
+                    /* An error here indicates that something went wrong with
+                     * the picked subchannel's http2 stream right before we
+                     * tried to start the stream. We are handling a promise
+                     * result here, so this is asynchronous with respect to the
+                     * original tryPick call, so calling it again is not
+                     * recursive. We call tryPick immediately instead of
+                     * queueing this pick again because handling the queue is
+                     * triggered by state changes, and we want to immediately
+                     * check if the state has already changed since the
+                     * previous tryPick call. We do this instead of cancelling
+                     * the stream because the correct behavior may be
+                     * re-queueing instead, based on the logic in the rest of
+                     * tryPick */
+                    this.tryPick(callStream, callMetadata);
                   }
                 } else {
-                  callStream.cancelWithStatus(
-                    Status.UNAVAILABLE,
-                    'Connection dropped while starting call'
-                  );
+                  /* The logic for doing this here is the same as in the catch
+                   * block above */
+                  this.tryPick(callStream, callMetadata);
                 }
               },
               (error: Error & { code: number }) => {
