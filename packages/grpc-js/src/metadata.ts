@@ -174,7 +174,7 @@ export class Metadata {
    * @return The newly cloned object.
    */
   clone(): Metadata {
-    const newMetadata = new Metadata();
+    const newMetadata = new Metadata(this.options);
     const newInternalRepr = newMetadata.internalRepr;
 
     this.internalRepr.forEach((value, key) => {

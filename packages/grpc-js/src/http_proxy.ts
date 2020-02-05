@@ -22,6 +22,7 @@ import { parseTarget } from "./resolver-dns";
 import { Socket } from "net";
 import * as http from 'http';
 import * as logging from './logging';
+import { SubchannelAddress, TcpSubchannelAddress, isTcpSubchannelAddress } from "./subchannel";
 
 const TRACER_NAME = 'proxy';
 
@@ -123,15 +124,16 @@ export function shouldUseProxy(target: string): boolean {
   return true;
 }
 
-export function getProxiedConnection(target: string, subchannelAddress: string): Promise<Socket> {
-  if (!(PROXY_INFO.address && shouldUseProxy(target))) {
+export function getProxiedConnection(target: string, subchannelAddress: SubchannelAddress): Promise<Socket> {
+  if (!(PROXY_INFO.address && shouldUseProxy(target) && isTcpSubchannelAddress(subchannelAddress))) {
     return Promise.reject<Socket>();
   }
+  const subchannelAddressPathString = `${subchannelAddress.host}:${subchannelAddress.port}`;
   trace('Using proxy ' + PROXY_INFO.address + ' to connect to ' + target + ' at ' + subchannelAddress);
   const options: http.RequestOptions = {
     method: 'CONNECT',
     host: PROXY_INFO.address,
-    path: subchannelAddress
+    path: subchannelAddressPathString
   };
   if (PROXY_INFO.creds) {
     options.headers = {
