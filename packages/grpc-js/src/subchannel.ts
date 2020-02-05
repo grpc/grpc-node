@@ -277,9 +277,6 @@ export class Subchannel {
   private createSession(socket?: net.Socket) {
     let connectionOptions: http2.SecureClientSessionOptions =
       this.credentials._getConnectionOptions() || {};
-    if (socket) {
-      connectionOptions.socket = socket;
-    }
     let addressScheme = 'http://';
     if ('secureContext' in connectionOptions) {
       addressScheme = 'https://';
@@ -300,15 +297,22 @@ export class Subchannel {
       } else {
         connectionOptions.servername = getDefaultAuthority(this.channelTarget);
       }
+      if (socket) {
+        connectionOptions.socket = socket;
+      }
     } else {
       /* In all but the most recent versions of Node, http2.connect does not use
        * the options when establishing plaintext connections, so we need to
        * establish that connection explicitly. */
       connectionOptions.createConnection = (authority, option) => {
-        /* net.NetConnectOpts is declared in a way that is more restrictive
-         * than what net.connect will actually accept, so we use the type
-         * assertion to work around that. */
-        return net.connect(this.subchannelAddress as net.NetConnectOpts);
+        if (socket) {
+          return socket;
+        } else {
+          /* net.NetConnectOpts is declared in a way that is more restrictive
+          * than what net.connect will actually accept, so we use the type
+          * assertion to work around that. */
+          return net.connect(this.subchannelAddress);
+        }
       };
     }
     connectionOptions = Object.assign(
