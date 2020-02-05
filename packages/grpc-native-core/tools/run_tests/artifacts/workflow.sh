@@ -1,3 +1,4 @@
+#!/bin/sh
 # Copyright 2020 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,7 +12,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# Config file for Kokoro (in protobuf text format)
-
-build_file: "grpc-node/packages/grpc-native-core/tools/run_tests/artifacts/workflow.sh"
