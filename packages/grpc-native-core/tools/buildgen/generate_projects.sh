@@ -21,6 +21,6 @@ root=$(pwd)
 native_root=$root/packages/grpc-native-core
 
 output_file=$(mktemp /tmp/genXXXXXX)
-python $(dirname $0)/gen_build_yaml.py > $output_file
+python $native_root/tools/buildgen/gen_build_yaml.py > $output_file
 
-./packages/grpc-native-core/deps/grpc/tools/buildgen/generate_projects.sh $native_root/build.yaml $output_file --base=$root --templates $(find templates -type f)
+$native_root/tools/buildgen/generate_projects.sh $native_root/build.yaml $output_file --base=$root --templates $(find templates -type f)
