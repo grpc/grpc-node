@@ -23,34 +23,32 @@ npm install -g npm
 # https://github.com/mapbox/node-pre-gyp/issues/362
 npm install -g node-gyp
 
-set -ex
-cd $(dirname $0)/../../../../..
-base_dir=$(pwd)
-
-cd $base_dir/packages/grpc-native-core
-
-# Install gRPC and its submodules.
-git submodule update --init --recursive
-
-pip install mako
-./tools/buildgen/generate_projects.sh
-
-export JOBS=8
-export ARTIFACTS_OUT=$base_dir/artifacts
-
-mkdir -p ${ARTIFACTS_OUT}
-
-rm -rf build || true
-
-npm update
+# $ARCH should only have one of these values if the script is being called in
+# an environment with these cross compiler packages installed
+case $ARCH in
+  arm)
+    export CC=arm-linux-gnueabihf-gcc
+    export CXX=arm-linux-gnueabihf-g++
+    export CXX=arm-linux-gnueabihf-g++
+    ;;
+  arm64)
+    export CC=aarch64-linux-gnu-gcc
+    export CXX=aarch64-linux-gnu-g++
+    export LD=aarch64-linux-gnu-g++
+    ;;
+  s390x)
+    export CC=s390x-linux-gnu-gcc
+    export CXX=s390x-linux-gnu-g++
+    export LD=s390x-linux-gnu-g++
+    ;;
+esac
 
 case $RUNTIME in
   electron)
     export HOME=~/.electron-gyp
     export npm_config_disturl=https://atom.io/download/electron
     ;;
-  node)
 esac
 
-./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$VERSION --target_arch=$ARCH
+./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$VERSION --target_arch=$ARCH --runtime=$RUNTIME --target_libc=$LIBC
 cp -r build/stage/* "${ARTIFACTS_OUT}"/
