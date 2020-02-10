@@ -32,9 +32,6 @@ cd $base_dir/packages/grpc-native-core
 # Install gRPC and its submodules.
 git submodule update --init --recursive
 
-pip install mako
-./tools/buildgen/generate_projects.sh
-
 export JOBS=8
 export ARTIFACTS_OUT=$base_dir/artifacts
 

@@ -32,9 +32,6 @@ cd $base_dir/packages/grpc-native-core
 # Install gRPC and its submodules.
 git submodule update --init --recursive
 
-pip install mako
-./tools/buildgen/generate_projects.sh
-
 case $ARCH in
   arm|arm64|s390x)
     docker build -t artifact-image $base_dir/tools/release/cross
