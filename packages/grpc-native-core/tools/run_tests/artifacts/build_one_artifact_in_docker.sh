@@ -50,5 +50,5 @@ case $RUNTIME in
     ;;
 esac
 
-./node_modules/.bin/node-pre-gyp configure rebuild package testpackage --target=$VERSION --target_arch=$ARCH --runtime=$RUNTIME --target_libc=$LIBC
+./node_modules/.bin/node-pre-gyp configure rebuild package --target=$VERSION --target_arch=$ARCH --runtime=$RUNTIME --target_libc=$LIBC
 cp -r build/stage/* "${ARTIFACTS_OUT}"/
