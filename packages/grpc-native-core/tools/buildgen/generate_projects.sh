@@ -16,6 +16,11 @@
 
 set -e
 
-cd `dirname $0`/../..
-root=`pwd`
-./deps/grpc/tools/buildgen/generate_projects.sh $root/build.yaml --base=$root --templates `find templates -type f`
+cd $(dirname $0)/../../../..
+root=$(pwd)
+native_root=$root/packages/grpc-native-core
+
+output_file=$(mktemp /tmp/genXXXXXX)
+python $native_root/tools/buildgen/gen_build_yaml.py > $output_file
+
+$native_root/deps/grpc/tools/buildgen/generate_projects.sh $native_root/build.yaml $output_file --base=$root --templates $(find templates -type f)

@@ -18,7 +18,7 @@
 import { ConnectionOptions, createSecureContext, PeerCertificate } from 'tls';
 
 import { CallCredentials } from './call-credentials';
-import {CIPHER_SUITES, getDefaultRootsData} from './tls-helpers';
+import { CIPHER_SUITES, getDefaultRootsData } from './tls-helpers';
 
 // tslint:disable-next-line:no-any
 function verifyIsBufferOrNull(obj: any, friendlyName: string): void {
@@ -190,7 +190,7 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
       ca: rootCerts || undefined,
       key: privateKey || undefined,
       cert: certChain || undefined,
-      ciphers: CIPHER_SUITES
+      ciphers: CIPHER_SUITES,
     });
     this.connectionOptions = { secureContext };
     if (verifyOptions && verifyOptions.checkServerIdentity) {

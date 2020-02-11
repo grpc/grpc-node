@@ -246,6 +246,7 @@ export class Http2CallStream implements Call {
    * @param status The status of the call.
    */
   private endCall(status: StatusObject): void {
+    this.destroyHttp2Stream();
     /* If the status is OK and a new status comes in (e.g. from a
      * deserialization failure), that new status takes priority */
     if (this.finalStatus === null || this.finalStatus.code === Status.OK) {
@@ -339,9 +340,7 @@ export class Http2CallStream implements Call {
   private tryPush(messageBytes: Buffer): void {
     if (this.isReadFilterPending) {
       this.trace(
-        '[' +
-          this.callNumber +
-          '] unfilteredReadMessages.push message of length ' +
+        'unfilteredReadMessages.push message of length ' +
           (messageBytes && messageBytes.length)
       );
       this.unfilteredReadMessages.push(messageBytes);
@@ -512,6 +511,11 @@ export class Http2CallStream implements Call {
         if (!this.pendingWriteCallback) {
           throw new Error('Invalid state in write handling code');
         }
+        this.trace(
+          'sending data chunk of length ' +
+            this.pendingWrite.length +
+            ' (deferred)'
+        );
         stream.write(this.pendingWrite, this.pendingWriteCallback);
       }
       this.maybeCloseWrites();
@@ -612,9 +616,13 @@ export class Http2CallStream implements Call {
     this.filterStack.sendMessage(Promise.resolve(writeObj)).then(message => {
       this.isWriteFilterPending = false;
       if (this.http2Stream === null) {
+        this.trace(
+          'deferring writing data chunk of length ' + message.message.length
+        );
         this.pendingWrite = message.message;
         this.pendingWriteCallback = cb;
       } else {
+        this.trace('sending data chunk of length ' + message.message.length);
         this.http2Stream.write(message.message, cb);
         this.maybeCloseWrites();
       }

@@ -203,11 +203,16 @@ export class Server {
     const options: ListenOptions = { host: url.hostname, port: +url.port };
     const serverOptions: http2.ServerOptions = {};
     if ('grpc.max_concurrent_streams' in this.options) {
-      serverOptions.settings = {maxConcurrentStreams: this.options['grpc.max_concurrent_streams']};
+      serverOptions.settings = {
+        maxConcurrentStreams: this.options['grpc.max_concurrent_streams'],
+      };
     }
 
     if (creds._isSecure()) {
-      const secureServerOptions = Object.assign(serverOptions, creds._getSettings()!);
+      const secureServerOptions = Object.assign(
+        serverOptions,
+        creds._getSettings()!
+      );
       this.http2Server = http2.createSecureServer(secureServerOptions);
     } else {
       this.http2Server = http2.createServer(serverOptions);

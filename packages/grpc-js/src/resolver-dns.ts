@@ -30,6 +30,7 @@ import { StatusObject } from './call-stream';
 import { Metadata } from './metadata';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
+import { SubchannelAddress, TcpSubchannelAddress } from './subchannel';
 
 const TRACER_NAME = 'dns_resolver';
 
@@ -112,7 +113,7 @@ const dnsLookupPromise = util.promisify(dns.lookup);
  * @param target
  * @return An "IP:port" string in an array if parsing was successful, `null` otherwise
  */
-function parseIP(target: string): string[] | null {
+function parseIP(target: string): SubchannelAddress[] | null {
   /* These three regular expressions are all mutually exclusive, so we just
    * want the first one that matches the target string, if any do. */
   const ipv4Match = IPV4_REGEX.exec(target);
@@ -123,14 +124,14 @@ function parseIP(target: string): string[] | null {
   }
 
   // ipv6 addresses should be bracketed
-  const addr = ipv4Match ? match[1] : `[${match[1]}]`;
+  const addr = match[1];
   let port: string;
   if (match[2]) {
     port = match[2];
   } else {
     port = DEFAULT_PORT;
   }
-  return [`${addr}:${port}`];
+  return [{ host: addr, port: +port }];
 }
 
 /**
@@ -161,7 +162,7 @@ function mergeArrays<T>(...arrays: T[][]): T[] {
  * Resolver implementation that handles DNS names and IP addresses.
  */
 class DnsResolver implements Resolver {
-  private readonly ipResult: string[] | null;
+  private readonly ipResult: SubchannelAddress[] | null;
   private readonly dnsHostname: string | null;
   private readonly port: string | null;
   /* The promise results here contain, in order, the A record, the AAAA record,
@@ -222,23 +223,28 @@ class DnsResolver implements Resolver {
       this.pendingResultPromise.then(
         ([addressList, txtRecord]) => {
           this.pendingResultPromise = null;
-          const ip4Addresses: string[] = addressList
-            .filter(addr => addr.family === 4)
-            .map(addr => `${addr.address}:${this.port}`);
-          let ip6Addresses: string[];
+          const ip4Addresses: dns.LookupAddress[] = addressList.filter(
+            addr => addr.family === 4
+          );
+          let ip6Addresses: dns.LookupAddress[];
           if (semver.satisfies(process.version, IPV6_SUPPORT_RANGE)) {
-            ip6Addresses = addressList
-              .filter(addr => addr.family === 6)
-              .map(addr => `[${addr.address}]:${this.port}`);
+            ip6Addresses = addressList.filter(addr => addr.family === 6);
           } else {
             ip6Addresses = [];
           }
-          const allAddresses: string[] = mergeArrays(
+          const allAddresses: TcpSubchannelAddress[] = mergeArrays(
             ip4Addresses,
             ip6Addresses
-          );
+          ).map(addr => ({ host: addr.address, port: +this.port! }));
+          const allAddressesString: string =
+            '[' +
+            allAddresses.map(addr => addr.host + ':' + addr.port).join(',') +
+            ']';
           trace(
-            'Resolved addresses for target ' + this.target + ': ' + allAddresses
+            'Resolved addresses for target ' +
+              this.target +
+              ': ' +
+              allAddressesString
           );
           if (allAddresses.length === 0) {
             this.listener.onError(this.defaultResolutionError);
