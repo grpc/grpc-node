@@ -51,7 +51,7 @@
  * `halfClose(next)`
  * * To continue, call next().
  *
- * `cancel(message, next)`
+ * `cancel(next)`
  * * To continue, call next().
  *
  * A listener is a POJO with one or more of the following methods:
@@ -109,7 +109,7 @@
  *     halfClose: function(next) {
  *       next();
  *     },
- *     cancel: function(message, next) {
+ *     cancel: function(next) {
  *       next();
  *     }
  *   });
