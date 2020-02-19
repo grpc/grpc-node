@@ -525,7 +525,7 @@ export class Subchannel {
   ref() {
     trace(
       this.subchannelAddressString +
-        ' callRefcount ' +
+        ' refcount ' +
         this.refcount +
         ' -> ' +
         (this.refcount + 1)
@@ -536,7 +536,7 @@ export class Subchannel {
   unref() {
     trace(
       this.subchannelAddressString +
-        ' callRefcount ' +
+        ' refcount ' +
         this.refcount +
         ' -> ' +
         (this.refcount - 1)
