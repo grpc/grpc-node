@@ -845,7 +845,7 @@ Server.prototype.forceShutdown = function() {
 
 function getUnimplementedStatusResponse(methodName) {
   return {
-    code: Status.UNIMPLEMENTED,
+    code: constants.status.UNIMPLEMENTED,
     details: 'The server does not implement the method' + methodName
   }
 }
