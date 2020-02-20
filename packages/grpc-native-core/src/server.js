@@ -843,25 +843,34 @@ Server.prototype.forceShutdown = function() {
   this._server.forceShutdown();
 };
 
-var unimplementedStatusResponse = {
-  code: constants.status.UNIMPLEMENTED,
-  details: 'The server does not implement this method'
-};
-
-var defaultHandler = {
-  unary: function(call, callback) {
-    callback(unimplementedStatusResponse);
-  },
-  client_stream: function(call, callback) {
-    callback(unimplementedStatusResponse);
-  },
-  server_stream: function(call) {
-    call.emit('error', unimplementedStatusResponse);
-  },
-  bidi: function(call) {
-    call.emit('error', unimplementedStatusResponse);
+function getUnimplementedStatusResponse(methodName) {
+  return {
+    code: Status.UNIMPLEMENTED,
+    details: 'The server does not implement the method' + methodName
   }
-};
+}
+
+function getDefaultHandler(handlerType, methodName) {
+  const unimplementedStatusResponse = getUnimplementedStatusResponse(methodName);
+  switch(handlerType) {
+    case 'unary':
+      return (call, callback) => {
+        callback(unimplementedStatusResponse, null);
+      };
+    case 'clientStream':
+      return (call,callback) => {
+        callback(unimplementedStatusResponse, null);
+      };
+    case 'serverStream':
+      return (call) => {
+        call.emit('error', unimplementedStatusResponse);
+      }
+    case 'bidi':
+      return (call) => {
+        call.emit('error', unimplementedStatusResponse);
+      }
+  }
+}
 
 function isObject(thing) {
   return (typeof thing === 'object' || typeof thing === 'function') && thing !== null;
@@ -908,7 +917,7 @@ Server.prototype.addService = function(service, implementation) {
       if (implementation[attrs.originalName] === undefined) {
         common.log(constants.logVerbosity.ERROR, 'Method handler ' + name +
             ' for ' + attrs.path + ' expected but not provided');
-        impl = defaultHandler[method_type];
+        impl = getDefaultHandler(method_type, name);
       } else {
         impl = implementation[attrs.originalName].bind(implementation);
       }
