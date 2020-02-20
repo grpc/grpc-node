@@ -857,11 +857,11 @@ function getDefaultHandler(handlerType, methodName) {
       return (call, callback) => {
         callback(unimplementedStatusResponse, null);
       };
-    case 'clientStream':
+    case 'client_stream':
       return (call,callback) => {
         callback(unimplementedStatusResponse, null);
       };
-    case 'serverStream':
+    case 'server_stream':
       return (call) => {
         call.emit('error', unimplementedStatusResponse);
       }
