@@ -112,6 +112,14 @@ export function subchannelAddressEqual(
   }
 }
 
+export function subchannelAddressToString(address: SubchannelAddress): string {
+  if (isTcpSubchannelAddress(address)) {
+    return address.host + ':' + address.port;
+  } else {
+    return address.path;
+  }
+}
+
 export class Subchannel {
   /**
    * The subchannel's current connectivity state. Invariant: `session` === `null`
@@ -231,11 +239,7 @@ export class Subchannel {
         );
       }
     }, backoffOptions);
-    if (isTcpSubchannelAddress(subchannelAddress)) {
-      this.subchannelAddressString = `${subchannelAddress.host}:${subchannelAddress.port}`;
-    } else {
-      this.subchannelAddressString = `${subchannelAddress.path}`;
-    }
+    this.subchannelAddressString = subchannelAddressToString(subchannelAddress);
   }
 
   /**
@@ -390,6 +394,11 @@ export class Subchannel {
     session.once('error', error => {
       /* Do nothing here. Any error should also trigger a close event, which is
        * where we want to handle that.  */
+      trace(
+        this.subchannelAddressString +
+          ' connection closed with error ' +
+          (error as Error).message
+      );
     });
   }
 
@@ -516,7 +525,7 @@ export class Subchannel {
   ref() {
     trace(
       this.subchannelAddressString +
-        ' callRefcount ' +
+        ' refcount ' +
         this.refcount +
         ' -> ' +
         (this.refcount + 1)
@@ -527,7 +536,7 @@ export class Subchannel {
   unref() {
     trace(
       this.subchannelAddressString +
-        ' callRefcount ' +
+        ' refcount ' +
         this.refcount +
         ' -> ' +
         (this.refcount - 1)

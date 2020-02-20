@@ -34,6 +34,7 @@ import {
   Subchannel,
   ConnectivityStateListener,
   SubchannelAddress,
+  subchannelAddressToString,
 } from './subchannel';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
@@ -335,7 +336,12 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    */
   private connectToAddressList(): void {
     this.resetSubchannelList();
-    trace('Connect to address list ' + this.latestAddressList);
+    trace(
+      'Connect to address list ' +
+        this.latestAddressList.map(address =>
+          subchannelAddressToString(address)
+        )
+    );
     this.subchannels = this.latestAddressList.map(address =>
       this.channelControlHelper.createSubchannel(address, {})
     );

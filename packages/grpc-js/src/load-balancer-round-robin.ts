@@ -34,7 +34,16 @@ import {
   Subchannel,
   ConnectivityStateListener,
   SubchannelAddress,
+  subchannelAddressToString,
 } from './subchannel';
+import * as logging from './logging';
+import { LogVerbosity } from './constants';
+
+const TRACER_NAME = 'round_robin';
+
+function trace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 const TYPE_NAME = 'round_robin';
 
@@ -147,6 +156,11 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
   }
 
   private updateState(newState: ConnectivityState, picker: Picker) {
+    trace(
+      ConnectivityState[this.currentState] +
+        ' -> ' +
+        ConnectivityState[newState]
+    );
     if (newState === ConnectivityState.READY) {
       this.currentReadyPicker = picker as RoundRobinPicker;
     } else {
@@ -176,6 +190,10 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     lbConfig: LoadBalancingConfig | null
   ): void {
     this.resetSubchannelList();
+    trace(
+      'Connect to address list ' +
+        addressList.map(address => subchannelAddressToString(address))
+    );
     this.subchannels = addressList.map(address =>
       this.channelControlHelper.createSubchannel(address, {})
     );
