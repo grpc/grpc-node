@@ -49,11 +49,15 @@ import { ChannelOptions } from './channel-options';
 
 function noop(): void {}
 
-const unimplementedStatusResponse: Partial<ServiceError> = {
-  code: Status.UNIMPLEMENTED,
-  details: 'The server does not implement this method',
-  metadata: new Metadata(),
-};
+function getUnimplementedStatusResponse(
+  methodName: string
+): Partial<ServiceError> {
+  return {
+    code: Status.UNIMPLEMENTED,
+    details: `The server does not implement the method ${methodName}`,
+    metadata: new Metadata(),
+  };
+}
 
 // tslint:disable:no-any
 type UntypedUnaryHandler = UnaryHandler<any, any>;
@@ -66,23 +70,37 @@ export interface UntypedServiceImplementation {
   [name: string]: UntypedHandleCall;
 }
 
-const defaultHandler = {
-  unary(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>): void {
-    callback(unimplementedStatusResponse as ServiceError, null);
-  },
-  clientStream(
-    call: ServerReadableStream<any, any>,
-    callback: sendUnaryData<any>
-  ): void {
-    callback(unimplementedStatusResponse as ServiceError, null);
-  },
-  serverStream(call: ServerWritableStream<any, any>): void {
-    call.emit('error', unimplementedStatusResponse);
-  },
-  bidi(call: ServerDuplexStream<any, any>): void {
-    call.emit('error', unimplementedStatusResponse);
-  },
-};
+function getDefaultHandler(handlerType: HandlerType, methodName: string) {
+  const unimplementedStatusResponse = getUnimplementedStatusResponse(
+    methodName
+  );
+  switch (handlerType) {
+    case 'unary':
+      return (
+        call: ServerUnaryCall<any, any>,
+        callback: sendUnaryData<any>
+      ) => {
+        callback(unimplementedStatusResponse as ServiceError, null);
+      };
+    case 'clientStream':
+      return (
+        call: ServerReadableStream<any, any>,
+        callback: sendUnaryData<any>
+      ) => {
+        callback(unimplementedStatusResponse as ServiceError, null);
+      };
+    case 'serverStream':
+      return (call: ServerWritableStream<any, any>) => {
+        call.emit('error', unimplementedStatusResponse);
+      };
+    case 'bidi':
+      return (call: ServerDuplexStream<any, any>) => {
+        call.emit('error', unimplementedStatusResponse);
+      };
+    default:
+      throw new Error(`Invalid handlerType ${handlerType}`);
+  }
+}
 // tslint:enable:no-any
 
 export class Server {
@@ -157,7 +175,7 @@ export class Server {
       if (implFn !== undefined) {
         impl = implFn.bind(implementation);
       } else {
-        impl = defaultHandler[methodType];
+        impl = getDefaultHandler(methodType, name);
       }
 
       const success = this.register(
@@ -353,7 +371,7 @@ export class Server {
           const handler = this.handlers.get(path);
 
           if (handler === undefined) {
-            throw unimplementedStatusResponse;
+            throw getUnimplementedStatusResponse(path);
           }
 
           const call = new Http2ServerCallStream(stream, handler);
