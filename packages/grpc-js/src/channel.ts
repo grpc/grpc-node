@@ -250,8 +250,11 @@ export class ChannelImplementation implements Channel {
             this.pickQueue.push({ callStream, callMetadata });
             break;
           }
+          /* We need to clone the callMetadata here because the transparent
+           * retry code in the promise resolution handler use the same
+           * callMetadata object, so it needs to stay unmodified */
           callStream.filterStack
-            .sendMetadata(Promise.resolve(callMetadata))
+            .sendMetadata(Promise.resolve(callMetadata.clone()))
             .then(
               finalMetadata => {
                 const subchannelState: ConnectivityState = pickResult.subchannel!.getConnectivityState();
@@ -280,6 +283,8 @@ export class ChannelImplementation implements Channel {
                       'channel',
                       'Failed to start call on picked subchannel ' +
                         pickResult.subchannel!.getAddress() +
+                        ' with error ' +
+                        (error as Error).message +
                         '. Retrying pick'
                     );
                     this.tryPick(callStream, callMetadata);
