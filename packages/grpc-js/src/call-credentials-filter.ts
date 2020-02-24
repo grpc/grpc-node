@@ -20,6 +20,7 @@ import { Call } from './call-stream';
 import { Channel } from './channel';
 import { BaseFilter, Filter, FilterFactory } from './filter';
 import { Metadata } from './metadata';
+import { Status } from './constants';
 
 export class CallCredentialsFilter extends BaseFilter implements Filter {
   private serviceUrl: string;
@@ -50,6 +51,12 @@ export class CallCredentialsFilter extends BaseFilter implements Filter {
     });
     const resultMetadata = await metadata;
     resultMetadata.merge(await credsMetadata);
+    if (resultMetadata.get('authorization').length > 1) {
+      this.stream.cancelWithStatus(
+        Status.INTERNAL,
+        '"authorization" metadata cannot have multiple values'
+      );
+    }
     return resultMetadata;
   }
 }
