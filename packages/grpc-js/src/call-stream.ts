@@ -98,7 +98,6 @@ export class Http2CallStream extends Duplex implements Call {
 
   private decoder = new StreamDecoder();
 
-  private isReadFilterPending = false;
   private canPush = false;
 
   private unpushedReadMessages: Array<Buffer | null> = [];
@@ -112,6 +111,7 @@ export class Http2CallStream extends Duplex implements Call {
   // can use these objects to await their completion. This helps us establish
   // order of precedence when obtaining the status of the call.
   private handlingHeaders = Promise.resolve();
+  private handlingReadFilter = Promise.resolve(true);
   private handlingTrailers = Promise.resolve();
 
   // This is populated (non-null) if and only if the call has ended
@@ -196,13 +196,13 @@ export class Http2CallStream extends Duplex implements Call {
     this.cancelWithStatus(Status.INTERNAL, error.message);
   }
 
-  private handleFilteredRead(message: Buffer) {
+  private handleFilteredRead(filteredRead: () => void, message: Buffer) {
     /* If we the call has already ended, we don't want to do anything with
      * this message. Dropping it on the floor is correct behavior */
     if (this.finalStatus !== null) {
       return;
     }
-    this.isReadFilterPending = false;
+    filteredRead();
     if (this.canPush) {
       if (!this.push(message)) {
         this.canPush = false;
@@ -237,25 +237,33 @@ export class Http2CallStream extends Duplex implements Call {
       return;
     }
     this.trace('filterReceivedMessage of length ' + framedMessage.length);
-    this.isReadFilterPending = true;
-    this.filterStack
-      .receiveMessage(Promise.resolve(framedMessage))
-      .then(
-        this.handleFilteredRead.bind(this),
+    this.handlingReadFilter = new Promise((resolve, _) => {
+      this.filterStack.receiveMessage(Promise.resolve(framedMessage)).then(
+        this.handleFilteredRead.bind(this, () => resolve(true)),
         this.handleFilterError.bind(this)
       );
+    });
   }
 
   private tryPush(messageBytes: Buffer | null): void {
-    if (this.isReadFilterPending) {
-      this.trace(
-        'unfilteredReadMessages.push message of length ' +
-          (messageBytes && messageBytes.length)
-      );
-      this.unfilteredReadMessages.push(messageBytes);
-    } else {
-      this.filterReceivedMessage(messageBytes);
-    }
+    // Detect if the handlingReadFilter promise has been resolved by making a race
+    // with a new promise which will resolve after I/O events' callbacks.
+    Promise.race([
+      new Promise((resolve, _) => {
+        setImmediate(resolve.bind(this, true));
+      }),
+      this.handlingReadFilter.then(_ => false),
+    ]).then(isReadFilterPending => {
+      if (isReadFilterPending) {
+        this.trace(
+          'unfilteredReadMessages.push message of length ' +
+            (messageBytes && messageBytes.length)
+        );
+        this.unfilteredReadMessages.push(messageBytes);
+      } else {
+        this.filterReceivedMessage(messageBytes);
+      }
+    });
   }
 
   private handleTrailers(headers: http2.IncomingHttpHeaders) {
@@ -270,6 +278,9 @@ export class Http2CallStream extends Duplex implements Call {
     }
     const status: StatusObject = { code, details, metadata };
     this.handlingTrailers = (async () => {
+      // Wait for the received messages to be processed by the filter stack before processing the trailers
+      await this.handlingReadFilter;
+
       let finalStatus;
       try {
         // Attempt to assign final status.
