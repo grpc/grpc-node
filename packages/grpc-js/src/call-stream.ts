@@ -460,6 +460,13 @@ export class Http2CallStream implements Call {
       });
       stream.on('close', () => {
         this.trace('HTTP/2 stream closed with code ' + stream.rstCode);
+        /* If we have a final status with an OK status code, that means that
+         * we have received all of the messages and we have processed the
+         * trailers and the call completed successfully, so it doesn't matter
+         * how the stream ends after that */
+        if (this.finalStatus?.code === Status.OK) {
+          return;
+        }
         let code: Status;
         let details = '';
         switch (stream.rstCode) {
@@ -532,9 +539,16 @@ export class Http2CallStream implements Call {
     // The http2 stream could already have been destroyed if cancelWithStatus
     // is called in response to an internal http2 error.
     if (this.http2Stream !== null && !this.http2Stream.destroyed) {
-      /* TODO(murgatroid99): Determine if we want to send different RST_STREAM
-       * codes based on the status code */
-      this.http2Stream.close(NGHTTP2_CANCEL);
+      /* If the call has ended with an OK status, communicate that when closing
+       * the stream, partly to avoid a situation in which we detect an error
+       * RST_STREAM as a result after we have the status */
+      let code: number;
+      if (this.finalStatus?.code === Status.OK) {
+        code = http2.constants.NGHTTP2_NO_ERROR;
+      } else {
+        code = http2.constants.NGHTTP2_CANCEL;
+      }
+      this.http2Stream.close(code);
     }
   }
 
