@@ -454,11 +454,10 @@ class BaseStreamingInterceptingCall extends BaseInterceptingCall
 // tslint:disable-next-line no-any
 function getBottomInterceptingCall(
   channel: Channel,
-  path: string,
   options: InterceptorOptions,
   methodDefinition: ClientMethodDefinition<any, any>
 ) {
-  const call = getCall(channel, path, options);
+  const call = getCall(channel, methodDefinition.path, options);
   if (methodDefinition.responseStream) {
     return new BaseStreamingInterceptingCall(call, methodDefinition);
   } else {
@@ -554,7 +553,6 @@ export function getInterceptingCall(
     (finalOptions: InterceptorOptions) =>
       getBottomInterceptingCall(
         channel,
-        methodDefinition.path,
         finalOptions,
         methodDefinition
       )
