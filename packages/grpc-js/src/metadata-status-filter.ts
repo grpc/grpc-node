@@ -22,9 +22,9 @@ import { Status } from './constants';
 import { BaseFilter, Filter, FilterFactory } from './filter';
 
 export class MetadataStatusFilter extends BaseFilter implements Filter {
-  async receiveTrailers(status: Promise<StatusObject>): Promise<StatusObject> {
+  receiveTrailers(status: StatusObject): StatusObject {
     // tslint:disable-next-line:prefer-const
-    let { code, details, metadata } = await status;
+    let { code, details, metadata } = status;
     if (code !== Status.UNKNOWN) {
       // we already have a known status, so don't assign a new one.
       return { code, details, metadata };

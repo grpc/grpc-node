@@ -26,16 +26,32 @@ import {
   ClientWritableStreamImpl,
   ServiceError,
   callErrorFromStatus,
+  SurfaceCall,
 } from './call';
 import { CallCredentials } from './call-credentials';
-import { Call, Deadline, StatusObject, WriteObject } from './call-stream';
+import {
+  Deadline,
+  StatusObject,
+  WriteObject,
+  InterceptingListener,
+} from './call-stream';
 import { Channel, ConnectivityState, ChannelImplementation } from './channel';
 import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
 import { Status } from './constants';
 import { Metadata } from './metadata';
+import { ClientMethodDefinition } from './make-client';
+import {
+  getInterceptingCall,
+  Interceptor,
+  InterceptorProvider,
+  InterceptorArguments,
+  InterceptingCallInterface,
+} from './client-interceptors';
 
 const CHANNEL_SYMBOL = Symbol();
+const INTERCEPTOR_SYMBOL = Symbol();
+const INTERCEPTOR_PROVIDER_SYMBOL = Symbol();
 
 export interface UnaryCallback<ResponseType> {
   (err: ServiceError | null, value?: ResponseType): void;
@@ -48,6 +64,8 @@ export interface CallOptions {
    * but the server is not yet implemented so it makes no sense to have it */
   propagate_flags?: number;
   credentials?: CallCredentials;
+  interceptors?: Interceptor[];
+  interceptor_providers?: InterceptorProvider[];
 }
 
 export type ClientOptions = Partial<ChannelOptions> & {
@@ -57,6 +75,8 @@ export type ClientOptions = Partial<ChannelOptions> & {
     credentials: ChannelCredentials,
     options: ClientOptions
   ) => Channel;
+  interceptors?: Interceptor[];
+  interceptor_providers?: InterceptorProvider[];
 };
 
 /**
@@ -65,6 +85,8 @@ export type ClientOptions = Partial<ChannelOptions> & {
  */
 export class Client {
   private readonly [CHANNEL_SYMBOL]: Channel;
+  private readonly [INTERCEPTOR_SYMBOL]: Interceptor[];
+  private readonly [INTERCEPTOR_PROVIDER_SYMBOL]: InterceptorProvider[];
   constructor(
     address: string,
     credentials: ChannelCredentials,
@@ -83,6 +105,17 @@ export class Client {
         address,
         credentials,
         options
+      );
+    }
+    this[INTERCEPTOR_SYMBOL] = options.interceptors ?? [];
+    this[INTERCEPTOR_PROVIDER_SYMBOL] = options.interceptor_providers ?? [];
+    if (
+      this[INTERCEPTOR_SYMBOL].length > 0 &&
+      this[INTERCEPTOR_PROVIDER_SYMBOL].length > 0
+    ) {
+      throw new Error(
+        'Both interceptors and interceptor_providers were passed as options ' +
+          'to the client constructor. Only one of these is allowed.'
       );
     }
   }
@@ -123,38 +156,6 @@ export class Client {
       }
     };
     setImmediate(checkState);
-  }
-
-  private handleUnaryResponse<ResponseType>(
-    call: Call,
-    deserialize: (value: Buffer) => ResponseType,
-    callback: UnaryCallback<ResponseType>
-  ): void {
-    let responseMessage: ResponseType | null = null;
-    call.on('data', (data: Buffer) => {
-      if (responseMessage != null) {
-        call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
-      }
-      try {
-        responseMessage = deserialize(data);
-      } catch (e) {
-        call.cancelWithStatus(
-          Status.INTERNAL,
-          'Failed to parse server response'
-        );
-      }
-    });
-    call.on('status', (status: StatusObject) => {
-      /* We assume that call emits status after it emits end, and that it
-       * accounts for any cancelWithStatus calls up until it emits status.
-       * Therefore, considering the above event handlers, status.code should be
-       * OK if and only if we have a non-null responseMessage */
-      if (status.code === Status.OK) {
-        callback(null, responseMessage as ResponseType);
-      } else {
-        callback(callErrorFromStatus(status));
-      }
-    });
   }
 
   private checkOptionalUnaryResponseArguments<ResponseType>(
@@ -232,23 +233,61 @@ export class Client {
     ({ metadata, options, callback } = this.checkOptionalUnaryResponseArguments<
       ResponseType
     >(metadata, options, callback));
-    const call: Call = this[CHANNEL_SYMBOL].createCall(
-      method,
-      options.deadline,
-      options.host,
-      null,
-      options.propagate_flags
+    const methodDefinition: ClientMethodDefinition<
+      RequestType,
+      ResponseType
+    > = {
+      path: method,
+      requestStream: false,
+      responseStream: false,
+      requestSerialize: serialize,
+      responseDeserialize: deserialize,
+    };
+    const interceptorArgs: InterceptorArguments = {
+      clientInterceptors: this[INTERCEPTOR_SYMBOL],
+      clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
+      callInterceptors: options.interceptors ?? [],
+      callInterceptorProviders: options.interceptor_providers ?? [],
+    };
+    const call: InterceptingCallInterface = getInterceptingCall(
+      interceptorArgs,
+      methodDefinition,
+      options,
+      this[CHANNEL_SYMBOL]
     );
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
-    const message: Buffer = serialize(argument);
-    const writeObj: WriteObject = { message };
-    call.sendMetadata(metadata);
-    call.write(writeObj);
-    call.end();
-    this.handleUnaryResponse<ResponseType>(call, deserialize, callback);
-    return new ClientUnaryCallImpl(call);
+    const emitter = new ClientUnaryCallImpl(call);
+    let responseMessage: ResponseType | null = null;
+    let receivedStatus = false;
+    call.start(metadata, {
+      onReceiveMetadata: metadata => {
+        emitter.emit('metadata', metadata);
+      },
+      // tslint:disable-next-line no-any
+      onReceiveMessage(message: any) {
+        if (responseMessage != null) {
+          call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
+        }
+        responseMessage = message;
+      },
+      onReceiveStatus(status: StatusObject) {
+        if (receivedStatus) {
+          return;
+        }
+        receivedStatus = true;
+        if (status.code === Status.OK) {
+          callback!(null, responseMessage!);
+        } else {
+          callback!(callErrorFromStatus(status));
+        }
+        emitter.emit('status', status);
+      },
+    });
+    call.sendMessage(argument);
+    call.halfClose();
+    return emitter;
   }
 
   makeClientStreamRequest<RequestType, ResponseType>(
@@ -290,19 +329,59 @@ export class Client {
     ({ metadata, options, callback } = this.checkOptionalUnaryResponseArguments<
       ResponseType
     >(metadata, options, callback));
-    const call: Call = this[CHANNEL_SYMBOL].createCall(
-      method,
-      options.deadline,
-      options.host,
-      null,
-      options.propagate_flags
+    const methodDefinition: ClientMethodDefinition<
+      RequestType,
+      ResponseType
+    > = {
+      path: method,
+      requestStream: true,
+      responseStream: false,
+      requestSerialize: serialize,
+      responseDeserialize: deserialize,
+    };
+    const interceptorArgs: InterceptorArguments = {
+      clientInterceptors: this[INTERCEPTOR_SYMBOL],
+      clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
+      callInterceptors: options.interceptors ?? [],
+      callInterceptorProviders: options.interceptor_providers ?? [],
+    };
+    const call: InterceptingCallInterface = getInterceptingCall(
+      interceptorArgs,
+      methodDefinition,
+      options,
+      this[CHANNEL_SYMBOL]
     );
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
-    call.sendMetadata(metadata);
-    this.handleUnaryResponse<ResponseType>(call, deserialize, callback);
-    return new ClientWritableStreamImpl<RequestType>(call, serialize);
+    const emitter = new ClientWritableStreamImpl<RequestType>(call, serialize);
+    let responseMessage: ResponseType | null = null;
+    let receivedStatus = false;
+    call.start(metadata, {
+      onReceiveMetadata: metadata => {
+        emitter.emit('metadata', metadata);
+      },
+      // tslint:disable-next-line no-any
+      onReceiveMessage(message: any) {
+        if (responseMessage != null) {
+          call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
+        }
+        responseMessage = message;
+      },
+      onReceiveStatus(status: StatusObject) {
+        if (receivedStatus) {
+          return;
+        }
+        receivedStatus = true;
+        if (status.code === Status.OK) {
+          callback!(null, responseMessage!);
+        } else {
+          callback!(callErrorFromStatus(status));
+        }
+        emitter.emit('status', status);
+      },
+    });
+    return emitter;
   }
 
   private checkMetadataAndOptions(
@@ -353,22 +432,61 @@ export class Client {
     options?: CallOptions
   ): ClientReadableStream<ResponseType> {
     ({ metadata, options } = this.checkMetadataAndOptions(metadata, options));
-    const call: Call = this[CHANNEL_SYMBOL].createCall(
-      method,
-      options.deadline,
-      options.host,
-      null,
-      options.propagate_flags
+    const methodDefinition: ClientMethodDefinition<
+      RequestType,
+      ResponseType
+    > = {
+      path: method,
+      requestStream: false,
+      responseStream: true,
+      requestSerialize: serialize,
+      responseDeserialize: deserialize,
+    };
+    const interceptorArgs: InterceptorArguments = {
+      clientInterceptors: this[INTERCEPTOR_SYMBOL],
+      clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
+      callInterceptors: options.interceptors ?? [],
+      callInterceptorProviders: options.interceptor_providers ?? [],
+    };
+    const call: InterceptingCallInterface = getInterceptingCall(
+      interceptorArgs,
+      methodDefinition,
+      options,
+      this[CHANNEL_SYMBOL]
     );
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
-    const message: Buffer = serialize(argument);
-    const writeObj: WriteObject = { message };
-    call.sendMetadata(metadata);
-    call.write(writeObj);
-    call.end();
-    return new ClientReadableStreamImpl<ResponseType>(call, deserialize);
+    const stream = new ClientReadableStreamImpl<ResponseType>(
+      call,
+      deserialize
+    );
+    let receivedStatus = false;
+    call.start(metadata, {
+      onReceiveMetadata(metadata: Metadata) {
+        stream.emit('metadata', metadata);
+      },
+      // tslint:disable-next-line no-any
+      onReceiveMessage(message: any) {
+        if (stream.push(message)) {
+          call.startRead();
+        }
+      },
+      onReceiveStatus(status: StatusObject) {
+        if (receivedStatus) {
+          return;
+        }
+        receivedStatus = true;
+        stream.push(null);
+        if (status.code !== Status.OK) {
+          stream.emit('error', callErrorFromStatus(status));
+        }
+        stream.emit('status', status);
+      },
+    });
+    call.sendMessage(argument);
+    call.halfClose();
+    return stream;
   }
 
   makeBidiStreamRequest<RequestType, ResponseType>(
@@ -392,21 +510,58 @@ export class Client {
     options?: CallOptions
   ): ClientDuplexStream<RequestType, ResponseType> {
     ({ metadata, options } = this.checkMetadataAndOptions(metadata, options));
-    const call: Call = this[CHANNEL_SYMBOL].createCall(
-      method,
-      options.deadline,
-      options.host,
-      null,
-      options.propagate_flags
+    const methodDefinition: ClientMethodDefinition<
+      RequestType,
+      ResponseType
+    > = {
+      path: method,
+      requestStream: true,
+      responseStream: true,
+      requestSerialize: serialize,
+      responseDeserialize: deserialize,
+    };
+    const interceptorArgs: InterceptorArguments = {
+      clientInterceptors: this[INTERCEPTOR_SYMBOL],
+      clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
+      callInterceptors: options.interceptors ?? [],
+      callInterceptorProviders: options.interceptor_providers ?? [],
+    };
+    const call: InterceptingCallInterface = getInterceptingCall(
+      interceptorArgs,
+      methodDefinition,
+      options,
+      this[CHANNEL_SYMBOL]
     );
     if (options.credentials) {
       call.setCredentials(options.credentials);
     }
-    call.sendMetadata(metadata);
-    return new ClientDuplexStreamImpl<RequestType, ResponseType>(
+    const stream = new ClientDuplexStreamImpl<RequestType, ResponseType>(
       call,
       serialize,
       deserialize
     );
+    let receivedStatus = false;
+    call.start(metadata, {
+      onReceiveMetadata(metadata: Metadata) {
+        stream.emit('metadata', metadata);
+      },
+      onReceiveMessage(message: Buffer) {
+        if (stream.push(message)) {
+          call.startRead();
+        }
+      },
+      onReceiveStatus(status: StatusObject) {
+        if (receivedStatus) {
+          return;
+        }
+        receivedStatus = true;
+        stream.push(null);
+        if (status.code !== Status.OK) {
+          stream.emit('error', callErrorFromStatus(status));
+        }
+        stream.emit('status', status);
+      },
+    });
+    return stream;
   }
 }

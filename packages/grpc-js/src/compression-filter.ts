@@ -174,18 +174,17 @@ export class CompressionFilter extends BaseFilter implements Filter {
     return headers;
   }
 
-  async receiveMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    const headers: Metadata = await metadata;
-    const receiveEncoding: MetadataValue[] = headers.get('grpc-encoding');
+  receiveMetadata(metadata: Metadata): Metadata {
+    const receiveEncoding: MetadataValue[] = metadata.get('grpc-encoding');
     if (receiveEncoding.length > 0) {
       const encoding: MetadataValue = receiveEncoding[0];
       if (typeof encoding === 'string') {
         this.receiveCompression = getCompressionHandler(encoding);
       }
     }
-    headers.remove('grpc-encoding');
-    headers.remove('grpc-accept-encoding');
-    return headers;
+    metadata.remove('grpc-encoding');
+    metadata.remove('grpc-accept-encoding');
+    return metadata;
   }
 
   async sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {

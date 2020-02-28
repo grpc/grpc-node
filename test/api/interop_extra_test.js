@@ -46,8 +46,6 @@ function multiDone(done, count) {
 function echoMetadataGenerator(options, callback) {
   const metadata = new grpc.Metadata();
   metadata.set('x-grpc-test-echo-initial', 'test_initial_metadata_value');
-  console.log('Adding metadata');
-  console.log(metadata);
   callback(null, metadata);
 }
 
