@@ -296,9 +296,10 @@ export class Http2CallStream implements Call {
   }
 
   private handleFilteredRead(message: Buffer) {
-    /* If we the call has already ended, we don't want to do anything with
-     * this message. Dropping it on the floor is correct behavior */
-    if (this.finalStatus !== null) {
+    /* If we the call has already ended with an error, we don't want to do
+     * anything with this message. Dropping it on the floor is correct
+     * behavior */
+    if (this.finalStatus !== null && this.finalStatus.code !== Status.OK) {
       this.maybeOutputStatus();
       return;
     }
@@ -321,9 +322,10 @@ export class Http2CallStream implements Call {
   }
 
   private filterReceivedMessage(framedMessage: Buffer) {
-    /* If we the call has already ended, we don't want to do anything with
-     * this message. Dropping it on the floor is correct behavior */
-    if (this.finalStatus !== null) {
+    /* If we the call has already ended with an error, we don't want to do
+     * anything with this message. Dropping it on the floor is correct
+     * behavior */
+    if (this.finalStatus !== null && this.finalStatus.code !== Status.OK) {
       this.maybeOutputStatus();
       return;
     }
@@ -586,9 +588,9 @@ export class Http2CallStream implements Call {
   }
 
   startRead() {
-    /* If we have already emitted a status, we should not emit any more
+    /* If the stream has ended with an error, we should not emit any more
      * messages and we should communicate that the stream has ended */
-    if (this.finalStatus !== null) {
+    if (this.finalStatus !== null && this.finalStatus.code !== Status.OK) {
       this.readsClosed = true;
       this.maybeOutputStatus();
       return;
