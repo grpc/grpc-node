@@ -328,3 +328,20 @@ export function setup(): void {
   registerResolver('dns:', DnsResolver);
   registerDefaultResolver(DnsResolver);
 }
+
+export interface dnsUrl {
+  host: string;
+  port?: string;
+}
+
+export function parseTarget(target: string): dnsUrl | null {
+  const match = IPV4_REGEX.exec(target) ?? IPV6_REGEX.exec(target) ?? IPV6_BRACKET_REGEX.exec(target) ?? DNS_REGEX.exec(target)
+  if (match) {
+    return {
+      host: match[1],
+      port: match[2] ?? undefined
+    };
+  } else {
+    return null;
+  }
+}

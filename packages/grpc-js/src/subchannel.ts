@@ -26,6 +26,7 @@ import { BackoffTimeout, BackoffOptions } from './backoff-timeout';
 import { getDefaultAuthority } from './resolver';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
+import { shouldUseProxy, getProxiedConnection } from './http_proxy';
 import * as net from 'net';
 
 const { version: clientVersion } = require('../../package.json');
@@ -277,7 +278,7 @@ export class Subchannel {
     clearTimeout(this.keepaliveTimeoutId);
   }
 
-  private startConnectingInternal() {
+  private createSession(socket?: net.Socket) {
     let connectionOptions: http2.SecureClientSessionOptions =
       this.credentials._getConnectionOptions() || {};
     let addressScheme = 'http://';
@@ -300,15 +301,22 @@ export class Subchannel {
       } else {
         connectionOptions.servername = getDefaultAuthority(this.channelTarget);
       }
+      if (socket) {
+        connectionOptions.socket = socket;
+      }
     } else {
       /* In all but the most recent versions of Node, http2.connect does not use
        * the options when establishing plaintext connections, so we need to
        * establish that connection explicitly. */
       connectionOptions.createConnection = (authority, option) => {
-        /* net.NetConnectOpts is declared in a way that is more restrictive
-         * than what net.connect will actually accept, so we use the type
-         * assertion to work around that. */
-        return net.connect(this.subchannelAddress as net.NetConnectOpts);
+        if (socket) {
+          return socket;
+        } else {
+          /* net.NetConnectOpts is declared in a way that is more restrictive
+          * than what net.connect will actually accept, so we use the type
+          * assertion to work around that. */
+          return net.connect(this.subchannelAddress);
+        }
       };
     }
     connectionOptions = Object.assign(
@@ -400,6 +408,18 @@ export class Subchannel {
           (error as Error).message
       );
     });
+  }
+
+  private startConnectingInternal() {
+    if (shouldUseProxy(this.channelTarget)) {
+      getProxiedConnection(this.channelTarget, this.subchannelAddress).then((socket) => {
+        this.createSession(socket);
+      }, (reason) => {
+        this.transitionToState([ConnectivityState.CONNECTING], ConnectivityState.TRANSIENT_FAILURE);
+      });
+    } else {
+      this.createSession();
+    }
   }
 
   /**
