@@ -100,7 +100,8 @@ export class SubchannelPool {
       }, REF_CHECK_INTERVAL);
 
       // Unref because this timer should not keep the event loop running.
-      this.cleanupTimer.unref();
+      // Call unref only if it exists to address electron/electron#21162
+      this.cleanupTimer.unref?.();
     }
   }
 
