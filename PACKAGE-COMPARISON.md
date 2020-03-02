@@ -12,9 +12,9 @@ Automatic Reconnection | :heavy_check_mark: | :heavy_check_mark:
 Per-message Compression | :heavy_check_mark: | only for response messages
 Channel State | :heavy_check_mark: | :heavy_check_mark:
 JWT Access and Service Account Credentials | provided by the [Google Auth Library](https://www.npmjs.com/package/google-auth-library) | provided by the [Google Auth Library](https://www.npmjs.com/package/google-auth-library)
-Interceptors | :heavy_check_mark: | :x:
+Interceptors | :heavy_check_mark: | :heavy_check_mark:
 Connection Keepalives | :heavy_check_mark: | :heavy_check_mark:
-HTTP Connect Support | :heavy_check_mark: | :x:
+HTTP Connect Support | :heavy_check_mark: | :heavy_check_mark:
 Retries | :heavy_check_mark: | :x:
 Stats/tracing/monitoring | :heavy_check_mark: | :x:
 Load Balancing | :heavy_check_mark: | Pick first and round robin
