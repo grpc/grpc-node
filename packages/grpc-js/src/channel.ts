@@ -265,29 +265,42 @@ export class ChannelImplementation implements Channel {
                       callStream
                     );
                   } catch (error) {
-                    /* An error here indicates that something went wrong with
-                     * the picked subchannel's http2 stream right before we
-                     * tried to start the stream. We are handling a promise
-                     * result here, so this is asynchronous with respect to the
-                     * original tryPick call, so calling it again is not
-                     * recursive. We call tryPick immediately instead of
-                     * queueing this pick again because handling the queue is
-                     * triggered by state changes, and we want to immediately
-                     * check if the state has already changed since the
-                     * previous tryPick call. We do this instead of cancelling
-                     * the stream because the correct behavior may be
-                     * re-queueing instead, based on the logic in the rest of
-                     * tryPick */
-                    trace(
-                      LogVerbosity.INFO,
-                      'channel',
-                      'Failed to start call on picked subchannel ' +
+                    if ((error as NodeJS.ErrnoException).code === 'ERR_HTTP2_GOAWAY_SESSION') {
+                      /* An error here indicates that something went wrong with
+                      * the picked subchannel's http2 stream right before we
+                      * tried to start the stream. We are handling a promise
+                      * result here, so this is asynchronous with respect to the
+                      * original tryPick call, so calling it again is not
+                      * recursive. We call tryPick immediately instead of
+                      * queueing this pick again because handling the queue is
+                      * triggered by state changes, and we want to immediately
+                      * check if the state has already changed since the
+                      * previous tryPick call. We do this instead of cancelling
+                      * the stream because the correct behavior may be
+                      * re-queueing instead, based on the logic in the rest of
+                      * tryPick */
+                      trace(
+                        LogVerbosity.INFO,
+                        'channel',
+                        'Failed to start call on picked subchannel ' +
                         pickResult.subchannel!.getAddress() +
                         ' with error ' +
                         (error as Error).message +
                         '. Retrying pick'
-                    );
-                    this.tryPick(callStream, callMetadata);
+                      );
+                      this.tryPick(callStream, callMetadata);
+                    } else {
+                      trace(
+                        LogVerbosity.INFO,
+                        'channel',
+                        'Failed to start call on picked subchanel ' +
+                        pickResult.subchannel!.getAddress() +
+                        ' with error ' +
+                        (error as Error).message +
+                        '. Ending call'
+                      );
+                      callStream.cancelWithStatus(Status.INTERNAL, 'Failed to start HTTP/2 stream');
+                    }
                   }
                 } else {
                   /* The logic for doing this here is the same as in the catch
