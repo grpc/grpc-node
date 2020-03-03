@@ -240,7 +240,7 @@ export class Server {
     this._setupHandlers();
 
     function onError(err: Error): void {
-      callback(err, -1);
+      callback(err, 0);
     }
 
     this.http2Server.once('error', onError);

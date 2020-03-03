@@ -970,7 +970,7 @@ Server.prototype.addProtoService = util.deprecate(function(service,
  *     "address:port"
  * @param {grpc.ServerCredentials} creds Server credential object to be used for
  *     SSL. Pass an insecure credentials object for an insecure port.
- * @return {number} The bound port number. Negative if binding the port failed.
+ * @return {number} The bound port number. Zero if binding the port failed.
  */
 Server.prototype.bind = function(port, creds) {
   if (this.started) {
@@ -984,7 +984,7 @@ Server.prototype.bind = function(port, creds) {
  * @callback grpc.Server~bindCallback
  * @param {Error=} error If non-null, indicates that binding the port failed.
  * @param {number} port The bound port number. If binding the port fails, this
- *     will be negative to match the output of bind.
+ *     will be zero to match the output of bind.
  */
 
 /**
@@ -1000,7 +1000,7 @@ Server.prototype.bindAsync = function(port, creds, callback) {
    * incorrect use of the function, which should not be surfaced asynchronously
    */
   const result = this.bind(port, creds)
-  if (result < 0) {
+  if (result == 0) {
     setImmediate(callback, new Error('Failed to bind port'), result);
   } else {
     setImmediate(callback, null, result);
