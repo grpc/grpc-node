@@ -46,7 +46,14 @@ describe('Name Resolver', () => {
                 addr.port === 50051
             )
           );
-          // We would check for the IPv6 address but it needs to be omitted on some Node versions
+          assert(
+            addressList.some(
+              addr =>
+                isTcpSubchannelAddress(addr) &&
+                addr.host === '::1' &&
+                addr.port === 50051
+            )
+          );
           done();
         },
         onError: (error: StatusObject) => {
@@ -72,7 +79,14 @@ describe('Name Resolver', () => {
                 addr.port === 443
             )
           );
-          // We would check for the IPv6 address but it needs to be omitted on some Node versions
+          assert(
+            addressList.some(
+              addr =>
+                isTcpSubchannelAddress(addr) &&
+                addr.host === '::1' &&
+                addr.port === 443
+            )
+          );
           done();
         },
         onError: (error: StatusObject) => {
@@ -98,7 +112,6 @@ describe('Name Resolver', () => {
                 addr.port === 443
             )
           );
-          // We would check for the IPv6 address but it needs to be omitted on some Node versions
           done();
         },
         onError: (error: StatusObject) => {
@@ -124,7 +137,6 @@ describe('Name Resolver', () => {
                 addr.port === 443
             )
           );
-          // We would check for the IPv6 address but it needs to be omitted on some Node versions
           done();
         },
         onError: (error: StatusObject) => {
@@ -150,7 +162,6 @@ describe('Name Resolver', () => {
                 addr.port === 50051
             )
           );
-          // We would check for the IPv6 address but it needs to be omitted on some Node versions
           done();
         },
         onError: (error: StatusObject) => {
@@ -186,7 +197,72 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
-          assert(addressList.length > 0);
+          assert(
+            addressList.some(
+              addr =>
+                isTcpSubchannelAddress(addr) &&
+                addr.host === '127.0.0.1' &&
+                addr.port === 443
+            )
+          );
+          done();
+        },
+        onError: (error: StatusObject) => {
+          done(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver = resolverManager.createResolver(target, listener);
+      resolver.updateResolution();
+    });
+    it('Should resolve a DNS name to an IPv6 address', done => {
+      const target = 'loopback6.unittest.grpc.io';
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: SubchannelAddress[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          assert(
+            addressList.some(
+              addr =>
+                isTcpSubchannelAddress(addr) &&
+                addr.host === '::1' &&
+                addr.port === 443
+            )
+          );
+          done();
+        },
+        onError: (error: StatusObject) => {
+          done(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver = resolverManager.createResolver(target, listener);
+      resolver.updateResolution();
+    });
+    it('Should resolve a DNS name to IPv4 and IPv6 addresses', done => {
+      const target = 'loopback46.unittest.grpc.io';
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: SubchannelAddress[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          assert(
+            addressList.some(
+              addr =>
+                isTcpSubchannelAddress(addr) &&
+                addr.host === '127.0.0.1' &&
+                addr.port === 443
+            )
+          );
+          assert(
+            addressList.some(
+              addr =>
+                isTcpSubchannelAddress(addr) &&
+                addr.host === '::1' &&
+                addr.port === 443
+            )
+          );
           done();
         },
         onError: (error: StatusObject) => {

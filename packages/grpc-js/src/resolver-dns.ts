@@ -21,7 +21,6 @@ import {
   registerDefaultResolver,
 } from './resolver';
 import * as dns from 'dns';
-import * as semver from 'semver';
 import * as util from 'util';
 import { extractAndSelectServiceConfig, ServiceConfig } from './service-config';
 import { ServiceError } from './call';
@@ -69,14 +68,6 @@ const DNS_REGEX = /^(?:dns:)?(?:\/\/(?:[a-zA-Z0-9-]+\.?)+\/)?((?:[a-zA-Z0-9-]+\.
  * The default TCP port to connect to if not explicitly specified in the target.
  */
 const DEFAULT_PORT = '443';
-
-/**
- * The range of Node versions in which the Node issue
- * https://github.com/nodejs/node/issues/28216 has been fixed. In other
- * versions, IPv6 literal addresses cannot be used to establish HTTP/2
- * connections.
- */
-const IPV6_SUPPORT_RANGE = '>= 12.6';
 
 /**
  * Get a promise that always resolves with either the result of the function
@@ -226,12 +217,7 @@ class DnsResolver implements Resolver {
           const ip4Addresses: dns.LookupAddress[] = addressList.filter(
             addr => addr.family === 4
           );
-          let ip6Addresses: dns.LookupAddress[];
-          if (semver.satisfies(process.version, IPV6_SUPPORT_RANGE)) {
-            ip6Addresses = addressList.filter(addr => addr.family === 6);
-          } else {
-            ip6Addresses = [];
-          }
+          const ip6Addresses: dns.LookupAddress[] = addressList.filter(addr => addr.family === 6);
           const allAddresses: TcpSubchannelAddress[] = mergeArrays(
             ip4Addresses,
             ip6Addresses
