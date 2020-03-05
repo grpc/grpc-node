@@ -1000,7 +1000,7 @@ Server.prototype.bindAsync = function(port, creds, callback) {
    * incorrect use of the function, which should not be surfaced asynchronously
    */
   const result = this.bind(port, creds)
-  if (result == 0) {
+  if (result === 0) {
     setImmediate(callback, new Error('Failed to bind port'), result);
   } else {
     setImmediate(callback, null, result);
