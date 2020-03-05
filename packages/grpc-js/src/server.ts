@@ -249,11 +249,7 @@ export class Server {
 
     const bindSpecificPort = (addressList: SubchannelAddress[], portNum: number, previousCount: number): Promise<BindResult> => {
       if (addressList.length === 0) {
-        if (previousCount > 0) {
-          return Promise.resolve({port: portNum, count: previousCount});
-        } else {
-          return Promise.reject<BindResult>(new Error('No addresses bound'));
-        }
+        return Promise.resolve({port: portNum, count: previousCount});
       }
       return Promise.all(addressList.map(address => {
         let addr: SubchannelAddress;
@@ -303,7 +299,7 @@ export class Server {
 
     const bindWildcardPort = (addressList: SubchannelAddress[]): Promise<BindResult> => {
       if (addressList.length === 0) {
-        return Promise.reject<BindResult>(new Error('No addresses bound'));
+        return Promise.resolve<BindResult>({port: 0, count: 0});
       }
       const address = addressList[0];
       const http2Server = setupServer();
