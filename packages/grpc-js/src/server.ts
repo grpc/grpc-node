@@ -271,6 +271,7 @@ export class Server {
           http2Server.once('error', onError);
 
           http2Server.listen(addr, () => {
+            this.http2ServerList.push(http2Server);
             const boundAddress = http2Server.address()!;
             if (typeof boundAddress === 'string') {
               resolve(portNum);
@@ -311,6 +312,7 @@ export class Server {
         http2Server.once('error', onError);
 
         http2Server.listen(address, () => {
+          this.http2ServerList.push(http2Server);
           resolve(bindSpecificPort(addressList.slice(1), (http2Server.address() as AddressInfo).port, 1));
           http2Server.removeListener('error', onError);
         });
