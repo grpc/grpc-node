@@ -27,4 +27,5 @@ jobs:
         gulp test
       working-directory: packages/grpc-js
     - name: Resolve IPv6 addresses
-      run: node -p 'require("dns").lookup("loopback6.unittest.grpc.io", {all: true}, console.log)'
+      run: |
+        node -p 'require("dns").lookup("loopback6.unittest.grpc.io", {all: true}, console.log)'
