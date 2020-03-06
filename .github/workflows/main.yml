@@ -20,9 +20,9 @@ jobs:
     - name: Resolve IPv6 addresses
       run: |
         node -p 'require("dns").lookup("loopback6.unittest.grpc.io", {all: true}, console.log)'
-        host -t ANY loopback6.unittest.grpc.io
+        host loopback6.unittest.grpc.io
         node -p 'require("dns").lookup("loopback46.unittest.grpc.io", {all: true}, console.log)'
-        host -t ANY loopback46.unittest.grpc.io
+        host loopback46.unittest.grpc.io
     - name: Install dependencies
       run: |
         npm install
