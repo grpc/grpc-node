@@ -20,10 +20,14 @@ jobs:
     - name: Resolve IPv6 addresses
       run: |
         node -p 'require("dns").getServers()'
+        echo 'lookup loopback6.unittest.grpc.io hints: 0'
         node -p 'require("dns").lookup("loopback6.unittest.grpc.io", {all: true, hints: 0}, console.log)'
+        echo 'lookup loopback6.unittest.grpc.io hints: dns.V4MAPPED'
+        node -p 'require("dns").lookup("loopback6.unittest.grpc.io", {all: true, hints: dns.V4MAPPED}, console.log)'
+        echo 'resolve loopback6.unittest.grpc.io'
         node -p 'require("dns").resolve6("loopback6.unittest.grpc.io", console.log)'
         host loopback6.unittest.grpc.io
-        node -p 'require("dns").lookup("loopback46.unittest.grpc.io", {all: true, hints: 0}, console.log)'
+        node -p 'require("dns").lookup("loopback46.unittest.grpc.io", {all: true, hints: dns.V4MAPPED}, console.log)'
         host loopback46.unittest.grpc.io
     - name: Install dependencies
       run: |
