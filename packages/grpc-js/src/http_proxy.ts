@@ -36,8 +36,8 @@ interface ProxyInfo {
 }
 
 function getProxyInfo(): ProxyInfo {
-  let proxyEnv: string = '';
-  let envVar: string = '';
+  let proxyEnv = '';
+  let envVar = '';
   /* Prefer using 'grpc_proxy'. Fallback on 'http_proxy' if it is not set.
    * Also prefer using 'https_proxy' with fallback on 'http_proxy'. The
    * fallback behavior can be removed if there's a demand for it.
@@ -89,7 +89,7 @@ const PROXY_INFO = getProxyInfo();
 function getNoProxyHostList(): string[] {
   /* Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set. */
   let noProxyStr: string | undefined = process.env.no_grpc_proxy;
-  let envVar: string = 'no_grpc_proxy';
+  let envVar = 'no_grpc_proxy';
   if (!noProxyStr) {
     noProxyStr = process.env.no_proxy;
     envVar = 'no_proxy';

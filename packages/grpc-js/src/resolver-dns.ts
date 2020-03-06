@@ -356,12 +356,12 @@ export function setup(): void {
   registerDefaultResolver(DnsResolver);
 }
 
-export interface dnsUrl {
+export interface DnsUrl {
   host: string;
   port?: string;
 }
 
-export function parseTarget(target: string): dnsUrl | null {
+export function parseTarget(target: string): DnsUrl | null {
   const match = IPV4_REGEX.exec(target) ?? IPV6_REGEX.exec(target) ?? IPV6_BRACKET_REGEX.exec(target) ?? DNS_REGEX.exec(target)
   if (match) {
     return {
