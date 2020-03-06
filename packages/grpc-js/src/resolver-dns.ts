@@ -97,7 +97,28 @@ const resolveTxtPromise = resolvePromisify<
   string[][],
   NodeJS.ErrnoException
 >(dns.resolveTxt);
-const dnsLookupPromise = util.promisify(dns.lookup);
+const resolve4Promise = resolvePromisify<
+  string,
+  string[],
+  NodeJS.ErrnoException
+>(dns.resolve4);
+const resolve6Promise = resolvePromisify<
+  string,
+  string[],
+  NodeJS.ErrnoException
+>(dns.resolve6);
+
+function dnsLookupPromise(hostname: string, options: dns.LookupAllOptions): Promise<dns.LookupAddress[] | NodeJS.ErrnoException> {
+  return new Promise<dns.LookupAddress[] | NodeJS.ErrnoException>((resolve, reject) => {
+    dns.lookup(hostname, options, (error, addresses) => {
+      if (error) {
+        resolve(error);
+      } else {
+        resolve(addresses);
+      }
+    });
+  });
+}
 
 /**
  * Attempt to parse a target string as an IP address
@@ -159,7 +180,7 @@ class DnsResolver implements Resolver {
   /* The promise results here contain, in order, the A record, the AAAA record,
    * and either the TXT record or an error if TXT resolution failed */
   private pendingResultPromise: Promise<
-    [dns.LookupAddress[], string[][] | NodeJS.ErrnoException]
+    [dns.LookupAddress[] | NodeJS.ErrnoException, dns.LookupAddress[] | NodeJS.ErrnoException, string[] | NodeJS.ErrnoException, string[] | NodeJS.ErrnoException, string[][] | NodeJS.ErrnoException]
   > | null = null;
   private percentage: number;
   private defaultResolutionError: StatusObject;
@@ -201,27 +222,47 @@ class DnsResolver implements Resolver {
     }
     if (this.dnsHostname !== null) {
       const hostname: string = this.dnsHostname;
-      /* We lookup both address families here and then split them up later
-       * because when looking up a single family, dns.lookup outputs an error
-       * if the name exists but there are no records for that family, and that
-       * error is indistinguishable from other kinds of errors */
-      const addressResult = dnsLookupPromise(hostname, { all: true });
-      /* We handle the TXT query promise differently than the others because
-       * the name resolution attempt as a whole is a success even if the TXT
-       * lookup fails */
+      /* We use both dns.lookup and dns.resolve{4,6} to maximize our chances of
+       * actually getting records, to account for the fact that resolve can't
+       * resolve localhost in some environments
+       * (https://github.com/nodejs/help/issues/2163) and that lookup sometimes
+       * fails to get AAAA records on MacOS in some environments. The result is
+       * a little more lenient than the original design: here, if either method
+       * resolves any IPv4 or IPv6 addresses, we consider the whole resolution
+       * operation a success */
+      const lookup4Result = dnsLookupPromise(hostname, {all: true, family: 4});
+      const lookup6Result = dnsLookupPromise(hostname, {all: true, family: 6});
+      const resolve4Result = resolve4Promise(hostname);
+      const resolve6Result = resolve6Promise(hostname);
       const txtResult = resolveTxtPromise(hostname);
-      this.pendingResultPromise = Promise.all([addressResult, txtResult]);
+      this.pendingResultPromise = Promise.all([lookup4Result, lookup6Result, resolve4Result, resolve6Result, txtResult]);
       this.pendingResultPromise.then(
-        ([addressList, txtRecord]) => {
+        ([ip4LookupAddresses, ip6LookupAddresses, ip44ResolveAddresses, ip6ResolveAddresses, txtRecord]) => {
           this.pendingResultPromise = null;
-          const ip4Addresses: dns.LookupAddress[] = addressList.filter(
-            addr => addr.family === 4
-          );
-          const ip6Addresses: dns.LookupAddress[] = addressList.filter(addr => addr.family === 6);
+          let ip4Addresses: string[];
+          if (Array.isArray(ip4LookupAddresses)) {
+            ip4Addresses = ip4LookupAddresses.map(addr => addr.address);
+          } else {
+            if (Array.isArray(ip44ResolveAddresses)) {
+              ip4Addresses = ip44ResolveAddresses;
+            } else {
+              ip4Addresses = [];
+            }
+          }
+          let ip6Addresses: string[];
+          if (Array.isArray(ip6LookupAddresses)) {
+            ip6Addresses = ip6LookupAddresses.map(addr => addr.address);
+          } else {
+            if (Array.isArray(ip6ResolveAddresses)) {
+              ip6Addresses = ip6ResolveAddresses;
+            } else {
+              ip6Addresses = [];
+            }
+          }
           const allAddresses: TcpSubchannelAddress[] = mergeArrays(
             ip4Addresses,
             ip6Addresses
-          ).map(addr => ({ host: addr.address, port: +this.port! }));
+          ).map(addr => ({ host: addr, port: +this.port! }));
           const allAddressesString: string =
             '[' +
             allAddresses.map(addr => addr.host + ':' + addr.port).join(',') +
