@@ -19,7 +19,9 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: Resolve IPv6 addresses
       run: |
+        node -p 'require("dns").getServers()'
         node -p 'require("dns").lookup("loopback6.unittest.grpc.io", {all: true}, console.log)'
+        node -p 'require("dns").resolve6("loopback6.unittest.grpc.io", console.log)'
         host loopback6.unittest.grpc.io
         node -p 'require("dns").lookup("loopback46.unittest.grpc.io", {all: true}, console.log)'
         host loopback46.unittest.grpc.io
