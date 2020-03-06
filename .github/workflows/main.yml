@@ -1,0 +1,28 @@
+name: CI
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        node-version: [10, 12]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up node ${{ matrix.node-version }} using nvm
+      uses: dcodeIO/setup-node-nvm@v2.0.0
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Install dependencies
+      run: |
+        npm install
+        npm install -g gulp
+    - name: Run pure JS tests
+      run: |
+        npm install
+        gulp test
+      working-directory: packages/grpc-js
