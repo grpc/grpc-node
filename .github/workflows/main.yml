@@ -17,6 +17,10 @@ jobs:
       uses: dcodeIO/setup-node-nvm@v2.0.0
       with:
         node-version: ${{ matrix.node-version }}
+    - name: Resolve IPv6 addresses
+      run: |
+        node -p 'require("dns").lookup("loopback6.unittest.grpc.io", {all: true}, console.log)'
+        host -t ANY loopback6.unittest.grpc.io
     - name: Install dependencies
       run: |
         npm install
@@ -26,6 +30,3 @@ jobs:
         npm install
         gulp test
       working-directory: packages/grpc-js
-    - name: Resolve IPv6 addresses
-      run: |
-        node -p 'require("dns").lookup("loopback6.unittest.grpc.io", {all: true}, console.log)'
