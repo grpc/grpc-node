@@ -302,6 +302,7 @@ function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
         continue;
       }
     }
+    process.emitWarning(`${target} not found in any of the include paths ${includePaths}`);
     return originalResolvePath(origin, target);
   };
 }
