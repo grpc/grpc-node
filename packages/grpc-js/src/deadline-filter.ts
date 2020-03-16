@@ -66,7 +66,7 @@ export class DeadlineFilter extends BaseFilter implements Filter {
           'Deadline exceeded'
         );
       }, timeout);
-      this.timer.unref();
+      this.timer.unref?.();
     }
   }
 
