@@ -34,6 +34,7 @@ export type ServiceError = StatusObject & Error;
  * A base type for all user-facing values returned by client-side method calls.
  */
 export type SurfaceCall = {
+  call?: InterceptingCallInterface;
   cancel(): void;
   getPeer(): string;
 } & EmitterAugmentation1<'metadata', Metadata> &
@@ -82,56 +83,57 @@ export function callErrorFromStatus(status: StatusObject): ServiceError {
 
 export class ClientUnaryCallImpl extends EventEmitter
   implements ClientUnaryCall {
-  constructor(private readonly call: InterceptingCallInterface) {
+  public call?: InterceptingCallInterface;
+  constructor() {
     super();
   }
 
   cancel(): void {
-    this.call.cancelWithStatus(Status.CANCELLED, 'Cancelled on client');
+    this.call?.cancelWithStatus(Status.CANCELLED, 'Cancelled on client');
   }
 
   getPeer(): string {
-    return this.call.getPeer();
+    return this.call?.getPeer() ?? '';
   }
 }
 
 export class ClientReadableStreamImpl<ResponseType> extends Readable
   implements ClientReadableStream<ResponseType> {
+  public call?: InterceptingCallInterface;
   constructor(
-    private readonly call: InterceptingCallInterface,
     readonly deserialize: (chunk: Buffer) => ResponseType
   ) {
     super({ objectMode: true });
   }
 
   cancel(): void {
-    this.call.cancelWithStatus(Status.CANCELLED, 'Cancelled on client');
+    this.call?.cancelWithStatus(Status.CANCELLED, 'Cancelled on client');
   }
 
   getPeer(): string {
-    return this.call.getPeer();
+    return this.call?.getPeer() ?? '';
   }
 
   _read(_size: number): void {
-    this.call.startRead();
+    this.call?.startRead();
   }
 }
 
 export class ClientWritableStreamImpl<RequestType> extends Writable
   implements ClientWritableStream<RequestType> {
+  public call?: InterceptingCallInterface;
   constructor(
-    private readonly call: InterceptingCallInterface,
     readonly serialize: (value: RequestType) => Buffer
   ) {
     super({ objectMode: true });
   }
 
   cancel(): void {
-    this.call.cancelWithStatus(Status.CANCELLED, 'Cancelled on client');
+    this.call?.cancelWithStatus(Status.CANCELLED, 'Cancelled on client');
   }
 
   getPeer(): string {
-    return this.call.getPeer();
+    return this.call?.getPeer() ?? '';
   }
 
   _write(chunk: RequestType, encoding: string, cb: WriteCallback) {
@@ -142,19 +144,19 @@ export class ClientWritableStreamImpl<RequestType> extends Writable
     if (!Number.isNaN(flags)) {
       context.flags = flags;
     }
-    this.call.sendMessageWithContext(context, chunk);
+    this.call?.sendMessageWithContext(context, chunk);
   }
 
   _final(cb: Function) {
-    this.call.halfClose();
+    this.call?.halfClose();
     cb();
   }
 }
 
 export class ClientDuplexStreamImpl<RequestType, ResponseType> extends Duplex
   implements ClientDuplexStream<RequestType, ResponseType> {
+  public call?: InterceptingCallInterface;
   constructor(
-    private readonly call: InterceptingCallInterface,
     readonly serialize: (value: RequestType) => Buffer,
     readonly deserialize: (chunk: Buffer) => ResponseType
   ) {
@@ -162,15 +164,15 @@ export class ClientDuplexStreamImpl<RequestType, ResponseType> extends Duplex
   }
 
   cancel(): void {
-    this.call.cancelWithStatus(Status.CANCELLED, 'Cancelled on client');
+    this.call?.cancelWithStatus(Status.CANCELLED, 'Cancelled on client');
   }
 
   getPeer(): string {
-    return this.call.getPeer();
+    return this.call?.getPeer() ?? '';
   }
 
   _read(_size: number): void {
-    this.call.startRead();
+    this.call?.startRead();
   }
 
   _write(chunk: RequestType, encoding: string, cb: WriteCallback) {
@@ -181,11 +183,11 @@ export class ClientDuplexStreamImpl<RequestType, ResponseType> extends Duplex
     if (!Number.isNaN(flags)) {
       context.flags = flags;
     }
-    this.call.sendMessageWithContext(context, chunk);
+    this.call?.sendMessageWithContext(context, chunk);
   }
 
   _final(cb: Function) {
-    this.call.halfClose();
+    this.call?.halfClose();
     cb();
   }
 }
