@@ -224,7 +224,8 @@ export class Http2CallStream implements Call {
     /* Precondition: this.finalStatus !== null */
     if (!this.statusOutput) {
       this.statusOutput = true;
-      this.listener!.onReceiveStatus(this.finalStatus!);
+      const filteredStatus = this.filterStack.receiveTrailers(this.finalStatus!);
+      this.listener!.onReceiveStatus(filteredStatus);
       if (this.subchannel) {
         this.subchannel.callUnref();
         this.subchannel.removeDisconnectListener(this.disconnectListener);
@@ -353,13 +354,25 @@ export class Http2CallStream implements Call {
 
   private handleTrailers(headers: http2.IncomingHttpHeaders) {
     this.trace('received HTTP/2 trailing headers frame');
-    const code: Status = this.mappedStatusCode;
-    const details = '';
     let metadata: Metadata;
     try {
       metadata = Metadata.fromHttp2Headers(headers);
     } catch (e) {
       metadata = new Metadata();
+    }
+    const metadataMap = metadata.getMap();
+    let code: Status = this.mappedStatusCode;
+    if (code === Status.UNKNOWN && typeof metadataMap['grpc-status'] === 'string') {
+      const receivedStatus = Number(metadataMap['grpc-status']);
+      if (receivedStatus in Status) {
+        code = receivedStatus;
+      }
+      metadata.remove('grpc-status');
+    }
+    let details = '';
+    if (typeof metadataMap['grpc-message'] === 'string') {
+      details = decodeURI(metadataMap['grpc-message']);
+      metadata.remove('grpc-message');
     }
     const status: StatusObject = { code, details, metadata };
     let finalStatus;

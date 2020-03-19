@@ -32,7 +32,6 @@ import { Status, LogVerbosity } from './constants';
 import { FilterStackFactory } from './filter-stack';
 import { CallCredentialsFilterFactory } from './call-credentials-filter';
 import { DeadlineFilterFactory } from './deadline-filter';
-import { MetadataStatusFilterFactory } from './metadata-status-filter';
 import { CompressionFilterFactory } from './compression-filter';
 import { getDefaultAuthority } from './resolver';
 import { LoadBalancingConfig } from './load-balancing-config';
@@ -192,7 +191,6 @@ export class ChannelImplementation implements Channel {
     this.filterStackFactory = new FilterStackFactory([
       new CallCredentialsFilterFactory(this),
       new DeadlineFilterFactory(this),
-      new MetadataStatusFilterFactory(this),
       new CompressionFilterFactory(this),
     ]);
     // TODO(murgatroid99): Add more centralized handling of channel options
