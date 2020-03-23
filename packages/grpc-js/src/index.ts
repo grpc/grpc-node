@@ -28,7 +28,7 @@ import { CallCredentials } from './call-credentials';
 import { Deadline, StatusObject } from './call-stream';
 import { Channel, ConnectivityState, ChannelImplementation } from './channel';
 import { ChannelCredentials } from './channel-credentials';
-import { CallOptions, Client } from './client';
+import { CallOptions, Client, CallInvocationTransformer, CallProperties } from './client';
 import { LogVerbosity, Status } from './constants';
 import * as logging from './logging';
 import {
@@ -199,7 +199,10 @@ export {
   loadPackageDefinition,
   makeClientConstructor,
   makeClientConstructor as makeGenericClientConstructor,
+  CallProperties,
+  CallInvocationTransformer,
   ChannelImplementation as Channel,
+  Channel as ChannelInterface
 };
 
 /**

@@ -48,6 +48,7 @@ import {
   InterceptorArguments,
   InterceptingCallInterface,
 } from './client-interceptors';
+import { ServerUnaryCall, ServerReadableStream, ServerWritableStream, ServerDuplexStream } from './server-call';
 
 const CHANNEL_SYMBOL = Symbol();
 const INTERCEPTOR_SYMBOL = Symbol();
@@ -61,8 +62,7 @@ export interface UnaryCallback<ResponseType> {
 export interface CallOptions {
   deadline?: Deadline;
   host?: string;
-  /* There should be a parent option here that will accept a server call,
-   * but the server is not yet implemented so it makes no sense to have it */
+  parent?: ServerUnaryCall<any, any> | ServerReadableStream<any, any> | ServerWritableStream<any, any> | ServerDuplexStream<any, any>
   propagate_flags?: number;
   credentials?: CallCredentials;
   interceptors?: Interceptor[];

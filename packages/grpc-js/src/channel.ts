@@ -110,9 +110,9 @@ export interface Channel {
    */
   createCall(
     method: string,
-    deadline: Deadline | null | undefined,
+    deadline: Deadline,
     host: string | null | undefined,
-    parentCall: Call | null | undefined,
+    parentCall: any,
     propagateFlags: number | null | undefined
   ): Call;
 }
@@ -140,6 +140,15 @@ export class ChannelImplementation implements Channel {
     private readonly credentials: ChannelCredentials,
     private readonly options: ChannelOptions
   ) {
+    if (typeof target !== 'string') {
+      throw new TypeError('Channel target must be a string');
+    }
+    if (!(credentials instanceof ChannelCredentials)) {
+      throw new TypeError('Channel credentials must be a ChannelCredentials object');
+    }
+    if ((typeof options !== 'object') || !Object.values(options).every(value => typeof value === 'string' || typeof value === 'number')) {
+      throw new TypeError('Channel options must be an object with string or number values');
+    }
     /* The global boolean parameter to getSubchannelPool has the inverse meaning to what
      * the grpc.use_local_subchannel_pool channel option means. */
     this.subchannelPool = getSubchannelPool(
@@ -430,11 +439,17 @@ export class ChannelImplementation implements Channel {
 
   createCall(
     method: string,
-    deadline: Deadline | null | undefined,
+    deadline: Deadline,
     host: string | null | undefined,
-    parentCall: Call | null | undefined,
+    parentCall: any,
     propagateFlags: number | null | undefined
   ): Call {
+    if (typeof method !== 'string') {
+      throw new TypeError('Channel#createCall: method must be a string');
+    }
+    if (!(typeof deadline === 'number' || deadline instanceof Date)) {
+      throw new TypeError('Channel#createCall: deadline must be a number or Date');
+    }
     if (this.connectivityState === ConnectivityState.SHUTDOWN) {
       throw new Error('Channel has been shut down');
     }
@@ -451,8 +466,7 @@ export class ChannelImplementation implements Channel {
         deadline
     );
     const finalOptions: CallStreamOptions = {
-      deadline:
-        deadline === null || deadline === undefined ? Infinity : deadline,
+      deadline: deadline,
       flags: propagateFlags || 0,
       host: host || this.defaultAuthority,
       parentCall: parentCall || null,
