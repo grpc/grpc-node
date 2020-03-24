@@ -146,8 +146,10 @@ export class ChannelImplementation implements Channel {
     if (!(credentials instanceof ChannelCredentials)) {
       throw new TypeError('Channel credentials must be a ChannelCredentials object');
     }
-    if ((typeof options !== 'object') || !Object.values(options).every(value => typeof value === 'string' || typeof value === 'number')) {
-      throw new TypeError('Channel options must be an object with string or number values');
+    if (options) {
+      if ((typeof options !== 'object') || !Object.values(options).every(value => typeof value === 'string' || typeof value === 'number')) {
+        throw new TypeError('Channel options must be an object with string or number values');
+      }
     }
     /* The global boolean parameter to getSubchannelPool has the inverse meaning to what
      * the grpc.use_local_subchannel_pool channel option means. */
