@@ -109,10 +109,28 @@ export class Client {
     credentials: ChannelCredentials,
     options: ClientOptions = {}
   ) {
+    options = Object.assign({}, options);
+    this[INTERCEPTOR_SYMBOL] = options.interceptors ?? [];
+    delete options.interceptors;
+    this[INTERCEPTOR_PROVIDER_SYMBOL] = options.interceptor_providers ?? [];
+    delete options.interceptor_providers;
+    if (
+      this[INTERCEPTOR_SYMBOL].length > 0 &&
+      this[INTERCEPTOR_PROVIDER_SYMBOL].length > 0
+    ) {
+      throw new Error(
+        'Both interceptors and interceptor_providers were passed as options ' +
+          'to the client constructor. Only one of these is allowed.'
+      );
+    }
+    this[CALL_INVOCATION_TRANSFORMER_SYMBOL] = options.callInvocationTransformer;
+    delete options.callInvocationTransformer;
     if (options.channelOverride) {
       this[CHANNEL_SYMBOL] = options.channelOverride;
     } else if (options.channelFactoryOverride) {
-      this[CHANNEL_SYMBOL] = options.channelFactoryOverride(
+      const channelFactoryOverride = options.channelFactoryOverride;
+      delete options.channelFactoryOverride;
+      this[CHANNEL_SYMBOL] = channelFactoryOverride(
         address,
         credentials,
         options
@@ -124,18 +142,6 @@ export class Client {
         options
       );
     }
-    this[INTERCEPTOR_SYMBOL] = options.interceptors ?? [];
-    this[INTERCEPTOR_PROVIDER_SYMBOL] = options.interceptor_providers ?? [];
-    if (
-      this[INTERCEPTOR_SYMBOL].length > 0 &&
-      this[INTERCEPTOR_PROVIDER_SYMBOL].length > 0
-    ) {
-      throw new Error(
-        'Both interceptors and interceptor_providers were passed as options ' +
-          'to the client constructor. Only one of these is allowed.'
-      );
-    }
-    this[CALL_INVOCATION_TRANSFORMER_SYMBOL] = options.callInvocationTransformer;
   }
 
   close(): void {
