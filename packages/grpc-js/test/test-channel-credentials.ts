@@ -59,6 +59,13 @@ const pFixtures = Promise.all(
 ).then(result => {
   return { ca: result[0], key: result[1], cert: result[2] };
 });
+const sFixtures = pFixtures.then(result => {
+  return {
+    ca: result.ca.toString('utf8'),
+    key: result.key.toString('utf8'),
+    cert: result.cert.toString('utf8')
+  };
+});
 
 describe('ChannelCredentials Implementation', () => {
   describe('createInsecure', () => {
@@ -110,6 +117,14 @@ describe('ChannelCredentials Implementation', () => {
       assert.throws(() => ChannelCredentials.createSsl(null, key));
       assert.throws(() => ChannelCredentials.createSsl(null, key, null));
       assert.throws(() => ChannelCredentials.createSsl(null, null, cert));
+    });
+
+    it('should work with three parameters specified as PEM string', async () => {
+      const { ca, key, cert } = await sFixtures;
+      const creds = assert2.noThrowAndReturn(() =>
+        ChannelCredentials.createSsl(ca, key, cert)
+      );
+      assert.ok(!!creds._getConnectionOptions());
     });
   });
 

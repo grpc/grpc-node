@@ -53,7 +53,7 @@ function bufferOrStringOrNullEqual(buf1: Buffer | string | null, buf2: Buffer | 
     return true;
   } else {
     return buf1 !== null && buf2 !== null && (buf1 === buf2 ||
-        (buf1 instanceof Buffer && buf2 instanceof Buffer && (<Buffer> buf1).equals(<Buffer> buf2)));
+        (buf1 instanceof Buffer && (buf1 as Buffer).equals(buf2 as Buffer)));
   }
 }
 
