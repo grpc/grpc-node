@@ -21,9 +21,9 @@ import { CallCredentials } from './call-credentials';
 import { CIPHER_SUITES, getDefaultRootsData } from './tls-helpers';
 
 // tslint:disable-next-line:no-any
-function verifyIsBufferOrNull(obj: any, friendlyName: string): void {
-  if (obj && !(obj instanceof Buffer)) {
-    throw new TypeError(`${friendlyName}, if provided, must be a Buffer.`);
+function verifyIsBufferOrStringOrNull(obj: any, friendlyName: string): void {
+  if (obj && !(obj instanceof Buffer) && typeof obj !== 'string') {
+    throw new TypeError(`${friendlyName}, if provided, must be a Buffer or string.`);
   }
 }
 
@@ -48,11 +48,12 @@ export type CheckServerIdentityCallback = (
   cert: Certificate
 ) => Error | undefined;
 
-function bufferOrNullEqual(buf1: Buffer | null, buf2: Buffer | null) {
+function bufferOrStringOrNullEqual(buf1: Buffer | string | null, buf2: Buffer | string | null) {
   if (buf1 === null && buf2 === null) {
     return true;
   } else {
-    return buf1 !== null && buf2 !== null && buf1.equals(buf2);
+    return buf1 !== null && buf2 !== null && (buf1 === buf2 ||
+        (buf1 instanceof Buffer && buf2 instanceof Buffer && (<Buffer> buf1).equals(<Buffer> buf2)));
   }
 }
 
@@ -122,14 +123,14 @@ export abstract class ChannelCredentials {
    * @param certChain The client certificate key chain, if available.
    */
   static createSsl(
-    rootCerts?: Buffer | null,
-    privateKey?: Buffer | null,
-    certChain?: Buffer | null,
+    rootCerts?: Buffer | string | null,
+    privateKey?: Buffer | string | null,
+    certChain?: Buffer | string | null,
     verifyOptions?: VerifyOptions
   ): ChannelCredentials {
-    verifyIsBufferOrNull(rootCerts, 'Root certificate');
-    verifyIsBufferOrNull(privateKey, 'Private key');
-    verifyIsBufferOrNull(certChain, 'Certificate chain');
+    verifyIsBufferOrStringOrNull(rootCerts, 'Root certificate');
+    verifyIsBufferOrStringOrNull(privateKey, 'Private key');
+    verifyIsBufferOrStringOrNull(certChain, 'Certificate chain');
     if (privateKey && !certChain) {
       throw new Error(
         'Private key must be given with accompanying certificate chain'
@@ -180,9 +181,9 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
   connectionOptions: ConnectionOptions;
 
   constructor(
-    private rootCerts: Buffer | null,
-    private privateKey: Buffer | null,
-    private certChain: Buffer | null,
+    private rootCerts: Buffer | string | null,
+    private privateKey: Buffer | string | null,
+    private certChain: Buffer | string | null,
     private verifyOptions: VerifyOptions
   ) {
     super();
@@ -221,13 +222,13 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
       return true;
     }
     if (other instanceof SecureChannelCredentialsImpl) {
-      if (!bufferOrNullEqual(this.rootCerts, other.rootCerts)) {
+      if (!bufferOrStringOrNullEqual(this.rootCerts, other.rootCerts)) {
         return false;
       }
-      if (!bufferOrNullEqual(this.privateKey, other.privateKey)) {
+      if (!bufferOrStringOrNullEqual(this.privateKey, other.privateKey)) {
         return false;
       }
-      if (!bufferOrNullEqual(this.certChain, other.certChain)) {
+      if (!bufferOrStringOrNullEqual(this.certChain, other.certChain)) {
         return false;
       }
       return (
