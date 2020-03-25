@@ -147,7 +147,7 @@ export class ChannelImplementation implements Channel {
       throw new TypeError('Channel credentials must be a ChannelCredentials object');
     }
     if (options) {
-      if ((typeof options !== 'object') || !Object.values(options).every(value => typeof value === 'string' || typeof value === 'number')) {
+      if ((typeof options !== 'object') || !Object.values(options).every(value => typeof value === 'string' || typeof value === 'number' || typeof value === 'undefined')) {
         throw new TypeError('Channel options must be an object with string or number values');
       }
     }
