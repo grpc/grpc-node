@@ -19,6 +19,13 @@ rm -rf ~/.rvm
 set -e
 cd $(dirname $0)/..
 
+OS=$(uname)
+if [ "$OS" = "Darwin" ]
+then
+  brew install make
+  PATH="$(brew --prefix)/opt/make/libexec/gnubin:$PATH"
+fi
+
 # Install gRPC and its submodules.
 git submodule update --init --recursive
 

@@ -24,6 +24,8 @@ npm install -g npm
 npm install -g node-gyp
 
 set -ex
+brew install make
+PATH="$(brew --prefix)/opt/make/libexec/gnubin:$PATH"
 cd $(dirname $0)/../../../../..
 base_dir=$(pwd)
 
