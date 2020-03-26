@@ -69,34 +69,7 @@ const DNS_REGEX = /^(?:dns:)?(?:\/\/(?:[a-zA-Z0-9-]+\.?)+\/)?((?:[a-zA-Z0-9-]+\.
  */
 const DEFAULT_PORT = '443';
 
-/**
- * Get a promise that always resolves with either the result of the function
- * or the error if it failed.
- * @param fn
- */
-function resolvePromisify<TArg, TResult, TError>(
-  fn: (
-    arg: TArg,
-    callback: (error: TError | null, result: TResult) => void
-  ) => void
-): (arg: TArg) => Promise<TResult | TError> {
-  return arg =>
-    new Promise<TResult | TError>((resolve, reject) => {
-      fn(arg, (error, result) => {
-        if (error) {
-          resolve(error);
-        } else {
-          resolve(result);
-        }
-      });
-    });
-}
-
-const resolveTxtPromise = resolvePromisify<
-  string,
-  string[][],
-  NodeJS.ErrnoException
->(dns.resolveTxt);
+const resolveTxtPromise = util.promisify(dns.resolveTxt);
 const dnsLookupPromise = util.promisify(dns.lookup);
 
 /**
@@ -156,11 +129,11 @@ class DnsResolver implements Resolver {
   private readonly ipResult: SubchannelAddress[] | null;
   private readonly dnsHostname: string | null;
   private readonly port: string | null;
-  /* The promise results here contain, in order, the A record, the AAAA record,
-   * and either the TXT record or an error if TXT resolution failed */
-  private pendingResultPromise: Promise<
-    [dns.LookupAddress[], string[][] | NodeJS.ErrnoException]
-  > | null = null;
+  private pendingLookupPromise: Promise<dns.LookupAddress[]> | null = null;
+  private pendingTxtPromise: Promise<string[][]> | null = null;
+  private latestLookupResult: TcpSubchannelAddress[] | null = null;
+  private latestServiceConfig: ServiceConfig | null = null;
+  private latestServiceConfigError: StatusObject | null = null;
   private percentage: number;
   private defaultResolutionError: StatusObject;
   constructor(private target: string, private listener: ResolverListener) {
@@ -189,7 +162,7 @@ class DnsResolver implements Resolver {
 
   /**
    * If the target is an IP address, just provide that address as a result.
-   * Otherwise, initiate A, AAAA, and TXT
+   * Otherwise, initiate A, AAAA, and TXT lookups
    */
   private startResolution() {
     if (this.ipResult !== null) {
@@ -200,87 +173,116 @@ class DnsResolver implements Resolver {
       return;
     }
     if (this.dnsHostname !== null) {
+      /* We clear out latestLookupResult here to ensure that it contains the
+       * latest result since the last time we started resolving. That way, the
+       * TXT resolution handler can use it, but only if it finishes second. We
+       * don't clear out any previous service config results because it's
+       * better to use a service config that's slightly out of date than to
+       * revert to an effectively blank one. */
+      this.latestLookupResult = null;
       const hostname: string = this.dnsHostname;
       /* We lookup both address families here and then split them up later
        * because when looking up a single family, dns.lookup outputs an error
        * if the name exists but there are no records for that family, and that
        * error is indistinguishable from other kinds of errors */
-      const addressResult = dnsLookupPromise(hostname, { all: true });
-      /* We handle the TXT query promise differently than the others because
-       * the name resolution attempt as a whole is a success even if the TXT
-       * lookup fails */
-      const txtResult = resolveTxtPromise(hostname);
-      this.pendingResultPromise = Promise.all([addressResult, txtResult]);
-      this.pendingResultPromise.then(
-        ([addressList, txtRecord]) => {
-          this.pendingResultPromise = null;
-          const ip4Addresses: dns.LookupAddress[] = addressList.filter(
-            addr => addr.family === 4
-          );
-          const ip6Addresses: dns.LookupAddress[] = addressList.filter(addr => addr.family === 6);
-          const allAddresses: TcpSubchannelAddress[] = mergeArrays(
-            ip4Addresses,
-            ip6Addresses
-          ).map(addr => ({ host: addr.address, port: +this.port! }));
-          const allAddressesString: string =
-            '[' +
-            allAddresses.map(addr => addr.host + ':' + addr.port).join(',') +
-            ']';
-          trace(
-            'Resolved addresses for target ' +
-              this.target +
-              ': ' +
-              allAddressesString
-          );
-          if (allAddresses.length === 0) {
-            this.listener.onError(this.defaultResolutionError);
-            return;
-          }
-          let serviceConfig: ServiceConfig | null = null;
-          let serviceConfigError: StatusObject | null = null;
-          if (txtRecord instanceof Error) {
-            serviceConfigError = {
+      this.pendingLookupPromise = dnsLookupPromise(hostname, { all: true });
+      this.pendingLookupPromise.then(addressList => {
+        this.pendingLookupPromise = null;
+        const ip4Addresses: dns.LookupAddress[] = addressList.filter(
+          addr => addr.family === 4
+        );
+        const ip6Addresses: dns.LookupAddress[] = addressList.filter(addr => addr.family === 6);
+        this.latestLookupResult = mergeArrays(
+          ip6Addresses,
+          ip4Addresses
+        ).map(addr => ({ host: addr.address, port: +this.port! }));
+        const allAddressesString: string =
+          '[' +
+          this.latestLookupResult.map(addr => addr.host + ':' + addr.port).join(',') +
+          ']';
+        trace(
+          'Resolved addresses for target ' +
+            this.target +
+            ': ' +
+            allAddressesString
+        );
+        if (this.latestLookupResult.length === 0) {
+          this.listener.onError(this.defaultResolutionError);
+          return;
+        }
+        /* If the TXT lookup has not yet finished, both of the last two
+         * arguments will be null, which is the equivalent of getting an
+         * empty TXT response. When the TXT lookup does finish, its handler
+         * can update the service config by using the same address list */
+        this.listener.onSuccessfulResolution(
+          this.latestLookupResult,
+          this.latestServiceConfig,
+          this.latestServiceConfigError
+        );
+      },
+      err => {
+        trace(
+          'Resolution error for target ' +
+            this.target +
+            ': ' +
+            (err as Error).message
+        );
+        this.pendingLookupPromise = null;
+        this.listener.onError(this.defaultResolutionError);
+      });
+      /* If there already is a still-pending TXT resolution, we can just use
+       * that result when it comes in */
+      if (this.pendingTxtPromise === null) {
+        /* We handle the TXT query promise differently than the others because
+         * the name resolution attempt as a whole is a success even if the TXT
+         * lookup fails */
+        this.pendingTxtPromise = resolveTxtPromise(hostname);
+        this.pendingTxtPromise.then(txtRecord => {
+          this.pendingTxtPromise = null;
+          try {
+            this.latestServiceConfig = extractAndSelectServiceConfig(
+              txtRecord,
+              this.percentage
+            );
+          } catch (err) {
+            this.latestServiceConfigError = {
               code: Status.UNAVAILABLE,
-              details: 'TXT query failed',
+              details: 'Parsing service config failed',
               metadata: new Metadata(),
             };
-          } else {
-            try {
-              serviceConfig = extractAndSelectServiceConfig(
-                txtRecord,
-                this.percentage
-              );
-            } catch (err) {
-              serviceConfigError = {
-                code: Status.UNAVAILABLE,
-                details: 'Parsing service config failed',
-                metadata: new Metadata(),
-              };
-            }
           }
-          this.listener.onSuccessfulResolution(
-            allAddresses,
-            serviceConfig,
-            serviceConfigError
-          );
-        },
-        err => {
-          trace(
-            'Resolution error for target ' +
-              this.target +
-              ': ' +
-              (err as Error).message
-          );
-          this.pendingResultPromise = null;
-          this.listener.onError(this.defaultResolutionError);
-        }
-      );
+          if (this.latestLookupResult !== null) {
+            /* We rely here on the assumption that calling this function with
+             * identical parameters will be essentialy idempotent, and calling
+             * it with the same address list and a different service config
+             * should result in a fast and seamless switchover. */
+            this.listener.onSuccessfulResolution(
+              this.latestLookupResult,
+              this.latestServiceConfig,
+              this.latestServiceConfigError
+            )
+          }
+        }, err => {
+          this.latestServiceConfigError = {
+            code: Status.UNAVAILABLE,
+            details: 'TXT query failed',
+            metadata: new Metadata(),
+          };
+          if (this.latestLookupResult !== null) {
+            this.listener.onSuccessfulResolution(
+              this.latestLookupResult,
+              this.latestServiceConfig,
+              this.latestServiceConfigError
+            )
+          }
+        });
+      }
     }
   }
 
   updateResolution() {
     trace('Resolution update requested for target ' + this.target);
-    if (this.pendingResultPromise === null) {
+    if (this.pendingLookupPromise === null) {
       this.startResolution();
     }
   }

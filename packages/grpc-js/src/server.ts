@@ -321,6 +321,8 @@ export class Server {
 
     const resolverListener: ResolverListener = {
       onSuccessfulResolution: (addressList, serviceConfig, serviceConfigError) => {
+        // We only want one resolution result. Discard all future results
+        resolverListener.onSuccessfulResolution = () => {}
         if (addressList.length === 0) {
           callback(new Error(`No addresses resolved for port ${port}`), 0);
           return;
