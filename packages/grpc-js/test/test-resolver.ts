@@ -38,6 +38,8 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
           assert(
             addressList.some(
               addr =>
@@ -71,6 +73,8 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
           assert(
             addressList.some(
               addr =>
@@ -104,6 +108,8 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
           assert(
             addressList.some(
               addr =>
@@ -129,6 +135,8 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
           assert(
             addressList.some(
               addr =>
@@ -154,6 +162,8 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
           assert(
             addressList.some(
               addr =>
@@ -179,6 +189,8 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
           assert(addressList.length > 0);
           done();
         },
@@ -197,6 +209,8 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
           assert(
             addressList.some(
               addr =>
@@ -224,6 +238,8 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
           assert(
             addressList.some(
               addr =>
@@ -249,6 +265,8 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
           assert(
             addressList.some(
               addr =>
@@ -278,6 +296,8 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
           assert(addressList.length > 0);
           done();
         },
@@ -290,16 +310,6 @@ describe('Name Resolver', () => {
     });
     it('Should resolve gRPC interop servers', done => {
       let completeCount = 0;
-      function done2(error?: Error) {
-        if (error) {
-          done(error);
-        } else {
-          completeCount += 1;
-          if (completeCount === 2) {
-            done();
-          }
-        }
-      }
       const target1 = 'grpc-test.sandbox.googleapis.com';
       const target2 = 'grpc-test4.sandbox.googleapis.com';
       const listener: resolverManager.ResolverListener = {
@@ -309,10 +319,15 @@ describe('Name Resolver', () => {
           serviceConfigError: StatusObject | null
         ) => {
           assert(addressList.length > 0);
-          done2();
+          completeCount += 1;
+          if (completeCount === 2) {
+            // Only handle the first resolution result
+            listener.onSuccessfulResolution = () => {};
+            done();
+          }
         },
         onError: (error: StatusObject) => {
-          done2(new Error(`Failed with status ${error.details}`));
+          done(new Error(`Failed with status ${error.details}`));
         },
       };
       const resolver1 = resolverManager.createResolver(target1, listener);
@@ -330,6 +345,8 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
           assert(
             addressList.some(
               addr => !isTcpSubchannelAddress(addr) && addr.path === 'socket'
@@ -352,6 +369,8 @@ describe('Name Resolver', () => {
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
           assert(
             addressList.some(
               addr =>
