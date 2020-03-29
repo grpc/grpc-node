@@ -294,6 +294,7 @@ export {
   ListenerBuilder,
   RequesterBuilder,
   Interceptor,
+  InterceptorOptions,
   InterceptorProvider,
   InterceptingCall,
   InterceptorConfigurationError,
