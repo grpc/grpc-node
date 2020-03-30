@@ -350,6 +350,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     }
     for (const subchannel of this.subchannels) {
       subchannel.addConnectivityStateListener(this.subchannelStateListener);
+      this.subchannelStateCounts[subchannel.getConnectivityState()] += 1;
       if (subchannel.getConnectivityState() === ConnectivityState.READY) {
         this.pickSubchannel(subchannel);
         this.resetSubchannelList();
