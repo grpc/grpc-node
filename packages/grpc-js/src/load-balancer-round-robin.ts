@@ -198,6 +198,8 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
       this.channelControlHelper.createSubchannel(address, {})
     );
     for (const subchannel of this.subchannels) {
+      subchannel.ref();
+      subchannel.addConnectivityStateListener(this.subchannelStateListener);
       const subchannelState = subchannel.getConnectivityState();
       this.subchannelStateCounts[subchannelState] += 1;
       if (
