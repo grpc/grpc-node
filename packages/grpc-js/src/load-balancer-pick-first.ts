@@ -173,8 +173,8 @@ export class PickFirstLoadBalancer implements LoadBalancer {
             if (this.subchannelStateCounts[ConnectivityState.CONNECTING] > 0) {
               newLBState = ConnectivityState.CONNECTING;
             } else if (
-              this.subchannelStateCounts[ConnectivityState.TRANSIENT_FAILURE] >
-              0
+              this.subchannelStateCounts[ConnectivityState.TRANSIENT_FAILURE] ==
+              this.subchannels.length
             ) {
               newLBState = ConnectivityState.TRANSIENT_FAILURE;
             } else {
