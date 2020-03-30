@@ -5,7 +5,7 @@
   "dependencies": {
     "dot-prop": "^4.2.0",
     "google-proto-files": "^0.15.1",
-    "mocha": "^5.0.4",
+    "mocha": "^6.0.0",
     "shimmer": "^1.2.0"
   }
 }
