@@ -230,12 +230,12 @@ export class Subchannel {
     this.backoffTimeout = new BackoffTimeout(() => {
       if (this.continueConnecting) {
         this.transitionToState(
-          [ConnectivityState.TRANSIENT_FAILURE, ConnectivityState.CONNECTING],
+          [ConnectivityState.TRANSIENT_FAILURE],
           ConnectivityState.CONNECTING
         );
       } else {
         this.transitionToState(
-          [ConnectivityState.TRANSIENT_FAILURE, ConnectivityState.CONNECTING],
+          [ConnectivityState.TRANSIENT_FAILURE],
           ConnectivityState.IDLE
         );
       }
