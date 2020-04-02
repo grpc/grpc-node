@@ -61,7 +61,7 @@ function getProxyInfo(): ProxyInfo {
     log(LogVerbosity.INFO, `cannot parse value of "${envVar}" env var`);
     return {};
   }
-  if (proxyUrl.protocol !== 'http') {
+  if (proxyUrl.protocol !== 'http:') {
     log(LogVerbosity.ERROR, `"${proxyUrl.protocol}" scheme not supported in proxy URI`);
     return {};
   }
