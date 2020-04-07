@@ -298,10 +298,16 @@ class DnsResolver implements Resolver {
       IPV6_REGEX.exec(target) ||
       IPV6_BRACKET_REGEX.exec(target);
     if (ipMatch) {
+      if (ipMatch[2]) {
+        return ipMatch[1] + ':' + ipMatch[2];
+      }
       return ipMatch[1];
     }
     const dnsMatch = DNS_REGEX.exec(target);
     if (dnsMatch) {
+      if (dnsMatch[2]) {
+        return dnsMatch[1] + ':' + dnsMatch[2];
+      }
       return dnsMatch[1];
     }
     throw new Error(`Failed to parse target ${target}`);
