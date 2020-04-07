@@ -169,8 +169,8 @@ export class CompressionFilter extends BaseFilter implements Filter {
   private receiveCompression: CompressionHandler = new IdentityHandler();
   async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
     const headers: Metadata = await metadata;
-    headers.set('grpc-encoding', 'identity');
     headers.set('grpc-accept-encoding', 'identity,deflate,gzip');
+    headers.set('accept-encoding', 'identity,gzip');
     return headers;
   }
 

@@ -298,8 +298,6 @@ export class Subchannel {
           return checkServerIdentity(sslTargetNameOverride, cert);
         };
         connectionOptions.servername = sslTargetNameOverride;
-      } else {
-        connectionOptions.servername = getDefaultAuthority(this.channelTarget);
       }
       if (socket) {
         connectionOptions.socket = socket;
@@ -589,6 +587,11 @@ export class Subchannel {
     headers[HTTP2_HEADER_PATH] = callStream.getMethod();
     headers[HTTP2_HEADER_TE] = 'trailers';
     const http2Stream = this.session!.request(headers);
+    let headersString = '';
+    for (const header of Object.keys(headers)) {
+      headersString += '\t\t' + header + ': ' + headers[header] + '\n'
+    }
+    trace('Starting stream with headers\n' + headersString);
     callStream.attachHttp2Stream(http2Stream, this);
   }
 

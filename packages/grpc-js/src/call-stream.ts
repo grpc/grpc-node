@@ -353,7 +353,11 @@ export class Http2CallStream implements Call {
   }
 
   private handleTrailers(headers: http2.IncomingHttpHeaders) {
-    this.trace('received HTTP/2 trailing headers frame');
+    let headersString = '';
+    for (const header of Object.keys(headers)) {
+      headersString += '\t\t' + header + ': ' + headers[header] + '\n'
+    }
+    this.trace('Received server trailers:\n' + headersString);
     let metadata: Metadata;
     try {
       metadata = Metadata.fromHttp2Headers(headers);
@@ -366,6 +370,7 @@ export class Http2CallStream implements Call {
       const receivedStatus = Number(metadataMap['grpc-status']);
       if (receivedStatus in Status) {
         code = receivedStatus;
+        this.trace('received status code ' + receivedStatus + ' from server');
       }
       metadata.remove('grpc-status');
     }
@@ -373,6 +378,7 @@ export class Http2CallStream implements Call {
     if (typeof metadataMap['grpc-message'] === 'string') {
       details = decodeURI(metadataMap['grpc-message']);
       metadata.remove('grpc-message');
+      this.trace('received status details string "' + details + '" from server');
     }
     const status: StatusObject = { code, details, metadata };
     let finalStatus;
@@ -407,7 +413,11 @@ export class Http2CallStream implements Call {
       subchannel.addDisconnectListener(this.disconnectListener);
       subchannel.callRef();
       stream.on('response', (headers, flags) => {
-        this.trace('received HTTP/2 headers frame');
+        let headersString = '';
+        for (const header of Object.keys(headers)) {
+          headersString += '\t\t' + header + ': ' + headers[header] + '\n'
+        }
+        this.trace('Received server headers:\n' + headersString);
         switch (headers[':status']) {
           // TODO(murgatroid99): handle 100 and 101
           case 400:
@@ -568,6 +578,7 @@ export class Http2CallStream implements Call {
   }
 
   cancelWithStatus(status: Status, details: string): void {
+    this.trace('cancelWithStatus code: ' + status + ' details: "' + details + '"');
     this.destroyHttp2Stream();
     this.endCall({ code: status, details, metadata: new Metadata() });
   }
