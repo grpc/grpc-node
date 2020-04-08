@@ -38,6 +38,7 @@ import { LoadBalancingConfig } from './load-balancing-config';
 import { ServiceConfig, validateServiceConfig } from './service-config';
 import { trace, log } from './logging';
 import { SubchannelAddress } from './subchannel';
+import { MaxMessageSizeFilterFactory } from './max-message-size-filter';
 
 export enum ConnectivityState {
   CONNECTING,
@@ -202,6 +203,7 @@ export class ChannelImplementation implements Channel {
     this.filterStackFactory = new FilterStackFactory([
       new CallCredentialsFilterFactory(this),
       new DeadlineFilterFactory(this),
+      new MaxMessageSizeFilterFactory(this.options),
       new CompressionFilterFactory(this),
     ]);
     // TODO(murgatroid99): Add more centralized handling of channel options

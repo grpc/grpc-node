@@ -30,6 +30,8 @@ export interface ChannelOptions {
   'grpc.initial_reconnect_backoff_ms'?: number;
   'grpc.max_reconnect_backoff_ms'?: number;
   'grpc.use_local_subchannel_pool'?: number;
+  'grpc.max_send_message_length'?: number;
+  'grpc.max_receive_message_length'?: number;
   [key: string]: string | number | undefined;
 }
 
@@ -49,6 +51,8 @@ export const recognizedOptions = {
   'grpc.initial_reconnect_backoff_ms': true,
   'grpc.max_reconnect_backoff_ms': true,
   'grpc.use_local_subchannel_pool': true,
+  'grpc.max_send_message_length': true,
+  'grpc.max_receive_message_length': true,
 };
 
 export function channelOptionsEqual(

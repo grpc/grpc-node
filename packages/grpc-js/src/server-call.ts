@@ -25,6 +25,7 @@ import { Deserialize, Serialize } from './make-client';
 import { Metadata } from './metadata';
 import { StreamDecoder } from './stream-decoder';
 import { ObjectReadable, ObjectWritable } from './object-stream';
+import { ChannelOptions } from './channel-options';
 
 interface DeadlineUnitIndexSignature {
   [name: string]: number;
@@ -325,6 +326,9 @@ export type HandlerType = 'bidi' | 'clientStream' | 'serverStream' | 'unary';
 
 const noopTimer: NodeJS.Timer = setTimeout(() => {}, 0);
 
+// The default max message size for sending or receiving is 4 MB
+const DEFAULT_MAX_MESSAGE_SIZE = 4 * 1024 * 1024;
+
 // Internal class that wraps the HTTP2 request.
 export class Http2ServerCallStream<
   RequestType,
@@ -338,10 +342,13 @@ export class Http2ServerCallStream<
   private isPushPending = false;
   private bufferedMessages: Array<Buffer | null> = [];
   private messagesToPush: Array<RequestType | null> = [];
+  private maxSendMessageSize: number = DEFAULT_MAX_MESSAGE_SIZE;
+  private maxReceiveMessageSize: number = DEFAULT_MAX_MESSAGE_SIZE;
 
   constructor(
     private stream: http2.ServerHttp2Stream,
-    private handler: Handler<RequestType, ResponseType>
+    private handler: Handler<RequestType, ResponseType>,
+    private options: ChannelOptions
   ) {
     super();
 
@@ -361,6 +368,13 @@ export class Http2ServerCallStream<
     this.stream.on('drain', () => {
       this.emit('drain');
     });
+
+    if ('grpc.max_send_message_length' in options) {
+      this.maxSendMessageSize = options['grpc.max_send_message_length']!;
+    }
+    if ('grpc.max_receive_message_length' in options) {
+      this.maxReceiveMessageSize = options['grpc.max_receive_message_length']!;
+    }
   }
 
   private checkCancelled(): boolean {
@@ -435,6 +449,9 @@ export class Http2ServerCallStream<
       stream.once('end', async () => {
         try {
           const requestBytes = Buffer.concat(chunks, totalLength);
+          if (this.maxReceiveMessageSize !== -1 && requestBytes.length > this.maxReceiveMessageSize) {
+            this.cancelWithStatus(Status.RESOURCE_EXHAUSTED, `Server received message of size ${requestBytes.length} > max size ${this.maxReceiveMessageSize}`);
+          }
 
           resolve(await this.deserializeMessage(requestBytes));
         } catch (err) {
@@ -550,9 +567,18 @@ export class Http2ServerCallStream<
     this.sendStatus(status);
   }
 
+  cancelWithStatus(code: Status, details: string) {
+    this.cancelled = true;
+    this.sendStatus({code, details, metadata: new Metadata()});
+  }
+
   write(chunk: Buffer) {
     if (this.checkCancelled()) {
       return;
+    }
+
+    if (this.maxSendMessageSize !== -1 && chunk.length > this.maxSendMessageSize) {
+      this.cancelWithStatus(Status.RESOURCE_EXHAUSTED, `Server failed to send message of size ${chunk.length} > max size ${this.maxSendMessageSize}`);
     }
 
     this.sendMetadata();
@@ -581,6 +607,9 @@ export class Http2ServerCallStream<
       const messages = decoder.write(data);
 
       for (const message of messages) {
+        if (this.maxReceiveMessageSize !== -1 && message.length > this.maxReceiveMessageSize) {
+          this.cancelWithStatus(Status.RESOURCE_EXHAUSTED, `Server received message of size ${message.length} > max size ${this.maxReceiveMessageSize}`);
+        }
         this.pushOrBufferMessage(readable, message);
       }
     });
