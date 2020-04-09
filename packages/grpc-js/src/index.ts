@@ -35,6 +35,7 @@ import {
   Deserialize,
   loadPackageDefinition,
   makeClientConstructor,
+  MethodDefinition,
   Serialize,
   ServiceDefinition,
 } from './make-client';
@@ -230,6 +231,7 @@ export {
   ClientWritableStream,
   ClientDuplexStream,
   CallOptions,
+  MethodDefinition,
   StatusObject,
   ServiceError,
   ServerUnaryCall,
