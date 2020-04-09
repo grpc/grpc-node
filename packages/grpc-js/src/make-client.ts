@@ -50,7 +50,6 @@ export interface MethodDefinition<RequestType, ResponseType>
     ServerMethodDefinition<RequestType, ResponseType> {}
 
 export interface ServiceDefinition {
-  // tslint:disable-next-line no-any
   [index: string]: MethodDefinition<any, any>;
 }
 
@@ -165,7 +164,6 @@ function partial(
   serialize: Function,
   deserialize: Function
 ): Function {
-  // tslint:disable-next-line:no-any
   return function(this: any, ...args: any[]) {
     return fn.call(this, path, serialize, deserialize, ...args);
   };

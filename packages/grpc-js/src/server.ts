@@ -67,7 +67,6 @@ function getUnimplementedStatusResponse(
   };
 }
 
-// tslint:disable:no-any
 type UntypedUnaryHandler = UnaryHandler<any, any>;
 type UntypedClientStreamingHandler = ClientStreamingHandler<any, any>;
 type UntypedServerStreamingHandler = ServerStreamingHandler<any, any>;
@@ -113,7 +112,7 @@ function getDefaultHandler(handlerType: HandlerType, methodName: string) {
 
 export class Server {
   private http2ServerList: (http2.Http2Server | http2.Http2SecureServer)[] = [];
-    
+
   private handlers: Map<string, UntypedHandler> = new Map<
     string,
     UntypedHandler
@@ -261,7 +260,7 @@ export class Server {
         } else {
           addr = address
         }
-        
+
         const http2Server = setupServer();
         return new Promise<number|Error>((resolve, reject) => {
           function onError(err: Error): void {
@@ -380,7 +379,6 @@ export class Server {
     this.sessions.forEach(session => {
       // Cast NGHTTP2_CANCEL to any because TypeScript doesn't seem to
       // recognize destroy(code) as a valid signature.
-      // tslint:disable-next-line:no-any
       session.destroy(http2.constants.NGHTTP2_CANCEL as any);
     });
     this.sessions.clear();

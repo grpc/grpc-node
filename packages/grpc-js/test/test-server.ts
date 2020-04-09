@@ -16,7 +16,6 @@
  */
 
 // Allow `any` data type for testing runtime type checking.
-// tslint:disable no-any
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as http2 from 'http2';
@@ -39,13 +38,13 @@ describe('Server', () => {
   describe('constructor', () => {
     it('should work with no arguments', () => {
       assert.doesNotThrow(() => {
-        new Server(); // tslint:disable-line:no-unused-expression
+        new Server();
       });
     });
 
     it('should work with an empty object argument', () => {
       assert.doesNotThrow(() => {
-        new Server({}); // tslint:disable-line:no-unused-expression
+        new Server({});
       });
     });
 

@@ -306,7 +306,6 @@ export class Client {
       onReceiveMetadata: metadata => {
         emitter.emit('metadata', metadata);
       },
-      // tslint:disable-next-line no-any
       onReceiveMessage(message: any) {
         if (responseMessage != null) {
           call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
@@ -418,7 +417,6 @@ export class Client {
       onReceiveMetadata: metadata => {
         emitter.emit('metadata', metadata);
       },
-      // tslint:disable-next-line no-any
       onReceiveMessage(message: any) {
         if (responseMessage != null) {
           call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
@@ -536,7 +534,6 @@ export class Client {
       onReceiveMetadata(metadata: Metadata) {
         stream.emit('metadata', metadata);
       },
-      // tslint:disable-next-line no-any
       onReceiveMessage(message: any) {
         if (stream.push(message)) {
           call.startRead();

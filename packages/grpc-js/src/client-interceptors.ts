@@ -64,7 +64,6 @@ export interface MetadataRequester {
 }
 
 export interface MessageRequester {
-  // tslint:disable-next-line no-any
   (message: any, next: (message: any) => void): void;
 }
 
@@ -189,7 +188,6 @@ const defaultRequester: FullRequester = {
 };
 
 export interface InterceptorOptions extends CallOptions {
-  // tslint:disable-next-line no-any
   method_definition: ClientMethodDefinition<any, any>;
 }
 
@@ -197,9 +195,7 @@ export interface InterceptingCallInterface {
   cancelWithStatus(status: Status, details: string): void;
   getPeer(): string;
   start(metadata: Metadata, listener?: Partial<InterceptingListener>): void;
-  // tslint:disable-next-line no-any
   sendMessageWithContext(context: MessageContext, message: any): void;
-  // tslint:disable-next-line no-any
   sendMessage(message: any): void;
   startRead(): void;
   halfClose(): void;
@@ -283,7 +279,6 @@ export class InterceptingCall implements InterceptingCallInterface {
       this.nextCall.start(md, finalInterceptingListener);
     });
   }
-  // tslint:disable-next-line no-any
   sendMessageWithContext(context: MessageContext, message: any): void {
     this.processingMessage = true;
     this.requester.sendMessage(message, finalMessage => {
@@ -294,7 +289,6 @@ export class InterceptingCall implements InterceptingCallInterface {
       }
     });
   }
-  // tslint:disable-next-line no-any
   sendMessage(message: any): void {
     this.sendMessageWithContext({}, message);
   }
@@ -343,7 +337,6 @@ function getCall(channel: Channel, path: string, options: CallOptions): Call {
  * object and handles serialization and deseraizliation.
  */
 class BaseInterceptingCall implements InterceptingCallInterface {
-  // tslint:disable-next-line no-any
   constructor(
     protected call: Call,
     protected methodDefinition: ClientMethodDefinition<any, any>
@@ -357,7 +350,6 @@ class BaseInterceptingCall implements InterceptingCallInterface {
   setCredentials(credentials: CallCredentials): void {
     this.call.setCredentials(credentials);
   }
-  // tslint:disable-next-line no-any
   sendMessageWithContext(context: MessageContext, message: any): void {
     let serialized: Buffer;
     try {
@@ -367,7 +359,6 @@ class BaseInterceptingCall implements InterceptingCallInterface {
       this.call.cancelWithStatus(Status.INTERNAL, 'Serialization failure');
     }
   }
-  // tslint:disable-next-line no-any
   sendMessage(message: any) {
     this.sendMessageWithContext({}, message);
   }
@@ -381,7 +372,6 @@ class BaseInterceptingCall implements InterceptingCallInterface {
         interceptingListener?.onReceiveMetadata?.(metadata);
       },
       onReceiveMessage: message => {
-        // tslint:disable-next-line no-any
         let deserialized: any;
         try {
           deserialized = this.methodDefinition.responseDeserialize(message);
@@ -418,7 +408,6 @@ class BaseInterceptingCall implements InterceptingCallInterface {
  */
 class BaseUnaryInterceptingCall extends BaseInterceptingCall
   implements InterceptingCallInterface {
-  // tslint:disable-next-line no-any
   constructor(call: Call, methodDefinition: ClientMethodDefinition<any, any>) {
     super(call, methodDefinition);
   }
@@ -427,7 +416,6 @@ class BaseUnaryInterceptingCall extends BaseInterceptingCall
     const wrapperListener: InterceptingListener = {
       onReceiveMetadata:
         listener?.onReceiveMetadata?.bind(listener) ?? (metadata => {}),
-      // tslint:disable-next-line no-any
       onReceiveMessage: (message: any) => {
         receivedMessage = true;
         listener?.onReceiveMessage?.(message);
@@ -450,8 +438,6 @@ class BaseUnaryInterceptingCall extends BaseInterceptingCall
  */
 class BaseStreamingInterceptingCall extends BaseInterceptingCall
   implements InterceptingCallInterface {}
-
-// tslint:disable-next-line no-any
 function getBottomInterceptingCall(
   channel: Channel,
   options: InterceptorOptions,
@@ -474,7 +460,6 @@ export interface Interceptor {
 }
 
 export interface InterceptorProvider {
-  // tslint:disable-next-line no-any
   (methodDefinition: ClientMethodDefinition<any, any>): Interceptor;
 }
 
@@ -484,8 +469,6 @@ export interface InterceptorArguments {
   callInterceptors: Interceptor[];
   callInterceptorProviders: InterceptorProvider[];
 }
-
-// tslint:disable-next-line no-any
 export function getInterceptingCall(
   interceptorArgs: InterceptorArguments,
   methodDefinition: ClientMethodDefinition<any, any>,

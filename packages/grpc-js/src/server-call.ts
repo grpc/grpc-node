@@ -174,7 +174,6 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
   async _write(
     chunk: ResponseType,
     encoding: string,
-    // tslint:disable-next-line:no-any
     callback: (...args: any[]) => void
   ) {
     try {
@@ -201,7 +200,6 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
     callback(null);
   }
 
-  // tslint:disable-next-line:no-any
   end(metadata?: any) {
     if (metadata) {
       this.trailingMetadata = metadata;
@@ -671,7 +669,6 @@ export class Http2ServerCallStream<
   }
 }
 
-// tslint:disable:no-any
 type UntypedServerCall = Http2ServerCallStream<any, any>;
 
 function handleExpiredDeadline(call: UntypedServerCall) {
