@@ -34,7 +34,6 @@ import { CallCredentialsFilterFactory } from './call-credentials-filter';
 import { DeadlineFilterFactory } from './deadline-filter';
 import { CompressionFilterFactory } from './compression-filter';
 import { getDefaultAuthority } from './resolver';
-import { LoadBalancingConfig } from './load-balancing-config';
 import { ServiceConfig, validateServiceConfig } from './service-config';
 import { trace, log } from './logging';
 import { SubchannelAddress } from './subchannel';

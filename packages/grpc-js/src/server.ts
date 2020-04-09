@@ -16,8 +16,7 @@
  */
 
 import * as http2 from 'http2';
-import { AddressInfo, ListenOptions } from 'net';
-import { URL } from 'url';
+import { AddressInfo } from 'net';
 
 import { ServiceError } from './call';
 import { Status, LogVerbosity } from './constants';

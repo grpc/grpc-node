@@ -23,7 +23,6 @@ import {
 import * as dns from 'dns';
 import * as util from 'util';
 import { extractAndSelectServiceConfig, ServiceConfig } from './service-config';
-import { ServiceError } from './call';
 import { Status } from './constants';
 import { StatusObject } from './call-stream';
 import { Metadata } from './metadata';

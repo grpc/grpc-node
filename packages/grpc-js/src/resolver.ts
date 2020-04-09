@@ -15,7 +15,6 @@
  *
  */
 
-import { ServiceError } from './call';
 import { ServiceConfig } from './service-config';
 import * as resolver_dns from './resolver-dns';
 import * as resolver_uds from './resolver-uds';

@@ -20,7 +20,7 @@ import { ChannelCredentials } from './channel-credentials';
 import { Metadata } from './metadata';
 import { Http2CallStream } from './call-stream';
 import { ChannelOptions } from './channel-options';
-import { PeerCertificate, checkServerIdentity, TLSSocket } from 'tls';
+import { PeerCertificate, checkServerIdentity } from 'tls';
 import { ConnectivityState } from './channel';
 import { BackoffTimeout, BackoffOptions } from './backoff-timeout';
 import { getDefaultAuthority } from './resolver';

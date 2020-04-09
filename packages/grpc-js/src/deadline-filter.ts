@@ -16,7 +16,7 @@
  */
 
 import { Call, StatusObject } from './call-stream';
-import { ConnectivityState, Channel } from './channel';
+import { Channel } from './channel';
 import { Status } from './constants';
 import { BaseFilter, Filter, FilterFactory } from './filter';
 import { Metadata } from './metadata';

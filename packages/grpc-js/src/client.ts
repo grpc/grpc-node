@@ -29,18 +29,13 @@ import {
   SurfaceCall,
 } from './call';
 import { CallCredentials } from './call-credentials';
-import {
-  Deadline,
-  StatusObject,
-  WriteObject,
-  InterceptingListener,
-} from './call-stream';
+import { Deadline, StatusObject } from './call-stream';
 import { Channel, ConnectivityState, ChannelImplementation } from './channel';
 import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
 import { Status } from './constants';
 import { Metadata } from './metadata';
-import { ClientMethodDefinition, MethodDefinition } from './make-client';
+import { ClientMethodDefinition } from './make-client';
 import {
   getInterceptingCall,
   Interceptor,

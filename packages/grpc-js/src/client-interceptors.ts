@@ -18,27 +18,22 @@
 import { Metadata } from './metadata';
 import {
   StatusObject,
-  CallStreamOptions,
   Listener,
   MetadataListener,
   MessageListener,
   StatusListener,
   FullListener,
   InterceptingListener,
-  WriteObject,
-  WriteCallback,
   InterceptingListenerImpl,
   isInterceptingListener,
   MessageContext,
-  Http2CallStream,
-  Deadline,
   Call,
 } from './call-stream';
 import { Status } from './constants';
 import { Channel } from './channel';
 import { CallOptions } from './client';
 import { CallCredentials } from './call-credentials';
-import { ClientMethodDefinition, Serialize } from './make-client';
+import { ClientMethodDefinition } from './make-client';
 
 /**
  * Error class associated with passing both interceptors and interceptor
