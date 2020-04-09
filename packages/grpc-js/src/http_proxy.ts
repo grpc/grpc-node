@@ -58,7 +58,7 @@ function getProxyInfo(): ProxyInfo {
   try {
     proxyUrl = new URL(proxyEnv);
   } catch (e) {
-    log(LogVerbosity.INFO, `cannot parse value of "${envVar}" env var`);
+    log(LogVerbosity.ERROR, `cannot parse value of "${envVar}" env var`);
     return {};
   }
   if (proxyUrl.protocol !== 'http:') {
@@ -145,17 +145,17 @@ export function getProxiedConnection(target: string, subchannelAddress: Subchann
     request.once('connect', (res, socket, head) => {
       request.removeAllListeners();
       socket.removeAllListeners();
-      if (res.statusCode === http.STATUS_CODES.OK) {
+      if (res.statusCode === 200) {
         trace('Successfully connected to ' + subchannelAddress + ' through proxy ' + PROXY_INFO.address);
         resolve(socket);
       } else {
-        trace('Failed to connect to ' + subchannelAddress + ' through proxy ' + PROXY_INFO.address);
+        log(LogVerbosity.ERROR, 'Failed to connect to ' + subchannelAddress + ' through proxy ' + PROXY_INFO.address);
         reject();
       }
     });
     request.once('error', (err) => {
       request.removeAllListeners();
-      trace('Failed to connect to proxy ' + PROXY_INFO.address);
+      log(LogVerbosity.ERROR, 'Failed to connect to proxy ' + PROXY_INFO.address);
       reject();
     });
   });
