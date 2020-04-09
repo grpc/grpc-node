@@ -44,7 +44,7 @@ export class MaxMessageSizeFilter extends BaseFilter implements Filter {
     } else {
       const concreteMessage = await message;
       if (concreteMessage.message.length > this.maxSendMessageSize) {
-        this.callStream.cancelWithStatus(Status.RESOURCE_EXHAUSTED, `Failed to send message of size ${concreteMessage.message.length} > max size ${this.maxSendMessageSize}`);
+        this.callStream.cancelWithStatus(Status.RESOURCE_EXHAUSTED, `Sent message larger than max (${concreteMessage.message.length} vs. ${this.maxSendMessageSize})`);
         return Promise.reject<WriteObject>('Message too large');
       } else {
         return concreteMessage;
@@ -60,7 +60,7 @@ export class MaxMessageSizeFilter extends BaseFilter implements Filter {
     } else {
       const concreteMessage = await message;
       if (concreteMessage.length > this.maxReceiveMessageSize) {
-        this.callStream.cancelWithStatus(Status.RESOURCE_EXHAUSTED, `Received message of size ${concreteMessage.length} > max size ${this.maxReceiveMessageSize}`);
+        this.callStream.cancelWithStatus(Status.RESOURCE_EXHAUSTED, `Received message larger than max (${concreteMessage.length} vs. ${this.maxReceiveMessageSize})`);
         return Promise.reject<Buffer>('Message too large');
       } else {
         return concreteMessage;
