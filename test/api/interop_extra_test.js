@@ -258,7 +258,6 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
         });
         it('should get an error when sending a large message', function(done) {
           restrictedServerClient.unaryCall({payload: {body: largeMessage}}, (error, result) => {
-            console.log(error.message);
             assert(error);
             assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
             const stream = restrictedServerClient.fullDuplexCall();
@@ -266,7 +265,6 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
             stream.end();
             stream.on('data', () => {});
             stream.on('status', (status) => {
-              console.log(status.details);
               assert.strictEqual(status.code, grpc.status.RESOURCE_EXHAUSTED);
               done();
             });
@@ -278,7 +276,6 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
           done = multiDone(done, 2);
           restrictedServerClient.unaryCall({response_size: largeMessageSize}, (error, result) => {
             assert(error);
-            console.log(error.message);
             assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
             done();
           });
