@@ -331,14 +331,12 @@ export function setup(): void {
   registerDefaultResolver(DnsResolver);
 }
 
-// camelCase needed for compatibility to grpc-native-js package
-// eslint-disable-next-line @typescript-eslint/class-name-casing
-export interface dnsUrl {
+export interface DnsUrl {
   host: string;
   port?: string;
 }
 
-export function parseTarget(target: string): dnsUrl | null {
+export function parseTarget(target: string): DnsUrl | null {
   const match =
     IPV4_REGEX.exec(target) ??
     IPV6_REGEX.exec(target) ??
