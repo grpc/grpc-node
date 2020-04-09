@@ -40,3 +40,9 @@ export enum LogVerbosity {
   INFO,
   ERROR,
 }
+
+// -1 means unlimited
+export const DEFAULT_MAX_SEND_MESSAGE_LENGTH = -1;
+
+// 4 MB default
+export const DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH = 4 * 1024 * 1024;

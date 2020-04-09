@@ -17,15 +17,12 @@
 
 import { BaseFilter, Filter, FilterFactory } from "./filter";
 import { Call, WriteObject } from "./call-stream";
-import { Status } from "./constants";
+import { Status, DEFAULT_MAX_SEND_MESSAGE_LENGTH, DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH } from "./constants";
 import { ChannelOptions } from "./channel-options";
 
-// The default max message size for sending or receiving is 4 MB
-const DEFAULT_MAX_MESSAGE_SIZE = 4 * 1024 * 1024;
-
 export class MaxMessageSizeFilter extends BaseFilter implements Filter {
-  private maxSendMessageSize: number = DEFAULT_MAX_MESSAGE_SIZE;
-  private maxReceiveMessageSize: number = DEFAULT_MAX_MESSAGE_SIZE;
+  private maxSendMessageSize: number = DEFAULT_MAX_SEND_MESSAGE_LENGTH;
+  private maxReceiveMessageSize: number = DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH;
   constructor(
     private readonly options: ChannelOptions,
     private readonly callStream: Call

@@ -20,7 +20,7 @@ import * as http2 from 'http2';
 import { Duplex, Readable, Writable } from 'stream';
 
 import { StatusObject } from './call-stream';
-import { Status } from './constants';
+import { Status, DEFAULT_MAX_SEND_MESSAGE_LENGTH, DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH } from './constants';
 import { Deserialize, Serialize } from './make-client';
 import { Metadata } from './metadata';
 import { StreamDecoder } from './stream-decoder';
@@ -326,9 +326,6 @@ export type HandlerType = 'bidi' | 'clientStream' | 'serverStream' | 'unary';
 
 const noopTimer: NodeJS.Timer = setTimeout(() => {}, 0);
 
-// The default max message size for sending or receiving is 4 MB
-const DEFAULT_MAX_MESSAGE_SIZE = 4 * 1024 * 1024;
-
 // Internal class that wraps the HTTP2 request.
 export class Http2ServerCallStream<
   RequestType,
@@ -342,8 +339,8 @@ export class Http2ServerCallStream<
   private isPushPending = false;
   private bufferedMessages: Array<Buffer | null> = [];
   private messagesToPush: Array<RequestType | null> = [];
-  private maxSendMessageSize: number = DEFAULT_MAX_MESSAGE_SIZE;
-  private maxReceiveMessageSize: number = DEFAULT_MAX_MESSAGE_SIZE;
+  private maxSendMessageSize: number = DEFAULT_MAX_SEND_MESSAGE_LENGTH;
+  private maxReceiveMessageSize: number = DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH;
 
   constructor(
     private stream: http2.ServerHttp2Stream,

@@ -57,8 +57,12 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
     let client;
     let port;
     before(function(done) {
-      /* The default server has no limits on max message size to make those
-       * tests easier to write */
+      /* To make testing max message size enforcement easier, the we explicitly
+       * remove the limit on the size of messages the server can receive, and
+       * we expect that the size of messages it can send is unlimited by
+       * default. On the other side, we explicitly limit the size of messages
+       * the client can send to 4 MB, and we expect that the size of messages
+       * it can receive is limited to 4 MB by default */
       interopServer.getServer(0, true, (err, serverObj) => {
         if (err) {
           done(err);
@@ -71,13 +75,13 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
           const creds = grpc.credentials.createSsl(ca_data);
           const options = {
             'grpc.ssl_target_name_override': 'foo.test.google.fr',
-            'grpc.default_authority': 'foo.test.google.fr'
+            'grpc.default_authority': 'foo.test.google.fr',
+            'grpc.max_send_message_length': 4*1024*1024
           };
           client = new testProto.TestService(`localhost:${port}`, creds, options);
           done();
         }
       }, {
-        'grpc.max_send_message_length': -1,
         'grpc.max_receive_message_length': -1
       });
     });
@@ -141,14 +145,12 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
       });
     });
     describe.only('max message size', function() {
-      // Note: the main server has these checks disabled
       // A size that is larger than the default limit
-      const largeMessageSize = 32 * 1024 * 1024;
+      const largeMessageSize = 6 * 1024 * 1024;
       const largeMessage = Buffer.alloc(largeMessageSize);
       it('should get an error when sending a large message', function(done) {
         done = multiDone(done, 2);
-        const unaryMessage = {payload: {body: largeMessage}}
-        console.log(client.unaryCall.requestSerialize(unaryMessage).length);
+        const unaryMessage = {payload: {body: largeMessage}};
         client.unaryCall(unaryMessage, (error, result) => {
           assert(error);
           assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
@@ -228,7 +230,7 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
           });
         });
       });
-      describe('with a server with message size limits', function() {
+      describe('with a server with message size limits and a client without limits', function() {
         let restrictedServer;
         let restrictedServerClient;
         before(function(done) {
@@ -244,13 +246,12 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
               const options = {
                 'grpc.ssl_target_name_override': 'foo.test.google.fr',
                 'grpc.default_authority': 'foo.test.google.fr',
-                'grpc.max_send_message_length': -1,
                 'grpc.max_receive_message_length': -1
               };
               restrictedServerClient = new testProto.TestService(`localhost:${serverObj.port}`, creds, options);
               done();
             }
-          });
+          }, {'grpc.max_send_message_length': 4 * 1024 * 1024});
         });
         after(function() {
           restrictedServer.forceShutdown();
@@ -276,7 +277,6 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
         it('should get an error when requesting a large message', function(done) {
           done = multiDone(done, 2);
           restrictedServerClient.unaryCall({response_size: largeMessageSize}, (error, result) => {
-            console.log(result.payload.body.length);
             assert(error);
             assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
             done();
