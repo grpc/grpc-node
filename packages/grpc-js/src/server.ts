@@ -111,7 +111,6 @@ function getDefaultHandler(handlerType: HandlerType, methodName: string) {
       throw new Error(`Invalid handlerType ${handlerType}`);
   }
 }
-// tslint:enable:no-any
 
 export class Server {
   private http2ServerList: (http2.Http2Server | http2.Http2SecureServer)[] = [];
