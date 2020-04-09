@@ -2,6 +2,9 @@
   "root": true,
   "extends": "./node_modules/gts",
   "rules": {
-    "@typescript-eslint/no-explicit-any": "off"
+    "@typescript-eslint/no-explicit-any": "off",
+    "node/no-unpublished-import": ["error", {
+        "tryExtensions": [".ts", ".js", ".json", ".node"]
+    }]
   }
 }
