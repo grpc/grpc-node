@@ -332,6 +332,8 @@ export function setup(): void {
   registerDefaultResolver(DnsResolver);
 }
 
+// camelCase needed for compatibility to grpc-native-js package
+// eslint-disable-next-line @typescript-eslint/class-name-casing
 export interface dnsUrl {
   host: string;
   port?: string;

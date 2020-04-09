@@ -21,7 +21,7 @@
  * specific object type if the input has the right structure, and throws an
  * error otherwise. */
 
-export interface RoundRobinConfig {}
+export type RoundRobinConfig = {};
 
 export interface XdsConfig {
   balancerName: string;
