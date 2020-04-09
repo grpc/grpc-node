@@ -447,7 +447,11 @@ export class Http2ServerCallStream<
         try {
           const requestBytes = Buffer.concat(chunks, totalLength);
           if (this.maxReceiveMessageSize !== -1 && requestBytes.length > this.maxReceiveMessageSize) {
-            this.cancelWithStatus(Status.RESOURCE_EXHAUSTED, `Server received message of size ${requestBytes.length} > max size ${this.maxReceiveMessageSize}`);
+            this.sendError({
+              code: Status.RESOURCE_EXHAUSTED,
+              details: `Server received message of size ${requestBytes.length} > max size ${this.maxReceiveMessageSize}`
+            });
+            resolve();
           }
 
           resolve(await this.deserializeMessage(requestBytes));
@@ -564,18 +568,17 @@ export class Http2ServerCallStream<
     this.sendStatus(status);
   }
 
-  cancelWithStatus(code: Status, details: string) {
-    this.cancelled = true;
-    this.sendStatus({code, details, metadata: new Metadata()});
-  }
-
   write(chunk: Buffer) {
     if (this.checkCancelled()) {
       return;
     }
 
     if (this.maxSendMessageSize !== -1 && chunk.length > this.maxSendMessageSize) {
-      this.cancelWithStatus(Status.RESOURCE_EXHAUSTED, `Server failed to send message of size ${chunk.length} > max size ${this.maxSendMessageSize}`);
+      this.sendError({
+        code: Status.RESOURCE_EXHAUSTED, 
+        details: `Server failed to send message of size ${chunk.length} > max size ${this.maxSendMessageSize}`
+      });
+      return;
     }
 
     this.sendMetadata();
@@ -605,7 +608,11 @@ export class Http2ServerCallStream<
 
       for (const message of messages) {
         if (this.maxReceiveMessageSize !== -1 && message.length > this.maxReceiveMessageSize) {
-          this.cancelWithStatus(Status.RESOURCE_EXHAUSTED, `Server received message of size ${message.length} > max size ${this.maxReceiveMessageSize}`);
+          this.sendError({
+            code: Status.RESOURCE_EXHAUSTED,
+            details: `Server received message of size ${message.length} > max size ${this.maxReceiveMessageSize}`
+          });
+          return;
         }
         this.pushOrBufferMessage(readable, message);
       }

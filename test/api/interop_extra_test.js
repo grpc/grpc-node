@@ -144,9 +144,9 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
         done();
       });
     });
-    describe.only('max message size', function() {
+    describe('max message size', function() {
       // A size that is larger than the default limit
-      const largeMessageSize = 6 * 1024 * 1024;
+      const largeMessageSize = 8 * 1024 * 1024;
       const largeMessage = Buffer.alloc(largeMessageSize);
       it('should get an error when sending a large message', function(done) {
         done = multiDone(done, 2);
@@ -257,27 +257,28 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
           restrictedServer.forceShutdown();
         });
         it('should get an error when sending a large message', function(done) {
-          done = multiDone(done, 2);
           restrictedServerClient.unaryCall({payload: {body: largeMessage}}, (error, result) => {
+            console.log(error.message);
             assert(error);
             assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
-            done();
-          });
-          const stream = restrictedServerClient.fullDuplexCall();
-          stream.write({payload: {body: largeMessage}});
-          stream.end();
-          stream.on('data', () => {});
-          stream.on('status', (status) => {
-            assert.strictEqual(status.code, grpc.status.RESOURCE_EXHAUSTED);
-            done();
-          });
-          stream.on('error', (error) => {
+            const stream = restrictedServerClient.fullDuplexCall();
+            stream.write({payload: {body: largeMessage}});
+            stream.end();
+            stream.on('data', () => {});
+            stream.on('status', (status) => {
+              console.log(status.details);
+              assert.strictEqual(status.code, grpc.status.RESOURCE_EXHAUSTED);
+              done();
+            });
+            stream.on('error', (error) => {
+            });
           });
         });
         it('should get an error when requesting a large message', function(done) {
           done = multiDone(done, 2);
           restrictedServerClient.unaryCall({response_size: largeMessageSize}, (error, result) => {
             assert(error);
+            console.log(error.message);
             assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
             done();
           });
