@@ -116,7 +116,7 @@ export function makeClientConstructor(
     [methodName: string]: Function;
   }
 
-  Object.keys(methods).forEach(name => {
+  Object.keys(methods).forEach((name) => {
     const attrs = methods[name];
     let methodType: keyof typeof requesterFuncs;
     // TODO(murgatroid99): Verify that we don't need this anymore
@@ -164,7 +164,7 @@ function partial(
   serialize: Function,
   deserialize: Function
 ): Function {
-  return function(this: any, ...args: any[]) {
+  return function (this: any, ...args: any[]) {
     return fn.call(this, path, serialize, deserialize, ...args);
   };
 }

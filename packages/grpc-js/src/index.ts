@@ -28,7 +28,12 @@ import { CallCredentials } from './call-credentials';
 import { Deadline, StatusObject } from './call-stream';
 import { Channel, ConnectivityState, ChannelImplementation } from './channel';
 import { ChannelCredentials } from './channel-credentials';
-import { CallOptions, Client, CallInvocationTransformer, CallProperties } from './client';
+import {
+  CallOptions,
+  Client,
+  CallInvocationTransformer,
+  CallProperties,
+} from './client';
 import { LogVerbosity, Status } from './constants';
 import * as logging from './logging';
 import {
@@ -129,14 +134,14 @@ export const credentials = mixin(
             });
           }
           getHeaders.then(
-            headers => {
+            (headers) => {
               const metadata = new Metadata();
               for (const key of Object.keys(headers)) {
                 metadata.add(key, headers[key]);
               }
               callback(null, metadata);
             },
-            err => {
+            (err) => {
               callback(err);
             }
           );
@@ -202,7 +207,7 @@ export {
   CallProperties,
   CallInvocationTransformer,
   ChannelImplementation as Channel,
-  Channel as ChannelInterface
+  Channel as ChannelInterface,
 };
 
 /**

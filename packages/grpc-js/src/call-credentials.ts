@@ -79,7 +79,7 @@ class ComposedCallCredentials extends CallCredentials {
   async generateMetadata(options: CallMetadataOptions): Promise<Metadata> {
     const base: Metadata = new Metadata();
     const generated: Metadata[] = await Promise.all(
-      this.creds.map(cred => cred.generateMetadata(options))
+      this.creds.map((cred) => cred.generateMetadata(options))
     );
     for (const gen of generated) {
       base.merge(gen);

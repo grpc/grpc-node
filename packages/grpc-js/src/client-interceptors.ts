@@ -179,10 +179,10 @@ const defaultRequester: FullRequester = {
   sendMessage: (message, next) => {
     next(message);
   },
-  halfClose: next => {
+  halfClose: (next) => {
     next();
   },
-  cancel: next => {
+  cancel: (next) => {
     next();
   },
 };
@@ -250,13 +250,13 @@ export class InterceptingCall implements InterceptingCallInterface {
     const fullInterceptingListener: InterceptingListener = {
       onReceiveMetadata:
         interceptingListener?.onReceiveMetadata?.bind(interceptingListener) ??
-        (metadata => {}),
+        ((metadata) => {}),
       onReceiveMessage:
         interceptingListener?.onReceiveMessage?.bind(interceptingListener) ??
-        (message => {}),
+        ((message) => {}),
       onReceiveStatus:
         interceptingListener?.onReceiveStatus?.bind(interceptingListener) ??
-        (status => {}),
+        ((status) => {}),
     };
     this.requester.start(metadata, fullInterceptingListener, (md, listener) => {
       let finalInterceptingListener: InterceptingListener;
@@ -281,7 +281,7 @@ export class InterceptingCall implements InterceptingCallInterface {
   }
   sendMessageWithContext(context: MessageContext, message: any): void {
     this.processingMessage = true;
-    this.requester.sendMessage(message, finalMessage => {
+    this.requester.sendMessage(message, (finalMessage) => {
       this.processingMessage = false;
       this.nextCall.sendMessageWithContext(context, finalMessage);
       if (this.pendingHalfClose) {
@@ -368,10 +368,10 @@ class BaseInterceptingCall implements InterceptingCallInterface {
   ): void {
     let readError: StatusObject | null = null;
     this.call.start(metadata, {
-      onReceiveMetadata: metadata => {
+      onReceiveMetadata: (metadata) => {
         interceptingListener?.onReceiveMetadata?.(metadata);
       },
-      onReceiveMessage: message => {
+      onReceiveMessage: (message) => {
         let deserialized: any;
         try {
           deserialized = this.methodDefinition.responseDeserialize(message);
@@ -385,7 +385,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
           this.call.cancelWithStatus(readError.code, readError.details);
         }
       },
-      onReceiveStatus: status => {
+      onReceiveStatus: (status) => {
         if (readError) {
           interceptingListener?.onReceiveStatus?.(readError);
         } else {
@@ -415,7 +415,7 @@ class BaseUnaryInterceptingCall extends BaseInterceptingCall
     let receivedMessage = false;
     const wrapperListener: InterceptingListener = {
       onReceiveMetadata:
-        listener?.onReceiveMetadata?.bind(listener) ?? (metadata => {}),
+        listener?.onReceiveMetadata?.bind(listener) ?? ((metadata) => {}),
       onReceiveMessage: (message: any) => {
         receivedMessage = true;
         listener?.onReceiveMessage?.(message);
@@ -502,21 +502,21 @@ export function getInterceptingCall(
     interceptors = ([] as Interceptor[])
       .concat(
         interceptorArgs.callInterceptors,
-        interceptorArgs.callInterceptorProviders.map(provider =>
+        interceptorArgs.callInterceptorProviders.map((provider) =>
           provider(methodDefinition)
         )
       )
-      .filter(interceptor => interceptor);
+      .filter((interceptor) => interceptor);
     // Filter out falsy values when providers return nothing
   } else {
     interceptors = ([] as Interceptor[])
       .concat(
         interceptorArgs.clientInterceptors,
-        interceptorArgs.clientInterceptorProviders.map(provider =>
+        interceptorArgs.clientInterceptorProviders.map((provider) =>
           provider(methodDefinition)
         )
       )
-      .filter(interceptor => interceptor);
+      .filter((interceptor) => interceptor);
     // Filter out falsy values when providers return nothing
   }
   const interceptorOptions = Object.assign({}, options, {
@@ -531,14 +531,10 @@ export function getInterceptingCall(
    * channel. */
   const getCall: NextCall = interceptors.reduceRight<NextCall>(
     (nextCall: NextCall, nextInterceptor: Interceptor) => {
-      return currentOptions => nextInterceptor(currentOptions, nextCall);
+      return (currentOptions) => nextInterceptor(currentOptions, nextCall);
     },
     (finalOptions: InterceptorOptions) =>
-      getBottomInterceptingCall(
-        channel,
-        finalOptions,
-        methodDefinition
-      )
+      getBottomInterceptingCall(channel, finalOptions, methodDefinition)
   );
   return getCall(interceptorOptions);
 }

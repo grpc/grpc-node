@@ -157,7 +157,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
     this.trailingMetadata = new Metadata();
     this.call.setupSurfaceCall(this);
 
-    this.on('error', err => {
+    this.on('error', (err) => {
       this.call.sendError(err);
       this.end();
     });
@@ -226,7 +226,7 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
     this.call.setupSurfaceCall(this);
     this.call.setupReadable(this);
 
-    this.on('error', err => {
+    this.on('error', (err) => {
       this.call.sendError(err);
       this.end();
     });
@@ -562,7 +562,7 @@ export class Http2ServerCallStream<
   }
 
   setupSurfaceCall(call: ServerSurfaceCall) {
-    this.once('cancelled', reason => {
+    this.once('cancelled', (reason) => {
       call.cancelled = true;
       call.emit('cancelled', reason);
     });

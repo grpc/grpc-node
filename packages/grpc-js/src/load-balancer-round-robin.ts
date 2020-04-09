@@ -125,7 +125,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
   private calculateAndUpdateState() {
     if (this.subchannelStateCounts[ConnectivityState.READY] > 0) {
       const readySubchannels = this.subchannels.filter(
-        subchannel =>
+        (subchannel) =>
           subchannel.getConnectivityState() === ConnectivityState.READY
       );
       let index = 0;
@@ -192,9 +192,9 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     this.resetSubchannelList();
     trace(
       'Connect to address list ' +
-        addressList.map(address => subchannelAddressToString(address))
+        addressList.map((address) => subchannelAddressToString(address))
     );
-    this.subchannels = addressList.map(address =>
+    this.subchannels = addressList.map((address) =>
       this.channelControlHelper.createSubchannel(address, {})
     );
     for (const subchannel of this.subchannels) {

@@ -67,7 +67,7 @@ export class SubchannelPool {
       const subchannelObjArray = this.pool[channelTarget];
 
       const refedSubchannels = subchannelObjArray.filter(
-        value => !value.subchannel.unrefIfOneRef()
+        (value) => !value.subchannel.unrefIfOneRef()
       );
 
       if (refedSubchannels.length > 0) {

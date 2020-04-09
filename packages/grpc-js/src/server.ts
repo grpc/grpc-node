@@ -48,7 +48,11 @@ import { ServerCredentials } from './server-credentials';
 import { ChannelOptions } from './channel-options';
 import { createResolver, ResolverListener } from './resolver';
 import { log } from './logging';
-import { SubchannelAddress, TcpSubchannelAddress, isTcpSubchannelAddress } from './subchannel';
+import {
+  SubchannelAddress,
+  TcpSubchannelAddress,
+  isTcpSubchannelAddress,
+} from './subchannel';
 
 interface BindResult {
   port: number;
@@ -152,7 +156,7 @@ export class Server {
       throw new Error('Cannot add an empty service to a server');
     }
 
-    serviceKeys.forEach(name => {
+    serviceKeys.forEach((name) => {
       const attrs = service[name];
       let methodType: HandlerType;
 
@@ -244,62 +248,72 @@ export class Server {
       http2Server.setTimeout(0, noop);
       this._setupHandlers(http2Server);
       return http2Server;
-    }
+    };
 
-    const bindSpecificPort = (addressList: SubchannelAddress[], portNum: number, previousCount: number): Promise<BindResult> => {
+    const bindSpecificPort = (
+      addressList: SubchannelAddress[],
+      portNum: number,
+      previousCount: number
+    ): Promise<BindResult> => {
       if (addressList.length === 0) {
-        return Promise.resolve({port: portNum, count: previousCount});
+        return Promise.resolve({ port: portNum, count: previousCount });
       }
-      return Promise.all(addressList.map(address => {
-        let addr: SubchannelAddress;
-        if (isTcpSubchannelAddress(address)) {
-           addr = {
-            host: (address as TcpSubchannelAddress).host,
-            port: portNum
-          };
-        } else {
-          addr = address
-        }
-
-        const http2Server = setupServer();
-        return new Promise<number|Error>((resolve, reject) => {
-          function onError(err: Error): void {
-            resolve(err);
+      return Promise.all(
+        addressList.map((address) => {
+          let addr: SubchannelAddress;
+          if (isTcpSubchannelAddress(address)) {
+            addr = {
+              host: (address as TcpSubchannelAddress).host,
+              port: portNum,
+            };
+          } else {
+            addr = address;
           }
 
-          http2Server.once('error', onError);
-
-          http2Server.listen(addr, () => {
-            this.http2ServerList.push(http2Server);
-            const boundAddress = http2Server.address()!;
-            if (typeof boundAddress === 'string') {
-              resolve(portNum);
-            } else {
-              resolve(boundAddress.port);
+          const http2Server = setupServer();
+          return new Promise<number | Error>((resolve, reject) => {
+            function onError(err: Error): void {
+              resolve(err);
             }
-            http2Server.removeListener('error', onError);
+
+            http2Server.once('error', onError);
+
+            http2Server.listen(addr, () => {
+              this.http2ServerList.push(http2Server);
+              const boundAddress = http2Server.address()!;
+              if (typeof boundAddress === 'string') {
+                resolve(portNum);
+              } else {
+                resolve(boundAddress.port);
+              }
+              http2Server.removeListener('error', onError);
+            });
           });
         })
-      })).then(results => {
+      ).then((results) => {
         let count = 0;
         for (const result of results) {
           if (typeof result === 'number') {
             count += 1;
             if (result !== portNum) {
-              throw new Error('Invalid state: multiple port numbers added from single address');
+              throw new Error(
+                'Invalid state: multiple port numbers added from single address'
+              );
             }
           }
         }
         return {
           port: portNum,
-          count: count + previousCount
+          count: count + previousCount,
         };
       });
-    }
+    };
 
-    const bindWildcardPort = (addressList: SubchannelAddress[]): Promise<BindResult> => {
+    const bindWildcardPort = (
+      addressList: SubchannelAddress[]
+    ): Promise<BindResult> => {
       if (addressList.length === 0) {
-        return Promise.resolve<BindResult>({port: 0, count: 0});
+        return Promise.resolve<BindResult>({ port: 0, count: 0 });
       }
       const address = addressList[0];
       const http2Server = setupServer();
@@ -312,16 +326,26 @@ export class Server {
 
         http2Server.listen(address, () => {
           this.http2ServerList.push(http2Server);
-          resolve(bindSpecificPort(addressList.slice(1), (http2Server.address() as AddressInfo).port, 1));
+          resolve(
+            bindSpecificPort(
+              addressList.slice(1),
+              (http2Server.address() as AddressInfo).port,
+              1
+            )
+          );
           http2Server.removeListener('error', onError);
         });
       });
-    }
+    };
 
     const resolverListener: ResolverListener = {
-      onSuccessfulResolution: (addressList, serviceConfig, serviceConfigError) => {
+      onSuccessfulResolution: (
+        addressList,
+        serviceConfig,
+        serviceConfigError
+      ) => {
         // We only want one resolution result. Discard all future results
-        resolverListener.onSuccessfulResolution = () => {}
+        resolverListener.onSuccessfulResolution = () => {};
         if (addressList.length === 0) {
           callback(new Error(`No addresses resolved for port ${port}`), 0);
           return;
@@ -331,32 +355,42 @@ export class Server {
           if (addressList[0].port === 0) {
             bindResultPromise = bindWildcardPort(addressList);
           } else {
-            bindResultPromise = bindSpecificPort(addressList, addressList[0].port, 0);
+            bindResultPromise = bindSpecificPort(
+              addressList,
+              addressList[0].port,
+              0
+            );
           }
-        } else{
+        } else {
           // Use an arbitrary non-zero port for non-TCP addresses
           bindResultPromise = bindSpecificPort(addressList, 1, 0);
         }
-        bindResultPromise.then(bindResult => {
-          if (bindResult.count === 0) {
+        bindResultPromise.then(
+          (bindResult) => {
+            if (bindResult.count === 0) {
+              const errorString = `No address added out of total ${addressList.length} resolved`;
+              log(LogVerbosity.ERROR, errorString);
+              callback(new Error(errorString), 0);
+            } else {
+              if (bindResult.count < addressList.length) {
+                log(
+                  LogVerbosity.INFO,
+                  `WARNING Only ${bindResult.count} addresses added out of total ${addressList.length} resolved`
+                );
+              }
+              callback(null, bindResult.port);
+            }
+          },
+          (error) => {
             const errorString = `No address added out of total ${addressList.length} resolved`;
             log(LogVerbosity.ERROR, errorString);
             callback(new Error(errorString), 0);
-          } else {
-            if (bindResult.count < addressList.length) {
-              log(LogVerbosity.INFO, `WARNING Only ${bindResult.count} addresses added out of total ${addressList.length} resolved`);
-            }
-            callback(null, bindResult.port);
           }
-        }, (error) => {
-          const errorString = `No address added out of total ${addressList.length} resolved`;
-          log(LogVerbosity.ERROR, errorString);
-          callback(new Error(errorString), 0);
-        });
+        );
       },
       onError: (error) => {
         callback(new Error(error.details), 0);
-      }
+      },
     };
 
     const resolver = createResolver(port, resolverListener);
@@ -376,7 +410,7 @@ export class Server {
 
     // Always destroy any available sessions. It's possible that one or more
     // tryShutdown() calls are in progress. Don't wait on them to finish.
-    this.sessions.forEach(session => {
+    this.sessions.forEach((session) => {
       // Cast NGHTTP2_CANCEL to any because TypeScript doesn't seem to
       // recognize destroy(code) as a valid signature.
       session.destroy(http2.constants.NGHTTP2_CANCEL as any);
@@ -405,7 +439,12 @@ export class Server {
   }
 
   start(): void {
-    if (this.http2ServerList.length === 0 || this.http2ServerList.every(http2Server => http2Server.listening !== true)) {
+    if (
+      this.http2ServerList.length === 0 ||
+      this.http2ServerList.every(
+        (http2Server) => http2Server.listening !== true
+      )
+    ) {
       throw new Error('server must be bound in order to start');
     }
 
@@ -439,7 +478,7 @@ export class Server {
 
     // If any sessions are active, close them gracefully.
     pendingChecks += this.sessions.size;
-    this.sessions.forEach(session => {
+    this.sessions.forEach((session) => {
       session.close(maybeCallback);
     });
     if (pendingChecks === 0) {
@@ -451,7 +490,9 @@ export class Server {
     throw new Error('Not yet implemented');
   }
 
-  private _setupHandlers(http2Server: http2.Http2Server | http2.Http2SecureServer): void {
+  private _setupHandlers(
+    http2Server: http2.Http2Server | http2.Http2SecureServer
+  ): void {
     if (http2Server === null) {
       return;
     }
@@ -525,7 +566,7 @@ export class Server {
       }
     );
 
-    http2Server.on('session', session => {
+    http2Server.on('session', (session) => {
       if (!this.started) {
         session.destroy();
         return;
