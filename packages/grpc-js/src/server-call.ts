@@ -479,7 +479,7 @@ export class Http2ServerCallStream<
     }
 
     if (err) {
-      if (!err.hasOwnProperty('metadata')) {
+      if (!Object.prototype.hasOwnProperty.call(err, 'metadata')) {
         err.metadata = metadata;
       }
       this.sendError(err);

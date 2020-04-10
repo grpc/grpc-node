@@ -194,7 +194,7 @@ export function loadPackageDefinition(
 ): GrpcObject {
   const result: GrpcObject = {};
   for (const serviceFqn in packageDef) {
-    if (packageDef.hasOwnProperty(serviceFqn)) {
+    if (Object.prototype.hasOwnProperty.call(packageDef, serviceFqn)) {
       const service = packageDef[serviceFqn];
       const nameComponents = serviceFqn.split('.');
       const serviceName = nameComponents[nameComponents.length - 1];
