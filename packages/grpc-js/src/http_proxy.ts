@@ -149,13 +149,13 @@ export function getProxiedConnection(target: string, subchannelAddress: Subchann
         trace('Successfully connected to ' + subchannelAddress + ' through proxy ' + PROXY_INFO.address);
         resolve(socket);
       } else {
-        log(LogVerbosity.ERROR, 'Failed to connect to ' + subchannelAddress + ' through proxy ' + PROXY_INFO.address);
+        log(LogVerbosity.ERROR, 'Failed to connect to ' + subchannelAddress + ' through proxy ' + PROXY_INFO.address + ' with status ' + res.statusCode);
         reject();
       }
     });
     request.once('error', (err) => {
       request.removeAllListeners();
-      log(LogVerbosity.ERROR, 'Failed to connect to proxy ' + PROXY_INFO.address);
+      log(LogVerbosity.ERROR, 'Failed to connect to proxy ' + PROXY_INFO.address + ' with error ' + err.message);
       reject();
     });
   });
