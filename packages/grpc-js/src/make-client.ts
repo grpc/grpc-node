@@ -18,6 +18,7 @@
 import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
 import { Client } from './client';
+import { UntypedServiceImplementation } from './server';
 
 export interface Serialize<T> {
   (value: T): Buffer;
@@ -49,10 +50,12 @@ export interface MethodDefinition<RequestType, ResponseType>
   extends ClientMethodDefinition<RequestType, ResponseType>,
     ServerMethodDefinition<RequestType, ResponseType> {}
 
-export interface ServiceDefinition {
+export type ServiceDefinition<
+  ImplementationType = UntypedServiceImplementation
+> = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [index: string]: MethodDefinition<any, any>;
-}
+  readonly [index in keyof ImplementationType]: MethodDefinition<any, any>;
+};
 
 export interface ProtobufTypeDefinition {
   format: string;
