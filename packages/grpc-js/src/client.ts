@@ -318,7 +318,7 @@ export class Client {
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onReceiveMessage(message: any) {
-        if (responseMessage != null) {
+        if (responseMessage !== null) {
           call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
         }
         responseMessage = message;
@@ -435,7 +435,7 @@ export class Client {
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onReceiveMessage(message: any) {
-        if (responseMessage != null) {
+        if (responseMessage !== null) {
           call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
         }
         responseMessage = message;

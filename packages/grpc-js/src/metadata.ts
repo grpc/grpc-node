@@ -48,7 +48,7 @@ function validate(key: string, value?: MetadataValue): void {
   if (!isLegalKey(key)) {
     throw new Error('Metadata key "' + key + '" contains illegal characters');
   }
-  if (value != null) {
+  if (value !== null && value !== undefined) {
     if (isBinaryKey(key)) {
       if (!(value instanceof Buffer)) {
         throw new Error("keys that end with '-bin' must have Buffer values");
