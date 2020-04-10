@@ -305,9 +305,6 @@ class DnsResolver implements Resolver {
     }
     const dnsMatch = DNS_REGEX.exec(target);
     if (dnsMatch) {
-      if (dnsMatch[2]) {
-        return dnsMatch[1] + ':' + dnsMatch[2];
-      }
       return dnsMatch[1];
     }
     throw new Error(`Failed to parse target ${target}`);
