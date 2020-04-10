@@ -15,18 +15,14 @@
  *
  */
 
-import { URL, parse } from 'url';
+import { URL } from 'url';
 import { log } from './logging';
 import { LogVerbosity } from './constants';
 import { parseTarget } from './resolver-dns';
 import { Socket } from 'net';
 import * as http from 'http';
 import * as logging from './logging';
-import {
-  SubchannelAddress,
-  TcpSubchannelAddress,
-  isTcpSubchannelAddress,
-} from './subchannel';
+import { SubchannelAddress, isTcpSubchannelAddress } from './subchannel';
 
 const TRACER_NAME = 'proxy';
 
