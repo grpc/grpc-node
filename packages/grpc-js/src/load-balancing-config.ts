@@ -21,6 +21,10 @@
  * specific object type if the input has the right structure, and throws an
  * error otherwise. */
 
+/* The any type is purposely used here. All functions validate their input at
+ * runtime */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export type RoundRobinConfig = {};
 
 export interface XdsConfig {

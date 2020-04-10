@@ -70,6 +70,7 @@ function getUnimplementedStatusResponse(
   };
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 type UntypedUnaryHandler = UnaryHandler<any, any>;
 type UntypedClientStreamingHandler = ClientStreamingHandler<any, any>;
 type UntypedServerStreamingHandler = ServerStreamingHandler<any, any>;
@@ -411,6 +412,7 @@ export class Server {
     this.sessions.forEach((session) => {
       // Cast NGHTTP2_CANCEL to any because TypeScript doesn't seem to
       // recognize destroy(code) as a valid signature.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       session.destroy(http2.constants.NGHTTP2_CANCEL as any);
     });
     this.sessions.clear();

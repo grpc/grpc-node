@@ -50,6 +50,7 @@ export interface MethodDefinition<RequestType, ResponseType>
     ServerMethodDefinition<RequestType, ResponseType> {}
 
 export interface ServiceDefinition {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [index: string]: MethodDefinition<any, any>;
 }
 
@@ -164,6 +165,7 @@ function partial(
   serialize: Function,
   deserialize: Function
 ): Function {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return function (this: any, ...args: any[]) {
     return fn.call(this, path, serialize, deserialize, ...args);
   };

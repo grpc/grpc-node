@@ -69,6 +69,7 @@ export interface MetadataListener {
 }
 
 export interface MessageListener {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (message: any, next: (message: any) => void): void;
 }
 
@@ -89,6 +90,7 @@ export type Listener = Partial<FullListener>;
  */
 export interface InterceptingListener {
   onReceiveMetadata(metadata: Metadata): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onReceiveMessage(message: any): void;
   onReceiveStatus(status: StatusObject): void;
 }
@@ -115,6 +117,7 @@ export class InterceptingListenerImpl implements InterceptingListener {
       this.nextListener.onReceiveMetadata(metadata);
     });
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onReceiveMessage(message: any): void {
     /* If this listener processes messages asynchronously, the last message may
      * be reordered with respect to the status */

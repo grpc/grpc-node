@@ -18,6 +18,8 @@
 import { Duplex, Readable, Writable } from 'stream';
 import { EmitterAugmentation1 } from './events';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export type WriteCallback = (error: Error | null | undefined) => void;
 
 export interface IntermediateObjectReadable<T> extends Readable {

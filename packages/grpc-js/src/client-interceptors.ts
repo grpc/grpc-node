@@ -59,6 +59,7 @@ export interface MetadataRequester {
 }
 
 export interface MessageRequester {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (message: any, next: (message: any) => void): void;
 }
 
@@ -183,6 +184,7 @@ const defaultRequester: FullRequester = {
 };
 
 export interface InterceptorOptions extends CallOptions {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   method_definition: ClientMethodDefinition<any, any>;
 }
 
@@ -190,7 +192,9 @@ export interface InterceptingCallInterface {
   cancelWithStatus(status: Status, details: string): void;
   getPeer(): string;
   start(metadata: Metadata, listener?: Partial<InterceptingListener>): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendMessageWithContext(context: MessageContext, message: any): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendMessage(message: any): void;
   startRead(): void;
   halfClose(): void;
@@ -274,6 +278,7 @@ export class InterceptingCall implements InterceptingCallInterface {
       this.nextCall.start(md, finalInterceptingListener);
     });
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendMessageWithContext(context: MessageContext, message: any): void {
     this.processingMessage = true;
     this.requester.sendMessage(message, (finalMessage) => {
@@ -284,6 +289,7 @@ export class InterceptingCall implements InterceptingCallInterface {
       }
     });
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendMessage(message: any): void {
     this.sendMessageWithContext({}, message);
   }
@@ -334,6 +340,7 @@ function getCall(channel: Channel, path: string, options: CallOptions): Call {
 class BaseInterceptingCall implements InterceptingCallInterface {
   constructor(
     protected call: Call,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected methodDefinition: ClientMethodDefinition<any, any>
   ) {}
   cancelWithStatus(status: Status, details: string): void {
@@ -345,6 +352,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
   setCredentials(credentials: CallCredentials): void {
     this.call.setCredentials(credentials);
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendMessageWithContext(context: MessageContext, message: any): void {
     let serialized: Buffer;
     try {
@@ -354,6 +362,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
       this.call.cancelWithStatus(Status.INTERNAL, 'Serialization failure');
     }
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendMessage(message: any) {
     this.sendMessageWithContext({}, message);
   }
@@ -367,6 +376,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
         interceptingListener?.onReceiveMetadata?.(metadata);
       },
       onReceiveMessage: (message) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let deserialized: any;
         try {
           deserialized = this.methodDefinition.responseDeserialize(message);
@@ -403,6 +413,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
  */
 class BaseUnaryInterceptingCall extends BaseInterceptingCall
   implements InterceptingCallInterface {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(call: Call, methodDefinition: ClientMethodDefinition<any, any>) {
     super(call, methodDefinition);
   }
@@ -411,6 +422,7 @@ class BaseUnaryInterceptingCall extends BaseInterceptingCall
     const wrapperListener: InterceptingListener = {
       onReceiveMetadata:
         listener?.onReceiveMetadata?.bind(listener) ?? ((metadata) => {}),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onReceiveMessage: (message: any) => {
         receivedMessage = true;
         listener?.onReceiveMessage?.(message);
@@ -433,9 +445,11 @@ class BaseUnaryInterceptingCall extends BaseInterceptingCall
  */
 class BaseStreamingInterceptingCall extends BaseInterceptingCall
   implements InterceptingCallInterface {}
+
 function getBottomInterceptingCall(
   channel: Channel,
   options: InterceptorOptions,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   methodDefinition: ClientMethodDefinition<any, any>
 ) {
   const call = getCall(channel, methodDefinition.path, options);
@@ -455,6 +469,7 @@ export interface Interceptor {
 }
 
 export interface InterceptorProvider {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (methodDefinition: ClientMethodDefinition<any, any>): Interceptor;
 }
 
@@ -464,8 +479,10 @@ export interface InterceptorArguments {
   callInterceptors: Interceptor[];
   callInterceptorProviders: InterceptorProvider[];
 }
+
 export function getInterceptingCall(
   interceptorArgs: InterceptorArguments,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   methodDefinition: ClientMethodDefinition<any, any>,
   options: CallOptions,
   channel: Channel

@@ -63,6 +63,7 @@ export class SubchannelPool {
     /* These objects are created with Object.create(null), so they do not
      * have a prototype, which means that for (... in ...) loops over them
      * do not need to be filtered */
+    // eslint-disable-disable-next-line:forin
     for (const channelTarget in this.pool) {
       const subchannelObjArray = this.pool[channelTarget];
 

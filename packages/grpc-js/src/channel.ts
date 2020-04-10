@@ -111,7 +111,7 @@ export interface Channel {
     method: string,
     deadline: Deadline,
     host: string | null | undefined,
-    parentCall: any,
+    parentCall: any, // eslint-disable-line @typescript-eslint/no-explicit-any
     propagateFlags: number | null | undefined
   ): Call;
 }
@@ -460,7 +460,7 @@ export class ChannelImplementation implements Channel {
     method: string,
     deadline: Deadline,
     host: string | null | undefined,
-    parentCall: any,
+    parentCall: any, // eslint-disable-line @typescript-eslint/no-explicit-any
     propagateFlags: number | null | undefined
   ): Call {
     if (typeof method !== 'string') {

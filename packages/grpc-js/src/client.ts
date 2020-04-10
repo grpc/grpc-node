@@ -59,6 +59,7 @@ export interface UnaryCallback<ResponseType> {
   (err: ServiceError | null, value?: ResponseType): void;
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface CallOptions {
   deadline?: Deadline;
   host?: string;
@@ -72,6 +73,7 @@ export interface CallOptions {
   interceptors?: Interceptor[];
   interceptor_providers?: InterceptorProvider[];
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export interface CallProperties<RequestType, ResponseType> {
   argument?: RequestType;
@@ -84,7 +86,7 @@ export interface CallProperties<RequestType, ResponseType> {
 }
 
 export interface CallInvocationTransformer {
-  (callProperties: CallProperties<any, any>): CallProperties<any, any>;
+  (callProperties: CallProperties<any, any>): CallProperties<any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 export type ClientOptions = Partial<ChannelOptions> & {
@@ -314,6 +316,7 @@ export class Client {
       onReceiveMetadata: (metadata) => {
         emitter.emit('metadata', metadata);
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onReceiveMessage(message: any) {
         if (responseMessage != null) {
           call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
@@ -430,6 +433,7 @@ export class Client {
       onReceiveMetadata: (metadata) => {
         emitter.emit('metadata', metadata);
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onReceiveMessage(message: any) {
         if (responseMessage != null) {
           call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
@@ -552,6 +556,7 @@ export class Client {
       onReceiveMetadata(metadata: Metadata) {
         stream.emit('metadata', metadata);
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onReceiveMessage(message: any) {
         if (stream.push(message)) {
           call.startRead();

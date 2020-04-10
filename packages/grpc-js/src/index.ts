@@ -67,15 +67,15 @@ if (!semver.satisfies(process.version, supportedNodeVersions)) {
 }
 
 interface IndexedObject {
-  [key: string]: any;
-  [key: number]: any;
+  [key: string]: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  [key: number]: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 function mixin(...sources: IndexedObject[]) {
   const result: { [key: string]: Function } = {};
   for (const source of sources) {
     for (const propName of Object.getOwnPropertyNames(source)) {
-      const property: any = source[propName];
+      const property: any = source[propName]; // eslint-disable-line @typescript-eslint/no-explicit-any
       if (typeof property === 'function') {
         result[propName] = property;
       }
@@ -250,13 +250,17 @@ export {
 
 export { handleBidiStreamingCall, handleServerStreamingCall, handleUnaryCall };
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export type Call =
   | ClientUnaryCall
   | ClientReadableStream<any>
   | ClientWritableStream<any>
   | ClientDuplexStream<any, any>;
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 /**** Unimplemented function stubs ****/
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export const loadObject = (value: any, options: any) => {
   throw new Error(

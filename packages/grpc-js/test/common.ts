@@ -72,6 +72,7 @@ export namespace assert2 {
    * Wraps a function to keep track of whether it was called or not.
    * @param fn The function to wrap.
    */
+  // tslint:disable:no-any
   export function mustCall<T>(
     fn: (...args: any[]) => T
   ): (...args: any[]) => T {

@@ -22,6 +22,10 @@
  * specific object type if the input has the right structure, and throws an
  * error otherwise. */
 
+/* The any type is purposely used here. All functions validate their input at
+ * runtime */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import * as lbconfig from './load-balancing-config';
 import * as os from 'os';
 

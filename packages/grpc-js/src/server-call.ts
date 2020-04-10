@@ -174,6 +174,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
   async _write(
     chunk: ResponseType,
     encoding: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     callback: (...args: any[]) => void
   ) {
     try {
@@ -200,6 +201,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
     callback(null);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   end(metadata?: any) {
     if (metadata) {
       this.trailingMetadata = metadata;
@@ -669,6 +671,7 @@ export class Http2ServerCallStream<
   }
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 type UntypedServerCall = Http2ServerCallStream<any, any>;
 
 function handleExpiredDeadline(call: UntypedServerCall) {

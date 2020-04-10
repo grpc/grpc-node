@@ -47,6 +47,8 @@ export const setLogger = (logger: Partial<Console>): void => {
 export const setLoggerVerbosity = (verbosity: LogVerbosity): void => {
   _logVerbosity = verbosity;
 };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const log = (severity: LogVerbosity, ...args: any[]): void => {
   if (severity >= _logVerbosity && typeof _logger.error === 'function') {
     _logger.error(...args);
