@@ -298,9 +298,6 @@ class DnsResolver implements Resolver {
       IPV6_REGEX.exec(target) ||
       IPV6_BRACKET_REGEX.exec(target);
     if (ipMatch) {
-      if (ipMatch[2]) {
-        return ipMatch[1] + ':' + ipMatch[2];
-      }
       return ipMatch[1];
     }
     const dnsMatch = DNS_REGEX.exec(target);
