@@ -50,12 +50,13 @@ export interface MethodDefinition<RequestType, ResponseType>
   extends ClientMethodDefinition<RequestType, ResponseType>,
     ServerMethodDefinition<RequestType, ResponseType> {}
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export type ServiceDefinition<
   ImplementationType = UntypedServiceImplementation
 > = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly [index in keyof ImplementationType]: MethodDefinition<any, any>;
 };
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export interface ProtobufTypeDefinition {
   format: string;

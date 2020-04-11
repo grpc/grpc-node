@@ -4,6 +4,7 @@
   "rules": {
     "node/no-unpublished-import": ["error", {
         "tryExtensions": [".ts", ".js", ".json", ".node"]
-    }]
+    }],
+    "@typescript-eslint/no-unused-vars": "off"
   }
 }
