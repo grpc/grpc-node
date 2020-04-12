@@ -32,6 +32,8 @@ function trace(text: string): void {
 
 interface ProxyInfo {
   address?: string;
+  hostname?: string;
+  port?: string | number;
   creds?: string;
 }
 
@@ -75,7 +77,9 @@ function getProxyInfo(): ProxyInfo {
     }
   }
   const result: ProxyInfo = {
-    address: proxyUrl.host
+    address: proxyUrl.host,
+    hostname: proxyUrl.hostname,
+    port: proxyUrl.port || 80,
   };
   if (userCred) {
     result.creds = userCred;
@@ -132,7 +136,8 @@ export function getProxiedConnection(target: string, subchannelAddress: Subchann
   trace('Using proxy ' + PROXY_INFO.address + ' to connect to ' + target + ' at ' + subchannelAddress);
   const options: http.RequestOptions = {
     method: 'CONNECT',
-    host: PROXY_INFO.address,
+    host: PROXY_INFO.hostname || PROXY_INFO.address,
+    port: PROXY_INFO.port || 80,
     path: subchannelAddressPathString
   };
   if (PROXY_INFO.creds) {
