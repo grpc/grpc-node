@@ -62,7 +62,8 @@ import {
   ServerDuplexStream,
 } from './server-call';
 
-const supportedNodeVersions = require('../../package.json').engines.node;
+import { engines as supportedEngines } from '../package.json';
+const supportedNodeVersions = supportedEngines.node;
 if (!semver.satisfies(process.version, supportedNodeVersions)) {
   throw new Error(`@grpc/grpc-js only works on Node ${supportedNodeVersions}`);
 }
