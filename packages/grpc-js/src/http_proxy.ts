@@ -181,7 +181,9 @@ export function getProxiedConnection(
           'Failed to connect to ' +
             subchannelAddress +
             ' through proxy ' +
-            PROXY_INFO.address
+            PROXY_INFO.address +
+            ' with status ' +
+            res.statusCode
         );
         reject();
       }
@@ -190,7 +192,10 @@ export function getProxiedConnection(
       request.removeAllListeners();
       log(
         LogVerbosity.ERROR,
-        'Failed to connect to proxy ' + PROXY_INFO.address
+        'Failed to connect to proxy ' +
+          PROXY_INFO.address +
+          ' with error ' +
+          err.message
       );
       reject();
     });
