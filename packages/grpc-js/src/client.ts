@@ -29,18 +29,13 @@ import {
   SurfaceCall,
 } from './call';
 import { CallCredentials } from './call-credentials';
-import {
-  Deadline,
-  StatusObject,
-  WriteObject,
-  InterceptingListener,
-} from './call-stream';
+import { Deadline, StatusObject } from './call-stream';
 import { Channel, ConnectivityState, ChannelImplementation } from './channel';
 import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
 import { Status } from './constants';
 import { Metadata } from './metadata';
-import { ClientMethodDefinition, MethodDefinition } from './make-client';
+import { ClientMethodDefinition } from './make-client';
 import {
   getInterceptingCall,
   Interceptor,
@@ -48,7 +43,12 @@ import {
   InterceptorArguments,
   InterceptingCallInterface,
 } from './client-interceptors';
-import { ServerUnaryCall, ServerReadableStream, ServerWritableStream, ServerDuplexStream } from './server-call';
+import {
+  ServerUnaryCall,
+  ServerReadableStream,
+  ServerWritableStream,
+  ServerDuplexStream,
+} from './server-call';
 
 const CHANNEL_SYMBOL = Symbol();
 const INTERCEPTOR_SYMBOL = Symbol();
@@ -59,15 +59,21 @@ export interface UnaryCallback<ResponseType> {
   (err: ServiceError | null, value?: ResponseType): void;
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface CallOptions {
   deadline?: Deadline;
   host?: string;
-  parent?: ServerUnaryCall<any, any> | ServerReadableStream<any, any> | ServerWritableStream<any, any> | ServerDuplexStream<any, any>
+  parent?:
+    | ServerUnaryCall<any, any>
+    | ServerReadableStream<any, any>
+    | ServerWritableStream<any, any>
+    | ServerDuplexStream<any, any>;
   propagate_flags?: number;
   credentials?: CallCredentials;
   interceptors?: Interceptor[];
   interceptor_providers?: InterceptorProvider[];
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export interface CallProperties<RequestType, ResponseType> {
   argument?: RequestType;
@@ -76,11 +82,11 @@ export interface CallProperties<RequestType, ResponseType> {
   channel: Channel;
   methodDefinition: ClientMethodDefinition<RequestType, ResponseType>;
   callOptions: CallOptions;
-  callback?: UnaryCallback<ResponseType>
+  callback?: UnaryCallback<ResponseType>;
 }
 
 export interface CallInvocationTransformer {
-  (callProperties: CallProperties<any, any>): CallProperties<any, any>
+  (callProperties: CallProperties<any, any>): CallProperties<any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 export type ClientOptions = Partial<ChannelOptions> & {
@@ -123,7 +129,8 @@ export class Client {
           'to the client constructor. Only one of these is allowed.'
       );
     }
-    this[CALL_INVOCATION_TRANSFORMER_SYMBOL] = options.callInvocationTransformer;
+    this[CALL_INVOCATION_TRANSFORMER_SYMBOL] =
+      options.callInvocationTransformer;
     delete options.callInvocationTransformer;
     if (options.channelOverride) {
       this[CHANNEL_SYMBOL] = options.channelOverride;
@@ -274,17 +281,20 @@ export class Client {
       channel: this[CHANNEL_SYMBOL],
       methodDefinition: methodDefinition,
       callOptions: checkedArguments.options,
-      callback: checkedArguments.callback
+      callback: checkedArguments.callback,
     };
     if (this[CALL_INVOCATION_TRANSFORMER_SYMBOL]) {
-      callProperties = this[CALL_INVOCATION_TRANSFORMER_SYMBOL]!(callProperties) as CallProperties<RequestType, ResponseType>;
+      callProperties = this[CALL_INVOCATION_TRANSFORMER_SYMBOL]!(
+        callProperties
+      ) as CallProperties<RequestType, ResponseType>;
     }
     const emitter: ClientUnaryCall = callProperties.call;
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
       callInterceptors: callProperties.callOptions.interceptors ?? [],
-      callInterceptorProviders: callProperties.callOptions.interceptor_providers ?? [],
+      callInterceptorProviders:
+        callProperties.callOptions.interceptor_providers ?? [],
     };
     const call: InterceptingCallInterface = getInterceptingCall(
       interceptorArgs,
@@ -303,12 +313,12 @@ export class Client {
     let responseMessage: ResponseType | null = null;
     let receivedStatus = false;
     call.start(callProperties.metadata, {
-      onReceiveMetadata: metadata => {
+      onReceiveMetadata: (metadata) => {
         emitter.emit('metadata', metadata);
       },
-      // tslint:disable-next-line no-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onReceiveMessage(message: any) {
-        if (responseMessage != null) {
+        if (responseMessage !== null) {
           call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
         }
         responseMessage = message;
@@ -386,17 +396,22 @@ export class Client {
       channel: this[CHANNEL_SYMBOL],
       methodDefinition: methodDefinition,
       callOptions: checkedArguments.options,
-      callback: checkedArguments.callback
+      callback: checkedArguments.callback,
     };
     if (this[CALL_INVOCATION_TRANSFORMER_SYMBOL]) {
-      callProperties = this[CALL_INVOCATION_TRANSFORMER_SYMBOL]!(callProperties) as CallProperties<RequestType, ResponseType>;
+      callProperties = this[CALL_INVOCATION_TRANSFORMER_SYMBOL]!(
+        callProperties
+      ) as CallProperties<RequestType, ResponseType>;
     }
-    const emitter: ClientWritableStream<RequestType> = callProperties.call as ClientWritableStream<RequestType>;
+    const emitter: ClientWritableStream<RequestType> = callProperties.call as ClientWritableStream<
+      RequestType
+    >;
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
       callInterceptors: callProperties.callOptions.interceptors ?? [],
-      callInterceptorProviders: callProperties.callOptions.interceptor_providers ?? [],
+      callInterceptorProviders:
+        callProperties.callOptions.interceptor_providers ?? [],
     };
     const call: InterceptingCallInterface = getInterceptingCall(
       interceptorArgs,
@@ -415,12 +430,12 @@ export class Client {
     let responseMessage: ResponseType | null = null;
     let receivedStatus = false;
     call.start(callProperties.metadata, {
-      onReceiveMetadata: metadata => {
+      onReceiveMetadata: (metadata) => {
         emitter.emit('metadata', metadata);
       },
-      // tslint:disable-next-line no-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onReceiveMessage(message: any) {
-        if (responseMessage != null) {
+        if (responseMessage !== null) {
           call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
         }
         responseMessage = message;
@@ -505,17 +520,22 @@ export class Client {
       call: new ClientReadableStreamImpl<ResponseType>(deserialize),
       channel: this[CHANNEL_SYMBOL],
       methodDefinition: methodDefinition,
-      callOptions: checkedArguments.options
+      callOptions: checkedArguments.options,
     };
     if (this[CALL_INVOCATION_TRANSFORMER_SYMBOL]) {
-      callProperties = this[CALL_INVOCATION_TRANSFORMER_SYMBOL]!(callProperties) as CallProperties<RequestType, ResponseType>;
+      callProperties = this[CALL_INVOCATION_TRANSFORMER_SYMBOL]!(
+        callProperties
+      ) as CallProperties<RequestType, ResponseType>;
     }
-    const stream: ClientReadableStream<ResponseType> = callProperties.call as ClientReadableStream<ResponseType>;
+    const stream: ClientReadableStream<ResponseType> = callProperties.call as ClientReadableStream<
+      ResponseType
+    >;
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
       callInterceptors: callProperties.callOptions.interceptors ?? [],
-      callInterceptorProviders: callProperties.callOptions.interceptor_providers ?? [],
+      callInterceptorProviders:
+        callProperties.callOptions.interceptor_providers ?? [],
     };
     const call: InterceptingCallInterface = getInterceptingCall(
       interceptorArgs,
@@ -536,7 +556,7 @@ export class Client {
       onReceiveMetadata(metadata: Metadata) {
         stream.emit('metadata', metadata);
       },
-      // tslint:disable-next-line no-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onReceiveMessage(message: any) {
         if (stream.push(message)) {
           call.startRead();
@@ -592,20 +612,29 @@ export class Client {
     };
     let callProperties: CallProperties<RequestType, ResponseType> = {
       metadata: checkedArguments.metadata,
-      call: new ClientDuplexStreamImpl<RequestType, ResponseType>(serialize, deserialize),
+      call: new ClientDuplexStreamImpl<RequestType, ResponseType>(
+        serialize,
+        deserialize
+      ),
       channel: this[CHANNEL_SYMBOL],
       methodDefinition: methodDefinition,
-      callOptions: checkedArguments.options
+      callOptions: checkedArguments.options,
     };
     if (this[CALL_INVOCATION_TRANSFORMER_SYMBOL]) {
-      callProperties = this[CALL_INVOCATION_TRANSFORMER_SYMBOL]!(callProperties) as CallProperties<RequestType, ResponseType>;
+      callProperties = this[CALL_INVOCATION_TRANSFORMER_SYMBOL]!(
+        callProperties
+      ) as CallProperties<RequestType, ResponseType>;
     }
-    const stream: ClientDuplexStream<RequestType, ResponseType> = callProperties.call as ClientDuplexStream<RequestType, ResponseType>;
+    const stream: ClientDuplexStream<
+      RequestType,
+      ResponseType
+    > = callProperties.call as ClientDuplexStream<RequestType, ResponseType>;
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
       callInterceptors: callProperties.callOptions.interceptors ?? [],
-      callInterceptorProviders: callProperties.callOptions.interceptor_providers ?? [],
+      callInterceptorProviders:
+        callProperties.callOptions.interceptor_providers ?? [],
     };
     const call: InterceptingCallInterface = getInterceptingCall(
       interceptorArgs,
