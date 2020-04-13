@@ -487,7 +487,7 @@ export class ChannelImplementation implements Channel {
         deadline
     );
     const finalOptions: CallStreamOptions = {
-      deadline: deadline,
+      deadline,
       flags: propagateFlags || 0,
       host: host || this.defaultAuthority,
       parentCall: parentCall || null,

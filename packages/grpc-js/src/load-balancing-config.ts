@@ -25,7 +25,8 @@
  * runtime */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export type RoundRobinConfig = {};
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface RoundRobinConfig {}
 
 export interface XdsConfig {
   balancerName: string;

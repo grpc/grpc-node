@@ -275,11 +275,11 @@ export class Client {
       responseDeserialize: deserialize,
     };
     let callProperties: CallProperties<RequestType, ResponseType> = {
-      argument: argument,
+      argument,
       metadata: checkedArguments.metadata,
       call: new ClientUnaryCallImpl(),
       channel: this[CHANNEL_SYMBOL],
-      methodDefinition: methodDefinition,
+      methodDefinition,
       callOptions: checkedArguments.options,
       callback: checkedArguments.callback,
     };
@@ -394,7 +394,7 @@ export class Client {
       metadata: checkedArguments.metadata,
       call: new ClientWritableStreamImpl<RequestType>(serialize),
       channel: this[CHANNEL_SYMBOL],
-      methodDefinition: methodDefinition,
+      methodDefinition,
       callOptions: checkedArguments.options,
       callback: checkedArguments.callback,
     };
@@ -515,11 +515,11 @@ export class Client {
       responseDeserialize: deserialize,
     };
     let callProperties: CallProperties<RequestType, ResponseType> = {
-      argument: argument,
+      argument,
       metadata: checkedArguments.metadata,
       call: new ClientReadableStreamImpl<ResponseType>(deserialize),
       channel: this[CHANNEL_SYMBOL],
-      methodDefinition: methodDefinition,
+      methodDefinition,
       callOptions: checkedArguments.options,
     };
     if (this[CALL_INVOCATION_TRANSFORMER_SYMBOL]) {
@@ -617,7 +617,7 @@ export class Client {
         deserialize
       ),
       channel: this[CHANNEL_SYMBOL],
-      methodDefinition: methodDefinition,
+      methodDefinition,
       callOptions: checkedArguments.options,
     };
     if (this[CALL_INVOCATION_TRANSFORMER_SYMBOL]) {

@@ -114,7 +114,9 @@ function getDefaultHandler(handlerType: HandlerType, methodName: string) {
 }
 
 export class Server {
-  private http2ServerList: (http2.Http2Server | http2.Http2SecureServer)[] = [];
+  private http2ServerList: Array<
+    http2.Http2Server | http2.Http2SecureServer
+  > = [];
 
   private handlers: Map<string, UntypedHandler> = new Map<
     string,
