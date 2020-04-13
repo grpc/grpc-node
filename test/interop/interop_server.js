@@ -202,10 +202,14 @@ function handleHalfDuplex(call) {
  * @param {boolean} tls Indicates that the bound port should use TLS
  * @param {function(Error, {{server: Server, port: number}})} callback Callback
  *     to call with result or error
+ * @param {object?} options Optional additional options to use when
+ *     constructing the server
  */
-function getServer(port, tls, callback) {
+function getServer(port, tls, callback, options) {
   // TODO(mlumish): enable TLS functionality
-  var options = {};
+  if (!options) {
+    options = {};
+  }
   var server_creds;
   if (tls) {
     var key_path = path.join(__dirname, '../data/server1.key');

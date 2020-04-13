@@ -41,5 +41,7 @@ In addition, all channel arguments defined in [this header file](https://github.
  - `grpc.initial_reconnect_backoff_ms`
  - `grpc.max_reconnect_backoff_ms`
  - `grpc.use_local_subchannel_pool`
+ - `grpc.max_send_message_length`
+ - `grpc.max_receive_message_length`
  - `channelOverride`
  - `channelFactoryOverride`

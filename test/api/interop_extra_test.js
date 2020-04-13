@@ -55,23 +55,34 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
   describe('Interop-adjacent tests', function() {
     let server;
     let client;
+    let port;
     before(function(done) {
+      /* To make testing max message size enforcement easier, the we explicitly
+       * remove the limit on the size of messages the server can receive, and
+       * we expect that the size of messages it can send is unlimited by
+       * default. On the other side, we explicitly limit the size of messages
+       * the client can send to 4 MB, and we expect that the size of messages
+       * it can receive is limited to 4 MB by default */
       interopServer.getServer(0, true, (err, serverObj) => {
         if (err) {
           done(err);
         } else {
           server = serverObj.server;
+          port = serverObj.port;
           server.start();
           const ca_path = path.join(__dirname, '../data/ca.pem');
           const ca_data = fs.readFileSync(ca_path);
           const creds = grpc.credentials.createSsl(ca_data);
           const options = {
             'grpc.ssl_target_name_override': 'foo.test.google.fr',
-            'grpc.default_authority': 'foo.test.google.fr'
+            'grpc.default_authority': 'foo.test.google.fr',
+            'grpc.max_send_message_length': 4*1024*1024
           };
-          client = new testProto.TestService(`localhost:${serverObj.port}`, creds, options);
+          client = new testProto.TestService(`localhost:${port}`, creds, options);
           done();
         }
+      }, {
+        'grpc.max_receive_message_length': -1
       });
     });
     after(function() {
@@ -131,6 +142,154 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
         assert(echo_trailer.length === 1);
         assert.strictEqual(echo_trailer[0].toString('hex'), 'ababab');
         done();
+      });
+    });
+    describe('max message size', function() {
+      // A size that is larger than the default limit
+      const largeMessageSize = 8 * 1024 * 1024;
+      const largeMessage = Buffer.alloc(largeMessageSize);
+      it('should get an error when sending a large message', function(done) {
+        done = multiDone(done, 2);
+        const unaryMessage = {payload: {body: largeMessage}};
+        client.unaryCall(unaryMessage, (error, result) => {
+          assert(error);
+          assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
+          done();
+        });
+        const stream = client.fullDuplexCall();
+        stream.write({payload: {body: largeMessage}});
+        stream.end();
+        stream.on('data', () => {});
+        stream.on('status', (status) => {
+          assert.strictEqual(status.code, grpc.status.RESOURCE_EXHAUSTED);
+          done();
+        });
+        stream.on('error', (error) => {
+        });
+      });
+      it('should get an error when receiving a large message', function(done) {
+        done = multiDone(done, 2);
+        client.unaryCall({response_size: largeMessageSize}, (error, result) => {
+          assert(error);
+          assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
+          done();
+        });
+        const stream = client.fullDuplexCall();
+        stream.write({response_parameters: [{size: largeMessageSize}]});
+        stream.end();
+        stream.on('data', () => {});
+        stream.on('status', (status) => {
+          assert.strictEqual(status.code, grpc.status.RESOURCE_EXHAUSTED);
+          done();
+        });
+        stream.on('error', (error) => {
+        });
+      });
+      describe('with a client with no message size limits', function() {
+        let unrestrictedClient;
+        before(function() {
+          const ca_path = path.join(__dirname, '../data/ca.pem');
+          const ca_data = fs.readFileSync(ca_path);
+          const creds = grpc.credentials.createSsl(ca_data);
+          const options = {
+            'grpc.ssl_target_name_override': 'foo.test.google.fr',
+            'grpc.default_authority': 'foo.test.google.fr',
+            'grpc.max_send_message_length': -1,
+            'grpc.max_receive_message_length': -1
+          };
+          unrestrictedClient = new testProto.TestService(`localhost:${port}`, creds, options);
+        });
+        it('should not get an error when sending or receiving a large message', function(done) {
+          done = multiDone(done, 2);
+          const unaryRequestMessage = {
+            response_size: largeMessageSize,
+            payload: {
+              body: largeMessage
+            }
+          };
+          unrestrictedClient.unaryCall(unaryRequestMessage, (error, result) => {
+            assert.ifError(error);
+            assert.strictEqual(result.payload.body.length, largeMessageSize);
+            done();
+          });
+          const streamingRequestMessage = {
+            response_parameters: [{size: largeMessageSize}],
+            payload: {body: largeMessage}
+          };
+          const stream = unrestrictedClient.fullDuplexCall();
+          stream.write(streamingRequestMessage);
+          stream.end();
+          stream.on('data', (result) => {
+            assert.strictEqual(result.payload.body.length, largeMessageSize);
+          });
+          stream.on('status', () => {
+            done();
+          });
+          stream.on('error', (error) => {
+            assert.ifError(error);
+          });
+        });
+      });
+      describe('with a server with message size limits and a client without limits', function() {
+        let restrictedServer;
+        let restrictedServerClient;
+        before(function(done) {
+          interopServer.getServer(0, true, (err, serverObj) => {
+            if (err) {
+              done(err);
+            } else {
+              restrictedServer = serverObj.server;
+              restrictedServer.start();
+              const ca_path = path.join(__dirname, '../data/ca.pem');
+              const ca_data = fs.readFileSync(ca_path);
+              const creds = grpc.credentials.createSsl(ca_data);
+              const options = {
+                'grpc.ssl_target_name_override': 'foo.test.google.fr',
+                'grpc.default_authority': 'foo.test.google.fr',
+                'grpc.max_receive_message_length': -1
+              };
+              restrictedServerClient = new testProto.TestService(`localhost:${serverObj.port}`, creds, options);
+              done();
+            }
+          }, {'grpc.max_send_message_length': 4 * 1024 * 1024});
+        });
+        after(function() {
+          restrictedServer.forceShutdown();
+        });
+        it('should get an error when sending a large message', function(done) {
+          restrictedServerClient.unaryCall({payload: {body: largeMessage}}, (error, result) => {
+            assert(error);
+            assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
+            const stream = restrictedServerClient.fullDuplexCall();
+            stream.write({payload: {body: largeMessage}});
+            stream.end();
+            stream.on('data', () => {});
+            stream.on('status', (status) => {
+              assert.strictEqual(status.code, grpc.status.RESOURCE_EXHAUSTED);
+              done();
+            });
+            stream.on('error', (error) => {
+            });
+          });
+        });
+        it('should get an error when requesting a large message', function(done) {
+          done = multiDone(done, 2);
+          restrictedServerClient.unaryCall({response_size: largeMessageSize}, (error, result) => {
+            assert(error);
+            assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
+            done();
+          });
+          const stream = restrictedServerClient.fullDuplexCall();
+          stream.write({response_parameters: [{size: largeMessageSize}]});
+          stream.end();
+          stream.on('data', () => {});
+          stream.on('status', (status) => {
+            assert.strictEqual(status.code, grpc.status.RESOURCE_EXHAUSTED);
+            done();
+          });
+          stream.on('error', (error) => {
+          });
+        });
       });
     });
   });

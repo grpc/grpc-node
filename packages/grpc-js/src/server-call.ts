@@ -20,11 +20,12 @@ import * as http2 from 'http2';
 import { Duplex, Readable, Writable } from 'stream';
 
 import { StatusObject } from './call-stream';
-import { Status } from './constants';
+import { Status, DEFAULT_MAX_SEND_MESSAGE_LENGTH, DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH } from './constants';
 import { Deserialize, Serialize } from './make-client';
 import { Metadata } from './metadata';
 import { StreamDecoder } from './stream-decoder';
 import { ObjectReadable, ObjectWritable } from './object-stream';
+import { ChannelOptions } from './channel-options';
 
 interface DeadlineUnitIndexSignature {
   [name: string]: number;
@@ -338,10 +339,13 @@ export class Http2ServerCallStream<
   private isPushPending = false;
   private bufferedMessages: Array<Buffer | null> = [];
   private messagesToPush: Array<RequestType | null> = [];
+  private maxSendMessageSize: number = DEFAULT_MAX_SEND_MESSAGE_LENGTH;
+  private maxReceiveMessageSize: number = DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH;
 
   constructor(
     private stream: http2.ServerHttp2Stream,
-    private handler: Handler<RequestType, ResponseType>
+    private handler: Handler<RequestType, ResponseType>,
+    private options: ChannelOptions
   ) {
     super();
 
@@ -361,6 +365,13 @@ export class Http2ServerCallStream<
     this.stream.on('drain', () => {
       this.emit('drain');
     });
+
+    if ('grpc.max_send_message_length' in options) {
+      this.maxSendMessageSize = options['grpc.max_send_message_length']!;
+    }
+    if ('grpc.max_receive_message_length' in options) {
+      this.maxReceiveMessageSize = options['grpc.max_receive_message_length']!;
+    }
   }
 
   private checkCancelled(): boolean {
@@ -435,6 +446,13 @@ export class Http2ServerCallStream<
       stream.once('end', async () => {
         try {
           const requestBytes = Buffer.concat(chunks, totalLength);
+          if (this.maxReceiveMessageSize !== -1 && requestBytes.length > this.maxReceiveMessageSize) {
+            this.sendError({
+              code: Status.RESOURCE_EXHAUSTED,
+              details: `Received message larger than max (${requestBytes.length} vs. ${this.maxReceiveMessageSize})`
+            });
+            resolve();
+          }
 
           resolve(await this.deserializeMessage(requestBytes));
         } catch (err) {
@@ -555,6 +573,14 @@ export class Http2ServerCallStream<
       return;
     }
 
+    if (this.maxSendMessageSize !== -1 && chunk.length > this.maxSendMessageSize) {
+      this.sendError({
+        code: Status.RESOURCE_EXHAUSTED, 
+        details: `Sent message larger than max (${chunk.length} vs. ${this.maxSendMessageSize})`
+      });
+      return;
+    }
+
     this.sendMetadata();
     return this.stream.write(chunk);
   }
@@ -581,6 +607,13 @@ export class Http2ServerCallStream<
       const messages = decoder.write(data);
 
       for (const message of messages) {
+        if (this.maxReceiveMessageSize !== -1 && message.length > this.maxReceiveMessageSize) {
+          this.sendError({
+            code: Status.RESOURCE_EXHAUSTED,
+            details: `Received message larger than max (${message.length} vs. ${this.maxReceiveMessageSize})`
+          });
+          return;
+        }
         this.pushOrBufferMessage(readable, message);
       }
     });

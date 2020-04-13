@@ -524,7 +524,7 @@ export class Server {
             throw getUnimplementedStatusResponse(path);
           }
 
-          const call = new Http2ServerCallStream(stream, handler);
+          const call = new Http2ServerCallStream(stream, handler, this.options);
           const metadata: Metadata = call.receiveMetadata(headers) as Metadata;
           switch (handler.type) {
             case 'unary':
@@ -555,7 +555,7 @@ export class Server {
               throw new Error(`Unknown handler type: ${handler.type}`);
           }
         } catch (err) {
-          const call = new Http2ServerCallStream(stream, null!);
+          const call = new Http2ServerCallStream(stream, null!, this.options);
 
           if (err.code === undefined) {
             err.code = Status.INTERNAL;
