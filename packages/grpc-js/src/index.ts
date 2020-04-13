@@ -28,13 +28,19 @@ import { CallCredentials } from './call-credentials';
 import { Deadline, StatusObject } from './call-stream';
 import { Channel, ConnectivityState, ChannelImplementation } from './channel';
 import { ChannelCredentials } from './channel-credentials';
-import { CallOptions, Client, CallInvocationTransformer, CallProperties } from './client';
+import {
+  CallOptions,
+  Client,
+  CallInvocationTransformer,
+  CallProperties,
+} from './client';
 import { LogVerbosity, Status } from './constants';
 import * as logging from './logging';
 import {
   Deserialize,
   loadPackageDefinition,
   makeClientConstructor,
+  MethodDefinition,
   Serialize,
   ServiceDefinition,
 } from './make-client';
@@ -56,21 +62,22 @@ import {
   ServerDuplexStream,
 } from './server-call';
 
-const supportedNodeVersions = require('../../package.json').engines.node;
+import { engines as supportedEngines } from '../package.json';
+const supportedNodeVersions = supportedEngines.node;
 if (!semver.satisfies(process.version, supportedNodeVersions)) {
   throw new Error(`@grpc/grpc-js only works on Node ${supportedNodeVersions}`);
 }
 
 interface IndexedObject {
-  [key: string]: any; // tslint:disable-line no-any
-  [key: number]: any; // tslint:disable-line no-any
+  [key: string]: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  [key: number]: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 function mixin(...sources: IndexedObject[]) {
   const result: { [key: string]: Function } = {};
   for (const source of sources) {
     for (const propName of Object.getOwnPropertyNames(source)) {
-      const property: any = source[propName]; // tslint:disable-line no-any
+      const property: any = source[propName]; // eslint-disable-line @typescript-eslint/no-explicit-any
       if (typeof property === 'function') {
         result[propName] = property;
       }
@@ -129,14 +136,14 @@ export const credentials = mixin(
             });
           }
           getHeaders.then(
-            headers => {
+            (headers) => {
               const metadata = new Metadata();
               for (const key of Object.keys(headers)) {
                 metadata.add(key, headers[key]);
               }
               callback(null, metadata);
             },
-            err => {
+            (err) => {
               callback(err);
             }
           );
@@ -202,7 +209,7 @@ export {
   CallProperties,
   CallInvocationTransformer,
   ChannelImplementation as Channel,
-  Channel as ChannelInterface
+  Channel as ChannelInterface,
 };
 
 /**
@@ -230,6 +237,7 @@ export {
   ClientWritableStream,
   ClientDuplexStream,
   CallOptions,
+  MethodDefinition,
   StatusObject,
   ServiceError,
   ServerUnaryCall,
@@ -245,17 +253,17 @@ export {
 
 export { handleBidiStreamingCall, handleServerStreamingCall, handleUnaryCall };
 
-/* tslint:disable:no-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export type Call =
   | ClientUnaryCall
   | ClientReadableStream<any>
   | ClientWritableStream<any>
   | ClientDuplexStream<any, any>;
-/* tslint:enable:no-any */
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 /**** Unimplemented function stubs ****/
 
-/* tslint:disable:no-any variable-name */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export const loadObject = (value: any, options: any) => {
   throw new Error(

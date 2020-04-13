@@ -69,7 +69,7 @@ export interface MetadataListener {
 }
 
 export interface MessageListener {
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (message: any, next: (message: any) => void): void;
 }
 
@@ -90,7 +90,7 @@ export type Listener = Partial<FullListener>;
  */
 export interface InterceptingListener {
   onReceiveMetadata(metadata: Metadata): void;
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onReceiveMessage(message: any): void;
   onReceiveStatus(status: StatusObject): void;
 }
@@ -113,16 +113,16 @@ export class InterceptingListenerImpl implements InterceptingListener {
   ) {}
 
   onReceiveMetadata(metadata: Metadata): void {
-    this.listener.onReceiveMetadata(metadata, metadata => {
+    this.listener.onReceiveMetadata(metadata, (metadata) => {
       this.nextListener.onReceiveMetadata(metadata);
     });
   }
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onReceiveMessage(message: any): void {
     /* If this listener processes messages asynchronously, the last message may
      * be reordered with respect to the status */
     this.processingMessage = true;
-    this.listener.onReceiveMessage(message, msg => {
+    this.listener.onReceiveMessage(message, (msg) => {
       this.processingMessage = false;
       this.nextListener.onReceiveMessage(msg);
       if (this.pendingStatus) {
@@ -131,7 +131,7 @@ export class InterceptingListenerImpl implements InterceptingListener {
     });
   }
   onReceiveStatus(status: StatusObject): void {
-    this.listener.onReceiveStatus(status, processedStatus => {
+    this.listener.onReceiveStatus(status, (processedStatus) => {
       if (this.processingMessage) {
         this.pendingStatus = processedStatus;
       } else {
@@ -224,7 +224,9 @@ export class Http2CallStream implements Call {
     /* Precondition: this.finalStatus !== null */
     if (!this.statusOutput) {
       this.statusOutput = true;
-      const filteredStatus = this.filterStack.receiveTrailers(this.finalStatus!);
+      const filteredStatus = this.filterStack.receiveTrailers(
+        this.finalStatus!
+      );
       this.listener!.onReceiveStatus(filteredStatus);
       if (this.subchannel) {
         this.subchannel.callUnref();
@@ -355,7 +357,7 @@ export class Http2CallStream implements Call {
   private handleTrailers(headers: http2.IncomingHttpHeaders) {
     let headersString = '';
     for (const header of Object.keys(headers)) {
-      headersString += '\t\t' + header + ': ' + headers[header] + '\n'
+      headersString += '\t\t' + header + ': ' + headers[header] + '\n';
     }
     this.trace('Received server trailers:\n' + headersString);
     let metadata: Metadata;
@@ -366,7 +368,10 @@ export class Http2CallStream implements Call {
     }
     const metadataMap = metadata.getMap();
     let code: Status = this.mappedStatusCode;
-    if (code === Status.UNKNOWN && typeof metadataMap['grpc-status'] === 'string') {
+    if (
+      code === Status.UNKNOWN &&
+      typeof metadataMap['grpc-status'] === 'string'
+    ) {
       const receivedStatus = Number(metadataMap['grpc-status']);
       if (receivedStatus in Status) {
         code = receivedStatus;
@@ -378,7 +383,9 @@ export class Http2CallStream implements Call {
     if (typeof metadataMap['grpc-message'] === 'string') {
       details = decodeURI(metadataMap['grpc-message']);
       metadata.remove('grpc-message');
-      this.trace('received status details string "' + details + '" from server');
+      this.trace(
+        'received status details string "' + details + '" from server'
+      );
     }
     const status: StatusObject = { code, details, metadata };
     let finalStatus;
@@ -415,7 +422,7 @@ export class Http2CallStream implements Call {
       stream.on('response', (headers, flags) => {
         let headersString = '';
         for (const header of Object.keys(headers)) {
-          headersString += '\t\t' + header + ': ' + headers[header] + '\n'
+          headersString += '\t\t' + header + ': ' + headers[header] + '\n';
         }
         this.trace('Received server headers:\n' + headersString);
         switch (headers[':status']) {
@@ -578,7 +585,9 @@ export class Http2CallStream implements Call {
   }
 
   cancelWithStatus(status: Status, details: string): void {
-    this.trace('cancelWithStatus code: ' + status + ' details: "' + details + '"');
+    this.trace(
+      'cancelWithStatus code: ' + status + ' details: "' + details + '"'
+    );
     this.destroyHttp2Stream();
     this.endCall({ code: status, details, metadata: new Metadata() });
   }
@@ -653,7 +662,7 @@ export class Http2CallStream implements Call {
     };
     const cb: WriteCallback = context.callback ?? (() => {});
     this.isWriteFilterPending = true;
-    this.filterStack.sendMessage(Promise.resolve(writeObj)).then(message => {
+    this.filterStack.sendMessage(Promise.resolve(writeObj)).then((message) => {
       this.isWriteFilterPending = false;
       if (this.http2Stream === null) {
         this.trace(

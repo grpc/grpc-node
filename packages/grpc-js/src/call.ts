@@ -100,9 +100,7 @@ export class ClientUnaryCallImpl extends EventEmitter
 export class ClientReadableStreamImpl<ResponseType> extends Readable
   implements ClientReadableStream<ResponseType> {
   public call?: InterceptingCallInterface;
-  constructor(
-    readonly deserialize: (chunk: Buffer) => ResponseType
-  ) {
+  constructor(readonly deserialize: (chunk: Buffer) => ResponseType) {
     super({ objectMode: true });
   }
 
@@ -122,9 +120,7 @@ export class ClientReadableStreamImpl<ResponseType> extends Readable
 export class ClientWritableStreamImpl<RequestType> extends Writable
   implements ClientWritableStream<RequestType> {
   public call?: InterceptingCallInterface;
-  constructor(
-    readonly serialize: (value: RequestType) => Buffer
-  ) {
+  constructor(readonly serialize: (value: RequestType) => Buffer) {
     super({ objectMode: true });
   }
 
@@ -140,7 +136,7 @@ export class ClientWritableStreamImpl<RequestType> extends Writable
     const context: MessageContext = {
       callback: cb,
     };
-    const flags: number = Number(encoding);
+    const flags = Number(encoding);
     if (!Number.isNaN(flags)) {
       context.flags = flags;
     }
@@ -179,7 +175,7 @@ export class ClientDuplexStreamImpl<RequestType, ResponseType> extends Duplex
     const context: MessageContext = {
       callback: cb,
     };
-    const flags: number = Number(encoding);
+    const flags = Number(encoding);
     if (!Number.isNaN(flags)) {
       context.flags = flags;
     }

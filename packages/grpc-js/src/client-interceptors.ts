@@ -18,27 +18,22 @@
 import { Metadata } from './metadata';
 import {
   StatusObject,
-  CallStreamOptions,
   Listener,
   MetadataListener,
   MessageListener,
   StatusListener,
   FullListener,
   InterceptingListener,
-  WriteObject,
-  WriteCallback,
   InterceptingListenerImpl,
   isInterceptingListener,
   MessageContext,
-  Http2CallStream,
-  Deadline,
   Call,
 } from './call-stream';
 import { Status } from './constants';
 import { Channel } from './channel';
 import { CallOptions } from './client';
 import { CallCredentials } from './call-credentials';
-import { ClientMethodDefinition, Serialize } from './make-client';
+import { ClientMethodDefinition } from './make-client';
 
 /**
  * Error class associated with passing both interceptors and interceptor
@@ -64,7 +59,7 @@ export interface MetadataRequester {
 }
 
 export interface MessageRequester {
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (message: any, next: (message: any) => void): void;
 }
 
@@ -180,16 +175,16 @@ const defaultRequester: FullRequester = {
   sendMessage: (message, next) => {
     next(message);
   },
-  halfClose: next => {
+  halfClose: (next) => {
     next();
   },
-  cancel: next => {
+  cancel: (next) => {
     next();
   },
 };
 
 export interface InterceptorOptions extends CallOptions {
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   method_definition: ClientMethodDefinition<any, any>;
 }
 
@@ -197,9 +192,9 @@ export interface InterceptingCallInterface {
   cancelWithStatus(status: Status, details: string): void;
   getPeer(): string;
   start(metadata: Metadata, listener?: Partial<InterceptingListener>): void;
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendMessageWithContext(context: MessageContext, message: any): void;
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendMessage(message: any): void;
   startRead(): void;
   halfClose(): void;
@@ -254,13 +249,13 @@ export class InterceptingCall implements InterceptingCallInterface {
     const fullInterceptingListener: InterceptingListener = {
       onReceiveMetadata:
         interceptingListener?.onReceiveMetadata?.bind(interceptingListener) ??
-        (metadata => {}),
+        ((metadata) => {}),
       onReceiveMessage:
         interceptingListener?.onReceiveMessage?.bind(interceptingListener) ??
-        (message => {}),
+        ((message) => {}),
       onReceiveStatus:
         interceptingListener?.onReceiveStatus?.bind(interceptingListener) ??
-        (status => {}),
+        ((status) => {}),
     };
     this.requester.start(metadata, fullInterceptingListener, (md, listener) => {
       let finalInterceptingListener: InterceptingListener;
@@ -283,10 +278,10 @@ export class InterceptingCall implements InterceptingCallInterface {
       this.nextCall.start(md, finalInterceptingListener);
     });
   }
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendMessageWithContext(context: MessageContext, message: any): void {
     this.processingMessage = true;
-    this.requester.sendMessage(message, finalMessage => {
+    this.requester.sendMessage(message, (finalMessage) => {
       this.processingMessage = false;
       this.nextCall.sendMessageWithContext(context, finalMessage);
       if (this.pendingHalfClose) {
@@ -294,7 +289,7 @@ export class InterceptingCall implements InterceptingCallInterface {
       }
     });
   }
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendMessage(message: any): void {
     this.sendMessageWithContext({}, message);
   }
@@ -343,9 +338,9 @@ function getCall(channel: Channel, path: string, options: CallOptions): Call {
  * object and handles serialization and deseraizliation.
  */
 class BaseInterceptingCall implements InterceptingCallInterface {
-  // tslint:disable-next-line no-any
   constructor(
     protected call: Call,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected methodDefinition: ClientMethodDefinition<any, any>
   ) {}
   cancelWithStatus(status: Status, details: string): void {
@@ -357,7 +352,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
   setCredentials(credentials: CallCredentials): void {
     this.call.setCredentials(credentials);
   }
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendMessageWithContext(context: MessageContext, message: any): void {
     let serialized: Buffer;
     try {
@@ -367,7 +362,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
       this.call.cancelWithStatus(Status.INTERNAL, 'Serialization failure');
     }
   }
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendMessage(message: any) {
     this.sendMessageWithContext({}, message);
   }
@@ -377,11 +372,11 @@ class BaseInterceptingCall implements InterceptingCallInterface {
   ): void {
     let readError: StatusObject | null = null;
     this.call.start(metadata, {
-      onReceiveMetadata: metadata => {
+      onReceiveMetadata: (metadata) => {
         interceptingListener?.onReceiveMetadata?.(metadata);
       },
-      onReceiveMessage: message => {
-        // tslint:disable-next-line no-any
+      onReceiveMessage: (message) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let deserialized: any;
         try {
           deserialized = this.methodDefinition.responseDeserialize(message);
@@ -395,7 +390,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
           this.call.cancelWithStatus(readError.code, readError.details);
         }
       },
-      onReceiveStatus: status => {
+      onReceiveStatus: (status) => {
         if (readError) {
           interceptingListener?.onReceiveStatus?.(readError);
         } else {
@@ -418,7 +413,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
  */
 class BaseUnaryInterceptingCall extends BaseInterceptingCall
   implements InterceptingCallInterface {
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(call: Call, methodDefinition: ClientMethodDefinition<any, any>) {
     super(call, methodDefinition);
   }
@@ -426,8 +421,8 @@ class BaseUnaryInterceptingCall extends BaseInterceptingCall
     let receivedMessage = false;
     const wrapperListener: InterceptingListener = {
       onReceiveMetadata:
-        listener?.onReceiveMetadata?.bind(listener) ?? (metadata => {}),
-      // tslint:disable-next-line no-any
+        listener?.onReceiveMetadata?.bind(listener) ?? ((metadata) => {}),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onReceiveMessage: (message: any) => {
         receivedMessage = true;
         listener?.onReceiveMessage?.(message);
@@ -451,10 +446,10 @@ class BaseUnaryInterceptingCall extends BaseInterceptingCall
 class BaseStreamingInterceptingCall extends BaseInterceptingCall
   implements InterceptingCallInterface {}
 
-// tslint:disable-next-line no-any
 function getBottomInterceptingCall(
   channel: Channel,
   options: InterceptorOptions,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   methodDefinition: ClientMethodDefinition<any, any>
 ) {
   const call = getCall(channel, methodDefinition.path, options);
@@ -474,7 +469,7 @@ export interface Interceptor {
 }
 
 export interface InterceptorProvider {
-  // tslint:disable-next-line no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (methodDefinition: ClientMethodDefinition<any, any>): Interceptor;
 }
 
@@ -485,9 +480,9 @@ export interface InterceptorArguments {
   callInterceptorProviders: InterceptorProvider[];
 }
 
-// tslint:disable-next-line no-any
 export function getInterceptingCall(
   interceptorArgs: InterceptorArguments,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   methodDefinition: ClientMethodDefinition<any, any>,
   options: CallOptions,
   channel: Channel
@@ -519,21 +514,21 @@ export function getInterceptingCall(
     interceptors = ([] as Interceptor[])
       .concat(
         interceptorArgs.callInterceptors,
-        interceptorArgs.callInterceptorProviders.map(provider =>
+        interceptorArgs.callInterceptorProviders.map((provider) =>
           provider(methodDefinition)
         )
       )
-      .filter(interceptor => interceptor);
+      .filter((interceptor) => interceptor);
     // Filter out falsy values when providers return nothing
   } else {
     interceptors = ([] as Interceptor[])
       .concat(
         interceptorArgs.clientInterceptors,
-        interceptorArgs.clientInterceptorProviders.map(provider =>
+        interceptorArgs.clientInterceptorProviders.map((provider) =>
           provider(methodDefinition)
         )
       )
-      .filter(interceptor => interceptor);
+      .filter((interceptor) => interceptor);
     // Filter out falsy values when providers return nothing
   }
   const interceptorOptions = Object.assign({}, options, {
@@ -548,14 +543,10 @@ export function getInterceptingCall(
    * channel. */
   const getCall: NextCall = interceptors.reduceRight<NextCall>(
     (nextCall: NextCall, nextInterceptor: Interceptor) => {
-      return currentOptions => nextInterceptor(currentOptions, nextCall);
+      return (currentOptions) => nextInterceptor(currentOptions, nextCall);
     },
     (finalOptions: InterceptorOptions) =>
-      getBottomInterceptingCall(
-        channel,
-        finalOptions,
-        methodDefinition
-      )
+      getBottomInterceptingCall(channel, finalOptions, methodDefinition)
   );
   return getCall(interceptorOptions);
 }

@@ -34,7 +34,6 @@ import { CallCredentialsFilterFactory } from './call-credentials-filter';
 import { DeadlineFilterFactory } from './deadline-filter';
 import { CompressionFilterFactory } from './compression-filter';
 import { getDefaultAuthority } from './resolver';
-import { LoadBalancingConfig } from './load-balancing-config';
 import { ServiceConfig, validateServiceConfig } from './service-config';
 import { trace, log } from './logging';
 import { SubchannelAddress } from './subchannel';
@@ -113,7 +112,7 @@ export interface Channel {
     method: string,
     deadline: Deadline,
     host: string | null | undefined,
-    parentCall: any,
+    parentCall: any, // eslint-disable-line @typescript-eslint/no-explicit-any
     propagateFlags: number | null | undefined
   ): Call;
 }
@@ -145,11 +144,23 @@ export class ChannelImplementation implements Channel {
       throw new TypeError('Channel target must be a string');
     }
     if (!(credentials instanceof ChannelCredentials)) {
-      throw new TypeError('Channel credentials must be a ChannelCredentials object');
+      throw new TypeError(
+        'Channel credentials must be a ChannelCredentials object'
+      );
     }
     if (options) {
-      if ((typeof options !== 'object') || !Object.values(options).every(value => typeof value === 'string' || typeof value === 'number' || typeof value === 'undefined')) {
-        throw new TypeError('Channel options must be an object with string or number values');
+      if (
+        typeof options !== 'object' ||
+        !Object.values(options).every(
+          (value) =>
+            typeof value === 'string' ||
+            typeof value === 'number' ||
+            typeof value === 'undefined'
+        )
+      ) {
+        throw new TypeError(
+          'Channel options must be an object with string or number values'
+        );
       }
     }
     /* The global boolean parameter to getSubchannelPool has the inverse meaning to what
@@ -267,7 +278,7 @@ export class ChannelImplementation implements Channel {
           callStream.filterStack
             .sendMetadata(Promise.resolve(callMetadata.clone()))
             .then(
-              finalMetadata => {
+              (finalMetadata) => {
                 const subchannelState: ConnectivityState = pickResult.subchannel!.getConnectivityState();
                 if (subchannelState === ConnectivityState.READY) {
                   try {
@@ -276,28 +287,31 @@ export class ChannelImplementation implements Channel {
                       callStream
                     );
                   } catch (error) {
-                    if ((error as NodeJS.ErrnoException).code === 'ERR_HTTP2_GOAWAY_SESSION') {
+                    if (
+                      (error as NodeJS.ErrnoException).code ===
+                      'ERR_HTTP2_GOAWAY_SESSION'
+                    ) {
                       /* An error here indicates that something went wrong with
-                      * the picked subchannel's http2 stream right before we
-                      * tried to start the stream. We are handling a promise
-                      * result here, so this is asynchronous with respect to the
-                      * original tryPick call, so calling it again is not
-                      * recursive. We call tryPick immediately instead of
-                      * queueing this pick again because handling the queue is
-                      * triggered by state changes, and we want to immediately
-                      * check if the state has already changed since the
-                      * previous tryPick call. We do this instead of cancelling
-                      * the stream because the correct behavior may be
-                      * re-queueing instead, based on the logic in the rest of
-                      * tryPick */
+                       * the picked subchannel's http2 stream right before we
+                       * tried to start the stream. We are handling a promise
+                       * result here, so this is asynchronous with respect to the
+                       * original tryPick call, so calling it again is not
+                       * recursive. We call tryPick immediately instead of
+                       * queueing this pick again because handling the queue is
+                       * triggered by state changes, and we want to immediately
+                       * check if the state has already changed since the
+                       * previous tryPick call. We do this instead of cancelling
+                       * the stream because the correct behavior may be
+                       * re-queueing instead, based on the logic in the rest of
+                       * tryPick */
                       trace(
                         LogVerbosity.INFO,
                         'channel',
                         'Failed to start call on picked subchannel ' +
-                        pickResult.subchannel!.getAddress() +
-                        ' with error ' +
-                        (error as Error).message +
-                        '. Retrying pick'
+                          pickResult.subchannel!.getAddress() +
+                          ' with error ' +
+                          (error as Error).message +
+                          '. Retrying pick'
                       );
                       this.tryPick(callStream, callMetadata);
                     } else {
@@ -305,12 +319,15 @@ export class ChannelImplementation implements Channel {
                         LogVerbosity.INFO,
                         'channel',
                         'Failed to start call on picked subchanel ' +
-                        pickResult.subchannel!.getAddress() +
-                        ' with error ' +
-                        (error as Error).message +
-                        '. Ending call'
+                          pickResult.subchannel!.getAddress() +
+                          ' with error ' +
+                          (error as Error).message +
+                          '. Ending call'
                       );
-                      callStream.cancelWithStatus(Status.INTERNAL, 'Failed to start HTTP/2 stream');
+                      callStream.cancelWithStatus(
+                        Status.INTERNAL,
+                        'Failed to start HTTP/2 stream'
+                      );
                     }
                   }
                 } else {
@@ -362,7 +379,7 @@ export class ChannelImplementation implements Channel {
     watcherObject: ConnectivityStateWatcher
   ) {
     const watcherIndex = this.connectivityStateWatchers.findIndex(
-      value => value === watcherObject
+      (value) => value === watcherObject
     );
     if (watcherIndex >= 0) {
       this.connectivityStateWatchers.splice(watcherIndex, 1);
@@ -445,14 +462,16 @@ export class ChannelImplementation implements Channel {
     method: string,
     deadline: Deadline,
     host: string | null | undefined,
-    parentCall: any,
+    parentCall: any, // eslint-disable-line @typescript-eslint/no-explicit-any
     propagateFlags: number | null | undefined
   ): Call {
     if (typeof method !== 'string') {
       throw new TypeError('Channel#createCall: method must be a string');
     }
     if (!(typeof deadline === 'number' || deadline instanceof Date)) {
-      throw new TypeError('Channel#createCall: deadline must be a number or Date');
+      throw new TypeError(
+        'Channel#createCall: deadline must be a number or Date'
+      );
     }
     if (this.connectivityState === ConnectivityState.SHUTDOWN) {
       throw new Error('Channel has been shut down');

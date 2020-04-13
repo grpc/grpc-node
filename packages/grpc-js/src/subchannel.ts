@@ -20,7 +20,7 @@ import { ChannelCredentials } from './channel-credentials';
 import { Metadata } from './metadata';
 import { Http2CallStream } from './call-stream';
 import { ChannelOptions } from './channel-options';
-import { PeerCertificate, checkServerIdentity, TLSSocket } from 'tls';
+import { PeerCertificate, checkServerIdentity } from 'tls';
 import { ConnectivityState } from './channel';
 import { BackoffTimeout, BackoffOptions } from './backoff-timeout';
 import { getDefaultAuthority } from './resolver';
@@ -29,7 +29,7 @@ import { LogVerbosity } from './constants';
 import { shouldUseProxy, getProxiedConnection } from './http_proxy';
 import * as net from 'net';
 
-const { version: clientVersion } = require('../../package.json');
+import { version as clientVersion } from '../package.json';
 
 const TRACER_NAME = 'subchannel';
 
@@ -210,7 +210,7 @@ export class Subchannel {
       `grpc-node-js/${clientVersion}`,
       options['grpc.secondary_user_agent'],
     ]
-      .filter(e => e)
+      .filter((e) => e)
       .join(' '); // remove falsey values first
 
     if ('grpc.keepalive_time_ms' in options) {
@@ -311,8 +311,8 @@ export class Subchannel {
           return socket;
         } else {
           /* net.NetConnectOpts is declared in a way that is more restrictive
-          * than what net.connect will actually accept, so we use the type
-          * assertion to work around that. */
+           * than what net.connect will actually accept, so we use the type
+           * assertion to work around that. */
           return net.connect(this.subchannelAddress);
         }
       };
@@ -397,7 +397,7 @@ export class Subchannel {
         }
       }
     );
-    session.once('error', error => {
+    session.once('error', (error) => {
       /* Do nothing here. Any error should also trigger a close event, which is
        * where we want to handle that.  */
       trace(
@@ -410,11 +410,17 @@ export class Subchannel {
 
   private startConnectingInternal() {
     if (shouldUseProxy(this.channelTarget)) {
-      getProxiedConnection(this.channelTarget, this.subchannelAddress).then((socket) => {
-        this.createSession(socket);
-      }, (reason) => {
-        this.transitionToState([ConnectivityState.CONNECTING], ConnectivityState.TRANSIENT_FAILURE);
-      });
+      getProxiedConnection(this.channelTarget, this.subchannelAddress).then(
+        (socket) => {
+          this.createSession(socket);
+        },
+        (reason) => {
+          this.transitionToState(
+            [ConnectivityState.CONNECTING],
+            ConnectivityState.TRANSIENT_FAILURE
+          );
+        }
+      );
     } else {
       this.createSession();
     }
@@ -589,7 +595,7 @@ export class Subchannel {
     const http2Stream = this.session!.request(headers);
     let headersString = '';
     for (const header of Object.keys(headers)) {
-      headersString += '\t\t' + header + ': ' + headers[header] + '\n'
+      headersString += '\t\t' + header + ': ' + headers[header] + '\n';
     }
     trace('Starting stream with headers\n' + headersString);
     callStream.attachHttp2Stream(http2Stream, this);
