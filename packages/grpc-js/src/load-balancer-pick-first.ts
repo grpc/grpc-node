@@ -338,11 +338,11 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     this.resetSubchannelList();
     trace(
       'Connect to address list ' +
-        this.latestAddressList.map(address =>
+        this.latestAddressList.map((address) =>
           subchannelAddressToString(address)
         )
     );
-    this.subchannels = this.latestAddressList.map(address =>
+    this.subchannels = this.latestAddressList.map((address) =>
       this.channelControlHelper.createSubchannel(address, {})
     );
     for (const subchannel of this.subchannels) {

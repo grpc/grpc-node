@@ -20,7 +20,7 @@ import { ConnectionOptions, createSecureContext, PeerCertificate } from 'tls';
 import { CallCredentials } from './call-credentials';
 import { CIPHER_SUITES, getDefaultRootsData } from './tls-helpers';
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function verifyIsBufferOrNull(obj: any, friendlyName: string): void {
   if (obj && !(obj instanceof Buffer)) {
     throw new TypeError(`${friendlyName}, if provided, must be a Buffer.`);

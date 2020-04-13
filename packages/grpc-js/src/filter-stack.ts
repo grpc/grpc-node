@@ -78,7 +78,7 @@ export class FilterStackFactory implements FilterFactory<FilterStack> {
 
   createFilter(callStream: Call): FilterStack {
     return new FilterStack(
-      this.factories.map(factory => factory.createFilter(callStream))
+      this.factories.map((factory) => factory.createFilter(callStream))
     );
   }
 }

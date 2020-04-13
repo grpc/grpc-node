@@ -5,6 +5,7 @@
     "outDir": "build",
     "target": "es2017",
     "module": "commonjs",
+    "resolveJsonModule": true,
     "incremental": true
   },
   "include": [

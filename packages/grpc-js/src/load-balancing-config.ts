@@ -23,9 +23,9 @@
 
 /* The any type is purposely used here. All functions validate their input at
  * runtime */
-/* tslint:disable:no-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-export interface RoundRobinConfig {}
+export type RoundRobinConfig = {};
 
 export interface XdsConfig {
   balancerName: string;
