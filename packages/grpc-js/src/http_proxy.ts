@@ -22,7 +22,7 @@ import { parseTarget } from "./resolver-dns";
 import { Socket } from "net";
 import * as http from 'http';
 import * as logging from './logging';
-import { SubchannelAddress, TcpSubchannelAddress, isTcpSubchannelAddress } from "./subchannel";
+import { SubchannelAddress, TcpSubchannelAddress, isTcpSubchannelAddress, subchannelAddressToString } from "./subchannel";
 
 const TRACER_NAME = 'proxy';
 
@@ -144,8 +144,8 @@ export function getProxiedConnection(target: string, subchannelAddress: Subchann
   if (!(PROXY_INFO.hostname && shouldUseProxy(target) && isTcpSubchannelAddress(subchannelAddress))) {
     return Promise.reject<Socket>();
   }
-  const subchannelAddressPathString = `${subchannelAddress.host}:${subchannelAddress.port}`;
-  trace('Using proxy ' + getAddressString(PROXY_INFO) + ' to connect to ' + target + ' at ' + subchannelAddress);
+  const subchannelAddressPathString = subchannelAddressToString(subchannelAddress);
+  trace('Using proxy ' + getAddressString(PROXY_INFO) + ' to connect to ' + target + ' at ' + subchannelAddressPathString);
   const options: http.RequestOptions = {
     method: 'CONNECT',
     host: PROXY_INFO.hostname,
@@ -163,10 +163,10 @@ export function getProxiedConnection(target: string, subchannelAddress: Subchann
       request.removeAllListeners();
       socket.removeAllListeners();
       if (res.statusCode === 200) {
-        trace('Successfully connected to ' + subchannelAddress + ' through proxy ' + getAddressString(PROXY_INFO));
+        trace('Successfully connected to ' + subchannelAddressPathString + ' through proxy ' + getAddressString(PROXY_INFO));
         resolve(socket);
       } else {
-        log(LogVerbosity.ERROR, 'Failed to connect to ' + subchannelAddress + ' through proxy ' + getAddressString(PROXY_INFO) + ' with status ' + res.statusCode);
+        log(LogVerbosity.ERROR, 'Failed to connect to ' + subchannelAddressPathString + ' through proxy ' + getAddressString(PROXY_INFO) + ' with status ' + res.statusCode);
         reject();
       }
     });
@@ -175,5 +175,6 @@ export function getProxiedConnection(target: string, subchannelAddress: Subchann
       log(LogVerbosity.ERROR, 'Failed to connect to proxy ' + getAddressString(PROXY_INFO) + ' with error ' + err.message);
       reject();
     });
+    request.end();
   });
 }

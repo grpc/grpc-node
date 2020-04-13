@@ -115,7 +115,12 @@ export function subchannelAddressEqual(
 
 export function subchannelAddressToString(address: SubchannelAddress): string {
   if (isTcpSubchannelAddress(address)) {
-    return address.host + ':' + address.port;
+    // We assume the host string has a colon if and only if it is IPv6
+    if (address.host.includes(':')) {
+      return '[' + address.host + ']:' + address.port;
+    } else {
+      return address.host + ':' + address.port;
+    }
   } else {
     return address.path;
   }
