@@ -32,7 +32,6 @@ export function mockFunction(): never {
   throw new Error('Not implemented');
 }
 
-// tslint:disable-next-line:no-namespace
 export namespace assert2 {
   const toCall = new Map<() => void, number>();
   const afterCallsQueue: Array<() => void> = [];
@@ -96,7 +95,6 @@ export namespace assert2 {
       return result;
     };
   }
-  // tslint:enable:no-any
 
   /**
    * Calls the given function when every function that was wrapped with

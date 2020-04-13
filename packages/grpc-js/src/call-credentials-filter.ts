@@ -15,7 +15,6 @@
  *
  */
 
-import { CallCredentials } from './call-credentials';
 import { Call } from './call-stream';
 import { Channel } from './channel';
 import { BaseFilter, Filter, FilterFactory } from './filter';

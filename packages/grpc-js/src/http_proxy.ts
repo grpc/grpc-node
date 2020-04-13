@@ -15,14 +15,14 @@
  *
  */
 
-import { URL, parse } from "url";
-import { log } from "./logging";
-import { LogVerbosity } from "./constants";
-import { parseTarget } from "./resolver-dns";
-import { Socket } from "net";
+import { URL } from 'url';
+import { log } from './logging';
+import { LogVerbosity } from './constants';
+import { parseTarget } from './resolver-dns';
+import { Socket } from 'net';
 import * as http from 'http';
 import * as logging from './logging';
-import { SubchannelAddress, TcpSubchannelAddress, isTcpSubchannelAddress } from "./subchannel";
+import { SubchannelAddress, isTcpSubchannelAddress } from './subchannel';
 
 const TRACER_NAME = 'proxy';
 
@@ -36,8 +36,8 @@ interface ProxyInfo {
 }
 
 function getProxyInfo(): ProxyInfo {
-  let proxyEnv: string = '';
-  let envVar: string = '';
+  let proxyEnv = '';
+  let envVar = '';
   /* Prefer using 'grpc_proxy'. Fallback on 'http_proxy' if it is not set.
    * Also prefer using 'https_proxy' with fallback on 'http_proxy'. The
    * fallback behavior can be removed if there's a demand for it.
@@ -62,7 +62,10 @@ function getProxyInfo(): ProxyInfo {
     return {};
   }
   if (proxyUrl.protocol !== 'http:') {
-    log(LogVerbosity.ERROR, `"${proxyUrl.protocol}" scheme not supported in proxy URI`);
+    log(
+      LogVerbosity.ERROR,
+      `"${proxyUrl.protocol}" scheme not supported in proxy URI`
+    );
     return {};
   }
   let userCred: string | null = null;
@@ -75,12 +78,14 @@ function getProxyInfo(): ProxyInfo {
     }
   }
   const result: ProxyInfo = {
-    address: proxyUrl.host
+    address: proxyUrl.host,
   };
   if (userCred) {
     result.creds = userCred;
   }
-  trace('Proxy server ' + result.address + ' set by environment variable ' + envVar);
+  trace(
+    'Proxy server ' + result.address + ' set by environment variable ' + envVar
+  );
   return result;
 }
 
@@ -89,7 +94,7 @@ const PROXY_INFO = getProxyInfo();
 function getNoProxyHostList(): string[] {
   /* Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set. */
   let noProxyStr: string | undefined = process.env.no_grpc_proxy;
-  let envVar: string = 'no_grpc_proxy';
+  let envVar = 'no_grpc_proxy';
   if (!noProxyStr) {
     noProxyStr = process.env.no_proxy;
     envVar = 'no_proxy';
@@ -124,20 +129,37 @@ export function shouldUseProxy(target: string): boolean {
   return true;
 }
 
-export function getProxiedConnection(target: string, subchannelAddress: SubchannelAddress): Promise<Socket> {
-  if (!(PROXY_INFO.address && shouldUseProxy(target) && isTcpSubchannelAddress(subchannelAddress))) {
+export function getProxiedConnection(
+  target: string,
+  subchannelAddress: SubchannelAddress
+): Promise<Socket> {
+  if (
+    !(
+      PROXY_INFO.address &&
+      shouldUseProxy(target) &&
+      isTcpSubchannelAddress(subchannelAddress)
+    )
+  ) {
     return Promise.reject<Socket>();
   }
   const subchannelAddressPathString = `${subchannelAddress.host}:${subchannelAddress.port}`;
-  trace('Using proxy ' + PROXY_INFO.address + ' to connect to ' + target + ' at ' + subchannelAddress);
+  trace(
+    'Using proxy ' +
+      PROXY_INFO.address +
+      ' to connect to ' +
+      target +
+      ' at ' +
+      subchannelAddress
+  );
   const options: http.RequestOptions = {
     method: 'CONNECT',
     host: PROXY_INFO.address,
-    path: subchannelAddressPathString
+    path: subchannelAddressPathString,
   };
   if (PROXY_INFO.creds) {
     options.headers = {
-      'Proxy-Authorization': 'Basic ' + Buffer.from(PROXY_INFO.creds).toString('base64')
+      'Proxy-Authorization':
+        'Basic ' + Buffer.from(PROXY_INFO.creds).toString('base64'),
     };
   }
   return new Promise<Socket>((resolve, reject) => {
@@ -146,16 +168,35 @@ export function getProxiedConnection(target: string, subchannelAddress: Subchann
       request.removeAllListeners();
       socket.removeAllListeners();
       if (res.statusCode === 200) {
-        trace('Successfully connected to ' + subchannelAddress + ' through proxy ' + PROXY_INFO.address);
+        trace(
+          'Successfully connected to ' +
+            subchannelAddress +
+            ' through proxy ' +
+            PROXY_INFO.address
+        );
         resolve(socket);
       } else {
-        log(LogVerbosity.ERROR, 'Failed to connect to ' + subchannelAddress + ' through proxy ' + PROXY_INFO.address + ' with status ' + res.statusCode);
+        log(
+          LogVerbosity.ERROR,
+          'Failed to connect to ' +
+            subchannelAddress +
+            ' through proxy ' +
+            PROXY_INFO.address +
+            ' with status ' +
+            res.statusCode
+        );
         reject();
       }
     });
     request.once('error', (err) => {
       request.removeAllListeners();
-      log(LogVerbosity.ERROR, 'Failed to connect to proxy ' + PROXY_INFO.address + ' with error ' + err.message);
+      log(
+        LogVerbosity.ERROR,
+        'Failed to connect to proxy ' +
+          PROXY_INFO.address +
+          ' with error ' +
+          err.message
+      );
       reject();
     });
   });

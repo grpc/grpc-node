@@ -23,7 +23,6 @@ import {
 import * as dns from 'dns';
 import * as util from 'util';
 import { extractAndSelectServiceConfig, ServiceConfig } from './service-config';
-import { ServiceError } from './call';
 import { Status } from './constants';
 import { StatusObject } from './call-stream';
 import { Metadata } from './metadata';
@@ -109,7 +108,7 @@ function mergeArrays<T>(...arrays: T[][]): T[] {
     i <
     Math.max.apply(
       null,
-      arrays.map(array => array.length)
+      arrays.map((array) => array.length)
     );
     i++
   ) {
@@ -186,50 +185,56 @@ class DnsResolver implements Resolver {
        * if the name exists but there are no records for that family, and that
        * error is indistinguishable from other kinds of errors */
       this.pendingLookupPromise = dnsLookupPromise(hostname, { all: true });
-      this.pendingLookupPromise.then(addressList => {
-        this.pendingLookupPromise = null;
-        const ip4Addresses: dns.LookupAddress[] = addressList.filter(
-          addr => addr.family === 4
-        );
-        const ip6Addresses: dns.LookupAddress[] = addressList.filter(addr => addr.family === 6);
-        this.latestLookupResult = mergeArrays(
-          ip6Addresses,
-          ip4Addresses
-        ).map(addr => ({ host: addr.address, port: +this.port! }));
-        const allAddressesString: string =
-          '[' +
-          this.latestLookupResult.map(addr => addr.host + ':' + addr.port).join(',') +
-          ']';
-        trace(
-          'Resolved addresses for target ' +
-            this.target +
-            ': ' +
-            allAddressesString
-        );
-        if (this.latestLookupResult.length === 0) {
+      this.pendingLookupPromise.then(
+        (addressList) => {
+          this.pendingLookupPromise = null;
+          const ip4Addresses: dns.LookupAddress[] = addressList.filter(
+            (addr) => addr.family === 4
+          );
+          const ip6Addresses: dns.LookupAddress[] = addressList.filter(
+            (addr) => addr.family === 6
+          );
+          this.latestLookupResult = mergeArrays(
+            ip6Addresses,
+            ip4Addresses
+          ).map((addr) => ({ host: addr.address, port: +this.port! }));
+          const allAddressesString: string =
+            '[' +
+            this.latestLookupResult
+              .map((addr) => addr.host + ':' + addr.port)
+              .join(',') +
+            ']';
+          trace(
+            'Resolved addresses for target ' +
+              this.target +
+              ': ' +
+              allAddressesString
+          );
+          if (this.latestLookupResult.length === 0) {
+            this.listener.onError(this.defaultResolutionError);
+            return;
+          }
+          /* If the TXT lookup has not yet finished, both of the last two
+           * arguments will be null, which is the equivalent of getting an
+           * empty TXT response. When the TXT lookup does finish, its handler
+           * can update the service config by using the same address list */
+          this.listener.onSuccessfulResolution(
+            this.latestLookupResult,
+            this.latestServiceConfig,
+            this.latestServiceConfigError
+          );
+        },
+        (err) => {
+          trace(
+            'Resolution error for target ' +
+              this.target +
+              ': ' +
+              (err as Error).message
+          );
+          this.pendingLookupPromise = null;
           this.listener.onError(this.defaultResolutionError);
-          return;
         }
-        /* If the TXT lookup has not yet finished, both of the last two
-         * arguments will be null, which is the equivalent of getting an
-         * empty TXT response. When the TXT lookup does finish, its handler
-         * can update the service config by using the same address list */
-        this.listener.onSuccessfulResolution(
-          this.latestLookupResult,
-          this.latestServiceConfig,
-          this.latestServiceConfigError
-        );
-      },
-      err => {
-        trace(
-          'Resolution error for target ' +
-            this.target +
-            ': ' +
-            (err as Error).message
-        );
-        this.pendingLookupPromise = null;
-        this.listener.onError(this.defaultResolutionError);
-      });
+      );
       /* If there already is a still-pending TXT resolution, we can just use
        * that result when it comes in */
       if (this.pendingTxtPromise === null) {
@@ -237,45 +242,48 @@ class DnsResolver implements Resolver {
          * the name resolution attempt as a whole is a success even if the TXT
          * lookup fails */
         this.pendingTxtPromise = resolveTxtPromise(hostname);
-        this.pendingTxtPromise.then(txtRecord => {
-          this.pendingTxtPromise = null;
-          try {
-            this.latestServiceConfig = extractAndSelectServiceConfig(
-              txtRecord,
-              this.percentage
-            );
-          } catch (err) {
+        this.pendingTxtPromise.then(
+          (txtRecord) => {
+            this.pendingTxtPromise = null;
+            try {
+              this.latestServiceConfig = extractAndSelectServiceConfig(
+                txtRecord,
+                this.percentage
+              );
+            } catch (err) {
+              this.latestServiceConfigError = {
+                code: Status.UNAVAILABLE,
+                details: 'Parsing service config failed',
+                metadata: new Metadata(),
+              };
+            }
+            if (this.latestLookupResult !== null) {
+              /* We rely here on the assumption that calling this function with
+               * identical parameters will be essentialy idempotent, and calling
+               * it with the same address list and a different service config
+               * should result in a fast and seamless switchover. */
+              this.listener.onSuccessfulResolution(
+                this.latestLookupResult,
+                this.latestServiceConfig,
+                this.latestServiceConfigError
+              );
+            }
+          },
+          (err) => {
             this.latestServiceConfigError = {
               code: Status.UNAVAILABLE,
-              details: 'Parsing service config failed',
+              details: 'TXT query failed',
               metadata: new Metadata(),
             };
+            if (this.latestLookupResult !== null) {
+              this.listener.onSuccessfulResolution(
+                this.latestLookupResult,
+                this.latestServiceConfig,
+                this.latestServiceConfigError
+              );
+            }
           }
-          if (this.latestLookupResult !== null) {
-            /* We rely here on the assumption that calling this function with
-             * identical parameters will be essentialy idempotent, and calling
-             * it with the same address list and a different service config
-             * should result in a fast and seamless switchover. */
-            this.listener.onSuccessfulResolution(
-              this.latestLookupResult,
-              this.latestServiceConfig,
-              this.latestServiceConfigError
-            )
-          }
-        }, err => {
-          this.latestServiceConfigError = {
-            code: Status.UNAVAILABLE,
-            details: 'TXT query failed',
-            metadata: new Metadata(),
-          };
-          if (this.latestLookupResult !== null) {
-            this.listener.onSuccessfulResolution(
-              this.latestLookupResult,
-              this.latestServiceConfig,
-              this.latestServiceConfigError
-            )
-          }
-        });
+        );
       }
     }
   }
@@ -317,17 +325,21 @@ export function setup(): void {
   registerDefaultResolver(DnsResolver);
 }
 
-export interface dnsUrl {
+export interface DnsUrl {
   host: string;
   port?: string;
 }
 
-export function parseTarget(target: string): dnsUrl | null {
-  const match = IPV4_REGEX.exec(target) ?? IPV6_REGEX.exec(target) ?? IPV6_BRACKET_REGEX.exec(target) ?? DNS_REGEX.exec(target)
+export function parseTarget(target: string): DnsUrl | null {
+  const match =
+    IPV4_REGEX.exec(target) ??
+    IPV6_REGEX.exec(target) ??
+    IPV6_BRACKET_REGEX.exec(target) ??
+    DNS_REGEX.exec(target);
   if (match) {
     return {
       host: match[1],
-      port: match[2] ?? undefined
+      port: match[2] ?? undefined,
     };
   } else {
     return null;

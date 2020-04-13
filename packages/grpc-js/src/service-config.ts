@@ -24,7 +24,7 @@
 
 /* The any type is purposely used here. All functions validate their input at
  * runtime */
-/* tslint:disable:no-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as lbconfig from './load-balancing-config';
 import * as os from 'os';

@@ -50,10 +50,13 @@ export interface MethodDefinition<RequestType, ResponseType>
   extends ClientMethodDefinition<RequestType, ResponseType>,
     ServerMethodDefinition<RequestType, ResponseType> {}
 
-export type ServiceDefinition<ImplementationType = UntypedServiceImplementation> = {
-  // tslint:disable-next-line no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type ServiceDefinition<
+  ImplementationType = UntypedServiceImplementation
+> = {
   readonly [index in keyof ImplementationType]: MethodDefinition<any, any>;
-}
+};
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export interface ProtobufTypeDefinition {
   format: string;
@@ -118,7 +121,7 @@ export function makeClientConstructor(
     [methodName: string]: Function;
   }
 
-  Object.keys(methods).forEach(name => {
+  Object.keys(methods).forEach((name) => {
     const attrs = methods[name];
     let methodType: keyof typeof requesterFuncs;
     // TODO(murgatroid99): Verify that we don't need this anymore
@@ -166,8 +169,8 @@ function partial(
   serialize: Function,
   deserialize: Function
 ): Function {
-  // tslint:disable-next-line:no-any
-  return function(this: any, ...args: any[]) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return function (this: any, ...args: any[]) {
     return fn.call(this, path, serialize, deserialize, ...args);
   };
 }
@@ -195,7 +198,7 @@ export function loadPackageDefinition(
 ): GrpcObject {
   const result: GrpcObject = {};
   for (const serviceFqn in packageDef) {
-    if (packageDef.hasOwnProperty(serviceFqn)) {
+    if (Object.prototype.hasOwnProperty.call(packageDef, serviceFqn)) {
       const service = packageDef[serviceFqn];
       const nameComponents = serviceFqn.split('.');
       const serviceName = nameComponents[nameComponents.length - 1];

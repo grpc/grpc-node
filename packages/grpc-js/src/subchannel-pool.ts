@@ -63,12 +63,12 @@ export class SubchannelPool {
     /* These objects are created with Object.create(null), so they do not
      * have a prototype, which means that for (... in ...) loops over them
      * do not need to be filtered */
-    // tslint:disable-next-line:forin
+    // eslint-disable-disable-next-line:forin
     for (const channelTarget in this.pool) {
       const subchannelObjArray = this.pool[channelTarget];
 
       const refedSubchannels = subchannelObjArray.filter(
-        value => !value.subchannel.unrefIfOneRef()
+        (value) => !value.subchannel.unrefIfOneRef()
       );
 
       if (refedSubchannels.length > 0) {

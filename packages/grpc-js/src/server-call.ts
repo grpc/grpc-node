@@ -157,7 +157,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
     this.trailingMetadata = new Metadata();
     this.call.setupSurfaceCall(this);
 
-    this.on('error', err => {
+    this.on('error', (err) => {
       this.call.sendError(err);
       this.end();
     });
@@ -174,7 +174,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
   async _write(
     chunk: ResponseType,
     encoding: string,
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     callback: (...args: any[]) => void
   ) {
     try {
@@ -201,7 +201,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
     callback(null);
   }
 
-  // tslint:disable-next-line:no-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   end(metadata?: any) {
     if (metadata) {
       this.trailingMetadata = metadata;
@@ -228,7 +228,7 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
     this.call.setupSurfaceCall(this);
     this.call.setupReadable(this);
 
-    this.on('error', err => {
+    this.on('error', (err) => {
       this.call.sendError(err);
       this.end();
     });
@@ -479,7 +479,7 @@ export class Http2ServerCallStream<
     }
 
     if (err) {
-      if (!err.hasOwnProperty('metadata')) {
+      if (!Object.prototype.hasOwnProperty.call(err, 'metadata')) {
         err.metadata = metadata;
       }
       this.sendError(err);
@@ -564,7 +564,7 @@ export class Http2ServerCallStream<
   }
 
   setupSurfaceCall(call: ServerSurfaceCall) {
-    this.once('cancelled', reason => {
+    this.once('cancelled', (reason) => {
       call.cancelled = true;
       call.emit('cancelled', reason);
     });
@@ -671,7 +671,7 @@ export class Http2ServerCallStream<
   }
 }
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 type UntypedServerCall = Http2ServerCallStream<any, any>;
 
 function handleExpiredDeadline(call: UntypedServerCall) {
