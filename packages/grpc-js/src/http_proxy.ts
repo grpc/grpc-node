@@ -22,7 +22,12 @@ import { parseTarget } from './resolver-dns';
 import { Socket } from 'net';
 import * as http from 'http';
 import * as logging from './logging';
-import { SubchannelAddress, isTcpSubchannelAddress } from './subchannel';
+import {
+  SubchannelAddress,
+  isTcpSubchannelAddress,
+  subchannelAddressToString,
+} from './subchannel';
+import { ChannelOptions } from './channel-options';
 
 const TRACER_NAME = 'proxy';
 
@@ -89,8 +94,6 @@ function getProxyInfo(): ProxyInfo {
   return result;
 }
 
-const PROXY_INFO = getProxyInfo();
-
 function getNoProxyHostList(): string[] {
   /* Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set. */
   let noProxyStr: string | undefined = process.env.no_grpc_proxy;
@@ -107,62 +110,87 @@ function getNoProxyHostList(): string[] {
   }
 }
 
-const NO_PROXY_HOSTS = getNoProxyHostList();
+export interface ProxyMapResult {
+  target: string;
+  extraOptions: ChannelOptions;
+}
 
-export function shouldUseProxy(target: string): boolean {
-  if (!PROXY_INFO.address) {
-    return false;
+export function mapProxyName(
+  target: string,
+  options: ChannelOptions
+): ProxyMapResult {
+  const noProxyResult: ProxyMapResult = {
+    target: target,
+    extraOptions: {},
+  };
+  const proxyInfo = getProxyInfo();
+  if (!proxyInfo.address) {
+    return noProxyResult;
   }
-  let serverHost: string;
   const parsedTarget = parseTarget(target);
-  if (parsedTarget) {
-    serverHost = parsedTarget.host;
-  } else {
-    return false;
+  if (!parsedTarget) {
+    return noProxyResult;
   }
-  for (const host of NO_PROXY_HOSTS) {
+  const serverHost = parsedTarget.host;
+  for (const host of getNoProxyHostList()) {
     if (host === serverHost) {
       trace('Not using proxy for target in no_proxy list: ' + target);
-      return false;
+      return noProxyResult;
     }
   }
-  return true;
+  const extraOptions: ChannelOptions = {
+    'grpc.http_connect_target': target,
+  };
+  if (proxyInfo.creds) {
+    extraOptions['grpc.http_connect_creds'] = proxyInfo.creds;
+  }
+  return {
+    target: `dns:///${proxyInfo.address}`,
+    extraOptions: extraOptions,
+  };
+}
+
+export interface ProxyConnectionResult {
+  socket?: Socket;
+  realTarget?: string;
 }
 
 export function getProxiedConnection(
-  target: string,
-  subchannelAddress: SubchannelAddress
-): Promise<Socket> {
-  if (
-    !(
-      PROXY_INFO.address &&
-      shouldUseProxy(target) &&
-      isTcpSubchannelAddress(subchannelAddress)
-    )
-  ) {
-    return Promise.reject<Socket>();
+  address: SubchannelAddress,
+  channelOptions: ChannelOptions
+): Promise<ProxyConnectionResult> {
+  if (!('grpc.http_connect_target' in channelOptions)) {
+    return Promise.resolve<ProxyConnectionResult>({});
   }
-  const subchannelAddressPathString = `${subchannelAddress.host}:${subchannelAddress.port}`;
-  trace(
-    'Using proxy ' +
-      PROXY_INFO.address +
-      ' to connect to ' +
-      target +
-      ' at ' +
-      subchannelAddress
-  );
+  const realTarget = channelOptions['grpc.http_connect_target'] as string;
+  const parsedTarget = parseTarget(realTarget)!;
   const options: http.RequestOptions = {
     method: 'CONNECT',
-    host: PROXY_INFO.address,
-    path: subchannelAddressPathString,
   };
-  if (PROXY_INFO.creds) {
+  // Connect to the subchannel address as a proxy
+  if (isTcpSubchannelAddress(address)) {
+    options.host = address.host;
+    options.port = address.port;
+  } else {
+    options.socketPath = address.path;
+  }
+  if (parsedTarget.port === undefined) {
+    options.path = parsedTarget.host;
+  } else {
+    options.path = `${parsedTarget.host}:${parsedTarget.port}`;
+  }
+  if ('grpc.http_connect_creds' in channelOptions) {
     options.headers = {
       'Proxy-Authorization':
-        'Basic ' + Buffer.from(PROXY_INFO.creds).toString('base64'),
+        'Basic ' +
+        Buffer.from(
+          channelOptions['grpc.http_connect_creds'] as string
+        ).toString('base64'),
     };
   }
-  return new Promise<Socket>((resolve, reject) => {
+  const proxyAddressString = subchannelAddressToString(address);
+  trace('Using proxy ' + proxyAddressString + ' to connect to ' + options.path);
+  return new Promise<ProxyConnectionResult>((resolve, reject) => {
     const request = http.request(options);
     request.once('connect', (res, socket, head) => {
       request.removeAllListeners();
@@ -170,18 +198,21 @@ export function getProxiedConnection(
       if (res.statusCode === 200) {
         trace(
           'Successfully connected to ' +
-            subchannelAddress +
+            options.path +
             ' through proxy ' +
-            PROXY_INFO.address
+            proxyAddressString
         );
-        resolve(socket);
+        resolve({
+          socket,
+          realTarget,
+        });
       } else {
         log(
           LogVerbosity.ERROR,
           'Failed to connect to ' +
-            subchannelAddress +
+            options.path +
             ' through proxy ' +
-            PROXY_INFO.address +
+            proxyAddressString +
             ' with status ' +
             res.statusCode
         );
@@ -193,11 +224,12 @@ export function getProxiedConnection(
       log(
         LogVerbosity.ERROR,
         'Failed to connect to proxy ' +
-          PROXY_INFO.address +
+          proxyAddressString +
           ' with error ' +
           err.message
       );
       reject();
     });
+    request.end();
   });
 }
