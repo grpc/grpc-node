@@ -171,7 +171,15 @@ class DnsResolver implements Resolver {
       });
       return;
     }
-    if (this.dnsHostname !== null) {
+    if (this.dnsHostname === null) {
+      setImmediate(() => {
+        this.listener.onError({
+          code: Status.UNAVAILABLE,
+          details: `Failed to parse DNS address ${this.target}`,
+          metadata: new Metadata(),
+        });
+      });
+    } else {
       /* We clear out latestLookupResult here to ensure that it contains the
        * latest result since the last time we started resolving. That way, the
        * TXT resolution handler can use it, but only if it finishes second. We

@@ -145,7 +145,7 @@ export function mapProxyName(
     extraOptions['grpc.http_connect_creds'] = proxyInfo.creds;
   }
   return {
-    target: `dns:///${proxyInfo.address}`,
+    target: `dns:${proxyInfo.address}`,
     extraOptions: extraOptions,
   };
 }
