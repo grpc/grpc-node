@@ -38,6 +38,7 @@ import { ServiceConfig, validateServiceConfig } from './service-config';
 import { trace, log } from './logging';
 import { SubchannelAddress } from './subchannel';
 import { MaxMessageSizeFilterFactory } from './max-message-size-filter';
+import { mapProxyName } from './http_proxy';
 
 export enum ConnectivityState {
   CONNECTING,
@@ -163,6 +164,14 @@ export class ChannelImplementation implements Channel {
         );
       }
     }
+    if (this.options['grpc.default_authority']) {
+      this.defaultAuthority = this.options['grpc.default_authority'] as string;
+    } else {
+      this.defaultAuthority = getDefaultAuthority(target);
+    }
+    const proxyMapResult = mapProxyName(target, options);
+    this.target = proxyMapResult.target;
+    this.options = Object.assign({}, this.options, proxyMapResult.extraOptions);
     /* The global boolean parameter to getSubchannelPool has the inverse meaning to what
      * the grpc.use_local_subchannel_pool channel option means. */
     this.subchannelPool = getSubchannelPool(
@@ -207,7 +216,7 @@ export class ChannelImplementation implements Channel {
       );
     }
     this.resolvingLoadBalancer = new ResolvingLoadBalancer(
-      target,
+      this.target,
       channelControlHelper,
       defaultServiceConfig
     );
@@ -217,12 +226,6 @@ export class ChannelImplementation implements Channel {
       new MaxMessageSizeFilterFactory(this.options),
       new CompressionFilterFactory(this),
     ]);
-    // TODO(murgatroid99): Add more centralized handling of channel options
-    if (this.options['grpc.default_authority']) {
-      this.defaultAuthority = this.options['grpc.default_authority'] as string;
-    } else {
-      this.defaultAuthority = getDefaultAuthority(target);
-    }
   }
 
   /**
