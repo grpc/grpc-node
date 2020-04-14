@@ -29,7 +29,7 @@ import { LogVerbosity } from './constants';
 import { shouldUseProxy, getProxiedConnection } from './http_proxy';
 import * as net from 'net';
 
-import { version as clientVersion } from '../package.json';
+const clientVersion = require('../../package.json').version;
 
 const TRACER_NAME = 'subchannel';
 
