@@ -23,3 +23,5 @@ coverage
 
 # Node's bash completion file
 .node_bash_completion
+
+docs

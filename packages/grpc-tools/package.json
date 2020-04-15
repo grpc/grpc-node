@@ -1,38 +1,38 @@
 {
-  "name": "grpc-tools",
+  "name": "grpc-tools-promise",
   "version": "1.8.1",
   "author": "Google Inc.",
-  "description": "Tools for developing with gRPC on Node.js",
+  "description": "Fork of grpc-node which provides a Promise returning API",
   "homepage": "https://grpc.io/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/grpc/grpc-node.git"
+    "url": "https://github.com/rhinodavid/grpc-node.git"
   },
-  "bugs": "https://github.com/grpc/grpc-node/issues",
+  "bugs": "https://github.com/rhinodavid/grpc-node/issues",
   "contributors": [
     {
       "name": "Michael Lumish",
       "email": "mlumish@google.com"
+    },
+    {
+      "name": "David Walsh",
+      "email": "rhinodavid@github.com"
     }
   ],
   "bin": {
-    "grpc_tools_node_protoc": "./bin/protoc.js",
-    "grpc_tools_node_protoc_plugin": "./bin/protoc_plugin.js"
+    "grpc_tools_node__promise_protoc": "./bin/protoc.js",
+    "grpc_tools_node_protoc_promise_plugin": "./bin/protoc_plugin.js"
   },
   "scripts": {
-    "install": "node-pre-gyp install",
-    "prepublishOnly": "git submodule update --init --recursive && node copy_well_known_protos.js"
+    "install": "yarn updateSubmodules && ./build_binaries.sh",
+    "updateSubmodules": "git submodule update --init --recursive && node copy_well_known_protos.js",
+    "prepublishOnly": "yarn updateSubmodules"
   },
-  "bundledDependencies": ["node-pre-gyp"],
+  "bundledDependencies": [
+    "node-pre-gyp"
+  ],
   "dependencies": {
     "node-pre-gyp": "^0.12.0"
-  },
-  "binary": {
-    "module_name": "grpc_tools",
-    "host": "https://node-precompiled-binaries.grpc.io/",
-    "remote_path": "{name}/v{version}",
-    "package_name": "{platform}-{arch}.tar.gz",
-    "module_path": "bin"
   },
   "files": [
     "index.js",

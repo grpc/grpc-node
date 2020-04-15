@@ -66,6 +66,8 @@
   },
   "scripts": {
     "test": "nyc gulp test && GRPC_DNS_RESOLVER=ares nyc gulp nativeTestOnly",
-    "coverage": "nyc report --reporter=text-lcov | coveralls"
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "install": "yarn install-tools",
+    "install-tools": "yarn workspaces grpc-tools install --build-from-source"
   }
 }
