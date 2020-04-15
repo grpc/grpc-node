@@ -8,7 +8,9 @@
     "name": "Google Inc."
   },
   "bin": {
-    "grpc_tools_node_protoc_plugin_with_promises": "./packages/grpc-tools/bin/protoc_plugin.js"
+    "grpc_tools_node_promise_protoc": ".packages/grpc-tools-promise/bin/protoc.js",
+    "grpc_tools_node_protoc_promise_plugin": ".packages/grpc-tools-promise/bin/protoc_plugin.js"
+
   },
   "license": "Apache-2.0",
   "devDependencies": {
@@ -64,10 +66,13 @@
     "cache": true,
     "all": true
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "test": "nyc gulp test && GRPC_DNS_RESOLVER=ares nyc gulp nativeTestOnly",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "install": "yarn install-tools",
-    "install-tools": "yarn workspaces grpc-tools install --build-from-source"
+    "install-tools": "yarn workspace grpc-tools-promise install"
   }
 }

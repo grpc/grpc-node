@@ -4,3 +4,5 @@ CMakeFiles
 CMakeCache.txt
 Makefile
 cmake_install.cmake
+grpc_node_plugin
+bin/google

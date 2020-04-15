@@ -20,11 +20,11 @@
     }
   ],
   "bin": {
-    "grpc_tools_node__promise_protoc": "./bin/protoc.js",
+    "grpc_tools_node_promise_protoc": "./bin/protoc.js",
     "grpc_tools_node_protoc_promise_plugin": "./bin/protoc_plugin.js"
   },
   "scripts": {
-    "install": "yarn updateSubmodules && ./build_binaries.sh",
+    "install": "yarn updateSubmodules && ARTIFACTS_OUT=/tmp ./build_binaries.sh",
     "updateSubmodules": "git submodule update --init --recursive && node copy_well_known_protos.js",
     "prepublishOnly": "yarn updateSubmodules"
   },
