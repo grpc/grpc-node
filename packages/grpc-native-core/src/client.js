@@ -498,9 +498,12 @@ Client.prototype.resolveCallInterceptors = function(method_definition, intercept
  *     serialize
  * @param {grpc.Metadata=} metadata Metadata to add to the call
  * @param {grpc.Client~CallOptions=} options Options map
- * @param {grpc.Client~requestCallback} callback The callback
- *     for when the response is received
- * @return {grpc~ClientUnaryCall} An event emitter for stream related events
+ * @param {grpc.Client~requestCallback= | PromiseConstructor} callback The callback
+ *     for when the response is received, or pass `Promise` to return a Promise
+ * @return {Promise<TResponse> | grpc~ClientUnaryCall} if `callback` is `the ES6 Promise Class`,
+ *     a `Promise` which resolves with the `grpc.Client~requestCallback` response and rejects
+ *     with the `grpc.Client-requestCallback` error; otherwise an event emitter stream of
+ *     related events
  */
 Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
                                              argument, metadata, options,
@@ -528,6 +531,24 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
         (options instanceof Object) &&
         (typeof callback === 'function'))) {
     throw new Error('Argument mismatch in makeUnaryRequest');
+  }
+
+  if (Reflect.get(callback, "name") === "Promise") {
+    return new Promise(function(resolve, reject) {
+      Client.prototype.makeUnaryRequest(
+        path,
+        serialize,
+        deserialize,
+        argument,
+        metadata,
+        options,
+        function(error, response) {
+          if (error) {
+            reject(error);
+          }
+          resolve(response);
+        }
+    });
   }
 
   var method_definition = options.method_definition = {
@@ -585,6 +606,12 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
   intercepting_call.start(callProperties.metadata, last_listener);
   intercepting_call.sendMessage(callProperties.argument);
   intercepting_call.halfClose();
+
+  if (returnPromise) {
+    return new Promise((resolve, reject) => {
+
+    });
+  }
 
   return emitter;
 };
