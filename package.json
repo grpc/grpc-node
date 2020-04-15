@@ -7,6 +7,9 @@
   "author": {
     "name": "Google Inc."
   },
+  "bin": {
+    "grpc_tools_node_protoc_plugin_with_promises": "./packages/grpc-tools/bin/protoc_plugin.js"
+  },
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/execa": "^0.8.0",
