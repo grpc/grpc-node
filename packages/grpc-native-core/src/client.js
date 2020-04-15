@@ -548,6 +548,7 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
           }
           resolve(response);
         }
+      )
     });
   }
 
