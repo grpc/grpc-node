@@ -60,5 +60,8 @@ for arch in "${arch_list[@]}"; do
   file $base/build/bin/*
   cd $base/build
   tar -czf "$out_dir/$platform-$arch.tar.gz" bin/
+  mv $base/build/bin/grpc_node_plugin $base/bin
+  mv $base/build/bin/protoc $base/bin
+  rm -rf $base/build
   cd $base
 done

@@ -8,8 +8,8 @@
     "name": "Google Inc."
   },
   "bin": {
-    "grpc_tools_node_promise_protoc": ".packages/grpc-tools-promise/bin/protoc.js",
-    "grpc_tools_node_protoc_promise_plugin": ".packages/grpc-tools-promise/bin/protoc_plugin.js"
+    "grpc_tools_node_promise_protoc": "./packages/grpc-tools/bin/protoc.js",
+    "grpc_tools_node_protoc_promise_plugin": "./packages/grpc-tools/bin/protoc_plugin.js"
   },
   "license": "Apache-2.0",
   "devDependencies": {
