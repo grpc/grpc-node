@@ -10,7 +10,6 @@
   "bin": {
     "grpc_tools_node_promise_protoc": ".packages/grpc-tools-promise/bin/protoc.js",
     "grpc_tools_node_protoc_promise_plugin": ".packages/grpc-tools-promise/bin/protoc_plugin.js"
-
   },
   "license": "Apache-2.0",
   "devDependencies": {
@@ -72,9 +71,8 @@
   "scripts": {
     "test": "nyc gulp test && GRPC_DNS_RESOLVER=ares nyc gulp nativeTestOnly",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "postinstall": "yarn update-submodules && yarn install-tools",
-    "install-tools": "yarn workspace grpc-tools-promise install",
-    "_update-submodules": "// A terrible hack from https://github.com/yarnpkg/yarn/issues/1488#issuecomment-404551741 to make submodules work with yarn",
-    "update-submodules": "sed -n -e '/path/,/url/p' .gitmodules | sed 'N;s/\\n/\\$$$/' | while IFS= read -r line; do if [[ $line =~ (.*)\\$\\$\\$(.*) ]] ; then path=\"$(echo ${BASH_REMATCH[1]} | sed 's/.*= //')\"; url=\"$(echo ${BASH_REMATCH[2]} | sed 's/.*= //')\"; if [ -d $path ] ; then start=$PWD; cd $path; git pull; cd $PWD; else git clone $url $path; fi fi done"
+    "postinstall": "yarn update-submodules && yarn workspace grpc-tools-promise build-binaries",
+    "_update-submodules": "// A terrible hack from https://github.com/yarnpkg/yarn/issues/1488#issuecomment-573393814 to make submodules work with yarn",
+    "update-submodules": "project_dir=$PWD; modules=( 'packages/grpc-tools/deps/protobuf', 'packages/grpc-native-core/deps/grpc' ); for module in \"${modules[@]}\"; do echo \"Notice: update module ${module}\"; cd \"${project_dir}/${module}\"; if [[ -f .gitmodules ]]; then sed -n -e '/path/,/url/p' .gitmodules | sed 'N;s/\\n/\\$$$/' | while IFS= read -r line; do if [[ $line =~ (.*)\\$\\$\\$(.*) ]] ; then path=\"$(echo ${BASH_REMATCH[1]} | sed 's/.*= //')\"; url=\"$(echo ${BASH_REMATCH[2]} | sed 's/.*= //')\"; if [[ -d \"${path}/.git\" ]] ; then echo \"Notice: git pull submodule $(realpath ${path})\"; cd \"${path}\" && git pull; else if [[ -z \"$(ls -A ${path})\" ]]; then echo \"Notice: git clone submodule $(realpath ${path})\"; rm -rf \"${path}\"; git clone --recursive $url $path; else echo \"Notice: $(realpath ${path}) submodule folder is not empty, try to remove it before clone.\"; fi; fi; else echo \"Notice: module ${module} is not contain submodules.\"; fi; done; else echo \"Notice: module ${module} is not contain submodules.\"; fi; cd \"${project_dir}\"; done;"
   }
 }

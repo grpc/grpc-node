@@ -24,9 +24,7 @@
     "grpc_tools_node_protoc_promise_plugin": "./bin/protoc_plugin.js"
   },
   "scripts": {
-    "install": "node copy_well_known_protos.js && ARTIFACTS_OUT=/tmp ./build_binaries.sh",
-    "update-submodules": "git submodule update --init --recursive",
-    "prepublishOnly": "yarn update-submodules"
+    "build-binaries": "node copy_well_known_protos.js && ARTIFACTS_OUT=/tmp ./build_binaries.sh"
   },
   "bundledDependencies": [
     "node-pre-gyp"
@@ -34,12 +32,5 @@
   "dependencies": {
     "node-pre-gyp": "^0.12.0"
   },
-  "files": [
-    "index.js",
-    "bin/protoc.js",
-    "bin/protoc_plugin.js",
-    "bin/google/protobuf",
-    "LICENSE"
-  ],
   "main": "index.js"
 }
