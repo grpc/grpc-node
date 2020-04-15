@@ -72,7 +72,9 @@
   "scripts": {
     "test": "nyc gulp test && GRPC_DNS_RESOLVER=ares nyc gulp nativeTestOnly",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "install": "yarn install-tools",
-    "install-tools": "yarn workspace grpc-tools-promise install"
+    "postinstall": "yarn update-submodules && yarn install-tools",
+    "install-tools": "yarn workspace grpc-tools-promise install",
+    "_update-submodules": "// A terrible hack from https://github.com/yarnpkg/yarn/issues/1488#issuecomment-404551741 to make submodules work with yarn",
+    "update-submodules": "sed -n -e '/path/,/url/p' .gitmodules | sed 'N;s/\\n/\\$$$/' | while IFS= read -r line; do if [[ $line =~ (.*)\\$\\$\\$(.*) ]] ; then path=\"$(echo ${BASH_REMATCH[1]} | sed 's/.*= //')\"; url=\"$(echo ${BASH_REMATCH[2]} | sed 's/.*= //')\"; if [ -d $path ] ; then start=$PWD; cd $path; git pull; cd $PWD; else git clone $url $path; fi fi done"
   }
 }
