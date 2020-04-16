@@ -400,7 +400,7 @@ describe('Name Resolver', () => {
     }
 
     it('Should return the correct authority if a different resolver has been registered', () => {
-      const target = parseUri('other://name')!;
+      const target = parseUri('other:name')!;
       resolverManager.registerResolver('other:', OtherResolver);
 
       const authority = resolverManager.getDefaultAuthority(target);
