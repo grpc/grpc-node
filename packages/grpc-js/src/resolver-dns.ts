@@ -270,7 +270,7 @@ class DnsResolver implements Resolver {
     if (hostPort !== null) {
       return hostPort.host;
     } else {
-      throw new Error(`Failed to parse target ${target}`);
+      throw new Error(`Failed to parse target ${uriToString(target)}`);
     }
   }
 }
