@@ -15,10 +15,8 @@
  *
  */
 
-import { URL } from 'url';
 import { log } from './logging';
 import { LogVerbosity } from './constants';
-import { parseTarget } from './resolver-dns';
 import { Socket } from 'net';
 import * as http from 'http';
 import * as logging from './logging';
@@ -28,6 +26,7 @@ import {
   subchannelAddressToString,
 } from './subchannel';
 import { ChannelOptions } from './channel-options';
+import { GrpcUri, parseUri, splitHostPort, uriToString } from './uri-parser';
 
 const TRACER_NAME = 'proxy';
 
@@ -59,31 +58,30 @@ function getProxyInfo(): ProxyInfo {
   } else {
     return {};
   }
-  let proxyUrl: URL;
-  try {
-    proxyUrl = new URL(proxyEnv);
-  } catch (e) {
+  const proxyUrl = parseUri(proxyEnv);
+  if (proxyUrl === null) {
     log(LogVerbosity.ERROR, `cannot parse value of "${envVar}" env var`);
     return {};
   }
-  if (proxyUrl.protocol !== 'http:') {
+  if (proxyUrl.scheme !== 'http') {
     log(
       LogVerbosity.ERROR,
-      `"${proxyUrl.protocol}" scheme not supported in proxy URI`
+      `"${proxyUrl.scheme}" scheme not supported in proxy URI`
     );
     return {};
   }
+  const splitPath = proxyUrl.path.split('@');
+  let host: string;
   let userCred: string | null = null;
-  if (proxyUrl.username) {
-    if (proxyUrl.password) {
-      log(LogVerbosity.INFO, 'userinfo found in proxy URI');
-      userCred = `${proxyUrl.username}:${proxyUrl.password}`;
-    } else {
-      userCred = proxyUrl.username;
-    }
+  if (splitPath.length === 2) {
+    log(LogVerbosity.INFO, 'userinfo found in proxy URI');
+    userCred = splitPath[0];
+    host = splitPath[1];
+  } else {
+    host = proxyUrl.path;
   }
   const result: ProxyInfo = {
-    address: proxyUrl.host,
+    address: host,
   };
   if (userCred) {
     result.creds = userCred;
@@ -111,12 +109,12 @@ function getNoProxyHostList(): string[] {
 }
 
 export interface ProxyMapResult {
-  target: string;
+  target: GrpcUri;
   extraOptions: ChannelOptions;
 }
 
 export function mapProxyName(
-  target: string,
+  target: GrpcUri,
   options: ChannelOptions
 ): ProxyMapResult {
   const noProxyResult: ProxyMapResult = {
@@ -127,11 +125,11 @@ export function mapProxyName(
   if (!proxyInfo.address) {
     return noProxyResult;
   }
-  const parsedTarget = parseTarget(target);
-  if (!parsedTarget) {
+  const hostPort = splitHostPort(target.path);
+  if (!hostPort) {
     return noProxyResult;
   }
-  const serverHost = parsedTarget.host;
+  const serverHost = hostPort.host;
   for (const host of getNoProxyHostList()) {
     if (host === serverHost) {
       trace('Not using proxy for target in no_proxy list: ' + target);
@@ -139,20 +137,20 @@ export function mapProxyName(
     }
   }
   const extraOptions: ChannelOptions = {
-    'grpc.http_connect_target': target,
+    'grpc.http_connect_target': uriToString(target),
   };
   if (proxyInfo.creds) {
     extraOptions['grpc.http_connect_creds'] = proxyInfo.creds;
   }
   return {
-    target: `dns:${proxyInfo.address}`,
+    target: { path: proxyInfo.address },
     extraOptions: extraOptions,
   };
 }
 
 export interface ProxyConnectionResult {
   socket?: Socket;
-  realTarget?: string;
+  realTarget?: GrpcUri;
 }
 
 export function getProxiedConnection(
@@ -163,9 +161,13 @@ export function getProxiedConnection(
     return Promise.resolve<ProxyConnectionResult>({});
   }
   const realTarget = channelOptions['grpc.http_connect_target'] as string;
-  const parsedTarget = parseTarget(realTarget)!;
+  const parsedTarget = parseUri(realTarget);
+  if (parsedTarget === null) {
+    return Promise.resolve<ProxyConnectionResult>({});
+  }
   const options: http.RequestOptions = {
     method: 'CONNECT',
+    path: parsedTarget.path,
   };
   // Connect to the subchannel address as a proxy
   if (isTcpSubchannelAddress(address)) {
@@ -173,11 +175,6 @@ export function getProxiedConnection(
     options.port = address.port;
   } else {
     options.socketPath = address.path;
-  }
-  if (parsedTarget.port === undefined) {
-    options.path = parsedTarget.host;
-  } else {
-    options.path = `${parsedTarget.host}:${parsedTarget.port}`;
   }
   if ('grpc.http_connect_creds' in channelOptions) {
     options.headers = {
@@ -204,7 +201,7 @@ export function getProxiedConnection(
         );
         resolve({
           socket,
-          realTarget,
+          realTarget: parsedTarget,
         });
       } else {
         log(

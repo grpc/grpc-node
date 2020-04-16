@@ -20,6 +20,7 @@ import * as resolver_dns from './resolver-dns';
 import * as resolver_uds from './resolver-uds';
 import { StatusObject } from './call-stream';
 import { SubchannelAddress } from './subchannel';
+import { GrpcUri, uriToString } from './uri-parser';
 
 /**
  * A listener object passed to the resolver's constructor that provides name
@@ -62,17 +63,17 @@ export interface Resolver {
 }
 
 export interface ResolverConstructor {
-  new (target: string, listener: ResolverListener): Resolver;
+  new (target: GrpcUri, listener: ResolverListener): Resolver;
   /**
    * Get the default authority for a target. This loosely corresponds to that
    * target's hostname. Throws an error if this resolver class cannot parse the
    * `target`.
    * @param target
    */
-  getDefaultAuthority(target: string): string;
+  getDefaultAuthority(target: GrpcUri): string;
 }
 
-const registeredResolvers: { [prefix: string]: ResolverConstructor } = {};
+const registeredResolvers: { [scheme: string]: ResolverConstructor } = {};
 let defaultResolver: ResolverConstructor | null = null;
 
 /**
@@ -83,10 +84,10 @@ let defaultResolver: ResolverConstructor | null = null;
  * @param resolverClass
  */
 export function registerResolver(
-  prefix: string,
+  scheme: string,
   resolverClass: ResolverConstructor
 ) {
-  registeredResolvers[prefix] = resolverClass;
+  registeredResolvers[scheme] = resolverClass;
 }
 
 /**
@@ -105,18 +106,24 @@ export function registerDefaultResolver(resolverClass: ResolverConstructor) {
  * @param listener
  */
 export function createResolver(
-  target: string,
+  target: GrpcUri,
   listener: ResolverListener
 ): Resolver {
-  for (const prefix of Object.keys(registeredResolvers)) {
-    if (target.startsWith(prefix)) {
-      return new registeredResolvers[prefix](target, listener);
+  if (target.scheme !== undefined && target.scheme in registeredResolvers) {
+    return new registeredResolvers[target.scheme](target, listener);
+  } else {
+    if (defaultResolver !== null) {
+      /* If the scheme does not correspond to a registered scheme, we assume
+       * that the whole thing is the path, and the scheme was pulled out
+       * incorrectly. For example, it is valid to parse "localhost:80" as
+       * having a scheme of "localhost" and a path of 80, but that is not
+       * how the resolver should see it */
+      return new defaultResolver({ path: uriToString(target) }, listener);
     }
   }
-  if (defaultResolver !== null) {
-    return new defaultResolver(target, listener);
-  }
-  throw new Error(`No resolver could be created for target ${target}`);
+  throw new Error(
+    `No resolver could be created for target ${uriToString(target)}`
+  );
 }
 
 /**
@@ -124,16 +131,16 @@ export function createResolver(
  * error if no registered name resolver can parse that target string.
  * @param target
  */
-export function getDefaultAuthority(target: string): string {
-  for (const prefix of Object.keys(registeredResolvers)) {
-    if (target.startsWith(prefix)) {
-      return registeredResolvers[prefix].getDefaultAuthority(target);
+export function getDefaultAuthority(target: GrpcUri): string {
+  if (target.scheme !== undefined && target.scheme in registeredResolvers) {
+    return registeredResolvers[target.scheme].getDefaultAuthority(target);
+  } else {
+    if (defaultResolver !== null) {
+      // See comment in createResolver for why we handle the target like this
+      return defaultResolver.getDefaultAuthority({ path: uriToString(target) });
     }
   }
-  if (defaultResolver !== null) {
-    return defaultResolver.getDefaultAuthority(target);
-  }
-  throw new Error(`Invalid target ${target}`);
+  throw new Error(`Invalid target ${uriToString(target)}`);
 }
 
 export function registerAll() {

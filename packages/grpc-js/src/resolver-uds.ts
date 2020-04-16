@@ -21,23 +21,18 @@ import {
   registerDefaultResolver,
 } from './resolver';
 import { SubchannelAddress } from './subchannel';
-
-function getUdsName(target: string): string {
-  /* Due to how this resolver is registered, it should only be constructed
-   * with strings that start with 'unix:'. Other strings may result in
-   * nonsensical output. If the string starts with 'unix://' that entire
-   * prefix needs to be ignored */
-  if (target.startsWith('unix://')) {
-    return target.substring(7);
-  } else {
-    return target.substring(5);
-  }
-}
+import { GrpcUri } from './uri-parser';
 
 class UdsResolver implements Resolver {
   private addresses: SubchannelAddress[] = [];
-  constructor(target: string, private listener: ResolverListener) {
-    this.addresses = [{ path: getUdsName(target) }];
+  constructor(target: GrpcUri, private listener: ResolverListener) {
+    let path: string;
+    if (target.authority === '') {
+      path = '/' + target.path;
+    } else {
+      path = target.path;
+    }
+    this.addresses = [{ path }];
   }
   updateResolution(): void {
     process.nextTick(
@@ -48,11 +43,11 @@ class UdsResolver implements Resolver {
     );
   }
 
-  static getDefaultAuthority(target: string): string {
+  static getDefaultAuthority(target: GrpcUri): string {
     return 'localhost';
   }
 }
 
 export function setup() {
-  registerResolver('unix:', UdsResolver);
+  registerResolver('unix', UdsResolver);
 }

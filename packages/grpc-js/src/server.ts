@@ -52,6 +52,7 @@ import {
   TcpSubchannelAddress,
   isTcpSubchannelAddress,
 } from './subchannel';
+import { parseUri } from './uri-parser';
 
 interface BindResult {
   port: number;
@@ -225,6 +226,11 @@ export class Server {
       throw new TypeError('callback must be a function');
     }
 
+    const portUri = parseUri(port);
+    if (portUri === null) {
+      throw new Error(`Could not parse port "${port}"`);
+    }
+
     const serverOptions: http2.ServerOptions = {};
     if ('grpc.max_concurrent_streams' in this.options) {
       serverOptions.settings = {
@@ -392,7 +398,7 @@ export class Server {
       },
     };
 
-    const resolver = createResolver(port, resolverListener);
+    const resolver = createResolver(portUri, resolverListener);
     resolver.updateResolution();
   }
 

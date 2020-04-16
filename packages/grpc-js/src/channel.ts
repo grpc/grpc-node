@@ -39,6 +39,7 @@ import { trace, log } from './logging';
 import { SubchannelAddress } from './subchannel';
 import { MaxMessageSizeFilterFactory } from './max-message-size-filter';
 import { mapProxyName } from './http_proxy';
+import { GrpcUri, parseUri, uriToString } from './uri-parser';
 
 export enum ConnectivityState {
   CONNECTING,
@@ -136,8 +137,9 @@ export class ChannelImplementation implements Channel {
   private connectivityStateWatchers: ConnectivityStateWatcher[] = [];
   private defaultAuthority: string;
   private filterStackFactory: FilterStackFactory;
+  private target: GrpcUri;
   constructor(
-    private target: string,
+    target: string,
     private readonly credentials: ChannelCredentials,
     private readonly options: ChannelOptions
   ) {
@@ -164,14 +166,24 @@ export class ChannelImplementation implements Channel {
         );
       }
     }
+    const originalTargetUri = parseUri(target);
+    if (originalTargetUri === null) {
+      throw new Error(`Could not parse target name "${target}"`);
+    }
     if (this.options['grpc.default_authority']) {
       this.defaultAuthority = this.options['grpc.default_authority'] as string;
     } else {
-      this.defaultAuthority = getDefaultAuthority(target);
+      this.defaultAuthority = getDefaultAuthority(originalTargetUri);
     }
-    const proxyMapResult = mapProxyName(target, options);
+    const proxyMapResult = mapProxyName(originalTargetUri, options);
     this.target = proxyMapResult.target;
     this.options = Object.assign({}, this.options, proxyMapResult.extraOptions);
+
+    const targetUri = parseUri(target);
+    if (targetUri === null) {
+      throw new Error(`Could not parse target name "${target}"`);
+    }
+    this.target = targetUri;
     /* The global boolean parameter to getSubchannelPool has the inverse meaning to what
      * the grpc.use_local_subchannel_pool channel option means. */
     this.subchannelPool = getSubchannelPool(
@@ -422,7 +434,7 @@ export class ChannelImplementation implements Channel {
   }
 
   getTarget() {
-    return this.target;
+    return uriToString(this.target);
   }
 
   getConnectivityState(tryToConnect: boolean) {

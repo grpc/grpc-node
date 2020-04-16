@@ -29,6 +29,8 @@ import { Metadata } from './metadata';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { SubchannelAddress, TcpSubchannelAddress } from './subchannel';
+import { GrpcUri, uriToString, splitHostPort } from './uri-parser';
+import { isIPv6, isIPv4 } from 'net';
 
 const TRACER_NAME = 'dns_resolver';
 
@@ -36,66 +38,13 @@ function trace(text: string): void {
   logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
 }
 
-/* These regular expressions match IP addresses with optional ports in different
- * formats. In each case, capture group 1 contains the address, and capture
- * group 2 contains the port number, if present */
-/**
- * Matches 4 groups of up to 3 digits each, separated by periods, optionally
- * followed by a colon and a number.
- */
-const IPV4_REGEX = /^(\d{1,3}(?:\.\d{1,3}){3})(?::(\d+))?$/;
-/**
- * Matches any number of groups of up to 4 hex digits (case insensitive)
- * separated by 1 or more colons. This variant does not match a port number.
- */
-const IPV6_REGEX = /^([0-9a-f]{0,4}(?::{1,2}[0-9a-f]{0,4})+)$/i;
-/**
- * Matches the same as the IPv6_REGEX, surrounded by square brackets, and
- * optionally followed by a colon and a number.
- */
-const IPV6_BRACKET_REGEX = /^\[([0-9a-f]{0,4}(?::{1,2}[0-9a-f]{0,4})+)\](?::(\d+))?$/i;
-
-/**
- * Matches `[dns:][//authority/]host[:port]`, where `authority` and `host` are
- * both arbitrary sequences of dot-separated strings of alphanumeric characters
- * and `port` is a sequence of digits. Group 1 contains the hostname and group
- * 2 contains the port number if provided.
- */
-const DNS_REGEX = /^(?:dns:)?(?:\/\/(?:[a-zA-Z0-9-]+\.?)+\/)?((?:[a-zA-Z0-9-]+\.?)+)(?::(\d+))?$/;
-
 /**
  * The default TCP port to connect to if not explicitly specified in the target.
  */
-const DEFAULT_PORT = '443';
+const DEFAULT_PORT = 443;
 
 const resolveTxtPromise = util.promisify(dns.resolveTxt);
 const dnsLookupPromise = util.promisify(dns.lookup);
-
-/**
- * Attempt to parse a target string as an IP address
- * @param target
- * @return An "IP:port" string in an array if parsing was successful, `null` otherwise
- */
-function parseIP(target: string): SubchannelAddress[] | null {
-  /* These three regular expressions are all mutually exclusive, so we just
-   * want the first one that matches the target string, if any do. */
-  const ipv4Match = IPV4_REGEX.exec(target);
-  const match =
-    ipv4Match || IPV6_REGEX.exec(target) || IPV6_BRACKET_REGEX.exec(target);
-  if (match === null) {
-    return null;
-  }
-
-  // ipv6 addresses should be bracketed
-  const addr = match[1];
-  let port: string;
-  if (match[2]) {
-    port = match[2];
-  } else {
-    port = DEFAULT_PORT;
-  }
-  return [{ host: addr, port: +port }];
-}
 
 /**
  * Merge any number of arrays into a single alternating array
@@ -127,7 +76,7 @@ function mergeArrays<T>(...arrays: T[][]): T[] {
 class DnsResolver implements Resolver {
   private readonly ipResult: SubchannelAddress[] | null;
   private readonly dnsHostname: string | null;
-  private readonly port: string | null;
+  private readonly port: number | null;
   private pendingLookupPromise: Promise<dns.LookupAddress[]> | null = null;
   private pendingTxtPromise: Promise<string[][]> | null = null;
   private latestLookupResult: TcpSubchannelAddress[] | null = null;
@@ -135,19 +84,27 @@ class DnsResolver implements Resolver {
   private latestServiceConfigError: StatusObject | null = null;
   private percentage: number;
   private defaultResolutionError: StatusObject;
-  constructor(private target: string, private listener: ResolverListener) {
-    trace('Resolver constructed for target ' + target);
-    this.ipResult = parseIP(target);
-    const dnsMatch = DNS_REGEX.exec(target);
-    if (dnsMatch === null) {
+  constructor(private target: GrpcUri, private listener: ResolverListener) {
+    trace('Resolver constructed for target ' + uriToString(target));
+    const hostPort = splitHostPort(target.path);
+    if (hostPort === null) {
+      this.ipResult = null;
       this.dnsHostname = null;
       this.port = null;
     } else {
-      this.dnsHostname = dnsMatch[1];
-      if (dnsMatch[2]) {
-        this.port = dnsMatch[2];
+      if (isIPv4(hostPort.host) || isIPv6(hostPort.host)) {
+        this.ipResult = [
+          {
+            host: hostPort.host,
+            port: hostPort.port ?? DEFAULT_PORT,
+          },
+        ];
+        this.dnsHostname = null;
+        this.port = null;
       } else {
-        this.port = DEFAULT_PORT;
+        this.ipResult = null;
+        this.dnsHostname = hostPort.host;
+        this.port = hostPort.port ?? DEFAULT_PORT;
       }
     }
     this.percentage = Math.random() * 100;
@@ -308,19 +265,13 @@ class DnsResolver implements Resolver {
    * the IP address. For DNS targets, it is the hostname.
    * @param target
    */
-  static getDefaultAuthority(target: string): string {
-    const ipMatch =
-      IPV4_REGEX.exec(target) ||
-      IPV6_REGEX.exec(target) ||
-      IPV6_BRACKET_REGEX.exec(target);
-    if (ipMatch) {
-      return ipMatch[1];
+  static getDefaultAuthority(target: GrpcUri): string {
+    const hostPort = splitHostPort(target.path);
+    if (hostPort !== null) {
+      return hostPort.host;
+    } else {
+      throw new Error(`Failed to parse target ${target}`);
     }
-    const dnsMatch = DNS_REGEX.exec(target);
-    if (dnsMatch) {
-      return dnsMatch[1];
-    }
-    throw new Error(`Failed to parse target ${target}`);
   }
 }
 
@@ -329,27 +280,11 @@ class DnsResolver implements Resolver {
  * "dns:" prefix and as the default resolver.
  */
 export function setup(): void {
-  registerResolver('dns:', DnsResolver);
+  registerResolver('dns', DnsResolver);
   registerDefaultResolver(DnsResolver);
 }
 
 export interface DnsUrl {
   host: string;
   port?: string;
-}
-
-export function parseTarget(target: string): DnsUrl | null {
-  const match =
-    IPV4_REGEX.exec(target) ??
-    IPV6_REGEX.exec(target) ??
-    IPV6_BRACKET_REGEX.exec(target) ??
-    DNS_REGEX.exec(target);
-  if (match) {
-    return {
-      host: match[1],
-      port: match[2] ?? undefined,
-    };
-  } else {
-    return null;
-  }
 }

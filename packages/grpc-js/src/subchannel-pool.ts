@@ -22,6 +22,7 @@ import {
   subchannelAddressEqual,
 } from './subchannel';
 import { ChannelCredentials } from './channel-credentials';
+import { GrpcUri, uriToString } from './uri-parser';
 
 // 10 seconds in milliseconds. This value is arbitrary.
 /**
@@ -114,13 +115,13 @@ export class SubchannelPool {
    * @param channelCredentials
    */
   getOrCreateSubchannel(
-    channelTarget: string,
+    channelTargetUri: GrpcUri,
     subchannelTarget: SubchannelAddress,
     channelArguments: ChannelOptions,
     channelCredentials: ChannelCredentials
   ): Subchannel {
     this.ensureCleanupTask();
-
+    const channelTarget = uriToString(channelTargetUri);
     if (channelTarget in this.pool) {
       const subchannelObjArray = this.pool[channelTarget];
       for (const subchannelObj of subchannelObjArray) {
@@ -141,7 +142,7 @@ export class SubchannelPool {
     }
     // If we get here, no matching subchannel was found
     const subchannel = new Subchannel(
-      channelTarget,
+      channelTargetUri,
       subchannelTarget,
       channelArguments,
       channelCredentials
