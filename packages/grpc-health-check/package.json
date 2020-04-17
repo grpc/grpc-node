@@ -1,6 +1,6 @@
 {
   "name": "grpc-health-check",
-  "version": "1.7.1",
+  "version": "1.8.0",
   "author": "Google Inc.",
   "description": "Health check client and service for use with gRPC-node",
   "repository": {
