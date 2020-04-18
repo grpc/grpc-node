@@ -21,6 +21,7 @@ import { LogVerbosity } from './constants';
 import { parseTarget } from './resolver-dns';
 import { Socket } from 'net';
 import * as http from 'http';
+import * as http2 from 'http2';
 import * as tls from 'tls'
 import * as logging from './logging';
 import {
@@ -158,7 +159,8 @@ export interface ProxyConnectionResult {
 
 export function getProxiedConnection(
   address: SubchannelAddress,
-  channelOptions: ChannelOptions
+  channelOptions: ChannelOptions,
+  connectionOptions: http2.SecureClientSessionOptions
 ): Promise<ProxyConnectionResult> {
   if (!('grpc.http_connect_target' in channelOptions)) {
     return Promise.resolve<ProxyConnectionResult>({});
@@ -204,6 +206,7 @@ export function getProxiedConnection(
             proxyAddressString
         );
         var cts = tls.connect({
+            ...connectionOptions,
             host: options.host,
             socket: socket
         }, function () {

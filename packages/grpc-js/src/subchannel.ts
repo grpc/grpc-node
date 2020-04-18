@@ -411,7 +411,28 @@ export class Subchannel {
   }
 
   private startConnectingInternal() {
-    getProxiedConnection(this.subchannelAddress, this.options).then(
+    let connectionOptions: http2.SecureClientSessionOptions =
+      this.credentials._getConnectionOptions() || {};
+
+    if ('secureContext' in connectionOptions) {
+      // If provided, the value of grpc.ssl_target_name_override should be used
+      // to override the target hostname when checking server identity.
+      // This option is used for testing only.
+      if (this.options['grpc.ssl_target_name_override']) {
+        const sslTargetNameOverride = this.options[
+          'grpc.ssl_target_name_override'
+        ]!;
+        connectionOptions.checkServerIdentity = (
+          host: string,
+          cert: PeerCertificate
+        ): Error | undefined => {
+          return checkServerIdentity(sslTargetNameOverride, cert);
+        };
+        connectionOptions.servername = sslTargetNameOverride;
+      }
+    }
+
+    getProxiedConnection(this.subchannelAddress, this.options, connectionOptions).then(
       (result) => {
         this.createSession(result);
       },
