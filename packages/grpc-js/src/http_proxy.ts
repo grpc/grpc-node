@@ -207,7 +207,6 @@ export function getProxiedConnection(
         );
         var cts = tls.connect({
             ...connectionOptions,
-            host: options.host,
             socket: socket
         }, function () {
           resolve({
