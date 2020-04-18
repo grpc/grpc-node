@@ -28,6 +28,7 @@ import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { getProxiedConnection, ProxyConnectionResult } from './http_proxy';
 import * as net from 'net';
+import * as tls from 'tls';
 
 const clientVersion = require('../../package.json').version;
 
@@ -299,9 +300,6 @@ export class Subchannel {
         };
         connectionOptions.servername = sslTargetNameOverride;
       }
-      if (proxyConnectionResult.socket) {
-        connectionOptions.socket = proxyConnectionResult.socket;
-      }
     }
     /* In all but the most recent versions of Node, http2.connect does not use
      * the options when establishing plaintext connections, so we need to
@@ -309,13 +307,15 @@ export class Subchannel {
     connectionOptions.createConnection = (authority, option) => {
       if (proxyConnectionResult.socket) {
         return proxyConnectionResult.socket;
-      } else {
-        /* net.NetConnectOpts is declared in a way that is more restrictive
-         * than what net.connect will actually accept, so we use the type
-         * assertion to work around that. */
-        return net.connect(this.subchannelAddress);
+      } else if ('secureContext' in connectionOptions) {
+        return tls.connect(this.subchannelAddress);
       }
+      /* net.NetConnectOpts is declared in a way that is more restrictive
+       * than what net.connect will actually accept, so we use the type
+       * assertion to work around that. */
+      return net.connect(this.subchannelAddress);
     };
+
     connectionOptions = Object.assign(
       connectionOptions,
       this.subchannelAddress
@@ -411,7 +411,7 @@ export class Subchannel {
   }
 
   private startConnectingInternal() {
-    let connectionOptions: http2.SecureClientSessionOptions =
+    const connectionOptions: http2.SecureClientSessionOptions =
       this.credentials._getConnectionOptions() || {};
 
     if ('secureContext' in connectionOptions) {
@@ -432,7 +432,11 @@ export class Subchannel {
       }
     }
 
-    getProxiedConnection(this.subchannelAddress, this.options, connectionOptions).then(
+    getProxiedConnection(
+      this.subchannelAddress,
+      this.options,
+      connectionOptions
+    ).then(
       (result) => {
         this.createSession(result);
       },

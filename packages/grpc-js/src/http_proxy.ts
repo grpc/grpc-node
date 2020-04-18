@@ -18,11 +18,12 @@
 import { URL } from 'url';
 import { log } from './logging';
 import { LogVerbosity } from './constants';
+import { getDefaultAuthority } from './resolver';
 import { parseTarget } from './resolver-dns';
 import { Socket } from 'net';
 import * as http from 'http';
 import * as http2 from 'http2';
-import * as tls from 'tls'
+import * as tls from 'tls';
 import * as logging from './logging';
 import {
   SubchannelAddress,
@@ -205,15 +206,23 @@ export function getProxiedConnection(
             ' through proxy ' +
             proxyAddressString
         );
-        var cts = tls.connect({
-            ...connectionOptions,
-            socket: socket
-        }, function () {
+        // The proxy is connecting to a TLS server, so upgrade
+        // this socket connection to a TLS connection.
+        if ('secureContext' in connectionOptions) {
+          const cts = tls.connect({
+              ...connectionOptions,
+              host: getDefaultAuthority(realTarget),
+              socket: socket,
+            }, () => {
+              resolve({ socket: cts, realTarget });
+            }
+          );
+        } else {
           resolve({
-            socket: cts,
+            socket,
             realTarget,
           });
-        });
+        }
       } else {
         log(
           LogVerbosity.ERROR,
