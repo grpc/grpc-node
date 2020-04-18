@@ -300,21 +300,26 @@ export class Subchannel {
         };
         connectionOptions.servername = sslTargetNameOverride;
       }
-    }
-    /* In all but the most recent versions of Node, http2.connect does not use
-     * the options when establishing plaintext connections, so we need to
-     * establish that connection explicitly. */
-    connectionOptions.createConnection = (authority, option) => {
       if (proxyConnectionResult.socket) {
-        return proxyConnectionResult.socket;
-      } else if ('secureContext' in connectionOptions) {
-        return tls.connect(this.subchannelAddress);
+        connectionOptions.createConnection = (authority, option) => {
+          return proxyConnectionResult.socket!;
+        };
       }
-      /* net.NetConnectOpts is declared in a way that is more restrictive
-       * than what net.connect will actually accept, so we use the type
-       * assertion to work around that. */
-      return net.connect(this.subchannelAddress);
-    };
+    } else {
+      /* In all but the most recent versions of Node, http2.connect does not use
+       * the options when establishing plaintext connections, so we need to
+       * establish that connection explicitly. */
+      connectionOptions.createConnection = (authority, option) => {
+        if (proxyConnectionResult.socket) {
+          return proxyConnectionResult.socket;
+        }
+        /* net.NetConnectOpts is declared in a way that is more restrictive
+         * than what net.connect will actually accept, so we use the type
+         * assertion to work around that. */
+        return net.connect(this.subchannelAddress);
+      };
+    }
+
 
     connectionOptions = Object.assign(
       connectionOptions,
