@@ -302,21 +302,20 @@ export class Subchannel {
       if (proxyConnectionResult.socket) {
         connectionOptions.socket = proxyConnectionResult.socket;
       }
-    } else {
-      /* In all but the most recent versions of Node, http2.connect does not use
-       * the options when establishing plaintext connections, so we need to
-       * establish that connection explicitly. */
-      connectionOptions.createConnection = (authority, option) => {
-        if (proxyConnectionResult.socket) {
-          return proxyConnectionResult.socket;
-        } else {
-          /* net.NetConnectOpts is declared in a way that is more restrictive
-           * than what net.connect will actually accept, so we use the type
-           * assertion to work around that. */
-          return net.connect(this.subchannelAddress);
-        }
-      };
     }
+    /* In all but the most recent versions of Node, http2.connect does not use
+     * the options when establishing plaintext connections, so we need to
+     * establish that connection explicitly. */
+    connectionOptions.createConnection = (authority, option) => {
+      if (proxyConnectionResult.socket) {
+        return proxyConnectionResult.socket;
+      } else {
+        /* net.NetConnectOpts is declared in a way that is more restrictive
+         * than what net.connect will actually accept, so we use the type
+         * assertion to work around that. */
+        return net.connect(this.subchannelAddress);
+      }
+    };
     connectionOptions = Object.assign(
       connectionOptions,
       this.subchannelAddress
