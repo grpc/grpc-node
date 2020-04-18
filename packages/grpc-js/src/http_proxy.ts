@@ -21,6 +21,7 @@ import { LogVerbosity } from './constants';
 import { parseTarget } from './resolver-dns';
 import { Socket } from 'net';
 import * as http from 'http';
+import * as tls from 'tls'
 import * as logging from './logging';
 import {
   SubchannelAddress,
@@ -202,9 +203,14 @@ export function getProxiedConnection(
             ' through proxy ' +
             proxyAddressString
         );
-        resolve({
-          socket,
-          realTarget,
+        var cts = tls.connect({
+            host: options.host,
+            socket: socket
+        }, function () {
+          resolve({
+            socket: cts,
+            realTarget,
+          });
         });
       } else {
         log(
