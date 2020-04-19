@@ -312,14 +312,14 @@ export class Subchannel {
       connectionOptions.createConnection = (authority, option) => {
         if (proxyConnectionResult.socket) {
           return proxyConnectionResult.socket;
+        } else {
+          /* net.NetConnectOpts is declared in a way that is more restrictive
+           * than what net.connect will actually accept, so we use the type
+           * assertion to work around that. */
+          return net.connect(this.subchannelAddress);
         }
-        /* net.NetConnectOpts is declared in a way that is more restrictive
-         * than what net.connect will actually accept, so we use the type
-         * assertion to work around that. */
-        return net.connect(this.subchannelAddress);
       };
     }
-
 
     connectionOptions = Object.assign(
       connectionOptions,
@@ -416,6 +416,10 @@ export class Subchannel {
   }
 
   private startConnectingInternal() {
+    /* Pass connection options through to the proxy so that it's able to
+     * upgrade it's connection to support tls if needed.
+     * This is a workaround for https://github.com/nodejs/node/issues/32922
+     * See https://github.com/grpc/grpc-node/pull/1369 for more info. */
     const connectionOptions: http2.SecureClientSessionOptions =
       this.credentials._getConnectionOptions() || {};
 

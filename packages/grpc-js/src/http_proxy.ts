@@ -22,9 +22,9 @@ import { getDefaultAuthority } from './resolver';
 import { parseTarget } from './resolver-dns';
 import { Socket } from 'net';
 import * as http from 'http';
-import * as http2 from 'http2';
 import * as tls from 'tls';
 import * as logging from './logging';
+import { SecureClientSessionOptions } from 'http2'
 import {
   SubchannelAddress,
   isTcpSubchannelAddress,
@@ -161,7 +161,7 @@ export interface ProxyConnectionResult {
 export function getProxiedConnection(
   address: SubchannelAddress,
   channelOptions: ChannelOptions,
-  connectionOptions: http2.SecureClientSessionOptions
+  connectionOptions: SecureClientSessionOptions
 ): Promise<ProxyConnectionResult> {
   if (!('grpc.http_connect_target' in channelOptions)) {
     return Promise.resolve<ProxyConnectionResult>({});
@@ -206,9 +206,11 @@ export function getProxiedConnection(
             ' through proxy ' +
             proxyAddressString
         );
-        // The proxy is connecting to a TLS server, so upgrade
-        // this socket connection to a TLS connection.
         if ('secureContext' in connectionOptions) {
+          /* The proxy is connecting to a TLS server, so upgrade this socket
+           * connection to a TLS connection.
+           * This is a workaround for https://github.com/nodejs/node/issues/32922
+           * See https://github.com/grpc/grpc-node/pull/1369 for more info. */
           const cts = tls.connect({
               ...connectionOptions,
               host: getDefaultAuthority(realTarget),
