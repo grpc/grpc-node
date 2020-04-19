@@ -24,7 +24,6 @@ import { Socket } from 'net';
 import * as http from 'http';
 import * as tls from 'tls';
 import * as logging from './logging';
-import { SecureClientSessionOptions } from 'http2'
 import {
   SubchannelAddress,
   isTcpSubchannelAddress,
@@ -161,7 +160,7 @@ export interface ProxyConnectionResult {
 export function getProxiedConnection(
   address: SubchannelAddress,
   channelOptions: ChannelOptions,
-  connectionOptions: SecureClientSessionOptions
+  connectionOptions: tls.ConnectionOptions
 ): Promise<ProxyConnectionResult> {
   if (!('grpc.http_connect_target' in channelOptions)) {
     return Promise.resolve<ProxyConnectionResult>({});

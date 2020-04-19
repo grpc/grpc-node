@@ -28,7 +28,7 @@ import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { getProxiedConnection, ProxyConnectionResult } from './http_proxy';
 import * as net from 'net';
-import * as tls from 'tls';
+import { ConnectionOptions } from 'tls';
 
 const clientVersion = require('../../package.json').version;
 
@@ -420,7 +420,7 @@ export class Subchannel {
      * upgrade it's connection to support tls if needed.
      * This is a workaround for https://github.com/nodejs/node/issues/32922
      * See https://github.com/grpc/grpc-node/pull/1369 for more info. */
-    const connectionOptions: http2.SecureClientSessionOptions =
+    const connectionOptions: ConnectionOptions =
       this.credentials._getConnectionOptions() || {};
 
     if ('secureContext' in connectionOptions) {
