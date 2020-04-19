@@ -424,6 +424,7 @@ export class Subchannel {
       this.credentials._getConnectionOptions() || {};
 
     if ('secureContext' in connectionOptions) {
+      connectionOptions.ALPNProtocols = ['h2'];
       // If provided, the value of grpc.ssl_target_name_override should be used
       // to override the target hostname when checking server identity.
       // This option is used for testing only.
