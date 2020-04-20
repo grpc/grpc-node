@@ -213,7 +213,7 @@ export function getProxiedConnection(
            * See https://github.com/grpc/grpc-node/pull/1369 for more info. */
           const cts = tls.connect({
               ...connectionOptions,
-              host: getDefaultAuthority(realTarget),
+              host: getDefaultAuthority(parsedTarget),
               socket: socket,
             }, () => {
               resolve({ socket: cts, realTarget: parsedTarget });
