@@ -25,9 +25,6 @@
     "install": "node-pre-gyp install --fallback-to-build --library=static_library",
     "prepack": "git submodule update --init --recursive && npm install"
   },
-  "bundledDependencies": [
-    "node-pre-gyp"
-  ],
   "dependencies": {
     "@types/bytebuffer": "^5.0.40",
     "lodash.camelcase": "^4.3.0",
