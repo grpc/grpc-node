@@ -28,6 +28,7 @@ import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { getProxiedConnection, ProxyConnectionResult } from './http_proxy';
 import * as net from 'net';
+import { ConnectionOptions } from 'tls';
 
 const clientVersion = require('../../package.json').version;
 
@@ -300,7 +301,9 @@ export class Subchannel {
         connectionOptions.servername = sslTargetNameOverride;
       }
       if (proxyConnectionResult.socket) {
-        connectionOptions.socket = proxyConnectionResult.socket;
+        connectionOptions.createConnection = (authority, option) => {
+          return proxyConnectionResult.socket!;
+        };
       }
     } else {
       /* In all but the most recent versions of Node, http2.connect does not use
@@ -317,6 +320,7 @@ export class Subchannel {
         }
       };
     }
+
     connectionOptions = Object.assign(
       connectionOptions,
       this.subchannelAddress
@@ -412,7 +416,37 @@ export class Subchannel {
   }
 
   private startConnectingInternal() {
-    getProxiedConnection(this.subchannelAddress, this.options).then(
+    /* Pass connection options through to the proxy so that it's able to
+     * upgrade it's connection to support tls if needed.
+     * This is a workaround for https://github.com/nodejs/node/issues/32922
+     * See https://github.com/grpc/grpc-node/pull/1369 for more info. */
+    const connectionOptions: ConnectionOptions =
+      this.credentials._getConnectionOptions() || {};
+
+    if ('secureContext' in connectionOptions) {
+      connectionOptions.ALPNProtocols = ['h2'];
+      // If provided, the value of grpc.ssl_target_name_override should be used
+      // to override the target hostname when checking server identity.
+      // This option is used for testing only.
+      if (this.options['grpc.ssl_target_name_override']) {
+        const sslTargetNameOverride = this.options[
+          'grpc.ssl_target_name_override'
+        ]!;
+        connectionOptions.checkServerIdentity = (
+          host: string,
+          cert: PeerCertificate
+        ): Error | undefined => {
+          return checkServerIdentity(sslTargetNameOverride, cert);
+        };
+        connectionOptions.servername = sslTargetNameOverride;
+      }
+    }
+
+    getProxiedConnection(
+      this.subchannelAddress,
+      this.options,
+      connectionOptions
+    ).then(
       (result) => {
         this.createSession(result);
       },
