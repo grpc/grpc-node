@@ -17,8 +17,10 @@
 
 import { log } from './logging';
 import { LogVerbosity } from './constants';
+import { getDefaultAuthority } from './resolver';
 import { Socket } from 'net';
 import * as http from 'http';
+import * as tls from 'tls';
 import * as logging from './logging';
 import {
   SubchannelAddress,
@@ -155,7 +157,8 @@ export interface ProxyConnectionResult {
 
 export function getProxiedConnection(
   address: SubchannelAddress,
-  channelOptions: ChannelOptions
+  channelOptions: ChannelOptions,
+  connectionOptions: tls.ConnectionOptions
 ): Promise<ProxyConnectionResult> {
   if (!('grpc.http_connect_target' in channelOptions)) {
     return Promise.resolve<ProxyConnectionResult>({});
@@ -203,6 +206,25 @@ export function getProxiedConnection(
           socket,
           realTarget: parsedTarget,
         });
+        if ('secureContext' in connectionOptions) {
+          /* The proxy is connecting to a TLS server, so upgrade this socket
+           * connection to a TLS connection.
+           * This is a workaround for https://github.com/nodejs/node/issues/32922
+           * See https://github.com/grpc/grpc-node/pull/1369 for more info. */
+          const cts = tls.connect({
+              ...connectionOptions,
+              host: getDefaultAuthority(realTarget),
+              socket: socket,
+            }, () => {
+              resolve({ socket: cts, realTarget: parsedTarget });
+            }
+          );
+        } else {
+          resolve({
+            socket,
+            realTarget: parsedTarget,
+          });
+        }
       } else {
         log(
           LogVerbosity.ERROR,

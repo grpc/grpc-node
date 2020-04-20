@@ -49,6 +49,7 @@ HealthImplementation.prototype.check = function(call, callback){
 
 module.exports = {
   Client: health_service.HealthClient,
+  messages: health_messages,
   service: health_service.HealthService,
   Implementation: HealthImplementation
 };
