@@ -33,6 +33,7 @@ import {
   Client,
   CallInvocationTransformer,
   CallProperties,
+  UnaryCallback
 } from './client';
 import { LogVerbosity, Status } from './constants';
 import * as logging from './logging';
@@ -209,6 +210,7 @@ export {
   CallInvocationTransformer,
   ChannelImplementation as Channel,
   Channel as ChannelInterface,
+  UnaryCallback as requestCallback
 };
 
 /**
