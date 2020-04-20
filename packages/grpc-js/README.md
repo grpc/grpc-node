@@ -1,10 +1,8 @@
 # Pure JavaScript gRPC Client
 
-**Note: This is an beta-level release. Some APIs may not yet be present and there may be bugs. Please report any that you encounter**
-
 ## Installation
 
-Node 10 is recommended. The exact set of compatible Node versions can be found in the `engines` field of the `package.json` file.
+Node 12 is recommended. The exact set of compatible Node versions can be found in the `engines` field of the `package.json` file.
 
 ```sh
 npm install @grpc/grpc-js
@@ -12,13 +10,17 @@ npm install @grpc/grpc-js
 
 ## Features
 
- - Unary and streaming calls
- - Cancellation
- - Deadlines
- - TLS channel credentials
- - Call credentials (for auth)
- - Simple reconnection
- - Channel API
+ - Clients
+ - Automatic reconnection
+ - Servers
+ - Streaming
+ - Metadata
+ - Partial compression support: clients can decompress response messages
+ - Pick first and round robin load balancing policies
+ - Client Interceptors
+ - Connection Keepalives
+ - HTTP Connect support (proxies)
+
 
 This library does not directly handle `.proto` files. To use `.proto` files with this library we recommend using the `@grpc/proto-loader` package.
 
