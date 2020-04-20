@@ -15,17 +15,11 @@
  *
  */
 
-// Allow `any` data type for testing runtime type checking.
-// tslint:disable no-any
 import * as assert from 'assert';
-import * as path from 'path';
 
 import * as grpc from '../src';
 import { Server, ServerCredentials } from '../src';
-import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
-import { sendUnaryData, ServerUnaryCall } from '../src/server-call';
-
-import { loadProtoFile } from './common';
+import { Client } from '../src';
 import { ConnectivityState } from '../src/channel';
 
 const clientInsecureCreds = grpc.credentials.createInsecure();
@@ -33,13 +27,9 @@ const serverInsecureCreds = ServerCredentials.createInsecure();
 
 describe('Client', () => {
   let server: Server;
-  let client: ServiceClient;
+  let client: Client;
 
   before(done => {
-    const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
-    const echoService = loadProtoFile(protoFile)
-      .EchoService as ServiceClientConstructor;
-
     server = new Server();
 
     server.bindAsync(
@@ -47,7 +37,7 @@ describe('Client', () => {
       serverInsecureCreds,
       (err, port) => {
         assert.ifError(err);
-        client = new echoService(
+        client = new Client(
           `localhost:${port}`,
           clientInsecureCreds
         );
@@ -62,7 +52,7 @@ describe('Client', () => {
     server.tryShutdown(done);
   });
 
-  it('should call the waitForReady callback only once when channel connectivity state is READY', done => {
+  it('should call the waitForReady callback only once, when channel connectivity state is READY', done => {
     const deadline = Date.now() + 100;
     let calledTimes = 0;
     client.waitForReady(deadline, err => {
