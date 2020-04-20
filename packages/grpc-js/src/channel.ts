@@ -403,9 +403,9 @@ export class ChannelImplementation implements Channel {
     const watchersCopy = this.connectivityStateWatchers.slice();
     for (const watcherObject of watchersCopy) {
       if (newState !== watcherObject.currentState) {
-        watcherObject.callback();
         clearTimeout(watcherObject.timer);
         this.removeConnectivityStateWatcher(watcherObject);
+        watcherObject.callback();
       }
     }
   }
