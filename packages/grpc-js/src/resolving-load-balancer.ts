@@ -35,6 +35,7 @@ import { Metadata } from './metadata';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { SubchannelAddress } from './subchannel';
+import { GrpcUri } from './uri-parser';
 
 const TRACER_NAME = 'resolving_load_balancer';
 
@@ -126,7 +127,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
    *     implmentation
    */
   constructor(
-    private target: string,
+    private target: GrpcUri,
     private channelControlHelper: ChannelControlHelper,
     private defaultServiceConfig: ServiceConfig | null
   ) {

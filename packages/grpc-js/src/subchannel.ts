@@ -28,6 +28,7 @@ import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { getProxiedConnection, ProxyConnectionResult } from './http_proxy';
 import * as net from 'net';
+import { GrpcUri } from './uri-parser';
 import { ConnectionOptions } from 'tls';
 
 const clientVersion = require('../../package.json').version;
@@ -200,7 +201,7 @@ export class Subchannel {
    *     connection
    */
   constructor(
-    private channelTarget: string,
+    private channelTarget: GrpcUri,
     private subchannelAddress: SubchannelAddress,
     private options: ChannelOptions,
     private credentials: ChannelCredentials
