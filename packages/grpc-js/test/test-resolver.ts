@@ -400,9 +400,9 @@ describe('Name Resolver', () => {
     }
 
     it('Should return the correct authority if a different resolver has been registered', () => {
+      resolverManager.registerResolver('other', OtherResolver);
       const target = resolverManager.mapUriDefaultScheme(parseUri('other:name')!)!;
       console.log(target);
-      resolverManager.registerResolver('other', OtherResolver);
 
       const authority = resolverManager.getDefaultAuthority(target);
       assert.equal(authority, 'other');
