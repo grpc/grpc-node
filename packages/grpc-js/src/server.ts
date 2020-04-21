@@ -45,7 +45,7 @@ import {
 } from './server-call';
 import { ServerCredentials } from './server-credentials';
 import { ChannelOptions } from './channel-options';
-import { createResolver, ResolverListener } from './resolver';
+import { createResolver, ResolverListener, mapUriDefaultScheme } from './resolver';
 import { log } from './logging';
 import {
   SubchannelAddress,
@@ -226,9 +226,13 @@ export class Server {
       throw new TypeError('callback must be a function');
     }
 
-    const portUri = parseUri(port);
-    if (portUri === null) {
+    const initialPortUri = parseUri(port);
+    if (initialPortUri === null) {
       throw new Error(`Could not parse port "${port}"`);
+    }
+    const portUri = mapUriDefaultScheme(initialPortUri);
+    if (portUri === null) {
+      throw new Error(`Could not get a default scheme for port "${port}"`);
     }
 
     const serverOptions: http2.ServerOptions = {};
