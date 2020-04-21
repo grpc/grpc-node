@@ -173,6 +173,9 @@ export class ChannelImplementation implements Channel {
     /* This ensures that the target has a scheme that is registered with the
      * resolver */
     const defaultSchemeMapResult = mapUriDefaultScheme(originalTargetUri);
+    if (defaultSchemeMapResult === null) {
+      throw new Error(`Could not find a default scheme for target name "${target}"`);
+    }
     if (this.options['grpc.default_authority']) {
       this.defaultAuthority = this.options['grpc.default_authority'] as string;
     } else {

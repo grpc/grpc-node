@@ -131,15 +131,16 @@ export function getDefaultAuthority(target: GrpcUri): string {
   }
 }
 
-export function mapUriDefaultScheme(target: GrpcUri): GrpcUri {
+export function mapUriDefaultScheme(target: GrpcUri): GrpcUri | null {
   if (target.scheme === undefined || !(target.scheme in registeredResolvers)) {
     if (defaultScheme !== null) {
       return {
         scheme: defaultScheme,
+        authority: undefined,
         path: uriToString(target)
       };
     } else {
-      throw new Error(`Invalid target ${uriToString(target)}`);
+      return null;
     }
   }
   return target;
