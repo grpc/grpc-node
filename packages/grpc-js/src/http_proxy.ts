@@ -29,6 +29,7 @@ import {
 } from './subchannel';
 import { ChannelOptions } from './channel-options';
 import { GrpcUri, parseUri, splitHostPort, uriToString } from './uri-parser';
+import { URL } from 'url';
 
 const TRACER_NAME = 'proxy';
 
@@ -60,30 +61,31 @@ function getProxyInfo(): ProxyInfo {
   } else {
     return {};
   }
-  const proxyUrl = parseUri(proxyEnv);
-  if (proxyUrl === null) {
+  let proxyUrl: URL;
+  try {
+    proxyUrl = new URL(proxyEnv);
+  } catch (e) {
     log(LogVerbosity.ERROR, `cannot parse value of "${envVar}" env var`);
     return {};
   }
-  if (proxyUrl.scheme !== 'http') {
+  if (proxyUrl.protocol !== 'http:') {
     log(
       LogVerbosity.ERROR,
-      `"${proxyUrl.scheme}" scheme not supported in proxy URI`
+      `"${proxyUrl.protocol}" scheme not supported in proxy URI`
     );
     return {};
   }
-  const splitPath = proxyUrl.path.split('@');
-  let host: string;
   let userCred: string | null = null;
-  if (splitPath.length === 2) {
-    log(LogVerbosity.INFO, 'userinfo found in proxy URI');
-    userCred = splitPath[0];
-    host = splitPath[1];
-  } else {
-    host = proxyUrl.path;
+  if (proxyUrl.username) {
+    if (proxyUrl.password) {
+      log(LogVerbosity.INFO, 'userinfo found in proxy URI');
+      userCred = `${proxyUrl.username}:${proxyUrl.password}`;
+    } else {
+      userCred = proxyUrl.username;
+    }
   }
   const result: ProxyInfo = {
-    address: host,
+    address: proxyUrl.host,
   };
   if (userCred) {
     result.creds = userCred;
@@ -145,7 +147,10 @@ export function mapProxyName(
     extraOptions['grpc.http_connect_creds'] = proxyInfo.creds;
   }
   return {
-    target: { path: proxyInfo.address },
+    target: { 
+      scheme: 'dns',
+      path: proxyInfo.address
+    },
     extraOptions: extraOptions,
   };
 }

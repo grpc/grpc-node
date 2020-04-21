@@ -33,7 +33,7 @@ import { FilterStackFactory } from './filter-stack';
 import { CallCredentialsFilterFactory } from './call-credentials-filter';
 import { DeadlineFilterFactory } from './deadline-filter';
 import { CompressionFilterFactory } from './compression-filter';
-import { getDefaultAuthority } from './resolver';
+import { getDefaultAuthority, mapUriDefaultScheme } from './resolver';
 import { ServiceConfig, validateServiceConfig } from './service-config';
 import { trace, log } from './logging';
 import { SubchannelAddress } from './subchannel';
@@ -170,20 +170,18 @@ export class ChannelImplementation implements Channel {
     if (originalTargetUri === null) {
       throw new Error(`Could not parse target name "${target}"`);
     }
+    /* This ensures that the target has a scheme that is registered with the
+     * resolver */
+    const defaultSchemeMapResult = mapUriDefaultScheme(originalTargetUri);
     if (this.options['grpc.default_authority']) {
       this.defaultAuthority = this.options['grpc.default_authority'] as string;
     } else {
-      this.defaultAuthority = getDefaultAuthority(originalTargetUri);
+      this.defaultAuthority = getDefaultAuthority(defaultSchemeMapResult);
     }
-    const proxyMapResult = mapProxyName(originalTargetUri, options);
+    const proxyMapResult = mapProxyName(defaultSchemeMapResult, options);
     this.target = proxyMapResult.target;
     this.options = Object.assign({}, this.options, proxyMapResult.extraOptions);
 
-    const targetUri = parseUri(target);
-    if (targetUri === null) {
-      throw new Error(`Could not parse target name "${target}"`);
-    }
-    this.target = targetUri;
     /* The global boolean parameter to getSubchannelPool has the inverse meaning to what
      * the grpc.use_local_subchannel_pool channel option means. */
     this.subchannelPool = getSubchannelPool(

@@ -74,7 +74,7 @@ export interface ResolverConstructor {
 }
 
 const registeredResolvers: { [scheme: string]: ResolverConstructor } = {};
-let defaultResolver: ResolverConstructor | null = null;
+let defaultScheme: string | null = null;
 
 /**
  * Register a resolver class to handle target names prefixed with the `prefix`
@@ -95,8 +95,8 @@ export function registerResolver(
  * any registered prefix.
  * @param resolverClass
  */
-export function registerDefaultResolver(resolverClass: ResolverConstructor) {
-  defaultResolver = resolverClass;
+export function registerDefaultScheme(scheme: string) {
+  defaultScheme = scheme;
 }
 
 /**
@@ -112,18 +112,10 @@ export function createResolver(
   if (target.scheme !== undefined && target.scheme in registeredResolvers) {
     return new registeredResolvers[target.scheme](target, listener);
   } else {
-    if (defaultResolver !== null) {
-      /* If the scheme does not correspond to a registered scheme, we assume
-       * that the whole thing is the path, and the scheme was pulled out
-       * incorrectly. For example, it is valid to parse "localhost:80" as
-       * having a scheme of "localhost" and a path of 80, but that is not
-       * how the resolver should see it */
-      return new defaultResolver({ path: uriToString(target) }, listener);
-    }
+    throw new Error(
+      `No resolver could be created for target ${uriToString(target)}`
+    );
   }
-  throw new Error(
-    `No resolver could be created for target ${uriToString(target)}`
-  );
 }
 
 /**
@@ -135,12 +127,22 @@ export function getDefaultAuthority(target: GrpcUri): string {
   if (target.scheme !== undefined && target.scheme in registeredResolvers) {
     return registeredResolvers[target.scheme].getDefaultAuthority(target);
   } else {
-    if (defaultResolver !== null) {
-      // See comment in createResolver for why we handle the target like this
-      return defaultResolver.getDefaultAuthority({ path: uriToString(target) });
+    throw new Error(`Invalid target ${uriToString(target)}`);
+  }
+}
+
+export function mapUriDefaultScheme(target: GrpcUri): GrpcUri {
+  if (target.scheme === undefined || !(target.scheme in registeredResolvers)) {
+    if (defaultScheme !== null) {
+      return {
+        scheme: defaultScheme,
+        path: uriToString(target)
+      };
+    } else {
+      throw new Error(`Invalid target ${uriToString(target)}`);
     }
   }
-  throw new Error(`Invalid target ${uriToString(target)}`);
+  return target;
 }
 
 export function registerAll() {
