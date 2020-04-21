@@ -17,6 +17,7 @@
 
 import * as assert from 'assert';
 import * as uriParser from '../src/uri-parser';
+import * as resolver from '../src/resolver';
 
 describe('URI Parser', function(){
   describe('parseUri', function() {
@@ -35,6 +36,23 @@ describe('URI Parser', function(){
       it (target, function() {
         assert.deepStrictEqual(uriParser.parseUri(target), result);
       });
+    }
+  });
+
+  describe('parseUri + mapUriDefaultScheme', function() {
+    const expectationList: {target: string, result: uriParser.GrpcUri | null}[] = [
+      {target: 'localhost', result: {scheme: 'dns', authority: undefined, path: 'localhost'}},
+      {target: 'localhost:80', result: {scheme: 'dns', authority: undefined, path: 'localhost:80'}},
+      {target: 'dns:localhost', result: {scheme: 'dns', authority: undefined, path: 'localhost'}},
+      {target: 'dns:///localhost', result: {scheme: 'dns', authority: '', path: 'localhost'}},
+      {target: 'dns://authority/localhost', result: {scheme: 'dns', authority: 'authority', path: 'localhost'}},
+      {target: 'unix:socket', result: {scheme: 'unix', authority: undefined, path: 'socket'}},
+      {target: 'bad:path', result: {scheme: 'dns', authority: undefined, path: 'bad:path'}}
+    ];
+    for (const {target, result} of expectationList) {
+      it(target, function() {
+        assert.deepStrictEqual(resolver.mapUriDefaultScheme(uriParser.parseUri(target) ?? {path: 'null'}), result);
+      })
     }
   });
   

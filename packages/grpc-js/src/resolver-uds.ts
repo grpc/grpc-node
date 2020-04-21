@@ -18,7 +18,6 @@ import {
   Resolver,
   ResolverListener,
   registerResolver,
-  registerDefaultResolver,
 } from './resolver';
 import { SubchannelAddress } from './subchannel';
 import { GrpcUri } from './uri-parser';

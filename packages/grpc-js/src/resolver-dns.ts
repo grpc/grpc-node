@@ -18,7 +18,7 @@ import {
   Resolver,
   ResolverListener,
   registerResolver,
-  registerDefaultResolver,
+  registerDefaultScheme,
 } from './resolver';
 import * as dns from 'dns';
 import * as util from 'util';
@@ -281,7 +281,7 @@ class DnsResolver implements Resolver {
  */
 export function setup(): void {
   registerResolver('dns', DnsResolver);
-  registerDefaultResolver(DnsResolver);
+  registerDefaultScheme('dns');
 }
 
 export interface DnsUrl {
