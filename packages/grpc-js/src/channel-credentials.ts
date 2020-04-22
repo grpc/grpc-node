@@ -211,7 +211,8 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
   }
 
   _getConnectionOptions(): ConnectionOptions | null {
-    return this.connectionOptions;
+    // Copy to prevent callers from mutating this.connectionOptions
+    return { ...this.connectionOptions };
   }
   _isSecure(): boolean {
     return true;
