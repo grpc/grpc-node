@@ -147,7 +147,7 @@ export function mapProxyName(
     extraOptions['grpc.http_connect_creds'] = proxyInfo.creds;
   }
   return {
-    target: { 
+    target: {
       scheme: 'dns',
       path: proxyInfo.address
     },
@@ -207,10 +207,6 @@ export function getProxiedConnection(
             ' through proxy ' +
             proxyAddressString
         );
-        resolve({
-          socket,
-          realTarget: parsedTarget,
-        });
         if ('secureContext' in connectionOptions) {
           /* The proxy is connecting to a TLS server, so upgrade this socket
            * connection to a TLS connection.
