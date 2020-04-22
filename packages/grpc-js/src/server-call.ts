@@ -172,14 +172,14 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
     this.call.sendMetadata(responseMetadata);
   }
 
-  async _write(
+  _write(
     chunk: ResponseType,
     encoding: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     callback: (...args: any[]) => void
   ) {
     try {
-      const response = await this.call.serializeMessage(chunk);
+      const response = this.call.serializeMessage(chunk);
 
       if (!this.call.write(response)) {
         this.call.once('drain', callback);
@@ -454,7 +454,7 @@ export class Http2ServerCallStream<
             resolve();
           }
 
-          resolve(await this.deserializeMessage(requestBytes));
+          resolve(this.deserializeMessage(requestBytes));
         } catch (err) {
           err.code = Status.INTERNAL;
           this.sendError(err);
@@ -476,7 +476,7 @@ export class Http2ServerCallStream<
     return output;
   }
 
-  async deserializeMessage(bytes: Buffer) {
+  deserializeMessage(bytes: Buffer) {
     // TODO(cjihrig): Call compression aware deserializeMessage().
     const receivedMessage = bytes.slice(5);
 
@@ -505,7 +505,7 @@ export class Http2ServerCallStream<
     }
 
     try {
-      const response = await this.serializeMessage(value!);
+      const response = this.serializeMessage(value!);
 
       this.write(response);
       this.sendStatus({ code: Status.OK, details: 'OK', metadata });
