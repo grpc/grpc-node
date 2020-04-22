@@ -322,10 +322,11 @@ export class Subchannel {
       };
     }
 
-    connectionOptions = Object.assign(
-      connectionOptions,
-      this.subchannelAddress
-    );
+    connectionOptions = {
+      ...connectionOptions,
+      ...this.subchannelAddress,
+    };
+
     /* http2.connect uses the options here:
      * https://github.com/nodejs/node/blob/70c32a6d190e2b5d7b9ff9d5b6a459d14e8b7d59/lib/internal/http2/core.js#L3028-L3036
      * The spread operator overides earlier values with later ones, so any port

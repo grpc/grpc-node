@@ -147,9 +147,9 @@ export function mapProxyName(
     extraOptions['grpc.http_connect_creds'] = proxyInfo.creds;
   }
   return {
-    target: { 
+    target: {
       scheme: 'dns',
-      path: proxyInfo.address
+      path: proxyInfo.address,
     },
     extraOptions: extraOptions,
   };
@@ -207,23 +207,33 @@ export function getProxiedConnection(
             ' through proxy ' +
             proxyAddressString
         );
-        resolve({
-          socket,
-          realTarget: parsedTarget,
-        });
         if ('secureContext' in connectionOptions) {
           /* The proxy is connecting to a TLS server, so upgrade this socket
            * connection to a TLS connection.
            * This is a workaround for https://github.com/nodejs/node/issues/32922
            * See https://github.com/grpc/grpc-node/pull/1369 for more info. */
-          const cts = tls.connect({
-              ...connectionOptions,
-              host: getDefaultAuthority(parsedTarget),
+          const remoteHost = getDefaultAuthority(parsedTarget);
+
+          const cts = tls.connect(
+            {
+              host: remoteHost,
+              servername: remoteHost,
               socket: socket,
-            }, () => {
+              ...connectionOptions,
+            },
+            () => {
+              trace(
+                'Successfully established a TLS connection to ' +
+                  options.path +
+                  ' through proxy ' +
+                  proxyAddressString
+              );
               resolve({ socket: cts, realTarget: parsedTarget });
             }
           );
+          cts.on('error', () => {
+            reject();
+          });
         } else {
           resolve({
             socket,
