@@ -347,11 +347,20 @@ describe('Other conditions', () => {
             metadata: trailerMetadata,
           });
         } else {
-          for (let i = 0; i < 5; i++) {
+          for (let i = 1; i <= 5; i++) {
             stream.write({ count: i });
+            if (req.errorAfter && req.errorAfter === i) {
+              stream.emit('error', {
+                code: grpc.status.UNKNOWN,
+                details: req.message || 'Requested error',
+                metadata: trailerMetadata,
+              });
+              break;
+            }
           }
-
-          stream.end(trailerMetadata);
+          if (!req.errorAfter) {
+            stream.end(trailerMetadata);
+          }
         }
       },
 
@@ -710,6 +719,24 @@ describe('Other conditions', () => {
           done();
         }
       );
+    });
+  });
+
+  describe('should handle server stream errors correctly', () => {
+    it('should emit data for all messages before error', (done) => {
+      const expectedDataCount = 2;
+      const call = client.serverStream({ errorAfter: expectedDataCount });
+
+      let actualDataCount = 0;
+      call.on('data', () => {
+        ++actualDataCount;
+      });
+      call.on('error', (error: ServiceError) => {
+        assert.strictEqual(error.code, grpc.status.UNKNOWN);
+        assert.strictEqual(error.details, 'Requested error');
+        assert.strictEqual(actualDataCount, expectedDataCount);
+        done();
+      });
     });
   });
 });
