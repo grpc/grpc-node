@@ -45,7 +45,7 @@ import {
   Serialize,
   ServiceDefinition,
 } from './make-client';
-import { Metadata } from './metadata';
+import { Metadata, MetadataValue } from './metadata';
 import {
   Server,
   UntypedHandleCall,
@@ -188,7 +188,7 @@ export const credentials = mixin(
 
 /**** Metadata ****/
 
-export { Metadata };
+export { Metadata, MetadataValue };
 
 /**** Constants ****/
 
