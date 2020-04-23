@@ -406,7 +406,7 @@ export class ChannelImplementation implements Channel {
     trace(
       LogVerbosity.DEBUG,
       'connectivity_state',
-      this.target +
+      uriToString(this.target) +
         ' ' +
         ConnectivityState[this.connectivityState] +
         ' -> ' +
@@ -496,7 +496,7 @@ export class ChannelImplementation implements Channel {
     trace(
       LogVerbosity.DEBUG,
       'channel',
-      this.target +
+      uriToString(this.target) +
         ' createCall [' +
         callNumber +
         '] method="' +

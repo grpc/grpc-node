@@ -136,7 +136,7 @@ export function mapProxyName(
   const serverHost = hostPort.host;
   for (const host of getNoProxyHostList()) {
     if (host === serverHost) {
-      trace('Not using proxy for target in no_proxy list: ' + target);
+      trace('Not using proxy for target in no_proxy list: ' + uriToString(target));
       return noProxyResult;
     }
   }
