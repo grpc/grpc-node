@@ -249,7 +249,6 @@ export class Http2CallStream implements Call {
    * @param status The status of the call.
    */
   private endCall(status: StatusObject): void {
-    this.destroyHttp2Stream();
     /* If the status is OK and a new status comes in (e.g. from a
      * deserialization failure), that new status takes priority */
     if (this.finalStatus === null || this.finalStatus.code === Status.OK) {
@@ -263,6 +262,7 @@ export class Http2CallStream implements Call {
       this.finalStatus = status;
       this.maybeOutputStatus();
     }
+    this.destroyHttp2Stream();
   }
 
   private maybeOutputStatus() {
@@ -467,7 +467,6 @@ export class Http2CallStream implements Call {
             const finalMetadata = this.filterStack.receiveMetadata(metadata);
             this.listener!.onReceiveMetadata(finalMetadata);
           } catch (error) {
-            this.destroyHttp2Stream();
             this.endCall({
               code: Status.UNKNOWN,
               details: error.message,
@@ -588,7 +587,6 @@ export class Http2CallStream implements Call {
     this.trace(
       'cancelWithStatus code: ' + status + ' details: "' + details + '"'
     );
-    this.destroyHttp2Stream();
     this.endCall({ code: status, details, metadata: new Metadata() });
   }
 
