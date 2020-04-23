@@ -111,7 +111,7 @@ class DnsResolver implements Resolver {
 
     this.defaultResolutionError = {
       code: Status.UNAVAILABLE,
-      details: `Name resolution failed for target ${this.target}`,
+      details: `Name resolution failed for target ${uriToString(this.target)}`,
       metadata: new Metadata(),
     };
   }
@@ -122,7 +122,7 @@ class DnsResolver implements Resolver {
    */
   private startResolution() {
     if (this.ipResult !== null) {
-      trace('Returning IP address for target ' + this.target);
+      trace('Returning IP address for target ' + uriToString(this.target));
       setImmediate(() => {
         this.listener.onSuccessfulResolution(this.ipResult!, null, null);
       });
@@ -132,7 +132,7 @@ class DnsResolver implements Resolver {
       setImmediate(() => {
         this.listener.onError({
           code: Status.UNAVAILABLE,
-          details: `Failed to parse DNS address ${this.target}`,
+          details: `Failed to parse DNS address ${uriToString(this.target)}`,
           metadata: new Metadata(),
         });
       });
@@ -171,7 +171,7 @@ class DnsResolver implements Resolver {
             ']';
           trace(
             'Resolved addresses for target ' +
-              this.target +
+              uriToString(this.target) +
               ': ' +
               allAddressesString
           );
@@ -192,7 +192,7 @@ class DnsResolver implements Resolver {
         (err) => {
           trace(
             'Resolution error for target ' +
-              this.target +
+              uriToString(this.target) +
               ': ' +
               (err as Error).message
           );
@@ -254,7 +254,7 @@ class DnsResolver implements Resolver {
   }
 
   updateResolution() {
-    trace('Resolution update requested for target ' + this.target);
+    trace('Resolution update requested for target ' + uriToString(this.target));
     if (this.pendingLookupPromise === null) {
       this.startResolution();
     }

@@ -35,7 +35,7 @@ import { Metadata } from './metadata';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { SubchannelAddress } from './subchannel';
-import { GrpcUri } from './uri-parser';
+import { GrpcUri, uriToString } from './uri-parser';
 
 const TRACER_NAME = 'resolving_load_balancer';
 
@@ -353,7 +353,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
 
   private updateState(connectivitystate: ConnectivityState, picker: Picker) {
     trace(
-      this.target +
+      uriToString(this.target) +
         ' ' +
         ConnectivityState[this.currentState] +
         ' -> ' +
