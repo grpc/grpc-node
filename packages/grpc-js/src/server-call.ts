@@ -63,6 +63,7 @@ export type ServerErrorResponse = ServerStatusResponse & Error;
 
 export type ServerSurfaceCall = {
   cancelled: boolean;
+  readonly metadata: Metadata
   getPeer(): string;
   sendMetadata(responseMetadata: Metadata): void;
 } & EventEmitter;
