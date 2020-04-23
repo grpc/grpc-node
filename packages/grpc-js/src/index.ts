@@ -57,6 +57,7 @@ import {
   handleBidiStreamingCall,
   handleServerStreamingCall,
   handleUnaryCall,
+  sendUnaryData,
   ServerUnaryCall,
   ServerReadableStream,
   ServerWritableStream,
@@ -228,6 +229,7 @@ export const waitForClientReady = (
 /* Interfaces */
 
 export {
+  sendUnaryData,
   ChannelCredentials,
   CallCredentials,
   Deadline,
