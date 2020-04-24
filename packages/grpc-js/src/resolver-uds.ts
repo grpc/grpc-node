@@ -38,7 +38,8 @@ class UdsResolver implements Resolver {
       this.listener.onSuccessfulResolution,
       this.addresses,
       null,
-      null
+      null,
+      {}
     );
   }
 

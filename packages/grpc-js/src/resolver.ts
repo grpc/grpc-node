@@ -39,7 +39,8 @@ export interface ResolverListener {
   onSuccessfulResolution(
     addressList: SubchannelAddress[],
     serviceConfig: ServiceConfig | null,
-    serviceConfigError: StatusObject | null
+    serviceConfigError: StatusObject | null,
+    attributes: {[key: string]: unknown}
   ): void;
   /**
    * Called whenever a name resolution attempt fails.
