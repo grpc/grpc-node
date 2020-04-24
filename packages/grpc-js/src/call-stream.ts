@@ -227,7 +227,7 @@ export class Http2CallStream implements Call {
       const filteredStatus = this.filterStack.receiveTrailers(
         this.finalStatus!
       );
-      this.listener!.onReceiveStatus(filteredStatus);
+      this.listener?.onReceiveStatus(filteredStatus);
       if (this.subchannel) {
         this.subchannel.callUnref();
         this.subchannel.removeDisconnectListener(this.disconnectListener);
@@ -289,7 +289,7 @@ export class Http2CallStream implements Call {
     );
     this.canPush = false;
     process.nextTick(() => {
-      this.listener!.onReceiveMessage(message);
+      this.listener?.onReceiveMessage(message);
       this.maybeOutputStatus();
     });
   }
@@ -465,7 +465,7 @@ export class Http2CallStream implements Call {
           }
           try {
             const finalMetadata = this.filterStack.receiveMetadata(metadata);
-            this.listener!.onReceiveMetadata(finalMetadata);
+            this.listener?.onReceiveMetadata(finalMetadata);
           } catch (error) {
             this.endCall({
               code: Status.UNKNOWN,
