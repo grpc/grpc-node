@@ -19,8 +19,8 @@ import * as http2 from 'http2';
 
 import { CallCredentials } from './call-credentials';
 import { Status } from './constants';
-import { Filter } from './filter';
-import { FilterStackFactory } from './filter-stack';
+import { Filter, FilterFactory } from './filter';
+import { FilterStackFactory, FilterStack } from './filter-stack';
 import { Metadata } from './metadata';
 import { StreamDecoder } from './stream-decoder';
 import { ChannelImplementation } from './channel';
@@ -407,8 +407,12 @@ export class Http2CallStream implements Call {
 
   attachHttp2Stream(
     stream: http2.ClientHttp2Stream,
-    subchannel: Subchannel
+    subchannel: Subchannel,
+    extraFilterFactory?: FilterFactory<Filter>
   ): void {
+    if (extraFilterFactory !== undefined) {
+      this.filterStack = new FilterStack([this.filterStack, extraFilterFactory.createFilter(this)]);
+    }
     if (this.finalStatus !== null) {
       stream.close(NGHTTP2_CANCEL);
     } else {

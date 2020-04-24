@@ -300,7 +300,8 @@ export class ChannelImplementation implements Channel {
                   try {
                     pickResult.subchannel!.startCallStream(
                       finalMetadata,
-                      callStream
+                      callStream,
+                      pickResult.extraFilterFactory ?? undefined
                     );
                   } catch (error) {
                     if (
