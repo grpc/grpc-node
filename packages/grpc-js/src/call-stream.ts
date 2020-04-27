@@ -411,7 +411,10 @@ export class Http2CallStream implements Call {
     extraFilterFactory?: FilterFactory<Filter>
   ): void {
     if (extraFilterFactory !== undefined) {
-      this.filterStack = new FilterStack([this.filterStack, extraFilterFactory.createFilter(this)]);
+      this.filterStack = new FilterStack([
+        this.filterStack,
+        extraFilterFactory.createFilter(this),
+      ]);
     }
     if (this.finalStatus !== null) {
       stream.close(NGHTTP2_CANCEL);

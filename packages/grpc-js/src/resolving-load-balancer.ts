@@ -137,7 +137,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
         addressList: SubchannelAddress[],
         serviceConfig: ServiceConfig | null,
         serviceConfigError: ServiceError | null,
-        attributes: {[key: string]: unknown}
+        attributes: { [key: string]: unknown }
       ) => {
         let workingServiceConfig: ServiceConfig | null = null;
         /* This first group of conditionals implements the algorithm described

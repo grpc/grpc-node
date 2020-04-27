@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  Resolver,
-  ResolverListener,
-  registerResolver,
-} from './resolver';
+import { Resolver, ResolverListener, registerResolver } from './resolver';
 import { SubchannelAddress } from './subchannel';
 import { GrpcUri } from './uri-parser';
 

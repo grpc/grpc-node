@@ -66,7 +66,7 @@ class PickFirstPicker implements Picker {
       subchannel: this.subchannel,
       status: null,
       extraFilterFactory: null,
-      onCallStarted: null
+      onCallStarted: null,
     };
   }
 }

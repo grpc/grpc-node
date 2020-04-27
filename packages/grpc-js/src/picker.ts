@@ -110,7 +110,7 @@ export class UnavailablePicker implements Picker {
       subchannel: null,
       status: this.status,
       extraFilterFactory: null,
-      onCallStarted: null
+      onCallStarted: null,
     };
   }
 }
@@ -139,7 +139,7 @@ export class QueuePicker {
       subchannel: null,
       status: null,
       extraFilterFactory: null,
-      onCallStarted: null
+      onCallStarted: null,
     };
   }
 }

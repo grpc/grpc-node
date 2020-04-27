@@ -620,7 +620,11 @@ export class Subchannel {
    * @param metadata
    * @param callStream
    */
-  startCallStream(metadata: Metadata, callStream: Http2CallStream, extraFilterFactory?: FilterFactory<Filter>) {
+  startCallStream(
+    metadata: Metadata,
+    callStream: Http2CallStream,
+    extraFilterFactory?: FilterFactory<Filter>
+  ) {
     const headers = metadata.toHttp2Headers();
     headers[HTTP2_HEADER_AUTHORITY] = callStream.getHost();
     headers[HTTP2_HEADER_USER_AGENT] = this.userAgent;
