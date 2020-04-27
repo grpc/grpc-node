@@ -100,7 +100,7 @@ export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
     super();
     this.cancelled = false;
     this.request = null;
-    this.call.setupSurfaceCall(this, call);
+    this.call.setupSurfaceCall(this);
   }
 
   getPeer(): string {
@@ -124,7 +124,7 @@ export class ServerReadableStreamImpl<RequestType, ResponseType>
   ) {
     super({ objectMode: true });
     this.cancelled = false;
-    this.call.setupSurfaceCall(this, call);
+    this.call.setupSurfaceCall(this);
     this.call.setupReadable(this);
   }
 
@@ -161,7 +161,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
     this.cancelled = false;
     this.request = null;
     this.trailingMetadata = new Metadata();
-    this.call.setupSurfaceCall(this, call);
+    this.call.setupSurfaceCall(this);
   }
 
   getPeer(): string {
@@ -226,7 +226,7 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
     super({ objectMode: true });
     this.cancelled = false;
     this.trailingMetadata = new Metadata();
-    this.call.setupSurfaceCall(this, call);
+    this.call.setupSurfaceCall(this);
     this.call.setupReadable(this);
   }
 
@@ -590,24 +590,19 @@ export class Http2ServerCallStream<
     this.stream.resume();
   }
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  setupSurfaceCall(
-    call: ServerSurfaceCall,
-    callStream: Http2ServerCallStream<any, any>
-  ) {
+  setupSurfaceCall(call: ServerSurfaceCall) {
     this.once('cancelled', (reason) => {
       call.cancelled = true;
       call.emit('cancelled', reason);
     });
 
-    this.on('error', (err) => {
+    call.on('error', (err) => {
       // Close the stream in a way gRPC understands
-      callStream.sendError(err);
+      this.sendError(err);
       // Kill the stream in a way the Node Streams library understands
-      callStream.emit('error', err);
+      this.emit('error', err);
     });
   }
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   setupReadable(
     readable:
