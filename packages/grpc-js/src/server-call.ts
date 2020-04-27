@@ -20,7 +20,11 @@ import * as http2 from 'http2';
 import { Duplex, Readable, Writable } from 'stream';
 
 import { StatusObject } from './call-stream';
-import { Status, DEFAULT_MAX_SEND_MESSAGE_LENGTH, DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH } from './constants';
+import {
+  Status,
+  DEFAULT_MAX_SEND_MESSAGE_LENGTH,
+  DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
+} from './constants';
 import { Deserialize, Serialize } from './make-client';
 import { Metadata } from './metadata';
 import { StreamDecoder } from './stream-decoder';
@@ -63,7 +67,7 @@ export type ServerErrorResponse = ServerStatusResponse & Error;
 
 export type ServerSurfaceCall = {
   cancelled: boolean;
-  readonly metadata: Metadata
+  readonly metadata: Metadata;
   getPeer(): string;
   sendMetadata(responseMetadata: Metadata): void;
 } & EventEmitter;
@@ -96,7 +100,7 @@ export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
     super();
     this.cancelled = false;
     this.request = null;
-    this.call.setupSurfaceCall(this);
+    this.call.setupSurfaceCall(this, call);
   }
 
   getPeer(): string {
@@ -120,7 +124,7 @@ export class ServerReadableStreamImpl<RequestType, ResponseType>
   ) {
     super({ objectMode: true });
     this.cancelled = false;
-    this.call.setupSurfaceCall(this);
+    this.call.setupSurfaceCall(this, call);
     this.call.setupReadable(this);
   }
 
@@ -157,12 +161,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
     this.cancelled = false;
     this.request = null;
     this.trailingMetadata = new Metadata();
-    this.call.setupSurfaceCall(this);
-
-    this.on('error', (err) => {
-      this.call.sendError(err);
-      this.end();
-    });
+    this.call.setupSurfaceCall(this, call);
   }
 
   getPeer(): string {
@@ -227,13 +226,8 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
     super({ objectMode: true });
     this.cancelled = false;
     this.trailingMetadata = new Metadata();
-    this.call.setupSurfaceCall(this);
+    this.call.setupSurfaceCall(this, call);
     this.call.setupReadable(this);
-
-    this.on('error', (err) => {
-      this.call.sendError(err);
-      this.end();
-    });
   }
 
   getPeer(): string {
@@ -447,10 +441,13 @@ export class Http2ServerCallStream<
       stream.once('end', async () => {
         try {
           const requestBytes = Buffer.concat(chunks, totalLength);
-          if (this.maxReceiveMessageSize !== -1 && requestBytes.length > this.maxReceiveMessageSize) {
+          if (
+            this.maxReceiveMessageSize !== -1 &&
+            requestBytes.length > this.maxReceiveMessageSize
+          ) {
             this.sendError({
               code: Status.RESOURCE_EXHAUSTED,
-              details: `Received message larger than max (${requestBytes.length} vs. ${this.maxReceiveMessageSize})`
+              details: `Received message larger than max (${requestBytes.length} vs. ${this.maxReceiveMessageSize})`,
             });
             resolve();
           }
@@ -574,10 +571,13 @@ export class Http2ServerCallStream<
       return;
     }
 
-    if (this.maxSendMessageSize !== -1 && chunk.length > this.maxSendMessageSize) {
+    if (
+      this.maxSendMessageSize !== -1 &&
+      chunk.length > this.maxSendMessageSize
+    ) {
       this.sendError({
-        code: Status.RESOURCE_EXHAUSTED, 
-        details: `Sent message larger than max (${chunk.length} vs. ${this.maxSendMessageSize})`
+        code: Status.RESOURCE_EXHAUSTED,
+        details: `Sent message larger than max (${chunk.length} vs. ${this.maxSendMessageSize})`,
       });
       return;
     }
@@ -590,12 +590,24 @@ export class Http2ServerCallStream<
     this.stream.resume();
   }
 
-  setupSurfaceCall(call: ServerSurfaceCall) {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  setupSurfaceCall(
+    call: ServerSurfaceCall,
+    callStream: Http2ServerCallStream<any, any>
+  ) {
     this.once('cancelled', (reason) => {
       call.cancelled = true;
       call.emit('cancelled', reason);
     });
+
+    this.on('error', (err) => {
+      // Close the stream in a way gRPC understands
+      callStream.sendError(err);
+      // Kill the stream in a way the Node Streams library understands
+      callStream.emit('error', err);
+    });
   }
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   setupReadable(
     readable:
@@ -608,10 +620,13 @@ export class Http2ServerCallStream<
       const messages = decoder.write(data);
 
       for (const message of messages) {
-        if (this.maxReceiveMessageSize !== -1 && message.length > this.maxReceiveMessageSize) {
+        if (
+          this.maxReceiveMessageSize !== -1 &&
+          message.length > this.maxReceiveMessageSize
+        ) {
           this.sendError({
             code: Status.RESOURCE_EXHAUSTED,
-            details: `Received message larger than max (${message.length} vs. ${this.maxReceiveMessageSize})`
+            details: `Received message larger than max (${message.length} vs. ${this.maxReceiveMessageSize})`,
           });
           return;
         }
