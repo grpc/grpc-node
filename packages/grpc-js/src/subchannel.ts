@@ -30,6 +30,7 @@ import { getProxiedConnection, ProxyConnectionResult } from './http_proxy';
 import * as net from 'net';
 import { GrpcUri } from './uri-parser';
 import { ConnectionOptions } from 'tls';
+import { FilterFactory, Filter } from './filter';
 
 const clientVersion = require('../../package.json').version;
 
@@ -619,7 +620,11 @@ export class Subchannel {
    * @param metadata
    * @param callStream
    */
-  startCallStream(metadata: Metadata, callStream: Http2CallStream) {
+  startCallStream(
+    metadata: Metadata,
+    callStream: Http2CallStream,
+    extraFilterFactory?: FilterFactory<Filter>
+  ) {
     const headers = metadata.toHttp2Headers();
     headers[HTTP2_HEADER_AUTHORITY] = callStream.getHost();
     headers[HTTP2_HEADER_USER_AGENT] = this.userAgent;
@@ -633,7 +638,7 @@ export class Subchannel {
       headersString += '\t\t' + header + ': ' + headers[header] + '\n';
     }
     trace('Starting stream with headers\n' + headersString);
-    callStream.attachHttp2Stream(http2Stream, this);
+    callStream.attachHttp2Stream(http2Stream, this, extraFilterFactory);
   }
 
   /**

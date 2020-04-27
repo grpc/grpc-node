@@ -136,7 +136,8 @@ export class ResolvingLoadBalancer implements LoadBalancer {
       onSuccessfulResolution: (
         addressList: SubchannelAddress[],
         serviceConfig: ServiceConfig | null,
-        serviceConfigError: ServiceError | null
+        serviceConfigError: ServiceError | null,
+        attributes: { [key: string]: unknown }
       ) => {
         let workingServiceConfig: ServiceConfig | null = null;
         /* This first group of conditionals implements the algorithm described
@@ -211,12 +212,14 @@ export class ResolvingLoadBalancer implements LoadBalancer {
           )!;
           this.innerLoadBalancer.updateAddressList(
             addressList,
-            loadBalancingConfig
+            loadBalancingConfig,
+            attributes
           );
         } else if (this.innerLoadBalancer.getTypeName() === loadBalancerName) {
           this.innerLoadBalancer.updateAddressList(
             addressList,
-            loadBalancingConfig
+            loadBalancingConfig,
+            attributes
           );
         } else {
           if (
@@ -234,7 +237,8 @@ export class ResolvingLoadBalancer implements LoadBalancer {
           }
           this.pendingReplacementLoadBalancer.updateAddressList(
             addressList,
-            loadBalancingConfig
+            loadBalancingConfig,
+            attributes
           );
         }
       },

@@ -20,6 +20,7 @@ import { StatusObject } from './call-stream';
 import { Metadata } from './metadata';
 import { Status } from './constants';
 import { LoadBalancer } from './load-balancer';
+import { FilterFactory, Filter } from './filter';
 
 export enum PickResultType {
   COMPLETE,
@@ -40,24 +41,37 @@ export interface PickResult {
    * `pickResultType` is TRANSIENT_FAILURE.
    */
   status: StatusObject | null;
+  /**
+   * Extra FilterFactory (can be multiple encapsulated in a FilterStackFactory)
+   * provided by the load balancer to be used with the call. For technical
+   * reasons filters from this factory will not see sendMetadata events.
+   */
+  extraFilterFactory: FilterFactory<Filter> | null;
+  onCallStarted: (() => void) | null;
 }
 
 export interface CompletePickResult extends PickResult {
   pickResultType: PickResultType.COMPLETE;
   subchannel: Subchannel | null;
   status: null;
+  extraFilterFactory: FilterFactory<Filter> | null;
+  onCallStarted: (() => void) | null;
 }
 
 export interface QueuePickResult extends PickResult {
   pickResultType: PickResultType.QUEUE;
   subchannel: null;
   status: null;
+  extraFilterFactory: null;
+  onCallStarted: null;
 }
 
 export interface TransientFailurePickResult extends PickResult {
   pickResultType: PickResultType.TRANSIENT_FAILURE;
   subchannel: null;
   status: StatusObject;
+  extraFilterFactory: null;
+  onCallStarted: null;
 }
 
 export interface PickArgs {
@@ -95,6 +109,8 @@ export class UnavailablePicker implements Picker {
       pickResultType: PickResultType.TRANSIENT_FAILURE,
       subchannel: null,
       status: this.status,
+      extraFilterFactory: null,
+      onCallStarted: null,
     };
   }
 }
@@ -122,6 +138,8 @@ export class QueuePicker {
       pickResultType: PickResultType.QUEUE,
       subchannel: null,
       status: null,
+      extraFilterFactory: null,
+      onCallStarted: null,
     };
   }
 }

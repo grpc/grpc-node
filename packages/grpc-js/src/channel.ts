@@ -174,7 +174,9 @@ export class ChannelImplementation implements Channel {
      * resolver */
     const defaultSchemeMapResult = mapUriDefaultScheme(originalTargetUri);
     if (defaultSchemeMapResult === null) {
-      throw new Error(`Could not find a default scheme for target name "${target}"`);
+      throw new Error(
+        `Could not find a default scheme for target name "${target}"`
+      );
     }
     if (this.options['grpc.default_authority']) {
       this.defaultAuthority = this.options['grpc.default_authority'] as string;
@@ -300,8 +302,12 @@ export class ChannelImplementation implements Channel {
                   try {
                     pickResult.subchannel!.startCallStream(
                       finalMetadata,
-                      callStream
+                      callStream,
+                      pickResult.extraFilterFactory ?? undefined
                     );
+                    /* If we reach this point, the call stream has started
+                     * successfully */
+                    pickResult.onCallStarted?.();
                   } catch (error) {
                     if (
                       (error as NodeJS.ErrnoException).code ===

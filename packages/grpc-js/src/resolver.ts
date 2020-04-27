@@ -39,7 +39,8 @@ export interface ResolverListener {
   onSuccessfulResolution(
     addressList: SubchannelAddress[],
     serviceConfig: ServiceConfig | null,
-    serviceConfigError: StatusObject | null
+    serviceConfigError: StatusObject | null,
+    attributes: { [key: string]: unknown }
   ): void;
   /**
    * Called whenever a name resolution attempt fails.
@@ -137,7 +138,7 @@ export function mapUriDefaultScheme(target: GrpcUri): GrpcUri | null {
       return {
         scheme: defaultScheme,
         authority: undefined,
-        path: uriToString(target)
+        path: uriToString(target),
       };
     } else {
       return null;

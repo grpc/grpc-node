@@ -67,7 +67,8 @@ export interface LoadBalancer {
    */
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig | null
+    lbConfig: LoadBalancingConfig | null,
+    attributes: { [key: string]: unknown }
   ): void;
   /**
    * If the load balancer is currently in the IDLE state, start connecting.
