@@ -47,6 +47,7 @@ export interface PickResult {
    * reasons filters from this factory will not see sendMetadata events.
    */
   extraFilterFactory: FilterFactory<Filter> | null;
+  onCallStarted: (() => void) | null;
 }
 
 export interface CompletePickResult extends PickResult {
@@ -54,6 +55,7 @@ export interface CompletePickResult extends PickResult {
   subchannel: Subchannel | null;
   status: null;
   extraFilterFactory: FilterFactory<Filter> | null;
+  onCallStarted: (() => void) | null;
 }
 
 export interface QueuePickResult extends PickResult {
@@ -61,6 +63,7 @@ export interface QueuePickResult extends PickResult {
   subchannel: null;
   status: null;
   extraFilterFactory: null;
+  onCallStarted: null;
 }
 
 export interface TransientFailurePickResult extends PickResult {
@@ -68,6 +71,7 @@ export interface TransientFailurePickResult extends PickResult {
   subchannel: null;
   status: StatusObject;
   extraFilterFactory: null;
+  onCallStarted: null;
 }
 
 export interface PickArgs {
@@ -105,7 +109,8 @@ export class UnavailablePicker implements Picker {
       pickResultType: PickResultType.TRANSIENT_FAILURE,
       subchannel: null,
       status: this.status,
-      extraFilterFactory: null
+      extraFilterFactory: null,
+      onCallStarted: null
     };
   }
 }
@@ -133,7 +138,8 @@ export class QueuePicker {
       pickResultType: PickResultType.QUEUE,
       subchannel: null,
       status: null,
-      extraFilterFactory: null
+      extraFilterFactory: null,
+      onCallStarted: null
     };
   }
 }

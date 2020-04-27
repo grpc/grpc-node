@@ -303,6 +303,9 @@ export class ChannelImplementation implements Channel {
                       callStream,
                       pickResult.extraFilterFactory ?? undefined
                     );
+                    /* If we reach this point, the call stream has started
+                     * successfully */
+                    pickResult.onCallStarted?.();
                   } catch (error) {
                     if (
                       (error as NodeJS.ErrnoException).code ===
