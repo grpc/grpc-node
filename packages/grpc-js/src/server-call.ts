@@ -518,6 +518,8 @@ export class Http2ServerCallStream<
       return;
     }
 
+    this.cancelled = true;
+
     clearTimeout(this.deadline);
 
     if (!this.wantTrailers) {
@@ -597,10 +599,7 @@ export class Http2ServerCallStream<
     });
 
     call.on('error', (err) => {
-      // Close the stream in a way gRPC understands
       this.sendError(err);
-      // Kill the stream in a way the Node Streams library understands
-      this.emit('error', err);
     });
   }
 
@@ -673,6 +672,9 @@ export class Http2ServerCallStream<
       | ServerDuplexStream<RequestType, ResponseType>,
     messageBytes: Buffer | null
   ) {
+    if (this.checkCancelled()) {
+      return;
+    }
     if (messageBytes === null) {
       if (this.canPush) {
         readable.push(null);
