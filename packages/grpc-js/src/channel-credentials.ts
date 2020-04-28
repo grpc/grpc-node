@@ -19,7 +19,7 @@ import { ConnectionOptions, createSecureContext, PeerCertificate } from 'tls';
 
 import { CallCredentials } from './call-credentials';
 import { CIPHER_SUITES, getDefaultRootsData } from './tls-helpers';
-import { GoogleAuth } from 'google-auth-library';
+import { GoogleAuth as GoogleAuthType } from 'google-auth-library';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function verifyIsBufferOrNull(obj: any, friendlyName: string): void {
@@ -281,6 +281,8 @@ class ComposedChannelCredentialsImpl extends ChannelCredentials {
 }
 
 export function createGoogleDefaultCredentials(): ChannelCredentials {
+  const GoogleAuth = require('google-auth-library')
+    .GoogleAuth as typeof GoogleAuthType;
   const sslCreds = ChannelCredentials.createSsl();
   const googleAuthCreds = CallCredentials.createFromGoogleCredential(
     new GoogleAuth()
