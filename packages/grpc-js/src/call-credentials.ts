@@ -26,6 +26,35 @@ export type CallMetadataGenerator = (
   cb: (err: Error | null, metadata?: Metadata) => void
 ) => void;
 
+// google-auth-library pre-v2.0.0 does not have getRequestHeaders
+// but has getRequestMetadata, which is deprecated in v2.0.0
+export interface OldOAuth2Client {
+  getRequestMetadata: (
+    url: string,
+    callback: (
+      err: Error | null,
+      headers?: {
+        [index: string]: string;
+      }
+    ) => void
+  ) => void;
+}
+
+export interface CurrentOAuth2Client {
+  getRequestHeaders: (url?: string) => Promise<{ [index: string]: string }>;
+}
+
+export type OAuth2Client = OldOAuth2Client | CurrentOAuth2Client;
+
+function isCurrentOauth2Client(
+  client: OAuth2Client
+): client is CurrentOAuth2Client {
+  return (
+    'getRequestHeaders' in client &&
+    typeof client.getRequestHeaders === 'function'
+  );
+}
+
 /**
  * A class that represents a generic method of adding authentication-related
  * metadata on a per-request basis.
@@ -63,6 +92,47 @@ export abstract class CallCredentials {
     metadataGenerator: CallMetadataGenerator
   ): CallCredentials {
     return new SingleCallCredentials(metadataGenerator);
+  }
+
+  /**
+   * Create a gRPC credential from a Google credential object.
+   * @param googleCredentials The authentication client to use.
+   * @return The resulting CallCredentials object.
+   */
+  static createFromGoogleCredential(
+    googleCredentials: OAuth2Client
+  ): CallCredentials {
+    return CallCredentials.createFromMetadataGenerator((options, callback) => {
+      let getHeaders: Promise<{ [index: string]: string }>;
+      if (isCurrentOauth2Client(googleCredentials)) {
+        getHeaders = googleCredentials.getRequestHeaders(options.service_url);
+      } else {
+        getHeaders = new Promise((resolve, reject) => {
+          googleCredentials.getRequestMetadata(
+            options.service_url,
+            (err, headers) => {
+              if (err) {
+                reject(err);
+                return;
+              }
+              resolve(headers);
+            }
+          );
+        });
+      }
+      getHeaders.then(
+        (headers) => {
+          const metadata = new Metadata();
+          for (const key of Object.keys(headers)) {
+            metadata.add(key, headers[key]);
+          }
+          callback(null, metadata);
+        },
+        (err) => {
+          callback(err);
+        }
+      );
+    });
   }
 
   static createEmpty(): CallCredentials {

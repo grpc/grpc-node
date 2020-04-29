@@ -55,6 +55,7 @@
     "posttest": "npm run check"
   },
   "dependencies": {
+    "google-auth-library": "^6.0.0",
     "semver": "^6.2.0"
   },
   "files": [
