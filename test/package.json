@@ -17,6 +17,12 @@
     "express": "^4.16.3",
     "google-auth-library": "^0.9.2",
     "lodash": "^4.17.4",
-    "poisson-process": "^1.0.0"
-  }
+    "poisson-process": "^1.0.0",
+    "snyk": "^1.316.1"
+  },
+  "scripts": {
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
+  },
+  "snyk": true
 }
