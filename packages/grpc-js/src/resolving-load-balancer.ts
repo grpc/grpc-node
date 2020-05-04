@@ -51,6 +51,8 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   private innerResolver: Resolver;
 
   private childLoadBalancer: ChildLoadBalancerHandler;
+  private latestChildState: ConnectivityState = ConnectivityState.IDLE;
+  private latestChildPicker: Picker = new QueuePicker(this);
   /**
    * This resolving load balancer's current connectivity state.
    */
@@ -106,6 +108,8 @@ export class ResolvingLoadBalancer implements LoadBalancer {
         }
       },
       updateState: (newState: ConnectivityState, picker: Picker) => {
+        this.latestChildState = newState;
+        this.latestChildPicker = picker;
         this.updateState(newState, picker);
       }
     });
@@ -177,6 +181,8 @@ export class ResolvingLoadBalancer implements LoadBalancer {
       if (this.continueResolving) {
         this.updateResolution();
         this.continueResolving = false;
+      } else {
+        this.updateState(this.latestChildState, this.latestChildPicker)
       }
     });
   }
@@ -205,7 +211,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   }
 
   private handleResolutionFailure(error: StatusObject) {
-    if (this.currentState === ConnectivityState.IDLE) {
+    if (this.latestChildState === ConnectivityState.IDLE) {
       this.updateState(
         ConnectivityState.TRANSIENT_FAILURE,
         new UnavailablePicker(error)
