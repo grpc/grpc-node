@@ -95,7 +95,9 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   ) {
     this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
     this.childLoadBalancer = new ChildLoadBalancerHandler({
-      createSubchannel: channelControlHelper.createSubchannel.bind(channelControlHelper),
+      createSubchannel: channelControlHelper.createSubchannel.bind(
+        channelControlHelper
+      ),
       requestReresolution: () => {
         /* If the backoffTimeout is running, we're still backing off from
          * making resolve requests, so we shouldn't make another one here.
@@ -111,7 +113,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
         this.latestChildState = newState;
         this.latestChildPicker = picker;
         this.updateState(newState, picker);
-      }
+      },
     });
     this.innerResolver = createResolver(target, {
       onSuccessfulResolution: (
@@ -152,11 +154,12 @@ export class ResolvingLoadBalancer implements LoadBalancer {
           workingServiceConfig = serviceConfig;
           this.previousServiceConfig = serviceConfig;
         }
-        const workingConfigList = workingServiceConfig?.loadBalancingConfig ?? [];
+        const workingConfigList =
+          workingServiceConfig?.loadBalancingConfig ?? [];
         if (workingConfigList.length === 0) {
           workingConfigList.push({
             name: 'pick_first',
-            pick_first: {}
+            pick_first: {},
           });
         }
         const loadBalancingConfig = getFirstUsableConfig(workingConfigList);
@@ -170,7 +173,11 @@ export class ResolvingLoadBalancer implements LoadBalancer {
           });
           return;
         }
-        this.childLoadBalancer.updateAddressList(addressList, loadBalancingConfig, attributes);
+        this.childLoadBalancer.updateAddressList(
+          addressList,
+          loadBalancingConfig,
+          attributes
+        );
       },
       onError: (error: StatusObject) => {
         this.handleResolutionFailure(error);
@@ -182,7 +189,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
         this.updateResolution();
         this.continueResolving = false;
       } else {
-        this.updateState(this.latestChildState, this.latestChildPicker)
+        this.updateState(this.latestChildState, this.latestChildPicker);
       }
     });
   }

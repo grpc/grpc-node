@@ -73,24 +73,37 @@ export interface PriorityLoadBalancingConfig {
   priority: PriorityLbConfig;
 }
 
-export type LoadBalancingConfig = PickFirstLoadBalancingConfig | RoundRobinLoadBalancingConfig | XdsLoadBalancingConfig | GrpcLbLoadBalancingConfig | PriorityLoadBalancingConfig;
+export type LoadBalancingConfig =
+  | PickFirstLoadBalancingConfig
+  | RoundRobinLoadBalancingConfig
+  | XdsLoadBalancingConfig
+  | GrpcLbLoadBalancingConfig
+  | PriorityLoadBalancingConfig;
 
-export function isRoundRobinLoadBalancingConfig(lbconfig: LoadBalancingConfig): lbconfig is RoundRobinLoadBalancingConfig {
+export function isRoundRobinLoadBalancingConfig(
+  lbconfig: LoadBalancingConfig
+): lbconfig is RoundRobinLoadBalancingConfig {
   return lbconfig.name === 'round_robin';
 }
 
-export function isXdsLoadBalancingConfig(lbconfig: LoadBalancingConfig): lbconfig is XdsLoadBalancingConfig {
+export function isXdsLoadBalancingConfig(
+  lbconfig: LoadBalancingConfig
+): lbconfig is XdsLoadBalancingConfig {
   return lbconfig.name === 'xds';
 }
 
-export function isGrpcLbLoadBalancingConfig(lbconfig: LoadBalancingConfig): lbconfig is GrpcLbLoadBalancingConfig {
+export function isGrpcLbLoadBalancingConfig(
+  lbconfig: LoadBalancingConfig
+): lbconfig is GrpcLbLoadBalancingConfig {
   return lbconfig.name === 'grpclb';
 }
 
-export function isPriorityLoadBalancingConfig(lbconfig: LoadBalancingConfig): lbconfig is PriorityLoadBalancingConfig {
+export function isPriorityLoadBalancingConfig(
+  lbconfig: LoadBalancingConfig
+): lbconfig is PriorityLoadBalancingConfig {
   return lbconfig.name === 'priority';
 }
- 
+
 /* In these functions we assume the input came from a JSON object. Therefore we
  * expect that the prototype is uninteresting and that `in` can be used
  * effectively */
@@ -146,7 +159,7 @@ export function validateConfig(obj: any): LoadBalancingConfig {
     if (obj['round_robin'] instanceof Object) {
       return {
         name: 'round_robin',
-        round_robin: {} 
+        round_robin: {},
       };
     }
   }
@@ -156,13 +169,13 @@ export function validateConfig(obj: any): LoadBalancingConfig {
     }
     return {
       name: 'xds',
-      xds: validateXdsConfig(obj.xds)
+      xds: validateXdsConfig(obj.xds),
     };
   }
   if ('grpclb' in obj) {
     return {
       name: 'grpclb',
-      grpclb: validateGrpcLbConfig(obj.grpclb)
+      grpclb: validateGrpcLbConfig(obj.grpclb),
     };
   }
   throw new Error('No recognized load balancing policy configured');

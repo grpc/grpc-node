@@ -20,10 +20,7 @@ import {
   ChannelControlHelper,
   createLoadBalancer,
 } from './load-balancer';
-import {
-  SubchannelAddress,
-  Subchannel,
-} from './subchannel';
+import { SubchannelAddress, Subchannel } from './subchannel';
 import { LoadBalancingConfig } from './load-balancing-config';
 import { ChannelOptions } from './channel-options';
 import { ConnectivityState } from './channel';
@@ -38,8 +35,14 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
   private ChildPolicyHelper = class {
     private child: LoadBalancer | null = null;
     constructor(private parent: ChildLoadBalancerHandler) {}
-    createSubchannel(subchannelAddress: SubchannelAddress, subchannelArgs: ChannelOptions): Subchannel {
-      return this.parent.channelControlHelper.createSubchannel(subchannelAddress, subchannelArgs);
+    createSubchannel(
+      subchannelAddress: SubchannelAddress,
+      subchannelArgs: ChannelOptions
+    ): Subchannel {
+      return this.parent.channelControlHelper.createSubchannel(
+        subchannelAddress,
+        subchannelArgs
+      );
     }
     updateState(connectivityState: ConnectivityState, picker: Picker): void {
       if (this.calledByPendingChild()) {
@@ -69,22 +72,29 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
     private calledByCurrentChild(): boolean {
       return this.child === this.parent.currentChild;
     }
-  }
+  };
 
   constructor(private readonly channelControlHelper: ChannelControlHelper) {}
 
   /**
    * Prerequisites: lbConfig !== null and lbConfig.name is registered
-   * @param addressList 
-   * @param lbConfig 
-   * @param attributes 
+   * @param addressList
+   * @param lbConfig
+   * @param attributes
    */
-  updateAddressList(addressList: SubchannelAddress[], lbConfig: LoadBalancingConfig | null, attributes: { [key: string]: unknown; }): void {
+  updateAddressList(
+    addressList: SubchannelAddress[],
+    lbConfig: LoadBalancingConfig | null,
+    attributes: { [key: string]: unknown }
+  ): void {
     if (lbConfig === null) {
       return;
     }
     let childToUpdate: LoadBalancer;
-    if (this.currentChild === null || this.currentChild.getTypeName() !== lbConfig.name) {
+    if (
+      this.currentChild === null ||
+      this.currentChild.getTypeName() !== lbConfig.name
+    ) {
       const newHelper = new this.ChildPolicyHelper(this);
       const newChild = createLoadBalancer(lbConfig.name, newHelper)!;
       newHelper.setChild(newChild);

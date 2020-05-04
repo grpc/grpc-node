@@ -123,7 +123,9 @@ export function isLoadBalancerNameRegistered(typeName: string): boolean {
   return typeName in registeredLoadBalancerTypes;
 }
 
-export function getFirstUsableConfig(configs: LoadBalancingConfig[]): LoadBalancingConfig | null {
+export function getFirstUsableConfig(
+  configs: LoadBalancingConfig[]
+): LoadBalancingConfig | null {
   for (const config of configs) {
     if (config.name in registeredLoadBalancerTypes) {
       return config;
