@@ -129,7 +129,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    * @param channelControlHelper `ChannelControlHelper` instance provided by
    *     this load balancer's owner.
    */
-  constructor(private channelControlHelper: ChannelControlHelper) {
+  constructor(private readonly channelControlHelper: ChannelControlHelper) {
     this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
     this.subchannelStateCounts = {
       [ConnectivityState.CONNECTING]: 0,
@@ -434,10 +434,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   getTypeName(): string {
     return TYPE_NAME;
-  }
-
-  replaceChannelControlHelper(channelControlHelper: ChannelControlHelper) {
-    this.channelControlHelper = channelControlHelper;
   }
 }
 
