@@ -189,7 +189,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
 
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig | null
+    lbConfig: LoadBalancingConfig
   ): void {
     this.resetSubchannelList();
     trace(

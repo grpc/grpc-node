@@ -383,7 +383,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig | null
+    lbConfig: LoadBalancingConfig
   ): void {
     // lbConfig has no useful information for pick first load balancing
     /* To avoid unnecessary churn, we only do something with this address list

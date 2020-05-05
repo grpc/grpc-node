@@ -84,12 +84,9 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
    */
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig | null,
+    lbConfig: LoadBalancingConfig,
     attributes: { [key: string]: unknown }
   ): void {
-    if (lbConfig === null) {
-      return;
-    }
     let childToUpdate: LoadBalancer;
     if (
       this.currentChild === null ||

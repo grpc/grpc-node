@@ -67,7 +67,7 @@ export interface LoadBalancer {
    */
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig | null,
+    lbConfig: LoadBalancingConfig,
     attributes: { [key: string]: unknown }
   ): void;
   /**
