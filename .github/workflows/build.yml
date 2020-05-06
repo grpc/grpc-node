@@ -1,0 +1,71 @@
+name: Binary build
+
+on:
+  push:
+    branches:
+      - 'grpc/1.24.x'
+  pull_request:
+    branches:
+      - 'grpc/1.24.x'
+
+jobs:
+  linux_nodejs:
+    name: Linux Node build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: tools/release/kokoro-nodejs.sh
+    - uses: actions/upload-artifact@v2
+      with:
+        name: linux-nodejs
+        path: artifacts/
+  linux_electron:
+    name: Linux Electron build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: tools/release/kokoro-electron.sh
+    - uses: actions/upload-artifact@v2
+      with:
+        name: linux-electron
+        path: artifacts/
+  macos_nodejs:
+    name: Macos Node build
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: tools/release/kokoro-nodejs.sh
+    - uses: actions/upload-artifact@v2
+      with:
+        name: macos-nodejs
+        path: artifacts/
+  macos_electron:
+    name: Macos Electron build
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: tools/release/kokoro-electron.sh
+    - uses: actions/upload-artifact@v2
+      with:
+        name: macos-electron
+        path: artifacts/
+  windows_nodejs:
+    name: Windows Node build
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: tools/release/kokoro-nodejs.bat
+    - uses: actions/upload-artifact@v2
+      with:
+        name: windows-nodejs
+        path: artifacts/
+  windows_electron:
+    name: Windows Electron build
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: tools/release/kokoro-electron.bat
+    - uses: actions/upload-artifact@v2
+      with:
+        name: windows-electron
+        path: artifacts/
