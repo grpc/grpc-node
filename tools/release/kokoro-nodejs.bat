@@ -21,9 +21,6 @@ call npm install -g node-gyp@3
 cd /d %~dp0
 cd ..\..
 
-git submodule update --init
-git submodule foreach --recursive git submodule update --init
-
 set ARTIFACTS_OUT=%cd%\artifacts
 cd packages\grpc-native-core
 call tools\run_tests\artifacts\build_artifact_node.bat || goto :error

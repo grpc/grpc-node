@@ -21,12 +21,8 @@ set -ex
 cd $(dirname $0)/../..
 base_dir=$(pwd)
 
-# Install gRPC and its submodules.
-git submodule update --init
-git submodule foreach --recursive git submodule update --init
-
 pip install mako
-pip install yaml
+pip install pyyaml
 ./packages/grpc-native-core/tools/buildgen/generate_projects.sh
 
 OS=`uname`
