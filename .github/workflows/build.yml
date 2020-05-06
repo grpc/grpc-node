@@ -3,10 +3,10 @@ name: Binary build
 on:
   push:
     branches:
-      - 'grpc/1.24.x'
+      - 'grpc@1.24.x'
   pull_request:
     branches:
-      - 'grpc/1.24.x'
+      - 'grpc@1.24.x'
 
 jobs:
   linux_nodejs:
