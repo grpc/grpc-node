@@ -38,11 +38,11 @@ var common = require('./common');
  */
 exports.deserializeCls = function deserializeCls(cls, options) {
   var conversion_options = {
-    defaults: true,
+    defaults: typeof(options.defaults)=='boolean'?options.defaults:true,
     bytes: options.binaryAsBase64 ? String : Buffer,
     longs: options.longsAsStrings ? String : null,
     enums: options.enumsAsStrings ? String : null,
-    oneofs: true
+    oneofs: typeof(options.oneofs)=='boolean'?options.oneofs:true
   };
   /**
    * Deserialize a buffer to a message object
