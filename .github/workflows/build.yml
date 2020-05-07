@@ -87,8 +87,9 @@ jobs:
     - name: Build
       env:
         JOBS: '8'
-        ARTIFACTS_OUT: $GITHUB_WORKSPACE/artifacts
-      run: packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_node.sh
+      run: |
+        # Need to set ARTIFACTS_OUT here to properly interpolate $GITHUB_WORKSPACE
+        ARTIFACTS_OUT=$GITHUB_WORKSPACE/artifacts packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_node.sh
     - uses: actions/upload-artifact@v2
       with:
         name: macos-nodejs
@@ -111,8 +112,9 @@ jobs:
     - name: Build
       env:
         JOBS: '8'
-        ARTIFACTS_OUT: $GITHUB_WORKSPACE/artifacts
-      run: packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_electron.sh
+      run: |
+        # Need to set ARTIFACTS_OUT here to properly interpolate $GITHUB_WORKSPACE
+        ARTIFACTS_OUT=$GITHUB_WORKSPACE/artifacts packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_electron.sh
     - uses: actions/upload-artifact@v2
       with:
         name: macos-electron
@@ -171,7 +173,8 @@ jobs:
     needs: [linux_nodejs_native, linux_nodejs_alpine, linux_nodejs_arm, linux_electron, macos_nodejs, macos_electron, windows_nodejs, windows_electron]
     steps:
     - uses: actions/download-artifact@v2
-    - run: |
+    - name: Copy
+      run: |
         mkdir artifacts
         cp -r ./**/* artifacts/
     - uses: actions/upload-artifact@v2
