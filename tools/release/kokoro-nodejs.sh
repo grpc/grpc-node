@@ -13,10 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-npm install -g npm
-# https://github.com/mapbox/node-pre-gyp/issues/362
-npm install -g node-gyp
-
 set -ex
 cd $(dirname $0)/../..
 base_dir=$(pwd)

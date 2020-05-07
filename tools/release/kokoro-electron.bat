@@ -12,12 +12,6 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
-@echo "Starting Windows build"
-
-call npm install -g npm@6.10.x
-@rem https://github.com/mapbox/node-pre-gyp/issues/362
-call npm install -g node-gyp@3
-
 cd /d %~dp0
 cd ..\..
 
