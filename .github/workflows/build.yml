@@ -136,7 +136,7 @@ jobs:
     - name: Build
       env:
         ARTIFACTS_OUT: '%GITHUB_WORKSPACE%/artifacts'
-      run: packages\grpc-native-core\tools\run_tests\artifacts\build_artifact_node.bat
+      run: tools/release/kokoro-electron.bat
     - uses: actions/upload-artifact@v2
       with:
         name: windows-nodejs
@@ -160,7 +160,7 @@ jobs:
     - name: Build
       env:
         ARTIFACTS_OUT: '%GITHUB_WORKSPACE%/artifacts'
-      run: packages\grpc-native-core\tools\run_tests\artifacts\build_artifact_electron.bat
+      run: tools/release/kokoro-electron.bat
     - uses: actions/upload-artifact@v2
       with:
         name: windows-electron
