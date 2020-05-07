@@ -88,8 +88,8 @@ jobs:
       env:
         JOBS: '8'
       run: |
-        # Need to set ARTIFACTS_OUT here to properly interpolate $GITHUB_WORKSPACE
-        ARTIFACTS_OUT=$GITHUB_WORKSPACE/artifacts packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_node.sh
+        export ARTIFACTS_OUT=$GITHUB_WORKSPACE/artifacts
+        packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_node.sh
     - uses: actions/upload-artifact@v2
       with:
         name: macos-nodejs
@@ -113,8 +113,8 @@ jobs:
       env:
         JOBS: '8'
       run: |
-        # Need to set ARTIFACTS_OUT here to properly interpolate $GITHUB_WORKSPACE
-        ARTIFACTS_OUT=$GITHUB_WORKSPACE/artifacts packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_electron.sh
+        export ARTIFACTS_OUT=$GITHUB_WORKSPACE/artifacts
+        packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_electron.sh
     - uses: actions/upload-artifact@v2
       with:
         name: macos-electron
