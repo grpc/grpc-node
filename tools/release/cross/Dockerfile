@@ -10,4 +10,4 @@ ENV NVM_DIR /usr/local/nvm
 
 RUN curl curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
 
-RUN nvm install 12
+RUN /bin/bash -l -c "nvm install 12"
