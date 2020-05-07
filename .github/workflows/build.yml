@@ -49,7 +49,7 @@ jobs:
     - name: Build
       run: |
         docker build -t kokoro-cross-image tools/release/cross
-        docker run -v /var/run/docker.sock:/var/run/docker.sock -v $GITHUB_WORKSPACE:$GITHUB_WORKSPACE -e ARTIFACTS_OUT=$GITHUB_WORKSPACE/artifacts -e JOBS=8 kokoro-native-image $GITHUB_WORKSPACE/packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_node_arm.sh
+        docker run -v /var/run/docker.sock:/var/run/docker.sock -v $GITHUB_WORKSPACE:$GITHUB_WORKSPACE -e ARTIFACTS_OUT=$GITHUB_WORKSPACE/artifacts -e JOBS=8 kokoro-cross-image $GITHUB_WORKSPACE/packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_node_arm.sh
     - uses: actions/upload-artifact@v2
       with:
         name: linux-nodejs-arm
@@ -136,7 +136,7 @@ jobs:
     - name: Build
       env:
         ARTIFACTS_OUT: '%GITHUB_WORKSPACE%/artifacts'
-      run: tools\run_tests\artifacts\build_artifact_node.bat
+      run: call tools\run_tests\artifacts\build_artifact_node.bat
     - uses: actions/upload-artifact@v2
       with:
         name: windows-nodejs
@@ -160,12 +160,13 @@ jobs:
     - name: Build
       env:
         ARTIFACTS_OUT: '%GITHUB_WORKSPACE%/artifacts'
-      run: tools\run_tests\artifacts\build_artifact_electron.bat
+      run: call tools\run_tests\artifacts\build_artifact_electron.bat
     - uses: actions/upload-artifact@v2
       with:
         name: windows-electron
         path: artifacts/
   combine_artifacts:
+    name: Combine Artifacts
     runs-on: ubuntu-latest
     needs: [linux_nodejs_native, linux_nodejs_alpine, linux_nodejs_arm, linux_electron, macos_nodejs, macos_electron, windows_nodejs, windows_electron]
     steps:
