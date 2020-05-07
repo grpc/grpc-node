@@ -166,6 +166,7 @@ jobs:
         name: windows-electron
         path: artifacts/
   combine_artifacts:
+    runs-on: ubuntu-latest
     needs: [linux_nodejs_native, linux_nodejs_alpine, linux_nodejs_arm, linux_electron, macos_nodejs, macos_electron, windows_nodejs, windows_electron]
     steps:
     - uses: actions/download-artifact@v2
