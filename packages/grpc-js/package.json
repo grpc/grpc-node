@@ -33,6 +33,7 @@
     "mocha-jenkins-reporter": "^0.4.1",
     "ncp": "^2.0.0",
     "pify": "^4.0.1",
+    "rimraf": "^3.0.2",
     "ts-node": "^8.3.0",
     "typescript": "^3.7.2"
   },
@@ -43,7 +44,7 @@
   ],
   "scripts": {
     "build": "npm run compile",
-    "clean": "gts clean",
+    "clean": "node -e 'require(\"rimraf\")(\"./build\", () => {})'",
     "compile": "tsc -p .",
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
     "lint": "npm run check",
