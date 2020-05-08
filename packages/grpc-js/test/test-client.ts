@@ -69,3 +69,26 @@ describe('Client', () => {
     }, deadline - Date.now());
   });
 });
+
+describe('Client without a server', () => {
+  let client: Client;
+  before(() => {
+    // Arbitrary target that should not have a running server
+    client = new Client('localhost:12345', clientInsecureCreds);
+  });
+  after(() => {
+    client.close();
+  });
+  it('should fail multiple calls to the nonexistent server', done => {
+    // Regression test for https://github.com/grpc/grpc-node/issues/1411
+    client.makeUnaryRequest('/service/method', x => x, x => x, Buffer.from([]), (error, value) => {
+      assert(error);
+      assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
+      client.makeUnaryRequest('/service/method', x => x, x => x, Buffer.from([]), (error, value) => {
+        assert(error);
+        assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
+        done();
+      });
+    });
+  });
+});

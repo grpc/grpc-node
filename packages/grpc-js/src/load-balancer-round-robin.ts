@@ -95,7 +95,6 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
   private currentReadyPicker: RoundRobinPicker | null = null;
 
   constructor(private channelControlHelper: ChannelControlHelper) {
-    this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
     this.subchannelStateCounts = {
       [ConnectivityState.CONNECTING]: 0,
       [ConnectivityState.IDLE]: 0,
