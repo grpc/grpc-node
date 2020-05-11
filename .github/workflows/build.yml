@@ -9,163 +9,100 @@ on:
       - 'grpc@1.24.x'
 
 jobs:
-  linux_nodejs_native:
-    name: Linux Node native build
+  all_node_glibc:
+    name: All Simple Native Builds
+    strategy:
+      matrix:
+        node: ['4', '5', '6', '7', '8', '9', '10', '11', '12', '13']
+        arch: [ia32, x64]
+        os: [linux, macos, windows]
+    runs-on: '${{{linux: "ubuntu-latest", macos: "macos-latest", windows: "windows-latest"}[matrix.os]}}'
+    env:
+      ARCH: ${{matrix.arch}}
+      VERSION: ${{matrix.node}}.0.0
+      RUNTIME: node
+      LIBC: glibc
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - uses: actions/setup-node@v1.1.0
+      with:
+        node-version: 12
+    - name: Build
+      run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_${{matrix.os}}
+    - uses: actions/upload-artifact@v2
+      with:
+        name: node_glibc_${{matrix.os}}_${{matrix.node}}_${{matrix.arch}}
+        path: artifacts/
+  all_electron:
+    name: All Electron Builds
+    strategy:
+      matrix:
+        electron: ['1.0', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7', '1.8', '2.0', '3.0', '3.1', '4.1', '4.2', '5.0', '6.0', '7.0']
+        os: [linux, macos, windows]
+        arch: [x86, x64]
+    runs-on: '${{{linux: "ubuntu-latest", macos: "macos-latest", windows: "windows-latest"}[matrix.os]}}'
+    env:
+      ARCH: ${{matrix.arch}}
+      VERSION: ${{matrix.electron}}.0
+      RUNTIME: electron
+      LIBC: glibc
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - uses: actions/setup-node@v1.1.0
+      with:
+        node-version: 12
+    - name: Build
+      run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_${{matrix.os}}
+    - uses: actions/upload-artifact@v2
+      with:
+        name: electron_${{matrix.os}}_${{matrix.electron}}_${{matrix.arch}}
+        path: artifacts/
+  linux_node_alpine:
+    name: Linux Alpine Build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['4', '5', '6', '7', '8', '9', '10', '11', '12', '13']
+    env:
+      ARCH: x64
+      VERSION: ${{matrix.node}}.0.0
+      RUNTIME: node
+      LIBC: musl
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: recursive
     - name: Build
-      run: |
-        docker build -t kokoro-native-image tools/release/native
-        docker run -v /var/run/docker.sock:/var/run/docker.sock -v $GITHUB_WORKSPACE:$GITHUB_WORKSPACE -e ARTIFACTS_OUT=$GITHUB_WORKSPACE/artifacts -e JOBS=8 kokoro-native-image $GITHUB_WORKSPACE/packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_node.sh
+      run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_linux.sh
     - uses: actions/upload-artifact@v2
       with:
-        name: linux-nodejs-native
+        name: linux_native_alpine_${{matrix.node}}
         path: artifacts/
-  linux_nodejs_alpine:
-    name: Linux Node Alpine build
+  linux_node_cross:
+    name: Linux Cross Compilation Builds
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['4', '5', '6', '7', '8', '9', '10', '11', '12', '13']
+        arch: [arm, arm64, s390x]
+    env:
+      ARCH: ${{matrix.arch}}
+      VERSION: ${{matrix.node}}.0.0
+      RUNTIME: node
+      LIBC: glibc
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: recursive
     - name: Build
-      run: |
-        docker build -t kokoro-alpine-image packages/grpc-native-core/tools/docker/alpine_artifact
-        docker run -v /var/run/docker.sock:/var/run/docker.sock -v $GITHUB_WORKSPACE:$GITHUB_WORKSPACE -e ARTIFACTS_OUT=$GITHUB_WORKSPACE/artifacts -e JOBS=8 kokoro-alpine-image $GITHUB_WORKSPACE/packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_node.sh --with-alpine
+      run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_linux.sh
     - uses: actions/upload-artifact@v2
       with:
-        name: linux-nodejs-alpine
-        path: artifacts/
-  linux_nodejs_arm:
-    name: Linux Node ARM build
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    - name: Build
-      run: |
-        docker build -t kokoro-cross-image tools/release/cross
-        docker run -v /var/run/docker.sock:/var/run/docker.sock -v $GITHUB_WORKSPACE:$GITHUB_WORKSPACE -e ARTIFACTS_OUT=$GITHUB_WORKSPACE/artifacts -e JOBS=8 kokoro-cross-image $GITHUB_WORKSPACE/packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_node_arm.sh
-    - uses: actions/upload-artifact@v2
-      with:
-        name: linux-nodejs-arm
-        path: artifacts/
-  linux_electron:
-    name: Linux Electron build
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    - name: Build
-      run: |
-        docker build -t kokoro-native-image tools/release/native
-        docker run -v /var/run/docker.sock:/var/run/docker.sock -v $GITHUB_WORKSPACE:$GITHUB_WORKSPACE -e ARTIFACTS_OUT=$GITHUB_WORKSPACE/artifacts -e JOBS=8 kokoro-native-image $GITHUB_WORKSPACE/packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_electron.sh
-    - uses: actions/upload-artifact@v2
-      with:
-        name: linux-electron
-        path: artifacts/
-  macos_nodejs:
-    name: Macos Node build
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    - uses: actions/setup-node@v1
-      with:
-        node-version: '12'
-    - name: Setup npm environment
-      run: |
-        npm install -g npm
-        # https://github.com/mapbox/node-pre-gyp/issues/362
-        npm install -g node-gyp@3
-    - name: Build
-      env:
-        JOBS: '8'
-      run: |
-        export ARTIFACTS_OUT=$GITHUB_WORKSPACE/artifacts
-        packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_node.sh
-    - uses: actions/upload-artifact@v2
-      with:
-        name: macos-nodejs
-        path: artifacts/
-  macos_electron:
-    name: Macos Electron build
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    - uses: actions/setup-node@v1
-      with:
-        node-version: '12'
-    - name: Setup npm environment
-      run: |
-        npm install -g npm
-        # https://github.com/mapbox/node-pre-gyp/issues/362
-        npm install -g node-gyp@3
-    - name: Build
-      env:
-        JOBS: '8'
-      run: |
-        export ARTIFACTS_OUT=$GITHUB_WORKSPACE/artifacts
-        packages/grpc-native-core/tools/run_tests/artifacts/build_artifact_electron.sh
-    - uses: actions/upload-artifact@v2
-      with:
-        name: macos-electron
-        path: artifacts/
-  windows_nodejs:
-    name: Windows Node build
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    - uses: actions/setup-node@v1
-      with:
-        node-version: '12'
-    - uses: microsoft/setup-msbuild@v1.0.0
-    - name: Setup npm environment
-      run: |
-        npm install -g npm@6.10.x
-        # https://github.com/mapbox/node-pre-gyp/issues/362
-        npm install -g node-gyp@3
-    - name: Build
-      env:
-        ARTIFACTS_OUT: '%GITHUB_WORKSPACE%/artifacts'
-      run: tools/release/kokoro-electron.bat
-    - uses: actions/upload-artifact@v2
-      with:
-        name: windows-nodejs
-        path: artifacts/
-  windows_electron:
-    name: Windows Electron build
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    - uses: actions/setup-node@v1
-      with:
-        node-version: '12'
-    - uses: microsoft/setup-msbuild@v1.0.0
-    - name: Setup npm environment
-      run: |
-        npm install -g npm@6.10.x
-        # https://github.com/mapbox/node-pre-gyp/issues/362
-        npm install -g node-gyp@3
-    - name: Build
-      env:
-        ARTIFACTS_OUT: '%GITHUB_WORKSPACE%/artifacts'
-      run: tools/release/kokoro-electron.bat
-    - uses: actions/upload-artifact@v2
-      with:
-        name: windows-electron
+        name: linux_cross_${{matrix.node}}_${{matrix.arch}}
         path: artifacts/
   combine_artifacts:
     name: Combine Artifacts
