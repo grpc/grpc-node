@@ -13,15 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
-nvm install 10
-nvm use 10
 npm install -g npm
 # https://github.com/mapbox/node-pre-gyp/issues/362
 npm install -g node-gyp
+
+set -ex
 
 # $ARCH should only have one of these values if the script is being called in
 # an environment with these cross compiler packages installed
