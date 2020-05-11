@@ -21,6 +21,8 @@ npm install -g node-gyp
 
 set -ex
 
+npm update
+
 # $ARCH should only have one of these values if the script is being called in
 # an environment with these cross compiler packages installed
 case $ARCH in
