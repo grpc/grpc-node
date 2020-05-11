@@ -26,6 +26,8 @@ namespace grpc_node_generator {
 struct Parameters {
   // Generate a package definition object instead of Client classes
   bool generate_package_definition;
+  // Use pure JavaScript gRPC Client
+  bool grpc_js;
 };
 
 grpc::string GenerateFile(const grpc::protobuf::FileDescriptor* file,
