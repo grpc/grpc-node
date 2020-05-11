@@ -21,6 +21,10 @@ npm install -g node-gyp
 
 set -ex
 
+cd $(dirname $0)/../../../../..
+base_dir=$(pwd)
+cd $base_dir/packages/grpc-native-core
+
 npm update
 
 # $ARCH should only have one of these values if the script is being called in
