@@ -8,10 +8,6 @@ on:
     branches:
       - 'grpc@1.24.x'
 
-defaults:
-  run:
-    shell: bash
-
 jobs:
   all_node_glibc:
     name: All Simple Native Builds
@@ -35,6 +31,10 @@ jobs:
         node-version: 12
     - name: Build
       run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_${{matrix.os}}.sh
+      if: ${{matrix.os != 'windows-latest'}}
+    - name: Build
+      run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_${{matrix.os}}.bat
+      if: ${{matrix.os == 'windows-latest'}}
     - uses: actions/upload-artifact@v2
       with:
         name: node_glibc_${{matrix.os}}_${{matrix.node}}_${{matrix.arch}}
@@ -61,6 +61,10 @@ jobs:
         node-version: 12
     - name: Build
       run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_${{matrix.os}}.sh
+      if: ${{matrix.os != 'windows-latest'}}
+    - name: Build
+      run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_${{matrix.os}}.bat
+      if: ${{matrix.os == 'windows-latest'}}
     - uses: actions/upload-artifact@v2
       with:
         name: electron_${{matrix.os}}_${{matrix.electron}}_${{matrix.arch}}
