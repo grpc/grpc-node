@@ -15,8 +15,8 @@ jobs:
       matrix:
         node: ['4', '5', '6', '7', '8', '9', '10', '11', '12', '13']
         arch: [ia32, x64]
-        os: [linux, macos, windows]
-    runs-on: '${{{linux: "ubuntu-latest", macos: "macos-latest", windows: "windows-latest"}[matrix.os]}}'
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{matrix.os}}
     env:
       ARCH: ${{matrix.arch}}
       VERSION: ${{matrix.node}}.0.0
@@ -40,9 +40,9 @@ jobs:
     strategy:
       matrix:
         electron: ['1.0', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7', '1.8', '2.0', '3.0', '3.1', '4.1', '4.2', '5.0', '6.0', '7.0']
-        os: [linux, macos, windows]
         arch: [x86, x64]
-    runs-on: '${{{linux: "ubuntu-latest", macos: "macos-latest", windows: "windows-latest"}[matrix.os]}}'
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{matrix.os}}
     env:
       ARCH: ${{matrix.arch}}
       VERSION: ${{matrix.electron}}.0
@@ -77,7 +77,7 @@ jobs:
       with:
         submodules: recursive
     - name: Build
-      run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_linux.sh
+      run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_ubuntu-latest.sh
     - uses: actions/upload-artifact@v2
       with:
         name: linux_native_alpine_${{matrix.node}}
@@ -99,7 +99,7 @@ jobs:
       with:
         submodules: recursive
     - name: Build
-      run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_linux.sh
+      run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_ubuntu-latest.sh
     - uses: actions/upload-artifact@v2
       with:
         name: linux_cross_${{matrix.node}}_${{matrix.arch}}
@@ -107,7 +107,7 @@ jobs:
   combine_artifacts:
     name: Combine Artifacts
     runs-on: ubuntu-latest
-    needs: [linux_nodejs_native, linux_nodejs_alpine, linux_nodejs_arm, linux_electron, macos_nodejs, macos_electron, windows_nodejs, windows_electron]
+    needs: [all_node_glibc, all_electron, linux_node_alpine, linux_node_cross]
     steps:
     - uses: actions/download-artifact@v2
     - name: Copy
