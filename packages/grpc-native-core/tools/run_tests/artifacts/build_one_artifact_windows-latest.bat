@@ -45,13 +45,13 @@ if "%RUNTIME%"=="electron" (
   set "npm_config_disturl=https://atom.io/download/electron"
 )
 
-call .\node_modules\.bin\node-pre-gyp.cmd configure build --target=%VERSION% --target_arch=%ARCH% && goto :EOF
+call .\node_modules\.bin\node-pre-gyp.cmd configure build --target=%VERSION% --target_arch=%ARCH% --runtime=%RUNTIME% && goto :EOF
 @rem Try again after removing openssl headers
 rmdir "%USERPROFILE%\.node-gyp\%VERSION%\include\node\openssl" /S /Q
 rmdir "%USERPROFILE%\.node-gyp\iojs-%VERSION%\include\node\openssl" /S /Q
 rmdir "%USERPROFILE%\AppData\Local\node-gyp\cache\%VERSION%\include\node\openssl" /S /Q
 rmdir "%USERPROFILE%\AppData\Local\node-gyp\cache\iojs-%VERSION%\include\node\openssl" /S /Q
-call .\node_modules\.bin\node-pre-gyp.cmd build package --target=%VERSION% --target_arch=%ARCH% || goto :error
+call .\node_modules\.bin\node-pre-gyp.cmd build package --target=%VERSION% --target_arch=%ARCH% --runtime=%RUNTIME% || goto :error
 
 xcopy /Y /I /S build\stage\* %ARTIFACTS_OUT%\ || goto :error
 
