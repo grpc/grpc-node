@@ -14,19 +14,12 @@
 
 @echo "Starting Windows build"
 
-powershell -c "& { iwr https://raw.githubusercontent.com/grumpycoders/nvm-ps/master/nvm.ps1 | iex }"
-
-call nvm install 10
-call nvm use 10
-
 call npm install -g npm@6.10.x
 @rem https://github.com/mapbox/node-pre-gyp/issues/362
 call npm install -g node-gyp@3
 
 cd /d %~dp0
 cd ..\..\..\..\..
-
-git submodule update --init --recursive
 
 set ARTIFACTS_OUT=%cd%\artifacts
 
@@ -41,17 +34,18 @@ del /f /q BUILD || rmdir build /s /q
 call npm update || goto :error
 
 if "%RUNTIME%"=="electron" (
-  set "HOME=%USERPROFILE%\electron-gyp"
   set "npm_config_disturl=https://atom.io/download/electron"
 )
 
-call .\node_modules\.bin\node-pre-gyp.cmd configure build --target=%VERSION% --target_arch=%ARCH% --runtime=%RUNTIME% && goto :EOF
+call .\node_modules\.bin\node-pre-gyp.cmd configure build package --target=%VERSION% --target_arch=%ARCH% --runtime=%RUNTIME% && goto :success
 @rem Try again after removing openssl headers
 rmdir "%USERPROFILE%\.node-gyp\%VERSION%\include\node\openssl" /S /Q
 rmdir "%USERPROFILE%\.node-gyp\iojs-%VERSION%\include\node\openssl" /S /Q
 rmdir "%USERPROFILE%\AppData\Local\node-gyp\cache\%VERSION%\include\node\openssl" /S /Q
 rmdir "%USERPROFILE%\AppData\Local\node-gyp\cache\iojs-%VERSION%\include\node\openssl" /S /Q
 call .\node_modules\.bin\node-pre-gyp.cmd build package --target=%VERSION% --target_arch=%ARCH% --runtime=%RUNTIME% || goto :error
+
+:success
 
 xcopy /Y /I /S build\stage\* %ARTIFACTS_OUT%\ || goto :error
 
