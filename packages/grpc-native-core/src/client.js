@@ -518,6 +518,14 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
     metadata = new Metadata();
     options = {};
   }
+  if (!callback && !options) {
+    if (metadata instanceof Metadata) {
+      options = {};
+    } else {
+      options = metadata;
+      metadata = new Metadata();
+    }
+  }
   if (!metadata) {
     metadata = new Metadata();
   }
@@ -525,8 +533,7 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
     options = {};
   }
   if (!((metadata instanceof Metadata) &&
-        (options instanceof Object) &&
-        (typeof callback === 'function'))) {
+        (options instanceof Object))) {
     throw new Error('Argument mismatch in makeUnaryRequest');
   }
 
@@ -565,26 +572,47 @@ Client.prototype.makeUnaryRequest = function(path, serialize, deserialize,
     callOptions.interceptor_providers
   );
 
-  var intercepting_call = client_interceptors.getInterceptingCall(
-    methodDefinition,
-    callOptions,
-    interceptors,
-    callProperties.channel,
-    callProperties.callback
-  );
-
   var emitter = callProperties.call;
-  emitter.call = intercepting_call;
 
-  var last_listener = client_interceptors.getLastListener(
-    methodDefinition,
-    emitter,
-    callProperties.callback
-  );
+  var promise = new Promise((resolve, reject) => {
+    var promise_callback = function (err, data) {
+      if (typeof callProperties.callback === 'function') {
+        callProperties.callback.apply(this, [err, data]);
+      }
+      
+      if (err) {
+        return reject(err);
+      }
+      resolve(data);
+    };
 
-  intercepting_call.start(callProperties.metadata, last_listener);
-  intercepting_call.sendMessage(callProperties.argument);
-  intercepting_call.halfClose();
+    var intercepting_call = client_interceptors.getInterceptingCall(
+      methodDefinition,
+      callOptions,
+      interceptors,
+      callProperties.channel,
+      promise_callback
+    );
+
+    emitter.call = intercepting_call;
+  
+    var last_listener = client_interceptors.getLastListener(
+      methodDefinition,
+      emitter,
+      promise_callback
+    );
+  
+    intercepting_call.start(callProperties.metadata, last_listener);
+    intercepting_call.sendMessage(callProperties.argument);
+    intercepting_call.halfClose();
+  });
+
+  if (typeof callProperties.callback === 'function') {
+    // avoid UnhandledPromiseRejectionWarning
+    promise.catch(() => {});
+  }
+
+  emitter.then = promise.then.bind(promise);
 
   return emitter;
 };
@@ -621,6 +649,14 @@ Client.prototype.makeClientStreamRequest = function(path, serialize,
     metadata = new Metadata();
     options = {};
   }
+  if (!callback && !options) {
+    if (metadata instanceof Metadata) {
+      options = {};
+    } else {
+      options = metadata;
+      metadata = new Metadata();
+    }
+  }
   if (!metadata) {
     metadata = new Metadata();
   }
@@ -628,8 +664,7 @@ Client.prototype.makeClientStreamRequest = function(path, serialize,
     options = {};
   }
   if (!((metadata instanceof Metadata) &&
-       (options instanceof Object) &&
-       (typeof callback === 'function'))) {
+       (options instanceof Object))) {
     throw new Error('Argument mismatch in makeClientStreamRequest');
   }
 
@@ -667,24 +702,45 @@ Client.prototype.makeClientStreamRequest = function(path, serialize,
     callOptions.interceptor_providers
   );
 
-  var intercepting_call = client_interceptors.getInterceptingCall(
-    methodDefinition,
-    callOptions,
-    interceptors,
-    callProperties.channel,
-    callProperties.callback
-  );
-
   var emitter = callProperties.call;
-  emitter.call = intercepting_call;
 
-  var last_listener = client_interceptors.getLastListener(
-    methodDefinition,
-    emitter,
-    callProperties.callback
-  );
+  var promise = new Promise((resolve, reject) => {
+    var promise_callback = function (err, data) {
+      if (typeof callProperties.callback === 'function') {
+        callProperties.callback.apply(this, [err, data]);
+      }
+      
+      if (err) {
+        return reject(err);
+      }
+      resolve(data);
+    };
 
-  intercepting_call.start(callProperties.metadata, last_listener);
+    var intercepting_call = client_interceptors.getInterceptingCall(
+      methodDefinition,
+      callOptions,
+      interceptors,
+      callProperties.channel,
+      promise_callback
+    );
+
+    emitter.call = intercepting_call;
+
+    var last_listener = client_interceptors.getLastListener(
+      methodDefinition,
+      emitter,
+      promise_callback
+    );
+
+    intercepting_call.start(callProperties.metadata, last_listener);
+  });
+
+  if (typeof callProperties.callback === 'function') {
+    // avoid UnhandledPromiseRejectionWarning
+    promise.catch(() => {});
+  }
+
+  emitter.then = promise.then.bind(promise);
 
   return emitter;
 };

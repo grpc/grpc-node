@@ -1129,8 +1129,8 @@ declare module "grpc" {
       argument: RequestType | null,
       metadata: Metadata | null,
       options: CallOptions | null,
-      callback: requestCallback<ResponseType>,
-    ): ClientUnaryCall;
+      callback?: requestCallback<ResponseType>,
+    ): ClientUnaryCall & PromiseLike<ResponseType>;
 
     /**
      * Make a client stream request to the given method, using the given serialize
@@ -1149,8 +1149,8 @@ declare module "grpc" {
       deserialize: deserialize<ResponseType>,
       metadata: Metadata | null,
       options: CallOptions | null,
-      callback: requestCallback<ResponseType>,
-    ): ClientWritableStream<RequestType>;
+      callback?: requestCallback<ResponseType>,
+    ): ClientWritableStream<RequestType> & PromiseLike<ResponseType>;
 
     /**
      * Make a server stream request to the given method, with the given serialize
