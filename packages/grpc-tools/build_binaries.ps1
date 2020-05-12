@@ -16,6 +16,10 @@
 
 $ErrorActionPreference = "Stop"
 
+<# https://stackoverflow.com/questions/16657778/install-nuget-via-powershell-script/26421187#comment107976901_48216538 #>
+
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls11,Tls12'
+
 Install-PackageProvider -Name NuGet -RequiredVersion 2.8.5.201 -Force
 Import-PackageProvider -Name NuGet -RequiredVersion 2.8.5.201
 Install-Module -Force -Name 7Zip4Powershell
