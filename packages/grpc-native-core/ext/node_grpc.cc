@@ -30,6 +30,7 @@
 // TODO(murgatroid99): Remove this when the endpoint API becomes public
 #include "src/core/lib/iomgr/pollset_uv.h"
 
+#include "auth_context.h"
 #include "call.h"
 #include "call_credentials.h"
 #include "channel.h"
@@ -280,6 +281,7 @@ void init(Local<Object> exports) {
 
   grpc_pollset_work_run_loop = 0;
 
+  grpc::node::AuthContext::Init(exports);
   grpc::node::Call::Init(exports);
   grpc::node::CallCredentials::Init(exports);
   grpc::node::Channel::Init(exports);

@@ -71,6 +71,7 @@ class Call : public Nan::ObjectWrap {
   static NAN_METHOD(Cancel);
   static NAN_METHOD(CancelWithStatus);
   static NAN_METHOD(GetPeer);
+  static NAN_METHOD(GetAuthContext);
   static NAN_METHOD(SetCredentials);
   static Nan::Callback *constructor;
   // Used for typechecking instances of this javascript class

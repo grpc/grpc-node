@@ -23,6 +23,7 @@
 #include <node.h>
 
 #include "byte_buffer.h"
+#include "auth_context.h"
 #include "call.h"
 #include "call_credentials.h"
 #include "channel.h"
@@ -543,6 +544,7 @@ void Call::Init(Local<Object> exports) {
   Nan::SetPrototypeMethod(tpl, "cancel", Cancel);
   Nan::SetPrototypeMethod(tpl, "cancelWithStatus", CancelWithStatus);
   Nan::SetPrototypeMethod(tpl, "getPeer", GetPeer);
+  Nan::SetPrototypeMethod(tpl, "getAuthContext", GetAuthContext);
   Nan::SetPrototypeMethod(tpl, "setCredentials", SetCredentials);
   fun_tpl.Reset(tpl);
   Local<Function> ctr = Nan::GetFunction(tpl).ToLocalChecked();
@@ -747,6 +749,27 @@ NAN_METHOD(Call::GetPeer) {
   Call *call = ObjectWrap::Unwrap<Call>(info.This());
   Local<Value> peer_value = Nan::New(call->peer).ToLocalChecked();
   info.GetReturnValue().Set(peer_value);
+}
+
+NAN_METHOD(Call::GetAuthContext) {
+  Nan::HandleScope scope;
+  if (!HasInstance(info.This())) {
+    return Nan::ThrowTypeError("getAuthContext can only be called on Call objects");
+  }
+
+  Call *call = ObjectWrap::Unwrap<Call>(info.This());
+  grpc_auth_context *auth_ctx = grpc_call_auth_context(call->wrapped_call);
+  if (auth_ctx) {
+    const int argc = 1;
+    Local<Value> argv[argc] = {
+        Nan::New<External>(reinterpret_cast<void *>(auth_ctx))};
+    MaybeLocal<Object> maybe_instance =
+        Nan::NewInstance(AuthContext::constructor->GetFunction(), argc, argv);
+
+    if (!maybe_instance.IsEmpty()) {
+      info.GetReturnValue().Set(maybe_instance.ToLocalChecked());
+    }
+  }
 }
 
 NAN_METHOD(Call::SetCredentials) {
