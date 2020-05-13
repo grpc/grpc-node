@@ -25,9 +25,13 @@ import * as semver from 'semver';
 const testDir = __dirname;
 const apiTestDir = path.resolve(testDir, 'api');
 
-const install = () => {
+const runInstall = () => {
   return execa('npm', ['install'], {cwd: testDir, stdio: 'inherit'});
 };
+
+const runRebuild = () => execa('npm', ['rebuild', '--unsafe-perm'], {cwd: testDir, stdio: 'inherit'});
+
+const install = gulp.series(runInstall, runRebuild);
 
 const cleanAll = () => Promise.resolve();
 
