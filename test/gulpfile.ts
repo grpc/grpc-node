@@ -43,19 +43,15 @@ const runTestsWithFixture = (server, client) => () => new Promise((resolve, reje
     .on('error', reject);
 });
 
-const testNativeClientNativeServer = runTestsWithFixture('native', 'native');
 const testJsClientNativeServer = runTestsWithFixture('native', 'js');
 const testNativeClientJsServer = runTestsWithFixture('js', 'native');
 const testJsClientJsServer = runTestsWithFixture('js', 'js');
 
-const test = semver.satisfies(process.version, '^8.13.0 || >=10.10.0') ?
-             gulp.series(
-               testNativeClientNativeServer,
+const test = gulp.series(
                testJsClientNativeServer,
                testNativeClientJsServer,
                testJsClientJsServer
-              ) :
-             testNativeClientNativeServer;
+              );
 
 export {
   install,

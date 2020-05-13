@@ -31,7 +31,7 @@ var protoPackage = protoLoader.loadSync(
     {keepCase: true,
      defaults: true,
      enums: String,
-     includeDirs: [__dirname + '/../../packages/grpc-native-core/deps/grpc']});
+     includeDirs: [__dirname + '/../proto/']});
 var testProto = grpc.loadPackageDefinition(protoPackage).grpc.testing;
 
 var ECHO_INITIAL_KEY = 'x-grpc-test-echo-initial';

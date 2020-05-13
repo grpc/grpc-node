@@ -18,33 +18,24 @@
 import * as gulp from 'gulp';
 import * as healthCheck from './packages/grpc-health-check/gulpfile';
 import * as jsCore from './packages/grpc-js/gulpfile';
-import * as nativeCore from './packages/grpc-native-core/gulpfile';
 import * as protobuf from './packages/proto-loader/gulpfile';
 import * as internalTest from './test/gulpfile';
 
-const root = __dirname;
+const installAll = gulp.series(jsCore.install, healthCheck.install, protobuf.install, internalTest.install);
 
-const installAll = gulp.series(jsCore.install, nativeCore.install, healthCheck.install, protobuf.install, internalTest.install);
+const lint = gulp.parallel(jsCore.lint);
 
-const installAllWindows = gulp.series(jsCore.install, nativeCore.installWindows, healthCheck.install, protobuf.install, internalTest.install);
+const build = gulp.series(jsCore.compile, protobuf.compile);
 
-const lint = gulp.parallel(jsCore.lint, nativeCore.lint);
-
-const build = gulp.series(jsCore.compile, nativeCore.build, protobuf.compile);
-
-const link = gulp.series(healthCheck.linkAdd);
-
-const setup = gulp.series(installAll, link);
-
-const setupWindows = gulp.series(installAllWindows, link);
+const setup = gulp.series(installAll);
 
 const setupPureJSInterop = gulp.series(jsCore.install, protobuf.install, internalTest.install);
 
-const clean = gulp.series(jsCore.clean, nativeCore.clean, protobuf.clean);
+const clean = gulp.series(jsCore.clean, protobuf.clean);
 
-const cleanAll = gulp.series(jsCore.cleanAll, nativeCore.cleanAll, healthCheck.cleanAll, internalTest.cleanAll, protobuf.cleanAll);
+const cleanAll = gulp.series(jsCore.cleanAll, internalTest.cleanAll, protobuf.cleanAll);
 
-const nativeTestOnly = gulp.parallel(nativeCore.test, healthCheck.test);
+const nativeTestOnly = gulp.parallel(healthCheck.test);
 
 const nativeTest = gulp.series(build, nativeTestOnly);
 
@@ -52,21 +43,15 @@ const testOnly = gulp.parallel(jsCore.test, nativeTestOnly, protobuf.test);
 
 const test = gulp.series(build, testOnly, internalTest.test);
 
-const docGen = gulp.series(nativeCore.docGen);
-
 export {
   installAll,
-  installAllWindows,
   lint,
   build,
-  link,
   setup,
-  setupWindows,
   setupPureJSInterop,
   clean,
   cleanAll,
   nativeTestOnly,
   nativeTest,
-  test,
-  docGen
+  test
 };
