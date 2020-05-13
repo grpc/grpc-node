@@ -20,12 +20,19 @@ import * as http2 from 'http2';
 import { Duplex, Readable, Writable } from 'stream';
 
 import { StatusObject } from './call-stream';
-import { Status, DEFAULT_MAX_SEND_MESSAGE_LENGTH, DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH } from './constants';
+import { Status, DEFAULT_MAX_SEND_MESSAGE_LENGTH, DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH, LogVerbosity } from './constants';
 import { Deserialize, Serialize } from './make-client';
 import { Metadata } from './metadata';
 import { StreamDecoder } from './stream-decoder';
 import { ObjectReadable, ObjectWritable } from './object-stream';
 import { ChannelOptions } from './channel-options';
+import * as logging from './logging';
+
+const TRACER_NAME = 'server_call';
+
+function trace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 interface DeadlineUnitIndexSignature {
   [name: string]: number;
@@ -294,6 +301,7 @@ export interface UnaryHandler<RequestType, ResponseType> {
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
   type: HandlerType;
+  path: string;
 }
 
 export interface ClientStreamingHandler<RequestType, ResponseType> {
@@ -301,6 +309,7 @@ export interface ClientStreamingHandler<RequestType, ResponseType> {
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
   type: HandlerType;
+  path: string;
 }
 
 export interface ServerStreamingHandler<RequestType, ResponseType> {
@@ -308,6 +317,7 @@ export interface ServerStreamingHandler<RequestType, ResponseType> {
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
   type: HandlerType;
+  path: string;
 }
 
 export interface BidiStreamingHandler<RequestType, ResponseType> {
@@ -315,6 +325,7 @@ export interface BidiStreamingHandler<RequestType, ResponseType> {
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
   type: HandlerType;
+  path: string;
 }
 
 export type Handler<RequestType, ResponseType> =
@@ -520,6 +531,8 @@ export class Http2ServerCallStream<
     if (this.checkCancelled()) {
       return;
     }
+
+    trace('Request to method ' + this.handler?.path + ' ended with status code: ' + Status[statusObj.code] + ' details: ' + statusObj.details);
 
     clearTimeout(this.deadline);
 
