@@ -45,7 +45,11 @@ import {
 } from './server-call';
 import { ServerCredentials } from './server-credentials';
 import { ChannelOptions } from './channel-options';
-import { createResolver, ResolverListener, mapUriDefaultScheme } from './resolver';
+import {
+  createResolver,
+  ResolverListener,
+  mapUriDefaultScheme,
+} from './resolver';
 import * as logging from './logging';
 import {
   SubchannelAddress,
@@ -538,11 +542,20 @@ export class Server {
 
         try {
           const path = headers[http2.constants.HTTP2_HEADER_PATH] as string;
-          trace('Received call to method ' + path + ' at address ' + http2Server.address()?.toString());
+          trace(
+            'Received call to method ' +
+              path +
+              ' at address ' +
+              http2Server.address()?.toString()
+          );
           const handler = this.handlers.get(path);
 
           if (handler === undefined) {
-            trace('No handler registered for method ' + path + '. Sending UNIMPLEMENTED status.');
+            trace(
+              'No handler registered for method ' +
+                path +
+                '. Sending UNIMPLEMENTED status.'
+            );
             throw getUnimplementedStatusResponse(path);
           }
 

@@ -20,7 +20,12 @@ import * as http2 from 'http2';
 import { Duplex, Readable, Writable } from 'stream';
 
 import { StatusObject } from './call-stream';
-import { Status, DEFAULT_MAX_SEND_MESSAGE_LENGTH, DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH, LogVerbosity } from './constants';
+import {
+  Status,
+  DEFAULT_MAX_SEND_MESSAGE_LENGTH,
+  DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
+  LogVerbosity,
+} from './constants';
 import { Deserialize, Serialize } from './make-client';
 import { Metadata } from './metadata';
 import { StreamDecoder } from './stream-decoder';
@@ -70,7 +75,7 @@ export type ServerErrorResponse = ServerStatusResponse & Error;
 
 export type ServerSurfaceCall = {
   cancelled: boolean;
-  readonly metadata: Metadata
+  readonly metadata: Metadata;
   getPeer(): string;
   sendMetadata(responseMetadata: Metadata): void;
 } & EventEmitter;
@@ -458,10 +463,13 @@ export class Http2ServerCallStream<
       stream.once('end', async () => {
         try {
           const requestBytes = Buffer.concat(chunks, totalLength);
-          if (this.maxReceiveMessageSize !== -1 && requestBytes.length > this.maxReceiveMessageSize) {
+          if (
+            this.maxReceiveMessageSize !== -1 &&
+            requestBytes.length > this.maxReceiveMessageSize
+          ) {
             this.sendError({
               code: Status.RESOURCE_EXHAUSTED,
-              details: `Received message larger than max (${requestBytes.length} vs. ${this.maxReceiveMessageSize})`
+              details: `Received message larger than max (${requestBytes.length} vs. ${this.maxReceiveMessageSize})`,
             });
             resolve();
           }
@@ -532,7 +540,14 @@ export class Http2ServerCallStream<
       return;
     }
 
-    trace('Request to method ' + this.handler?.path + ' ended with status code: ' + Status[statusObj.code] + ' details: ' + statusObj.details);
+    trace(
+      'Request to method ' +
+        this.handler?.path +
+        ' ended with status code: ' +
+        Status[statusObj.code] +
+        ' details: ' +
+        statusObj.details
+    );
 
     clearTimeout(this.deadline);
 
@@ -587,10 +602,13 @@ export class Http2ServerCallStream<
       return;
     }
 
-    if (this.maxSendMessageSize !== -1 && chunk.length > this.maxSendMessageSize) {
+    if (
+      this.maxSendMessageSize !== -1 &&
+      chunk.length > this.maxSendMessageSize
+    ) {
       this.sendError({
-        code: Status.RESOURCE_EXHAUSTED, 
-        details: `Sent message larger than max (${chunk.length} vs. ${this.maxSendMessageSize})`
+        code: Status.RESOURCE_EXHAUSTED,
+        details: `Sent message larger than max (${chunk.length} vs. ${this.maxSendMessageSize})`,
       });
       return;
     }
@@ -621,10 +639,13 @@ export class Http2ServerCallStream<
       const messages = decoder.write(data);
 
       for (const message of messages) {
-        if (this.maxReceiveMessageSize !== -1 && message.length > this.maxReceiveMessageSize) {
+        if (
+          this.maxReceiveMessageSize !== -1 &&
+          message.length > this.maxReceiveMessageSize
+        ) {
           this.sendError({
             code: Status.RESOURCE_EXHAUSTED,
-            details: `Received message larger than max (${message.length} vs. ${this.maxReceiveMessageSize})`
+            details: `Received message larger than max (${message.length} vs. ${this.maxReceiveMessageSize})`,
           });
           return;
         }
