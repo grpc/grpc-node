@@ -37,7 +37,7 @@ MkDir-p ($Base + "/build/bin")
 $PackageFile = $Base + "/package.json"
 $ToolsVersion = ((Get-Content $PackageFile) -join "`n" | ConvertFrom-Json).version
 
-$OutDir = $Env:ARTIFACTS_OUT + "/grpc-tools/v" + $ToolsVersion
+$OutDir = $Base + "/../../artifacts/grpc-tools/v" + $ToolsVersion
 Mkdir-p $OutDir
 
 $ArchList = "ia32","x64"
