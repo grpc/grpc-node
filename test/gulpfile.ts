@@ -25,9 +25,13 @@ import * as semver from 'semver';
 const testDir = __dirname;
 const apiTestDir = path.resolve(testDir, 'api');
 
-const install = () => {
+const runInstall = () => {
   return execa('npm', ['install'], {cwd: testDir, stdio: 'inherit'});
 };
+
+const runRebuild = () => execa('npm', ['rebuild', '--unsafe-perm'], {cwd: testDir, stdio: 'inherit'});
+
+const install = gulp.series(runInstall, runRebuild);
 
 const cleanAll = () => Promise.resolve();
 
@@ -43,19 +47,15 @@ const runTestsWithFixture = (server, client) => () => new Promise((resolve, reje
     .on('error', reject);
 });
 
-const testNativeClientNativeServer = runTestsWithFixture('native', 'native');
 const testJsClientNativeServer = runTestsWithFixture('native', 'js');
 const testNativeClientJsServer = runTestsWithFixture('js', 'native');
 const testJsClientJsServer = runTestsWithFixture('js', 'js');
 
-const test = semver.satisfies(process.version, '^8.13.0 || >=10.10.0') ?
-             gulp.series(
-               testNativeClientNativeServer,
+const test = gulp.series(
                testJsClientNativeServer,
                testNativeClientJsServer,
                testJsClientJsServer
-              ) :
-             testNativeClientNativeServer;
+              );
 
 export {
   install,

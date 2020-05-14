@@ -31,7 +31,7 @@ const protoPackage = protoLoader.loadSync(
   {keepCase: true,
    defaults: true,
    enums: String,
-   includeDirs: [__dirname + '/../../packages/grpc-native-core/deps/grpc']});
+   includeDirs: [__dirname + '/../proto/']});
 const testProto = grpc.loadPackageDefinition(protoPackage).grpc.testing;
 
 function multiDone(done, count) {

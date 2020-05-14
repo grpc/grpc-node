@@ -11,8 +11,6 @@ yarn.lock
 \#*\#
 .\#*
 
-packages/grpc-native-core/src/node/
-
 .nyc_output/
 reports/
 

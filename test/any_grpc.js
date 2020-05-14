@@ -27,7 +27,7 @@ function getImplementation(globalField) {
   if (impl === 'js') {
     return require(`../packages/grpc-${impl}`);
   } else if (impl === 'native') {
-    return require(`../packages/grpc-${impl}-core`);
+    return require('grpc');
   }
 
   throw new Error([
