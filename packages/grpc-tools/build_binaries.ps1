@@ -42,6 +42,7 @@ $PackageFile = $Base + "/package.json"
 Write-Host $PackageFile
 Write-Host (Get-Content $PackageFile) -join "`n"
 $ToolsVersion = ((Get-Content $PackageFile) -join "`n" | ConvertFrom-Json).version
+Write-Host $ToolsVersion
 
 cd ../..
 $OutDir = $pwd + "/artifacts/grpc-tools/v" + $ToolsVersion
