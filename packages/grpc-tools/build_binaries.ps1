@@ -14,10 +14,6 @@
   limitations under the License.
 #>
 
-Set-PSDebug -trace 2
-
-Write-Host "Hello World"
-
 $ErrorActionPreference = "Stop"
 
 <# https://stackoverflow.com/questions/16657778/install-nuget-via-powershell-script/26421187#comment107976901_48216538 #>
@@ -45,8 +41,11 @@ MkDir-p ($Base + "/build/bin")
 $PackageFile = $Base + "/package.json"
 $ToolsVersion = ((Get-Content $PackageFile) -join "`n" | ConvertFrom-Json).version
 
-$OutDir = $Base + "/../../artifacts/grpc-tools/v" + $ToolsVersion
+cd ../..
+$OutDir = $pwd + "/artifacts/grpc-tools/v" + $ToolsVersion
 Mkdir-p $OutDir
+
+cd $Base
 
 $ArchList = "ia32","x64"
 
