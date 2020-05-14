@@ -47,6 +47,8 @@ Mkdir-p $OutDir
 
 cd $Base
 
+Set-PSDebug -trace 2
+
 $ArchList = "ia32","x64"
 
 foreach ($Arch in $ArchList) {
