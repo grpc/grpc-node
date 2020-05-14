@@ -16,6 +16,8 @@
 
 Set-PSDebug -trace 2
 
+Write-Host "Hello World"
+
 $ErrorActionPreference = "Stop"
 
 <# https://stackoverflow.com/questions/16657778/install-nuget-via-powershell-script/26421187#comment107976901_48216538 #>
