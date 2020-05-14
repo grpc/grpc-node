@@ -45,7 +45,8 @@ jobs:
         with:
           submodules: recursive
       - name: Build
-        run: packages/grpc-tools/build_binaries.ps1
+        run: powershell -File ./packages/grpc-tools/build_binaries.ps1
+        shell: cmd
       - uses: actions/upload-artifact@v1
         with:
           name: grpc-tools_windows
