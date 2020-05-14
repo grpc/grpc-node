@@ -39,6 +39,8 @@ $ProtobufBase = $Base + "/deps/protobuf"
 MkDir-p ($Base + "/build/bin")
 
 $PackageFile = $Base + "/package.json"
+Write-Host $PackageFile
+Write-Host (Get-Content $PackageFile) -join "`n"
 $ToolsVersion = ((Get-Content $PackageFile) -join "`n" | ConvertFrom-Json).version
 
 cd ../..
