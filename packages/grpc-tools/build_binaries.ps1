@@ -53,12 +53,12 @@ $ArchList = "ia32","x64"
 
 foreach ($Arch in $ArchList) {
   if ($Arch -eq "x64") {
-    $Generator = "Visual Studio 14 2015 Win64"
+    $ArchName = "x64"
   } else {
-    $Generator = "Visual Studio 14 2015"
+    $ArchName = "Win32"
   }
 
-  & cmake.exe .
+  & cmake.exe . -A $ArchName
   if ($LASTEXITCODE -ne 0) {
     throw "cmake failed"
   }
@@ -73,7 +73,5 @@ foreach ($Arch in $ArchList) {
   Compress-7Zip -Path ($Base + "/build") -Format Tar -ArchiveFileName ($Base + "/Archive.tar")
   Compress-7Zip -Path ($Base + "/Archive.tar") -Format GZip -ArchiveFileName ($OutDir + "/win32-" + $Arch + ".tar.gz")
 
-  Remove-Item ($Base + "/build/bin/protoc.exe")
-  Remove-Item ($Base + "/build/bin/grpc_node_plugin.exe")
-  Remove-Item ($Base + "/CMakeCache.txt")
+  & git clean -xdf .
 }
