@@ -40,6 +40,11 @@ jobs:
   windows_build:
     name: Windows grpc-tools Build
     runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [ia32, x64]
+    env:
+      ARCH: ${{matrix.arch}}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -49,7 +54,7 @@ jobs:
         shell: cmd
       - uses: actions/upload-artifact@v1
         with:
-          name: grpc-tools_windows
+          name: grpc-tools_windows_${{matrix.arch}}
           path: artifacts/
   combine_artifacts:
     name: Combine grpc-tools artifacts

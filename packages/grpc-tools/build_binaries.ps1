@@ -49,29 +49,27 @@ cd $Base
 
 Set-PSDebug -trace 2
 
-$ArchList = "ia32","x64"
+$Arch = $Env:ARCH
 
-foreach ($Arch in $ArchList) {
-  if ($Arch -eq "x64") {
-    $ArchName = "x64"
-  } else {
-    $ArchName = "Win32"
-  }
-
-  & cmake.exe . -A $ArchName
-  if ($LASTEXITCODE -ne 0) {
-    throw "cmake failed"
-  }
-  & cmake.exe --build .
-  if ($LASTEXITCODE -ne 0) {
-    throw "cmake build failed"
-  }
-
-  Copy-Item ($ProtobufBase + "/Debug/protoc.exe") -Destination ($Base + "/build/bin/protoc.exe")
-  Copy-Item ($Base + "/Debug/grpc_node_plugin.exe") -Destination ($Base + "/build/bin/grpc_node_plugin.exe")
-
-  Compress-7Zip -Path ($Base + "/build") -Format Tar -ArchiveFileName ($Base + "/Archive.tar")
-  Compress-7Zip -Path ($Base + "/Archive.tar") -Format GZip -ArchiveFileName ($OutDir + "/win32-" + $Arch + ".tar.gz")
-
-  & git clean -xdf .
+if ($Arch -eq "x64") {
+  $ArchName = "x64"
+} else {
+  $ArchName = "Win32"
 }
+
+& cmake.exe . -A $ArchName
+if ($LASTEXITCODE -ne 0) {
+  throw "cmake failed"
+}
+& cmake.exe --build .
+if ($LASTEXITCODE -ne 0) {
+  throw "cmake build failed"
+}
+
+Copy-Item ($ProtobufBase + "/Debug/protoc.exe") -Destination ($Base + "/build/bin/protoc.exe")
+Copy-Item ($Base + "/Debug/grpc_node_plugin.exe") -Destination ($Base + "/build/bin/grpc_node_plugin.exe")
+
+Compress-7Zip -Path ($Base + "/build") -Format Tar -ArchiveFileName ($Base + "/Archive.tar")
+Compress-7Zip -Path ($Base + "/Archive.tar") -Format GZip -ArchiveFileName ($OutDir + "/win32-" + $Arch + ".tar.gz")
+
+& git clean -xdf .
