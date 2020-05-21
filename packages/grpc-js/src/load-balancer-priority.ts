@@ -111,22 +111,31 @@ export class PriorityLoadBalancer implements LoadBalancer {
       this.parent.onChildStateChange(this);
     }
 
+    private startFailoverTimer() {
+      if (this.failoverTimer === null) {
+        this.failoverTimer = setTimeout(() => {
+          this.failoverTimer = null;
+          this.updateState(
+            ConnectivityState.TRANSIENT_FAILURE,
+            new UnavailablePicker()
+          );
+        }, DEFAULT_FAILOVER_TIME_MS);
+      }
+    }
+
     updateAddressList(
       addressList: SubchannelAddress[],
       lbConfig: LoadBalancingConfig,
       attributes: { [key: string]: unknown }
     ): void {
       this.childBalancer.updateAddressList(addressList, lbConfig, attributes);
-      this.failoverTimer = setTimeout(() => {
-        this.failoverTimer = null;
-        this.updateState(
-          ConnectivityState.TRANSIENT_FAILURE,
-          new UnavailablePicker()
-        );
-      }, DEFAULT_FAILOVER_TIME_MS);
+      this.startFailoverTimer();
     }
 
     exitIdle() {
+      if (this.connectivityState === ConnectivityState.IDLE) {
+        this.startFailoverTimer();
+      }
       this.childBalancer.exitIdle();
     }
 
@@ -215,6 +224,16 @@ export class PriorityLoadBalancer implements LoadBalancer {
 
   constructor(private channelControlHelper: ChannelControlHelper) {}
 
+  private updateState(state: ConnectivityState, picker: Picker) {
+    /* If switching to IDLE, use a QueuePicker attached to this load balancer
+     * so that when the picker calls exitIdle, that in turn calls exitIdle on
+     * the PriorityChildImpl, which will start the failover timer. */
+    if (state === ConnectivityState.IDLE) {
+      picker = new QueuePicker(this);
+    }
+    this.channelControlHelper.updateState(state, picker);
+  }
+
   private onChildStateChange(child: PriorityChildBalancer) {
     const childState = child.getConnectivityState();
     if (child === this.currentChildFromBeforeUpdate) {
@@ -222,7 +241,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
         childState === ConnectivityState.READY ||
         childState === ConnectivityState.IDLE
       ) {
-        this.channelControlHelper.updateState(childState, child.getPicker());
+        this.updateState(childState, child.getPicker());
       } else {
         this.currentChildFromBeforeUpdate = null;
         this.tryNextPriority(true);
@@ -258,7 +277,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
     }
     /* The currently selected child has updated state to something other than
      * TRANSIENT_FAILURE, so we pass that update along */
-    this.channelControlHelper.updateState(childState, child.getPicker());
+    this.updateState(childState, child.getPicker());
   }
 
   private deleteChild(child: PriorityChildBalancer) {
@@ -279,7 +298,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
   private selectPriority(priority: number) {
     this.currentPriority = priority;
     const chosenChild = this.children.get(this.priorities[priority])!;
-    this.channelControlHelper.updateState(
+    this.updateState(
       chosenChild.getConnectivityState(),
       chosenChild.getPicker()
     );
@@ -302,10 +321,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
       /* If the child doesn't already exist, create it and update it.  */
       if (child === undefined) {
         if (reportConnecting) {
-          this.channelControlHelper.updateState(
-            ConnectivityState.CONNECTING,
-            new QueuePicker(this)
-          );
+          this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
         }
         child = new this.PriorityChildImpl(this, childName);
         this.children.set(childName, child);
@@ -332,17 +348,14 @@ export class PriorityLoadBalancer implements LoadBalancer {
         /* This child is still trying to connect. Wait until its failover timer
          * has ended to continue to the next one */
         if (reportConnecting) {
-          this.channelControlHelper.updateState(
-            ConnectivityState.CONNECTING,
-            new QueuePicker(this)
-          );
+          this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
         }
         return;
       }
     }
     this.currentPriority = null;
     this.currentChildFromBeforeUpdate = null;
-    this.channelControlHelper.updateState(
+    this.updateState(
       ConnectivityState.TRANSIENT_FAILURE,
       new UnavailablePicker({
         code: Status.UNAVAILABLE,
