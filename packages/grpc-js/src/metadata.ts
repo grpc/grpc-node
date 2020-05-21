@@ -278,11 +278,7 @@ export class Metadata {
               result.add(key, value);
             });
           } else if (values !== undefined) {
-            if (isCustomMetadata(key)) {
-              values.split(',').forEach((v) => result.add(key, v.trim()));
-            } else {
-              result.add(key, values);
-            }
+            result.add(key, values);
           }
         }
       } catch (error) {
