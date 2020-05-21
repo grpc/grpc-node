@@ -16,6 +16,10 @@
 
 $ErrorActionPreference = "Stop"
 
+<# https://stackoverflow.com/questions/16657778/install-nuget-via-powershell-script/26421187#comment107976901_48216538 #>
+
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls11,Tls12'
+
 Install-PackageProvider -Name NuGet -RequiredVersion 2.8.5.201 -Force
 Import-PackageProvider -Name NuGet -RequiredVersion 2.8.5.201
 Install-Module -Force -Name 7Zip4Powershell
@@ -37,34 +41,35 @@ MkDir-p ($Base + "/build/bin")
 $PackageFile = $Base + "/package.json"
 $ToolsVersion = ((Get-Content $PackageFile) -join "`n" | ConvertFrom-Json).version
 
-$OutDir = $Env:ARTIFACTS_OUT + "/grpc-tools/v" + $ToolsVersion
+cd ../..
+$OutDir = $pwd.Path + "/artifacts/grpc-tools/v" + $ToolsVersion
 Mkdir-p $OutDir
 
-$ArchList = "ia32","x64"
+cd $Base
 
-foreach ($Arch in $ArchList) {
-  if ($Arch -eq "x64") {
-    $Generator = "Visual Studio 14 2015 Win64"
-  } else {
-    $Generator = "Visual Studio 14 2015"
-  }
+Set-PSDebug -trace 2
 
-  & cmake.exe .
-  if ($LASTEXITCODE -ne 0) {
-    throw "cmake failed"
-  }
-  & cmake.exe --build .
-  if ($LASTEXITCODE -ne 0) {
-    throw "cmake build failed"
-  }
+$Arch = $Env:ARCH
 
-  Copy-Item ($ProtobufBase + "/Debug/protoc.exe") -Destination ($Base + "/build/bin/protoc.exe")
-  Copy-Item ($Base + "/Debug/grpc_node_plugin.exe") -Destination ($Base + "/build/bin/grpc_node_plugin.exe")
-
-  Compress-7Zip -Path ($Base + "/build") -Format Tar -ArchiveFileName ($Base + "/Archive.tar")
-  Compress-7Zip -Path ($Base + "/Archive.tar") -Format GZip -ArchiveFileName ($OutDir + "/win32-" + $Arch + ".tar.gz")
-
-  Remove-Item ($Base + "/build/bin/protoc.exe")
-  Remove-Item ($Base + "/build/bin/grpc_node_plugin.exe")
-  Remove-Item ($Base + "/CMakeCache.txt")
+if ($Arch -eq "x64") {
+  $ArchName = "x64"
+} else {
+  $ArchName = "Win32"
 }
+
+& cmake.exe . -A $ArchName
+if ($LASTEXITCODE -ne 0) {
+  throw "cmake failed"
+}
+& cmake.exe --build .
+if ($LASTEXITCODE -ne 0) {
+  throw "cmake build failed"
+}
+
+Copy-Item ($ProtobufBase + "/Debug/protoc.exe") -Destination ($Base + "/build/bin/protoc.exe")
+Copy-Item ($Base + "/Debug/grpc_node_plugin.exe") -Destination ($Base + "/build/bin/grpc_node_plugin.exe")
+
+Compress-7Zip -Path ($Base + "/build") -Format Tar -ArchiveFileName ($Base + "/Archive.tar")
+Compress-7Zip -Path ($Base + "/Archive.tar") -Format GZip -ArchiveFileName ($OutDir + "/win32-" + $Arch + ".tar.gz")
+
+& git clean -xdf .
