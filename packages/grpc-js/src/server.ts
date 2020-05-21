@@ -45,14 +45,25 @@ import {
 } from './server-call';
 import { ServerCredentials } from './server-credentials';
 import { ChannelOptions } from './channel-options';
-import { createResolver, ResolverListener, mapUriDefaultScheme } from './resolver';
-import { log } from './logging';
+import {
+  createResolver,
+  ResolverListener,
+  mapUriDefaultScheme,
+} from './resolver';
+import * as logging from './logging';
 import {
   SubchannelAddress,
   TcpSubchannelAddress,
   isTcpSubchannelAddress,
+  subchannelAddressToString,
 } from './subchannel';
 import { parseUri } from './uri-parser';
+
+const TRACER_NAME = 'server';
+
+function trace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 interface BindResult {
   port: number;
@@ -269,6 +280,7 @@ export class Server {
       }
       return Promise.all(
         addressList.map((address) => {
+          trace('Attempting to bind ' + subchannelAddressToString(address));
           let addr: SubchannelAddress;
           if (isTcpSubchannelAddress(address)) {
             addr = {
@@ -288,6 +300,7 @@ export class Server {
             http2Server.once('error', onError);
 
             http2Server.listen(addr, () => {
+              trace('Successfully bound ' + subchannelAddressToString(address));
               this.http2ServerList.push(http2Server);
               const boundAddress = http2Server.address()!;
               if (typeof boundAddress === 'string') {
@@ -378,11 +391,11 @@ export class Server {
           (bindResult) => {
             if (bindResult.count === 0) {
               const errorString = `No address added out of total ${addressList.length} resolved`;
-              log(LogVerbosity.ERROR, errorString);
+              logging.log(LogVerbosity.ERROR, errorString);
               callback(new Error(errorString), 0);
             } else {
               if (bindResult.count < addressList.length) {
-                log(
+                logging.log(
                   LogVerbosity.INFO,
                   `WARNING Only ${bindResult.count} addresses added out of total ${addressList.length} resolved`
                 );
@@ -392,7 +405,7 @@ export class Server {
           },
           (error) => {
             const errorString = `No address added out of total ${addressList.length} resolved`;
-            log(LogVerbosity.ERROR, errorString);
+            logging.log(LogVerbosity.ERROR, errorString);
             callback(new Error(errorString), 0);
           }
         );
@@ -444,6 +457,7 @@ export class Server {
       serialize,
       deserialize,
       type,
+      path: name,
     } as UntypedHandler);
     return true;
   }
@@ -528,9 +542,20 @@ export class Server {
 
         try {
           const path = headers[http2.constants.HTTP2_HEADER_PATH] as string;
+          trace(
+            'Received call to method ' +
+              path +
+              ' at address ' +
+              http2Server.address()?.toString()
+          );
           const handler = this.handlers.get(path);
 
           if (handler === undefined) {
+            trace(
+              'No handler registered for method ' +
+                path +
+                '. Sending UNIMPLEMENTED status.'
+            );
             throw getUnimplementedStatusResponse(path);
           }
 

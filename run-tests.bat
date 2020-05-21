@@ -54,7 +54,7 @@ for %%v in (8 10 12) do (
   node -e "process.exit(process.version.startsWith('v%%v') ? 0 : -1)" || goto :error
 
   call .\node_modules\.bin\gulp cleanAll || SET FAILED=1
-  call .\node_modules\.bin\gulp setupWindows || SET FAILED=1
+  call .\node_modules\.bin\gulp setup || SET FAILED=1
   call .\node_modules\.bin\gulp test || SET FAILED=1
   cmd.exe /c "SET GRPC_DNS_RESOLVER=ares& call .\node_modules\.bin\gulp nativeTestOnly" || SET FAILED=1
 )

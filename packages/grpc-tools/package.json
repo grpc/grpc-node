@@ -1,6 +1,6 @@
 {
   "name": "grpc-tools",
-  "version": "1.8.1",
+  "version": "1.9.0",
   "author": "Google Inc.",
   "description": "Tools for developing with gRPC on Node.js",
   "homepage": "https://grpc.io/",
@@ -23,7 +23,6 @@
     "install": "node-pre-gyp install",
     "prepublishOnly": "git submodule update --init --recursive && node copy_well_known_protos.js"
   },
-  "bundledDependencies": ["node-pre-gyp"],
   "dependencies": {
     "node-pre-gyp": "^0.12.0"
   },

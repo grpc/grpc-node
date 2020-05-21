@@ -130,7 +130,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    *     this load balancer's owner.
    */
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
-    this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
     this.subchannelStateCounts = {
       [ConnectivityState.CONNECTING]: 0,
       [ConnectivityState.IDLE]: 0,
@@ -168,6 +167,8 @@ export class PickFirstLoadBalancer implements LoadBalancer {
            * basic IDLE state where there is no subchannel list to avoid
            * holding unused resources */
           this.resetSubchannelList();
+          this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
+          return;
         }
         if (this.currentPick === null) {
           if (this.triedAllSubchannels) {

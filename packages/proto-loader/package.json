@@ -14,7 +14,7 @@
   "typings": "build/src/index.d.ts",
   "scripts": {
     "build": "npm run compile",
-    "clean": "gts clean",
+    "clean": "node -e 'require(\"rimraf\")(\"./build\", () => {})'",
     "compile": "tsc -p .",
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
     "lint": "tslint -c node_modules/google-ts-style/tslint.json -p . -t codeFrame --type-check",
@@ -47,6 +47,7 @@
     "@types/node": "^10.12.5",
     "clang-format": "^1.2.2",
     "gts": "^1.1.0",
+    "rimraf": "^3.0.2",
     "typescript": "~3.3.3333"
   },
   "engines": {

@@ -359,7 +359,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
       serialized = this.methodDefinition.requestSerialize(message);
       this.call.sendMessageWithContext(context, serialized);
     } catch (e) {
-      this.call.cancelWithStatus(Status.INTERNAL, 'Serialization failure');
+      this.call.cancelWithStatus(Status.INTERNAL, `Request message serialization failure: ${e.message}`);
     }
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -384,7 +384,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
         } catch (e) {
           readError = {
             code: Status.INTERNAL,
-            details: 'Failed to parse server response',
+            details: `Response message parsing error: ${e.message}`,
             metadata: new Metadata(),
           };
           this.call.cancelWithStatus(readError.code, readError.details);

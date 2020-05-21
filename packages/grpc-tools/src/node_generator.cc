@@ -212,7 +212,8 @@ void PrintService(const ServiceDescriptor* service, Printer* out,
 void PrintImports(const FileDescriptor* file, Printer* out,
                   const Parameters& params) {
   if (!params.generate_package_definition) {
-    out->Print("var grpc = require('grpc');\n");
+    grpc::string package = params.grpc_js ? "@grpc/grpc-js" : "grpc";
+    out->Print("var grpc = require('$package$');\n", "package", package);
   }
   if (file->message_type_count() > 0) {
     grpc::string file_path =

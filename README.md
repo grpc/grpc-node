@@ -7,7 +7,7 @@ For a comparison of the features available in these two libraries, see [this doc
 
 ### C-based Client and Server
 
-Directory: [`packages/grpc-native-core`](https://github.com/grpc/grpc-node/tree/master/packages/grpc-native-core) (see here for installation information)
+Directory: [`packages/grpc-native-core`](https://github.com/grpc/grpc-node/tree/grpc@1.24.x/packages/grpc-native-core) (lives in the `grpc@1.24.x` branch) (see here for installation information)
 
 npm package: [grpc](https://www.npmjs.com/package/grpc).
 

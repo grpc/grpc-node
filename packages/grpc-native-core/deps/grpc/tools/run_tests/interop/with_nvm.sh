@@ -1,5 +1,6 @@
 #!/bin/bash
-# Copyright 2017 gRPC authors.
+
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
-cd $(dirname $0)/..
-
-./run-tests.sh
+# Makes sure NVM is loaded before executing the command passed as an argument
+# shellcheck disable=SC1090
+source ~/.nvm/nvm.sh
+"$@"

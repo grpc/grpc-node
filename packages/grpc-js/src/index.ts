@@ -24,7 +24,7 @@ import {
   ClientWritableStream,
   ServiceError,
 } from './call';
-import { CallCredentials } from './call-credentials';
+import { CallCredentials, OAuth2Client } from './call-credentials';
 import { Deadline, StatusObject } from './call-stream';
 import { Channel, ConnectivityState, ChannelImplementation } from './channel';
 import { ChannelCredentials } from './channel-credentials';
@@ -33,7 +33,7 @@ import {
   Client,
   CallInvocationTransformer,
   CallProperties,
-  UnaryCallback
+  UnaryCallback,
 } from './client';
 import { LogVerbosity, Status } from './constants';
 import * as logging from './logging';
@@ -87,71 +87,13 @@ function mixin(...sources: IndexedObject[]) {
   return result;
 }
 
-export interface OAuth2Client {
-  getRequestMetadata: (
-    url: string,
-    callback: (
-      err: Error | null,
-      headers?: {
-        [index: string]: string;
-      }
-    ) => void
-  ) => void;
-  getRequestHeaders: (url?: string) => Promise<{ [index: string]: string }>;
-}
+export { OAuth2Client };
 
 /**** Client Credentials ****/
 
 // Using assign only copies enumerable properties, which is what we want
 export const credentials = mixin(
   {
-    /**
-     * Create a gRPC credential from a Google credential object.
-     * @param googleCredentials The authentication client to use.
-     * @return The resulting CallCredentials object.
-     */
-    createFromGoogleCredential: (
-      googleCredentials: OAuth2Client
-    ): CallCredentials => {
-      return CallCredentials.createFromMetadataGenerator(
-        (options, callback) => {
-          // google-auth-library pre-v2.0.0 does not have getRequestHeaders
-          // but has getRequestMetadata, which is deprecated in v2.0.0
-          let getHeaders: Promise<{ [index: string]: string }>;
-          if (typeof googleCredentials.getRequestHeaders === 'function') {
-            getHeaders = googleCredentials.getRequestHeaders(
-              options.service_url
-            );
-          } else {
-            getHeaders = new Promise((resolve, reject) => {
-              googleCredentials.getRequestMetadata(
-                options.service_url,
-                (err, headers) => {
-                  if (err) {
-                    reject(err);
-                    return;
-                  }
-                  resolve(headers);
-                }
-              );
-            });
-          }
-          getHeaders.then(
-            (headers) => {
-              const metadata = new Metadata();
-              for (const key of Object.keys(headers)) {
-                metadata.add(key, headers[key]);
-              }
-              callback(null, metadata);
-            },
-            (err) => {
-              callback(err);
-            }
-          );
-        }
-      );
-    },
-
     /**
      * Combine a ChannelCredentials with any number of CallCredentials into a
      * single ChannelCredentials object.
@@ -211,7 +153,7 @@ export {
   CallInvocationTransformer,
   ChannelImplementation as Channel,
   Channel as ChannelInterface,
-  UnaryCallback as requestCallback
+  UnaryCallback as requestCallback,
 };
 
 /**

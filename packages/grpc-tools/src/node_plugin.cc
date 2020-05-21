@@ -38,13 +38,16 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
                 grpc::string* error) const {
     grpc_node_generator::Parameters generator_parameters;
     generator_parameters.generate_package_definition = false;
+    generator_parameters.grpc_js = false;
     if (!parameter.empty()) {
-      std::vector<grpc::string> parameters_list =	
-          grpc_generator::tokenize(parameter, ",");	
-      for (auto parameter_string = parameters_list.begin();	
+      std::vector<grpc::string> parameters_list =
+          grpc_generator::tokenize(parameter, ",");
+      for (auto parameter_string = parameters_list.begin();
            parameter_string != parameters_list.end(); parameter_string++) {
         if (*parameter_string == "generate_package_definition") {
           generator_parameters.generate_package_definition = true;
+        } else if (*parameter_string == "grpc_js") {
+          generator_parameters.grpc_js = true;
         }
       }
     }
