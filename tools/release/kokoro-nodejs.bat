@@ -12,23 +12,8 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
-@echo "Starting Windows build"
-
-powershell -c "& { iwr https://raw.githubusercontent.com/grumpycoders/nvm-ps/master/nvm.ps1 | iex }"
-
-SET PATH=%APPDATA%\nvm-ps;%APPDATA%\nvm-ps\nodejs;%PATH%
-call nvm install 10
-call nvm use 10
-
-call npm install -g npm@6.10.x
-@rem https://github.com/mapbox/node-pre-gyp/issues/362
-call npm install -g node-gyp@3
-
 cd /d %~dp0
 cd ..\..
-
-git submodule update --init
-git submodule foreach --recursive git submodule update --init
 
 set ARTIFACTS_OUT=%cd%\artifacts
 cd packages\grpc-native-core

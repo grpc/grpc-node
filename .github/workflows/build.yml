@@ -1,0 +1,134 @@
+name: Binary build
+
+on:
+  push:
+    branches:
+      - 'grpc@1.24.x'
+  pull_request:
+    branches:
+      - 'grpc@1.24.x'
+
+jobs:
+  all_node_glibc:
+    name: All Simple Native Builds
+    strategy:
+      matrix:
+        node: ['4', '5', '6', '7', '8', '9', '10', '11', '12', '13']
+        arch: [ia32, x64]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{matrix.os}}
+    env:
+      ARCH: ${{matrix.arch}}
+      VERSION: ${{matrix.node}}.0.0
+      RUNTIME: node
+      LIBC: glibc
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - uses: actions/setup-node@v1.1.0
+      with:
+        node-version: 12
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.0.0
+      if: ${{matrix.os == 'windows-latest'}}
+    - name: Build
+      run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_${{matrix.os}}.sh
+      if: ${{matrix.os != 'windows-latest'}}
+    - name: Build
+      run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_${{matrix.os}}.bat
+      if: ${{matrix.os == 'windows-latest'}}
+    - uses: actions/upload-artifact@v2
+      with:
+        name: node_glibc_${{matrix.os}}_${{matrix.node}}_${{matrix.arch}}
+        path: artifacts/
+  all_electron:
+    name: All Electron Builds
+    strategy:
+      matrix:
+        electron: ['1.0', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7', '1.8', '2.0', '3.0', '3.1', '4.1', '4.2', '5.0', '6.0', '7.0']
+        arch: [ia32, x64]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{matrix.os}}
+    env:
+      ARCH: ${{matrix.arch}}
+      VERSION: ${{matrix.electron}}.0
+      RUNTIME: electron
+      LIBC: glibc
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - uses: actions/setup-node@v1.1.0
+      with:
+        node-version: 12
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.0.0
+      if: ${{matrix.os == 'windows-latest'}}
+    - name: Build
+      run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_${{matrix.os}}.sh
+      if: ${{matrix.os != 'windows-latest'}}
+    - name: Build
+      run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_${{matrix.os}}.bat
+      if: ${{matrix.os == 'windows-latest'}}
+    - uses: actions/upload-artifact@v2
+      with:
+        name: electron_${{matrix.os}}_${{matrix.electron}}_${{matrix.arch}}
+        path: artifacts/
+  linux_node_alpine:
+    name: Linux Alpine Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['4', '5', '6', '7', '8', '9', '10', '11', '12', '13']
+    env:
+      ARCH: x64
+      VERSION: ${{matrix.node}}.0.0
+      RUNTIME: node
+      LIBC: musl
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - name: Build
+      run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_ubuntu-latest.sh
+    - uses: actions/upload-artifact@v2
+      with:
+        name: linux_native_alpine_${{matrix.node}}
+        path: artifacts/
+  linux_node_cross:
+    name: Linux Cross Compilation Builds
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['4', '5', '6', '7', '8', '9', '10', '11', '12', '13']
+        arch: [arm, arm64, s390x]
+    env:
+      ARCH: ${{matrix.arch}}
+      VERSION: ${{matrix.node}}.0.0
+      RUNTIME: node
+      LIBC: glibc
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - name: Build
+      run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_ubuntu-latest.sh
+    - uses: actions/upload-artifact@v2
+      with:
+        name: linux_cross_${{matrix.node}}_${{matrix.arch}}
+        path: artifacts/
+  combine_artifacts:
+    name: Combine Artifacts
+    runs-on: ubuntu-latest
+    needs: [all_node_glibc, all_electron, linux_node_alpine, linux_node_cross]
+    steps:
+    - uses: actions/download-artifact@v2
+    - name: Copy
+      run: |
+        mkdir artifacts
+        cp -r ./**/* artifacts/
+    - uses: actions/upload-artifact@v2
+      with:
+        name: combined-artifacts
+        path: artifacts/

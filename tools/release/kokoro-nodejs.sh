@@ -13,25 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-
-nvm install 10
-nvm use 10
-npm install -g npm
-# https://github.com/mapbox/node-pre-gyp/issues/362
-npm install -g node-gyp
-
 set -ex
 cd $(dirname $0)/../..
 base_dir=$(pwd)
 
-# Install gRPC and its submodules.
-git submodule update --init
-git submodule foreach --recursive git submodule update --init
-
 pip install mako
+pip install pyyaml
 ./packages/grpc-native-core/tools/buildgen/generate_projects.sh
 
 OS=`uname`
