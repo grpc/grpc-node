@@ -20,12 +20,24 @@ import * as http2 from 'http2';
 import { Duplex, Readable, Writable } from 'stream';
 
 import { StatusObject } from './call-stream';
-import { Status, DEFAULT_MAX_SEND_MESSAGE_LENGTH, DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH } from './constants';
+import {
+  Status,
+  DEFAULT_MAX_SEND_MESSAGE_LENGTH,
+  DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
+  LogVerbosity,
+} from './constants';
 import { Deserialize, Serialize } from './make-client';
 import { Metadata } from './metadata';
 import { StreamDecoder } from './stream-decoder';
 import { ObjectReadable, ObjectWritable } from './object-stream';
 import { ChannelOptions } from './channel-options';
+import * as logging from './logging';
+
+const TRACER_NAME = 'server_call';
+
+function trace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 interface DeadlineUnitIndexSignature {
   [name: string]: number;
@@ -63,7 +75,7 @@ export type ServerErrorResponse = ServerStatusResponse & Error;
 
 export type ServerSurfaceCall = {
   cancelled: boolean;
-  readonly metadata: Metadata
+  readonly metadata: Metadata;
   getPeer(): string;
   sendMetadata(responseMetadata: Metadata): void;
 } & EventEmitter;
@@ -294,6 +306,7 @@ export interface UnaryHandler<RequestType, ResponseType> {
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
   type: HandlerType;
+  path: string;
 }
 
 export interface ClientStreamingHandler<RequestType, ResponseType> {
@@ -301,6 +314,7 @@ export interface ClientStreamingHandler<RequestType, ResponseType> {
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
   type: HandlerType;
+  path: string;
 }
 
 export interface ServerStreamingHandler<RequestType, ResponseType> {
@@ -308,6 +322,7 @@ export interface ServerStreamingHandler<RequestType, ResponseType> {
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
   type: HandlerType;
+  path: string;
 }
 
 export interface BidiStreamingHandler<RequestType, ResponseType> {
@@ -315,6 +330,7 @@ export interface BidiStreamingHandler<RequestType, ResponseType> {
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
   type: HandlerType;
+  path: string;
 }
 
 export type Handler<RequestType, ResponseType> =
@@ -447,10 +463,13 @@ export class Http2ServerCallStream<
       stream.once('end', async () => {
         try {
           const requestBytes = Buffer.concat(chunks, totalLength);
-          if (this.maxReceiveMessageSize !== -1 && requestBytes.length > this.maxReceiveMessageSize) {
+          if (
+            this.maxReceiveMessageSize !== -1 &&
+            requestBytes.length > this.maxReceiveMessageSize
+          ) {
             this.sendError({
               code: Status.RESOURCE_EXHAUSTED,
-              details: `Received message larger than max (${requestBytes.length} vs. ${this.maxReceiveMessageSize})`
+              details: `Received message larger than max (${requestBytes.length} vs. ${this.maxReceiveMessageSize})`,
             });
             resolve();
           }
@@ -521,6 +540,15 @@ export class Http2ServerCallStream<
       return;
     }
 
+    trace(
+      'Request to method ' +
+        this.handler?.path +
+        ' ended with status code: ' +
+        Status[statusObj.code] +
+        ' details: ' +
+        statusObj.details
+    );
+
     clearTimeout(this.deadline);
 
     if (!this.wantTrailers) {
@@ -574,10 +602,13 @@ export class Http2ServerCallStream<
       return;
     }
 
-    if (this.maxSendMessageSize !== -1 && chunk.length > this.maxSendMessageSize) {
+    if (
+      this.maxSendMessageSize !== -1 &&
+      chunk.length > this.maxSendMessageSize
+    ) {
       this.sendError({
-        code: Status.RESOURCE_EXHAUSTED, 
-        details: `Sent message larger than max (${chunk.length} vs. ${this.maxSendMessageSize})`
+        code: Status.RESOURCE_EXHAUSTED,
+        details: `Sent message larger than max (${chunk.length} vs. ${this.maxSendMessageSize})`,
       });
       return;
     }
@@ -608,10 +639,13 @@ export class Http2ServerCallStream<
       const messages = decoder.write(data);
 
       for (const message of messages) {
-        if (this.maxReceiveMessageSize !== -1 && message.length > this.maxReceiveMessageSize) {
+        if (
+          this.maxReceiveMessageSize !== -1 &&
+          message.length > this.maxReceiveMessageSize
+        ) {
           this.sendError({
             code: Status.RESOURCE_EXHAUSTED,
-            details: `Received message larger than max (${message.length} vs. ${this.maxReceiveMessageSize})`
+            details: `Received message larger than max (${message.length} vs. ${this.maxReceiveMessageSize})`,
           });
           return;
         }
