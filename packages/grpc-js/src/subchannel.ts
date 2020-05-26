@@ -507,10 +507,6 @@ export class Subchannel {
         this.stopKeepalivePings();
         break;
       case ConnectivityState.IDLE:
-        /* Stopping the backoff timer here is probably redundant because we
-         * should only transition to the IDLE state as a result of the timer
-         * ending, but we still want to reset the backoff timeout. */
-        this.stopBackoff();
         if (this.session) {
           this.session.close();
         }
