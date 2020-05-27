@@ -129,7 +129,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    * @param channelControlHelper `ChannelControlHelper` instance provided by
    *     this load balancer's owner.
    */
-  constructor(private channelControlHelper: ChannelControlHelper) {
+  constructor(private readonly channelControlHelper: ChannelControlHelper) {
     this.subchannelStateCounts = {
       [ConnectivityState.CONNECTING]: 0,
       [ConnectivityState.IDLE]: 0,
@@ -384,7 +384,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig | null
+    lbConfig: LoadBalancingConfig
   ): void {
     // lbConfig has no useful information for pick first load balancing
     /* To avoid unnecessary churn, we only do something with this address list
@@ -435,10 +435,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   getTypeName(): string {
     return TYPE_NAME;
-  }
-
-  replaceChannelControlHelper(channelControlHelper: ChannelControlHelper) {
-    this.channelControlHelper = channelControlHelper;
   }
 }
 

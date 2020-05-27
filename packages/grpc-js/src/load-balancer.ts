@@ -67,7 +67,7 @@ export interface LoadBalancer {
    */
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig | null,
+    lbConfig: LoadBalancingConfig,
     attributes: { [key: string]: unknown }
   ): void;
   /**
@@ -91,11 +91,6 @@ export interface LoadBalancer {
    * balancer implementation class was registered with.
    */
   getTypeName(): string;
-  /**
-   * Replace the existing ChannelControlHelper with a new one
-   * @param channelControlHelper The new ChannelControlHelper to use from now on
-   */
-  replaceChannelControlHelper(channelControlHelper: ChannelControlHelper): void;
 }
 
 export interface LoadBalancerConstructor {
@@ -126,6 +121,17 @@ export function createLoadBalancer(
 
 export function isLoadBalancerNameRegistered(typeName: string): boolean {
   return typeName in registeredLoadBalancerTypes;
+}
+
+export function getFirstUsableConfig(
+  configs: LoadBalancingConfig[]
+): LoadBalancingConfig | null {
+  for (const config of configs) {
+    if (config.name in registeredLoadBalancerTypes) {
+      return config;
+    }
+  }
+  return null;
 }
 
 export function registerAll() {

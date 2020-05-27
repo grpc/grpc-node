@@ -25,6 +25,8 @@
  * runtime */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+export type PickFirstConfig = {};
+
 export type RoundRobinConfig = {};
 
 export interface XdsConfig {
@@ -37,11 +39,69 @@ export interface GrpcLbConfig {
   childPolicy: LoadBalancingConfig[];
 }
 
-export interface LoadBalancingConfig {
-  /* Exactly one of these must be set for a config to be valid */
-  round_robin?: RoundRobinConfig;
-  xds?: XdsConfig;
-  grpclb?: GrpcLbConfig;
+export interface PriorityChild {
+  config: LoadBalancingConfig[];
+}
+
+export interface PriorityLbConfig {
+  children: Map<string, PriorityChild>;
+  priorities: string[];
+}
+
+export interface PickFirstLoadBalancingConfig {
+  name: 'pick_first';
+  pick_first: PickFirstConfig;
+}
+
+export interface RoundRobinLoadBalancingConfig {
+  name: 'round_robin';
+  round_robin: RoundRobinConfig;
+}
+
+export interface XdsLoadBalancingConfig {
+  name: 'xds';
+  xds: XdsConfig;
+}
+
+export interface GrpcLbLoadBalancingConfig {
+  name: 'grpclb';
+  grpclb: GrpcLbConfig;
+}
+
+export interface PriorityLoadBalancingConfig {
+  name: 'priority';
+  priority: PriorityLbConfig;
+}
+
+export type LoadBalancingConfig =
+  | PickFirstLoadBalancingConfig
+  | RoundRobinLoadBalancingConfig
+  | XdsLoadBalancingConfig
+  | GrpcLbLoadBalancingConfig
+  | PriorityLoadBalancingConfig;
+
+export function isRoundRobinLoadBalancingConfig(
+  lbconfig: LoadBalancingConfig
+): lbconfig is RoundRobinLoadBalancingConfig {
+  return lbconfig.name === 'round_robin';
+}
+
+export function isXdsLoadBalancingConfig(
+  lbconfig: LoadBalancingConfig
+): lbconfig is XdsLoadBalancingConfig {
+  return lbconfig.name === 'xds';
+}
+
+export function isGrpcLbLoadBalancingConfig(
+  lbconfig: LoadBalancingConfig
+): lbconfig is GrpcLbLoadBalancingConfig {
+  return lbconfig.name === 'grpclb';
+}
+
+export function isPriorityLoadBalancingConfig(
+  lbconfig: LoadBalancingConfig
+): lbconfig is PriorityLoadBalancingConfig {
+  return lbconfig.name === 'priority';
 }
 
 /* In these functions we assume the input came from a JSON object. Therefore we
@@ -97,17 +157,26 @@ export function validateConfig(obj: any): LoadBalancingConfig {
       throw new Error('Multiple load balancing policies configured');
     }
     if (obj['round_robin'] instanceof Object) {
-      return { round_robin: {} };
+      return {
+        name: 'round_robin',
+        round_robin: {},
+      };
     }
   }
   if ('xds' in obj) {
     if ('grpclb' in obj) {
       throw new Error('Multiple load balancing policies configured');
     }
-    return { xds: validateXdsConfig(obj.xds) };
+    return {
+      name: 'xds',
+      xds: validateXdsConfig(obj.xds),
+    };
   }
   if ('grpclb' in obj) {
-    return { grpclb: validateGrpcLbConfig(obj.grpclb) };
+    return {
+      name: 'grpclb',
+      grpclb: validateGrpcLbConfig(obj.grpclb),
+    };
   }
   throw new Error('No recognized load balancing policy configured');
 }
