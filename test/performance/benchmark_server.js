@@ -39,7 +39,7 @@ var protoPackage = protoLoader.loadSync(
      defaults: true,
      enums: String,
      oneofs: true,
-     includeDirs: [__dirname + '/../../packages/grpc-native-core/deps/grpc']});
+     includeDirs: [__dirname + '/../proto']});
 var serviceProto = grpc.loadPackageDefinition(protoPackage).grpc.testing;
 
 /**

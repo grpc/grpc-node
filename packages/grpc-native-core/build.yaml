@@ -1,2 +1,0 @@
-settings:
-  '#': It's possible to have node_version here as a key to override the core's version.

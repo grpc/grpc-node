@@ -26,25 +26,15 @@ const healthCheckDir = __dirname;
 const baseDir = path.resolve(healthCheckDir, '..', '..');
 const testDir = path.resolve(healthCheckDir, 'test');
 
-const cleanLinks = () => del(path.resolve(healthCheckDir, 'node_modules/grpc'));
-
-const cleanAll = gulp.parallel(cleanLinks);
-
 const runInstall = () => execa('npm', ['install', '--unsafe-perm'], {cwd: healthCheckDir, stdio: 'inherit'});
 
-const install = gulp.series(cleanLinks, runInstall);
+const runRebuild = () => execa('npm', ['rebuild', '--unsafe-perm'], {cwd: healthCheckDir, stdio: 'inherit'});
 
-const linkAdd = (callback) => {
-  linkSync(healthCheckDir, './node_modules/grpc', '../grpc-native-core');
-  callback();
-}
+const install = gulp.series(runInstall, runRebuild);
 
 const test = () => gulp.src(`${testDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
 
 export {
-  cleanLinks,
-  cleanAll,
   install,
-  linkAdd,
   test
 }

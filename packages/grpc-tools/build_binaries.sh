@@ -23,8 +23,8 @@ protobuf_base=$base/deps/protobuf
 
 tools_version=$(jq '.version' < package.json | tr -d '"')
 
-# Note: $ARTIFACTS_OUT should not be in this directory
-out_dir=$ARTIFACTS_OUT/grpc-tools/v$tools_version
+# Note: artifacts should not be output in the package directory
+out_dir=$base/../../artifacts/grpc-tools/v$tools_version
 mkdir -p "$out_dir"
 
 case $(uname -s) in

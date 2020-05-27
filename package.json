@@ -54,15 +54,13 @@
     "include": [
       "packages/grpc-health-check/health.js",
       "packages/grpc-js/build/src/*",
-      "packages/grpc-native-core/index.js",
-      "packages/grpc-native-core/src/*.js",
       "packages/proto-loader/build/src/*"
     ],
     "cache": true,
     "all": true
   },
   "scripts": {
-    "test": "nyc gulp test && GRPC_DNS_RESOLVER=ares nyc gulp nativeTestOnly",
+    "test": "nyc gulp test",
     "coverage": "nyc report --reporter=text-lcov | coveralls"
   }
 }

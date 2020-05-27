@@ -21,7 +21,7 @@
 // TODO(murgatroid99): use multiple grpc implementations
 var grpc = require('grpc');
 
-var proto = grpc.load(__dirname + '/../packages/grpc-native-core/ext/grpc/src/proto/grpc/testing/metrics.proto');
+var proto = grpc.load(__dirname + '/../proto/src/proto/grpc/testing/metrics.proto');
 var metrics = proto.grpc.testing;
 
 function main() {
