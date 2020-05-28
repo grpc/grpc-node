@@ -48,6 +48,15 @@ export interface PriorityLbConfig {
   priorities: string[];
 }
 
+export interface WeightedTarget {
+  weight: number;
+  child_policy: LoadBalancingConfig[];
+}
+
+export interface WeightedTargetLbConfig {
+  targets: Map<string, WeightedTarget>;
+}
+
 export interface PickFirstLoadBalancingConfig {
   name: 'pick_first';
   pick_first: PickFirstConfig;
@@ -73,12 +82,18 @@ export interface PriorityLoadBalancingConfig {
   priority: PriorityLbConfig;
 }
 
+export interface WeightedTargetLoadBalancingConfig {
+  name: 'weighted_target';
+  weighted_target: WeightedTargetLbConfig;
+}
+
 export type LoadBalancingConfig =
   | PickFirstLoadBalancingConfig
   | RoundRobinLoadBalancingConfig
   | XdsLoadBalancingConfig
   | GrpcLbLoadBalancingConfig
-  | PriorityLoadBalancingConfig;
+  | PriorityLoadBalancingConfig
+  | WeightedTargetLoadBalancingConfig;
 
 export function isRoundRobinLoadBalancingConfig(
   lbconfig: LoadBalancingConfig
@@ -102,6 +117,12 @@ export function isPriorityLoadBalancingConfig(
   lbconfig: LoadBalancingConfig
 ): lbconfig is PriorityLoadBalancingConfig {
   return lbconfig.name === 'priority';
+}
+
+export function isWeightedTargetLoadBalancingConfig(
+  lbconfig: LoadBalancingConfig
+): lbconfig is WeightedTargetLoadBalancingConfig {
+  return lbconfig.name === 'weighted_target';
 }
 
 /* In these functions we assume the input came from a JSON object. Therefore we
