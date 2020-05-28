@@ -100,9 +100,6 @@ export class PriorityLoadBalancer implements LoadBalancer {
         },
       });
       this.picker = new QueuePicker(this.childBalancer);
-
-      this.deactivationTimer = setTimeout(() => {}, 0);
-      clearTimeout(this.deactivationTimer);
     }
 
     private updateState(connectivityState: ConnectivityState, picker: Picker) {
@@ -415,7 +412,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
     this.priorities = priorityConfig.priorities;
     /* Pair up the new child configs with the corresponding address lists, and
      * update all existing children with their new configs */
-    for (const [childName, childConfig] of priorityConfig.children.entries()) {
+    for (const [childName, childConfig] of priorityConfig.children) {
       const chosenChildConfig = getFirstUsableConfig(childConfig.config);
       if (chosenChildConfig !== null) {
         const childAddresses = childAddressMap.get(childName) ?? [];
@@ -434,7 +431,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
       }
     }
     // Deactivate all children that are no longer in the priority list
-    for (const [childName, child] of this.children.entries()) {
+    for (const [childName, child] of this.children) {
       if (this.priorities.indexOf(childName) < 0) {
         child.deactivate();
       }
