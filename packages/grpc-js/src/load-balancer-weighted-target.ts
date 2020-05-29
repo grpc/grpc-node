@@ -299,6 +299,13 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
       target.updateAddressList(childAddressMap.get(targetName) ?? [], targetConfig, attributes);
     }
 
+    // Deactivate targets that are not in the new config
+    for (const [targetName, target] of this.targets) {
+      if (this.targetList.indexOf(targetName) < 0) {
+        target.deactivate();
+      }
+    }
+
     this.updateState();
   }
   exitIdle(): void {
