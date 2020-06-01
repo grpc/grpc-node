@@ -28,7 +28,7 @@ jobs:
         submodules: recursive
     - uses: actions/setup-node@v1.1.0
       with:
-        node-version: 12
+        node-version: 14
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.0.0
       if: ${{matrix.os == 'windows-latest'}}
@@ -61,7 +61,7 @@ jobs:
         submodules: recursive
     - uses: actions/setup-node@v1.1.0
       with:
-        node-version: 12
+        node-version: 14
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.0.0
       if: ${{matrix.os == 'windows-latest'}}
