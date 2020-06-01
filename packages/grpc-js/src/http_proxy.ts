@@ -125,6 +125,9 @@ export function mapProxyName(
     target: target,
     extraOptions: {},
   };
+  if ((options['grpc.enable_http_proxy'] ?? 1) === 0) {
+    return noProxyResult;
+  }
   const proxyInfo = getProxyInfo();
   if (!proxyInfo.address) {
     return noProxyResult;
