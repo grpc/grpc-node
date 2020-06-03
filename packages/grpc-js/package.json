@@ -26,6 +26,7 @@
     "@types/semver": "^6.0.1",
     "clang-format": "^1.0.55",
     "execa": "^2.0.3",
+    "google-auth-library": "^6.0.0",
     "gts": "^2.0.0",
     "gulp": "^4.0.2",
     "gulp-mocha": "^6.0.0",
@@ -56,8 +57,10 @@
     "posttest": "npm run check"
   },
   "dependencies": {
-    "google-auth-library": "^6.0.0",
     "semver": "^6.2.0"
+  },
+  "peerDependencies": {
+    "google-auth-library": "5.x || 6.x"
   },
   "files": [
     "src/*.ts",
