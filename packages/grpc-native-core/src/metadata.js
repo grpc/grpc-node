@@ -22,6 +22,9 @@ var clone = require('lodash.clone');
 
 var grpc = require('./grpc_extension');
 
+const common = require('./common');
+const logVerbosity = require('./constants').logVerbosity;
+
 const IDEMPOTENT_REQUEST_FLAG = 0x10;
 const WAIT_FOR_READY_FLAG = 0x20;
 const CACHEABLE_REQUEST_FLAG = 0x40;
@@ -231,6 +234,12 @@ Metadata._fromCoreRepresentation = function(metadata) {
   if (metadata) {
     Object.keys(metadata.metadata).forEach(key => {
       const value = metadata.metadata[key];
+      if (!grpc.metadataKeyIsLegal(key)) {
+        common.log(logVerbosity.ERROR,
+          "Warning: possibly corrupted metadata key received: " +
+          key + ": " + value +
+          ". Please report this at https://github.com/grpc/grpc-node/issues/1173.");
+      }
       newMetadata._internal_repr[key] = clone(value);
     });
   }

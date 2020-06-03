@@ -1,6 +1,8 @@
 [![npm](https://img.shields.io/npm/v/grpc.svg)](https://www.npmjs.com/package/grpc)
 # Node.js gRPC Library
 
+**This library is now only receiving bug fixes and runtime compatibility updates. In April 2021 it will be deprecated and will no longer receive any updates.**
+
 ## PREREQUISITES
 - `node`: This requires `node` to be installed, version `4.0` or above. If you instead have the `nodejs` executable on Debian, you should install the [`nodejs-legacy`](https://packages.debian.org/sid/nodejs-legacy) package.
 
