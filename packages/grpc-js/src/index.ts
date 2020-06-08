@@ -31,6 +31,7 @@ import { ChannelCredentials } from './channel-credentials';
 import {
   CallOptions,
   Client,
+  ClientOptions,
   CallInvocationTransformer,
   CallProperties,
   UnaryCallback,
@@ -133,6 +134,7 @@ export {
 
 export {
   Client,
+  ClientOptions,
   loadPackageDefinition,
   makeClientConstructor,
   makeClientConstructor as makeGenericClientConstructor,
