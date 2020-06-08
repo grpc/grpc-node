@@ -28,7 +28,7 @@ import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { getProxiedConnection, ProxyConnectionResult } from './http_proxy';
 import * as net from 'net';
-import { GrpcUri } from './uri-parser';
+import { GrpcUri, parseUri } from './uri-parser';
 import { ConnectionOptions } from 'tls';
 import { FilterFactory, Filter } from './filter';
 
@@ -286,6 +286,9 @@ export class Subchannel {
   }
 
   private createSession(proxyConnectionResult: ProxyConnectionResult) {
+    const targetAuthority = getDefaultAuthority(
+      proxyConnectionResult.realTarget ?? this.channelTarget
+    );
     let connectionOptions: http2.SecureClientSessionOptions =
       this.credentials._getConnectionOptions() || {};
     let addressScheme = 'http://';
@@ -305,8 +308,16 @@ export class Subchannel {
           return checkServerIdentity(sslTargetNameOverride, cert);
         };
         connectionOptions.servername = sslTargetNameOverride;
+      } else {
+        // We want to always set servername to support SNI
+        connectionOptions.servername = targetAuthority;
       }
       if (proxyConnectionResult.socket) {
+        /* This is part of the workaround for
+         * https://github.com/nodejs/node/issues/32922. Without that bug,
+         * proxyConnectionResult.socket would always be a plaintext socket and
+         * this would say
+         * connectionOptions.socket = proxyConnectionResult.socket; */
         connectionOptions.createConnection = (authority, option) => {
           return proxyConnectionResult.socket!;
         };
@@ -350,10 +361,7 @@ export class Subchannel {
      * determines whether the connection will be established over TLS or not.
      */
     const session = http2.connect(
-      addressScheme +
-        getDefaultAuthority(
-          proxyConnectionResult.realTarget ?? this.channelTarget
-        ),
+      addressScheme + targetAuthority,
       connectionOptions
     );
     this.session = session;
@@ -446,6 +454,18 @@ export class Subchannel {
           return checkServerIdentity(sslTargetNameOverride, cert);
         };
         connectionOptions.servername = sslTargetNameOverride;
+      } else {
+        if ('grpc.http_connect_target' in this.options) {
+          /* This is more or less how servername will be set in createSession
+           * if a connection is successfully established through the proxy.
+           * If the proxy is not used, these connectionOptions are discarded
+           * anyway */
+          connectionOptions.servername = getDefaultAuthority(
+            parseUri(this.options['grpc.http_connect_target'] as string) ?? {
+              path: 'localhost',
+            }
+          );
+        }
       }
     }
 
