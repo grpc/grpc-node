@@ -341,15 +341,13 @@ export type Handler<RequestType, ResponseType> =
 
 export type HandlerType = 'bidi' | 'clientStream' | 'serverStream' | 'unary';
 
-const noopTimer: NodeJS.Timer = setTimeout(() => {}, 0);
-
 // Internal class that wraps the HTTP2 request.
 export class Http2ServerCallStream<
   RequestType,
   ResponseType
 > extends EventEmitter {
   cancelled = false;
-  deadline: NodeJS.Timer = noopTimer;
+  deadline: NodeJS.Timer = setTimeout(() => {}, 0);
   private wantTrailers = false;
   private metadataSent = false;
   private canPush = false;
@@ -389,6 +387,9 @@ export class Http2ServerCallStream<
     if ('grpc.max_receive_message_length' in options) {
       this.maxReceiveMessageSize = options['grpc.max_receive_message_length']!;
     }
+
+    // Clear noop timer
+    clearTimeout(this.deadline);
   }
 
   private checkCancelled(): boolean {
