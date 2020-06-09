@@ -500,7 +500,6 @@ export class Server {
       }
     }
 
-    pendingChecks += this.sessions.size;
     this.sessions.forEach((session) => {
       if (!session.closed) {
         pendingChecks += 1;
