@@ -31,6 +31,7 @@ import { ChannelCredentials } from './channel-credentials';
 import {
   CallOptions,
   Client,
+  ClientOptions,
   CallInvocationTransformer,
   CallProperties,
   UnaryCallback,
@@ -69,65 +70,52 @@ if (!semver.satisfies(process.version, supportedNodeVersions)) {
   throw new Error(`@grpc/grpc-js only works on Node ${supportedNodeVersions}`);
 }
 
-interface IndexedObject {
-  [key: string]: any; // eslint-disable-line @typescript-eslint/no-explicit-any
-  [key: number]: any; // eslint-disable-line @typescript-eslint/no-explicit-any
-}
-
-function mixin(...sources: IndexedObject[]) {
-  const result: { [key: string]: Function } = {};
-  for (const source of sources) {
-    for (const propName of Object.getOwnPropertyNames(source)) {
-      const property: any = source[propName]; // eslint-disable-line @typescript-eslint/no-explicit-any
-      if (typeof property === 'function') {
-        result[propName] = property;
-      }
-    }
-  }
-  return result;
-}
-
 export { OAuth2Client };
 
 /**** Client Credentials ****/
 
 // Using assign only copies enumerable properties, which is what we want
-export const credentials = mixin(
-  {
-    /**
-     * Combine a ChannelCredentials with any number of CallCredentials into a
-     * single ChannelCredentials object.
-     * @param channelCredentials The ChannelCredentials object.
-     * @param callCredentials Any number of CallCredentials objects.
-     * @return The resulting ChannelCredentials object.
-     */
-    combineChannelCredentials: (
-      channelCredentials: ChannelCredentials,
-      ...callCredentials: CallCredentials[]
-    ): ChannelCredentials => {
-      return callCredentials.reduce(
-        (acc, other) => acc.compose(other),
-        channelCredentials
-      );
-    },
-
-    /**
-     * Combine any number of CallCredentials into a single CallCredentials
-     * object.
-     * @param first The first CallCredentials object.
-     * @param additional Any number of additional CallCredentials objects.
-     * @return The resulting CallCredentials object.
-     */
-    combineCallCredentials: (
-      first: CallCredentials,
-      ...additional: CallCredentials[]
-    ): CallCredentials => {
-      return additional.reduce((acc, other) => acc.compose(other), first);
-    },
+export const credentials = {
+  /**
+   * Combine a ChannelCredentials with any number of CallCredentials into a
+   * single ChannelCredentials object.
+   * @param channelCredentials The ChannelCredentials object.
+   * @param callCredentials Any number of CallCredentials objects.
+   * @return The resulting ChannelCredentials object.
+   */
+  combineChannelCredentials: (
+    channelCredentials: ChannelCredentials,
+    ...callCredentials: CallCredentials[]
+  ): ChannelCredentials => {
+    return callCredentials.reduce(
+      (acc, other) => acc.compose(other),
+      channelCredentials
+    );
   },
-  ChannelCredentials,
-  CallCredentials
-);
+
+  /**
+   * Combine any number of CallCredentials into a single CallCredentials
+   * object.
+   * @param first The first CallCredentials object.
+   * @param additional Any number of additional CallCredentials objects.
+   * @return The resulting CallCredentials object.
+   */
+  combineCallCredentials: (
+    first: CallCredentials,
+    ...additional: CallCredentials[]
+  ): CallCredentials => {
+    return additional.reduce((acc, other) => acc.compose(other), first);
+  },
+
+  // from channel-credentials.ts
+  createInsecure: ChannelCredentials.createInsecure,
+  createSsl: ChannelCredentials.createSsl,
+
+  // from call-credentials.ts
+  createFromMetadataGenerator: CallCredentials.createFromMetadataGenerator,
+  createFromGoogleCredential: CallCredentials.createFromGoogleCredential,
+  createEmpty: CallCredentials.createEmpty,
+};
 
 /**** Metadata ****/
 
@@ -146,6 +134,7 @@ export {
 
 export {
   Client,
+  ClientOptions,
   loadPackageDefinition,
   makeClientConstructor,
   makeClientConstructor as makeGenericClientConstructor,

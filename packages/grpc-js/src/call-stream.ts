@@ -289,6 +289,13 @@ export class Http2CallStream implements Call {
     );
     this.canPush = false;
     process.nextTick(() => {
+      /* If we have already output the status any later messages should be
+       * ignored, and can cause out-of-order operation errors higher up in the
+       * stack. Checking as late as possible here to avoid any race conditions.
+       */
+      if (this.statusOutput) {
+        return;
+      }
       this.listener?.onReceiveMessage(message);
       this.maybeOutputStatus();
     });

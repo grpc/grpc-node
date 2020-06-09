@@ -231,19 +231,23 @@ export class Subchannel {
       maxDelay: options['grpc.max_reconnect_backoff_ms'],
     };
     this.backoffTimeout = new BackoffTimeout(() => {
-      if (this.continueConnecting) {
-        this.transitionToState(
-          [ConnectivityState.TRANSIENT_FAILURE],
-          ConnectivityState.CONNECTING
-        );
-      } else {
-        this.transitionToState(
-          [ConnectivityState.TRANSIENT_FAILURE],
-          ConnectivityState.IDLE
-        );
-      }
+      this.handleBackoffTimer();
     }, backoffOptions);
     this.subchannelAddressString = subchannelAddressToString(subchannelAddress);
+  }
+
+  private handleBackoffTimer() {
+    if (this.continueConnecting) {
+      this.transitionToState(
+        [ConnectivityState.TRANSIENT_FAILURE],
+        ConnectivityState.CONNECTING
+      );
+    } else {
+      this.transitionToState(
+        [ConnectivityState.TRANSIENT_FAILURE],
+        ConnectivityState.IDLE
+      );
+    }
   }
 
   /**
@@ -505,12 +509,16 @@ export class Subchannel {
         }
         this.session = null;
         this.stopKeepalivePings();
+        /* If the backoff timer has already ended by the time we get to the
+         * TRANSIENT_FAILURE state, we want to immediately transition out of
+         * TRANSIENT_FAILURE as though the backoff timer is ending right now */
+        if (!this.backoffTimeout.isRunning()) {
+          process.nextTick(() => {
+            this.handleBackoffTimer();
+          });
+        }
         break;
       case ConnectivityState.IDLE:
-        /* Stopping the backoff timer here is probably redundant because we
-         * should only transition to the IDLE state as a result of the timer
-         * ending, but we still want to reset the backoff timeout. */
-        this.stopBackoff();
         if (this.session) {
           this.session.close();
         }

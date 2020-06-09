@@ -32,6 +32,7 @@ export interface ChannelOptions {
   'grpc.use_local_subchannel_pool'?: number;
   'grpc.max_send_message_length'?: number;
   'grpc.max_receive_message_length'?: number;
+  'grpc.enable_http_proxy'?: number;
   [key: string]: string | number | undefined;
 }
 
@@ -53,6 +54,7 @@ export const recognizedOptions = {
   'grpc.use_local_subchannel_pool': true,
   'grpc.max_send_message_length': true,
   'grpc.max_receive_message_length': true,
+  'grpc.enable_http_proxy': true,
 };
 
 export function channelOptionsEqual(

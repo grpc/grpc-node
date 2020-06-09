@@ -43,5 +43,6 @@ In addition, all channel arguments defined in [this header file](https://github.
  - `grpc.use_local_subchannel_pool`
  - `grpc.max_send_message_length`
  - `grpc.max_receive_message_length`
+ - `grpc.enable_http_proxy`
  - `channelOverride`
  - `channelFactoryOverride`
