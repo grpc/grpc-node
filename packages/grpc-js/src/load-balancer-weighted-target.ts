@@ -23,23 +23,11 @@ import { ConnectivityState } from "./channel";
 import { ChildLoadBalancerHandler } from "./load-balancer-child-handler";
 import { Status } from "./constants";
 import { Metadata } from "./metadata";
+import { isLocalitySubchannelAddress, LocalitySubchannelAddress } from "./load-balancer-priority";
 
 const TYPE_NAME = 'weighted_target';
 
 const DEFAULT_RETENTION_INTERVAL_MS = 15 * 60 * 1000;
-
-/* These should be imported from load-balancer-priority.ts or factored into
- * a separate file */
-
-export type LocalitySubchannelAddress = SubchannelAddress & {
-  localityPath: string[];
-};
-
-export function isLocalitySubchannelAddress(
-  address: SubchannelAddress
-): address is LocalitySubchannelAddress {
-  return Array.isArray((address as LocalitySubchannelAddress).localityPath);
-}
 
 /**
  * Represents a picker and a subinterval of a larger interval used for randomly
