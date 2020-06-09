@@ -1,3 +1,9 @@
 [submodule "packages/grpc-tools/deps/protobuf"]
 	path = packages/grpc-tools/deps/protobuf
 	url = https://github.com/protocolbuffers/protobuf
+[submodule "packages/grpc-js/deps/envoy-api"]
+	path = packages/grpc-js/deps/envoy-api
+	url = https://github.com/envoyproxy/data-plane-api.git
+[submodule "packages/grpc-js/deps/udpa"]
+	path = packages/grpc-js/deps/udpa
+	url = https://github.com/cncf/udpa.git
