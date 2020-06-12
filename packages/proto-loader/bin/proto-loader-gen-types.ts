@@ -125,7 +125,7 @@ function generatePermissiveMessageInterface(formatter: TextFormatter, messageTyp
         type = 'string';
         break;
       case 'bytes':
-        type = 'Buffer | UInt8Array | String';
+        type = 'Buffer | Uint8Array | string';
         break;
       default:
         if (field.resolvedType === null) {
@@ -188,7 +188,7 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
         if (options.bytes === Array) {
           type = 'Uint8Array';
         } else if (options.bytes === String) {
-          type = 'String';
+          type = 'string';
         } else {
           type = 'Buffer';
         }
