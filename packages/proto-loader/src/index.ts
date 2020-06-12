@@ -20,6 +20,8 @@ import * as path from 'path';
 import * as Protobuf from 'protobufjs';
 import * as descriptor from 'protobufjs/ext/descriptor';
 
+export { Long } from 'long';
+
 import camelCase = require('lodash.camelcase');
 
 declare module 'protobufjs' {

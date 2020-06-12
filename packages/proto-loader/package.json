@@ -36,19 +36,30 @@
   "files": [
     "LICENSE",
     "build/src/*.d.ts",
-    "build/src/*.js"
+    "build/src/*.js",
+    "build/bin/*.js"
   ],
+  "bin": {
+    "proto-loader-gen-types": "./build/bin/proto-loader-gen-types.js"
+  },
   "dependencies": {
+    "@types/long": "^4.0.1",
     "lodash.camelcase": "^4.3.0",
-    "protobufjs": "^6.8.6"
+    "long": "^4.0.0",
+    "mkdirp": "^1.0.4",
+    "protobufjs": "^6.8.6",
+    "yargs": "^15.3.1"
   },
   "devDependencies": {
     "@types/lodash.camelcase": "^4.3.4",
-    "@types/node": "^10.12.5",
+    "@types/mkdirp": "^1.0.1",
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^10.17.26",
+    "@types/yargs": "^15.0.5",
     "clang-format": "^1.2.2",
     "gts": "^1.1.0",
     "rimraf": "^3.0.2",
-    "typescript": "~3.3.3333"
+    "typescript": "~3.8.3"
   },
   "engines": {
     "node": ">=6"
