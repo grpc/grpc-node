@@ -24,7 +24,7 @@
     "prepublishOnly": "git submodule update --init --recursive && node copy_well_known_protos.js"
   },
   "dependencies": {
-    "node-pre-gyp": "^0.12.0"
+    "node-pre-gyp": "^0.15.0"
   },
   "binary": {
     "module_name": "grpc_tools",
