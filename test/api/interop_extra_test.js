@@ -150,7 +150,7 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
         response_parameters: [
         ]
       };
-      for (let i = 0; i < 100_000; i++) {
+      for (let i = 0; i < 100000; i++) {
         arg.response_parameters.push({size: 0});
       }
       var call = client.streamingOutputCall(arg);
