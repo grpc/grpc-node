@@ -158,12 +158,13 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
       call.on('data', (value) => {
         responseCount++;
       });
-      call.on('end', () => {
+      call.on('status', (status) => {
+        assert.strictEqual(status.code, grpc.status.OK);
         assert.strictEqual(responseCount, arg.response_parameters.length);
         done();
       });
-      call.on('status', function(status) {
-        assert.strictEqual(status.code, grpc.status.OK);
+      call.on('error', (error) => {
+        assert.ifError(error);
       });
     });
     describe('max message size', function() {
