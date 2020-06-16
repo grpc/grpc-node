@@ -144,6 +144,28 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
         done();
       });
     });
+    it('should receive all messages in a long stream', function() {
+      var arg = {
+        response_type: 'COMPRESSABLE',
+        response_parameters: [
+        ]
+      };
+      for (let i = 0; i < 100_000; i++) {
+        arg.response_parameters.push({size: 0});
+      }
+      var call = client.streamingOutputCall(arg);
+      let responseCount = 0;
+      call.on('data', (value) => {
+        responseCount++;
+      });
+      call.on('end', () => {
+        assert.strictEqual(responseCount, arg.response_parameters.length);
+        done();
+      });
+      call.on('status', function(status) {
+        assert.strictEqual(status.code, grpc.status.OK);
+      });
+    });
     describe('max message size', function() {
       // A size that is larger than the default limit
       const largeMessageSize = 8 * 1024 * 1024;
