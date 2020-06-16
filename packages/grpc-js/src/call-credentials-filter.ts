@@ -39,7 +39,7 @@ export class CallCredentialsFilter extends BaseFilter implements Filter {
     if (splitPath.length >= 2) {
       serviceName = splitPath[1];
     }
-    const hostname = splitHostPort(stream.getHost()).host;
+    const hostname = splitHostPort(stream.getHost())?.host ?? 'localhost';
     /* Currently, call credentials are only allowed on HTTPS connections, so we
      * can assume that the scheme is "https" */
     this.serviceUrl = `https://${hostname}/${serviceName}`;
