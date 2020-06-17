@@ -51,7 +51,7 @@ function echoMetadataGenerator(options, callback) {
 
 const credentials = grpc.credentials.createFromMetadataGenerator(echoMetadataGenerator);
 
-describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, function() {
+describe.only(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, function() {
   describe('Interop-adjacent tests', function() {
     let server;
     let client;
@@ -144,7 +144,8 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
         done();
       });
     });
-    it('should receive all messages in a long stream', function() {
+    it('should receive all messages in a long stream', function(done) {
+      this.timeout(20000);
       var arg = {
         response_type: 'COMPRESSABLE',
         response_parameters: [
