@@ -51,7 +51,7 @@ function echoMetadataGenerator(options, callback) {
 
 const credentials = grpc.credentials.createFromMetadataGenerator(echoMetadataGenerator);
 
-describe.only(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, function() {
+describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, function() {
   describe('Interop-adjacent tests', function() {
     let server;
     let client;
