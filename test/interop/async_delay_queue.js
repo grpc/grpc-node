@@ -39,9 +39,13 @@ AsyncDelayQueue.prototype.runNext = function() {
   var continueCallback = _.bind(this.runNext, this);
   if (next) {
     this.callback_pending = true;
-    setTimeout(function() {
+    if (next.delay === 0) {
       next.callback(continueCallback);
-    }, next.delay);
+    } else {
+      setTimeout(function() {
+        next.callback(continueCallback);
+      }, next.delay);
+    }
   } else {
     this.callback_pending = false;
   }

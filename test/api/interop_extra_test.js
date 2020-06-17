@@ -51,7 +51,7 @@ function echoMetadataGenerator(options, callback) {
 
 const credentials = grpc.credentials.createFromMetadataGenerator(echoMetadataGenerator);
 
-describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, function() {
+describe.only(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, function() {
   describe('Interop-adjacent tests', function() {
     let server;
     let client;
@@ -142,6 +142,30 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
         assert(echo_trailer.length === 1);
         assert.strictEqual(echo_trailer[0].toString('hex'), 'ababab');
         done();
+      });
+    });
+    it('should receive all messages in a long stream', function(done) {
+      this.timeout(20000);
+      var arg = {
+        response_type: 'COMPRESSABLE',
+        response_parameters: [
+        ]
+      };
+      for (let i = 0; i < 100000; i++) {
+        arg.response_parameters.push({size: 0});
+      }
+      var call = client.streamingOutputCall(arg);
+      let responseCount = 0;
+      call.on('data', (value) => {
+        responseCount++;
+      });
+      call.on('status', (status) => {
+        assert.strictEqual(status.code, grpc.status.OK);
+        assert.strictEqual(responseCount, arg.response_parameters.length);
+        done();
+      });
+      call.on('error', (error) => {
+        assert.ifError(error);
       });
     });
     describe('max message size', function() {
