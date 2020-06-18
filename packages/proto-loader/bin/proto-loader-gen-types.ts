@@ -96,6 +96,15 @@ function getImportLine(dependency: Protobuf.Type | Protobuf.Enum, from?: Protobu
 }
 
 function generatePermissiveMessageInterface(formatter: TextFormatter, messageType: Protobuf.Type) {
+  if (messageType.fullName === '.google.protobuf.Any') {
+    /* This describes the behavior of the Protobuf.js Any wrapper fromObject
+     * replacement function */
+    formatter.writeLine('export type Any__Output = AnyExtension | {');
+    formatter.writeLine('  type_url: string;');
+    formatter.writeLine('  value: Buffer | Uint8Array | string;');
+    formatter.writeLine('}');
+    return;
+  }
   formatter.writeLine(`export interface ${messageType.name} {`);
   formatter.indent();
   for (const field of messageType.fieldsArray) {
@@ -104,6 +113,8 @@ function generatePermissiveMessageInterface(formatter: TextFormatter, messageTyp
     switch (field.type) {
       case 'double':
       case 'float':
+        type = 'number | string';
+        break;
       case 'int32':
       case 'uint32':
       case 'sint32':
@@ -149,6 +160,23 @@ function generatePermissiveMessageInterface(formatter: TextFormatter, messageTyp
 }
 
 function generateRestrictedMessageInterface(formatter: TextFormatter, messageType: Protobuf.Type, options: Protobuf.IConversionOptions) {
+  if (messageType.fullName === '.google.protobuf.Any' && options.json) {
+    /* This describes the behavior of the Protobuf.js Any wrapper toObject
+     * replacement function */
+    formatter.writeLine('export type Any__Output = AnyExtension | {');
+    formatter.writeLine('  type_url: string;');
+    let type: string;
+    if (options.bytes === Array) {
+      type = 'Uint8Array';
+    } else if (options.bytes === String) {
+      type = 'string';
+    } else {
+      type = 'Buffer';
+    }
+    formatter.writeLine(`  value: ${type};`);
+    formatter.writeLine('}');
+    return;
+  }
   formatter.writeLine(`export interface ${messageType.name}__Output {`);
   formatter.indent();
   for (const field of messageType.fieldsArray) {
@@ -158,6 +186,12 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
     switch (field.type) {
       case 'double':
       case 'float':
+        if (options.json) {
+          type = 'number | string';
+        } else {
+          type = 'number';
+        }
+        break;
       case 'int32':
       case 'uint32':
       case 'sint32':
@@ -243,6 +277,9 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
   }
   if (usesLong) {
     formatter.writeLine("import { Long } from '@grpc/proto-loader';");
+  }
+  if (messageType.fullName === '.google.protobuf.Any') {
+    formatter.writeLine("import { AnyExtension } from '@grpc/proto-loader';")
   }
   formatter.writeLine('');
 
@@ -524,7 +561,7 @@ function runScript() {
     .string(['includeDirs', 'grpcLib'])
     .normalize(['includeDirs', 'outDir'])
     .array('includeDirs')
-    .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs'])
+    .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs', 'json'])
 //    .choices('longs', ['String', 'Number'])
 //    .choices('enums', ['String'])
 //    .choices('bytes', ['Array', 'String'])
@@ -559,13 +596,14 @@ function runScript() {
       outDir: 'O'
     }).describe({
       keepCase: 'Preserve the case of field names',
-      longs: 'The type that should be used to output 64 bit integer values',
-      enums: 'The type that should be used to output enum fields',
-      bytes: 'The type that should be used to output bytes fields',
+      longs: 'The type that should be used to output 64 bit integer values. Can be String, Number',
+      enums: 'The type that should be used to output enum fields. Can be String',
+      bytes: 'The type that should be used to output bytes fields. Can be String, Array',
       defaults: 'Output default values for omitted fields',
       arrays: 'Output default values for omitted repeated fields even if --defaults is not set',
       objects: 'Output default values for omitted message fields even if --defaults is not set',
       oneofs: 'Output virtual oneof fields set to the present field\'s name',
+      json: 'Represent Infinity and NaN as strings in float fields. Also decode google.protobuf.Any automatically',
       includeDirs: 'Directories to search for included files',
       outDir: 'Directory in which to output files',
       grpcLib: 'The gRPC implementation library that these types will be used with'
