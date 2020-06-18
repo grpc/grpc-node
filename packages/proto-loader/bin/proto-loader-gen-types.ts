@@ -426,7 +426,7 @@ function generateMasterFile(formatter: TextFormatter, root: Protobuf.Root, optio
 
   formatter.writeLine('type ConstructorArguments<Constructor> = Constructor extends new (...args: infer Args) => any ? Args: never;');
   formatter.writeLine('type SubtypeConstructor<Constructor, Subtype> = {');
-  formatter.writeLine('  new(args: ConstructorArguments<Constructor>): Subtype;');
+  formatter.writeLine('  new(...args: ConstructorArguments<Constructor>): Subtype;');
   formatter.writeLine('}');
   formatter.writeLine('');
 
