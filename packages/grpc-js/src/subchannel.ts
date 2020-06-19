@@ -28,7 +28,7 @@ import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { getProxiedConnection, ProxyConnectionResult } from './http_proxy';
 import * as net from 'net';
-import { GrpcUri, parseUri } from './uri-parser';
+import { GrpcUri, parseUri, splitHostPort } from './uri-parser';
 import { ConnectionOptions } from 'tls';
 import { FilterFactory, Filter } from './filter';
 
@@ -309,8 +309,9 @@ export class Subchannel {
         };
         connectionOptions.servername = sslTargetNameOverride;
       } else {
+        const authorityHostname = splitHostPort(targetAuthority)?.host ?? 'localhost';
         // We want to always set servername to support SNI
-        connectionOptions.servername = targetAuthority;
+        connectionOptions.servername = authorityHostname;
       }
       if (proxyConnectionResult.socket) {
         /* This is part of the workaround for
