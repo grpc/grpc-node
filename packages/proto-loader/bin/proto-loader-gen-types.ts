@@ -95,17 +95,30 @@ function getImportLine(dependency: Protobuf.Type | Protobuf.Enum, from?: Protobu
   return `import { ${importedTypes} } from '${filePath}';`
 }
 
-function generatePermissiveMessageInterface(formatter: TextFormatter, messageType: Protobuf.Type) {
+function getChildMessagesAndEnums(namespace: Protobuf.NamespaceBase): (Protobuf.Type | Protobuf.Enum)[] {
+  const messageList: (Protobuf.Type | Protobuf.Enum)[] = [];
+  for (const nested of namespace.nestedArray) {
+    if (nested instanceof Protobuf.Type || nested instanceof Protobuf.Enum) {
+      messageList.push(nested);
+    }
+    if (isNamespaceBase(nested)) {
+      messageList.push(...getChildMessagesAndEnums(nested));
+    }
+  }
+  return messageList;
+}
+
+function generatePermissiveMessageInterface(formatter: TextFormatter, messageType: Protobuf.Type, nameOverride?: string) {
   if (messageType.fullName === '.google.protobuf.Any') {
     /* This describes the behavior of the Protobuf.js Any wrapper fromObject
      * replacement function */
-    formatter.writeLine('export type Any__Output = AnyExtension | {');
+    formatter.writeLine('export type Any = AnyExtension | {');
     formatter.writeLine('  type_url: string;');
     formatter.writeLine('  value: Buffer | Uint8Array | string;');
     formatter.writeLine('}');
     return;
   }
-  formatter.writeLine(`export interface ${messageType.name} {`);
+  formatter.writeLine(`export interface ${nameOverride ?? messageType.name} {`);
   formatter.indent();
   for (const field of messageType.fieldsArray) {
     const repeatedString = field.repeated ? '[]' : '';
@@ -149,17 +162,17 @@ function generatePermissiveMessageInterface(formatter: TextFormatter, messageTyp
           type = `${typeInterfaceName} | keyof typeof ${typeInterfaceName}`;
         }
     }
-    formatter.writeLine(`${field.name}?: (${type})${repeatedString};`);
+    formatter.writeLine(`'${field.name}'?: (${type})${repeatedString};`);
   }
   for (const oneof of messageType.oneofsArray) {
     const typeString = oneof.fieldsArray.map(field => `"${field.name}"`).join('|');
-    formatter.writeLine(`${oneof.name}?: ${typeString};`);
+    formatter.writeLine(`'${oneof.name}'?: ${typeString};`);
   }
   formatter.unindent();
   formatter.writeLine('}');
 }
 
-function generateRestrictedMessageInterface(formatter: TextFormatter, messageType: Protobuf.Type, options: Protobuf.IConversionOptions) {
+function generateRestrictedMessageInterface(formatter: TextFormatter, messageType: Protobuf.Type, options: Protobuf.IConversionOptions, nameOverride?: string) {
   if (messageType.fullName === '.google.protobuf.Any' && options.json) {
     /* This describes the behavior of the Protobuf.js Any wrapper toObject
      * replacement function */
@@ -177,7 +190,7 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
     formatter.writeLine('}');
     return;
   }
-  formatter.writeLine(`export interface ${messageType.name}__Output {`);
+  formatter.writeLine(`export interface ${nameOverride ?? messageType.name}__Output {`);
   formatter.indent();
   for (const field of messageType.fieldsArray) {
     const repeatedString = field.repeated ? '[]' : '';
@@ -247,12 +260,12 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
       fieldGuaranteed = false;
     }
     const optionalString = fieldGuaranteed ? '' : '?';
-    formatter.writeLine(`${field.name}${optionalString}: (${type})${repeatedString};`);
+    formatter.writeLine(`'${field.name}'${optionalString}: (${type})${repeatedString};`);
   }
   if (options.oneofs) {
     for (const oneof of messageType.oneofsArray) {
       const typeString = oneof.fieldsArray.map(field => `"${field.name}"`).join('|');
-      formatter.writeLine(`${oneof.name}: ${typeString};`);
+      formatter.writeLine(`'${oneof.name}': ${typeString};`);
     }
   }
   formatter.unindent();
@@ -262,8 +275,11 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
 function generateMessageInterfaces(formatter: TextFormatter, messageType: Protobuf.Type, options: Protobuf.IConversionOptions) {
   let usesLong: boolean = false;
   let seenDeps: Set<string> = new Set<string>();
+  const childTypes = getChildMessagesAndEnums(messageType);
+  formatter.writeLine(`// Original file: ${messageType.filename}`);
+  formatter.writeLine('');
   for (const field of messageType.fieldsArray) {
-    if (field.resolvedType) {
+    if (field.resolvedType && childTypes.indexOf(field.resolvedType) < 0) {
       const dependency = field.resolvedType;
       if (seenDeps.has(dependency.fullName)) {
         continue;
@@ -275,6 +291,23 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
       usesLong = true;
     }
   }
+  for (const childType of childTypes) {
+    if (childType instanceof Protobuf.Type) {
+      for (const field of childType.fieldsArray) {
+        if (field.resolvedType && childTypes.indexOf(field.resolvedType) < 0) {
+          const dependency = field.resolvedType;
+          if (seenDeps.has(dependency.fullName)) {
+            continue;
+          }
+          seenDeps.add(dependency.fullName);
+          formatter.writeLine(getImportLine(dependency, messageType));
+        }
+        if (field.type.indexOf('64') >= 0) {
+          usesLong = true;
+        }
+      }
+    }
+  }
   if (usesLong) {
     formatter.writeLine("import { Long } from '@grpc/proto-loader';");
   }
@@ -282,14 +315,27 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
     formatter.writeLine("import { AnyExtension } from '@grpc/proto-loader';")
   }
   formatter.writeLine('');
+  for (const childType of childTypes) {
+    const nameOverride = getTypeInterfaceName(childType);
+    if (childType instanceof Protobuf.Type) {
+      generatePermissiveMessageInterface(formatter, childType, nameOverride);
+      formatter.writeLine('');
+      generateRestrictedMessageInterface(formatter, childType, options, nameOverride);
+    } else {
+      generateEnumInterface(formatter, childType, nameOverride);
+    }
+    formatter.writeLine('');
+  }
 
   generatePermissiveMessageInterface(formatter, messageType);
   formatter.writeLine('');
   generateRestrictedMessageInterface(formatter, messageType, options);
 }
 
-function generateEnumInterface(formatter: TextFormatter, enumType: Protobuf.Enum) {
-  formatter.writeLine(`export enum ${enumType.name} {`);
+function generateEnumInterface(formatter: TextFormatter, enumType: Protobuf.Enum, nameOverride?: string) {
+  formatter.writeLine(`// Original file: ${enumType.filename}`);
+  formatter.writeLine('');
+  formatter.writeLine(`export enum ${nameOverride ?? enumType.name} {`);
   formatter.indent();
   for (const key of Object.keys(enumType.values)) {
     formatter.writeLine(`${key} = ${enumType.values[key]},`);
@@ -302,8 +348,7 @@ function generateMessageAndEnumImports(formatter: TextFormatter, namespace: Prot
   for (const nested of namespace.nestedArray) {
     if (nested instanceof Protobuf.Type || nested instanceof Protobuf.Enum) {
       formatter.writeLine(getImportLine(nested));
-    }
-    if (isNamespaceBase(nested)) {
+    } else if (isNamespaceBase(nested)) {
       generateMessageAndEnumImports(formatter, nested);
     }
   }
@@ -491,14 +536,13 @@ function generateFilesForNamespace(namespace: Protobuf.NamespaceBase, options: G
     const fileFormatter = new TextFormatter();
     if (nested instanceof Protobuf.Type) {
       generateMessageInterfaces(fileFormatter, nested, options);
-      console.log(`Writing ${options.outDir}/${getPath(nested)}`);
+      console.log(`Writing ${options.outDir}/${getPath(nested)} from file ${nested.filename}`);
       filePromises.push(writeFile(`${options.outDir}/${getPath(nested)}`, fileFormatter.getFullText()));
     } else if (nested instanceof Protobuf.Enum) {
       generateEnumInterface(fileFormatter, nested);
-      console.log(`Writing ${options.outDir}/${getPath(nested)}`);
+      console.log(`Writing ${options.outDir}/${getPath(nested)} from file ${nested.filename}`);
       filePromises.push(writeFile(`${options.outDir}/${getPath(nested)}`, fileFormatter.getFullText()));
-    }
-    if (isNamespaceBase(nested)) {
+    } else if (isNamespaceBase(nested)) {
       filePromises.push(...generateFilesForNamespace(nested, options));
     }
   }

@@ -1,6 +1,6 @@
 {
   "name": "@grpc/proto-loader",
-  "version": "0.6.0-pre3",
+  "version": "0.6.0-pre4",
   "author": "Google Inc.",
   "contributors": [
     {
@@ -47,7 +47,7 @@
     "lodash.camelcase": "^4.3.0",
     "long": "^4.0.0",
     "mkdirp": "^1.0.4",
-    "protobufjs": "^6.8.6",
+    "protobufjs": "^6.9.0",
     "yargs": "^15.3.1"
   },
   "devDependencies": {
