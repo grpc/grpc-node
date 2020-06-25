@@ -372,7 +372,7 @@ function generateMessageAndEnumExports(formatter: TextFormatter, namespace: Prot
 }
 
 function generateServiceClientInterface(formatter: TextFormatter, serviceType: Protobuf.Service) {
-  formatter.writeLine(`interface ${serviceType.name}Client extends grpc.Client {`);
+  formatter.writeLine(`export interface ${serviceType.name}Client extends grpc.Client {`);
   formatter.indent();
   for (const methodName of Object.keys(serviceType.methods)) {
     const method = serviceType.methods[methodName];
@@ -416,7 +416,9 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
   formatter.writeLine('}');
 }
 
-function generateAllServiceClientInterfaces(formatter: TextFormatter, namespace: Protobuf.NamespaceBase) {
+function generateAllServiceClientInterfaces(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, nameOverride?: string) {
+  formatter.writeLine(`export namespace ${nameOverride ?? namespace.name} {`);
+  formatter.indent();
   for (const nested of namespace.nestedArray) {
     if (nested instanceof Protobuf.Service) {
       generateServiceClientInterface(formatter, nested);
@@ -424,11 +426,13 @@ function generateAllServiceClientInterfaces(formatter: TextFormatter, namespace:
       generateAllServiceClientInterfaces(formatter, nested);
     }
   }
+  formatter.unindent();
+  formatter.writeLine('}');
 }
 
 function generateSingleLoadedDefinitionType(formatter: TextFormatter, nested: Protobuf.ReflectionObject) {
   if (nested instanceof Protobuf.Service) {
-    formatter.writeLine(`${nested.name}: SubtypeConstructor<typeof grpc.Client, ${nested.name}Client> & { service: ServiceDefinition }`)
+    formatter.writeLine(`${nested.name}: SubtypeConstructor<typeof grpc.Client, ClientInterfaces.${stripLeadingPeriod(nested.fullName)}Client> & { service: ServiceDefinition }`)
   } else if (nested instanceof Protobuf.Enum) {
     formatter.writeLine(`${nested.name}: EnumTypeDefinition`);
   } else if (nested instanceof Protobuf.Type) {
@@ -503,7 +507,7 @@ function generateMasterFile(formatter: TextFormatter, root: Protobuf.Root, optio
   generateMessageAndEnumExports(formatter, root, 'messages');
   formatter.writeLine('');
 
-  generateAllServiceClientInterfaces(formatter, root);
+  generateAllServiceClientInterfaces(formatter, root, 'ClientInterfaces');
   formatter.writeLine('');
 
   formatter.writeLine('type ConstructorArguments<Constructor> = Constructor extends new (...args: infer Args) => any ? Args: never;');
