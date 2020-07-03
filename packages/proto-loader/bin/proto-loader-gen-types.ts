@@ -461,15 +461,15 @@ function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: 
         formatter.writeLine(`${methodName}(call: grpc.ServerDuplexStream<${requestType}, ${responseType}>): void;`);
       } else {
         // Client streaming
-        formatter.writeLine(`${methodName}(call: grpc.ServerReadableStream<${requestType}>, callback: grpc.SendUnaryData<${responseType}>): void;`);
+        formatter.writeLine(`${methodName}(call: grpc.ServerReadableStream<${requestType}>, callback: grpc.sendUnaryData<${responseType}>): void;`);
       }
     } else {
       if (method.responseStream) {
         // Server streaming
-        formatter.writeLine(`${methodName}(call: grpc.ServerWriteableStream<${requestType}, ${responseType}>): void;`);
+        formatter.writeLine(`${methodName}(call: grpc.ServerWritableStream<${requestType}, ${responseType}>): void;`);
       } else {
         // Unary
-        formatter.writeLine(`${methodName}(call: grpc.ServerUnaryCall<${requestType}>, callback: grpc.SendUnaryData<${responseType}>): void;`);
+        formatter.writeLine(`${methodName}(call: grpc.ServerUnaryCall<${requestType}, ${responseType}>, callback: grpc.sendUnaryData<${responseType}>): void;`);
       }
     }
     formatter.writeLine('');
