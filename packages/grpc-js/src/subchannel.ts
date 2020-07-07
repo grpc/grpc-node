@@ -309,7 +309,8 @@ export class Subchannel {
         };
         connectionOptions.servername = sslTargetNameOverride;
       } else {
-        const authorityHostname = splitHostPort(targetAuthority)?.host ?? 'localhost';
+        const authorityHostname =
+          splitHostPort(targetAuthority)?.host ?? 'localhost';
         // We want to always set servername to support SNI
         connectionOptions.servername = authorityHostname;
       }
@@ -413,6 +414,11 @@ export class Subchannel {
               KEEPALIVE_MAX_TIME_MS
             );
           }
+          trace(
+            this.subchannelAddress +
+              ' connection closed by GOAWAY with code ' +
+              errorCode
+          );
           this.transitionToState(
             [ConnectivityState.CONNECTING, ConnectivityState.READY],
             ConnectivityState.IDLE
@@ -661,7 +667,24 @@ export class Subchannel {
     headers[HTTP2_HEADER_METHOD] = 'POST';
     headers[HTTP2_HEADER_PATH] = callStream.getMethod();
     headers[HTTP2_HEADER_TE] = 'trailers';
-    const http2Stream = this.session!.request(headers);
+    let http2Stream: http2.ClientHttp2Stream;
+    /* In theory, if an error is thrown by session.request because session has
+     * become unusable (e.g. because it has received a goaway), this subchannel
+     * should soon see the corresponding close or goaway event anyway and leave
+     * READY. But we have seen reports that this does not happen
+     * (https://github.com/googleapis/nodejs-firestore/issues/1023#issuecomment-653204096)
+     * so for defense in depth, we just discard the session when we see an
+     * error here.
+     */
+    try {
+      http2Stream = this.session!.request(headers);
+    } catch (e) {
+      this.transitionToState(
+        [ConnectivityState.READY],
+        ConnectivityState.TRANSIENT_FAILURE
+      );
+      throw e;
+    }
     let headersString = '';
     for (const header of Object.keys(headers)) {
       headersString += '\t\t' + header + ': ' + headers[header] + '\n';
