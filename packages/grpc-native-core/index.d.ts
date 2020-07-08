@@ -906,6 +906,17 @@ declare module "grpc" {
     INFO,
     ERROR,
   }
+  
+  /**
+   * Method type constants
+   */
+  export enum methodTypes {
+    UNARY,
+    CLIENT_STREAMING,
+    SERVER_STREAMING,
+    BIDI_STREAMING,
+  }
+
 
   /**
    * A certificate as received by the checkServerIdentity callback.
