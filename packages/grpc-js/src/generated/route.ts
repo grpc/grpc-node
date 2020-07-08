@@ -1,21 +1,8 @@
 import * as grpc from '../index';
 import { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
 
-import { Cluster as _envoy_api_v2_Cluster, Cluster__Output as _envoy_api_v2_Cluster__Output } from './envoy/api/v2/Cluster';
-import { LoadBalancingPolicy as _envoy_api_v2_LoadBalancingPolicy, LoadBalancingPolicy__Output as _envoy_api_v2_LoadBalancingPolicy__Output } from './envoy/api/v2/LoadBalancingPolicy';
-import { UpstreamBindConfig as _envoy_api_v2_UpstreamBindConfig, UpstreamBindConfig__Output as _envoy_api_v2_UpstreamBindConfig__Output } from './envoy/api/v2/UpstreamBindConfig';
-import { UpstreamConnectionOptions as _envoy_api_v2_UpstreamConnectionOptions, UpstreamConnectionOptions__Output as _envoy_api_v2_UpstreamConnectionOptions__Output } from './envoy/api/v2/UpstreamConnectionOptions';
-import { UpstreamTlsContext as _envoy_api_v2_auth_UpstreamTlsContext, UpstreamTlsContext__Output as _envoy_api_v2_auth_UpstreamTlsContext__Output } from './envoy/api/v2/auth/UpstreamTlsContext';
-import { DownstreamTlsContext as _envoy_api_v2_auth_DownstreamTlsContext, DownstreamTlsContext__Output as _envoy_api_v2_auth_DownstreamTlsContext__Output } from './envoy/api/v2/auth/DownstreamTlsContext';
-import { CommonTlsContext as _envoy_api_v2_auth_CommonTlsContext, CommonTlsContext__Output as _envoy_api_v2_auth_CommonTlsContext__Output } from './envoy/api/v2/auth/CommonTlsContext';
-import { GenericSecret as _envoy_api_v2_auth_GenericSecret, GenericSecret__Output as _envoy_api_v2_auth_GenericSecret__Output } from './envoy/api/v2/auth/GenericSecret';
-import { SdsSecretConfig as _envoy_api_v2_auth_SdsSecretConfig, SdsSecretConfig__Output as _envoy_api_v2_auth_SdsSecretConfig__Output } from './envoy/api/v2/auth/SdsSecretConfig';
-import { Secret as _envoy_api_v2_auth_Secret, Secret__Output as _envoy_api_v2_auth_Secret__Output } from './envoy/api/v2/auth/Secret';
-import { TlsParameters as _envoy_api_v2_auth_TlsParameters, TlsParameters__Output as _envoy_api_v2_auth_TlsParameters__Output } from './envoy/api/v2/auth/TlsParameters';
-import { PrivateKeyProvider as _envoy_api_v2_auth_PrivateKeyProvider, PrivateKeyProvider__Output as _envoy_api_v2_auth_PrivateKeyProvider__Output } from './envoy/api/v2/auth/PrivateKeyProvider';
-import { TlsCertificate as _envoy_api_v2_auth_TlsCertificate, TlsCertificate__Output as _envoy_api_v2_auth_TlsCertificate__Output } from './envoy/api/v2/auth/TlsCertificate';
-import { TlsSessionTicketKeys as _envoy_api_v2_auth_TlsSessionTicketKeys, TlsSessionTicketKeys__Output as _envoy_api_v2_auth_TlsSessionTicketKeys__Output } from './envoy/api/v2/auth/TlsSessionTicketKeys';
-import { CertificateValidationContext as _envoy_api_v2_auth_CertificateValidationContext, CertificateValidationContext__Output as _envoy_api_v2_auth_CertificateValidationContext__Output } from './envoy/api/v2/auth/CertificateValidationContext';
+import { RouteConfiguration as _envoy_api_v2_RouteConfiguration, RouteConfiguration__Output as _envoy_api_v2_RouteConfiguration__Output } from './envoy/api/v2/RouteConfiguration';
+import { Vhds as _envoy_api_v2_Vhds, Vhds__Output as _envoy_api_v2_Vhds__Output } from './envoy/api/v2/Vhds';
 import { RoutingPriority as _envoy_api_v2_core_RoutingPriority } from './envoy/api/v2/core/RoutingPriority';
 import { RequestMethod as _envoy_api_v2_core_RequestMethod } from './envoy/api/v2/core/RequestMethod';
 import { TrafficDirection as _envoy_api_v2_core_TrafficDirection } from './envoy/api/v2/core/TrafficDirection';
@@ -37,54 +24,57 @@ import { AsyncDataSource as _envoy_api_v2_core_AsyncDataSource, AsyncDataSource_
 import { TransportSocket as _envoy_api_v2_core_TransportSocket, TransportSocket__Output as _envoy_api_v2_core_TransportSocket__Output } from './envoy/api/v2/core/TransportSocket';
 import { RuntimeFractionalPercent as _envoy_api_v2_core_RuntimeFractionalPercent, RuntimeFractionalPercent__Output as _envoy_api_v2_core_RuntimeFractionalPercent__Output } from './envoy/api/v2/core/RuntimeFractionalPercent';
 import { ControlPlane as _envoy_api_v2_core_ControlPlane, ControlPlane__Output as _envoy_api_v2_core_ControlPlane__Output } from './envoy/api/v2/core/ControlPlane';
-import { HealthStatus as _envoy_api_v2_core_HealthStatus } from './envoy/api/v2/core/HealthStatus';
-import { HealthCheck as _envoy_api_v2_core_HealthCheck, HealthCheck__Output as _envoy_api_v2_core_HealthCheck__Output } from './envoy/api/v2/core/HealthCheck';
-import { Pipe as _envoy_api_v2_core_Pipe, Pipe__Output as _envoy_api_v2_core_Pipe__Output } from './envoy/api/v2/core/Pipe';
-import { SocketAddress as _envoy_api_v2_core_SocketAddress, SocketAddress__Output as _envoy_api_v2_core_SocketAddress__Output } from './envoy/api/v2/core/SocketAddress';
-import { TcpKeepalive as _envoy_api_v2_core_TcpKeepalive, TcpKeepalive__Output as _envoy_api_v2_core_TcpKeepalive__Output } from './envoy/api/v2/core/TcpKeepalive';
-import { BindConfig as _envoy_api_v2_core_BindConfig, BindConfig__Output as _envoy_api_v2_core_BindConfig__Output } from './envoy/api/v2/core/BindConfig';
-import { Address as _envoy_api_v2_core_Address, Address__Output as _envoy_api_v2_core_Address__Output } from './envoy/api/v2/core/Address';
-import { CidrRange as _envoy_api_v2_core_CidrRange, CidrRange__Output as _envoy_api_v2_core_CidrRange__Output } from './envoy/api/v2/core/CidrRange';
 import { ApiVersion as _envoy_api_v2_core_ApiVersion } from './envoy/api/v2/core/ApiVersion';
 import { ApiConfigSource as _envoy_api_v2_core_ApiConfigSource, ApiConfigSource__Output as _envoy_api_v2_core_ApiConfigSource__Output } from './envoy/api/v2/core/ApiConfigSource';
 import { AggregatedConfigSource as _envoy_api_v2_core_AggregatedConfigSource, AggregatedConfigSource__Output as _envoy_api_v2_core_AggregatedConfigSource__Output } from './envoy/api/v2/core/AggregatedConfigSource';
 import { SelfConfigSource as _envoy_api_v2_core_SelfConfigSource, SelfConfigSource__Output as _envoy_api_v2_core_SelfConfigSource__Output } from './envoy/api/v2/core/SelfConfigSource';
 import { RateLimitSettings as _envoy_api_v2_core_RateLimitSettings, RateLimitSettings__Output as _envoy_api_v2_core_RateLimitSettings__Output } from './envoy/api/v2/core/RateLimitSettings';
 import { ConfigSource as _envoy_api_v2_core_ConfigSource, ConfigSource__Output as _envoy_api_v2_core_ConfigSource__Output } from './envoy/api/v2/core/ConfigSource';
-import { TcpProtocolOptions as _envoy_api_v2_core_TcpProtocolOptions, TcpProtocolOptions__Output as _envoy_api_v2_core_TcpProtocolOptions__Output } from './envoy/api/v2/core/TcpProtocolOptions';
-import { UpstreamHttpProtocolOptions as _envoy_api_v2_core_UpstreamHttpProtocolOptions, UpstreamHttpProtocolOptions__Output as _envoy_api_v2_core_UpstreamHttpProtocolOptions__Output } from './envoy/api/v2/core/UpstreamHttpProtocolOptions';
-import { HttpProtocolOptions as _envoy_api_v2_core_HttpProtocolOptions, HttpProtocolOptions__Output as _envoy_api_v2_core_HttpProtocolOptions__Output } from './envoy/api/v2/core/HttpProtocolOptions';
-import { Http1ProtocolOptions as _envoy_api_v2_core_Http1ProtocolOptions, Http1ProtocolOptions__Output as _envoy_api_v2_core_Http1ProtocolOptions__Output } from './envoy/api/v2/core/Http1ProtocolOptions';
-import { Http2ProtocolOptions as _envoy_api_v2_core_Http2ProtocolOptions, Http2ProtocolOptions__Output as _envoy_api_v2_core_Http2ProtocolOptions__Output } from './envoy/api/v2/core/Http2ProtocolOptions';
-import { GrpcProtocolOptions as _envoy_api_v2_core_GrpcProtocolOptions, GrpcProtocolOptions__Output as _envoy_api_v2_core_GrpcProtocolOptions__Output } from './envoy/api/v2/core/GrpcProtocolOptions';
-import { SocketOption as _envoy_api_v2_core_SocketOption, SocketOption__Output as _envoy_api_v2_core_SocketOption__Output } from './envoy/api/v2/core/SocketOption';
-import { HttpUri as _envoy_api_v2_core_HttpUri, HttpUri__Output as _envoy_api_v2_core_HttpUri__Output } from './envoy/api/v2/core/HttpUri';
 import { BackoffStrategy as _envoy_api_v2_core_BackoffStrategy, BackoffStrategy__Output as _envoy_api_v2_core_BackoffStrategy__Output } from './envoy/api/v2/core/BackoffStrategy';
-import { EventServiceConfig as _envoy_api_v2_core_EventServiceConfig, EventServiceConfig__Output as _envoy_api_v2_core_EventServiceConfig__Output } from './envoy/api/v2/core/EventServiceConfig';
+import { Pipe as _envoy_api_v2_core_Pipe, Pipe__Output as _envoy_api_v2_core_Pipe__Output } from './envoy/api/v2/core/Pipe';
+import { SocketAddress as _envoy_api_v2_core_SocketAddress, SocketAddress__Output as _envoy_api_v2_core_SocketAddress__Output } from './envoy/api/v2/core/SocketAddress';
+import { TcpKeepalive as _envoy_api_v2_core_TcpKeepalive, TcpKeepalive__Output as _envoy_api_v2_core_TcpKeepalive__Output } from './envoy/api/v2/core/TcpKeepalive';
+import { BindConfig as _envoy_api_v2_core_BindConfig, BindConfig__Output as _envoy_api_v2_core_BindConfig__Output } from './envoy/api/v2/core/BindConfig';
+import { Address as _envoy_api_v2_core_Address, Address__Output as _envoy_api_v2_core_Address__Output } from './envoy/api/v2/core/Address';
+import { CidrRange as _envoy_api_v2_core_CidrRange, CidrRange__Output as _envoy_api_v2_core_CidrRange__Output } from './envoy/api/v2/core/CidrRange';
+import { HttpUri as _envoy_api_v2_core_HttpUri, HttpUri__Output as _envoy_api_v2_core_HttpUri__Output } from './envoy/api/v2/core/HttpUri';
 import { GrpcService as _envoy_api_v2_core_GrpcService, GrpcService__Output as _envoy_api_v2_core_GrpcService__Output } from './envoy/api/v2/core/GrpcService';
-import { CircuitBreakers as _envoy_api_v2_cluster_CircuitBreakers, CircuitBreakers__Output as _envoy_api_v2_cluster_CircuitBreakers__Output } from './envoy/api/v2/cluster/CircuitBreakers';
-import { Filter as _envoy_api_v2_cluster_Filter, Filter__Output as _envoy_api_v2_cluster_Filter__Output } from './envoy/api/v2/cluster/Filter';
-import { OutlierDetection as _envoy_api_v2_cluster_OutlierDetection, OutlierDetection__Output as _envoy_api_v2_cluster_OutlierDetection__Output } from './envoy/api/v2/cluster/OutlierDetection';
-import { ClusterLoadAssignment as _envoy_api_v2_ClusterLoadAssignment, ClusterLoadAssignment__Output as _envoy_api_v2_ClusterLoadAssignment__Output } from './envoy/api/v2/ClusterLoadAssignment';
-import { Endpoint as _envoy_api_v2_endpoint_Endpoint, Endpoint__Output as _envoy_api_v2_endpoint_Endpoint__Output } from './envoy/api/v2/endpoint/Endpoint';
-import { LbEndpoint as _envoy_api_v2_endpoint_LbEndpoint, LbEndpoint__Output as _envoy_api_v2_endpoint_LbEndpoint__Output } from './envoy/api/v2/endpoint/LbEndpoint';
-import { LocalityLbEndpoints as _envoy_api_v2_endpoint_LocalityLbEndpoints, LocalityLbEndpoints__Output as _envoy_api_v2_endpoint_LocalityLbEndpoints__Output } from './envoy/api/v2/endpoint/LocalityLbEndpoints';
+import { SocketOption as _envoy_api_v2_core_SocketOption, SocketOption__Output as _envoy_api_v2_core_SocketOption__Output } from './envoy/api/v2/core/SocketOption';
+import { VirtualHost as _envoy_api_v2_route_VirtualHost, VirtualHost__Output as _envoy_api_v2_route_VirtualHost__Output } from './envoy/api/v2/route/VirtualHost';
+import { FilterAction as _envoy_api_v2_route_FilterAction, FilterAction__Output as _envoy_api_v2_route_FilterAction__Output } from './envoy/api/v2/route/FilterAction';
+import { Route as _envoy_api_v2_route_Route, Route__Output as _envoy_api_v2_route_Route__Output } from './envoy/api/v2/route/Route';
+import { WeightedCluster as _envoy_api_v2_route_WeightedCluster, WeightedCluster__Output as _envoy_api_v2_route_WeightedCluster__Output } from './envoy/api/v2/route/WeightedCluster';
+import { RouteMatch as _envoy_api_v2_route_RouteMatch, RouteMatch__Output as _envoy_api_v2_route_RouteMatch__Output } from './envoy/api/v2/route/RouteMatch';
+import { CorsPolicy as _envoy_api_v2_route_CorsPolicy, CorsPolicy__Output as _envoy_api_v2_route_CorsPolicy__Output } from './envoy/api/v2/route/CorsPolicy';
+import { RouteAction as _envoy_api_v2_route_RouteAction, RouteAction__Output as _envoy_api_v2_route_RouteAction__Output } from './envoy/api/v2/route/RouteAction';
+import { RetryPolicy as _envoy_api_v2_route_RetryPolicy, RetryPolicy__Output as _envoy_api_v2_route_RetryPolicy__Output } from './envoy/api/v2/route/RetryPolicy';
+import { HedgePolicy as _envoy_api_v2_route_HedgePolicy, HedgePolicy__Output as _envoy_api_v2_route_HedgePolicy__Output } from './envoy/api/v2/route/HedgePolicy';
+import { RedirectAction as _envoy_api_v2_route_RedirectAction, RedirectAction__Output as _envoy_api_v2_route_RedirectAction__Output } from './envoy/api/v2/route/RedirectAction';
+import { DirectResponseAction as _envoy_api_v2_route_DirectResponseAction, DirectResponseAction__Output as _envoy_api_v2_route_DirectResponseAction__Output } from './envoy/api/v2/route/DirectResponseAction';
+import { Decorator as _envoy_api_v2_route_Decorator, Decorator__Output as _envoy_api_v2_route_Decorator__Output } from './envoy/api/v2/route/Decorator';
+import { Tracing as _envoy_api_v2_route_Tracing, Tracing__Output as _envoy_api_v2_route_Tracing__Output } from './envoy/api/v2/route/Tracing';
+import { VirtualCluster as _envoy_api_v2_route_VirtualCluster, VirtualCluster__Output as _envoy_api_v2_route_VirtualCluster__Output } from './envoy/api/v2/route/VirtualCluster';
+import { RateLimit as _envoy_api_v2_route_RateLimit, RateLimit__Output as _envoy_api_v2_route_RateLimit__Output } from './envoy/api/v2/route/RateLimit';
+import { HeaderMatcher as _envoy_api_v2_route_HeaderMatcher, HeaderMatcher__Output as _envoy_api_v2_route_HeaderMatcher__Output } from './envoy/api/v2/route/HeaderMatcher';
+import { QueryParameterMatcher as _envoy_api_v2_route_QueryParameterMatcher, QueryParameterMatcher__Output as _envoy_api_v2_route_QueryParameterMatcher__Output } from './envoy/api/v2/route/QueryParameterMatcher';
 import { Percent as _envoy_type_Percent, Percent__Output as _envoy_type_Percent__Output } from './envoy/type/Percent';
 import { FractionalPercent as _envoy_type_FractionalPercent, FractionalPercent__Output as _envoy_type_FractionalPercent__Output } from './envoy/type/FractionalPercent';
 import { SemanticVersion as _envoy_type_SemanticVersion, SemanticVersion__Output as _envoy_type_SemanticVersion__Output } from './envoy/type/SemanticVersion';
+import { RegexMatcher as _envoy_type_matcher_RegexMatcher, RegexMatcher__Output as _envoy_type_matcher_RegexMatcher__Output } from './envoy/type/matcher/RegexMatcher';
+import { RegexMatchAndSubstitute as _envoy_type_matcher_RegexMatchAndSubstitute, RegexMatchAndSubstitute__Output as _envoy_type_matcher_RegexMatchAndSubstitute__Output } from './envoy/type/matcher/RegexMatchAndSubstitute';
+import { StringMatcher as _envoy_type_matcher_StringMatcher, StringMatcher__Output as _envoy_type_matcher_StringMatcher__Output } from './envoy/type/matcher/StringMatcher';
+import { ListStringMatcher as _envoy_type_matcher_ListStringMatcher, ListStringMatcher__Output as _envoy_type_matcher_ListStringMatcher__Output } from './envoy/type/matcher/ListStringMatcher';
 import { Int64Range as _envoy_type_Int64Range, Int64Range__Output as _envoy_type_Int64Range__Output } from './envoy/type/Int64Range';
 import { Int32Range as _envoy_type_Int32Range, Int32Range__Output as _envoy_type_Int32Range__Output } from './envoy/type/Int32Range';
 import { DoubleRange as _envoy_type_DoubleRange, DoubleRange__Output as _envoy_type_DoubleRange__Output } from './envoy/type/DoubleRange';
-import { StringMatcher as _envoy_type_matcher_StringMatcher, StringMatcher__Output as _envoy_type_matcher_StringMatcher__Output } from './envoy/type/matcher/StringMatcher';
-import { ListStringMatcher as _envoy_type_matcher_ListStringMatcher, ListStringMatcher__Output as _envoy_type_matcher_ListStringMatcher__Output } from './envoy/type/matcher/ListStringMatcher';
-import { RegexMatcher as _envoy_type_matcher_RegexMatcher, RegexMatcher__Output as _envoy_type_matcher_RegexMatcher__Output } from './envoy/type/matcher/RegexMatcher';
-import { RegexMatchAndSubstitute as _envoy_type_matcher_RegexMatchAndSubstitute, RegexMatchAndSubstitute__Output as _envoy_type_matcher_RegexMatchAndSubstitute__Output } from './envoy/type/matcher/RegexMatchAndSubstitute';
-import { CodecClientType as _envoy_type_CodecClientType } from './envoy/type/CodecClientType';
+import { CustomTag as _envoy_type_tracing_v2_CustomTag, CustomTag__Output as _envoy_type_tracing_v2_CustomTag__Output } from './envoy/type/tracing/v2/CustomTag';
+import { MetadataKey as _envoy_type_metadata_v2_MetadataKey, MetadataKey__Output as _envoy_type_metadata_v2_MetadataKey__Output } from './envoy/type/metadata/v2/MetadataKey';
+import { MetadataKind as _envoy_type_metadata_v2_MetadataKind, MetadataKind__Output as _envoy_type_metadata_v2_MetadataKind__Output } from './envoy/type/metadata/v2/MetadataKind';
+import { PackageVersionStatus as _udpa_annotations_PackageVersionStatus } from './udpa/annotations/PackageVersionStatus';
+import { StatusAnnotation as _udpa_annotations_StatusAnnotation, StatusAnnotation__Output as _udpa_annotations_StatusAnnotation__Output } from './udpa/annotations/StatusAnnotation';
 import { MigrateAnnotation as _udpa_annotations_MigrateAnnotation, MigrateAnnotation__Output as _udpa_annotations_MigrateAnnotation__Output } from './udpa/annotations/MigrateAnnotation';
 import { FieldMigrateAnnotation as _udpa_annotations_FieldMigrateAnnotation, FieldMigrateAnnotation__Output as _udpa_annotations_FieldMigrateAnnotation__Output } from './udpa/annotations/FieldMigrateAnnotation';
 import { FileMigrateAnnotation as _udpa_annotations_FileMigrateAnnotation, FileMigrateAnnotation__Output as _udpa_annotations_FileMigrateAnnotation__Output } from './udpa/annotations/FileMigrateAnnotation';
-import { PackageVersionStatus as _udpa_annotations_PackageVersionStatus } from './udpa/annotations/PackageVersionStatus';
-import { StatusAnnotation as _udpa_annotations_StatusAnnotation, StatusAnnotation__Output as _udpa_annotations_StatusAnnotation__Output } from './udpa/annotations/StatusAnnotation';
 import { FieldRules as _validate_FieldRules, FieldRules__Output as _validate_FieldRules__Output } from './validate/FieldRules';
 import { FloatRules as _validate_FloatRules, FloatRules__Output as _validate_FloatRules__Output } from './validate/FloatRules';
 import { DoubleRules as _validate_DoubleRules, DoubleRules__Output as _validate_DoubleRules__Output } from './validate/DoubleRules';
@@ -109,12 +99,6 @@ import { MapRules as _validate_MapRules, MapRules__Output as _validate_MapRules_
 import { AnyRules as _validate_AnyRules, AnyRules__Output as _validate_AnyRules__Output } from './validate/AnyRules';
 import { DurationRules as _validate_DurationRules, DurationRules__Output as _validate_DurationRules__Output } from './validate/DurationRules';
 import { TimestampRules as _validate_TimestampRules, TimestampRules__Output as _validate_TimestampRules__Output } from './validate/TimestampRules';
-import { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from './google/protobuf/Any';
-import { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from './google/protobuf/Duration';
-import { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_Struct__Output } from './google/protobuf/Struct';
-import { Value as _google_protobuf_Value, Value__Output as _google_protobuf_Value__Output } from './google/protobuf/Value';
-import { NullValue as _google_protobuf_NullValue } from './google/protobuf/NullValue';
-import { ListValue as _google_protobuf_ListValue, ListValue__Output as _google_protobuf_ListValue__Output } from './google/protobuf/ListValue';
 import { DoubleValue as _google_protobuf_DoubleValue, DoubleValue__Output as _google_protobuf_DoubleValue__Output } from './google/protobuf/DoubleValue';
 import { FloatValue as _google_protobuf_FloatValue, FloatValue__Output as _google_protobuf_FloatValue__Output } from './google/protobuf/FloatValue';
 import { Int64Value as _google_protobuf_Int64Value, Int64Value__Output as _google_protobuf_Int64Value__Output } from './google/protobuf/Int64Value';
@@ -124,6 +108,12 @@ import { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _go
 import { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from './google/protobuf/BoolValue';
 import { StringValue as _google_protobuf_StringValue, StringValue__Output as _google_protobuf_StringValue__Output } from './google/protobuf/StringValue';
 import { BytesValue as _google_protobuf_BytesValue, BytesValue__Output as _google_protobuf_BytesValue__Output } from './google/protobuf/BytesValue';
+import { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from './google/protobuf/Any';
+import { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from './google/protobuf/Duration';
+import { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_Struct__Output } from './google/protobuf/Struct';
+import { Value as _google_protobuf_Value, Value__Output as _google_protobuf_Value__Output } from './google/protobuf/Value';
+import { NullValue as _google_protobuf_NullValue } from './google/protobuf/NullValue';
+import { ListValue as _google_protobuf_ListValue, ListValue__Output as _google_protobuf_ListValue__Output } from './google/protobuf/ListValue';
 import { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from './google/protobuf/Timestamp';
 import { FileDescriptorSet as _google_protobuf_FileDescriptorSet, FileDescriptorSet__Output as _google_protobuf_FileDescriptorSet__Output } from './google/protobuf/FileDescriptorSet';
 import { FileDescriptorProto as _google_protobuf_FileDescriptorProto, FileDescriptorProto__Output as _google_protobuf_FileDescriptorProto__Output } from './google/protobuf/FileDescriptorProto';
@@ -146,46 +136,15 @@ import { UninterpretedOption as _google_protobuf_UninterpretedOption, Uninterpre
 import { SourceCodeInfo as _google_protobuf_SourceCodeInfo, SourceCodeInfo__Output as _google_protobuf_SourceCodeInfo__Output } from './google/protobuf/SourceCodeInfo';
 import { GeneratedCodeInfo as _google_protobuf_GeneratedCodeInfo, GeneratedCodeInfo__Output as _google_protobuf_GeneratedCodeInfo__Output } from './google/protobuf/GeneratedCodeInfo';
 import { Empty as _google_protobuf_Empty, Empty__Output as _google_protobuf_Empty__Output } from './google/protobuf/Empty';
-import { Http as _google_api_Http, Http__Output as _google_api_Http__Output } from './google/api/Http';
-import { HttpRule as _google_api_HttpRule, HttpRule__Output as _google_api_HttpRule__Output } from './google/api/HttpRule';
-import { CustomHttpPattern as _google_api_CustomHttpPattern, CustomHttpPattern__Output as _google_api_CustomHttpPattern__Output } from './google/api/CustomHttpPattern';
 
 export namespace messages {
   export namespace envoy {
     export namespace api {
       export namespace v2 {
-        export type Cluster = _envoy_api_v2_Cluster;
-        export type Cluster__Output = _envoy_api_v2_Cluster__Output;
-        export type LoadBalancingPolicy = _envoy_api_v2_LoadBalancingPolicy;
-        export type LoadBalancingPolicy__Output = _envoy_api_v2_LoadBalancingPolicy__Output;
-        export type UpstreamBindConfig = _envoy_api_v2_UpstreamBindConfig;
-        export type UpstreamBindConfig__Output = _envoy_api_v2_UpstreamBindConfig__Output;
-        export type UpstreamConnectionOptions = _envoy_api_v2_UpstreamConnectionOptions;
-        export type UpstreamConnectionOptions__Output = _envoy_api_v2_UpstreamConnectionOptions__Output;
-        export namespace auth {
-          export type UpstreamTlsContext = _envoy_api_v2_auth_UpstreamTlsContext;
-          export type UpstreamTlsContext__Output = _envoy_api_v2_auth_UpstreamTlsContext__Output;
-          export type DownstreamTlsContext = _envoy_api_v2_auth_DownstreamTlsContext;
-          export type DownstreamTlsContext__Output = _envoy_api_v2_auth_DownstreamTlsContext__Output;
-          export type CommonTlsContext = _envoy_api_v2_auth_CommonTlsContext;
-          export type CommonTlsContext__Output = _envoy_api_v2_auth_CommonTlsContext__Output;
-          export type GenericSecret = _envoy_api_v2_auth_GenericSecret;
-          export type GenericSecret__Output = _envoy_api_v2_auth_GenericSecret__Output;
-          export type SdsSecretConfig = _envoy_api_v2_auth_SdsSecretConfig;
-          export type SdsSecretConfig__Output = _envoy_api_v2_auth_SdsSecretConfig__Output;
-          export type Secret = _envoy_api_v2_auth_Secret;
-          export type Secret__Output = _envoy_api_v2_auth_Secret__Output;
-          export type TlsParameters = _envoy_api_v2_auth_TlsParameters;
-          export type TlsParameters__Output = _envoy_api_v2_auth_TlsParameters__Output;
-          export type PrivateKeyProvider = _envoy_api_v2_auth_PrivateKeyProvider;
-          export type PrivateKeyProvider__Output = _envoy_api_v2_auth_PrivateKeyProvider__Output;
-          export type TlsCertificate = _envoy_api_v2_auth_TlsCertificate;
-          export type TlsCertificate__Output = _envoy_api_v2_auth_TlsCertificate__Output;
-          export type TlsSessionTicketKeys = _envoy_api_v2_auth_TlsSessionTicketKeys;
-          export type TlsSessionTicketKeys__Output = _envoy_api_v2_auth_TlsSessionTicketKeys__Output;
-          export type CertificateValidationContext = _envoy_api_v2_auth_CertificateValidationContext;
-          export type CertificateValidationContext__Output = _envoy_api_v2_auth_CertificateValidationContext__Output;
-        }
+        export type RouteConfiguration = _envoy_api_v2_RouteConfiguration;
+        export type RouteConfiguration__Output = _envoy_api_v2_RouteConfiguration__Output;
+        export type Vhds = _envoy_api_v2_Vhds;
+        export type Vhds__Output = _envoy_api_v2_Vhds__Output;
         export namespace core {
           export type RoutingPriority = _envoy_api_v2_core_RoutingPriority;
           export type RequestMethod = _envoy_api_v2_core_RequestMethod;
@@ -226,9 +185,19 @@ export namespace messages {
           export type RuntimeFractionalPercent__Output = _envoy_api_v2_core_RuntimeFractionalPercent__Output;
           export type ControlPlane = _envoy_api_v2_core_ControlPlane;
           export type ControlPlane__Output = _envoy_api_v2_core_ControlPlane__Output;
-          export type HealthStatus = _envoy_api_v2_core_HealthStatus;
-          export type HealthCheck = _envoy_api_v2_core_HealthCheck;
-          export type HealthCheck__Output = _envoy_api_v2_core_HealthCheck__Output;
+          export type ApiVersion = _envoy_api_v2_core_ApiVersion;
+          export type ApiConfigSource = _envoy_api_v2_core_ApiConfigSource;
+          export type ApiConfigSource__Output = _envoy_api_v2_core_ApiConfigSource__Output;
+          export type AggregatedConfigSource = _envoy_api_v2_core_AggregatedConfigSource;
+          export type AggregatedConfigSource__Output = _envoy_api_v2_core_AggregatedConfigSource__Output;
+          export type SelfConfigSource = _envoy_api_v2_core_SelfConfigSource;
+          export type SelfConfigSource__Output = _envoy_api_v2_core_SelfConfigSource__Output;
+          export type RateLimitSettings = _envoy_api_v2_core_RateLimitSettings;
+          export type RateLimitSettings__Output = _envoy_api_v2_core_RateLimitSettings__Output;
+          export type ConfigSource = _envoy_api_v2_core_ConfigSource;
+          export type ConfigSource__Output = _envoy_api_v2_core_ConfigSource__Output;
+          export type BackoffStrategy = _envoy_api_v2_core_BackoffStrategy;
+          export type BackoffStrategy__Output = _envoy_api_v2_core_BackoffStrategy__Output;
           export type Pipe = _envoy_api_v2_core_Pipe;
           export type Pipe__Output = _envoy_api_v2_core_Pipe__Output;
           export type SocketAddress = _envoy_api_v2_core_SocketAddress;
@@ -241,57 +210,48 @@ export namespace messages {
           export type Address__Output = _envoy_api_v2_core_Address__Output;
           export type CidrRange = _envoy_api_v2_core_CidrRange;
           export type CidrRange__Output = _envoy_api_v2_core_CidrRange__Output;
-          export type ApiVersion = _envoy_api_v2_core_ApiVersion;
-          export type ApiConfigSource = _envoy_api_v2_core_ApiConfigSource;
-          export type ApiConfigSource__Output = _envoy_api_v2_core_ApiConfigSource__Output;
-          export type AggregatedConfigSource = _envoy_api_v2_core_AggregatedConfigSource;
-          export type AggregatedConfigSource__Output = _envoy_api_v2_core_AggregatedConfigSource__Output;
-          export type SelfConfigSource = _envoy_api_v2_core_SelfConfigSource;
-          export type SelfConfigSource__Output = _envoy_api_v2_core_SelfConfigSource__Output;
-          export type RateLimitSettings = _envoy_api_v2_core_RateLimitSettings;
-          export type RateLimitSettings__Output = _envoy_api_v2_core_RateLimitSettings__Output;
-          export type ConfigSource = _envoy_api_v2_core_ConfigSource;
-          export type ConfigSource__Output = _envoy_api_v2_core_ConfigSource__Output;
-          export type TcpProtocolOptions = _envoy_api_v2_core_TcpProtocolOptions;
-          export type TcpProtocolOptions__Output = _envoy_api_v2_core_TcpProtocolOptions__Output;
-          export type UpstreamHttpProtocolOptions = _envoy_api_v2_core_UpstreamHttpProtocolOptions;
-          export type UpstreamHttpProtocolOptions__Output = _envoy_api_v2_core_UpstreamHttpProtocolOptions__Output;
-          export type HttpProtocolOptions = _envoy_api_v2_core_HttpProtocolOptions;
-          export type HttpProtocolOptions__Output = _envoy_api_v2_core_HttpProtocolOptions__Output;
-          export type Http1ProtocolOptions = _envoy_api_v2_core_Http1ProtocolOptions;
-          export type Http1ProtocolOptions__Output = _envoy_api_v2_core_Http1ProtocolOptions__Output;
-          export type Http2ProtocolOptions = _envoy_api_v2_core_Http2ProtocolOptions;
-          export type Http2ProtocolOptions__Output = _envoy_api_v2_core_Http2ProtocolOptions__Output;
-          export type GrpcProtocolOptions = _envoy_api_v2_core_GrpcProtocolOptions;
-          export type GrpcProtocolOptions__Output = _envoy_api_v2_core_GrpcProtocolOptions__Output;
-          export type SocketOption = _envoy_api_v2_core_SocketOption;
-          export type SocketOption__Output = _envoy_api_v2_core_SocketOption__Output;
           export type HttpUri = _envoy_api_v2_core_HttpUri;
           export type HttpUri__Output = _envoy_api_v2_core_HttpUri__Output;
-          export type BackoffStrategy = _envoy_api_v2_core_BackoffStrategy;
-          export type BackoffStrategy__Output = _envoy_api_v2_core_BackoffStrategy__Output;
-          export type EventServiceConfig = _envoy_api_v2_core_EventServiceConfig;
-          export type EventServiceConfig__Output = _envoy_api_v2_core_EventServiceConfig__Output;
           export type GrpcService = _envoy_api_v2_core_GrpcService;
           export type GrpcService__Output = _envoy_api_v2_core_GrpcService__Output;
+          export type SocketOption = _envoy_api_v2_core_SocketOption;
+          export type SocketOption__Output = _envoy_api_v2_core_SocketOption__Output;
         }
-        export namespace cluster {
-          export type CircuitBreakers = _envoy_api_v2_cluster_CircuitBreakers;
-          export type CircuitBreakers__Output = _envoy_api_v2_cluster_CircuitBreakers__Output;
-          export type Filter = _envoy_api_v2_cluster_Filter;
-          export type Filter__Output = _envoy_api_v2_cluster_Filter__Output;
-          export type OutlierDetection = _envoy_api_v2_cluster_OutlierDetection;
-          export type OutlierDetection__Output = _envoy_api_v2_cluster_OutlierDetection__Output;
-        }
-        export type ClusterLoadAssignment = _envoy_api_v2_ClusterLoadAssignment;
-        export type ClusterLoadAssignment__Output = _envoy_api_v2_ClusterLoadAssignment__Output;
-        export namespace endpoint {
-          export type Endpoint = _envoy_api_v2_endpoint_Endpoint;
-          export type Endpoint__Output = _envoy_api_v2_endpoint_Endpoint__Output;
-          export type LbEndpoint = _envoy_api_v2_endpoint_LbEndpoint;
-          export type LbEndpoint__Output = _envoy_api_v2_endpoint_LbEndpoint__Output;
-          export type LocalityLbEndpoints = _envoy_api_v2_endpoint_LocalityLbEndpoints;
-          export type LocalityLbEndpoints__Output = _envoy_api_v2_endpoint_LocalityLbEndpoints__Output;
+        export namespace route {
+          export type VirtualHost = _envoy_api_v2_route_VirtualHost;
+          export type VirtualHost__Output = _envoy_api_v2_route_VirtualHost__Output;
+          export type FilterAction = _envoy_api_v2_route_FilterAction;
+          export type FilterAction__Output = _envoy_api_v2_route_FilterAction__Output;
+          export type Route = _envoy_api_v2_route_Route;
+          export type Route__Output = _envoy_api_v2_route_Route__Output;
+          export type WeightedCluster = _envoy_api_v2_route_WeightedCluster;
+          export type WeightedCluster__Output = _envoy_api_v2_route_WeightedCluster__Output;
+          export type RouteMatch = _envoy_api_v2_route_RouteMatch;
+          export type RouteMatch__Output = _envoy_api_v2_route_RouteMatch__Output;
+          export type CorsPolicy = _envoy_api_v2_route_CorsPolicy;
+          export type CorsPolicy__Output = _envoy_api_v2_route_CorsPolicy__Output;
+          export type RouteAction = _envoy_api_v2_route_RouteAction;
+          export type RouteAction__Output = _envoy_api_v2_route_RouteAction__Output;
+          export type RetryPolicy = _envoy_api_v2_route_RetryPolicy;
+          export type RetryPolicy__Output = _envoy_api_v2_route_RetryPolicy__Output;
+          export type HedgePolicy = _envoy_api_v2_route_HedgePolicy;
+          export type HedgePolicy__Output = _envoy_api_v2_route_HedgePolicy__Output;
+          export type RedirectAction = _envoy_api_v2_route_RedirectAction;
+          export type RedirectAction__Output = _envoy_api_v2_route_RedirectAction__Output;
+          export type DirectResponseAction = _envoy_api_v2_route_DirectResponseAction;
+          export type DirectResponseAction__Output = _envoy_api_v2_route_DirectResponseAction__Output;
+          export type Decorator = _envoy_api_v2_route_Decorator;
+          export type Decorator__Output = _envoy_api_v2_route_Decorator__Output;
+          export type Tracing = _envoy_api_v2_route_Tracing;
+          export type Tracing__Output = _envoy_api_v2_route_Tracing__Output;
+          export type VirtualCluster = _envoy_api_v2_route_VirtualCluster;
+          export type VirtualCluster__Output = _envoy_api_v2_route_VirtualCluster__Output;
+          export type RateLimit = _envoy_api_v2_route_RateLimit;
+          export type RateLimit__Output = _envoy_api_v2_route_RateLimit__Output;
+          export type HeaderMatcher = _envoy_api_v2_route_HeaderMatcher;
+          export type HeaderMatcher__Output = _envoy_api_v2_route_HeaderMatcher__Output;
+          export type QueryParameterMatcher = _envoy_api_v2_route_QueryParameterMatcher;
+          export type QueryParameterMatcher__Output = _envoy_api_v2_route_QueryParameterMatcher__Output;
         }
       }
     }
@@ -302,38 +262,51 @@ export namespace messages {
       export type FractionalPercent__Output = _envoy_type_FractionalPercent__Output;
       export type SemanticVersion = _envoy_type_SemanticVersion;
       export type SemanticVersion__Output = _envoy_type_SemanticVersion__Output;
+      export namespace matcher {
+        export type RegexMatcher = _envoy_type_matcher_RegexMatcher;
+        export type RegexMatcher__Output = _envoy_type_matcher_RegexMatcher__Output;
+        export type RegexMatchAndSubstitute = _envoy_type_matcher_RegexMatchAndSubstitute;
+        export type RegexMatchAndSubstitute__Output = _envoy_type_matcher_RegexMatchAndSubstitute__Output;
+        export type StringMatcher = _envoy_type_matcher_StringMatcher;
+        export type StringMatcher__Output = _envoy_type_matcher_StringMatcher__Output;
+        export type ListStringMatcher = _envoy_type_matcher_ListStringMatcher;
+        export type ListStringMatcher__Output = _envoy_type_matcher_ListStringMatcher__Output;
+      }
       export type Int64Range = _envoy_type_Int64Range;
       export type Int64Range__Output = _envoy_type_Int64Range__Output;
       export type Int32Range = _envoy_type_Int32Range;
       export type Int32Range__Output = _envoy_type_Int32Range__Output;
       export type DoubleRange = _envoy_type_DoubleRange;
       export type DoubleRange__Output = _envoy_type_DoubleRange__Output;
-      export namespace matcher {
-        export type StringMatcher = _envoy_type_matcher_StringMatcher;
-        export type StringMatcher__Output = _envoy_type_matcher_StringMatcher__Output;
-        export type ListStringMatcher = _envoy_type_matcher_ListStringMatcher;
-        export type ListStringMatcher__Output = _envoy_type_matcher_ListStringMatcher__Output;
-        export type RegexMatcher = _envoy_type_matcher_RegexMatcher;
-        export type RegexMatcher__Output = _envoy_type_matcher_RegexMatcher__Output;
-        export type RegexMatchAndSubstitute = _envoy_type_matcher_RegexMatchAndSubstitute;
-        export type RegexMatchAndSubstitute__Output = _envoy_type_matcher_RegexMatchAndSubstitute__Output;
+      export namespace tracing {
+        export namespace v2 {
+          export type CustomTag = _envoy_type_tracing_v2_CustomTag;
+          export type CustomTag__Output = _envoy_type_tracing_v2_CustomTag__Output;
+        }
       }
-      export type CodecClientType = _envoy_type_CodecClientType;
+      export namespace metadata {
+        export namespace v2 {
+          export type MetadataKey = _envoy_type_metadata_v2_MetadataKey;
+          export type MetadataKey__Output = _envoy_type_metadata_v2_MetadataKey__Output;
+          export type MetadataKind = _envoy_type_metadata_v2_MetadataKind;
+          export type MetadataKind__Output = _envoy_type_metadata_v2_MetadataKind__Output;
+        }
+      }
     }
     export namespace annotations {
     }
   }
   export namespace udpa {
     export namespace annotations {
+      export type PackageVersionStatus = _udpa_annotations_PackageVersionStatus;
+      export type StatusAnnotation = _udpa_annotations_StatusAnnotation;
+      export type StatusAnnotation__Output = _udpa_annotations_StatusAnnotation__Output;
       export type MigrateAnnotation = _udpa_annotations_MigrateAnnotation;
       export type MigrateAnnotation__Output = _udpa_annotations_MigrateAnnotation__Output;
       export type FieldMigrateAnnotation = _udpa_annotations_FieldMigrateAnnotation;
       export type FieldMigrateAnnotation__Output = _udpa_annotations_FieldMigrateAnnotation__Output;
       export type FileMigrateAnnotation = _udpa_annotations_FileMigrateAnnotation;
       export type FileMigrateAnnotation__Output = _udpa_annotations_FileMigrateAnnotation__Output;
-      export type PackageVersionStatus = _udpa_annotations_PackageVersionStatus;
-      export type StatusAnnotation = _udpa_annotations_StatusAnnotation;
-      export type StatusAnnotation__Output = _udpa_annotations_StatusAnnotation__Output;
     }
   }
   export namespace validate {
@@ -387,17 +360,6 @@ export namespace messages {
   }
   export namespace google {
     export namespace protobuf {
-      export type Any = _google_protobuf_Any;
-      export type Any__Output = _google_protobuf_Any__Output;
-      export type Duration = _google_protobuf_Duration;
-      export type Duration__Output = _google_protobuf_Duration__Output;
-      export type Struct = _google_protobuf_Struct;
-      export type Struct__Output = _google_protobuf_Struct__Output;
-      export type Value = _google_protobuf_Value;
-      export type Value__Output = _google_protobuf_Value__Output;
-      export type NullValue = _google_protobuf_NullValue;
-      export type ListValue = _google_protobuf_ListValue;
-      export type ListValue__Output = _google_protobuf_ListValue__Output;
       export type DoubleValue = _google_protobuf_DoubleValue;
       export type DoubleValue__Output = _google_protobuf_DoubleValue__Output;
       export type FloatValue = _google_protobuf_FloatValue;
@@ -416,6 +378,17 @@ export namespace messages {
       export type StringValue__Output = _google_protobuf_StringValue__Output;
       export type BytesValue = _google_protobuf_BytesValue;
       export type BytesValue__Output = _google_protobuf_BytesValue__Output;
+      export type Any = _google_protobuf_Any;
+      export type Any__Output = _google_protobuf_Any__Output;
+      export type Duration = _google_protobuf_Duration;
+      export type Duration__Output = _google_protobuf_Duration__Output;
+      export type Struct = _google_protobuf_Struct;
+      export type Struct__Output = _google_protobuf_Struct__Output;
+      export type Value = _google_protobuf_Value;
+      export type Value__Output = _google_protobuf_Value__Output;
+      export type NullValue = _google_protobuf_NullValue;
+      export type ListValue = _google_protobuf_ListValue;
+      export type ListValue__Output = _google_protobuf_ListValue__Output;
       export type Timestamp = _google_protobuf_Timestamp;
       export type Timestamp__Output = _google_protobuf_Timestamp__Output;
       export type FileDescriptorSet = _google_protobuf_FileDescriptorSet;
@@ -461,14 +434,6 @@ export namespace messages {
       export type Empty = _google_protobuf_Empty;
       export type Empty__Output = _google_protobuf_Empty__Output;
     }
-    export namespace api {
-      export type Http = _google_api_Http;
-      export type Http__Output = _google_api_Http__Output;
-      export type HttpRule = _google_api_HttpRule;
-      export type HttpRule__Output = _google_api_HttpRule__Output;
-      export type CustomHttpPattern = _google_api_CustomHttpPattern;
-      export type CustomHttpPattern__Output = _google_api_CustomHttpPattern__Output;
-    }
   }
 }
 
@@ -476,67 +441,9 @@ export namespace ClientInterfaces {
   export namespace envoy {
     export namespace api {
       export namespace v2 {
-        export namespace Cluster {
-          export namespace TransportSocketMatch {
-          }
-          export namespace CustomClusterType {
-          }
-          export namespace EdsClusterConfig {
-          }
-          export namespace LbSubsetConfig {
-            export namespace LbSubsetSelector {
-            }
-          }
-          export namespace LeastRequestLbConfig {
-          }
-          export namespace RingHashLbConfig {
-          }
-          export namespace OriginalDstLbConfig {
-          }
-          export namespace CommonLbConfig {
-            export namespace ZoneAwareLbConfig {
-            }
-            export namespace LocalityWeightedLbConfig {
-            }
-            export namespace ConsistentHashingLbConfig {
-            }
-          }
-          export namespace RefreshRate {
-          }
+        export namespace RouteConfiguration {
         }
-        export namespace LoadBalancingPolicy {
-          export namespace Policy {
-          }
-        }
-        export namespace UpstreamBindConfig {
-        }
-        export namespace UpstreamConnectionOptions {
-        }
-        export namespace auth {
-          export namespace UpstreamTlsContext {
-          }
-          export namespace DownstreamTlsContext {
-          }
-          export namespace CommonTlsContext {
-            export namespace CombinedCertificateValidationContext {
-            }
-          }
-          export namespace GenericSecret {
-          }
-          export namespace SdsSecretConfig {
-          }
-          export namespace Secret {
-          }
-          export namespace TlsParameters {
-          }
-          export namespace PrivateKeyProvider {
-          }
-          export namespace TlsCertificate {
-          }
-          export namespace TlsSessionTicketKeys {
-          }
-          export namespace CertificateValidationContext {
-          }
+        export namespace Vhds {
         }
         export namespace core {
           export namespace Locality {
@@ -575,21 +482,17 @@ export namespace ClientInterfaces {
           }
           export namespace ControlPlane {
           }
-          export namespace HealthCheck {
-            export namespace Payload {
-            }
-            export namespace HttpHealthCheck {
-            }
-            export namespace TcpHealthCheck {
-            }
-            export namespace RedisHealthCheck {
-            }
-            export namespace GrpcHealthCheck {
-            }
-            export namespace CustomHealthCheck {
-            }
-            export namespace TlsOptions {
-            }
+          export namespace ApiConfigSource {
+          }
+          export namespace AggregatedConfigSource {
+          }
+          export namespace SelfConfigSource {
+          }
+          export namespace RateLimitSettings {
+          }
+          export namespace ConfigSource {
+          }
+          export namespace BackoffStrategy {
           }
           export namespace Pipe {
           }
@@ -603,41 +506,7 @@ export namespace ClientInterfaces {
           }
           export namespace CidrRange {
           }
-          export namespace ApiConfigSource {
-          }
-          export namespace AggregatedConfigSource {
-          }
-          export namespace SelfConfigSource {
-          }
-          export namespace RateLimitSettings {
-          }
-          export namespace ConfigSource {
-          }
-          export namespace TcpProtocolOptions {
-          }
-          export namespace UpstreamHttpProtocolOptions {
-          }
-          export namespace HttpProtocolOptions {
-          }
-          export namespace Http1ProtocolOptions {
-            export namespace HeaderKeyFormat {
-              export namespace ProperCaseWords {
-              }
-            }
-          }
-          export namespace Http2ProtocolOptions {
-            export namespace SettingsParameter {
-            }
-          }
-          export namespace GrpcProtocolOptions {
-          }
-          export namespace SocketOption {
-          }
           export namespace HttpUri {
-          }
-          export namespace BackoffStrategy {
-          }
-          export namespace EventServiceConfig {
           }
           export namespace GrpcService {
             export namespace EnvoyGrpc {
@@ -661,33 +530,85 @@ export namespace ClientInterfaces {
               }
             }
           }
+          export namespace SocketOption {
+          }
         }
-        export namespace cluster {
-          export namespace CircuitBreakers {
-            export namespace Thresholds {
-              export namespace RetryBudget {
+        export namespace route {
+          export namespace VirtualHost {
+          }
+          export namespace FilterAction {
+          }
+          export namespace Route {
+          }
+          export namespace WeightedCluster {
+            export namespace ClusterWeight {
+            }
+          }
+          export namespace RouteMatch {
+            export namespace GrpcRouteMatchOptions {
+            }
+            export namespace TlsContextMatchOptions {
+            }
+          }
+          export namespace CorsPolicy {
+          }
+          export namespace RouteAction {
+            export namespace RequestMirrorPolicy {
+            }
+            export namespace HashPolicy {
+              export namespace Header {
+              }
+              export namespace Cookie {
+              }
+              export namespace ConnectionProperties {
+              }
+              export namespace QueryParameter {
+              }
+              export namespace FilterState {
+              }
+            }
+            export namespace UpgradeConfig {
+            }
+          }
+          export namespace RetryPolicy {
+            export namespace RetryPriority {
+            }
+            export namespace RetryHostPredicate {
+            }
+            export namespace RetryBackOff {
+            }
+          }
+          export namespace HedgePolicy {
+          }
+          export namespace RedirectAction {
+          }
+          export namespace DirectResponseAction {
+          }
+          export namespace Decorator {
+          }
+          export namespace Tracing {
+          }
+          export namespace VirtualCluster {
+          }
+          export namespace RateLimit {
+            export namespace Action {
+              export namespace SourceCluster {
+              }
+              export namespace DestinationCluster {
+              }
+              export namespace RequestHeaders {
+              }
+              export namespace RemoteAddress {
+              }
+              export namespace GenericKey {
+              }
+              export namespace HeaderValueMatch {
               }
             }
           }
-          export namespace Filter {
+          export namespace HeaderMatcher {
           }
-          export namespace OutlierDetection {
-          }
-        }
-        export namespace ClusterLoadAssignment {
-          export namespace Policy {
-            export namespace DropOverload {
-            }
-          }
-        }
-        export namespace endpoint {
-          export namespace Endpoint {
-            export namespace HealthCheckConfig {
-            }
-          }
-          export namespace LbEndpoint {
-          }
-          export namespace LocalityLbEndpoints {
+          export namespace QueryParameterMatcher {
           }
         }
       }
@@ -699,22 +620,54 @@ export namespace ClientInterfaces {
       }
       export namespace SemanticVersion {
       }
+      export namespace matcher {
+        export namespace RegexMatcher {
+          export namespace GoogleRE2 {
+          }
+        }
+        export namespace RegexMatchAndSubstitute {
+        }
+        export namespace StringMatcher {
+        }
+        export namespace ListStringMatcher {
+        }
+      }
       export namespace Int64Range {
       }
       export namespace Int32Range {
       }
       export namespace DoubleRange {
       }
-      export namespace matcher {
-        export namespace StringMatcher {
-        }
-        export namespace ListStringMatcher {
-        }
-        export namespace RegexMatcher {
-          export namespace GoogleRE2 {
+      export namespace tracing {
+        export namespace v2 {
+          export namespace CustomTag {
+            export namespace Literal {
+            }
+            export namespace Environment {
+            }
+            export namespace Header {
+            }
+            export namespace Metadata {
+            }
           }
         }
-        export namespace RegexMatchAndSubstitute {
+      }
+      export namespace metadata {
+        export namespace v2 {
+          export namespace MetadataKey {
+            export namespace PathSegment {
+            }
+          }
+          export namespace MetadataKind {
+            export namespace Request {
+            }
+            export namespace Route {
+            }
+            export namespace Cluster {
+            }
+            export namespace Host {
+            }
+          }
         }
       }
     }
@@ -723,13 +676,13 @@ export namespace ClientInterfaces {
   }
   export namespace udpa {
     export namespace annotations {
+      export namespace StatusAnnotation {
+      }
       export namespace MigrateAnnotation {
       }
       export namespace FieldMigrateAnnotation {
       }
       export namespace FileMigrateAnnotation {
-      }
-      export namespace StatusAnnotation {
       }
     }
   }
@@ -783,16 +736,6 @@ export namespace ClientInterfaces {
   }
   export namespace google {
     export namespace protobuf {
-      export namespace Any {
-      }
-      export namespace Duration {
-      }
-      export namespace Struct {
-      }
-      export namespace Value {
-      }
-      export namespace ListValue {
-      }
       export namespace DoubleValue {
       }
       export namespace FloatValue {
@@ -810,6 +753,16 @@ export namespace ClientInterfaces {
       export namespace StringValue {
       }
       export namespace BytesValue {
+      }
+      export namespace Any {
+      }
+      export namespace Duration {
+      }
+      export namespace Struct {
+      }
+      export namespace Value {
+      }
+      export namespace ListValue {
       }
       export namespace Timestamp {
       }
@@ -866,14 +819,6 @@ export namespace ClientInterfaces {
       export namespace Empty {
       }
     }
-    export namespace api {
-      export namespace Http {
-      }
-      export namespace HttpRule {
-      }
-      export namespace CustomHttpPattern {
-      }
-    }
   }
 }
 
@@ -886,23 +831,8 @@ export interface ProtoGrpcType {
   envoy: {
     api: {
       v2: {
-        Cluster: MessageTypeDefinition
-        LoadBalancingPolicy: MessageTypeDefinition
-        UpstreamBindConfig: MessageTypeDefinition
-        UpstreamConnectionOptions: MessageTypeDefinition
-        auth: {
-          UpstreamTlsContext: MessageTypeDefinition
-          DownstreamTlsContext: MessageTypeDefinition
-          CommonTlsContext: MessageTypeDefinition
-          GenericSecret: MessageTypeDefinition
-          SdsSecretConfig: MessageTypeDefinition
-          Secret: MessageTypeDefinition
-          TlsParameters: MessageTypeDefinition
-          PrivateKeyProvider: MessageTypeDefinition
-          TlsCertificate: MessageTypeDefinition
-          TlsSessionTicketKeys: MessageTypeDefinition
-          CertificateValidationContext: MessageTypeDefinition
-        }
+        RouteConfiguration: MessageTypeDefinition
+        Vhds: MessageTypeDefinition
         core: {
           RoutingPriority: EnumTypeDefinition
           RequestMethod: EnumTypeDefinition
@@ -925,42 +855,41 @@ export interface ProtoGrpcType {
           TransportSocket: MessageTypeDefinition
           RuntimeFractionalPercent: MessageTypeDefinition
           ControlPlane: MessageTypeDefinition
-          HealthStatus: EnumTypeDefinition
-          HealthCheck: MessageTypeDefinition
-          Pipe: MessageTypeDefinition
-          SocketAddress: MessageTypeDefinition
-          TcpKeepalive: MessageTypeDefinition
-          BindConfig: MessageTypeDefinition
-          Address: MessageTypeDefinition
-          CidrRange: MessageTypeDefinition
           ApiVersion: EnumTypeDefinition
           ApiConfigSource: MessageTypeDefinition
           AggregatedConfigSource: MessageTypeDefinition
           SelfConfigSource: MessageTypeDefinition
           RateLimitSettings: MessageTypeDefinition
           ConfigSource: MessageTypeDefinition
-          TcpProtocolOptions: MessageTypeDefinition
-          UpstreamHttpProtocolOptions: MessageTypeDefinition
-          HttpProtocolOptions: MessageTypeDefinition
-          Http1ProtocolOptions: MessageTypeDefinition
-          Http2ProtocolOptions: MessageTypeDefinition
-          GrpcProtocolOptions: MessageTypeDefinition
-          SocketOption: MessageTypeDefinition
-          HttpUri: MessageTypeDefinition
           BackoffStrategy: MessageTypeDefinition
-          EventServiceConfig: MessageTypeDefinition
+          Pipe: MessageTypeDefinition
+          SocketAddress: MessageTypeDefinition
+          TcpKeepalive: MessageTypeDefinition
+          BindConfig: MessageTypeDefinition
+          Address: MessageTypeDefinition
+          CidrRange: MessageTypeDefinition
+          HttpUri: MessageTypeDefinition
           GrpcService: MessageTypeDefinition
+          SocketOption: MessageTypeDefinition
         }
-        cluster: {
-          CircuitBreakers: MessageTypeDefinition
-          Filter: MessageTypeDefinition
-          OutlierDetection: MessageTypeDefinition
-        }
-        ClusterLoadAssignment: MessageTypeDefinition
-        endpoint: {
-          Endpoint: MessageTypeDefinition
-          LbEndpoint: MessageTypeDefinition
-          LocalityLbEndpoints: MessageTypeDefinition
+        route: {
+          VirtualHost: MessageTypeDefinition
+          FilterAction: MessageTypeDefinition
+          Route: MessageTypeDefinition
+          WeightedCluster: MessageTypeDefinition
+          RouteMatch: MessageTypeDefinition
+          CorsPolicy: MessageTypeDefinition
+          RouteAction: MessageTypeDefinition
+          RetryPolicy: MessageTypeDefinition
+          HedgePolicy: MessageTypeDefinition
+          RedirectAction: MessageTypeDefinition
+          DirectResponseAction: MessageTypeDefinition
+          Decorator: MessageTypeDefinition
+          Tracing: MessageTypeDefinition
+          VirtualCluster: MessageTypeDefinition
+          RateLimit: MessageTypeDefinition
+          HeaderMatcher: MessageTypeDefinition
+          QueryParameterMatcher: MessageTypeDefinition
         }
       }
     }
@@ -968,27 +897,37 @@ export interface ProtoGrpcType {
       Percent: MessageTypeDefinition
       FractionalPercent: MessageTypeDefinition
       SemanticVersion: MessageTypeDefinition
+      matcher: {
+        RegexMatcher: MessageTypeDefinition
+        RegexMatchAndSubstitute: MessageTypeDefinition
+        StringMatcher: MessageTypeDefinition
+        ListStringMatcher: MessageTypeDefinition
+      }
       Int64Range: MessageTypeDefinition
       Int32Range: MessageTypeDefinition
       DoubleRange: MessageTypeDefinition
-      matcher: {
-        StringMatcher: MessageTypeDefinition
-        ListStringMatcher: MessageTypeDefinition
-        RegexMatcher: MessageTypeDefinition
-        RegexMatchAndSubstitute: MessageTypeDefinition
+      tracing: {
+        v2: {
+          CustomTag: MessageTypeDefinition
+        }
       }
-      CodecClientType: EnumTypeDefinition
+      metadata: {
+        v2: {
+          MetadataKey: MessageTypeDefinition
+          MetadataKind: MessageTypeDefinition
+        }
+      }
     }
     annotations: {
     }
   }
   udpa: {
     annotations: {
+      PackageVersionStatus: EnumTypeDefinition
+      StatusAnnotation: MessageTypeDefinition
       MigrateAnnotation: MessageTypeDefinition
       FieldMigrateAnnotation: MessageTypeDefinition
       FileMigrateAnnotation: MessageTypeDefinition
-      PackageVersionStatus: EnumTypeDefinition
-      StatusAnnotation: MessageTypeDefinition
     }
   }
   validate: {
@@ -1019,12 +958,6 @@ export interface ProtoGrpcType {
   }
   google: {
     protobuf: {
-      Any: MessageTypeDefinition
-      Duration: MessageTypeDefinition
-      Struct: MessageTypeDefinition
-      Value: MessageTypeDefinition
-      NullValue: EnumTypeDefinition
-      ListValue: MessageTypeDefinition
       DoubleValue: MessageTypeDefinition
       FloatValue: MessageTypeDefinition
       Int64Value: MessageTypeDefinition
@@ -1034,6 +967,12 @@ export interface ProtoGrpcType {
       BoolValue: MessageTypeDefinition
       StringValue: MessageTypeDefinition
       BytesValue: MessageTypeDefinition
+      Any: MessageTypeDefinition
+      Duration: MessageTypeDefinition
+      Struct: MessageTypeDefinition
+      Value: MessageTypeDefinition
+      NullValue: EnumTypeDefinition
+      ListValue: MessageTypeDefinition
       Timestamp: MessageTypeDefinition
       FileDescriptorSet: MessageTypeDefinition
       FileDescriptorProto: MessageTypeDefinition
@@ -1057,11 +996,6 @@ export interface ProtoGrpcType {
       GeneratedCodeInfo: MessageTypeDefinition
       Empty: MessageTypeDefinition
     }
-    api: {
-      Http: MessageTypeDefinition
-      HttpRule: MessageTypeDefinition
-      CustomHttpPattern: MessageTypeDefinition
-    }
   }
 }
 
@@ -1069,67 +1003,9 @@ export namespace ServiceHandlers {
   export namespace envoy {
     export namespace api {
       export namespace v2 {
-        export namespace Cluster {
-          export namespace TransportSocketMatch {
-          }
-          export namespace CustomClusterType {
-          }
-          export namespace EdsClusterConfig {
-          }
-          export namespace LbSubsetConfig {
-            export namespace LbSubsetSelector {
-            }
-          }
-          export namespace LeastRequestLbConfig {
-          }
-          export namespace RingHashLbConfig {
-          }
-          export namespace OriginalDstLbConfig {
-          }
-          export namespace CommonLbConfig {
-            export namespace ZoneAwareLbConfig {
-            }
-            export namespace LocalityWeightedLbConfig {
-            }
-            export namespace ConsistentHashingLbConfig {
-            }
-          }
-          export namespace RefreshRate {
-          }
+        export namespace RouteConfiguration {
         }
-        export namespace LoadBalancingPolicy {
-          export namespace Policy {
-          }
-        }
-        export namespace UpstreamBindConfig {
-        }
-        export namespace UpstreamConnectionOptions {
-        }
-        export namespace auth {
-          export namespace UpstreamTlsContext {
-          }
-          export namespace DownstreamTlsContext {
-          }
-          export namespace CommonTlsContext {
-            export namespace CombinedCertificateValidationContext {
-            }
-          }
-          export namespace GenericSecret {
-          }
-          export namespace SdsSecretConfig {
-          }
-          export namespace Secret {
-          }
-          export namespace TlsParameters {
-          }
-          export namespace PrivateKeyProvider {
-          }
-          export namespace TlsCertificate {
-          }
-          export namespace TlsSessionTicketKeys {
-          }
-          export namespace CertificateValidationContext {
-          }
+        export namespace Vhds {
         }
         export namespace core {
           export namespace Locality {
@@ -1168,21 +1044,17 @@ export namespace ServiceHandlers {
           }
           export namespace ControlPlane {
           }
-          export namespace HealthCheck {
-            export namespace Payload {
-            }
-            export namespace HttpHealthCheck {
-            }
-            export namespace TcpHealthCheck {
-            }
-            export namespace RedisHealthCheck {
-            }
-            export namespace GrpcHealthCheck {
-            }
-            export namespace CustomHealthCheck {
-            }
-            export namespace TlsOptions {
-            }
+          export namespace ApiConfigSource {
+          }
+          export namespace AggregatedConfigSource {
+          }
+          export namespace SelfConfigSource {
+          }
+          export namespace RateLimitSettings {
+          }
+          export namespace ConfigSource {
+          }
+          export namespace BackoffStrategy {
           }
           export namespace Pipe {
           }
@@ -1196,41 +1068,7 @@ export namespace ServiceHandlers {
           }
           export namespace CidrRange {
           }
-          export namespace ApiConfigSource {
-          }
-          export namespace AggregatedConfigSource {
-          }
-          export namespace SelfConfigSource {
-          }
-          export namespace RateLimitSettings {
-          }
-          export namespace ConfigSource {
-          }
-          export namespace TcpProtocolOptions {
-          }
-          export namespace UpstreamHttpProtocolOptions {
-          }
-          export namespace HttpProtocolOptions {
-          }
-          export namespace Http1ProtocolOptions {
-            export namespace HeaderKeyFormat {
-              export namespace ProperCaseWords {
-              }
-            }
-          }
-          export namespace Http2ProtocolOptions {
-            export namespace SettingsParameter {
-            }
-          }
-          export namespace GrpcProtocolOptions {
-          }
-          export namespace SocketOption {
-          }
           export namespace HttpUri {
-          }
-          export namespace BackoffStrategy {
-          }
-          export namespace EventServiceConfig {
           }
           export namespace GrpcService {
             export namespace EnvoyGrpc {
@@ -1254,33 +1092,85 @@ export namespace ServiceHandlers {
               }
             }
           }
+          export namespace SocketOption {
+          }
         }
-        export namespace cluster {
-          export namespace CircuitBreakers {
-            export namespace Thresholds {
-              export namespace RetryBudget {
+        export namespace route {
+          export namespace VirtualHost {
+          }
+          export namespace FilterAction {
+          }
+          export namespace Route {
+          }
+          export namespace WeightedCluster {
+            export namespace ClusterWeight {
+            }
+          }
+          export namespace RouteMatch {
+            export namespace GrpcRouteMatchOptions {
+            }
+            export namespace TlsContextMatchOptions {
+            }
+          }
+          export namespace CorsPolicy {
+          }
+          export namespace RouteAction {
+            export namespace RequestMirrorPolicy {
+            }
+            export namespace HashPolicy {
+              export namespace Header {
+              }
+              export namespace Cookie {
+              }
+              export namespace ConnectionProperties {
+              }
+              export namespace QueryParameter {
+              }
+              export namespace FilterState {
+              }
+            }
+            export namespace UpgradeConfig {
+            }
+          }
+          export namespace RetryPolicy {
+            export namespace RetryPriority {
+            }
+            export namespace RetryHostPredicate {
+            }
+            export namespace RetryBackOff {
+            }
+          }
+          export namespace HedgePolicy {
+          }
+          export namespace RedirectAction {
+          }
+          export namespace DirectResponseAction {
+          }
+          export namespace Decorator {
+          }
+          export namespace Tracing {
+          }
+          export namespace VirtualCluster {
+          }
+          export namespace RateLimit {
+            export namespace Action {
+              export namespace SourceCluster {
+              }
+              export namespace DestinationCluster {
+              }
+              export namespace RequestHeaders {
+              }
+              export namespace RemoteAddress {
+              }
+              export namespace GenericKey {
+              }
+              export namespace HeaderValueMatch {
               }
             }
           }
-          export namespace Filter {
+          export namespace HeaderMatcher {
           }
-          export namespace OutlierDetection {
-          }
-        }
-        export namespace ClusterLoadAssignment {
-          export namespace Policy {
-            export namespace DropOverload {
-            }
-          }
-        }
-        export namespace endpoint {
-          export namespace Endpoint {
-            export namespace HealthCheckConfig {
-            }
-          }
-          export namespace LbEndpoint {
-          }
-          export namespace LocalityLbEndpoints {
+          export namespace QueryParameterMatcher {
           }
         }
       }
@@ -1292,22 +1182,54 @@ export namespace ServiceHandlers {
       }
       export namespace SemanticVersion {
       }
+      export namespace matcher {
+        export namespace RegexMatcher {
+          export namespace GoogleRE2 {
+          }
+        }
+        export namespace RegexMatchAndSubstitute {
+        }
+        export namespace StringMatcher {
+        }
+        export namespace ListStringMatcher {
+        }
+      }
       export namespace Int64Range {
       }
       export namespace Int32Range {
       }
       export namespace DoubleRange {
       }
-      export namespace matcher {
-        export namespace StringMatcher {
-        }
-        export namespace ListStringMatcher {
-        }
-        export namespace RegexMatcher {
-          export namespace GoogleRE2 {
+      export namespace tracing {
+        export namespace v2 {
+          export namespace CustomTag {
+            export namespace Literal {
+            }
+            export namespace Environment {
+            }
+            export namespace Header {
+            }
+            export namespace Metadata {
+            }
           }
         }
-        export namespace RegexMatchAndSubstitute {
+      }
+      export namespace metadata {
+        export namespace v2 {
+          export namespace MetadataKey {
+            export namespace PathSegment {
+            }
+          }
+          export namespace MetadataKind {
+            export namespace Request {
+            }
+            export namespace Route {
+            }
+            export namespace Cluster {
+            }
+            export namespace Host {
+            }
+          }
         }
       }
     }
@@ -1316,13 +1238,13 @@ export namespace ServiceHandlers {
   }
   export namespace udpa {
     export namespace annotations {
+      export namespace StatusAnnotation {
+      }
       export namespace MigrateAnnotation {
       }
       export namespace FieldMigrateAnnotation {
       }
       export namespace FileMigrateAnnotation {
-      }
-      export namespace StatusAnnotation {
       }
     }
   }
@@ -1376,16 +1298,6 @@ export namespace ServiceHandlers {
   }
   export namespace google {
     export namespace protobuf {
-      export namespace Any {
-      }
-      export namespace Duration {
-      }
-      export namespace Struct {
-      }
-      export namespace Value {
-      }
-      export namespace ListValue {
-      }
       export namespace DoubleValue {
       }
       export namespace FloatValue {
@@ -1403,6 +1315,16 @@ export namespace ServiceHandlers {
       export namespace StringValue {
       }
       export namespace BytesValue {
+      }
+      export namespace Any {
+      }
+      export namespace Duration {
+      }
+      export namespace Struct {
+      }
+      export namespace Value {
+      }
+      export namespace ListValue {
       }
       export namespace Timestamp {
       }
@@ -1457,14 +1379,6 @@ export namespace ServiceHandlers {
         }
       }
       export namespace Empty {
-      }
-    }
-    export namespace api {
-      export namespace Http {
-      }
-      export namespace HttpRule {
-      }
-      export namespace CustomHttpPattern {
       }
     }
   }

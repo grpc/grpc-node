@@ -28,8 +28,6 @@ import { AsyncDataSource as _envoy_api_v2_core_AsyncDataSource, AsyncDataSource_
 import { TransportSocket as _envoy_api_v2_core_TransportSocket, TransportSocket__Output as _envoy_api_v2_core_TransportSocket__Output } from './envoy/api/v2/core/TransportSocket';
 import { RuntimeFractionalPercent as _envoy_api_v2_core_RuntimeFractionalPercent, RuntimeFractionalPercent__Output as _envoy_api_v2_core_RuntimeFractionalPercent__Output } from './envoy/api/v2/core/RuntimeFractionalPercent';
 import { ControlPlane as _envoy_api_v2_core_ControlPlane, ControlPlane__Output as _envoy_api_v2_core_ControlPlane__Output } from './envoy/api/v2/core/ControlPlane';
-import { BackoffStrategy as _envoy_api_v2_core_BackoffStrategy, BackoffStrategy__Output as _envoy_api_v2_core_BackoffStrategy__Output } from './envoy/api/v2/core/BackoffStrategy';
-import { HttpUri as _envoy_api_v2_core_HttpUri, HttpUri__Output as _envoy_api_v2_core_HttpUri__Output } from './envoy/api/v2/core/HttpUri';
 import { Pipe as _envoy_api_v2_core_Pipe, Pipe__Output as _envoy_api_v2_core_Pipe__Output } from './envoy/api/v2/core/Pipe';
 import { SocketAddress as _envoy_api_v2_core_SocketAddress, SocketAddress__Output as _envoy_api_v2_core_SocketAddress__Output } from './envoy/api/v2/core/SocketAddress';
 import { TcpKeepalive as _envoy_api_v2_core_TcpKeepalive, TcpKeepalive__Output as _envoy_api_v2_core_TcpKeepalive__Output } from './envoy/api/v2/core/TcpKeepalive';
@@ -37,6 +35,8 @@ import { BindConfig as _envoy_api_v2_core_BindConfig, BindConfig__Output as _env
 import { Address as _envoy_api_v2_core_Address, Address__Output as _envoy_api_v2_core_Address__Output } from './envoy/api/v2/core/Address';
 import { CidrRange as _envoy_api_v2_core_CidrRange, CidrRange__Output as _envoy_api_v2_core_CidrRange__Output } from './envoy/api/v2/core/CidrRange';
 import { SocketOption as _envoy_api_v2_core_SocketOption, SocketOption__Output as _envoy_api_v2_core_SocketOption__Output } from './envoy/api/v2/core/SocketOption';
+import { HttpUri as _envoy_api_v2_core_HttpUri, HttpUri__Output as _envoy_api_v2_core_HttpUri__Output } from './envoy/api/v2/core/HttpUri';
+import { BackoffStrategy as _envoy_api_v2_core_BackoffStrategy, BackoffStrategy__Output as _envoy_api_v2_core_BackoffStrategy__Output } from './envoy/api/v2/core/BackoffStrategy';
 import { Percent as _envoy_type_Percent, Percent__Output as _envoy_type_Percent__Output } from './envoy/type/Percent';
 import { FractionalPercent as _envoy_type_FractionalPercent, FractionalPercent__Output as _envoy_type_FractionalPercent__Output } from './envoy/type/FractionalPercent';
 import { SemanticVersion as _envoy_type_SemanticVersion, SemanticVersion__Output as _envoy_type_SemanticVersion__Output } from './envoy/type/SemanticVersion';
@@ -171,10 +171,6 @@ export namespace messages {
           export type RuntimeFractionalPercent__Output = _envoy_api_v2_core_RuntimeFractionalPercent__Output;
           export type ControlPlane = _envoy_api_v2_core_ControlPlane;
           export type ControlPlane__Output = _envoy_api_v2_core_ControlPlane__Output;
-          export type BackoffStrategy = _envoy_api_v2_core_BackoffStrategy;
-          export type BackoffStrategy__Output = _envoy_api_v2_core_BackoffStrategy__Output;
-          export type HttpUri = _envoy_api_v2_core_HttpUri;
-          export type HttpUri__Output = _envoy_api_v2_core_HttpUri__Output;
           export type Pipe = _envoy_api_v2_core_Pipe;
           export type Pipe__Output = _envoy_api_v2_core_Pipe__Output;
           export type SocketAddress = _envoy_api_v2_core_SocketAddress;
@@ -189,6 +185,10 @@ export namespace messages {
           export type CidrRange__Output = _envoy_api_v2_core_CidrRange__Output;
           export type SocketOption = _envoy_api_v2_core_SocketOption;
           export type SocketOption__Output = _envoy_api_v2_core_SocketOption__Output;
+          export type HttpUri = _envoy_api_v2_core_HttpUri;
+          export type HttpUri__Output = _envoy_api_v2_core_HttpUri__Output;
+          export type BackoffStrategy = _envoy_api_v2_core_BackoffStrategy;
+          export type BackoffStrategy__Output = _envoy_api_v2_core_BackoffStrategy__Output;
         }
       }
     }
@@ -415,10 +415,6 @@ export namespace ClientInterfaces {
           }
           export namespace ControlPlane {
           }
-          export namespace BackoffStrategy {
-          }
-          export namespace HttpUri {
-          }
           export namespace Pipe {
           }
           export namespace SocketAddress {
@@ -432,6 +428,10 @@ export namespace ClientInterfaces {
           export namespace CidrRange {
           }
           export namespace SocketOption {
+          }
+          export namespace HttpUri {
+          }
+          export namespace BackoffStrategy {
           }
         }
       }
@@ -639,8 +639,6 @@ export interface ProtoGrpcType {
           TransportSocket: MessageTypeDefinition
           RuntimeFractionalPercent: MessageTypeDefinition
           ControlPlane: MessageTypeDefinition
-          BackoffStrategy: MessageTypeDefinition
-          HttpUri: MessageTypeDefinition
           Pipe: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
           TcpKeepalive: MessageTypeDefinition
@@ -648,6 +646,8 @@ export interface ProtoGrpcType {
           Address: MessageTypeDefinition
           CidrRange: MessageTypeDefinition
           SocketOption: MessageTypeDefinition
+          HttpUri: MessageTypeDefinition
+          BackoffStrategy: MessageTypeDefinition
         }
       }
     }
@@ -802,10 +802,6 @@ export namespace ServiceHandlers {
           }
           export namespace ControlPlane {
           }
-          export namespace BackoffStrategy {
-          }
-          export namespace HttpUri {
-          }
           export namespace Pipe {
           }
           export namespace SocketAddress {
@@ -819,6 +815,10 @@ export namespace ServiceHandlers {
           export namespace CidrRange {
           }
           export namespace SocketOption {
+          }
+          export namespace HttpUri {
+          }
+          export namespace BackoffStrategy {
           }
         }
       }
