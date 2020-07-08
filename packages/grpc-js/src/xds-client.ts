@@ -46,26 +46,36 @@ function loadAdsProtos(): Promise<adsTypes.ProtoGrpcType> {
   if (loadedProtos !== null) {
     return loadedProtos;
   }
-  loadedProtos = protoLoader.load([
-    'envoy/service/discovery/v2/ads.proto',
-    'envoy/api/v2/listener.proto',
-    'envoy/api/v2/route.proto',
-    'envoy/api/v2/cluster.proto',
-    'envoy/api/v2/endpoint.proto'
-  ], {
-    keepCase: true,
-    longs: String,
-    enums: String,
-    defaults: true,
-    oneofs: true,
-    includeDirs: [
-      'deps/envoy-api/',
-      'deps/udpa/',
-      'node_modules/protobufjs/',
-      'deps/googleapis/',
-      'deps/protoc-gen-validate/'
-    ]
-  }).then(packageDefinition => loadPackageDefinition(packageDefinition) as unknown as adsTypes.ProtoGrpcType);
+  loadedProtos = protoLoader
+    .load(
+      [
+        'envoy/service/discovery/v2/ads.proto',
+        'envoy/api/v2/listener.proto',
+        'envoy/api/v2/route.proto',
+        'envoy/api/v2/cluster.proto',
+        'envoy/api/v2/endpoint.proto',
+      ],
+      {
+        keepCase: true,
+        longs: String,
+        enums: String,
+        defaults: true,
+        oneofs: true,
+        includeDirs: [
+          'deps/envoy-api/',
+          'deps/udpa/',
+          'node_modules/protobufjs/',
+          'deps/googleapis/',
+          'deps/protoc-gen-validate/',
+        ],
+      }
+    )
+    .then(
+      (packageDefinition) =>
+        (loadPackageDefinition(
+          packageDefinition
+        ) as unknown) as adsTypes.ProtoGrpcType
+    );
   return loadedProtos;
 }
 
@@ -78,16 +88,29 @@ export interface Watcher<UpdateType> {
 export class XdsClient {
   private node: adsTypes.messages.envoy.api.v2.core.Node | null = null;
   private client: adsTypes.ClientInterfaces.envoy.service.discovery.v2.AggregatedDiscoveryServiceClient | null = null;
-  private adsCall: ClientDuplexStream<adsTypes.messages.envoy.api.v2.DiscoveryRequest, adsTypes.messages.envoy.api.v2.DiscoveryResponse__Output> | null = null;
+  private adsCall: ClientDuplexStream<
+    adsTypes.messages.envoy.api.v2.DiscoveryRequest,
+    adsTypes.messages.envoy.api.v2.DiscoveryResponse__Output
+  > | null = null;
 
-  private hasShutdown: boolean = false;
+  private hasShutdown = false;
 
-  private endpointWatchers: Map<string, Watcher<edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output>[]> = new Map<string, Watcher<edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output>[]>();
-  private lastEdsVersionInfo: string = '';
-  private lastEdsNonce: string = '';
+  private endpointWatchers: Map<
+    string,
+    Watcher<edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output>[]
+  > = new Map<
+    string,
+    Watcher<edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output>[]
+  >();
+  private lastEdsVersionInfo = '';
+  private lastEdsNonce = '';
 
-  constructor(private targetName: string, private serviceConfigWatcher: Watcher<ServiceConfig>, channelOptions: ChannelOptions) {
-    const channelArgs = {...channelOptions};
+  constructor(
+    private targetName: string,
+    private serviceConfigWatcher: Watcher<ServiceConfig>,
+    channelOptions: ChannelOptions
+  ) {
+    const channelArgs = { ...channelOptions };
     const channelArgsToRemove = [
       /* The SSL target name override corresponds to the target, and this
        * client has its own target */
@@ -100,37 +123,44 @@ export class XdsClient {
        * needs its own separate load balancing policy setting. In particular,
        * recursively using an xDS load balancer for the xDS client would be
        * bad */
-      'grpc.service_config'
+      'grpc.service_config',
     ];
     for (const arg of channelArgsToRemove) {
       delete channelArgs[arg];
     }
     channelArgs['grpc.keepalive_time_ms'] = 5000;
-    Promise.all([loadBootstrapInfo(), loadAdsProtos()]).then(([bootstrapInfo, protoDefinitions]) => {
-      if (this.hasShutdown) {
-        return;
+    Promise.all([loadBootstrapInfo(), loadAdsProtos()]).then(
+      ([bootstrapInfo, protoDefinitions]) => {
+        if (this.hasShutdown) {
+          return;
+        }
+        this.node = {
+          ...bootstrapInfo.node,
+          build_version: `gRPC Node Pure JS ${clientVersion}`,
+          user_agent_name: 'gRPC Node Pure JS',
+        };
+        this.client = new protoDefinitions.envoy.service.discovery.v2.AggregatedDiscoveryService(
+          bootstrapInfo.xdsServers[0].serverUri,
+          createGoogleDefaultCredentials(),
+          channelArgs
+        );
+        this.maybeStartAdsStream();
+      },
+      (error) => {
+        trace('Failed to initialize xDS Client. ' + error.message);
+        // Bubble this error up to any listeners
+        this.reportStreamError({
+          code: Status.INTERNAL,
+          details: `Failed to initialize xDS Client. ${error.message}`,
+          metadata: new Metadata(),
+        });
       }
-      this.node = {
-        ...bootstrapInfo.node,
-        build_version: `gRPC Node Pure JS ${clientVersion}`,
-        user_agent_name: 'gRPC Node Pure JS'
-      }
-      this.client = new protoDefinitions.envoy.service.discovery.v2.AggregatedDiscoveryService(bootstrapInfo.xdsServers[0].serverUri, createGoogleDefaultCredentials(), channelArgs);
-      this.maybeStartAdsStream();
-    }, (error) => {
-      trace('Failed to initialize xDS Client. ' + error.message);
-      // Bubble this error up to any listeners
-      this.reportStreamError({
-        code: Status.INTERNAL,
-        details: `Failed to initialize xDS Client. ${error.message}`,
-        metadata: new Metadata()
-      });
-    });
+    );
   }
 
   /**
    * Start the ADS stream if the client exists and there is not already an
-   * existing stream, and there 
+   * existing stream, and there
    */
   private maybeStartAdsStream() {
     if (this.client === null) {
@@ -143,36 +173,56 @@ export class XdsClient {
       return;
     }
     this.adsCall = this.client.StreamAggregatedResources();
-    this.adsCall.on('data', (message: adsTypes.messages.envoy.api.v2.DiscoveryResponse__Output) => {
-      switch (message.type_url) {
-        case EDS_TYPE_URL:
-          const edsResponses: edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output[] = [];
-          for (const resource of message.resources) {
-            if (protoLoader.isAnyExtension(resource) && resource['@type'] === EDS_TYPE_URL) {
-              const resp = resource as protoLoader.AnyExtension & edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output;
-              if (!this.validateEdsResponse(resp)) {
-                this.nackEds('ClusterLoadAssignment validation failed');
+    this.adsCall.on(
+      'data',
+      (message: adsTypes.messages.envoy.api.v2.DiscoveryResponse__Output) => {
+        switch (message.type_url) {
+          case EDS_TYPE_URL: {
+            const edsResponses: edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output[] = [];
+            for (const resource of message.resources) {
+              if (
+                protoLoader.isAnyExtension(resource) &&
+                resource['@type'] === EDS_TYPE_URL
+              ) {
+                const resp = resource as protoLoader.AnyExtension &
+                  edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output;
+                if (!this.validateEdsResponse(resp)) {
+                  this.nackEds('ClusterLoadAssignment validation failed');
+                  return;
+                }
+                edsResponses.push(resp);
+              } else {
+                this.nackEds(
+                  `Invalid resource type ${
+                    protoLoader.isAnyExtension(resource)
+                      ? resource['@type']
+                      : resource.type_url
+                  }`
+                );
                 return;
               }
-              edsResponses.push(resp);
-            } else {
-              this.nackEds(`Invalid resource type ${protoLoader.isAnyExtension(resource) ? resource['@type'] : resource.type_url}`);
-              return;
             }
+            for (const message of edsResponses) {
+              this.handleEdsResponse(message);
+            }
+            this.lastEdsVersionInfo = message.version_info;
+            this.lastEdsNonce = message.nonce;
+            this.ackEds();
+            break;
           }
-          for (const message of edsResponses) {
-            this.handleEdsResponse(message);
-          }
-          this.lastEdsVersionInfo = message.version_info;
-          this.lastEdsNonce = message.nonce;
-          this.ackEds();
-          break;
-        default:
-          this.nackUnknown(message.type_url, message.version_info, message.nonce);
+          default:
+            this.nackUnknown(
+              message.type_url,
+              message.version_info,
+              message.nonce
+            );
+        }
       }
-    });
+    );
     this.adsCall.on('error', (error: ServiceError) => {
-      trace('ADS stream ended. code=' + error.code + ' details= ' + error.details);
+      trace(
+        'ADS stream ended. code=' + error.code + ' details= ' + error.details
+      );
       this.adsCall = null;
       this.reportStreamError(error);
       /* Connection backoff is handled by the client object, so we can
@@ -185,7 +235,7 @@ export class XdsClient {
       this.adsCall.write({
         node: this.node!,
         type_url: EDS_TYPE_URL,
-        resource_names: endpointWatcherNames
+        resource_names: endpointWatcherNames,
       });
     }
   }
@@ -200,8 +250,8 @@ export class XdsClient {
       version_info: versionInfo,
       response_nonce: nonce,
       error_detail: {
-        message: `Unknown type_url ${typeUrl}`
-      }
+        message: `Unknown type_url ${typeUrl}`,
+      },
     });
   }
 
@@ -218,7 +268,7 @@ export class XdsClient {
       type_url: EDS_TYPE_URL,
       resource_names: Array.from(this.endpointWatchers.keys()),
       response_nonce: this.lastEdsNonce,
-      version_info: this.lastEdsVersionInfo
+      version_info: this.lastEdsVersionInfo,
     });
   }
 
@@ -237,8 +287,8 @@ export class XdsClient {
       response_nonce: this.lastEdsNonce,
       version_info: this.lastEdsVersionInfo,
       error_detail: {
-        message
-      }
+        message,
+      },
     });
   }
 
@@ -247,7 +297,9 @@ export class XdsClient {
    * https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md#clusterloadassignment-proto
    * @param message
    */
-  private validateEdsResponse(message: edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output): boolean {
+  private validateEdsResponse(
+    message: edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output
+  ): boolean {
     for (const endpoint of message.endpoints) {
       for (const lb of endpoint.lb_endpoints) {
         const socketAddress = lb.endpoint?.address?.socket_address;
@@ -265,7 +317,9 @@ export class XdsClient {
     return true;
   }
 
-  private handleEdsResponse(message: edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output) {
+  private handleEdsResponse(
+    message: edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output
+  ) {
     const watchers = this.endpointWatchers.get(message.cluster_name) ?? [];
     for (const watcher of watchers) {
       watcher.onValidUpdate(message);
@@ -279,7 +333,7 @@ export class XdsClient {
         type_url: EDS_TYPE_URL,
         resource_names: Array.from(this.endpointWatchers.keys()),
         response_nonce: this.lastEdsNonce,
-        version_info: this.lastEdsVersionInfo
+        version_info: this.lastEdsVersionInfo,
       });
     }
   }
@@ -293,7 +347,12 @@ export class XdsClient {
     // Also do the same for other types of watchers when those are implemented
   }
 
-  addEndpointWatcher(edsServiceName: string, watcher: Watcher<edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output>) {
+  addEndpointWatcher(
+    edsServiceName: string,
+    watcher: Watcher<
+      edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output
+    >
+  ) {
     trace('Watcher added for endpoint ' + edsServiceName);
     let watchersEntry = this.endpointWatchers.get(edsServiceName);
     let addedServiceName = false;
@@ -308,7 +367,12 @@ export class XdsClient {
     }
   }
 
-  removeEndpointWatcher(edsServiceName: string, watcher: Watcher<edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output>) {
+  removeEndpointWatcher(
+    edsServiceName: string,
+    watcher: Watcher<
+      edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output
+    >
+  ) {
     trace('Watcher removed for endpoint ' + edsServiceName);
     const watchersEntry = this.endpointWatchers.get(edsServiceName);
     let removedServiceName = false;

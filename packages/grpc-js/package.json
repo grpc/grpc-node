@@ -52,7 +52,7 @@
     "prepare": "npm run compile",
     "test": "gulp test",
     "check": "gts check src/**/*.ts",
-    "fix": "gts fix src/**/*.ts",
+    "fix": "gts fix src/*.ts",
     "pretest": "npm run compile",
     "posttest": "npm run check"
   },
