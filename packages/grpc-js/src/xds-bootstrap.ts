@@ -75,8 +75,117 @@ function validateXdsServerConfig(obj: any): XdsServerConfig {
   };
 }
 
+function validateValue(obj: any): adsTypes.messages.google.protobuf.Value {
+  if (Array.isArray(obj)) {
+    return {
+      kind: 'listValue',
+      listValue: {
+        values: obj.map(value => validateValue(value))
+      }
+    }
+  } else {
+    switch (typeof obj) {
+      case 'boolean':
+        return {
+          kind: 'boolValue',
+          boolValue: obj
+        };
+      case 'number':
+        return {
+          kind: 'numberValue',
+          numberValue: obj
+        };
+      case 'string':
+        return {
+          kind: 'stringValue',
+          stringValue: obj
+        };
+      case 'object':
+        if (obj === null) {
+          return {
+            kind: 'nullValue',
+            nullValue: 'NULL_VALUE'
+          };
+        } else {
+          return {
+            kind: 'structValue',
+            structValue: getStructFromJson(obj)
+          };
+        }
+      default:
+        throw new Error(`Could not handle struct value of type ${typeof obj}`);
+    }
+  }
+}
+
+function getStructFromJson(obj: any): adsTypes.messages.google.protobuf.Struct {
+  if (typeof obj !== 'object' || obj === null) {
+    throw new Error('Invalid JSON object for Struct field');
+  }
+  const result = Object.keys(obj).map(key => validateValue(key));
+  if (result.length === 1) {
+    return {
+      fields: result[0]
+    }
+  } else {
+    return {
+      fields: {
+        kind: 'listValue',
+        listValue: {
+          values: result
+        }
+      }
+    }
+  };
+}
+
+/**
+ * Validate that the input obj is a valid Node proto message. Only checks the
+ * fields we expect to see: id, cluster, locality, and metadata.
+ * @param obj 
+ */
 function validateNode(obj: any): adsTypes.messages.envoy.api.v2.core.Node {
-  throw new Error('Not implemented');
+  const result: adsTypes.messages.envoy.api.v2.core.Node = {};
+  if (!('id' in obj)) {
+    throw new Error('id field missing in node element');
+  }
+  if (typeof obj.id !== 'string') {
+    throw new Error(`node.id field: expected string, got ${typeof obj.id}`);
+  }
+  result.id = obj.id;
+  if (!('cluster' in obj)) {
+    throw new Error('cluster field missing in node element');
+  }
+  if (typeof obj.cluster !== 'string') {
+    throw new Error(`node.cluster field: expected string, got ${typeof obj.cluster}`);
+  }
+  result.cluster = obj.cluster;
+  if (!('locality' in obj)) {
+    throw new Error('locality field missing in node element');
+  }
+  result.locality = {};
+  if ('region' in obj.locality) {
+    if (typeof obj.locality.region !== 'string') {
+      throw new Error(`node.locality.region field: expected string, got ${typeof obj.locality.region}`);
+    }
+    result.locality.region = obj.locality.region;
+  }
+  if ('zone' in obj.locality) {
+    if (typeof obj.locality.region !== 'string') {
+      throw new Error(`node.locality.zone field: expected string, got ${typeof obj.locality.zone}`);
+    }
+    result.locality.zone = obj.locality.zone;
+  }
+  if ('sub_zone' in obj.locality) {
+    if (typeof obj.locality.sub_zone !== 'string') {
+      throw new Error(`node.locality.sub_zone field: expected string, got ${typeof obj.locality.sub_zone}`);
+    }
+    result.locality.sub_zone = obj.locality.sub_zone;
+  }
+  if ('metadata' in obj) {
+    result.metadata = getStructFromJson(obj.metadata);
+  }
+  return result;
 }
 
 function validateBootstrapFile(obj: any): BootstrapInfo {
@@ -94,7 +203,7 @@ export async function loadBootstrapInfo(): Promise<BootstrapInfo> {
   }
   const bootstrapPath = process.env.GRPC_XDS_BOOTSTRAP;
   if (bootstrapPath === undefined) {
-    return Promise.reject(new Error('GRPC_XDS_BOOTSTRAP environment variable needs to be set to the path to the bootstrap file to use xDS'));
+    return Promise.reject(new Error('The GRPC_XDS_BOOTSTRAP environment variable needs to be set to the path to the bootstrap file to use xDS'));
   }
   loadedBootstrapInfo = new Promise((resolve, reject) => {
     fs.readFile(bootstrapPath, { encoding: 'utf8'}, (err, data) => {
