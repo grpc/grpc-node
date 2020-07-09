@@ -541,6 +541,15 @@ export class Http2CallStream implements Call {
             code = Status.PERMISSION_DENIED;
             details = 'Protocol not secure enough';
             break;
+          case http2.constants.NGHTTP2_INTERNAL_ERROR:
+            code = Status.INTERNAL;
+            /* This error code was previously handled in the default case, and
+             * there are several instances of it online, so I wanted to
+             * preserve the original error message so that people find existing
+             * information in searches, but also include the more recognizable
+             * "Internal server error" message. */
+            details = `Received RST_STREAM with code ${stream.rstCode} (Internal server error)`;
+            break;
           default:
             code = Status.INTERNAL;
             details = `Received RST_STREAM with code ${stream.rstCode}`;
