@@ -59,9 +59,6 @@
   "dependencies": {
     "semver": "^6.2.0"
   },
-  "peerDependencies": {
-    "google-auth-library": "5.x || 6.x"
-  },
   "files": [
     "src/*.ts",
     "build/src/*.{js,d.ts,js.map}",
