@@ -26,21 +26,12 @@ import * as yargs from 'yargs';
 import camelCase = require('lodash.camelcase');
 import { loadProtosWithOptions, addCommonProtos } from '../src/util';
 
-function compareName(x: {name: string}, y: {name: string}): number {
-  if (x.name < y.name) {
-    return -1;
-  } else if (x.name > y.name) {
-    return 1
-  } else {
-    return 0;
-  }
-}
-
 type GeneratorOptions = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
   includeDirs?: string[];
   grpcLib: string;
   outDir: string;
   verbose?: boolean;
+  includeComments?: boolean;
 }
 
 class TextFormatter {
@@ -67,6 +58,18 @@ class TextFormatter {
 
   getFullText() {
     return this.textParts.join('');
+  }
+}
+
+// GENERATOR UTILITY FUNCTIONS
+
+function compareName(x: {name: string}, y: {name: string}): number {
+  if (x.name < y.name) {
+    return -1;
+  } else if (x.name > y.name) {
+    return 1
+  } else {
+    return 0;
   }
 }
 
@@ -119,7 +122,23 @@ function getChildMessagesAndEnums(namespace: Protobuf.NamespaceBase): (Protobuf.
   return messageList;
 }
 
-function generatePermissiveMessageInterface(formatter: TextFormatter, messageType: Protobuf.Type, nameOverride?: string) {
+function formatComment(formatter: TextFormatter, comment?: string | null) {
+  if (!comment) {
+    return;
+  }
+  formatter.writeLine('/**');
+  for(const line of comment.split('\n')) {
+    formatter.writeLine(` * ${line.replace(/\*\//g, '* /')}`);
+  }
+  formatter.writeLine(' */');
+}
+
+// GENERATOR FUNCTIONS
+
+function generatePermissiveMessageInterface(formatter: TextFormatter, messageType: Protobuf.Type, options: GeneratorOptions, nameOverride?: string) {
+  if (options.includeComments) {
+    formatComment(formatter, messageType.comment);
+  }
   if (messageType.fullName === '.google.protobuf.Any') {
     /* This describes the behavior of the Protobuf.js Any wrapper fromObject
      * replacement function */
@@ -173,17 +192,26 @@ function generatePermissiveMessageInterface(formatter: TextFormatter, messageTyp
           type = `${typeInterfaceName} | keyof typeof ${typeInterfaceName}`;
         }
     }
+    if (options.includeComments) {
+      formatComment(formatter, field.comment);
+    }
     formatter.writeLine(`'${field.name}'?: (${type})${repeatedString};`);
   }
   for (const oneof of messageType.oneofsArray) {
     const typeString = oneof.fieldsArray.map(field => `"${field.name}"`).join('|');
+    if (options.includeComments) {
+      formatComment(formatter, oneof.comment);
+    }
     formatter.writeLine(`'${oneof.name}'?: ${typeString};`);
   }
   formatter.unindent();
   formatter.writeLine('}');
 }
 
-function generateRestrictedMessageInterface(formatter: TextFormatter, messageType: Protobuf.Type, options: Protobuf.IConversionOptions, nameOverride?: string) {
+function generateRestrictedMessageInterface(formatter: TextFormatter, messageType: Protobuf.Type, options: GeneratorOptions, nameOverride?: string) {
+  if (options.includeComments) {
+    formatComment(formatter, messageType.comment);
+  }
   if (messageType.fullName === '.google.protobuf.Any' && options.json) {
     /* This describes the behavior of the Protobuf.js Any wrapper toObject
      * replacement function */
@@ -271,11 +299,17 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
       fieldGuaranteed = false;
     }
     const optionalString = fieldGuaranteed ? '' : '?';
+    if (options.includeComments) {
+      formatComment(formatter, field.comment);
+    }
     formatter.writeLine(`'${field.name}'${optionalString}: (${type})${repeatedString};`);
   }
   if (options.oneofs) {
     for (const oneof of messageType.oneofsArray) {
       const typeString = oneof.fieldsArray.map(field => `"${field.name}"`).join('|');
+      if (options.includeComments) {
+        formatComment(formatter, oneof.comment);
+      }
       formatter.writeLine(`'${oneof.name}': ${typeString};`);
     }
   }
@@ -283,7 +317,7 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
   formatter.writeLine('}');
 }
 
-function generateMessageInterfaces(formatter: TextFormatter, messageType: Protobuf.Type, options: Protobuf.IConversionOptions) {
+function generateMessageInterfaces(formatter: TextFormatter, messageType: Protobuf.Type, options: GeneratorOptions) {
   let usesLong: boolean = false;
   let seenDeps: Set<string> = new Set<string>();
   const childTypes = getChildMessagesAndEnums(messageType);
@@ -330,26 +364,32 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
   for (const childType of childTypes) {
     const nameOverride = getTypeInterfaceName(childType);
     if (childType instanceof Protobuf.Type) {
-      generatePermissiveMessageInterface(formatter, childType, nameOverride);
+      generatePermissiveMessageInterface(formatter, childType, options, nameOverride);
       formatter.writeLine('');
       generateRestrictedMessageInterface(formatter, childType, options, nameOverride);
     } else {
-      generateEnumInterface(formatter, childType, nameOverride);
+      generateEnumInterface(formatter, childType, options, nameOverride);
     }
     formatter.writeLine('');
   }
 
-  generatePermissiveMessageInterface(formatter, messageType);
+  generatePermissiveMessageInterface(formatter, messageType, options);
   formatter.writeLine('');
   generateRestrictedMessageInterface(formatter, messageType, options);
 }
 
-function generateEnumInterface(formatter: TextFormatter, enumType: Protobuf.Enum, nameOverride?: string) {
+function generateEnumInterface(formatter: TextFormatter, enumType: Protobuf.Enum, options: GeneratorOptions, nameOverride?: string) {
   formatter.writeLine(`// Original file: ${enumType.filename}`);
   formatter.writeLine('');
+  if (options.includeComments) {
+    formatComment(formatter, enumType.comment);
+  }
   formatter.writeLine(`export enum ${nameOverride ?? enumType.name} {`);
   formatter.indent();
   for (const key of Object.keys(enumType.values)) {
+    if (options.includeComments) {
+      formatComment(formatter, enumType.comments[key]);
+    }
     formatter.writeLine(`${key} = ${enumType.values[key]},`);
   }
   formatter.unindent();
@@ -366,29 +406,41 @@ function generateMessageAndEnumImports(formatter: TextFormatter, namespace: Prot
   }
 }
 
-function generateMessageAndEnumExports(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, nameOverride?: string) {
+function generateMessageAndEnumExports(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, options: GeneratorOptions, nameOverride?: string) {
   formatter.writeLine(`export namespace ${nameOverride ?? namespace.name} {`);
   formatter.indent();
   for (const nested of namespace.nestedArray.sort(compareName)) {
     if (nested instanceof Protobuf.Enum || nested instanceof Protobuf.Type) {
+      if (options.includeComments) {
+        formatComment(formatter, nested.comment);
+      }
       formatter.writeLine(`export type ${nested.name} = ${getTypeInterfaceName(nested)};`);
       if (nested instanceof Protobuf.Type) {
+        if (options.includeComments) {
+          formatComment(formatter, nested.comment);
+        }
         formatter.writeLine(`export type ${nested.name}__Output = ${getTypeInterfaceName(nested)}__Output;`);
       }
     } else if (isNamespaceBase(nested)) {
-      generateMessageAndEnumExports(formatter, nested);
+      generateMessageAndEnumExports(formatter, nested, options);
     }
   }
   formatter.unindent();
   formatter.writeLine('}');
 }
 
-function generateServiceClientInterface(formatter: TextFormatter, serviceType: Protobuf.Service) {
+function generateServiceClientInterface(formatter: TextFormatter, serviceType: Protobuf.Service, options: GeneratorOptions) {
+  if (options.includeComments) {
+    formatComment(formatter, serviceType.comment);
+  }
   formatter.writeLine(`export interface ${serviceType.name}Client extends grpc.Client {`);
   formatter.indent();
   for (const methodName of Object.keys(serviceType.methods).sort()) {
     const method = serviceType.methods[methodName];
     for (const name of [methodName, camelCase(methodName)]) {
+      if (options.includeComments) {
+        formatComment(formatter, method.comment);
+      }
       const requestType = 'messages.' + stripLeadingPeriod(method.resolvedRequestType!.fullName);
       const responseType = 'messages.' + stripLeadingPeriod(method.resolvedResponseType!.fullName) + '__Output';
       const callbackType = `(error?: grpc.ServiceError, result?: ${responseType}) => void`;
@@ -428,47 +480,56 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
   formatter.writeLine('}');
 }
 
-function generateAllServiceClientInterfaces(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, nameOverride?: string) {
+function generateAllServiceClientInterfaces(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, options: GeneratorOptions, nameOverride?: string) {
   formatter.writeLine(`export namespace ${nameOverride ?? namespace.name} {`);
   formatter.indent();
   for (const nested of namespace.nestedArray.sort(compareName)) {
     if (nested instanceof Protobuf.Service) {
-      generateServiceClientInterface(formatter, nested);
+      generateServiceClientInterface(formatter, nested, options);
     } else if (isNamespaceBase(nested)) {
-      generateAllServiceClientInterfaces(formatter, nested);
+      generateAllServiceClientInterfaces(formatter, nested, options);
     }
   }
   formatter.unindent();
   formatter.writeLine('}');
 }
 
-function generateSingleLoadedDefinitionType(formatter: TextFormatter, nested: Protobuf.ReflectionObject) {
+function generateSingleLoadedDefinitionType(formatter: TextFormatter, nested: Protobuf.ReflectionObject, options: GeneratorOptions) {
   if (nested instanceof Protobuf.Service) {
+    if (options.includeComments) {
+      formatComment(formatter, nested.comment);
+    }
     formatter.writeLine(`${nested.name}: SubtypeConstructor<typeof grpc.Client, ClientInterfaces.${stripLeadingPeriod(nested.fullName)}Client> & { service: ServiceDefinition }`)
   } else if (nested instanceof Protobuf.Enum) {
     formatter.writeLine(`${nested.name}: EnumTypeDefinition`);
   } else if (nested instanceof Protobuf.Type) {
     formatter.writeLine(`${nested.name}: MessageTypeDefinition`);
   } else if (isNamespaceBase(nested)) {
-    generateLoadedDefinitionTypes(formatter, nested);
+    generateLoadedDefinitionTypes(formatter, nested, options);
   }
 }
 
-function generateLoadedDefinitionTypes(formatter: TextFormatter, namespace: Protobuf.NamespaceBase) {
+function generateLoadedDefinitionTypes(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, options: GeneratorOptions) {
   formatter.writeLine(`${namespace.name}: {`);
   formatter.indent();
   for (const nested of namespace.nestedArray.sort(compareName)) {
-    generateSingleLoadedDefinitionType(formatter, nested);
+    generateSingleLoadedDefinitionType(formatter, nested, options);
   }
   formatter.unindent();
   formatter.writeLine('}');
 }
 
-function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: Protobuf.Service) {
+function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: Protobuf.Service, options: GeneratorOptions) {
+  if (options.includeComments) {
+    formatComment(formatter, serviceType.comment);
+  }
   formatter.writeLine(`export interface ${serviceType.name} {`);
   formatter.indent();
   for (const methodName of Object.keys(serviceType.methods).sort()) {
     const method = serviceType.methods[methodName];
+    if (options.includeComments) {
+      formatComment(formatter, method.comment);
+    }
     const requestType = 'messages.' + stripLeadingPeriod(method.resolvedRequestType!.fullName) + '__Output';
     const responseType = 'messages.' + stripLeadingPeriod(method.resolvedResponseType!.fullName);
     if (method.requestStream) {
@@ -494,14 +555,14 @@ function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: 
   formatter.writeLine('}');
 }
 
-function generateAllServiceHandlerInterfaces(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, nameOverride?: string) {
+function generateAllServiceHandlerInterfaces(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, options: GeneratorOptions, nameOverride?: string) {
   formatter.writeLine(`export namespace ${nameOverride ?? namespace.name} {`);
   formatter.indent();
   for (const nested of namespace.nestedArray.sort(compareName)) {
     if (nested instanceof Protobuf.Service) {
-      generateServiceHandlerInterface(formatter, nested);
+      generateServiceHandlerInterface(formatter, nested, options);
     } else if (isNamespaceBase(nested)) {
-      generateAllServiceHandlerInterfaces(formatter, nested);
+      generateAllServiceHandlerInterfaces(formatter, nested, options);
     }
   }
   formatter.unindent();
@@ -516,10 +577,10 @@ function generateRootFile(formatter: TextFormatter, root: Protobuf.Root, options
   generateMessageAndEnumImports(formatter, root);
   formatter.writeLine('');
 
-  generateMessageAndEnumExports(formatter, root, 'messages');
+  generateMessageAndEnumExports(formatter, root, options, 'messages');
   formatter.writeLine('');
 
-  generateAllServiceClientInterfaces(formatter, root, 'ClientInterfaces');
+  generateAllServiceClientInterfaces(formatter, root, options, 'ClientInterfaces');
   formatter.writeLine('');
 
   formatter.writeLine('type ConstructorArguments<Constructor> = Constructor extends new (...args: infer Args) => any ? Args: never;');
@@ -531,13 +592,13 @@ function generateRootFile(formatter: TextFormatter, root: Protobuf.Root, options
   formatter.writeLine('export interface ProtoGrpcType {');
   formatter.indent();
   for (const nested of root.nestedArray) {
-    generateSingleLoadedDefinitionType(formatter, nested);
+    generateSingleLoadedDefinitionType(formatter, nested, options);
   }
   formatter.unindent();
   formatter.writeLine('}');
   formatter.writeLine('');
 
-  generateAllServiceHandlerInterfaces(formatter, root, 'ServiceHandlers');
+  generateAllServiceHandlerInterfaces(formatter, root, options, 'ServiceHandlers');
 }
 
 async function writeFile(filename: string, contents: string): Promise<void> {
@@ -556,7 +617,7 @@ function generateFilesForNamespace(namespace: Protobuf.NamespaceBase, options: G
       }
       filePromises.push(writeFile(`${options.outDir}/${getPath(nested)}`, fileFormatter.getFullText()));
     } else if (nested instanceof Protobuf.Enum) {
-      generateEnumInterface(fileFormatter, nested);
+      generateEnumInterface(fileFormatter, nested, options);
       if (options.verbose) {
         console.log(`Writing ${options.outDir}/${getPath(nested)} from file ${nested.filename}`);
       }
@@ -596,7 +657,7 @@ function runScript() {
     .string(['includeDirs', 'grpcLib'])
     .normalize(['includeDirs', 'outDir'])
     .array('includeDirs')
-    .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs', 'json', 'verbose'])
+    .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs', 'json', 'verbose', 'generateComments'])
 //    .choices('longs', ['String', 'Number'])
 //    .choices('enums', ['String'])
 //    .choices('bytes', ['Array', 'String'])
@@ -652,7 +713,7 @@ function runScript() {
       console.log('Parsed arguments:', argv);
     }
     addCommonProtos();
-    writeAllFiles(argv._, argv).then(() => {
+    writeAllFiles(argv._, {...argv, alternateCommentMode: true}).then(() => {
       if (argv.verbose) {
         console.log('Success');
       }
