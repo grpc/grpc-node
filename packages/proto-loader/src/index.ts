@@ -406,23 +406,29 @@ export function loadSync(
 }
 
 // Load Google's well-known proto files that aren't exposed by Protobuf.js.
-{
-  // Protobuf.js exposes: any, duration, empty, field_mask, struct, timestamp,
-  // and wrappers. compiler/plugin is excluded in Protobuf.js and here.
-  const wellKnownProtos = ['api', 'descriptor', 'source_context', 'type'];
-  const sourceDir = path.join(
-    path.dirname(require.resolve('protobufjs')),
-    'google',
-    'protobuf'
-  );
 
-  for (const proto of wellKnownProtos) {
-    const file = path.join(sourceDir, `${proto}.proto`);
-    const descriptor = Protobuf.loadSync(file).toJSON();
+// Protobuf.js exposes: any, duration, empty, field_mask, struct, timestamp,
+// and wrappers. compiler/plugin is excluded in Protobuf.js and here.
 
-    Protobuf.common(
-      proto,
-      (descriptor.nested!.google as Protobuf.INamespace).nested!
-    );
-  }
-}
+// Using constant strings for compatibility with tools like Webpack
+const apiDescriptor = require('protobufjs/google/protobuf/api.json');
+const descriptorDescriptor = require('protobufjs/google/protobuf/descriptor.json');
+const sourceContextDescriptor = require('protobufjs/google/protobuf/source_context.json');
+const typeDescriptor = require('protobufjs/google/protobuf/type.json');
+
+Protobuf.common(
+  'api',
+  apiDescriptor.nested.google.nested.protobuf.nested
+);
+Protobuf.common(
+  'descriptor',
+  descriptorDescriptor.nested.google.nested.protobuf.nested
+);
+Protobuf.common(
+  'source_context',
+  sourceContextDescriptor.nested.google.nested.protobuf.nested
+);
+Protobuf.common(
+  'type',
+  typeDescriptor.nested.google.nested.protobuf.nested
+);

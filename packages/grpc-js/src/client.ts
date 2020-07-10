@@ -558,9 +558,7 @@ export class Client {
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onReceiveMessage(message: any) {
-        if (stream.push(message)) {
-          call.startRead();
-        }
+        stream.push(message);
       },
       onReceiveStatus(status: StatusObject) {
         if (receivedStatus) {
@@ -656,9 +654,7 @@ export class Client {
         stream.emit('metadata', metadata);
       },
       onReceiveMessage(message: Buffer) {
-        if (stream.push(message)) {
-          call.startRead();
-        }
+        stream.push(message)
       },
       onReceiveStatus(status: StatusObject) {
         if (receivedStatus) {
