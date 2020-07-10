@@ -23,12 +23,34 @@ export enum _envoy_config_filter_accesslog_v2_GrpcStatusFilter_Status {
   UNAUTHENTICATED = 16,
 }
 
+/**
+ * Filters gRPC requests based on their response status. If a gRPC status is not provided, the
+ * filter will infer the status from the HTTP status code.
+ */
 export interface GrpcStatusFilter {
+  /**
+   * Logs only responses that have any one of the gRPC statuses in this field.
+   */
   'statuses'?: (_envoy_config_filter_accesslog_v2_GrpcStatusFilter_Status | keyof typeof _envoy_config_filter_accesslog_v2_GrpcStatusFilter_Status)[];
+  /**
+   * If included and set to true, the filter will instead block all responses with a gRPC status or
+   * inferred gRPC status enumerated in statuses, and allow all other responses.
+   */
   'exclude'?: (boolean);
 }
 
+/**
+ * Filters gRPC requests based on their response status. If a gRPC status is not provided, the
+ * filter will infer the status from the HTTP status code.
+ */
 export interface GrpcStatusFilter__Output {
+  /**
+   * Logs only responses that have any one of the gRPC statuses in this field.
+   */
   'statuses': (keyof typeof _envoy_config_filter_accesslog_v2_GrpcStatusFilter_Status)[];
+  /**
+   * If included and set to true, the filter will instead block all responses with a gRPC status or
+   * inferred gRPC status enumerated in statuses, and allow all other responses.
+   */
   'exclude': (boolean);
 }

@@ -143,154 +143,825 @@ export namespace messages {
     }
     export namespace api {
       export namespace v2 {
+        /**
+         * [#next-free-field: 11]
+         */
         export type RouteConfiguration = _envoy_api_v2_RouteConfiguration;
+        /**
+         * [#next-free-field: 11]
+         */
         export type RouteConfiguration__Output = _envoy_api_v2_RouteConfiguration__Output;
         export type Vhds = _envoy_api_v2_Vhds;
         export type Vhds__Output = _envoy_api_v2_Vhds__Output;
         export namespace core {
+          /**
+           * Addresses specify either a logical or physical address and port, which are
+           * used to tell Envoy where to bind/listen, connect to upstream and find
+           * management servers.
+           */
           export type Address = _envoy_api_v2_core_Address;
+          /**
+           * Addresses specify either a logical or physical address and port, which are
+           * used to tell Envoy where to bind/listen, connect to upstream and find
+           * management servers.
+           */
           export type Address__Output = _envoy_api_v2_core_Address__Output;
+          /**
+           * Aggregated Discovery Service (ADS) options. This is currently empty, but when
+           * set in :ref:`ConfigSource <envoy_api_msg_core.ConfigSource>` can be used to
+           * specify that ADS is to be used.
+           */
           export type AggregatedConfigSource = _envoy_api_v2_core_AggregatedConfigSource;
+          /**
+           * Aggregated Discovery Service (ADS) options. This is currently empty, but when
+           * set in :ref:`ConfigSource <envoy_api_msg_core.ConfigSource>` can be used to
+           * specify that ADS is to be used.
+           */
           export type AggregatedConfigSource__Output = _envoy_api_v2_core_AggregatedConfigSource__Output;
+          /**
+           * API configuration source. This identifies the API type and cluster that Envoy
+           * will use to fetch an xDS API.
+           * [#next-free-field: 9]
+           */
           export type ApiConfigSource = _envoy_api_v2_core_ApiConfigSource;
+          /**
+           * API configuration source. This identifies the API type and cluster that Envoy
+           * will use to fetch an xDS API.
+           * [#next-free-field: 9]
+           */
           export type ApiConfigSource__Output = _envoy_api_v2_core_ApiConfigSource__Output;
+          /**
+           * xDS API version. This is used to describe both resource and transport
+           * protocol versions (in distinct configuration fields).
+           */
           export type ApiVersion = _envoy_api_v2_core_ApiVersion;
+          /**
+           * Async data source which support async data fetch.
+           */
           export type AsyncDataSource = _envoy_api_v2_core_AsyncDataSource;
+          /**
+           * Async data source which support async data fetch.
+           */
           export type AsyncDataSource__Output = _envoy_api_v2_core_AsyncDataSource__Output;
+          /**
+           * Configuration defining a jittered exponential back off strategy.
+           */
           export type BackoffStrategy = _envoy_api_v2_core_BackoffStrategy;
+          /**
+           * Configuration defining a jittered exponential back off strategy.
+           */
           export type BackoffStrategy__Output = _envoy_api_v2_core_BackoffStrategy__Output;
           export type BindConfig = _envoy_api_v2_core_BindConfig;
           export type BindConfig__Output = _envoy_api_v2_core_BindConfig__Output;
+          /**
+           * BuildVersion combines SemVer version of extension with free-form build information
+           * (i.e. 'alpha', 'private-build') as a set of strings.
+           */
           export type BuildVersion = _envoy_api_v2_core_BuildVersion;
+          /**
+           * BuildVersion combines SemVer version of extension with free-form build information
+           * (i.e. 'alpha', 'private-build') as a set of strings.
+           */
           export type BuildVersion__Output = _envoy_api_v2_core_BuildVersion__Output;
+          /**
+           * CidrRange specifies an IP Address and a prefix length to construct
+           * the subnet mask for a `CIDR <https://tools.ietf.org/html/rfc4632>`_ range.
+           */
           export type CidrRange = _envoy_api_v2_core_CidrRange;
+          /**
+           * CidrRange specifies an IP Address and a prefix length to construct
+           * the subnet mask for a `CIDR <https://tools.ietf.org/html/rfc4632>`_ range.
+           */
           export type CidrRange__Output = _envoy_api_v2_core_CidrRange__Output;
+          /**
+           * Configuration for :ref:`listeners <config_listeners>`, :ref:`clusters
+           * <config_cluster_manager>`, :ref:`routes
+           * <envoy_api_msg_RouteConfiguration>`, :ref:`endpoints
+           * <arch_overview_service_discovery>` etc. may either be sourced from the
+           * filesystem or from an xDS API source. Filesystem configs are watched with
+           * inotify for updates.
+           * [#next-free-field: 7]
+           */
           export type ConfigSource = _envoy_api_v2_core_ConfigSource;
+          /**
+           * Configuration for :ref:`listeners <config_listeners>`, :ref:`clusters
+           * <config_cluster_manager>`, :ref:`routes
+           * <envoy_api_msg_RouteConfiguration>`, :ref:`endpoints
+           * <arch_overview_service_discovery>` etc. may either be sourced from the
+           * filesystem or from an xDS API source. Filesystem configs are watched with
+           * inotify for updates.
+           * [#next-free-field: 7]
+           */
           export type ConfigSource__Output = _envoy_api_v2_core_ConfigSource__Output;
+          /**
+           * Identifies a specific ControlPlane instance that Envoy is connected to.
+           */
           export type ControlPlane = _envoy_api_v2_core_ControlPlane;
+          /**
+           * Identifies a specific ControlPlane instance that Envoy is connected to.
+           */
           export type ControlPlane__Output = _envoy_api_v2_core_ControlPlane__Output;
+          /**
+           * Data source consisting of either a file or an inline value.
+           */
           export type DataSource = _envoy_api_v2_core_DataSource;
+          /**
+           * Data source consisting of either a file or an inline value.
+           */
           export type DataSource__Output = _envoy_api_v2_core_DataSource__Output;
+          /**
+           * Version and identification for an Envoy extension.
+           * [#next-free-field: 6]
+           */
           export type Extension = _envoy_api_v2_core_Extension;
+          /**
+           * Version and identification for an Envoy extension.
+           * [#next-free-field: 6]
+           */
           export type Extension__Output = _envoy_api_v2_core_Extension__Output;
+          /**
+           * gRPC service configuration. This is used by :ref:`ApiConfigSource
+           * <envoy_api_msg_core.ApiConfigSource>` and filter configurations.
+           * [#next-free-field: 6]
+           */
           export type GrpcService = _envoy_api_v2_core_GrpcService;
+          /**
+           * gRPC service configuration. This is used by :ref:`ApiConfigSource
+           * <envoy_api_msg_core.ApiConfigSource>` and filter configurations.
+           * [#next-free-field: 6]
+           */
           export type GrpcService__Output = _envoy_api_v2_core_GrpcService__Output;
+          /**
+           * Wrapper for a set of headers.
+           */
           export type HeaderMap = _envoy_api_v2_core_HeaderMap;
+          /**
+           * Wrapper for a set of headers.
+           */
           export type HeaderMap__Output = _envoy_api_v2_core_HeaderMap__Output;
+          /**
+           * Header name/value pair.
+           */
           export type HeaderValue = _envoy_api_v2_core_HeaderValue;
+          /**
+           * Header name/value pair.
+           */
           export type HeaderValue__Output = _envoy_api_v2_core_HeaderValue__Output;
+          /**
+           * Header name/value pair plus option to control append behavior.
+           */
           export type HeaderValueOption = _envoy_api_v2_core_HeaderValueOption;
+          /**
+           * Header name/value pair plus option to control append behavior.
+           */
           export type HeaderValueOption__Output = _envoy_api_v2_core_HeaderValueOption__Output;
+          /**
+           * Envoy external URI descriptor
+           */
           export type HttpUri = _envoy_api_v2_core_HttpUri;
+          /**
+           * Envoy external URI descriptor
+           */
           export type HttpUri__Output = _envoy_api_v2_core_HttpUri__Output;
+          /**
+           * Identifies location of where either Envoy runs or where upstream hosts run.
+           */
           export type Locality = _envoy_api_v2_core_Locality;
+          /**
+           * Identifies location of where either Envoy runs or where upstream hosts run.
+           */
           export type Locality__Output = _envoy_api_v2_core_Locality__Output;
+          /**
+           * Metadata provides additional inputs to filters based on matched listeners,
+           * filter chains, routes and endpoints. It is structured as a map, usually from
+           * filter name (in reverse DNS format) to metadata specific to the filter. Metadata
+           * key-values for a filter are merged as connection and request handling occurs,
+           * with later values for the same key overriding earlier values.
+           * 
+           * An example use of metadata is providing additional values to
+           * http_connection_manager in the envoy.http_connection_manager.access_log
+           * namespace.
+           * 
+           * Another example use of metadata is to per service config info in cluster metadata, which may get
+           * consumed by multiple filters.
+           * 
+           * For load balancing, Metadata provides a means to subset cluster endpoints.
+           * Endpoints have a Metadata object associated and routes contain a Metadata
+           * object to match against. There are some well defined metadata used today for
+           * this purpose:
+           * 
+           * * ``{"envoy.lb": {"canary": <bool> }}`` This indicates the canary status of an
+           * endpoint and is also used during header processing
+           * (x-envoy-upstream-canary) and for stats purposes.
+           * [#next-major-version: move to type/metadata/v2]
+           */
           export type Metadata = _envoy_api_v2_core_Metadata;
+          /**
+           * Metadata provides additional inputs to filters based on matched listeners,
+           * filter chains, routes and endpoints. It is structured as a map, usually from
+           * filter name (in reverse DNS format) to metadata specific to the filter. Metadata
+           * key-values for a filter are merged as connection and request handling occurs,
+           * with later values for the same key overriding earlier values.
+           * 
+           * An example use of metadata is providing additional values to
+           * http_connection_manager in the envoy.http_connection_manager.access_log
+           * namespace.
+           * 
+           * Another example use of metadata is to per service config info in cluster metadata, which may get
+           * consumed by multiple filters.
+           * 
+           * For load balancing, Metadata provides a means to subset cluster endpoints.
+           * Endpoints have a Metadata object associated and routes contain a Metadata
+           * object to match against. There are some well defined metadata used today for
+           * this purpose:
+           * 
+           * * ``{"envoy.lb": {"canary": <bool> }}`` This indicates the canary status of an
+           * endpoint and is also used during header processing
+           * (x-envoy-upstream-canary) and for stats purposes.
+           * [#next-major-version: move to type/metadata/v2]
+           */
           export type Metadata__Output = _envoy_api_v2_core_Metadata__Output;
+          /**
+           * Identifies a specific Envoy instance. The node identifier is presented to the
+           * management server, which may use this identifier to distinguish per Envoy
+           * configuration for serving.
+           * [#next-free-field: 12]
+           */
           export type Node = _envoy_api_v2_core_Node;
+          /**
+           * Identifies a specific Envoy instance. The node identifier is presented to the
+           * management server, which may use this identifier to distinguish per Envoy
+           * configuration for serving.
+           * [#next-free-field: 12]
+           */
           export type Node__Output = _envoy_api_v2_core_Node__Output;
           export type Pipe = _envoy_api_v2_core_Pipe;
           export type Pipe__Output = _envoy_api_v2_core_Pipe__Output;
+          /**
+           * Rate Limit settings to be applied for discovery requests made by Envoy.
+           */
           export type RateLimitSettings = _envoy_api_v2_core_RateLimitSettings;
+          /**
+           * Rate Limit settings to be applied for discovery requests made by Envoy.
+           */
           export type RateLimitSettings__Output = _envoy_api_v2_core_RateLimitSettings__Output;
+          /**
+           * The message specifies how to fetch data from remote and how to verify it.
+           */
           export type RemoteDataSource = _envoy_api_v2_core_RemoteDataSource;
+          /**
+           * The message specifies how to fetch data from remote and how to verify it.
+           */
           export type RemoteDataSource__Output = _envoy_api_v2_core_RemoteDataSource__Output;
+          /**
+           * HTTP request method.
+           */
           export type RequestMethod = _envoy_api_v2_core_RequestMethod;
+          /**
+           * The message specifies the retry policy of remote data source when fetching fails.
+           */
           export type RetryPolicy = _envoy_api_v2_core_RetryPolicy;
+          /**
+           * The message specifies the retry policy of remote data source when fetching fails.
+           */
           export type RetryPolicy__Output = _envoy_api_v2_core_RetryPolicy__Output;
+          /**
+           * Envoy supports :ref:`upstream priority routing
+           * <arch_overview_http_routing_priority>` both at the route and the virtual
+           * cluster level. The current priority implementation uses different connection
+           * pool and circuit breaking settings for each priority level. This means that
+           * even for HTTP/2 requests, two physical connections will be used to an
+           * upstream host. In the future Envoy will likely support true HTTP/2 priority
+           * over a single upstream connection.
+           */
           export type RoutingPriority = _envoy_api_v2_core_RoutingPriority;
+          /**
+           * Runtime derived double with a default when not specified.
+           */
           export type RuntimeDouble = _envoy_api_v2_core_RuntimeDouble;
+          /**
+           * Runtime derived double with a default when not specified.
+           */
           export type RuntimeDouble__Output = _envoy_api_v2_core_RuntimeDouble__Output;
+          /**
+           * Runtime derived bool with a default when not specified.
+           */
           export type RuntimeFeatureFlag = _envoy_api_v2_core_RuntimeFeatureFlag;
+          /**
+           * Runtime derived bool with a default when not specified.
+           */
           export type RuntimeFeatureFlag__Output = _envoy_api_v2_core_RuntimeFeatureFlag__Output;
+          /**
+           * Runtime derived FractionalPercent with defaults for when the numerator or denominator is not
+           * specified via a runtime key.
+           * 
+           * .. note::
+           * 
+           * Parsing of the runtime key's data is implemented such that it may be represented as a
+           * :ref:`FractionalPercent <envoy_api_msg_type.FractionalPercent>` proto represented as JSON/YAML
+           * and may also be represented as an integer with the assumption that the value is an integral
+           * percentage out of 100. For instance, a runtime key lookup returning the value "42" would parse
+           * as a `FractionalPercent` whose numerator is 42 and denominator is HUNDRED.
+           */
           export type RuntimeFractionalPercent = _envoy_api_v2_core_RuntimeFractionalPercent;
+          /**
+           * Runtime derived FractionalPercent with defaults for when the numerator or denominator is not
+           * specified via a runtime key.
+           * 
+           * .. note::
+           * 
+           * Parsing of the runtime key's data is implemented such that it may be represented as a
+           * :ref:`FractionalPercent <envoy_api_msg_type.FractionalPercent>` proto represented as JSON/YAML
+           * and may also be represented as an integer with the assumption that the value is an integral
+           * percentage out of 100. For instance, a runtime key lookup returning the value "42" would parse
+           * as a `FractionalPercent` whose numerator is 42 and denominator is HUNDRED.
+           */
           export type RuntimeFractionalPercent__Output = _envoy_api_v2_core_RuntimeFractionalPercent__Output;
+          /**
+           * Runtime derived uint32 with a default when not specified.
+           */
           export type RuntimeUInt32 = _envoy_api_v2_core_RuntimeUInt32;
+          /**
+           * Runtime derived uint32 with a default when not specified.
+           */
           export type RuntimeUInt32__Output = _envoy_api_v2_core_RuntimeUInt32__Output;
+          /**
+           * [#not-implemented-hide:]
+           * Self-referencing config source options. This is currently empty, but when
+           * set in :ref:`ConfigSource <envoy_api_msg_core.ConfigSource>` can be used to
+           * specify that other data can be obtained from the same server.
+           */
           export type SelfConfigSource = _envoy_api_v2_core_SelfConfigSource;
+          /**
+           * [#not-implemented-hide:]
+           * Self-referencing config source options. This is currently empty, but when
+           * set in :ref:`ConfigSource <envoy_api_msg_core.ConfigSource>` can be used to
+           * specify that other data can be obtained from the same server.
+           */
           export type SelfConfigSource__Output = _envoy_api_v2_core_SelfConfigSource__Output;
+          /**
+           * [#next-free-field: 7]
+           */
           export type SocketAddress = _envoy_api_v2_core_SocketAddress;
+          /**
+           * [#next-free-field: 7]
+           */
           export type SocketAddress__Output = _envoy_api_v2_core_SocketAddress__Output;
+          /**
+           * Generic socket option message. This would be used to set socket options that
+           * might not exist in upstream kernels or precompiled Envoy binaries.
+           * [#next-free-field: 7]
+           */
           export type SocketOption = _envoy_api_v2_core_SocketOption;
+          /**
+           * Generic socket option message. This would be used to set socket options that
+           * might not exist in upstream kernels or precompiled Envoy binaries.
+           * [#next-free-field: 7]
+           */
           export type SocketOption__Output = _envoy_api_v2_core_SocketOption__Output;
           export type TcpKeepalive = _envoy_api_v2_core_TcpKeepalive;
           export type TcpKeepalive__Output = _envoy_api_v2_core_TcpKeepalive__Output;
+          /**
+           * Identifies the direction of the traffic relative to the local Envoy.
+           */
           export type TrafficDirection = _envoy_api_v2_core_TrafficDirection;
+          /**
+           * Configuration for transport socket in :ref:`listeners <config_listeners>` and
+           * :ref:`clusters <envoy_api_msg_Cluster>`. If the configuration is
+           * empty, a default transport socket implementation and configuration will be
+           * chosen based on the platform and existence of tls_context.
+           */
           export type TransportSocket = _envoy_api_v2_core_TransportSocket;
+          /**
+           * Configuration for transport socket in :ref:`listeners <config_listeners>` and
+           * :ref:`clusters <envoy_api_msg_Cluster>`. If the configuration is
+           * empty, a default transport socket implementation and configuration will be
+           * chosen based on the platform and existence of tls_context.
+           */
           export type TransportSocket__Output = _envoy_api_v2_core_TransportSocket__Output;
         }
         export namespace route {
+          /**
+           * [#next-free-field: 12]
+           */
           export type CorsPolicy = _envoy_api_v2_route_CorsPolicy;
+          /**
+           * [#next-free-field: 12]
+           */
           export type CorsPolicy__Output = _envoy_api_v2_route_CorsPolicy__Output;
           export type Decorator = _envoy_api_v2_route_Decorator;
           export type Decorator__Output = _envoy_api_v2_route_Decorator__Output;
           export type DirectResponseAction = _envoy_api_v2_route_DirectResponseAction;
           export type DirectResponseAction__Output = _envoy_api_v2_route_DirectResponseAction__Output;
+          /**
+           * A filter-defined action type.
+           */
           export type FilterAction = _envoy_api_v2_route_FilterAction;
+          /**
+           * A filter-defined action type.
+           */
           export type FilterAction__Output = _envoy_api_v2_route_FilterAction__Output;
+          /**
+           * .. attention::
+           * 
+           * Internally, Envoy always uses the HTTP/2 *:authority* header to represent the HTTP/1 *Host*
+           * header. Thus, if attempting to match on *Host*, match on *:authority* instead.
+           * 
+           * .. attention::
+           * 
+           * To route on HTTP method, use the special HTTP/2 *:method* header. This works for both
+           * HTTP/1 and HTTP/2 as Envoy normalizes headers. E.g.,
+           * 
+           * .. code-block:: json
+           * 
+           * {
+           * "name": ":method",
+           * "exact_match": "POST"
+           * }
+           * 
+           * .. attention::
+           * In the absence of any header match specifier, match will default to :ref:`present_match
+           * <envoy_api_field_route.HeaderMatcher.present_match>`. i.e, a request that has the :ref:`name
+           * <envoy_api_field_route.HeaderMatcher.name>` header will match, regardless of the header's
+           * value.
+           * 
+           * [#next-major-version: HeaderMatcher should be refactored to use StringMatcher.]
+           * [#next-free-field: 12]
+           */
           export type HeaderMatcher = _envoy_api_v2_route_HeaderMatcher;
+          /**
+           * .. attention::
+           * 
+           * Internally, Envoy always uses the HTTP/2 *:authority* header to represent the HTTP/1 *Host*
+           * header. Thus, if attempting to match on *Host*, match on *:authority* instead.
+           * 
+           * .. attention::
+           * 
+           * To route on HTTP method, use the special HTTP/2 *:method* header. This works for both
+           * HTTP/1 and HTTP/2 as Envoy normalizes headers. E.g.,
+           * 
+           * .. code-block:: json
+           * 
+           * {
+           * "name": ":method",
+           * "exact_match": "POST"
+           * }
+           * 
+           * .. attention::
+           * In the absence of any header match specifier, match will default to :ref:`present_match
+           * <envoy_api_field_route.HeaderMatcher.present_match>`. i.e, a request that has the :ref:`name
+           * <envoy_api_field_route.HeaderMatcher.name>` header will match, regardless of the header's
+           * value.
+           * 
+           * [#next-major-version: HeaderMatcher should be refactored to use StringMatcher.]
+           * [#next-free-field: 12]
+           */
           export type HeaderMatcher__Output = _envoy_api_v2_route_HeaderMatcher__Output;
+          /**
+           * HTTP request hedging :ref:`architecture overview <arch_overview_http_routing_hedging>`.
+           */
           export type HedgePolicy = _envoy_api_v2_route_HedgePolicy;
+          /**
+           * HTTP request hedging :ref:`architecture overview <arch_overview_http_routing_hedging>`.
+           */
           export type HedgePolicy__Output = _envoy_api_v2_route_HedgePolicy__Output;
+          /**
+           * Query parameter matching treats the query string of a request's :path header
+           * as an ampersand-separated list of keys and/or key=value elements.
+           * [#next-free-field: 7]
+           */
           export type QueryParameterMatcher = _envoy_api_v2_route_QueryParameterMatcher;
+          /**
+           * Query parameter matching treats the query string of a request's :path header
+           * as an ampersand-separated list of keys and/or key=value elements.
+           * [#next-free-field: 7]
+           */
           export type QueryParameterMatcher__Output = _envoy_api_v2_route_QueryParameterMatcher__Output;
+          /**
+           * Global rate limiting :ref:`architecture overview <arch_overview_global_rate_limit>`.
+           */
           export type RateLimit = _envoy_api_v2_route_RateLimit;
+          /**
+           * Global rate limiting :ref:`architecture overview <arch_overview_global_rate_limit>`.
+           */
           export type RateLimit__Output = _envoy_api_v2_route_RateLimit__Output;
+          /**
+           * [#next-free-field: 9]
+           */
           export type RedirectAction = _envoy_api_v2_route_RedirectAction;
+          /**
+           * [#next-free-field: 9]
+           */
           export type RedirectAction__Output = _envoy_api_v2_route_RedirectAction__Output;
+          /**
+           * HTTP retry :ref:`architecture overview <arch_overview_http_routing_retry>`.
+           * [#next-free-field: 11]
+           */
           export type RetryPolicy = _envoy_api_v2_route_RetryPolicy;
+          /**
+           * HTTP retry :ref:`architecture overview <arch_overview_http_routing_retry>`.
+           * [#next-free-field: 11]
+           */
           export type RetryPolicy__Output = _envoy_api_v2_route_RetryPolicy__Output;
+          /**
+           * A route is both a specification of how to match a request as well as an indication of what to do
+           * next (e.g., redirect, forward, rewrite, etc.).
+           * 
+           * .. attention::
+           * 
+           * Envoy supports routing on HTTP method via :ref:`header matching
+           * <envoy_api_msg_route.HeaderMatcher>`.
+           * [#next-free-field: 18]
+           */
           export type Route = _envoy_api_v2_route_Route;
+          /**
+           * A route is both a specification of how to match a request as well as an indication of what to do
+           * next (e.g., redirect, forward, rewrite, etc.).
+           * 
+           * .. attention::
+           * 
+           * Envoy supports routing on HTTP method via :ref:`header matching
+           * <envoy_api_msg_route.HeaderMatcher>`.
+           * [#next-free-field: 18]
+           */
           export type Route__Output = _envoy_api_v2_route_Route__Output;
+          /**
+           * [#next-free-field: 34]
+           */
           export type RouteAction = _envoy_api_v2_route_RouteAction;
+          /**
+           * [#next-free-field: 34]
+           */
           export type RouteAction__Output = _envoy_api_v2_route_RouteAction__Output;
+          /**
+           * [#next-free-field: 12]
+           */
           export type RouteMatch = _envoy_api_v2_route_RouteMatch;
+          /**
+           * [#next-free-field: 12]
+           */
           export type RouteMatch__Output = _envoy_api_v2_route_RouteMatch__Output;
           export type Tracing = _envoy_api_v2_route_Tracing;
           export type Tracing__Output = _envoy_api_v2_route_Tracing__Output;
+          /**
+           * A virtual cluster is a way of specifying a regex matching rule against
+           * certain important endpoints such that statistics are generated explicitly for
+           * the matched requests. The reason this is useful is that when doing
+           * prefix/path matching Envoy does not always know what the application
+           * considers to be an endpoint. Thus, it’s impossible for Envoy to generically
+           * emit per endpoint statistics. However, often systems have highly critical
+           * endpoints that they wish to get “perfect” statistics on. Virtual cluster
+           * statistics are perfect in the sense that they are emitted on the downstream
+           * side such that they include network level failures.
+           * 
+           * Documentation for :ref:`virtual cluster statistics <config_http_filters_router_vcluster_stats>`.
+           * 
+           * .. note::
+           * 
+           * Virtual clusters are a useful tool, but we do not recommend setting up a virtual cluster for
+           * every application endpoint. This is both not easily maintainable and as well the matching and
+           * statistics output are not free.
+           */
           export type VirtualCluster = _envoy_api_v2_route_VirtualCluster;
+          /**
+           * A virtual cluster is a way of specifying a regex matching rule against
+           * certain important endpoints such that statistics are generated explicitly for
+           * the matched requests. The reason this is useful is that when doing
+           * prefix/path matching Envoy does not always know what the application
+           * considers to be an endpoint. Thus, it’s impossible for Envoy to generically
+           * emit per endpoint statistics. However, often systems have highly critical
+           * endpoints that they wish to get “perfect” statistics on. Virtual cluster
+           * statistics are perfect in the sense that they are emitted on the downstream
+           * side such that they include network level failures.
+           * 
+           * Documentation for :ref:`virtual cluster statistics <config_http_filters_router_vcluster_stats>`.
+           * 
+           * .. note::
+           * 
+           * Virtual clusters are a useful tool, but we do not recommend setting up a virtual cluster for
+           * every application endpoint. This is both not easily maintainable and as well the matching and
+           * statistics output are not free.
+           */
           export type VirtualCluster__Output = _envoy_api_v2_route_VirtualCluster__Output;
+          /**
+           * The top level element in the routing configuration is a virtual host. Each virtual host has
+           * a logical name as well as a set of domains that get routed to it based on the incoming request's
+           * host header. This allows a single listener to service multiple top level domain path trees. Once
+           * a virtual host is selected based on the domain, the routes are processed in order to see which
+           * upstream cluster to route to or whether to perform a redirect.
+           * [#next-free-field: 21]
+           */
           export type VirtualHost = _envoy_api_v2_route_VirtualHost;
+          /**
+           * The top level element in the routing configuration is a virtual host. Each virtual host has
+           * a logical name as well as a set of domains that get routed to it based on the incoming request's
+           * host header. This allows a single listener to service multiple top level domain path trees. Once
+           * a virtual host is selected based on the domain, the routes are processed in order to see which
+           * upstream cluster to route to or whether to perform a redirect.
+           * [#next-free-field: 21]
+           */
           export type VirtualHost__Output = _envoy_api_v2_route_VirtualHost__Output;
+          /**
+           * Compared to the :ref:`cluster <envoy_api_field_route.RouteAction.cluster>` field that specifies a
+           * single upstream cluster as the target of a request, the :ref:`weighted_clusters
+           * <envoy_api_field_route.RouteAction.weighted_clusters>` option allows for specification of
+           * multiple upstream clusters along with weights that indicate the percentage of
+           * traffic to be forwarded to each cluster. The router selects an upstream cluster based on the
+           * weights.
+           */
           export type WeightedCluster = _envoy_api_v2_route_WeightedCluster;
+          /**
+           * Compared to the :ref:`cluster <envoy_api_field_route.RouteAction.cluster>` field that specifies a
+           * single upstream cluster as the target of a request, the :ref:`weighted_clusters
+           * <envoy_api_field_route.RouteAction.weighted_clusters>` option allows for specification of
+           * multiple upstream clusters along with weights that indicate the percentage of
+           * traffic to be forwarded to each cluster. The router selects an upstream cluster based on the
+           * weights.
+           */
           export type WeightedCluster__Output = _envoy_api_v2_route_WeightedCluster__Output;
         }
       }
     }
     export namespace type {
+      /**
+       * Specifies the double start and end of the range using half-open interval semantics [start,
+       * end).
+       */
       export type DoubleRange = _envoy_type_DoubleRange;
+      /**
+       * Specifies the double start and end of the range using half-open interval semantics [start,
+       * end).
+       */
       export type DoubleRange__Output = _envoy_type_DoubleRange__Output;
+      /**
+       * A fractional percentage is used in cases in which for performance reasons performing floating
+       * point to integer conversions during randomness calculations is undesirable. The message includes
+       * both a numerator and denominator that together determine the final fractional value.
+       * 
+       * * **Example**: 1/100 = 1%.
+       * * **Example**: 3/10000 = 0.03%.
+       */
       export type FractionalPercent = _envoy_type_FractionalPercent;
+      /**
+       * A fractional percentage is used in cases in which for performance reasons performing floating
+       * point to integer conversions during randomness calculations is undesirable. The message includes
+       * both a numerator and denominator that together determine the final fractional value.
+       * 
+       * * **Example**: 1/100 = 1%.
+       * * **Example**: 3/10000 = 0.03%.
+       */
       export type FractionalPercent__Output = _envoy_type_FractionalPercent__Output;
+      /**
+       * Specifies the int32 start and end of the range using half-open interval semantics [start,
+       * end).
+       */
       export type Int32Range = _envoy_type_Int32Range;
+      /**
+       * Specifies the int32 start and end of the range using half-open interval semantics [start,
+       * end).
+       */
       export type Int32Range__Output = _envoy_type_Int32Range__Output;
+      /**
+       * Specifies the int64 start and end of the range using half-open interval semantics [start,
+       * end).
+       */
       export type Int64Range = _envoy_type_Int64Range;
+      /**
+       * Specifies the int64 start and end of the range using half-open interval semantics [start,
+       * end).
+       */
       export type Int64Range__Output = _envoy_type_Int64Range__Output;
+      /**
+       * Identifies a percentage, in the range [0.0, 100.0].
+       */
       export type Percent = _envoy_type_Percent;
+      /**
+       * Identifies a percentage, in the range [0.0, 100.0].
+       */
       export type Percent__Output = _envoy_type_Percent__Output;
+      /**
+       * Envoy uses SemVer (https://semver.org/). Major/minor versions indicate
+       * expected behaviors and APIs, the patch version field is used only
+       * for security fixes and can be generally ignored.
+       */
       export type SemanticVersion = _envoy_type_SemanticVersion;
+      /**
+       * Envoy uses SemVer (https://semver.org/). Major/minor versions indicate
+       * expected behaviors and APIs, the patch version field is used only
+       * for security fixes and can be generally ignored.
+       */
       export type SemanticVersion__Output = _envoy_type_SemanticVersion__Output;
       export namespace matcher {
+        /**
+         * Specifies a list of ways to match a string.
+         */
         export type ListStringMatcher = _envoy_type_matcher_ListStringMatcher;
+        /**
+         * Specifies a list of ways to match a string.
+         */
         export type ListStringMatcher__Output = _envoy_type_matcher_ListStringMatcher__Output;
+        /**
+         * Describes how to match a string and then produce a new string using a regular
+         * expression and a substitution string.
+         */
         export type RegexMatchAndSubstitute = _envoy_type_matcher_RegexMatchAndSubstitute;
+        /**
+         * Describes how to match a string and then produce a new string using a regular
+         * expression and a substitution string.
+         */
         export type RegexMatchAndSubstitute__Output = _envoy_type_matcher_RegexMatchAndSubstitute__Output;
+        /**
+         * A regex matcher designed for safety when used with untrusted input.
+         */
         export type RegexMatcher = _envoy_type_matcher_RegexMatcher;
+        /**
+         * A regex matcher designed for safety when used with untrusted input.
+         */
         export type RegexMatcher__Output = _envoy_type_matcher_RegexMatcher__Output;
+        /**
+         * Specifies the way to match a string.
+         * [#next-free-field: 7]
+         */
         export type StringMatcher = _envoy_type_matcher_StringMatcher;
+        /**
+         * Specifies the way to match a string.
+         * [#next-free-field: 7]
+         */
         export type StringMatcher__Output = _envoy_type_matcher_StringMatcher__Output;
       }
       export namespace metadata {
         export namespace v2 {
+          /**
+           * MetadataKey provides a general interface using `key` and `path` to retrieve value from
+           * :ref:`Metadata <envoy_api_msg_core.Metadata>`.
+           * 
+           * For example, for the following Metadata:
+           * 
+           * .. code-block:: yaml
+           * 
+           * filter_metadata:
+           * envoy.xxx:
+           * prop:
+           * foo: bar
+           * xyz:
+           * hello: envoy
+           * 
+           * The following MetadataKey will retrieve a string value "bar" from the Metadata.
+           * 
+           * .. code-block:: yaml
+           * 
+           * key: envoy.xxx
+           * path:
+           * - key: prop
+           * - key: foo
+           */
           export type MetadataKey = _envoy_type_metadata_v2_MetadataKey;
+          /**
+           * MetadataKey provides a general interface using `key` and `path` to retrieve value from
+           * :ref:`Metadata <envoy_api_msg_core.Metadata>`.
+           * 
+           * For example, for the following Metadata:
+           * 
+           * .. code-block:: yaml
+           * 
+           * filter_metadata:
+           * envoy.xxx:
+           * prop:
+           * foo: bar
+           * xyz:
+           * hello: envoy
+           * 
+           * The following MetadataKey will retrieve a string value "bar" from the Metadata.
+           * 
+           * .. code-block:: yaml
+           * 
+           * key: envoy.xxx
+           * path:
+           * - key: prop
+           * - key: foo
+           */
           export type MetadataKey__Output = _envoy_type_metadata_v2_MetadataKey__Output;
+          /**
+           * Describes what kind of metadata.
+           */
           export type MetadataKind = _envoy_type_metadata_v2_MetadataKind;
+          /**
+           * Describes what kind of metadata.
+           */
           export type MetadataKind__Output = _envoy_type_metadata_v2_MetadataKind__Output;
         }
       }
       export namespace tracing {
         export namespace v2 {
+          /**
+           * Describes custom tags for the active span.
+           * [#next-free-field: 6]
+           */
           export type CustomTag = _envoy_type_tracing_v2_CustomTag;
+          /**
+           * Describes custom tags for the active span.
+           * [#next-free-field: 6]
+           */
           export type CustomTag__Output = _envoy_type_tracing_v2_CustomTag__Output;
         }
       }
@@ -387,52 +1058,203 @@ export namespace messages {
     }
   }
   export namespace validate {
+    /**
+     * AnyRules describe constraints applied exclusively to the
+     * `google.protobuf.Any` well-known type
+     */
     export type AnyRules = _validate_AnyRules;
+    /**
+     * AnyRules describe constraints applied exclusively to the
+     * `google.protobuf.Any` well-known type
+     */
     export type AnyRules__Output = _validate_AnyRules__Output;
+    /**
+     * BoolRules describes the constraints applied to `bool` values
+     */
     export type BoolRules = _validate_BoolRules;
+    /**
+     * BoolRules describes the constraints applied to `bool` values
+     */
     export type BoolRules__Output = _validate_BoolRules__Output;
+    /**
+     * BytesRules describe the constraints applied to `bytes` values
+     */
     export type BytesRules = _validate_BytesRules;
+    /**
+     * BytesRules describe the constraints applied to `bytes` values
+     */
     export type BytesRules__Output = _validate_BytesRules__Output;
+    /**
+     * DoubleRules describes the constraints applied to `double` values
+     */
     export type DoubleRules = _validate_DoubleRules;
+    /**
+     * DoubleRules describes the constraints applied to `double` values
+     */
     export type DoubleRules__Output = _validate_DoubleRules__Output;
+    /**
+     * DurationRules describe the constraints applied exclusively to the
+     * `google.protobuf.Duration` well-known type
+     */
     export type DurationRules = _validate_DurationRules;
+    /**
+     * DurationRules describe the constraints applied exclusively to the
+     * `google.protobuf.Duration` well-known type
+     */
     export type DurationRules__Output = _validate_DurationRules__Output;
+    /**
+     * EnumRules describe the constraints applied to enum values
+     */
     export type EnumRules = _validate_EnumRules;
+    /**
+     * EnumRules describe the constraints applied to enum values
+     */
     export type EnumRules__Output = _validate_EnumRules__Output;
+    /**
+     * FieldRules encapsulates the rules for each type of field. Depending on the
+     * field, the correct set should be used to ensure proper validations.
+     */
     export type FieldRules = _validate_FieldRules;
+    /**
+     * FieldRules encapsulates the rules for each type of field. Depending on the
+     * field, the correct set should be used to ensure proper validations.
+     */
     export type FieldRules__Output = _validate_FieldRules__Output;
+    /**
+     * Fixed32Rules describes the constraints applied to `fixed32` values
+     */
     export type Fixed32Rules = _validate_Fixed32Rules;
+    /**
+     * Fixed32Rules describes the constraints applied to `fixed32` values
+     */
     export type Fixed32Rules__Output = _validate_Fixed32Rules__Output;
+    /**
+     * Fixed64Rules describes the constraints applied to `fixed64` values
+     */
     export type Fixed64Rules = _validate_Fixed64Rules;
+    /**
+     * Fixed64Rules describes the constraints applied to `fixed64` values
+     */
     export type Fixed64Rules__Output = _validate_Fixed64Rules__Output;
+    /**
+     * FloatRules describes the constraints applied to `float` values
+     */
     export type FloatRules = _validate_FloatRules;
+    /**
+     * FloatRules describes the constraints applied to `float` values
+     */
     export type FloatRules__Output = _validate_FloatRules__Output;
+    /**
+     * Int32Rules describes the constraints applied to `int32` values
+     */
     export type Int32Rules = _validate_Int32Rules;
+    /**
+     * Int32Rules describes the constraints applied to `int32` values
+     */
     export type Int32Rules__Output = _validate_Int32Rules__Output;
+    /**
+     * Int64Rules describes the constraints applied to `int64` values
+     */
     export type Int64Rules = _validate_Int64Rules;
+    /**
+     * Int64Rules describes the constraints applied to `int64` values
+     */
     export type Int64Rules__Output = _validate_Int64Rules__Output;
+    /**
+     * WellKnownRegex contain some well-known patterns.
+     */
     export type KnownRegex = _validate_KnownRegex;
+    /**
+     * MapRules describe the constraints applied to `map` values
+     */
     export type MapRules = _validate_MapRules;
+    /**
+     * MapRules describe the constraints applied to `map` values
+     */
     export type MapRules__Output = _validate_MapRules__Output;
+    /**
+     * MessageRules describe the constraints applied to embedded message values.
+     * For message-type fields, validation is performed recursively.
+     */
     export type MessageRules = _validate_MessageRules;
+    /**
+     * MessageRules describe the constraints applied to embedded message values.
+     * For message-type fields, validation is performed recursively.
+     */
     export type MessageRules__Output = _validate_MessageRules__Output;
+    /**
+     * RepeatedRules describe the constraints applied to `repeated` values
+     */
     export type RepeatedRules = _validate_RepeatedRules;
+    /**
+     * RepeatedRules describe the constraints applied to `repeated` values
+     */
     export type RepeatedRules__Output = _validate_RepeatedRules__Output;
+    /**
+     * SFixed32Rules describes the constraints applied to `sfixed32` values
+     */
     export type SFixed32Rules = _validate_SFixed32Rules;
+    /**
+     * SFixed32Rules describes the constraints applied to `sfixed32` values
+     */
     export type SFixed32Rules__Output = _validate_SFixed32Rules__Output;
+    /**
+     * SFixed64Rules describes the constraints applied to `sfixed64` values
+     */
     export type SFixed64Rules = _validate_SFixed64Rules;
+    /**
+     * SFixed64Rules describes the constraints applied to `sfixed64` values
+     */
     export type SFixed64Rules__Output = _validate_SFixed64Rules__Output;
+    /**
+     * SInt32Rules describes the constraints applied to `sint32` values
+     */
     export type SInt32Rules = _validate_SInt32Rules;
+    /**
+     * SInt32Rules describes the constraints applied to `sint32` values
+     */
     export type SInt32Rules__Output = _validate_SInt32Rules__Output;
+    /**
+     * SInt64Rules describes the constraints applied to `sint64` values
+     */
     export type SInt64Rules = _validate_SInt64Rules;
+    /**
+     * SInt64Rules describes the constraints applied to `sint64` values
+     */
     export type SInt64Rules__Output = _validate_SInt64Rules__Output;
+    /**
+     * StringRules describe the constraints applied to `string` values
+     */
     export type StringRules = _validate_StringRules;
+    /**
+     * StringRules describe the constraints applied to `string` values
+     */
     export type StringRules__Output = _validate_StringRules__Output;
+    /**
+     * TimestampRules describe the constraints applied exclusively to the
+     * `google.protobuf.Timestamp` well-known type
+     */
     export type TimestampRules = _validate_TimestampRules;
+    /**
+     * TimestampRules describe the constraints applied exclusively to the
+     * `google.protobuf.Timestamp` well-known type
+     */
     export type TimestampRules__Output = _validate_TimestampRules__Output;
+    /**
+     * UInt32Rules describes the constraints applied to `uint32` values
+     */
     export type UInt32Rules = _validate_UInt32Rules;
+    /**
+     * UInt32Rules describes the constraints applied to `uint32` values
+     */
     export type UInt32Rules__Output = _validate_UInt32Rules__Output;
+    /**
+     * UInt64Rules describes the constraints applied to `uint64` values
+     */
     export type UInt64Rules = _validate_UInt64Rules;
+    /**
+     * UInt64Rules describes the constraints applied to `uint64` values
+     */
     export type UInt64Rules__Output = _validate_UInt64Rules__Output;
   }
 }

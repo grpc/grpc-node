@@ -111,73 +111,410 @@ export namespace messages {
   export namespace envoy {
     export namespace api {
       export namespace v2 {
+        /**
+         * DeltaDiscoveryRequest and DeltaDiscoveryResponse are used in a new gRPC
+         * endpoint for Delta xDS.
+         * 
+         * With Delta xDS, the DeltaDiscoveryResponses do not need to include a full
+         * snapshot of the tracked resources. Instead, DeltaDiscoveryResponses are a
+         * diff to the state of a xDS client.
+         * In Delta XDS there are per-resource versions, which allow tracking state at
+         * the resource granularity.
+         * An xDS Delta session is always in the context of a gRPC bidirectional
+         * stream. This allows the xDS server to keep track of the state of xDS clients
+         * connected to it.
+         * 
+         * In Delta xDS the nonce field is required and used to pair
+         * DeltaDiscoveryResponse to a DeltaDiscoveryRequest ACK or NACK.
+         * Optionally, a response message level system_version_info is present for
+         * debugging purposes only.
+         * 
+         * DeltaDiscoveryRequest plays two independent roles. Any DeltaDiscoveryRequest
+         * can be either or both of: [1] informing the server of what resources the
+         * client has gained/lost interest in (using resource_names_subscribe and
+         * resource_names_unsubscribe), or [2] (N)ACKing an earlier resource update from
+         * the server (using response_nonce, with presence of error_detail making it a NACK).
+         * Additionally, the first message (for a given type_url) of a reconnected gRPC stream
+         * has a third role: informing the server of the resources (and their versions)
+         * that the client already possesses, using the initial_resource_versions field.
+         * 
+         * As with state-of-the-world, when multiple resource types are multiplexed (ADS),
+         * all requests/acknowledgments/updates are logically walled off by type_url:
+         * a Cluster ACK exists in a completely separate world from a prior Route NACK.
+         * In particular, initial_resource_versions being sent at the "start" of every
+         * gRPC stream actually entails a message for each type_url, each with its own
+         * initial_resource_versions.
+         * [#next-free-field: 8]
+         */
         export type DeltaDiscoveryRequest = _envoy_api_v2_DeltaDiscoveryRequest;
+        /**
+         * DeltaDiscoveryRequest and DeltaDiscoveryResponse are used in a new gRPC
+         * endpoint for Delta xDS.
+         * 
+         * With Delta xDS, the DeltaDiscoveryResponses do not need to include a full
+         * snapshot of the tracked resources. Instead, DeltaDiscoveryResponses are a
+         * diff to the state of a xDS client.
+         * In Delta XDS there are per-resource versions, which allow tracking state at
+         * the resource granularity.
+         * An xDS Delta session is always in the context of a gRPC bidirectional
+         * stream. This allows the xDS server to keep track of the state of xDS clients
+         * connected to it.
+         * 
+         * In Delta xDS the nonce field is required and used to pair
+         * DeltaDiscoveryResponse to a DeltaDiscoveryRequest ACK or NACK.
+         * Optionally, a response message level system_version_info is present for
+         * debugging purposes only.
+         * 
+         * DeltaDiscoveryRequest plays two independent roles. Any DeltaDiscoveryRequest
+         * can be either or both of: [1] informing the server of what resources the
+         * client has gained/lost interest in (using resource_names_subscribe and
+         * resource_names_unsubscribe), or [2] (N)ACKing an earlier resource update from
+         * the server (using response_nonce, with presence of error_detail making it a NACK).
+         * Additionally, the first message (for a given type_url) of a reconnected gRPC stream
+         * has a third role: informing the server of the resources (and their versions)
+         * that the client already possesses, using the initial_resource_versions field.
+         * 
+         * As with state-of-the-world, when multiple resource types are multiplexed (ADS),
+         * all requests/acknowledgments/updates are logically walled off by type_url:
+         * a Cluster ACK exists in a completely separate world from a prior Route NACK.
+         * In particular, initial_resource_versions being sent at the "start" of every
+         * gRPC stream actually entails a message for each type_url, each with its own
+         * initial_resource_versions.
+         * [#next-free-field: 8]
+         */
         export type DeltaDiscoveryRequest__Output = _envoy_api_v2_DeltaDiscoveryRequest__Output;
+        /**
+         * [#next-free-field: 7]
+         */
         export type DeltaDiscoveryResponse = _envoy_api_v2_DeltaDiscoveryResponse;
+        /**
+         * [#next-free-field: 7]
+         */
         export type DeltaDiscoveryResponse__Output = _envoy_api_v2_DeltaDiscoveryResponse__Output;
+        /**
+         * A DiscoveryRequest requests a set of versioned resources of the same type for
+         * a given Envoy node on some API.
+         * [#next-free-field: 7]
+         */
         export type DiscoveryRequest = _envoy_api_v2_DiscoveryRequest;
+        /**
+         * A DiscoveryRequest requests a set of versioned resources of the same type for
+         * a given Envoy node on some API.
+         * [#next-free-field: 7]
+         */
         export type DiscoveryRequest__Output = _envoy_api_v2_DiscoveryRequest__Output;
+        /**
+         * [#next-free-field: 7]
+         */
         export type DiscoveryResponse = _envoy_api_v2_DiscoveryResponse;
+        /**
+         * [#next-free-field: 7]
+         */
         export type DiscoveryResponse__Output = _envoy_api_v2_DiscoveryResponse__Output;
         export type Resource = _envoy_api_v2_Resource;
         export type Resource__Output = _envoy_api_v2_Resource__Output;
         export namespace core {
+          /**
+           * Addresses specify either a logical or physical address and port, which are
+           * used to tell Envoy where to bind/listen, connect to upstream and find
+           * management servers.
+           */
           export type Address = _envoy_api_v2_core_Address;
+          /**
+           * Addresses specify either a logical or physical address and port, which are
+           * used to tell Envoy where to bind/listen, connect to upstream and find
+           * management servers.
+           */
           export type Address__Output = _envoy_api_v2_core_Address__Output;
+          /**
+           * Async data source which support async data fetch.
+           */
           export type AsyncDataSource = _envoy_api_v2_core_AsyncDataSource;
+          /**
+           * Async data source which support async data fetch.
+           */
           export type AsyncDataSource__Output = _envoy_api_v2_core_AsyncDataSource__Output;
+          /**
+           * Configuration defining a jittered exponential back off strategy.
+           */
           export type BackoffStrategy = _envoy_api_v2_core_BackoffStrategy;
+          /**
+           * Configuration defining a jittered exponential back off strategy.
+           */
           export type BackoffStrategy__Output = _envoy_api_v2_core_BackoffStrategy__Output;
           export type BindConfig = _envoy_api_v2_core_BindConfig;
           export type BindConfig__Output = _envoy_api_v2_core_BindConfig__Output;
+          /**
+           * BuildVersion combines SemVer version of extension with free-form build information
+           * (i.e. 'alpha', 'private-build') as a set of strings.
+           */
           export type BuildVersion = _envoy_api_v2_core_BuildVersion;
+          /**
+           * BuildVersion combines SemVer version of extension with free-form build information
+           * (i.e. 'alpha', 'private-build') as a set of strings.
+           */
           export type BuildVersion__Output = _envoy_api_v2_core_BuildVersion__Output;
+          /**
+           * CidrRange specifies an IP Address and a prefix length to construct
+           * the subnet mask for a `CIDR <https://tools.ietf.org/html/rfc4632>`_ range.
+           */
           export type CidrRange = _envoy_api_v2_core_CidrRange;
+          /**
+           * CidrRange specifies an IP Address and a prefix length to construct
+           * the subnet mask for a `CIDR <https://tools.ietf.org/html/rfc4632>`_ range.
+           */
           export type CidrRange__Output = _envoy_api_v2_core_CidrRange__Output;
+          /**
+           * Identifies a specific ControlPlane instance that Envoy is connected to.
+           */
           export type ControlPlane = _envoy_api_v2_core_ControlPlane;
+          /**
+           * Identifies a specific ControlPlane instance that Envoy is connected to.
+           */
           export type ControlPlane__Output = _envoy_api_v2_core_ControlPlane__Output;
+          /**
+           * Data source consisting of either a file or an inline value.
+           */
           export type DataSource = _envoy_api_v2_core_DataSource;
+          /**
+           * Data source consisting of either a file or an inline value.
+           */
           export type DataSource__Output = _envoy_api_v2_core_DataSource__Output;
+          /**
+           * Version and identification for an Envoy extension.
+           * [#next-free-field: 6]
+           */
           export type Extension = _envoy_api_v2_core_Extension;
+          /**
+           * Version and identification for an Envoy extension.
+           * [#next-free-field: 6]
+           */
           export type Extension__Output = _envoy_api_v2_core_Extension__Output;
+          /**
+           * Wrapper for a set of headers.
+           */
           export type HeaderMap = _envoy_api_v2_core_HeaderMap;
+          /**
+           * Wrapper for a set of headers.
+           */
           export type HeaderMap__Output = _envoy_api_v2_core_HeaderMap__Output;
+          /**
+           * Header name/value pair.
+           */
           export type HeaderValue = _envoy_api_v2_core_HeaderValue;
+          /**
+           * Header name/value pair.
+           */
           export type HeaderValue__Output = _envoy_api_v2_core_HeaderValue__Output;
+          /**
+           * Header name/value pair plus option to control append behavior.
+           */
           export type HeaderValueOption = _envoy_api_v2_core_HeaderValueOption;
+          /**
+           * Header name/value pair plus option to control append behavior.
+           */
           export type HeaderValueOption__Output = _envoy_api_v2_core_HeaderValueOption__Output;
+          /**
+           * Envoy external URI descriptor
+           */
           export type HttpUri = _envoy_api_v2_core_HttpUri;
+          /**
+           * Envoy external URI descriptor
+           */
           export type HttpUri__Output = _envoy_api_v2_core_HttpUri__Output;
+          /**
+           * Identifies location of where either Envoy runs or where upstream hosts run.
+           */
           export type Locality = _envoy_api_v2_core_Locality;
+          /**
+           * Identifies location of where either Envoy runs or where upstream hosts run.
+           */
           export type Locality__Output = _envoy_api_v2_core_Locality__Output;
+          /**
+           * Metadata provides additional inputs to filters based on matched listeners,
+           * filter chains, routes and endpoints. It is structured as a map, usually from
+           * filter name (in reverse DNS format) to metadata specific to the filter. Metadata
+           * key-values for a filter are merged as connection and request handling occurs,
+           * with later values for the same key overriding earlier values.
+           * 
+           * An example use of metadata is providing additional values to
+           * http_connection_manager in the envoy.http_connection_manager.access_log
+           * namespace.
+           * 
+           * Another example use of metadata is to per service config info in cluster metadata, which may get
+           * consumed by multiple filters.
+           * 
+           * For load balancing, Metadata provides a means to subset cluster endpoints.
+           * Endpoints have a Metadata object associated and routes contain a Metadata
+           * object to match against. There are some well defined metadata used today for
+           * this purpose:
+           * 
+           * * ``{"envoy.lb": {"canary": <bool> }}`` This indicates the canary status of an
+           * endpoint and is also used during header processing
+           * (x-envoy-upstream-canary) and for stats purposes.
+           * [#next-major-version: move to type/metadata/v2]
+           */
           export type Metadata = _envoy_api_v2_core_Metadata;
+          /**
+           * Metadata provides additional inputs to filters based on matched listeners,
+           * filter chains, routes and endpoints. It is structured as a map, usually from
+           * filter name (in reverse DNS format) to metadata specific to the filter. Metadata
+           * key-values for a filter are merged as connection and request handling occurs,
+           * with later values for the same key overriding earlier values.
+           * 
+           * An example use of metadata is providing additional values to
+           * http_connection_manager in the envoy.http_connection_manager.access_log
+           * namespace.
+           * 
+           * Another example use of metadata is to per service config info in cluster metadata, which may get
+           * consumed by multiple filters.
+           * 
+           * For load balancing, Metadata provides a means to subset cluster endpoints.
+           * Endpoints have a Metadata object associated and routes contain a Metadata
+           * object to match against. There are some well defined metadata used today for
+           * this purpose:
+           * 
+           * * ``{"envoy.lb": {"canary": <bool> }}`` This indicates the canary status of an
+           * endpoint and is also used during header processing
+           * (x-envoy-upstream-canary) and for stats purposes.
+           * [#next-major-version: move to type/metadata/v2]
+           */
           export type Metadata__Output = _envoy_api_v2_core_Metadata__Output;
+          /**
+           * Identifies a specific Envoy instance. The node identifier is presented to the
+           * management server, which may use this identifier to distinguish per Envoy
+           * configuration for serving.
+           * [#next-free-field: 12]
+           */
           export type Node = _envoy_api_v2_core_Node;
+          /**
+           * Identifies a specific Envoy instance. The node identifier is presented to the
+           * management server, which may use this identifier to distinguish per Envoy
+           * configuration for serving.
+           * [#next-free-field: 12]
+           */
           export type Node__Output = _envoy_api_v2_core_Node__Output;
           export type Pipe = _envoy_api_v2_core_Pipe;
           export type Pipe__Output = _envoy_api_v2_core_Pipe__Output;
+          /**
+           * The message specifies how to fetch data from remote and how to verify it.
+           */
           export type RemoteDataSource = _envoy_api_v2_core_RemoteDataSource;
+          /**
+           * The message specifies how to fetch data from remote and how to verify it.
+           */
           export type RemoteDataSource__Output = _envoy_api_v2_core_RemoteDataSource__Output;
+          /**
+           * HTTP request method.
+           */
           export type RequestMethod = _envoy_api_v2_core_RequestMethod;
+          /**
+           * The message specifies the retry policy of remote data source when fetching fails.
+           */
           export type RetryPolicy = _envoy_api_v2_core_RetryPolicy;
+          /**
+           * The message specifies the retry policy of remote data source when fetching fails.
+           */
           export type RetryPolicy__Output = _envoy_api_v2_core_RetryPolicy__Output;
+          /**
+           * Envoy supports :ref:`upstream priority routing
+           * <arch_overview_http_routing_priority>` both at the route and the virtual
+           * cluster level. The current priority implementation uses different connection
+           * pool and circuit breaking settings for each priority level. This means that
+           * even for HTTP/2 requests, two physical connections will be used to an
+           * upstream host. In the future Envoy will likely support true HTTP/2 priority
+           * over a single upstream connection.
+           */
           export type RoutingPriority = _envoy_api_v2_core_RoutingPriority;
+          /**
+           * Runtime derived double with a default when not specified.
+           */
           export type RuntimeDouble = _envoy_api_v2_core_RuntimeDouble;
+          /**
+           * Runtime derived double with a default when not specified.
+           */
           export type RuntimeDouble__Output = _envoy_api_v2_core_RuntimeDouble__Output;
+          /**
+           * Runtime derived bool with a default when not specified.
+           */
           export type RuntimeFeatureFlag = _envoy_api_v2_core_RuntimeFeatureFlag;
+          /**
+           * Runtime derived bool with a default when not specified.
+           */
           export type RuntimeFeatureFlag__Output = _envoy_api_v2_core_RuntimeFeatureFlag__Output;
+          /**
+           * Runtime derived FractionalPercent with defaults for when the numerator or denominator is not
+           * specified via a runtime key.
+           * 
+           * .. note::
+           * 
+           * Parsing of the runtime key's data is implemented such that it may be represented as a
+           * :ref:`FractionalPercent <envoy_api_msg_type.FractionalPercent>` proto represented as JSON/YAML
+           * and may also be represented as an integer with the assumption that the value is an integral
+           * percentage out of 100. For instance, a runtime key lookup returning the value "42" would parse
+           * as a `FractionalPercent` whose numerator is 42 and denominator is HUNDRED.
+           */
           export type RuntimeFractionalPercent = _envoy_api_v2_core_RuntimeFractionalPercent;
+          /**
+           * Runtime derived FractionalPercent with defaults for when the numerator or denominator is not
+           * specified via a runtime key.
+           * 
+           * .. note::
+           * 
+           * Parsing of the runtime key's data is implemented such that it may be represented as a
+           * :ref:`FractionalPercent <envoy_api_msg_type.FractionalPercent>` proto represented as JSON/YAML
+           * and may also be represented as an integer with the assumption that the value is an integral
+           * percentage out of 100. For instance, a runtime key lookup returning the value "42" would parse
+           * as a `FractionalPercent` whose numerator is 42 and denominator is HUNDRED.
+           */
           export type RuntimeFractionalPercent__Output = _envoy_api_v2_core_RuntimeFractionalPercent__Output;
+          /**
+           * Runtime derived uint32 with a default when not specified.
+           */
           export type RuntimeUInt32 = _envoy_api_v2_core_RuntimeUInt32;
+          /**
+           * Runtime derived uint32 with a default when not specified.
+           */
           export type RuntimeUInt32__Output = _envoy_api_v2_core_RuntimeUInt32__Output;
+          /**
+           * [#next-free-field: 7]
+           */
           export type SocketAddress = _envoy_api_v2_core_SocketAddress;
+          /**
+           * [#next-free-field: 7]
+           */
           export type SocketAddress__Output = _envoy_api_v2_core_SocketAddress__Output;
+          /**
+           * Generic socket option message. This would be used to set socket options that
+           * might not exist in upstream kernels or precompiled Envoy binaries.
+           * [#next-free-field: 7]
+           */
           export type SocketOption = _envoy_api_v2_core_SocketOption;
+          /**
+           * Generic socket option message. This would be used to set socket options that
+           * might not exist in upstream kernels or precompiled Envoy binaries.
+           * [#next-free-field: 7]
+           */
           export type SocketOption__Output = _envoy_api_v2_core_SocketOption__Output;
           export type TcpKeepalive = _envoy_api_v2_core_TcpKeepalive;
           export type TcpKeepalive__Output = _envoy_api_v2_core_TcpKeepalive__Output;
+          /**
+           * Identifies the direction of the traffic relative to the local Envoy.
+           */
           export type TrafficDirection = _envoy_api_v2_core_TrafficDirection;
+          /**
+           * Configuration for transport socket in :ref:`listeners <config_listeners>` and
+           * :ref:`clusters <envoy_api_msg_Cluster>`. If the configuration is
+           * empty, a default transport socket implementation and configuration will be
+           * chosen based on the platform and existence of tls_context.
+           */
           export type TransportSocket = _envoy_api_v2_core_TransportSocket;
+          /**
+           * Configuration for transport socket in :ref:`listeners <config_listeners>` and
+           * :ref:`clusters <envoy_api_msg_Cluster>`. If the configuration is
+           * empty, a default transport socket implementation and configuration will be
+           * chosen based on the platform and existence of tls_context.
+           */
           export type TransportSocket__Output = _envoy_api_v2_core_TransportSocket__Output;
         }
       }
@@ -185,7 +522,15 @@ export namespace messages {
     export namespace service {
       export namespace discovery {
         export namespace v2 {
+          /**
+           * [#not-implemented-hide:] Not configuration. Workaround c++ protobuf issue with importing
+           * services: https://github.com/google/protobuf/issues/4221
+           */
           export type AdsDummy = _envoy_service_discovery_v2_AdsDummy;
+          /**
+           * [#not-implemented-hide:] Not configuration. Workaround c++ protobuf issue with importing
+           * services: https://github.com/google/protobuf/issues/4221
+           */
           export type AdsDummy__Output = _envoy_service_discovery_v2_AdsDummy__Output;
           export namespace AggregatedDiscoveryService {
           }
@@ -193,11 +538,43 @@ export namespace messages {
       }
     }
     export namespace type {
+      /**
+       * A fractional percentage is used in cases in which for performance reasons performing floating
+       * point to integer conversions during randomness calculations is undesirable. The message includes
+       * both a numerator and denominator that together determine the final fractional value.
+       * 
+       * * **Example**: 1/100 = 1%.
+       * * **Example**: 3/10000 = 0.03%.
+       */
       export type FractionalPercent = _envoy_type_FractionalPercent;
+      /**
+       * A fractional percentage is used in cases in which for performance reasons performing floating
+       * point to integer conversions during randomness calculations is undesirable. The message includes
+       * both a numerator and denominator that together determine the final fractional value.
+       * 
+       * * **Example**: 1/100 = 1%.
+       * * **Example**: 3/10000 = 0.03%.
+       */
       export type FractionalPercent__Output = _envoy_type_FractionalPercent__Output;
+      /**
+       * Identifies a percentage, in the range [0.0, 100.0].
+       */
       export type Percent = _envoy_type_Percent;
+      /**
+       * Identifies a percentage, in the range [0.0, 100.0].
+       */
       export type Percent__Output = _envoy_type_Percent__Output;
+      /**
+       * Envoy uses SemVer (https://semver.org/). Major/minor versions indicate
+       * expected behaviors and APIs, the patch version field is used only
+       * for security fixes and can be generally ignored.
+       */
       export type SemanticVersion = _envoy_type_SemanticVersion;
+      /**
+       * Envoy uses SemVer (https://semver.org/). Major/minor versions indicate
+       * expected behaviors and APIs, the patch version field is used only
+       * for security fixes and can be generally ignored.
+       */
       export type SemanticVersion__Output = _envoy_type_SemanticVersion__Output;
     }
   }
@@ -276,7 +653,25 @@ export namespace messages {
       export type Value__Output = _google_protobuf_Value__Output;
     }
     export namespace rpc {
+      /**
+       * The `Status` type defines a logical error model that is suitable for
+       * different programming environments, including REST APIs and RPC APIs. It is
+       * used by [gRPC](https://github.com/grpc). Each `Status` message contains
+       * three pieces of data: error code, error message, and error details.
+       * 
+       * You can find out more about this error model and how to work with it in the
+       * [API Design Guide](https://cloud.google.com/apis/design/errors).
+       */
       export type Status = _google_rpc_Status;
+      /**
+       * The `Status` type defines a logical error model that is suitable for
+       * different programming environments, including REST APIs and RPC APIs. It is
+       * used by [gRPC](https://github.com/grpc). Each `Status` message contains
+       * three pieces of data: error code, error message, and error details.
+       * 
+       * You can find out more about this error model and how to work with it in the
+       * [API Design Guide](https://cloud.google.com/apis/design/errors).
+       */
       export type Status__Output = _google_rpc_Status__Output;
     }
   }
@@ -294,52 +689,203 @@ export namespace messages {
     }
   }
   export namespace validate {
+    /**
+     * AnyRules describe constraints applied exclusively to the
+     * `google.protobuf.Any` well-known type
+     */
     export type AnyRules = _validate_AnyRules;
+    /**
+     * AnyRules describe constraints applied exclusively to the
+     * `google.protobuf.Any` well-known type
+     */
     export type AnyRules__Output = _validate_AnyRules__Output;
+    /**
+     * BoolRules describes the constraints applied to `bool` values
+     */
     export type BoolRules = _validate_BoolRules;
+    /**
+     * BoolRules describes the constraints applied to `bool` values
+     */
     export type BoolRules__Output = _validate_BoolRules__Output;
+    /**
+     * BytesRules describe the constraints applied to `bytes` values
+     */
     export type BytesRules = _validate_BytesRules;
+    /**
+     * BytesRules describe the constraints applied to `bytes` values
+     */
     export type BytesRules__Output = _validate_BytesRules__Output;
+    /**
+     * DoubleRules describes the constraints applied to `double` values
+     */
     export type DoubleRules = _validate_DoubleRules;
+    /**
+     * DoubleRules describes the constraints applied to `double` values
+     */
     export type DoubleRules__Output = _validate_DoubleRules__Output;
+    /**
+     * DurationRules describe the constraints applied exclusively to the
+     * `google.protobuf.Duration` well-known type
+     */
     export type DurationRules = _validate_DurationRules;
+    /**
+     * DurationRules describe the constraints applied exclusively to the
+     * `google.protobuf.Duration` well-known type
+     */
     export type DurationRules__Output = _validate_DurationRules__Output;
+    /**
+     * EnumRules describe the constraints applied to enum values
+     */
     export type EnumRules = _validate_EnumRules;
+    /**
+     * EnumRules describe the constraints applied to enum values
+     */
     export type EnumRules__Output = _validate_EnumRules__Output;
+    /**
+     * FieldRules encapsulates the rules for each type of field. Depending on the
+     * field, the correct set should be used to ensure proper validations.
+     */
     export type FieldRules = _validate_FieldRules;
+    /**
+     * FieldRules encapsulates the rules for each type of field. Depending on the
+     * field, the correct set should be used to ensure proper validations.
+     */
     export type FieldRules__Output = _validate_FieldRules__Output;
+    /**
+     * Fixed32Rules describes the constraints applied to `fixed32` values
+     */
     export type Fixed32Rules = _validate_Fixed32Rules;
+    /**
+     * Fixed32Rules describes the constraints applied to `fixed32` values
+     */
     export type Fixed32Rules__Output = _validate_Fixed32Rules__Output;
+    /**
+     * Fixed64Rules describes the constraints applied to `fixed64` values
+     */
     export type Fixed64Rules = _validate_Fixed64Rules;
+    /**
+     * Fixed64Rules describes the constraints applied to `fixed64` values
+     */
     export type Fixed64Rules__Output = _validate_Fixed64Rules__Output;
+    /**
+     * FloatRules describes the constraints applied to `float` values
+     */
     export type FloatRules = _validate_FloatRules;
+    /**
+     * FloatRules describes the constraints applied to `float` values
+     */
     export type FloatRules__Output = _validate_FloatRules__Output;
+    /**
+     * Int32Rules describes the constraints applied to `int32` values
+     */
     export type Int32Rules = _validate_Int32Rules;
+    /**
+     * Int32Rules describes the constraints applied to `int32` values
+     */
     export type Int32Rules__Output = _validate_Int32Rules__Output;
+    /**
+     * Int64Rules describes the constraints applied to `int64` values
+     */
     export type Int64Rules = _validate_Int64Rules;
+    /**
+     * Int64Rules describes the constraints applied to `int64` values
+     */
     export type Int64Rules__Output = _validate_Int64Rules__Output;
+    /**
+     * WellKnownRegex contain some well-known patterns.
+     */
     export type KnownRegex = _validate_KnownRegex;
+    /**
+     * MapRules describe the constraints applied to `map` values
+     */
     export type MapRules = _validate_MapRules;
+    /**
+     * MapRules describe the constraints applied to `map` values
+     */
     export type MapRules__Output = _validate_MapRules__Output;
+    /**
+     * MessageRules describe the constraints applied to embedded message values.
+     * For message-type fields, validation is performed recursively.
+     */
     export type MessageRules = _validate_MessageRules;
+    /**
+     * MessageRules describe the constraints applied to embedded message values.
+     * For message-type fields, validation is performed recursively.
+     */
     export type MessageRules__Output = _validate_MessageRules__Output;
+    /**
+     * RepeatedRules describe the constraints applied to `repeated` values
+     */
     export type RepeatedRules = _validate_RepeatedRules;
+    /**
+     * RepeatedRules describe the constraints applied to `repeated` values
+     */
     export type RepeatedRules__Output = _validate_RepeatedRules__Output;
+    /**
+     * SFixed32Rules describes the constraints applied to `sfixed32` values
+     */
     export type SFixed32Rules = _validate_SFixed32Rules;
+    /**
+     * SFixed32Rules describes the constraints applied to `sfixed32` values
+     */
     export type SFixed32Rules__Output = _validate_SFixed32Rules__Output;
+    /**
+     * SFixed64Rules describes the constraints applied to `sfixed64` values
+     */
     export type SFixed64Rules = _validate_SFixed64Rules;
+    /**
+     * SFixed64Rules describes the constraints applied to `sfixed64` values
+     */
     export type SFixed64Rules__Output = _validate_SFixed64Rules__Output;
+    /**
+     * SInt32Rules describes the constraints applied to `sint32` values
+     */
     export type SInt32Rules = _validate_SInt32Rules;
+    /**
+     * SInt32Rules describes the constraints applied to `sint32` values
+     */
     export type SInt32Rules__Output = _validate_SInt32Rules__Output;
+    /**
+     * SInt64Rules describes the constraints applied to `sint64` values
+     */
     export type SInt64Rules = _validate_SInt64Rules;
+    /**
+     * SInt64Rules describes the constraints applied to `sint64` values
+     */
     export type SInt64Rules__Output = _validate_SInt64Rules__Output;
+    /**
+     * StringRules describe the constraints applied to `string` values
+     */
     export type StringRules = _validate_StringRules;
+    /**
+     * StringRules describe the constraints applied to `string` values
+     */
     export type StringRules__Output = _validate_StringRules__Output;
+    /**
+     * TimestampRules describe the constraints applied exclusively to the
+     * `google.protobuf.Timestamp` well-known type
+     */
     export type TimestampRules = _validate_TimestampRules;
+    /**
+     * TimestampRules describe the constraints applied exclusively to the
+     * `google.protobuf.Timestamp` well-known type
+     */
     export type TimestampRules__Output = _validate_TimestampRules__Output;
+    /**
+     * UInt32Rules describes the constraints applied to `uint32` values
+     */
     export type UInt32Rules = _validate_UInt32Rules;
+    /**
+     * UInt32Rules describes the constraints applied to `uint32` values
+     */
     export type UInt32Rules__Output = _validate_UInt32Rules__Output;
+    /**
+     * UInt64Rules describes the constraints applied to `uint64` values
+     */
     export type UInt64Rules = _validate_UInt64Rules;
+    /**
+     * UInt64Rules describes the constraints applied to `uint64` values
+     */
     export type UInt64Rules__Output = _validate_UInt64Rules__Output;
   }
 }
@@ -421,14 +967,28 @@ export namespace ClientInterfaces {
         export namespace v2 {
           export namespace AdsDummy {
           }
+          /**
+           * See https://github.com/lyft/envoy-api#apis for a description of the role of
+           * ADS and how it is intended to be used by a management server. ADS requests
+           * have the same structure as their singleton xDS counterparts, but can
+           * multiplex many resource types on a single stream. The type_url in the
+           * DiscoveryRequest/DiscoveryResponse provides sufficient information to recover
+           * the multiplexed singleton APIs at the Envoy instance and management server.
+           */
           export interface AggregatedDiscoveryServiceClient extends grpc.Client {
             DeltaAggregatedResources(metadata: grpc.Metadata, options?: grpc.CallOptions): grpc.ClientDuplexStream<messages.envoy.api.v2.DeltaDiscoveryRequest, messages.envoy.api.v2.DeltaDiscoveryResponse__Output>;
             DeltaAggregatedResources(options?: grpc.CallOptions): grpc.ClientDuplexStream<messages.envoy.api.v2.DeltaDiscoveryRequest, messages.envoy.api.v2.DeltaDiscoveryResponse__Output>;
             deltaAggregatedResources(metadata: grpc.Metadata, options?: grpc.CallOptions): grpc.ClientDuplexStream<messages.envoy.api.v2.DeltaDiscoveryRequest, messages.envoy.api.v2.DeltaDiscoveryResponse__Output>;
             deltaAggregatedResources(options?: grpc.CallOptions): grpc.ClientDuplexStream<messages.envoy.api.v2.DeltaDiscoveryRequest, messages.envoy.api.v2.DeltaDiscoveryResponse__Output>;
             
+            /**
+             * This is a gRPC-only API.
+             */
             StreamAggregatedResources(metadata: grpc.Metadata, options?: grpc.CallOptions): grpc.ClientDuplexStream<messages.envoy.api.v2.DiscoveryRequest, messages.envoy.api.v2.DiscoveryResponse__Output>;
             StreamAggregatedResources(options?: grpc.CallOptions): grpc.ClientDuplexStream<messages.envoy.api.v2.DiscoveryRequest, messages.envoy.api.v2.DiscoveryResponse__Output>;
+            /**
+             * This is a gRPC-only API.
+             */
             streamAggregatedResources(metadata: grpc.Metadata, options?: grpc.CallOptions): grpc.ClientDuplexStream<messages.envoy.api.v2.DiscoveryRequest, messages.envoy.api.v2.DiscoveryResponse__Output>;
             streamAggregatedResources(options?: grpc.CallOptions): grpc.ClientDuplexStream<messages.envoy.api.v2.DiscoveryRequest, messages.envoy.api.v2.DiscoveryResponse__Output>;
             
@@ -647,6 +1207,14 @@ export interface ProtoGrpcType {
       discovery: {
         v2: {
           AdsDummy: MessageTypeDefinition
+          /**
+           * See https://github.com/lyft/envoy-api#apis for a description of the role of
+           * ADS and how it is intended to be used by a management server. ADS requests
+           * have the same structure as their singleton xDS counterparts, but can
+           * multiplex many resource types on a single stream. The type_url in the
+           * DiscoveryRequest/DiscoveryResponse provides sufficient information to recover
+           * the multiplexed singleton APIs at the Envoy instance and management server.
+           */
           AggregatedDiscoveryService: SubtypeConstructor<typeof grpc.Client, ClientInterfaces.envoy.service.discovery.v2.AggregatedDiscoveryServiceClient> & { service: ServiceDefinition }
         }
       }
@@ -814,9 +1382,20 @@ export namespace ServiceHandlers {
         export namespace v2 {
           export namespace AdsDummy {
           }
+          /**
+           * See https://github.com/lyft/envoy-api#apis for a description of the role of
+           * ADS and how it is intended to be used by a management server. ADS requests
+           * have the same structure as their singleton xDS counterparts, but can
+           * multiplex many resource types on a single stream. The type_url in the
+           * DiscoveryRequest/DiscoveryResponse provides sufficient information to recover
+           * the multiplexed singleton APIs at the Envoy instance and management server.
+           */
           export interface AggregatedDiscoveryService {
             DeltaAggregatedResources(call: grpc.ServerDuplexStream<messages.envoy.api.v2.DeltaDiscoveryRequest__Output, messages.envoy.api.v2.DeltaDiscoveryResponse>): void;
             
+            /**
+             * This is a gRPC-only API.
+             */
             StreamAggregatedResources(call: grpc.ServerDuplexStream<messages.envoy.api.v2.DiscoveryRequest__Output, messages.envoy.api.v2.DiscoveryResponse>): void;
             
           }

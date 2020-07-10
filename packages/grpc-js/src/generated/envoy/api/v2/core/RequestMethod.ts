@@ -1,5 +1,8 @@
 // Original file: deps/envoy-api/envoy/api/v2/core/base.proto
 
+/**
+ * HTTP request method.
+ */
 export enum RequestMethod {
   METHOD_UNSPECIFIED = 0,
   GET = 1,

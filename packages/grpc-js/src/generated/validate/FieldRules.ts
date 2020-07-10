@@ -24,7 +24,14 @@ import { DurationRules as _validate_DurationRules, DurationRules__Output as _val
 import { TimestampRules as _validate_TimestampRules, TimestampRules__Output as _validate_TimestampRules__Output } from '../validate/TimestampRules';
 import { Long } from '@grpc/proto-loader';
 
+/**
+ * FieldRules encapsulates the rules for each type of field. Depending on the
+ * field, the correct set should be used to ensure proper validations.
+ */
 export interface FieldRules {
+  /**
+   * Scalar Field Types
+   */
   'float'?: (_validate_FloatRules);
   'double'?: (_validate_DoubleRules);
   'int32'?: (_validate_Int32Rules);
@@ -40,17 +47,30 @@ export interface FieldRules {
   'bool'?: (_validate_BoolRules);
   'string'?: (_validate_StringRules);
   'bytes'?: (_validate_BytesRules);
+  /**
+   * Complex Field Types
+   */
   'enum'?: (_validate_EnumRules);
   'message'?: (_validate_MessageRules);
   'repeated'?: (_validate_RepeatedRules);
   'map'?: (_validate_MapRules);
+  /**
+   * Well-Known Field Types
+   */
   'any'?: (_validate_AnyRules);
   'duration'?: (_validate_DurationRules);
   'timestamp'?: (_validate_TimestampRules);
   'type'?: "float"|"double"|"int32"|"int64"|"uint32"|"uint64"|"sint32"|"sint64"|"fixed32"|"fixed64"|"sfixed32"|"sfixed64"|"bool"|"string"|"bytes"|"enum"|"repeated"|"map"|"any"|"duration"|"timestamp";
 }
 
+/**
+ * FieldRules encapsulates the rules for each type of field. Depending on the
+ * field, the correct set should be used to ensure proper validations.
+ */
 export interface FieldRules__Output {
+  /**
+   * Scalar Field Types
+   */
   'float'?: (_validate_FloatRules__Output);
   'double'?: (_validate_DoubleRules__Output);
   'int32'?: (_validate_Int32Rules__Output);
@@ -66,10 +86,16 @@ export interface FieldRules__Output {
   'bool'?: (_validate_BoolRules__Output);
   'string'?: (_validate_StringRules__Output);
   'bytes'?: (_validate_BytesRules__Output);
+  /**
+   * Complex Field Types
+   */
   'enum'?: (_validate_EnumRules__Output);
   'message': (_validate_MessageRules__Output);
   'repeated'?: (_validate_RepeatedRules__Output);
   'map'?: (_validate_MapRules__Output);
+  /**
+   * Well-Known Field Types
+   */
   'any'?: (_validate_AnyRules__Output);
   'duration'?: (_validate_DurationRules__Output);
   'timestamp'?: (_validate_TimestampRules__Output);
