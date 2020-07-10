@@ -12,27 +12,27 @@ export enum _envoy_api_v2_route_RedirectAction_RedirectResponseCode {
 }
 
 export interface RedirectAction {
-  'https_redirect'?: (boolean);
-  'scheme_redirect'?: (string);
   'host_redirect'?: (string);
-  'port_redirect'?: (number);
   'path_redirect'?: (string);
-  'prefix_rewrite'?: (string);
   'response_code'?: (_envoy_api_v2_route_RedirectAction_RedirectResponseCode | keyof typeof _envoy_api_v2_route_RedirectAction_RedirectResponseCode);
+  'https_redirect'?: (boolean);
+  'prefix_rewrite'?: (string);
   'strip_query'?: (boolean);
+  'scheme_redirect'?: (string);
+  'port_redirect'?: (number);
   'scheme_rewrite_specifier'?: "https_redirect"|"scheme_redirect";
   'path_rewrite_specifier'?: "path_redirect"|"prefix_rewrite";
 }
 
 export interface RedirectAction__Output {
-  'https_redirect'?: (boolean);
-  'scheme_redirect'?: (string);
   'host_redirect': (string);
-  'port_redirect': (number);
   'path_redirect'?: (string);
-  'prefix_rewrite'?: (string);
   'response_code': (keyof typeof _envoy_api_v2_route_RedirectAction_RedirectResponseCode);
+  'https_redirect'?: (boolean);
+  'prefix_rewrite'?: (string);
   'strip_query': (boolean);
+  'scheme_redirect'?: (string);
+  'port_redirect': (number);
   'scheme_rewrite_specifier': "https_redirect"|"scheme_redirect";
   'path_rewrite_specifier': "path_redirect"|"prefix_rewrite";
 }

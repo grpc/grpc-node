@@ -1,16 +1,16 @@
-// Original file: node_modules/protobufjs/google/protobuf/descriptor.proto
+// Original file: null
 
 
 export interface _google_protobuf_GeneratedCodeInfo_Annotation {
   'path'?: (number)[];
-  'source_file'?: (string);
+  'sourceFile'?: (string);
   'begin'?: (number);
   'end'?: (number);
 }
 
 export interface _google_protobuf_GeneratedCodeInfo_Annotation__Output {
   'path': (number)[];
-  'source_file': (string);
+  'sourceFile': (string);
   'begin': (number);
   'end': (number);
 }

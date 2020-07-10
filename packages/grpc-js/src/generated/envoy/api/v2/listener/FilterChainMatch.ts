@@ -1,7 +1,7 @@
 // Original file: deps/envoy-api/envoy/api/v2/listener/listener_components.proto
 
-import { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 import { CidrRange as _envoy_api_v2_core_CidrRange, CidrRange__Output as _envoy_api_v2_core_CidrRange__Output } from '../../../../envoy/api/v2/core/CidrRange';
+import { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 
 // Original file: deps/envoy-api/envoy/api/v2/listener/listener_components.proto
 
@@ -12,27 +12,27 @@ export enum _envoy_api_v2_listener_FilterChainMatch_ConnectionSourceType {
 }
 
 export interface FilterChainMatch {
-  'destination_port'?: (_google_protobuf_UInt32Value);
   'prefix_ranges'?: (_envoy_api_v2_core_CidrRange)[];
   'address_suffix'?: (string);
   'suffix_len'?: (_google_protobuf_UInt32Value);
-  'source_type'?: (_envoy_api_v2_listener_FilterChainMatch_ConnectionSourceType | keyof typeof _envoy_api_v2_listener_FilterChainMatch_ConnectionSourceType);
   'source_prefix_ranges'?: (_envoy_api_v2_core_CidrRange)[];
   'source_ports'?: (number)[];
-  'server_names'?: (string)[];
+  'destination_port'?: (_google_protobuf_UInt32Value);
   'transport_protocol'?: (string);
   'application_protocols'?: (string)[];
+  'server_names'?: (string)[];
+  'source_type'?: (_envoy_api_v2_listener_FilterChainMatch_ConnectionSourceType | keyof typeof _envoy_api_v2_listener_FilterChainMatch_ConnectionSourceType);
 }
 
 export interface FilterChainMatch__Output {
-  'destination_port': (_google_protobuf_UInt32Value__Output);
   'prefix_ranges': (_envoy_api_v2_core_CidrRange__Output)[];
   'address_suffix': (string);
   'suffix_len': (_google_protobuf_UInt32Value__Output);
-  'source_type': (keyof typeof _envoy_api_v2_listener_FilterChainMatch_ConnectionSourceType);
   'source_prefix_ranges': (_envoy_api_v2_core_CidrRange__Output)[];
   'source_ports': (number)[];
-  'server_names': (string)[];
+  'destination_port': (_google_protobuf_UInt32Value__Output);
   'transport_protocol': (string);
   'application_protocols': (string)[];
+  'server_names': (string)[];
+  'source_type': (keyof typeof _envoy_api_v2_listener_FilterChainMatch_ConnectionSourceType);
 }

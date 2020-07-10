@@ -3,14 +3,6 @@
 import { MetadataKind as _envoy_type_metadata_v2_MetadataKind, MetadataKind__Output as _envoy_type_metadata_v2_MetadataKind__Output } from '../../../../envoy/type/metadata/v2/MetadataKind';
 import { MetadataKey as _envoy_type_metadata_v2_MetadataKey, MetadataKey__Output as _envoy_type_metadata_v2_MetadataKey__Output } from '../../../../envoy/type/metadata/v2/MetadataKey';
 
-export interface _envoy_type_tracing_v2_CustomTag_Literal {
-  'value'?: (string);
-}
-
-export interface _envoy_type_tracing_v2_CustomTag_Literal__Output {
-  'value': (string);
-}
-
 export interface _envoy_type_tracing_v2_CustomTag_Environment {
   'name'?: (string);
   'default_value'?: (string);
@@ -29,6 +21,14 @@ export interface _envoy_type_tracing_v2_CustomTag_Header {
 export interface _envoy_type_tracing_v2_CustomTag_Header__Output {
   'name': (string);
   'default_value': (string);
+}
+
+export interface _envoy_type_tracing_v2_CustomTag_Literal {
+  'value'?: (string);
+}
+
+export interface _envoy_type_tracing_v2_CustomTag_Literal__Output {
+  'value': (string);
 }
 
 export interface _envoy_type_tracing_v2_CustomTag_Metadata {

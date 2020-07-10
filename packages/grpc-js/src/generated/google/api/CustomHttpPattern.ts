@@ -1,4 +1,4 @@
-// Original file: node_modules/protobufjs/google/api/http.proto
+// Original file: deps/googleapis/google/api/http.proto
 
 
 export interface CustomHttpPattern {

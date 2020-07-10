@@ -1,4 +1,4 @@
-// Original file: node_modules/protobufjs/google/protobuf/descriptor.proto
+// Original file: null
 
 import { MethodDescriptorProto as _google_protobuf_MethodDescriptorProto, MethodDescriptorProto__Output as _google_protobuf_MethodDescriptorProto__Output } from '../../google/protobuf/MethodDescriptorProto';
 import { ServiceOptions as _google_protobuf_ServiceOptions, ServiceOptions__Output as _google_protobuf_ServiceOptions__Output } from '../../google/protobuf/ServiceOptions';

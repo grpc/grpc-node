@@ -7,18 +7,14 @@ import { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_S
 import { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
 import { Long } from '@grpc/proto-loader';
 
-export interface _envoy_api_v2_route_RetryPolicy_RetryPriority {
-  'name'?: (string);
-  'config'?: (_google_protobuf_Struct);
-  'typed_config'?: (_google_protobuf_Any);
-  'config_type'?: "config"|"typed_config";
+export interface _envoy_api_v2_route_RetryPolicy_RetryBackOff {
+  'base_interval'?: (_google_protobuf_Duration);
+  'max_interval'?: (_google_protobuf_Duration);
 }
 
-export interface _envoy_api_v2_route_RetryPolicy_RetryPriority__Output {
-  'name': (string);
-  'config'?: (_google_protobuf_Struct__Output);
-  'typed_config'?: (_google_protobuf_Any__Output);
-  'config_type': "config"|"typed_config";
+export interface _envoy_api_v2_route_RetryPolicy_RetryBackOff__Output {
+  'base_interval': (_google_protobuf_Duration__Output);
+  'max_interval': (_google_protobuf_Duration__Output);
 }
 
 export interface _envoy_api_v2_route_RetryPolicy_RetryHostPredicate {
@@ -35,14 +31,18 @@ export interface _envoy_api_v2_route_RetryPolicy_RetryHostPredicate__Output {
   'config_type': "config"|"typed_config";
 }
 
-export interface _envoy_api_v2_route_RetryPolicy_RetryBackOff {
-  'base_interval'?: (_google_protobuf_Duration);
-  'max_interval'?: (_google_protobuf_Duration);
+export interface _envoy_api_v2_route_RetryPolicy_RetryPriority {
+  'name'?: (string);
+  'config'?: (_google_protobuf_Struct);
+  'typed_config'?: (_google_protobuf_Any);
+  'config_type'?: "config"|"typed_config";
 }
 
-export interface _envoy_api_v2_route_RetryPolicy_RetryBackOff__Output {
-  'base_interval': (_google_protobuf_Duration__Output);
-  'max_interval': (_google_protobuf_Duration__Output);
+export interface _envoy_api_v2_route_RetryPolicy_RetryPriority__Output {
+  'name': (string);
+  'config'?: (_google_protobuf_Struct__Output);
+  'typed_config'?: (_google_protobuf_Any__Output);
+  'config_type': "config"|"typed_config";
 }
 
 export interface RetryPolicy {

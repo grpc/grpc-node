@@ -1,20 +1,20 @@
-// Original file: node_modules/protobufjs/google/protobuf/descriptor.proto
+// Original file: null
 
 
 export interface _google_protobuf_SourceCodeInfo_Location {
   'path'?: (number)[];
   'span'?: (number)[];
-  'leading_comments'?: (string);
-  'trailing_comments'?: (string);
-  'leading_detached_comments'?: (string)[];
+  'leadingComments'?: (string);
+  'trailingComments'?: (string);
+  'leadingDetachedComments'?: (string)[];
 }
 
 export interface _google_protobuf_SourceCodeInfo_Location__Output {
   'path': (number)[];
   'span': (number)[];
-  'leading_comments': (string);
-  'trailing_comments': (string);
-  'leading_detached_comments': (string)[];
+  'leadingComments': (string);
+  'trailingComments': (string);
+  'leadingDetachedComments': (string)[];
 }
 
 export interface SourceCodeInfo {

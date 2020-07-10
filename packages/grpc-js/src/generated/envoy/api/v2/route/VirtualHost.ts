@@ -27,18 +27,18 @@ export interface VirtualHost {
   'virtual_clusters'?: (_envoy_api_v2_route_VirtualCluster)[];
   'rate_limits'?: (_envoy_api_v2_route_RateLimit)[];
   'request_headers_to_add'?: (_envoy_api_v2_core_HeaderValueOption)[];
-  'request_headers_to_remove'?: (string)[];
+  'cors'?: (_envoy_api_v2_route_CorsPolicy);
   'response_headers_to_add'?: (_envoy_api_v2_core_HeaderValueOption)[];
   'response_headers_to_remove'?: (string)[];
-  'cors'?: (_envoy_api_v2_route_CorsPolicy);
   'per_filter_config'?: (_google_protobuf_Struct);
-  'typed_per_filter_config'?: (_google_protobuf_Any);
+  'request_headers_to_remove'?: (string)[];
   'include_request_attempt_count'?: (boolean);
-  'include_attempt_count_in_response'?: (boolean);
+  'typed_per_filter_config'?: (_google_protobuf_Any);
   'retry_policy'?: (_envoy_api_v2_route_RetryPolicy);
-  'retry_policy_typed_config'?: (_google_protobuf_Any);
   'hedge_policy'?: (_envoy_api_v2_route_HedgePolicy);
   'per_request_buffer_limit_bytes'?: (_google_protobuf_UInt32Value);
+  'include_attempt_count_in_response'?: (boolean);
+  'retry_policy_typed_config'?: (_google_protobuf_Any);
 }
 
 export interface VirtualHost__Output {
@@ -49,16 +49,16 @@ export interface VirtualHost__Output {
   'virtual_clusters': (_envoy_api_v2_route_VirtualCluster__Output)[];
   'rate_limits': (_envoy_api_v2_route_RateLimit__Output)[];
   'request_headers_to_add': (_envoy_api_v2_core_HeaderValueOption__Output)[];
-  'request_headers_to_remove': (string)[];
+  'cors': (_envoy_api_v2_route_CorsPolicy__Output);
   'response_headers_to_add': (_envoy_api_v2_core_HeaderValueOption__Output)[];
   'response_headers_to_remove': (string)[];
-  'cors': (_envoy_api_v2_route_CorsPolicy__Output);
   'per_filter_config': (_google_protobuf_Struct__Output);
-  'typed_per_filter_config': (_google_protobuf_Any__Output);
+  'request_headers_to_remove': (string)[];
   'include_request_attempt_count': (boolean);
-  'include_attempt_count_in_response': (boolean);
+  'typed_per_filter_config': (_google_protobuf_Any__Output);
   'retry_policy': (_envoy_api_v2_route_RetryPolicy__Output);
-  'retry_policy_typed_config': (_google_protobuf_Any__Output);
   'hedge_policy': (_envoy_api_v2_route_HedgePolicy__Output);
   'per_request_buffer_limit_bytes': (_google_protobuf_UInt32Value__Output);
+  'include_attempt_count_in_response': (boolean);
+  'retry_policy_typed_config': (_google_protobuf_Any__Output);
 }

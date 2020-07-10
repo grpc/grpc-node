@@ -1,13 +1,13 @@
-// Original file: node_modules/protobufjs/google/protobuf/descriptor.proto
+// Original file: null
 
 import { UninterpretedOption as _google_protobuf_UninterpretedOption, UninterpretedOption__Output as _google_protobuf_UninterpretedOption__Output } from '../../google/protobuf/UninterpretedOption';
 
 export interface ServiceOptions {
   'deprecated'?: (boolean);
-  'uninterpreted_option'?: (_google_protobuf_UninterpretedOption)[];
+  'uninterpretedOption'?: (_google_protobuf_UninterpretedOption)[];
 }
 
 export interface ServiceOptions__Output {
   'deprecated': (boolean);
-  'uninterpreted_option': (_google_protobuf_UninterpretedOption__Output)[];
+  'uninterpretedOption': (_google_protobuf_UninterpretedOption__Output)[];
 }

@@ -4,7 +4,6 @@ import { Long } from '@grpc/proto-loader';
 
 export interface BytesRules {
   'const'?: (Buffer | Uint8Array | string);
-  'len'?: (number | string | Long);
   'min_len'?: (number | string | Long);
   'max_len'?: (number | string | Long);
   'pattern'?: (string);
@@ -16,12 +15,12 @@ export interface BytesRules {
   'ip'?: (boolean);
   'ipv4'?: (boolean);
   'ipv6'?: (boolean);
+  'len'?: (number | string | Long);
   'well_known'?: "ip"|"ipv4"|"ipv6";
 }
 
 export interface BytesRules__Output {
   'const': (Buffer);
-  'len': (string);
   'min_len': (string);
   'max_len': (string);
   'pattern': (string);
@@ -33,5 +32,6 @@ export interface BytesRules__Output {
   'ip'?: (boolean);
   'ipv4'?: (boolean);
   'ipv6'?: (boolean);
+  'len': (string);
   'well_known': "ip"|"ipv4"|"ipv6";
 }

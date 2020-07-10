@@ -33,13 +33,13 @@ export interface _envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload__Output
 export interface ClusterLoadAssignment {
   'cluster_name'?: (string);
   'endpoints'?: (_envoy_api_v2_endpoint_LocalityLbEndpoints)[];
-  'named_endpoints'?: (_envoy_api_v2_endpoint_Endpoint);
   'policy'?: (_envoy_api_v2_ClusterLoadAssignment_Policy);
+  'named_endpoints'?: (_envoy_api_v2_endpoint_Endpoint);
 }
 
 export interface ClusterLoadAssignment__Output {
   'cluster_name': (string);
   'endpoints': (_envoy_api_v2_endpoint_LocalityLbEndpoints__Output)[];
-  'named_endpoints': (_envoy_api_v2_endpoint_Endpoint__Output);
   'policy': (_envoy_api_v2_ClusterLoadAssignment_Policy__Output);
+  'named_endpoints': (_envoy_api_v2_endpoint_Endpoint__Output);
 }

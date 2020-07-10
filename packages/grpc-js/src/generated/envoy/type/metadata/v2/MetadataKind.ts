@@ -1,18 +1,6 @@
 // Original file: deps/envoy-api/envoy/type/metadata/v2/metadata.proto
 
 
-export interface _envoy_type_metadata_v2_MetadataKind_Request {
-}
-
-export interface _envoy_type_metadata_v2_MetadataKind_Request__Output {
-}
-
-export interface _envoy_type_metadata_v2_MetadataKind_Route {
-}
-
-export interface _envoy_type_metadata_v2_MetadataKind_Route__Output {
-}
-
 export interface _envoy_type_metadata_v2_MetadataKind_Cluster {
 }
 
@@ -23,6 +11,18 @@ export interface _envoy_type_metadata_v2_MetadataKind_Host {
 }
 
 export interface _envoy_type_metadata_v2_MetadataKind_Host__Output {
+}
+
+export interface _envoy_type_metadata_v2_MetadataKind_Request {
+}
+
+export interface _envoy_type_metadata_v2_MetadataKind_Request__Output {
+}
+
+export interface _envoy_type_metadata_v2_MetadataKind_Route {
+}
+
+export interface _envoy_type_metadata_v2_MetadataKind_Route__Output {
 }
 
 export interface MetadataKind {

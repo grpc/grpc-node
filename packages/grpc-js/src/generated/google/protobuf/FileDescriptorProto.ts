@@ -1,4 +1,4 @@
-// Original file: node_modules/protobufjs/google/protobuf/descriptor.proto
+// Original file: null
 
 import { DescriptorProto as _google_protobuf_DescriptorProto, DescriptorProto__Output as _google_protobuf_DescriptorProto__Output } from '../../google/protobuf/DescriptorProto';
 import { EnumDescriptorProto as _google_protobuf_EnumDescriptorProto, EnumDescriptorProto__Output as _google_protobuf_EnumDescriptorProto__Output } from '../../google/protobuf/EnumDescriptorProto';
@@ -11,14 +11,14 @@ export interface FileDescriptorProto {
   'name'?: (string);
   'package'?: (string);
   'dependency'?: (string)[];
-  'public_dependency'?: (number)[];
-  'weak_dependency'?: (number)[];
-  'message_type'?: (_google_protobuf_DescriptorProto)[];
-  'enum_type'?: (_google_protobuf_EnumDescriptorProto)[];
+  'messageType'?: (_google_protobuf_DescriptorProto)[];
+  'enumType'?: (_google_protobuf_EnumDescriptorProto)[];
   'service'?: (_google_protobuf_ServiceDescriptorProto)[];
   'extension'?: (_google_protobuf_FieldDescriptorProto)[];
   'options'?: (_google_protobuf_FileOptions);
-  'source_code_info'?: (_google_protobuf_SourceCodeInfo);
+  'sourceCodeInfo'?: (_google_protobuf_SourceCodeInfo);
+  'publicDependency'?: (number)[];
+  'weakDependency'?: (number)[];
   'syntax'?: (string);
 }
 
@@ -26,13 +26,13 @@ export interface FileDescriptorProto__Output {
   'name': (string);
   'package': (string);
   'dependency': (string)[];
-  'public_dependency': (number)[];
-  'weak_dependency': (number)[];
-  'message_type': (_google_protobuf_DescriptorProto__Output)[];
-  'enum_type': (_google_protobuf_EnumDescriptorProto__Output)[];
+  'messageType': (_google_protobuf_DescriptorProto__Output)[];
+  'enumType': (_google_protobuf_EnumDescriptorProto__Output)[];
   'service': (_google_protobuf_ServiceDescriptorProto__Output)[];
   'extension': (_google_protobuf_FieldDescriptorProto__Output)[];
   'options': (_google_protobuf_FileOptions__Output);
-  'source_code_info': (_google_protobuf_SourceCodeInfo__Output);
+  'sourceCodeInfo': (_google_protobuf_SourceCodeInfo__Output);
+  'publicDependency': (number)[];
+  'weakDependency': (number)[];
   'syntax': (string);
 }

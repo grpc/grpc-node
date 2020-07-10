@@ -24,32 +24,10 @@ export interface _envoy_api_v2_route_RateLimit_Action__Output {
   'action_specifier': "source_cluster"|"destination_cluster"|"request_headers"|"remote_address"|"generic_key"|"header_value_match";
 }
 
-export interface _envoy_api_v2_route_RateLimit_Action_SourceCluster {
-}
-
-export interface _envoy_api_v2_route_RateLimit_Action_SourceCluster__Output {
-}
-
 export interface _envoy_api_v2_route_RateLimit_Action_DestinationCluster {
 }
 
 export interface _envoy_api_v2_route_RateLimit_Action_DestinationCluster__Output {
-}
-
-export interface _envoy_api_v2_route_RateLimit_Action_RequestHeaders {
-  'header_name'?: (string);
-  'descriptor_key'?: (string);
-}
-
-export interface _envoy_api_v2_route_RateLimit_Action_RequestHeaders__Output {
-  'header_name': (string);
-  'descriptor_key': (string);
-}
-
-export interface _envoy_api_v2_route_RateLimit_Action_RemoteAddress {
-}
-
-export interface _envoy_api_v2_route_RateLimit_Action_RemoteAddress__Output {
 }
 
 export interface _envoy_api_v2_route_RateLimit_Action_GenericKey {
@@ -70,6 +48,28 @@ export interface _envoy_api_v2_route_RateLimit_Action_HeaderValueMatch__Output {
   'descriptor_value': (string);
   'expect_match': (_google_protobuf_BoolValue__Output);
   'headers': (_envoy_api_v2_route_HeaderMatcher__Output)[];
+}
+
+export interface _envoy_api_v2_route_RateLimit_Action_RemoteAddress {
+}
+
+export interface _envoy_api_v2_route_RateLimit_Action_RemoteAddress__Output {
+}
+
+export interface _envoy_api_v2_route_RateLimit_Action_RequestHeaders {
+  'header_name'?: (string);
+  'descriptor_key'?: (string);
+}
+
+export interface _envoy_api_v2_route_RateLimit_Action_RequestHeaders__Output {
+  'header_name': (string);
+  'descriptor_key': (string);
+}
+
+export interface _envoy_api_v2_route_RateLimit_Action_SourceCluster {
+}
+
+export interface _envoy_api_v2_route_RateLimit_Action_SourceCluster__Output {
 }
 
 export interface RateLimit {

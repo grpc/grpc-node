@@ -12,8 +12,8 @@ export interface DownstreamTlsContext {
   'require_sni'?: (_google_protobuf_BoolValue);
   'session_ticket_keys'?: (_envoy_api_v2_auth_TlsSessionTicketKeys);
   'session_ticket_keys_sds_secret_config'?: (_envoy_api_v2_auth_SdsSecretConfig);
-  'disable_stateless_session_resumption'?: (boolean);
   'session_timeout'?: (_google_protobuf_Duration);
+  'disable_stateless_session_resumption'?: (boolean);
   'session_ticket_keys_type'?: "session_ticket_keys"|"session_ticket_keys_sds_secret_config"|"disable_stateless_session_resumption";
 }
 
@@ -23,7 +23,7 @@ export interface DownstreamTlsContext__Output {
   'require_sni': (_google_protobuf_BoolValue__Output);
   'session_ticket_keys'?: (_envoy_api_v2_auth_TlsSessionTicketKeys__Output);
   'session_ticket_keys_sds_secret_config'?: (_envoy_api_v2_auth_SdsSecretConfig__Output);
-  'disable_stateless_session_resumption'?: (boolean);
   'session_timeout': (_google_protobuf_Duration__Output);
+  'disable_stateless_session_resumption'?: (boolean);
   'session_ticket_keys_type': "session_ticket_keys"|"session_ticket_keys_sds_secret_config"|"disable_stateless_session_resumption";
 }

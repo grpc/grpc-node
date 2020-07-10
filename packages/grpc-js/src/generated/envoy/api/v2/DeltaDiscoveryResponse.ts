@@ -6,14 +6,14 @@ export interface DeltaDiscoveryResponse {
   'system_version_info'?: (string);
   'resources'?: (_envoy_api_v2_Resource)[];
   'type_url'?: (string);
-  'removed_resources'?: (string)[];
   'nonce'?: (string);
+  'removed_resources'?: (string)[];
 }
 
 export interface DeltaDiscoveryResponse__Output {
   'system_version_info': (string);
   'resources': (_envoy_api_v2_Resource__Output)[];
   'type_url': (string);
-  'removed_resources': (string)[];
   'nonce': (string);
+  'removed_resources': (string)[];
 }

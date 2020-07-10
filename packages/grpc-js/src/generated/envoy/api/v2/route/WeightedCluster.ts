@@ -32,12 +32,12 @@ export interface _envoy_api_v2_route_WeightedCluster_ClusterWeight__Output {
 
 export interface WeightedCluster {
   'clusters'?: (_envoy_api_v2_route_WeightedCluster_ClusterWeight)[];
-  'total_weight'?: (_google_protobuf_UInt32Value);
   'runtime_key_prefix'?: (string);
+  'total_weight'?: (_google_protobuf_UInt32Value);
 }
 
 export interface WeightedCluster__Output {
   'clusters': (_envoy_api_v2_route_WeightedCluster_ClusterWeight__Output)[];
-  'total_weight': (_google_protobuf_UInt32Value__Output);
   'runtime_key_prefix': (string);
+  'total_weight': (_google_protobuf_UInt32Value__Output);
 }

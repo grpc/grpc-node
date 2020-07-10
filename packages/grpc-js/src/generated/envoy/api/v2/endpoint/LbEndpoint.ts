@@ -7,18 +7,18 @@ import { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _go
 
 export interface LbEndpoint {
   'endpoint'?: (_envoy_api_v2_endpoint_Endpoint);
-  'endpoint_name'?: (string);
   'health_status'?: (_envoy_api_v2_core_HealthStatus | keyof typeof _envoy_api_v2_core_HealthStatus);
   'metadata'?: (_envoy_api_v2_core_Metadata);
   'load_balancing_weight'?: (_google_protobuf_UInt32Value);
+  'endpoint_name'?: (string);
   'host_identifier'?: "endpoint"|"endpoint_name";
 }
 
 export interface LbEndpoint__Output {
   'endpoint'?: (_envoy_api_v2_endpoint_Endpoint__Output);
-  'endpoint_name'?: (string);
   'health_status': (keyof typeof _envoy_api_v2_core_HealthStatus);
   'metadata': (_envoy_api_v2_core_Metadata__Output);
   'load_balancing_weight': (_google_protobuf_UInt32Value__Output);
+  'endpoint_name'?: (string);
   'host_identifier': "endpoint"|"endpoint_name";
 }
