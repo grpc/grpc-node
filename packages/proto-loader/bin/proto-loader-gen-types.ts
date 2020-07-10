@@ -72,7 +72,7 @@ function getImportPath(to: Protobuf.Type | Protobuf.Enum) {
 }
 
 function getPath(to: Protobuf.Type | Protobuf.Enum) {
-  return stripLeadingPeriod(to.fullName).replace(/\./g, '/') + '.d.ts';
+  return stripLeadingPeriod(to.fullName).replace(/\./g, '/') + '.ts';
 }
 
 function getRelativeImportPath(from: Protobuf.Type, to: Protobuf.Type | Protobuf.Enum) {
@@ -600,7 +600,7 @@ async function writeAllFiles(protoFiles: string[], options: GeneratorOptions) {
     }
     const loadedRoot = await root.load(filename, options);
     root.resolveAll();
-    writeFilesForRoot(loadedRoot, path.basename(filename).replace('.proto', '.d.ts'), options);
+    writeFilesForRoot(loadedRoot, path.basename(filename).replace('.proto', '.ts'), options);
   }
 }
 
