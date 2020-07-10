@@ -65,7 +65,6 @@ function loadAdsProtos(): Promise<adsTypes.ProtoGrpcType> {
           // Paths are relative to src/build
           __dirname + '/../../deps/envoy-api/',
           __dirname + '/../../deps/udpa/',
-          __dirname + '/../../node_modules/protobufjs/',
           __dirname + '/../../deps/googleapis/',
           __dirname + '/../../deps/protoc-gen-validate/',
         ],
