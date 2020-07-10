@@ -15,10 +15,12 @@
  * limitations under the License.
  *
  */
-import * as fs from 'fs';
-import * as path from 'path';
+
+import camelCase = require('lodash.camelcase');
 import * as Protobuf from 'protobufjs';
 import * as descriptor from 'protobufjs/ext/descriptor';
+
+import { loadProtosWithOptionsSync, loadProtosWithOptions, Options, addCommonProtos } from './util';
 
 export { Long } from 'long';
 
@@ -54,8 +56,6 @@ export interface AnyExtension {
 export function isAnyExtension(obj: object): obj is AnyExtension {
   return ('@type' in obj) && (typeof (obj as AnyExtension)['@type'] === 'string');
 }
-
-import camelCase = require('lodash.camelcase');
 
 declare module 'protobufjs' {
   interface Type {
@@ -128,10 +128,7 @@ export interface PackageDefinition {
   [index: string]: AnyDefinition;
 }
 
-export type Options = Protobuf.IParseOptions &
-  Protobuf.IConversionOptions & {
-    includeDirs?: string[];
-  };
+export { Options };
 
 const descriptorOptions: Protobuf.IConversionOptions = {
   longs: String,
@@ -322,26 +319,6 @@ function createPackageDefinition(
   return def;
 }
 
-function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
-  const originalResolvePath = root.resolvePath;
-  root.resolvePath = (origin: string, target: string) => {
-    if (path.isAbsolute(target)) {
-      return target;
-    }
-    for (const directory of includePaths) {
-      const fullPath: string = path.join(directory, target);
-      try {
-        fs.accessSync(fullPath, fs.constants.R_OK);
-        return fullPath;
-      } catch (err) {
-        continue;
-      }
-    }
-    process.emitWarning(`${target} not found in any of the include paths ${includePaths}`);
-    return originalResolvePath(origin, target);
-  };
-}
-
 /**
  * Load a .proto file with the specified options.
  * @param filename One or multiple file paths to load. Can be an absolute path
@@ -372,19 +349,8 @@ export function load(
   filename: string | string[],
   options?: Options
 ): Promise<PackageDefinition> {
-  const root: Protobuf.Root = new Protobuf.Root();
-  options = options || {};
-  if (!!options.includeDirs) {
-    if (!Array.isArray(options.includeDirs)) {
-      return Promise.reject(
-        new Error('The includeDirs option must be an array')
-      );
-    }
-    addIncludePathResolver(root, options.includeDirs as string[]);
-  }
-  return root.load(filename, options).then(loadedRoot => {
-    loadedRoot.resolveAll();
-    return createPackageDefinition(root, options!);
+  return loadProtosWithOptions(filename, options).then(loadedRoot => {
+    return createPackageDefinition(loadedRoot, options!);
   });
 }
 
@@ -392,43 +358,8 @@ export function loadSync(
   filename: string | string[],
   options?: Options
 ): PackageDefinition {
-  const root: Protobuf.Root = new Protobuf.Root();
-  options = options || {};
-  if (!!options.includeDirs) {
-    if (!Array.isArray(options.includeDirs)) {
-      throw new Error('The includeDirs option must be an array');
-    }
-    addIncludePathResolver(root, options.includeDirs as string[]);
-  }
-  const loadedRoot = root.loadSync(filename, options);
-  loadedRoot.resolveAll();
-  return createPackageDefinition(root, options!);
+  const loadedRoot = loadProtosWithOptionsSync(filename, options);
+  return createPackageDefinition(loadedRoot, options!);
 }
 
-// Load Google's well-known proto files that aren't exposed by Protobuf.js.
-
-// Protobuf.js exposes: any, duration, empty, field_mask, struct, timestamp,
-// and wrappers. compiler/plugin is excluded in Protobuf.js and here.
-
-// Using constant strings for compatibility with tools like Webpack
-const apiDescriptor = require('protobufjs/google/protobuf/api.json');
-const descriptorDescriptor = require('protobufjs/google/protobuf/descriptor.json');
-const sourceContextDescriptor = require('protobufjs/google/protobuf/source_context.json');
-const typeDescriptor = require('protobufjs/google/protobuf/type.json');
-
-Protobuf.common(
-  'api',
-  apiDescriptor.nested.google.nested.protobuf.nested
-);
-Protobuf.common(
-  'descriptor',
-  descriptorDescriptor.nested.google.nested.protobuf.nested
-);
-Protobuf.common(
-  'source_context',
-  sourceContextDescriptor.nested.google.nested.protobuf.nested
-);
-Protobuf.common(
-  'type',
-  typeDescriptor.nested.google.nested.protobuf.nested
-);
+addCommonProtos();

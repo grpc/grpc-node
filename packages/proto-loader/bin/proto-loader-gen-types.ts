@@ -20,16 +20,27 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import * as mkdirp from 'mkdirp';
 import * as Protobuf from 'protobufjs';
 import * as yargs from 'yargs';
 
 import camelCase = require('lodash.camelcase');
+import { loadProtosWithOptions, addCommonProtos } from '../src/util';
+
+function compareName(x: {name: string}, y: {name: string}): number {
+  if (x.name < y.name) {
+    return -1;
+  } else if (x.name > y.name) {
+    return 1
+  } else {
+    return 0;
+  }
+}
 
 type GeneratorOptions = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
   includeDirs?: string[];
   grpcLib: string;
   outDir: string;
+  verbose?: boolean;
 }
 
 class TextFormatter {
@@ -278,6 +289,7 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
   const childTypes = getChildMessagesAndEnums(messageType);
   formatter.writeLine(`// Original file: ${messageType.filename}`);
   formatter.writeLine('');
+  messageType.fieldsArray.sort((fieldA, fieldB) => fieldA.id - fieldB.id);
   for (const field of messageType.fieldsArray) {
     if (field.resolvedType && childTypes.indexOf(field.resolvedType) < 0) {
       const dependency = field.resolvedType;
@@ -345,7 +357,7 @@ function generateEnumInterface(formatter: TextFormatter, enumType: Protobuf.Enum
 }
 
 function generateMessageAndEnumImports(formatter: TextFormatter, namespace: Protobuf.NamespaceBase) {
-  for (const nested of namespace.nestedArray) {
+  for (const nested of namespace.nestedArray.sort(compareName)) {
     if (nested instanceof Protobuf.Type || nested instanceof Protobuf.Enum) {
       formatter.writeLine(getImportLine(nested));
     } else if (isNamespaceBase(nested)) {
@@ -357,7 +369,7 @@ function generateMessageAndEnumImports(formatter: TextFormatter, namespace: Prot
 function generateMessageAndEnumExports(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, nameOverride?: string) {
   formatter.writeLine(`export namespace ${nameOverride ?? namespace.name} {`);
   formatter.indent();
-  for (const nested of namespace.nestedArray) {
+  for (const nested of namespace.nestedArray.sort(compareName)) {
     if (nested instanceof Protobuf.Enum || nested instanceof Protobuf.Type) {
       formatter.writeLine(`export type ${nested.name} = ${getTypeInterfaceName(nested)};`);
       if (nested instanceof Protobuf.Type) {
@@ -374,7 +386,7 @@ function generateMessageAndEnumExports(formatter: TextFormatter, namespace: Prot
 function generateServiceClientInterface(formatter: TextFormatter, serviceType: Protobuf.Service) {
   formatter.writeLine(`export interface ${serviceType.name}Client extends grpc.Client {`);
   formatter.indent();
-  for (const methodName of Object.keys(serviceType.methods)) {
+  for (const methodName of Object.keys(serviceType.methods).sort()) {
     const method = serviceType.methods[methodName];
     for (const name of [methodName, camelCase(methodName)]) {
       const requestType = 'messages.' + stripLeadingPeriod(method.resolvedRequestType!.fullName);
@@ -419,7 +431,7 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
 function generateAllServiceClientInterfaces(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, nameOverride?: string) {
   formatter.writeLine(`export namespace ${nameOverride ?? namespace.name} {`);
   formatter.indent();
-  for (const nested of namespace.nestedArray) {
+  for (const nested of namespace.nestedArray.sort(compareName)) {
     if (nested instanceof Protobuf.Service) {
       generateServiceClientInterface(formatter, nested);
     } else if (isNamespaceBase(nested)) {
@@ -445,7 +457,7 @@ function generateSingleLoadedDefinitionType(formatter: TextFormatter, nested: Pr
 function generateLoadedDefinitionTypes(formatter: TextFormatter, namespace: Protobuf.NamespaceBase) {
   formatter.writeLine(`${namespace.name}: {`);
   formatter.indent();
-  for (const nested of namespace.nestedArray) {
+  for (const nested of namespace.nestedArray.sort(compareName)) {
     generateSingleLoadedDefinitionType(formatter, nested);
   }
   formatter.unindent();
@@ -455,7 +467,7 @@ function generateLoadedDefinitionTypes(formatter: TextFormatter, namespace: Prot
 function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: Protobuf.Service) {
   formatter.writeLine(`export interface ${serviceType.name} {`);
   formatter.indent();
-  for (const methodName of Object.keys(serviceType.methods)) {
+  for (const methodName of Object.keys(serviceType.methods).sort()) {
     const method = serviceType.methods[methodName];
     const requestType = 'messages.' + stripLeadingPeriod(method.resolvedRequestType!.fullName) + '__Output';
     const responseType = 'messages.' + stripLeadingPeriod(method.resolvedResponseType!.fullName);
@@ -485,7 +497,7 @@ function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: 
 function generateAllServiceHandlerInterfaces(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, nameOverride?: string) {
   formatter.writeLine(`export namespace ${nameOverride ?? namespace.name} {`);
   formatter.indent();
-  for (const nested of namespace.nestedArray) {
+  for (const nested of namespace.nestedArray.sort(compareName)) {
     if (nested instanceof Protobuf.Service) {
       generateServiceHandlerInterface(formatter, nested);
     } else if (isNamespaceBase(nested)) {
@@ -496,7 +508,7 @@ function generateAllServiceHandlerInterfaces(formatter: TextFormatter, namespace
   formatter.writeLine('}');
 }
 
-function generateMasterFile(formatter: TextFormatter, root: Protobuf.Root, options: GeneratorOptions) {
+function generateRootFile(formatter: TextFormatter, root: Protobuf.Root, options: GeneratorOptions) {
   formatter.writeLine(`import * as grpc from '${options.grpcLib}';`);
   formatter.writeLine("import { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';");
   formatter.writeLine('');
@@ -528,10 +540,9 @@ function generateMasterFile(formatter: TextFormatter, root: Protobuf.Root, optio
   generateAllServiceHandlerInterfaces(formatter, root, 'ServiceHandlers');
 }
 
-function writeFile(filename: string, contents: string): Promise<void> {
-  return mkdirp(path.dirname(filename)).then(
-    () => fs.promises.writeFile(filename, contents)
-  );
+async function writeFile(filename: string, contents: string): Promise<void> {
+  await fs.promises.mkdir(path.dirname(filename), {recursive: true});
+  return fs.promises.writeFile(filename, contents);
 }
 
 function generateFilesForNamespace(namespace: Protobuf.NamespaceBase, options: GeneratorOptions): Promise<void>[] {
@@ -540,11 +551,15 @@ function generateFilesForNamespace(namespace: Protobuf.NamespaceBase, options: G
     const fileFormatter = new TextFormatter();
     if (nested instanceof Protobuf.Type) {
       generateMessageInterfaces(fileFormatter, nested, options);
-      console.log(`Writing ${options.outDir}/${getPath(nested)} from file ${nested.filename}`);
+      if (options.verbose) {
+        console.log(`Writing ${options.outDir}/${getPath(nested)} from file ${nested.filename}`);
+      }
       filePromises.push(writeFile(`${options.outDir}/${getPath(nested)}`, fileFormatter.getFullText()));
     } else if (nested instanceof Protobuf.Enum) {
       generateEnumInterface(fileFormatter, nested);
-      console.log(`Writing ${options.outDir}/${getPath(nested)} from file ${nested.filename}`);
+      if (options.verbose) {
+        console.log(`Writing ${options.outDir}/${getPath(nested)} from file ${nested.filename}`);
+      }
       filePromises.push(writeFile(`${options.outDir}/${getPath(nested)}`, fileFormatter.getFullText()));
     } else if (isNamespaceBase(nested)) {
       filePromises.push(...generateFilesForNamespace(nested, options));
@@ -557,8 +572,10 @@ function writeFilesForRoot(root: Protobuf.Root, masterFileName: string, options:
   const filePromises: Promise<void>[] = [];
 
   const masterFileFormatter = new TextFormatter();
-  generateMasterFile(masterFileFormatter, root, options);
-  console.log(`Writing ${options.outDir}/${masterFileName}`);
+  generateRootFile(masterFileFormatter, root, options);
+  if (options.verbose) {
+    console.log(`Writing ${options.outDir}/${masterFileName}`);
+  }
   filePromises.push(writeFile(`${options.outDir}/${masterFileName}`, masterFileFormatter.getFullText()));
 
   filePromises.push(...generateFilesForNamespace(root, options));
@@ -566,40 +583,10 @@ function writeFilesForRoot(root: Protobuf.Root, masterFileName: string, options:
   return filePromises;
 }
 
-function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
-  const originalResolvePath = root.resolvePath;
-  root.resolvePath = (origin: string, target: string) => {
-    if (path.isAbsolute(target)) {
-      return target;
-    }
-    for (const directory of includePaths) {
-      const fullPath: string = path.join(directory, target);
-      try {
-        fs.accessSync(fullPath, fs.constants.R_OK);
-        return fullPath;
-      } catch (err) {
-        continue;
-      }
-    }
-    process.emitWarning(`${target} not found in any of the include paths ${includePaths}`);
-    return originalResolvePath(origin, target);
-  };
-}
-
 async function writeAllFiles(protoFiles: string[], options: GeneratorOptions) {
-  await mkdirp(options.outDir);
+  await fs.promises.mkdir(options.outDir, {recursive: true});
   for (const filename of protoFiles) {
-    console.log(`Processing ${filename}`);
-    const root: Protobuf.Root = new Protobuf.Root();
-    options = options || {};
-    if (!!options.includeDirs) {
-      if (!Array.isArray(options.includeDirs)) {
-        throw new Error('The includeDirs option must be an array');
-      }
-      addIncludePathResolver(root, options.includeDirs as string[]);
-    }
-    const loadedRoot = await root.load(filename, options);
-    root.resolveAll();
+    const loadedRoot = await loadProtosWithOptions(filename, options);
     writeFilesForRoot(loadedRoot, path.basename(filename).replace('.proto', '.ts'), options);
   }
 }
@@ -609,7 +596,7 @@ function runScript() {
     .string(['includeDirs', 'grpcLib'])
     .normalize(['includeDirs', 'outDir'])
     .array('includeDirs')
-    .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs', 'json'])
+    .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs', 'json', 'verbose'])
 //    .choices('longs', ['String', 'Number'])
 //    .choices('enums', ['String'])
 //    .choices('bytes', ['Array', 'String'])
@@ -641,7 +628,8 @@ function runScript() {
       }
     }).alias({
       includeDirs: 'I',
-      outDir: 'O'
+      outDir: 'O',
+      verbose: 'v'
     }).describe({
       keepCase: 'Preserve the case of field names',
       longs: 'The type that should be used to output 64 bit integer values. Can be String, Number',
@@ -660,9 +648,14 @@ function runScript() {
     .usage('$0 [options] filenames...')
     .epilogue('WARNING: This tool is in alpha. The CLI and generated code are subject to change')
     .argv;
-    console.log(argv);
+    if (argv.verbose) {
+      console.log('Parsed arguments:', argv);
+    }
+    addCommonProtos();
     writeAllFiles(argv._, argv).then(() => {
-      console.log('Success');
+      if (argv.verbose) {
+        console.log('Success');
+      }
     }, (error) => {
       throw error;
     })

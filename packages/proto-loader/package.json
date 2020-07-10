@@ -46,7 +46,6 @@
     "@types/long": "^4.0.1",
     "lodash.camelcase": "^4.3.0",
     "long": "^4.0.0",
-    "mkdirp": "^1.0.4",
     "protobufjs": "^6.9.0",
     "yargs": "^15.3.1"
   },
