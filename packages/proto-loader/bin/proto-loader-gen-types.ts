@@ -81,31 +81,44 @@ function stripLeadingPeriod(name: string) {
   return name.startsWith('.') ? name.substring(1) : name;
 }
 
-function getImportPath(to: Protobuf.Type | Protobuf.Enum) {
+function getImportPath(to: Protobuf.Type | Protobuf.Enum | Protobuf.Service) {
   return stripLeadingPeriod(to.fullName).replace(/\./g, '/');
 }
 
-function getPath(to: Protobuf.Type | Protobuf.Enum) {
+function getPath(to: Protobuf.Type | Protobuf.Enum | Protobuf.Service) {
   return stripLeadingPeriod(to.fullName).replace(/\./g, '/') + '.ts';
 }
 
-function getRelativeImportPath(from: Protobuf.Type, to: Protobuf.Type | Protobuf.Enum) {
+function getPathToRoot(from: Protobuf.NamespaceBase) {
   const depth = stripLeadingPeriod(from.fullName).split('.').length - 1;
   let path = '';
   for (let i = 0; i < depth; i++) {
     path += '../';
   }
-  return path + getImportPath(to);
+  return path;
 }
 
-function getTypeInterfaceName(type: Protobuf.Type | Protobuf.Enum) {
+function getRelativeImportPath(from: Protobuf.Type | Protobuf.Service, to: Protobuf.Type | Protobuf.Enum | Protobuf.Service) {
+  return getPathToRoot(from) + getImportPath(to);
+}
+
+function getTypeInterfaceName(type: Protobuf.Type | Protobuf.Enum | Protobuf.Service) {
   return type.fullName.replace(/\./g, '_');
 }
 
-function getImportLine(dependency: Protobuf.Type | Protobuf.Enum, from?: Protobuf.Type) {
+function getImportLine(dependency: Protobuf.Type | Protobuf.Enum | Protobuf.Service, from?: Protobuf.Type | Protobuf.Service) {
   const filePath = from === undefined ? './' + getImportPath(dependency) : getRelativeImportPath(from, dependency);
   const typeInterfaceName = getTypeInterfaceName(dependency);
-  const importedTypes = dependency instanceof Protobuf.Type ? `${dependency.name} as ${typeInterfaceName}, ${dependency.name}__Output as ${typeInterfaceName}__Output` : `${dependency.name} as ${typeInterfaceName}`;
+  let importedTypes: string;
+  if (dependency instanceof Protobuf.Type) {
+    importedTypes = `${dependency.name} as ${typeInterfaceName}, ${dependency.name}__Output as ${typeInterfaceName}__Output`;
+  } else if (dependency instanceof Protobuf.Enum) {
+    importedTypes = `${dependency.name} as ${typeInterfaceName}`;
+  } else if (dependency instanceof Protobuf.Service) {
+    importedTypes = `${dependency.name}Client as ${typeInterfaceName}Client`;
+  } else {
+    throw new Error('Invalid object passed to getImportLine');
+  }
   return `import { ${importedTypes} } from '${filePath}';`
 }
 
@@ -361,7 +374,7 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
     formatter.writeLine("import { AnyExtension } from '@grpc/proto-loader';")
   }
   formatter.writeLine('');
-  for (const childType of childTypes) {
+  for (const childType of childTypes.sort(compareName)) {
     const nameOverride = getTypeInterfaceName(childType);
     if (childType instanceof Protobuf.Type) {
       generatePermissiveMessageInterface(formatter, childType, options, nameOverride);
@@ -396,39 +409,6 @@ function generateEnumInterface(formatter: TextFormatter, enumType: Protobuf.Enum
   formatter.writeLine('}');
 }
 
-function generateMessageAndEnumImports(formatter: TextFormatter, namespace: Protobuf.NamespaceBase) {
-  for (const nested of namespace.nestedArray.sort(compareName)) {
-    if (nested instanceof Protobuf.Type || nested instanceof Protobuf.Enum) {
-      formatter.writeLine(getImportLine(nested));
-    } else if (isNamespaceBase(nested)) {
-      generateMessageAndEnumImports(formatter, nested);
-    }
-  }
-}
-
-function generateMessageAndEnumExports(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, options: GeneratorOptions, nameOverride?: string) {
-  formatter.writeLine(`export namespace ${nameOverride ?? namespace.name} {`);
-  formatter.indent();
-  for (const nested of namespace.nestedArray.sort(compareName)) {
-    if (nested instanceof Protobuf.Enum || nested instanceof Protobuf.Type) {
-      if (options.includeComments) {
-        formatComment(formatter, nested.comment);
-      }
-      formatter.writeLine(`export type ${nested.name} = ${getTypeInterfaceName(nested)};`);
-      if (nested instanceof Protobuf.Type) {
-        if (options.includeComments) {
-          formatComment(formatter, nested.comment);
-        }
-        formatter.writeLine(`export type ${nested.name}__Output = ${getTypeInterfaceName(nested)}__Output;`);
-      }
-    } else if (isNamespaceBase(nested)) {
-      generateMessageAndEnumExports(formatter, nested, options);
-    }
-  }
-  formatter.unindent();
-  formatter.writeLine('}');
-}
-
 function generateServiceClientInterface(formatter: TextFormatter, serviceType: Protobuf.Service, options: GeneratorOptions) {
   if (options.includeComments) {
     formatComment(formatter, serviceType.comment);
@@ -441,8 +421,8 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
       if (options.includeComments) {
         formatComment(formatter, method.comment);
       }
-      const requestType = 'messages.' + stripLeadingPeriod(method.resolvedRequestType!.fullName);
-      const responseType = 'messages.' + stripLeadingPeriod(method.resolvedResponseType!.fullName) + '__Output';
+      const requestType = getTypeInterfaceName(method.resolvedRequestType!);
+      const responseType = getTypeInterfaceName(method.resolvedResponseType!) + '__Output';
       const callbackType = `(error?: grpc.ServiceError, result?: ${responseType}) => void`;
       if (method.requestStream) {
         if (method.responseStream) {
@@ -480,58 +460,19 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
   formatter.writeLine('}');
 }
 
-function generateAllServiceClientInterfaces(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, options: GeneratorOptions, nameOverride?: string) {
-  formatter.writeLine(`export namespace ${nameOverride ?? namespace.name} {`);
-  formatter.indent();
-  for (const nested of namespace.nestedArray.sort(compareName)) {
-    if (nested instanceof Protobuf.Service) {
-      generateServiceClientInterface(formatter, nested, options);
-    } else if (isNamespaceBase(nested)) {
-      generateAllServiceClientInterfaces(formatter, nested, options);
-    }
-  }
-  formatter.unindent();
-  formatter.writeLine('}');
-}
-
-function generateSingleLoadedDefinitionType(formatter: TextFormatter, nested: Protobuf.ReflectionObject, options: GeneratorOptions) {
-  if (nested instanceof Protobuf.Service) {
-    if (options.includeComments) {
-      formatComment(formatter, nested.comment);
-    }
-    formatter.writeLine(`${nested.name}: SubtypeConstructor<typeof grpc.Client, ClientInterfaces.${stripLeadingPeriod(nested.fullName)}Client> & { service: ServiceDefinition }`)
-  } else if (nested instanceof Protobuf.Enum) {
-    formatter.writeLine(`${nested.name}: EnumTypeDefinition`);
-  } else if (nested instanceof Protobuf.Type) {
-    formatter.writeLine(`${nested.name}: MessageTypeDefinition`);
-  } else if (isNamespaceBase(nested)) {
-    generateLoadedDefinitionTypes(formatter, nested, options);
-  }
-}
-
-function generateLoadedDefinitionTypes(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, options: GeneratorOptions) {
-  formatter.writeLine(`${namespace.name}: {`);
-  formatter.indent();
-  for (const nested of namespace.nestedArray.sort(compareName)) {
-    generateSingleLoadedDefinitionType(formatter, nested, options);
-  }
-  formatter.unindent();
-  formatter.writeLine('}');
-}
-
 function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: Protobuf.Service, options: GeneratorOptions) {
   if (options.includeComments) {
     formatComment(formatter, serviceType.comment);
   }
-  formatter.writeLine(`export interface ${serviceType.name} {`);
+  formatter.writeLine(`export interface ${serviceType.name}Handlers {`);
   formatter.indent();
   for (const methodName of Object.keys(serviceType.methods).sort()) {
     const method = serviceType.methods[methodName];
     if (options.includeComments) {
       formatComment(formatter, method.comment);
     }
-    const requestType = 'messages.' + stripLeadingPeriod(method.resolvedRequestType!.fullName) + '__Output';
-    const responseType = 'messages.' + stripLeadingPeriod(method.resolvedResponseType!.fullName);
+    const requestType = getTypeInterfaceName(method.resolvedRequestType!);
+    const responseType = getTypeInterfaceName(method.resolvedResponseType!) + '__Output';
     if (method.requestStream) {
       if (method.responseStream) {
         // Bidi streaming
@@ -555,15 +496,57 @@ function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: 
   formatter.writeLine('}');
 }
 
-function generateAllServiceHandlerInterfaces(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, options: GeneratorOptions, nameOverride?: string) {
-  formatter.writeLine(`export namespace ${nameOverride ?? namespace.name} {`);
-  formatter.indent();
+function generateServiceInterfaces(formatter: TextFormatter, serviceType: Protobuf.Service, options: GeneratorOptions) {
+  formatter.writeLine(`// Original file: ${serviceType.filename}`);
+  formatter.writeLine('');
+  const grpcImportPath = options.grpcLib.startsWith('.') ? getPathToRoot(serviceType) + options.grpcLib : options.grpcLib;
+  formatter.writeLine(`import * as grpc from '${grpcImportPath}'`);
+  const dependencies: Set<Protobuf.Type> = new Set<Protobuf.Type>();
+  for (const method of serviceType.methodsArray) {
+    dependencies.add(method.resolvedRequestType!);
+    dependencies.add(method.resolvedResponseType!);
+  }
+  for (const dep of Array.from(dependencies.values()).sort(compareName)) {
+    formatter.writeLine(getImportLine(dep, serviceType));
+  }
+  formatter.writeLine('');
+
+  generateServiceClientInterface(formatter, serviceType, options);
+  formatter.writeLine('');
+
+  generateServiceHandlerInterface(formatter, serviceType, options);
+}
+
+function generateServiceImports(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, options: GeneratorOptions) {
   for (const nested of namespace.nestedArray.sort(compareName)) {
     if (nested instanceof Protobuf.Service) {
-      generateServiceHandlerInterface(formatter, nested, options);
-    } else if (isNamespaceBase(nested)) {
-      generateAllServiceHandlerInterfaces(formatter, nested, options);
+      formatter.writeLine(getImportLine(nested));
+    } else if (isNamespaceBase(nested) && !(nested instanceof Protobuf.Type) && !(nested instanceof Protobuf.Enum)) {
+      generateServiceImports(formatter, nested, options);
     }
+  }
+}
+
+function generateSingleLoadedDefinitionType(formatter: TextFormatter, nested: Protobuf.ReflectionObject, options: GeneratorOptions) {
+  if (nested instanceof Protobuf.Service) {
+    if (options.includeComments) {
+      formatComment(formatter, nested.comment);
+    }
+    formatter.writeLine(`${nested.name}: SubtypeConstructor<typeof grpc.Client, ${getTypeInterfaceName(nested)}Client> & { service: ServiceDefinition }`)
+  } else if (nested instanceof Protobuf.Enum) {
+    formatter.writeLine(`${nested.name}: EnumTypeDefinition`);
+  } else if (nested instanceof Protobuf.Type) {
+    formatter.writeLine(`${nested.name}: MessageTypeDefinition`);
+  } else if (isNamespaceBase(nested)) {
+    generateLoadedDefinitionTypes(formatter, nested, options);
+  }
+}
+
+function generateLoadedDefinitionTypes(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, options: GeneratorOptions) {
+  formatter.writeLine(`${namespace.name}: {`);
+  formatter.indent();
+  for (const nested of namespace.nestedArray.sort(compareName)) {
+    generateSingleLoadedDefinitionType(formatter, nested, options);
   }
   formatter.unindent();
   formatter.writeLine('}');
@@ -573,14 +556,8 @@ function generateRootFile(formatter: TextFormatter, root: Protobuf.Root, options
   formatter.writeLine(`import * as grpc from '${options.grpcLib}';`);
   formatter.writeLine("import { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';");
   formatter.writeLine('');
-
-  generateMessageAndEnumImports(formatter, root);
-  formatter.writeLine('');
-
-  generateMessageAndEnumExports(formatter, root, options, 'messages');
-  formatter.writeLine('');
-
-  generateAllServiceClientInterfaces(formatter, root, options, 'ClientInterfaces');
+  
+  generateServiceImports(formatter, root, options);
   formatter.writeLine('');
 
   formatter.writeLine('type ConstructorArguments<Constructor> = Constructor extends new (...args: infer Args) => any ? Args: never;');
@@ -597,8 +574,6 @@ function generateRootFile(formatter: TextFormatter, root: Protobuf.Root, options
   formatter.unindent();
   formatter.writeLine('}');
   formatter.writeLine('');
-
-  generateAllServiceHandlerInterfaces(formatter, root, options, 'ServiceHandlers');
 }
 
 async function writeFile(filename: string, contents: string): Promise<void> {
@@ -618,6 +593,12 @@ function generateFilesForNamespace(namespace: Protobuf.NamespaceBase, options: G
       filePromises.push(writeFile(`${options.outDir}/${getPath(nested)}`, fileFormatter.getFullText()));
     } else if (nested instanceof Protobuf.Enum) {
       generateEnumInterface(fileFormatter, nested, options);
+      if (options.verbose) {
+        console.log(`Writing ${options.outDir}/${getPath(nested)} from file ${nested.filename}`);
+      }
+      filePromises.push(writeFile(`${options.outDir}/${getPath(nested)}`, fileFormatter.getFullText()));
+    } else if (nested instanceof Protobuf.Service) {
+      generateServiceInterfaces(fileFormatter, nested, options);
       if (options.verbose) {
         console.log(`Writing ${options.outDir}/${getPath(nested)} from file ${nested.filename}`);
       }
