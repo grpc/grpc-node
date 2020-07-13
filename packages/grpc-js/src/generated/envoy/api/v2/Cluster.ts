@@ -21,8 +21,8 @@ import { Filter as _envoy_api_v2_cluster_Filter, Filter__Output as _envoy_api_v2
 import { LoadBalancingPolicy as _envoy_api_v2_LoadBalancingPolicy, LoadBalancingPolicy__Output as _envoy_api_v2_LoadBalancingPolicy__Output } from '../../../envoy/api/v2/LoadBalancingPolicy';
 import { ConfigSource as _envoy_api_v2_core_ConfigSource, ConfigSource__Output as _envoy_api_v2_core_ConfigSource__Output } from '../../../envoy/api/v2/core/ConfigSource';
 import { UpstreamHttpProtocolOptions as _envoy_api_v2_core_UpstreamHttpProtocolOptions, UpstreamHttpProtocolOptions__Output as _envoy_api_v2_core_UpstreamHttpProtocolOptions__Output } from '../../../envoy/api/v2/core/UpstreamHttpProtocolOptions';
-import { Percent as _envoy_type_Percent, Percent__Output as _envoy_type_Percent__Output } from '../../../envoy/type/Percent';
 import { UInt64Value as _google_protobuf_UInt64Value, UInt64Value__Output as _google_protobuf_UInt64Value__Output } from '../../../google/protobuf/UInt64Value';
+import { Percent as _envoy_type_Percent, Percent__Output as _envoy_type_Percent__Output } from '../../../envoy/type/Percent';
 import { Long } from '@grpc/proto-loader';
 
 // Original file: deps/envoy-api/envoy/api/v2/cluster.proto
@@ -197,78 +197,6 @@ export interface _envoy_api_v2_Cluster_CommonLbConfig_ConsistentHashingLbConfig_
 }
 
 /**
- * Configuration for :ref:`locality weighted load balancing
- * <arch_overview_load_balancing_locality_weighted_lb>`
- */
-export interface _envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig {
-}
-
-/**
- * Configuration for :ref:`locality weighted load balancing
- * <arch_overview_load_balancing_locality_weighted_lb>`
- */
-export interface _envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig__Output {
-}
-
-/**
- * Configuration for :ref:`zone aware routing
- * <arch_overview_load_balancing_zone_aware_routing>`.
- */
-export interface _envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig {
-  /**
-   * Configures percentage of requests that will be considered for zone aware routing
-   * if zone aware routing is configured. If not specified, the default is 100%.
-   * * :ref:`runtime values <config_cluster_manager_cluster_runtime_zone_routing>`.
-   * * :ref:`Zone aware routing support <arch_overview_load_balancing_zone_aware_routing>`.
-   */
-  'routing_enabled'?: (_envoy_type_Percent);
-  /**
-   * Configures minimum upstream cluster size required for zone aware routing
-   * If upstream cluster size is less than specified, zone aware routing is not performed
-   * even if zone aware routing is configured. If not specified, the default is 6.
-   * * :ref:`runtime values <config_cluster_manager_cluster_runtime_zone_routing>`.
-   * * :ref:`Zone aware routing support <arch_overview_load_balancing_zone_aware_routing>`.
-   */
-  'min_cluster_size'?: (_google_protobuf_UInt64Value);
-  /**
-   * If set to true, Envoy will not consider any hosts when the cluster is in :ref:`panic
-   * mode<arch_overview_load_balancing_panic_threshold>`. Instead, the cluster will fail all
-   * requests as if all hosts are unhealthy. This can help avoid potentially overwhelming a
-   * failing service.
-   */
-  'fail_traffic_on_panic'?: (boolean);
-}
-
-/**
- * Configuration for :ref:`zone aware routing
- * <arch_overview_load_balancing_zone_aware_routing>`.
- */
-export interface _envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig__Output {
-  /**
-   * Configures percentage of requests that will be considered for zone aware routing
-   * if zone aware routing is configured. If not specified, the default is 100%.
-   * * :ref:`runtime values <config_cluster_manager_cluster_runtime_zone_routing>`.
-   * * :ref:`Zone aware routing support <arch_overview_load_balancing_zone_aware_routing>`.
-   */
-  'routing_enabled': (_envoy_type_Percent__Output);
-  /**
-   * Configures minimum upstream cluster size required for zone aware routing
-   * If upstream cluster size is less than specified, zone aware routing is not performed
-   * even if zone aware routing is configured. If not specified, the default is 6.
-   * * :ref:`runtime values <config_cluster_manager_cluster_runtime_zone_routing>`.
-   * * :ref:`Zone aware routing support <arch_overview_load_balancing_zone_aware_routing>`.
-   */
-  'min_cluster_size': (_google_protobuf_UInt64Value__Output);
-  /**
-   * If set to true, Envoy will not consider any hosts when the cluster is in :ref:`panic
-   * mode<arch_overview_load_balancing_panic_threshold>`. Instead, the cluster will fail all
-   * requests as if all hosts are unhealthy. This can help avoid potentially overwhelming a
-   * failing service.
-   */
-  'fail_traffic_on_panic': (boolean);
-}
-
-/**
  * Extended cluster type.
  */
 export interface _envoy_api_v2_Cluster_CustomClusterType {
@@ -385,6 +313,24 @@ export interface _envoy_api_v2_Cluster_EdsClusterConfig__Output {
    * length.
    */
   'service_name': (string);
+}
+
+// Original file: deps/envoy-api/envoy/api/v2/cluster.proto
+
+/**
+ * The hash function used to hash hosts onto the ketama ring.
+ */
+export enum _envoy_api_v2_Cluster_RingHashLbConfig_HashFunction {
+  /**
+   * Use `xxHash <https://github.com/Cyan4973/xxHash>`_, this is the default hash function.
+   */
+  XX_HASH = 0,
+  /**
+   * Use `MurmurHash2 <https://sites.google.com/site/murmurhash/>`_, this is compatible with
+   * std:hash<string> in GNU libstdc++ 3.4.20 or above. This is typically the case when compiled
+   * on Linux and not macOS.
+   */
+  MURMUR_HASH_2 = 1,
 }
 
 // Original file: deps/envoy-api/envoy/api/v2/cluster.proto
@@ -729,6 +675,20 @@ export interface _envoy_api_v2_Cluster_LeastRequestLbConfig__Output {
 }
 
 /**
+ * Configuration for :ref:`locality weighted load balancing
+ * <arch_overview_load_balancing_locality_weighted_lb>`
+ */
+export interface _envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig {
+}
+
+/**
+ * Configuration for :ref:`locality weighted load balancing
+ * <arch_overview_load_balancing_locality_weighted_lb>`
+ */
+export interface _envoy_api_v2_Cluster_CommonLbConfig_LocalityWeightedLbConfig__Output {
+}
+
+/**
  * Specific configuration for the
  * :ref:`Original Destination <arch_overview_load_balancing_types_original_destination>`
  * load balancing policy.
@@ -850,24 +810,6 @@ export interface _envoy_api_v2_Cluster_RingHashLbConfig__Output {
   'maximum_ring_size': (_google_protobuf_UInt64Value__Output);
 }
 
-// Original file: deps/envoy-api/envoy/api/v2/cluster.proto
-
-/**
- * The hash function used to hash hosts onto the ketama ring.
- */
-export enum _envoy_api_v2_Cluster_RingHashLbConfig_HashFunction {
-  /**
-   * Use `xxHash <https://github.com/Cyan4973/xxHash>`_, this is the default hash function.
-   */
-  XX_HASH = 0,
-  /**
-   * Use `MurmurHash2 <https://sites.google.com/site/murmurhash/>`_, this is compatible with
-   * std:hash<string> in GNU libstdc++ 3.4.20 or above. This is typically the case when compiled
-   * on Linux and not macOS.
-   */
-  MURMUR_HASH_2 = 1,
-}
-
 /**
  * TransportSocketMatch specifies what transport socket config will be used
  * when the match conditions are satisfied.
@@ -912,6 +854,64 @@ export interface _envoy_api_v2_Cluster_TransportSocketMatch__Output {
    * The configuration of the transport socket.
    */
   'transport_socket': (_envoy_api_v2_core_TransportSocket__Output);
+}
+
+/**
+ * Configuration for :ref:`zone aware routing
+ * <arch_overview_load_balancing_zone_aware_routing>`.
+ */
+export interface _envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig {
+  /**
+   * Configures percentage of requests that will be considered for zone aware routing
+   * if zone aware routing is configured. If not specified, the default is 100%.
+   * * :ref:`runtime values <config_cluster_manager_cluster_runtime_zone_routing>`.
+   * * :ref:`Zone aware routing support <arch_overview_load_balancing_zone_aware_routing>`.
+   */
+  'routing_enabled'?: (_envoy_type_Percent);
+  /**
+   * Configures minimum upstream cluster size required for zone aware routing
+   * If upstream cluster size is less than specified, zone aware routing is not performed
+   * even if zone aware routing is configured. If not specified, the default is 6.
+   * * :ref:`runtime values <config_cluster_manager_cluster_runtime_zone_routing>`.
+   * * :ref:`Zone aware routing support <arch_overview_load_balancing_zone_aware_routing>`.
+   */
+  'min_cluster_size'?: (_google_protobuf_UInt64Value);
+  /**
+   * If set to true, Envoy will not consider any hosts when the cluster is in :ref:`panic
+   * mode<arch_overview_load_balancing_panic_threshold>`. Instead, the cluster will fail all
+   * requests as if all hosts are unhealthy. This can help avoid potentially overwhelming a
+   * failing service.
+   */
+  'fail_traffic_on_panic'?: (boolean);
+}
+
+/**
+ * Configuration for :ref:`zone aware routing
+ * <arch_overview_load_balancing_zone_aware_routing>`.
+ */
+export interface _envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig__Output {
+  /**
+   * Configures percentage of requests that will be considered for zone aware routing
+   * if zone aware routing is configured. If not specified, the default is 100%.
+   * * :ref:`runtime values <config_cluster_manager_cluster_runtime_zone_routing>`.
+   * * :ref:`Zone aware routing support <arch_overview_load_balancing_zone_aware_routing>`.
+   */
+  'routing_enabled': (_envoy_type_Percent__Output);
+  /**
+   * Configures minimum upstream cluster size required for zone aware routing
+   * If upstream cluster size is less than specified, zone aware routing is not performed
+   * even if zone aware routing is configured. If not specified, the default is 6.
+   * * :ref:`runtime values <config_cluster_manager_cluster_runtime_zone_routing>`.
+   * * :ref:`Zone aware routing support <arch_overview_load_balancing_zone_aware_routing>`.
+   */
+  'min_cluster_size': (_google_protobuf_UInt64Value__Output);
+  /**
+   * If set to true, Envoy will not consider any hosts when the cluster is in :ref:`panic
+   * mode<arch_overview_load_balancing_panic_threshold>`. Instead, the cluster will fail all
+   * requests as if all hosts are unhealthy. This can help avoid potentially overwhelming a
+   * failing service.
+   */
+  'fail_traffic_on_panic': (boolean);
 }
 
 /**

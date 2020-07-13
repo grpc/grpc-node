@@ -47,7 +47,7 @@
     "clean": "node -e 'require(\"rimraf\")(\"./build\", () => {})'",
     "compile": "tsc -p .",
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
-    "generate-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --json --generateComments --includeDirs deps/envoy-api/ deps/udpa/ deps/googleapis/ deps/protoc-gen-validate/ -O src/generated/ --grpcLib ../index envoy/service/discovery/v2/ads.proto envoy/api/v2/listener.proto envoy/api/v2/route.proto envoy/api/v2/cluster.proto envoy/api/v2/endpoint.proto",
+    "generate-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --json --includeComments --includeDirs deps/envoy-api/ deps/udpa/ deps/googleapis/ deps/protoc-gen-validate/ -O src/generated/ --grpcLib ../index envoy/service/discovery/v2/ads.proto envoy/api/v2/listener.proto envoy/api/v2/route.proto envoy/api/v2/cluster.proto envoy/api/v2/endpoint.proto",
     "lint": "npm run check",
     "prepare": "npm run compile",
     "test": "gulp test",

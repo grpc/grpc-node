@@ -16,7 +16,9 @@
  */
 
 import * as fs from 'fs';
-import * as adsTypes from './generated/ads';
+import { Struct } from './generated/google/protobuf/Struct';
+import { Node } from './generated/envoy/api/v2/core/Node';
+import { Value } from './generated/google/protobuf/Value';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -32,7 +34,7 @@ export interface XdsServerConfig {
 
 export interface BootstrapInfo {
   xdsServers: XdsServerConfig[];
-  node: adsTypes.messages.envoy.api.v2.core.Node;
+  node: Node;
 }
 
 function validateChannelCredsConfig(obj: any): ChannelCredsConfig {
@@ -85,7 +87,7 @@ function validateXdsServerConfig(obj: any): XdsServerConfig {
   };
 }
 
-function validateValue(obj: any): adsTypes.messages.google.protobuf.Value {
+function validateValue(obj: any): Value {
   if (Array.isArray(obj)) {
     return {
       kind: 'listValue',
@@ -128,7 +130,7 @@ function validateValue(obj: any): adsTypes.messages.google.protobuf.Value {
   }
 }
 
-function getStructFromJson(obj: any): adsTypes.messages.google.protobuf.Struct {
+function getStructFromJson(obj: any): Struct {
   if (typeof obj !== 'object' || obj === null) {
     throw new Error('Invalid JSON object for Struct field');
   }
@@ -154,8 +156,8 @@ function getStructFromJson(obj: any): adsTypes.messages.google.protobuf.Struct {
  * fields we expect to see: id, cluster, locality, and metadata.
  * @param obj
  */
-function validateNode(obj: any): adsTypes.messages.envoy.api.v2.core.Node {
-  const result: adsTypes.messages.envoy.api.v2.core.Node = {};
+function validateNode(obj: any): Node {
+  const result: Node = {};
   if (!('id' in obj)) {
     throw new Error('id field missing in node element');
   }

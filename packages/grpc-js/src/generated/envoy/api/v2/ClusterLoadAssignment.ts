@@ -7,6 +7,34 @@ import { Duration as _google_protobuf_Duration, Duration__Output as _google_prot
 import { FractionalPercent as _envoy_type_FractionalPercent, FractionalPercent__Output as _envoy_type_FractionalPercent__Output } from '../../../envoy/type/FractionalPercent';
 
 /**
+ * [#not-implemented-hide:]
+ */
+export interface _envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload {
+  /**
+   * Identifier for the policy specifying the drop.
+   */
+  'category'?: (string);
+  /**
+   * Percentage of traffic that should be dropped for the category.
+   */
+  'drop_percentage'?: (_envoy_type_FractionalPercent);
+}
+
+/**
+ * [#not-implemented-hide:]
+ */
+export interface _envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload__Output {
+  /**
+   * Identifier for the policy specifying the drop.
+   */
+  'category': (string);
+  /**
+   * Percentage of traffic that should be dropped for the category.
+   */
+  'drop_percentage': (_envoy_type_FractionalPercent__Output);
+}
+
+/**
  * Load balancing policy settings.
  * [#next-free-field: 6]
  */
@@ -134,34 +162,6 @@ export interface _envoy_api_v2_ClusterLoadAssignment_Policy__Output {
    * [#not-implemented-hide:]
    */
   'disable_overprovisioning': (boolean);
-}
-
-/**
- * [#not-implemented-hide:]
- */
-export interface _envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload {
-  /**
-   * Identifier for the policy specifying the drop.
-   */
-  'category'?: (string);
-  /**
-   * Percentage of traffic that should be dropped for the category.
-   */
-  'drop_percentage'?: (_envoy_type_FractionalPercent);
-}
-
-/**
- * [#not-implemented-hide:]
- */
-export interface _envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload__Output {
-  /**
-   * Identifier for the policy specifying the drop.
-   */
-  'category': (string);
-  /**
-   * Percentage of traffic that should be dropped for the category.
-   */
-  'drop_percentage': (_envoy_type_FractionalPercent__Output);
 }
 
 /**

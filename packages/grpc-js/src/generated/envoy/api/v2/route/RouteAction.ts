@@ -27,108 +27,6 @@ export enum _envoy_api_v2_route_RouteAction_ClusterNotFoundResponseCode {
   NOT_FOUND = 1,
 }
 
-/**
- * Specifies the route's hashing policy if the upstream cluster uses a hashing :ref:`load balancer
- * <arch_overview_load_balancing_types>`.
- * [#next-free-field: 7]
- */
-export interface _envoy_api_v2_route_RouteAction_HashPolicy {
-  /**
-   * Header hash policy.
-   */
-  'header'?: (_envoy_api_v2_route_RouteAction_HashPolicy_Header);
-  /**
-   * Cookie hash policy.
-   */
-  'cookie'?: (_envoy_api_v2_route_RouteAction_HashPolicy_Cookie);
-  /**
-   * Connection properties hash policy.
-   */
-  'connection_properties'?: (_envoy_api_v2_route_RouteAction_HashPolicy_ConnectionProperties);
-  /**
-   * Query parameter hash policy.
-   */
-  'query_parameter'?: (_envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter);
-  /**
-   * Filter state hash policy.
-   */
-  'filter_state'?: (_envoy_api_v2_route_RouteAction_HashPolicy_FilterState);
-  /**
-   * The flag that short-circuits the hash computing. This field provides a
-   * 'fallback' style of configuration: "if a terminal policy doesn't work,
-   * fallback to rest of the policy list", it saves time when the terminal
-   * policy works.
-   * 
-   * If true, and there is already a hash computed, ignore rest of the
-   * list of hash polices.
-   * For example, if the following hash methods are configured:
-   * 
-   * ========= ========
-   * specifier terminal
-   * ========= ========
-   * Header A  true
-   * Header B  false
-   * Header C  false
-   * ========= ========
-   * 
-   * The generateHash process ends if policy "header A" generates a hash, as
-   * it's a terminal policy.
-   */
-  'terminal'?: (boolean);
-  'policy_specifier'?: "header"|"cookie"|"connection_properties"|"query_parameter"|"filter_state";
-}
-
-/**
- * Specifies the route's hashing policy if the upstream cluster uses a hashing :ref:`load balancer
- * <arch_overview_load_balancing_types>`.
- * [#next-free-field: 7]
- */
-export interface _envoy_api_v2_route_RouteAction_HashPolicy__Output {
-  /**
-   * Header hash policy.
-   */
-  'header'?: (_envoy_api_v2_route_RouteAction_HashPolicy_Header__Output);
-  /**
-   * Cookie hash policy.
-   */
-  'cookie'?: (_envoy_api_v2_route_RouteAction_HashPolicy_Cookie__Output);
-  /**
-   * Connection properties hash policy.
-   */
-  'connection_properties'?: (_envoy_api_v2_route_RouteAction_HashPolicy_ConnectionProperties__Output);
-  /**
-   * Query parameter hash policy.
-   */
-  'query_parameter'?: (_envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter__Output);
-  /**
-   * Filter state hash policy.
-   */
-  'filter_state'?: (_envoy_api_v2_route_RouteAction_HashPolicy_FilterState__Output);
-  /**
-   * The flag that short-circuits the hash computing. This field provides a
-   * 'fallback' style of configuration: "if a terminal policy doesn't work,
-   * fallback to rest of the policy list", it saves time when the terminal
-   * policy works.
-   * 
-   * If true, and there is already a hash computed, ignore rest of the
-   * list of hash polices.
-   * For example, if the following hash methods are configured:
-   * 
-   * ========= ========
-   * specifier terminal
-   * ========= ========
-   * Header A  true
-   * Header B  false
-   * Header C  false
-   * ========= ========
-   * 
-   * The generateHash process ends if policy "header A" generates a hash, as
-   * it's a terminal policy.
-   */
-  'terminal': (boolean);
-  'policy_specifier': "header"|"cookie"|"connection_properties"|"query_parameter"|"filter_state";
-}
-
 export interface _envoy_api_v2_route_RouteAction_HashPolicy_ConnectionProperties {
   /**
    * Hash on source IP address.
@@ -233,6 +131,108 @@ export interface _envoy_api_v2_route_RouteAction_HashPolicy_FilterState__Output 
   'key': (string);
 }
 
+/**
+ * Specifies the route's hashing policy if the upstream cluster uses a hashing :ref:`load balancer
+ * <arch_overview_load_balancing_types>`.
+ * [#next-free-field: 7]
+ */
+export interface _envoy_api_v2_route_RouteAction_HashPolicy {
+  /**
+   * Header hash policy.
+   */
+  'header'?: (_envoy_api_v2_route_RouteAction_HashPolicy_Header);
+  /**
+   * Cookie hash policy.
+   */
+  'cookie'?: (_envoy_api_v2_route_RouteAction_HashPolicy_Cookie);
+  /**
+   * Connection properties hash policy.
+   */
+  'connection_properties'?: (_envoy_api_v2_route_RouteAction_HashPolicy_ConnectionProperties);
+  /**
+   * Query parameter hash policy.
+   */
+  'query_parameter'?: (_envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter);
+  /**
+   * Filter state hash policy.
+   */
+  'filter_state'?: (_envoy_api_v2_route_RouteAction_HashPolicy_FilterState);
+  /**
+   * The flag that short-circuits the hash computing. This field provides a
+   * 'fallback' style of configuration: "if a terminal policy doesn't work,
+   * fallback to rest of the policy list", it saves time when the terminal
+   * policy works.
+   * 
+   * If true, and there is already a hash computed, ignore rest of the
+   * list of hash polices.
+   * For example, if the following hash methods are configured:
+   * 
+   * ========= ========
+   * specifier terminal
+   * ========= ========
+   * Header A  true
+   * Header B  false
+   * Header C  false
+   * ========= ========
+   * 
+   * The generateHash process ends if policy "header A" generates a hash, as
+   * it's a terminal policy.
+   */
+  'terminal'?: (boolean);
+  'policy_specifier'?: "header"|"cookie"|"connection_properties"|"query_parameter"|"filter_state";
+}
+
+/**
+ * Specifies the route's hashing policy if the upstream cluster uses a hashing :ref:`load balancer
+ * <arch_overview_load_balancing_types>`.
+ * [#next-free-field: 7]
+ */
+export interface _envoy_api_v2_route_RouteAction_HashPolicy__Output {
+  /**
+   * Header hash policy.
+   */
+  'header'?: (_envoy_api_v2_route_RouteAction_HashPolicy_Header__Output);
+  /**
+   * Cookie hash policy.
+   */
+  'cookie'?: (_envoy_api_v2_route_RouteAction_HashPolicy_Cookie__Output);
+  /**
+   * Connection properties hash policy.
+   */
+  'connection_properties'?: (_envoy_api_v2_route_RouteAction_HashPolicy_ConnectionProperties__Output);
+  /**
+   * Query parameter hash policy.
+   */
+  'query_parameter'?: (_envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter__Output);
+  /**
+   * Filter state hash policy.
+   */
+  'filter_state'?: (_envoy_api_v2_route_RouteAction_HashPolicy_FilterState__Output);
+  /**
+   * The flag that short-circuits the hash computing. This field provides a
+   * 'fallback' style of configuration: "if a terminal policy doesn't work,
+   * fallback to rest of the policy list", it saves time when the terminal
+   * policy works.
+   * 
+   * If true, and there is already a hash computed, ignore rest of the
+   * list of hash polices.
+   * For example, if the following hash methods are configured:
+   * 
+   * ========= ========
+   * specifier terminal
+   * ========= ========
+   * Header A  true
+   * Header B  false
+   * Header C  false
+   * ========= ========
+   * 
+   * The generateHash process ends if policy "header A" generates a hash, as
+   * it's a terminal policy.
+   */
+  'terminal': (boolean);
+  'policy_specifier': "header"|"cookie"|"connection_properties"|"query_parameter"|"filter_state";
+}
+
 export interface _envoy_api_v2_route_RouteAction_HashPolicy_Header {
   /**
    * The name of the request header that will be used to obtain the hash
@@ -247,6 +247,16 @@ export interface _envoy_api_v2_route_RouteAction_HashPolicy_Header__Output {
    * key. If the request header is not present, no hash will be produced.
    */
   'header_name': (string);
+}
+
+// Original file: deps/envoy-api/envoy/api/v2/route/route_components.proto
+
+/**
+ * Configures :ref:`internal redirect <arch_overview_internal_redirects>` behavior.
+ */
+export enum _envoy_api_v2_route_RouteAction_InternalRedirectAction {
+  PASS_THROUGH_INTERNAL_REDIRECT = 0,
+  HANDLE_INTERNAL_REDIRECT = 1,
 }
 
 export interface _envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter {
@@ -265,16 +275,6 @@ export interface _envoy_api_v2_route_RouteAction_HashPolicy_QueryParameter__Outp
    * parameter names are case-sensitive.
    */
   'name': (string);
-}
-
-// Original file: deps/envoy-api/envoy/api/v2/route/route_components.proto
-
-/**
- * Configures :ref:`internal redirect <arch_overview_internal_redirects>` behavior.
- */
-export enum _envoy_api_v2_route_RouteAction_InternalRedirectAction {
-  PASS_THROUGH_INTERNAL_REDIRECT = 0,
-  HANDLE_INTERNAL_REDIRECT = 1,
 }
 
 /**

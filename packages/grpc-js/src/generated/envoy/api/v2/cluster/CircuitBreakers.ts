@@ -4,6 +4,42 @@ import { RoutingPriority as _envoy_api_v2_core_RoutingPriority } from '../../../
 import { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 import { Percent as _envoy_type_Percent, Percent__Output as _envoy_type_Percent__Output } from '../../../../envoy/type/Percent';
 
+export interface _envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget {
+  /**
+   * Specifies the limit on concurrent retries as a percentage of the sum of active requests and
+   * active pending requests. For example, if there are 100 active requests and the
+   * budget_percent is set to 25, there may be 25 active retries.
+   * 
+   * This parameter is optional. Defaults to 20%.
+   */
+  'budget_percent'?: (_envoy_type_Percent);
+  /**
+   * Specifies the minimum retry concurrency allowed for the retry budget. The limit on the
+   * number of active retries may never go below this number.
+   * 
+   * This parameter is optional. Defaults to 3.
+   */
+  'min_retry_concurrency'?: (_google_protobuf_UInt32Value);
+}
+
+export interface _envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget__Output {
+  /**
+   * Specifies the limit on concurrent retries as a percentage of the sum of active requests and
+   * active pending requests. For example, if there are 100 active requests and the
+   * budget_percent is set to 25, there may be 25 active retries.
+   * 
+   * This parameter is optional. Defaults to 20%.
+   */
+  'budget_percent': (_envoy_type_Percent__Output);
+  /**
+   * Specifies the minimum retry concurrency allowed for the retry budget. The limit on the
+   * number of active retries may never go below this number.
+   * 
+   * This parameter is optional. Defaults to 3.
+   */
+  'min_retry_concurrency': (_google_protobuf_UInt32Value__Output);
+}
+
 /**
  * A Thresholds defines CircuitBreaker settings for a
  * :ref:`RoutingPriority<envoy_api_enum_core.RoutingPriority>`.
@@ -126,42 +162,6 @@ export interface _envoy_api_v2_cluster_CircuitBreakers_Thresholds__Output {
    * more details.
    */
   'max_connection_pools': (_google_protobuf_UInt32Value__Output);
-}
-
-export interface _envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget {
-  /**
-   * Specifies the limit on concurrent retries as a percentage of the sum of active requests and
-   * active pending requests. For example, if there are 100 active requests and the
-   * budget_percent is set to 25, there may be 25 active retries.
-   * 
-   * This parameter is optional. Defaults to 20%.
-   */
-  'budget_percent'?: (_envoy_type_Percent);
-  /**
-   * Specifies the minimum retry concurrency allowed for the retry budget. The limit on the
-   * number of active retries may never go below this number.
-   * 
-   * This parameter is optional. Defaults to 3.
-   */
-  'min_retry_concurrency'?: (_google_protobuf_UInt32Value);
-}
-
-export interface _envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget__Output {
-  /**
-   * Specifies the limit on concurrent retries as a percentage of the sum of active requests and
-   * active pending requests. For example, if there are 100 active requests and the
-   * budget_percent is set to 25, there may be 25 active retries.
-   * 
-   * This parameter is optional. Defaults to 20%.
-   */
-  'budget_percent': (_envoy_type_Percent__Output);
-  /**
-   * Specifies the minimum retry concurrency allowed for the retry budget. The limit on the
-   * number of active retries may never go below this number.
-   * 
-   * This parameter is optional. Defaults to 3.
-   */
-  'min_retry_concurrency': (_google_protobuf_UInt32Value__Output);
 }
 
 /**

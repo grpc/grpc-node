@@ -18,7 +18,6 @@
 import * as protoLoader from '@grpc/proto-loader';
 import { loadPackageDefinition } from './make-client';
 import * as adsTypes from './generated/ads';
-import * as edsTypes from './generated/endpoint';
 import { createGoogleDefaultCredentials } from './channel-credentials';
 import { loadBootstrapInfo } from './xds-bootstrap';
 import { ClientDuplexStream, ServiceError } from './call';
@@ -29,6 +28,11 @@ import { Metadata } from './metadata';
 import * as logging from './logging';
 import { ServiceConfig } from './service-config';
 import { ChannelOptions } from './channel-options';
+import { Node } from './generated/envoy/api/v2/core/Node';
+import { AggregatedDiscoveryServiceClient } from './generated/envoy/service/discovery/v2/AggregatedDiscoveryService';
+import { DiscoveryRequest } from './generated/envoy/api/v2/DiscoveryRequest';
+import { DiscoveryResponse__Output } from './generated/envoy/api/v2/DiscoveryResponse';
+import { ClusterLoadAssignment__Output } from './generated/envoy/api/v2/ClusterLoadAssignment';
 
 const TRACER_NAME = 'xds_client';
 
@@ -86,21 +90,21 @@ export interface Watcher<UpdateType> {
 }
 
 export class XdsClient {
-  private node: adsTypes.messages.envoy.api.v2.core.Node | null = null;
-  private client: adsTypes.ClientInterfaces.envoy.service.discovery.v2.AggregatedDiscoveryServiceClient | null = null;
+  private node: Node | null = null;
+  private client: AggregatedDiscoveryServiceClient | null = null;
   private adsCall: ClientDuplexStream<
-    adsTypes.messages.envoy.api.v2.DiscoveryRequest,
-    adsTypes.messages.envoy.api.v2.DiscoveryResponse__Output
+    DiscoveryRequest,
+    DiscoveryResponse__Output
   > | null = null;
 
   private hasShutdown = false;
 
   private endpointWatchers: Map<
     string,
-    Watcher<edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output>[]
+    Watcher<ClusterLoadAssignment__Output>[]
   > = new Map<
     string,
-    Watcher<edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output>[]
+    Watcher<ClusterLoadAssignment__Output>[]
   >();
   private lastEdsVersionInfo = '';
   private lastEdsNonce = '';
@@ -175,17 +179,17 @@ export class XdsClient {
     this.adsCall = this.client.StreamAggregatedResources();
     this.adsCall.on(
       'data',
-      (message: adsTypes.messages.envoy.api.v2.DiscoveryResponse__Output) => {
+      (message: DiscoveryResponse__Output) => {
         switch (message.type_url) {
           case EDS_TYPE_URL: {
-            const edsResponses: edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output[] = [];
+            const edsResponses: ClusterLoadAssignment__Output[] = [];
             for (const resource of message.resources) {
               if (
                 protoLoader.isAnyExtension(resource) &&
                 resource['@type'] === EDS_TYPE_URL
               ) {
                 const resp = resource as protoLoader.AnyExtension &
-                  edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output;
+                  ClusterLoadAssignment__Output;
                 if (!this.validateEdsResponse(resp)) {
                   this.nackEds('ClusterLoadAssignment validation failed');
                   return;
@@ -298,7 +302,7 @@ export class XdsClient {
    * @param message
    */
   private validateEdsResponse(
-    message: edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output
+    message: ClusterLoadAssignment__Output
   ): boolean {
     for (const endpoint of message.endpoints) {
       for (const lb of endpoint.lb_endpoints) {
@@ -318,7 +322,7 @@ export class XdsClient {
   }
 
   private handleEdsResponse(
-    message: edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output
+    message: ClusterLoadAssignment__Output
   ) {
     const watchers = this.endpointWatchers.get(message.cluster_name) ?? [];
     for (const watcher of watchers) {
@@ -350,7 +354,7 @@ export class XdsClient {
   addEndpointWatcher(
     edsServiceName: string,
     watcher: Watcher<
-      edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output
+      ClusterLoadAssignment__Output
     >
   ) {
     trace('Watcher added for endpoint ' + edsServiceName);
@@ -370,7 +374,7 @@ export class XdsClient {
   removeEndpointWatcher(
     edsServiceName: string,
     watcher: Watcher<
-      edsTypes.messages.envoy.api.v2.ClusterLoadAssignment__Output
+      ClusterLoadAssignment__Output
     >
   ) {
     trace('Watcher removed for endpoint ' + edsServiceName);
