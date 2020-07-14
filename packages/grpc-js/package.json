@@ -15,6 +15,7 @@
   "types": "build/src/index.d.ts",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@grpc/proto-loader": "^0.6.0-pre6",
     "@types/gulp": "^4.0.6",
     "@types/gulp-mocha": "0.0.32",
     "@types/lodash": "^4.14.108",
@@ -57,7 +58,6 @@
     "posttest": "npm run check"
   },
   "dependencies": {
-    "@grpc/proto-loader": "^0.6.0-pre6",
     "semver": "^6.2.0"
   },
   "peerDependencies": {
