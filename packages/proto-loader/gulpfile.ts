@@ -61,8 +61,7 @@ const compile = () => execNpmCommand('compile');
 const runTests = () => {
   if (semver.satisfies(process.version, ">=6")) {
     return gulp.src(`${outDir}/test/**/*.js`)
-      .pipe(mocha({reporter: 'mocha-jenkins-reporter',
-                    require: ['ts-node/register']}));
+      .pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
   } else {
     console.log(`Skipping proto-loader tests for Node ${process.version}`);
     return Promise.resolve(null);
