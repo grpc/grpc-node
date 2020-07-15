@@ -68,8 +68,7 @@ const copyTestFixtures = checkTask(() => ncpP(`${jsCoreDir}/test/fixtures`, `${o
 
 const runTests = checkTask(() => {
   return gulp.src(`${outDir}/test/**/*.js`)
-    .pipe(mocha({reporter: 'mocha-jenkins-reporter',
-                 require: ['ts-node/register']}));
+    .pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
 });
 
 const test = gulp.series(install, copyTestFixtures, runTests);
