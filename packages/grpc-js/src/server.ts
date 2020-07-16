@@ -500,10 +500,11 @@ export class Server {
       }
     }
 
-    // If any sessions are active, close them gracefully.
-    pendingChecks += this.sessions.size;
     this.sessions.forEach((session) => {
-      session.close(maybeCallback);
+      if (!session.closed) {
+        pendingChecks += 1;
+        session.close(maybeCallback);
+      }
     });
     if (pendingChecks === 0) {
       callback();
@@ -608,6 +609,10 @@ export class Server {
       }
 
       this.sessions.add(session);
+
+      session.on('close', () => {
+        this.sessions.delete(session);
+      });
     });
   }
 }

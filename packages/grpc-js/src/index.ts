@@ -36,7 +36,7 @@ import {
   CallProperties,
   UnaryCallback,
 } from './client';
-import { LogVerbosity, Status } from './constants';
+import { LogVerbosity, Status, Propagate } from './constants';
 import * as logging from './logging';
 import {
   Deserialize,
@@ -127,6 +127,7 @@ export {
   LogVerbosity as logVerbosity,
   Status as status,
   ConnectivityState as connectivityState,
+  Propagate as propagate,
   // TODO: Other constants as well
 };
 

@@ -1,6 +1,6 @@
 {
   "name": "@grpc/grpc-js",
-  "version": "1.0.5",
+  "version": "1.1.2",
   "description": "gRPC Library for Node - pure JS implementation",
   "homepage": "https://grpc.io/",
   "repository": "https://github.com/grpc/grpc-node/tree/master/packages/grpc-js",
@@ -59,9 +59,6 @@
   },
   "dependencies": {
     "semver": "^6.2.0"
-  },
-  "peerDependencies": {
-    "google-auth-library": "5.x || 6.x"
   },
   "files": [
     "src/**/*.ts",

@@ -28,7 +28,7 @@ import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { getProxiedConnection, ProxyConnectionResult } from './http_proxy';
 import * as net from 'net';
-import { GrpcUri } from './uri-parser';
+import { GrpcUri, parseUri, splitHostPort } from './uri-parser';
 import { ConnectionOptions } from 'tls';
 import { FilterFactory, Filter } from './filter';
 
@@ -286,6 +286,9 @@ export class Subchannel {
   }
 
   private createSession(proxyConnectionResult: ProxyConnectionResult) {
+    const targetAuthority = getDefaultAuthority(
+      proxyConnectionResult.realTarget ?? this.channelTarget
+    );
     let connectionOptions: http2.SecureClientSessionOptions =
       this.credentials._getConnectionOptions() || {};
     let addressScheme = 'http://';
@@ -305,8 +308,18 @@ export class Subchannel {
           return checkServerIdentity(sslTargetNameOverride, cert);
         };
         connectionOptions.servername = sslTargetNameOverride;
+      } else {
+        const authorityHostname =
+          splitHostPort(targetAuthority)?.host ?? 'localhost';
+        // We want to always set servername to support SNI
+        connectionOptions.servername = authorityHostname;
       }
       if (proxyConnectionResult.socket) {
+        /* This is part of the workaround for
+         * https://github.com/nodejs/node/issues/32922. Without that bug,
+         * proxyConnectionResult.socket would always be a plaintext socket and
+         * this would say
+         * connectionOptions.socket = proxyConnectionResult.socket; */
         connectionOptions.createConnection = (authority, option) => {
           return proxyConnectionResult.socket!;
         };
@@ -350,10 +363,7 @@ export class Subchannel {
      * determines whether the connection will be established over TLS or not.
      */
     const session = http2.connect(
-      addressScheme +
-        getDefaultAuthority(
-          proxyConnectionResult.realTarget ?? this.channelTarget
-        ),
+      addressScheme + targetAuthority,
       connectionOptions
     );
     this.session = session;
@@ -404,6 +414,11 @@ export class Subchannel {
               KEEPALIVE_MAX_TIME_MS
             );
           }
+          trace(
+            this.subchannelAddress +
+              ' connection closed by GOAWAY with code ' +
+              errorCode
+          );
           this.transitionToState(
             [ConnectivityState.CONNECTING, ConnectivityState.READY],
             ConnectivityState.IDLE
@@ -446,6 +461,18 @@ export class Subchannel {
           return checkServerIdentity(sslTargetNameOverride, cert);
         };
         connectionOptions.servername = sslTargetNameOverride;
+      } else {
+        if ('grpc.http_connect_target' in this.options) {
+          /* This is more or less how servername will be set in createSession
+           * if a connection is successfully established through the proxy.
+           * If the proxy is not used, these connectionOptions are discarded
+           * anyway */
+          connectionOptions.servername = getDefaultAuthority(
+            parseUri(this.options['grpc.http_connect_target'] as string) ?? {
+              path: 'localhost',
+            }
+          );
+        }
       }
     }
 
@@ -640,7 +667,24 @@ export class Subchannel {
     headers[HTTP2_HEADER_METHOD] = 'POST';
     headers[HTTP2_HEADER_PATH] = callStream.getMethod();
     headers[HTTP2_HEADER_TE] = 'trailers';
-    const http2Stream = this.session!.request(headers);
+    let http2Stream: http2.ClientHttp2Stream;
+    /* In theory, if an error is thrown by session.request because session has
+     * become unusable (e.g. because it has received a goaway), this subchannel
+     * should soon see the corresponding close or goaway event anyway and leave
+     * READY. But we have seen reports that this does not happen
+     * (https://github.com/googleapis/nodejs-firestore/issues/1023#issuecomment-653204096)
+     * so for defense in depth, we just discard the session when we see an
+     * error here.
+     */
+    try {
+      http2Stream = this.session!.request(headers);
+    } catch (e) {
+      this.transitionToState(
+        [ConnectivityState.READY],
+        ConnectivityState.TRANSIENT_FAILURE
+      );
+      throw e;
+    }
     let headersString = '';
     for (const header of Object.keys(headers)) {
       headersString += '\t\t' + header + ': ' + headers[header] + '\n';
