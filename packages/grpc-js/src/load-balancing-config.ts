@@ -57,6 +57,24 @@ export interface WeightedTargetLbConfig {
   targets: Map<string, WeightedTarget>;
 }
 
+export interface EdsLbConfig {
+  cluster: string;
+  edsServiceName?: string;
+  lrsLoadReportingServerName?: string;
+  /**
+   * This policy's config is expected to be in the format used by the
+   * weighted_target policy. Defaults to weighted_target if not specified.
+   *
+   * This is currently not used because there is currently no other config
+   * that has the same format as weighted_target.
+   */
+  localityPickingPolicy: LoadBalancingConfig[];
+  /**
+   * Defaults to round_robin if not specified.
+   */
+  endpointPickingPolicy: LoadBalancingConfig[];
+}
+
 export interface PickFirstLoadBalancingConfig {
   name: 'pick_first';
   pick_first: PickFirstConfig;
@@ -87,13 +105,19 @@ export interface WeightedTargetLoadBalancingConfig {
   weighted_target: WeightedTargetLbConfig;
 }
 
+export interface EdsLoadBalancingConfig {
+  name: 'eds';
+  eds: EdsLbConfig;
+}
+
 export type LoadBalancingConfig =
   | PickFirstLoadBalancingConfig
   | RoundRobinLoadBalancingConfig
   | XdsLoadBalancingConfig
   | GrpcLbLoadBalancingConfig
   | PriorityLoadBalancingConfig
-  | WeightedTargetLoadBalancingConfig;
+  | WeightedTargetLoadBalancingConfig
+  | EdsLoadBalancingConfig;
 
 export function isRoundRobinLoadBalancingConfig(
   lbconfig: LoadBalancingConfig
@@ -123,6 +147,12 @@ export function isWeightedTargetLoadBalancingConfig(
   lbconfig: LoadBalancingConfig
 ): lbconfig is WeightedTargetLoadBalancingConfig {
   return lbconfig.name === 'weighted_target';
+}
+
+export function isEdsLoadBalancingConfig(
+  lbconfig: LoadBalancingConfig
+): lbconfig is EdsLoadBalancingConfig {
+  return lbconfig.name === 'eds';
 }
 
 /* In these functions we assume the input came from a JSON object. Therefore we
