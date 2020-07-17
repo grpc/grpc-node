@@ -15,18 +15,31 @@
  *
  */
 
-import { LoadBalancer, ChannelControlHelper, registerLoadBalancerType, getFirstUsableConfig } from "./load-balancer";
-import { SubchannelAddress } from "./subchannel";
-import { LoadBalancingConfig, isEdsLoadBalancingConfig, EdsLoadBalancingConfig, PriorityLbConfig, PriorityChild, WeightedTarget, PriorityLoadBalancingConfig } from "./load-balancing-config";
-import { ChildLoadBalancerHandler } from "./load-balancer-child-handler";
-import { XdsClient, Watcher } from "./xds-client";
-import { ClusterLoadAssignment__Output } from "./generated/envoy/api/v2/ClusterLoadAssignment";
-import { ConnectivityState } from "./channel";
-import { UnavailablePicker } from "./picker";
-import { Locality__Output } from "./generated/envoy/api/v2/core/Locality";
-import { LocalitySubchannelAddress } from "./load-balancer-priority";
-import { Status } from "./constants";
-import { Metadata } from "./metadata";
+import {
+  LoadBalancer,
+  ChannelControlHelper,
+  registerLoadBalancerType,
+  getFirstUsableConfig,
+} from './load-balancer';
+import { SubchannelAddress } from './subchannel';
+import {
+  LoadBalancingConfig,
+  isEdsLoadBalancingConfig,
+  EdsLoadBalancingConfig,
+  PriorityLbConfig,
+  PriorityChild,
+  WeightedTarget,
+  PriorityLoadBalancingConfig,
+} from './load-balancing-config';
+import { ChildLoadBalancerHandler } from './load-balancer-child-handler';
+import { XdsClient, Watcher } from './xds-client';
+import { ClusterLoadAssignment__Output } from './generated/envoy/api/v2/ClusterLoadAssignment';
+import { ConnectivityState } from './channel';
+import { UnavailablePicker } from './picker';
+import { Locality__Output } from './generated/envoy/api/v2/core/Locality';
+import { LocalitySubchannelAddress } from './load-balancer-priority';
+import { Status } from './constants';
+import { Metadata } from './metadata';
 
 const TYPE_NAME = 'eds';
 
@@ -55,7 +68,7 @@ export class EdsLoadBalancer implements LoadBalancer {
   private isWatcherActive = false;
 
   private lastestConfig: EdsLoadBalancingConfig | null = null;
-  private latestAttributes: {[key: string]: unknown} = {};
+  private latestAttributes: { [key: string]: unknown } = {};
   private latestEdsUpdate: ClusterLoadAssignment__Output | null = null;
 
   /**
@@ -73,7 +86,7 @@ export class EdsLoadBalancer implements LoadBalancer {
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
     this.childBalancer = new ChildLoadBalancerHandler(channelControlHelper);
     this.watcher = {
-      onValidUpdate: update => {
+      onValidUpdate: (update) => {
         this.latestEdsUpdate = update;
         this.updateChild();
       },
@@ -83,14 +96,17 @@ export class EdsLoadBalancer implements LoadBalancer {
       },
       onTransientError: (status) => {
         if (this.latestEdsUpdate === null) {
-          channelControlHelper.updateState(ConnectivityState.TRANSIENT_FAILURE, new UnavailablePicker({
-            code: Status.UNAVAILABLE,
-            details: `xDS request failed with error ${status.details}`,
-            metadata: new Metadata()
-          }));
+          channelControlHelper.updateState(
+            ConnectivityState.TRANSIENT_FAILURE,
+            new UnavailablePicker({
+              code: Status.UNAVAILABLE,
+              details: `xDS request failed with error ${status.details}`,
+              metadata: new Metadata(),
+            })
+          );
         }
-      }
-    }
+      },
+    };
   }
 
   /**
@@ -105,8 +121,15 @@ export class EdsLoadBalancer implements LoadBalancer {
      * Maps each priority number to the list of localities with that priority,
      * and the list of addresses associated with each locality.
      */
-    const priorityList: {locality: Locality__Output, weight: number, addresses: SubchannelAddress[]}[][] = [];
-    const newLocalityPriorities: Map<string, number> = new Map<string, number>();
+    const priorityList: {
+      locality: Locality__Output;
+      weight: number;
+      addresses: SubchannelAddress[];
+    }[][] = [];
+    const newLocalityPriorities: Map<string, number> = new Map<
+      string,
+      number
+    >();
     /* We are given a list of localities, each of which has a priority. This
      * loop consolidates localities into buckets by priority, while also
      * simplifying the data structure to make the later steps simpler */
@@ -116,23 +139,34 @@ export class EdsLoadBalancer implements LoadBalancer {
         localityArray = [];
         priorityList[endpoint.priority] = localityArray;
       }
-      const addresses: SubchannelAddress[] = endpoint.lb_endpoints.map(lbEndpoint => {
-        /* The validator in the XdsClient class ensures that each endpoint has
-         * a socket_address with an IP address and a port_value. */
-        const socketAddress = lbEndpoint.endpoint!.address.socket_address!;
-        return {host: socketAddress.address!, port: socketAddress.port_value!};
-      });
+      const addresses: SubchannelAddress[] = endpoint.lb_endpoints.map(
+        (lbEndpoint) => {
+          /* The validator in the XdsClient class ensures that each endpoint has
+           * a socket_address with an IP address and a port_value. */
+          const socketAddress = lbEndpoint.endpoint!.address.socket_address!;
+          return {
+            host: socketAddress.address!,
+            port: socketAddress.port_value!,
+          };
+        }
+      );
       localityArray.push({
         locality: endpoint.locality,
         addresses: addresses,
-        weight: endpoint.load_balancing_weight.value
+        weight: endpoint.load_balancing_weight.value,
       });
-      newLocalityPriorities.set(localityToName(endpoint.locality), endpoint.priority);
+      newLocalityPriorities.set(
+        localityToName(endpoint.locality),
+        endpoint.priority
+      );
     }
 
     const newPriorityNames: string[] = [];
     const addressList: LocalitySubchannelAddress[] = [];
-    const priorityChildren: Map<string, PriorityChild> = new Map<string, PriorityChild>();
+    const priorityChildren: Map<string, PriorityChild> = new Map<
+      string,
+      PriorityChild
+    >();
     /* The algorithm here is as follows: for each priority we are given, from
      * high to low:
      * - If the previous mapping had any of the same localities at the same or
@@ -150,8 +184,14 @@ export class EdsLoadBalancer implements LoadBalancer {
        */
       let highestOldPriority = Infinity;
       for (const localityObj of localityArray) {
-        const oldPriority = this.localityPriorities.get(localityToName(localityObj.locality));
-        if (oldPriority !== undefined && oldPriority >= priority && oldPriority < highestOldPriority) {
+        const oldPriority = this.localityPriorities.get(
+          localityToName(localityObj.locality)
+        );
+        if (
+          oldPriority !== undefined &&
+          oldPriority >= priority &&
+          oldPriority < highestOldPriority
+        ) {
           highestOldPriority = oldPriority;
         }
       }
@@ -171,7 +211,10 @@ export class EdsLoadBalancer implements LoadBalancer {
       }
       newPriorityNames[priority] = newPriorityName;
 
-      const childTargets: Map<string, WeightedTarget> = new Map<string, WeightedTarget>();
+      const childTargets: Map<string, WeightedTarget> = new Map<
+        string,
+        WeightedTarget
+      >();
       for (const localityObj of localityArray) {
         childTargets.set(localityToName(localityObj.locality), {
           weight: localityObj.weight,
@@ -179,23 +222,31 @@ export class EdsLoadBalancer implements LoadBalancer {
            * config after implementing lrs */
           /* Use the endpoint picking policy from the config, default to
            * round_robin. */
-          child_policy: [...this.lastestConfig.eds.endpointPickingPolicy, {name: 'round_robin', round_robin: {}}]
+          child_policy: [
+            ...this.lastestConfig.eds.endpointPickingPolicy,
+            { name: 'round_robin', round_robin: {} },
+          ],
         });
         for (const address of localityObj.addresses) {
           addressList.push({
-            localityPath: [newPriorityName, localityToName(localityObj.locality)],
-            ...address
+            localityPath: [
+              newPriorityName,
+              localityToName(localityObj.locality),
+            ],
+            ...address,
           });
         }
       }
 
       priorityChildren.set(newPriorityName, {
-        config: [{
-          name: 'weighted_target',
-          weighted_target: {
-            targets: childTargets
-          }
-        }]
+        config: [
+          {
+            name: 'weighted_target',
+            weighted_target: {
+              targets: childTargets,
+            },
+          },
+        ],
       });
     }
     const childConfig: PriorityLoadBalancingConfig = {
@@ -203,17 +254,25 @@ export class EdsLoadBalancer implements LoadBalancer {
       priority: {
         children: priorityChildren,
         /* Contract the priority names array if it is sparse. This config only
-        * cares about the order of priorities, not their specific numbers */
-        priorities: newPriorityNames.filter(value => value !== undefined)
-      }
+         * cares about the order of priorities, not their specific numbers */
+        priorities: newPriorityNames.filter((value) => value !== undefined),
+      },
     };
-    this.childBalancer.updateAddressList(addressList, childConfig, this.latestAttributes);
+    this.childBalancer.updateAddressList(
+      addressList,
+      childConfig,
+      this.latestAttributes
+    );
 
     this.localityPriorities = newLocalityPriorities;
     this.priorityNames = newPriorityNames;
   }
 
-  updateAddressList(addressList: SubchannelAddress[], lbConfig: LoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+  updateAddressList(
+    addressList: SubchannelAddress[],
+    lbConfig: LoadBalancingConfig,
+    attributes: { [key: string]: unknown }
+  ): void {
     if (!isEdsLoadBalancingConfig(lbConfig)) {
       return;
     }
