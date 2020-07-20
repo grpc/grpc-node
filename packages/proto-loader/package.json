@@ -52,7 +52,7 @@
   "devDependencies": {
     "@types/lodash.camelcase": "^4.3.4",
     "@types/mkdirp": "^1.0.1",
-    "@types/mocha": "^7.0.2",
+    "@types/mocha": "^5.2.7",
     "@types/node": "^10.17.26",
     "@types/yargs": "^15.0.5",
     "clang-format": "^1.2.2",
