@@ -35,7 +35,7 @@ export interface _envoy_type_matcher_RegexMatcher_GoogleRE2__Output {
    * This field is deprecated; regexp validation should be performed on the management server
    * instead of being done by each individual client.
    */
-  'max_program_size': (_google_protobuf_UInt32Value__Output);
+  'max_program_size'?: (_google_protobuf_UInt32Value__Output);
 }
 
 /**

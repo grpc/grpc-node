@@ -35,5 +35,5 @@ export interface Decorator__Output {
   /**
    * Whether the decorated details should be propagated to the other party. The default is true.
    */
-  'propagate': (_google_protobuf_BoolValue__Output);
+  'propagate'?: (_google_protobuf_BoolValue__Output);
 }

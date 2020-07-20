@@ -29,10 +29,10 @@ export interface RetryPolicy__Output {
    * This parameter is optional, in which case the default base interval is 1000 milliseconds. The
    * default maximum interval is 10 times the base interval.
    */
-  'retry_back_off': (_envoy_api_v2_core_BackoffStrategy__Output);
+  'retry_back_off'?: (_envoy_api_v2_core_BackoffStrategy__Output);
   /**
    * Specifies the allowed number of retries. This parameter is optional and
    * defaults to 1.
    */
-  'num_retries': (_google_protobuf_UInt32Value__Output);
+  'num_retries'?: (_google_protobuf_UInt32Value__Output);
 }

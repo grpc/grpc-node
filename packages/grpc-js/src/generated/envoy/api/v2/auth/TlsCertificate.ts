@@ -47,20 +47,20 @@ export interface TlsCertificate__Output {
   /**
    * The TLS certificate chain.
    */
-  'certificate_chain': (_envoy_api_v2_core_DataSource__Output);
+  'certificate_chain'?: (_envoy_api_v2_core_DataSource__Output);
   /**
    * The TLS private key.
    */
-  'private_key': (_envoy_api_v2_core_DataSource__Output);
+  'private_key'?: (_envoy_api_v2_core_DataSource__Output);
   /**
    * The password to decrypt the TLS private key. If this field is not set, it is assumed that the
    * TLS private key is not password encrypted.
    */
-  'password': (_envoy_api_v2_core_DataSource__Output);
+  'password'?: (_envoy_api_v2_core_DataSource__Output);
   /**
    * [#not-implemented-hide:]
    */
-  'ocsp_staple': (_envoy_api_v2_core_DataSource__Output);
+  'ocsp_staple'?: (_envoy_api_v2_core_DataSource__Output);
   /**
    * [#not-implemented-hide:]
    */
@@ -74,5 +74,5 @@ export interface TlsCertificate__Output {
    * <envoy_api_field_auth.TlsCertificate.private_key_provider>` fields will result in an
    * error.
    */
-  'private_key_provider': (_envoy_api_v2_auth_PrivateKeyProvider__Output);
+  'private_key_provider'?: (_envoy_api_v2_auth_PrivateKeyProvider__Output);
 }

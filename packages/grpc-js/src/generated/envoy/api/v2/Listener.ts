@@ -70,7 +70,7 @@ export interface _envoy_api_v2_Listener_DeprecatedV1__Output {
    * 
    * [#comment:TODO(PiotrSikora): Remove this once verified that we no longer need it.]
    */
-  'bind_to_port': (_google_protobuf_BoolValue__Output);
+  'bind_to_port'?: (_google_protobuf_BoolValue__Output);
 }
 
 // Original file: deps/envoy-api/envoy/api/v2/listener.proto
@@ -322,7 +322,7 @@ export interface Listener__Output {
    * that is governed by the bind rules of the OS. E.g., multiple listeners can listen on port 0 on
    * Linux as the actual port will be allocated by the OS.
    */
-  'address': (_envoy_api_v2_core_Address__Output);
+  'address'?: (_envoy_api_v2_core_Address__Output);
   /**
    * A list of filter chains to consider for this listener. The
    * :ref:`FilterChain <envoy_api_msg_listener.FilterChain>` with the most specific
@@ -350,20 +350,20 @@ export interface Listener__Output {
    * will be removed, as filter chain matching can be used to select a filter chain based on the
    * restored destination address.
    */
-  'use_original_dst': (_google_protobuf_BoolValue__Output);
+  'use_original_dst'?: (_google_protobuf_BoolValue__Output);
   /**
    * Soft limit on size of the listener’s new connection read and write buffers.
    * If unspecified, an implementation defined default is applied (1MiB).
    */
-  'per_connection_buffer_limit_bytes': (_google_protobuf_UInt32Value__Output);
+  'per_connection_buffer_limit_bytes'?: (_google_protobuf_UInt32Value__Output);
   /**
    * Listener metadata.
    */
-  'metadata': (_envoy_api_v2_core_Metadata__Output);
+  'metadata'?: (_envoy_api_v2_core_Metadata__Output);
   /**
    * [#not-implemented-hide:]
    */
-  'deprecated_v1': (_envoy_api_v2_Listener_DeprecatedV1__Output);
+  'deprecated_v1'?: (_envoy_api_v2_Listener_DeprecatedV1__Output);
   /**
    * The type of draining to perform at a listener-wide level.
    */
@@ -396,7 +396,7 @@ export interface Listener__Output {
    * When this flag is not set (default), the socket is not modified, i.e. the transparent option
    * is neither set nor reset.
    */
-  'transparent': (_google_protobuf_BoolValue__Output);
+  'transparent'?: (_google_protobuf_BoolValue__Output);
   /**
    * Whether the listener should set the *IP_FREEBIND* socket option. When this
    * flag is set to true, listeners can be bound to an IP address that is not
@@ -405,7 +405,7 @@ export interface Listener__Output {
    * (default), the socket is not modified, i.e. the option is neither enabled
    * nor disabled.
    */
-  'freebind': (_google_protobuf_BoolValue__Output);
+  'freebind'?: (_google_protobuf_BoolValue__Output);
   /**
    * Whether the listener should accept TCP Fast Open (TFO) connections.
    * When this flag is set to a value greater than 0, the option TCP_FASTOPEN is enabled on
@@ -422,7 +422,7 @@ export interface Listener__Output {
    * On macOS, only values of 0, 1, and unset are valid; other values may result in an error.
    * To set the queue length on macOS, set the net.inet.tcp.fastopen_backlog kernel parameter.
    */
-  'tcp_fast_open_queue_length': (_google_protobuf_UInt32Value__Output);
+  'tcp_fast_open_queue_length'?: (_google_protobuf_UInt32Value__Output);
   /**
    * Additional socket options that may not be present in Envoy source code or
    * precompiled binaries.
@@ -434,7 +434,7 @@ export interface Listener__Output {
    * `continue_on_listener_filters_timeout` is set to true. Specify 0 to disable the
    * timeout. If not specified, a default timeout of 15s is used.
    */
-  'listener_filters_timeout': (_google_protobuf_Duration__Output);
+  'listener_filters_timeout'?: (_google_protobuf_Duration__Output);
   /**
    * Specifies the intended direction of the traffic relative to the local Envoy.
    */
@@ -457,7 +457,7 @@ export interface Listener__Output {
    * <envoy_api_field_listener.UdpListenerConfig.udp_listener_name>` = "raw_udp_listener" for
    * creating a packet-oriented UDP listener. If not present, treat it as "raw_udp_listener".
    */
-  'udp_listener_config': (_envoy_api_v2_listener_UdpListenerConfig__Output);
+  'udp_listener_config'?: (_envoy_api_v2_listener_UdpListenerConfig__Output);
   /**
    * Used to represent an API listener, which is used in non-proxy clients. The type of API
    * exposed to the non-proxy application depends on the type of API listener.
@@ -476,13 +476,13 @@ export interface Listener__Output {
    * socket listener and the various types of API listener. That way, a given Listener message
    * can structurally only contain the fields of the relevant type.]
    */
-  'api_listener': (_envoy_config_listener_v2_ApiListener__Output);
+  'api_listener'?: (_envoy_config_listener_v2_ApiListener__Output);
   /**
    * The listener's connection balancer configuration, currently only applicable to TCP listeners.
    * If no configuration is specified, Envoy will not attempt to balance active connections between
    * worker threads.
    */
-  'connection_balance_config': (_envoy_api_v2_Listener_ConnectionBalanceConfig__Output);
+  'connection_balance_config'?: (_envoy_api_v2_Listener_ConnectionBalanceConfig__Output);
   /**
    * When this flag is set to true, listeners set the *SO_REUSEPORT* socket option and
    * create one socket for each worker thread. This makes inbound connections

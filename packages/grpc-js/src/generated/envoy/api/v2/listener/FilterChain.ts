@@ -71,7 +71,7 @@ export interface FilterChain__Output {
   /**
    * The criteria to use when matching a connection to this filter chain.
    */
-  'filter_chain_match': (_envoy_api_v2_listener_FilterChainMatch__Output);
+  'filter_chain_match'?: (_envoy_api_v2_listener_FilterChainMatch__Output);
   /**
    * The TLS context for this filter chain.
    * 
@@ -80,7 +80,7 @@ export interface FilterChain__Output {
    * **This field is deprecated**. Use `transport_socket` with name `tls` instead. If both are
    * set, `transport_socket` takes priority.
    */
-  'tls_context': (_envoy_api_v2_auth_DownstreamTlsContext__Output);
+  'tls_context'?: (_envoy_api_v2_auth_DownstreamTlsContext__Output);
   /**
    * A list of individual network filters that make up the filter chain for
    * connections established with the listener. Order matters as the filters are
@@ -96,11 +96,11 @@ export interface FilterChain__Output {
    * absent or set to false, Envoy will use the physical peer address of the
    * connection as the remote address.
    */
-  'use_proxy_proto': (_google_protobuf_BoolValue__Output);
+  'use_proxy_proto'?: (_google_protobuf_BoolValue__Output);
   /**
    * [#not-implemented-hide:] filter chain metadata.
    */
-  'metadata': (_envoy_api_v2_core_Metadata__Output);
+  'metadata'?: (_envoy_api_v2_core_Metadata__Output);
   /**
    * Optional custom transport socket implementation to use for downstream connections.
    * To setup TLS, set a transport socket with name `tls` and
@@ -108,7 +108,7 @@ export interface FilterChain__Output {
    * If no transport socket configuration is specified, new connections
    * will be set up with plaintext.
    */
-  'transport_socket': (_envoy_api_v2_core_TransportSocket__Output);
+  'transport_socket'?: (_envoy_api_v2_core_TransportSocket__Output);
   /**
    * [#not-implemented-hide:] The unique name (or empty) by which this filter chain is known. If no
    * name is provided, Envoy will allocate an internal UUID for the filter chain. If the filter

@@ -105,7 +105,7 @@ export interface _envoy_api_v2_route_RouteAction_HashPolicy_Cookie__Output {
    * not present. If the TTL is present and zero, the generated cookie will
    * be a session cookie.
    */
-  'ttl': (_google_protobuf_Duration__Output);
+  'ttl'?: (_google_protobuf_Duration__Output);
   /**
    * The name of the path for the cookie. If no path is specified here, no path
    * will be set for the cookie.
@@ -378,11 +378,11 @@ export interface _envoy_api_v2_route_RouteAction_RequestMirrorPolicy__Output {
    * number is <= the value of the numerator N, or if the key is not present, the default
    * value, the request will be mirrored.
    */
-  'runtime_fraction': (_envoy_api_v2_core_RuntimeFractionalPercent__Output);
+  'runtime_fraction'?: (_envoy_api_v2_core_RuntimeFractionalPercent__Output);
   /**
    * Determines if the trace span should be sampled. Defaults to true.
    */
-  'trace_sampled': (_google_protobuf_BoolValue__Output);
+  'trace_sampled'?: (_google_protobuf_BoolValue__Output);
 }
 
 /**
@@ -424,7 +424,7 @@ export interface _envoy_api_v2_route_RouteAction_UpgradeConfig__Output {
   /**
    * Determines if upgrades are available on this route. Defaults to true.
    */
-  'enabled': (_google_protobuf_BoolValue__Output);
+  'enabled'?: (_google_protobuf_BoolValue__Output);
 }
 
 /**
@@ -751,7 +751,7 @@ export interface RouteAction__Output {
    * <envoy_api_field_route.RouteAction.weighted_clusters>`, metadata will be merged, with values
    * provided there taking precedence. The filter name should be specified as *envoy.lb*.
    */
-  'metadata_match': (_envoy_api_v2_core_Metadata__Output);
+  'metadata_match'?: (_envoy_api_v2_core_Metadata__Output);
   /**
    * Indicates that during forwarding, the matched prefix (or path) should be
    * swapped with this value. This option allows application URLs to be rooted
@@ -812,13 +812,13 @@ export interface RouteAction__Output {
    * :ref:`config_http_filters_router_x-envoy-upstream-rq-per-try-timeout-ms`, and the
    * :ref:`retry overview <arch_overview_http_routing_retry>`.
    */
-  'timeout': (_google_protobuf_Duration__Output);
+  'timeout'?: (_google_protobuf_Duration__Output);
   /**
    * Indicates that the route has a retry policy. Note that if this is set,
    * it'll take precedence over the virtual host level retry policy entirely
    * (e.g.: policies are not merged, most internal one becomes the enforced policy).
    */
-  'retry_policy': (_envoy_api_v2_route_RetryPolicy__Output);
+  'retry_policy'?: (_envoy_api_v2_route_RetryPolicy__Output);
   /**
    * Indicates that the route has a request mirroring policy.
    * 
@@ -826,7 +826,7 @@ export interface RouteAction__Output {
    * This field has been deprecated in favor of `request_mirror_policies` which supports one or
    * more mirroring policies.
    */
-  'request_mirror_policy': (_envoy_api_v2_route_RouteAction_RequestMirrorPolicy__Output);
+  'request_mirror_policy'?: (_envoy_api_v2_route_RouteAction_RequestMirrorPolicy__Output);
   /**
    * Optionally specifies the :ref:`routing priority <arch_overview_http_routing_priority>`.
    */
@@ -842,7 +842,7 @@ export interface RouteAction__Output {
    * :ref:`rate_limits <envoy_api_field_route.VirtualHost.rate_limits>` are not applied to the
    * request.
    */
-  'include_vh_rate_limits': (_google_protobuf_BoolValue__Output);
+  'include_vh_rate_limits'?: (_google_protobuf_BoolValue__Output);
   /**
    * Specifies a list of hash policies to use for ring hash load balancing. Each
    * hash policy is evaluated individually and the combined result is used to
@@ -861,7 +861,7 @@ export interface RouteAction__Output {
   /**
    * Indicates that the route has a CORS policy.
    */
-  'cors': (_envoy_api_v2_route_CorsPolicy__Output);
+  'cors'?: (_envoy_api_v2_route_CorsPolicy__Output);
   /**
    * The HTTP status code to use when configured cluster is not found.
    * The default response code is 503 Service Unavailable.
@@ -888,7 +888,7 @@ export interface RouteAction__Output {
    * :ref:`config_http_filters_router_x-envoy-upstream-rq-per-try-timeout-ms`, and the
    * :ref:`retry overview <arch_overview_http_routing_retry>`.
    */
-  'max_grpc_timeout': (_google_protobuf_Duration__Output);
+  'max_grpc_timeout'?: (_google_protobuf_Duration__Output);
   /**
    * Specifies the idle timeout for the route. If not specified, there is no per-route idle timeout,
    * although the connection manager wide :ref:`stream_idle_timeout
@@ -909,7 +909,7 @@ export interface RouteAction__Output {
    * upstream response header has been received, otherwise a stream reset
    * occurs.
    */
-  'idle_timeout': (_google_protobuf_Duration__Output);
+  'idle_timeout'?: (_google_protobuf_Duration__Output);
   'upgrade_configs': (_envoy_api_v2_route_RouteAction_UpgradeConfig__Output)[];
   'internal_redirect_action': (keyof typeof _envoy_api_v2_route_RouteAction_InternalRedirectAction);
   /**
@@ -917,7 +917,7 @@ export interface RouteAction__Output {
    * it'll take precedence over the virtual host level hedge policy entirely
    * (e.g.: policies are not merged, most internal one becomes the enforced policy).
    */
-  'hedge_policy': (_envoy_api_v2_route_HedgePolicy__Output);
+  'hedge_policy'?: (_envoy_api_v2_route_HedgePolicy__Output);
   /**
    * If present, Envoy will adjust the timeout provided by the `grpc-timeout` header by subtracting
    * the provided duration from the header. This is useful in allowing Envoy to set its global
@@ -927,7 +927,7 @@ export interface RouteAction__Output {
    * ensures that the offset will only ever decrease the timeout and never set it to 0 (meaning
    * infinity).
    */
-  'grpc_timeout_offset': (_google_protobuf_Duration__Output);
+  'grpc_timeout_offset'?: (_google_protobuf_Duration__Output);
   /**
    * Indicates that during forwarding, the host header will be swapped with the content of given
    * downstream or :ref:`custom <config_http_conn_man_headers_custom_request_headers>` header.
@@ -959,7 +959,7 @@ export interface RouteAction__Output {
    * 
    * If not specified, at most one redirect will be followed.
    */
-  'max_internal_redirects': (_google_protobuf_UInt32Value__Output);
+  'max_internal_redirects'?: (_google_protobuf_UInt32Value__Output);
   /**
    * Indicates that during forwarding, portions of the path that match the
    * pattern should be rewritten, even allowing the substitution of capture
@@ -990,7 +990,7 @@ export interface RouteAction__Output {
    * would do a case-insensitive match and transform path ``/aaa/XxX/bbb`` to
    * ``/aaa/yyy/bbb``.
    */
-  'regex_rewrite': (_envoy_type_matcher_RegexMatchAndSubstitute__Output);
+  'regex_rewrite'?: (_envoy_type_matcher_RegexMatchAndSubstitute__Output);
   /**
    * [#not-implemented-hide:]
    * Specifies the configuration for retry policy extension. Note that if this is set, it'll take
@@ -998,7 +998,7 @@ export interface RouteAction__Output {
    * most internal one becomes the enforced policy). :ref:`Retry policy <envoy_api_field_route.VirtualHost.retry_policy>`
    * should not be set if this field is used.
    */
-  'retry_policy_typed_config': (_google_protobuf_Any__Output);
+  'retry_policy_typed_config'?: (_google_protobuf_Any__Output);
   'cluster_specifier': "cluster"|"cluster_header"|"weighted_clusters";
   'host_rewrite_specifier': "host_rewrite"|"auto_host_rewrite"|"auto_host_rewrite_header";
 }

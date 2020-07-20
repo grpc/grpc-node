@@ -25,10 +25,10 @@ export interface HeaderValueOption__Output {
   /**
    * Header name/value pair that this option applies to.
    */
-  'header': (_envoy_api_v2_core_HeaderValue__Output);
+  'header'?: (_envoy_api_v2_core_HeaderValue__Output);
   /**
    * Should the value be appended? If true (default), the value is appended to
    * existing values.
    */
-  'append': (_google_protobuf_BoolValue__Output);
+  'append'?: (_google_protobuf_BoolValue__Output);
 }

@@ -44,14 +44,14 @@ export interface HedgePolicy__Output {
    * Defaults to 1.
    * [#not-implemented-hide:]
    */
-  'initial_requests': (_google_protobuf_UInt32Value__Output);
+  'initial_requests'?: (_google_protobuf_UInt32Value__Output);
   /**
    * Specifies a probability that an additional upstream request should be sent
    * on top of what is specified by initial_requests.
    * Defaults to 0.
    * [#not-implemented-hide:]
    */
-  'additional_request_chance': (_envoy_type_FractionalPercent__Output);
+  'additional_request_chance'?: (_envoy_type_FractionalPercent__Output);
   /**
    * Indicates that a hedged request should be sent when the per-try timeout
    * is hit. This will only occur if the retry policy also indicates that a

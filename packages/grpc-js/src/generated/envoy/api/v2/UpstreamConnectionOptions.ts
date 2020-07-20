@@ -13,5 +13,5 @@ export interface UpstreamConnectionOptions__Output {
   /**
    * If set then set SO_KEEPALIVE on the socket to enable TCP Keepalives.
    */
-  'tcp_keepalive': (_envoy_api_v2_core_TcpKeepalive__Output);
+  'tcp_keepalive'?: (_envoy_api_v2_core_TcpKeepalive__Output);
 }

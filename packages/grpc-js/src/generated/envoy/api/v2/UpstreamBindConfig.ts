@@ -21,5 +21,5 @@ export interface UpstreamBindConfig__Output {
   /**
    * The address Envoy should bind to when establishing upstream connections.
    */
-  'source_address': (_envoy_api_v2_core_Address__Output);
+  'source_address'?: (_envoy_api_v2_core_Address__Output);
 }

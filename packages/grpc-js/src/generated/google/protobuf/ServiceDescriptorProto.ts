@@ -12,5 +12,5 @@ export interface ServiceDescriptorProto {
 export interface ServiceDescriptorProto__Output {
   'name': (string);
   'method': (_google_protobuf_MethodDescriptorProto__Output)[];
-  'options': (_google_protobuf_ServiceOptions__Output);
+  'options'?: (_google_protobuf_ServiceOptions__Output);
 }

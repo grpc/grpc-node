@@ -13,5 +13,5 @@ export interface GrpcProtocolOptions {
  * [#not-implemented-hide:]
  */
 export interface GrpcProtocolOptions__Output {
-  'http2_protocol_options': (_envoy_api_v2_core_Http2ProtocolOptions__Output);
+  'http2_protocol_options'?: (_envoy_api_v2_core_Http2ProtocolOptions__Output);
 }

@@ -108,7 +108,7 @@ export interface ApiConfigSource__Output {
   /**
    * For REST APIs, the delay between successive polls.
    */
-  'refresh_delay': (_google_protobuf_Duration__Output);
+  'refresh_delay'?: (_google_protobuf_Duration__Output);
   /**
    * Multiple gRPC services be provided for GRPC. If > 1 cluster is defined,
    * services will be cycled through if any kind of failure occurs.
@@ -117,12 +117,12 @@ export interface ApiConfigSource__Output {
   /**
    * For REST APIs, the request timeout. If not set, a default value of 1s will be used.
    */
-  'request_timeout': (_google_protobuf_Duration__Output);
+  'request_timeout'?: (_google_protobuf_Duration__Output);
   /**
    * For GRPC APIs, the rate limit settings. If present, discovery requests made by Envoy will be
    * rate limited.
    */
-  'rate_limit_settings': (_envoy_api_v2_core_RateLimitSettings__Output);
+  'rate_limit_settings'?: (_envoy_api_v2_core_RateLimitSettings__Output);
   /**
    * Skip the node identifier in subsequent discovery requests for streaming gRPC config types.
    */

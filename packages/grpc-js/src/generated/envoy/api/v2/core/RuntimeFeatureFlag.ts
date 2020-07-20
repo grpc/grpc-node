@@ -25,7 +25,7 @@ export interface RuntimeFeatureFlag__Output {
   /**
    * Default value if runtime value is not available.
    */
-  'default_value': (_google_protobuf_BoolValue__Output);
+  'default_value'?: (_google_protobuf_BoolValue__Output);
   /**
    * Runtime key to get value for comparison. This value is used if defined. The boolean value must
    * be represented via its

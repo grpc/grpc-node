@@ -41,7 +41,7 @@ export interface RuntimeFractionalPercent__Output {
   /**
    * Default value if the runtime value's for the numerator/denominator keys are not available.
    */
-  'default_value': (_envoy_type_FractionalPercent__Output);
+  'default_value'?: (_envoy_type_FractionalPercent__Output);
   /**
    * Runtime key for a YAML representation of a FractionalPercent.
    */

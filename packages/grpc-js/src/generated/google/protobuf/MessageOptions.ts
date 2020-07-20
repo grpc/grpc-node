@@ -20,5 +20,5 @@ export interface MessageOptions__Output {
   'mapEntry': (boolean);
   'uninterpretedOption': (_google_protobuf_UninterpretedOption__Output)[];
   '.validate.disabled': (boolean);
-  '.udpa.annotations.message_migrate': (_udpa_annotations_MigrateAnnotation__Output);
+  '.udpa.annotations.message_migrate'?: (_udpa_annotations_MigrateAnnotation__Output);
 }

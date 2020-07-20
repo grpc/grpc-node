@@ -14,5 +14,5 @@ export interface EnumOptions__Output {
   'allowAlias': (boolean);
   'deprecated': (boolean);
   'uninterpretedOption': (_google_protobuf_UninterpretedOption__Output)[];
-  '.udpa.annotations.enum_migrate': (_udpa_annotations_MigrateAnnotation__Output);
+  '.udpa.annotations.enum_migrate'?: (_udpa_annotations_MigrateAnnotation__Output);
 }

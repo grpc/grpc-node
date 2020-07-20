@@ -59,7 +59,7 @@ export interface Route {
    * specific; see the :ref:`HTTP filter documentation <config_http_filters>` for
    * if and how it is utilized.
    */
-  'per_filter_config'?: (_google_protobuf_Struct);
+  'per_filter_config'?: ({[key: string]: _google_protobuf_Struct});
   /**
    * Specifies a set of headers that will be added to requests matching this
    * route. Headers specified at this level are applied before headers from the
@@ -95,7 +95,7 @@ export interface Route {
    * specific; see the :ref:`HTTP filter documentation <config_http_filters>` for
    * if and how it is utilized.
    */
-  'typed_per_filter_config'?: (_google_protobuf_Any);
+  'typed_per_filter_config'?: ({[key: string]: _google_protobuf_Any});
   /**
    * Name for the route.
    */
@@ -134,7 +134,7 @@ export interface Route__Output {
   /**
    * Route matching parameters.
    */
-  'match': (_envoy_api_v2_route_RouteMatch__Output);
+  'match'?: (_envoy_api_v2_route_RouteMatch__Output);
   /**
    * Route request to some upstream cluster.
    */
@@ -150,11 +150,11 @@ export interface Route__Output {
    * For instance, if the metadata is intended for the Router filter,
    * the filter name should be specified as *envoy.filters.http.router*.
    */
-  'metadata': (_envoy_api_v2_core_Metadata__Output);
+  'metadata'?: (_envoy_api_v2_core_Metadata__Output);
   /**
    * Decorator for the matched route.
    */
-  'decorator': (_envoy_api_v2_route_Decorator__Output);
+  'decorator'?: (_envoy_api_v2_route_Decorator__Output);
   /**
    * Return an arbitrary HTTP response directly, without proxying.
    */
@@ -166,7 +166,7 @@ export interface Route__Output {
    * specific; see the :ref:`HTTP filter documentation <config_http_filters>` for
    * if and how it is utilized.
    */
-  'per_filter_config': (_google_protobuf_Struct__Output);
+  'per_filter_config'?: ({[key: string]: _google_protobuf_Struct__Output});
   /**
    * Specifies a set of headers that will be added to requests matching this
    * route. Headers specified at this level are applied before headers from the
@@ -202,7 +202,7 @@ export interface Route__Output {
    * specific; see the :ref:`HTTP filter documentation <config_http_filters>` for
    * if and how it is utilized.
    */
-  'typed_per_filter_config': (_google_protobuf_Any__Output);
+  'typed_per_filter_config'?: ({[key: string]: _google_protobuf_Any__Output});
   /**
    * Name for the route.
    */
@@ -211,13 +211,13 @@ export interface Route__Output {
    * Presence of the object defines whether the connection manager's tracing configuration
    * is overridden by this route specific instance.
    */
-  'tracing': (_envoy_api_v2_route_Tracing__Output);
+  'tracing'?: (_envoy_api_v2_route_Tracing__Output);
   /**
    * The maximum bytes which will be buffered for retries and shadowing.
    * If set, the bytes actually buffered will be the minimum value of this and the
    * listener per_connection_buffer_limit_bytes.
    */
-  'per_request_buffer_limit_bytes': (_google_protobuf_UInt32Value__Output);
+  'per_request_buffer_limit_bytes'?: (_google_protobuf_UInt32Value__Output);
   /**
    * [#not-implemented-hide:]
    * If true, a filter will define the action (e.g., it could dynamically generate the

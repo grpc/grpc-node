@@ -90,7 +90,7 @@ export interface FieldRules__Output {
    * Complex Field Types
    */
   'enum'?: (_validate_EnumRules__Output);
-  'message': (_validate_MessageRules__Output);
+  'message'?: (_validate_MessageRules__Output);
   'repeated'?: (_validate_RepeatedRules__Output);
   'map'?: (_validate_MapRules__Output);
   /**
