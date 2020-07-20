@@ -75,6 +75,10 @@ export interface EdsLbConfig {
   endpointPickingPolicy: LoadBalancingConfig[];
 }
 
+export interface CdsLbConfig {
+  cluster: string;
+}
+
 export interface PickFirstLoadBalancingConfig {
   name: 'pick_first';
   pick_first: PickFirstConfig;
@@ -110,6 +114,11 @@ export interface EdsLoadBalancingConfig {
   eds: EdsLbConfig;
 }
 
+export interface CdsLoadBalancingConfig {
+  name: 'cds';
+  cds: CdsLbConfig;
+}
+
 export type LoadBalancingConfig =
   | PickFirstLoadBalancingConfig
   | RoundRobinLoadBalancingConfig
@@ -117,7 +126,8 @@ export type LoadBalancingConfig =
   | GrpcLbLoadBalancingConfig
   | PriorityLoadBalancingConfig
   | WeightedTargetLoadBalancingConfig
-  | EdsLoadBalancingConfig;
+  | EdsLoadBalancingConfig
+  | CdsLoadBalancingConfig;
 
 export function isRoundRobinLoadBalancingConfig(
   lbconfig: LoadBalancingConfig
@@ -153,6 +163,12 @@ export function isEdsLoadBalancingConfig(
   lbconfig: LoadBalancingConfig
 ): lbconfig is EdsLoadBalancingConfig {
   return lbconfig.name === 'eds';
+}
+
+export function isCdsLoadBalancingConfig(
+  lbconfig: LoadBalancingConfig
+): lbconfig is CdsLoadBalancingConfig {
+  return lbconfig.name === 'cds';
 }
 
 /* In these functions we assume the input came from a JSON object. Therefore we

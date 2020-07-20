@@ -33,6 +33,7 @@ import { AggregatedDiscoveryServiceClient } from './generated/envoy/service/disc
 import { DiscoveryRequest } from './generated/envoy/api/v2/DiscoveryRequest';
 import { DiscoveryResponse__Output } from './generated/envoy/api/v2/DiscoveryResponse';
 import { ClusterLoadAssignment__Output } from './generated/envoy/api/v2/ClusterLoadAssignment';
+import { Cluster__Output } from './generated/envoy/api/v2/Cluster';
 
 const TRACER_NAME = 'xds_client';
 
@@ -43,6 +44,7 @@ function trace(text: string): void {
 const clientVersion = require('../../package.json').version;
 
 const EDS_TYPE_URL = 'type.googleapis.com/envoy.api.v2.ClusterLoadAssignment';
+const CDS_TYPE_URL = 'type.googleapis.com/envoy.api.v2.Cluster'
 
 let loadedProtos: Promise<adsTypes.ProtoGrpcType> | null = null;
 
@@ -105,6 +107,10 @@ export class XdsClient {
   > = new Map<string, Watcher<ClusterLoadAssignment__Output>[]>();
   private lastEdsVersionInfo = '';
   private lastEdsNonce = '';
+  
+  private clusterWatchers: Map<string, Watcher<Cluster__Output>[]> = new Map<string, Watcher<Cluster__Output>[]>();
+  private lastCdsVersionInfo = '';
+  private lastCdsNonce = '';
 
   constructor(
     private targetName: string,
@@ -209,6 +215,36 @@ export class XdsClient {
           this.ackEds();
           break;
         }
+        case CDS_TYPE_URL:
+          const cdsResponses: Cluster__Output[] = [];
+          for (const resource of message.resources) {
+            if (
+              protoLoader.isAnyExtension(resource) &&
+              resource['@type'] === CDS_TYPE_URL
+            ) {
+              const resp = resource as protoLoader.AnyExtension & Cluster__Output;
+              if (!this.validateCdsResponse(resp)) {
+                this.nackCds('Cluster validation failed');
+                return;
+              }
+            } else {
+              this.nackEds(
+                `Invalid resource type ${
+                  protoLoader.isAnyExtension(resource)
+                    ? resource['@type']
+                    : resource.type_url
+                }`
+              );
+              return;
+            }
+          }
+          for (const message of cdsResponses) {
+            this.handleCdsResponse(message);
+          }
+          this.lastCdsVersionInfo = message.version_info;
+          this.lastCdsNonce = message.nonce;
+          this.ackCds();
+          break;
         default:
           this.nackUnknown(
             message.type_url,
@@ -270,6 +306,19 @@ export class XdsClient {
     });
   }
 
+  private ackCds() {
+    if (!this.adsCall) {
+      return;
+    }
+    this.adsCall.write({
+      node: this.node!,
+      type_url: CDS_TYPE_URL,
+      resource_names: Array.from(this.clusterWatchers.keys()),
+      response_nonce: this.lastCdsNonce,
+      version_info: this.lastCdsVersionInfo,
+    });
+  }
+
   /**
    * Reject an EDS update. This should be called without updating the local
    * nonce and version info.
@@ -284,6 +333,22 @@ export class XdsClient {
       resource_names: Array.from(this.endpointWatchers.keys()),
       response_nonce: this.lastEdsNonce,
       version_info: this.lastEdsVersionInfo,
+      error_detail: {
+        message,
+      },
+    });
+  }
+
+  private nackCds(message: string) {
+    if (!this.adsCall) {
+      return;
+    }
+    this.adsCall.write({
+      node: this.node!,
+      type_url: CDS_TYPE_URL,
+      resource_names: Array.from(this.clusterWatchers.keys()),
+      response_nonce: this.lastCdsNonce,
+      version_info: this.lastCdsVersionInfo,
       error_detail: {
         message,
       },
@@ -313,8 +378,33 @@ export class XdsClient {
     return true;
   }
 
+  private validateCdsResponse(message: Cluster__Output): boolean {
+    if (message.type !== 'EDS') {
+      return false;
+    }
+    if (!message.eds_cluster_config.eds_config.ads) {
+      return false;
+    }
+    if (message.lb_policy !== 'ROUND_ROBIN') {
+      return false;
+    }
+    if (message.lrs_server) {
+      if (!message.lrs_server.self) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   private handleEdsResponse(message: ClusterLoadAssignment__Output) {
     const watchers = this.endpointWatchers.get(message.cluster_name) ?? [];
+    for (const watcher of watchers) {
+      watcher.onValidUpdate(message);
+    }
+  }
+
+  private handleCdsResponse(message: Cluster__Output) {
+    const watchers = this.clusterWatchers.get(message.name) ?? [];
     for (const watcher of watchers) {
       watcher.onValidUpdate(message);
     }
@@ -332,8 +422,20 @@ export class XdsClient {
     }
   }
 
+  private updateCdsNames() {
+    if (this.adsCall) {
+      this.adsCall.write({
+        node: this.node!,
+        type_url: CDS_TYPE_URL,
+        resource_names: Array.from(this.clusterWatchers.keys()),
+        response_nonce: this.lastCdsNonce,
+        version_info: this.lastCdsVersionInfo,
+      });
+    }
+  }
+
   private reportStreamError(status: StatusObject) {
-    for (const watcherList of this.endpointWatchers.values()) {
+    for (const watcherList of [...this.endpointWatchers.values(), ...this.clusterWatchers.values()]) {
       for (const watcher of watcherList) {
         watcher.onTransientError(status);
       }
@@ -378,6 +480,46 @@ export class XdsClient {
     }
     if (removedServiceName) {
       this.updateEdsNames();
+    }
+  }
+
+  addClusterWatcher(
+    clusterName: string,
+    watcher: Watcher<Cluster__Output>
+  ) {
+    trace('Watcher added for cluster ' + clusterName);
+    let watchersEntry = this.clusterWatchers.get(clusterName);
+    let addedServiceName = false;
+    if (watchersEntry === undefined) {
+      addedServiceName = true;
+      watchersEntry = [];
+      this.clusterWatchers.set(clusterName, watchersEntry);
+    }
+    watchersEntry.push(watcher);
+    if (addedServiceName) {
+      this.updateCdsNames();
+    }
+  }
+
+  removeClusterWatcher(
+    clusterName: string,
+    watcher: Watcher<Cluster__Output>
+  ) {
+    trace('Watcher removed for endpoint ' + clusterName);
+    const watchersEntry = this.clusterWatchers.get(clusterName);
+    let removedServiceName = false;
+    if (watchersEntry !== undefined) {
+      const entryIndex = watchersEntry.indexOf(watcher);
+      if (entryIndex >= 0) {
+        watchersEntry.splice(entryIndex, 1);
+      }
+      if (watchersEntry.length === 0) {
+        removedServiceName = true;
+        this.endpointWatchers.delete(clusterName);
+      }
+    }
+    if (removedServiceName) {
+      this.updateCdsNames();
     }
   }
 

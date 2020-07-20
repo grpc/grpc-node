@@ -91,8 +91,8 @@ export class EdsLoadBalancer implements LoadBalancer {
         this.updateChild();
       },
       onResourceDoesNotExist: () => {
-        /* TODO(murgatroid99): Figure out what needs to be done here after
-         * implementing CDS */
+        this.xdsClient?.removeEndpointWatcher(this.edsServiceName!, this.watcher);
+        this.isWatcherActive = false;
       },
       onTransientError: (status) => {
         if (this.latestEdsUpdate === null) {
