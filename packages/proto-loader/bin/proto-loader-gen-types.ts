@@ -148,6 +148,52 @@ function formatComment(formatter: TextFormatter, comment?: string | null) {
 
 // GENERATOR FUNCTIONS
 
+function getTypeNamePermissive(fieldType: string, resolvedType: Protobuf.Type | Protobuf.Enum | null): string {
+  switch (fieldType) {
+    case 'double':
+    case 'float':
+      return 'number | string';
+    case 'int32':
+    case 'uint32':
+    case 'sint32':
+    case 'fixed32':
+    case 'sfixed32':
+      return 'number';
+    case 'int64':
+    case 'uint64':
+    case 'sint64':
+    case 'fixed64':
+    case 'sfixed64':
+      return 'number | string | Long';
+    case 'bool':
+      return 'boolean';
+    case 'string':
+      return 'string';
+    case 'bytes':
+      return 'Buffer | Uint8Array | string';
+    default:
+      if (resolvedType === null) {
+        throw new Error('Found field with no usable type');
+      }
+      const typeInterfaceName = getTypeInterfaceName(resolvedType);
+      if (resolvedType instanceof Protobuf.Type) {
+        return typeInterfaceName;
+      } else {
+        return `${typeInterfaceName} | keyof typeof ${typeInterfaceName}`;
+      }
+  }
+}
+
+function getFieldTypePermissive(field: Protobuf.FieldBase): string {
+  const valueType = getTypeNamePermissive(field.type, field.resolvedType);
+  if (field instanceof Protobuf.MapField) {
+    const keyType = field.keyType === 'string' ? 'string' : 'number';
+    return `{[key: ${keyType}]: ${valueType}}`;
+  } else {
+    return valueType;
+  }
+}
+
 function generatePermissiveMessageInterface(formatter: TextFormatter, messageType: Protobuf.Type, options: GeneratorOptions, nameOverride?: string) {
   if (options.includeComments) {
     formatComment(formatter, messageType.comment);
@@ -165,46 +211,7 @@ function generatePermissiveMessageInterface(formatter: TextFormatter, messageTyp
   formatter.indent();
   for (const field of messageType.fieldsArray) {
     const repeatedString = field.repeated ? '[]' : '';
-    let type: string;
-    switch (field.type) {
-      case 'double':
-      case 'float':
-        type = 'number | string';
-        break;
-      case 'int32':
-      case 'uint32':
-      case 'sint32':
-      case 'fixed32':
-      case 'sfixed32':
-        type = 'number';
-        break;
-      case 'int64':
-      case 'uint64':
-      case 'sint64':
-      case 'fixed64':
-      case 'sfixed64':
-        type = 'number | string | Long';
-        break;
-      case 'bool':
-        type = 'boolean';
-        break;
-      case 'string':
-        type = 'string';
-        break;
-      case 'bytes':
-        type = 'Buffer | Uint8Array | string';
-        break;
-      default:
-        if (field.resolvedType === null) {
-          throw new Error('Found field with no usable type');
-        }
-        const typeInterfaceName = getTypeInterfaceName(field.resolvedType);
-        if (field.resolvedType instanceof Protobuf.Type) {
-          type = typeInterfaceName;
-        } else {
-          type = `${typeInterfaceName} | keyof typeof ${typeInterfaceName}`;
-        }
-    }
+    const type: string = getFieldTypePermissive(field);
     if (options.includeComments) {
       formatComment(formatter, field.comment);
     }
@@ -221,6 +228,72 @@ function generatePermissiveMessageInterface(formatter: TextFormatter, messageTyp
   formatter.writeLine('}');
 }
 
+function getTypeNameRestricted(fieldType: string, resolvedType: Protobuf.Type | Protobuf.Enum | null, options: GeneratorOptions): string {
+  switch (fieldType) {
+    case 'double':
+    case 'float':
+      if (options.json) {
+        return 'number | string';
+      } else {
+        return 'number';
+      }
+    case 'int32':
+    case 'uint32':
+    case 'sint32':
+    case 'fixed32':
+    case 'sfixed32':
+      return 'number';
+    case 'int64':
+    case 'uint64':
+    case 'sint64':
+    case 'fixed64':
+    case 'sfixed64':
+      if (options.longs === Number) {
+        return 'number';
+      } else if (options.longs === String) {
+        return 'string';
+      } else {
+        return 'Long';
+      }
+    case 'bool':
+      return 'boolean';
+    case 'string':
+      return 'string';
+    case 'bytes':
+      if (options.bytes === Array) {
+        return 'Uint8Array';
+      } else if (options.bytes === String) {
+        return 'string';
+      } else {
+        return 'Buffer';
+      }
+    default:
+      if (resolvedType === null) {
+        throw new Error('Found field with no usable type');
+      }
+      const typeInterfaceName = getTypeInterfaceName(resolvedType);
+      if (resolvedType instanceof Protobuf.Type) {
+        return typeInterfaceName + '__Output';
+      } else {
+        if (options.enums == String) {
+          return `keyof typeof ${typeInterfaceName}`;
+        } else {
+          return typeInterfaceName;
+        }
+      }
+  }
+}
+
+function getFieldTypeRestricted(field: Protobuf.FieldBase, options: GeneratorOptions): string {
+  const valueType = getTypeNameRestricted(field.type, field.resolvedType, options);
+  if (field instanceof Protobuf.MapField) {
+    const keyType = field.keyType === 'string' ? 'string' : 'number';
+    return `{[key: ${keyType}]: ${valueType}}`;
+  } else {
+    return valueType;
+  }
+}
+
 function generateRestrictedMessageInterface(formatter: TextFormatter, messageType: Protobuf.Type, options: GeneratorOptions, nameOverride?: string) {
   if (options.includeComments) {
     formatComment(formatter, messageType.comment);
@@ -228,90 +301,39 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
   if (messageType.fullName === '.google.protobuf.Any' && options.json) {
     /* This describes the behavior of the Protobuf.js Any wrapper toObject
      * replacement function */
+    let optionalString = options.defaults ? '' : '?';
     formatter.writeLine('export type Any__Output = AnyExtension | {');
-    formatter.writeLine('  type_url: string;');
-    let type: string;
-    if (options.bytes === Array) {
-      type = 'Uint8Array';
-    } else if (options.bytes === String) {
-      type = 'string';
-    } else {
-      type = 'Buffer';
-    }
-    formatter.writeLine(`  value: ${type};`);
+    formatter.writeLine(`  type_url${optionalString}: string;`);
+    formatter.writeLine(`  value${optionalString}: ${getTypeNameRestricted('bytes', null, options)};`);
     formatter.writeLine('}');
     return;
   }
   formatter.writeLine(`export interface ${nameOverride ?? messageType.name}__Output {`);
   formatter.indent();
   for (const field of messageType.fieldsArray) {
-    const repeatedString = field.repeated ? '[]' : '';
-    let fieldGuaranteed = options.defaults || (field.repeated && options.arrays);
-    let type: string;
-    switch (field.type) {
-      case 'double':
-      case 'float':
-        if (options.json) {
-          type = 'number | string';
-        } else {
-          type = 'number';
-        }
-        break;
-      case 'int32':
-      case 'uint32':
-      case 'sint32':
-      case 'fixed32':
-      case 'sfixed32':
-        type = 'number';
-        break;
-      case 'int64':
-      case 'uint64':
-      case 'sint64':
-      case 'fixed64':
-      case 'sfixed64':
-        if (options.longs === Number) {
-          type = 'number';
-        } else if (options.longs === String) {
-          type = 'string';
-        } else {
-          type = 'Long';
-        }
-        break;
-      case 'bool':
-        type = 'boolean';
-        break;
-      case 'string':
-        type = 'string';
-        break;
-      case 'bytes':
-        if (options.bytes === Array) {
-          type = 'Uint8Array';
-        } else if (options.bytes === String) {
-          type = 'string';
-        } else {
-          type = 'Buffer';
-        }
-        break;
-      default:
-        if (field.resolvedType === null) {
-          throw new Error('Found field with no usable type');
-        }
-        const typeInterfaceName = getTypeInterfaceName(field.resolvedType);
-        if (field.resolvedType instanceof Protobuf.Type) {
-          fieldGuaranteed = fieldGuaranteed || options.objects;
-          type = typeInterfaceName + '__Output';
-        } else {
-          if (options.enums == String) {
-            type = `keyof typeof ${typeInterfaceName}`;
-          } else {
-            type = typeInterfaceName;
-          }
-        }
-    }
+    let fieldGuaranteed: boolean;
     if (field.partOf) {
+      // The field is not guaranteed populated if it is part of a oneof
       fieldGuaranteed = false;
+    } else if (field.repeated) {
+      fieldGuaranteed = (options.defaults || options.arrays) ?? false;
+    } else if (field.resolvedType) {
+      if (field.resolvedType instanceof Protobuf.Enum) {
+        fieldGuaranteed = options.defaults ?? false;
+      } else {
+        // Message fields can always be omitted
+        fieldGuaranteed = false;
+      }
+    } else {
+      if (field.map) {
+        fieldGuaranteed = (options.defaults || options.objects) ?? false;
+      } else {
+        fieldGuaranteed = options.defaults ?? false;
+      }
     }
     const optionalString = fieldGuaranteed ? '' : '?';
+    const repeatedString = field.repeated ? '[]' : '';
+    const type = getFieldTypeRestricted(field, options);
     if (options.includeComments) {
       formatComment(formatter, field.comment);
     }
@@ -643,13 +665,6 @@ function runScript() {
 //    .choices('enums', ['String'])
 //    .choices('bytes', ['Array', 'String'])
     .string(['longs', 'enums', 'bytes'])
-    .middleware(argv => {
-      if (argv.longs) {
-        switch (argv.longs) {
-          case 'String': argv.longsArg = String;
-        }
-      }
-    })
     .coerce('longs', value => {
       switch (value) {
         case 'String': return String;
