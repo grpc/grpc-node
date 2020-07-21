@@ -660,7 +660,7 @@ function runScript() {
     .string(['includeDirs', 'grpcLib'])
     .normalize(['includeDirs', 'outDir'])
     .array('includeDirs')
-    .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs', 'json', 'verbose', 'generateComments'])
+    .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs', 'json', 'verbose', 'includeComments'])
 //    .choices('longs', ['String', 'Number'])
 //    .choices('enums', ['String'])
 //    .choices('bytes', ['Array', 'String'])
@@ -697,6 +697,7 @@ function runScript() {
       objects: 'Output default values for omitted message fields even if --defaults is not set',
       oneofs: 'Output virtual oneof fields set to the present field\'s name',
       json: 'Represent Infinity and NaN as strings in float fields. Also decode google.protobuf.Any automatically',
+      includeComments: 'Generate doc comments from comments in the original files',
       includeDirs: 'Directories to search for included files',
       outDir: 'Directory in which to output files',
       grpcLib: 'The gRPC implementation library that these types will be used with'

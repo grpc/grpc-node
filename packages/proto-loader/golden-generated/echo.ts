@@ -25,6 +25,17 @@ export interface ProtoGrpcType {
       ListOperationsResponse: MessageTypeDefinition
       Operation: MessageTypeDefinition
       OperationInfo: MessageTypeDefinition
+      /**
+       * Manages long-running operations with an API service.
+       * 
+       * When an API method normally takes long time to complete, it can be designed
+       * to return [Operation][google.longrunning.Operation] to the client, and the client can use this
+       * interface to receive the real response asynchronously by polling the
+       * operation resource, or pass the operation resource to another API (such as
+       * Google Cloud Pub/Sub API) to receive the response.  Any API service that
+       * returns long-running operations should implement the `Operations` interface
+       * so developers can have a consistent client experience.
+       */
       Operations: SubtypeConstructor<typeof grpc.Client, _google_longrunning_OperationsClient> & { service: ServiceDefinition }
       WaitOperationRequest: MessageTypeDefinition
     }
@@ -61,6 +72,13 @@ export interface ProtoGrpcType {
       v1beta1: {
         BlockRequest: MessageTypeDefinition
         BlockResponse: MessageTypeDefinition
+        /**
+         * This service is used showcase the four main types of rpcs - unary, server
+         * side streaming, client side streaming, and bidirectional streaming. This
+         * service also exposes methods that explicitly implement server delay, and
+         * paginated calls. Set the 'showcase-trailer' metadata key on any method
+         * to have the values echoed in the response trailers.
+         */
         Echo: SubtypeConstructor<typeof grpc.Client, _google_showcase_v1beta1_EchoClient> & { service: ServiceDefinition }
         EchoRequest: MessageTypeDefinition
         EchoResponse: MessageTypeDefinition
