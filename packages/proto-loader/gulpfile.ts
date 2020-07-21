@@ -72,6 +72,9 @@ const runTests = () => {
 const testGeneratorGolden = () => {
   if (semver.satisfies(process.version, ">=10")) {
     return execNpmCommand('validate-golden');
+  } else {
+    console.log(`Skipping generator test for Node ${process.version}`);
+    return Promise.resolve(null);
   }
 }
 
