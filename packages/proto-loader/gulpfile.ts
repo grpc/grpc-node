@@ -69,7 +69,9 @@ const runTests = () => {
   }
 }
 
-const test = gulp.series(install, runTests);
+const testGeneratorGolden = () => execNpmCommand('validate-golden');
+
+const test = gulp.series(install, runTests, testGeneratorGolden);
 
 export {
   install,

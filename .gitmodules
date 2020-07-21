@@ -1,3 +1,9 @@
 [submodule "packages/grpc-tools/deps/protobuf"]
 	path = packages/grpc-tools/deps/protobuf
 	url = https://github.com/protocolbuffers/protobuf
+[submodule "packages/proto-loader/deps/gapic-showcase"]
+	path = packages/proto-loader/deps/gapic-showcase
+	url = https://github.com/googleapis/gapic-showcase.git
+[submodule "packages/proto-loader/deps/googleapis"]
+	path = packages/proto-loader/deps/googleapis
+	url = https://github.com/googleapis/googleapis.git
