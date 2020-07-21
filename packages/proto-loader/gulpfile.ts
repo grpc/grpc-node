@@ -69,7 +69,11 @@ const runTests = () => {
   }
 }
 
-const testGeneratorGolden = () => execNpmCommand('validate-golden');
+const testGeneratorGolden = () => {
+  if (semver.satisfies(process.version, ">=10")) {
+    return execNpmCommand('validate-golden');
+  }
+}
 
 const test = gulp.series(install, runTests, testGeneratorGolden);
 
