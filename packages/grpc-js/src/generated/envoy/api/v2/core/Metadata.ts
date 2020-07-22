@@ -31,7 +31,7 @@ export interface Metadata {
    * Key is the reverse DNS filter name, e.g. com.acme.widget. The envoy.*
    * namespace is reserved for Envoy's built-in filters.
    */
-  'filter_metadata'?: (_google_protobuf_Struct);
+  'filter_metadata'?: ({[key: string]: _google_protobuf_Struct});
 }
 
 /**
@@ -63,5 +63,5 @@ export interface Metadata__Output {
    * Key is the reverse DNS filter name, e.g. com.acme.widget. The envoy.*
    * namespace is reserved for Envoy's built-in filters.
    */
-  'filter_metadata': (_google_protobuf_Struct__Output);
+  'filter_metadata'?: ({[key: string]: _google_protobuf_Struct__Output});
 }

@@ -38,7 +38,7 @@ export interface ListenerFilter__Output {
    * See :ref:`ListenerFilterChainMatchPredicate <envoy_api_msg_listener.ListenerFilterChainMatchPredicate>`
    * for further examples.
    */
-  'filter_disabled': (_envoy_api_v2_listener_ListenerFilterChainMatchPredicate__Output);
+  'filter_disabled'?: (_envoy_api_v2_listener_ListenerFilterChainMatchPredicate__Output);
   /**
    * Filter specific configuration which depends on the filter being instantiated.
    * See the supported filters for further documentation.

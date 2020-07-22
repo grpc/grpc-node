@@ -85,7 +85,7 @@ export interface Http1ProtocolOptions__Output {
    * envoy as their HTTP proxy. In Unix, for example, this is typically done by setting the
    * *http_proxy* environment variable.
    */
-  'allow_absolute_url': (_google_protobuf_BoolValue__Output);
+  'allow_absolute_url'?: (_google_protobuf_BoolValue__Output);
   /**
    * Handle incoming HTTP/1.0 and HTTP 0.9 requests.
    * This is off by default, and not fully standards compliant. There is support for pre-HTTP/1.1
@@ -103,7 +103,7 @@ export interface Http1ProtocolOptions__Output {
    * Describes how the keys for response headers should be formatted. By default, all header keys
    * are lower cased.
    */
-  'header_key_format': (_envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat__Output);
+  'header_key_format'?: (_envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat__Output);
   /**
    * Enables trailers for HTTP/1. By default the HTTP/1 codec drops proxied trailers.
    * 

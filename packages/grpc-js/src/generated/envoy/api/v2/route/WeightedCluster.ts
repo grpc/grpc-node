@@ -67,7 +67,7 @@ export interface _envoy_api_v2_route_WeightedCluster_ClusterWeight {
    * specific; see the :ref:`HTTP filter documentation <config_http_filters>`
    * for if and how it is utilized.
    */
-  'per_filter_config'?: (_google_protobuf_Struct);
+  'per_filter_config'?: ({[key: string]: _google_protobuf_Struct});
   /**
    * The per_filter_config field can be used to provide weighted cluster-specific
    * configurations for filters. The key should match the filter name, such as
@@ -75,7 +75,7 @@ export interface _envoy_api_v2_route_WeightedCluster_ClusterWeight {
    * specific; see the :ref:`HTTP filter documentation <config_http_filters>`
    * for if and how it is utilized.
    */
-  'typed_per_filter_config'?: (_google_protobuf_Any);
+  'typed_per_filter_config'?: ({[key: string]: _google_protobuf_Any});
 }
 
 /**
@@ -93,7 +93,7 @@ export interface _envoy_api_v2_route_WeightedCluster_ClusterWeight__Output {
    * the choice of an upstream cluster is determined by its weight. The sum of weights across all
    * entries in the clusters array must add up to the total_weight, which defaults to 100.
    */
-  'weight': (_google_protobuf_UInt32Value__Output);
+  'weight'?: (_google_protobuf_UInt32Value__Output);
   /**
    * Optional endpoint metadata match criteria used by the subset load balancer. Only endpoints in
    * the upstream cluster with metadata matching what is set in this field will be considered for
@@ -101,7 +101,7 @@ export interface _envoy_api_v2_route_WeightedCluster_ClusterWeight__Output {
    * :ref:`RouteAction.metadata_match <envoy_api_field_route.RouteAction.metadata_match>`, with
    * values here taking precedence. The filter name should be specified as *envoy.lb*.
    */
-  'metadata_match': (_envoy_api_v2_core_Metadata__Output);
+  'metadata_match'?: (_envoy_api_v2_core_Metadata__Output);
   /**
    * Specifies a list of headers to be added to requests when this cluster is selected
    * through the enclosing :ref:`envoy_api_msg_route.RouteAction`.
@@ -139,7 +139,7 @@ export interface _envoy_api_v2_route_WeightedCluster_ClusterWeight__Output {
    * specific; see the :ref:`HTTP filter documentation <config_http_filters>`
    * for if and how it is utilized.
    */
-  'per_filter_config': (_google_protobuf_Struct__Output);
+  'per_filter_config'?: ({[key: string]: _google_protobuf_Struct__Output});
   /**
    * The per_filter_config field can be used to provide weighted cluster-specific
    * configurations for filters. The key should match the filter name, such as
@@ -147,7 +147,7 @@ export interface _envoy_api_v2_route_WeightedCluster_ClusterWeight__Output {
    * specific; see the :ref:`HTTP filter documentation <config_http_filters>`
    * for if and how it is utilized.
    */
-  'typed_per_filter_config': (_google_protobuf_Any__Output);
+  'typed_per_filter_config'?: ({[key: string]: _google_protobuf_Any__Output});
 }
 
 /**
@@ -209,5 +209,5 @@ export interface WeightedCluster__Output {
    * Specifies the total weight across all clusters. The sum of all cluster weights must equal this
    * value, which must be greater than 0. Defaults to 100.
    */
-  'total_weight': (_google_protobuf_UInt32Value__Output);
+  'total_weight'?: (_google_protobuf_UInt32Value__Output);
 }

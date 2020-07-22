@@ -60,17 +60,17 @@ export interface DownstreamTlsContext__Output {
   /**
    * Common TLS context settings.
    */
-  'common_tls_context': (_envoy_api_v2_auth_CommonTlsContext__Output);
+  'common_tls_context'?: (_envoy_api_v2_auth_CommonTlsContext__Output);
   /**
    * If specified, Envoy will reject connections without a valid client
    * certificate.
    */
-  'require_client_certificate': (_google_protobuf_BoolValue__Output);
+  'require_client_certificate'?: (_google_protobuf_BoolValue__Output);
   /**
    * If specified, Envoy will reject connections without a valid and matching SNI.
    * [#not-implemented-hide:]
    */
-  'require_sni': (_google_protobuf_BoolValue__Output);
+  'require_sni'?: (_google_protobuf_BoolValue__Output);
   /**
    * TLS session ticket key settings.
    */
@@ -85,7 +85,7 @@ export interface DownstreamTlsContext__Output {
    * <https://tools.ietf.org/html/rfc5077#section-5.6>`
    * only seconds could be specified (fractional seconds are going to be ignored).
    */
-  'session_timeout': (_google_protobuf_Duration__Output);
+  'session_timeout'?: (_google_protobuf_Duration__Output);
   /**
    * Config for controlling stateless TLS session resumption: setting this to true will cause the TLS
    * server to not issue TLS session tickets for the purposes of stateless TLS session resumption.

@@ -47,7 +47,7 @@ export interface AccessLog__Output {
   /**
    * Filter which is used to determine if the access log needs to be written.
    */
-  'filter': (_envoy_config_filter_accesslog_v2_AccessLogFilter__Output);
+  'filter'?: (_envoy_config_filter_accesslog_v2_AccessLogFilter__Output);
   'config'?: (_google_protobuf_Struct__Output);
   'typed_config'?: (_google_protobuf_Any__Output);
   /**

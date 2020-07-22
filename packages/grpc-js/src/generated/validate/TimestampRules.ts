@@ -66,27 +66,27 @@ export interface TimestampRules__Output {
   /**
    * Const specifies that this field must be exactly the specified value
    */
-  'const': (_google_protobuf_Timestamp__Output);
+  'const'?: (_google_protobuf_Timestamp__Output);
   /**
    * Lt specifies that this field must be less than the specified value,
    * exclusive
    */
-  'lt': (_google_protobuf_Timestamp__Output);
+  'lt'?: (_google_protobuf_Timestamp__Output);
   /**
    * Lte specifies that this field must be less than the specified value,
    * inclusive
    */
-  'lte': (_google_protobuf_Timestamp__Output);
+  'lte'?: (_google_protobuf_Timestamp__Output);
   /**
    * Gt specifies that this field must be greater than the specified value,
    * exclusive
    */
-  'gt': (_google_protobuf_Timestamp__Output);
+  'gt'?: (_google_protobuf_Timestamp__Output);
   /**
    * Gte specifies that this field must be greater than the specified value,
    * inclusive
    */
-  'gte': (_google_protobuf_Timestamp__Output);
+  'gte'?: (_google_protobuf_Timestamp__Output);
   /**
    * LtNow specifies that this must be less than the current time. LtNow
    * can only be used with the Within rule.
@@ -102,5 +102,5 @@ export interface TimestampRules__Output {
    * current time. This constraint can be used alone or with the LtNow and
    * GtNow rules.
    */
-  'within': (_google_protobuf_Duration__Output);
+  'within'?: (_google_protobuf_Duration__Output);
 }

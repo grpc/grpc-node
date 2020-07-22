@@ -187,7 +187,7 @@ export interface FilterChainMatch__Output {
   /**
    * [#not-implemented-hide:]
    */
-  'suffix_len': (_google_protobuf_UInt32Value__Output);
+  'suffix_len'?: (_google_protobuf_UInt32Value__Output);
   /**
    * The criteria is satisfied if the source IP address of the downstream
    * connection is contained in at least one of the specified subnets. If the
@@ -205,7 +205,7 @@ export interface FilterChainMatch__Output {
    * Optional destination port to consider when use_original_dst is set on the
    * listener in determining a filter chain match.
    */
-  'destination_port': (_google_protobuf_UInt32Value__Output);
+  'destination_port'?: (_google_protobuf_UInt32Value__Output);
   /**
    * If non-empty, a transport protocol to consider when determining a filter chain match.
    * This value will be compared against the transport protocol of a new connection, when

@@ -124,11 +124,11 @@ export interface Node__Output {
    * Opaque metadata extending the node identifier. Envoy will pass this
    * directly to the management server.
    */
-  'metadata': (_google_protobuf_Struct__Output);
+  'metadata'?: (_google_protobuf_Struct__Output);
   /**
    * Locality specifying where the Envoy instance is running.
    */
-  'locality': (_envoy_api_v2_core_Locality__Output);
+  'locality'?: (_envoy_api_v2_core_Locality__Output);
   /**
    * This is motivated by informing a management server during canary which
    * version of Envoy is being tested in a heterogeneous fleet. This will be set

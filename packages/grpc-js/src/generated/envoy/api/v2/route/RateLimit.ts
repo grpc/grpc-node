@@ -183,7 +183,7 @@ export interface _envoy_api_v2_route_RateLimit_Action_HeaderValueMatch__Output {
    * descriptor entry when the request does not match the headers. The
    * default value is true.
    */
-  'expect_match': (_google_protobuf_BoolValue__Output);
+  'expect_match'?: (_google_protobuf_BoolValue__Output);
   /**
    * Specifies a set of headers that the rate limit action should match
    * on. The action will check the request’s headers against all the
@@ -324,7 +324,7 @@ export interface RateLimit__Output {
    * 
    * The filter supports a range of 0 - 10 inclusively for stage numbers.
    */
-  'stage': (_google_protobuf_UInt32Value__Output);
+  'stage'?: (_google_protobuf_UInt32Value__Output);
   /**
    * The key to be set in runtime to disable this rate limit configuration.
    */

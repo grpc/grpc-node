@@ -28,16 +28,16 @@ export interface TcpKeepalive__Output {
    * the connection is dead. Default is to use the OS level configuration (unless
    * overridden, Linux defaults to 9.)
    */
-  'keepalive_probes': (_google_protobuf_UInt32Value__Output);
+  'keepalive_probes'?: (_google_protobuf_UInt32Value__Output);
   /**
    * The number of seconds a connection needs to be idle before keep-alive probes
    * start being sent. Default is to use the OS level configuration (unless
    * overridden, Linux defaults to 7200s (i.e., 2 hours.)
    */
-  'keepalive_time': (_google_protobuf_UInt32Value__Output);
+  'keepalive_time'?: (_google_protobuf_UInt32Value__Output);
   /**
    * The number of seconds between keep-alive probes. Default is to use the OS
    * level configuration (unless overridden, Linux defaults to 75s.)
    */
-  'keepalive_interval': (_google_protobuf_UInt32Value__Output);
+  'keepalive_interval'?: (_google_protobuf_UInt32Value__Output);
 }

@@ -19,5 +19,5 @@ export interface SdsSecretConfig__Output {
    * SDS. When only name is specified, then secret will be loaded from static resources.
    */
   'name': (string);
-  'sds_config': (_envoy_api_v2_core_ConfigSource__Output);
+  'sds_config'?: (_envoy_api_v2_core_ConfigSource__Output);
 }

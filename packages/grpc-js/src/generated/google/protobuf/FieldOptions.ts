@@ -42,8 +42,8 @@ export interface FieldOptions__Output {
   'jstype': (keyof typeof _google_protobuf_FieldOptions_JSType);
   'weak': (boolean);
   'uninterpretedOption': (_google_protobuf_UninterpretedOption__Output)[];
-  '.validate.rules': (_validate_FieldRules__Output);
+  '.validate.rules'?: (_validate_FieldRules__Output);
   '.udpa.annotations.sensitive': (boolean);
-  '.udpa.annotations.field_migrate': (_udpa_annotations_FieldMigrateAnnotation__Output);
+  '.udpa.annotations.field_migrate'?: (_udpa_annotations_FieldMigrateAnnotation__Output);
   '.envoy.annotations.disallowed_by_default': (boolean);
 }

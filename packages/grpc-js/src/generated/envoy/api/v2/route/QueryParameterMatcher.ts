@@ -73,7 +73,7 @@ export interface QueryParameterMatcher__Output {
    * ..attention::
    * This field is deprecated. Use a `safe_regex` match inside the `string_match` field.
    */
-  'regex': (_google_protobuf_BoolValue__Output);
+  'regex'?: (_google_protobuf_BoolValue__Output);
   /**
    * Specifies whether a query parameter value should match against a string.
    */

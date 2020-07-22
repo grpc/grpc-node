@@ -66,7 +66,7 @@ export interface LbEndpoint__Output {
    * :ref:`RouteAction <envoy_api_msg_route.RouteAction>` metadata_match field
    * to subset the endpoints considered in cluster load balancing.
    */
-  'metadata': (_envoy_api_v2_core_Metadata__Output);
+  'metadata'?: (_envoy_api_v2_core_Metadata__Output);
   /**
    * The optional load balancing weight of the upstream host; at least 1.
    * Envoy uses the load balancing weight in some of the built in load
@@ -78,7 +78,7 @@ export interface LbEndpoint__Output {
    * weight in a locality. The sum of the weights of all endpoints in the
    * endpoint's locality must not exceed uint32_t maximal value (4294967295).
    */
-  'load_balancing_weight': (_google_protobuf_UInt32Value__Output);
+  'load_balancing_weight'?: (_google_protobuf_UInt32Value__Output);
   /**
    * [#not-implemented-hide:]
    */

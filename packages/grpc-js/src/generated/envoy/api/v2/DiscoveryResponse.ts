@@ -104,5 +104,5 @@ export interface DiscoveryResponse__Output {
    * [#not-implemented-hide:]
    * The control plane instance that sent the response.
    */
-  'control_plane': (_envoy_api_v2_core_ControlPlane__Output);
+  'control_plane'?: (_envoy_api_v2_core_ControlPlane__Output);
 }

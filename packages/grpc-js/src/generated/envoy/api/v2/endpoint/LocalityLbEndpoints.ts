@@ -68,7 +68,7 @@ export interface LocalityLbEndpoints__Output {
   /**
    * Identifies location of where the upstream hosts run.
    */
-  'locality': (_envoy_api_v2_core_Locality__Output);
+  'locality'?: (_envoy_api_v2_core_Locality__Output);
   /**
    * The group of endpoints belonging to the locality specified.
    */
@@ -86,7 +86,7 @@ export interface LocalityLbEndpoints__Output {
    * specified when locality weighted load balancing is enabled, the locality is
    * assigned no load.
    */
-  'load_balancing_weight': (_google_protobuf_UInt32Value__Output);
+  'load_balancing_weight'?: (_google_protobuf_UInt32Value__Output);
   /**
    * Optional: the priority for this LocalityLbEndpoints. If unspecified this will
    * default to the highest priority (0).
@@ -107,5 +107,5 @@ export interface LocalityLbEndpoints__Output {
    * to determine where to route the requests.
    * [#not-implemented-hide:]
    */
-  'proximity': (_google_protobuf_UInt32Value__Output);
+  'proximity'?: (_google_protobuf_UInt32Value__Output);
 }

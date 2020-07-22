@@ -44,5 +44,5 @@ export interface ComparisonFilter__Output {
   /**
    * Value to compare against.
    */
-  'value': (_envoy_api_v2_core_RuntimeUInt32__Output);
+  'value'?: (_envoy_api_v2_core_RuntimeUInt32__Output);
 }

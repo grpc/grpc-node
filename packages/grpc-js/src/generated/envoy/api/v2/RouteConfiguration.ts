@@ -155,7 +155,7 @@ export interface RouteConfiguration__Output {
    * option. Users may wish to override the default behavior in certain cases (for example when
    * using CDS with a static route table).
    */
-  'validate_clusters': (_google_protobuf_BoolValue__Output);
+  'validate_clusters'?: (_google_protobuf_BoolValue__Output);
   /**
    * Specifies a list of HTTP headers that should be removed from each request
    * routed by the HTTP connection manager.
@@ -169,7 +169,7 @@ export interface RouteConfiguration__Output {
    * generate a routing table for a given RouteConfiguration, with *vhds* derived configuration
    * taking precedence.
    */
-  'vhds': (_envoy_api_v2_Vhds__Output);
+  'vhds'?: (_envoy_api_v2_Vhds__Output);
   /**
    * By default, headers that should be added/removed are evaluated from most to least specific:
    * 

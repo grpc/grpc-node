@@ -52,7 +52,7 @@ export interface Tracing__Output {
    * <config_http_conn_man_runtime>`.
    * Default: 100%
    */
-  'client_sampling': (_envoy_type_FractionalPercent__Output);
+  'client_sampling'?: (_envoy_type_FractionalPercent__Output);
   /**
    * Target percentage of requests managed by this HTTP connection manager that will be randomly
    * selected for trace generation, if not requested by the client or not forced. This field is
@@ -60,7 +60,7 @@ export interface Tracing__Output {
    * :ref:`HTTP Connection Manager <config_http_conn_man_runtime>`.
    * Default: 100%
    */
-  'random_sampling': (_envoy_type_FractionalPercent__Output);
+  'random_sampling'?: (_envoy_type_FractionalPercent__Output);
   /**
    * Target percentage of requests managed by this HTTP connection manager that will be traced
    * after all other sampling checks have been applied (client-directed, force tracing, random
@@ -71,7 +71,7 @@ export interface Tracing__Output {
    * :ref:`HTTP Connection Manager <config_http_conn_man_runtime>`.
    * Default: 100%
    */
-  'overall_sampling': (_envoy_type_FractionalPercent__Output);
+  'overall_sampling'?: (_envoy_type_FractionalPercent__Output);
   /**
    * A list of custom tags with unique tag name to create tags for the active span.
    * It will take effect after merging with the :ref:`corresponding configuration

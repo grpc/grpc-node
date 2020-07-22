@@ -35,5 +35,5 @@ export interface DirectResponseAction__Output {
    * :ref:`envoy_api_msg_route.Route`, :ref:`envoy_api_msg_RouteConfiguration` or
    * :ref:`envoy_api_msg_route.VirtualHost`.
    */
-  'body': (_envoy_api_v2_core_DataSource__Output);
+  'body'?: (_envoy_api_v2_core_DataSource__Output);
 }

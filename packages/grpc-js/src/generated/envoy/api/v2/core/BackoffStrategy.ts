@@ -31,7 +31,7 @@ export interface BackoffStrategy__Output {
    * be greater than zero and less than or equal to :ref:`max_interval
    * <envoy_api_field_core.BackoffStrategy.max_interval>`.
    */
-  'base_interval': (_google_protobuf_Duration__Output);
+  'base_interval'?: (_google_protobuf_Duration__Output);
   /**
    * Specifies the maximum interval between retries. This parameter is optional,
    * but must be greater than or equal to the :ref:`base_interval
@@ -39,5 +39,5 @@ export interface BackoffStrategy__Output {
    * is 10 times the :ref:`base_interval
    * <envoy_api_field_core.BackoffStrategy.base_interval>`.
    */
-  'max_interval': (_google_protobuf_Duration__Output);
+  'max_interval'?: (_google_protobuf_Duration__Output);
 }

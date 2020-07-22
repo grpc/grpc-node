@@ -20,11 +20,11 @@ export interface _envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValidati
   /**
    * How to validate peer certificates.
    */
-  'default_validation_context': (_envoy_api_v2_auth_CertificateValidationContext__Output);
+  'default_validation_context'?: (_envoy_api_v2_auth_CertificateValidationContext__Output);
   /**
    * Config for fetching validation context via SDS API.
    */
-  'validation_context_sds_secret_config': (_envoy_api_v2_auth_SdsSecretConfig__Output);
+  'validation_context_sds_secret_config'?: (_envoy_api_v2_auth_SdsSecretConfig__Output);
 }
 
 /**
@@ -91,7 +91,7 @@ export interface CommonTlsContext__Output {
   /**
    * TLS protocol versions, cipher suites etc.
    */
-  'tls_params': (_envoy_api_v2_auth_TlsParameters__Output);
+  'tls_params'?: (_envoy_api_v2_auth_TlsParameters__Output);
   /**
    * :ref:`Multiple TLS certificates <arch_overview_ssl_cert_select>` can be associated with the
    * same context to allow both RSA and ECDSA certificates.

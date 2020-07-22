@@ -14,6 +14,7 @@ set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
 set(protobuf_WITH_ZLIB OFF CACHE BOOL "Build protobuf with zlib.")
 
 set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-stack-protector")
 
 add_executable(grpc_node_plugin
   src/node_generator.cc

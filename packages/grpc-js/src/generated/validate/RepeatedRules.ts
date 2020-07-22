@@ -56,5 +56,5 @@ export interface RepeatedRules__Output {
    * Repeated message fields will still execute validation against each item
    * unless skip is specified here.
    */
-  'items': (_validate_FieldRules__Output);
+  'items'?: (_validate_FieldRules__Output);
 }

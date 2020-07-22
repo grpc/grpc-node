@@ -119,7 +119,7 @@ export interface VirtualHost {
    * specific; see the :ref:`HTTP filter documentation <config_http_filters>`
    * for if and how it is utilized.
    */
-  'per_filter_config'?: (_google_protobuf_Struct);
+  'per_filter_config'?: ({[key: string]: _google_protobuf_Struct});
   /**
    * Specifies a list of HTTP headers that should be removed from each request
    * handled by this virtual host.
@@ -145,7 +145,7 @@ export interface VirtualHost {
    * specific; see the :ref:`HTTP filter documentation <config_http_filters>`
    * for if and how it is utilized.
    */
-  'typed_per_filter_config'?: (_google_protobuf_Any);
+  'typed_per_filter_config'?: ({[key: string]: _google_protobuf_Any});
   /**
    * Indicates the retry policy for all routes in this virtual host. Note that setting a
    * route level entry will take precedence over this config and it'll be treated
@@ -252,7 +252,7 @@ export interface VirtualHost__Output {
   /**
    * Indicates that the virtual host has a CORS policy.
    */
-  'cors': (_envoy_api_v2_route_CorsPolicy__Output);
+  'cors'?: (_envoy_api_v2_route_CorsPolicy__Output);
   /**
    * Specifies a list of HTTP headers that should be added to each response
    * handled by this virtual host. Headers specified at this level are applied
@@ -274,7 +274,7 @@ export interface VirtualHost__Output {
    * specific; see the :ref:`HTTP filter documentation <config_http_filters>`
    * for if and how it is utilized.
    */
-  'per_filter_config': (_google_protobuf_Struct__Output);
+  'per_filter_config'?: ({[key: string]: _google_protobuf_Struct__Output});
   /**
    * Specifies a list of HTTP headers that should be removed from each request
    * handled by this virtual host.
@@ -300,25 +300,25 @@ export interface VirtualHost__Output {
    * specific; see the :ref:`HTTP filter documentation <config_http_filters>`
    * for if and how it is utilized.
    */
-  'typed_per_filter_config': (_google_protobuf_Any__Output);
+  'typed_per_filter_config'?: ({[key: string]: _google_protobuf_Any__Output});
   /**
    * Indicates the retry policy for all routes in this virtual host. Note that setting a
    * route level entry will take precedence over this config and it'll be treated
    * independently (e.g.: values are not inherited).
    */
-  'retry_policy': (_envoy_api_v2_route_RetryPolicy__Output);
+  'retry_policy'?: (_envoy_api_v2_route_RetryPolicy__Output);
   /**
    * Indicates the hedge policy for all routes in this virtual host. Note that setting a
    * route level entry will take precedence over this config and it'll be treated
    * independently (e.g.: values are not inherited).
    */
-  'hedge_policy': (_envoy_api_v2_route_HedgePolicy__Output);
+  'hedge_policy'?: (_envoy_api_v2_route_HedgePolicy__Output);
   /**
    * The maximum bytes which will be buffered for retries and shadowing.
    * If set and a route-specific limit is not set, the bytes actually buffered will be the minimum
    * value of this and the listener per_connection_buffer_limit_bytes.
    */
-  'per_request_buffer_limit_bytes': (_google_protobuf_UInt32Value__Output);
+  'per_request_buffer_limit_bytes'?: (_google_protobuf_UInt32Value__Output);
   /**
    * Decides whether the :ref:`x-envoy-attempt-count
    * <config_http_filters_router_x-envoy-attempt-count>` header should be included
@@ -337,5 +337,5 @@ export interface VirtualHost__Output {
    * inherited). :ref:`Retry policy <envoy_api_field_route.VirtualHost.retry_policy>` should not be
    * set if this field is used.
    */
-  'retry_policy_typed_config': (_google_protobuf_Any__Output);
+  'retry_policy_typed_config'?: (_google_protobuf_Any__Output);
 }

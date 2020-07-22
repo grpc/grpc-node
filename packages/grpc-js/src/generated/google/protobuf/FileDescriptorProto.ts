@@ -30,8 +30,8 @@ export interface FileDescriptorProto__Output {
   'enumType': (_google_protobuf_EnumDescriptorProto__Output)[];
   'service': (_google_protobuf_ServiceDescriptorProto__Output)[];
   'extension': (_google_protobuf_FieldDescriptorProto__Output)[];
-  'options': (_google_protobuf_FileOptions__Output);
-  'sourceCodeInfo': (_google_protobuf_SourceCodeInfo__Output);
+  'options'?: (_google_protobuf_FileOptions__Output);
+  'sourceCodeInfo'?: (_google_protobuf_SourceCodeInfo__Output);
   'publicDependency': (number)[];
   'weakDependency': (number)[];
   'syntax': (string);

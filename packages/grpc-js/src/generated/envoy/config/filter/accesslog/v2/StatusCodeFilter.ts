@@ -19,5 +19,5 @@ export interface StatusCodeFilter__Output {
   /**
    * Comparison.
    */
-  'comparison': (_envoy_config_filter_accesslog_v2_ComparisonFilter__Output);
+  'comparison'?: (_envoy_config_filter_accesslog_v2_ComparisonFilter__Output);
 }

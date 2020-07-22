@@ -25,5 +25,5 @@ export interface Filter__Output {
    * Filter specific configuration which depends on the filter being
    * instantiated. See the supported filters for further documentation.
    */
-  'typed_config': (_google_protobuf_Any__Output);
+  'typed_config'?: (_google_protobuf_Any__Output);
 }
