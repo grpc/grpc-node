@@ -143,7 +143,7 @@ export class EdsLoadBalancer implements LoadBalancer {
         (lbEndpoint) => {
           /* The validator in the XdsClient class ensures that each endpoint has
            * a socket_address with an IP address and a port_value. */
-          const socketAddress = lbEndpoint.endpoint!.address.socket_address!;
+          const socketAddress = lbEndpoint.endpoint!.address!.socket_address!;
           return {
             host: socketAddress.address!,
             port: socketAddress.port_value!,
@@ -151,12 +151,12 @@ export class EdsLoadBalancer implements LoadBalancer {
         }
       );
       localityArray.push({
-        locality: endpoint.locality,
+        locality: endpoint.locality!,
         addresses: addresses,
-        weight: endpoint.load_balancing_weight.value,
+        weight: endpoint.load_balancing_weight?.value ?? 0,
       });
       newLocalityPriorities.set(
-        localityToName(endpoint.locality),
+        localityToName(endpoint.locality!),
         endpoint.priority
       );
     }
