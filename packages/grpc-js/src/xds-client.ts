@@ -44,7 +44,7 @@ function trace(text: string): void {
 const clientVersion = require('../../package.json').version;
 
 const EDS_TYPE_URL = 'type.googleapis.com/envoy.api.v2.ClusterLoadAssignment';
-const CDS_TYPE_URL = 'type.googleapis.com/envoy.api.v2.Cluster'
+const CDS_TYPE_URL = 'type.googleapis.com/envoy.api.v2.Cluster';
 
 let loadedProtos: Promise<adsTypes.ProtoGrpcType> | null = null;
 
@@ -108,10 +108,14 @@ export class XdsClient {
   private lastEdsVersionInfo = '';
   private lastEdsNonce = '';
   private latestEdsResponses: ClusterLoadAssignment__Output[] = [];
-  
-  private clusterWatchers: Map<string, Watcher<Cluster__Output>[]> = new Map<string, Watcher<Cluster__Output>[]>();
+
+  private clusterWatchers: Map<string, Watcher<Cluster__Output>[]> = new Map<
+    string,
+    Watcher<Cluster__Output>[]
+  >();
   private lastCdsVersionInfo = '';
   private lastCdsNonce = '';
+  private latestCdsResponses: Cluster__Output[] = [];
 
   constructor(
     private targetName: string,
@@ -217,14 +221,15 @@ export class XdsClient {
           this.ackEds();
           break;
         }
-        case CDS_TYPE_URL:
+        case CDS_TYPE_URL: {
           const cdsResponses: Cluster__Output[] = [];
           for (const resource of message.resources) {
             if (
               protoLoader.isAnyExtension(resource) &&
               resource['@type'] === CDS_TYPE_URL
             ) {
-              const resp = resource as protoLoader.AnyExtension & Cluster__Output;
+              const resp = resource as protoLoader.AnyExtension &
+                Cluster__Output;
               if (!this.validateCdsResponse(resp)) {
                 this.nackCds('Cluster validation failed');
                 return;
@@ -245,8 +250,10 @@ export class XdsClient {
           }
           this.lastCdsVersionInfo = message.version_info;
           this.lastCdsNonce = message.nonce;
+          this.latestCdsResponses = cdsResponses;
           this.ackCds();
           break;
+        }
         default:
           this.nackUnknown(
             message.type_url,
@@ -384,7 +391,7 @@ export class XdsClient {
     if (message.type !== 'EDS') {
       return false;
     }
-    if (!message.eds_cluster_config.eds_config.ads) {
+    if (!message.eds_cluster_config?.eds_config?.ads) {
       return false;
     }
     if (message.lb_policy !== 'ROUND_ROBIN') {
@@ -437,7 +444,10 @@ export class XdsClient {
   }
 
   private reportStreamError(status: StatusObject) {
-    for (const watcherList of [...this.endpointWatchers.values(), ...this.clusterWatchers.values()]) {
+    for (const watcherList of [
+      ...this.endpointWatchers.values(),
+      ...this.clusterWatchers.values(),
+    ]) {
       for (const watcher of watcherList) {
         watcher.onTransientError(status);
       }
@@ -497,10 +507,7 @@ export class XdsClient {
     }
   }
 
-  addClusterWatcher(
-    clusterName: string,
-    watcher: Watcher<Cluster__Output>
-  ) {
+  addClusterWatcher(clusterName: string, watcher: Watcher<Cluster__Output>) {
     trace('Watcher added for cluster ' + clusterName);
     let watchersEntry = this.clusterWatchers.get(clusterName);
     let addedServiceName = false;
@@ -513,12 +520,21 @@ export class XdsClient {
     if (addedServiceName) {
       this.updateCdsNames();
     }
+
+    /* If we have already received an update for the requested clusterName,
+     * immediately pass that update along to the watcher */
+    for (const message of this.latestCdsResponses) {
+      if (message.name === clusterName) {
+        /* These updates normally occur asynchronously, so we ensure that
+         * the same happens here */
+        process.nextTick(() => {
+          watcher.onValidUpdate(message);
+        });
+      }
+    }
   }
 
-  removeClusterWatcher(
-    clusterName: string,
-    watcher: Watcher<Cluster__Output>
-  ) {
+  removeClusterWatcher(clusterName: string, watcher: Watcher<Cluster__Output>) {
     trace('Watcher removed for endpoint ' + clusterName);
     const watchersEntry = this.clusterWatchers.get(clusterName);
     let removedServiceName = false;

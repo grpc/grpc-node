@@ -21,7 +21,12 @@ import {
   registerLoadBalancerType,
 } from './load-balancer';
 import { SubchannelAddress } from './subchannel';
-import { LoadBalancingConfig, isCdsLoadBalancingConfig, EdsLbConfig, CdsLoadBalancingConfig } from './load-balancing-config';
+import {
+  LoadBalancingConfig,
+  isCdsLoadBalancingConfig,
+  EdsLbConfig,
+  CdsLoadBalancingConfig,
+} from './load-balancing-config';
 import { XdsClient, Watcher } from './xds-client';
 import { ChildLoadBalancerHandler } from './load-balancer-child-handler';
 import { Cluster__Output } from './generated/envoy/api/v2/Cluster';
@@ -47,22 +52,38 @@ export class CdsLoadBalancer implements LoadBalancer {
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
     this.childBalancer = new ChildLoadBalancerHandler(channelControlHelper);
     this.watcher = {
-      onValidUpdate: update => {
+      onValidUpdate: (update) => {
         this.latestCdsUpdate = update;
         const edsConfig: EdsLbConfig = {
           cluster: update.name,
-          edsServiceName: update.eds_cluster_config.service_name === '' ? undefined : update.eds_cluster_config.service_name,
+          edsServiceName:
+            update.eds_cluster_config!.service_name === ''
+              ? undefined
+              : update.eds_cluster_config!.service_name,
           localityPickingPolicy: [],
-          endpointPickingPolicy: []
-          // TODO(murgatroid99): populate lrsLoadReportingServerName
+          endpointPickingPolicy: [],
+        };
+        if (update.lrs_server?.self) {
+          /* the lrs_server.self field indicates that the same server should be
+           * used for load reporting as for other xDS operations. Setting
+           * lrsLoadReportingServerName to the empty string sets that behavior.
+           * Otherwise, if the field is omitted, load reporting is disabled. */
+          edsConfig.lrsLoadReportingServerName = '';
         }
-        this.childBalancer.updateAddressList([], {name: 'eds', eds: edsConfig}, this.latestAttributes);
+        this.childBalancer.updateAddressList(
+          [],
+          { name: 'eds', eds: edsConfig },
+          this.latestAttributes
+        );
       },
       onResourceDoesNotExist: () => {
-        this.xdsClient?.removeClusterWatcher(this.latestConfig!.cds.cluster, this.watcher);
+        this.xdsClient?.removeClusterWatcher(
+          this.latestConfig!.cds.cluster,
+          this.watcher
+        );
         this.isWatcherActive = false;
       },
-      onTransientError: status => {
+      onTransientError: (status) => {
         if (this.latestCdsUpdate === null) {
           channelControlHelper.updateState(
             ConnectivityState.TRANSIENT_FAILURE,
@@ -73,11 +94,15 @@ export class CdsLoadBalancer implements LoadBalancer {
             })
           );
         }
-      }
+      },
     };
   }
 
-  updateAddressList(addressList: SubchannelAddress[], lbConfig: LoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+  updateAddressList(
+    addressList: SubchannelAddress[],
+    lbConfig: LoadBalancingConfig,
+    attributes: { [key: string]: unknown }
+  ): void {
     if (!isCdsLoadBalancingConfig(lbConfig)) {
       return;
     }
@@ -85,8 +110,27 @@ export class CdsLoadBalancer implements LoadBalancer {
       return;
     }
     this.xdsClient = attributes.xdsClient;
-    this.latestConfig = lbConfig;
     this.latestAttributes = attributes;
+
+    /* If the cluster is changing, disable the old watcher before adding the new
+     * one */
+    if (
+      this.isWatcherActive &&
+      this.latestConfig?.cds.cluster !== lbConfig.cds.cluster
+    ) {
+      this.xdsClient.removeClusterWatcher(
+        this.latestConfig!.cds.cluster,
+        this.watcher
+      );
+      /* Setting isWatcherActive to false here lets us have one code path for
+       * calling addClusterWatcher */
+      this.isWatcherActive = false;
+      /* If we have a new name, the latestCdsUpdate does not correspond to
+       * the new config, so it is no longer valid */
+      this.latestCdsUpdate = null;
+    }
+
+    this.latestConfig = lbConfig;
 
     if (!this.isWatcherActive) {
       this.xdsClient.addClusterWatcher(lbConfig.cds.cluster, this.watcher);
@@ -102,7 +146,10 @@ export class CdsLoadBalancer implements LoadBalancer {
   destroy(): void {
     this.childBalancer.destroy();
     if (this.isWatcherActive) {
-      this.xdsClient?.removeClusterWatcher(this.latestConfig!.cds.cluster, this.watcher);
+      this.xdsClient?.removeClusterWatcher(
+        this.latestConfig!.cds.cluster,
+        this.watcher
+      );
     }
   }
   getTypeName(): string {
