@@ -60,10 +60,10 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   /**
    * The service config object from the last successful resolution, if
    * available. A value of undefined indicates that there has not yet
-   * been a successful resolution. A value of null indicates that the last
-   * successful resolution explicitly provided a null service config.
+   * been a successful resolution, or that the last succesful resolution
+   * explicitly provided a null service config.
    */
-  private previousServiceConfig: ServiceConfig | null | undefined = undefined;
+  private previousServiceConfig: ServiceConfig | null = null;
 
   /**
    * The backoff timer for handling name resolution failures.
@@ -131,19 +131,13 @@ export class ResolvingLoadBalancer implements LoadBalancer {
           // Step 4 and 5
           if (serviceConfigError === null) {
             // Step 5
-            this.previousServiceConfig = serviceConfig;
+            this.previousServiceConfig = this.defaultServiceConfig;
             workingServiceConfig = this.defaultServiceConfig;
           } else {
             // Step 4
-            if (this.previousServiceConfig === undefined) {
+            if (this.previousServiceConfig === null) {
               // Step 4.ii
-              if (this.defaultServiceConfig === null) {
-                // Step 4.ii.b
-                this.handleResolutionFailure(serviceConfigError);
-              } else {
-                // Step 4.ii.a
-                workingServiceConfig = this.defaultServiceConfig;
-              }
+              this.handleResolutionFailure(serviceConfigError);
             } else {
               // Step 4.i
               workingServiceConfig = this.previousServiceConfig;
