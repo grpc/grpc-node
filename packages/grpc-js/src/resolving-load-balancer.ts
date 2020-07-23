@@ -59,9 +59,8 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   private currentState: ConnectivityState = ConnectivityState.IDLE;
   /**
    * The service config object from the last successful resolution, if
-   * available. A value of undefined indicates that there has not yet
-   * been a successful resolution, or that the last succesful resolution
-   * explicitly provided a null service config.
+   * available. A value of null indicates that we have not yet received a valid
+   * service config from the resolver.
    */
   private previousServiceConfig: ServiceConfig | null = null;
 
@@ -131,7 +130,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
           // Step 4 and 5
           if (serviceConfigError === null) {
             // Step 5
-            this.previousServiceConfig = this.defaultServiceConfig;
+            this.previousServiceConfig = null;
             workingServiceConfig = this.defaultServiceConfig;
           } else {
             // Step 4
