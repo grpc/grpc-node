@@ -105,6 +105,7 @@ export class XdsClient {
   > = new Map<string, Watcher<ClusterLoadAssignment__Output>[]>();
   private lastEdsVersionInfo = '';
   private lastEdsNonce = '';
+  private latestEdsResponses: ClusterLoadAssignment__Output[] = [];
 
   constructor(
     private targetName: string,
@@ -206,6 +207,7 @@ export class XdsClient {
           }
           this.lastEdsVersionInfo = message.version_info;
           this.lastEdsNonce = message.nonce;
+          this.latestEdsResponses = edsResponses;
           this.ackEds();
           break;
         }
@@ -356,6 +358,18 @@ export class XdsClient {
     watchersEntry.push(watcher);
     if (addedServiceName) {
       this.updateEdsNames();
+    }
+
+    /* If we have already received an update for the requested edsServiceName,
+     * immediately pass that update along to the watcher */
+    for (const message of this.latestEdsResponses) {
+      if (message.cluster_name === edsServiceName) {
+        /* These updates normally occur asynchronously, so we ensure that
+         * the same happens here */
+        process.nextTick(() => {
+          watcher.onValidUpdate(message);
+        });
+      }
     }
   }
 
