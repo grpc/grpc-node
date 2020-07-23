@@ -25,11 +25,11 @@ export interface _envoy_api_v2_core_Http2ProtocolOptions_SettingsParameter__Outp
   /**
    * The 16 bit parameter identifier.
    */
-  'identifier': (_google_protobuf_UInt32Value__Output);
+  'identifier'?: (_google_protobuf_UInt32Value__Output);
   /**
    * The 32 bit parameter value.
    */
-  'value': (_google_protobuf_UInt32Value__Output);
+  'value'?: (_google_protobuf_UInt32Value__Output);
 }
 
 /**
@@ -188,7 +188,7 @@ export interface Http2ProtocolOptions__Output {
    * range from 0 to 4294967295 (2^32 - 1) and defaults to 4096. 0 effectively disables header
    * compression.
    */
-  'hpack_table_size': (_google_protobuf_UInt32Value__Output);
+  'hpack_table_size'?: (_google_protobuf_UInt32Value__Output);
   /**
    * `Maximum concurrent streams <https://httpwg.org/specs/rfc7540.html#rfc.section.5.1.2>`_
    * allowed for peer on one HTTP/2 connection. Valid values range from 1 to 2147483647 (2^31 - 1)
@@ -198,7 +198,7 @@ export interface Http2ProtocolOptions__Output {
    * on a single connection. If the limit is reached, Envoy may queue requests or establish
    * additional connections (as allowed per circuit breaker limits).
    */
-  'max_concurrent_streams': (_google_protobuf_UInt32Value__Output);
+  'max_concurrent_streams'?: (_google_protobuf_UInt32Value__Output);
   /**
    * `Initial stream-level flow-control window
    * <https://httpwg.org/specs/rfc7540.html#rfc.section.6.9.2>`_ size. Valid values range from 65535
@@ -212,12 +212,12 @@ export interface Http2ProtocolOptions__Output {
    * HTTP/2 codec buffers. Once the buffer reaches this pointer, watermark callbacks will fire to
    * stop the flow of data to the codec buffers.
    */
-  'initial_stream_window_size': (_google_protobuf_UInt32Value__Output);
+  'initial_stream_window_size'?: (_google_protobuf_UInt32Value__Output);
   /**
    * Similar to *initial_stream_window_size*, but for connection-level flow-control
    * window. Currently, this has the same minimum/maximum/default as *initial_stream_window_size*.
    */
-  'initial_connection_window_size': (_google_protobuf_UInt32Value__Output);
+  'initial_connection_window_size'?: (_google_protobuf_UInt32Value__Output);
   /**
    * Allows proxying Websocket and other upgrades over H2 connect.
    */
@@ -238,7 +238,7 @@ export interface Http2ProtocolOptions__Output {
    * to flood mitigation. The default limit is 10000.
    * [#comment:TODO: implement same limits for upstream outbound frames as well.]
    */
-  'max_outbound_frames': (_google_protobuf_UInt32Value__Output);
+  'max_outbound_frames'?: (_google_protobuf_UInt32Value__Output);
   /**
    * Limit the number of pending outbound downstream frames of types PING, SETTINGS and RST_STREAM,
    * preventing high memory utilization when receiving continuous stream of these frames. Exceeding
@@ -247,7 +247,7 @@ export interface Http2ProtocolOptions__Output {
    * mitigation. The default limit is 1000.
    * [#comment:TODO: implement same limits for upstream outbound frames as well.]
    */
-  'max_outbound_control_frames': (_google_protobuf_UInt32Value__Output);
+  'max_outbound_control_frames'?: (_google_protobuf_UInt32Value__Output);
   /**
    * Limit the number of consecutive inbound frames of types HEADERS, CONTINUATION and DATA with an
    * empty payload and no end stream flag. Those frames have no legitimate use and are abusive, but
@@ -257,7 +257,7 @@ export interface Http2ProtocolOptions__Output {
    * and no end stream flag. The default limit is 1.
    * [#comment:TODO: implement same limits for upstream inbound frames as well.]
    */
-  'max_consecutive_inbound_frames_with_empty_payload': (_google_protobuf_UInt32Value__Output);
+  'max_consecutive_inbound_frames_with_empty_payload'?: (_google_protobuf_UInt32Value__Output);
   /**
    * Limit the number of inbound PRIORITY frames allowed per each opened stream. If the number
    * of PRIORITY frames received over the lifetime of connection exceeds the value calculated
@@ -269,7 +269,7 @@ export interface Http2ProtocolOptions__Output {
    * the number of connections terminated due to flood mitigation. The default limit is 100.
    * [#comment:TODO: implement same limits for upstream inbound frames as well.]
    */
-  'max_inbound_priority_frames_per_stream': (_google_protobuf_UInt32Value__Output);
+  'max_inbound_priority_frames_per_stream'?: (_google_protobuf_UInt32Value__Output);
   /**
    * Limit the number of inbound WINDOW_UPDATE frames allowed per DATA frame sent. If the number
    * of WINDOW_UPDATE frames received over the lifetime of connection exceeds the value calculated
@@ -284,7 +284,7 @@ export interface Http2ProtocolOptions__Output {
    * but more complex implementations that try to estimate available bandwidth require at least 2.
    * [#comment:TODO: implement same limits for upstream inbound frames as well.]
    */
-  'max_inbound_window_update_frames_per_data_frame_sent': (_google_protobuf_UInt32Value__Output);
+  'max_inbound_window_update_frames_per_data_frame_sent'?: (_google_protobuf_UInt32Value__Output);
   /**
    * Allows invalid HTTP messaging and headers. When this option is disabled (default), then
    * the whole HTTP/2 connection is terminated upon receiving invalid HEADERS frame. However,

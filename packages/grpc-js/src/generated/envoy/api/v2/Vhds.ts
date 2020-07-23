@@ -13,5 +13,5 @@ export interface Vhds__Output {
   /**
    * Configuration source specifier for VHDS.
    */
-  'config_source': (_envoy_api_v2_core_ConfigSource__Output);
+  'config_source'?: (_envoy_api_v2_core_ConfigSource__Output);
 }

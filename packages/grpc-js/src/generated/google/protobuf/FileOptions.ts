@@ -48,6 +48,6 @@ export interface FileOptions__Output {
   'objcClassPrefix': (string);
   'csharpNamespace': (string);
   'uninterpretedOption': (_google_protobuf_UninterpretedOption__Output)[];
-  '.udpa.annotations.file_migrate': (_udpa_annotations_FileMigrateAnnotation__Output);
-  '.udpa.annotations.file_status': (_udpa_annotations_StatusAnnotation__Output);
+  '.udpa.annotations.file_migrate'?: (_udpa_annotations_FileMigrateAnnotation__Output);
+  '.udpa.annotations.file_status'?: (_udpa_annotations_StatusAnnotation__Output);
 }

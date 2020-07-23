@@ -49,7 +49,7 @@ export interface RegexMatchAndSubstitute__Output {
    * used in the pattern to extract portions of the subject string, and then
    * referenced in the substitution string.
    */
-  'pattern': (_envoy_type_matcher_RegexMatcher__Output);
+  'pattern'?: (_envoy_type_matcher_RegexMatcher__Output);
   /**
    * The string that should be substituted into matching portions of the
    * subject string during a substitution operation to produce a new string.

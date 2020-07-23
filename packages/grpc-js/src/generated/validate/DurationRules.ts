@@ -59,27 +59,27 @@ export interface DurationRules__Output {
   /**
    * Const specifies that this field must be exactly the specified value
    */
-  'const': (_google_protobuf_Duration__Output);
+  'const'?: (_google_protobuf_Duration__Output);
   /**
    * Lt specifies that this field must be less than the specified value,
    * exclusive
    */
-  'lt': (_google_protobuf_Duration__Output);
+  'lt'?: (_google_protobuf_Duration__Output);
   /**
    * Lt specifies that this field must be less than the specified value,
    * inclusive
    */
-  'lte': (_google_protobuf_Duration__Output);
+  'lte'?: (_google_protobuf_Duration__Output);
   /**
    * Gt specifies that this field must be greater than the specified value,
    * exclusive
    */
-  'gt': (_google_protobuf_Duration__Output);
+  'gt'?: (_google_protobuf_Duration__Output);
   /**
    * Gte specifies that this field must be greater than the specified value,
    * inclusive
    */
-  'gte': (_google_protobuf_Duration__Output);
+  'gte'?: (_google_protobuf_Duration__Output);
   /**
    * In specifies that this field must be equal to one of the specified
    * values

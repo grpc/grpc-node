@@ -86,7 +86,7 @@ export interface DeltaDiscoveryRequest {
    * The map's keys are names of xDS resources known to the xDS client.
    * The map's values are opaque resource versions.
    */
-  'initial_resource_versions'?: (string);
+  'initial_resource_versions'?: ({[key: string]: string});
   /**
    * When the DeltaDiscoveryRequest is a ACK or NACK message in response
    * to a previous DeltaDiscoveryResponse, the response_nonce must be the
@@ -141,7 +141,7 @@ export interface DeltaDiscoveryRequest__Output {
   /**
    * The node making the request.
    */
-  'node': (_envoy_api_v2_core_Node__Output);
+  'node'?: (_envoy_api_v2_core_Node__Output);
   /**
    * Type of the resource that is being requested, e.g.
    * "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment".
@@ -185,7 +185,7 @@ export interface DeltaDiscoveryRequest__Output {
    * The map's keys are names of xDS resources known to the xDS client.
    * The map's values are opaque resource versions.
    */
-  'initial_resource_versions': (string);
+  'initial_resource_versions': ({[key: string]: string});
   /**
    * When the DeltaDiscoveryRequest is a ACK or NACK message in response
    * to a previous DeltaDiscoveryResponse, the response_nonce must be the
@@ -198,5 +198,5 @@ export interface DeltaDiscoveryRequest__Output {
    * failed to update configuration. The *message* field in *error_details*
    * provides the Envoy internal exception related to the failure.
    */
-  'error_detail': (_google_rpc_Status__Output);
+  'error_detail'?: (_google_rpc_Status__Output);
 }

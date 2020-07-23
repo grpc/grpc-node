@@ -134,21 +134,13 @@ function getStructFromJson(obj: any): Struct {
   if (typeof obj !== 'object' || obj === null) {
     throw new Error('Invalid JSON object for Struct field');
   }
-  const result = Object.keys(obj).map((key) => validateValue(key));
-  if (result.length === 1) {
-    return {
-      fields: result[0],
-    };
-  } else {
-    return {
-      fields: {
-        kind: 'listValue',
-        listValue: {
-          values: result,
-        },
-      },
-    };
+  const fields: { [key: string]: Value } = {};
+  for (const [fieldName, value] of Object.entries(obj)) {
+    fields[fieldName] = validateValue(value);
   }
+  return {
+    fields,
+  };
 }
 
 /**

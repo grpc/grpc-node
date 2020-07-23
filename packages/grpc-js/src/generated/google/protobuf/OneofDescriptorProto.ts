@@ -9,5 +9,5 @@ export interface OneofDescriptorProto {
 
 export interface OneofDescriptorProto__Output {
   'name': (string);
-  'options': (_google_protobuf_OneofOptions__Output);
+  'options'?: (_google_protobuf_OneofOptions__Output);
 }

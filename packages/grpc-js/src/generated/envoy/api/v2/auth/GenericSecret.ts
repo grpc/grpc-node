@@ -13,5 +13,5 @@ export interface GenericSecret__Output {
   /**
    * Secret of generic type and is available to filters.
    */
-  'secret': (_envoy_api_v2_core_DataSource__Output);
+  'secret'?: (_envoy_api_v2_core_DataSource__Output);
 }

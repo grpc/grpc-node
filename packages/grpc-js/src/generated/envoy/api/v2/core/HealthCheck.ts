@@ -186,11 +186,11 @@ export interface _envoy_api_v2_core_HealthCheck_HttpHealthCheck__Output {
   /**
    * [#not-implemented-hide:] HTTP specific payload.
    */
-  'send': (_envoy_api_v2_core_HealthCheck_Payload__Output);
+  'send'?: (_envoy_api_v2_core_HealthCheck_Payload__Output);
   /**
    * [#not-implemented-hide:] HTTP specific response.
    */
-  'receive': (_envoy_api_v2_core_HealthCheck_Payload__Output);
+  'receive'?: (_envoy_api_v2_core_HealthCheck_Payload__Output);
   /**
    * An optional service name parameter which is used to validate the identity of
    * the health checked cluster. See the :ref:`architecture overview
@@ -237,7 +237,7 @@ export interface _envoy_api_v2_core_HealthCheck_HttpHealthCheck__Output {
    * <envoy_api_msg_type.matcher.StringMatcher>`. See the :ref:`architecture overview
    * <arch_overview_health_checking_identity>` for more information.
    */
-  'service_name_matcher': (_envoy_type_matcher_StringMatcher__Output);
+  'service_name_matcher'?: (_envoy_type_matcher_StringMatcher__Output);
 }
 
 /**
@@ -307,7 +307,7 @@ export interface _envoy_api_v2_core_HealthCheck_TcpHealthCheck__Output {
   /**
    * Empty payloads imply a connect-only health check.
    */
-  'send': (_envoy_api_v2_core_HealthCheck_Payload__Output);
+  'send'?: (_envoy_api_v2_core_HealthCheck_Payload__Output);
   /**
    * When checking the response, “fuzzy” matching is performed such that each
    * binary block must be found, and in the order specified, but not
@@ -485,36 +485,36 @@ export interface HealthCheck__Output {
    * The time to wait for a health check response. If the timeout is reached the
    * health check attempt will be considered a failure.
    */
-  'timeout': (_google_protobuf_Duration__Output);
+  'timeout'?: (_google_protobuf_Duration__Output);
   /**
    * The interval between health checks.
    */
-  'interval': (_google_protobuf_Duration__Output);
+  'interval'?: (_google_protobuf_Duration__Output);
   /**
    * An optional jitter amount in milliseconds. If specified, during every
    * interval Envoy will add interval_jitter to the wait time.
    */
-  'interval_jitter': (_google_protobuf_Duration__Output);
+  'interval_jitter'?: (_google_protobuf_Duration__Output);
   /**
    * The number of unhealthy health checks required before a host is marked
    * unhealthy. Note that for *http* health checking if a host responds with 503
    * this threshold is ignored and the host is considered unhealthy immediately.
    */
-  'unhealthy_threshold': (_google_protobuf_UInt32Value__Output);
+  'unhealthy_threshold'?: (_google_protobuf_UInt32Value__Output);
   /**
    * The number of healthy health checks required before a host is marked
    * healthy. Note that during startup, only a single successful health check is
    * required to mark a host healthy.
    */
-  'healthy_threshold': (_google_protobuf_UInt32Value__Output);
+  'healthy_threshold'?: (_google_protobuf_UInt32Value__Output);
   /**
    * [#not-implemented-hide:] Non-serving port for health checking.
    */
-  'alt_port': (_google_protobuf_UInt32Value__Output);
+  'alt_port'?: (_google_protobuf_UInt32Value__Output);
   /**
    * Reuse health check connection between health checks. Default is true.
    */
-  'reuse_connection': (_google_protobuf_BoolValue__Output);
+  'reuse_connection'?: (_google_protobuf_BoolValue__Output);
   /**
    * HTTP health check.
    */
@@ -537,7 +537,7 @@ export interface HealthCheck__Output {
    * 
    * The default value for "no traffic interval" is 60 seconds.
    */
-  'no_traffic_interval': (_google_protobuf_Duration__Output);
+  'no_traffic_interval'?: (_google_protobuf_Duration__Output);
   /**
    * Custom health check.
    */
@@ -549,7 +549,7 @@ export interface HealthCheck__Output {
    * 
    * The default value for "unhealthy interval" is the same as "interval".
    */
-  'unhealthy_interval': (_google_protobuf_Duration__Output);
+  'unhealthy_interval'?: (_google_protobuf_Duration__Output);
   /**
    * The "unhealthy edge interval" is a special health check interval that is used for the first
    * health check right after a host is marked as unhealthy. For subsequent health checks
@@ -558,7 +558,7 @@ export interface HealthCheck__Output {
    * 
    * The default value for "unhealthy edge interval" is the same as "unhealthy interval".
    */
-  'unhealthy_edge_interval': (_google_protobuf_Duration__Output);
+  'unhealthy_edge_interval'?: (_google_protobuf_Duration__Output);
   /**
    * The "healthy edge interval" is a special health check interval that is used for the first
    * health check right after a host is marked as healthy. For subsequent health checks
@@ -566,7 +566,7 @@ export interface HealthCheck__Output {
    * 
    * The default value for "healthy edge interval" is the same as the default interval.
    */
-  'healthy_edge_interval': (_google_protobuf_Duration__Output);
+  'healthy_edge_interval'?: (_google_protobuf_Duration__Output);
   /**
    * Specifies the path to the :ref:`health check event log <arch_overview_health_check_logging>`.
    * If empty, no event log will be written.
@@ -592,16 +592,16 @@ export interface HealthCheck__Output {
    * checking after for a random time in ms between 0 and initial_jitter. This only
    * applies to the first health check.
    */
-  'initial_jitter': (_google_protobuf_Duration__Output);
+  'initial_jitter'?: (_google_protobuf_Duration__Output);
   /**
    * This allows overriding the cluster TLS settings, just for health check connections.
    */
-  'tls_options': (_envoy_api_v2_core_HealthCheck_TlsOptions__Output);
+  'tls_options'?: (_envoy_api_v2_core_HealthCheck_TlsOptions__Output);
   /**
    * [#not-implemented-hide:]
    * The gRPC service for the health check event service.
    * If empty, health check events won't be sent to a remote endpoint.
    */
-  'event_service': (_envoy_api_v2_core_EventServiceConfig__Output);
+  'event_service'?: (_envoy_api_v2_core_EventServiceConfig__Output);
   'health_checker': "http_health_check"|"tcp_health_check"|"grpc_health_check"|"custom_health_check";
 }

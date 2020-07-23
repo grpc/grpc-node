@@ -25,8 +25,8 @@ export interface _envoy_api_v2_LoadBalancingPolicy_Policy__Output {
    * Optional config for the LB policy.
    * No more than one of these two fields may be populated.
    */
-  'config': (_google_protobuf_Struct__Output);
-  'typed_config': (_google_protobuf_Any__Output);
+  'config'?: (_google_protobuf_Struct__Output);
+  'typed_config'?: (_google_protobuf_Any__Output);
 }
 
 /**

@@ -15,7 +15,7 @@ export interface MethodDescriptorProto__Output {
   'name': (string);
   'inputType': (string);
   'outputType': (string);
-  'options': (_google_protobuf_MethodOptions__Output);
+  'options'?: (_google_protobuf_MethodOptions__Output);
   'clientStreaming': (boolean);
   'serverStreaming': (boolean);
 }

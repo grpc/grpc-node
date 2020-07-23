@@ -21,5 +21,5 @@ export interface HeaderFilter__Output {
    * Only requests with a header which matches the specified HeaderMatcher will pass the filter
    * check.
    */
-  'header': (_envoy_api_v2_route_HeaderMatcher__Output);
+  'header'?: (_envoy_api_v2_route_HeaderMatcher__Output);
 }

@@ -193,7 +193,7 @@ export interface _envoy_api_v2_core_GrpcService_GoogleGrpc__Output {
    * :ref:`channel_credentials <envoy_api_field_core.GrpcService.GoogleGrpc.channel_credentials>`.
    */
   'target_uri': (string);
-  'channel_credentials': (_envoy_api_v2_core_GrpcService_GoogleGrpc_ChannelCredentials__Output);
+  'channel_credentials'?: (_envoy_api_v2_core_GrpcService_GoogleGrpc_ChannelCredentials__Output);
   /**
    * A set of call credentials that can be composed with `channel credentials
    * <https://grpc.io/docs/guides/auth.html#credential-types>`_.
@@ -221,7 +221,7 @@ export interface _envoy_api_v2_core_GrpcService_GoogleGrpc__Output {
    * Additional configuration for site-specific customizations of the Google
    * gRPC library.
    */
-  'config': (_google_protobuf_Struct__Output);
+  'config'?: (_google_protobuf_Struct__Output);
 }
 
 export interface _envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials {
@@ -297,15 +297,15 @@ export interface _envoy_api_v2_core_GrpcService_GoogleGrpc_SslCredentials__Outpu
   /**
    * PEM encoded server root certificates.
    */
-  'root_certs': (_envoy_api_v2_core_DataSource__Output);
+  'root_certs'?: (_envoy_api_v2_core_DataSource__Output);
   /**
    * PEM encoded client private key.
    */
-  'private_key': (_envoy_api_v2_core_DataSource__Output);
+  'private_key'?: (_envoy_api_v2_core_DataSource__Output);
   /**
    * PEM encoded client certificate chain.
    */
-  'cert_chain': (_envoy_api_v2_core_DataSource__Output);
+  'cert_chain'?: (_envoy_api_v2_core_DataSource__Output);
 }
 
 /**
@@ -470,7 +470,7 @@ export interface GrpcService__Output {
    * The timeout for the gRPC request. This is the timeout for a specific
    * request.
    */
-  'timeout': (_google_protobuf_Duration__Output);
+  'timeout'?: (_google_protobuf_Duration__Output);
   /**
    * Additional metadata to include in streams initiated to the GrpcService.
    * This can be used for scenarios in which additional ad hoc authorization

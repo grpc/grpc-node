@@ -12,5 +12,5 @@ export interface MethodOptions {
 export interface MethodOptions__Output {
   'deprecated': (boolean);
   'uninterpretedOption': (_google_protobuf_UninterpretedOption__Output)[];
-  '.google.api.http': (_google_api_HttpRule__Output);
+  '.google.api.http'?: (_google_api_HttpRule__Output);
 }

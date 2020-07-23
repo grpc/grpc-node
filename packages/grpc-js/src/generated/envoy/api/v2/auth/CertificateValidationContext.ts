@@ -193,7 +193,7 @@ export interface CertificateValidationContext__Output {
    * See :ref:`the TLS overview <arch_overview_ssl_enabling_verification>` for a list of common
    * system CA locations.
    */
-  'trusted_ca': (_envoy_api_v2_core_DataSource__Output);
+  'trusted_ca'?: (_envoy_api_v2_core_DataSource__Output);
   /**
    * An optional list of hex-encoded SHA-256 hashes. If specified, Envoy will verify that
    * the SHA-256 of the DER-encoded presented certificate matches one of the specified values.
@@ -270,11 +270,11 @@ export interface CertificateValidationContext__Output {
   /**
    * [#not-implemented-hide:] Must present a signed time-stamped OCSP response.
    */
-  'require_ocsp_staple': (_google_protobuf_BoolValue__Output);
+  'require_ocsp_staple'?: (_google_protobuf_BoolValue__Output);
   /**
    * [#not-implemented-hide:] Must present signed certificate time-stamp.
    */
-  'require_signed_certificate_timestamp': (_google_protobuf_BoolValue__Output);
+  'require_signed_certificate_timestamp'?: (_google_protobuf_BoolValue__Output);
   /**
    * An optional `certificate revocation list
    * <https://en.wikipedia.org/wiki/Certificate_revocation_list>`_
@@ -282,7 +282,7 @@ export interface CertificateValidationContext__Output {
    * certificate has not been revoked by this CRL. If this DataSource contains
    * multiple CRLs, all of them will be used.
    */
-  'crl': (_envoy_api_v2_core_DataSource__Output);
+  'crl'?: (_envoy_api_v2_core_DataSource__Output);
   /**
    * If specified, Envoy will not reject expired certificates.
    */

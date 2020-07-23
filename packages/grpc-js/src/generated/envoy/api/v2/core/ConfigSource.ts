@@ -118,7 +118,7 @@ export interface ConfigSource__Output {
    * means no timeout - Envoy will wait indefinitely for the first xDS config (unless another
    * timeout applies). The default is 15s.
    */
-  'initial_fetch_timeout': (_google_protobuf_Duration__Output);
+  'initial_fetch_timeout'?: (_google_protobuf_Duration__Output);
   /**
    * [#not-implemented-hide:]
    * When set, the client will access the resources from the same server it got the

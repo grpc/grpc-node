@@ -237,19 +237,13 @@ class DnsResolver implements Resolver {
             }
           },
           (err) => {
-            this.latestServiceConfigError = {
-              code: Status.UNAVAILABLE,
-              details: 'TXT query failed',
-              metadata: new Metadata(),
-            };
-            if (this.latestLookupResult !== null) {
-              this.listener.onSuccessfulResolution(
-                this.latestLookupResult,
-                this.latestServiceConfig,
-                this.latestServiceConfigError,
-                {}
-              );
-            }
+            /* If TXT lookup fails we should do nothing, which means that we
+             * continue to use the result of the most recent successful lookup,
+             * or the default null config object if there has never been a
+             * successful lookup. We do not set the latestServiceConfigError
+             * here because that is specifically used for response validation
+             * errors. We still need to handle this error so that it does not
+             * bubble up as an unhandled promise rejection. */
           }
         );
       }

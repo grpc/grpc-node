@@ -143,7 +143,7 @@ export class EdsLoadBalancer implements LoadBalancer {
         (lbEndpoint) => {
           /* The validator in the XdsClient class ensures that each endpoint has
            * a socket_address with an IP address and a port_value. */
-          const socketAddress = lbEndpoint.endpoint!.address.socket_address!;
+          const socketAddress = lbEndpoint.endpoint!.address!.socket_address!;
           return {
             host: socketAddress.address!,
             port: socketAddress.port_value!,
@@ -151,12 +151,12 @@ export class EdsLoadBalancer implements LoadBalancer {
         }
       );
       localityArray.push({
-        locality: endpoint.locality,
+        locality: endpoint.locality!,
         addresses: addresses,
-        weight: endpoint.load_balancing_weight.value,
+        weight: endpoint.load_balancing_weight?.value ?? 0,
       });
       newLocalityPriorities.set(
-        localityToName(endpoint.locality),
+        localityToName(endpoint.locality!),
         endpoint.priority
       );
     }
@@ -282,13 +282,30 @@ export class EdsLoadBalancer implements LoadBalancer {
     this.lastestConfig = lbConfig;
     this.latestAttributes = attributes;
     this.xdsClient = attributes.xdsClient;
-    this.edsServiceName = lbConfig.eds.edsServiceName ?? lbConfig.eds.cluster;
+    const newEdsServiceName = lbConfig.eds.edsServiceName ?? lbConfig.eds.cluster;
+
+    /* If the name is changing, disable the old watcher before adding the new
+     * one */
+    if (this.isWatcherActive && this.edsServiceName !== newEdsServiceName) {
+      this.xdsClient.removeEndpointWatcher(this.edsServiceName!, this.watcher);
+      /* Setting isWatcherActive to false here lets us have one code path for
+        * calling addEndpointWatcher */
+      this.isWatcherActive = false;
+      /* If we have a new name, the latestEdsUpdate does not correspond to
+        * the new config, so it is no longer valid */
+      this.latestEdsUpdate = null;
+    }
+
+    this.edsServiceName = newEdsServiceName;
 
     if (!this.isWatcherActive) {
       this.xdsClient.addEndpointWatcher(this.edsServiceName, this.watcher);
       this.isWatcherActive = true;
     }
 
+    /* If updateAddressList is called after receiving an update and the update
+     * is still valid, we want to update the child config with the information
+     * in the new EdsLoadBalancingConfig. */
     this.updateChild();
   }
   exitIdle(): void {

@@ -13,5 +13,5 @@ export interface FilterAction {
  * A filter-defined action type.
  */
 export interface FilterAction__Output {
-  'action': (_google_protobuf_Any__Output);
+  'action'?: (_google_protobuf_Any__Output);
 }

@@ -118,7 +118,7 @@ export interface CorsPolicy__Output {
   /**
    * Specifies whether the resource allows credentials.
    */
-  'allow_credentials': (_google_protobuf_BoolValue__Output);
+  'allow_credentials'?: (_google_protobuf_BoolValue__Output);
   /**
    * Specifies if the CORS filter is enabled. Defaults to true. Only effective on route.
    * 
@@ -159,7 +159,7 @@ export interface CorsPolicy__Output {
    * Envoy will lookup the runtime key to get the percentage of requests for which it will evaluate
    * and track the request's *Origin* to determine if it's valid but will not enforce any policies.
    */
-  'shadow_enabled': (_envoy_api_v2_core_RuntimeFractionalPercent__Output);
+  'shadow_enabled'?: (_envoy_api_v2_core_RuntimeFractionalPercent__Output);
   /**
    * Specifies string patterns that match allowed origins. An origin is allowed if any of the
    * string matchers match.

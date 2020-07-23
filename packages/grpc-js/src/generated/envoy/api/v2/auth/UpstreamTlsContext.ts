@@ -45,7 +45,7 @@ export interface UpstreamTlsContext__Output {
    * :ref:`trusted_ca<envoy_api_field_auth.CertificateValidationContext.trusted_ca>` to enable
    * verification.
    */
-  'common_tls_context': (_envoy_api_v2_auth_CommonTlsContext__Output);
+  'common_tls_context'?: (_envoy_api_v2_auth_CommonTlsContext__Output);
   /**
    * SNI string to use when creating TLS backend connections.
    */
@@ -64,5 +64,5 @@ export interface UpstreamTlsContext__Output {
    * 
    * Defaults to 1, setting this to 0 disables session resumption.
    */
-  'max_session_keys': (_google_protobuf_UInt32Value__Output);
+  'max_session_keys'?: (_google_protobuf_UInt32Value__Output);
 }

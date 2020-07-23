@@ -122,11 +122,11 @@ export interface _envoy_type_tracing_v2_CustomTag_Metadata__Output {
   /**
    * Specify what kind of metadata to obtain tag value from.
    */
-  'kind': (_envoy_type_metadata_v2_MetadataKind__Output);
+  'kind'?: (_envoy_type_metadata_v2_MetadataKind__Output);
   /**
    * Metadata key to define the path to retrieve the tag value.
    */
-  'metadata_key': (_envoy_type_metadata_v2_MetadataKey__Output);
+  'metadata_key'?: (_envoy_type_metadata_v2_MetadataKey__Output);
   /**
    * When no valid metadata is found,
    * the tag value would be populated with this default value if specified,

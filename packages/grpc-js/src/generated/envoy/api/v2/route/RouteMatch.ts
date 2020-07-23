@@ -30,12 +30,12 @@ export interface _envoy_api_v2_route_RouteMatch_TlsContextMatchOptions__Output {
    * If specified, the route will match against whether or not a certificate is presented.
    * If not specified, certificate presentation status (true or false) will not be considered when route matching.
    */
-  'presented': (_google_protobuf_BoolValue__Output);
+  'presented'?: (_google_protobuf_BoolValue__Output);
   /**
    * If specified, the route will match against whether or not a certificate is validated.
    * If not specified, certificate validation status (true or false) will not be considered when route matching.
    */
-  'validated': (_google_protobuf_BoolValue__Output);
+  'validated'?: (_google_protobuf_BoolValue__Output);
 }
 
 /**
@@ -179,7 +179,7 @@ export interface RouteMatch__Output {
    * Indicates that prefix/path matching should be case insensitive. The default
    * is true.
    */
-  'case_sensitive': (_google_protobuf_BoolValue__Output);
+  'case_sensitive'?: (_google_protobuf_BoolValue__Output);
   /**
    * Specifies a set of headers that the route should match on. The router will
    * check the request’s headers against all the specified headers in the route
@@ -201,7 +201,7 @@ export interface RouteMatch__Output {
    * that the content-type header has a application/grpc or one of the various
    * application/grpc+ values.
    */
-  'grpc': (_envoy_api_v2_route_RouteMatch_GrpcRouteMatchOptions__Output);
+  'grpc'?: (_envoy_api_v2_route_RouteMatch_GrpcRouteMatchOptions__Output);
   /**
    * Indicates that the route should additionally match on a runtime key. Every time the route
    * is considered for a match, it must also fall under the percentage of matches indicated by
@@ -220,7 +220,7 @@ export interface RouteMatch__Output {
    * instance, a runtime key lookup returning the value "42" would parse as a FractionalPercent
    * whose numerator is 42 and denominator is HUNDRED. This preserves legacy semantics.
    */
-  'runtime_fraction': (_envoy_api_v2_core_RuntimeFractionalPercent__Output);
+  'runtime_fraction'?: (_envoy_api_v2_core_RuntimeFractionalPercent__Output);
   /**
    * If specified, the route is a regular expression rule meaning that the
    * regex must match the *:path* header once the query string is removed. The entire path
@@ -242,6 +242,6 @@ export interface RouteMatch__Output {
    * 
    * [#next-major-version: unify with RBAC]
    */
-  'tls_context': (_envoy_api_v2_route_RouteMatch_TlsContextMatchOptions__Output);
+  'tls_context'?: (_envoy_api_v2_route_RouteMatch_TlsContextMatchOptions__Output);
   'path_specifier': "prefix"|"path"|"regex"|"safe_regex";
 }

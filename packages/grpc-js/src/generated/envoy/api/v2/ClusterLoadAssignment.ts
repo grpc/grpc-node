@@ -31,7 +31,7 @@ export interface _envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload__Output
   /**
    * Percentage of traffic that should be dropped for the category.
    */
-  'drop_percentage': (_envoy_type_FractionalPercent__Output);
+  'drop_percentage'?: (_envoy_type_FractionalPercent__Output);
 }
 
 /**
@@ -143,14 +143,14 @@ export interface _envoy_api_v2_ClusterLoadAssignment_Policy__Output {
    * Read more at :ref:`priority levels <arch_overview_load_balancing_priority_levels>` and
    * :ref:`localities <arch_overview_load_balancing_locality_weighted_lb>`.
    */
-  'overprovisioning_factor': (_google_protobuf_UInt32Value__Output);
+  'overprovisioning_factor'?: (_google_protobuf_UInt32Value__Output);
   /**
    * The max time until which the endpoints from this assignment can be used.
    * If no new assignments are received before this time expires the endpoints
    * are considered stale and should be marked unhealthy.
    * Defaults to 0 which means endpoints never go stale.
    */
-  'endpoint_stale_after': (_google_protobuf_Duration__Output);
+  'endpoint_stale_after'?: (_google_protobuf_Duration__Output);
   /**
    * The flag to disable overprovisioning. If it is set to true,
    * :ref:`overprovisioning factor
@@ -196,7 +196,7 @@ export interface ClusterLoadAssignment {
    * Map of named endpoints that can be referenced in LocalityLbEndpoints.
    * [#not-implemented-hide:]
    */
-  'named_endpoints'?: (_envoy_api_v2_endpoint_Endpoint);
+  'named_endpoints'?: ({[key: string]: _envoy_api_v2_endpoint_Endpoint});
 }
 
 /**
@@ -226,10 +226,10 @@ export interface ClusterLoadAssignment__Output {
   /**
    * Load balancing policy settings.
    */
-  'policy': (_envoy_api_v2_ClusterLoadAssignment_Policy__Output);
+  'policy'?: (_envoy_api_v2_ClusterLoadAssignment_Policy__Output);
   /**
    * Map of named endpoints that can be referenced in LocalityLbEndpoints.
    * [#not-implemented-hide:]
    */
-  'named_endpoints': (_envoy_api_v2_endpoint_Endpoint__Output);
+  'named_endpoints'?: ({[key: string]: _envoy_api_v2_endpoint_Endpoint__Output});
 }
