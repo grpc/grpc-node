@@ -24,6 +24,8 @@ import * as load_balancer_pick_first from './load-balancer-pick-first';
 import * as load_balancer_round_robin from './load-balancer-round-robin';
 import * as load_balancer_priority from './load-balancer-priority';
 import * as load_balancer_weighted_target from './load-balancer-weighted-target';
+import * as load_balancer_eds from './load-balancer-eds';
+import * as load_balancer_cds from './load-balancer-cds';
 
 /**
  * A collection of functions associated with a channel that a load balancer
@@ -141,4 +143,6 @@ export function registerAll() {
   load_balancer_round_robin.setup();
   load_balancer_priority.setup();
   load_balancer_weighted_target.setup();
+  load_balancer_eds.setup();
+  load_balancer_cds.setup();
 }

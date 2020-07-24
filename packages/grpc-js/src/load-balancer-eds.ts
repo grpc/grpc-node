@@ -91,8 +91,11 @@ export class EdsLoadBalancer implements LoadBalancer {
         this.updateChild();
       },
       onResourceDoesNotExist: () => {
-        /* TODO(murgatroid99): Figure out what needs to be done here after
-         * implementing CDS */
+        this.xdsClient?.removeEndpointWatcher(
+          this.edsServiceName!,
+          this.watcher
+        );
+        this.isWatcherActive = false;
       },
       onTransientError: (status) => {
         if (this.latestEdsUpdate === null) {
@@ -282,17 +285,18 @@ export class EdsLoadBalancer implements LoadBalancer {
     this.lastestConfig = lbConfig;
     this.latestAttributes = attributes;
     this.xdsClient = attributes.xdsClient;
-    const newEdsServiceName = lbConfig.eds.edsServiceName ?? lbConfig.eds.cluster;
+    const newEdsServiceName =
+      lbConfig.eds.edsServiceName ?? lbConfig.eds.cluster;
 
     /* If the name is changing, disable the old watcher before adding the new
      * one */
     if (this.isWatcherActive && this.edsServiceName !== newEdsServiceName) {
       this.xdsClient.removeEndpointWatcher(this.edsServiceName!, this.watcher);
       /* Setting isWatcherActive to false here lets us have one code path for
-        * calling addEndpointWatcher */
+       * calling addEndpointWatcher */
       this.isWatcherActive = false;
       /* If we have a new name, the latestEdsUpdate does not correspond to
-        * the new config, so it is no longer valid */
+       * the new config, so it is no longer valid */
       this.latestEdsUpdate = null;
     }
 
