@@ -33,7 +33,7 @@ import { Cluster__Output } from './generated/envoy/api/v2/Cluster';
 import { ConnectivityState } from './channel';
 import { UnavailablePicker } from './picker';
 import { Status } from './constants';
-import { Metadata } from '.';
+import { Metadata } from './metadata';
 
 const TYPE_NAME = 'cds';
 
