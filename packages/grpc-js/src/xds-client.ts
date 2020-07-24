@@ -18,6 +18,7 @@
 import * as protoLoader from '@grpc/proto-loader';
 import { loadPackageDefinition } from './make-client';
 import * as adsTypes from './generated/ads';
+import * as lrsTypes from './generated/lrs';
 import { createGoogleDefaultCredentials } from './channel-credentials';
 import { loadBootstrapInfo } from './xds-bootstrap';
 import { ClientDuplexStream, ServiceError } from './call';
@@ -34,6 +35,15 @@ import { DiscoveryRequest } from './generated/envoy/api/v2/DiscoveryRequest';
 import { DiscoveryResponse__Output } from './generated/envoy/api/v2/DiscoveryResponse';
 import { ClusterLoadAssignment__Output } from './generated/envoy/api/v2/ClusterLoadAssignment';
 import { Cluster__Output } from './generated/envoy/api/v2/Cluster';
+import { LoadReportingServiceClient } from './generated/envoy/service/load_stats/v2/LoadReportingService';
+import { LoadStatsRequest } from './generated/envoy/service/load_stats/v2/LoadStatsRequest';
+import { LoadStatsResponse__Output } from './generated/envoy/service/load_stats/v2/LoadStatsResponse';
+import { Locality__Output } from './generated/envoy/api/v2/core/Locality';
+import {
+  ClusterStats,
+  _envoy_api_v2_endpoint_ClusterStats_DroppedRequests,
+} from './generated/envoy/api/v2/endpoint/ClusterStats';
+import { UpstreamLocalityStats } from './generated/envoy/api/v2/endpoint/UpstreamLocalityStats';
 
 const TRACER_NAME = 'xds_client';
 
@@ -46,9 +56,13 @@ const clientVersion = require('../../package.json').version;
 const EDS_TYPE_URL = 'type.googleapis.com/envoy.api.v2.ClusterLoadAssignment';
 const CDS_TYPE_URL = 'type.googleapis.com/envoy.api.v2.Cluster';
 
-let loadedProtos: Promise<adsTypes.ProtoGrpcType> | null = null;
+let loadedProtos: Promise<
+  adsTypes.ProtoGrpcType & lrsTypes.ProtoGrpcType
+> | null = null;
 
-function loadAdsProtos(): Promise<adsTypes.ProtoGrpcType> {
+function loadAdsProtos(): Promise<
+  adsTypes.ProtoGrpcType & lrsTypes.ProtoGrpcType
+> {
   if (loadedProtos !== null) {
     return loadedProtos;
   }
@@ -80,7 +94,7 @@ function loadAdsProtos(): Promise<adsTypes.ProtoGrpcType> {
       (packageDefinition) =>
         (loadPackageDefinition(
           packageDefinition
-        ) as unknown) as adsTypes.ProtoGrpcType
+        ) as unknown) as adsTypes.ProtoGrpcType & lrsTypes.ProtoGrpcType
     );
   return loadedProtos;
 }
@@ -91,13 +105,101 @@ export interface Watcher<UpdateType> {
   onResourceDoesNotExist(): void;
 }
 
+export interface XdsClusterDropStats {
+  addCallDropped(category: string): void;
+}
+
+interface ClusterLocalityStats {
+  locality: Locality__Output;
+  callsStarted: number;
+  callsSucceeded: number;
+  callsFailed: number;
+  callsInProgress: number;
+}
+
+interface ClusterLoadReport {
+  callsDropped: Map<string, number>;
+  localityStats: ClusterLocalityStats[];
+  intervalStart: [number, number];
+}
+
+class ClusterLoadReportMap {
+  private statsMap: {
+    clusterName: string;
+    edsServiceName: string;
+    stats: ClusterLoadReport;
+  }[] = [];
+
+  get(
+    clusterName: string,
+    edsServiceName: string
+  ): ClusterLoadReport | undefined {
+    for (const statsObj of this.statsMap) {
+      if (
+        statsObj.clusterName === clusterName &&
+        statsObj.edsServiceName === edsServiceName
+      ) {
+        return statsObj.stats;
+      }
+    }
+    return undefined;
+  }
+
+  getOrCreate(clusterName: string, edsServiceName: string): ClusterLoadReport {
+    for (const statsObj of this.statsMap) {
+      if (
+        statsObj.clusterName === clusterName &&
+        statsObj.edsServiceName === edsServiceName
+      ) {
+        return statsObj.stats;
+      }
+    }
+    const newStats: ClusterLoadReport = {
+      callsDropped: new Map<string, number>(),
+      localityStats: [],
+      intervalStart: process.hrtime(),
+    };
+    this.statsMap.push({
+      clusterName,
+      edsServiceName,
+      stats: newStats,
+    });
+    return newStats;
+  }
+
+  *entries(): IterableIterator<
+    [{ clusterName: string; edsServiceName: string }, ClusterLoadReport]
+  > {
+    for (const statsEntry of this.statsMap) {
+      yield [
+        {
+          clusterName: statsEntry.clusterName,
+          edsServiceName: statsEntry.edsServiceName,
+        },
+        statsEntry.stats,
+      ];
+    }
+  }
+}
+
 export class XdsClient {
-  private node: Node | null = null;
-  private client: AggregatedDiscoveryServiceClient | null = null;
+  private adsNode: Node | null = null;
+  private adsClient: AggregatedDiscoveryServiceClient | null = null;
   private adsCall: ClientDuplexStream<
     DiscoveryRequest,
     DiscoveryResponse__Output
   > | null = null;
+
+  private lrsNode: Node | null = null;
+  private lrsClient: LoadReportingServiceClient | null = null;
+  private lrsCall: ClientDuplexStream<
+    LoadStatsRequest,
+    LoadStatsResponse__Output
+  > | null = null;
+  private latestLrsSettings: LoadStatsResponse__Output | null = null;
+
+  private clusterStatsMap: ClusterLoadReportMap = new ClusterLoadReportMap();
+  private statsTimer: NodeJS.Timer;
 
   private hasShutdown = false;
 
@@ -146,17 +248,32 @@ export class XdsClient {
         if (this.hasShutdown) {
           return;
         }
-        this.node = {
+        const node: Node = {
           ...bootstrapInfo.node,
           build_version: `gRPC Node Pure JS ${clientVersion}`,
           user_agent_name: 'gRPC Node Pure JS',
         };
-        this.client = new protoDefinitions.envoy.service.discovery.v2.AggregatedDiscoveryService(
+        this.adsNode = {
+          ...node,
+          client_features: ['envoy.lb.does_not_support_overprovisioning'],
+        };
+        this.lrsNode = {
+          ...node,
+          client_features: ['envoy.lrs.supports_send_all_clusters'],
+        };
+        this.adsClient = new protoDefinitions.envoy.service.discovery.v2.AggregatedDiscoveryService(
           bootstrapInfo.xdsServers[0].serverUri,
           createGoogleDefaultCredentials(),
           channelArgs
         );
         this.maybeStartAdsStream();
+
+        this.lrsClient = new protoDefinitions.envoy.service.load_stats.v2.LoadReportingService(
+          bootstrapInfo.xdsServers[0].serverUri,
+          createGoogleDefaultCredentials(),
+          channelArgs
+        );
+        this.maybeStartLrsStream();
       },
       (error) => {
         trace('Failed to initialize xDS Client. ' + error.message);
@@ -168,6 +285,8 @@ export class XdsClient {
         });
       }
     );
+    this.statsTimer = setInterval(() => {}, 0);
+    clearInterval(this.statsTimer);
   }
 
   /**
@@ -175,7 +294,7 @@ export class XdsClient {
    * existing stream, and there
    */
   private maybeStartAdsStream() {
-    if (this.client === null) {
+    if (this.adsClient === null) {
       return;
     }
     if (this.adsCall !== null) {
@@ -184,7 +303,7 @@ export class XdsClient {
     if (this.hasShutdown) {
       return;
     }
-    this.adsCall = this.client.StreamAggregatedResources();
+    this.adsCall = this.adsClient.StreamAggregatedResources();
     this.adsCall.on('data', (message: DiscoveryResponse__Output) => {
       switch (message.type_url) {
         case EDS_TYPE_URL: {
@@ -276,7 +395,7 @@ export class XdsClient {
     const endpointWatcherNames = Array.from(this.endpointWatchers.keys());
     if (endpointWatcherNames.length > 0) {
       this.adsCall.write({
-        node: this.node!,
+        node: this.adsNode!,
         type_url: EDS_TYPE_URL,
         resource_names: endpointWatcherNames,
       });
@@ -288,7 +407,7 @@ export class XdsClient {
       return;
     }
     this.adsCall.write({
-      node: this.node!,
+      node: this.adsNode!,
       type_url: typeUrl,
       version_info: versionInfo,
       response_nonce: nonce,
@@ -307,7 +426,7 @@ export class XdsClient {
       return;
     }
     this.adsCall.write({
-      node: this.node!,
+      node: this.adsNode!,
       type_url: EDS_TYPE_URL,
       resource_names: Array.from(this.endpointWatchers.keys()),
       response_nonce: this.lastEdsNonce,
@@ -320,7 +439,7 @@ export class XdsClient {
       return;
     }
     this.adsCall.write({
-      node: this.node!,
+      node: this.adsNode!,
       type_url: CDS_TYPE_URL,
       resource_names: Array.from(this.clusterWatchers.keys()),
       response_nonce: this.lastCdsNonce,
@@ -337,7 +456,7 @@ export class XdsClient {
       return;
     }
     this.adsCall.write({
-      node: this.node!,
+      node: this.adsNode!,
       type_url: EDS_TYPE_URL,
       resource_names: Array.from(this.endpointWatchers.keys()),
       response_nonce: this.lastEdsNonce,
@@ -353,7 +472,7 @@ export class XdsClient {
       return;
     }
     this.adsCall.write({
-      node: this.node!,
+      node: this.adsNode!,
       type_url: CDS_TYPE_URL,
       resource_names: Array.from(this.clusterWatchers.keys()),
       response_nonce: this.lastCdsNonce,
@@ -422,7 +541,7 @@ export class XdsClient {
   private updateEdsNames() {
     if (this.adsCall) {
       this.adsCall.write({
-        node: this.node!,
+        node: this.adsNode!,
         type_url: EDS_TYPE_URL,
         resource_names: Array.from(this.endpointWatchers.keys()),
         response_nonce: this.lastEdsNonce,
@@ -434,7 +553,7 @@ export class XdsClient {
   private updateCdsNames() {
     if (this.adsCall) {
       this.adsCall.write({
-        node: this.node!,
+        node: this.adsNode!,
         type_url: CDS_TYPE_URL,
         resource_names: Array.from(this.clusterWatchers.keys()),
         response_nonce: this.lastCdsNonce,
@@ -453,6 +572,125 @@ export class XdsClient {
       }
     }
     // Also do the same for other types of watchers when those are implemented
+  }
+
+  private maybeStartLrsStream() {
+    if (!this.lrsClient) {
+      return;
+    }
+    if (this.lrsCall) {
+      return;
+    }
+    if (this.hasShutdown) {
+      return;
+    }
+
+    this.lrsCall = this.lrsClient.streamLoadStats();
+    this.lrsCall.on('data', (message: LoadStatsResponse__Output) => {
+      if (
+        message.load_reporting_interval?.seconds !==
+          this.latestLrsSettings?.load_reporting_interval?.seconds ||
+        message.load_reporting_interval?.nanos !==
+          this.latestLrsSettings?.load_reporting_interval?.nanos
+      ) {
+        /* Only reset the timer if the interval has changed or was not set
+         * before. */
+        clearInterval(this.statsTimer);
+        /* Convert a google.protobuf.Duration to a number of milliseconds for
+         * use with setInterval. */
+        const loadReportingIntervalMs =
+          Number.parseInt(message.load_reporting_interval!.seconds) * 1000 +
+          message.load_reporting_interval!.nanos / 1_000_000;
+        setInterval(() => {
+          this.sendStats();
+        }, loadReportingIntervalMs);
+      }
+      this.latestLrsSettings = message;
+    });
+    this.lrsCall.on('error', (error: ServiceError) => {
+      trace(
+        'LRS stream ended. code=' + error.code + ' details= ' + error.details
+      );
+      this.lrsCall = null;
+      clearInterval(this.statsTimer);
+      /* Connection backoff is handled by the client object, so we can
+       * immediately start a new request to indicate that it should try to
+       * reconnect */
+      this.maybeStartAdsStream();
+    });
+    this.lrsCall.write({
+      node: this.lrsNode!,
+    });
+  }
+
+  private sendStats() {
+    if (!this.lrsCall) {
+      return;
+    }
+    const clusterStats: ClusterStats[] = [];
+    for (const [
+      { clusterName, edsServiceName },
+      stats,
+    ] of this.clusterStatsMap.entries()) {
+      if (
+        this.latestLrsSettings!.send_all_clusters ||
+        this.latestLrsSettings!.clusters.indexOf(clusterName) > 0
+      ) {
+        const upstreamLocalityStats: UpstreamLocalityStats[] = [];
+        for (const localityStats of stats.localityStats) {
+          // Skip localities with 0 requests
+          if (
+            localityStats.callsStarted > 0 ||
+            localityStats.callsSucceeded > 0 ||
+            localityStats.callsFailed > 0
+          ) {
+            upstreamLocalityStats.push({
+              locality: localityStats.locality,
+              total_issued_requests: localityStats.callsStarted,
+              total_successful_requests: localityStats.callsSucceeded,
+              total_error_requests: localityStats.callsFailed,
+              total_requests_in_progress: localityStats.callsInProgress,
+            });
+            localityStats.callsStarted = 0;
+            localityStats.callsSucceeded = 0;
+            localityStats.callsFailed = 0;
+          }
+        }
+        const droppedRequests: _envoy_api_v2_endpoint_ClusterStats_DroppedRequests[] = [];
+        let totalDroppedRequests = 0;
+        for (const [category, count] of stats.callsDropped.entries()) {
+          if (count > 0) {
+            droppedRequests.push({
+              category,
+              dropped_count: count,
+            });
+            totalDroppedRequests += count;
+          }
+        }
+        // Clear out dropped call stats after sending them
+        stats.callsDropped.clear();
+        const interval = process.hrtime(stats.intervalStart);
+        stats.intervalStart = process.hrtime();
+        // Skip clusters with 0 requests
+        if (upstreamLocalityStats.length > 0 || totalDroppedRequests > 0) {
+          clusterStats.push({
+            cluster_name: clusterName,
+            cluster_service_name: edsServiceName,
+            dropped_requests: droppedRequests,
+            total_dropped_requests: totalDroppedRequests,
+            upstream_locality_stats: upstreamLocalityStats,
+            load_report_interval: {
+              seconds: interval[0],
+              nanos: interval[1],
+            },
+          });
+        }
+      }
+    }
+    this.lrsCall.write({
+      node: this.lrsNode!,
+      cluster_stats: clusterStats,
+    });
   }
 
   addEndpointWatcher(
@@ -553,9 +791,25 @@ export class XdsClient {
     }
   }
 
+  addClusterDropStats(
+    clusterName: string,
+    edsServiceName: string
+  ): XdsClusterDropStats {
+    const clusterStats = this.clusterStatsMap.getOrCreate(
+      clusterName,
+      edsServiceName
+    );
+    return {
+      addCallDropped: (category) => {
+        const prevCount = clusterStats.callsDropped.get(category) ?? 0;
+        clusterStats.callsDropped.set(category, prevCount + 1);
+      },
+    };
+  }
+
   shutdown(): void {
     this.adsCall?.cancel();
-    this.client?.close();
+    this.adsClient?.close();
     this.hasShutdown = true;
   }
 }

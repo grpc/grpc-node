@@ -32,10 +32,10 @@ import {
   PriorityLoadBalancingConfig,
 } from './load-balancing-config';
 import { ChildLoadBalancerHandler } from './load-balancer-child-handler';
-import { XdsClient, Watcher } from './xds-client';
+import { XdsClient, Watcher, XdsClusterDropStats } from './xds-client';
 import { ClusterLoadAssignment__Output } from './generated/envoy/api/v2/ClusterLoadAssignment';
 import { ConnectivityState } from './channel';
-import { UnavailablePicker } from './picker';
+import { UnavailablePicker, Picker, PickResultType } from './picker';
 import { Locality__Output } from './generated/envoy/api/v2/core/Locality';
 import { LocalitySubchannelAddress } from './load-balancer-priority';
 import { Status } from './constants';
@@ -83,8 +83,48 @@ export class EdsLoadBalancer implements LoadBalancer {
 
   private nextPriorityChildNumber = 0;
 
+  private clusterDropStats: XdsClusterDropStats | null = null;
+
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
-    this.childBalancer = new ChildLoadBalancerHandler(channelControlHelper);
+    this.childBalancer = new ChildLoadBalancerHandler({
+      createSubchannel: (subchannelAddres, subchannelArgs) =>
+        this.channelControlHelper.createSubchannel(
+          subchannelAddres,
+          subchannelArgs
+        ),
+      requestReresolution: () =>
+        this.channelControlHelper.requestReresolution(),
+      updateState: (connectivityState, originalPicker) => {
+        if (this.latestEdsUpdate === null) {
+          return;
+        }
+        const edsPicker: Picker = {
+          pick: (pickArgs) => {
+            const dropCategory = this.checkForDrop();
+            /* If we drop the call, it ends with an UNAVAILABLE status.
+             * Otherwise, delegate picking the subchannel to the child
+             * balancer. */
+            if (dropCategory === null) {
+              return originalPicker.pick(pickArgs);
+            } else {
+              this.clusterDropStats?.addCallDropped(dropCategory);
+              return {
+                pickResultType: PickResultType.DROP,
+                status: {
+                  code: Status.UNAVAILABLE,
+                  details: `Call dropped by load balancing policy. Category: ${dropCategory}`,
+                  metadata: new Metadata(),
+                },
+                subchannel: null,
+                extraFilterFactory: null,
+                onCallStarted: null,
+              };
+            }
+          },
+        };
+        this.channelControlHelper.updateState(connectivityState, edsPicker);
+      },
+    });
     this.watcher = {
       onValidUpdate: (update) => {
         this.latestEdsUpdate = update;
@@ -110,6 +150,44 @@ export class EdsLoadBalancer implements LoadBalancer {
         }
       },
     };
+  }
+
+  /**
+   * Check whether a single call should be dropped according to the current
+   * policy, based on randomly chosen numbers. Returns the drop category if
+   * the call should be dropped, and null otherwise.
+   */
+  private checkForDrop(): string | null {
+    if (!this.latestEdsUpdate?.policy) {
+      return null;
+    }
+    /* The drop_overloads policy is a list of pairs of category names and
+     * probabilities. For each one, if the random number is within that
+     * probability range, we drop the call citing that category. Otherwise, the
+     * call proceeds as usual. */
+    for (const dropOverload of this.latestEdsUpdate.policy.drop_overloads) {
+      if (!dropOverload.drop_percentage) {
+        continue;
+      }
+      let randNum: number;
+      switch (dropOverload.drop_percentage.denominator) {
+        case 'HUNDRED':
+          randNum = Math.random() * 100;
+          break;
+        case 'TEN_THOUSAND':
+          randNum = Math.random() * 10_000;
+          break;
+        case 'MILLION':
+          randNum = Math.random() * 1_000_000;
+          break;
+        default:
+          continue;
+      }
+      if (randNum < dropOverload.drop_percentage.numerator) {
+        return dropOverload.category;
+      }
+    }
+    return null;
   }
 
   /**
@@ -306,6 +384,11 @@ export class EdsLoadBalancer implements LoadBalancer {
       this.xdsClient.addEndpointWatcher(this.edsServiceName, this.watcher);
       this.isWatcherActive = true;
     }
+
+    this.clusterDropStats = this.xdsClient.addClusterDropStats(
+      lbConfig.eds.cluster,
+      lbConfig.eds.edsServiceName ?? ''
+    );
 
     /* If updateAddressList is called after receiving an update and the update
      * is still valid, we want to update the child config with the information
