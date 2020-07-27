@@ -26,6 +26,7 @@ export enum PickResultType {
   COMPLETE,
   QUEUE,
   TRANSIENT_FAILURE,
+  DROP,
 }
 
 export interface PickResult {
@@ -68,6 +69,14 @@ export interface QueuePickResult extends PickResult {
 
 export interface TransientFailurePickResult extends PickResult {
   pickResultType: PickResultType.TRANSIENT_FAILURE;
+  subchannel: null;
+  status: StatusObject;
+  extraFilterFactory: null;
+  onCallStarted: null;
+}
+
+export interface DropCallPickResult extends PickResult {
+  pickResultType: PickResultType.DROP;
   subchannel: null;
   status: StatusObject;
   extraFilterFactory: null;

@@ -390,6 +390,12 @@ export class ChannelImplementation implements Channel {
           );
         }
         break;
+      case PickResultType.DROP:
+        callStream.cancelWithStatus(
+          pickResult.status!.code,
+          pickResult.status!.details
+        );
+        break;
       default:
         throw new Error(
           `Invalid state: unknown pickResultType ${pickResult.pickResultType}`
