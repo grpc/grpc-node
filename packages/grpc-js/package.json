@@ -1,6 +1,6 @@
 {
   "name": "@grpc/grpc-js",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "gRPC Library for Node - pure JS implementation",
   "homepage": "https://grpc.io/",
   "repository": "https://github.com/grpc/grpc-node/tree/master/packages/grpc-js",
@@ -15,7 +15,7 @@
   "types": "build/src/index.d.ts",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@grpc/proto-loader": "^0.5.0",
+    "@grpc/proto-loader": "^0.6.0-pre6",
     "@types/gulp": "^4.0.6",
     "@types/gulp-mocha": "0.0.32",
     "@types/lodash": "^4.14.108",
@@ -48,11 +48,12 @@
     "clean": "node -e 'require(\"rimraf\")(\"./build\", () => {})'",
     "compile": "tsc -p .",
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
+    "generate-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --json --includeComments --includeDirs deps/envoy-api/ deps/udpa/ deps/googleapis/ deps/protoc-gen-validate/ -O src/generated/ --grpcLib ../index envoy/service/discovery/v2/ads.proto envoy/api/v2/listener.proto envoy/api/v2/route.proto envoy/api/v2/cluster.proto envoy/api/v2/endpoint.proto",
     "lint": "npm run check",
     "prepare": "npm run compile",
     "test": "gulp test",
     "check": "gts check src/**/*.ts",
-    "fix": "gts fix src/**/*.ts",
+    "fix": "gts fix src/*.ts",
     "pretest": "npm run compile",
     "posttest": "npm run check"
   },
@@ -60,8 +61,16 @@
     "semver": "^6.2.0"
   },
   "files": [
-    "src/*.ts",
+    "src/**/*.ts",
     "build/src/*.{js,d.ts,js.map}",
-    "LICENSE"
+    "LICENSE",
+    "deps/envoy-api/envoy/api/v2/**/*.proto",
+    "deps/envoy-api/envoy/config/**/*.proto",
+    "deps/envoy-api/envoy/service/**/*.proto",
+    "deps/envoy-api/envoy/type/**/*.proto",
+    "deps/udpa/udpa/**/*.proto",
+    "deps/googleapis/google/api/*.proto",
+    "deps/googleapis/google/rpc/*.proto",
+    "deps/protoc-gen-validate/validate/**/*.proto"
   ]
 }
