@@ -791,10 +791,24 @@ export class XdsClient {
     }
   }
 
+  /**
+   * 
+   * @param lrsServer The target name of the server to send stats to. An empty
+   *     string indicates that the default LRS client should be used. Currently
+   *     only the empty string is supported here.
+   * @param clusterName 
+   * @param edsServiceName 
+   */
   addClusterDropStats(
+    lrsServer: string,
     clusterName: string,
     edsServiceName: string
   ): XdsClusterDropStats {
+    if (lrsServer !== '') {
+      return {
+        addCallDropped: category => {}
+      };
+    }
     const clusterStats = this.clusterStatsMap.getOrCreate(
       clusterName,
       edsServiceName
@@ -810,6 +824,8 @@ export class XdsClient {
   shutdown(): void {
     this.adsCall?.cancel();
     this.adsClient?.close();
+    this.lrsCall?.cancel();
+    this.lrsClient?.close();
     this.hasShutdown = true;
   }
 }

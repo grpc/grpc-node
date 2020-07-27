@@ -87,9 +87,9 @@ export class EdsLoadBalancer implements LoadBalancer {
 
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
     this.childBalancer = new ChildLoadBalancerHandler({
-      createSubchannel: (subchannelAddres, subchannelArgs) =>
+      createSubchannel: (subchannelAddress, subchannelArgs) =>
         this.channelControlHelper.createSubchannel(
-          subchannelAddres,
+          subchannelAddress,
           subchannelArgs
         ),
       requestReresolution: () =>
@@ -385,10 +385,13 @@ export class EdsLoadBalancer implements LoadBalancer {
       this.isWatcherActive = true;
     }
 
-    this.clusterDropStats = this.xdsClient.addClusterDropStats(
-      lbConfig.eds.cluster,
-      lbConfig.eds.edsServiceName ?? ''
-    );
+    if (lbConfig.eds.lrsLoadReportingServerName) {
+      this.clusterDropStats = this.xdsClient.addClusterDropStats(
+        lbConfig.eds.lrsLoadReportingServerName,
+        lbConfig.eds.cluster,
+        lbConfig.eds.edsServiceName ?? ''
+      );
+    }
 
     /* If updateAddressList is called after receiving an update and the update
      * is still valid, we want to update the child config with the information
