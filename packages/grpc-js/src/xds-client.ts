@@ -865,7 +865,7 @@ export class XdsClient {
     }
     if (localityStats === null) {
       localityStats = {
-        locality,
+        locality: locality,
         callsInProgress: 0,
         callsStarted: 0,
         callsSucceeded: 0,
@@ -878,7 +878,7 @@ export class XdsClient {
     const finalLocalityStats: ClusterLocalityStats = localityStats;
     return {
       addCallStarted: () => {
-        finalLocalityStats.callsSucceeded += 1;
+        finalLocalityStats.callsStarted += 1;
         finalLocalityStats.callsInProgress += 1;
       },
       addCallFinished: (fail) => {
