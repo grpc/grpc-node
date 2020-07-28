@@ -38,7 +38,10 @@ import { Cluster__Output } from './generated/envoy/api/v2/Cluster';
 import { LoadReportingServiceClient } from './generated/envoy/service/load_stats/v2/LoadReportingService';
 import { LoadStatsRequest } from './generated/envoy/service/load_stats/v2/LoadStatsRequest';
 import { LoadStatsResponse__Output } from './generated/envoy/service/load_stats/v2/LoadStatsResponse';
-import { Locality__Output } from './generated/envoy/api/v2/core/Locality';
+import {
+  Locality__Output,
+  Locality,
+} from './generated/envoy/api/v2/core/Locality';
 import {
   ClusterStats,
   _envoy_api_v2_endpoint_ClusterStats_DroppedRequests,
@@ -99,6 +102,17 @@ function loadAdsProtos(): Promise<
   return loadedProtos;
 }
 
+function localityEqual(
+  loc1: Locality__Output,
+  loc2: Locality__Output
+): boolean {
+  return (
+    loc1.region === loc2.region &&
+    loc1.zone === loc2.zone &&
+    loc1.sub_zone === loc2.sub_zone
+  );
+}
+
 export interface Watcher<UpdateType> {
   onValidUpdate(update: UpdateType): void;
   onTransientError(error: StatusObject): void;
@@ -107,6 +121,11 @@ export interface Watcher<UpdateType> {
 
 export interface XdsClusterDropStats {
   addCallDropped(category: string): void;
+}
+
+export interface XdsClusterLocalityStats {
+  addCallStarted(): void;
+  addCallFinished(fail: boolean): void;
 }
 
 interface ClusterLocalityStats {
@@ -792,12 +811,12 @@ export class XdsClient {
   }
 
   /**
-   * 
+   *
    * @param lrsServer The target name of the server to send stats to. An empty
    *     string indicates that the default LRS client should be used. Currently
    *     only the empty string is supported here.
-   * @param clusterName 
-   * @param edsServiceName 
+   * @param clusterName
+   * @param edsServiceName
    */
   addClusterDropStats(
     lrsServer: string,
@@ -806,7 +825,7 @@ export class XdsClient {
   ): XdsClusterDropStats {
     if (lrsServer !== '') {
       return {
-        addCallDropped: category => {}
+        addCallDropped: (category) => {},
       };
     }
     const clusterStats = this.clusterStatsMap.getOrCreate(
@@ -817,6 +836,58 @@ export class XdsClient {
       addCallDropped: (category) => {
         const prevCount = clusterStats.callsDropped.get(category) ?? 0;
         clusterStats.callsDropped.set(category, prevCount + 1);
+      },
+    };
+  }
+
+  addClusterLocalityStats(
+    lrsServer: string,
+    clusterName: string,
+    edsServiceName: string,
+    locality: Locality__Output
+  ): XdsClusterLocalityStats {
+    if (lrsServer !== '') {
+      return {
+        addCallStarted: () => {},
+        addCallFinished: (fail) => {},
+      };
+    }
+    const clusterStats = this.clusterStatsMap.getOrCreate(
+      clusterName,
+      edsServiceName
+    );
+    let localityStats: ClusterLocalityStats | null = null;
+    for (const statsObj of clusterStats.localityStats) {
+      if (localityEqual(locality, statsObj.locality)) {
+        localityStats = statsObj;
+        break;
+      }
+    }
+    if (localityStats === null) {
+      localityStats = {
+        locality,
+        callsInProgress: 0,
+        callsStarted: 0,
+        callsSucceeded: 0,
+        callsFailed: 0,
+      };
+      clusterStats.localityStats.push(localityStats);
+    }
+    /* Help the compiler understand that this object is always non-null in the
+     * closure */
+    const finalLocalityStats: ClusterLocalityStats = localityStats;
+    return {
+      addCallStarted: () => {
+        finalLocalityStats.callsSucceeded += 1;
+        finalLocalityStats.callsInProgress += 1;
+      },
+      addCallFinished: (fail) => {
+        if (fail) {
+          finalLocalityStats.callsFailed += 1;
+        } else {
+          finalLocalityStats.callsSucceeded += 1;
+        }
+        finalLocalityStats.callsInProgress -= 1;
       },
     };
   }

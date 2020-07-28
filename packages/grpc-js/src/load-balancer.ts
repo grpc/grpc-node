@@ -26,6 +26,7 @@ import * as load_balancer_priority from './load-balancer-priority';
 import * as load_balancer_weighted_target from './load-balancer-weighted-target';
 import * as load_balancer_eds from './load-balancer-eds';
 import * as load_balancer_cds from './load-balancer-cds';
+import * as load_balancer_lrs from './load-balancer-lrs';
 
 /**
  * A collection of functions associated with a channel that a load balancer
@@ -145,4 +146,5 @@ export function registerAll() {
   load_balancer_weighted_target.setup();
   load_balancer_eds.setup();
   load_balancer_cds.setup();
+  load_balancer_lrs.setup();
 }
