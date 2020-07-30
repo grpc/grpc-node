@@ -297,16 +297,33 @@ export class EdsLoadBalancer implements LoadBalancer {
         WeightedTarget
       >();
       for (const localityObj of localityArray) {
+        /* Use the endpoint picking policy from the config, default to
+         * round_robin. */
+        const endpointPickingPolicy: LoadBalancingConfig[] = [
+          ...this.lastestConfig.eds.endpointPickingPolicy,
+          { name: 'round_robin', round_robin: {} },
+        ];
+        let childPolicy: LoadBalancingConfig[];
+        if (this.lastestConfig.eds.lrsLoadReportingServerName) {
+          childPolicy = [
+            {
+              name: 'lrs',
+              lrs: {
+                cluster_name: this.lastestConfig.eds.cluster,
+                eds_service_name: this.lastestConfig.eds.edsServiceName ?? '',
+                lrs_load_reporting_server_name: this.lastestConfig.eds
+                  .lrsLoadReportingServerName,
+                locality: localityObj.locality,
+                child_policy: endpointPickingPolicy,
+              },
+            },
+          ];
+        } else {
+          childPolicy = endpointPickingPolicy;
+        }
         childTargets.set(localityToName(localityObj.locality), {
           weight: localityObj.weight,
-          /* TODO(murgatroid99): Insert an lrs config around the round_robin
-           * config after implementing lrs */
-          /* Use the endpoint picking policy from the config, default to
-           * round_robin. */
-          child_policy: [
-            ...this.lastestConfig.eds.endpointPickingPolicy,
-            { name: 'round_robin', round_robin: {} },
-          ],
+          child_policy: childPolicy,
         });
         for (const address of localityObj.addresses) {
           addressList.push({

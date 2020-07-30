@@ -15,6 +15,8 @@
  *
  */
 
+import { Locality__Output } from './generated/envoy/api/v2/core/Locality';
+
 /* This file is an implementation of gRFC A24:
  * https://github.com/grpc/proposal/blob/master/A24-lb-policy-config.md. Each
  * function here takes an object with unknown structure and returns its
@@ -79,6 +81,14 @@ export interface CdsLbConfig {
   cluster: string;
 }
 
+export interface LrsLbConfig {
+  cluster_name: string;
+  eds_service_name: string;
+  lrs_load_reporting_server_name: string;
+  locality: Locality__Output;
+  child_policy: LoadBalancingConfig[];
+}
+
 export interface PickFirstLoadBalancingConfig {
   name: 'pick_first';
   pick_first: PickFirstConfig;
@@ -119,6 +129,11 @@ export interface CdsLoadBalancingConfig {
   cds: CdsLbConfig;
 }
 
+export interface LrsLoadBalancingConfig {
+  name: 'lrs';
+  lrs: LrsLbConfig;
+}
+
 export type LoadBalancingConfig =
   | PickFirstLoadBalancingConfig
   | RoundRobinLoadBalancingConfig
@@ -127,7 +142,8 @@ export type LoadBalancingConfig =
   | PriorityLoadBalancingConfig
   | WeightedTargetLoadBalancingConfig
   | EdsLoadBalancingConfig
-  | CdsLoadBalancingConfig;
+  | CdsLoadBalancingConfig
+  | LrsLoadBalancingConfig;
 
 export function isRoundRobinLoadBalancingConfig(
   lbconfig: LoadBalancingConfig
@@ -169,6 +185,12 @@ export function isCdsLoadBalancingConfig(
   lbconfig: LoadBalancingConfig
 ): lbconfig is CdsLoadBalancingConfig {
   return lbconfig.name === 'cds';
+}
+
+export function isLrsLoadBalancingConfig(
+  lbconfig: LoadBalancingConfig
+): lbconfig is LrsLoadBalancingConfig {
+  return lbconfig.name === 'lrs';
 }
 
 /* In these functions we assume the input came from a JSON object. Therefore we
