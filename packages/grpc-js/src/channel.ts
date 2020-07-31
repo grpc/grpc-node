@@ -220,20 +220,10 @@ export class ChannelImplementation implements Channel {
         );
       },
     };
-    // TODO(murgatroid99): check channel arg for default service config
-    let defaultServiceConfig: ServiceConfig = {
-      loadBalancingConfig: [],
-      methodConfig: [],
-    };
-    if (options['grpc.service_config']) {
-      defaultServiceConfig = validateServiceConfig(
-        JSON.parse(options['grpc.service_config']!)
-      );
-    }
     this.resolvingLoadBalancer = new ResolvingLoadBalancer(
       this.target,
       channelControlHelper,
-      defaultServiceConfig
+      options
     );
     this.filterStackFactory = new FilterStackFactory([
       new CallCredentialsFilterFactory(this),

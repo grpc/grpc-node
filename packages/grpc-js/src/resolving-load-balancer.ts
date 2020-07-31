@@ -20,7 +20,7 @@ import {
   LoadBalancer,
   getFirstUsableConfig,
 } from './load-balancer';
-import { ServiceConfig } from './service-config';
+import { ServiceConfig, validateServiceConfig } from './service-config';
 import { ConnectivityState } from './channel';
 import { createResolver, Resolver } from './resolver';
 import { ServiceError } from './call';
@@ -35,6 +35,7 @@ import { LogVerbosity } from './constants';
 import { SubchannelAddress } from './subchannel';
 import { GrpcUri, uriToString } from './uri-parser';
 import { ChildLoadBalancerHandler } from './load-balancer-child-handler';
+import { ChannelOptions } from './channel-options';
 
 const TRACER_NAME = 'resolving_load_balancer';
 
@@ -57,6 +58,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
    * This resolving load balancer's current connectivity state.
    */
   private currentState: ConnectivityState = ConnectivityState.IDLE;
+  private readonly defaultServiceConfig: ServiceConfig;
   /**
    * The service config object from the last successful resolution, if
    * available. A value of null indicates that we have not yet received a valid
@@ -90,8 +92,18 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   constructor(
     private readonly target: GrpcUri,
     private readonly channelControlHelper: ChannelControlHelper,
-    private readonly defaultServiceConfig: ServiceConfig | null
+    private readonly channelOptions: ChannelOptions
   ) {
+    if (channelOptions['grpc.service_config']) {
+      this.defaultServiceConfig = validateServiceConfig(
+        JSON.parse(channelOptions['grpc.service_config']!)
+      );
+    } else {
+      this.defaultServiceConfig = {
+        loadBalancingConfig: [],
+        methodConfig: [],
+      };
+    }
     this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
     this.childLoadBalancer = new ChildLoadBalancerHandler({
       createSubchannel: channelControlHelper.createSubchannel.bind(
@@ -114,68 +126,72 @@ export class ResolvingLoadBalancer implements LoadBalancer {
         this.updateState(newState, picker);
       },
     });
-    this.innerResolver = createResolver(target, {
-      onSuccessfulResolution: (
-        addressList: SubchannelAddress[],
-        serviceConfig: ServiceConfig | null,
-        serviceConfigError: ServiceError | null,
-        attributes: { [key: string]: unknown }
-      ) => {
-        let workingServiceConfig: ServiceConfig | null = null;
-        /* This first group of conditionals implements the algorithm described
-         * in https://github.com/grpc/proposal/blob/master/A21-service-config-error-handling.md
-         * in the section called "Behavior on receiving a new gRPC Config".
-         */
-        if (serviceConfig === null) {
-          // Step 4 and 5
-          if (serviceConfigError === null) {
-            // Step 5
-            this.previousServiceConfig = null;
-            workingServiceConfig = this.defaultServiceConfig;
-          } else {
-            // Step 4
-            if (this.previousServiceConfig === null) {
-              // Step 4.ii
-              this.handleResolutionFailure(serviceConfigError);
+    this.innerResolver = createResolver(
+      target,
+      {
+        onSuccessfulResolution: (
+          addressList: SubchannelAddress[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: ServiceError | null,
+          attributes: { [key: string]: unknown }
+        ) => {
+          let workingServiceConfig: ServiceConfig | null = null;
+          /* This first group of conditionals implements the algorithm described
+           * in https://github.com/grpc/proposal/blob/master/A21-service-config-error-handling.md
+           * in the section called "Behavior on receiving a new gRPC Config".
+           */
+          if (serviceConfig === null) {
+            // Step 4 and 5
+            if (serviceConfigError === null) {
+              // Step 5
+              this.previousServiceConfig = null;
+              workingServiceConfig = this.defaultServiceConfig;
             } else {
-              // Step 4.i
-              workingServiceConfig = this.previousServiceConfig;
+              // Step 4
+              if (this.previousServiceConfig === null) {
+                // Step 4.ii
+                this.handleResolutionFailure(serviceConfigError);
+              } else {
+                // Step 4.i
+                workingServiceConfig = this.previousServiceConfig;
+              }
             }
+          } else {
+            // Step 3
+            workingServiceConfig = serviceConfig;
+            this.previousServiceConfig = serviceConfig;
           }
-        } else {
-          // Step 3
-          workingServiceConfig = serviceConfig;
-          this.previousServiceConfig = serviceConfig;
-        }
-        const workingConfigList =
-          workingServiceConfig?.loadBalancingConfig ?? [];
-        if (workingConfigList.length === 0) {
-          workingConfigList.push({
-            name: 'pick_first',
-            pick_first: {},
-          });
-        }
-        const loadBalancingConfig = getFirstUsableConfig(workingConfigList);
-        if (loadBalancingConfig === null) {
-          // There were load balancing configs but none are supported. This counts as a resolution failure
-          this.handleResolutionFailure({
-            code: Status.UNAVAILABLE,
-            details:
-              'All load balancer options in service config are not compatible',
-            metadata: new Metadata(),
-          });
-          return;
-        }
-        this.childLoadBalancer.updateAddressList(
-          addressList,
-          loadBalancingConfig,
-          attributes
-        );
+          const workingConfigList =
+            workingServiceConfig?.loadBalancingConfig ?? [];
+          if (workingConfigList.length === 0) {
+            workingConfigList.push({
+              name: 'pick_first',
+              pick_first: {},
+            });
+          }
+          const loadBalancingConfig = getFirstUsableConfig(workingConfigList);
+          if (loadBalancingConfig === null) {
+            // There were load balancing configs but none are supported. This counts as a resolution failure
+            this.handleResolutionFailure({
+              code: Status.UNAVAILABLE,
+              details:
+                'All load balancer options in service config are not compatible',
+              metadata: new Metadata(),
+            });
+            return;
+          }
+          this.childLoadBalancer.updateAddressList(
+            addressList,
+            loadBalancingConfig,
+            attributes
+          );
+        },
+        onError: (error: StatusObject) => {
+          this.handleResolutionFailure(error);
+        },
       },
-      onError: (error: StatusObject) => {
-        this.handleResolutionFailure(error);
-      },
-    });
+      channelOptions
+    );
 
     this.backoffTimeout = new BackoffTimeout(() => {
       if (this.continueResolving) {
