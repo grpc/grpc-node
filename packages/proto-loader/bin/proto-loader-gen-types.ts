@@ -81,7 +81,12 @@ function stripLeadingPeriod(name: string) {
   return name.startsWith('.') ? name.substring(1) : name;
 }
 
-function getImportPath(to: Protobuf.Type | Protobuf.Enum | Protobuf.Service) {
+function getImportPath(to: Protobuf.Type | Protobuf.Enum | Protobuf.Service): string {
+  /* If the thing we are importing is defined in a message, it is generated in
+   * the same file as that message. */
+  if (to.parent instanceof Protobuf.Type) {
+    return getImportPath(to.parent);
+  }
   return stripLeadingPeriod(to.fullName).replace(/\./g, '/');
 }
 
@@ -110,14 +115,28 @@ function getImportLine(dependency: Protobuf.Type | Protobuf.Enum | Protobuf.Serv
   const filePath = from === undefined ? './' + getImportPath(dependency) : getRelativeImportPath(from, dependency);
   const typeInterfaceName = getTypeInterfaceName(dependency);
   let importedTypes: string;
-  if (dependency instanceof Protobuf.Type) {
-    importedTypes = `${dependency.name} as ${typeInterfaceName}, ${dependency.name}__Output as ${typeInterfaceName}__Output`;
-  } else if (dependency instanceof Protobuf.Enum) {
-    importedTypes = `${dependency.name} as ${typeInterfaceName}`;
-  } else if (dependency instanceof Protobuf.Service) {
-    importedTypes = `${dependency.name}Client as ${typeInterfaceName}Client`;
+  /* If the dependenc is defined within a message, it will be generated in that
+   * message's file and exported using its typeInterfaceName. */
+  if (dependency.parent instanceof Protobuf.Type) {
+    if (dependency instanceof Protobuf.Type) {
+      importedTypes = `${typeInterfaceName}, ${typeInterfaceName}__Output`;
+    } else if (dependency instanceof Protobuf.Enum) {
+      importedTypes = `${typeInterfaceName}`;
+    } else if (dependency instanceof Protobuf.Service) {
+      importedTypes = `${typeInterfaceName}Client`;
+    } else {
+      throw new Error('Invalid object passed to getImportLine');
+    }
   } else {
-    throw new Error('Invalid object passed to getImportLine');
+    if (dependency instanceof Protobuf.Type) {
+      importedTypes = `${dependency.name} as ${typeInterfaceName}, ${dependency.name}__Output as ${typeInterfaceName}__Output`;
+    } else if (dependency instanceof Protobuf.Enum) {
+      importedTypes = `${dependency.name} as ${typeInterfaceName}`;
+    } else if (dependency instanceof Protobuf.Service) {
+      importedTypes = `${dependency.name}Client as ${typeInterfaceName}Client`;
+    } else {
+      throw new Error('Invalid object passed to getImportLine');
+    }
   }
   return `import { ${importedTypes} } from '${filePath}';`
 }
@@ -585,7 +604,7 @@ function generateRootFile(formatter: TextFormatter, root: Protobuf.Root, options
   formatter.writeLine('type ConstructorArguments<Constructor> = Constructor extends new (...args: infer Args) => any ? Args: never;');
   formatter.writeLine('type SubtypeConstructor<Constructor, Subtype> = {');
   formatter.writeLine('  new(...args: ConstructorArguments<Constructor>): Subtype;');
-  formatter.writeLine('}');
+  formatter.writeLine('};');
   formatter.writeLine('');
 
   formatter.writeLine('export interface ProtoGrpcType {');

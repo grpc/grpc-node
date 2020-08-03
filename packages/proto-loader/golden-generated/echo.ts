@@ -7,7 +7,7 @@ import { EchoClient as _google_showcase_v1beta1_EchoClient } from './google/show
 type ConstructorArguments<Constructor> = Constructor extends new (...args: infer Args) => any ? Args: never;
 type SubtypeConstructor<Constructor, Subtype> = {
   new(...args: ConstructorArguments<Constructor>): Subtype;
-}
+};
 
 export interface ProtoGrpcType {
   google: {
