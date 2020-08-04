@@ -91,10 +91,13 @@ export type ServerWritableStream<
   RequestType,
   ResponseType
 > = ServerSurfaceCall &
-  ObjectWritable<ResponseType> & { request: RequestType | null };
+  ObjectWritable<ResponseType> & {
+    request: RequestType | null;
+    end: (metadata?: Metadata) => void;
+  };
 export type ServerDuplexStream<RequestType, ResponseType> = ServerSurfaceCall &
   ObjectReadable<RequestType> &
-  ObjectWritable<ResponseType>;
+  ObjectWritable<ResponseType> & { end: (metadata?: Metadata) => void };
 
 export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
   implements ServerUnaryCall<RequestType, ResponseType> {
@@ -254,6 +257,15 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
 
   sendMetadata(responseMetadata: Metadata): void {
     this.call.sendMetadata(responseMetadata);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  end(metadata?: any) {
+    if (metadata) {
+      this.trailingMetadata = metadata;
+    }
+
+    super.end();
   }
 }
 
