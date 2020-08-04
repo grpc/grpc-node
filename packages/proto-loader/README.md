@@ -52,3 +52,37 @@ const options = {
   oneofs: true
 }
 ```
+
+## Generating TypeScript types
+
+The `proto-loader-gen-types` script distributed with this package can be used to generate TypeScript type information for the objects loaded at runtime. More information about how to use it can be found in [the *@grpc/proto-loader TypeScript Type Generator CLI Tool* proposal document](https://github.com/grpc/proposal/blob/master/L70-node-proto-loader-type-generator.md). The arguments mostly match the `load` function's options; the full usage information is as follows:
+
+```
+proto-loader-gen-types.js [options] filenames...
+
+Options:
+  --help             Show help                                         [boolean]
+  --version          Show version number                               [boolean]
+  --keepCase         Preserve the case of field names                  [boolean]
+  --longs            The type that should be used to output 64 bit integer
+                     values. Can be String, Number                      [string]
+  --enums            The type that should be used to output enum fields. Can be
+                     String                                             [string]
+  --bytes            The type that should be used to output bytes fields. Can be
+                     String, Array                                      [string]
+  --defaults         Output default values for omitted fields          [boolean]
+  --arrays           Output default values for omitted repeated fields even if
+                     --defaults is not set                             [boolean]
+  --objects          Output default values for omitted message fields even if
+                     --defaults is not set                             [boolean]
+  --oneofs           Output virtual oneof fields set to the present field's name
+                                                                       [boolean]
+  --json             Represent Infinity and NaN as strings in float fields. Also
+                     decode google.protobuf.Any automatically          [boolean]
+  --includeComments  Generate doc comments from comments in the original files
+                                                                       [boolean]
+  --includeDirs, -I  Directories to search for included files            [array]
+  --outDir, -O       Directory in which to output files      [string] [required]
+  --grpcLib          The gRPC implementation library that these types will be
+                     used with                               [string] [required]
+```
