@@ -415,7 +415,7 @@ export class Subchannel {
             );
           }
           trace(
-            this.subchannelAddress +
+            this.subchannelAddressString +
               ' connection closed by GOAWAY with code ' +
               errorCode
           );

@@ -373,6 +373,12 @@ export class Http2ServerCallStream<
     });
 
     this.stream.once('close', () => {
+      trace(
+        'Request to method ' +
+          this.handler?.path +
+          ' stream closed with rstCode ' +
+          this.stream.rstCode
+      );
       this.cancelled = true;
       this.emit('cancelled', 'cancelled');
     });
