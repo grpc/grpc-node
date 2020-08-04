@@ -630,7 +630,7 @@ export class Http2CallStream implements Call {
   }
 
   getPeer(): string {
-    throw new Error('Not yet implemented');
+    return this.subchannel?.getAddress() ?? this.channel.getTarget();
   }
 
   getMethod(): string {

@@ -93,7 +93,7 @@ export class ClientUnaryCallImpl extends EventEmitter
   }
 
   getPeer(): string {
-    return this.call?.getPeer() ?? '';
+    return this.call?.getPeer() ?? 'unknown';
   }
 }
 
@@ -109,7 +109,7 @@ export class ClientReadableStreamImpl<ResponseType> extends Readable
   }
 
   getPeer(): string {
-    return this.call?.getPeer() ?? '';
+    return this.call?.getPeer() ?? 'unknown';
   }
 
   _read(_size: number): void {
@@ -129,7 +129,7 @@ export class ClientWritableStreamImpl<RequestType> extends Writable
   }
 
   getPeer(): string {
-    return this.call?.getPeer() ?? '';
+    return this.call?.getPeer() ?? 'unknown';
   }
 
   _write(chunk: RequestType, encoding: string, cb: WriteCallback) {
@@ -164,7 +164,7 @@ export class ClientDuplexStreamImpl<RequestType, ResponseType> extends Duplex
   }
 
   getPeer(): string {
-    return this.call?.getPeer() ?? '';
+    return this.call?.getPeer() ?? 'unknown';
   }
 
   _read(_size: number): void {
