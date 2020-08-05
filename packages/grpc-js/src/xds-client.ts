@@ -439,7 +439,7 @@ export class XdsClient {
           for (const resource of message.resources) {
             if (
               protoLoader.isAnyExtension(resource) &&
-              resource['@type'] === LDS_TYPE_URL
+              resource['@type'] === RDS_TYPE_URL
             ) {
               const resp = resource as protoLoader.AnyExtension &
                 RouteConfiguration__Output;
@@ -823,7 +823,7 @@ export class XdsClient {
   private updateRdsNames() {
     this.adsCall?.write({
       node: this.adsNode!,
-      type_url: CDS_TYPE_URL,
+      type_url: RDS_TYPE_URL,
       resource_names: this.routeConfigName ? [this.routeConfigName] : [],
       response_nonce: this.lastRdsNonce,
       version_info: this.lastRdsVersionInfo,
