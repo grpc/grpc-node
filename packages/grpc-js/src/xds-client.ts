@@ -452,6 +452,7 @@ export class XdsClient {
                 } else {
                   nackError = 'RouteConfiguration validation failed';
                 }
+                break;
               }
             } else {
               nackError = `Invalid resource type ${
