@@ -17,10 +17,15 @@
 import { Resolver, ResolverListener, registerResolver } from './resolver';
 import { SubchannelAddress } from './subchannel';
 import { GrpcUri } from './uri-parser';
+import { ChannelOptions } from './channel-options';
 
 class UdsResolver implements Resolver {
   private addresses: SubchannelAddress[] = [];
-  constructor(target: GrpcUri, private listener: ResolverListener) {
+  constructor(
+    target: GrpcUri,
+    private listener: ResolverListener,
+    channelOptions: ChannelOptions
+  ) {
     let path: string;
     if (target.authority === '') {
       path = '/' + target.path;

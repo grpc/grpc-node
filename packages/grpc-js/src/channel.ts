@@ -34,7 +34,6 @@ import { CallCredentialsFilterFactory } from './call-credentials-filter';
 import { DeadlineFilterFactory } from './deadline-filter';
 import { CompressionFilterFactory } from './compression-filter';
 import { getDefaultAuthority, mapUriDefaultScheme } from './resolver';
-import { ServiceConfig, validateServiceConfig } from './service-config';
 import { trace, log } from './logging';
 import { SubchannelAddress } from './subchannel';
 import { MaxMessageSizeFilterFactory } from './max-message-size-filter';
@@ -220,20 +219,10 @@ export class ChannelImplementation implements Channel {
         );
       },
     };
-    // TODO(murgatroid99): check channel arg for default service config
-    let defaultServiceConfig: ServiceConfig = {
-      loadBalancingConfig: [],
-      methodConfig: [],
-    };
-    if (options['grpc.service_config']) {
-      defaultServiceConfig = validateServiceConfig(
-        JSON.parse(options['grpc.service_config']!)
-      );
-    }
     this.resolvingLoadBalancer = new ResolvingLoadBalancer(
       this.target,
       channelControlHelper,
-      defaultServiceConfig
+      options
     );
     this.filterStackFactory = new FilterStackFactory([
       new CallCredentialsFilterFactory(this),

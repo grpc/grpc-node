@@ -31,6 +31,7 @@ import { LogVerbosity } from './constants';
 import { SubchannelAddress, TcpSubchannelAddress } from './subchannel';
 import { GrpcUri, uriToString, splitHostPort } from './uri-parser';
 import { isIPv6, isIPv4 } from 'net';
+import { ChannelOptions } from './channel-options';
 
 const TRACER_NAME = 'dns_resolver';
 
@@ -84,7 +85,11 @@ class DnsResolver implements Resolver {
   private latestServiceConfigError: StatusObject | null = null;
   private percentage: number;
   private defaultResolutionError: StatusObject;
-  constructor(private target: GrpcUri, private listener: ResolverListener) {
+  constructor(
+    private target: GrpcUri,
+    private listener: ResolverListener,
+    channelOptions: ChannelOptions
+  ) {
     trace('Resolver constructed for target ' + uriToString(target));
     const hostPort = splitHostPort(target.path);
     if (hostPort === null) {

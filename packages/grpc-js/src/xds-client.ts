@@ -47,6 +47,9 @@ import {
   _envoy_api_v2_endpoint_ClusterStats_DroppedRequests,
 } from './generated/envoy/api/v2/endpoint/ClusterStats';
 import { UpstreamLocalityStats } from './generated/envoy/api/v2/endpoint/UpstreamLocalityStats';
+import { Listener__Output } from './generated/envoy/api/v2/Listener';
+import { HttpConnectionManager__Output } from './generated/envoy/config/filter/network/http_connection_manager/v2/HttpConnectionManager';
+import { RouteConfiguration__Output } from './generated/envoy/api/v2/RouteConfiguration';
 
 const TRACER_NAME = 'xds_client';
 
@@ -58,6 +61,11 @@ const clientVersion = require('../../package.json').version;
 
 const EDS_TYPE_URL = 'type.googleapis.com/envoy.api.v2.ClusterLoadAssignment';
 const CDS_TYPE_URL = 'type.googleapis.com/envoy.api.v2.Cluster';
+const LDS_TYPE_URL = 'type.googleapis.com/envoy.api.v2.Listener';
+const RDS_TYPE_URL = 'type.googleapis.com/envoy.api.v2.RouteConfiguration';
+
+const HTTP_CONNECTION_MANGER_TYPE_URL =
+  'type.googleapis.com/envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager';
 
 let loadedProtos: Promise<
   adsTypes.ProtoGrpcType & lrsTypes.ProtoGrpcType
@@ -73,10 +81,12 @@ function loadAdsProtos(): Promise<
     .load(
       [
         'envoy/service/discovery/v2/ads.proto',
+        'envoy/service/load_stats/v2/lrs.proto',
         'envoy/api/v2/listener.proto',
         'envoy/api/v2/route.proto',
         'envoy/api/v2/cluster.proto',
         'envoy/api/v2/endpoint.proto',
+        'envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.proto',
       ],
       {
         keepCase: true,
@@ -238,6 +248,15 @@ export class XdsClient {
   private lastCdsNonce = '';
   private latestCdsResponses: Cluster__Output[] = [];
 
+  private lastLdsVersionInfo = '';
+  private lastLdsNonce = '';
+  private latestLdsResponse: Listener__Output | null = null;
+
+  private routeConfigName: string | null = null;
+  private lastRdsVersionInfo = '';
+  private lastRdsNonce = '';
+  private latestRdsResponse: RouteConfiguration__Output | null = null;
+
   constructor(
     private targetName: string,
     private serviceConfigWatcher: Watcher<ServiceConfig>,
@@ -308,6 +327,155 @@ export class XdsClient {
     clearInterval(this.statsTimer);
   }
 
+  private handleAdsResponse(message: DiscoveryResponse__Output) {
+    switch (message.type_url) {
+      case EDS_TYPE_URL: {
+        const edsResponses: ClusterLoadAssignment__Output[] = [];
+        for (const resource of message.resources) {
+          if (
+            protoLoader.isAnyExtension(resource) &&
+            resource['@type'] === EDS_TYPE_URL
+          ) {
+            const resp = resource as protoLoader.AnyExtension &
+              ClusterLoadAssignment__Output;
+            if (!this.validateEdsResponse(resp)) {
+              this.nackEds('ClusterLoadAssignment validation failed');
+              return;
+            }
+            edsResponses.push(resp);
+          } else {
+            this.nackEds(
+              `Invalid resource type ${
+                protoLoader.isAnyExtension(resource)
+                  ? resource['@type']
+                  : resource.type_url
+              }`
+            );
+            return;
+          }
+        }
+        for (const message of edsResponses) {
+          this.handleEdsResponse(message);
+        }
+        this.lastEdsVersionInfo = message.version_info;
+        this.lastEdsNonce = message.nonce;
+        this.latestEdsResponses = edsResponses;
+        this.ackEds();
+        break;
+      }
+      case CDS_TYPE_URL: {
+        const cdsResponses: Cluster__Output[] = [];
+        for (const resource of message.resources) {
+          if (
+            protoLoader.isAnyExtension(resource) &&
+            resource['@type'] === CDS_TYPE_URL
+          ) {
+            const resp = resource as protoLoader.AnyExtension & Cluster__Output;
+            if (!this.validateCdsResponse(resp)) {
+              this.nackCds('Cluster validation failed');
+              return;
+            }
+          } else {
+            this.nackCds(
+              `Invalid resource type ${
+                protoLoader.isAnyExtension(resource)
+                  ? resource['@type']
+                  : resource.type_url
+              }`
+            );
+            return;
+          }
+        }
+        for (const message of cdsResponses) {
+          this.handleCdsResponse(message);
+        }
+        this.lastCdsVersionInfo = message.version_info;
+        this.lastCdsNonce = message.nonce;
+        this.latestCdsResponses = cdsResponses;
+        this.ackCds();
+        break;
+      }
+      case LDS_TYPE_URL: {
+        let nackError: string | null = null;
+        for (const resource of message.resources) {
+          if (
+            protoLoader.isAnyExtension(resource) &&
+            resource['@type'] === LDS_TYPE_URL
+          ) {
+            const resp = resource as protoLoader.AnyExtension &
+              Listener__Output;
+            if (resp.name === this.targetName) {
+              if (this.validateLdsResponse(resp)) {
+                this.handleLdsResponse(resp);
+                this.lastLdsVersionInfo = message.version_info;
+                this.lastLdsNonce = message.nonce;
+                this.latestLdsResponse = resp;
+              } else {
+                nackError = 'Listener validation failed';
+              }
+              break;
+            }
+          } else {
+            nackError = `Invalid resource type ${
+              protoLoader.isAnyExtension(resource)
+                ? resource['@type']
+                : resource.type_url
+            }`;
+            break;
+          }
+        }
+        if (nackError) {
+          this.nackLds(nackError);
+        } else {
+          this.ackLds();
+        }
+        break;
+      }
+      case RDS_TYPE_URL: {
+        let nackError: string | null = null;
+        if (this.routeConfigName === null) {
+          nackError = 'Unexpected RouteConfiguration response';
+        } else {
+          for (const resource of message.resources) {
+            if (
+              protoLoader.isAnyExtension(resource) &&
+              resource['@type'] === RDS_TYPE_URL
+            ) {
+              const resp = resource as protoLoader.AnyExtension &
+                RouteConfiguration__Output;
+              if (resp.name === this.routeConfigName) {
+                if (this.validateRdsResponse(resp)) {
+                  this.handleRdsResponse(resp);
+                  this.lastRdsVersionInfo = message.version_info;
+                  this.lastRdsNonce = message.nonce;
+                  this.latestRdsResponse = resp;
+                } else {
+                  nackError = 'RouteConfiguration validation failed';
+                }
+                break;
+              }
+            } else {
+              nackError = `Invalid resource type ${
+                protoLoader.isAnyExtension(resource)
+                  ? resource['@type']
+                  : resource.type_url
+              }`;
+              break;
+            }
+          }
+        }
+        if (nackError) {
+          this.nackRds(nackError);
+        } else {
+          this.ackRds();
+        }
+        break;
+      }
+      default:
+        this.nackUnknown(message.type_url, message.version_info, message.nonce);
+    }
+  }
+
   /**
    * Start the ADS stream if the client exists and there is not already an
    * existing stream, and there
@@ -324,81 +492,7 @@ export class XdsClient {
     }
     this.adsCall = this.adsClient.StreamAggregatedResources();
     this.adsCall.on('data', (message: DiscoveryResponse__Output) => {
-      switch (message.type_url) {
-        case EDS_TYPE_URL: {
-          const edsResponses: ClusterLoadAssignment__Output[] = [];
-          for (const resource of message.resources) {
-            if (
-              protoLoader.isAnyExtension(resource) &&
-              resource['@type'] === EDS_TYPE_URL
-            ) {
-              const resp = resource as protoLoader.AnyExtension &
-                ClusterLoadAssignment__Output;
-              if (!this.validateEdsResponse(resp)) {
-                this.nackEds('ClusterLoadAssignment validation failed');
-                return;
-              }
-              edsResponses.push(resp);
-            } else {
-              this.nackEds(
-                `Invalid resource type ${
-                  protoLoader.isAnyExtension(resource)
-                    ? resource['@type']
-                    : resource.type_url
-                }`
-              );
-              return;
-            }
-          }
-          for (const message of edsResponses) {
-            this.handleEdsResponse(message);
-          }
-          this.lastEdsVersionInfo = message.version_info;
-          this.lastEdsNonce = message.nonce;
-          this.latestEdsResponses = edsResponses;
-          this.ackEds();
-          break;
-        }
-        case CDS_TYPE_URL: {
-          const cdsResponses: Cluster__Output[] = [];
-          for (const resource of message.resources) {
-            if (
-              protoLoader.isAnyExtension(resource) &&
-              resource['@type'] === CDS_TYPE_URL
-            ) {
-              const resp = resource as protoLoader.AnyExtension &
-                Cluster__Output;
-              if (!this.validateCdsResponse(resp)) {
-                this.nackCds('Cluster validation failed');
-                return;
-              }
-            } else {
-              this.nackEds(
-                `Invalid resource type ${
-                  protoLoader.isAnyExtension(resource)
-                    ? resource['@type']
-                    : resource.type_url
-                }`
-              );
-              return;
-            }
-          }
-          for (const message of cdsResponses) {
-            this.handleCdsResponse(message);
-          }
-          this.lastCdsVersionInfo = message.version_info;
-          this.lastCdsNonce = message.nonce;
-          this.latestCdsResponses = cdsResponses;
-          this.ackCds();
-          break;
-        }
-        default:
-          this.nackUnknown(
-            message.type_url,
-            message.version_info,
-            message.nonce
-          );
-      }
+      this.handleAdsResponse(message);
     });
     this.adsCall.on('error', (error: ServiceError) => {
       trace(
@@ -411,6 +505,30 @@ export class XdsClient {
        * reconnect */
       this.maybeStartAdsStream();
     });
+
+    this.adsCall.write({
+      node: this.adsNode!,
+      type_url: LDS_TYPE_URL,
+      resource_names: [this.targetName],
+    });
+
+    if (this.routeConfigName) {
+      this.adsCall.write({
+        node: this.adsNode!,
+        type_url: RDS_TYPE_URL,
+        resource_names: [this.routeConfigName],
+      });
+    }
+
+    const clusterNames = Array.from(this.clusterWatchers.keys());
+    if (clusterNames.length > 0) {
+      this.adsCall.write({
+        node: this.adsNode!,
+        type_url: CDS_TYPE_URL,
+        resource_names: clusterNames,
+      });
+    }
+
     const endpointWatcherNames = Array.from(this.endpointWatchers.keys());
     if (endpointWatcherNames.length > 0) {
       this.adsCall.write({
@@ -466,6 +584,26 @@ export class XdsClient {
     });
   }
 
+  private ackLds() {
+    this.adsCall?.write({
+      node: this.adsNode!,
+      type_url: LDS_TYPE_URL,
+      resource_names: [this.targetName],
+      response_nonce: this.lastLdsNonce,
+      version_info: this.lastLdsVersionInfo,
+    });
+  }
+
+  private ackRds() {
+    this.adsCall?.write({
+      node: this.adsNode!,
+      type_url: RDS_TYPE_URL,
+      resource_names: [this.routeConfigName!],
+      response_nonce: this.lastRdsNonce,
+      version_info: this.lastRdsVersionInfo,
+    });
+  }
+
   /**
    * Reject an EDS update. This should be called without updating the local
    * nonce and version info.
@@ -496,6 +634,32 @@ export class XdsClient {
       resource_names: Array.from(this.clusterWatchers.keys()),
       response_nonce: this.lastCdsNonce,
       version_info: this.lastCdsVersionInfo,
+      error_detail: {
+        message,
+      },
+    });
+  }
+
+  private nackLds(message: string) {
+    this.adsCall?.write({
+      node: this.adsNode!,
+      type_url: LDS_TYPE_URL,
+      resource_names: [this.targetName],
+      response_nonce: this.lastLdsNonce,
+      version_info: this.lastLdsVersionInfo,
+      error_detail: {
+        message,
+      },
+    });
+  }
+
+  private nackRds(message: string) {
+    this.adsCall?.write({
+      node: this.adsNode!,
+      type_url: RDS_TYPE_URL,
+      resource_names: this.routeConfigName ? [this.routeConfigName] : [],
+      response_nonce: this.lastRdsNonce,
+      version_info: this.lastRdsVersionInfo,
       error_detail: {
         message,
       },
@@ -543,6 +707,36 @@ export class XdsClient {
     return true;
   }
 
+  private validateLdsResponse(message: Listener__Output): boolean {
+    if (
+      !(
+        message.api_listener?.api_listener &&
+        protoLoader.isAnyExtension(message.api_listener.api_listener) &&
+        message.api_listener?.api_listener['@type'] ===
+          HTTP_CONNECTION_MANGER_TYPE_URL
+      )
+    ) {
+      return false;
+    }
+    const httpConnectionManager = message.api_listener
+      ?.api_listener as protoLoader.AnyExtension &
+      HttpConnectionManager__Output;
+    switch (httpConnectionManager.route_specifier) {
+      case 'rds':
+        if (!httpConnectionManager.rds?.config_source?.ads) {
+          return false;
+        }
+        break;
+      case 'route_config':
+        return this.validateRdsResponse(httpConnectionManager.route_config!);
+    }
+    return false;
+  }
+
+  private validateRdsResponse(message: RouteConfiguration__Output): boolean {
+    return true;
+  }
+
   private handleEdsResponse(message: ClusterLoadAssignment__Output) {
     const watchers = this.endpointWatchers.get(message.cluster_name) ?? [];
     for (const watcher of watchers) {
@@ -555,6 +749,52 @@ export class XdsClient {
     for (const watcher of watchers) {
       watcher.onValidUpdate(message);
     }
+  }
+
+  private handleLdsResponse(message: Listener__Output) {
+    // The validation step ensures that this is correct
+    const httpConnectionManager = message.api_listener!
+      .api_listener as protoLoader.AnyExtension & HttpConnectionManager__Output;
+    switch (httpConnectionManager.route_specifier) {
+      case 'rds':
+        this.routeConfigName = httpConnectionManager.rds!.route_config_name;
+        this.updateRdsNames();
+        break;
+      case 'route_config':
+        this.handleRdsResponse(httpConnectionManager.route_config!);
+        if (this.routeConfigName) {
+          this.routeConfigName = null;
+          this.updateRdsNames();
+        }
+        break;
+      default:
+      // The validation rules should prevent this
+    }
+  }
+
+  private handleRdsResponse(message: RouteConfiguration__Output) {
+    for (const virtualHost of message.virtual_hosts) {
+      if (virtualHost.domains.indexOf(this.routeConfigName!) >= 0) {
+        const route = virtualHost.routes[virtualHost.routes.length - 1];
+        if (route.match?.prefix === '' && route.route?.cluster) {
+          this.serviceConfigWatcher.onValidUpdate({
+            methodConfig: [],
+            loadBalancingConfig: [
+              {
+                name: 'cds',
+                cds: {
+                  cluster: route.route.cluster,
+                },
+              },
+            ],
+          });
+          break;
+        }
+      }
+    }
+    /* If none of the routes match the one we are looking for, bubble up an
+     * error. */
+    this.serviceConfigWatcher.onResourceDoesNotExist();
   }
 
   private updateEdsNames() {
@@ -581,16 +821,26 @@ export class XdsClient {
     }
   }
 
+  private updateRdsNames() {
+    this.adsCall?.write({
+      node: this.adsNode!,
+      type_url: RDS_TYPE_URL,
+      resource_names: this.routeConfigName ? [this.routeConfigName] : [],
+      response_nonce: this.lastRdsNonce,
+      version_info: this.lastRdsVersionInfo,
+    });
+  }
+
   private reportStreamError(status: StatusObject) {
     for (const watcherList of [
       ...this.endpointWatchers.values(),
       ...this.clusterWatchers.values(),
+      [this.serviceConfigWatcher],
     ]) {
       for (const watcher of watcherList) {
         watcher.onTransientError(status);
       }
     }
-    // Also do the same for other types of watchers when those are implemented
   }
 
   private maybeStartLrsStream() {

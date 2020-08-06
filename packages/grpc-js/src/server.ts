@@ -415,7 +415,7 @@ export class Server {
       },
     };
 
-    const resolver = createResolver(portUri, resolverListener);
+    const resolver = createResolver(portUri, resolverListener, this.options);
     resolver.updateResolution();
   }
 
