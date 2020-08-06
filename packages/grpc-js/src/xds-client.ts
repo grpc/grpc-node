@@ -332,6 +332,22 @@ class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
     return true;
   }
 
+  /**
+   * Given a list of edsServiceNames (which may actually be the cluster name),
+   * for each watcher watching a name not on the list, call that watcher's
+   * onResourceDoesNotExist method.
+   * @param allClusterNames
+   */
+  handleMissingNames(allEdsServiceNames: Set<string>) {
+    for (const [edsServiceName, watcherList] of this.watchers.entries()) {
+      if (!allEdsServiceNames.has(edsServiceName)) {
+        for (const watcher of watcherList) {
+          watcher.onResourceDoesNotExist();
+        }
+      }
+    }
+  }
+
   handleResponses(responses: ClusterLoadAssignment__Output[]) {
     for (const message of responses) {
       if (!this.validateResponse(message)) {
@@ -339,12 +355,15 @@ class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
       }
     }
     this.latestResponses = responses;
+    const allClusterNames: Set<string> = new Set<string>();
     for (const message of responses) {
+      allClusterNames.add(message.cluster_name);
       const watchers = this.watchers.get(message.cluster_name) ?? [];
       for (const watcher of watchers) {
         watcher.onValidUpdate(message);
       }
     }
+    this.handleMissingNames(allClusterNames);
     return null;
   }
 
@@ -368,7 +387,10 @@ class CdsState implements XdsStreamState<Cluster__Output> {
 
   private latestResponses: Cluster__Output[] = [];
 
-  constructor(private updateResourceNames: () => void) {}
+  constructor(
+    private edsState: EdsState,
+    private updateResourceNames: () => void
+  ) {}
 
   /**
    * Add the watcher to the watcher list. Returns true if the list of resource
@@ -442,6 +464,22 @@ class CdsState implements XdsStreamState<Cluster__Output> {
     return true;
   }
 
+  /**
+   * Given a list of edsServiceNames (which may actually be the cluster name),
+   * for each watcher watching a name not on the list, call that watcher's
+   * onResourceDoesNotExist method.
+   * @param allClusterNames
+   */
+  private handleMissingNames(allClusterNames: Set<string>) {
+    for (const [edsServiceName, watcherList] of this.watchers.entries()) {
+      if (!allClusterNames.has(edsServiceName)) {
+        for (const watcher of watcherList) {
+          watcher.onResourceDoesNotExist();
+        }
+      }
+    }
+  }
+
   handleResponses(responses: Cluster__Output[]): string | null {
     for (const message of responses) {
       if (!this.validateResponse(message)) {
@@ -449,12 +487,21 @@ class CdsState implements XdsStreamState<Cluster__Output> {
       }
     }
     this.latestResponses = responses;
+    const allEdsServiceNames: Set<string> = new Set<string>();
+    const allClusterNames: Set<string> = new Set<string>();
     for (const message of responses) {
+      allClusterNames.add(message.name);
+      const edsServiceName = message.eds_cluster_config?.service_name ?? '';
+      allEdsServiceNames.add(
+        edsServiceName === '' ? message.name : edsServiceName
+      );
       const watchers = this.watchers.get(message.name) ?? [];
       for (const watcher of watchers) {
         watcher.onValidUpdate(message);
       }
     }
+    this.handleMissingNames(allClusterNames);
+    this.edsState.handleMissingNames(allEdsServiceNames);
     return null;
   }
 
@@ -671,7 +718,7 @@ export class XdsClient {
     const edsState = new EdsState(() => {
       this.updateNames(EDS_TYPE_URL);
     });
-    const cdsState = new CdsState(() => {
+    const cdsState = new CdsState(edsState, () => {
       this.updateNames(CDS_TYPE_URL);
     });
     const rdsState = new RdsState(serviceConfigWatcher, () => {
