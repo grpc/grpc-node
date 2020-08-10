@@ -520,7 +520,7 @@ function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: 
         formatter.writeLine(`${methodName}(call: grpc.ServerDuplexStream<${requestType}, ${responseType}>): void;`);
       } else {
         // Client streaming
-        formatter.writeLine(`${methodName}(call: grpc.ServerReadableStream<${requestType}>, callback: grpc.sendUnaryData<${responseType}>): void;`);
+        formatter.writeLine(`${methodName}(call: grpc.ServerReadableStream<${requestType}, ${responseType}>, callback: grpc.sendUnaryData<${responseType}>): void;`);
       }
     } else {
       if (method.responseStream) {
