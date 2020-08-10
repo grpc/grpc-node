@@ -622,22 +622,23 @@ async function handleUnary<RequestType, ResponseType>(
   handler: UnaryHandler<RequestType, ResponseType>,
   metadata: Metadata
 ): Promise<void> {
-  const emitter = new ServerUnaryCallImpl<RequestType, ResponseType>(
-    call,
-    metadata
-  );
   const request = await call.receiveUnaryMessage();
 
   if (request === undefined || call.cancelled) {
     return;
   }
+  
+  const emitter = new ServerUnaryCallImpl<RequestType, ResponseType>(
+    call,
+    metadata,
+    request
+  );
 
-  emitter.request = request;
   handler.func(
     emitter,
     (
       err: ServerErrorResponse | ServerStatusResponse | null,
-      value: ResponseType | null,
+      value?: ResponseType | null,
       trailer?: Metadata,
       flags?: number
     ) => {
@@ -659,7 +660,7 @@ function handleClientStreaming<RequestType, ResponseType>(
 
   function respond(
     err: ServerErrorResponse | ServerStatusResponse | null,
-    value: ResponseType | null,
+    value?: ResponseType | null,
     trailer?: Metadata,
     flags?: number
   ) {
@@ -689,10 +690,10 @@ async function handleServerStreaming<RequestType, ResponseType>(
   const stream = new ServerWritableStreamImpl<RequestType, ResponseType>(
     call,
     metadata,
-    handler.serialize
+    handler.serialize,
+    request
   );
 
-  stream.request = request;
   handler.func(stream);
 }
 

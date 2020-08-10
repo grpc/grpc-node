@@ -229,7 +229,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
         picker = new WeightedTargetPicker(pickerList);
         break;
       case ConnectivityState.CONNECTING:
-      case ConnectivityState.READY:
+      case ConnectivityState.IDLE:
         picker = new QueuePicker(this);
         break;
       default:

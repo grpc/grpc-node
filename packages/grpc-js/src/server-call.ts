@@ -81,7 +81,7 @@ export type ServerSurfaceCall = {
 } & EventEmitter;
 
 export type ServerUnaryCall<RequestType, ResponseType> = ServerSurfaceCall & {
-  request: RequestType | null;
+  request: RequestType;
 };
 export type ServerReadableStream<
   RequestType,
@@ -91,7 +91,7 @@ export type ServerWritableStream<
   RequestType,
   ResponseType
 > = ServerSurfaceCall &
-  ObjectWritable<ResponseType> & { request: RequestType | null };
+  ObjectWritable<ResponseType> & { request: RequestType };
 export type ServerDuplexStream<RequestType, ResponseType> = ServerSurfaceCall &
   ObjectReadable<RequestType> &
   ObjectWritable<ResponseType>;
@@ -99,15 +99,14 @@ export type ServerDuplexStream<RequestType, ResponseType> = ServerSurfaceCall &
 export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
   implements ServerUnaryCall<RequestType, ResponseType> {
   cancelled: boolean;
-  request: RequestType | null;
 
   constructor(
     private call: Http2ServerCallStream<RequestType, ResponseType>,
-    public metadata: Metadata
+    public metadata: Metadata,
+    public request: RequestType
   ) {
     super();
     this.cancelled = false;
-    this.request = null;
     this.call.setupSurfaceCall(this);
   }
 
@@ -157,17 +156,16 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
   extends Writable
   implements ServerWritableStream<RequestType, ResponseType> {
   cancelled: boolean;
-  request: RequestType | null;
   private trailingMetadata: Metadata;
 
   constructor(
     private call: Http2ServerCallStream<RequestType, ResponseType>,
     public metadata: Metadata,
-    public serialize: Serialize<ResponseType>
+    public serialize: Serialize<ResponseType>,
+    public request: RequestType
   ) {
     super({ objectMode: true });
     this.cancelled = false;
-    this.request = null;
     this.trailingMetadata = new Metadata();
     this.call.setupSurfaceCall(this);
 
@@ -268,7 +266,7 @@ ServerDuplexStreamImpl.prototype.end = ServerWritableStreamImpl.prototype.end;
 // Unary response callback signature.
 export type sendUnaryData<ResponseType> = (
   error: ServerErrorResponse | ServerStatusResponse | null,
-  value: ResponseType | null,
+  value?: ResponseType | null,
   trailer?: Metadata,
   flags?: number
 ) => void;
@@ -506,7 +504,7 @@ export class Http2ServerCallStream<
 
   async sendUnaryMessage(
     err: ServerErrorResponse | ServerStatusResponse | null,
-    value: ResponseType | null,
+    value?: ResponseType | null,
     metadata?: Metadata,
     flags?: number
   ) {
