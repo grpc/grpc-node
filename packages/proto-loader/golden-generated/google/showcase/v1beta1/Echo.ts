@@ -26,8 +26,8 @@ export interface EchoClient extends grpc.Client {
    */
   Block(argument: _google_showcase_v1beta1_BlockRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_BlockResponse__Output) => void): grpc.ClientUnaryCall;
   Block(argument: _google_showcase_v1beta1_BlockRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_BlockResponse__Output) => void): grpc.ClientUnaryCall;
-  Block(argument: _google_showcase_v1beta1_BlockRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_BlockResponse__Output) => void): grpc.ClientUnaryCall;
-  Block(argument: _google_showcase_v1beta1_BlockRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_BlockResponse__Output) => void): grpc.ClientUnaryCall;
+  Block(argument: _google_showcase_v1beta1_BlockRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_BlockResponse__Output) => void): grpc.ClientUnaryCall;
+  Block(argument: _google_showcase_v1beta1_BlockRequest, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_BlockResponse__Output) => void): grpc.ClientUnaryCall;
   /**
    * This method will block (wait) for the requested amount of time
    * and then return the response or error.
@@ -35,8 +35,8 @@ export interface EchoClient extends grpc.Client {
    */
   block(argument: _google_showcase_v1beta1_BlockRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_BlockResponse__Output) => void): grpc.ClientUnaryCall;
   block(argument: _google_showcase_v1beta1_BlockRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_BlockResponse__Output) => void): grpc.ClientUnaryCall;
-  block(argument: _google_showcase_v1beta1_BlockRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_BlockResponse__Output) => void): grpc.ClientUnaryCall;
-  block(argument: _google_showcase_v1beta1_BlockRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_BlockResponse__Output) => void): grpc.ClientUnaryCall;
+  block(argument: _google_showcase_v1beta1_BlockRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_BlockResponse__Output) => void): grpc.ClientUnaryCall;
+  block(argument: _google_showcase_v1beta1_BlockRequest, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_BlockResponse__Output) => void): grpc.ClientUnaryCall;
   
   /**
    * This method, upon receiving a request on the stream, the same content will
@@ -60,8 +60,8 @@ export interface EchoClient extends grpc.Client {
    */
   Collect(metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
   Collect(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
-  Collect(metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
-  Collect(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
+  Collect(options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
+  Collect(callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
   /**
    * This method will collect the words given to it. When the stream is closed
    * by the client, this method will return the a concatenation of the strings
@@ -69,23 +69,23 @@ export interface EchoClient extends grpc.Client {
    */
   collect(metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
   collect(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
-  collect(metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
-  collect(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
+  collect(options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
+  collect(callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
   
   /**
    * This method simply echos the request. This method is showcases unary rpcs.
    */
   Echo(argument: _google_showcase_v1beta1_EchoRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientUnaryCall;
   Echo(argument: _google_showcase_v1beta1_EchoRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientUnaryCall;
-  Echo(argument: _google_showcase_v1beta1_EchoRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientUnaryCall;
-  Echo(argument: _google_showcase_v1beta1_EchoRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientUnaryCall;
+  Echo(argument: _google_showcase_v1beta1_EchoRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientUnaryCall;
+  Echo(argument: _google_showcase_v1beta1_EchoRequest, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientUnaryCall;
   /**
    * This method simply echos the request. This method is showcases unary rpcs.
    */
   echo(argument: _google_showcase_v1beta1_EchoRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientUnaryCall;
   echo(argument: _google_showcase_v1beta1_EchoRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientUnaryCall;
-  echo(argument: _google_showcase_v1beta1_EchoRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientUnaryCall;
-  echo(argument: _google_showcase_v1beta1_EchoRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientUnaryCall;
+  echo(argument: _google_showcase_v1beta1_EchoRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientUnaryCall;
+  echo(argument: _google_showcase_v1beta1_EchoRequest, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientUnaryCall;
   
   /**
    * This method split the given content into words and will pass each word back
@@ -106,16 +106,16 @@ export interface EchoClient extends grpc.Client {
    */
   PagedExpand(argument: _google_showcase_v1beta1_PagedExpandRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_PagedExpandResponse__Output) => void): grpc.ClientUnaryCall;
   PagedExpand(argument: _google_showcase_v1beta1_PagedExpandRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_PagedExpandResponse__Output) => void): grpc.ClientUnaryCall;
-  PagedExpand(argument: _google_showcase_v1beta1_PagedExpandRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_PagedExpandResponse__Output) => void): grpc.ClientUnaryCall;
-  PagedExpand(argument: _google_showcase_v1beta1_PagedExpandRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_PagedExpandResponse__Output) => void): grpc.ClientUnaryCall;
+  PagedExpand(argument: _google_showcase_v1beta1_PagedExpandRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_PagedExpandResponse__Output) => void): grpc.ClientUnaryCall;
+  PagedExpand(argument: _google_showcase_v1beta1_PagedExpandRequest, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_PagedExpandResponse__Output) => void): grpc.ClientUnaryCall;
   /**
    * This is similar to the Expand method but instead of returning a stream of
    * expanded words, this method returns a paged list of expanded words.
    */
   pagedExpand(argument: _google_showcase_v1beta1_PagedExpandRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_PagedExpandResponse__Output) => void): grpc.ClientUnaryCall;
   pagedExpand(argument: _google_showcase_v1beta1_PagedExpandRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_PagedExpandResponse__Output) => void): grpc.ClientUnaryCall;
-  pagedExpand(argument: _google_showcase_v1beta1_PagedExpandRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_PagedExpandResponse__Output) => void): grpc.ClientUnaryCall;
-  pagedExpand(argument: _google_showcase_v1beta1_PagedExpandRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_PagedExpandResponse__Output) => void): grpc.ClientUnaryCall;
+  pagedExpand(argument: _google_showcase_v1beta1_PagedExpandRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_PagedExpandResponse__Output) => void): grpc.ClientUnaryCall;
+  pagedExpand(argument: _google_showcase_v1beta1_PagedExpandRequest, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_PagedExpandResponse__Output) => void): grpc.ClientUnaryCall;
   
   /**
    * This method will wait the requested amount of and then return.
@@ -123,16 +123,16 @@ export interface EchoClient extends grpc.Client {
    */
   Wait(argument: _google_showcase_v1beta1_WaitRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
   Wait(argument: _google_showcase_v1beta1_WaitRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
-  Wait(argument: _google_showcase_v1beta1_WaitRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
-  Wait(argument: _google_showcase_v1beta1_WaitRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
+  Wait(argument: _google_showcase_v1beta1_WaitRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
+  Wait(argument: _google_showcase_v1beta1_WaitRequest, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
   /**
    * This method will wait the requested amount of and then return.
    * This method showcases how a client handles a request timing out.
    */
   wait(argument: _google_showcase_v1beta1_WaitRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
   wait(argument: _google_showcase_v1beta1_WaitRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
-  wait(argument: _google_showcase_v1beta1_WaitRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
-  wait(argument: _google_showcase_v1beta1_WaitRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
+  wait(argument: _google_showcase_v1beta1_WaitRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
+  wait(argument: _google_showcase_v1beta1_WaitRequest, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
   
 }
 
@@ -149,43 +149,43 @@ export interface EchoHandlers {
    * and then return the response or error.
    * This method showcases how a client handles delays or retries.
    */
-  Block(call: grpc.ServerUnaryCall<_google_showcase_v1beta1_BlockRequest, _google_showcase_v1beta1_BlockResponse__Output>, callback: grpc.sendUnaryData<_google_showcase_v1beta1_BlockResponse__Output>): void;
+  Block(call: grpc.ServerUnaryCall<_google_showcase_v1beta1_BlockRequest__Output, _google_showcase_v1beta1_BlockResponse>, callback: grpc.sendUnaryData<_google_showcase_v1beta1_BlockResponse>): void;
   
   /**
    * This method, upon receiving a request on the stream, the same content will
    * be passed  back on the stream. This method showcases bidirectional
    * streaming rpcs.
    */
-  Chat(call: grpc.ServerDuplexStream<_google_showcase_v1beta1_EchoRequest, _google_showcase_v1beta1_EchoResponse__Output>): void;
+  Chat(call: grpc.ServerDuplexStream<_google_showcase_v1beta1_EchoRequest__Output, _google_showcase_v1beta1_EchoResponse>): void;
   
   /**
    * This method will collect the words given to it. When the stream is closed
    * by the client, this method will return the a concatenation of the strings
    * passed to it. This method showcases client-side streaming rpcs.
    */
-  Collect(call: grpc.ServerReadableStream<_google_showcase_v1beta1_EchoRequest>, callback: grpc.sendUnaryData<_google_showcase_v1beta1_EchoResponse__Output>): void;
+  Collect(call: grpc.ServerReadableStream<_google_showcase_v1beta1_EchoRequest__Output>, callback: grpc.sendUnaryData<_google_showcase_v1beta1_EchoResponse>): void;
   
   /**
    * This method simply echos the request. This method is showcases unary rpcs.
    */
-  Echo(call: grpc.ServerUnaryCall<_google_showcase_v1beta1_EchoRequest, _google_showcase_v1beta1_EchoResponse__Output>, callback: grpc.sendUnaryData<_google_showcase_v1beta1_EchoResponse__Output>): void;
+  Echo(call: grpc.ServerUnaryCall<_google_showcase_v1beta1_EchoRequest__Output, _google_showcase_v1beta1_EchoResponse>, callback: grpc.sendUnaryData<_google_showcase_v1beta1_EchoResponse>): void;
   
   /**
    * This method split the given content into words and will pass each word back
    * through the stream. This method showcases server-side streaming rpcs.
    */
-  Expand(call: grpc.ServerWritableStream<_google_showcase_v1beta1_ExpandRequest, _google_showcase_v1beta1_EchoResponse__Output>): void;
+  Expand(call: grpc.ServerWritableStream<_google_showcase_v1beta1_ExpandRequest__Output, _google_showcase_v1beta1_EchoResponse>): void;
   
   /**
    * This is similar to the Expand method but instead of returning a stream of
    * expanded words, this method returns a paged list of expanded words.
    */
-  PagedExpand(call: grpc.ServerUnaryCall<_google_showcase_v1beta1_PagedExpandRequest, _google_showcase_v1beta1_PagedExpandResponse__Output>, callback: grpc.sendUnaryData<_google_showcase_v1beta1_PagedExpandResponse__Output>): void;
+  PagedExpand(call: grpc.ServerUnaryCall<_google_showcase_v1beta1_PagedExpandRequest__Output, _google_showcase_v1beta1_PagedExpandResponse>, callback: grpc.sendUnaryData<_google_showcase_v1beta1_PagedExpandResponse>): void;
   
   /**
    * This method will wait the requested amount of and then return.
    * This method showcases how a client handles a request timing out.
    */
-  Wait(call: grpc.ServerUnaryCall<_google_showcase_v1beta1_WaitRequest, _google_longrunning_Operation__Output>, callback: grpc.sendUnaryData<_google_longrunning_Operation__Output>): void;
+  Wait(call: grpc.ServerUnaryCall<_google_showcase_v1beta1_WaitRequest__Output, _google_longrunning_Operation>, callback: grpc.sendUnaryData<_google_longrunning_Operation>): void;
   
 }

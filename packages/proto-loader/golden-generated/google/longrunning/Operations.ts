@@ -36,8 +36,8 @@ export interface OperationsClient extends grpc.Client {
    */
   CancelOperation(argument: _google_longrunning_CancelOperationRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
   CancelOperation(argument: _google_longrunning_CancelOperationRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
-  CancelOperation(argument: _google_longrunning_CancelOperationRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
-  CancelOperation(argument: _google_longrunning_CancelOperationRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
+  CancelOperation(argument: _google_longrunning_CancelOperationRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
+  CancelOperation(argument: _google_longrunning_CancelOperationRequest, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
   /**
    * Starts asynchronous cancellation on a long-running operation.  The server
    * makes a best effort to cancel the operation, but success is not
@@ -52,8 +52,8 @@ export interface OperationsClient extends grpc.Client {
    */
   cancelOperation(argument: _google_longrunning_CancelOperationRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
   cancelOperation(argument: _google_longrunning_CancelOperationRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
-  cancelOperation(argument: _google_longrunning_CancelOperationRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
-  cancelOperation(argument: _google_longrunning_CancelOperationRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
+  cancelOperation(argument: _google_longrunning_CancelOperationRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
+  cancelOperation(argument: _google_longrunning_CancelOperationRequest, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
   
   /**
    * Deletes a long-running operation. This method indicates that the client is
@@ -63,8 +63,8 @@ export interface OperationsClient extends grpc.Client {
    */
   DeleteOperation(argument: _google_longrunning_DeleteOperationRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
   DeleteOperation(argument: _google_longrunning_DeleteOperationRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
-  DeleteOperation(argument: _google_longrunning_DeleteOperationRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
-  DeleteOperation(argument: _google_longrunning_DeleteOperationRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
+  DeleteOperation(argument: _google_longrunning_DeleteOperationRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
+  DeleteOperation(argument: _google_longrunning_DeleteOperationRequest, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
   /**
    * Deletes a long-running operation. This method indicates that the client is
    * no longer interested in the operation result. It does not cancel the
@@ -73,8 +73,8 @@ export interface OperationsClient extends grpc.Client {
    */
   deleteOperation(argument: _google_longrunning_DeleteOperationRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
   deleteOperation(argument: _google_longrunning_DeleteOperationRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
-  deleteOperation(argument: _google_longrunning_DeleteOperationRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
-  deleteOperation(argument: _google_longrunning_DeleteOperationRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
+  deleteOperation(argument: _google_longrunning_DeleteOperationRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
+  deleteOperation(argument: _google_longrunning_DeleteOperationRequest, callback: (error?: grpc.ServiceError, result?: _google_protobuf_Empty__Output) => void): grpc.ClientUnaryCall;
   
   /**
    * Gets the latest state of a long-running operation.  Clients can use this
@@ -83,8 +83,8 @@ export interface OperationsClient extends grpc.Client {
    */
   GetOperation(argument: _google_longrunning_GetOperationRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
   GetOperation(argument: _google_longrunning_GetOperationRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
-  GetOperation(argument: _google_longrunning_GetOperationRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
-  GetOperation(argument: _google_longrunning_GetOperationRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
+  GetOperation(argument: _google_longrunning_GetOperationRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
+  GetOperation(argument: _google_longrunning_GetOperationRequest, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
   /**
    * Gets the latest state of a long-running operation.  Clients can use this
    * method to poll the operation result at intervals as recommended by the API
@@ -92,8 +92,8 @@ export interface OperationsClient extends grpc.Client {
    */
   getOperation(argument: _google_longrunning_GetOperationRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
   getOperation(argument: _google_longrunning_GetOperationRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
-  getOperation(argument: _google_longrunning_GetOperationRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
-  getOperation(argument: _google_longrunning_GetOperationRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
+  getOperation(argument: _google_longrunning_GetOperationRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
+  getOperation(argument: _google_longrunning_GetOperationRequest, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
   
   /**
    * Lists operations that match the specified filter in the request. If the
@@ -109,8 +109,8 @@ export interface OperationsClient extends grpc.Client {
    */
   ListOperations(argument: _google_longrunning_ListOperationsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_ListOperationsResponse__Output) => void): grpc.ClientUnaryCall;
   ListOperations(argument: _google_longrunning_ListOperationsRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_longrunning_ListOperationsResponse__Output) => void): grpc.ClientUnaryCall;
-  ListOperations(argument: _google_longrunning_ListOperationsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_ListOperationsResponse__Output) => void): grpc.ClientUnaryCall;
-  ListOperations(argument: _google_longrunning_ListOperationsRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_longrunning_ListOperationsResponse__Output) => void): grpc.ClientUnaryCall;
+  ListOperations(argument: _google_longrunning_ListOperationsRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_ListOperationsResponse__Output) => void): grpc.ClientUnaryCall;
+  ListOperations(argument: _google_longrunning_ListOperationsRequest, callback: (error?: grpc.ServiceError, result?: _google_longrunning_ListOperationsResponse__Output) => void): grpc.ClientUnaryCall;
   /**
    * Lists operations that match the specified filter in the request. If the
    * server doesn't support this method, it returns `UNIMPLEMENTED`.
@@ -125,8 +125,8 @@ export interface OperationsClient extends grpc.Client {
    */
   listOperations(argument: _google_longrunning_ListOperationsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_ListOperationsResponse__Output) => void): grpc.ClientUnaryCall;
   listOperations(argument: _google_longrunning_ListOperationsRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_longrunning_ListOperationsResponse__Output) => void): grpc.ClientUnaryCall;
-  listOperations(argument: _google_longrunning_ListOperationsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_ListOperationsResponse__Output) => void): grpc.ClientUnaryCall;
-  listOperations(argument: _google_longrunning_ListOperationsRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_longrunning_ListOperationsResponse__Output) => void): grpc.ClientUnaryCall;
+  listOperations(argument: _google_longrunning_ListOperationsRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_ListOperationsResponse__Output) => void): grpc.ClientUnaryCall;
+  listOperations(argument: _google_longrunning_ListOperationsRequest, callback: (error?: grpc.ServiceError, result?: _google_longrunning_ListOperationsResponse__Output) => void): grpc.ClientUnaryCall;
   
   /**
    * Waits for the specified long-running operation until it is done or reaches
@@ -141,8 +141,8 @@ export interface OperationsClient extends grpc.Client {
    */
   WaitOperation(argument: _google_longrunning_WaitOperationRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
   WaitOperation(argument: _google_longrunning_WaitOperationRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
-  WaitOperation(argument: _google_longrunning_WaitOperationRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
-  WaitOperation(argument: _google_longrunning_WaitOperationRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
+  WaitOperation(argument: _google_longrunning_WaitOperationRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
+  WaitOperation(argument: _google_longrunning_WaitOperationRequest, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
   /**
    * Waits for the specified long-running operation until it is done or reaches
    * at most a specified timeout, returning the latest state.  If the operation
@@ -156,8 +156,8 @@ export interface OperationsClient extends grpc.Client {
    */
   waitOperation(argument: _google_longrunning_WaitOperationRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
   waitOperation(argument: _google_longrunning_WaitOperationRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
-  waitOperation(argument: _google_longrunning_WaitOperationRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
-  waitOperation(argument: _google_longrunning_WaitOperationRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
+  waitOperation(argument: _google_longrunning_WaitOperationRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
+  waitOperation(argument: _google_longrunning_WaitOperationRequest, callback: (error?: grpc.ServiceError, result?: _google_longrunning_Operation__Output) => void): grpc.ClientUnaryCall;
   
 }
 
@@ -185,7 +185,7 @@ export interface OperationsHandlers {
    * an [Operation.error][google.longrunning.Operation.error] value with a [google.rpc.Status.code][google.rpc.Status.code] of 1,
    * corresponding to `Code.CANCELLED`.
    */
-  CancelOperation(call: grpc.ServerUnaryCall<_google_longrunning_CancelOperationRequest, _google_protobuf_Empty__Output>, callback: grpc.sendUnaryData<_google_protobuf_Empty__Output>): void;
+  CancelOperation(call: grpc.ServerUnaryCall<_google_longrunning_CancelOperationRequest__Output, _google_protobuf_Empty>, callback: grpc.sendUnaryData<_google_protobuf_Empty>): void;
   
   /**
    * Deletes a long-running operation. This method indicates that the client is
@@ -193,14 +193,14 @@ export interface OperationsHandlers {
    * operation. If the server doesn't support this method, it returns
    * `google.rpc.Code.UNIMPLEMENTED`.
    */
-  DeleteOperation(call: grpc.ServerUnaryCall<_google_longrunning_DeleteOperationRequest, _google_protobuf_Empty__Output>, callback: grpc.sendUnaryData<_google_protobuf_Empty__Output>): void;
+  DeleteOperation(call: grpc.ServerUnaryCall<_google_longrunning_DeleteOperationRequest__Output, _google_protobuf_Empty>, callback: grpc.sendUnaryData<_google_protobuf_Empty>): void;
   
   /**
    * Gets the latest state of a long-running operation.  Clients can use this
    * method to poll the operation result at intervals as recommended by the API
    * service.
    */
-  GetOperation(call: grpc.ServerUnaryCall<_google_longrunning_GetOperationRequest, _google_longrunning_Operation__Output>, callback: grpc.sendUnaryData<_google_longrunning_Operation__Output>): void;
+  GetOperation(call: grpc.ServerUnaryCall<_google_longrunning_GetOperationRequest__Output, _google_longrunning_Operation>, callback: grpc.sendUnaryData<_google_longrunning_Operation>): void;
   
   /**
    * Lists operations that match the specified filter in the request. If the
@@ -214,7 +214,7 @@ export interface OperationsHandlers {
    * collection id, however overriding users must ensure the name binding
    * is the parent resource, without the operations collection id.
    */
-  ListOperations(call: grpc.ServerUnaryCall<_google_longrunning_ListOperationsRequest, _google_longrunning_ListOperationsResponse__Output>, callback: grpc.sendUnaryData<_google_longrunning_ListOperationsResponse__Output>): void;
+  ListOperations(call: grpc.ServerUnaryCall<_google_longrunning_ListOperationsRequest__Output, _google_longrunning_ListOperationsResponse>, callback: grpc.sendUnaryData<_google_longrunning_ListOperationsResponse>): void;
   
   /**
    * Waits for the specified long-running operation until it is done or reaches
@@ -227,6 +227,6 @@ export interface OperationsHandlers {
    * state before the specified timeout (including immediately), meaning even an
    * immediate response is no guarantee that the operation is done.
    */
-  WaitOperation(call: grpc.ServerUnaryCall<_google_longrunning_WaitOperationRequest, _google_longrunning_Operation__Output>, callback: grpc.sendUnaryData<_google_longrunning_Operation__Output>): void;
+  WaitOperation(call: grpc.ServerUnaryCall<_google_longrunning_WaitOperationRequest__Output, _google_longrunning_Operation>, callback: grpc.sendUnaryData<_google_longrunning_Operation>): void;
   
 }

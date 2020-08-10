@@ -476,8 +476,8 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
           const callType = `grpc.ClientWritableStream<${responseType}>`;
           formatter.writeLine(`${name}(metadata: grpc.Metadata, options: grpc.CallOptions, callback: ${callbackType}): ${callType};`);
           formatter.writeLine(`${name}(metadata: grpc.Metadata, callback: ${callbackType}): ${callType};`);
-          formatter.writeLine(`${name}(metadata: grpc.Metadata, options: grpc.CallOptions, callback: ${callbackType}): ${callType};`);
-          formatter.writeLine(`${name}(metadata: grpc.Metadata, callback: ${callbackType}): ${callType};`);
+          formatter.writeLine(`${name}(options: grpc.CallOptions, callback: ${callbackType}): ${callType};`);
+          formatter.writeLine(`${name}(callback: ${callbackType}): ${callType};`);
         }
       } else {
         if (method.responseStream) {
@@ -490,8 +490,8 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
           const callType = 'grpc.ClientUnaryCall';
           formatter.writeLine(`${name}(argument: ${requestType}, metadata: grpc.Metadata, options: grpc.CallOptions, callback: ${callbackType}): ${callType};`);
           formatter.writeLine(`${name}(argument: ${requestType}, metadata: grpc.Metadata, callback: ${callbackType}): ${callType};`);
-          formatter.writeLine(`${name}(argument: ${requestType}, metadata: grpc.Metadata, options: grpc.CallOptions, callback: ${callbackType}): ${callType};`);
-          formatter.writeLine(`${name}(argument: ${requestType}, metadata: grpc.Metadata, callback: ${callbackType}): ${callType};`);
+          formatter.writeLine(`${name}(argument: ${requestType}, options: grpc.CallOptions, callback: ${callbackType}): ${callType};`);
+          formatter.writeLine(`${name}(argument: ${requestType}, callback: ${callbackType}): ${callType};`);
         }
       }
     }
@@ -505,15 +505,15 @@ function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: 
   if (options.includeComments) {
     formatComment(formatter, serviceType.comment);
   }
-  formatter.writeLine(`export interface ${serviceType.name}Handlers {`);
+  formatter.writeLine(`export interface ${serviceType.name}Handlers extends grpc.UntypedServiceImplementation {`);
   formatter.indent();
   for (const methodName of Object.keys(serviceType.methods).sort()) {
     const method = serviceType.methods[methodName];
     if (options.includeComments) {
       formatComment(formatter, method.comment);
     }
-    const requestType = getTypeInterfaceName(method.resolvedRequestType!);
-    const responseType = getTypeInterfaceName(method.resolvedResponseType!) + '__Output';
+    const requestType = getTypeInterfaceName(method.resolvedRequestType!) + '__Output';
+    const responseType = getTypeInterfaceName(method.resolvedResponseType!);
     if (method.requestStream) {
       if (method.responseStream) {
         // Bidi streaming
