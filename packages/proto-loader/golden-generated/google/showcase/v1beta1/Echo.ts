@@ -143,7 +143,7 @@ export interface EchoClient extends grpc.Client {
  * paginated calls. Set the 'showcase-trailer' metadata key on any method
  * to have the values echoed in the response trailers.
  */
-export interface EchoHandlers {
+export interface EchoHandlers extends grpc.UntypedServiceImplementation {
   /**
    * This method will block (wait) for the requested amount of time
    * and then return the response or error.
@@ -163,7 +163,7 @@ export interface EchoHandlers {
    * by the client, this method will return the a concatenation of the strings
    * passed to it. This method showcases client-side streaming rpcs.
    */
-  Collect(call: grpc.ServerReadableStream<_google_showcase_v1beta1_EchoRequest__Output>, callback: grpc.sendUnaryData<_google_showcase_v1beta1_EchoResponse>): void;
+  Collect(call: grpc.ServerReadableStream<_google_showcase_v1beta1_EchoRequest__Output, _google_showcase_v1beta1_EchoResponse>, callback: grpc.sendUnaryData<_google_showcase_v1beta1_EchoResponse>): void;
   
   /**
    * This method simply echos the request. This method is showcases unary rpcs.

@@ -172,7 +172,7 @@ export interface OperationsClient extends grpc.Client {
  * returns long-running operations should implement the `Operations` interface
  * so developers can have a consistent client experience.
  */
-export interface OperationsHandlers {
+export interface OperationsHandlers extends grpc.UntypedServiceImplementation {
   /**
    * Starts asynchronous cancellation on a long-running operation.  The server
    * makes a best effort to cancel the operation, but success is not
