@@ -8,6 +8,10 @@ Node 12 is recommended. The exact set of compatible Node versions can be found i
 npm install @grpc/grpc-js
 ```
 
+## Documentation
+
+Documentation specifically for the `@grpc/grpc-js` package is currently not available. However, [documentation is available for the `grpc` package](https://grpc.github.io/grpc/node/grpc.html), and the two packages contain mostly the same interface. There are a few notable differences, however, and these differences are noted in the "Migrating from grpc" section below.
+
 ## Features
 
 - Clients
