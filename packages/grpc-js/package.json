@@ -21,7 +21,6 @@
     "@types/lodash": "^4.14.108",
     "@types/mocha": "^5.2.6",
     "@types/ncp": "^2.0.1",
-    "@types/node": "^12.7.5",
     "@types/pify": "^3.0.2",
     "@types/semver": "^6.0.1",
     "clang-format": "^1.0.55",
@@ -58,6 +57,7 @@
     "posttest": "npm run check"
   },
   "dependencies": {
+    "@types/node": "^12.12.47",
     "semver": "^6.2.0"
   },
   "files": [
