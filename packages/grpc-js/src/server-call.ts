@@ -112,7 +112,7 @@ export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
   }
 
   getPeer(): string {
-    throw new Error('not implemented yet');
+    return this.call.getPeer();
   }
 
   sendMetadata(responseMetadata: Metadata): void {
@@ -145,7 +145,7 @@ export class ServerReadableStreamImpl<RequestType, ResponseType>
   }
 
   getPeer(): string {
-    throw new Error('not implemented yet');
+    return this.call.getPeer();
   }
 
   sendMetadata(responseMetadata: Metadata): void {
@@ -178,7 +178,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
   }
 
   getPeer(): string {
-    throw new Error('not implemented yet');
+    return this.call.getPeer();
   }
 
   sendMetadata(responseMetadata: Metadata): void {
@@ -249,7 +249,7 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
   }
 
   getPeer(): string {
-    throw new Error('not implemented yet');
+    return this.call.getPeer();
   }
 
   sendMetadata(responseMetadata: Metadata): void {
@@ -736,6 +736,19 @@ export class Http2ServerCallStream<
         readable,
         this.bufferedMessages.shift() as Buffer | null
       );
+    }
+  }
+
+  getPeer(): string {
+    const socket = this.stream.session.socket;
+    if (socket.remoteAddress) {
+      if (socket.remotePort) {
+        return `${socket.remoteAddress}:${socket.remotePort}`;
+      } else {
+        return socket.remoteAddress;
+      }
+    } else {
+      return 'unknown';
     }
   }
 }
