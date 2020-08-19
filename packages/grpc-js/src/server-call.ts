@@ -425,7 +425,7 @@ export class Http2ServerCallStream<
     this.metadataSent = true;
     const custom = customMetadata ? customMetadata.toHttp2Headers() : null;
     // TODO(cjihrig): Include compression headers.
-    const headers = Object.assign(defaultResponseHeaders, custom);
+    const headers = Object.assign({}, defaultResponseHeaders, custom);
     this.stream.respond(headers, defaultResponseOptions);
   }
 
