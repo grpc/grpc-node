@@ -877,8 +877,6 @@ export class XdsClient {
     ];
     for (const typeUrl of allTypeUrls) {
       const state = this.adsState[typeUrl];
-      state.nonce = '';
-      state.versionInfo = '';
       if (state.getResourceNames().length > 0) {
         this.updateNames(typeUrl);
       }
