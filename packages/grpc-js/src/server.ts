@@ -543,11 +543,21 @@ export class Server {
 
         try {
           const path = headers[http2.constants.HTTP2_HEADER_PATH] as string;
+          const serverAddress = http2Server.address();
+          let serverAddressString = 'null';
+          if (serverAddress) {
+            if (typeof serverAddress === 'string') {
+              serverAddressString = serverAddress;
+            } else {
+              serverAddressString =
+                serverAddress.address + ':' + serverAddress.port;
+            }
+          }
           trace(
             'Received call to method ' +
               path +
               ' at address ' +
-              http2Server.address()?.toString()
+              serverAddressString
           );
           const handler = this.handlers.get(path);
 

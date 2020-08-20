@@ -91,10 +91,13 @@ export type ServerWritableStream<
   RequestType,
   ResponseType
 > = ServerSurfaceCall &
-  ObjectWritable<ResponseType> & { request: RequestType };
+  ObjectWritable<ResponseType> & {
+    request: RequestType;
+    end: (metadata?: Metadata) => void;
+  };
 export type ServerDuplexStream<RequestType, ResponseType> = ServerSurfaceCall &
   ObjectReadable<RequestType> &
-  ObjectWritable<ResponseType>;
+  ObjectWritable<ResponseType> & { end: (metadata?: Metadata) => void };
 
 export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
   implements ServerUnaryCall<RequestType, ResponseType> {
@@ -111,7 +114,7 @@ export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
   }
 
   getPeer(): string {
-    throw new Error('not implemented yet');
+    return this.call.getPeer();
   }
 
   sendMetadata(responseMetadata: Metadata): void {
@@ -144,7 +147,7 @@ export class ServerReadableStreamImpl<RequestType, ResponseType>
   }
 
   getPeer(): string {
-    throw new Error('not implemented yet');
+    return this.call.getPeer();
   }
 
   sendMetadata(responseMetadata: Metadata): void {
@@ -176,7 +179,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
   }
 
   getPeer(): string {
-    throw new Error('not implemented yet');
+    return this.call.getPeer();
   }
 
   sendMetadata(responseMetadata: Metadata): void {
@@ -247,11 +250,20 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
   }
 
   getPeer(): string {
-    throw new Error('not implemented yet');
+    return this.call.getPeer();
   }
 
   sendMetadata(responseMetadata: Metadata): void {
     this.call.sendMetadata(responseMetadata);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  end(metadata?: any) {
+    if (metadata) {
+      this.trailingMetadata = metadata;
+    }
+
+    super.end();
   }
 }
 
@@ -371,6 +383,12 @@ export class Http2ServerCallStream<
     });
 
     this.stream.once('close', () => {
+      trace(
+        'Request to method ' +
+          this.handler?.path +
+          ' stream closed with rstCode ' +
+          this.stream.rstCode
+      );
       this.cancelled = true;
       this.emit('cancelled', 'cancelled');
     });
@@ -411,7 +429,7 @@ export class Http2ServerCallStream<
     this.metadataSent = true;
     const custom = customMetadata ? customMetadata.toHttp2Headers() : null;
     // TODO(cjihrig): Include compression headers.
-    const headers = Object.assign(defaultResponseHeaders, custom);
+    const headers = Object.assign({}, defaultResponseHeaders, custom);
     this.stream.respond(headers, defaultResponseOptions);
   }
 
@@ -734,6 +752,19 @@ export class Http2ServerCallStream<
         readable,
         this.bufferedMessages.shift() as Buffer | null
       );
+    }
+  }
+
+  getPeer(): string {
+    const socket = this.stream.session.socket;
+    if (socket.remoteAddress) {
+      if (socket.remotePort) {
+        return `${socket.remoteAddress}:${socket.remotePort}`;
+      } else {
+        return socket.remoteAddress;
+      }
+    } else {
+      return 'unknown';
     }
   }
 }
