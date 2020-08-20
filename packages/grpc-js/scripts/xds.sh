@@ -10,7 +10,7 @@ npm run compile
 
 cd ../../..
 
-git clone -b remotes/origin/ --single-branch --depth=1 https://github.com/grpc/grpc.git
+git clone -b master --single-branch --depth=1 https://github.com/grpc/grpc.git
 
 grpc/tools/run_tests/helper_scripts/prep_xds.sh
 
