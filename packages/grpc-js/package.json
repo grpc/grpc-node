@@ -1,6 +1,6 @@
 {
   "name": "@grpc/grpc-js",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "gRPC Library for Node - pure JS implementation",
   "homepage": "https://grpc.io/",
   "repository": "https://github.com/grpc/grpc-node/tree/master/packages/grpc-js",
@@ -15,7 +15,6 @@
   "types": "build/src/index.d.ts",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@grpc/proto-loader": "^0.6.0-pre6",
     "@types/gulp": "^4.0.6",
     "@types/gulp-mocha": "0.0.32",
     "@types/lodash": "^4.14.108",
@@ -25,7 +24,6 @@
     "@types/semver": "^6.0.1",
     "clang-format": "^1.0.55",
     "execa": "^2.0.3",
-    "google-auth-library": "^6.0.0",
     "gts": "^2.0.0",
     "gulp": "^4.0.2",
     "gulp-mocha": "^6.0.0",
@@ -57,7 +55,9 @@
     "posttest": "npm run check"
   },
   "dependencies": {
+    "@grpc/proto-loader": "^0.6.0-pre14",
     "@types/node": "^12.12.47",
+    "google-auth-library": "^6.0.0",
     "semver": "^6.2.0"
   },
   "files": [
