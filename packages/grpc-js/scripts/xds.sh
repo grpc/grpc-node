@@ -19,7 +19,7 @@ grpc/tools/run_tests/helper_scripts/prep_xds.sh
 #
 # TODO: remove "path_matching" and "header_matching" from --test_case after
 # they are added into "all".
-GRPC_TRACE=all GRPC_VERBOSITY=DEBUG \
+GRPC_NODE_TRACE=all GRPC_NODE_VERBOSITY=DEBUG \
   python3 grpc/tools/run_tests/run_xds_tests.py \
     --test_case="all" \
     --project_id=grpc-testing \
