@@ -184,11 +184,13 @@ function main() {
     .number(['num_channels', 'qps'])
     .require(['fail_on_failed_rpcs', 'num_channels', 'qps', 'server', 'stats_port'])
     .argv;
+  console.log('Starting xDS interop client. Args: ', argv);
   const callStatsTracker = new CallStatsTracker();
   for (let i = 0; i < argv.num_channels; i++) {
     /* The 'unique' channel argument is there solely to ensure that the
      * channels do not share any subchannels. It does not have any
      * inherent function. */
+    console.log(`Interop client channel ${i} starting sending ${argv.qps} QPS to ${argv.server}`);
     sendConstantQps(new loadedProto.grpc.testing.TestService(argv.server, grpc.credentials.createInsecure(), {'unique': i}), 
       argv.qps, 
       argv.fail_on_failed_rpcs === 'true', 
@@ -211,6 +213,7 @@ function main() {
     if (error) {
       throw error;
     }
+    console.log(`Starting stats service server bound to port ${port}`);
     server.start();
   });
 }
