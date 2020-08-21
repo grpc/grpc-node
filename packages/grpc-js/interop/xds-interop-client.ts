@@ -221,5 +221,3 @@ function main() {
 if (require.main === module) {
   main();
 }
-
-console.log('Bottom of xds-interop-client');
