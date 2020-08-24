@@ -182,7 +182,8 @@ function main() {
   const argv = yargs
     .string(['fail_on_failed_rpcs', 'server', 'stats_port'])
     .number(['num_channels', 'qps'])
-    .require(['fail_on_failed_rpcs', 'num_channels', 'qps', 'server', 'stats_port'])
+    .require(['qps', 'server', 'stats_port'])
+    .default('num_channels', 1)
     .argv;
   console.log('Starting xDS interop client. Args: ', argv);
   const callStatsTracker = new CallStatsTracker();

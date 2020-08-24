@@ -75,15 +75,6 @@ do
   npm test || FAILED="true"
 done
 
-if [ "$OS" = "Linux" ]
-then
-  set +ex
-  nvm use 12
-  set -ex
-  # Run the xds interop tests only on Linux
-  ./packages/grpc-js/scripts/xds.sh
-fi
-
 set +ex
 nvm use 8
 set -ex
