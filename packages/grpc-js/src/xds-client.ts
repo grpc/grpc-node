@@ -357,6 +357,7 @@ class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
   handleResponses(responses: ClusterLoadAssignment__Output[]) {
     for (const message of responses) {
       if (!this.validateResponse(message)) {
+        trace('EDS validation failed for message ' + JSON.stringify(message));
         return 'EDS Error: ClusterLoadAssignment validation failed';
       }
     }
@@ -494,6 +495,7 @@ class CdsState implements XdsStreamState<Cluster__Output> {
   handleResponses(responses: Cluster__Output[]): string | null {
     for (const message of responses) {
       if (!this.validateResponse(message)) {
+        trace('CDS validation failed for message ' + JSON.stringify(message));
         return 'CDS Error: Cluster validation failed';
       }
     }
@@ -559,16 +561,19 @@ class RdsState implements XdsStreamState<RouteConfiguration__Output> {
             ],
           });
           return;
+        } else {
+          trace('Discarded matching route with prefix ' + route.match?.prefix + ' and cluster ' + route.route?.cluster);
         }
       }
     }
-    trace('Reporting RDS resource does not exist');
+    trace('Reporting RDS resource does not exist from domain lists ' + message.virtual_hosts.map(virtualHost => virtualHost.domains));
     /* If none of the routes match the one we are looking for, bubble up an
      * error. */
     this.watcher.onResourceDoesNotExist();
   }
 
   handleResponses(responses: RouteConfiguration__Output[]): string | null {
+    trace('Received RDS response with route config names ' + responses.map(message => message.name));
     if (this.routeConfigName !== null) {
       for (const message of responses) {
         if (message.name === this.routeConfigName) {
@@ -627,6 +632,7 @@ class LdsState implements XdsStreamState<Listener__Output> {
   }
 
   handleResponses(responses: Listener__Output[]): string | null {
+    trace('Received LDS update with names ' + responses.map(message => message.name));
     for (const message of responses) {
       if (message.name === this.targetName) {
         if (this.validateResponse(message)) {
@@ -652,6 +658,7 @@ class LdsState implements XdsStreamState<Listener__Output> {
             // The validation rules should prevent this
           }
         } else {
+          trace('LRS validation error for message ' + JSON.stringify(message));
           return 'LRS Error: Listener validation failed';
         }
       }
@@ -965,6 +972,7 @@ export class XdsClient {
   }
 
   private updateNames(typeUrl: AdsTypeUrl) {
+    trace('Sending update for type URL ' + typeUrl + ' with names ' + this.adsState[typeUrl].getResourceNames());
     this.adsCall?.write({
       node: this.adsNode!,
       type_url: typeUrl,
