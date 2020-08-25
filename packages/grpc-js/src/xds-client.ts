@@ -105,6 +105,7 @@ function loadAdsProtos(): Promise<
         enums: String,
         defaults: true,
         oneofs: true,
+        json: true,
         includeDirs: [
           // Paths are relative to src/build
           __dirname + '/../../deps/envoy-api/',
