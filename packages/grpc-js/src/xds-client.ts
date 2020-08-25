@@ -641,7 +641,7 @@ class LdsState implements XdsStreamState<Listener__Output> {
         }
       }
     }
-    throw new Error('Method not implemented.');
+    return null;
   }
 
   reportStreamError(status: StatusObject): void {
