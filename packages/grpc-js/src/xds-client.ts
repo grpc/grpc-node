@@ -535,6 +535,7 @@ class RdsState implements XdsStreamState<RouteConfiguration__Output> {
   private routeConfigName: string | null = null;
 
   constructor(
+    private targetName: string,
     private watcher: Watcher<ServiceConfig>,
     private updateResouceNames: () => void
   ) {}
@@ -545,10 +546,10 @@ class RdsState implements XdsStreamState<RouteConfiguration__Output> {
 
   handleSingleMessage(message: RouteConfiguration__Output) {
     for (const virtualHost of message.virtual_hosts) {
-      if (virtualHost.domains.indexOf(this.routeConfigName!) >= 0) {
+      if (virtualHost.domains.indexOf(this.targetName) >= 0) {
         const route = virtualHost.routes[virtualHost.routes.length - 1];
         if (route.match?.prefix === '' && route.route?.cluster) {
-          trace('Reporting RDS update for host ' + this.routeConfigName + ' with cluster ' + route.route.cluster);
+          trace('Reporting RDS update for host ' + this.targetName + ' with cluster ' + route.route.cluster);
           this.watcher.onValidUpdate({
             methodConfig: [],
             loadBalancingConfig: [
@@ -747,7 +748,7 @@ export class XdsClient {
     const cdsState = new CdsState(edsState, () => {
       this.updateNames(CDS_TYPE_URL);
     });
-    const rdsState = new RdsState(serviceConfigWatcher, () => {
+    const rdsState = new RdsState(targetName, serviceConfigWatcher, () => {
       this.updateNames(RDS_TYPE_URL);
     });
     const ldsState = new LdsState(targetName, rdsState);
