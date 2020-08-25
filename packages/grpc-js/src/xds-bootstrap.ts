@@ -171,7 +171,7 @@ function validateNode(obj: any): Node {
     result.locality.region = obj.locality.region;
   }
   if ('zone' in obj.locality) {
-    if (typeof obj.locality.region !== 'string') {
+    if (typeof obj.locality.zone !== 'string') {
       throw new Error(
         `node.locality.zone field: expected string, got ${typeof obj.locality
           .zone}`
