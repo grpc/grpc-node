@@ -39,7 +39,7 @@ const loadedProto = grpc.loadPackageDefinition(packageDefinition) as unknown as 
 
 interface CallEndNotifier {
   onCallSucceeded(peerName: string): void;
-  onCallFailed(): void;
+  onCallFailed(message: string): void;
 }
 
 class CallSubscriber {
@@ -47,6 +47,7 @@ class CallSubscriber {
   private callsSucceededByPeer: {[key: string]: number} = {};
   private callsSucceeded = 0;
   private callsFinished = 0;
+  private failureMessageCount: Map<string, number> = new Map<string, number>();
 
   constructor(private callGoal: number, private onFinished: () => void) {}
 
@@ -56,6 +57,10 @@ class CallSubscriber {
 
   private maybeOnFinished() {
     if (this.callsFinished == this.callGoal) {
+      console.log(`Out of a total of ${this.callsFinished} calls, ${this.callsSucceeded} succeeded`);
+      for (const [message, count] of this.failureMessageCount) {
+        console.log(`${count} failed with the message ${message}`);
+      }
       this.onFinished();
     }
   }
@@ -70,8 +75,9 @@ class CallSubscriber {
     this.callsFinished += 1;
     this.maybeOnFinished();
   }
-  addCallFailed(): void {
+  addCallFailed(message: string): void {
     this.callsFinished += 1;
+    this.failureMessageCount.set(message, (this.failureMessageCount.get(message) ?? 0) + 1);
     this.maybeOnFinished();
   }
 
@@ -125,9 +131,9 @@ class CallStatsTracker {
           subscriber.addCallSucceeded(peerName);
         }
       },
-      onCallFailed: () => {
+      onCallFailed: (message: string) => {
         for (const subscriber of callSubscribers) {
-          subscriber.addCallFailed();
+          subscriber.addCallFailed(message);
         }
       }
     }
@@ -150,12 +156,12 @@ function sendConstantQps(client: TestServiceClient, qps: number, failOnFailedRpc
         }
         completed = true;
         completedWithError = true;
-        notifier.onCallFailed();
+        notifier.onCallFailed(error.message);
       } else {
         anyCallSucceeded = true;
         if (gotMetadata) {
           if (hostname === null) {
-            notifier.onCallFailed()
+            notifier.onCallFailed('Hostname omitted from call metadata');
           } else {
             notifier.onCallSucceeded(hostname);
           }
@@ -167,7 +173,7 @@ function sendConstantQps(client: TestServiceClient, qps: number, failOnFailedRpc
       gotMetadata = true;
       if (completed && !completedWithError) {
         if (hostname === null) {
-          notifier.onCallFailed();
+          notifier.onCallFailed('Hostname omitted from call metadata');
         } else {
           notifier.onCallSucceeded(hostname);
         }
