@@ -21,7 +21,7 @@ import {
   getFirstUsableConfig,
   registerLoadBalancerType,
 } from './load-balancer';
-import { SubchannelAddress } from './subchannel';
+import { SubchannelAddress, subchannelAddressToString } from './subchannel';
 import {
   LoadBalancingConfig,
   isPriorityLoadBalancingConfig,
@@ -32,6 +32,14 @@ import { ChildLoadBalancerHandler } from './load-balancer-child-handler';
 import { ChannelOptions } from './channel-options';
 import { Status } from './constants';
 import { Metadata } from './metadata';
+import * as logging from './logging';
+import { LogVerbosity } from './constants';
+
+const TRACER_NAME = 'priority';
+
+function trace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 const TYPE_NAME = 'priority';
 
@@ -222,6 +230,10 @@ export class PriorityLoadBalancer implements LoadBalancer {
   constructor(private channelControlHelper: ChannelControlHelper) {}
 
   private updateState(state: ConnectivityState, picker: Picker) {
+    trace(
+        'Transitioning to ' +
+        ConnectivityState[state]
+    );
     /* If switching to IDLE, use a QueuePicker attached to this load balancer
      * so that when the picker calls exitIdle, that in turn calls exitIdle on
      * the PriorityChildImpl, which will start the failover timer. */
@@ -233,6 +245,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
 
   private onChildStateChange(child: PriorityChildBalancer) {
     const childState = child.getConnectivityState();
+    trace('Child ' + child.getName() + ' transitioning to ' + ConnectivityState[childState]);
     if (child === this.currentChildFromBeforeUpdate) {
       if (
         childState === ConnectivityState.READY ||
@@ -369,6 +382,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
   ): void {
     if (!isPriorityLoadBalancingConfig(lbConfig)) {
       // Reject a config of the wrong type
+      trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig));
       return;
     }
     const priorityConfig = lbConfig.priority;
@@ -416,6 +430,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
       const chosenChildConfig = getFirstUsableConfig(childConfig.config);
       if (chosenChildConfig !== null) {
         const childAddresses = childAddressMap.get(childName) ?? [];
+        trace('Assigning child ' + childName + ' address list ' + childAddresses.map(address => '(' + subchannelAddressToString(address) + ' path=' + address.localityPath + ')'))
         this.latestUpdates.set(childName, {
           subchannelAddress: childAddresses,
           lbConfig: chosenChildConfig,
@@ -433,6 +448,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
     // Deactivate all children that are no longer in the priority list
     for (const [childName, child] of this.children) {
       if (this.priorities.indexOf(childName) < 0) {
+        trace('Deactivating child ' + childName);
         child.deactivate();
       }
     }

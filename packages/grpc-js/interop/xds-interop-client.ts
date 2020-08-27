@@ -200,7 +200,9 @@ function main() {
 
   const loadBalancerStatsServiceImpl: LoadBalancerStatsServiceHandlers = {
     GetClientStats: (call, callback) => {
+      console.log(`Received stats request with num_rpcs=${call.request.num_rpcs} and timeout_sec=${call.request.num_rpcs}`);
       callStatsTracker.getCallStats(call.request.num_rpcs, call.request.timeout_sec).then((value) => {
+        console.log(`Sending stats response: ${JSON.stringify(value)}`);
         callback(null, value);
       }, (error) => {
         callback({code: grpc.status.ABORTED, details: 'Call stats collection failed'});

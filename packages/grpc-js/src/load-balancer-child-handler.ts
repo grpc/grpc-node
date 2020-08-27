@@ -133,9 +133,11 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
   destroy(): void {
     if (this.currentChild) {
       this.currentChild.destroy();
+      this.currentChild = null;
     }
     if (this.pendingChild) {
       this.pendingChild.destroy();
+      this.pendingChild = null;
     }
   }
   getTypeName(): string {

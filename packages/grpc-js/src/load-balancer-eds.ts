@@ -21,7 +21,7 @@ import {
   registerLoadBalancerType,
   getFirstUsableConfig,
 } from './load-balancer';
-import { SubchannelAddress } from './subchannel';
+import { SubchannelAddress, subchannelAddressToString } from './subchannel';
 import {
   LoadBalancingConfig,
   isEdsLoadBalancingConfig,
@@ -40,6 +40,14 @@ import { Locality__Output } from './generated/envoy/api/v2/core/Locality';
 import { LocalitySubchannelAddress } from './load-balancer-priority';
 import { Status } from './constants';
 import { Metadata } from './metadata';
+import * as logging from './logging';
+import { LogVerbosity } from './constants';
+
+const TRACER_NAME = 'eds_balancer';
+
+function trace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 const TYPE_NAME = 'eds';
 
@@ -136,6 +144,8 @@ export class EdsLoadBalancer implements LoadBalancer {
           this.watcher
         );
         this.isWatcherActive = false;
+        this.channelControlHelper.updateState(ConnectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: Status.UNAVAILABLE, details: 'EDS resource does not exist', metadata: new Metadata()}));
+        this.childBalancer.destroy();
       },
       onTransientError: (status) => {
         if (this.latestEdsUpdate === null) {
@@ -356,6 +366,8 @@ export class EdsLoadBalancer implements LoadBalancer {
         priorities: newPriorityNames.filter((value) => value !== undefined),
       },
     };
+    trace('Child update addresses: ' + addressList.map(address => '(' + subchannelAddressToString(address) + ' path=' + address.localityPath + ')'));
+    trace('Child update service config: ' + JSON.stringify(childConfig));
     this.childBalancer.updateAddressList(
       addressList,
       childConfig,
@@ -372,11 +384,14 @@ export class EdsLoadBalancer implements LoadBalancer {
     attributes: { [key: string]: unknown }
   ): void {
     if (!isEdsLoadBalancingConfig(lbConfig)) {
+      trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig));
       return;
     }
     if (!(attributes.xdsClient instanceof XdsClient)) {
+      trace('Discarding address list update missing xdsClient attribute');
       return;
     }
+    trace('Received update with config: ' + JSON.stringify(lbConfig));
     this.lastestConfig = lbConfig;
     this.latestAttributes = attributes;
     this.xdsClient = attributes.xdsClient;
