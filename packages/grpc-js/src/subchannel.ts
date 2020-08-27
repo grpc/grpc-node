@@ -40,6 +40,10 @@ function trace(text: string): void {
   logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
 }
 
+function refTrace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, 'subchannel_refcount', text);
+}
+
 const MIN_CONNECT_TIMEOUT_MS = 20000;
 const INITIAL_BACKOFF_MS = 1000;
 const BACKOFF_MULTIPLIER = 1.6;
@@ -278,7 +282,8 @@ export class Subchannel {
     this.keepaliveIntervalId = setInterval(() => {
       this.sendPing();
     }, this.keepaliveTimeMs);
-    this.sendPing();
+    /* Don't send a ping immediately because whatever caused us to start
+     * sending pings should also involve some network activity. */
   }
 
   private stopKeepalivePings() {
@@ -584,7 +589,7 @@ export class Subchannel {
   }
 
   callRef() {
-    trace(
+    refTrace(
       this.subchannelAddressString +
         ' callRefcount ' +
         this.callRefcount +
@@ -601,7 +606,7 @@ export class Subchannel {
   }
 
   callUnref() {
-    trace(
+    refTrace(
       this.subchannelAddressString +
         ' callRefcount ' +
         this.callRefcount +
@@ -619,7 +624,7 @@ export class Subchannel {
   }
 
   ref() {
-    trace(
+    refTrace(
       this.subchannelAddressString +
         ' refcount ' +
         this.refcount +
@@ -630,7 +635,7 @@ export class Subchannel {
   }
 
   unref() {
-    trace(
+    refTrace(
       this.subchannelAddressString +
         ' refcount ' +
         this.refcount +
