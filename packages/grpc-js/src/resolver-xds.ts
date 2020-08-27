@@ -54,12 +54,12 @@ class XdsResolver implements Resolver {
     // Wait until updateResolution is called once to start the xDS requests
     if (!this.resolutionStarted) {
       this.resolutionStarted = true;
-      trace('Starting resolution for target ' + this.target);
+      trace('Starting resolution for target ' + uriToString(this.target));
       const xdsClient = new XdsClient(
         this.target.path,
         {
           onValidUpdate: (update: ServiceConfig) => {
-            trace('Resolved service config for target ' + this.target + ': ' + JSON.stringify(update));
+            trace('Resolved service config for target ' + uriToString(this.target) + ': ' + JSON.stringify(update));
             this.hasReportedSuccess = true;
             this.listener.onSuccessfulResolution([], update, null, {
               xdsClient: xdsClient,
@@ -69,12 +69,12 @@ class XdsResolver implements Resolver {
             /* A transient error only needs to bubble up as a failure if we have
              * not already provided a ServiceConfig for the upper layer to use */
             if (!this.hasReportedSuccess) {
-              trace('Resolution error for target ' + this.target + ' due to xDS client transient error ' + error.details);
+              trace('Resolution error for target ' + uriToString(this.target) + ' due to xDS client transient error ' + error.details);
               this.reportResolutionError();
             }
           },
           onResourceDoesNotExist: () => {
-            trace('Resolution error for target ' + this.target + ': resource does not exist');
+            trace('Resolution error for target ' + uriToString(this.target) + ': resource does not exist');
             this.reportResolutionError();
           },
         },

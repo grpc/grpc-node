@@ -417,7 +417,7 @@ export class Subchannel {
             );
             logging.log(
               LogVerbosity.ERROR,
-              `Connection to ${uriToString(this.channelTarget)} at ${this.subchannelAddressString} rejected by server because of excess pings. Increasing ping interval to ${this.keepaliveTimeMs}`
+              `Connection to ${uriToString(this.channelTarget)} at ${this.subchannelAddressString} rejected by server because of excess pings. Increasing ping interval to ${this.keepaliveTimeMs} ms`
             );
           }
           trace(

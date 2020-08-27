@@ -777,7 +777,8 @@ export class XdsClient {
     for (const arg of channelArgsToRemove) {
       delete channelArgs[arg];
     }
-    channelArgs['grpc.keepalive_time_ms'] = 5000;
+    // 5 minutes
+    channelArgs['grpc.keepalive_time_ms'] = 5 * 60 * 1000;
 
     this.adsBackoff = new BackoffTimeout(() => {
       this.maybeStartAdsStream();
