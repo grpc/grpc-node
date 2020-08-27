@@ -28,7 +28,7 @@ import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { getProxiedConnection, ProxyConnectionResult } from './http_proxy';
 import * as net from 'net';
-import { GrpcUri, parseUri, splitHostPort } from './uri-parser';
+import { GrpcUri, parseUri, splitHostPort, uriToString } from './uri-parser';
 import { ConnectionOptions } from 'tls';
 import { FilterFactory, Filter } from './filter';
 
@@ -263,6 +263,7 @@ export class Subchannel {
   }
 
   private sendPing() {
+    logging.trace(LogVerbosity.DEBUG, 'keepalive', 'Sending ping to ' + this.subchannelAddressString);
     this.keepaliveTimeoutId = setTimeout(() => {
       this.transitionToState([ConnectivityState.READY], ConnectivityState.IDLE);
     }, this.keepaliveTimeoutMs);
@@ -405,13 +406,13 @@ export class Subchannel {
             errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM &&
             opaqueData.equals(tooManyPingsData)
           ) {
-            logging.log(
-              LogVerbosity.ERROR,
-              `Connection to ${this.channelTarget} rejected by server because of excess pings`
-            );
             this.keepaliveTimeMs = Math.min(
               2 * this.keepaliveTimeMs,
               KEEPALIVE_MAX_TIME_MS
+            );
+            logging.log(
+              LogVerbosity.ERROR,
+              `Connection to ${uriToString(this.channelTarget)} at ${this.subchannelAddressString} rejected by server because of excess pings. Increasing ping interval to ${this.keepaliveTimeMs}`
             );
           }
           trace(
@@ -689,7 +690,7 @@ export class Subchannel {
     for (const header of Object.keys(headers)) {
       headersString += '\t\t' + header + ': ' + headers[header] + '\n';
     }
-    trace('Starting stream with headers\n' + headersString);
+    logging.trace(LogVerbosity.DEBUG, 'call_stream', 'Starting stream on subchannel ' + this.subchannelAddressString + ' with headers\n' + headersString);
     callStream.attachHttp2Stream(http2Stream, this, extraFilterFactory);
   }
 
