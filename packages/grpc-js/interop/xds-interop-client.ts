@@ -52,20 +52,18 @@ class CallSubscriber {
   constructor(private callGoal: number, private onFinished: () => void) {}
 
   addCallStarted(): void {
+    console.log('Call started');
     this.callsStarted += 1;
   }
 
   private maybeOnFinished() {
     if (this.callsFinished == this.callGoal) {
-      console.log(`Out of a total of ${this.callsFinished} calls, ${this.callsSucceeded} succeeded`);
-      for (const [message, count] of this.failureMessageCount) {
-        console.log(`${count} failed with the message ${message}`);
-      }
       this.onFinished();
     }
   }
 
   addCallSucceeded(peerName: string): void {
+    console.log(`Call to ${peerName} succeeded`);
     if (peerName in this.callsSucceededByPeer) {
       this.callsSucceededByPeer[peerName] += 1;
     } else {    
@@ -76,6 +74,7 @@ class CallSubscriber {
     this.maybeOnFinished();
   }
   addCallFailed(message: string): void {
+    console.log(`Call failed with message ${message}`);
     this.callsFinished += 1;
     this.failureMessageCount.set(message, (this.failureMessageCount.get(message) ?? 0) + 1);
     this.maybeOnFinished();
@@ -86,6 +85,10 @@ class CallSubscriber {
   }
 
   getFinalStats(): LoadBalancerStatsResponse {
+    console.log(`Out of a total of ${this.callGoal} calls requested, ${this.callsFinished} finished. ${this.callsSucceeded} succeeded`);
+    for (const [message, count] of this.failureMessageCount) {
+      console.log(`${count} failed with the message ${message}`);
+    }
     return {
       rpcs_by_peer: this.callsSucceededByPeer,
       num_failures: this.callsStarted - this.callsSucceeded
