@@ -1039,6 +1039,7 @@ export class XdsClient {
         'LRS stream ended. code=' + error.code + ' details= ' + error.details
       );
       this.lrsCall = null;
+      this.latestLrsSettings = null;
       clearInterval(this.statsTimer);
       /* If the backoff timer is no longer running, we do not need to wait any
        * more to start the new call. */
