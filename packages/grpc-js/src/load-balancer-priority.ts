@@ -111,6 +111,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
     }
 
     private updateState(connectivityState: ConnectivityState, picker: Picker) {
+      trace('Child ' + this.name + ' ' + ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[connectivityState]);
       this.connectivityState = connectivityState;
       this.picker = picker;
       this.parent.onChildStateChange(this);
@@ -118,7 +119,9 @@ export class PriorityLoadBalancer implements LoadBalancer {
 
     private startFailoverTimer() {
       if (this.failoverTimer === null) {
+        trace('Starting failover timer for child ' + this.name);
         this.failoverTimer = setTimeout(() => {
+          trace('Failover timer triggered for child ' + this.name);
           this.failoverTimer = null;
           this.updateState(
             ConnectivityState.TRANSIENT_FAILURE,
@@ -308,6 +311,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
   private selectPriority(priority: number) {
     this.currentPriority = priority;
     const chosenChild = this.children.get(this.priorities[priority])!;
+    chosenChild.cancelFailoverTimer();
     this.updateState(
       chosenChild.getConnectivityState(),
       chosenChild.getPicker()
