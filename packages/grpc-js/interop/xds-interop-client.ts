@@ -37,6 +37,8 @@ const packageDefinition = protoLoader.loadSync('grpc/testing/test.proto', {
 
 const loadedProto = grpc.loadPackageDefinition(packageDefinition) as unknown as ProtoGrpcType;
 
+const REQUEST_TIMEOUT_SEC = 20;
+
 interface CallEndNotifier {
   onCallSucceeded(peerName: string): void;
   onCallFailed(message: string): void;
@@ -151,7 +153,9 @@ function sendConstantQps(client: TestServiceClient, qps: number, failOnFailedRpc
     let hostname: string | null = null;
     let completed: boolean = false;
     let completedWithError: boolean = false;
-    const call = client.emptyCall({}, (error, value) => {
+    const deadline = new Date();
+    deadline.setSeconds(deadline.getSeconds() + REQUEST_TIMEOUT_SEC);
+    const call = client.emptyCall({}, {deadline}, (error, value) => {
       if (error) {
         if (failOnFailedRpcs && anyCallSucceeded) {
           console.error('A call failed after a call succeeded');
