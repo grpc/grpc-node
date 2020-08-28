@@ -33,7 +33,7 @@ export interface ChannelOptions {
   'grpc.max_send_message_length'?: number;
   'grpc.max_receive_message_length'?: number;
   'grpc.enable_http_proxy'?: number;
-  [key: string]: string | number | undefined;
+  [key: string]: any;
 }
 
 /**

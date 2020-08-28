@@ -816,7 +816,7 @@ export class XdsClient {
         this.lrsClient = new protoDefinitions.envoy.service.load_stats.v2.LoadReportingService(
           bootstrapInfo.xdsServers[0].serverUri,
           createGoogleDefaultCredentials(),
-          channelArgs
+          {channelOverride: this.adsClient.getChannel()}
         );
         this.maybeStartLrsStream();
       },
