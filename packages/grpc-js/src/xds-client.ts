@@ -1029,7 +1029,6 @@ export class XdsClient {
           message.load_reporting_interval!.nanos / 1_000_000;
         trace('Received LRS request with load reporting interval ' + loadReportingIntervalMs + ' ms');
         this.statsTimer = setInterval(() => {
-          trace('Sending LRS stats');
           this.sendStats();
         }, loadReportingIntervalMs);
       }
@@ -1047,15 +1046,16 @@ export class XdsClient {
         this.maybeStartLrsStream();
       }
     });
-    this.lrsCall.write({
-      node: this.lrsNode!,
-    });
+    /* Send buffered stats information when starting LRS stream. If there is no
+     * buffered stats information, it will still send the node field. */
+    this.sendStats();
   }
 
   private sendStats() {
     if (!this.lrsCall) {
       return;
     }
+    trace('Sending LRS stats');
     const clusterStats: ClusterStats[] = [];
     for (const [
       { clusterName, edsServiceName },
