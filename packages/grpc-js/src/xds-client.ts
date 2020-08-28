@@ -1027,7 +1027,9 @@ export class XdsClient {
         const loadReportingIntervalMs =
           Number.parseInt(message.load_reporting_interval!.seconds) * 1000 +
           message.load_reporting_interval!.nanos / 1_000_000;
+        trace('Received LRS request with load reporting interval ' + loadReportingIntervalMs + ' ms');
         this.statsTimer = setInterval(() => {
+          trace('Sending LRS stats');
           this.sendStats();
         }, loadReportingIntervalMs);
       }
