@@ -268,13 +268,7 @@ class DnsResolver implements Resolver {
    * @param target
    */
   static getDefaultAuthority(target: GrpcUri): string {
-    const hostPort = uri_parser_1.splitHostPort(target.path);
-    if (hostPort !== null) {
-      return hostPort.host;
-    }
-    else {
-      throw new Error(`Failed to parse target ${uri_parser_1.uriToString(target)}`);
-    }
+    return target.path;
   }
 }
 
