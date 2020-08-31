@@ -217,6 +217,10 @@ export class EdsLoadBalancer implements LoadBalancer {
       weight: number;
       addresses: SubchannelAddress[];
     }[][] = [];
+    /**
+     * New replacement for this.localityPriorities, mapping locality names to
+     * priority values. The replacement occurrs at the end of this method.
+     */
     const newLocalityPriorities: Map<string, number> = new Map<
       string,
       number
@@ -225,12 +229,7 @@ export class EdsLoadBalancer implements LoadBalancer {
      * loop consolidates localities into buckets by priority, while also
      * simplifying the data structure to make the later steps simpler */
     for (const endpoint of this.latestEdsUpdate.endpoints) {
-      let localityArray = priorityList[endpoint.priority];
-      if (localityArray === undefined) {
-        localityArray = [];
-        priorityList[endpoint.priority] = localityArray;
-      }
-      const addresses: SubchannelAddress[] = endpoint.lb_endpoints.map(
+      const addresses: SubchannelAddress[] = endpoint.lb_endpoints.filter(lbEndpoint => lbEndpoint.health_status === 'UNKNOWN' || lbEndpoint.health_status === 'HEALTHY').map(
         (lbEndpoint) => {
           /* The validator in the XdsClient class ensures that each endpoint has
            * a socket_address with an IP address and a port_value. */
@@ -241,15 +240,22 @@ export class EdsLoadBalancer implements LoadBalancer {
           };
         }
       );
-      localityArray.push({
-        locality: endpoint.locality!,
-        addresses: addresses,
-        weight: endpoint.load_balancing_weight?.value ?? 0,
-      });
-      newLocalityPriorities.set(
-        localityToName(endpoint.locality!),
-        endpoint.priority
-      );
+      if (addresses.length > 0) {
+        let localityArray = priorityList[endpoint.priority];
+        if (localityArray === undefined) {
+          localityArray = [];
+          priorityList[endpoint.priority] = localityArray;
+        }
+        localityArray.push({
+          locality: endpoint.locality!,
+          addresses: addresses,
+          weight: endpoint.load_balancing_weight?.value ?? 0,
+        });
+        newLocalityPriorities.set(
+          localityToName(endpoint.locality!),
+          endpoint.priority
+        );
+      }
     }
 
     const newPriorityNames: string[] = [];
@@ -266,6 +272,7 @@ export class EdsLoadBalancer implements LoadBalancer {
      * - Otherwise, construct a new name using this.nextPriorityChildNumber.
      */
     for (const [priority, localityArray] of priorityList.entries()) {
+      // Skip priorities that have no localities with healthy endpoints
       if (localityArray === undefined) {
         continue;
       }
@@ -367,7 +374,9 @@ export class EdsLoadBalancer implements LoadBalancer {
       },
     };
     trace('Child update addresses: ' + addressList.map(address => '(' + subchannelAddressToString(address) + ' path=' + address.localityPath + ')'));
-    trace('Child update service config: ' + JSON.stringify(childConfig));
+    for (const [childName, child] of childConfig.priority.priorities.entries()) {
+      trace('Child update priority config: ' + childName + ' -> ' + JSON.stringify(child));
+    }
     this.childBalancer.updateAddressList(
       addressList,
       childConfig,
