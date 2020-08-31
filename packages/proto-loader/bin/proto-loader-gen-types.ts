@@ -96,6 +96,9 @@ function getPath(to: Protobuf.Type | Protobuf.Enum | Protobuf.Service) {
 
 function getPathToRoot(from: Protobuf.NamespaceBase) {
   const depth = stripLeadingPeriod(from.fullName).split('.').length - 1;
+  if (depth === 0) {
+    return './';
+  }
   let path = '';
   for (let i = 0; i < depth; i++) {
     path += '../';
