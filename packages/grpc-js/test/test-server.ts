@@ -181,7 +181,7 @@ describe('Server', () => {
       const server = new Server();
 
       assert.throws(() => {
-        server.addService({}, dummyImpls);
+        server.addService({} as any, dummyImpls);
       }, /Cannot add an empty service to a server/);
     });
 
