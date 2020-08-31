@@ -467,11 +467,13 @@ export class Subchannel {
            * if a connection is successfully established through the proxy.
            * If the proxy is not used, these connectionOptions are discarded
            * anyway */
-          connectionOptions.servername = getDefaultAuthority(
+          const targetPath = getDefaultAuthority(
             parseUri(this.options['grpc.http_connect_target'] as string) ?? {
               path: 'localhost',
             }
           );
+          const hostPort = splitHostPort(targetPath);
+          connectionOptions.servername = hostPort?.host ?? targetPath;
         }
       }
     }
