@@ -217,7 +217,7 @@ export function getProxiedConnection(
            * See https://github.com/grpc/grpc-node/pull/1369 for more info. */
           const targetPath = getDefaultAuthority(parsedTarget);
           const hostPort = splitHostPort(targetPath);
-          const remoteHost = (hostPort !== null) ? hostPort.host : targetPath;
+          const remoteHost = hostPort?.host ?? targetPath;
           
           const cts = tls.connect(
             {
