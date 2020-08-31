@@ -135,6 +135,7 @@ export class EdsLoadBalancer implements LoadBalancer {
     });
     this.watcher = {
       onValidUpdate: (update) => {
+        trace('Received EDS update for ' + this.edsServiceName + ': ' + JSON.stringify(update));
         this.latestEdsUpdate = update;
         this.updateChild();
       },
@@ -229,6 +230,9 @@ export class EdsLoadBalancer implements LoadBalancer {
      * loop consolidates localities into buckets by priority, while also
      * simplifying the data structure to make the later steps simpler */
     for (const endpoint of this.latestEdsUpdate.endpoints) {
+      if (!endpoint.load_balancing_weight) {
+        continue;
+      }
       const addresses: SubchannelAddress[] = endpoint.lb_endpoints.filter(lbEndpoint => lbEndpoint.health_status === 'UNKNOWN' || lbEndpoint.health_status === 'HEALTHY').map(
         (lbEndpoint) => {
           /* The validator in the XdsClient class ensures that each endpoint has
@@ -249,7 +253,7 @@ export class EdsLoadBalancer implements LoadBalancer {
         localityArray.push({
           locality: endpoint.locality!,
           addresses: addresses,
-          weight: endpoint.load_balancing_weight?.value ?? 0,
+          weight: endpoint.load_balancing_weight.value,
         });
         newLocalityPriorities.set(
           localityToName(endpoint.locality!),
@@ -374,7 +378,8 @@ export class EdsLoadBalancer implements LoadBalancer {
       },
     };
     trace('Child update addresses: ' + addressList.map(address => '(' + subchannelAddressToString(address) + ' path=' + address.localityPath + ')'));
-    for (const [childName, child] of childConfig.priority.priorities.entries()) {
+    trace('Child update priority list: ' + childConfig.priority.priorities);
+    for (const [childName, child] of childConfig.priority.children) {
       trace('Child update priority config: ' + childName + ' -> ' + JSON.stringify(child));
     }
     this.childBalancer.updateAddressList(
