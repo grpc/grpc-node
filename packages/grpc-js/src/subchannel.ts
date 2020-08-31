@@ -473,7 +473,7 @@ export class Subchannel {
             }
           );
           const hostPort = splitHostPort(targetPath);
-          connectionOptions.servername = (hostPort !== null) ? hostPort.host : targetPath;
+          connectionOptions.servername = hostPort?.host ?? : targetPath;
         }
       }
     }
