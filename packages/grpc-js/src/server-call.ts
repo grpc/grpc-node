@@ -743,7 +743,10 @@ export class Http2ServerCallStream<
       // Ignore any remaining messages when errors occur.
       this.bufferedMessages.length = 0;
 
-      err.code = Status.INTERNAL;
+      if(!err.code){
+        err.code = Status.INTERNAL;
+      }
+      
       readable.emit('error', err);
     }
 
