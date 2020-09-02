@@ -120,7 +120,7 @@ export interface Channel {
 
 interface ConnectivityStateWatcher {
   currentState: ConnectivityState;
-  timer: NodeJS.Timeout;
+  timer: NodeJS.Timeout | null;
   callback: (error?: Error) => void;
 }
 
@@ -417,7 +417,9 @@ export class ChannelImplementation implements Channel {
     const watchersCopy = this.connectivityStateWatchers.slice();
     for (const watcherObject of watchersCopy) {
       if (newState !== watcherObject.currentState) {
-        clearTimeout(watcherObject.timer);
+        if(watcherObject.timer) {
+          clearTimeout(watcherObject.timer);
+        }
         this.removeConnectivityStateWatcher(watcherObject);
         watcherObject.callback();
       }
@@ -452,25 +454,29 @@ export class ChannelImplementation implements Channel {
     deadline: Date | number,
     callback: (error?: Error) => void
   ): void {
-    const deadlineDate: Date =
-      deadline instanceof Date ? deadline : new Date(deadline);
-    const now = new Date();
-    if (deadlineDate <= now) {
-      process.nextTick(
-        callback,
-        new Error('Deadline passed without connectivity state change')
-      );
-      return;
-    }
-    const watcherObject = {
-      currentState,
-      callback,
-      timer: setTimeout(() => {
+    let timer = null;
+    if(deadline !== Infinity) {
+      const deadlineDate: Date =
+        deadline instanceof Date ? deadline : new Date(deadline);
+      const now = new Date();
+      if (deadline === -Infinity || deadlineDate <= now) {
+        process.nextTick(
+          callback,
+          new Error('Deadline passed without connectivity state change')
+        );
+        return;
+      }
+      timer = setTimeout(() => {
         this.removeConnectivityStateWatcher(watcherObject);
         callback(
           new Error('Deadline passed without connectivity state change')
         );
-      }, deadlineDate.getTime() - now.getTime()),
+      }, deadlineDate.getTime() - now.getTime())
+    }
+    const watcherObject = {
+      currentState,
+      callback,
+      timer
     };
     this.connectivityStateWatchers.push(watcherObject);
   }

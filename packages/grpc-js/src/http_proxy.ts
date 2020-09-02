@@ -215,8 +215,10 @@ export function getProxiedConnection(
            * connection to a TLS connection.
            * This is a workaround for https://github.com/nodejs/node/issues/32922
            * See https://github.com/grpc/grpc-node/pull/1369 for more info. */
-          const remoteHost = getDefaultAuthority(parsedTarget);
-
+          const targetPath = getDefaultAuthority(parsedTarget);
+          const hostPort = splitHostPort(targetPath);
+          const remoteHost = hostPort?.host ?? targetPath;
+          
           const cts = tls.connect(
             {
               host: remoteHost,
