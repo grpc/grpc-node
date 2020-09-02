@@ -739,12 +739,24 @@ export class Http2ServerCallStream<
       } else {
         this.messagesToPush.push(deserialized);
       }
-    } catch (err) {
+    } catch (error) {
       // Ignore any remaining messages when errors occur.
       this.bufferedMessages.length = 0;
 
-      err.code = Status.INTERNAL;
-      readable.emit('error', err);
+      if (
+        !(
+          'code' in error &&
+          typeof error.code === 'number' &&
+          Number.isInteger(error.code) &&
+          error.code >= Status.OK &&
+          error.code <= Status.UNAUTHENTICATED
+        )
+      ) {
+        // The error code is not a valid gRPC code so its being overwritten.
+        error.code = Status.INTERNAL;
+      }
+
+      readable.emit('error', error);
     }
 
     this.isPushPending = false;
