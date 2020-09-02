@@ -604,9 +604,8 @@ function generateRootFile(formatter: TextFormatter, root: Protobuf.Root, options
   generateServiceImports(formatter, root, options);
   formatter.writeLine('');
 
-  formatter.writeLine('type ConstructorArguments<Constructor> = Constructor extends new (...args: infer Args) => any ? Args: never;');
   formatter.writeLine('type SubtypeConstructor<Constructor, Subtype> = {');
-  formatter.writeLine('  new(...args: ConstructorArguments<Constructor>): Subtype;');
+  formatter.writeLine('  new(...args: ConstructorParameters<Constructor>): Subtype;');
   formatter.writeLine('};');
   formatter.writeLine('');
 

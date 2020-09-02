@@ -4,9 +4,8 @@ import { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@g
 import { OperationsClient as _google_longrunning_OperationsClient } from './google/longrunning/Operations';
 import { EchoClient as _google_showcase_v1beta1_EchoClient } from './google/showcase/v1beta1/Echo';
 
-type ConstructorArguments<Constructor> = Constructor extends new (...args: infer Args) => any ? Args: never;
 type SubtypeConstructor<Constructor, Subtype> = {
-  new(...args: ConstructorArguments<Constructor>): Subtype;
+  new(...args: ConstructorParameters<Constructor>): Subtype;
 };
 
 export interface ProtoGrpcType {
