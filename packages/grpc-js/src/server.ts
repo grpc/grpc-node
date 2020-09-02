@@ -145,10 +145,9 @@ export class Server {
   }
 
   addService<
-    ImplementationType extends Record<
-      string,
-      UntypedHandleCall
-    > = UntypedServiceImplementation
+    ImplementationType extends {
+      readonly [index in keyof ImplementationType]: UntypedHandleCall;
+    }
   >(
     service: ServiceDefinition<ImplementationType>,
     implementation: ImplementationType
@@ -166,7 +165,7 @@ export class Server {
       throw new Error('addService() requires two objects as arguments');
     }
 
-    const serviceKeys = Object.keys(service);
+    const serviceKeys = Object.keys(service) as Array<keyof ImplementationType>;
 
     if (serviceKeys.length === 0) {
       throw new Error('Cannot add an empty service to a server');
@@ -194,13 +193,13 @@ export class Server {
       let impl;
 
       if (implFn === undefined && typeof attrs.originalName === 'string') {
-        implFn = implementation[attrs.originalName];
+        implFn = implementation[attrs.originalName as keyof ImplementationType];
       }
 
       if (implFn !== undefined) {
-        impl = implFn.bind(implementation);
+        impl = implFn.bind(implementation as any);
       } else {
-        impl = getDefaultHandler(methodType, name);
+        impl = getDefaultHandler(methodType, name as string);
       }
 
       const success = this.register(
