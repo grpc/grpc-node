@@ -19,7 +19,7 @@ import * as protoLoader from '@grpc/proto-loader';
 import { loadPackageDefinition } from './make-client';
 import * as adsTypes from './generated/ads';
 import * as lrsTypes from './generated/lrs';
-import { createGoogleDefaultCredentials } from './channel-credentials';
+import { createGoogleDefaultCredentials, ChannelCredentials } from './channel-credentials';
 import { loadBootstrapInfo } from './xds-bootstrap';
 import { ClientDuplexStream, ServiceError } from './call';
 import { StatusObject } from './call-stream';
@@ -805,17 +805,38 @@ export class XdsClient {
           ...node,
           client_features: ['envoy.lrs.supports_send_all_clusters'],
         };
+        const credentialsConfigs = bootstrapInfo.xdsServers[0].channelCreds;
+        let channelCreds: ChannelCredentials | null = null;
+        for (const config of credentialsConfigs) {
+          if (config.type === 'google_default') {
+            channelCreds = createGoogleDefaultCredentials();
+            break;
+          } else if (config.type === 'insecure') {
+            channelCreds = ChannelCredentials.createInsecure();
+            break;
+          }
+        }
+        if (channelCreds === null) {
+          trace('Failed to initialize xDS Client. No valid credentials types found.');
+          // Bubble this error up to any listeners
+          this.reportStreamError({
+            code: Status.INTERNAL,
+            details: 'Failed to initialize xDS Client. No valid credentials types found.',
+            metadata: new Metadata(),
+          });
+          return;
+        }
         trace('Starting xDS client connected to server URI ' + bootstrapInfo.xdsServers[0].serverUri);
         this.adsClient = new protoDefinitions.envoy.service.discovery.v2.AggregatedDiscoveryService(
           bootstrapInfo.xdsServers[0].serverUri,
-          createGoogleDefaultCredentials(),
+          channelCreds,
           channelArgs
         );
         this.maybeStartAdsStream();
 
         this.lrsClient = new protoDefinitions.envoy.service.load_stats.v2.LoadReportingService(
           bootstrapInfo.xdsServers[0].serverUri,
-          createGoogleDefaultCredentials(),
+          channelCreds,
           {channelOverride: this.adsClient.getChannel()}
         );
         this.maybeStartLrsStream();
