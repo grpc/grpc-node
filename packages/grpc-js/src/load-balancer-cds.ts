@@ -34,6 +34,14 @@ import { ConnectivityState } from './channel';
 import { UnavailablePicker } from './picker';
 import { Status } from './constants';
 import { Metadata } from './metadata';
+import * as logging from './logging';
+import { LogVerbosity } from './constants';
+
+const TRACER_NAME = 'cds_balancer';
+
+function trace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 const TYPE_NAME = 'cds';
 
@@ -70,6 +78,7 @@ export class CdsLoadBalancer implements LoadBalancer {
            * Otherwise, if the field is omitted, load reporting is disabled. */
           edsConfig.lrsLoadReportingServerName = '';
         }
+        trace('Child update EDS config: ' + JSON.stringify(edsConfig));
         this.childBalancer.updateAddressList(
           [],
           { name: 'eds', eds: edsConfig },
@@ -82,6 +91,8 @@ export class CdsLoadBalancer implements LoadBalancer {
           this.watcher
         );
         this.isWatcherActive = false;
+        this.channelControlHelper.updateState(ConnectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: Status.UNAVAILABLE, details: 'CDS resource does not exist', metadata: new Metadata()}));
+        this.childBalancer.destroy();
       },
       onTransientError: (status) => {
         if (this.latestCdsUpdate === null) {
@@ -104,11 +115,14 @@ export class CdsLoadBalancer implements LoadBalancer {
     attributes: { [key: string]: unknown }
   ): void {
     if (!isCdsLoadBalancingConfig(lbConfig)) {
+      trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig));
       return;
     }
     if (!(attributes.xdsClient instanceof XdsClient)) {
+      trace('Discarding address list update missing xdsClient attribute');
       return;
     }
+    trace('Received update with config ' + JSON.stringify(lbConfig));
     this.xdsClient = attributes.xdsClient;
     this.latestAttributes = attributes;
 

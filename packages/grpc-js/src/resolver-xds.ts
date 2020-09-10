@@ -19,9 +19,16 @@ import { GrpcUri, uriToString } from './uri-parser';
 import { XdsClient } from './xds-client';
 import { ServiceConfig } from './service-config';
 import { StatusObject } from './call-stream';
-import { Status } from './constants';
+import { Status, LogVerbosity } from './constants';
 import { Metadata } from './metadata';
 import { ChannelOptions } from './channel-options';
+import * as logging from './logging';
+
+const TRACER_NAME = 'xds_resolver';
+
+function trace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 class XdsResolver implements Resolver {
   private resolutionStarted = false;
@@ -47,10 +54,12 @@ class XdsResolver implements Resolver {
     // Wait until updateResolution is called once to start the xDS requests
     if (!this.resolutionStarted) {
       this.resolutionStarted = true;
+      trace('Starting resolution for target ' + uriToString(this.target));
       const xdsClient = new XdsClient(
         this.target.path,
         {
           onValidUpdate: (update: ServiceConfig) => {
+            trace('Resolved service config for target ' + uriToString(this.target) + ': ' + JSON.stringify(update));
             this.hasReportedSuccess = true;
             this.listener.onSuccessfulResolution([], update, null, {
               xdsClient: xdsClient,
@@ -60,10 +69,12 @@ class XdsResolver implements Resolver {
             /* A transient error only needs to bubble up as a failure if we have
              * not already provided a ServiceConfig for the upper layer to use */
             if (!this.hasReportedSuccess) {
+              trace('Resolution error for target ' + uriToString(this.target) + ' due to xDS client transient error ' + error.details);
               this.reportResolutionError();
             }
           },
           onResourceDoesNotExist: () => {
+            trace('Resolution error for target ' + uriToString(this.target) + ': resource does not exist');
             this.reportResolutionError();
           },
         },

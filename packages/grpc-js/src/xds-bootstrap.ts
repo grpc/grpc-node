@@ -157,15 +157,6 @@ function validateNode(obj: any): Node {
     throw new Error(`node.id field: expected string, got ${typeof obj.id}`);
   }
   result.id = obj.id;
-  if (!('cluster' in obj)) {
-    throw new Error('cluster field missing in node element');
-  }
-  if (typeof obj.cluster !== 'string') {
-    throw new Error(
-      `node.cluster field: expected string, got ${typeof obj.cluster}`
-    );
-  }
-  result.cluster = obj.cluster;
   if (!('locality' in obj)) {
     throw new Error('locality field missing in node element');
   }
@@ -180,7 +171,7 @@ function validateNode(obj: any): Node {
     result.locality.region = obj.locality.region;
   }
   if ('zone' in obj.locality) {
-    if (typeof obj.locality.region !== 'string') {
+    if (typeof obj.locality.zone !== 'string') {
       throw new Error(
         `node.locality.zone field: expected string, got ${typeof obj.locality
           .zone}`
@@ -196,6 +187,14 @@ function validateNode(obj: any): Node {
       );
     }
     result.locality.sub_zone = obj.locality.sub_zone;
+  }
+  if ('cluster' in obj) {
+    if (typeof obj.cluster !== 'string') {
+      throw new Error(
+        `node.cluster field: expected string, got ${typeof obj.cluster}`
+      );
+    }
+    result.cluster = obj.cluster;
   }
   if ('metadata' in obj) {
     result.metadata = getStructFromJson(obj.metadata);

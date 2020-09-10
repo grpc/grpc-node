@@ -16,7 +16,7 @@
  */
 
 import { LoadBalancer, ChannelControlHelper, getFirstUsableConfig, registerLoadBalancerType } from "./load-balancer";
-import { SubchannelAddress } from "./subchannel";
+import { SubchannelAddress, subchannelAddressToString } from "./subchannel";
 import { LoadBalancingConfig, WeightedTarget, isWeightedTargetLoadBalancingConfig } from "./load-balancing-config";
 import { Picker, PickResult, PickArgs, QueuePicker, UnavailablePicker } from "./picker";
 import { ConnectivityState } from "./channel";
@@ -24,6 +24,14 @@ import { ChildLoadBalancerHandler } from "./load-balancer-child-handler";
 import { Status } from "./constants";
 import { Metadata } from "./metadata";
 import { isLocalitySubchannelAddress, LocalitySubchannelAddress } from "./load-balancer-priority";
+import * as logging from './logging';
+import { LogVerbosity } from './constants';
+
+const TRACER_NAME = 'weighted_target';
+
+function trace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 const TYPE_NAME = 'weighted_target';
 
@@ -116,6 +124,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
     }
 
     private updateState(connectivityState: ConnectivityState, picker: Picker) {
+      trace('Target ' + this.name + ' ' + ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[connectivityState]);
       this.connectivityState = connectivityState;
       this.picker = picker;
       this.parent.updateState();
@@ -229,7 +238,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
         picker = new WeightedTargetPicker(pickerList);
         break;
       case ConnectivityState.CONNECTING:
-      case ConnectivityState.READY:
+      case ConnectivityState.IDLE:
         picker = new QueuePicker(this);
         break;
       default:
@@ -239,12 +248,17 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
           metadata: new Metadata()
         });
     }
+    trace(
+        'Transitioning to ' +
+        ConnectivityState[connectivityState]
+    );
     this.channelControlHelper.updateState(connectivityState, picker);
   }
 
   updateAddressList(addressList: SubchannelAddress[], lbConfig: LoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
     if (!isWeightedTargetLoadBalancingConfig(lbConfig)) {
       // Reject a config of the wrong type
+      trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig));
       return;
     }
 
@@ -252,7 +266,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
      * which child it belongs to. So we bucket those addresses by that first
      * element, and pass along the rest of the localityPath for that child
      * to use. */
-    const childAddressMap = new Map<string, SubchannelAddress[]>();
+    const childAddressMap = new Map<string, LocalitySubchannelAddress[]>();
     for (const address of addressList) {
       if (!isLocalitySubchannelAddress(address)) {
         // Reject address that cannot be associated with targets
@@ -284,12 +298,15 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
       } else {
         target.maybeReactivate();
       }
-      target.updateAddressList(childAddressMap.get(targetName) ?? [], targetConfig, attributes);
+      const targetAddresses = childAddressMap.get(targetName) ?? [];
+      trace('Assigning target ' + targetName + ' address list ' + targetAddresses.map(address => '(' + subchannelAddressToString(address) + ' path=' + address.localityPath + ')'));
+      target.updateAddressList(targetAddresses, targetConfig, attributes);
     }
 
     // Deactivate targets that are not in the new config
     for (const [targetName, target] of this.targets) {
       if (this.targetList.indexOf(targetName) < 0) {
+        trace('Deactivating target ' + targetName);
         target.deactivate();
       }
     }

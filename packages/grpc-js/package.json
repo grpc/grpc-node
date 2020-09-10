@@ -22,6 +22,7 @@
     "@types/ncp": "^2.0.1",
     "@types/pify": "^3.0.2",
     "@types/semver": "^6.0.1",
+    "@types/yargs": "^15.0.5",
     "clang-format": "^1.0.55",
     "execa": "^2.0.3",
     "gts": "^2.0.0",
@@ -33,7 +34,8 @@
     "pify": "^4.0.1",
     "rimraf": "^3.0.2",
     "ts-node": "^8.3.0",
-    "typescript": "^3.7.2"
+    "typescript": "^3.7.2",
+    "yargs": "^15.4.1"
   },
   "contributors": [
     {
@@ -46,6 +48,7 @@
     "compile": "tsc -p .",
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
     "generate-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --json --includeComments --includeDirs deps/envoy-api/ deps/udpa/ deps/googleapis/ deps/protoc-gen-validate/ -O src/generated/ --grpcLib ../index envoy/service/discovery/v2/ads.proto envoy/service/load_stats/v2/lrs.proto envoy/api/v2/listener.proto envoy/api/v2/route.proto envoy/api/v2/cluster.proto envoy/api/v2/endpoint.proto envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.proto",
+    "generate-interop-types": "proto-loader-gen-types --keep-case --longs String --enums String --defaults --oneofs --json --includeComments --includeDirs proto/ -O interop/generated --grpcLib ../../src grpc/testing/test.proto",
     "lint": "npm run check",
     "prepare": "npm run compile",
     "test": "gulp test",
@@ -57,7 +60,7 @@
   "dependencies": {
     "@grpc/proto-loader": "^0.6.0-pre14",
     "@types/node": "^12.12.47",
-    "google-auth-library": "^6.0.0",
+    "google-auth-library": "^5.10.1",
     "semver": "^6.2.0"
   },
   "files": [

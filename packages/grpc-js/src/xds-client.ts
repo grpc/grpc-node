@@ -54,6 +54,7 @@ import { Listener__Output } from './generated/envoy/api/v2/Listener';
 import { HttpConnectionManager__Output } from './generated/envoy/config/filter/network/http_connection_manager/v2/HttpConnectionManager';
 import { RouteConfiguration__Output } from './generated/envoy/api/v2/RouteConfiguration';
 import { Any__Output } from './generated/google/protobuf/Any';
+import { BackoffTimeout } from './backoff-timeout';
 
 const TRACER_NAME = 'xds_client';
 
@@ -105,6 +106,7 @@ function loadAdsProtos(): Promise<
         enums: String,
         defaults: true,
         oneofs: true,
+        json: true,
         includeDirs: [
           // Paths are relative to src/build
           __dirname + '/../../deps/envoy-api/',
@@ -259,6 +261,7 @@ class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
     edsServiceName: string,
     watcher: Watcher<ClusterLoadAssignment__Output>
   ): void {
+    trace('Adding EDS watcher for edsServiceName ' + edsServiceName);
     let watchersEntry = this.watchers.get(edsServiceName);
     let addedServiceName = false;
     if (watchersEntry === undefined) {
@@ -275,6 +278,7 @@ class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
         /* These updates normally occur asynchronously, so we ensure that
          * the same happens here */
         process.nextTick(() => {
+          trace('Reporting existing EDS update for new watcher for edsServiceName ' + edsServiceName);
           watcher.onValidUpdate(message);
         });
       }
@@ -288,6 +292,7 @@ class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
     edsServiceName: string,
     watcher: Watcher<ClusterLoadAssignment__Output>
   ): void {
+    trace('Removing EDS watcher for edsServiceName ' + edsServiceName);
     const watchersEntry = this.watchers.get(edsServiceName);
     let removedServiceName = false;
     if (watchersEntry !== undefined) {
@@ -341,6 +346,7 @@ class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
   handleMissingNames(allEdsServiceNames: Set<string>) {
     for (const [edsServiceName, watcherList] of this.watchers.entries()) {
       if (!allEdsServiceNames.has(edsServiceName)) {
+        trace('Reporting EDS resource does not exist for edsServiceName ' + edsServiceName);
         for (const watcher of watcherList) {
           watcher.onResourceDoesNotExist();
         }
@@ -351,7 +357,8 @@ class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
   handleResponses(responses: ClusterLoadAssignment__Output[]) {
     for (const message of responses) {
       if (!this.validateResponse(message)) {
-        return 'ClusterLoadAssignment validation failed';
+        trace('EDS validation failed for message ' + JSON.stringify(message));
+        return 'EDS Error: ClusterLoadAssignment validation failed';
       }
     }
     this.latestResponses = responses;
@@ -363,6 +370,7 @@ class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
         watcher.onValidUpdate(message);
       }
     }
+    trace('Received EDS updates for cluster names ' + Array.from(allClusterNames));
     this.handleMissingNames(allClusterNames);
     return null;
   }
@@ -399,6 +407,7 @@ class CdsState implements XdsStreamState<Cluster__Output> {
    * @param watcher
    */
   addWatcher(clusterName: string, watcher: Watcher<Cluster__Output>): void {
+    trace('Adding CDS watcher for clusterName ' + clusterName);
     let watchersEntry = this.watchers.get(clusterName);
     let addedServiceName = false;
     if (watchersEntry === undefined) {
@@ -415,6 +424,7 @@ class CdsState implements XdsStreamState<Cluster__Output> {
         /* These updates normally occur asynchronously, so we ensure that
          * the same happens here */
         process.nextTick(() => {
+          trace('Reporting existing CDS update for new watcher for clusterName ' + clusterName);
           watcher.onValidUpdate(message);
         });
       }
@@ -425,6 +435,7 @@ class CdsState implements XdsStreamState<Cluster__Output> {
   }
 
   removeWatcher(clusterName: string, watcher: Watcher<Cluster__Output>): void {
+    trace('Removing CDS watcher for clusterName ' + clusterName);
     const watchersEntry = this.watchers.get(clusterName);
     let removedServiceName = false;
     if (watchersEntry !== undefined) {
@@ -465,14 +476,15 @@ class CdsState implements XdsStreamState<Cluster__Output> {
   }
 
   /**
-   * Given a list of edsServiceNames (which may actually be the cluster name),
+   * Given a list of clusterNames (which may actually be the cluster name),
    * for each watcher watching a name not on the list, call that watcher's
    * onResourceDoesNotExist method.
    * @param allClusterNames
    */
   private handleMissingNames(allClusterNames: Set<string>) {
-    for (const [edsServiceName, watcherList] of this.watchers.entries()) {
-      if (!allClusterNames.has(edsServiceName)) {
+    for (const [clusterName, watcherList] of this.watchers.entries()) {
+      if (!allClusterNames.has(clusterName)) {
+        trace('Reporting CDS resource does not exist for clusterName ' + clusterName);
         for (const watcher of watcherList) {
           watcher.onResourceDoesNotExist();
         }
@@ -483,7 +495,8 @@ class CdsState implements XdsStreamState<Cluster__Output> {
   handleResponses(responses: Cluster__Output[]): string | null {
     for (const message of responses) {
       if (!this.validateResponse(message)) {
-        return 'Cluster validation failed';
+        trace('CDS validation failed for message ' + JSON.stringify(message));
+        return 'CDS Error: Cluster validation failed';
       }
     }
     this.latestResponses = responses;
@@ -500,6 +513,7 @@ class CdsState implements XdsStreamState<Cluster__Output> {
         watcher.onValidUpdate(message);
       }
     }
+    trace('Received CDS updates for cluster names ' + Array.from(allClusterNames));
     this.handleMissingNames(allClusterNames);
     this.edsState.handleMissingNames(allEdsServiceNames);
     return null;
@@ -521,6 +535,7 @@ class RdsState implements XdsStreamState<RouteConfiguration__Output> {
   private routeConfigName: string | null = null;
 
   constructor(
+    private targetName: string,
     private watcher: Watcher<ServiceConfig>,
     private updateResouceNames: () => void
   ) {}
@@ -531,9 +546,10 @@ class RdsState implements XdsStreamState<RouteConfiguration__Output> {
 
   handleSingleMessage(message: RouteConfiguration__Output) {
     for (const virtualHost of message.virtual_hosts) {
-      if (virtualHost.domains.indexOf(this.routeConfigName!) >= 0) {
+      if (virtualHost.domains.indexOf(this.targetName) >= 0) {
         const route = virtualHost.routes[virtualHost.routes.length - 1];
         if (route.match?.prefix === '' && route.route?.cluster) {
+          trace('Reporting RDS update for host ' + this.targetName + ' with cluster ' + route.route.cluster);
           this.watcher.onValidUpdate({
             methodConfig: [],
             loadBalancingConfig: [
@@ -545,16 +561,20 @@ class RdsState implements XdsStreamState<RouteConfiguration__Output> {
               },
             ],
           });
-          break;
+          return;
+        } else {
+          trace('Discarded matching route with prefix ' + route.match?.prefix + ' and cluster ' + route.route?.cluster);
         }
       }
     }
+    trace('Reporting RDS resource does not exist from domain lists ' + message.virtual_hosts.map(virtualHost => virtualHost.domains));
     /* If none of the routes match the one we are looking for, bubble up an
      * error. */
     this.watcher.onResourceDoesNotExist();
   }
 
   handleResponses(responses: RouteConfiguration__Output[]): string | null {
+    trace('Received RDS response with route config names ' + responses.map(message => message.name));
     if (this.routeConfigName !== null) {
       for (const message of responses) {
         if (message.name === this.routeConfigName) {
@@ -613,6 +633,7 @@ class LdsState implements XdsStreamState<Listener__Output> {
   }
 
   handleResponses(responses: Listener__Output[]): string | null {
+    trace('Received LDS update with names ' + responses.map(message => message.name));
     for (const message of responses) {
       if (message.name === this.targetName) {
         if (this.validateResponse(message)) {
@@ -622,11 +643,13 @@ class LdsState implements XdsStreamState<Listener__Output> {
             HttpConnectionManager__Output;
           switch (httpConnectionManager.route_specifier) {
             case 'rds':
+              trace('Received LDS update with RDS route config name ' + httpConnectionManager.rds!.route_config_name);
               this.rdsState.setRouteConfigName(
                 httpConnectionManager.rds!.route_config_name
               );
               break;
             case 'route_config':
+              trace('Received LDS update with route configuration');
               this.rdsState.setRouteConfigName(null);
               this.rdsState.handleSingleMessage(
                 httpConnectionManager.route_config!
@@ -636,11 +659,12 @@ class LdsState implements XdsStreamState<Listener__Output> {
             // The validation rules should prevent this
           }
         } else {
-          return 'Listener validation failed';
+          trace('LRS validation error for message ' + JSON.stringify(message));
+          return 'LRS Error: Listener validation failed';
         }
       }
     }
-    throw new Error('Method not implemented.');
+    return null;
   }
 
   reportStreamError(status: StatusObject): void {
@@ -676,11 +700,11 @@ function getResponseMessages<T extends AdsTypeUrl>(
       result.push(resource as protoLoader.AnyExtension & OutputType<T>);
     } else {
       throw new Error(
-        `Invalid resource type ${
+        `ADS Error: Invalid resource type ${
           protoLoader.isAnyExtension(resource)
             ? resource['@type']
             : resource.type_url
-        }`
+        }, expected ${typeUrl}`
       );
     }
   }
@@ -710,6 +734,9 @@ export class XdsClient {
 
   private adsState: AdsState;
 
+  private adsBackoff: BackoffTimeout;
+  private lrsBackoff: BackoffTimeout;
+
   constructor(
     targetName: string,
     serviceConfigWatcher: Watcher<ServiceConfig>,
@@ -721,7 +748,7 @@ export class XdsClient {
     const cdsState = new CdsState(edsState, () => {
       this.updateNames(CDS_TYPE_URL);
     });
-    const rdsState = new RdsState(serviceConfigWatcher, () => {
+    const rdsState = new RdsState(targetName, serviceConfigWatcher, () => {
       this.updateNames(RDS_TYPE_URL);
     });
     const ldsState = new LdsState(targetName, rdsState);
@@ -750,7 +777,16 @@ export class XdsClient {
     for (const arg of channelArgsToRemove) {
       delete channelArgs[arg];
     }
-    channelArgs['grpc.keepalive_time_ms'] = 5000;
+    // 5 minutes
+    channelArgs['grpc.keepalive_time_ms'] = 5 * 60 * 1000;
+
+    this.adsBackoff = new BackoffTimeout(() => {
+      this.maybeStartAdsStream();
+    });
+    this.lrsBackoff = new BackoffTimeout(() => {
+      this.maybeStartLrsStream();
+    })
+
     Promise.all([loadBootstrapInfo(), loadAdsProtos()]).then(
       ([bootstrapInfo, protoDefinitions]) => {
         if (this.hasShutdown) {
@@ -769,6 +805,7 @@ export class XdsClient {
           ...node,
           client_features: ['envoy.lrs.supports_send_all_clusters'],
         };
+        trace('Starting xDS client connected to server URI ' + bootstrapInfo.xdsServers[0].serverUri);
         this.adsClient = new protoDefinitions.envoy.service.discovery.v2.AggregatedDiscoveryService(
           bootstrapInfo.xdsServers[0].serverUri,
           createGoogleDefaultCredentials(),
@@ -779,7 +816,7 @@ export class XdsClient {
         this.lrsClient = new protoDefinitions.envoy.service.load_stats.v2.LoadReportingService(
           bootstrapInfo.xdsServers[0].serverUri,
           createGoogleDefaultCredentials(),
-          channelArgs
+          {channelOverride: this.adsClient.getChannel()}
         );
         this.maybeStartLrsStream();
       },
@@ -827,6 +864,7 @@ export class XdsClient {
         errorString = `Unknown type_url ${message.type_url}`;
     }
     if (errorString === null) {
+      trace('Acking message with type URL ' + message.type_url);
       /* errorString can only be null in one of the first 4 cases, which
        * implies that message.type_url is one of the 4 known type URLs, which
        * means that this type assertion is valid. */
@@ -835,6 +873,7 @@ export class XdsClient {
       this.adsState[typeUrl].versionInfo = message.version_info;
       this.ack(typeUrl);
     } else {
+      trace('Nacking message with type URL ' + message.type_url + ': "' + errorString + '"');
       this.nack(message.type_url, errorString);
     }
   }
@@ -853,6 +892,9 @@ export class XdsClient {
     if (this.hasShutdown) {
       return;
     }
+    trace('Starting ADS stream');
+    // Backoff relative to when we start the request
+    this.adsBackoff.runOnce();
     this.adsCall = this.adsClient.StreamAggregatedResources();
     this.adsCall.on('data', (message: DiscoveryResponse__Output) => {
       this.handleAdsResponse(message);
@@ -863,10 +905,11 @@ export class XdsClient {
       );
       this.adsCall = null;
       this.reportStreamError(error);
-      /* Connection backoff is handled by the client object, so we can
-       * immediately start a new request to indicate that it should try to
-       * reconnect */
-      this.maybeStartAdsStream();
+      /* If the backoff timer is no longer running, we do not need to wait any
+       * more to start the new call. */
+      if (!this.adsBackoff.isRunning()) {
+        this.maybeStartAdsStream();
+      }
     });
 
     const allTypeUrls: AdsTypeUrl[] = [
@@ -877,8 +920,6 @@ export class XdsClient {
     ];
     for (const typeUrl of allTypeUrls) {
       const state = this.adsState[typeUrl];
-      state.nonce = '';
-      state.versionInfo = '';
       if (state.getResourceNames().length > 0) {
         this.updateNames(typeUrl);
       }
@@ -890,6 +931,11 @@ export class XdsClient {
    * version info are updated so that it sends the post-update values.
    */
   ack(typeUrl: AdsTypeUrl) {
+    /* An ack is the best indication of a successful interaction between the
+     * client and the server, so we can reset the backoff timer here. */
+    this.adsBackoff.stop();
+    this.adsBackoff.reset();
+
     this.updateNames(typeUrl);
   }
 
@@ -928,6 +974,7 @@ export class XdsClient {
   }
 
   private updateNames(typeUrl: AdsTypeUrl) {
+    trace('Sending update for type URL ' + typeUrl + ' with names ' + this.adsState[typeUrl].getResourceNames());
     this.adsCall?.write({
       node: this.adsNode!,
       type_url: typeUrl,
@@ -954,8 +1001,17 @@ export class XdsClient {
     if (this.hasShutdown) {
       return;
     }
+  
+    trace('Starting LRS stream');
 
+    this.lrsBackoff.runOnce();
     this.lrsCall = this.lrsClient.streamLoadStats();
+    this.lrsCall.on('metadata', () => {
+      /* Once we get any response from the server, we assume that the stream is
+       * in a good state, so we can reset the backoff timer. */
+      this.lrsBackoff.stop();
+      this.lrsBackoff.reset();
+    });
     this.lrsCall.on('data', (message: LoadStatsResponse__Output) => {
       if (
         message.load_reporting_interval?.seconds !==
@@ -971,7 +1027,8 @@ export class XdsClient {
         const loadReportingIntervalMs =
           Number.parseInt(message.load_reporting_interval!.seconds) * 1000 +
           message.load_reporting_interval!.nanos / 1_000_000;
-        setInterval(() => {
+        trace('Received LRS request with load reporting interval ' + loadReportingIntervalMs + ' ms');
+        this.statsTimer = setInterval(() => {
           this.sendStats();
         }, loadReportingIntervalMs);
       }
@@ -982,21 +1039,24 @@ export class XdsClient {
         'LRS stream ended. code=' + error.code + ' details= ' + error.details
       );
       this.lrsCall = null;
+      this.latestLrsSettings = null;
       clearInterval(this.statsTimer);
-      /* Connection backoff is handled by the client object, so we can
-       * immediately start a new request to indicate that it should try to
-       * reconnect */
-      this.maybeStartAdsStream();
+      /* If the backoff timer is no longer running, we do not need to wait any
+       * more to start the new call. */
+      if (!this.lrsBackoff.isRunning()) {
+        this.maybeStartLrsStream();
+      }
     });
-    this.lrsCall.write({
-      node: this.lrsNode!,
-    });
+    /* Send buffered stats information when starting LRS stream. If there is no
+     * buffered stats information, it will still send the node field. */
+    this.sendStats();
   }
 
   private sendStats() {
     if (!this.lrsCall) {
       return;
     }
+    trace('Sending LRS stats');
     const clusterStats: ClusterStats[] = [];
     for (const [
       { clusterName, edsServiceName },
