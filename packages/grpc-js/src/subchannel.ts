@@ -291,6 +291,7 @@ export class Subchannel {
     );
     let connectionOptions: http2.SecureClientSessionOptions =
       this.credentials._getConnectionOptions() || {};
+    connectionOptions.maxSendHeaderBlockLength = Number.MAX_SAFE_INTEGER;
     let addressScheme = 'http://';
     if ('secureContext' in connectionOptions) {
       addressScheme = 'https://';

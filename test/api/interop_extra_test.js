@@ -168,6 +168,29 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
         assert.ifError(error);
       });
     });
+    it('should be able to send very large headers and trailers', function(done) {
+      done = multiDone(done, 3);
+      const header = 'X'.repeat(64 * 1024);
+      const trailer = Buffer.from('Y'.repeat(64 * 1024));
+      const metadata = new Metadata();
+      metadata.set('x-grpc-test-echo-initial', header);
+      metadata.set('x-grpc-test-echo-trailing-bin', trailer);
+      const call = client.unaryCall({}, metadata, (error, result) => {
+        assert.ifError(error);
+        done();
+      });
+      call.on('metadata', (metadata) => {
+        assert.deepStrictEqual(metadata.get('x-grpc-test-echo-initial'),
+                               [header]);
+        done();
+      });
+      call.on('status', (status) => {
+        var echo_trailer = status.metadata.get('x-grpc-test-echo-trailing-bin');
+        assert(echo_trailer.length === 1);
+        assert.strictEqual(echo_trailer[0].toString('ascii'), 'Y'.repeat(64 * 1024));
+        done();
+      });
+    });
     describe('max message size', function() {
       // A size that is larger than the default limit
       const largeMessageSize = 8 * 1024 * 1024;
