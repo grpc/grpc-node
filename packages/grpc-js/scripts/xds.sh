@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+cd $(dirname $0)/..
+base=$(pwd)
+
 # Install NVM
 cd ~
 export NVM_DIR=`pwd`/.nvm
@@ -26,8 +29,7 @@ nvm install 12
 set -exu -o pipefail
 [[ -f /VERSION ]] && cat /VERSION
 
-cd $(dirname $0)/..
-base=$(pwd)
+cd $base
 npm run compile
 
 cd ../../..
