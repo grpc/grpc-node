@@ -172,7 +172,7 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
       done = multiDone(done, 3);
       const header = 'X'.repeat(64 * 1024);
       const trailer = Buffer.from('Y'.repeat(64 * 1024));
-      const metadata = new Metadata();
+      const metadata = new grpc.Metadata();
       metadata.set('x-grpc-test-echo-initial', header);
       metadata.set('x-grpc-test-echo-trailing-bin', trailer);
       const call = client.unaryCall({}, metadata, (error, result) => {
