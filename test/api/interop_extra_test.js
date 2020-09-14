@@ -76,13 +76,15 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
           const options = {
             'grpc.ssl_target_name_override': 'foo.test.google.fr',
             'grpc.default_authority': 'foo.test.google.fr',
-            'grpc.max_send_message_length': 4*1024*1024
+            'grpc.max_send_message_length': 4*1024*1024,
+            'grpc.max_metadata_size': 4*1024*1024
           };
           client = new testProto.TestService(`localhost:${port}`, creds, options);
           done();
         }
       }, {
-        'grpc.max_receive_message_length': -1
+        'grpc.max_receive_message_length': -1,
+        'grpc.max_metadata_size': 4*1024*1024
       });
     });
     after(function() {
