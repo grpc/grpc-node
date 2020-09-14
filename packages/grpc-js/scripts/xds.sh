@@ -30,7 +30,7 @@ set -exu -o pipefail
 [[ -f /VERSION ]] && cat /VERSION
 
 cd $base
-npm run compile
+npm install
 
 cd ../../..
 
