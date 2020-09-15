@@ -29,6 +29,11 @@ nvm install 12
 set -exu -o pipefail
 [[ -f /VERSION ]] && cat /VERSION
 
+# Make nvm available to the subprocess that the python script spawns
+echo "source $NVM_DIR/nvm.sh" > ~/.profile
+echo "source $NVM_DIR/nvm.sh" > ~/.shrc
+export ENV=~/.shrc
+
 cd $base
 npm install
 
