@@ -137,6 +137,14 @@ export class ChannelImplementation implements Channel {
   private defaultAuthority: string;
   private filterStackFactory: FilterStackFactory;
   private target: GrpcUri;
+  /**
+   * This timer does not do anything on its own. Its purpose is to hold the
+   * event loop open while there are any pending calls for the channel that
+   * have not yet been assigned to specific subchannels. In other words,
+   * the invariant is that callRefTimer is reffed if and only if pickQueue
+   * is non-empty.
+   */
+  private callRefTimer: NodeJS.Timer;
   constructor(
     target: string,
     private readonly credentials: ChannelCredentials,
@@ -206,6 +214,7 @@ export class ChannelImplementation implements Channel {
       updateState: (connectivityState: ConnectivityState, picker: Picker) => {
         this.currentPicker = picker;
         const queueCopy = this.pickQueue.slice();
+        this.callRefTimer.unref?.();
         this.pickQueue = [];
         for (const { callStream, callMetadata } of queueCopy) {
           this.tryPick(callStream, callMetadata);
@@ -230,6 +239,14 @@ export class ChannelImplementation implements Channel {
       new MaxMessageSizeFilterFactory(this.options),
       new CompressionFilterFactory(this),
     ]);
+
+    this.callRefTimer = setInterval(() => {}, 1 << 31 - 1);
+    this.callRefTimer.unref?.();
+  }
+
+  private pushPick(callStream: Http2CallStream, callMetadata: Metadata) {
+    this.callRefTimer.ref?.();
+    this.pickQueue.push({ callStream, callMetadata });
   }
 
   /**
@@ -276,7 +293,7 @@ export class ChannelImplementation implements Channel {
                 ' has state ' +
                 ConnectivityState[pickResult.subchannel!.getConnectivityState()]
             );
-            this.pickQueue.push({ callStream, callMetadata });
+            this.pushPick(callStream, callMetadata);
             break;
           }
           /* We need to clone the callMetadata here because the transparent
@@ -367,11 +384,11 @@ export class ChannelImplementation implements Channel {
         }
         break;
       case PickResultType.QUEUE:
-        this.pickQueue.push({ callStream, callMetadata });
+        this.pushPick(callStream, callMetadata);
         break;
       case PickResultType.TRANSIENT_FAILURE:
         if (callMetadata.getOptions().waitForReady) {
-          this.pickQueue.push({ callStream, callMetadata });
+          this.pushPick(callStream, callMetadata);
         } else {
           callStream.cancelWithStatus(
             pickResult.status!.code,
@@ -433,6 +450,7 @@ export class ChannelImplementation implements Channel {
   close() {
     this.resolvingLoadBalancer.destroy();
     this.updateState(ConnectivityState.SHUTDOWN);
+    clearInterval(this.callRefTimer);
 
     this.subchannelPool.unrefUnusedSubchannels();
   }
