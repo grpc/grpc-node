@@ -48,6 +48,11 @@ export enum ConnectivityState {
   SHUTDOWN,
 }
 
+/**
+ * See https://nodejs.org/api/timers.html#timers_setinterval_callback_delay_args
+ */
+const MAX_TIMEOUT_TIME = 2147483647;
+
 let nextCallNumber = 0;
 
 function getNewCallNumber(): number {
@@ -185,6 +190,10 @@ export class ChannelImplementation implements Channel {
         `Could not find a default scheme for target name "${target}"`
       );
     }
+
+    this.callRefTimer = setInterval(() => {}, MAX_TIMEOUT_TIME);
+    this.callRefTimer.unref?.();
+
     if (this.options['grpc.default_authority']) {
       this.defaultAuthority = this.options['grpc.default_authority'] as string;
     } else {
@@ -239,9 +248,6 @@ export class ChannelImplementation implements Channel {
       new MaxMessageSizeFilterFactory(this.options),
       new CompressionFilterFactory(this),
     ]);
-
-    this.callRefTimer = setInterval(() => {}, 1 << 31 - 1);
-    this.callRefTimer.unref?.();
   }
 
   private pushPick(callStream: Http2CallStream, callMetadata: Metadata) {
