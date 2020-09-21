@@ -1,0 +1,32 @@
+From 0761cc8780a5f94c10f187dbcd8d8e70c7b52577 Mon Sep 17 00:00:00 2001
+From: Michael Lumish <mlumish@google.com>
+Date: Mon, 21 Sep 2020 13:28:08 -0700
+Subject: [PATCH] Add PATH logging
+
+---
+ tools/run_tests/run_xds_tests.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/tools/run_tests/run_xds_tests.py b/tools/run_tests/run_xds_tests.py
+index 0cfa59e..df5a3f9 100755
+--- a/tools/run_tests/run_xds_tests.py
++++ b/tools/run_tests/run_xds_tests.py
+@@ -1730,6 +1730,7 @@ try:
+     wait_for_healthy_backends(gcp, backend_service, instance_group)
+ 
+     if args.test_case:
++        logger.debug('PATH: %s', os.environ['PATH'])
+         client_env = dict(os.environ)
+         bootstrap_server_features = []
+         if gcp.service_port == _DEFAULT_SERVICE_PORT:
+@@ -1800,6 +1801,7 @@ try:
+                 rpcs_to_send=rpcs_to_send,
+                 metadata_to_send=metadata_to_send)
+             logger.debug('running client: %s', client_cmd_formatted)
++            logger.debug('Using PATH: %s', client_env['PATH'])
+             client_cmd = shlex.split(client_cmd_formatted)
+             try:
+                 client_process = subprocess.Popen(client_cmd,
+-- 
+2.7.4
+

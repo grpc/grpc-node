@@ -45,6 +45,10 @@ cd ../../..
 
 git clone -b master --single-branch --depth=1 https://github.com/grpc/grpc.git
 
+cd grpc
+git apply ../grpc-node/0001-Add-PATH-logging.patch
+cd ..
+
 grpc/tools/run_tests/helper_scripts/prep_xds.sh
 
 GRPC_NODE_TRACE=xds_client,xds_resolver,cds_balancer,eds_balancer,priority,weighted_target,round_robin,resolving_load_balancer,subchannel,keepalive,dns_resolver
