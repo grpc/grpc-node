@@ -15,6 +15,9 @@
  *
  */
 
+console.log(`Running xDS interop client on node ${process.version} from ${process.argv[0]}`);
+console.log(`PATH: ${process.env.PATH}`);
+
 import * as grpc from '../src';
 
 import { ProtoGrpcType } from './generated/test';

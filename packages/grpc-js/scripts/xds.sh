@@ -34,6 +34,10 @@ echo "source $NVM_DIR/nvm.sh" > ~/.profile
 echo "source $NVM_DIR/nvm.sh" > ~/.shrc
 export ENV=~/.shrc
 
+echo $PATH
+which node
+node -v
+
 cd $base
 npm install
 
@@ -43,7 +47,9 @@ git clone -b master --single-branch --depth=1 https://github.com/grpc/grpc.git
 
 grpc/tools/run_tests/helper_scripts/prep_xds.sh
 
-GRPC_NODE_TRACE=xds_client,xds_resolver,cds_balancer,eds_balancer,priority,weighted_target,round_robin,resolving_load_balancer,subchannel,keepalive,dns_resolver GRPC_NODE_VERBOSITY=DEBUG \
+GRPC_NODE_TRACE=xds_client,xds_resolver,cds_balancer,eds_balancer,priority,weighted_target,round_robin,resolving_load_balancer,subchannel,keepalive,dns_resolver
+  GRPC_NODE_VERBOSITY=DEBUG \
+  NODE_XDS_INTEROP_VERBOSITY=1 \
   python3 grpc/tools/run_tests/run_xds_tests.py \
     --test_case="backends_restart,change_backend_service,gentle_failover,ping_pong,remove_instance_group,round_robin,secondary_locality_gets_no_requests_on_partial_primary_failure,secondary_locality_gets_requests_on_primary_failure" \
     --project_id=grpc-testing \
