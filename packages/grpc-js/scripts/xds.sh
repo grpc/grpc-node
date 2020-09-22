@@ -39,6 +39,7 @@ which node
 node -v
 
 cd $base
+git submodule update --init --recursive
 npm install
 
 cd ../../..
