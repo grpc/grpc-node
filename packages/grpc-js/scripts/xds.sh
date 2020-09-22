@@ -34,10 +34,6 @@ echo "source $NVM_DIR/nvm.sh" > ~/.profile
 echo "source $NVM_DIR/nvm.sh" > ~/.shrc
 export ENV=~/.shrc
 
-echo $PATH
-which node
-node -v
-
 cd $base
 git submodule update --init --recursive
 npm install
@@ -45,10 +41,6 @@ npm install
 cd ../../..
 
 git clone -b master --single-branch --depth=1 https://github.com/grpc/grpc.git
-
-cd grpc
-git apply ../grpc-node/0001-Add-PATH-logging.patch
-cd ..
 
 grpc/tools/run_tests/helper_scripts/prep_xds.sh
 
