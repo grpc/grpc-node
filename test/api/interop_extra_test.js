@@ -258,6 +258,8 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
         let restrictedServer;
         let restrictedServerClient;
         let restrictedServerClient2;
+        let restrictedServerClient3;
+        let restrictedServerClient4;
         before(function(done) {
           interopServer.getServer(0, true, (err, serverObj) => {
             if (err) {
@@ -275,6 +277,8 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
               };
               restrictedServerClient = new testProto.TestService(`localhost:${serverObj.port}`, creds, options);
               restrictedServerClient2 = new testProto.TestService(`localhost:${serverObj.port}`, creds, {...options, unique: 1});
+              restrictedServerClient3 = new testProto.TestService(`localhost:${serverObj.port}`, creds, {...options, unique: 2});
+              restrictedServerClient4 = new testProto.TestService(`localhost:${serverObj.port}`, creds, {...options, unique: 3});
               done();
             }
           }, {'grpc.max_send_message_length': 4 * 1024 * 1024});
@@ -299,10 +303,10 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
           });
         });
         it('should get an error when requesting a large message', function(done) {
-          restrictedServerClient.unaryCall({response_size: largeMessageSize}, (error, result) => {
+          restrictedServerClient3.unaryCall({response_size: largeMessageSize}, (error, result) => {
             assert(error);
             assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
-            const stream = restrictedServerClient2.fullDuplexCall();
+            const stream = restrictedServerClient4.fullDuplexCall();
             stream.write({response_parameters: [{size: largeMessageSize}]});
             stream.end();
             stream.on('data', () => {});
