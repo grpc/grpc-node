@@ -520,18 +520,18 @@ function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: 
     if (method.requestStream) {
       if (method.responseStream) {
         // Bidi streaming
-        formatter.writeLine(`${methodName}(call: grpc.ServerDuplexStream<${requestType}, ${responseType}>): void;`);
+        formatter.writeLine(`${methodName}: grpc.handleBidiStreamingCall<${requestType}, ${responseType}>;`);
       } else {
         // Client streaming
-        formatter.writeLine(`${methodName}(call: grpc.ServerReadableStream<${requestType}, ${responseType}>, callback: grpc.sendUnaryData<${responseType}>): void;`);
+        formatter.writeLine(`${methodName}: grpc.handleClientStreamingCall<${requestType}, ${responseType}>;`);
       }
     } else {
       if (method.responseStream) {
         // Server streaming
-        formatter.writeLine(`${methodName}(call: grpc.ServerWritableStream<${requestType}, ${responseType}>): void;`);
+        formatter.writeLine(`${methodName}: grpc.handleServerStreamingCall<${requestType}, ${responseType}>;`);
       } else {
         // Unary
-        formatter.writeLine(`${methodName}(call: grpc.ServerUnaryCall<${requestType}, ${responseType}>, callback: grpc.sendUnaryData<${responseType}>): void;`);
+        formatter.writeLine(`${methodName}: grpc.handleUnaryCall<${requestType}, ${responseType}>;`);
       }
     }
     formatter.writeLine('');

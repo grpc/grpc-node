@@ -185,7 +185,7 @@ export interface OperationsHandlers extends grpc.UntypedServiceImplementation {
    * an [Operation.error][google.longrunning.Operation.error] value with a [google.rpc.Status.code][google.rpc.Status.code] of 1,
    * corresponding to `Code.CANCELLED`.
    */
-  CancelOperation(call: grpc.ServerUnaryCall<_google_longrunning_CancelOperationRequest__Output, _google_protobuf_Empty>, callback: grpc.sendUnaryData<_google_protobuf_Empty>): void;
+  CancelOperation: grpc.handleUnaryCall<_google_longrunning_CancelOperationRequest__Output, _google_protobuf_Empty>;
   
   /**
    * Deletes a long-running operation. This method indicates that the client is
@@ -193,14 +193,14 @@ export interface OperationsHandlers extends grpc.UntypedServiceImplementation {
    * operation. If the server doesn't support this method, it returns
    * `google.rpc.Code.UNIMPLEMENTED`.
    */
-  DeleteOperation(call: grpc.ServerUnaryCall<_google_longrunning_DeleteOperationRequest__Output, _google_protobuf_Empty>, callback: grpc.sendUnaryData<_google_protobuf_Empty>): void;
+  DeleteOperation: grpc.handleUnaryCall<_google_longrunning_DeleteOperationRequest__Output, _google_protobuf_Empty>;
   
   /**
    * Gets the latest state of a long-running operation.  Clients can use this
    * method to poll the operation result at intervals as recommended by the API
    * service.
    */
-  GetOperation(call: grpc.ServerUnaryCall<_google_longrunning_GetOperationRequest__Output, _google_longrunning_Operation>, callback: grpc.sendUnaryData<_google_longrunning_Operation>): void;
+  GetOperation: grpc.handleUnaryCall<_google_longrunning_GetOperationRequest__Output, _google_longrunning_Operation>;
   
   /**
    * Lists operations that match the specified filter in the request. If the
@@ -214,7 +214,7 @@ export interface OperationsHandlers extends grpc.UntypedServiceImplementation {
    * collection id, however overriding users must ensure the name binding
    * is the parent resource, without the operations collection id.
    */
-  ListOperations(call: grpc.ServerUnaryCall<_google_longrunning_ListOperationsRequest__Output, _google_longrunning_ListOperationsResponse>, callback: grpc.sendUnaryData<_google_longrunning_ListOperationsResponse>): void;
+  ListOperations: grpc.handleUnaryCall<_google_longrunning_ListOperationsRequest__Output, _google_longrunning_ListOperationsResponse>;
   
   /**
    * Waits for the specified long-running operation until it is done or reaches
@@ -227,6 +227,6 @@ export interface OperationsHandlers extends grpc.UntypedServiceImplementation {
    * state before the specified timeout (including immediately), meaning even an
    * immediate response is no guarantee that the operation is done.
    */
-  WaitOperation(call: grpc.ServerUnaryCall<_google_longrunning_WaitOperationRequest__Output, _google_longrunning_Operation>, callback: grpc.sendUnaryData<_google_longrunning_Operation>): void;
+  WaitOperation: grpc.handleUnaryCall<_google_longrunning_WaitOperationRequest__Output, _google_longrunning_Operation>;
   
 }
