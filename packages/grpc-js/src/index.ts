@@ -57,6 +57,7 @@ import { StatusBuilder } from './status-builder';
 import {
   handleBidiStreamingCall,
   handleServerStreamingCall,
+  handleClientStreamingCall,
   handleUnaryCall,
   sendUnaryData,
   ServerUnaryCall,
@@ -186,7 +187,7 @@ export {
 
 /**** Server ****/
 
-export { handleBidiStreamingCall, handleServerStreamingCall, handleUnaryCall };
+export { handleBidiStreamingCall, handleServerStreamingCall, handleUnaryCall, handleClientStreamingCall };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type Call =
