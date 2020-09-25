@@ -26,7 +26,7 @@ declare module "grpc" {
 
   /* The Message interface is copied and slightly modified from @types/protobuf
    * version 5.0.31, which was distributed under the following license:
-   * 
+   *
    * This project is licensed under the MIT license.
    * Copyrights are respective of each contributor listed at the beginning of each definition file.
    *
@@ -452,13 +452,13 @@ declare module "grpc" {
    * User provided method to handle server streaming methods on the server.
    */
   type handleServerStreamingCall<RequestType, ResponseType> =
-    (call: ServerWritableStream<RequestType>) => void;
+    (call: ServerWritableStream<RequestType, ResponseType>) => void;
 
   /**
    * A stream that the server can write to. Used for calls that are streaming
    * from the server side.
    */
-  export class ServerWritableStream<RequestType> extends Writable {
+  export class ServerWritableStream<RequestType, ResponseType=unknown> extends Writable {
     /**
      * Indicates if the call has been cancelled
      */
@@ -491,7 +491,7 @@ declare module "grpc" {
 
   /* This typo existed in previous versions of this file, so we provide this
    * type alias for backwards compatibility. */
-  export type ServerWriteableStream<RequestType> = ServerWritableStream<RequestType>;
+  export type ServerWriteableStream<RequestType, ResponseType=unknown> = ServerWritableStream<RequestType, ResponseType>;
 
   /**
    * User provided method to handle bidirectional streaming calls on the server.
