@@ -140,10 +140,6 @@ export class EdsLoadBalancer implements LoadBalancer {
         this.updateChild();
       },
       onResourceDoesNotExist: () => {
-        this.xdsClient?.removeEndpointWatcher(
-          this.edsServiceName!,
-          this.watcher
-        );
         this.isWatcherActive = false;
         this.channelControlHelper.updateState(ConnectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: Status.UNAVAILABLE, details: 'EDS resource does not exist', metadata: new Metadata()}));
         this.childBalancer.destroy();

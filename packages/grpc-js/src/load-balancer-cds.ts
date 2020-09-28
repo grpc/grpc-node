@@ -86,10 +86,6 @@ export class CdsLoadBalancer implements LoadBalancer {
         );
       },
       onResourceDoesNotExist: () => {
-        this.xdsClient?.removeClusterWatcher(
-          this.latestConfig!.cds.cluster,
-          this.watcher
-        );
         this.isWatcherActive = false;
         this.channelControlHelper.updateState(ConnectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: Status.UNAVAILABLE, details: 'CDS resource does not exist', metadata: new Metadata()}));
         this.childBalancer.destroy();
