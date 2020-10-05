@@ -401,7 +401,7 @@ export class EdsLoadBalancer implements LoadBalancer {
       trace('Discarding address list update missing xdsClient attribute');
       return;
     }
-    trace('Received update with config: ' + JSON.stringify(lbConfig));
+    trace('Received update with config: ' + JSON.stringify(lbConfig, undefined, 2));
     this.lastestConfig = lbConfig;
     this.latestAttributes = attributes;
     this.xdsClient = attributes.xdsClient;
@@ -411,6 +411,7 @@ export class EdsLoadBalancer implements LoadBalancer {
     /* If the name is changing, disable the old watcher before adding the new
      * one */
     if (this.isWatcherActive && this.edsServiceName !== newEdsServiceName) {
+      trace('Removing old endpoint watcher for edsServiceName ' + this.edsServiceName)
       this.xdsClient.removeEndpointWatcher(this.edsServiceName!, this.watcher);
       /* Setting isWatcherActive to false here lets us have one code path for
        * calling addEndpointWatcher */
@@ -423,6 +424,7 @@ export class EdsLoadBalancer implements LoadBalancer {
     this.edsServiceName = newEdsServiceName;
 
     if (!this.isWatcherActive) {
+      trace('Adding new endpoint watcher for edsServiceName ' + this.edsServiceName);
       this.xdsClient.addEndpointWatcher(this.edsServiceName, this.watcher);
       this.isWatcherActive = true;
     }
@@ -447,6 +449,7 @@ export class EdsLoadBalancer implements LoadBalancer {
     this.childBalancer.resetBackoff();
   }
   destroy(): void {
+    trace('Destroying load balancer with edsServiceName ' + this.edsServiceName);
     if (this.edsServiceName) {
       this.xdsClient?.removeEndpointWatcher(this.edsServiceName, this.watcher);
     }
