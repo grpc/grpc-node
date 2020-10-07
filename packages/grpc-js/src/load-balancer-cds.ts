@@ -111,14 +111,14 @@ export class CdsLoadBalancer implements LoadBalancer {
     attributes: { [key: string]: unknown }
   ): void {
     if (!isCdsLoadBalancingConfig(lbConfig)) {
-      trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig));
+      trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig, undefined, 2));
       return;
     }
     if (!(attributes.xdsClient instanceof XdsClient)) {
       trace('Discarding address list update missing xdsClient attribute');
       return;
     }
-    trace('Received update with config ' + JSON.stringify(lbConfig));
+    trace('Received update with config ' + JSON.stringify(lbConfig, undefined, 2));
     this.xdsClient = attributes.xdsClient;
     this.latestAttributes = attributes;
 
@@ -128,6 +128,7 @@ export class CdsLoadBalancer implements LoadBalancer {
       this.isWatcherActive &&
       this.latestConfig?.cds.cluster !== lbConfig.cds.cluster
     ) {
+      trace('Removing old cluster watcher for cluster name ' + this.latestConfig!.cds.cluster);
       this.xdsClient.removeClusterWatcher(
         this.latestConfig!.cds.cluster,
         this.watcher
@@ -143,6 +144,7 @@ export class CdsLoadBalancer implements LoadBalancer {
     this.latestConfig = lbConfig;
 
     if (!this.isWatcherActive) {
+      trace('Adding new cluster watcher for cluster name ' + lbConfig.cds.cluster);
       this.xdsClient.addClusterWatcher(lbConfig.cds.cluster, this.watcher);
       this.isWatcherActive = true;
     }
@@ -154,6 +156,7 @@ export class CdsLoadBalancer implements LoadBalancer {
     this.childBalancer.resetBackoff();
   }
   destroy(): void {
+    trace('Destroying load balancer with cluster name ' + this.latestConfig?.cds.cluster);
     this.childBalancer.destroy();
     if (this.isWatcherActive) {
       this.xdsClient?.removeClusterWatcher(

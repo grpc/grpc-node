@@ -261,7 +261,6 @@ class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
     edsServiceName: string,
     watcher: Watcher<ClusterLoadAssignment__Output>
   ): void {
-    trace('Adding EDS watcher for edsServiceName ' + edsServiceName);
     let watchersEntry = this.watchers.get(edsServiceName);
     let addedServiceName = false;
     if (watchersEntry === undefined) {
@@ -269,6 +268,7 @@ class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
       watchersEntry = [];
       this.watchers.set(edsServiceName, watchersEntry);
     }
+    trace('Adding EDS watcher (' + watchersEntry.length + ' ->' + (watchersEntry.length + 1) + ') for edsServiceName ' + edsServiceName);
     watchersEntry.push(watcher);
 
     /* If we have already received an update for the requested edsServiceName,
@@ -298,6 +298,7 @@ class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
     if (watchersEntry !== undefined) {
       const entryIndex = watchersEntry.indexOf(watcher);
       if (entryIndex >= 0) {
+        trace('Removed EDS watcher (' + watchersEntry.length + ' -> ' + (watchersEntry.length - 1) + ') for edsServiceName ' + edsServiceName);
         watchersEntry.splice(entryIndex, 1);
       }
       if (watchersEntry.length === 0) {
