@@ -22,7 +22,8 @@ var fs = require('fs');
 var path = require('path');
 var grpc = require('../any_grpc').client;
 var protoLoader = require('../../packages/proto-loader');
-var GoogleAuth = require('google-auth-library');
+
+const { GoogleAuth } = require('google-auth-library');
 
 var protoPackage = protoLoader.loadSync(
     'src/proto/grpc/testing/test.proto',
@@ -463,60 +464,31 @@ function oauth2Test(client, done, extra) {
 }
 
 function perRpcAuthTest(client, done, extra) {
-  (new GoogleAuth()).getApplicationDefault(function(err, credential) {
+  const creds = grpc.credentials.createFromGoogleCredential(new GoogleAuth({scopes: extra.oauth_scope}));
+  client.unaryCall(arg, {credentials: creds}, function(err, resp) {
     assert.ifError(err);
-    var arg = {
-      fill_username: true,
-      fill_oauth_scope: true
-    };
-    var scope = extra.oauth_scope;
-    if (credential.createScopedRequired() && scope) {
-      credential = credential.createScoped(scope);
+    assert.strictEqual(resp.username, SERVICE_ACCOUNT_EMAIL);
+    assert(extra.oauth_scope.indexOf(resp.oauth_scope) > -1);
+    if (done) {
+      done();
     }
-    var creds = grpc.credentials.createFromGoogleCredential(credential);
-    client.unaryCall(arg, {credentials: creds}, function(err, resp) {
-      assert.ifError(err);
-      assert.strictEqual(resp.username, SERVICE_ACCOUNT_EMAIL);
-      assert(extra.oauth_scope.indexOf(resp.oauth_scope) > -1);
-      if (done) {
-        done();
-      }
-    });
   });
 }
 
 function getApplicationCreds(scope, callback) {
-  (new GoogleAuth()).getApplicationDefault(function(err, credential) {
-    if (err) {
-      callback(err);
-      return;
-    }
-    if (credential.createScopedRequired() && scope) {
-      credential = credential.createScoped(scope);
-    }
-    callback(null, grpc.credentials.createFromGoogleCredential(credential));
-  });
+  callback(null, grpc.credentials.createFromGoogleCredential(new GoogleAuth({scopes: scope})));
 }
 
 function getOauth2Creds(scope, callback) {
-  (new GoogleAuth()).getApplicationDefault(function(err, credential) {
-    if (err) {
-      callback(err);
-      return;
-    }
-    credential = credential.createScoped(scope);
-    credential.getAccessToken(function(err, token) {
-      if (err) {
-        callback(err);
-        return;
-      }
-      var updateMd = function(service_url, callback) {
-        var metadata = new grpc.Metadata();
-        metadata.add('authorization', 'Bearer ' + token);
-        callback(null, metadata);
-      };
-      callback(null, grpc.credentials.createFromMetadataGenerator(updateMd));
-    });
+  (new GoogleAuth()).getAccessToken().then((token) => {
+    var updateMd = function(service_url, callback) {
+      var metadata = new grpc.Metadata();
+      metadata.add('authorization', 'Bearer ' + token);
+      callback(null, metadata);
+    };
+    callback(null, grpc.credentials.createFromMetadataGenerator(updateMd));
+  }, (error) => {
+    callback(error);
   });
 }
 
