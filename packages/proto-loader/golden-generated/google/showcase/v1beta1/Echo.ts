@@ -58,19 +58,19 @@ export interface EchoClient extends grpc.Client {
    * by the client, this method will return the a concatenation of the strings
    * passed to it. This method showcases client-side streaming rpcs.
    */
-  Collect(metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
-  Collect(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
-  Collect(options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
-  Collect(callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
+  Collect(metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoRequest>;
+  Collect(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoRequest>;
+  Collect(options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoRequest>;
+  Collect(callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoRequest>;
   /**
    * This method will collect the words given to it. When the stream is closed
    * by the client, this method will return the a concatenation of the strings
    * passed to it. This method showcases client-side streaming rpcs.
    */
-  collect(metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
-  collect(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
-  collect(options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
-  collect(callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoResponse__Output>;
+  collect(metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoRequest>;
+  collect(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoRequest>;
+  collect(options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoRequest>;
+  collect(callback: (error?: grpc.ServiceError, result?: _google_showcase_v1beta1_EchoResponse__Output) => void): grpc.ClientWritableStream<_google_showcase_v1beta1_EchoRequest>;
   
   /**
    * This method simply echos the request. This method is showcases unary rpcs.
