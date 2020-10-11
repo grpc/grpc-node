@@ -476,7 +476,7 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
           formatter.writeLine(`${name}(options?: grpc.CallOptions): ${callType};`);
         } else {
           // Client streaming
-          const callType = `grpc.ClientWritableStream<${responseType}>`;
+          const callType = `grpc.ClientWritableStream<${requestType}>`;
           formatter.writeLine(`${name}(metadata: grpc.Metadata, options: grpc.CallOptions, callback: ${callbackType}): ${callType};`);
           formatter.writeLine(`${name}(metadata: grpc.Metadata, callback: ${callbackType}): ${callType};`);
           formatter.writeLine(`${name}(options: grpc.CallOptions, callback: ${callbackType}): ${callType};`);
