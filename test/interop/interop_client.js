@@ -464,6 +464,10 @@ function oauth2Test(client, done, extra) {
 }
 
 function perRpcAuthTest(client, done, extra) {
+  var arg = {
+    fill_username: true,
+    fill_oauth_scope: true
+  };
   const creds = grpc.credentials.createFromGoogleCredential(new GoogleAuth({scopes: extra.oauth_scope}));
   client.unaryCall(arg, {credentials: creds}, function(err, resp) {
     assert.ifError(err);
