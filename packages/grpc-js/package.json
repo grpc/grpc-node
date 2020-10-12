@@ -58,9 +58,7 @@
     "posttest": "npm run check"
   },
   "dependencies": {
-    "@grpc/proto-loader": "^0.6.0-pre14",
     "@types/node": "^12.12.47",
-    "google-auth-library": "^5.10.1",
     "semver": "^6.2.0"
   },
   "files": [
