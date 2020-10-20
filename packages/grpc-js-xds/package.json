@@ -11,7 +11,9 @@
     "fix": "gts fix",
     "prepare": "npm run compile",
     "pretest": "npm run compile",
-    "posttest": "npm run check"
+    "posttest": "npm run check",
+    "generate-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --json --includeComments --includeDirs deps/envoy-api/ deps/udpa/ deps/googleapis/ deps/protoc-gen-validate/ -O src/generated/ --grpcLib @grpc/grpc-js envoy/service/discovery/v2/ads.proto envoy/service/load_stats/v2/lrs.proto envoy/api/v2/listener.proto envoy/api/v2/route.proto envoy/api/v2/cluster.proto envoy/api/v2/endpoint.proto envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.proto",
+    "generate-interop-types": "proto-loader-gen-types --keep-case --longs String --enums String --defaults --oneofs --json --includeComments --includeDirs proto/ -O interop/generated --grpcLib @grpc/grpc-js grpc/testing/test.proto"
   },
   "repository": {
     "type": "git",
@@ -31,10 +33,15 @@
   "devDependencies": {
     "gts": "^2.0.2",
     "typescript": "^3.8.3",
+    "@types/gulp": "^4.0.6",
+    "@types/gulp-mocha": "0.0.32",
+    "@types/mocha": "^5.2.6",
     "@types/node": "^13.11.1",
+    "@types/yargs": "^15.0.5",
     "yargs": "^15.4.1"
   },
   "dependencies": {
+    "@grpc/grpc-js": "file:../grpc-js",
     "@grpc/proto-loader": "^0.6.0-pre14",
     "google-auth-library": "^6.1.1"
   }

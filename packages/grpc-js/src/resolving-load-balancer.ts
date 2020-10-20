@@ -19,13 +19,13 @@ import {
   ChannelControlHelper,
   LoadBalancer,
   getFirstUsableConfig,
+  LoadBalancingConfig
 } from './load-balancer';
 import { ServiceConfig, validateServiceConfig } from './service-config';
 import { ConnectivityState } from './channel';
 import { createResolver, Resolver } from './resolver';
 import { ServiceError } from './call';
 import { Picker, UnavailablePicker, QueuePicker } from './picker';
-import { LoadBalancingConfig } from './load-balancing-config';
 import { BackoffTimeout } from './backoff-timeout';
 import { Status } from './constants';
 import { StatusObject } from './call-stream';
@@ -36,6 +36,7 @@ import { SubchannelAddress } from './subchannel';
 import { GrpcUri, uriToString } from './uri-parser';
 import { ChildLoadBalancerHandler } from './load-balancer-child-handler';
 import { ChannelOptions } from './channel-options';
+import { PickFirstLoadBalancingConfig } from './load-balancer-pick-first';
 
 const TRACER_NAME = 'resolving_load_balancer';
 
@@ -163,13 +164,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
           }
           const workingConfigList =
             workingServiceConfig?.loadBalancingConfig ?? [];
-          if (workingConfigList.length === 0) {
-            workingConfigList.push({
-              name: 'pick_first',
-              pick_first: {},
-            });
-          }
-          const loadBalancingConfig = getFirstUsableConfig(workingConfigList);
+          const loadBalancingConfig = getFirstUsableConfig(workingConfigList, true);
           if (loadBalancingConfig === null) {
             // There were load balancing configs but none are supported. This counts as a resolution failure
             this.handleResolutionFailure({

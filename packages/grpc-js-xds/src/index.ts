@@ -1,24 +1,32 @@
-console.log('Try npm run check/fix!');
+/*
+ * Copyright 2020 gRPC authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 
-const longString =
-  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer ut aliquet diam.';
+import * as resolver_xds from './resolver-xds';
+import * as load_balancer_cds from './load-balancer-cds';
+import * as load_balancer_eds from './load-balancer-eds';
+import * as load_balancer_lrs from './load-balancer-lrs';
+import * as load_balancer_priority from './load-balancer-priority';
+import * as load_balancer_weighted_target from './load-balancer-weighted-target';
 
-const trailing = 'Semicolon';
-
-const why = 'am I tabbed?';
-
-export function doSomeStuff(
-  withThis: string,
-  andThat: string,
-  andThose: string[]
-) {
-  //function on one line
-  if (!andThose.length) {
-    return false;
-  }
-  console.log(withThis);
-  console.log(andThat);
-  console.dir(andThose);
-  return;
+export function register() {
+  resolver_xds.setup();
+  load_balancer_cds.setup();
+  load_balancer_eds.setup();
+  load_balancer_lrs.setup();
+  load_balancer_priority.setup();
+  load_balancer_weighted_target.setup();
 }
-// TODO: more examples

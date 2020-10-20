@@ -19,6 +19,7 @@ import {
   LoadBalancer,
   ChannelControlHelper,
   registerLoadBalancerType,
+  LoadBalancingConfig
 } from './load-balancer';
 import { ConnectivityState } from './channel';
 import {
@@ -29,7 +30,6 @@ import {
   PickResultType,
   UnavailablePicker,
 } from './picker';
-import { LoadBalancingConfig } from './load-balancing-config';
 import {
   Subchannel,
   ConnectivityStateListener,
@@ -52,6 +52,24 @@ const TYPE_NAME = 'pick_first';
  * connection on the next subchannel in the list, for Happy Eyeballs algorithm.
  */
 const CONNECTION_DELAY_INTERVAL_MS = 250;
+
+export class PickFirstLoadBalancingConfig implements LoadBalancingConfig {
+  getLoadBalancerName(): string {
+    return TYPE_NAME;
+  }
+
+  constructor() {}
+
+  toJsonObject(): object {
+    return {
+      [TYPE_NAME]: {}
+    };
+  }
+
+  static createFromJson(obj: any) {
+    return new PickFirstLoadBalancingConfig();
+  }
+}
 
 /**
  * Picker for a `PickFirstLoadBalancer` in the READY state. Always returns the
@@ -439,5 +457,5 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 }
 
 export function setup(): void {
-  registerLoadBalancerType(TYPE_NAME, PickFirstLoadBalancer);
+  registerLoadBalancerType(TYPE_NAME, PickFirstLoadBalancer, PickFirstLoadBalancingConfig);
 }
