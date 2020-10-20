@@ -992,6 +992,9 @@ exports.makeClientConstructor = function(methods, serviceName,
 
   Object.keys(methods).forEach(name => {
     const attrs = methods[name];
+    if (name === '__proto__') {
+      return;
+    }
     if (name.indexOf('$') === 0) {
       throw new Error('Method names cannot start with $');
     }
@@ -1011,7 +1014,7 @@ exports.makeClientConstructor = function(methods, serviceName,
     ServiceClient.prototype.$method_names[attrs.path] = name;
     // Associate all provided attributes with the method
     Object.assign(ServiceClient.prototype[name], attrs);
-    if (attrs.originalName) {
+    if (attrs.originalName && attrs.originalName !== '__proto__') {
       ServiceClient.prototype[attrs.originalName] =
         ServiceClient.prototype[name];
     }

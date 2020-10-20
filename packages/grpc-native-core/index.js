@@ -161,6 +161,9 @@ exports.loadPackageDefinition = function loadPackageDefintion(packageDef) {
   for (const serviceFqn in packageDef) {
     const service = packageDef[serviceFqn];
     const nameComponents = serviceFqn.split('.');
+    if (nameComponents.some(comp => comp === '__proto__')) {
+      continue;
+    }
     const serviceName = nameComponents[nameComponents.length-1];
     let current = result;
     for (const packageName of nameComponents.slice(0, -1)) {
