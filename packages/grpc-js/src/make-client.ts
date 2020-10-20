@@ -122,6 +122,9 @@ export function makeClientConstructor(
   }
 
   Object.keys(methods).forEach((name) => {
+    if (name === '__proto__') {
+      return;
+    }
     const attrs = methods[name];
     let methodType: keyof typeof requesterFuncs;
     // TODO(murgatroid99): Verify that we don't need this anymore
@@ -152,7 +155,7 @@ export function makeClientConstructor(
     ServiceClientImpl.prototype[name] = methodFunc;
     // Associate all provided attributes with the method
     Object.assign(ServiceClientImpl.prototype[name], attrs);
-    if (attrs.originalName) {
+    if (attrs.originalName && attrs.originalName !== '__proto__') {
       ServiceClientImpl.prototype[attrs.originalName] =
         ServiceClientImpl.prototype[name];
     }
@@ -201,6 +204,9 @@ export function loadPackageDefinition(
     if (Object.prototype.hasOwnProperty.call(packageDef, serviceFqn)) {
       const service = packageDef[serviceFqn];
       const nameComponents = serviceFqn.split('.');
+      if (nameComponents.some(comp => comp === '__proto__')) {
+        continue;
+      }
       const serviceName = nameComponents[nameComponents.length - 1];
       let current = result;
       for (const packageName of nameComponents.slice(0, -1)) {
