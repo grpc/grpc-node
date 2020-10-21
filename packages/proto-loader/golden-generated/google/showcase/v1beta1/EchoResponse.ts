@@ -1,6 +1,6 @@
 // Original file: deps/gapic-showcase/schema/google/showcase/v1beta1/echo.proto
 
-import { Severity as _google_showcase_v1beta1_Severity } from '../../../google/showcase/v1beta1/Severity';
+import type { Severity as _google_showcase_v1beta1_Severity } from '../../../google/showcase/v1beta1/Severity';
 
 /**
  * The response message for the Echo methods.

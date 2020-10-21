@@ -1,7 +1,7 @@
 // Original file: deps/gapic-showcase/schema/google/showcase/v1beta1/echo.proto
 
-import { Status as _google_rpc_Status, Status__Output as _google_rpc_Status__Output } from '../../../google/rpc/Status';
-import { Severity as _google_showcase_v1beta1_Severity } from '../../../google/showcase/v1beta1/Severity';
+import type { Status as _google_rpc_Status, Status__Output as _google_rpc_Status__Output } from '../../../google/rpc/Status';
+import type { Severity as _google_showcase_v1beta1_Severity } from '../../../google/showcase/v1beta1/Severity';
 
 /**
  * The request message used for the Echo, Collect and Chat methods.

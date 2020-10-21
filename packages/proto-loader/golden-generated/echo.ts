@@ -1,8 +1,8 @@
 import * as grpc from '@grpc/grpc-js';
-import { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
+import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
 
-import { OperationsClient as _google_longrunning_OperationsClient } from './google/longrunning/Operations';
-import { EchoClient as _google_showcase_v1beta1_EchoClient } from './google/showcase/v1beta1/Echo';
+import type { OperationsClient as _google_longrunning_OperationsClient } from './google/longrunning/Operations';
+import type { EchoClient as _google_showcase_v1beta1_EchoClient } from './google/showcase/v1beta1/Echo';
 
 type SubtypeConstructor<Constructor, Subtype> = {
   new(...args: ConstructorParameters<Constructor>): Subtype;

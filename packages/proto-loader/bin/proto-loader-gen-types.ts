@@ -141,7 +141,7 @@ function getImportLine(dependency: Protobuf.Type | Protobuf.Enum | Protobuf.Serv
       throw new Error('Invalid object passed to getImportLine');
     }
   }
-  return `import { ${importedTypes} } from '${filePath}';`
+  return `import type { ${importedTypes} } from '${filePath}';`
 }
 
 function getChildMessagesAndEnums(namespace: Protobuf.NamespaceBase): (Protobuf.Type | Protobuf.Enum)[] {
@@ -412,10 +412,10 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
     }
   }
   if (usesLong) {
-    formatter.writeLine("import { Long } from '@grpc/proto-loader';");
+    formatter.writeLine("import type { Long } from '@grpc/proto-loader';");
   }
   if (messageType.fullName === '.google.protobuf.Any') {
-    formatter.writeLine("import { AnyExtension } from '@grpc/proto-loader';")
+    formatter.writeLine("import type { AnyExtension } from '@grpc/proto-loader';")
   }
   formatter.writeLine('');
   for (const childType of childTypes.sort(compareName)) {
@@ -598,7 +598,7 @@ function generateLoadedDefinitionTypes(formatter: TextFormatter, namespace: Prot
 
 function generateRootFile(formatter: TextFormatter, root: Protobuf.Root, options: GeneratorOptions) {
   formatter.writeLine(`import * as grpc from '${options.grpcLib}';`);
-  formatter.writeLine("import { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';");
+  formatter.writeLine("import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';");
   formatter.writeLine('');
   
   generateServiceImports(formatter, root, options);

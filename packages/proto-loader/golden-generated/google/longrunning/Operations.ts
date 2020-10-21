@@ -1,14 +1,14 @@
 // Original file: deps/googleapis/google/longrunning/operations.proto
 
 import * as grpc from '@grpc/grpc-js'
-import { CancelOperationRequest as _google_longrunning_CancelOperationRequest, CancelOperationRequest__Output as _google_longrunning_CancelOperationRequest__Output } from '../../google/longrunning/CancelOperationRequest';
-import { DeleteOperationRequest as _google_longrunning_DeleteOperationRequest, DeleteOperationRequest__Output as _google_longrunning_DeleteOperationRequest__Output } from '../../google/longrunning/DeleteOperationRequest';
-import { Empty as _google_protobuf_Empty, Empty__Output as _google_protobuf_Empty__Output } from '../../google/protobuf/Empty';
-import { GetOperationRequest as _google_longrunning_GetOperationRequest, GetOperationRequest__Output as _google_longrunning_GetOperationRequest__Output } from '../../google/longrunning/GetOperationRequest';
-import { ListOperationsRequest as _google_longrunning_ListOperationsRequest, ListOperationsRequest__Output as _google_longrunning_ListOperationsRequest__Output } from '../../google/longrunning/ListOperationsRequest';
-import { ListOperationsResponse as _google_longrunning_ListOperationsResponse, ListOperationsResponse__Output as _google_longrunning_ListOperationsResponse__Output } from '../../google/longrunning/ListOperationsResponse';
-import { Operation as _google_longrunning_Operation, Operation__Output as _google_longrunning_Operation__Output } from '../../google/longrunning/Operation';
-import { WaitOperationRequest as _google_longrunning_WaitOperationRequest, WaitOperationRequest__Output as _google_longrunning_WaitOperationRequest__Output } from '../../google/longrunning/WaitOperationRequest';
+import type { CancelOperationRequest as _google_longrunning_CancelOperationRequest, CancelOperationRequest__Output as _google_longrunning_CancelOperationRequest__Output } from '../../google/longrunning/CancelOperationRequest';
+import type { DeleteOperationRequest as _google_longrunning_DeleteOperationRequest, DeleteOperationRequest__Output as _google_longrunning_DeleteOperationRequest__Output } from '../../google/longrunning/DeleteOperationRequest';
+import type { Empty as _google_protobuf_Empty, Empty__Output as _google_protobuf_Empty__Output } from '../../google/protobuf/Empty';
+import type { GetOperationRequest as _google_longrunning_GetOperationRequest, GetOperationRequest__Output as _google_longrunning_GetOperationRequest__Output } from '../../google/longrunning/GetOperationRequest';
+import type { ListOperationsRequest as _google_longrunning_ListOperationsRequest, ListOperationsRequest__Output as _google_longrunning_ListOperationsRequest__Output } from '../../google/longrunning/ListOperationsRequest';
+import type { ListOperationsResponse as _google_longrunning_ListOperationsResponse, ListOperationsResponse__Output as _google_longrunning_ListOperationsResponse__Output } from '../../google/longrunning/ListOperationsResponse';
+import type { Operation as _google_longrunning_Operation, Operation__Output as _google_longrunning_Operation__Output } from '../../google/longrunning/Operation';
+import type { WaitOperationRequest as _google_longrunning_WaitOperationRequest, WaitOperationRequest__Output as _google_longrunning_WaitOperationRequest__Output } from '../../google/longrunning/WaitOperationRequest';
 
 /**
  * Manages long-running operations with an API service.

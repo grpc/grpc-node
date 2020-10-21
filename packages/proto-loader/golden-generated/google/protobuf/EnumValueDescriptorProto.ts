@@ -1,6 +1,6 @@
 // Original file: null
 
-import { EnumValueOptions as _google_protobuf_EnumValueOptions, EnumValueOptions__Output as _google_protobuf_EnumValueOptions__Output } from '../../google/protobuf/EnumValueOptions';
+import type { EnumValueOptions as _google_protobuf_EnumValueOptions, EnumValueOptions__Output as _google_protobuf_EnumValueOptions__Output } from '../../google/protobuf/EnumValueOptions';
 
 export interface EnumValueDescriptorProto {
   'name'?: (string);

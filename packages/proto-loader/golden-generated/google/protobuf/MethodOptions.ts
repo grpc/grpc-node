@@ -1,8 +1,8 @@
 // Original file: null
 
-import { UninterpretedOption as _google_protobuf_UninterpretedOption, UninterpretedOption__Output as _google_protobuf_UninterpretedOption__Output } from '../../google/protobuf/UninterpretedOption';
-import { OperationInfo as _google_longrunning_OperationInfo, OperationInfo__Output as _google_longrunning_OperationInfo__Output } from '../../google/longrunning/OperationInfo';
-import { HttpRule as _google_api_HttpRule, HttpRule__Output as _google_api_HttpRule__Output } from '../../google/api/HttpRule';
+import type { UninterpretedOption as _google_protobuf_UninterpretedOption, UninterpretedOption__Output as _google_protobuf_UninterpretedOption__Output } from '../../google/protobuf/UninterpretedOption';
+import type { OperationInfo as _google_longrunning_OperationInfo, OperationInfo__Output as _google_longrunning_OperationInfo__Output } from '../../google/longrunning/OperationInfo';
+import type { HttpRule as _google_api_HttpRule, HttpRule__Output as _google_api_HttpRule__Output } from '../../google/api/HttpRule';
 
 export interface MethodOptions {
   'deprecated'?: (boolean);

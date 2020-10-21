@@ -1,7 +1,7 @@
 // Original file: null
 
-import { EnumValueDescriptorProto as _google_protobuf_EnumValueDescriptorProto, EnumValueDescriptorProto__Output as _google_protobuf_EnumValueDescriptorProto__Output } from '../../google/protobuf/EnumValueDescriptorProto';
-import { EnumOptions as _google_protobuf_EnumOptions, EnumOptions__Output as _google_protobuf_EnumOptions__Output } from '../../google/protobuf/EnumOptions';
+import type { EnumValueDescriptorProto as _google_protobuf_EnumValueDescriptorProto, EnumValueDescriptorProto__Output as _google_protobuf_EnumValueDescriptorProto__Output } from '../../google/protobuf/EnumValueDescriptorProto';
+import type { EnumOptions as _google_protobuf_EnumOptions, EnumOptions__Output as _google_protobuf_EnumOptions__Output } from '../../google/protobuf/EnumOptions';
 
 export interface EnumDescriptorProto {
   'name'?: (string);

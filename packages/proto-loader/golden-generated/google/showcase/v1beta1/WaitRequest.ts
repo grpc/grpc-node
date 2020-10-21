@@ -1,9 +1,9 @@
 // Original file: deps/gapic-showcase/schema/google/showcase/v1beta1/echo.proto
 
-import { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../../google/protobuf/Timestamp';
-import { Status as _google_rpc_Status, Status__Output as _google_rpc_Status__Output } from '../../../google/rpc/Status';
-import { WaitResponse as _google_showcase_v1beta1_WaitResponse, WaitResponse__Output as _google_showcase_v1beta1_WaitResponse__Output } from '../../../google/showcase/v1beta1/WaitResponse';
-import { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../google/protobuf/Duration';
+import type { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../../google/protobuf/Timestamp';
+import type { Status as _google_rpc_Status, Status__Output as _google_rpc_Status__Output } from '../../../google/rpc/Status';
+import type { WaitResponse as _google_showcase_v1beta1_WaitResponse, WaitResponse__Output as _google_showcase_v1beta1_WaitResponse__Output } from '../../../google/showcase/v1beta1/WaitResponse';
+import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../google/protobuf/Duration';
 
 /**
  * The request for Wait method.
