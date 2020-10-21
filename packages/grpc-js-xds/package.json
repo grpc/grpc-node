@@ -42,7 +42,6 @@
   },
   "dependencies": {
     "@grpc/grpc-js": "file:../grpc-js",
-    "@grpc/proto-loader": "^0.6.0-pre14",
-    "google-auth-library": "^6.1.1"
+    "@grpc/proto-loader": "^0.6.0-pre14"
   }
 }
