@@ -58,7 +58,7 @@ GRPC_NODE_TRACE=xds_client,xds_resolver,cds_balancer,eds_balancer,priority,weigh
     --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
     --gcp_suffix=$(date '+%s') \
     --verbose \
-    --client_cmd="$(which node) grpc-node/packages/grpc-js/build/interop/xds-interop-client \
+    --client_cmd="$(which node) grpc-node/packages/grpc-js-xds/build/interop/xds-interop-client \
       --server=xds:///{server_uri} \
       --stats_port={stats_port} \
       --qps={qps} \
