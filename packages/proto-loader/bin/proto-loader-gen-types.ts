@@ -544,7 +544,7 @@ function generateServiceInterfaces(formatter: TextFormatter, serviceType: Protob
   formatter.writeLine(`// Original file: ${serviceType.filename}`);
   formatter.writeLine('');
   const grpcImportPath = options.grpcLib.startsWith('.') ? getPathToRoot(serviceType) + options.grpcLib : options.grpcLib;
-  formatter.writeLine(`import * as grpc from '${grpcImportPath}'`);
+  formatter.writeLine(`import type * as grpc from '${grpcImportPath}'`);
   const dependencies: Set<Protobuf.Type> = new Set<Protobuf.Type>();
   for (const method of serviceType.methodsArray) {
     dependencies.add(method.resolvedRequestType!);
@@ -597,14 +597,14 @@ function generateLoadedDefinitionTypes(formatter: TextFormatter, namespace: Prot
 }
 
 function generateRootFile(formatter: TextFormatter, root: Protobuf.Root, options: GeneratorOptions) {
-  formatter.writeLine(`import * as grpc from '${options.grpcLib}';`);
+  formatter.writeLine(`import type * as grpc from '${options.grpcLib}';`);
   formatter.writeLine("import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';");
   formatter.writeLine('');
   
   generateServiceImports(formatter, root, options);
   formatter.writeLine('');
 
-  formatter.writeLine('type SubtypeConstructor<Constructor, Subtype> = {');
+  formatter.writeLine('type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {');
   formatter.writeLine('  new(...args: ConstructorParameters<Constructor>): Subtype;');
   formatter.writeLine('};');
   formatter.writeLine('');
