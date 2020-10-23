@@ -46,5 +46,8 @@
   },
   "peerDependencies": {
     "@grpc/grpc-js": "~1.2.0"
+  },
+  "engines": {
+    "node": ">=10.10.0"
   }
 }

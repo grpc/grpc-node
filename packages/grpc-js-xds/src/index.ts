@@ -22,6 +22,9 @@ import * as load_balancer_lrs from './load-balancer-lrs';
 import * as load_balancer_priority from './load-balancer-priority';
 import * as load_balancer_weighted_target from './load-balancer-weighted-target';
 
+/**
+ * Register the "xds:" name scheme with the @grpc/grpc-js library.
+ */
 export function register() {
   resolver_xds.setup();
   load_balancer_cds.setup();
