@@ -84,8 +84,16 @@ function getProxyInfo(): ProxyInfo {
       userCred = proxyUrl.username;
     }
   }
+  const hostname = proxyUrl.hostname;
+  let port = proxyUrl.port;
+  /* The proxy URL uses the scheme "http:", which has a default port number of
+   * 80. We need to set that explicitly here if it is omitted because otherwise
+   * it will use gRPC's default port 443. */
+  if (port === '') {
+    port = '80';
+  }
   const result: ProxyInfo = {
-    address: proxyUrl.host,
+    address: `${hostname}:${port}`
   };
   if (userCred) {
     result.creds = userCred;
