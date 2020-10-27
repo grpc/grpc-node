@@ -8,6 +8,11 @@
 
 - **Note:** If you installed `node` via a package manager and the version is still less than `4.0`, try directly installing it from [nodejs.org](https://nodejs.org).
 
+## LATEST VERSIONS SUPPORTED
+
+ - Node: 15
+ - Electron: 10.1
+
 ## INSTALLATION
 
 Install the gRPC NPM package
