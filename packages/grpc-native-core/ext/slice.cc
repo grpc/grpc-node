@@ -71,10 +71,9 @@ Local<String> CopyStringFromSlice(const grpc_slice slice) {
 Local<Value> CopyBufferFromSlice(const grpc_slice slice) {
   Nan::EscapableHandleScope scope;
   return scope.Escape(
-    Nan::CopyBuffer(
-      const_cast<char *>(
-        reinterpret_cast<const char *>(GRPC_SLICE_START_PTR(slice))),
-      GRPC_SLICE_LENGTH(slice)));
+    Nan::CopyBuffer(reinterpret_cast<const char *>(GRPC_SLICE_START_PTR(slice)),
+      GRPC_SLICE_LENGTH(slice))
+    .ToLocalChecked());
 }
 
 }  // namespace node
