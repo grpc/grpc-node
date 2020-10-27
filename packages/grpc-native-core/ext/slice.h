@@ -32,7 +32,7 @@ grpc_slice CreateSliceFromBuffer(const v8::Local<v8::Value> source);
 
 v8::Local<v8::String> CopyStringFromSlice(const grpc_slice slice);
 
-v8::Local<v8::Value> CreateBufferFromSlice(const grpc_slice slice);
+v8::Local<v8::Value> CopyBufferFromSlice(const grpc_slice slice);
 
 }  // namespace node
 }  // namespace grpc

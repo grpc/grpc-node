@@ -158,7 +158,7 @@ Local<Value> ParseMetadata(const grpc_metadata_array *metadata_array) {
       array = Local<Array>::Cast(maybe_array.ToLocalChecked());
     }
     if (grpc_is_binary_header(elem->key)) {
-      Nan::Set(array, array->Length(), CreateBufferFromSlice(elem->value));
+      Nan::Set(array, array->Length(), CopyBufferFromSlice(elem->value));
     } else {
       // TODO(murgatroid99): Use zero-copy string construction instead
       Nan::Set(array, array->Length(), CopyStringFromSlice(elem->value));
