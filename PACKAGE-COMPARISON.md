@@ -36,6 +36,7 @@ In addition, all channel arguments defined in [this header file](https://github.
  - `grpc.default_authority`
  - `grpc.keepalive_time_ms`
  - `grpc.keepalive_timeout_ms`
+ - `grpc.keepalive_permit_without_calls`
  - `grpc.service_config`
  - `grpc.max_concurrent_streams`
  - `grpc.initial_reconnect_backoff_ms`
