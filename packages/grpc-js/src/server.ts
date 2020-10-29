@@ -458,6 +458,10 @@ export class Server {
     return true;
   }
 
+  unregister(name: string): boolean {
+    return this.handlers.delete(name);
+  }
+
   start(): void {
     if (
       this.http2ServerList.length === 0 ||
