@@ -220,6 +220,67 @@ describe('Server', () => {
     });
   });
 
+  describe('removeService', () => {
+    let server: Server;
+    let client: ServiceClient;
+
+    const mathProtoFile = path.join(__dirname, 'fixtures', 'math.proto');
+    const mathClient = (loadProtoFile(mathProtoFile).math as any).Math;
+    const mathServiceAttrs = mathClient.service;
+    const dummyImpls = { div() {}, divMany() {}, fib() {}, sum() {} };
+
+    beforeEach(done => {
+      server = new Server();
+      server.addService(mathServiceAttrs, dummyImpls);
+      server.bindAsync(
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert.ifError(err);
+          client = new mathClient(
+            `localhost:${port}`,
+            grpc.credentials.createInsecure()
+          );
+          server.start();
+          done();
+        }
+      );
+    });
+
+    afterEach(done => {
+      client.close();
+      server.tryShutdown(done);
+    });
+
+    it('succeeds with a single service by removing all method handlers', done => {
+      server.removeService(mathServiceAttrs);
+
+      let methodsVerifiedCount = 0;
+      const methodsToVerify = Object.keys(mathServiceAttrs);
+
+      const assertFailsWithUnimplementedError = (error: ServiceError) => {
+        assert(error);
+        assert.strictEqual(error.code, grpc.status.UNIMPLEMENTED);
+        methodsVerifiedCount++;
+        if (methodsVerifiedCount === methodsToVerify.length) {
+          done();
+        }
+      };
+
+      methodsToVerify.forEach((method) => {
+        const call = client[method]({}, assertFailsWithUnimplementedError); // for unary
+        call.on('error', assertFailsWithUnimplementedError); // for streamed
+      });
+    });
+
+    it('fails for non-object service definition argument', () => {
+      assert.throws(() => {
+          server.removeService('upsie' as any)
+        }, /removeService.*requires object as argument/
+      );
+    });
+  });
+
   describe('unregister', () => {
 
     let server: Server;

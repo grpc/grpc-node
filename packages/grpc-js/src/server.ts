@@ -208,6 +208,21 @@ export class Server {
     });
   }
 
+  removeService(service: ServiceDefinition): void {
+    if (
+      service === null ||
+      typeof service !== 'object'
+    ) {
+      throw new Error('removeService() requires object as argument');
+    }
+
+    const serviceKeys = Object.keys(service);
+    serviceKeys.forEach((name) => {
+      const attrs = service[name];
+      this.unregister(attrs.path);
+    });
+  }
+
   bind(port: string, creds: ServerCredentials): void {
     throw new Error('Not implemented. Use bindAsync() instead');
   }
