@@ -202,7 +202,7 @@ describe('Server', () => {
       });
     });
 
-    it('fails if the server has been started', done => {
+    it('succeeds after server has been started', done => {
       const server = new Server();
 
       server.bindAsync(
@@ -211,12 +211,128 @@ describe('Server', () => {
         (err, port) => {
           assert.ifError(err);
           server.start();
-          assert.throws(() => {
+          assert.doesNotThrow(() => {
             server.addService(mathServiceAttrs, dummyImpls);
-          }, /Can't add a service to a started server\./);
+          });
           server.tryShutdown(done);
         }
       );
+    });
+  });
+
+  describe('removeService', () => {
+    let server: Server;
+    let client: ServiceClient;
+
+    const mathProtoFile = path.join(__dirname, 'fixtures', 'math.proto');
+    const mathClient = (loadProtoFile(mathProtoFile).math as any).Math;
+    const mathServiceAttrs = mathClient.service;
+    const dummyImpls = { div() {}, divMany() {}, fib() {}, sum() {} };
+
+    beforeEach(done => {
+      server = new Server();
+      server.addService(mathServiceAttrs, dummyImpls);
+      server.bindAsync(
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert.ifError(err);
+          client = new mathClient(
+            `localhost:${port}`,
+            grpc.credentials.createInsecure()
+          );
+          server.start();
+          done();
+        }
+      );
+    });
+
+    afterEach(done => {
+      client.close();
+      server.tryShutdown(done);
+    });
+
+    it('succeeds with a single service by removing all method handlers', done => {
+      server.removeService(mathServiceAttrs);
+
+      let methodsVerifiedCount = 0;
+      const methodsToVerify = Object.keys(mathServiceAttrs);
+
+      const assertFailsWithUnimplementedError = (error: ServiceError) => {
+        assert(error);
+        assert.strictEqual(error.code, grpc.status.UNIMPLEMENTED);
+        methodsVerifiedCount++;
+        if (methodsVerifiedCount === methodsToVerify.length) {
+          done();
+        }
+      };
+
+      methodsToVerify.forEach((method) => {
+        const call = client[method]({}, assertFailsWithUnimplementedError); // for unary
+        call.on('error', assertFailsWithUnimplementedError); // for streamed
+      });
+    });
+
+    it('fails for non-object service definition argument', () => {
+      assert.throws(() => {
+          server.removeService('upsie' as any)
+        }, /removeService.*requires object as argument/
+      );
+    });
+  });
+
+  describe('unregister', () => {
+
+    let server: Server;
+    let client: ServiceClient;
+
+    const mathProtoFile = path.join(__dirname, 'fixtures', 'math.proto');
+    const mathClient = (loadProtoFile(mathProtoFile).math as any).Math;
+    const mathServiceAttrs = mathClient.service;
+
+    beforeEach(done => {
+      server = new Server();
+      server.addService(mathServiceAttrs, {
+        div(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
+          callback(null, {quotient: '42'});
+        },
+      });
+      server.bindAsync(
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert.ifError(err);
+          client = new mathClient(
+            `localhost:${port}`,
+            grpc.credentials.createInsecure()
+          );
+          server.start();
+          done();
+        }
+      );
+    });
+
+    afterEach(done => {
+      client.close();
+      server.tryShutdown(done);
+    });
+
+    it('removes handler by name and returns true', done => {
+      const name = mathServiceAttrs['Div'].path;
+      assert.strictEqual(server.unregister(name), true, 'Server#unregister should return true on success');
+
+      client.div(
+        { divisor: 4, dividend: 3 },
+        (error: ServiceError, response: any) => {
+          assert(error);
+          assert.strictEqual(error.code, grpc.status.UNIMPLEMENTED);
+          done();
+        }
+      );
+    });
+
+    it('returns false for unknown handler', () => {
+      assert.strictEqual(server.unregister('noOneHere'), false, 'Server#unregister should return false on failure');
     });
   });
 
