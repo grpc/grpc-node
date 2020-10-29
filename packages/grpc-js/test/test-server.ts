@@ -202,7 +202,7 @@ describe('Server', () => {
       });
     });
 
-    it('fails if the server has been started', done => {
+    it('succeeds after server has been started', done => {
       const server = new Server();
 
       server.bindAsync(
@@ -211,9 +211,9 @@ describe('Server', () => {
         (err, port) => {
           assert.ifError(err);
           server.start();
-          assert.throws(() => {
+          assert.doesNotThrow(() => {
             server.addService(mathServiceAttrs, dummyImpls);
-          }, /Can't add a service to a started server\./);
+          });
           server.tryShutdown(done);
         }
       );

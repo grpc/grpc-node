@@ -148,10 +148,6 @@ export class Server {
     service: ServiceDefinition,
     implementation: UntypedServiceImplementation
   ): void {
-    if (this.started === true) {
-      throw new Error("Can't add a service to a started server.");
-    }
-
     if (
       service === null ||
       typeof service !== 'object' ||
@@ -637,7 +633,7 @@ async function handleUnary<RequestType, ResponseType>(
   if (request === undefined || call.cancelled) {
     return;
   }
-  
+
   const emitter = new ServerUnaryCallImpl<RequestType, ResponseType>(
     call,
     metadata,
