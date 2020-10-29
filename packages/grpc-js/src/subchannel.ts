@@ -180,6 +180,10 @@ export class Subchannel {
    * Timer reference tracking when the most recent ping will be considered lost
    */
   private keepaliveTimeoutId: NodeJS.Timer;
+  /**
+   * Indicates whether keepalive pings should be sent without any active calls
+   */
+  private keepaliveWithoutCalls: boolean = false;
 
   /**
    * Tracks calls with references to this subchannel
@@ -225,6 +229,11 @@ export class Subchannel {
     }
     if ('grpc.keepalive_timeout_ms' in options) {
       this.keepaliveTimeoutMs = options['grpc.keepalive_timeout_ms']!;
+    }
+    if ('grpc.keepalive_permit_without_calls' in options) {
+      this.keepaliveWithoutCalls = options['grpc.keepalive_permit_without_calls'] === 1;
+    } else {
+      this.keepaliveWithoutCalls = false;
     }
     this.keepaliveIntervalId = setTimeout(() => {}, 0);
     clearTimeout(this.keepaliveIntervalId);
@@ -532,6 +541,9 @@ export class Subchannel {
             listener();
           }
         });
+        if (this.keepaliveWithoutCalls) {
+          this.startKeepalivePings();
+        }
         break;
       case ConnectivityState.CONNECTING:
         this.startBackoff();
@@ -602,7 +614,9 @@ export class Subchannel {
       if (this.session) {
         this.session.ref();
       }
-      this.startKeepalivePings();
+      if (!this.keepaliveWithoutCalls) {
+        this.startKeepalivePings();
+      }
     }
     this.callRefcount += 1;
   }
@@ -620,7 +634,9 @@ export class Subchannel {
       if (this.session) {
         this.session.unref();
       }
-      this.stopKeepalivePings();
+      if (!this.keepaliveWithoutCalls) {
+        this.stopKeepalivePings();
+      }
       this.checkBothRefcounts();
     }
   }
