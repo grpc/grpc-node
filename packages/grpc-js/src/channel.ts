@@ -28,7 +28,7 @@ import { SubchannelPool, getSubchannelPool } from './subchannel-pool';
 import { ChannelControlHelper } from './load-balancer';
 import { UnavailablePicker, Picker, PickResultType } from './picker';
 import { Metadata } from './metadata';
-import { Status, LogVerbosity } from './constants';
+import { Status, LogVerbosity, Propagate } from './constants';
 import { FilterStackFactory } from './filter-stack';
 import { CallCredentialsFilterFactory } from './call-credentials-filter';
 import { DeadlineFilterFactory } from './deadline-filter';
@@ -39,6 +39,8 @@ import { SubchannelAddress } from './subchannel';
 import { MaxMessageSizeFilterFactory } from './max-message-size-filter';
 import { mapProxyName } from './http_proxy';
 import { GrpcUri, parseUri, uriToString } from './uri-parser';
+import { ServerSurfaceCall } from './server-call';
+import { SurfaceCall } from './call';
 
 export enum ConnectivityState {
   CONNECTING,
@@ -118,7 +120,7 @@ export interface Channel {
     method: string,
     deadline: Deadline,
     host: string | null | undefined,
-    parentCall: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    parentCall: ServerSurfaceCall | null,
     propagateFlags: number | null | undefined
   ): Call;
 }
@@ -509,7 +511,7 @@ export class ChannelImplementation implements Channel {
     method: string,
     deadline: Deadline,
     host: string | null | undefined,
-    parentCall: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    parentCall: ServerSurfaceCall | null,
     propagateFlags: number | null | undefined
   ): Call {
     if (typeof method !== 'string') {
@@ -537,9 +539,9 @@ export class ChannelImplementation implements Channel {
     );
     const finalOptions: CallStreamOptions = {
       deadline: deadline,
-      flags: propagateFlags || 0,
-      host: host || this.defaultAuthority,
-      parentCall: parentCall || null,
+      flags: propagateFlags ?? Propagate.DEFAULTS,
+      host: host ?? this.defaultAuthority,
+      parentCall: parentCall,
     };
     const stream: Http2CallStream = new Http2CallStream(
       method,

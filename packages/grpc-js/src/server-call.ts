@@ -19,7 +19,7 @@ import { EventEmitter } from 'events';
 import * as http2 from 'http2';
 import { Duplex, Readable, Writable } from 'stream';
 
-import { StatusObject } from './call-stream';
+import { Deadline, StatusObject } from './call-stream';
 import {
   Status,
   DEFAULT_MAX_SEND_MESSAGE_LENGTH,
@@ -78,6 +78,7 @@ export type ServerSurfaceCall = {
   readonly metadata: Metadata;
   getPeer(): string;
   sendMetadata(responseMetadata: Metadata): void;
+  getDeadline(): Deadline;
 } & EventEmitter;
 
 export type ServerUnaryCall<RequestType, ResponseType> = ServerSurfaceCall & {
@@ -120,6 +121,10 @@ export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
   sendMetadata(responseMetadata: Metadata): void {
     this.call.sendMetadata(responseMetadata);
   }
+
+  getDeadline(): Deadline {
+    return this.call.getDeadline();
+  }
 }
 
 export class ServerReadableStreamImpl<RequestType, ResponseType>
@@ -153,6 +158,10 @@ export class ServerReadableStreamImpl<RequestType, ResponseType>
   sendMetadata(responseMetadata: Metadata): void {
     this.call.sendMetadata(responseMetadata);
   }
+
+  getDeadline(): Deadline {
+    return this.call.getDeadline();
+  }
 }
 
 export class ServerWritableStreamImpl<RequestType, ResponseType>
@@ -184,6 +193,10 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
 
   sendMetadata(responseMetadata: Metadata): void {
     this.call.sendMetadata(responseMetadata);
+  }
+
+  getDeadline(): Deadline {
+    return this.call.getDeadline();
   }
 
   _write(
@@ -255,6 +268,10 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
 
   sendMetadata(responseMetadata: Metadata): void {
     this.call.sendMetadata(responseMetadata);
+  }
+
+  getDeadline(): Deadline {
+    return this.call.getDeadline();
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -357,7 +374,8 @@ export class Http2ServerCallStream<
   ResponseType
 > extends EventEmitter {
   cancelled = false;
-  deadline: NodeJS.Timer = setTimeout(() => {}, 0);
+  deadlineTimer: NodeJS.Timer = setTimeout(() => {}, 0);
+  private deadline: Deadline = Infinity;
   private wantTrailers = false;
   private metadataSent = false;
   private canPush = false;
@@ -405,7 +423,7 @@ export class Http2ServerCallStream<
     }
 
     // Clear noop timer
-    clearTimeout(this.deadline);
+    clearTimeout(this.deadlineTimer);
   }
 
   private checkCancelled(): boolean {
@@ -452,7 +470,9 @@ export class Http2ServerCallStream<
 
       const timeout = (+match[1] * deadlineUnitsToMs[match[2]]) | 0;
 
-      this.deadline = setTimeout(handleExpiredDeadline, timeout, this);
+      const now = new Date();
+      this.deadline = now.setMilliseconds(now.getMilliseconds() + timeout);
+      this.deadlineTimer = setTimeout(handleExpiredDeadline, timeout, this);
       metadata.remove(GRPC_TIMEOUT_HEADER);
     }
 
@@ -566,7 +586,7 @@ export class Http2ServerCallStream<
         statusObj.details
     );
 
-    clearTimeout(this.deadline);
+    clearTimeout(this.deadlineTimer);
 
     if (!this.wantTrailers) {
       this.wantTrailers = true;
@@ -778,6 +798,10 @@ export class Http2ServerCallStream<
     } else {
       return 'unknown';
     }
+  }
+
+  getDeadline(): Deadline {
+    return this.deadline;
   }
 }
 

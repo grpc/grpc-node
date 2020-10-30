@@ -18,7 +18,7 @@
 import * as http2 from 'http2';
 
 import { CallCredentials } from './call-credentials';
-import { Status } from './constants';
+import { Propagate, Status } from './constants';
 import { Filter, FilterFactory } from './filter';
 import { FilterStackFactory, FilterStack } from './filter-stack';
 import { Metadata } from './metadata';
@@ -27,6 +27,7 @@ import { ChannelImplementation } from './channel';
 import { Subchannel } from './subchannel';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
+import { ServerSurfaceCall } from './server-call';
 
 const TRACER_NAME = 'call_stream';
 
@@ -42,7 +43,7 @@ export interface CallStreamOptions {
   deadline: Deadline;
   flags: number;
   host: string;
-  parentCall: Call | null;
+  parentCall: ServerSurfaceCall | null;
 }
 
 export type PartialCallStreamOptions = Partial<CallStreamOptions>;
@@ -218,6 +219,11 @@ export class Http2CallStream implements Call {
         metadata: new Metadata(),
       });
     };
+    if (this.options.parentCall && this.options.flags & Propagate.CANCELLATION) {
+      this.options.parentCall.on('cancelled', () => {
+        this.cancelWithStatus(Status.CANCELLED, 'Cancelled by parent call');
+      });
+    }
   }
 
   private outputStatus() {
@@ -623,7 +629,11 @@ export class Http2CallStream implements Call {
   }
 
   getDeadline(): Deadline {
-    return this.options.deadline;
+    if (this.options.parentCall && this.options.flags & Propagate.DEADLINE) {
+      return this.options.parentCall.getDeadline();
+    } else {
+      return this.options.deadline;
+    }
   }
 
   getCredentials(): CallCredentials {
