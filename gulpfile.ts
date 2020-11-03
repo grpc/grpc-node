@@ -34,7 +34,7 @@ const setupPureJSInterop = gulp.series(jsCore.install, protobuf.install, interna
 
 const clean = gulp.series(jsCore.clean, protobuf.clean, jsXds.clean);
 
-const cleanAll = gulp.series(jsCore.cleanAll, internalTest.cleanAll, protobuf.cleanAll, jsXds.cleanAll);
+const cleanAll = gulp.series(jsXds.cleanAll, jsCore.cleanAll, internalTest.cleanAll, protobuf.cleanAll);
 
 const nativeTestOnly = gulp.parallel(healthCheck.test);
 

@@ -16,7 +16,7 @@
  */
 
 import { connectivityState as ConnectivityState, status as Status, Metadata, logVerbosity as LogVerbosity, experimental, ChannelOptions } from '@grpc/grpc-js';
-import { validateLoadBalancingConfig } from '@grpc/grpc-js/build/src/experimental';
+import validateLoadBalancingConfig = experimental.validateLoadBalancingConfig;
 import LoadBalancer = experimental.LoadBalancer;
 import ChannelControlHelper = experimental.ChannelControlHelper;
 import getFirstUsableConfig = experimental.getFirstUsableConfig;
