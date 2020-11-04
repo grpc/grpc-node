@@ -10,7 +10,7 @@
 
 ## LATEST VERSIONS SUPPORTED
 
- - Node: 15
+ - Node: 14
  - Electron: 10.1
 
 ## INSTALLATION
