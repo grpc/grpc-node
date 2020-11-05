@@ -72,7 +72,7 @@
       '-std=c99'
     ],
     'cflags_cc': [
-      '-std=c++1y'
+      '-std=c++14'
     ],
     'include_dirs': [
       'deps/grpc',
@@ -91,7 +91,7 @@
       'GPR_BACKWARDS_COMPATIBILITY_MODE',
       'GRPC_ARES=1',
       'GRPC_UV',
-      'GRPC_NODE_VERSION="1.24.2"',
+      'GRPC_NODE_VERSION="1.24.4"',
       'CARES_STATICLIB',
       'CARES_SYMBOL_HIDING'
     ],
