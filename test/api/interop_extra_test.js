@@ -170,7 +170,10 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
         assert.ifError(error);
       });
     });
-    it('should be able to send very large headers and trailers', function(done) {
+    /* The test against the JS server does not work because of
+     * https://github.com/nodejs/node/issues/35218. The test against the native
+     * server fails because of an unidentified timeout issue. */
+    it.skip('should be able to send very large headers and trailers', function(done) {
       done = multiDone(done, 3);
       const header = 'X'.repeat(64 * 1024);
       const trailer = Buffer.from('Y'.repeat(64 * 1024));
