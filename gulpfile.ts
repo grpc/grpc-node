@@ -18,28 +18,29 @@
 import * as gulp from 'gulp';
 import * as healthCheck from './packages/grpc-health-check/gulpfile';
 import * as jsCore from './packages/grpc-js/gulpfile';
+import * as jsXds from './packages/grpc-js-xds/gulpfile';
 import * as protobuf from './packages/proto-loader/gulpfile';
 import * as internalTest from './test/gulpfile';
 
-const installAll = gulp.series(jsCore.install, healthCheck.install, protobuf.install, internalTest.install);
+const installAll = gulp.series(jsCore.install, healthCheck.install, protobuf.install, internalTest.install, jsXds.install);
 
 const lint = gulp.parallel(jsCore.lint);
 
-const build = gulp.series(jsCore.compile, protobuf.compile);
+const build = gulp.series(jsCore.compile, protobuf.compile, jsXds.compile);
 
 const setup = gulp.series(installAll);
 
 const setupPureJSInterop = gulp.series(jsCore.install, protobuf.install, internalTest.install);
 
-const clean = gulp.series(jsCore.clean, protobuf.clean);
+const clean = gulp.series(jsCore.clean, protobuf.clean, jsXds.clean);
 
-const cleanAll = gulp.series(jsCore.cleanAll, internalTest.cleanAll, protobuf.cleanAll);
+const cleanAll = gulp.series(jsXds.cleanAll, jsCore.cleanAll, internalTest.cleanAll, protobuf.cleanAll);
 
 const nativeTestOnly = gulp.parallel(healthCheck.test);
 
 const nativeTest = gulp.series(build, nativeTestOnly);
 
-const testOnly = gulp.parallel(jsCore.test, nativeTestOnly, protobuf.test);
+const testOnly = gulp.parallel(jsCore.test, nativeTestOnly, protobuf.test, jsXds.test);
 
 const test = gulp.series(build, testOnly, internalTest.test);
 

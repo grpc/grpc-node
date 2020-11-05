@@ -26,8 +26,8 @@
  * runtime */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as lbconfig from './load-balancing-config';
 import * as os from 'os';
+import { LoadBalancingConfig, validateLoadBalancingConfig } from './load-balancer';
 
 export interface MethodConfigName {
   service: string;
@@ -44,7 +44,7 @@ export interface MethodConfig {
 
 export interface ServiceConfig {
   loadBalancingPolicy?: string;
-  loadBalancingConfig: lbconfig.LoadBalancingConfig[];
+  loadBalancingConfig: LoadBalancingConfig[];
   methodConfig: MethodConfig[];
 }
 
@@ -139,7 +139,7 @@ export function validateServiceConfig(obj: any): ServiceConfig {
   if ('loadBalancingConfig' in obj) {
     if (Array.isArray(obj.loadBalancingConfig)) {
       for (const config of obj.loadBalancingConfig) {
-        result.loadBalancingConfig.push(lbconfig.validateConfig(config));
+        result.loadBalancingConfig.push(validateLoadBalancingConfig(config));
       }
     } else {
       throw new Error('Invalid service config: invalid loadBalancingConfig');

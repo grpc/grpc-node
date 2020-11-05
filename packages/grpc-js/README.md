@@ -42,3 +42,4 @@ The public API of this library follows semantic versioning, with some caveats:
 - Some methods are prefixed with an underscore. These methods are internal and should not be considered part of the public API.
 - The class `Call` is only exposed due to limitations of TypeScript. It should not be considered part of the public API.
 - In general, any API that is exposed by this library but is not exposed by the `grpc` library is likely an error and should not be considered part of the public API.
+- The `grpc.experimental` namespace contains APIs that have not stabilized. Any API in that namespace may break in any minor version update.

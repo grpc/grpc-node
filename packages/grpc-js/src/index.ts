@@ -246,6 +246,11 @@ export {
 
 export { GrpcObject } from './make-client';
 
+export { ChannelOptions } from './channel-options';
+
+import * as experimental from './experimental';
+export { experimental };
+
 import * as resolver from './resolver';
 import * as load_balancer from './load-balancer';
 

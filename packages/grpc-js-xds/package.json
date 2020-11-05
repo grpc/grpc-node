@@ -1,0 +1,53 @@
+{
+  "name": "@grpc/grpc-js-xds",
+  "version": "1.0.0",
+  "description": "Plugin for @grpc/grpc-js. Adds the xds:// URL scheme and associated features.",
+  "main": "build/src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check": "gts check",
+    "clean": "gts clean",
+    "compile": "tsc",
+    "fix": "gts fix",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "posttest": "npm run check",
+    "generate-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --json --includeComments --includeDirs deps/envoy-api/ deps/udpa/ deps/googleapis/ deps/protoc-gen-validate/ -O src/generated/ --grpcLib @grpc/grpc-js envoy/service/discovery/v2/ads.proto envoy/service/load_stats/v2/lrs.proto envoy/api/v2/listener.proto envoy/api/v2/route.proto envoy/api/v2/cluster.proto envoy/api/v2/endpoint.proto envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.proto",
+    "generate-interop-types": "proto-loader-gen-types --keep-case --longs String --enums String --defaults --oneofs --json --includeComments --includeDirs proto/ -O interop/generated --grpcLib @grpc/grpc-js grpc/testing/test.proto"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/grpc/grpc-node.git"
+  },
+  "keywords": [
+    "grpc"
+  ],
+  "author": {
+    "name": "Google Inc."
+  },
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/grpc/grpc-node/issues"
+  },
+  "homepage": "https://github.com/grpc/grpc-node#readme",
+  "devDependencies": {
+    "@grpc/grpc-js": "file:../grpc-js",
+    "gts": "^2.0.2",
+    "typescript": "^3.8.3",
+    "@types/gulp": "^4.0.6",
+    "@types/gulp-mocha": "0.0.32",
+    "@types/mocha": "^5.2.6",
+    "@types/node": "^13.11.1",
+    "@types/yargs": "^15.0.5",
+    "yargs": "^15.4.1"
+  },
+  "dependencies": {
+    "@grpc/proto-loader": "^0.6.0-pre14"
+  },
+  "peerDependencies": {
+    "@grpc/grpc-js": "~1.2.0"
+  },
+  "engines": {
+    "node": ">=10.10.0"
+  }
+}

@@ -19,6 +19,7 @@ import {
   LoadBalancer,
   ChannelControlHelper,
   registerLoadBalancerType,
+  LoadBalancingConfig
 } from './load-balancer';
 import { ConnectivityState } from './channel';
 import {
@@ -29,7 +30,6 @@ import {
   PickResultType,
   UnavailablePicker,
 } from './picker';
-import { LoadBalancingConfig } from './load-balancing-config';
 import {
   Subchannel,
   ConnectivityStateListener,
@@ -46,6 +46,24 @@ function trace(text: string): void {
 }
 
 const TYPE_NAME = 'round_robin';
+
+class RoundRobinLoadBalancingConfig implements LoadBalancingConfig {
+  getLoadBalancerName(): string {
+    return TYPE_NAME;
+  }
+
+  constructor() {}
+
+  toJsonObject(): object {
+    return {
+      [TYPE_NAME]: {}
+    };
+  }
+
+  static createFromJson(obj: any) {
+    return new RoundRobinLoadBalancingConfig();
+  }
+}
 
 class RoundRobinPicker implements Picker {
   constructor(
@@ -231,5 +249,5 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
 }
 
 export function setup() {
-  registerLoadBalancerType(TYPE_NAME, RoundRobinLoadBalancer);
+  registerLoadBalancerType(TYPE_NAME, RoundRobinLoadBalancer, RoundRobinLoadBalancingConfig);
 }

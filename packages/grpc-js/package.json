@@ -15,6 +15,7 @@
   "types": "build/src/index.d.ts",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@grpc/proto-loader": "^0.5.5",
     "@types/gulp": "^4.0.6",
     "@types/gulp-mocha": "0.0.32",
     "@types/lodash": "^4.14.108",
@@ -47,8 +48,6 @@
     "clean": "node -e 'require(\"rimraf\")(\"./build\", () => {})'",
     "compile": "tsc -p .",
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
-    "generate-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --json --includeComments --includeDirs deps/envoy-api/ deps/udpa/ deps/googleapis/ deps/protoc-gen-validate/ -O src/generated/ --grpcLib ../index envoy/service/discovery/v2/ads.proto envoy/service/load_stats/v2/lrs.proto envoy/api/v2/listener.proto envoy/api/v2/route.proto envoy/api/v2/cluster.proto envoy/api/v2/endpoint.proto envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.proto",
-    "generate-interop-types": "proto-loader-gen-types --keep-case --longs String --enums String --defaults --oneofs --json --includeComments --includeDirs proto/ -O interop/generated --grpcLib ../../src grpc/testing/test.proto",
     "lint": "npm run check",
     "prepare": "npm run compile",
     "test": "gulp test",
@@ -58,9 +57,8 @@
     "posttest": "npm run check"
   },
   "dependencies": {
-    "@grpc/proto-loader": "^0.6.0-pre14",
     "@types/node": "^12.12.47",
-    "google-auth-library": "^5.10.1",
+    "google-auth-library": "^6.1.1",
     "semver": "^6.2.0"
   },
   "files": [
