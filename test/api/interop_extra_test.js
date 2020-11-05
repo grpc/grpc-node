@@ -76,13 +76,15 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
           const options = {
             'grpc.ssl_target_name_override': 'foo.test.google.fr',
             'grpc.default_authority': 'foo.test.google.fr',
-            'grpc.max_send_message_length': 4*1024*1024
+            'grpc.max_send_message_length': 4*1024*1024,
+            'grpc.max_metadata_size': 4*1024*1024
           };
           client = new testProto.TestService(`localhost:${port}`, creds, options);
           done();
         }
       }, {
-        'grpc.max_receive_message_length': -1
+        'grpc.max_receive_message_length': -1,
+        'grpc.max_metadata_size': 4*1024*1024
       });
     });
     after(function() {
@@ -166,6 +168,32 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
       });
       call.on('error', (error) => {
         assert.ifError(error);
+      });
+    });
+    /* The test against the JS server does not work because of
+     * https://github.com/nodejs/node/issues/35218. The test against the native
+     * server fails because of an unidentified timeout issue. */
+    it.skip('should be able to send very large headers and trailers', function(done) {
+      done = multiDone(done, 3);
+      const header = 'X'.repeat(64 * 1024);
+      const trailer = Buffer.from('Y'.repeat(64 * 1024));
+      const metadata = new grpc.Metadata();
+      metadata.set('x-grpc-test-echo-initial', header);
+      metadata.set('x-grpc-test-echo-trailing-bin', trailer);
+      const call = client.unaryCall({}, metadata, (error, result) => {
+        assert.ifError(error);
+        done();
+      });
+      call.on('metadata', (metadata) => {
+        assert.deepStrictEqual(metadata.get('x-grpc-test-echo-initial'),
+                               [header]);
+        done();
+      });
+      call.on('status', (status) => {
+        var echo_trailer = status.metadata.get('x-grpc-test-echo-trailing-bin');
+        assert(echo_trailer.length === 1);
+        assert.strictEqual(echo_trailer[0].toString('ascii'), 'Y'.repeat(64 * 1024));
+        done();
       });
     });
     describe('max message size', function() {

@@ -257,7 +257,9 @@ export class Server {
       throw new Error(`Could not get a default scheme for port "${port}"`);
     }
 
-    const serverOptions: http2.ServerOptions = {};
+    const serverOptions: http2.ServerOptions = {
+      maxSendHeaderBlockLength: Number.MAX_SAFE_INTEGER
+    };
     if ('grpc.max_concurrent_streams' in this.options) {
       serverOptions.settings = {
         maxConcurrentStreams: this.options['grpc.max_concurrent_streams'],
