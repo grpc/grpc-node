@@ -41,10 +41,10 @@ import { mapProxyName } from './http_proxy';
 import { GrpcUri, parseUri, uriToString } from './uri-parser';
 
 export enum ConnectivityState {
+  IDLE,
   CONNECTING,
   READY,
   TRANSIENT_FAILURE,
-  IDLE,
   SHUTDOWN,
 }
 
