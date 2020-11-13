@@ -1018,13 +1018,11 @@ export class XdsClient {
 
     this.lrsBackoff.runOnce();
     this.lrsCall = this.lrsClient.streamLoadStats();
-    this.lrsCall.on('metadata', () => {
+    this.lrsCall.on('data', (message: LoadStatsResponse__Output) => {
       /* Once we get any response from the server, we assume that the stream is
        * in a good state, so we can reset the backoff timer. */
       this.lrsBackoff.stop();
       this.lrsBackoff.reset();
-    });
-    this.lrsCall.on('data', (message: LoadStatsResponse__Output) => {
       if (
         message.load_reporting_interval?.seconds !==
           this.latestLrsSettings?.load_reporting_interval?.seconds ||
