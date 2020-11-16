@@ -269,7 +269,7 @@ function createDefinition(
   }
 }
 
-function createPackageDefinition(
+export function createPackageDefinition(
   root: Protobuf.Root,
   options: Options
 ): PackageDefinition {
