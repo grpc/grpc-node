@@ -630,7 +630,11 @@ export class Http2CallStream implements Call {
 
   getDeadline(): Deadline {
     if (this.options.parentCall && this.options.flags & Propagate.DEADLINE) {
-      return this.options.parentCall.getDeadline();
+      const parentDeadline = this.options.parentCall.getDeadline();
+      const selfDeadline = this.options.deadline;
+      const parentDeadlineMsecs = parentDeadline instanceof Date ? parentDeadline.getTime() : parentDeadline;
+      const selfDeadlineMsecs = selfDeadline instanceof Date ? selfDeadline.getTime() : selfDeadline;
+      return Math.min(parentDeadlineMsecs, selfDeadlineMsecs);
     } else {
       return this.options.deadline;
     }
