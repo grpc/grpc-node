@@ -204,7 +204,14 @@ export function loadPackageDefinition(
     if (Object.prototype.hasOwnProperty.call(packageDef, serviceFqn)) {
       const service = packageDef[serviceFqn];
       const nameComponents = serviceFqn.split('.');
-      if (nameComponents.some(comp => comp === '__proto__' || comp === 'constructor' || comp === 'prototype')) {
+      if (
+        nameComponents.some(
+          (comp) =>
+            comp === 'prototype' ||
+            comp === 'constructor' ||
+            comp === '__proto__'
+        )
+      ) {
         continue;
       }
       const serviceName = nameComponents[nameComponents.length - 1];
