@@ -99,4 +99,9 @@ describe('Descriptor types', () => {
     // This will throw if the well known protos are not available.
     proto_loader.loadSync(`${TEST_PROTO_DIR}/well_known.proto`);
   });
+
+  it('Can load binary-encoded proto file descriptor sets', () => {
+    // This will throw if the well known protos are not available.
+    proto_loader.loadFileDescriptorSetFile(`${TEST_PROTO_DIR}/rpc.desc`);
+  });
 });

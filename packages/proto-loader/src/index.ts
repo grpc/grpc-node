@@ -30,6 +30,17 @@ declare module 'protobufjs' {
       descriptor.IDescriptorProto;
   }
 
+  interface RootConstructor {
+    new (options?: Options): Root;
+    fromDescriptor(
+      descriptorSet:
+        | descriptor.IFileDescriptorSet
+        | Protobuf.Reader
+        | Uint8Array
+    ): Root;
+    fromJSON(json: Protobuf.INamespace, root?: Root): Root;
+  }
+
   interface Root {
     toDescriptor(
       protoVersion: string
@@ -366,6 +377,38 @@ export function loadSync(
   const loadedRoot = root.loadSync(filename, options);
   loadedRoot.resolveAll();
   return createPackageDefinition(root, options!);
+}
+
+export async function loadFileDescriptorSet(
+  descriptorSet: Protobuf.Message<descriptor.IFileDescriptorSet> &
+    descriptor.IFileDescriptorSet,
+  options?: Options
+): Promise<PackageDefinition> {
+  options = options || {};
+  const root = (Protobuf.Root as Protobuf.RootConstructor).fromDescriptor(
+    descriptorSet
+  );
+  root.resolveAll();
+  return createPackageDefinition(root, options);
+}
+
+export function loadFileDescriptorSetFile(
+  filename: string,
+  options?: Options
+): Promise<PackageDefinition> {
+  return new Promise((resolve, reject) => {
+    fs.readFile(filename, (err, data) => {
+      if (err) {
+        return reject(err);
+      }
+
+      const descriptorSet = descriptor.FileDescriptorSet.decode(
+        data
+      ) as Protobuf.Message<descriptor.IFileDescriptorSet> &
+        descriptor.IFileDescriptorSet;
+      return resolve(loadFileDescriptorSet(descriptorSet, options));
+    });
+  });
 }
 
 // Load Google's well-known proto files that aren't exposed by Protobuf.js.

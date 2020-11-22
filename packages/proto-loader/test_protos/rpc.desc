@@ -1,0 +1,11 @@
+
+˜
+test_protos/rpc.proto"
+	MyRequest
+path (	Rpath"$
+
+MyResponse
+status (Rstatus20
+	MyService#
+MyMethod
+.MyRequest.MyResponsebproto3
