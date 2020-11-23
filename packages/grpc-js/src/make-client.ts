@@ -48,14 +48,14 @@ export interface ServerMethodDefinition<RequestType, ResponseType> {
 
 export interface MethodDefinition<RequestType, ResponseType>
   extends ClientMethodDefinition<RequestType, ResponseType>,
-  ServerMethodDefinition<RequestType, ResponseType> { }
+    ServerMethodDefinition<RequestType, ResponseType> {}
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type ServiceDefinition<
   ImplementationType = UntypedServiceImplementation
-  > = {
-    readonly [index in keyof ImplementationType]: MethodDefinition<any, any>;
-  };
+> = {
+  readonly [index in keyof ImplementationType]: MethodDefinition<any, any>;
+};
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export interface ProtobufTypeDefinition {
@@ -85,7 +85,7 @@ export interface ServiceClient extends Client {
 }
 
 export interface ServiceClientConstructor {
-  new(
+  new (
     address: string,
     credentials: ChannelCredentials,
     options?: Partial<ChannelOptions>
@@ -123,9 +123,9 @@ export function makeClientConstructor(
 
   Object.keys(methods).forEach((name) => {
     if (
-      name === 'prototype' ||
+      name === '__proto__' ||
       name === 'constructor' ||
-      name === '__proto__'
+      name === 'prototype' 
     ) {
       return;
     }
@@ -159,7 +159,7 @@ export function makeClientConstructor(
     ServiceClientImpl.prototype[name] = methodFunc;
     // Associate all provided attributes with the method
     Object.assign(ServiceClientImpl.prototype[name], attrs);
-    if (attrs.originalName && attrs.originalName !== '__proto__' && attrs.originalName !== 'constructor' && attrs.originalName !== 'prototype') {
+    if (attrs.originalName && attrs.originalName !== '__proto__' && attrs.originalName !== 'prototype' && attrs.originalName !== 'constructor') {
       ServiceClientImpl.prototype[attrs.originalName] =
         ServiceClientImpl.prototype[name];
     }
@@ -184,9 +184,9 @@ function partial(
 
 export interface GrpcObject {
   [index: string]:
-  | GrpcObject
-  | ServiceClientConstructor
-  | ProtobufTypeDefinition;
+    | GrpcObject
+    | ServiceClientConstructor
+    | ProtobufTypeDefinition;
 }
 
 function isProtobufTypeDefinition(
@@ -211,9 +211,9 @@ export function loadPackageDefinition(
       if (
         nameComponents.some(
           (comp) =>
-            comp === 'prototype' ||
+            comp === '__proto__' ||
             comp === 'constructor' ||
-            comp === '__proto__'
+            comp === 'prototype'
         )
       ) {
         continue;
