@@ -391,12 +391,12 @@ export function loadFileDescriptorSet(
   options = options || {};
 
   let decodedDescriptorSet: DecodedDescriptorSet;
-  if (typeof descriptorSet === 'object') {
-    decodedDescriptorSet = descriptor.FileDescriptorSet.fromObject(
+  if (Buffer.isBuffer(descriptorSet)) {
+    decodedDescriptorSet = descriptor.FileDescriptorSet.decode(
       descriptorSet
     ) as DecodedDescriptorSet;
   } else {
-    decodedDescriptorSet = descriptor.FileDescriptorSet.decode(
+    decodedDescriptorSet = descriptor.FileDescriptorSet.fromObject(
       descriptorSet
     ) as DecodedDescriptorSet;
   }
@@ -418,7 +418,12 @@ export function loadFileDescriptorSetFile(
         return reject(err);
       }
 
-      return resolve(loadFileDescriptorSet(data, options));
+      try {
+        const jsonData = JSON.parse(data.toString());
+        return resolve(loadFileDescriptorSet(jsonData, options));
+      } catch (e) {
+        return resolve(loadFileDescriptorSet(data, options));
+      }
     });
   });
 }

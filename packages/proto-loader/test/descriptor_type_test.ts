@@ -103,7 +103,12 @@ describe('Descriptor types', () => {
 
   it('Can load binary-encoded proto file descriptor sets', () => {
     // This will throw if the rpc descriptor cannot be decoded
-    proto_loader.loadFileDescriptorSetFile(`${TEST_PROTO_DIR}/rpc.desc`);
+    proto_loader.loadFileDescriptorSetFile(`${TEST_PROTO_DIR}/rpc.desc.bin`);
+  });
+
+  it('Can load json file descriptor sets', () => {
+    // This will throw if the rpc descriptor JSON cannot be decoded
+    proto_loader.loadFileDescriptorSetFile(`${TEST_PROTO_DIR}/rpc.desc.json`);
   });
 
   it('Can parse plain file descriptor set objects', () => {
