@@ -16,6 +16,7 @@
  */
 
 import * as assert from 'assert';
+import { rpcFileDescriptorSet } from '../test_protos/rpc.desc';
 
 import * as proto_loader from '../src/index';
 
@@ -101,7 +102,12 @@ describe('Descriptor types', () => {
   });
 
   it('Can load binary-encoded proto file descriptor sets', () => {
-    // This will throw if the well known protos are not available.
+    // This will throw if the rpc descriptor cannot be decoded
     proto_loader.loadFileDescriptorSetFile(`${TEST_PROTO_DIR}/rpc.desc`);
+  });
+
+  it('Can parse plain file descriptor set objects', () => {
+    // This will throw if the file descriptor object cannot be parsed
+    proto_loader.loadFileDescriptorSet(rpcFileDescriptorSet);
   });
 });

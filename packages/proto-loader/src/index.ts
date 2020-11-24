@@ -379,14 +379,30 @@ export function loadSync(
   return createPackageDefinition(root, options!);
 }
 
-export async function loadFileDescriptorSet(
-  descriptorSet: Protobuf.Message<descriptor.IFileDescriptorSet> &
-    descriptor.IFileDescriptorSet,
+export function loadFileDescriptorSet(
+  descriptorSet:
+    | Buffer
+    | ReturnType<typeof descriptor.FileDescriptorSet.toObject>,
   options?: Options
-): Promise<PackageDefinition> {
+): PackageDefinition {
+  type DecodedDescriptorSet = Protobuf.Message<descriptor.IFileDescriptorSet> &
+    descriptor.IFileDescriptorSet;
+
   options = options || {};
+
+  let decodedDescriptorSet: DecodedDescriptorSet;
+  if (typeof descriptorSet === 'object') {
+    decodedDescriptorSet = descriptor.FileDescriptorSet.fromObject(
+      descriptorSet
+    ) as DecodedDescriptorSet;
+  } else {
+    decodedDescriptorSet = descriptor.FileDescriptorSet.decode(
+      descriptorSet
+    ) as DecodedDescriptorSet;
+  }
+
   const root = (Protobuf.Root as Protobuf.RootConstructor).fromDescriptor(
-    descriptorSet
+    decodedDescriptorSet
   );
   root.resolveAll();
   return createPackageDefinition(root, options);
@@ -402,11 +418,7 @@ export function loadFileDescriptorSetFile(
         return reject(err);
       }
 
-      const descriptorSet = descriptor.FileDescriptorSet.decode(
-        data
-      ) as Protobuf.Message<descriptor.IFileDescriptorSet> &
-        descriptor.IFileDescriptorSet;
-      return resolve(loadFileDescriptorSet(descriptorSet, options));
+      return resolve(loadFileDescriptorSet(data, options));
     });
   });
 }
