@@ -419,11 +419,10 @@ export function loadFileDescriptorSetFile(
       }
 
       try {
-        const jsonData = JSON.parse(data.toString());
-        return resolve(loadFileDescriptorSet(jsonData, options));
-      } catch (e) {
-        return resolve(loadFileDescriptorSet(data, options));
-      }
+        data = JSON.parse(data.toString());
+      } catch (e) {}
+
+      return resolve(loadFileDescriptorSet(data, options));
     });
   });
 }
