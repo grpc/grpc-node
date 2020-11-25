@@ -394,6 +394,9 @@ describe('Name Resolver', () => {
         return [];
       }
 
+      destroy() {
+      }
+
       static getDefaultAuthority(target: GrpcUri): string {
         return 'other';
       }
