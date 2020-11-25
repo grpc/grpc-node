@@ -1,6 +1,6 @@
 {
   "name": "@grpc/grpc-js-xds",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Plugin for @grpc/grpc-js. Adds the xds:// URL scheme and associated features.",
   "main": "build/src/index.js",
   "scripts": {
@@ -32,13 +32,13 @@
   "homepage": "https://github.com/grpc/grpc-node#readme",
   "devDependencies": {
     "@grpc/grpc-js": "file:../grpc-js",
-    "gts": "^2.0.2",
-    "typescript": "^3.8.3",
     "@types/gulp": "^4.0.6",
     "@types/gulp-mocha": "0.0.32",
     "@types/mocha": "^5.2.6",
     "@types/node": "^13.11.1",
     "@types/yargs": "^15.0.5",
+    "gts": "^2.0.2",
+    "typescript": "^3.8.3",
     "yargs": "^15.4.1"
   },
   "dependencies": {
