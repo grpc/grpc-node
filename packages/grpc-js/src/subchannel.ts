@@ -28,7 +28,7 @@ import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { getProxiedConnection, ProxyConnectionResult } from './http_proxy';
 import * as net from 'net';
-import { GrpcUri, parseUri, splitHostPort } from './uri-parser';
+import { GrpcUri, parseUri, splitHostPort, uriToString } from './uri-parser';
 import { ConnectionOptions } from 'tls';
 import { FilterFactory, Filter } from './filter';
 
@@ -38,6 +38,10 @@ const TRACER_NAME = 'subchannel';
 
 function trace(text: string): void {
   logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
+}
+
+function refTrace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, 'subchannel_refcount', text);
 }
 
 const MIN_CONNECT_TIMEOUT_MS = 20000;
@@ -176,6 +180,10 @@ export class Subchannel {
    * Timer reference tracking when the most recent ping will be considered lost
    */
   private keepaliveTimeoutId: NodeJS.Timer;
+  /**
+   * Indicates whether keepalive pings should be sent without any active calls
+   */
+  private keepaliveWithoutCalls: boolean = false;
 
   /**
    * Tracks calls with references to this subchannel
@@ -222,6 +230,11 @@ export class Subchannel {
     if ('grpc.keepalive_timeout_ms' in options) {
       this.keepaliveTimeoutMs = options['grpc.keepalive_timeout_ms']!;
     }
+    if ('grpc.keepalive_permit_without_calls' in options) {
+      this.keepaliveWithoutCalls = options['grpc.keepalive_permit_without_calls'] === 1;
+    } else {
+      this.keepaliveWithoutCalls = false;
+    }
     this.keepaliveIntervalId = setTimeout(() => {}, 0);
     clearTimeout(this.keepaliveIntervalId);
     this.keepaliveTimeoutId = setTimeout(() => {}, 0);
@@ -263,6 +276,7 @@ export class Subchannel {
   }
 
   private sendPing() {
+    logging.trace(LogVerbosity.DEBUG, 'keepalive', 'Sending ping to ' + this.subchannelAddressString);
     this.keepaliveTimeoutId = setTimeout(() => {
       this.transitionToState([ConnectivityState.READY], ConnectivityState.IDLE);
     }, this.keepaliveTimeoutMs);
@@ -277,7 +291,8 @@ export class Subchannel {
     this.keepaliveIntervalId = setInterval(() => {
       this.sendPing();
     }, this.keepaliveTimeMs);
-    this.sendPing();
+    /* Don't send a ping immediately because whatever caused us to start
+     * sending pings should also involve some network activity. */
   }
 
   private stopKeepalivePings() {
@@ -291,6 +306,7 @@ export class Subchannel {
     );
     let connectionOptions: http2.SecureClientSessionOptions =
       this.credentials._getConnectionOptions() || {};
+    connectionOptions.maxSendHeaderBlockLength = Number.MAX_SAFE_INTEGER;
     let addressScheme = 'http://';
     if ('secureContext' in connectionOptions) {
       addressScheme = 'https://';
@@ -405,17 +421,17 @@ export class Subchannel {
             errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM &&
             opaqueData.equals(tooManyPingsData)
           ) {
-            logging.log(
-              LogVerbosity.ERROR,
-              `Connection to ${this.channelTarget} rejected by server because of excess pings`
-            );
             this.keepaliveTimeMs = Math.min(
               2 * this.keepaliveTimeMs,
               KEEPALIVE_MAX_TIME_MS
             );
+            logging.log(
+              LogVerbosity.ERROR,
+              `Connection to ${uriToString(this.channelTarget)} at ${this.subchannelAddressString} rejected by server because of excess pings. Increasing ping interval to ${this.keepaliveTimeMs} ms`
+            );
           }
           trace(
-            this.subchannelAddress +
+            this.subchannelAddressString +
               ' connection closed by GOAWAY with code ' +
               errorCode
           );
@@ -467,11 +483,13 @@ export class Subchannel {
            * if a connection is successfully established through the proxy.
            * If the proxy is not used, these connectionOptions are discarded
            * anyway */
-          connectionOptions.servername = getDefaultAuthority(
+          const targetPath = getDefaultAuthority(
             parseUri(this.options['grpc.http_connect_target'] as string) ?? {
               path: 'localhost',
             }
           );
+          const hostPort = splitHostPort(targetPath);
+          connectionOptions.servername = hostPort?.host ?? targetPath;
         }
       }
     }
@@ -524,6 +542,9 @@ export class Subchannel {
             listener();
           }
         });
+        if (this.keepaliveWithoutCalls) {
+          this.startKeepalivePings();
+        }
         break;
       case ConnectivityState.CONNECTING:
         this.startBackoff();
@@ -583,7 +604,7 @@ export class Subchannel {
   }
 
   callRef() {
-    trace(
+    refTrace(
       this.subchannelAddressString +
         ' callRefcount ' +
         this.callRefcount +
@@ -594,13 +615,15 @@ export class Subchannel {
       if (this.session) {
         this.session.ref();
       }
-      this.startKeepalivePings();
+      if (!this.keepaliveWithoutCalls) {
+        this.startKeepalivePings();
+      }
     }
     this.callRefcount += 1;
   }
 
   callUnref() {
-    trace(
+    refTrace(
       this.subchannelAddressString +
         ' callRefcount ' +
         this.callRefcount +
@@ -612,13 +635,15 @@ export class Subchannel {
       if (this.session) {
         this.session.unref();
       }
-      this.stopKeepalivePings();
+      if (!this.keepaliveWithoutCalls) {
+        this.stopKeepalivePings();
+      }
       this.checkBothRefcounts();
     }
   }
 
   ref() {
-    trace(
+    refTrace(
       this.subchannelAddressString +
         ' refcount ' +
         this.refcount +
@@ -629,7 +654,7 @@ export class Subchannel {
   }
 
   unref() {
-    trace(
+    refTrace(
       this.subchannelAddressString +
         ' refcount ' +
         this.refcount +
@@ -689,7 +714,7 @@ export class Subchannel {
     for (const header of Object.keys(headers)) {
       headersString += '\t\t' + header + ': ' + headers[header] + '\n';
     }
-    trace('Starting stream with headers\n' + headersString);
+    logging.trace(LogVerbosity.DEBUG, 'call_stream', 'Starting stream on subchannel ' + this.subchannelAddressString + ' with headers\n' + headersString);
     callStream.attachHttp2Stream(http2Stream, this, extraFilterFactory);
   }
 

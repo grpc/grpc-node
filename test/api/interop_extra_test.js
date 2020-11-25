@@ -76,13 +76,15 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
           const options = {
             'grpc.ssl_target_name_override': 'foo.test.google.fr',
             'grpc.default_authority': 'foo.test.google.fr',
-            'grpc.max_send_message_length': 4*1024*1024
+            'grpc.max_send_message_length': 4*1024*1024,
+            'grpc.max_metadata_size': 4*1024*1024
           };
           client = new testProto.TestService(`localhost:${port}`, creds, options);
           done();
         }
       }, {
-        'grpc.max_receive_message_length': -1
+        'grpc.max_receive_message_length': -1,
+        'grpc.max_metadata_size': 4*1024*1024
       });
     });
     after(function() {
@@ -166,6 +168,32 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
       });
       call.on('error', (error) => {
         assert.ifError(error);
+      });
+    });
+    /* The test against the JS server does not work because of
+     * https://github.com/nodejs/node/issues/35218. The test against the native
+     * server fails because of an unidentified timeout issue. */
+    it.skip('should be able to send very large headers and trailers', function(done) {
+      done = multiDone(done, 3);
+      const header = 'X'.repeat(64 * 1024);
+      const trailer = Buffer.from('Y'.repeat(64 * 1024));
+      const metadata = new grpc.Metadata();
+      metadata.set('x-grpc-test-echo-initial', header);
+      metadata.set('x-grpc-test-echo-trailing-bin', trailer);
+      const call = client.unaryCall({}, metadata, (error, result) => {
+        assert.ifError(error);
+        done();
+      });
+      call.on('metadata', (metadata) => {
+        assert.deepStrictEqual(metadata.get('x-grpc-test-echo-initial'),
+                               [header]);
+        done();
+      });
+      call.on('status', (status) => {
+        var echo_trailer = status.metadata.get('x-grpc-test-echo-trailing-bin');
+        assert(echo_trailer.length === 1);
+        assert.strictEqual(echo_trailer[0].toString('ascii'), 'Y'.repeat(64 * 1024));
+        done();
       });
     });
     describe('max message size', function() {
@@ -257,6 +285,9 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
       describe('with a server with message size limits and a client without limits', function() {
         let restrictedServer;
         let restrictedServerClient;
+        let restrictedServerClient2;
+        let restrictedServerClient3;
+        let restrictedServerClient4;
         before(function(done) {
           interopServer.getServer(0, true, (err, serverObj) => {
             if (err) {
@@ -273,6 +304,9 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
                 'grpc.max_receive_message_length': -1
               };
               restrictedServerClient = new testProto.TestService(`localhost:${serverObj.port}`, creds, options);
+              restrictedServerClient2 = new testProto.TestService(`localhost:${serverObj.port}`, creds, {...options, unique: 1});
+              restrictedServerClient3 = new testProto.TestService(`localhost:${serverObj.port}`, creds, {...options, unique: 2});
+              restrictedServerClient4 = new testProto.TestService(`localhost:${serverObj.port}`, creds, {...options, unique: 3});
               done();
             }
           }, {'grpc.max_send_message_length': 4 * 1024 * 1024});
@@ -284,7 +318,7 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
           restrictedServerClient.unaryCall({payload: {body: largeMessage}}, (error, result) => {
             assert(error);
             assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
-            const stream = restrictedServerClient.fullDuplexCall();
+            const stream = restrictedServerClient2.fullDuplexCall();
             stream.write({payload: {body: largeMessage}});
             stream.end();
             stream.on('data', () => {});
@@ -297,21 +331,19 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
           });
         });
         it('should get an error when requesting a large message', function(done) {
-          done = multiDone(done, 2);
-          restrictedServerClient.unaryCall({response_size: largeMessageSize}, (error, result) => {
+          restrictedServerClient3.unaryCall({response_size: largeMessageSize}, (error, result) => {
             assert(error);
             assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
-            done();
-          });
-          const stream = restrictedServerClient.fullDuplexCall();
-          stream.write({response_parameters: [{size: largeMessageSize}]});
-          stream.end();
-          stream.on('data', () => {});
-          stream.on('status', (status) => {
-            assert.strictEqual(status.code, grpc.status.RESOURCE_EXHAUSTED);
-            done();
-          });
-          stream.on('error', (error) => {
+            const stream = restrictedServerClient4.fullDuplexCall();
+            stream.write({response_parameters: [{size: largeMessageSize}]});
+            stream.end();
+            stream.on('data', () => {});
+            stream.on('status', (status) => {
+              assert.strictEqual(status.code, grpc.status.RESOURCE_EXHAUSTED);
+              done();
+            });
+            stream.on('error', (error) => {
+            });
           });
         });
       });

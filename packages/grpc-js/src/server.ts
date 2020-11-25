@@ -148,10 +148,6 @@ export class Server {
     service: ServiceDefinition,
     implementation: UntypedServiceImplementation
   ): void {
-    if (this.started === true) {
-      throw new Error("Can't add a service to a started server.");
-    }
-
     if (
       service === null ||
       typeof service !== 'object' ||
@@ -212,6 +208,21 @@ export class Server {
     });
   }
 
+  removeService(service: ServiceDefinition): void {
+    if (
+      service === null ||
+      typeof service !== 'object'
+    ) {
+      throw new Error('removeService() requires object as argument');
+    }
+
+    const serviceKeys = Object.keys(service);
+    serviceKeys.forEach((name) => {
+      const attrs = service[name];
+      this.unregister(attrs.path);
+    });
+  }
+
   bind(port: string, creds: ServerCredentials): void {
     throw new Error('Not implemented. Use bindAsync() instead');
   }
@@ -246,7 +257,9 @@ export class Server {
       throw new Error(`Could not get a default scheme for port "${port}"`);
     }
 
-    const serverOptions: http2.ServerOptions = {};
+    const serverOptions: http2.ServerOptions = {
+      maxSendHeaderBlockLength: Number.MAX_SAFE_INTEGER
+    };
     if ('grpc.max_concurrent_streams' in this.options) {
       serverOptions.settings = {
         maxConcurrentStreams: this.options['grpc.max_concurrent_streams'],
@@ -415,7 +428,7 @@ export class Server {
       },
     };
 
-    const resolver = createResolver(portUri, resolverListener);
+    const resolver = createResolver(portUri, resolverListener, this.options);
     resolver.updateResolution();
   }
 
@@ -460,6 +473,10 @@ export class Server {
       path: name,
     } as UntypedHandler);
     return true;
+  }
+
+  unregister(name: string): boolean {
+    return this.handlers.delete(name);
   }
 
   start(): void {
@@ -543,11 +560,21 @@ export class Server {
 
         try {
           const path = headers[http2.constants.HTTP2_HEADER_PATH] as string;
+          const serverAddress = http2Server.address();
+          let serverAddressString = 'null';
+          if (serverAddress) {
+            if (typeof serverAddress === 'string') {
+              serverAddressString = serverAddress;
+            } else {
+              serverAddressString =
+                serverAddress.address + ':' + serverAddress.port;
+            }
+          }
           trace(
             'Received call to method ' +
               path +
               ' at address ' +
-              http2Server.address()?.toString()
+              serverAddressString
           );
           const handler = this.handlers.get(path);
 
@@ -622,22 +649,23 @@ async function handleUnary<RequestType, ResponseType>(
   handler: UnaryHandler<RequestType, ResponseType>,
   metadata: Metadata
 ): Promise<void> {
-  const emitter = new ServerUnaryCallImpl<RequestType, ResponseType>(
-    call,
-    metadata
-  );
   const request = await call.receiveUnaryMessage();
 
   if (request === undefined || call.cancelled) {
     return;
   }
 
-  emitter.request = request;
+  const emitter = new ServerUnaryCallImpl<RequestType, ResponseType>(
+    call,
+    metadata,
+    request
+  );
+
   handler.func(
     emitter,
     (
       err: ServerErrorResponse | ServerStatusResponse | null,
-      value: ResponseType | null,
+      value?: ResponseType | null,
       trailer?: Metadata,
       flags?: number
     ) => {
@@ -659,7 +687,7 @@ function handleClientStreaming<RequestType, ResponseType>(
 
   function respond(
     err: ServerErrorResponse | ServerStatusResponse | null,
-    value: ResponseType | null,
+    value?: ResponseType | null,
     trailer?: Metadata,
     flags?: number
   ) {
@@ -689,10 +717,10 @@ async function handleServerStreaming<RequestType, ResponseType>(
   const stream = new ServerWritableStreamImpl<RequestType, ResponseType>(
     call,
     metadata,
-    handler.serialize
+    handler.serialize,
+    request
   );
 
-  stream.request = request;
   handler.func(stream);
 }
 

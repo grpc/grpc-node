@@ -57,6 +57,7 @@ import { StatusBuilder } from './status-builder';
 import {
   handleBidiStreamingCall,
   handleServerStreamingCall,
+  handleClientStreamingCall,
   handleUnaryCall,
   sendUnaryData,
   ServerUnaryCall,
@@ -186,7 +187,7 @@ export {
 
 /**** Server ****/
 
-export { handleBidiStreamingCall, handleServerStreamingCall, handleUnaryCall };
+export { handleBidiStreamingCall, handleServerStreamingCall, handleUnaryCall, handleClientStreamingCall };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type Call =
@@ -244,6 +245,11 @@ export {
 } from './client-interceptors';
 
 export { GrpcObject } from './make-client';
+
+export { ChannelOptions } from './channel-options';
+
+import * as experimental from './experimental';
+export { experimental };
 
 import * as resolver from './resolver';
 import * as load_balancer from './load-balancer';

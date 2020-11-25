@@ -311,21 +311,11 @@ export class InterceptingCall implements InterceptingCallInterface {
 }
 
 function getCall(channel: Channel, path: string, options: CallOptions): Call {
-  let deadline;
-  let host;
-  const parent = null;
-  let propagateFlags;
-  let credentials;
-  if (options) {
-    deadline = options.deadline;
-    host = options.host;
-
-    propagateFlags = options.propagate_flags;
-    credentials = options.credentials;
-  }
-  if (deadline === undefined) {
-    deadline = Infinity;
-  }
+  const deadline = options.deadline ?? Infinity;
+  const host = options.host;
+  const parent = options.parent ?? null;
+  const propagateFlags = options.propagate_flags;
+  const credentials = options.credentials;
   const call = channel.createCall(path, deadline, host, parent, propagateFlags);
   if (credentials) {
     call.setCredentials(credentials);

@@ -52,9 +52,9 @@ const testNativeClientJsServer = runTestsWithFixture('js', 'native');
 const testJsClientJsServer = runTestsWithFixture('js', 'js');
 
 const test = gulp.series(
+               testJsClientJsServer,
                testJsClientNativeServer,
-               testNativeClientJsServer,
-               testJsClientJsServer
+               testNativeClientJsServer
               );
 
 export {

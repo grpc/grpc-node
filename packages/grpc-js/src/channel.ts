@@ -28,26 +28,32 @@ import { SubchannelPool, getSubchannelPool } from './subchannel-pool';
 import { ChannelControlHelper } from './load-balancer';
 import { UnavailablePicker, Picker, PickResultType } from './picker';
 import { Metadata } from './metadata';
-import { Status, LogVerbosity } from './constants';
+import { Status, LogVerbosity, Propagate } from './constants';
 import { FilterStackFactory } from './filter-stack';
 import { CallCredentialsFilterFactory } from './call-credentials-filter';
 import { DeadlineFilterFactory } from './deadline-filter';
 import { CompressionFilterFactory } from './compression-filter';
 import { getDefaultAuthority, mapUriDefaultScheme } from './resolver';
-import { ServiceConfig, validateServiceConfig } from './service-config';
 import { trace, log } from './logging';
 import { SubchannelAddress } from './subchannel';
 import { MaxMessageSizeFilterFactory } from './max-message-size-filter';
 import { mapProxyName } from './http_proxy';
 import { GrpcUri, parseUri, uriToString } from './uri-parser';
+import { ServerSurfaceCall } from './server-call';
+import { SurfaceCall } from './call';
 
 export enum ConnectivityState {
+  IDLE,
   CONNECTING,
   READY,
   TRANSIENT_FAILURE,
-  IDLE,
   SHUTDOWN,
 }
+
+/**
+ * See https://nodejs.org/api/timers.html#timers_setinterval_callback_delay_args
+ */
+const MAX_TIMEOUT_TIME = 2147483647;
 
 let nextCallNumber = 0;
 
@@ -114,14 +120,14 @@ export interface Channel {
     method: string,
     deadline: Deadline,
     host: string | null | undefined,
-    parentCall: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    parentCall: ServerSurfaceCall | null,
     propagateFlags: number | null | undefined
   ): Call;
 }
 
 interface ConnectivityStateWatcher {
   currentState: ConnectivityState;
-  timer: NodeJS.Timeout;
+  timer: NodeJS.Timeout | null;
   callback: (error?: Error) => void;
 }
 
@@ -138,6 +144,14 @@ export class ChannelImplementation implements Channel {
   private defaultAuthority: string;
   private filterStackFactory: FilterStackFactory;
   private target: GrpcUri;
+  /**
+   * This timer does not do anything on its own. Its purpose is to hold the
+   * event loop open while there are any pending calls for the channel that
+   * have not yet been assigned to specific subchannels. In other words,
+   * the invariant is that callRefTimer is reffed if and only if pickQueue
+   * is non-empty.
+   */
+  private callRefTimer: NodeJS.Timer;
   constructor(
     target: string,
     private readonly credentials: ChannelCredentials,
@@ -178,6 +192,10 @@ export class ChannelImplementation implements Channel {
         `Could not find a default scheme for target name "${target}"`
       );
     }
+
+    this.callRefTimer = setInterval(() => {}, MAX_TIMEOUT_TIME);
+    this.callRefTimer.unref?.();
+
     if (this.options['grpc.default_authority']) {
       this.defaultAuthority = this.options['grpc.default_authority'] as string;
     } else {
@@ -207,6 +225,7 @@ export class ChannelImplementation implements Channel {
       updateState: (connectivityState: ConnectivityState, picker: Picker) => {
         this.currentPicker = picker;
         const queueCopy = this.pickQueue.slice();
+        this.callRefTimer.unref?.();
         this.pickQueue = [];
         for (const { callStream, callMetadata } of queueCopy) {
           this.tryPick(callStream, callMetadata);
@@ -220,20 +239,10 @@ export class ChannelImplementation implements Channel {
         );
       },
     };
-    // TODO(murgatroid99): check channel arg for default service config
-    let defaultServiceConfig: ServiceConfig = {
-      loadBalancingConfig: [],
-      methodConfig: [],
-    };
-    if (options['grpc.service_config']) {
-      defaultServiceConfig = validateServiceConfig(
-        JSON.parse(options['grpc.service_config']!)
-      );
-    }
     this.resolvingLoadBalancer = new ResolvingLoadBalancer(
       this.target,
       channelControlHelper,
-      defaultServiceConfig
+      options
     );
     this.filterStackFactory = new FilterStackFactory([
       new CallCredentialsFilterFactory(this),
@@ -241,6 +250,11 @@ export class ChannelImplementation implements Channel {
       new MaxMessageSizeFilterFactory(this.options),
       new CompressionFilterFactory(this),
     ]);
+  }
+
+  private pushPick(callStream: Http2CallStream, callMetadata: Metadata) {
+    this.callRefTimer.ref?.();
+    this.pickQueue.push({ callStream, callMetadata });
   }
 
   /**
@@ -287,7 +301,7 @@ export class ChannelImplementation implements Channel {
                 ' has state ' +
                 ConnectivityState[pickResult.subchannel!.getConnectivityState()]
             );
-            this.pickQueue.push({ callStream, callMetadata });
+            this.pushPick(callStream, callMetadata);
             break;
           }
           /* We need to clone the callMetadata here because the transparent
@@ -378,17 +392,23 @@ export class ChannelImplementation implements Channel {
         }
         break;
       case PickResultType.QUEUE:
-        this.pickQueue.push({ callStream, callMetadata });
+        this.pushPick(callStream, callMetadata);
         break;
       case PickResultType.TRANSIENT_FAILURE:
         if (callMetadata.getOptions().waitForReady) {
-          this.pickQueue.push({ callStream, callMetadata });
+          this.pushPick(callStream, callMetadata);
         } else {
           callStream.cancelWithStatus(
             pickResult.status!.code,
             pickResult.status!.details
           );
         }
+        break;
+      case PickResultType.DROP:
+        callStream.cancelWithStatus(
+          pickResult.status!.code,
+          pickResult.status!.details
+        );
         break;
       default:
         throw new Error(
@@ -422,7 +442,9 @@ export class ChannelImplementation implements Channel {
     const watchersCopy = this.connectivityStateWatchers.slice();
     for (const watcherObject of watchersCopy) {
       if (newState !== watcherObject.currentState) {
-        clearTimeout(watcherObject.timer);
+        if(watcherObject.timer) {
+          clearTimeout(watcherObject.timer);
+        }
         this.removeConnectivityStateWatcher(watcherObject);
         watcherObject.callback();
       }
@@ -436,6 +458,7 @@ export class ChannelImplementation implements Channel {
   close() {
     this.resolvingLoadBalancer.destroy();
     this.updateState(ConnectivityState.SHUTDOWN);
+    clearInterval(this.callRefTimer);
 
     this.subchannelPool.unrefUnusedSubchannels();
   }
@@ -457,25 +480,29 @@ export class ChannelImplementation implements Channel {
     deadline: Date | number,
     callback: (error?: Error) => void
   ): void {
-    const deadlineDate: Date =
-      deadline instanceof Date ? deadline : new Date(deadline);
-    const now = new Date();
-    if (deadlineDate <= now) {
-      process.nextTick(
-        callback,
-        new Error('Deadline passed without connectivity state change')
-      );
-      return;
-    }
-    const watcherObject = {
-      currentState,
-      callback,
-      timer: setTimeout(() => {
+    let timer = null;
+    if(deadline !== Infinity) {
+      const deadlineDate: Date =
+        deadline instanceof Date ? deadline : new Date(deadline);
+      const now = new Date();
+      if (deadline === -Infinity || deadlineDate <= now) {
+        process.nextTick(
+          callback,
+          new Error('Deadline passed without connectivity state change')
+        );
+        return;
+      }
+      timer = setTimeout(() => {
         this.removeConnectivityStateWatcher(watcherObject);
         callback(
           new Error('Deadline passed without connectivity state change')
         );
-      }, deadlineDate.getTime() - now.getTime()),
+      }, deadlineDate.getTime() - now.getTime())
+    }
+    const watcherObject = {
+      currentState,
+      callback,
+      timer
     };
     this.connectivityStateWatchers.push(watcherObject);
   }
@@ -484,7 +511,7 @@ export class ChannelImplementation implements Channel {
     method: string,
     deadline: Deadline,
     host: string | null | undefined,
-    parentCall: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    parentCall: ServerSurfaceCall | null,
     propagateFlags: number | null | undefined
   ): Call {
     if (typeof method !== 'string') {
@@ -512,9 +539,9 @@ export class ChannelImplementation implements Channel {
     );
     const finalOptions: CallStreamOptions = {
       deadline: deadline,
-      flags: propagateFlags || 0,
-      host: host || this.defaultAuthority,
-      parentCall: parentCall || null,
+      flags: propagateFlags ?? Propagate.DEFAULTS,
+      host: host ?? this.defaultAuthority,
+      parentCall: parentCall,
     };
     const stream: Http2CallStream = new Http2CallStream(
       method,

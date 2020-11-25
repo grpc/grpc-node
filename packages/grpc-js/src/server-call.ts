@@ -19,7 +19,7 @@ import { EventEmitter } from 'events';
 import * as http2 from 'http2';
 import { Duplex, Readable, Writable } from 'stream';
 
-import { StatusObject } from './call-stream';
+import { Deadline, StatusObject } from './call-stream';
 import {
   Status,
   DEFAULT_MAX_SEND_MESSAGE_LENGTH,
@@ -78,10 +78,11 @@ export type ServerSurfaceCall = {
   readonly metadata: Metadata;
   getPeer(): string;
   sendMetadata(responseMetadata: Metadata): void;
+  getDeadline(): Deadline;
 } & EventEmitter;
 
 export type ServerUnaryCall<RequestType, ResponseType> = ServerSurfaceCall & {
-  request: RequestType | null;
+  request: RequestType;
 };
 export type ServerReadableStream<
   RequestType,
@@ -91,32 +92,38 @@ export type ServerWritableStream<
   RequestType,
   ResponseType
 > = ServerSurfaceCall &
-  ObjectWritable<ResponseType> & { request: RequestType | null };
+  ObjectWritable<ResponseType> & {
+    request: RequestType;
+    end: (metadata?: Metadata) => void;
+  };
 export type ServerDuplexStream<RequestType, ResponseType> = ServerSurfaceCall &
   ObjectReadable<RequestType> &
-  ObjectWritable<ResponseType>;
+  ObjectWritable<ResponseType> & { end: (metadata?: Metadata) => void };
 
 export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
   implements ServerUnaryCall<RequestType, ResponseType> {
   cancelled: boolean;
-  request: RequestType | null;
 
   constructor(
     private call: Http2ServerCallStream<RequestType, ResponseType>,
-    public metadata: Metadata
+    public metadata: Metadata,
+    public request: RequestType
   ) {
     super();
     this.cancelled = false;
-    this.request = null;
     this.call.setupSurfaceCall(this);
   }
 
   getPeer(): string {
-    throw new Error('not implemented yet');
+    return this.call.getPeer();
   }
 
   sendMetadata(responseMetadata: Metadata): void {
     this.call.sendMetadata(responseMetadata);
+  }
+
+  getDeadline(): Deadline {
+    return this.call.getDeadline();
   }
 }
 
@@ -145,11 +152,15 @@ export class ServerReadableStreamImpl<RequestType, ResponseType>
   }
 
   getPeer(): string {
-    throw new Error('not implemented yet');
+    return this.call.getPeer();
   }
 
   sendMetadata(responseMetadata: Metadata): void {
     this.call.sendMetadata(responseMetadata);
+  }
+
+  getDeadline(): Deadline {
+    return this.call.getDeadline();
   }
 }
 
@@ -157,17 +168,16 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
   extends Writable
   implements ServerWritableStream<RequestType, ResponseType> {
   cancelled: boolean;
-  request: RequestType | null;
   private trailingMetadata: Metadata;
 
   constructor(
     private call: Http2ServerCallStream<RequestType, ResponseType>,
     public metadata: Metadata,
-    public serialize: Serialize<ResponseType>
+    public serialize: Serialize<ResponseType>,
+    public request: RequestType
   ) {
     super({ objectMode: true });
     this.cancelled = false;
-    this.request = null;
     this.trailingMetadata = new Metadata();
     this.call.setupSurfaceCall(this);
 
@@ -178,11 +188,15 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
   }
 
   getPeer(): string {
-    throw new Error('not implemented yet');
+    return this.call.getPeer();
   }
 
   sendMetadata(responseMetadata: Metadata): void {
     this.call.sendMetadata(responseMetadata);
+  }
+
+  getDeadline(): Deadline {
+    return this.call.getDeadline();
   }
 
   _write(
@@ -249,11 +263,24 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
   }
 
   getPeer(): string {
-    throw new Error('not implemented yet');
+    return this.call.getPeer();
   }
 
   sendMetadata(responseMetadata: Metadata): void {
     this.call.sendMetadata(responseMetadata);
+  }
+
+  getDeadline(): Deadline {
+    return this.call.getDeadline();
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  end(metadata?: any) {
+    if (metadata) {
+      this.trailingMetadata = metadata;
+    }
+
+    super.end();
   }
 }
 
@@ -268,7 +295,7 @@ ServerDuplexStreamImpl.prototype.end = ServerWritableStreamImpl.prototype.end;
 // Unary response callback signature.
 export type sendUnaryData<ResponseType> = (
   error: ServerErrorResponse | ServerStatusResponse | null,
-  value: ResponseType | null,
+  value?: ResponseType | null,
   trailer?: Metadata,
   flags?: number
 ) => void;
@@ -347,7 +374,8 @@ export class Http2ServerCallStream<
   ResponseType
 > extends EventEmitter {
   cancelled = false;
-  deadline: NodeJS.Timer = setTimeout(() => {}, 0);
+  deadlineTimer: NodeJS.Timer = setTimeout(() => {}, 0);
+  private deadline: Deadline = Infinity;
   private wantTrailers = false;
   private metadataSent = false;
   private canPush = false;
@@ -373,6 +401,12 @@ export class Http2ServerCallStream<
     });
 
     this.stream.once('close', () => {
+      trace(
+        'Request to method ' +
+          this.handler?.path +
+          ' stream closed with rstCode ' +
+          this.stream.rstCode
+      );
       this.cancelled = true;
       this.emit('cancelled', 'cancelled');
     });
@@ -389,7 +423,7 @@ export class Http2ServerCallStream<
     }
 
     // Clear noop timer
-    clearTimeout(this.deadline);
+    clearTimeout(this.deadlineTimer);
   }
 
   private checkCancelled(): boolean {
@@ -413,7 +447,7 @@ export class Http2ServerCallStream<
     this.metadataSent = true;
     const custom = customMetadata ? customMetadata.toHttp2Headers() : null;
     // TODO(cjihrig): Include compression headers.
-    const headers = Object.assign(defaultResponseHeaders, custom);
+    const headers = Object.assign({}, defaultResponseHeaders, custom);
     this.stream.respond(headers, defaultResponseOptions);
   }
 
@@ -436,7 +470,9 @@ export class Http2ServerCallStream<
 
       const timeout = (+match[1] * deadlineUnitsToMs[match[2]]) | 0;
 
-      this.deadline = setTimeout(handleExpiredDeadline, timeout, this);
+      const now = new Date();
+      this.deadline = now.setMilliseconds(now.getMilliseconds() + timeout);
+      this.deadlineTimer = setTimeout(handleExpiredDeadline, timeout, this);
       metadata.remove(GRPC_TIMEOUT_HEADER);
     }
 
@@ -506,7 +542,7 @@ export class Http2ServerCallStream<
 
   async sendUnaryMessage(
     err: ServerErrorResponse | ServerStatusResponse | null,
-    value: ResponseType | null,
+    value?: ResponseType | null,
     metadata?: Metadata,
     flags?: number
   ) {
@@ -550,7 +586,7 @@ export class Http2ServerCallStream<
         statusObj.details
     );
 
-    clearTimeout(this.deadline);
+    clearTimeout(this.deadlineTimer);
 
     if (!this.wantTrailers) {
       this.wantTrailers = true;
@@ -721,12 +757,24 @@ export class Http2ServerCallStream<
       } else {
         this.messagesToPush.push(deserialized);
       }
-    } catch (err) {
+    } catch (error) {
       // Ignore any remaining messages when errors occur.
       this.bufferedMessages.length = 0;
 
-      err.code = Status.INTERNAL;
-      readable.emit('error', err);
+      if (
+        !(
+          'code' in error &&
+          typeof error.code === 'number' &&
+          Number.isInteger(error.code) &&
+          error.code >= Status.OK &&
+          error.code <= Status.UNAUTHENTICATED
+        )
+      ) {
+        // The error code is not a valid gRPC code so its being overwritten.
+        error.code = Status.INTERNAL;
+      }
+
+      readable.emit('error', error);
     }
 
     this.isPushPending = false;
@@ -737,6 +785,23 @@ export class Http2ServerCallStream<
         this.bufferedMessages.shift() as Buffer | null
       );
     }
+  }
+
+  getPeer(): string {
+    const socket = this.stream.session.socket;
+    if (socket.remoteAddress) {
+      if (socket.remotePort) {
+        return `${socket.remoteAddress}:${socket.remotePort}`;
+      } else {
+        return socket.remoteAddress;
+      }
+    } else {
+      return 'unknown';
+    }
+  }
+
+  getDeadline(): Deadline {
+    return this.deadline;
   }
 }
 

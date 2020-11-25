@@ -19,9 +19,9 @@ import {
   LoadBalancer,
   ChannelControlHelper,
   createLoadBalancer,
+  LoadBalancingConfig
 } from './load-balancer';
 import { SubchannelAddress, Subchannel } from './subchannel';
-import { LoadBalancingConfig } from './load-balancing-config';
 import { ChannelOptions } from './channel-options';
 import { ConnectivityState } from './channel';
 import { Picker } from './picker';
@@ -90,10 +90,10 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
     let childToUpdate: LoadBalancer;
     if (
       this.currentChild === null ||
-      this.currentChild.getTypeName() !== lbConfig.name
+      this.currentChild.getTypeName() !== lbConfig.getLoadBalancerName()
     ) {
       const newHelper = new this.ChildPolicyHelper(this);
-      const newChild = createLoadBalancer(lbConfig.name, newHelper)!;
+      const newChild = createLoadBalancer(lbConfig, newHelper)!;
       newHelper.setChild(newChild);
       if (this.currentChild === null) {
         this.currentChild = newChild;
@@ -133,9 +133,11 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
   destroy(): void {
     if (this.currentChild) {
       this.currentChild.destroy();
+      this.currentChild = null;
     }
     if (this.pendingChild) {
       this.pendingChild.destroy();
+      this.pendingChild = null;
     }
   }
   getTypeName(): string {

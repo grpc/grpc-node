@@ -25,6 +25,7 @@ export interface ChannelOptions {
   'grpc.default_authority'?: string;
   'grpc.keepalive_time_ms'?: number;
   'grpc.keepalive_timeout_ms'?: number;
+  'grpc.keepalive_permit_without_calls'?: number;
   'grpc.service_config'?: string;
   'grpc.max_concurrent_streams'?: number;
   'grpc.initial_reconnect_backoff_ms'?: number;
@@ -33,7 +34,9 @@ export interface ChannelOptions {
   'grpc.max_send_message_length'?: number;
   'grpc.max_receive_message_length'?: number;
   'grpc.enable_http_proxy'?: number;
-  [key: string]: string | number | undefined;
+  'grpc.http_connect_target'?: string;
+  'grpc.http_connect_creds'?: string;
+  [key: string]: any;
 }
 
 /**
@@ -47,6 +50,7 @@ export const recognizedOptions = {
   'grpc.default_authority': true,
   'grpc.keepalive_time_ms': true,
   'grpc.keepalive_timeout_ms': true,
+  'grpc.keepalive_permit_without_calls': true,
   'grpc.service_config': true,
   'grpc.max_concurrent_streams': true,
   'grpc.initial_reconnect_backoff_ms': true,

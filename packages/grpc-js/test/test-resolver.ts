@@ -63,7 +63,7 @@ describe('Name Resolver', () => {
           done(new Error(`Failed with status ${error.details}`));
         },
       };
-      const resolver = resolverManager.createResolver(target, listener);
+      const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
     it('Should default to port 443', done => {
@@ -98,7 +98,7 @@ describe('Name Resolver', () => {
           done(new Error(`Failed with status ${error.details}`));
         },
       };
-      const resolver = resolverManager.createResolver(target, listener);
+      const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
     it('Should correctly represent an ipv4 address', done => {
@@ -125,7 +125,7 @@ describe('Name Resolver', () => {
           done(new Error(`Failed with status ${error.details}`));
         },
       };
-      const resolver = resolverManager.createResolver(target, listener);
+      const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
     it('Should correctly represent an ipv6 address', done => {
@@ -152,7 +152,7 @@ describe('Name Resolver', () => {
           done(new Error(`Failed with status ${error.details}`));
         },
       };
-      const resolver = resolverManager.createResolver(target, listener);
+      const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
     it('Should correctly represent a bracketed ipv6 address', done => {
@@ -179,7 +179,7 @@ describe('Name Resolver', () => {
           done(new Error(`Failed with status ${error.details}`));
         },
       };
-      const resolver = resolverManager.createResolver(target, listener);
+      const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
     it('Should resolve a public address', done => {
@@ -199,7 +199,7 @@ describe('Name Resolver', () => {
           done(new Error(`Failed with status ${error.details}`));
         },
       };
-      const resolver = resolverManager.createResolver(target, listener);
+      const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
     it('Should resolve a name with multiple dots', done => {
@@ -226,7 +226,7 @@ describe('Name Resolver', () => {
           done(new Error(`Failed with status ${error.details}`));
         },
       };
-      const resolver = resolverManager.createResolver(target, listener);
+      const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
     /* TODO(murgatroid99): re-enable this test, once we can get the IPv6 result
@@ -255,7 +255,7 @@ describe('Name Resolver', () => {
           done(new Error(`Failed with status ${error.details}`));
         },
       };
-      const resolver = resolverManager.createResolver(target, listener);
+      const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
     it('Should resolve a DNS name to IPv4 and IPv6 addresses', done => {
@@ -284,7 +284,7 @@ describe('Name Resolver', () => {
           done(new Error(`Failed with status ${error.details}`));
         },
       };
-      const resolver = resolverManager.createResolver(target, listener);
+      const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
     it('Should resolve a name with a hyphen', done => {
@@ -306,7 +306,7 @@ describe('Name Resolver', () => {
           done(new Error(`Failed with status ${error.details}`));
         },
       };
-      const resolver = resolverManager.createResolver(target, listener);
+      const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
     it('Should resolve gRPC interop servers', done => {
@@ -331,9 +331,9 @@ describe('Name Resolver', () => {
           done(new Error(`Failed with status ${error.details}`));
         },
       };
-      const resolver1 = resolverManager.createResolver(target1, listener);
+      const resolver1 = resolverManager.createResolver(target1, listener, {});
       resolver1.updateResolution();
-      const resolver2 = resolverManager.createResolver(target2, listener);
+      const resolver2 = resolverManager.createResolver(target2, listener, {});
       resolver2.updateResolution();
     });
   });
@@ -359,7 +359,7 @@ describe('Name Resolver', () => {
           done(new Error(`Failed with status ${error.details}`));
         },
       };
-      const resolver = resolverManager.createResolver(target, listener);
+      const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
     it('Should handle an absolute Unix Domain Socket name', done => {
@@ -384,7 +384,7 @@ describe('Name Resolver', () => {
           done(new Error(`Failed with status ${error.details}`));
         },
       };
-      const resolver = resolverManager.createResolver(target, listener);
+      const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
   });

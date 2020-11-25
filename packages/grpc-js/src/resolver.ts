@@ -21,6 +21,7 @@ import * as resolver_uds from './resolver-uds';
 import { StatusObject } from './call-stream';
 import { SubchannelAddress } from './subchannel';
 import { GrpcUri, uriToString } from './uri-parser';
+import { ChannelOptions } from './channel-options';
 
 /**
  * A listener object passed to the resolver's constructor that provides name
@@ -64,7 +65,11 @@ export interface Resolver {
 }
 
 export interface ResolverConstructor {
-  new (target: GrpcUri, listener: ResolverListener): Resolver;
+  new (
+    target: GrpcUri,
+    listener: ResolverListener,
+    channelOptions: ChannelOptions
+  ): Resolver;
   /**
    * Get the default authority for a target. This loosely corresponds to that
    * target's hostname. Throws an error if this resolver class cannot parse the
@@ -108,10 +113,11 @@ export function registerDefaultScheme(scheme: string) {
  */
 export function createResolver(
   target: GrpcUri,
-  listener: ResolverListener
+  listener: ResolverListener,
+  options: ChannelOptions
 ): Resolver {
   if (target.scheme !== undefined && target.scheme in registeredResolvers) {
-    return new registeredResolvers[target.scheme](target, listener);
+    return new registeredResolvers[target.scheme](target, listener, options);
   } else {
     throw new Error(
       `No resolver could be created for target ${uriToString(target)}`

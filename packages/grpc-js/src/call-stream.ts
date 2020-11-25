@@ -18,7 +18,7 @@
 import * as http2 from 'http2';
 
 import { CallCredentials } from './call-credentials';
-import { Status } from './constants';
+import { Propagate, Status } from './constants';
 import { Filter, FilterFactory } from './filter';
 import { FilterStackFactory, FilterStack } from './filter-stack';
 import { Metadata } from './metadata';
@@ -27,6 +27,7 @@ import { ChannelImplementation } from './channel';
 import { Subchannel } from './subchannel';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
+import { ServerSurfaceCall } from './server-call';
 
 const TRACER_NAME = 'call_stream';
 
@@ -42,7 +43,7 @@ export interface CallStreamOptions {
   deadline: Deadline;
   flags: number;
   host: string;
-  parentCall: Call | null;
+  parentCall: ServerSurfaceCall | null;
 }
 
 export type PartialCallStreamOptions = Partial<CallStreamOptions>;
@@ -218,6 +219,11 @@ export class Http2CallStream implements Call {
         metadata: new Metadata(),
       });
     };
+    if (this.options.parentCall && this.options.flags & Propagate.CANCELLATION) {
+      this.options.parentCall.on('cancelled', () => {
+        this.cancelWithStatus(Status.CANCELLED, 'Cancelled by parent call');
+      });
+    }
   }
 
   private outputStatus() {
@@ -227,7 +233,15 @@ export class Http2CallStream implements Call {
       const filteredStatus = this.filterStack.receiveTrailers(
         this.finalStatus!
       );
-      this.listener?.onReceiveStatus(filteredStatus);
+      /* We delay the actual action of bubbling up the status to insulate the
+       * cleanup code in this class from any errors that may be thrown in the
+       * upper layers as a result of bubbling up the status. In particular,
+       * if the status is not OK, the "error" event may be emitted
+       * synchronously at the top level, which will result in a thrown error if
+       * the user does not handle that event. */
+      process.nextTick(() => {
+        this.listener?.onReceiveStatus(filteredStatus);
+      });
       if (this.subchannel) {
         this.subchannel.callUnref();
         this.subchannel.removeDisconnectListener(this.disconnectListener);
@@ -602,6 +616,7 @@ export class Http2CallStream implements Call {
       } else {
         code = http2.constants.NGHTTP2_CANCEL;
       }
+      this.trace('close http2 stream with code ' + code);
       this.http2Stream.close(code);
     }
   }
@@ -614,7 +629,11 @@ export class Http2CallStream implements Call {
   }
 
   getDeadline(): Deadline {
-    return this.options.deadline;
+    if (this.options.parentCall && this.options.flags & Propagate.DEADLINE) {
+      return this.options.parentCall.getDeadline();
+    } else {
+      return this.options.deadline;
+    }
   }
 
   getCredentials(): CallCredentials {
@@ -630,7 +649,7 @@ export class Http2CallStream implements Call {
   }
 
   getPeer(): string {
-    throw new Error('Not yet implemented');
+    return this.subchannel?.getAddress() ?? this.channel.getTarget();
   }
 
   getMethod(): string {
