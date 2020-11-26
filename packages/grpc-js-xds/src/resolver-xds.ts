@@ -30,8 +30,8 @@ function trace(text: string): void {
 }
 
 class XdsResolver implements Resolver {
-  private resolutionStarted = false;
   private hasReportedSuccess = false;
+  private xdsClient: XdsClient | null = null;
 
   constructor(
     private target: GrpcUri,
@@ -51,17 +51,16 @@ class XdsResolver implements Resolver {
 
   updateResolution(): void {
     // Wait until updateResolution is called once to start the xDS requests
-    if (!this.resolutionStarted) {
-      this.resolutionStarted = true;
+    if (this.xdsClient === null) {
       trace('Starting resolution for target ' + uriToString(this.target));
-      const xdsClient = new XdsClient(
+      this.xdsClient = new XdsClient(
         this.target.path,
         {
           onValidUpdate: (update: ServiceConfig) => {
             trace('Resolved service config for target ' + uriToString(this.target) + ': ' + JSON.stringify(update));
             this.hasReportedSuccess = true;
             this.listener.onSuccessfulResolution([], update, null, {
-              xdsClient: xdsClient,
+              xdsClient: this.xdsClient,
             });
           },
           onTransientError: (error: StatusObject) => {
@@ -80,6 +79,10 @@ class XdsResolver implements Resolver {
         this.channelOptions
       );
     }
+  }
+
+  destroy() {
+    this.xdsClient?.shutdown();
   }
 
   static getDefaultAuthority(target: GrpcUri) {

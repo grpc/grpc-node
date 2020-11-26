@@ -45,7 +45,7 @@
     "@grpc/proto-loader": "^0.6.0-pre14"
   },
   "peerDependencies": {
-    "@grpc/grpc-js": "~1.2.0"
+    "@grpc/grpc-js": "~1.2.2"
   },
   "engines": {
     "node": ">=10.10.0"

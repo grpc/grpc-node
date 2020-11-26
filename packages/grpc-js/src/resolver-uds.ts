@@ -44,6 +44,10 @@ class UdsResolver implements Resolver {
     );
   }
 
+  destroy() {
+    // This resolver owns no resources, so we do nothing here.
+  }
+
   static getDefaultAuthority(target: GrpcUri): string {
     return 'localhost';
   }

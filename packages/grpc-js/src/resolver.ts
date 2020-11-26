@@ -62,6 +62,11 @@ export interface Resolver {
    * called synchronously with the constructor or updateResolution.
    */
   updateResolution(): void;
+  
+  /**
+   * Destroy the resolver. Should be called when the owning channel shuts down.
+   */
+  destroy(): void;
 }
 
 export interface ResolverConstructor {
