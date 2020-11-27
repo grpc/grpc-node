@@ -213,9 +213,7 @@ export function loadPackageDefinition(
     if (Object.prototype.hasOwnProperty.call(packageDef, serviceFqn)) {
       const service = packageDef[serviceFqn];
       const nameComponents = serviceFqn.split('.');
-      if (
-        nameComponents.some((comp: string) => isPrototypePolluted(comp))
-      ) {
+      if (nameComponents.some((comp: string) => isPrototypePolluted(comp))) {
         continue;
       }
       const serviceName = nameComponents[nameComponents.length - 1];
