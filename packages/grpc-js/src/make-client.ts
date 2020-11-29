@@ -164,7 +164,7 @@ export function makeClientConstructor(
     ServiceClientImpl.prototype[name] = methodFunc;
     // Associate all provided attributes with the method
     Object.assign(ServiceClientImpl.prototype[name], attrs);
-    if (attrs.originalName && isPrototypePolluted(attrs.originalName)) {
+    if (attrs.originalName && !isPrototypePolluted(attrs.originalName)) {
       ServiceClientImpl.prototype[attrs.originalName] =
         ServiceClientImpl.prototype[name];
     }
