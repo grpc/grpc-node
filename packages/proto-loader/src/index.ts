@@ -109,6 +109,9 @@ export type Options = Protobuf.IParseOptions &
     includeDirs?: string[];
   };
 
+type DecodedDescriptorSet = Protobuf.Message<descriptor.IFileDescriptorSet> &
+  descriptor.IFileDescriptorSet;
+
 const descriptorOptions: Protobuf.IConversionOptions = {
   longs: String,
   enums: String,
@@ -318,6 +321,19 @@ function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
   };
 }
 
+function createPackageDefinitionFromDescriptorSet(
+  decodedDescriptorSet: DecodedDescriptorSet,
+  options?: Options
+) {
+  options = options || {};
+
+  const root = (Protobuf.Root as Protobuf.RootConstructor).fromDescriptor(
+    decodedDescriptorSet
+  );
+  root.resolveAll();
+  return createPackageDefinition(root, options);
+}
+
 /**
  * Load a .proto file with the specified options.
  * @param filename One or multiple file paths to load. Can be an absolute path
@@ -379,52 +395,32 @@ export function loadSync(
   return createPackageDefinition(root, options!);
 }
 
-export function loadFileDescriptorSet(
-  descriptorSet:
-    | Buffer
-    | ReturnType<typeof descriptor.FileDescriptorSet.toObject>,
+export function loadFileDescriptorSetFromBuffer(
+  descriptorSet: Buffer,
   options?: Options
 ): PackageDefinition {
-  type DecodedDescriptorSet = Protobuf.Message<descriptor.IFileDescriptorSet> &
-    descriptor.IFileDescriptorSet;
+  const decodedDescriptorSet = descriptor.FileDescriptorSet.decode(
+    descriptorSet
+  ) as DecodedDescriptorSet;
 
-  options = options || {};
-
-  let decodedDescriptorSet: DecodedDescriptorSet;
-  if (Buffer.isBuffer(descriptorSet)) {
-    decodedDescriptorSet = descriptor.FileDescriptorSet.decode(
-      descriptorSet
-    ) as DecodedDescriptorSet;
-  } else {
-    decodedDescriptorSet = descriptor.FileDescriptorSet.fromObject(
-      descriptorSet
-    ) as DecodedDescriptorSet;
-  }
-
-  const root = (Protobuf.Root as Protobuf.RootConstructor).fromDescriptor(
-    decodedDescriptorSet
+  return createPackageDefinitionFromDescriptorSet(
+    decodedDescriptorSet,
+    options
   );
-  root.resolveAll();
-  return createPackageDefinition(root, options);
 }
 
-export function loadFileDescriptorSetFile(
-  filename: string,
+export function loadFileDescriptorSetFromObject(
+  descriptorSet: Parameters<typeof descriptor.FileDescriptorSet.fromObject>[0],
   options?: Options
-): Promise<PackageDefinition> {
-  return new Promise((resolve, reject) => {
-    fs.readFile(filename, (err, data) => {
-      if (err) {
-        return reject(err);
-      }
+): PackageDefinition {
+  const decodedDescriptorSet = descriptor.FileDescriptorSet.fromObject(
+    descriptorSet
+  ) as DecodedDescriptorSet;
 
-      try {
-        data = JSON.parse(data.toString());
-      } catch (e) {}
-
-      return resolve(loadFileDescriptorSet(data, options));
-    });
-  });
+  return createPackageDefinitionFromDescriptorSet(
+    decodedDescriptorSet,
+    options
+  );
 }
 
 // Load Google's well-known proto files that aren't exposed by Protobuf.js.
