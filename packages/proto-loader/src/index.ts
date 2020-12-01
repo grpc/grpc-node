@@ -30,6 +30,17 @@ declare module 'protobufjs' {
       descriptor.IDescriptorProto;
   }
 
+  interface RootConstructor {
+    new (options?: Options): Root;
+    fromDescriptor(
+      descriptorSet:
+        | descriptor.IFileDescriptorSet
+        | Protobuf.Reader
+        | Uint8Array
+    ): Root;
+    fromJSON(json: Protobuf.INamespace, root?: Root): Root;
+  }
+
   interface Root {
     toDescriptor(
       protoVersion: string
@@ -97,6 +108,9 @@ export type Options = Protobuf.IParseOptions &
   Protobuf.IConversionOptions & {
     includeDirs?: string[];
   };
+
+type DecodedDescriptorSet = Protobuf.Message<descriptor.IFileDescriptorSet> &
+  descriptor.IFileDescriptorSet;
 
 const descriptorOptions: Protobuf.IConversionOptions = {
   longs: String,
@@ -307,6 +321,19 @@ function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
   };
 }
 
+function createPackageDefinitionFromDescriptorSet(
+  decodedDescriptorSet: DecodedDescriptorSet,
+  options?: Options
+) {
+  options = options || {};
+
+  const root = (Protobuf.Root as Protobuf.RootConstructor).fromDescriptor(
+    decodedDescriptorSet
+  );
+  root.resolveAll();
+  return createPackageDefinition(root, options);
+}
+
 /**
  * Load a .proto file with the specified options.
  * @param filename One or multiple file paths to load. Can be an absolute path
@@ -366,6 +393,34 @@ export function loadSync(
   const loadedRoot = root.loadSync(filename, options);
   loadedRoot.resolveAll();
   return createPackageDefinition(root, options!);
+}
+
+export function loadFileDescriptorSetFromBuffer(
+  descriptorSet: Buffer,
+  options?: Options
+): PackageDefinition {
+  const decodedDescriptorSet = descriptor.FileDescriptorSet.decode(
+    descriptorSet
+  ) as DecodedDescriptorSet;
+
+  return createPackageDefinitionFromDescriptorSet(
+    decodedDescriptorSet,
+    options
+  );
+}
+
+export function loadFileDescriptorSetFromObject(
+  descriptorSet: Parameters<typeof descriptor.FileDescriptorSet.fromObject>[0],
+  options?: Options
+): PackageDefinition {
+  const decodedDescriptorSet = descriptor.FileDescriptorSet.fromObject(
+    descriptorSet
+  ) as DecodedDescriptorSet;
+
+  return createPackageDefinitionFromDescriptorSet(
+    decodedDescriptorSet,
+    options
+  );
 }
 
 // Load Google's well-known proto files that aren't exposed by Protobuf.js.
