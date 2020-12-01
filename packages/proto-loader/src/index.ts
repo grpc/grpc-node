@@ -65,6 +65,17 @@ declare module 'protobufjs' {
       descriptor.IDescriptorProto;
   }
 
+  interface RootConstructor {
+    new (options?: Options): Root;
+    fromDescriptor(
+      descriptorSet:
+        | descriptor.IFileDescriptorSet
+        | Protobuf.Reader
+        | Uint8Array
+    ): Root;
+    fromJSON(json: Protobuf.INamespace, root?: Root): Root;
+  }
+
   interface Root {
     toDescriptor(
       protoVersion: string
@@ -129,6 +140,9 @@ export interface PackageDefinition {
 }
 
 export { Options };
+
+type DecodedDescriptorSet = Protobuf.Message<descriptor.IFileDescriptorSet> &
+  descriptor.IFileDescriptorSet;
 
 const descriptorOptions: Protobuf.IConversionOptions = {
   longs: String,
@@ -319,6 +333,19 @@ function createPackageDefinition(
   return def;
 }
 
+function createPackageDefinitionFromDescriptorSet(
+  decodedDescriptorSet: DecodedDescriptorSet,
+  options?: Options
+) {
+  options = options || {};
+
+  const root = (Protobuf.Root as Protobuf.RootConstructor).fromDescriptor(
+    decodedDescriptorSet
+  );
+  root.resolveAll();
+  return createPackageDefinition(root, options);
+}
+
 /**
  * Load a .proto file with the specified options.
  * @param filename One or multiple file paths to load. Can be an absolute path
@@ -360,6 +387,34 @@ export function loadSync(
 ): PackageDefinition {
   const loadedRoot = loadProtosWithOptionsSync(filename, options);
   return createPackageDefinition(loadedRoot, options!);
+}
+
+export function loadFileDescriptorSetFromBuffer(
+  descriptorSet: Buffer,
+  options?: Options
+): PackageDefinition {
+  const decodedDescriptorSet = descriptor.FileDescriptorSet.decode(
+    descriptorSet
+  ) as DecodedDescriptorSet;
+
+  return createPackageDefinitionFromDescriptorSet(
+    decodedDescriptorSet,
+    options
+  );
+}
+
+export function loadFileDescriptorSetFromObject(
+  descriptorSet: Parameters<typeof descriptor.FileDescriptorSet.fromObject>[0],
+  options?: Options
+): PackageDefinition {
+  const decodedDescriptorSet = descriptor.FileDescriptorSet.fromObject(
+    descriptorSet
+  ) as DecodedDescriptorSet;
+
+  return createPackageDefinitionFromDescriptorSet(
+    decodedDescriptorSet,
+    options
+  );
 }
 
 addCommonProtos();
