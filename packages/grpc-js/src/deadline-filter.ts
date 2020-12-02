@@ -56,10 +56,14 @@ export class DeadlineFilter extends BaseFilter implements Filter {
     }
     const now: number = new Date().getTime();
     let timeout = this.deadline - now;
-    if (timeout < 0) {
-      timeout = 0;
-    }
-    if (this.deadline !== Infinity) {
+    if (timeout <= 0) {
+      process.nextTick(() => {
+        callStream.cancelWithStatus(
+          Status.DEADLINE_EXCEEDED,
+          'Deadline exceeded'
+        );
+      });
+    } else if (this.deadline !== Infinity) {
       this.timer = setTimeout(() => {
         callStream.cancelWithStatus(
           Status.DEADLINE_EXCEEDED,
