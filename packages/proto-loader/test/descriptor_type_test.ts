@@ -16,6 +16,8 @@
  */
 
 import * as assert from 'assert';
+import { rpcFileDescriptorSet } from '../test_protos/rpc.desc';
+import { readFileSync } from 'fs';
 
 import * as proto_loader from '../src/index';
 
@@ -98,5 +100,23 @@ describe('Descriptor types', () => {
   it('Can use well known Google protos', () => {
     // This will throw if the well known protos are not available.
     proto_loader.loadSync(`${TEST_PROTO_DIR}/well_known.proto`);
+  });
+
+  it('Can load binary-encoded proto file descriptor sets', () => {
+    const buffer = readFileSync(`${TEST_PROTO_DIR}/rpc.desc.bin`);
+    // This will throw if the rpc descriptor cannot be decoded
+    proto_loader.loadFileDescriptorSetFromBuffer(buffer);
+  });
+
+  it('Can load json file descriptor sets', () => {
+    const buffer = readFileSync(`${TEST_PROTO_DIR}/rpc.desc.json`);
+    const json = JSON.parse(buffer.toString());
+    // This will throw if the rpc descriptor JSON cannot be decoded
+    proto_loader.loadFileDescriptorSetFromObject(json);
+  });
+
+  it('Can parse plain file descriptor set objects', () => {
+    // This will throw if the file descriptor object cannot be parsed
+    proto_loader.loadFileDescriptorSetFromObject(rpcFileDescriptorSet);
   });
 });
