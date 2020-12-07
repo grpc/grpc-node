@@ -48,14 +48,14 @@ export interface ServerMethodDefinition<RequestType, ResponseType> {
 
 export interface MethodDefinition<RequestType, ResponseType>
   extends ClientMethodDefinition<RequestType, ResponseType>,
-    ServerMethodDefinition<RequestType, ResponseType> {}
+  ServerMethodDefinition<RequestType, ResponseType> { }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type ServiceDefinition<
   ImplementationType = UntypedServiceImplementation
-> = {
-  readonly [index in keyof ImplementationType]: MethodDefinition<any, any>;
-};
+  > = {
+    readonly [index in keyof ImplementationType]: MethodDefinition<any, any>;
+  };
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export interface ProtobufTypeDefinition {
@@ -85,7 +85,7 @@ export interface ServiceClient extends Client {
 }
 
 export interface ServiceClientConstructor {
-  new (
+  new(
     address: string,
     credentials: ChannelCredentials,
     options?: Partial<ChannelOptions>
@@ -98,7 +98,7 @@ export interface ServiceClientConstructor {
  * keys.
  * @param key key for check, string.
  */
-const isPrototypePolluted = (key: string) => {
+function isPrototypePolluted(key: string): Boolean {
   return ['__proto__', 'prototype', 'constructor'].includes(key);
 }
 
@@ -189,9 +189,9 @@ function partial(
 
 export interface GrpcObject {
   [index: string]:
-    | GrpcObject
-    | ServiceClientConstructor
-    | ProtobufTypeDefinition;
+  | GrpcObject
+  | ServiceClientConstructor
+  | ProtobufTypeDefinition;
 }
 
 function isProtobufTypeDefinition(
