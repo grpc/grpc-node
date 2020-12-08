@@ -20,90 +20,95 @@
 
 var assert = require('assert');
 
-var grpc = require('@grpc/grpc-js');
-
-var health = require('../health')(grpc);
-
 var health_messages = require('../v1/health_pb');
 
 var ServingStatus = health_messages.HealthCheckResponse.ServingStatus;
 
+var impls = {
+  '@grpc/grpc-js': require('@grpc/grpc-js'),
+  'grpc': require('grpc'),
+};
 
-describe('Health Checking', function() {
-  var statusMap = {
-    '': ServingStatus.SERVING,
-    'grpc.test.TestServiceNotServing': ServingStatus.NOT_SERVING,
-    'grpc.test.TestServiceServing': ServingStatus.SERVING
-  };
-  var healthServer;
-  var healthImpl;
-  var healthClient;
-  before(function(done) {
-    healthServer = new grpc.Server();
-    healthImpl = new health.Implementation(statusMap);
-    healthServer.addService(health.service, healthImpl);
-    healthServer.bindAsync(
-      '0.0.0.0:0',
-      grpc.ServerCredentials.createInsecure(),
-      function(err, port_num) {
-        healthServer.start();
-        healthClient = new health.Client('localhost:' + port_num,
-                                         grpc.credentials.createInsecure());
-        done();
-      }
-    );
-  });
-  after(function() {
-    healthServer.forceShutdown();
-  });
-  it('should say an enabled service is SERVING', function(done) {
-    var request = new health_messages.HealthCheckRequest();
-    request.setService('');
-    healthClient.check(request, function(err, response) {
-      assert.ifError(err);
-      assert.strictEqual(response.getStatus(), ServingStatus.SERVING);
-      done();
+Object.keys(impls).forEach(function(impl) {
+  var grpc = impls[impl];
+  var health = require('../health')(grpc);
+
+  describe('Health Checking (' + impl + ')', function() {
+    var statusMap = {
+      '': ServingStatus.SERVING,
+      'grpc.test.TestServiceNotServing': ServingStatus.NOT_SERVING,
+      'grpc.test.TestServiceServing': ServingStatus.SERVING
+    };
+    var healthServer;
+    var healthImpl;
+    var healthClient;
+    before(function(done) {
+      healthServer = new grpc.Server();
+      healthImpl = new health.Implementation(statusMap);
+      healthServer.addService(health.service, healthImpl);
+      healthServer.bindAsync(
+        '0.0.0.0:0',
+        grpc.ServerCredentials.createInsecure(),
+        function(err, port_num) {
+          healthServer.start();
+          healthClient = new health.Client('localhost:' + port_num,
+                                           grpc.credentials.createInsecure());
+          done();
+        }
+      );
     });
-  });
-  it('should say that a disabled service is NOT_SERVING', function(done) {
-    var request = new health_messages.HealthCheckRequest();
-    request.setService('grpc.test.TestServiceNotServing');
-    healthClient.check(request, function(err, response) {
-      assert.ifError(err);
-      assert.strictEqual(response.getStatus(), ServingStatus.NOT_SERVING);
-      done();
+    after(function() {
+      healthServer.forceShutdown();
     });
-  });
-  it('should say that an enabled service is SERVING', function(done) {
-    var request = new health_messages.HealthCheckRequest();
-    request.setService('grpc.test.TestServiceServing');
-    healthClient.check(request, function(err, response) {
-      assert.ifError(err);
-      assert.strictEqual(response.getStatus(), ServingStatus.SERVING);
-      done();
-    });
-  });
-  it('should get NOT_FOUND if the service is not registered', function(done) {
-    var request = new health_messages.HealthCheckRequest();
-    request.setService('not_registered');
-    healthClient.check(request, function(err, response) {
-      assert(err);
-      assert.strictEqual(err.code, grpc.status.NOT_FOUND);
-      done();
-    });
-  });
-  it('should get a different response if the status changes', function(done) {
-    var request = new health_messages.HealthCheckRequest();
-    request.setService('transient');
-    healthClient.check(request, function(err, response) {
-      assert(err);
-      assert.strictEqual(err.code, grpc.status.NOT_FOUND);
-      healthImpl.setStatus('transient', ServingStatus.SERVING);
+    it('should say an enabled service is SERVING', function(done) {
+      var request = new health_messages.HealthCheckRequest();
+      request.setService('');
       healthClient.check(request, function(err, response) {
         assert.ifError(err);
         assert.strictEqual(response.getStatus(), ServingStatus.SERVING);
         done();
       });
     });
+    it('should say that a disabled service is NOT_SERVING', function(done) {
+      var request = new health_messages.HealthCheckRequest();
+      request.setService('grpc.test.TestServiceNotServing');
+      healthClient.check(request, function(err, response) {
+        assert.ifError(err);
+        assert.strictEqual(response.getStatus(), ServingStatus.NOT_SERVING);
+        done();
+      });
+    });
+    it('should say that an enabled service is SERVING', function(done) {
+      var request = new health_messages.HealthCheckRequest();
+      request.setService('grpc.test.TestServiceServing');
+      healthClient.check(request, function(err, response) {
+        assert.ifError(err);
+        assert.strictEqual(response.getStatus(), ServingStatus.SERVING);
+        done();
+      });
+    });
+    it('should get NOT_FOUND if the service is not registered', function(done) {
+      var request = new health_messages.HealthCheckRequest();
+      request.setService('not_registered');
+      healthClient.check(request, function(err, response) {
+        assert(err);
+        assert.strictEqual(err.code, grpc.status.NOT_FOUND);
+        done();
+      });
+    });
+    it('should get a different response if the status changes', function(done) {
+      var request = new health_messages.HealthCheckRequest();
+      request.setService('transient');
+      healthClient.check(request, function(err, response) {
+        assert(err);
+        assert.strictEqual(err.code, grpc.status.NOT_FOUND);
+        healthImpl.setStatus('transient', ServingStatus.SERVING);
+        healthClient.check(request, function(err, response) {
+          assert.ifError(err);
+          assert.strictEqual(response.getStatus(), ServingStatus.SERVING);
+          done();
+        });
+      });
+    });
   });
-});
+})

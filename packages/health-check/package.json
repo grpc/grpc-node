@@ -25,6 +25,7 @@
   "main": "health.js",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@grpc/grpc-js": "^1.2.2"
+    "@grpc/grpc-js": "^1.2.2",
+    "grpc": "^1.24.4"
   }
 }
