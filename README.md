@@ -41,8 +41,8 @@ Distribution of protoc and the gRPC Node protoc plugin for ease of installation 
 
 ### gRPC Health Check Service
 
-Directory: [`packages/grpc-health-check`](https://github.com/grpc/grpc-node/tree/master/packages/grpc-health-check)
+Directory: [`packages/health-check`](https://github.com/grpc/grpc-node/tree/master/packages/health-check)
 
-npm package: [grpc-health-check](https://www.npmjs.com/package/grpc-health-check)
+npm package: [@grpc/health-check](https://www.npmjs.com/package/@grpc/health-check)
 
 Health check service for gRPC servers.

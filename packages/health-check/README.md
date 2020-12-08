@@ -1,4 +1,4 @@
-# grpc-health-check
+# @grpc/health-check
 
 Health check client and service for use with gRPC-node.
 
@@ -12,22 +12,29 @@ By using this package, clients and servers can rely on common proto and service 
 
 ## Installation
 
-Use the package manager [npm](https://www.npmjs.com/get-npm) to install `grpc-health-check`.
+Use the package manager [npm](https://www.npmjs.com/get-npm) to install `@grpc/health-check`.
 
 ```bash
-npm install grpc-health-check
+npm install @grpc/health-check
 ```
+
+> Note: version 2 has been published as `@grpc/health-check` and requires passing `grpc` as the first argument when importing. This keeps the package
+  agnostic of implementation.
 
 ## Usage
 
 ### Server
 
-Any gRPC-node server can use `grpc-health-check` to adhere to the gRPC Health Checking Protocol. 
+Any gRPC-node server can use `grpc-health-check` to adhere to the gRPC Health Checking Protocol.
 The following shows how this package can be added to a pre-existing gRPC server.
 
 ```javascript 1.8
 // Import package
-let health = require('grpc-health-check');
+const grpc = require('@grpc/grpc-js');
+// or const grpc = require('grpc')
+
+// Important: as of v2
+const health = require('@grpc/health-check')(grpc);
 
 // Define service status map. Key is the service name, value is the corresponding status.
 // By convention, the empty string "" key represents that status of the entire server.
@@ -38,7 +45,7 @@ const statusMap = {
 };
 
 // Construct the service implementation
-let healthImpl = new health.Implementation(statusMap);
+const healthImpl = new health.Implementation(statusMap);
 
 // Add the service and implementation to your pre-existing gRPC-node server
 server.addService(health.service, healthImpl);
@@ -48,7 +55,7 @@ Congrats! Your server now allows any client to run a health check against it.
 
 ### Client
 
-Any gRPC-node client can use `grpc-health-check` to run health checks against other servers that follow the protocol.
+Any gRPC-node client (`grpc or @grpc/grpc-js`) can use `@grpc/health-check` to run health checks against other servers that follow the protocol.
 
 ## Contributing
 

@@ -20,13 +20,14 @@
 
 var assert = require('assert');
 
-var health = require('../health');
+var grpc = require('@grpc/grpc-js');
+
+var health = require('../health')(grpc);
 
 var health_messages = require('../v1/health_pb');
 
 var ServingStatus = health_messages.HealthCheckResponse.ServingStatus;
 
-var grpc = require('grpc');
 
 describe('Health Checking', function() {
   var statusMap = {
@@ -37,15 +38,20 @@ describe('Health Checking', function() {
   var healthServer;
   var healthImpl;
   var healthClient;
-  before(function() {
+  before(function(done) {
     healthServer = new grpc.Server();
     healthImpl = new health.Implementation(statusMap);
     healthServer.addService(health.service, healthImpl);
-    var port_num = healthServer.bind('0.0.0.0:0',
-                                     grpc.ServerCredentials.createInsecure());
-    healthServer.start();
-    healthClient = new health.Client('localhost:' + port_num,
-                                     grpc.credentials.createInsecure());
+    healthServer.bindAsync(
+      '0.0.0.0:0',
+      grpc.ServerCredentials.createInsecure(),
+      function(err, port_num) {
+        healthServer.start();
+        healthClient = new health.Client('localhost:' + port_num,
+                                         grpc.credentials.createInsecure());
+        done();
+      }
+    );
   });
   after(function() {
     healthServer.forceShutdown();

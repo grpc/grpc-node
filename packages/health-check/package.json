@@ -1,12 +1,9 @@
 {
-  "name": "grpc-health-check",
-  "version": "1.8.0",
+  "name": "@grpc/health-check",
+  "version": "2.0.0",
   "author": "Google Inc.",
   "description": "Health check client and service for use with gRPC-node",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/grpc/grpc-node.git"
-  },
+  "repository": "https://github.com/grpc/grpc-node/tree/master/packages/health-check",
   "bugs": "https://github.com/grpc/grpc-node/issues",
   "contributors": [
     {
@@ -16,7 +13,6 @@
   ],
   "dependencies": {
     "google-protobuf": "^3.4.0",
-    "grpc": "^1.6.0",
     "lodash.clone": "^4.5.0",
     "lodash.get": "^4.4.2"
   },
@@ -27,5 +23,8 @@
     "v1"
   ],
   "main": "health.js",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@grpc/grpc-js": "^1.2.2"
+  }
 }
