@@ -600,7 +600,7 @@ function generateRootFile(formatter: TextFormatter, root: Protobuf.Root, options
   formatter.writeLine(`import type * as grpc from '${options.grpcLib}';`);
   formatter.writeLine("import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';");
   formatter.writeLine('');
-  
+
   generateServiceImports(formatter, root, options);
   formatter.writeLine('');
 
