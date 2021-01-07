@@ -24,4 +24,8 @@ describe('loadPackageDefinition', () => {
       loadPackageDefinition({'__proto__.polluted': true} as any);
       assert.notStrictEqual(({} as any).polluted, true);
   });
+  it('Should not allow prototype pollution #2', () => {
+      loadPackageDefinition({'constructor.prototype.polluted': true} as any);
+      assert.notStrictEqual(({} as any).polluted, true);
+  });
 });
