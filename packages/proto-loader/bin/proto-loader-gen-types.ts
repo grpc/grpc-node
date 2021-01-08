@@ -678,6 +678,9 @@ async function writeAllFiles(protoFiles: string[], options: GeneratorOptions) {
 
 function runScript() {
   const argv = yargs
+    .parserConfiguration({
+      'parse-positional-numbers': false
+    })
     .string(['includeDirs', 'grpcLib'])
     .normalize(['includeDirs', 'outDir'])
     .array('includeDirs')
@@ -731,7 +734,7 @@ function runScript() {
       console.log('Parsed arguments:', argv);
     }
     addCommonProtos();
-    writeAllFiles(argv._, {...argv, alternateCommentMode: true}).then(() => {
+    writeAllFiles(argv._ as string[], {...argv, alternateCommentMode: true}).then(() => {
       if (argv.verbose) {
         console.log('Success');
       }
