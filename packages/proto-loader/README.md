@@ -57,7 +57,7 @@ const options = {
 
 The `proto-loader-gen-types` script distributed with this package can be used to generate TypeScript type information for the objects loaded at runtime. More information about how to use it can be found in [the *@grpc/proto-loader TypeScript Type Generator CLI Tool* proposal document](https://github.com/grpc/proposal/blob/master/L70-node-proto-loader-type-generator.md). The arguments mostly match the `load` function's options; the full usage information is as follows:
 
-```
+```console
 proto-loader-gen-types.js [options] filenames...
 
 Options:
@@ -85,4 +85,33 @@ Options:
   --outDir, -O       Directory in which to output files      [string] [required]
   --grpcLib          The gRPC implementation library that these types will be
                      used with                               [string] [required]
+```
+
+### Example Usage
+
+Generate the types:
+
+```sh
+$(npm bin)/proto-loader-gen-types --longs=String --enums=String --defaults --oneofs --grpcLib=@grpc/grpc-js --outDir=proto/ proto/*.proto
+```
+
+Consume the types:
+
+```ts
+import * as grpc from '@grpc/grpc-js';
+import * as protoLoader from '@grpc/proto-loader';
+import { ProtoGrpcType } from './proto/example';
+import { ExampleHandlers } from './proto/example_package/Example';
+
+const exampleServer: ExampleHandlers = {
+  // server handlers implementation...
+};
+
+const packageDefinition = protoLoader.loadSync('./proto/example.proto');
+const proto = (grpc.loadPackageDefinition(
+  packageDefinition
+) as unknown) as ProtoGrpcType;
+
+const server = new grpc.Server();
+server.addService(proto.example_package.Example.service, exampleServer);
 ```
