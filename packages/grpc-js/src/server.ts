@@ -258,8 +258,11 @@ export class Server {
     }
 
     const serverOptions: http2.ServerOptions = {
-      maxSendHeaderBlockLength: Number.MAX_SAFE_INTEGER
+      maxSendHeaderBlockLength: Number.MAX_SAFE_INTEGER,
     };
+    if ('grpc.max_session_memory' in this.options) {
+      serverOptions.maxSessionMemory = this.options['grpc.max_session_memory'];
+    }
     if ('grpc.max_concurrent_streams' in this.options) {
       serverOptions.settings = {
         maxConcurrentStreams: this.options['grpc.max_concurrent_streams'],

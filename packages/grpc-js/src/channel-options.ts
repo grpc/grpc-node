@@ -28,6 +28,7 @@ export interface ChannelOptions {
   'grpc.keepalive_permit_without_calls'?: number;
   'grpc.service_config'?: string;
   'grpc.max_concurrent_streams'?: number;
+  'grpc.max_session_memory'?: number;
   'grpc.initial_reconnect_backoff_ms'?: number;
   'grpc.max_reconnect_backoff_ms'?: number;
   'grpc.use_local_subchannel_pool'?: number;
@@ -53,6 +54,7 @@ export const recognizedOptions = {
   'grpc.keepalive_permit_without_calls': true,
   'grpc.service_config': true,
   'grpc.max_concurrent_streams': true,
+  'grpc.max_session_memory': true,
   'grpc.initial_reconnect_backoff_ms': true,
   'grpc.max_reconnect_backoff_ms': true,
   'grpc.use_local_subchannel_pool': true,
