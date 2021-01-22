@@ -687,7 +687,9 @@ export class Subchannel {
   ) {
     const headers = metadata.toHttp2Headers();
     headers[HTTP2_HEADER_AUTHORITY] = callStream.getHost();
-    headers[HTTP2_HEADER_USER_AGENT] = this.userAgent;
+    if (!headers[HTTP2_HEADER_USER_AGENT]) {
+      headers[HTTP2_HEADER_USER_AGENT] = this.userAgent;
+    }    
     headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
     headers[HTTP2_HEADER_METHOD] = 'POST';
     headers[HTTP2_HEADER_PATH] = callStream.getMethod();
