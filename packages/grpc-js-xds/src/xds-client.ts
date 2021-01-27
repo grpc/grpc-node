@@ -1155,7 +1155,7 @@ export class XdsClient {
   }
 
   removeClusterWatcher(clusterName: string, watcher: Watcher<Cluster__Output>) {
-    trace('Watcher removed for endpoint ' + clusterName);
+    trace('Watcher removed for cluster ' + clusterName);
     this.adsState[CDS_TYPE_URL].removeWatcher(clusterName, watcher);
   }
 

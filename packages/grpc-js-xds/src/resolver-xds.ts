@@ -39,12 +39,12 @@ class XdsResolver implements Resolver {
     private channelOptions: ChannelOptions
   ) {}
 
-  private reportResolutionError() {
+  private reportResolutionError(reason: string) {
     this.listener.onError({
       code: status.UNAVAILABLE,
       details: `xDS name resolution failed for target ${uriToString(
         this.target
-      )}`,
+      )}: ${reason}`,
       metadata: new Metadata(),
     });
   }
@@ -68,12 +68,12 @@ class XdsResolver implements Resolver {
              * not already provided a ServiceConfig for the upper layer to use */
             if (!this.hasReportedSuccess) {
               trace('Resolution error for target ' + uriToString(this.target) + ' due to xDS client transient error ' + error.details);
-              this.reportResolutionError();
+              this.reportResolutionError(error.details);
             }
           },
           onResourceDoesNotExist: () => {
             trace('Resolution error for target ' + uriToString(this.target) + ': resource does not exist');
-            this.reportResolutionError();
+            this.reportResolutionError("Resource does not exist");
           },
         },
         this.channelOptions
