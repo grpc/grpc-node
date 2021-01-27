@@ -49,5 +49,19 @@
   },
   "engines": {
     "node": ">=10.10.0"
-  }
+  },
+  "files": [
+    "src/**/*.ts",
+    "build/src/**/*.{js,d.ts,js.map}",
+    "deps/envoy-api/envoy/api/v2/**/*.proto",
+    "deps/envoy-api/envoy/config/**/*.proto",
+    "deps/envoy-api/envoy/service/**/*.proto",
+    "deps/envoy-api/envoy/type/**/*.proto",
+    "deps/envoy-api/envoy/annotations/**/*.proto",
+    "deps/googleapis/google/api/**/*.proto",
+    "deps/googleapis/google/protobuf/**/*.proto",
+    "deps/googleapis/google/rpc/**/*.proto",
+    "deps/udpa/udpa/annotations/**/*.proto",
+    "deps/protoc-gen-validate/validate/**/*.proto"
+  ]
 }
