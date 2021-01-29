@@ -262,6 +262,12 @@ class DnsResolver implements Resolver {
     }
   }
 
+  destroy() {
+    /* Do nothing. There is not a practical way to cancel in-flight DNS
+     * requests, and after this function is called we can expect that
+     * updateResolution will not be called again. */
+  }
+
   /**
    * Get the default authority for the given target. For IP targets, that is
    * the IP address. For DNS targets, it is the hostname.

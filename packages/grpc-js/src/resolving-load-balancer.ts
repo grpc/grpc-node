@@ -257,6 +257,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
 
   destroy() {
     this.childLoadBalancer.destroy();
+    this.innerResolver.destroy();
     this.updateState(ConnectivityState.SHUTDOWN, new UnavailablePicker());
   }
 
