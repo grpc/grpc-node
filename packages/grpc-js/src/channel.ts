@@ -33,7 +33,7 @@ import { FilterStackFactory } from './filter-stack';
 import { CallCredentialsFilterFactory } from './call-credentials-filter';
 import { DeadlineFilterFactory } from './deadline-filter';
 import { CompressionFilterFactory } from './compression-filter';
-import { getDefaultAuthority, mapUriDefaultScheme } from './resolver';
+import { CallConfig, ConfigSelector, getDefaultAuthority, mapUriDefaultScheme } from './resolver';
 import { trace, log } from './logging';
 import { SubchannelAddress } from './subchannel';
 import { MaxMessageSizeFilterFactory } from './max-message-size-filter';
@@ -136,9 +136,18 @@ export class ChannelImplementation implements Channel {
   private subchannelPool: SubchannelPool;
   private connectivityState: ConnectivityState = ConnectivityState.IDLE;
   private currentPicker: Picker = new UnavailablePicker();
+  /**
+   * Calls queued up to get a call config. Should only be populated before the
+   * first time the resolver returns a result, which includes the ConfigSelector.
+   */
+  private configSelectionQueue: Array<{
+    callStream: Http2CallStream;
+    callMetadata: Metadata;
+  }> = [];
   private pickQueue: Array<{
     callStream: Http2CallStream;
     callMetadata: Metadata;
+    callConfig: CallConfig;
   }> = [];
   private connectivityStateWatchers: ConnectivityStateWatcher[] = [];
   private defaultAuthority: string;
@@ -152,6 +161,7 @@ export class ChannelImplementation implements Channel {
    * is non-empty.
    */
   private callRefTimer: NodeJS.Timer;
+  private configSelector: ConfigSelector | null = null;
   constructor(
     target: string,
     private readonly credentials: ChannelCredentials,
@@ -227,8 +237,8 @@ export class ChannelImplementation implements Channel {
         const queueCopy = this.pickQueue.slice();
         this.callRefTimer.unref?.();
         this.pickQueue = [];
-        for (const { callStream, callMetadata } of queueCopy) {
-          this.tryPick(callStream, callMetadata);
+        for (const { callStream, callMetadata, callConfig } of queueCopy) {
+          this.tryPick(callStream, callMetadata, callConfig);
         }
         this.updateState(connectivityState);
       },
@@ -242,7 +252,17 @@ export class ChannelImplementation implements Channel {
     this.resolvingLoadBalancer = new ResolvingLoadBalancer(
       this.target,
       channelControlHelper,
-      options
+      options,
+      (configSelector) => {
+        this.configSelector = configSelector;
+        /* We process the queue asynchronously to ensure that the corresponding
+         * load balancer update has completed. */
+        process.nextTick(() => {
+          for (const {callStream, callMetadata} of this.configSelectionQueue) {
+            this.tryGetConfig(callStream, callMetadata);
+          }
+        });
+      }
     );
     this.filterStackFactory = new FilterStackFactory([
       new CallCredentialsFilterFactory(this),
@@ -252,9 +272,9 @@ export class ChannelImplementation implements Channel {
     ]);
   }
 
-  private pushPick(callStream: Http2CallStream, callMetadata: Metadata) {
+  private pushPick(callStream: Http2CallStream, callMetadata: Metadata, callConfig: CallConfig) {
     this.callRefTimer.ref?.();
-    this.pickQueue.push({ callStream, callMetadata });
+    this.pickQueue.push({ callStream, callMetadata, callConfig });
   }
 
   /**
@@ -264,8 +284,8 @@ export class ChannelImplementation implements Channel {
    * @param callStream
    * @param callMetadata
    */
-  private tryPick(callStream: Http2CallStream, callMetadata: Metadata) {
-    const pickResult = this.currentPicker.pick({ metadata: callMetadata });
+  private tryPick(callStream: Http2CallStream, callMetadata: Metadata, callConfig: CallConfig) {
+    const pickResult = this.currentPicker.pick({ metadata: callMetadata, extraPickInfo: callConfig.pickInformation });
     trace(
       LogVerbosity.DEBUG,
       'channel',
@@ -301,7 +321,7 @@ export class ChannelImplementation implements Channel {
                 ' has state ' +
                 ConnectivityState[pickResult.subchannel!.getConnectivityState()]
             );
-            this.pushPick(callStream, callMetadata);
+            this.pushPick(callStream, callMetadata, callConfig);
             break;
           }
           /* We need to clone the callMetadata here because the transparent
@@ -321,6 +341,7 @@ export class ChannelImplementation implements Channel {
                     );
                     /* If we reach this point, the call stream has started
                      * successfully */
+                    callConfig.onCommitted?.();
                     pickResult.onCallStarted?.();
                   } catch (error) {
                     if (
@@ -349,7 +370,7 @@ export class ChannelImplementation implements Channel {
                           (error as Error).message +
                           '. Retrying pick'
                       );
-                      this.tryPick(callStream, callMetadata);
+                      this.tryPick(callStream, callMetadata, callConfig);
                     } else {
                       trace(
                         LogVerbosity.INFO,
@@ -378,7 +399,7 @@ export class ChannelImplementation implements Channel {
                       ConnectivityState[subchannelState] +
                       ' after metadata filters. Retrying pick'
                   );
-                  this.tryPick(callStream, callMetadata);
+                  this.tryPick(callStream, callMetadata, callConfig);
                 }
               },
               (error: Error & { code: number }) => {
@@ -392,11 +413,11 @@ export class ChannelImplementation implements Channel {
         }
         break;
       case PickResultType.QUEUE:
-        this.pushPick(callStream, callMetadata);
+        this.pushPick(callStream, callMetadata, callConfig);
         break;
       case PickResultType.TRANSIENT_FAILURE:
         if (callMetadata.getOptions().waitForReady) {
-          this.pushPick(callStream, callMetadata);
+          this.pushPick(callStream, callMetadata, callConfig);
         } else {
           callStream.cancelWithStatus(
             pickResult.status!.code,
@@ -451,8 +472,25 @@ export class ChannelImplementation implements Channel {
     }
   }
 
+  private tryGetConfig(stream: Http2CallStream, metadata: Metadata) {
+    if (this.configSelector === null) {
+      this.callRefTimer.ref?.();
+      this.configSelectionQueue.push({ 
+        callStream: stream,
+        callMetadata: metadata
+      });
+    } else {
+      const callConfig = this.configSelector(stream.getMethod(), metadata);
+      if (callConfig.status === Status.OK) {
+        this.tryPick(stream, metadata, callConfig);
+      } else {
+        stream.cancelWithStatus(callConfig.status, "Failed to route call to method " + stream.getMethod());
+      }
+    }
+  }
+
   _startCallStream(stream: Http2CallStream, metadata: Metadata) {
-    this.tryPick(stream, metadata.clone());
+    this.tryGetConfig(stream, metadata.clone());
   }
 
   close() {
