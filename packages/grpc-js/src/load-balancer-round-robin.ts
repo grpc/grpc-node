@@ -128,14 +128,12 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
       this.subchannelStateCounts[previousState] -= 1;
       this.subchannelStateCounts[newState] += 1;
       this.calculateAndUpdateState();
-
-      if (newState === ConnectivityState.TRANSIENT_FAILURE) {
-        this.channelControlHelper.requestReresolution();
-      }
+      
       if (
         newState === ConnectivityState.TRANSIENT_FAILURE ||
         newState === ConnectivityState.IDLE
       ) {
+        this.channelControlHelper.requestReresolution();
         subchannel.startConnecting();
       }
     };

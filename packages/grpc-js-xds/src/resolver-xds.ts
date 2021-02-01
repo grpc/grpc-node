@@ -30,8 +30,8 @@ function trace(text: string): void {
 }
 
 class XdsResolver implements Resolver {
-  private resolutionStarted = false;
   private hasReportedSuccess = false;
+  private xdsClient: XdsClient | null = null;
 
   constructor(
     private target: GrpcUri,
@@ -39,29 +39,28 @@ class XdsResolver implements Resolver {
     private channelOptions: ChannelOptions
   ) {}
 
-  private reportResolutionError() {
+  private reportResolutionError(reason: string) {
     this.listener.onError({
       code: status.UNAVAILABLE,
       details: `xDS name resolution failed for target ${uriToString(
         this.target
-      )}`,
+      )}: ${reason}`,
       metadata: new Metadata(),
     });
   }
 
   updateResolution(): void {
     // Wait until updateResolution is called once to start the xDS requests
-    if (!this.resolutionStarted) {
-      this.resolutionStarted = true;
+    if (this.xdsClient === null) {
       trace('Starting resolution for target ' + uriToString(this.target));
-      const xdsClient = new XdsClient(
+      this.xdsClient = new XdsClient(
         this.target.path,
         {
           onValidUpdate: (update: ServiceConfig) => {
             trace('Resolved service config for target ' + uriToString(this.target) + ': ' + JSON.stringify(update));
             this.hasReportedSuccess = true;
             this.listener.onSuccessfulResolution([], update, null, null, {
-              xdsClient: xdsClient,
+              xdsClient: this.xdsClient,
             });
           },
           onTransientError: (error: StatusObject) => {
@@ -69,17 +68,21 @@ class XdsResolver implements Resolver {
              * not already provided a ServiceConfig for the upper layer to use */
             if (!this.hasReportedSuccess) {
               trace('Resolution error for target ' + uriToString(this.target) + ' due to xDS client transient error ' + error.details);
-              this.reportResolutionError();
+              this.reportResolutionError(error.details);
             }
           },
           onResourceDoesNotExist: () => {
             trace('Resolution error for target ' + uriToString(this.target) + ': resource does not exist');
-            this.reportResolutionError();
+            this.reportResolutionError("Resource does not exist");
           },
         },
         this.channelOptions
       );
     }
+  }
+
+  destroy() {
+    this.xdsClient?.shutdown();
   }
 
   static getDefaultAuthority(target: GrpcUri) {

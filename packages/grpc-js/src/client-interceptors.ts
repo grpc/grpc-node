@@ -347,10 +347,11 @@ class BaseInterceptingCall implements InterceptingCallInterface {
     let serialized: Buffer;
     try {
       serialized = this.methodDefinition.requestSerialize(message);
-      this.call.sendMessageWithContext(context, serialized);
     } catch (e) {
       this.call.cancelWithStatus(Status.INTERNAL, `Request message serialization failure: ${e.message}`);
+      return;
     }
+    this.call.sendMessageWithContext(context, serialized);
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendMessage(message: any) {
@@ -370,7 +371,6 @@ class BaseInterceptingCall implements InterceptingCallInterface {
         let deserialized: any;
         try {
           deserialized = this.methodDefinition.responseDeserialize(message);
-          interceptingListener?.onReceiveMessage?.(deserialized);
         } catch (e) {
           readError = {
             code: Status.INTERNAL,
@@ -378,7 +378,9 @@ class BaseInterceptingCall implements InterceptingCallInterface {
             metadata: new Metadata(),
           };
           this.call.cancelWithStatus(readError.code, readError.details);
+          return;
         }
+        interceptingListener?.onReceiveMessage?.(deserialized);
       },
       onReceiveStatus: (status) => {
         if (readError) {
