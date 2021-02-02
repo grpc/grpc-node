@@ -261,6 +261,7 @@ export class ChannelImplementation implements Channel {
           for (const {callStream, callMetadata} of this.configSelectionQueue) {
             this.tryGetConfig(callStream, callMetadata);
           }
+          this.configSelectionQueue = [];
         });
       }
     );
@@ -474,6 +475,11 @@ export class ChannelImplementation implements Channel {
 
   private tryGetConfig(stream: Http2CallStream, metadata: Metadata) {
     if (this.configSelector === null) {
+      /* This branch will only be taken at the beginning of the channel's life,
+       * before the resolver ever returns a result. So, the
+       * ResolvingLoadBalancer may be idle and if so it needs to be kicked
+       * because it now has a pending request. */
+      this.resolvingLoadBalancer.exitIdle();
       this.callRefTimer.ref?.();
       this.configSelectionQueue.push({ 
         callStream: stream,
