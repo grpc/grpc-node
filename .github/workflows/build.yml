@@ -30,7 +30,7 @@ jobs:
       with:
         node-version: 14
     - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1.0.0
+      uses: microsoft/setup-msbuild@v1
       if: ${{matrix.os == 'windows-latest'}}
     - name: Build
       run: packages/grpc-native-core/tools/run_tests/artifacts/build_one_artifact_${{matrix.os}}.sh
