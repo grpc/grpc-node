@@ -76,6 +76,10 @@ export interface ResolutionCallback {
   (configSelector: ConfigSelector): void;
 }
 
+export interface ResolutionFailureCallback {
+  (status: StatusObject): void;
+}
+
 export class ResolvingLoadBalancer implements LoadBalancer {
   /**
    * The resolver class constructed for the target address.
@@ -124,7 +128,8 @@ export class ResolvingLoadBalancer implements LoadBalancer {
     private readonly target: GrpcUri,
     private readonly channelControlHelper: ChannelControlHelper,
     private readonly channelOptions: ChannelOptions,
-    private readonly onSuccessfulResolution: ResolutionCallback
+    private readonly onSuccessfulResolution: ResolutionCallback,
+    private readonly onFailedResolution: ResolutionFailureCallback
   ) {
     if (channelOptions['grpc.service_config']) {
       this.defaultServiceConfig = validateServiceConfig(
@@ -261,6 +266,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
         ConnectivityState.TRANSIENT_FAILURE,
         new UnavailablePicker(error)
       );
+      this.onFailedResolution(error);
     }
     this.backoffTimeout.runOnce();
   }
