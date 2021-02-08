@@ -293,14 +293,16 @@ export class ChannelImplementation implements Channel {
   }
 
   private callRefTimerRef() {
-    if (!this.callRefTimer.hasRef()) {
+    // If the hasRef function does not exist, always run the code
+    if (!this.callRefTimer.hasRef?.()) {
       trace(LogVerbosity.DEBUG, 'channel', 'callRefTimer.ref | configSelectionQueue.length=' + this.configSelectionQueue.length + ' pickQueue.length=' + this.pickQueue.length);
       this.callRefTimer.ref?.();
     }
   }
 
   private callRefTimerUnref() {
-    if (this.callRefTimer.hasRef()) {
+    // If the hasRef function does not exist, always run the code
+    if ((!this.callRefTimer.hasRef) || (this.callRefTimer.hasRef())) {
       trace(LogVerbosity.DEBUG, 'channel', 'callRefTimer.unref | configSelectionQueue.length=' + this.configSelectionQueue.length + ' pickQueue.length=' + this.pickQueue.length);
       this.callRefTimer.unref?.();
     }
