@@ -59,7 +59,7 @@ class XdsResolver implements Resolver {
           onValidUpdate: (update: ServiceConfig) => {
             trace('Resolved service config for target ' + uriToString(this.target) + ': ' + JSON.stringify(update));
             this.hasReportedSuccess = true;
-            this.listener.onSuccessfulResolution([], update, null, {
+            this.listener.onSuccessfulResolution([], update, null, null, {
               xdsClient: this.xdsClient,
             });
           },

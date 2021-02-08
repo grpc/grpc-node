@@ -129,7 +129,7 @@ class DnsResolver implements Resolver {
     if (this.ipResult !== null) {
       trace('Returning IP address for target ' + uriToString(this.target));
       setImmediate(() => {
-        this.listener.onSuccessfulResolution(this.ipResult!, null, null, {});
+        this.listener.onSuccessfulResolution(this.ipResult!, null, null, null, {});
       });
       return;
     }
@@ -192,6 +192,7 @@ class DnsResolver implements Resolver {
             this.latestLookupResult,
             this.latestServiceConfig,
             this.latestServiceConfigError,
+            null,
             {}
           );
         },
@@ -237,6 +238,7 @@ class DnsResolver implements Resolver {
                 this.latestLookupResult,
                 this.latestServiceConfig,
                 this.latestServiceConfigError,
+                null,
                 {}
               );
             }

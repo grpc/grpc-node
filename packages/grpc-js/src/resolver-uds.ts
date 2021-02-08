@@ -40,6 +40,7 @@ class UdsResolver implements Resolver {
       this.addresses,
       null,
       null,
+      null,
       {}
     );
   }
