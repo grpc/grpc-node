@@ -177,6 +177,8 @@ class XdsClusterManager implements LoadBalancer {
   // End of XdsClusterManagerChildImpl
 
   private children: Map<string, XdsClusterManagerChild> = new Map<string, XdsClusterManagerChild>();
+  // Shutdown is a placeholder value that will never appear in normal operation.
+  private currentState: ConnectivityState = ConnectivityState.SHUTDOWN;
   constructor(private channelControlHelper: ChannelControlHelper) {}
 
   private updateState() {
@@ -207,6 +209,13 @@ class XdsClusterManager implements LoadBalancer {
       connectivityState = ConnectivityState.IDLE;
     } else {
       connectivityState = ConnectivityState.TRANSIENT_FAILURE;
+    }
+    /* For each of the states CONNECTING, IDLE, and TRANSIENT_FAILURE, there is
+     * exactly one corresponding picker, so if the state is one of those and
+     * that does not change, no new information is provided by passing the
+     * new state upward. */
+    if (connectivityState === this.currentState && connectivityState !== ConnectivityState.READY) {
+      return;
     }
     let picker: Picker;
 
