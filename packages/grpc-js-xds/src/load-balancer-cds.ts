@@ -16,7 +16,7 @@
  */
 
 import { connectivityState, status, Metadata, logVerbosity, experimental } from '@grpc/grpc-js';
-import { XdsClient, Watcher } from './xds-client';
+import { XdsClient } from './xds-client';
 import { Cluster__Output } from './generated/envoy/api/v2/Cluster';
 import SubchannelAddress = experimental.SubchannelAddress;
 import UnavailablePicker = experimental.UnavailablePicker;
@@ -26,6 +26,7 @@ import ChannelControlHelper = experimental.ChannelControlHelper;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
 import LoadBalancingConfig = experimental.LoadBalancingConfig;
 import { EdsLoadBalancingConfig } from './load-balancer-eds';
+import { Watcher } from './xds-stream-state/xds-stream-state';
 
 const TRACER_NAME = 'cds_balancer';
 
