@@ -362,7 +362,7 @@ export class ChannelImplementation implements Channel {
                       );
                       callStream.cancelWithStatus(
                         Status.INTERNAL,
-                        'Failed to start HTTP/2 stream'
+                        `Failed to start HTTP/2 stream with error: ${(error as Error).message}`
                       );
                     }
                   }
