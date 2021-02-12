@@ -196,6 +196,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
         this.updateState(this.latestChildState, this.latestChildPicker);
       }
     });
+    this.backoffTimeout.unref();
   }
 
   private updateResolution() {
