@@ -384,7 +384,7 @@ export class ChannelImplementation implements Channel {
               (error: Error & { code: number }) => {
                 // We assume the error code isn't 0 (Status.OK)
                 callStream.cancelWithStatus(
-                  error.code || Status.UNKNOWN,
+                  (typeof error.code === 'number') ? error.code : Status.UNKNOWN,
                   `Getting metadata from plugin failed with error: ${error.message}`
                 );
               }
