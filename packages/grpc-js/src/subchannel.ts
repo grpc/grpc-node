@@ -716,6 +716,9 @@ export class Subchannel {
     }
     logging.trace(LogVerbosity.DEBUG, 'call_stream', 'Starting stream on subchannel ' + this.subchannelAddressString + ' with headers\n' + headersString);
     callStream.attachHttp2Stream(http2Stream, this, extraFilterFactory);
+    http2Stream.on('error', () => {
+      this.session?.close();
+    });
   }
 
   /**

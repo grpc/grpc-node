@@ -638,12 +638,12 @@ export class Http2CallStream implements Call {
        * RST_STREAM as a result after we have the status */
       let code: number;
       if (this.finalStatus?.code === Status.OK) {
-        code = http2.constants.NGHTTP2_NO_ERROR;
+        this.http2Stream.close(http2.constants.NGHTTP2_NO_ERROR);
+        this.trace('close http2 stream with code ' + http2.constants.NGHTTP2_NO_ERROR);
       } else {
-        code = http2.constants.NGHTTP2_CANCEL;
+        this.http2Stream.destroy(new Error('Stream error'));
+        this.trace('destroy http2 stream after error ');
       }
-      this.trace('close http2 stream with code ' + code);
-      this.http2Stream.close(code);
     }
   }
 
