@@ -42,7 +42,8 @@
     "yargs": "^15.4.1"
   },
   "dependencies": {
-    "@grpc/proto-loader": "^0.6.0-pre14"
+    "@grpc/proto-loader": "^0.6.0-pre14",
+    "re2-wasm": "^1.0.1"
   },
   "peerDependencies": {
     "@grpc/grpc-js": "~1.2.2"

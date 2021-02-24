@@ -19,7 +19,7 @@ import * as protoLoader from '@grpc/proto-loader';
 import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
 import { Listener__Output } from "../generated/envoy/api/v2/Listener";
 import { RdsState } from "./rds-state";
-import { XdsStreamState } from "./xds-stream-state";
+import { Watcher, XdsStreamState } from "./xds-stream-state";
 import { HttpConnectionManager__Output } from '../generated/envoy/config/filter/network/http_connection_manager/v2/HttpConnectionManager';
 
 const TRACER_NAME = 'xds_client';
@@ -35,10 +35,60 @@ export class LdsState implements XdsStreamState<Listener__Output> {
   versionInfo = '';
   nonce = '';
 
-  constructor(private targetName: string, private rdsState: RdsState) {}
+  private watchers: Map<string, Watcher<Listener__Output>[]> = new Map<string, Watcher<Listener__Output>[]>();
+  private latestResponses: Listener__Output[] = [];
+
+  constructor(private rdsState: RdsState, private updateResourceNames: () => void) {}
+
+  addWatcher(targetName: string, watcher: Watcher<Listener__Output>) {
+    trace('Adding RDS watcher for targetName ' + targetName);
+    let watchersEntry = this.watchers.get(targetName);
+    let addedServiceName = false;
+    if (watchersEntry === undefined) {
+      addedServiceName = true;
+      watchersEntry = [];
+      this.watchers.set(targetName, watchersEntry);
+    }
+    watchersEntry.push(watcher);
+
+    /* If we have already received an update for the requested edsServiceName,
+     * immediately pass that update along to the watcher */
+    for (const message of this.latestResponses) {
+      if (message.name === targetName) {
+        /* These updates normally occur asynchronously, so we ensure that
+         * the same happens here */
+        process.nextTick(() => {
+          trace('Reporting existing RDS update for new watcher for targetName ' + targetName);
+          watcher.onValidUpdate(message);
+        });
+      }
+    }
+    if (addedServiceName) {
+      this.updateResourceNames();
+    }
+  }
+
+  removeWatcher(targetName: string, watcher: Watcher<Listener__Output>): void {
+    trace('Removing RDS watcher for targetName ' + targetName);
+    const watchersEntry = this.watchers.get(targetName);
+    let removedServiceName = false;
+    if (watchersEntry !== undefined) {
+      const entryIndex = watchersEntry.indexOf(watcher);
+      if (entryIndex >= 0) {
+        watchersEntry.splice(entryIndex, 1);
+      }
+      if (watchersEntry.length === 0) {
+        removedServiceName = true;
+        this.watchers.delete(targetName);
+      }
+    }
+    if (removedServiceName) {
+      this.updateResourceNames();
+    }
+  }
 
   getResourceNames(): string[] {
-    return [this.targetName];
+    return Array.from(this.watchers.keys());
   }
 
   private validateResponse(message: Listener__Output): boolean {
@@ -59,47 +109,47 @@ export class LdsState implements XdsStreamState<Listener__Output> {
       case 'rds':
         return !!httpConnectionManager.rds?.config_source?.ads;
       case 'route_config':
-        return true;
+        return this.rdsState.validateResponse(httpConnectionManager.route_config!);
     }
     return false;
   }
 
-  handleResponses(responses: Listener__Output[]): string | null {
-    trace('Received LDS update with names ' + responses.map(message => message.name));
-    for (const message of responses) {
-      if (message.name === this.targetName) {
-        if (this.validateResponse(message)) {
-          // The validation step ensures that this is correct
-          const httpConnectionManager = message.api_listener!
-            .api_listener as protoLoader.AnyExtension &
-            HttpConnectionManager__Output;
-          switch (httpConnectionManager.route_specifier) {
-            case 'rds':
-              trace('Received LDS update with RDS route config name ' + httpConnectionManager.rds!.route_config_name);
-              this.rdsState.setRouteConfigName(
-                httpConnectionManager.rds!.route_config_name
-              );
-              break;
-            case 'route_config':
-              trace('Received LDS update with route configuration');
-              this.rdsState.setRouteConfigName(null);
-              this.rdsState.handleSingleMessage(
-                httpConnectionManager.route_config!
-              );
-              break;
-            default:
-            // The validation rules should prevent this
-          }
-        } else {
-          trace('LRS validation error for message ' + JSON.stringify(message));
-          return 'LRS Error: Listener validation failed';
+  private handleMissingNames(allTargetNames: Set<string>) {
+    for (const [targetName, watcherList] of this.watchers.entries()) {
+      if (!allTargetNames.has(targetName)) {
+        for (const watcher of watcherList) {
+          watcher.onResourceDoesNotExist();
         }
       }
     }
+  }
+
+  handleResponses(responses: Listener__Output[]): string | null {
+    for (const message of responses) {
+      if (!this.validateResponse(message)) {
+        trace('LDS validation failed for message ' + JSON.stringify(message));
+        return 'LDS Error: Route validation failed';
+      }
+    }
+    this.latestResponses = responses;
+    const allTargetNames = new Set<string>();
+    for (const message of responses) {
+      allTargetNames.add(message.name);
+      const watchers = this.watchers.get(message.name) ?? [];
+      for (const watcher of watchers) {
+        watcher.onValidUpdate(message);
+      }
+    }
+    trace('Received RDS response with route config names ' + Array.from(allTargetNames));
+    this.handleMissingNames(allTargetNames);
     return null;
   }
 
   reportStreamError(status: StatusObject): void {
-    // Nothing to do here
+    for (const watcherList of this.watchers.values()) {
+      for (const watcher of watcherList) {
+        watcher.onTransientError(status);
+      }
+    }
   }
 }
