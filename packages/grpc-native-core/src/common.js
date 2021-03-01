@@ -155,7 +155,7 @@ exports.zipObject = function(props, values) {
  * @return {Boolean}
  */
 exports.isPrototypePolluted = function(key) {
-  return ['__proto__', 'prototype', 'constructor'].includes(key);
+  return ['__proto__', 'prototype', 'constructor'].indexOf(key) >= 0;
 }
 
 // JSDoc definitions that are used in multiple other modules
