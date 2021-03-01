@@ -37,6 +37,7 @@ import { RouteMatch__Output } from './generated/envoy/api/v2/route/RouteMatch';
 import { HeaderMatcher__Output } from './generated/envoy/api/v2/route/HeaderMatcher';
 import ConfigSelector = experimental.ConfigSelector;
 import LoadBalancingConfig = experimental.LoadBalancingConfig;
+import { XdsClusterManagerLoadBalancingConfig } from './load-balancer-xds-cluster-manager';
 
 const TRACER_NAME = 'xds_resolver';
 
@@ -376,7 +377,8 @@ class XdsResolver implements Resolver {
         const routeMatcher = getPredicateForMatcher(route.match!);
         matchList.push({matcher: routeMatcher, action: routeAction});
       }
-      // Mark clusters that are not in this config, and remove ones with no references
+      /* Mark clusters that are not in this route config, and remove ones with
+       * no references */
       for (const [name, refCount] of Array.from(this.clusterRefcounts.entries())) {
         if (!allConfigClusters.has(name)) {
           refCount.inLastConfig = false;
@@ -385,6 +387,7 @@ class XdsResolver implements Resolver {
           }
         }
       }
+      // Add any new clusters from this route config
       for (const name of allConfigClusters) {
         if (this.clusterRefcounts.has(name)) {
           this.clusterRefcounts.get(name)!.inLastConfig = true;
@@ -410,7 +413,7 @@ class XdsResolver implements Resolver {
         }
         return {
           methodConfig: {name: []},
-          // pickInformation won't be used here, but it's set because of some TypeScript weirdness
+          // cluster won't be used here, but it's set because of some TypeScript weirdness
           pickInformation: {cluster: ''},
           status: status.UNAVAILABLE
         };
@@ -419,8 +422,14 @@ class XdsResolver implements Resolver {
       for (const clusterName of this.clusterRefcounts.keys()) {
         clusterConfigMap.set(clusterName, {child_policy: [new CdsLoadBalancingConfig(clusterName)]});
       }
-      // TODO: Create xdsClusterManagerLoadBalancingConfig and report successful resolution
+      const lbPolicyConfig = new XdsClusterManagerLoadBalancingConfig(clusterConfigMap);
+      const serviceConfig: ServiceConfig = {
+        methodConfig: [],
+        loadBalancingConfig: [lbPolicyConfig]
+      }
+      this.listener.onSuccessfulResolution([], serviceConfig, null, configSelector, {});
     } else {
+      // !GRPC_XDS_EXPERIMENTAL_ROUTING
       for (const virtualHost of routeConfig.virtual_hosts) {
         if (virtualHost.domains.indexOf(this.target.path) >= 0) {
           const route = virtualHost.routes[virtualHost.routes.length - 1];

@@ -44,7 +44,7 @@ interface ClusterManagerChild {
   child_policy: LoadBalancingConfig[];
 }
 
-class XdsClusterManagerLoadBalancingConfig implements LoadBalancingConfig {
+export class XdsClusterManagerLoadBalancingConfig implements LoadBalancingConfig {
   getLoadBalancerName(): string {
     return TYPE_NAME;
   }
