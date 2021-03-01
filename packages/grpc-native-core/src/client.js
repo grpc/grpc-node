@@ -992,7 +992,7 @@ exports.makeClientConstructor = function(methods, serviceName,
 
   Object.keys(methods).forEach(name => {
     const attrs = methods[name];
-    if (name === '__proto__') {
+    if (common.isPrototypePolluted(name)) {
       return;
     }
     if (name.indexOf('$') === 0) {
@@ -1014,7 +1014,7 @@ exports.makeClientConstructor = function(methods, serviceName,
     ServiceClient.prototype.$method_names[attrs.path] = name;
     // Associate all provided attributes with the method
     Object.assign(ServiceClient.prototype[name], attrs);
-    if (attrs.originalName && attrs.originalName !== '__proto__') {
+    if (attrs.originalName && !common.isPrototypePolluted(attrs.originalName)) {
       ServiceClient.prototype[attrs.originalName] =
         ServiceClient.prototype[name];
     }

@@ -148,6 +148,16 @@ exports.zipObject = function(props, values) {
   }, {});
 }
 
+/**
+ * Returns true, if given key is included in the blacklisted
+ * keys.
+ * @param key {String} key for check, string.
+ * @return {Boolean}
+ */
+exports.isPrototypePolluted = function(key) {
+  return ['__proto__', 'prototype', 'constructor'].indexOf(key) >= 0;
+}
+
 // JSDoc definitions that are used in multiple other modules
 
 /**

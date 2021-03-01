@@ -161,7 +161,7 @@ exports.loadPackageDefinition = function loadPackageDefintion(packageDef) {
   for (const serviceFqn in packageDef) {
     const service = packageDef[serviceFqn];
     const nameComponents = serviceFqn.split('.');
-    if (nameComponents.some(comp => comp === '__proto__')) {
+    if (nameComponents.some(comp => common.isPrototypePolluted(comp))) {
       continue;
     }
     const serviceName = nameComponents[nameComponents.length-1];
