@@ -48,7 +48,7 @@ import { RouteConfiguration__Output } from './generated/envoy/api/v2/RouteConfig
 import { Any__Output } from './generated/google/protobuf/Any';
 import BackoffTimeout = experimental.BackoffTimeout;
 import ServiceConfig = experimental.ServiceConfig;
-import createGoogleDefaultCredentials = experimental.createGoogleDefaultCredentials;
+import { createGoogleDefaultCredentials } from './google-default-credentials';
 import { CdsLoadBalancingConfig } from './load-balancer-cds';
 import { EdsState } from './xds-stream-state/eds-state';
 import { CdsState } from './xds-stream-state/cds-state';
