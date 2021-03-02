@@ -16,6 +16,7 @@
  */
 
 import * as http2 from 'http2';
+import * as os from 'os';
 
 import { CallCredentials } from './call-credentials';
 import { Propagate, Status } from './constants';
@@ -37,8 +38,34 @@ const {
   NGHTTP2_CANCEL,
 } = http2.constants;
 
-interface NodeError extends Error {
+/**
+ * https://nodejs.org/api/errors.html#errors_class_systemerror
+ */
+interface SystemError extends Error {
+  address?: string;
   code: string;
+  dest?: string;
+  errno: number;
+  info?: object;
+  message: string;
+  path?: string;
+  port?: number;
+  syscall: string;
+}
+
+/**
+ * Should do approximately the same thing as util.getSystemErrorName but the
+ * TypeScript types don't have that function for some reason so I just made my
+ * own.
+ * @param errno 
+ */
+function getSystemErrorName(errno: number): string {
+  for (const [name, num] of Object.entries(os.constants.errno)) {
+    if (num === errno) {
+      return name;
+    }
+  }
+  return 'Unknown system error ' + errno;
 }
 
 export type Deadline = Date | number;
@@ -206,7 +233,7 @@ export class Http2CallStream implements Call {
 
   private listener: InterceptingListener | null = null;
 
-  private internalErrorMessage: string | null = null;
+  private internalError: SystemError | null = null;
 
   constructor(
     private readonly methodName: string,
@@ -567,7 +594,7 @@ export class Http2CallStream implements Call {
               break;
             case http2.constants.NGHTTP2_INTERNAL_ERROR:
               code = Status.INTERNAL;
-              if (this.internalErrorMessage === null) {
+              if (this.internalError === null) {
                 /* This error code was previously handled in the default case, and
                  * there are several instances of it online, so I wanted to
                  * preserve the original error message so that people find existing
@@ -575,11 +602,16 @@ export class Http2CallStream implements Call {
                  * "Internal server error" message. */
                 details = `Received RST_STREAM with code ${stream.rstCode} (Internal server error)`;
               } else {
-                /* The "Received RST_STREAM with code ..." error is preserved
-                 * here for continuity with errors reported online, but the
-                 * error message at the end will probably be more relevant in
-                 * most cases. */
-                details = `Received RST_STREAM with code ${stream.rstCode} triggered by internal client error: ${this.internalErrorMessage}`;
+                if (this.internalError.errno === os.constants.errno.ECONNRESET) {
+                  code = Status.UNAVAILABLE;
+                  details = this.internalError.message;
+                } else {
+                  /* The "Received RST_STREAM with code ..." error is preserved
+                   * here for continuity with errors reported online, but the
+                   * error message at the end will probably be more relevant in
+                   * most cases. */
+                  details = `Received RST_STREAM with code ${stream.rstCode} triggered by internal client error: ${this.internalError.message}`;
+                }
               }
               break;
             default:
@@ -593,7 +625,7 @@ export class Http2CallStream implements Call {
           this.endCall({ code, details, metadata: new Metadata() });
         });
       });
-      stream.on('error', (err: NodeError) => {
+      stream.on('error', (err: SystemError) => {
         /* We need an error handler here to stop "Uncaught Error" exceptions
          * from bubbling up. However, errors here should all correspond to
          * "close" events, where we will handle the error more granularly */
@@ -602,7 +634,8 @@ export class Http2CallStream implements Call {
          * https://github.com/nodejs/node/blob/8b8620d580314050175983402dfddf2674e8e22a/lib/internal/http2/core.js#L2267
          */
         if (err.code !== 'ERR_HTTP2_STREAM_ERROR') {
-          this.internalErrorMessage = err.message;
+          this.trace('Node error event: message=' + err.message + ' code=' + err.code + ' errno=' + getSystemErrorName(err.errno) + ' syscall=' + err.syscall);
+          this.internalError = err;
         }
       });
       if (!this.pendingRead) {
