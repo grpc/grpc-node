@@ -360,12 +360,14 @@ export class XdsClient {
           channelCreds,
           channelArgs
         );
+        this.maybeStartAdsStream();
 
         this.lrsClient = new protoDefinitions.envoy.service.load_stats.v2.LoadReportingService(
           bootstrapInfo.xdsServers[0].serverUri,
           channelCreds,
           {channelOverride: this.adsClient.getChannel()}
         );
+        this.maybeStartLrsStream();
       },
       (error) => {
         trace('Failed to initialize xDS Client. ' + error.message);
@@ -437,6 +439,12 @@ export class XdsClient {
       return;
     }
     if (this.hasShutdown) {
+      return;
+    }
+    if (this.adsState[EDS_TYPE_URL].getResourceNames().length === 0 &&
+    this.adsState[CDS_TYPE_URL].getResourceNames().length === 0 &&
+    this.adsState[RDS_TYPE_URL].getResourceNames().length === 0 &&
+    this.adsState[LDS_TYPE_URL].getResourceNames().length === 0) {
       return;
     }
     trace('Starting ADS stream');
@@ -556,6 +564,12 @@ export class XdsClient {
       return;
     }
     if (this.hasShutdown) {
+      return;
+    }
+    if (this.adsState[EDS_TYPE_URL].getResourceNames().length === 0 &&
+    this.adsState[CDS_TYPE_URL].getResourceNames().length === 0 &&
+    this.adsState[RDS_TYPE_URL].getResourceNames().length === 0 &&
+    this.adsState[LDS_TYPE_URL].getResourceNames().length === 0) {
       return;
     }
   
