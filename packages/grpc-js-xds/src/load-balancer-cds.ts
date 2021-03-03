@@ -121,10 +121,6 @@ export class CdsLoadBalancer implements LoadBalancer {
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig, undefined, 2));
       return;
     }
-    if (!(attributes.xdsClient instanceof XdsClient)) {
-      trace('Discarding address list update missing xdsClient attribute');
-      return;
-    }
     trace('Received update with config ' + JSON.stringify(lbConfig, undefined, 2));
     this.latestAttributes = attributes;
 
