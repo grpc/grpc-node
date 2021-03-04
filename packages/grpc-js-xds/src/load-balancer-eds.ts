@@ -377,7 +377,7 @@ export class EdsLoadBalancer implements LoadBalancer {
           validateLoadBalancingConfig({ round_robin: {} }),
         ];
         let childPolicy: LoadBalancingConfig[];
-        if (this.lastestConfig.getLrsLoadReportingServerName()) {
+        if (this.lastestConfig.getLrsLoadReportingServerName() !== undefined) {
           childPolicy = [new LrsLoadBalancingConfig(this.lastestConfig.getCluster(), this.lastestConfig.getEdsServiceName() ?? '', this.lastestConfig.getLrsLoadReportingServerName()!, localityObj.locality, endpointPickingPolicy)];
         } else {
           childPolicy = endpointPickingPolicy;

@@ -751,6 +751,7 @@ export class XdsClient {
     clusterName: string,
     edsServiceName: string
   ): XdsClusterDropStats {
+    trace('addClusterDropStats(lrsServer=' + lrsServer + ', clusterName=' + clusterName + ', edsServiceName=' + edsServiceName + ')');
     if (lrsServer !== '') {
       return {
         addCallDropped: (category) => {},
@@ -774,6 +775,7 @@ export class XdsClient {
     edsServiceName: string,
     locality: Locality__Output
   ): XdsClusterLocalityStats {
+    trace('addClusterLocalityStats(lrsServer=' + lrsServer + ', clusterName=' + clusterName + ', edsServiceName=' + edsServiceName + ', locality=' + JSON.stringify(locality) + ')');
     if (lrsServer !== '') {
       return {
         addCallStarted: () => {},
