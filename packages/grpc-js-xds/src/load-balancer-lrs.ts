@@ -16,7 +16,6 @@
  */
 
 import { connectivityState as ConnectivityState, StatusObject, status as Status, experimental } from '@grpc/grpc-js';
-import { type } from 'os';
 import { Locality__Output } from './generated/envoy/api/v2/core/Locality';
 import { XdsClusterLocalityStats, XdsClient } from './xds-client';
 import LoadBalancer = experimental.LoadBalancer;
