@@ -1068,7 +1068,6 @@ export class XdsClient {
     if (!this.lrsCall) {
       return;
     }
-    trace('Sending LRS stats');
     const clusterStats: ClusterStats[] = [];
     for (const [
       { clusterName, edsServiceName },
@@ -1129,6 +1128,7 @@ export class XdsClient {
         }
       }
     }
+    trace('Sending LRS stats ' + JSON.stringify(clusterStats, undefined, 2));
     this.lrsCall.write({
       node: this.lrsNode!,
       cluster_stats: clusterStats,
