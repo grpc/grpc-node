@@ -442,21 +442,8 @@ export class Http2CallStream implements Call {
       );
     }
     const status: StatusObject = { code, details, metadata };
-    let finalStatus;
-    try {
-      // Attempt to assign final status.
-      finalStatus = this.filterStack.receiveTrailers(status);
-    } catch (error) {
-      // This is a no-op if the call was already ended when handling headers.
-      this.endCall({
-        code: Status.INTERNAL,
-        details: 'Failed to process received status',
-        metadata: new Metadata(),
-      });
-      return;
-    }
     // This is a no-op if the call was already ended when handling headers.
-    this.endCall(finalStatus);
+    this.endCall(status);
   }
 
   attachHttp2Stream(
