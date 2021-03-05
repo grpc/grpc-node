@@ -76,7 +76,7 @@ export class BackoffTimeout {
       this.running = false;
     }, this.nextDelay);
     if (!this.hasRef) {
-      this.timerId.unref();
+      this.timerId.unref?.();
     }
     const nextBackoff = Math.min(
       this.nextDelay * this.multiplier,
@@ -109,11 +109,11 @@ export class BackoffTimeout {
 
   ref() {
     this.hasRef = true;
-    this.timerId.ref();
+    this.timerId.ref?.();
   }
 
   unref() {
     this.hasRef = false;
-    this.timerId.unref();
+    this.timerId.unref?.();
   }
 }
