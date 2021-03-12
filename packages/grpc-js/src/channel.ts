@@ -480,6 +480,9 @@ export class ChannelImplementation implements Channel {
     deadline: Date | number,
     callback: (error?: Error) => void
   ): void {
+    if (this.connectivityState === ConnectivityState.SHUTDOWN) {
+      throw new Error('Channel has been shut down');
+    }
     let timer = null;
     if(deadline !== Infinity) {
       const deadlineDate: Date =
