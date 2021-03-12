@@ -102,6 +102,15 @@ describe('Descriptor types', () => {
     proto_loader.loadSync(`${TEST_PROTO_DIR}/well_known.proto`);
   });
 
+  it('Can load JSON descriptors', () => {
+    // This is protobuf.js JSON descriptor
+    // https://github.com/protobufjs/protobuf.js#using-json-descriptors
+    const buffer = readFileSync(`${TEST_PROTO_DIR}/rpc.proto.json`);
+    const json = JSON.parse(buffer.toString());
+    // This will throw if the rpc descriptor JSON cannot be decoded
+    proto_loader.fromJSON(json);
+  });
+
   it('Can load binary-encoded proto file descriptor sets', () => {
     const buffer = readFileSync(`${TEST_PROTO_DIR}/rpc.desc.bin`);
     // This will throw if the rpc descriptor cannot be decoded
