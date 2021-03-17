@@ -399,17 +399,10 @@ export function fromJSON(
   json: Protobuf.INamespace,
   root?: Protobuf.Root
 ): PackageDefinition {
-  const options: Options = json.options || {};
   const newRoot: Protobuf.Root = root || new Protobuf.Root();
-  if (!!options.includeDirs) {
-    if (!Array.isArray(options.includeDirs)) {
-      throw new Error('The includeDirs option must be an array');
-    }
-    addIncludePathResolver(newRoot, options.includeDirs as string[]);
-  }
   const loadedRoot = Protobuf.Root.fromJSON(json, newRoot);
   loadedRoot.resolveAll();
-  return createPackageDefinition(newRoot, options!);
+  return createPackageDefinition(newRoot, {});
 }
 
 export function loadFileDescriptorSetFromBuffer(
