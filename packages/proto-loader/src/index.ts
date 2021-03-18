@@ -398,10 +398,9 @@ export function loadSync(
 export function fromJSON(
   json: Protobuf.INamespace
 ): PackageDefinition {
-  const newRoot: Protobuf.Root = new Protobuf.Root();
-  const loadedRoot = Protobuf.Root.fromJSON(json, newRoot);
+  const loadedRoot = Protobuf.Root.fromJSON(json);
   loadedRoot.resolveAll();
-  return createPackageDefinition(newRoot, {});
+  return createPackageDefinition(loadedRoot, {});
 }
 
 export function loadFileDescriptorSetFromBuffer(
