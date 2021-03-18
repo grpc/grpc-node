@@ -396,11 +396,16 @@ export function loadSync(
 }
 
 export function fromJSON(
-  json: Protobuf.INamespace
+  json: Protobuf.INamespace,
+  options?: Options
 ): PackageDefinition {
+  options = options || {};
+  if (!!options.includeDirs) {
+    throw new Error('The fromJSON does not need to load any files, checkout your options');
+  }
   const loadedRoot = Protobuf.Root.fromJSON(json);
   loadedRoot.resolveAll();
-  return createPackageDefinition(loadedRoot, {});
+  return createPackageDefinition(loadedRoot, options!);
 }
 
 export function loadFileDescriptorSetFromBuffer(
