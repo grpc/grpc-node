@@ -1,6 +1,6 @@
 // Original file: deps/gapic-showcase/schema/google/showcase/v1beta1/echo.proto
 
-import * as grpc from '@grpc/grpc-js'
+import type * as grpc from '@grpc/grpc-js'
 import type { BlockRequest as _google_showcase_v1beta1_BlockRequest, BlockRequest__Output as _google_showcase_v1beta1_BlockRequest__Output } from '../../../google/showcase/v1beta1/BlockRequest';
 import type { BlockResponse as _google_showcase_v1beta1_BlockResponse, BlockResponse__Output as _google_showcase_v1beta1_BlockResponse__Output } from '../../../google/showcase/v1beta1/BlockResponse';
 import type { EchoRequest as _google_showcase_v1beta1_EchoRequest, EchoRequest__Output as _google_showcase_v1beta1_EchoRequest__Output } from '../../../google/showcase/v1beta1/EchoRequest';
