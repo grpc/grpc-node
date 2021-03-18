@@ -26,6 +26,9 @@ import { TestServiceClient } from './generated/grpc/testing/TestService';
 import { LoadBalancerStatsResponse } from './generated/grpc/testing/LoadBalancerStatsResponse';
 import * as yargs from 'yargs';
 import { LoadBalancerStatsServiceHandlers } from './generated/grpc/testing/LoadBalancerStatsService';
+import { XdsUpdateClientConfigureServiceHandlers } from './generated/grpc/testing/XdsUpdateClientConfigureService';
+import { Empty__Output } from './generated/grpc/testing/Empty';
+import { LoadBalancerAccumulatedStatsResponse } from './generated/grpc/testing/LoadBalancerAccumulatedStatsResponse';
 
 grpc_xds.register();
 
@@ -159,47 +162,95 @@ class CallStatsTracker {
   }
 }
 
-function sendConstantQps(client: TestServiceClient, qps: number, failOnFailedRpcs: boolean, callStatsTracker: CallStatsTracker) {
-  let anyCallSucceeded: boolean = false;
-  setInterval(() => {
-    const notifier = callStatsTracker.startCall();
-    let gotMetadata: boolean = false;
-    let hostname: string | null = null;
-    let completed: boolean = false;
-    let completedWithError: boolean = false;
-    const deadline = new Date();
-    deadline.setSeconds(deadline.getSeconds() + REQUEST_TIMEOUT_SEC);
-    const call = client.emptyCall({}, {deadline}, (error, value) => {
-      if (error) {
-        if (failOnFailedRpcs && anyCallSucceeded) {
-          console.error('A call failed after a call succeeded');
-          process.exit(1);
-        }
-        completed = true;
-        completedWithError = true;
-        notifier.onCallFailed(error.message);
-      } else {
-        anyCallSucceeded = true;
-        if (gotMetadata) {
-          if (hostname === null) {
-            notifier.onCallFailed('Hostname omitted from call metadata');
-          } else {
-            notifier.onCallSucceeded(hostname);
-          }
-        }
+type CallType = 'EMPTY_CALL' | 'UNARY_CALL';
+
+interface ClientConfiguration {
+  callTypes: (CallType)[];
+  metadata: {
+    EMPTY_CALL: grpc.Metadata,
+    UNARY_CALL: grpc.Metadata
+  },
+  timeoutSec: number
+}
+
+const currentConfig: ClientConfiguration = {
+  callTypes: ['EMPTY_CALL'],
+  metadata: {
+    EMPTY_CALL: new grpc.Metadata(),
+    UNARY_CALL: new grpc.Metadata()
+  },
+  timeoutSec: REQUEST_TIMEOUT_SEC
+};
+
+let anyCallSucceeded = false;
+
+const accumulatedStats: LoadBalancerAccumulatedStatsResponse = {
+  stats_per_method: {
+    'EMPTY_CALL': {
+      rpcs_started: 0,
+      result: {}
+    },
+    'UNARY_CALL': {
+      rpcs_started: 0,
+      result: {}
+    }
+  }
+};
+
+function makeSingleRequest(client: TestServiceClient, type: CallType, failOnFailedRpcs: boolean, callStatsTracker: CallStatsTracker) {
+  const callTypeStats = accumulatedStats.stats_per_method![type];
+  callTypeStats.rpcs_started! += 1;
+
+  const notifier = callStatsTracker.startCall();
+  let gotMetadata: boolean = false;
+  let hostname: string | null = null;
+  let completed: boolean = false;
+  let completedWithError: boolean = false;
+  const deadline = new Date();
+  deadline.setSeconds(deadline.getSeconds() + currentConfig.timeoutSec);
+  const callback = (error: grpc.ServiceError | undefined, value: Empty__Output | undefined) => {
+    const statusCode = error?.code ?? grpc.status.OK;
+    callTypeStats.result![statusCode] = (callTypeStats.result![statusCode] ?? 0) + 1;
+    if (error) {
+      if (failOnFailedRpcs && anyCallSucceeded) {
+        console.error('A call failed after a call succeeded');
+        process.exit(1);
       }
-    });
-    call.on('metadata', (metadata) => {
-      hostname = (metadata.get('hostname') as string[])[0] ?? null;
-      gotMetadata = true;
-      if (completed && !completedWithError) {
+      completed = true;
+      completedWithError = true;
+      notifier.onCallFailed(error.message);
+    } else {
+      anyCallSucceeded = true;
+      if (gotMetadata) {
         if (hostname === null) {
           notifier.onCallFailed('Hostname omitted from call metadata');
         } else {
           notifier.onCallSucceeded(hostname);
         }
       }
-    })
+    }
+  };
+  const method = (type === 'EMPTY_CALL' ? client.emptyCall : client.unaryCall).bind(client);
+  const call = method({}, currentConfig.metadata[type], {deadline}, callback);
+  call.on('metadata', (metadata) => {
+    hostname = (metadata.get('hostname') as string[])[0] ?? null;
+    gotMetadata = true;
+    if (completed && !completedWithError) {
+      if (hostname === null) {
+        notifier.onCallFailed('Hostname omitted from call metadata');
+      } else {
+        notifier.onCallSucceeded(hostname);
+      }
+    }
+  });
+
+}
+
+function sendConstantQps(client: TestServiceClient, qps: number, failOnFailedRpcs: boolean, callStatsTracker: CallStatsTracker) {
+  setInterval(() => {
+    for (const callType of currentConfig.callTypes) {
+      makeSingleRequest(client, callType, failOnFailedRpcs, callStatsTracker);
+    }
   }, 1000/qps);
 }
 
@@ -234,11 +285,30 @@ function main() {
       }, (error) => {
         callback({code: grpc.status.ABORTED, details: 'Call stats collection failed'});
       });
+    },
+    GetClientAccumulatedStats: (call, callback) => {
+      callback(null, accumulatedStats);
+    }
+  }
+
+  const xdsUpdateClientConfigureServiceImpl: XdsUpdateClientConfigureServiceHandlers = {
+    Configure: (call, callback) => {
+      const callMetadata = {
+        EMPTY_CALL: new grpc.Metadata(),
+        UNARY_CALL: new grpc.Metadata()
+      }
+      for (const metadataItem of call.request.metadata) {
+        callMetadata[metadataItem.type].add(metadataItem.key, metadataItem.value);
+      }
+      currentConfig.callTypes = call.request.types;
+      currentConfig.metadata = callMetadata;
+      currentConfig.timeoutSec = call.request.timeout_sec
     }
   }
 
   const server = new grpc.Server();
   server.addService(loadedProto.grpc.testing.LoadBalancerStatsService.service, loadBalancerStatsServiceImpl);
+  server.addService(loadedProto.grpc.testing.XdsUpdateClientConfigureService.service, xdsUpdateClientConfigureServiceImpl);
   server.bindAsync(`0.0.0.0:${argv.stats_port}`, grpc.ServerCredentials.createInsecure(), (error, port) => {
     if (error) {
       throw error;
