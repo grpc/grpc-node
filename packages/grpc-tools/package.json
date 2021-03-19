@@ -20,7 +20,6 @@
     "grpc_tools_node_protoc_plugin": "./bin/protoc_plugin.js"
   },
   "scripts": {
-    "install": "node-pre-gyp install",
     "prepublishOnly": "git submodule update --init --recursive && node copy_well_known_protos.js"
   },
   "dependencies": {
@@ -30,6 +29,8 @@
     "index.js",
     "bin/protoc.js",
     "bin/protoc_plugin.js",
+    "bin/protoc",
+    "bin/grpc_node_plugin",
     "bin/google/protobuf",
     "LICENSE"
   ],
