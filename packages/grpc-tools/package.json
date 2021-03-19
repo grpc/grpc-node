@@ -1,14 +1,14 @@
 {
-  "name": "grpc-tools",
+  "name": "@faire/grpc-tools",
   "version": "1.11.0",
   "author": "Google Inc.",
   "description": "Tools for developing with gRPC on Node.js",
-  "homepage": "https://grpc.io/",
+  "homepage": "git@github.com:Faire/grpc-node.git",
   "repository": {
     "type": "git",
-    "url": "https://github.com/grpc/grpc-node.git"
+    "url": "https://github.com/Faire/grpc-node.git"
   },
-  "bugs": "https://github.com/grpc/grpc-node/issues",
+  "bugs": "https://github.com/Faire/grpc-node/issues",
   "contributors": [
     {
       "name": "Michael Lumish",
@@ -25,13 +25,6 @@
   },
   "dependencies": {
     "node-pre-gyp": "^0.15.0"
-  },
-  "binary": {
-    "module_name": "grpc_tools",
-    "host": "https://node-precompiled-binaries.grpc.io/",
-    "remote_path": "{name}/v{version}",
-    "package_name": "{platform}-{arch}.tar.gz",
-    "module_path": "bin"
   },
   "files": [
     "index.js",
