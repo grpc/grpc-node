@@ -400,9 +400,6 @@ export function fromJSON(
   options?: Options
 ): PackageDefinition {
   options = options || {};
-  if (!!options.includeDirs) {
-    throw new Error('The fromJSON does not need to load any files, checkout your options');
-  }
   const loadedRoot = Protobuf.Root.fromJSON(json);
   loadedRoot.resolveAll();
   return createPackageDefinition(loadedRoot, options!);
