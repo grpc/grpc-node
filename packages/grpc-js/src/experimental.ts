@@ -1,5 +1,5 @@
 export { trace } from './logging';
-export { Resolver, ResolverListener, registerResolver } from './resolver';
+export { Resolver, ResolverListener, registerResolver, ConfigSelector } from './resolver';
 export { GrpcUri, uriToString } from './uri-parser';
 export { ServiceConfig } from './service-config';
 export { BackoffTimeout } from './backoff-timeout';
