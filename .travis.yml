@@ -1,0 +1,21 @@
+language: node_js
+node_js:
+  - "14.16.0"
+cache:
+  yarn: true
+  directories:
+    - node_modules
+before_install:
+  - export TZ=America/New_York
+jobs:
+  include:
+    - stage: "build and publish"
+      name: "Build and Publish"
+      script:
+        - cd ./packages/grpc-tools/
+        - ./build_binaries.sh
+        - mv build/bin/* bin
+        - npm publish
+branches:
+  only:
+    - master
