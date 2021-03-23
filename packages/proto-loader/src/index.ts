@@ -395,6 +395,16 @@ export function loadSync(
   return createPackageDefinition(root, options!);
 }
 
+export function fromJSON(
+  json: Protobuf.INamespace,
+  options?: Options
+): PackageDefinition {
+  options = options || {};
+  const loadedRoot = Protobuf.Root.fromJSON(json);
+  loadedRoot.resolveAll();
+  return createPackageDefinition(loadedRoot, options!);
+}
+
 export function loadFileDescriptorSetFromBuffer(
   descriptorSet: Buffer,
   options?: Options
