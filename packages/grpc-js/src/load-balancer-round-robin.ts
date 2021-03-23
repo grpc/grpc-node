@@ -45,6 +45,61 @@ function trace(text: string): void {
   logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
 }
 
+function getTargetConnectionCount(): number {
+  const connectionCountEnv = process.env.GRPC_EXPERIMENTAL_ROUNDROBIN_RANDOM_MAX_CONNECTIONS;
+  if (connectionCountEnv === undefined) {
+    return Infinity;
+  }
+  trace('Read environment variable GRPC_EXPERIMENTAL_ROUNDROBIN_RANDOM_MAX_CONNECTIONS=' + connectionCountEnv);
+  const parsedConnectionCount = Number.parseInt(connectionCountEnv);
+  if (isNaN(parsedConnectionCount) || parsedConnectionCount <= 0) {
+    return Infinity;
+  }
+  return parsedConnectionCount;
+}
+
+const TARGET_CONNECTION_COUNT = getTargetConnectionCount();
+
+function subchannelIsReadyOrTryingToConnect(subchannel: Subchannel): boolean {
+  const subchannelState = subchannel.getConnectivityState();
+  return (subchannelState === ConnectivityState.READY) ||
+    (subchannelState === ConnectivityState.CONNECTING) ||
+    (subchannelState === ConnectivityState.TRANSIENT_FAILURE && subchannel.getContinueConnectingFlag());
+}
+
+/**
+ * Chooses a random subset of array of size equal to count. If
+ * count >= array.length, return array. The order of the output is
+ * independent of the order of the input.
+ * @param array 
+ * @param count 
+ */
+function chooseRandomSubset<T>(array: T[], count: number): T[] {
+  // Copy the array, because the shuffle is destructive
+  const arrayCopy = array.slice(0);
+  if (arrayCopy.length <= count) {
+    return arrayCopy;
+  }
+  // Optimize a couple of common cases
+  if (count <= 0) {
+    return [];
+  }
+  if (count === 1) {
+    return [arrayCopy[Math.trunc(Math.random() * arrayCopy.length)]]
+  }
+  // Fisher-Yates shuffle, implemented based on Wikipeda pseudocode
+  for (let i = arrayCopy.length - 1; i > 0; i--) {
+    // j ← random integer such that 0 ≤ j ≤ i
+    const j = Math.trunc(Math.random() * (i + 1));
+    // Swap arrayCopy[i] and arrayCopy[j]
+    const temp = arrayCopy[i];
+    arrayCopy[i] = arrayCopy[j];
+    arrayCopy[j] = temp;
+  }
+  // Return the first count elements of the shuffled array
+  return arrayCopy.slice(0, count);
+}
+
 const TYPE_NAME = 'round_robin';
 
 class RoundRobinLoadBalancingConfig implements LoadBalancingConfig {
@@ -93,14 +148,6 @@ class RoundRobinPicker implements Picker {
   }
 }
 
-interface ConnectivityStateCounts {
-  [ConnectivityState.CONNECTING]: number;
-  [ConnectivityState.IDLE]: number;
-  [ConnectivityState.READY]: number;
-  [ConnectivityState.SHUTDOWN]: number;
-  [ConnectivityState.TRANSIENT_FAILURE]: number;
-}
-
 export class RoundRobinLoadBalancer implements LoadBalancer {
   private subchannels: Subchannel[] = [];
 
@@ -108,39 +155,47 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
 
   private subchannelStateListener: ConnectivityStateListener;
 
-  private subchannelStateCounts: ConnectivityStateCounts;
-
   private currentReadyPicker: RoundRobinPicker | null = null;
 
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
-    this.subchannelStateCounts = {
-      [ConnectivityState.CONNECTING]: 0,
-      [ConnectivityState.IDLE]: 0,
-      [ConnectivityState.READY]: 0,
-      [ConnectivityState.SHUTDOWN]: 0,
-      [ConnectivityState.TRANSIENT_FAILURE]: 0,
-    };
     this.subchannelStateListener = (
       subchannel: Subchannel,
       previousState: ConnectivityState,
       newState: ConnectivityState
     ) => {
-      this.subchannelStateCounts[previousState] -= 1;
-      this.subchannelStateCounts[newState] += 1;
       this.calculateAndUpdateState();
-      
-      if (
-        newState === ConnectivityState.TRANSIENT_FAILURE ||
-        newState === ConnectivityState.IDLE
-      ) {
+      /* In this context, this should generally choose 0 subchannels if this
+       * subchannel is READY or CONNECTING, and 1 otherwise. Doing that
+       * explicitly could be more efficient, doing it this way is defense in
+       * depth to ensure that the target is reached consistently. */
+      this.connectToRandomSubchannels();
+      if (newState === ConnectivityState.IDLE || 
+          newState === ConnectivityState.TRANSIENT_FAILURE) {
         this.channelControlHelper.requestReresolution();
-        subchannel.startConnecting();
       }
     };
   }
 
   private calculateAndUpdateState() {
-    if (this.subchannelStateCounts[ConnectivityState.READY] > 0) {
+    let anyReady = false;
+    let anyConnecting = false;
+    let anyTransientFailure = false;
+    for (const subchannel of this.subchannels) {
+      switch (subchannel.getConnectivityState()) {
+        case ConnectivityState.READY:
+          anyReady = true;
+          break;
+        case ConnectivityState.CONNECTING:
+          anyConnecting = true;
+          break;
+        case ConnectivityState.TRANSIENT_FAILURE:
+          anyTransientFailure = true;
+          break;
+        default:
+          break;
+      }
+    }
+    if (anyReady) {
       const readySubchannels = this.subchannels.filter(
         (subchannel) =>
           subchannel.getConnectivityState() === ConnectivityState.READY
@@ -158,11 +213,9 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
         ConnectivityState.READY,
         new RoundRobinPicker(readySubchannels, index)
       );
-    } else if (this.subchannelStateCounts[ConnectivityState.CONNECTING] > 0) {
+    } else if (anyConnecting) {
       this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
-    } else if (
-      this.subchannelStateCounts[ConnectivityState.TRANSIENT_FAILURE] > 0
-    ) {
+    } else if (anyTransientFailure) {
       this.updateState(
         ConnectivityState.TRANSIENT_FAILURE,
         new UnavailablePicker()
@@ -192,14 +245,24 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
       subchannel.removeConnectivityStateListener(this.subchannelStateListener);
       subchannel.unref();
     }
-    this.subchannelStateCounts = {
-      [ConnectivityState.CONNECTING]: 0,
-      [ConnectivityState.IDLE]: 0,
-      [ConnectivityState.READY]: 0,
-      [ConnectivityState.SHUTDOWN]: 0,
-      [ConnectivityState.TRANSIENT_FAILURE]: 0,
-    };
     this.subchannels = [];
+  }
+
+  /**
+   * Connect to a randomly selected subset of the subchannels that are not
+   * ready or trying to connect, so that the total number of subchannels that
+   * are ready or trying to connect is greater than or equal to
+   * TARGET_CONNECTION_COUNT.
+   */
+  private connectToRandomSubchannels() {
+    const readyOrConnectingCount = this.subchannels.filter(subchannelIsReadyOrTryingToConnect).length;
+    if (readyOrConnectingCount < TARGET_CONNECTION_COUNT) {
+      const notReadyOrConnecting = this.subchannels.filter(subchannel => !subchannelIsReadyOrTryingToConnect(subchannel));
+      const subchannelsToConnect = chooseRandomSubset(notReadyOrConnecting, TARGET_CONNECTION_COUNT - readyOrConnectingCount);
+      for (const subchannel of subchannelsToConnect) {
+        subchannel.startConnecting();
+      }
+    }
   }
 
   updateAddressList(
@@ -217,15 +280,8 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     for (const subchannel of this.subchannels) {
       subchannel.ref();
       subchannel.addConnectivityStateListener(this.subchannelStateListener);
-      const subchannelState = subchannel.getConnectivityState();
-      this.subchannelStateCounts[subchannelState] += 1;
-      if (
-        subchannelState === ConnectivityState.IDLE ||
-        subchannelState === ConnectivityState.TRANSIENT_FAILURE
-      ) {
-        subchannel.startConnecting();
-      }
     }
+    this.connectToRandomSubchannels();
     this.calculateAndUpdateState();
   }
 

@@ -796,4 +796,8 @@ export class Subchannel {
   getAddress(): string {
     return this.subchannelAddressString;
   }
+
+  getContinueConnectingFlag(): boolean {
+    return this.continueConnecting;
+  }
 }
