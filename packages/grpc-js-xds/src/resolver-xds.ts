@@ -38,6 +38,8 @@ import { HeaderMatcher__Output } from './generated/envoy/api/v2/route/HeaderMatc
 import ConfigSelector = experimental.ConfigSelector;
 import LoadBalancingConfig = experimental.LoadBalancingConfig;
 import { XdsClusterManagerLoadBalancingConfig } from './load-balancer-xds-cluster-manager';
+import { ExactValueMatcher, Fraction, FullMatcher, HeaderMatcher, Matcher, PathExactValueMatcher, PathPrefixValueMatcher, PathSafeRegexValueMatcher, PrefixValueMatcher, PresentValueMatcher, RangeValueMatcher, RejectValueMatcher, SafeRegexValueMatcher, SuffixValueMatcher, ValueMatcher } from './matcher';
+import { RouteAction, SingleClusterRouteAction, WeightedCluster, WeightedClusterRouteAction } from './route-action';
 
 const TRACER_NAME = 'xds_resolver';
 
@@ -119,68 +121,35 @@ function findVirtualHostForDomain(virutalHostList: VirtualHost__Output[], domain
   return targetVhost;
 }
 
-interface Matcher {
-  (methodName: string, metadata: Metadata): boolean;
-}
-
 const numberRegex = new RE2(/^-?\d+$/u);
 
 function getPredicateForHeaderMatcher(headerMatch: HeaderMatcher__Output): Matcher {
-  let valueChecker: (value: string) => boolean;
+  let valueChecker: ValueMatcher;
   switch (headerMatch.header_match_specifier) {
     case 'exact_match':
-      valueChecker = value => value === headerMatch.exact_match;
+      valueChecker = new ExactValueMatcher(headerMatch.exact_match!);
       break;
     case 'safe_regex_match':
-      const regex = new RE2(`^${headerMatch.safe_regex_match}$`, 'u');
-      valueChecker = value => regex.test(value);
+      valueChecker = new SafeRegexValueMatcher(headerMatch.safe_regex_match!.regex);
       break;
     case 'range_match':
       const start = BigInt(headerMatch.range_match!.start);
       const end = BigInt(headerMatch.range_match!.end);
-      valueChecker = value => {
-        if (!numberRegex.test(value)) {
-          return false;
-        }
-        const numberValue = BigInt(value);
-        return start <= numberValue && numberValue < end;
-      }
+      valueChecker = new RangeValueMatcher(start, end);
       break;
     case 'present_match':
-      valueChecker = value => true;
+      valueChecker = new PresentValueMatcher();
       break;
     case 'prefix_match':
-      valueChecker = value => value.startsWith(headerMatch.prefix_match!);
+      valueChecker = new PrefixValueMatcher(headerMatch.prefix_match!);
       break;
     case 'suffix_match':
-      valueChecker = value => value.endsWith(headerMatch.suffix_match!);
+      valueChecker = new SuffixValueMatcher(headerMatch.suffix_match!);
       break;
     default:
-      // Should be prevented by validation rules
-      return (methodName, metadata) => false;
+      valueChecker = new RejectValueMatcher();
   }
-  const headerMatcher: Matcher = (methodName, metadata) => {
-    if (headerMatch.name.endsWith('-bin')) {
-      return false;
-    }
-    let value: string;
-    if (headerMatch.name === 'content-type') {
-      value = 'application/grpc';
-    } else {
-      const valueArray = metadata.get(headerMatch.name);
-      if (valueArray.length === 0) {
-        return false;
-      } else {
-        value = valueArray.join(',');
-      }
-    }
-    return valueChecker(value);
-  }
-  if (headerMatch.invert_match) {
-    return (methodName, metadata) => !headerMatcher(methodName, metadata);
-  } else {
-    return headerMatcher;
-  }
+  return new HeaderMatcher(headerMatch.name, valueChecker, headerMatch.invert_match);
 }
 
 const RUNTIME_FRACTION_DENOMINATOR_VALUES = {
@@ -190,48 +159,32 @@ const RUNTIME_FRACTION_DENOMINATOR_VALUES = {
 }
 
 function getPredicateForMatcher(routeMatch: RouteMatch__Output): Matcher {
-  let pathMatcher: Matcher;
+  let pathMatcher: ValueMatcher;
+  const caseInsensitive = routeMatch.case_sensitive?.value === false;
   switch (routeMatch.path_specifier) {
     case 'prefix':
-      if (routeMatch.case_sensitive?.value === false) {
-        const prefix = routeMatch.prefix!.toLowerCase();
-        pathMatcher = (methodName, metadata) => (methodName.toLowerCase().startsWith(prefix));
-      } else {
-        const prefix = routeMatch.prefix!;
-        pathMatcher = (methodName, metadata) => (methodName.startsWith(prefix));
-      }
+      pathMatcher = new PathPrefixValueMatcher(routeMatch.prefix!, caseInsensitive);
       break;
     case 'path':
-      if (routeMatch.case_sensitive?.value === false) {
-        const path = routeMatch.path!.toLowerCase();
-        pathMatcher = (methodName, metadata) => (methodName.toLowerCase() === path);
-      } else {
-        const path = routeMatch.path!;
-        pathMatcher = (methodName, metadata) => (methodName === path);
-      }
+      pathMatcher = new PathExactValueMatcher(routeMatch.path!, caseInsensitive);
       break;
     case 'safe_regex':
-      const flags = routeMatch.case_sensitive?.value === false ? 'ui' : 'u';
-      const regex = new RE2(`^${routeMatch.safe_regex!.regex!}$`, flags);
-      pathMatcher = (methodName, metadata) => (regex.test(methodName));
+      pathMatcher = new PathSafeRegexValueMatcher(routeMatch.safe_regex!.regex, caseInsensitive);
       break;
     default:
-      // Should be prevented by validation rules
-      return (methodName, metadata) => false;
+      pathMatcher = new RejectValueMatcher();
   }
   const headerMatchers: Matcher[] = routeMatch.headers.map(getPredicateForHeaderMatcher);
-  let runtimeFractionHandler: () => boolean;
+  let runtimeFraction: Fraction | null;
   if (!routeMatch.runtime_fraction?.default_value) {
-    runtimeFractionHandler = () => true;
+    runtimeFraction = null;
   } else {
-    const numerator = routeMatch.runtime_fraction.default_value.numerator;
-    const denominator = RUNTIME_FRACTION_DENOMINATOR_VALUES[routeMatch.runtime_fraction.default_value.denominator];
-    runtimeFractionHandler = () => {
-      const randomNumber = Math.random() * denominator;
-      return randomNumber < numerator;
-    }
+    runtimeFraction = {
+      numerator: routeMatch.runtime_fraction.default_value.numerator,
+      denominator: RUNTIME_FRACTION_DENOMINATOR_VALUES[routeMatch.runtime_fraction.default_value.denominator]
+    };
   }
-  return (methodName, metadata) => pathMatcher(methodName, metadata) && headerMatchers.every(matcher => matcher(methodName, metadata)) && runtimeFractionHandler();
+  return new FullMatcher(pathMatcher, headerMatchers, runtimeFraction);
 }
 
 class XdsResolver implements Resolver {
@@ -340,38 +293,27 @@ class XdsResolver implements Resolver {
         this.reportResolutionError('No matching route found');
         return;
       }
+      trace('Received virtual host config ' + JSON.stringify(virtualHost, undefined, 2));
       const allConfigClusters = new Set<string>();
-      const matchList: {matcher: Matcher, action: () => string}[] = [];
+      const matchList: {matcher: Matcher, action: RouteAction}[] = [];
       for (const route of virtualHost.routes) {
-        let routeAction: () => string;
+        let routeAction: RouteAction;
         switch (route.route!.cluster_specifier) {
           case 'cluster_header':
             continue;
           case 'cluster':{
             const cluster = route.route!.cluster!;
             allConfigClusters.add(cluster);
-            routeAction = () => cluster;
+            routeAction = new SingleClusterRouteAction(cluster);
             break;
           }
           case 'weighted_clusters': {
-            let lastNumerator = 0;
-            // clusterChoices is essentially the weighted choices represented as a CDF
-            const clusterChoices: {cluster: string, numerator: number}[] = [];
+            const weightedClusters: WeightedCluster[] = [];
             for (const clusterWeight of route.route!.weighted_clusters!.clusters) {
               allConfigClusters.add(clusterWeight.name);
-              lastNumerator = lastNumerator + (clusterWeight.weight?.value ?? 0);
-              clusterChoices.push({cluster: clusterWeight.name, numerator: lastNumerator});
+              weightedClusters.push({name: clusterWeight.name, weight: clusterWeight.weight?.value ?? 0});
             }
-            routeAction = () => {
-              const randomNumber = Math.random() * (route.route!.weighted_clusters!.total_weight?.value ?? 100);
-              for (const choice of clusterChoices) {
-                if (randomNumber < choice.numerator) {
-                  return choice.cluster;
-                }
-              }
-              // This should be prevented by the validation rules
-              return '';
-            }
+            routeAction = new WeightedClusterRouteAction(weightedClusters, route.route!.weighted_clusters!.total_weight?.value ?? 100);
           }
         }
         const routeMatcher = getPredicateForMatcher(route.match!);
@@ -397,8 +339,8 @@ class XdsResolver implements Resolver {
       }
       const configSelector: ConfigSelector = (methodName, metadata) => {
         for (const {matcher, action} of matchList) {
-          if (matcher(methodName, metadata)) {
-            const clusterName = action();
+          if (matcher.apply(methodName, metadata)) {
+            const clusterName = action.getCluster();
             this.refCluster(clusterName);
             const onCommitted = () => {
               this.unrefCluster(clusterName);
@@ -418,6 +360,11 @@ class XdsResolver implements Resolver {
           status: status.UNAVAILABLE
         };
       };
+      trace('Created ConfigSelector with configuration:');
+      for (const {matcher, action} of matchList) {
+        trace(matcher.toString());
+        trace('=> ' + action.toString());
+      }
       const clusterConfigMap = new Map<string, {child_policy: LoadBalancingConfig[]}>();
       for (const clusterName of this.clusterRefcounts.keys()) {
         clusterConfigMap.set(clusterName, {child_policy: [new CdsLoadBalancingConfig(clusterName)]});

@@ -303,6 +303,8 @@ function main() {
       currentConfig.callTypes = call.request.types;
       currentConfig.metadata = callMetadata;
       currentConfig.timeoutSec = call.request.timeout_sec
+      console.log('Received new client configuration: ' + JSON.stringify(currentConfig, undefined, 2));
+      callback(null, {});
     }
   }
 
