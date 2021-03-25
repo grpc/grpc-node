@@ -23,7 +23,7 @@ import { ProtoGrpcType } from './generated/test';
 
 import * as protoLoader from '@grpc/proto-loader';
 import { TestServiceClient } from './generated/grpc/testing/TestService';
-import { LoadBalancerStatsResponse } from './generated/grpc/testing/LoadBalancerStatsResponse';
+import { LoadBalancerStatsResponse, _grpc_testing_LoadBalancerStatsResponse_RpcsByPeer__Output } from './generated/grpc/testing/LoadBalancerStatsResponse';
 import * as yargs from 'yargs';
 import { LoadBalancerStatsServiceHandlers } from './generated/grpc/testing/LoadBalancerStatsService';
 import { XdsUpdateClientConfigureServiceHandlers } from './generated/grpc/testing/XdsUpdateClientConfigureService';
@@ -49,13 +49,14 @@ const REQUEST_TIMEOUT_SEC = 20;
 const VERBOSITY = Number.parseInt(process.env.NODE_XDS_INTEROP_VERBOSITY ?? '0');
 
 interface CallEndNotifier {
-  onCallSucceeded(peerName: string): void;
+  onCallSucceeded(methodName: string, peerName: string): void;
   onCallFailed(message: string): void;
 }
 
 class CallSubscriber {
   private callsStarted = 0;
-  private callsSucceededByPeer: {[key: string]: number} = {};
+  private callsSucceededByPeer: {[peer: string]: number} = {};
+  private callsSucceededByMethod: {[method: string]: _grpc_testing_LoadBalancerStatsResponse_RpcsByPeer__Output} = {}
   private callsSucceeded = 0;
   private callsFinished = 0;
   private failureMessageCount: Map<string, number> = new Map<string, number>();
@@ -75,9 +76,18 @@ class CallSubscriber {
     }
   }
 
-  addCallSucceeded(peerName: string): void {
+  addCallSucceeded(methodName: string, peerName: string): void {
     if (VERBOSITY >= 2) {
-      console.log(`Call to ${peerName} succeeded`);
+      console.log(`Call ${methodName} to ${peerName} succeeded`);
+    }
+    if (methodName in this.callsSucceededByMethod) {
+      if (peerName in this.callsSucceededByMethod[methodName]) {
+        this.callsSucceededByMethod[methodName].rpcs_by_peer[peerName] += 1;
+      } else {
+        this.callsSucceededByMethod[methodName].rpcs_by_peer[peerName] = 1;
+      }
+    } else {
+      this.callsSucceededByMethod[methodName] = {rpcs_by_peer: {[peerName]: 1}};
     }
     if (peerName in this.callsSucceededByPeer) {
       this.callsSucceededByPeer[peerName] += 1;
@@ -110,7 +120,8 @@ class CallSubscriber {
     }
     return {
       rpcs_by_peer: this.callsSucceededByPeer,
-      num_failures: this.callsStarted - this.callsSucceeded
+      num_failures: this.callsStarted - this.callsSucceeded,
+      rpcs_by_method: this.callsSucceededByMethod
     };
   }
 }
@@ -148,9 +159,9 @@ class CallStatsTracker {
       }
     }
     return {
-      onCallSucceeded: (peerName: string) => {
+      onCallSucceeded: (methodName: string, peerName: string) => {
         for (const subscriber of callSubscribers) {
-          subscriber.addCallSucceeded(peerName);
+          subscriber.addCallSucceeded(methodName, peerName);
         }
       },
       onCallFailed: (message: string) => {
@@ -200,7 +211,10 @@ const accumulatedStats: LoadBalancerAccumulatedStatsResponse = {
 function makeSingleRequest(client: TestServiceClient, type: CallType, failOnFailedRpcs: boolean, callStatsTracker: CallStatsTracker) {
   const callTypeStats = accumulatedStats.stats_per_method![type];
   callTypeStats.rpcs_started! += 1;
-
+  const methodName = {
+    'EMPTY_CALL': 'EmptyCall',
+    'UNARY_CALL': 'UnaryCall'
+  }[type];
   const notifier = callStatsTracker.startCall();
   let gotMetadata: boolean = false;
   let hostname: string | null = null;
@@ -225,7 +239,7 @@ function makeSingleRequest(client: TestServiceClient, type: CallType, failOnFail
         if (hostname === null) {
           notifier.onCallFailed('Hostname omitted from call metadata');
         } else {
-          notifier.onCallSucceeded(hostname);
+          notifier.onCallSucceeded(methodName, hostname);
         }
       }
     }
@@ -239,7 +253,7 @@ function makeSingleRequest(client: TestServiceClient, type: CallType, failOnFail
       if (hostname === null) {
         notifier.onCallFailed('Hostname omitted from call metadata');
       } else {
-        notifier.onCallSucceeded(hostname);
+        notifier.onCallSucceeded(methodName, hostname);
       }
     }
   });
