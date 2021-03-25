@@ -291,6 +291,8 @@ function main() {
     }
     currentConfig.metadata[method].add(key, value);
   }
+  console.log('EmptyCall metadata: ' + currentConfig.metadata.EmptyCall.getMap());
+  console.log('UnaryCall metadata: ' + currentConfig.metadata.UnaryCall.getMap());
   const callStatsTracker = new CallStatsTracker();
   for (let i = 0; i < argv.num_channels; i++) {
     /* The 'unique' channel argument is there solely to ensure that the
