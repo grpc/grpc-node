@@ -40,6 +40,7 @@ import LoadBalancingConfig = experimental.LoadBalancingConfig;
 import { XdsClusterManagerLoadBalancingConfig } from './load-balancer-xds-cluster-manager';
 import { ExactValueMatcher, Fraction, FullMatcher, HeaderMatcher, Matcher, PathExactValueMatcher, PathPrefixValueMatcher, PathSafeRegexValueMatcher, PrefixValueMatcher, PresentValueMatcher, RangeValueMatcher, RejectValueMatcher, SafeRegexValueMatcher, SuffixValueMatcher, ValueMatcher } from './matcher';
 import { RouteAction, SingleClusterRouteAction, WeightedCluster, WeightedClusterRouteAction } from './route-action';
+import { LogVerbosity } from '@grpc/grpc-js/build/src/constants';
 
 const TRACER_NAME = 'xds_resolver';
 
@@ -337,9 +338,14 @@ class XdsResolver implements Resolver {
           this.clusterRefcounts.set(name, {inLastConfig: true, refCount: 0});
         }
       }
+      let configSelectorLogCounter = 0;
       const configSelector: ConfigSelector = (methodName, metadata) => {
         for (const {matcher, action} of matchList) {
           if (matcher.apply(methodName, metadata)) {
+            // 37 is coprime with most relevant numbers
+            if (configSelectorLogCounter % 37 === 0) {
+              trace('Call with method ' + methodName + ' and metadata ' + JSON.stringify(metadata.getMap(), undefined, 2) + ' matched ' + matcher.toString());
+            }
             const clusterName = action.getCluster();
             this.refCluster(clusterName);
             const onCommitted = () => {
