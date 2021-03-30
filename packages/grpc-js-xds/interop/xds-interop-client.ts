@@ -281,7 +281,7 @@ function main() {
     .argv;
   console.log('Starting xDS interop client. Args: ', argv);
   currentConfig.callTypes = argv.rpc.split(',').filter(value => value === 'EmptyCall' || value === 'UnaryCall') as CallType[];
-  for (const item in argv.metadata.split(',')) {
+  for (const item of argv.metadata.split(',')) {
     const [method, key, value] = item.split(':');
     if (value === undefined) {
       continue;
