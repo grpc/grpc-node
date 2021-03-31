@@ -694,9 +694,6 @@ function runScript() {
     .normalize(['includeDirs', 'outDir'])
     .array('includeDirs')
     .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs', 'json', 'verbose', 'includeComments'])
-//    .choices('longs', ['String', 'Number'])
-//    .choices('enums', ['String'])
-//    .choices('bytes', ['Array', 'String'])
     .string(['longs', 'enums', 'bytes'])
     .coerce('longs', value => {
       switch (value) {
@@ -739,17 +736,18 @@ function runScript() {
     .usage('$0 [options] filenames...')
     .epilogue('WARNING: This tool is in alpha. The CLI and generated code are subject to change')
     .argv;
+  if (argv.verbose) {
+    console.log('Parsed arguments:', argv);
+  }
+  addCommonProtos();
+  writeAllFiles(argv._ as string[], {...argv, alternateCommentMode: true}).then(() => {
     if (argv.verbose) {
-      console.log('Parsed arguments:', argv);
+      console.log('Success');
     }
-    addCommonProtos();
-    writeAllFiles(argv._ as string[], {...argv, alternateCommentMode: true}).then(() => {
-      if (argv.verbose) {
-        console.log('Success');
-      }
-    }, (error) => {
-      throw error;
-    })
+  }, (error) => {
+    console.error(error)
+    process.exit(1);
+  });
 }
 
 if (require.main === module) {
