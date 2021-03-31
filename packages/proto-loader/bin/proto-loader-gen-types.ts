@@ -118,7 +118,7 @@ function getImportLine(dependency: Protobuf.Type | Protobuf.Enum | Protobuf.Serv
   const filePath = from === undefined ? './' + getImportPath(dependency) : getRelativeImportPath(from, dependency);
   const typeInterfaceName = getTypeInterfaceName(dependency);
   let importedTypes: string;
-  /* If the dependenc is defined within a message, it will be generated in that
+  /* If the dependency is defined within a message, it will be generated in that
    * message's file and exported using its typeInterfaceName. */
   if (dependency.parent instanceof Protobuf.Type) {
     if (dependency instanceof Protobuf.Type) {
