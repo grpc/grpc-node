@@ -670,9 +670,18 @@ function writeFilesForRoot(root: Protobuf.Root, masterFileName: string, options:
 
 async function writeAllFiles(protoFiles: string[], options: GeneratorOptions) {
   await fs.promises.mkdir(options.outDir, {recursive: true});
+  const basenameMap = new Map<string, string[]>();
   for (const filename of protoFiles) {
-    const loadedRoot = await loadProtosWithOptions(filename, options);
-    writeFilesForRoot(loadedRoot, path.basename(filename).replace('.proto', '.ts'), options);
+    const basename = path.basename(filename).replace(/\.proto$/, '.ts');
+    if (basenameMap.has(basename)) {
+      basenameMap.get(basename)!.push(filename);
+    } else {
+      basenameMap.set(basename, [filename]);
+    }
+  }
+  for (const [basename, filenames] of basenameMap.entries()) {
+    const loadedRoot = await loadProtosWithOptions(filenames, options);
+    writeFilesForRoot(loadedRoot, basename, options);
   }
 }
 
