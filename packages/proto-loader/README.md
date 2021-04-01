@@ -61,30 +61,33 @@ The `proto-loader-gen-types` script distributed with this package can be used to
 proto-loader-gen-types.js [options] filenames...
 
 Options:
-  --help             Show help                                         [boolean]
-  --version          Show version number                               [boolean]
-  --keepCase         Preserve the case of field names                  [boolean]
-  --longs            The type that should be used to output 64 bit integer
-                     values. Can be String, Number                      [string]
-  --enums            The type that should be used to output enum fields. Can be
-                     String                                             [string]
-  --bytes            The type that should be used to output bytes fields. Can be
-                     String, Array                                      [string]
-  --defaults         Output default values for omitted fields          [boolean]
-  --arrays           Output default values for omitted repeated fields even if
-                     --defaults is not set                             [boolean]
-  --objects          Output default values for omitted message fields even if
-                     --defaults is not set                             [boolean]
-  --oneofs           Output virtual oneof fields set to the present field's name
-                                                                       [boolean]
-  --json             Represent Infinity and NaN as strings in float fields. Also
-                     decode google.protobuf.Any automatically          [boolean]
-  --includeComments  Generate doc comments from comments in the original files
-                                                                       [boolean]
-  --includeDirs, -I  Directories to search for included files            [array]
-  --outDir, -O       Directory in which to output files      [string] [required]
-  --grpcLib          The gRPC implementation library that these types will be
-                     used with                               [string] [required]
+      --help             Show help                                     [boolean]
+      --version          Show version number                           [boolean]
+      --keepCase         Preserve the case of field names
+                                                      [boolean] [default: false]
+      --longs            The type that should be used to output 64 bit integer
+                         values. Can be String, Number[string] [default: "Long"]
+      --enums            The type that should be used to output enum fields. Can
+                         be String                  [string] [default: "number"]
+      --bytes            The type that should be used to output bytes fields.
+                         Can be String, Array       [string] [default: "Buffer"]
+      --defaults         Output default values for omitted fields
+                                                      [boolean] [default: false]
+      --arrays           Output default values for omitted repeated fields even
+                         if --defaults is not set     [boolean] [default: false]
+      --objects          Output default values for omitted message fields even
+                         if --defaults is not set     [boolean] [default: false]
+      --oneofs           Output virtual oneof fields set to the present field's
+                         name                         [boolean] [default: false]
+      --json             Represent Infinity and NaN as strings in float fields.
+                         Also decode google.protobuf.Any automatically
+                                                      [boolean] [default: false]
+      --includeComments  Generate doc comments from comments in the original
+                         files                        [boolean] [default: false]
+  -I, --includeDirs      Directories to search for included files        [array]
+  -O, --outDir           Directory in which to output files  [string] [required]
+      --grpcLib          The gRPC implementation library that these types will
+                         be used with                        [string] [required]
 ```
 
 ### Example Usage

@@ -695,6 +695,16 @@ function runScript() {
     .array('includeDirs')
     .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs', 'json', 'verbose', 'includeComments'])
     .string(['longs', 'enums', 'bytes'])
+    .default('keepCase', false)
+    .default('defaults', false)
+    .default('arrays', false)
+    .default('objects', false)
+    .default('oneofs', false)
+    .default('json', false)
+    .default('includeComments', false)
+    .default('longs', 'Long')
+    .default('enums', 'number')
+    .default('bytes', 'Buffer')
     .coerce('longs', value => {
       switch (value) {
         case 'String': return String;
