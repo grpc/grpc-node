@@ -40,8 +40,13 @@ class UdsResolver implements Resolver {
       this.addresses,
       null,
       null,
+      null,
       {}
     );
+  }
+
+  destroy() {
+    // This resolver owns no resources, so we do nothing here.
   }
 
   static getDefaultAuthority(target: GrpcUri): string {

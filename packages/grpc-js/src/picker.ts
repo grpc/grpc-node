@@ -85,6 +85,7 @@ export interface DropCallPickResult extends PickResult {
 
 export interface PickArgs {
   metadata: Metadata;
+  extraPickInfo: {[key: string]: string};
 }
 
 /**

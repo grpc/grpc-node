@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 gRPC authors.
+ * Copyright 2021 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,20 +12,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-import * as assert from 'assert';
 
-import { loadPackageDefinition } from '../src';
+import { GoogleAuth } from 'google-auth-library';
+import { ChannelCredentials, CallCredentials } from '@grpc/grpc-js';
 
-describe('loadPackageDefinition', () => {
-  it('Should not allow prototype pollution', () => {
-      loadPackageDefinition({'__proto__.polluted': true} as any);
-      assert.notStrictEqual(({} as any).polluted, true);
-  });
-  it('Should not allow prototype pollution #2', () => {
-      loadPackageDefinition({'constructor.prototype.polluted': true} as any);
-      assert.notStrictEqual(({} as any).polluted, true);
-  });
-});
+export function createGoogleDefaultCredentials(): ChannelCredentials {
+  const sslCreds = ChannelCredentials.createSsl();
+  const googleAuthCreds = CallCredentials.createFromGoogleCredential(
+    new GoogleAuth()
+  );
+  return sslCreds.compose(googleAuthCreds);
+}

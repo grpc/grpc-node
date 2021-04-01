@@ -37,6 +37,10 @@ const {
   NGHTTP2_CANCEL,
 } = http2.constants;
 
+interface NodeError extends Error {
+  code: string;
+}
+
 export type Deadline = Date | number;
 
 export interface CallStreamOptions {
@@ -201,6 +205,8 @@ export class Http2CallStream implements Call {
   private disconnectListener: () => void;
 
   private listener: InterceptingListener | null = null;
+
+  private internalErrorMessage: string | null = null;
 
   constructor(
     private readonly methodName: string,
@@ -409,21 +415,8 @@ export class Http2CallStream implements Call {
       );
     }
     const status: StatusObject = { code, details, metadata };
-    let finalStatus;
-    try {
-      // Attempt to assign final status.
-      finalStatus = this.filterStack.receiveTrailers(status);
-    } catch (error) {
-      // This is a no-op if the call was already ended when handling headers.
-      this.endCall({
-        code: Status.INTERNAL,
-        details: 'Failed to process received status',
-        metadata: new Metadata(),
-      });
-      return;
-    }
     // This is a no-op if the call was already ended when handling headers.
-    this.endCall(finalStatus);
+    this.endCall(status);
   }
 
   attachHttp2Stream(
@@ -518,66 +511,86 @@ export class Http2CallStream implements Call {
         this.maybeOutputStatus();
       });
       stream.on('close', () => {
-        this.trace('HTTP/2 stream closed with code ' + stream.rstCode);
-        /* If we have a final status with an OK status code, that means that
-         * we have received all of the messages and we have processed the
-         * trailers and the call completed successfully, so it doesn't matter
-         * how the stream ends after that */
-        if (this.finalStatus?.code === Status.OK) {
-          return;
-        }
-        let code: Status;
-        let details = '';
-        switch (stream.rstCode) {
-          case http2.constants.NGHTTP2_NO_ERROR:
-            /* If we get a NO_ERROR code and we already have a status, the
-             * stream completed properly and we just haven't fully processed
-             * it yet */
-            if (this.finalStatus !== null) {
-              return;
-            }
-            code = Status.INTERNAL;
-            details = `Received RST_STREAM with code ${stream.rstCode}`;
-            break;
-          case http2.constants.NGHTTP2_REFUSED_STREAM:
-            code = Status.UNAVAILABLE;
-            details = 'Stream refused by server';
-            break;
-          case http2.constants.NGHTTP2_CANCEL:
-            code = Status.CANCELLED;
-            details = 'Call cancelled';
-            break;
-          case http2.constants.NGHTTP2_ENHANCE_YOUR_CALM:
-            code = Status.RESOURCE_EXHAUSTED;
-            details = 'Bandwidth exhausted';
-            break;
-          case http2.constants.NGHTTP2_INADEQUATE_SECURITY:
-            code = Status.PERMISSION_DENIED;
-            details = 'Protocol not secure enough';
-            break;
-          case http2.constants.NGHTTP2_INTERNAL_ERROR:
-            code = Status.INTERNAL;
-            /* This error code was previously handled in the default case, and
-             * there are several instances of it online, so I wanted to
-             * preserve the original error message so that people find existing
-             * information in searches, but also include the more recognizable
-             * "Internal server error" message. */
-            details = `Received RST_STREAM with code ${stream.rstCode} (Internal server error)`;
-            break;
-          default:
-            code = Status.INTERNAL;
-            details = `Received RST_STREAM with code ${stream.rstCode}`;
-        }
-        // This is a no-op if trailers were received at all.
-        // This is OK, because status codes emitted here correspond to more
-        // catastrophic issues that prevent us from receiving trailers in the
-        // first place.
-        this.endCall({ code, details, metadata: new Metadata() });
+        /* Use process.next tick to ensure that this code happens after any
+         * "error" event that may be emitted at about the same time, so that
+         * we can bubble up the error message from that event. */ 
+        process.nextTick(() => {
+          this.trace('HTTP/2 stream closed with code ' + stream.rstCode);
+          /* If we have a final status with an OK status code, that means that
+           * we have received all of the messages and we have processed the
+           * trailers and the call completed successfully, so it doesn't matter
+           * how the stream ends after that */
+          if (this.finalStatus?.code === Status.OK) {
+            return;
+          }
+          let code: Status;
+          let details = '';
+          switch (stream.rstCode) {
+            case http2.constants.NGHTTP2_NO_ERROR:
+              /* If we get a NO_ERROR code and we already have a status, the
+               * stream completed properly and we just haven't fully processed
+               * it yet */
+              if (this.finalStatus !== null) {
+                return;
+              }
+              code = Status.INTERNAL;
+              details = `Received RST_STREAM with code ${stream.rstCode}`;
+              break;
+            case http2.constants.NGHTTP2_REFUSED_STREAM:
+              code = Status.UNAVAILABLE;
+              details = 'Stream refused by server';
+              break;
+            case http2.constants.NGHTTP2_CANCEL:
+              code = Status.CANCELLED;
+              details = 'Call cancelled';
+              break;
+            case http2.constants.NGHTTP2_ENHANCE_YOUR_CALM:
+              code = Status.RESOURCE_EXHAUSTED;
+              details = 'Bandwidth exhausted';
+              break;
+            case http2.constants.NGHTTP2_INADEQUATE_SECURITY:
+              code = Status.PERMISSION_DENIED;
+              details = 'Protocol not secure enough';
+              break;
+            case http2.constants.NGHTTP2_INTERNAL_ERROR:
+              code = Status.INTERNAL;
+              if (this.internalErrorMessage === null) {
+                /* This error code was previously handled in the default case, and
+                 * there are several instances of it online, so I wanted to
+                 * preserve the original error message so that people find existing
+                 * information in searches, but also include the more recognizable
+                 * "Internal server error" message. */
+                details = `Received RST_STREAM with code ${stream.rstCode} (Internal server error)`;
+              } else {
+                /* The "Received RST_STREAM with code ..." error is preserved
+                 * here for continuity with errors reported online, but the
+                 * error message at the end will probably be more relevant in
+                 * most cases. */
+                details = `Received RST_STREAM with code ${stream.rstCode} triggered by internal client error: ${this.internalErrorMessage}`;
+              }
+              break;
+            default:
+              code = Status.INTERNAL;
+              details = `Received RST_STREAM with code ${stream.rstCode}`;
+          }
+          // This is a no-op if trailers were received at all.
+          // This is OK, because status codes emitted here correspond to more
+          // catastrophic issues that prevent us from receiving trailers in the
+          // first place.
+          this.endCall({ code, details, metadata: new Metadata() });
+        });
       });
-      stream.on('error', (err: Error) => {
+      stream.on('error', (err: NodeError) => {
         /* We need an error handler here to stop "Uncaught Error" exceptions
          * from bubbling up. However, errors here should all correspond to
          * "close" events, where we will handle the error more granularly */
+        /* Specifically looking for stream errors that were *not* constructed
+         * from a RST_STREAM response here:
+         * https://github.com/nodejs/node/blob/8b8620d580314050175983402dfddf2674e8e22a/lib/internal/http2/core.js#L2267
+         */
+        if (err.code !== 'ERR_HTTP2_STREAM_ERROR') {
+          this.internalErrorMessage = err.message;
+        }
       });
       if (!this.pendingRead) {
         stream.pause();
@@ -630,7 +643,11 @@ export class Http2CallStream implements Call {
 
   getDeadline(): Deadline {
     if (this.options.parentCall && this.options.flags & Propagate.DEADLINE) {
-      return this.options.parentCall.getDeadline();
+      const parentDeadline = this.options.parentCall.getDeadline();
+      const selfDeadline = this.options.deadline;
+      const parentDeadlineMsecs = parentDeadline instanceof Date ? parentDeadline.getTime() : parentDeadline;
+      const selfDeadlineMsecs = selfDeadline instanceof Date ? selfDeadline.getTime() : selfDeadline;
+      return Math.min(parentDeadlineMsecs, selfDeadlineMsecs);
     } else {
       return this.options.deadline;
     }

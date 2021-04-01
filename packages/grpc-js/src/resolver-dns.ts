@@ -129,7 +129,7 @@ class DnsResolver implements Resolver {
     if (this.ipResult !== null) {
       trace('Returning IP address for target ' + uriToString(this.target));
       setImmediate(() => {
-        this.listener.onSuccessfulResolution(this.ipResult!, null, null, {});
+        this.listener.onSuccessfulResolution(this.ipResult!, null, null, null, {});
       });
       return;
     }
@@ -192,6 +192,7 @@ class DnsResolver implements Resolver {
             this.latestLookupResult,
             this.latestServiceConfig,
             this.latestServiceConfigError,
+            null,
             {}
           );
         },
@@ -237,6 +238,7 @@ class DnsResolver implements Resolver {
                 this.latestLookupResult,
                 this.latestServiceConfig,
                 this.latestServiceConfigError,
+                null,
                 {}
               );
             }
@@ -260,6 +262,12 @@ class DnsResolver implements Resolver {
     if (this.pendingLookupPromise === null) {
       this.startResolution();
     }
+  }
+
+  destroy() {
+    /* Do nothing. There is not a practical way to cancel in-flight DNS
+     * requests, and after this function is called we can expect that
+     * updateResolution will not be called again. */
   }
 
   /**

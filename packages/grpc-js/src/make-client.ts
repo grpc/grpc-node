@@ -94,6 +94,15 @@ export interface ServiceClientConstructor {
 }
 
 /**
+ * Returns true, if given key is included in the blacklisted
+ * keys.
+ * @param key key for check, string.
+ */
+function isPrototypePolluted(key: string): Boolean {
+  return ['__proto__', 'prototype', 'constructor'].includes(key);
+}
+
+/**
  * Creates a constructor for a client with the given methods, as specified in
  * the methods argument. The resulting class will have an instance method for
  * each method in the service, which is a partial application of one of the
@@ -122,7 +131,7 @@ export function makeClientConstructor(
   }
 
   Object.keys(methods).forEach((name) => {
-    if (name === '__proto__') {
+    if (isPrototypePolluted(name)) {
       return;
     }
     const attrs = methods[name];
@@ -155,7 +164,7 @@ export function makeClientConstructor(
     ServiceClientImpl.prototype[name] = methodFunc;
     // Associate all provided attributes with the method
     Object.assign(ServiceClientImpl.prototype[name], attrs);
-    if (attrs.originalName && attrs.originalName !== '__proto__') {
+    if (attrs.originalName && !isPrototypePolluted(attrs.originalName)) {
       ServiceClientImpl.prototype[attrs.originalName] =
         ServiceClientImpl.prototype[name];
     }
@@ -204,7 +213,7 @@ export function loadPackageDefinition(
     if (Object.prototype.hasOwnProperty.call(packageDef, serviceFqn)) {
       const service = packageDef[serviceFqn];
       const nameComponents = serviceFqn.split('.');
-      if (nameComponents.some(comp => comp === '__proto__')) {
+      if (nameComponents.some((comp: string) => isPrototypePolluted(comp))) {
         continue;
       }
       const serviceName = nameComponents[nameComponents.length - 1];

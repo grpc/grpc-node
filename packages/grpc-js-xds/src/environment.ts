@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 gRPC authors.
+ * Copyright 2021 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,8 @@
  *
  */
 
-import * as assert from 'assert';
-
-import { loadPackageDefinition } from '../src';
-
-describe('loadPackageDefinition', () => {
-  it('Should not allow prototype pollution', () => {
-      loadPackageDefinition({'__proto__.polluted': true} as any);
-      assert.notStrictEqual(({} as any).polluted, true);
-  });
-  it('Should not allow prototype pollution #2', () => {
-      loadPackageDefinition({'constructor.prototype.polluted': true} as any);
-      assert.notStrictEqual(({} as any).polluted, true);
-  });
-});
+/**
+ * Environment variable protection for traffic splitting and routing
+ * https://github.com/grpc/proposal/blob/master/A28-xds-traffic-splitting-and-routing.md#xds-resolver-and-xds-client
+ */
+export const GRPC_XDS_EXPERIMENTAL_ROUTING = (process.env.GRPC_XDS_EXPERIMENTAL_ROUTING === 'true');

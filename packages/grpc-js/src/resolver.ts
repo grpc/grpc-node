@@ -15,13 +15,30 @@
  *
  */
 
-import { ServiceConfig } from './service-config';
+import { MethodConfig, ServiceConfig } from './service-config';
 import * as resolver_dns from './resolver-dns';
 import * as resolver_uds from './resolver-uds';
 import { StatusObject } from './call-stream';
 import { SubchannelAddress } from './subchannel';
 import { GrpcUri, uriToString } from './uri-parser';
 import { ChannelOptions } from './channel-options';
+import { Metadata } from './metadata';
+import { Status } from './constants';
+
+export interface CallConfig {
+  methodConfig: MethodConfig;
+  onCommitted?: () => void;
+  pickInformation: {[key: string]: string};
+  status: Status;
+}
+
+/**
+ * Selects a configuration for a method given the name and metadata. Defined in
+ * https://github.com/grpc/proposal/blob/master/A31-xds-timeout-support-and-config-selector.md#new-functionality-in-grpc
+ */
+export interface ConfigSelector {
+  (methodName: string, metadata: Metadata): CallConfig;
+}
 
 /**
  * A listener object passed to the resolver's constructor that provides name
@@ -41,6 +58,7 @@ export interface ResolverListener {
     addressList: SubchannelAddress[],
     serviceConfig: ServiceConfig | null,
     serviceConfigError: StatusObject | null,
+    configSelector: ConfigSelector | null,
     attributes: { [key: string]: unknown }
   ): void;
   /**
@@ -62,6 +80,11 @@ export interface Resolver {
    * called synchronously with the constructor or updateResolution.
    */
   updateResolution(): void;
+  
+  /**
+   * Destroy the resolver. Should be called when the owning channel shuts down.
+   */
+  destroy(): void;
 }
 
 export interface ResolverConstructor {
