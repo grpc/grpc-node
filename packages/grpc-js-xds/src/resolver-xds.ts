@@ -30,7 +30,6 @@ import { Listener__Output } from './generated/envoy/api/v2/Listener';
 import { Watcher } from './xds-stream-state/xds-stream-state';
 import { RouteConfiguration__Output } from './generated/envoy/api/v2/RouteConfiguration';
 import { HttpConnectionManager__Output } from './generated/envoy/config/filter/network/http_connection_manager/v2/HttpConnectionManager';
-import { GRPC_XDS_EXPERIMENTAL_ROUTING } from './environment';
 import { CdsLoadBalancingConfig } from './load-balancer-cds';
 import { VirtualHost__Output } from './generated/envoy/api/v2/route/VirtualHost';
 import { RouteMatch__Output } from './generated/envoy/api/v2/route/RouteMatch';
@@ -288,116 +287,93 @@ class XdsResolver implements Resolver {
 
   private handleRouteConfig(routeConfig: RouteConfiguration__Output) {
     this.latestRouteConfig = routeConfig;
-    if (GRPC_XDS_EXPERIMENTAL_ROUTING) {
-      const virtualHost = findVirtualHostForDomain(routeConfig.virtual_hosts, this.target.path);
-      if (virtualHost === null) {
-        this.reportResolutionError('No matching route found');
-        return;
-      }
-      trace('Received virtual host config ' + JSON.stringify(virtualHost, undefined, 2));
-      const allConfigClusters = new Set<string>();
-      const matchList: {matcher: Matcher, action: RouteAction}[] = [];
-      for (const route of virtualHost.routes) {
-        let routeAction: RouteAction;
-        switch (route.route!.cluster_specifier) {
-          case 'cluster_header':
-            continue;
-          case 'cluster':{
-            const cluster = route.route!.cluster!;
-            allConfigClusters.add(cluster);
-            routeAction = new SingleClusterRouteAction(cluster);
-            break;
-          }
-          case 'weighted_clusters': {
-            const weightedClusters: WeightedCluster[] = [];
-            for (const clusterWeight of route.route!.weighted_clusters!.clusters) {
-              allConfigClusters.add(clusterWeight.name);
-              weightedClusters.push({name: clusterWeight.name, weight: clusterWeight.weight?.value ?? 0});
-            }
-            routeAction = new WeightedClusterRouteAction(weightedClusters, route.route!.weighted_clusters!.total_weight?.value ?? 100);
-          }
-        }
-        const routeMatcher = getPredicateForMatcher(route.match!);
-        matchList.push({matcher: routeMatcher, action: routeAction});
-      }
-      /* Mark clusters that are not in this route config, and remove ones with
-       * no references */
-      for (const [name, refCount] of Array.from(this.clusterRefcounts.entries())) {
-        if (!allConfigClusters.has(name)) {
-          refCount.inLastConfig = false;
-          if (refCount.refCount === 0) {
-            this.clusterRefcounts.delete(name);
-          }
-        }
-      }
-      // Add any new clusters from this route config
-      for (const name of allConfigClusters) {
-        if (this.clusterRefcounts.has(name)) {
-          this.clusterRefcounts.get(name)!.inLastConfig = true;
-        } else {
-          this.clusterRefcounts.set(name, {inLastConfig: true, refCount: 0});
-        }
-      }
-      const configSelector: ConfigSelector = (methodName, metadata) => {
-        for (const {matcher, action} of matchList) {
-          if (matcher.apply(methodName, metadata)) {
-            const clusterName = action.getCluster();
-            this.refCluster(clusterName);
-            const onCommitted = () => {
-              this.unrefCluster(clusterName);
-            }
-            return {
-              methodConfig: {name: []},
-              onCommitted: onCommitted,
-              pickInformation: {cluster: clusterName},
-              status: status.OK
-            };
-          }
-        }
-        return {
-          methodConfig: {name: []},
-          // cluster won't be used here, but it's set because of some TypeScript weirdness
-          pickInformation: {cluster: ''},
-          status: status.UNAVAILABLE
-        };
-      };
-      trace('Created ConfigSelector with configuration:');
-      for (const {matcher, action} of matchList) {
-        trace(matcher.toString());
-        trace('=> ' + action.toString());
-      }
-      const clusterConfigMap = new Map<string, {child_policy: LoadBalancingConfig[]}>();
-      for (const clusterName of this.clusterRefcounts.keys()) {
-        clusterConfigMap.set(clusterName, {child_policy: [new CdsLoadBalancingConfig(clusterName)]});
-      }
-      const lbPolicyConfig = new XdsClusterManagerLoadBalancingConfig(clusterConfigMap);
-      const serviceConfig: ServiceConfig = {
-        methodConfig: [],
-        loadBalancingConfig: [lbPolicyConfig]
-      }
-      this.listener.onSuccessfulResolution([], serviceConfig, null, configSelector, {});
-    } else {
-      // !GRPC_XDS_EXPERIMENTAL_ROUTING
-      for (const virtualHost of routeConfig.virtual_hosts) {
-        if (virtualHost.domains.indexOf(this.target.path) >= 0) {
-          const route = virtualHost.routes[virtualHost.routes.length - 1];
-          if (route.match?.prefix === '' && route.route?.cluster) {
-            trace('Reporting RDS update for host ' + uriToString(this.target) + ' with cluster ' + route.route.cluster);
-            this.listener.onSuccessfulResolution([], {
-              methodConfig: [],
-              loadBalancingConfig: [
-                new CdsLoadBalancingConfig(route.route.cluster)
-              ],
-            }, null, null, {});
-            this.hasReportedSuccess = true;
-            return;
-          } else {
-            trace('Discarded matching route with prefix ' + route.match?.prefix + ' and cluster ' + route.route?.cluster);
-          }
-        }
-      }
+    const virtualHost = findVirtualHostForDomain(routeConfig.virtual_hosts, this.target.path);
+    if (virtualHost === null) {
       this.reportResolutionError('No matching route found');
+      return;
     }
+    trace('Received virtual host config ' + JSON.stringify(virtualHost, undefined, 2));
+    const allConfigClusters = new Set<string>();
+    const matchList: {matcher: Matcher, action: RouteAction}[] = [];
+    for (const route of virtualHost.routes) {
+      let routeAction: RouteAction;
+      switch (route.route!.cluster_specifier) {
+        case 'cluster_header':
+          continue;
+        case 'cluster':{
+          const cluster = route.route!.cluster!;
+          allConfigClusters.add(cluster);
+          routeAction = new SingleClusterRouteAction(cluster);
+          break;
+        }
+        case 'weighted_clusters': {
+          const weightedClusters: WeightedCluster[] = [];
+          for (const clusterWeight of route.route!.weighted_clusters!.clusters) {
+            allConfigClusters.add(clusterWeight.name);
+            weightedClusters.push({name: clusterWeight.name, weight: clusterWeight.weight?.value ?? 0});
+          }
+          routeAction = new WeightedClusterRouteAction(weightedClusters, route.route!.weighted_clusters!.total_weight?.value ?? 100);
+        }
+      }
+      const routeMatcher = getPredicateForMatcher(route.match!);
+      matchList.push({matcher: routeMatcher, action: routeAction});
+    }
+    /* Mark clusters that are not in this route config, and remove ones with
+      * no references */
+    for (const [name, refCount] of Array.from(this.clusterRefcounts.entries())) {
+      if (!allConfigClusters.has(name)) {
+        refCount.inLastConfig = false;
+        if (refCount.refCount === 0) {
+          this.clusterRefcounts.delete(name);
+        }
+      }
+    }
+    // Add any new clusters from this route config
+    for (const name of allConfigClusters) {
+      if (this.clusterRefcounts.has(name)) {
+        this.clusterRefcounts.get(name)!.inLastConfig = true;
+      } else {
+        this.clusterRefcounts.set(name, {inLastConfig: true, refCount: 0});
+      }
+    }
+    const configSelector: ConfigSelector = (methodName, metadata) => {
+      for (const {matcher, action} of matchList) {
+        if (matcher.apply(methodName, metadata)) {
+          const clusterName = action.getCluster();
+          this.refCluster(clusterName);
+          const onCommitted = () => {
+            this.unrefCluster(clusterName);
+          }
+          return {
+            methodConfig: {name: []},
+            onCommitted: onCommitted,
+            pickInformation: {cluster: clusterName},
+            status: status.OK
+          };
+        }
+      }
+      return {
+        methodConfig: {name: []},
+        // cluster won't be used here, but it's set because of some TypeScript weirdness
+        pickInformation: {cluster: ''},
+        status: status.UNAVAILABLE
+      };
+    };
+    trace('Created ConfigSelector with configuration:');
+    for (const {matcher, action} of matchList) {
+      trace(matcher.toString());
+      trace('=> ' + action.toString());
+    }
+    const clusterConfigMap = new Map<string, {child_policy: LoadBalancingConfig[]}>();
+    for (const clusterName of this.clusterRefcounts.keys()) {
+      clusterConfigMap.set(clusterName, {child_policy: [new CdsLoadBalancingConfig(clusterName)]});
+    }
+    const lbPolicyConfig = new XdsClusterManagerLoadBalancingConfig(clusterConfigMap);
+    const serviceConfig: ServiceConfig = {
+      methodConfig: [],
+      loadBalancingConfig: [lbPolicyConfig]
+    }
+    this.listener.onSuccessfulResolution([], serviceConfig, null, configSelector, {});
   }
 
   private reportResolutionError(reason: string) {

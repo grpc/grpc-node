@@ -14,9 +14,3 @@
  * limitations under the License.
  *
  */
-
-/**
- * Environment variable protection for traffic splitting and routing
- * https://github.com/grpc/proposal/blob/master/A28-xds-traffic-splitting-and-routing.md#xds-resolver-and-xds-client
- */
-export const GRPC_XDS_EXPERIMENTAL_ROUTING = (process.env.GRPC_XDS_EXPERIMENTAL_ROUTING === 'true');
