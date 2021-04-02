@@ -32,7 +32,7 @@ import getFirstUsableConfig = experimental.getFirstUsableConfig;
 import ChannelControlHelper = experimental.ChannelControlHelper;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
 
-const TRACER_NAME = 'weighted_target';
+const TRACER_NAME = 'xds_cluster_manager';
 
 function trace(text: string): void {
   experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
@@ -247,6 +247,7 @@ class XdsClusterManager implements LoadBalancer {
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));
       return;
     }
+    trace('Received update with config: ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));
     const configChildren = lbConfig.getChildren();
     // Delete children that are not in the new config
     const namesToRemove: string[] = [];

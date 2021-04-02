@@ -191,7 +191,7 @@ export class EdsLoadBalancer implements LoadBalancer {
     });
     this.watcher = {
       onValidUpdate: (update) => {
-        trace('Received EDS update for ' + this.edsServiceName + ': ' + JSON.stringify(update));
+        trace('Received EDS update for ' + this.edsServiceName + ': ' + JSON.stringify(update, undefined, 2));
         this.latestEdsUpdate = update;
         this.updateChild();
       },

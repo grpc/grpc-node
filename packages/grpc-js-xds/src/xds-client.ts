@@ -577,12 +577,14 @@ export class XdsClient {
 
     this.lrsBackoff.runOnce();
     this.lrsCall = this.lrsClient.streamLoadStats();
+    let receivedSettingsForThisStream = false;
     this.lrsCall.on('data', (message: LoadStatsResponse__Output) => {
       /* Once we get any response from the server, we assume that the stream is
        * in a good state, so we can reset the backoff timer. */
       this.lrsBackoff.stop();
       this.lrsBackoff.reset();
       if (
+        !receivedSettingsForThisStream ||
         message.load_reporting_interval?.seconds !==
           this.latestLrsSettings?.load_reporting_interval?.seconds ||
         message.load_reporting_interval?.nanos !==
@@ -602,13 +604,13 @@ export class XdsClient {
         }, loadReportingIntervalMs);
       }
       this.latestLrsSettings = message;
+      receivedSettingsForThisStream = true;
     });
     this.lrsCall.on('error', (error: ServiceError) => {
       trace(
         'LRS stream ended. code=' + error.code + ' details= ' + error.details
       );
       this.lrsCall = null;
-      this.latestLrsSettings = null;
       clearInterval(this.statsTimer);
       /* If the backoff timer is no longer running, we do not need to wait any
        * more to start the new call. */
@@ -625,14 +627,20 @@ export class XdsClient {
     if (!this.lrsCall) {
       return;
     }
+    if (!this.latestLrsSettings) {
+      this.lrsCall.write({
+        node: this.lrsNode!,
+      });
+      return;
+    }
     const clusterStats: ClusterStats[] = [];
     for (const [
       { clusterName, edsServiceName },
       stats,
     ] of this.clusterStatsMap.entries()) {
       if (
-        this.latestLrsSettings!.send_all_clusters ||
-        this.latestLrsSettings!.clusters.indexOf(clusterName) > 0
+        this.latestLrsSettings.send_all_clusters ||
+        this.latestLrsSettings.clusters.indexOf(clusterName) > 0
       ) {
         const upstreamLocalityStats: UpstreamLocalityStats[] = [];
         for (const localityStats of stats.localityStats) {
