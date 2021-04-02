@@ -51,7 +51,6 @@ grpc/tools/run_tests/helper_scripts/prep_xds.sh
 GRPC_NODE_TRACE=xds_client,xds_resolver,cds_balancer,eds_balancer,priority,weighted_target,round_robin,resolving_load_balancer,subchannel,keepalive,dns_resolver \
   GRPC_NODE_VERBOSITY=DEBUG \
   NODE_XDS_INTEROP_VERBOSITY=1 \
-  GRPC_XDS_EXPERIMENTAL_ROUTING=true \
   python3 grpc/tools/run_tests/run_xds_tests.py \
     --test_case="all,path_matching,header_matching" \
     --project_id=grpc-testing \
