@@ -419,7 +419,7 @@ export class ChannelImplementation implements Channel {
                       );
                       callStream.cancelWithStatus(
                         Status.INTERNAL,
-                        'Failed to start HTTP/2 stream'
+                        `Failed to start HTTP/2 stream with error: ${(error as Error).message}`
                       );
                     }
                   }
@@ -441,7 +441,7 @@ export class ChannelImplementation implements Channel {
               (error: Error & { code: number }) => {
                 // We assume the error code isn't 0 (Status.OK)
                 callStream.cancelWithStatus(
-                  error.code || Status.UNKNOWN,
+                  (typeof error.code === 'number') ? error.code : Status.UNKNOWN,
                   `Getting metadata from plugin failed with error: ${error.message}`
                 );
               }
@@ -559,6 +559,9 @@ export class ChannelImplementation implements Channel {
     deadline: Date | number,
     callback: (error?: Error) => void
   ): void {
+    if (this.connectivityState === ConnectivityState.SHUTDOWN) {
+      throw new Error('Channel has been shut down');
+    }
     let timer = null;
     if(deadline !== Infinity) {
       const deadlineDate: Date =

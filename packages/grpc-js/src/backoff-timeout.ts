@@ -44,6 +44,7 @@ export class BackoffTimeout {
   private nextDelay: number;
   private timerId: NodeJS.Timer;
   private running = false;
+  private hasRef = true;
 
   constructor(private callback: () => void, options?: BackoffOptions) {
     if (options) {
@@ -74,6 +75,9 @@ export class BackoffTimeout {
       this.callback();
       this.running = false;
     }, this.nextDelay);
+    if (!this.hasRef) {
+      this.timerId.unref?.();
+    }
     const nextBackoff = Math.min(
       this.nextDelay * this.multiplier,
       this.maxDelay
@@ -101,5 +105,15 @@ export class BackoffTimeout {
 
   isRunning() {
     return this.running;
+  }
+
+  ref() {
+    this.hasRef = true;
+    this.timerId.ref?.();
+  }
+
+  unref() {
+    this.hasRef = false;
+    this.timerId.unref?.();
   }
 }

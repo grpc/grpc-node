@@ -618,6 +618,7 @@ export class Subchannel {
       if (this.session) {
         this.session.ref();
       }
+      this.backoffTimeout.ref();
       if (!this.keepaliveWithoutCalls) {
         this.startKeepalivePings();
       }
@@ -638,6 +639,7 @@ export class Subchannel {
       if (this.session) {
         this.session.unref();
       }
+      this.backoffTimeout.unref();
       if (!this.keepaliveWithoutCalls) {
         this.stopKeepalivePings();
       }

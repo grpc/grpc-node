@@ -21,6 +21,7 @@ import { BaseFilter, Filter, FilterFactory } from './filter';
 import { Metadata } from './metadata';
 import { Status } from './constants';
 import { splitHostPort } from './uri-parser';
+import { ServiceError } from './call';
 
 export class CallCredentialsFilter extends BaseFilter implements Filter {
   private serviceUrl: string;
@@ -51,12 +52,21 @@ export class CallCredentialsFilter extends BaseFilter implements Filter {
       service_url: this.serviceUrl,
     });
     const resultMetadata = await metadata;
-    resultMetadata.merge(await credsMetadata);
+    try {
+      resultMetadata.merge(await credsMetadata);
+    } catch (error) {
+      this.stream.cancelWithStatus(
+        Status.UNAUTHENTICATED,
+        `Failed to retrieve auth metadata with error: ${error.message}`
+      );
+      return Promise.reject<Metadata>('Failed to retrieve auth metadata');
+    }
     if (resultMetadata.get('authorization').length > 1) {
       this.stream.cancelWithStatus(
         Status.INTERNAL,
         '"authorization" metadata cannot have multiple values'
       );
+      return Promise.reject<Metadata>('"authorization" metadata cannot have multiple values');
     }
     return resultMetadata;
   }
