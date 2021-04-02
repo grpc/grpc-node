@@ -307,6 +307,9 @@ export class Subchannel {
     let connectionOptions: http2.SecureClientSessionOptions =
       this.credentials._getConnectionOptions() || {};
     connectionOptions.maxSendHeaderBlockLength = Number.MAX_SAFE_INTEGER;
+    if ('grpc-node.max_session_memory' in this.options) {
+      connectionOptions.maxSessionMemory = this.options['grpc-node.max_session_memory'];
+    }
     let addressScheme = 'http://';
     if ('secureContext' in connectionOptions) {
       addressScheme = 'https://';
