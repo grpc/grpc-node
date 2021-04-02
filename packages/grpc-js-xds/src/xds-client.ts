@@ -311,9 +311,11 @@ export class XdsClient {
     this.adsBackoff = new BackoffTimeout(() => {
       this.maybeStartAdsStream();
     });
+    this.adsBackoff.unref();
     this.lrsBackoff = new BackoffTimeout(() => {
       this.maybeStartLrsStream();
-    })
+    });
+    this.lrsBackoff.unref();
 
     Promise.all([loadBootstrapInfo(), loadAdsProtos()]).then(
       ([bootstrapInfo, protoDefinitions]) => {
