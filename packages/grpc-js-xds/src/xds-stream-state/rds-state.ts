@@ -16,7 +16,6 @@
  */
 
 import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
-import { GRPC_XDS_EXPERIMENTAL_ROUTING } from "../environment";
 import { RouteConfiguration__Output } from "../generated/envoy/api/v2/RouteConfiguration";
 import { CdsLoadBalancingConfig } from "../load-balancer-cds";
 import { Watcher, XdsStreamState } from "./xds-stream-state";
@@ -99,55 +98,51 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
   }
 
   validateResponse(message: RouteConfiguration__Output): boolean {
-    if (GRPC_XDS_EXPERIMENTAL_ROUTING) {
-      // https://github.com/grpc/proposal/blob/master/A28-xds-traffic-splitting-and-routing.md#response-validation
-      for (const virtualHost of message.virtual_hosts) {
-        for (const domainPattern of virtualHost.domains) {
-          const starIndex = domainPattern.indexOf('*');
-          const lastStarIndex = domainPattern.lastIndexOf('*');
-          // A domain pattern can have at most one wildcard *
-          if (starIndex !== lastStarIndex) {
-            return false;
-          }
-          // A wildcard * can either be absent or at the beginning or end of the pattern
-          if (!(starIndex === -1 || starIndex === 0 || starIndex === domainPattern.length - 1)) {
+    // https://github.com/grpc/proposal/blob/master/A28-xds-traffic-splitting-and-routing.md#response-validation
+    for (const virtualHost of message.virtual_hosts) {
+      for (const domainPattern of virtualHost.domains) {
+        const starIndex = domainPattern.indexOf('*');
+        const lastStarIndex = domainPattern.lastIndexOf('*');
+        // A domain pattern can have at most one wildcard *
+        if (starIndex !== lastStarIndex) {
+          return false;
+        }
+        // A wildcard * can either be absent or at the beginning or end of the pattern
+        if (!(starIndex === -1 || starIndex === 0 || starIndex === domainPattern.length - 1)) {
+          return false;
+        }
+      }
+      for (const route of virtualHost.routes) {
+        const match = route.match;
+        if (!match) {
+          return false;
+        }
+        if (SUPPORTED_PATH_SPECIFIERS.indexOf(match.path_specifier) < 0) {
+          return false;
+        }
+        for (const headers of match.headers) {
+          if (SUPPPORTED_HEADER_MATCH_SPECIFIERS.indexOf(headers.header_match_specifier) < 0) {
             return false;
           }
         }
-        for (const route of virtualHost.routes) {
-          const match = route.match;
-          if (!match) {
+        if (route.action !== 'route') {
+          return false;
+        }
+        if ((route.route === undefined) || SUPPORTED_CLUSTER_SPECIFIERS.indexOf(route.route.cluster_specifier) < 0) {
+          return false;
+        }
+        if (route.route!.cluster_specifier === 'weighted_clusters') {
+          let weightSum = 0;
+          for (const clusterWeight of route.route.weighted_clusters!.clusters) {
+            weightSum += clusterWeight.weight?.value ?? 0;
+          }
+          if (weightSum !== route.route.weighted_clusters!.total_weight?.value ?? 100) {
             return false;
-          }
-          if (SUPPORTED_PATH_SPECIFIERS.indexOf(match.path_specifier) < 0) {
-            return false;
-          }
-          for (const headers of match.headers) {
-            if (SUPPPORTED_HEADER_MATCH_SPECIFIERS.indexOf(headers.header_match_specifier) < 0) {
-              return false;
-            }
-          }
-          if (route.action !== 'route') {
-            return false;
-          }
-          if ((route.route === undefined) || SUPPORTED_CLUSTER_SPECIFIERS.indexOf(route.route.cluster_specifier) < 0) {
-            return false;
-          }
-          if (route.route!.cluster_specifier === 'weighted_clusters') {
-            let weightSum = 0;
-            for (const clusterWeight of route.route.weighted_clusters!.clusters) {
-              weightSum += clusterWeight.weight?.value ?? 0;
-            }
-            if (weightSum !== route.route.weighted_clusters!.total_weight?.value ?? 100) {
-              return false;
-            }
           }
         }
       }
-      return true;
-    } else {
-      return true;
     }
+    return true;
   }
 
   private handleMissingNames(allRouteConfigNames: Set<string>) {
