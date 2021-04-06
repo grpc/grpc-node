@@ -1,6 +1,6 @@
 {
   "name": "@grpc/proto-loader",
-  "version": "0.5.6",
+  "version": "0.6.0",
   "author": "Google Inc.",
   "contributors": [
     {
@@ -23,7 +23,9 @@
     "check": "gts check",
     "fix": "gts fix",
     "pretest": "npm run compile",
-    "posttest": "npm run check"
+    "posttest": "npm run check",
+    "generate-golden": "node ./build/bin/proto-loader-gen-types.js --keepCase --longs=String --enums=String --defaults --oneofs --json --includeComments -I deps/gapic-showcase/schema/ deps/googleapis/ -O ./golden-generated --grpcLib @grpc/grpc-js google/showcase/v1beta1/echo.proto",
+    "validate-golden": "rm -rf ./golden-generated-old && mv ./golden-generated/ ./golden-generated-old && npm run generate-golden && diff -r ./golden-generated ./golden-generated-old"
   },
   "repository": {
     "type": "git",
@@ -36,20 +38,29 @@
   "files": [
     "LICENSE",
     "build/src/*.d.ts",
-    "build/src/*.js"
+    "build/src/*.js",
+    "build/bin/*.js"
   ],
+  "bin": {
+    "proto-loader-gen-types": "./build/bin/proto-loader-gen-types.js"
+  },
   "dependencies": {
+    "@types/long": "^4.0.1",
     "lodash.camelcase": "^4.3.0",
-    "protobufjs": "^6.8.6"
+    "long": "^4.0.0",
+    "protobufjs": "^6.10.0",
+    "yargs": "^16.1.1"
   },
   "devDependencies": {
     "@types/lodash.camelcase": "^4.3.4",
+    "@types/mkdirp": "^1.0.1",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^10.12.5",
+    "@types/node": "^10.17.26",
+    "@types/yargs": "^15.0.5",
     "clang-format": "^1.2.2",
     "gts": "^1.1.0",
     "rimraf": "^3.0.2",
-    "typescript": "~3.3.3333"
+    "typescript": "~3.8.3"
   },
   "engines": {
     "node": ">=6"
