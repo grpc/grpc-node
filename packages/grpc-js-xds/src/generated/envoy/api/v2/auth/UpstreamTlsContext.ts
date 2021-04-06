@@ -1,7 +1,7 @@
 // Original file: deps/envoy-api/envoy/api/v2/auth/tls.proto
 
-import { CommonTlsContext as _envoy_api_v2_auth_CommonTlsContext, CommonTlsContext__Output as _envoy_api_v2_auth_CommonTlsContext__Output } from '../../../../envoy/api/v2/auth/CommonTlsContext';
-import { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
+import type { CommonTlsContext as _envoy_api_v2_auth_CommonTlsContext, CommonTlsContext__Output as _envoy_api_v2_auth_CommonTlsContext__Output } from '../../../../envoy/api/v2/auth/CommonTlsContext';
+import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 
 export interface UpstreamTlsContext {
   /**

@@ -1,10 +1,10 @@
 // Original file: deps/envoy-api/envoy/service/discovery/v2/ads.proto
 
-import * as grpc from '@grpc/grpc-js'
-import { DeltaDiscoveryRequest as _envoy_api_v2_DeltaDiscoveryRequest, DeltaDiscoveryRequest__Output as _envoy_api_v2_DeltaDiscoveryRequest__Output } from '../../../../envoy/api/v2/DeltaDiscoveryRequest';
-import { DeltaDiscoveryResponse as _envoy_api_v2_DeltaDiscoveryResponse, DeltaDiscoveryResponse__Output as _envoy_api_v2_DeltaDiscoveryResponse__Output } from '../../../../envoy/api/v2/DeltaDiscoveryResponse';
-import { DiscoveryRequest as _envoy_api_v2_DiscoveryRequest, DiscoveryRequest__Output as _envoy_api_v2_DiscoveryRequest__Output } from '../../../../envoy/api/v2/DiscoveryRequest';
-import { DiscoveryResponse as _envoy_api_v2_DiscoveryResponse, DiscoveryResponse__Output as _envoy_api_v2_DiscoveryResponse__Output } from '../../../../envoy/api/v2/DiscoveryResponse';
+import type * as grpc from '@grpc/grpc-js'
+import type { DeltaDiscoveryRequest as _envoy_api_v2_DeltaDiscoveryRequest, DeltaDiscoveryRequest__Output as _envoy_api_v2_DeltaDiscoveryRequest__Output } from '../../../../envoy/api/v2/DeltaDiscoveryRequest';
+import type { DeltaDiscoveryResponse as _envoy_api_v2_DeltaDiscoveryResponse, DeltaDiscoveryResponse__Output as _envoy_api_v2_DeltaDiscoveryResponse__Output } from '../../../../envoy/api/v2/DeltaDiscoveryResponse';
+import type { DiscoveryRequest as _envoy_api_v2_DiscoveryRequest, DiscoveryRequest__Output as _envoy_api_v2_DiscoveryRequest__Output } from '../../../../envoy/api/v2/DiscoveryRequest';
+import type { DiscoveryResponse as _envoy_api_v2_DiscoveryResponse, DiscoveryResponse__Output as _envoy_api_v2_DiscoveryResponse__Output } from '../../../../envoy/api/v2/DiscoveryResponse';
 
 /**
  * See https://github.com/lyft/envoy-api#apis for a description of the role of
@@ -42,11 +42,11 @@ export interface AggregatedDiscoveryServiceClient extends grpc.Client {
  * the multiplexed singleton APIs at the Envoy instance and management server.
  */
 export interface AggregatedDiscoveryServiceHandlers extends grpc.UntypedServiceImplementation {
-  DeltaAggregatedResources(call: grpc.ServerDuplexStream<_envoy_api_v2_DeltaDiscoveryRequest__Output, _envoy_api_v2_DeltaDiscoveryResponse>): void;
+  DeltaAggregatedResources: grpc.handleBidiStreamingCall<_envoy_api_v2_DeltaDiscoveryRequest__Output, _envoy_api_v2_DeltaDiscoveryResponse>;
   
   /**
    * This is a gRPC-only API.
    */
-  StreamAggregatedResources(call: grpc.ServerDuplexStream<_envoy_api_v2_DiscoveryRequest__Output, _envoy_api_v2_DiscoveryResponse>): void;
+  StreamAggregatedResources: grpc.handleBidiStreamingCall<_envoy_api_v2_DiscoveryRequest__Output, _envoy_api_v2_DiscoveryResponse>;
   
 }

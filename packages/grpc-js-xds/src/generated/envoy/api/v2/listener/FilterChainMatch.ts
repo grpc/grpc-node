@@ -1,7 +1,7 @@
 // Original file: deps/envoy-api/envoy/api/v2/listener/listener_components.proto
 
-import { CidrRange as _envoy_api_v2_core_CidrRange, CidrRange__Output as _envoy_api_v2_core_CidrRange__Output } from '../../../../envoy/api/v2/core/CidrRange';
-import { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
+import type { CidrRange as _envoy_api_v2_core_CidrRange, CidrRange__Output as _envoy_api_v2_core_CidrRange__Output } from '../../../../envoy/api/v2/core/CidrRange';
+import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 
 // Original file: deps/envoy-api/envoy/api/v2/listener/listener_components.proto
 

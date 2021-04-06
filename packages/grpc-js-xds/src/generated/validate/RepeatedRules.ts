@@ -1,7 +1,7 @@
 // Original file: deps/protoc-gen-validate/validate/validate.proto
 
-import { FieldRules as _validate_FieldRules, FieldRules__Output as _validate_FieldRules__Output } from '../validate/FieldRules';
-import { Long } from '@grpc/proto-loader';
+import type { FieldRules as _validate_FieldRules, FieldRules__Output as _validate_FieldRules__Output } from '../validate/FieldRules';
+import type { Long } from '@grpc/proto-loader';
 
 /**
  * RepeatedRules describe the constraints applied to `repeated` values

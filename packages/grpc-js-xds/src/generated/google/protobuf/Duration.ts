@@ -1,6 +1,6 @@
 // Original file: null
 
-import { Long } from '@grpc/proto-loader';
+import type { Long } from '@grpc/proto-loader';
 
 export interface Duration {
   'seconds'?: (number | string | Long);

@@ -1,7 +1,7 @@
 // Original file: deps/envoy-api/envoy/api/v2/listener/listener_components.proto
 
-import { ListenerFilterChainMatchPredicate as _envoy_api_v2_listener_ListenerFilterChainMatchPredicate, ListenerFilterChainMatchPredicate__Output as _envoy_api_v2_listener_ListenerFilterChainMatchPredicate__Output } from '../../../../envoy/api/v2/listener/ListenerFilterChainMatchPredicate';
-import { Int32Range as _envoy_type_Int32Range, Int32Range__Output as _envoy_type_Int32Range__Output } from '../../../../envoy/type/Int32Range';
+import type { ListenerFilterChainMatchPredicate as _envoy_api_v2_listener_ListenerFilterChainMatchPredicate, ListenerFilterChainMatchPredicate__Output as _envoy_api_v2_listener_ListenerFilterChainMatchPredicate__Output } from '../../../../envoy/api/v2/listener/ListenerFilterChainMatchPredicate';
+import type { Int32Range as _envoy_type_Int32Range, Int32Range__Output as _envoy_type_Int32Range__Output } from '../../../../envoy/type/Int32Range';
 
 /**
  * A set of match configurations used for logical operations.

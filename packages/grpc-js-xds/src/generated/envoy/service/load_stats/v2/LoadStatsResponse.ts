@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/service/load_stats/v2/lrs.proto
 
-import { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
+import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
 
 /**
  * The management server sends envoy a LoadStatsResponse with all clusters it

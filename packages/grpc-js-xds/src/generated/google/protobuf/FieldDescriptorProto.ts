@@ -1,6 +1,6 @@
 // Original file: null
 
-import { FieldOptions as _google_protobuf_FieldOptions, FieldOptions__Output as _google_protobuf_FieldOptions__Output } from '../../google/protobuf/FieldOptions';
+import type { FieldOptions as _google_protobuf_FieldOptions, FieldOptions__Output as _google_protobuf_FieldOptions__Output } from '../../google/protobuf/FieldOptions';
 
 // Original file: null
 

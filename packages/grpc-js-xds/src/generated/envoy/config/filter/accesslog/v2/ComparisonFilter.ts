@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/config/filter/accesslog/v2/accesslog.proto
 
-import { RuntimeUInt32 as _envoy_api_v2_core_RuntimeUInt32, RuntimeUInt32__Output as _envoy_api_v2_core_RuntimeUInt32__Output } from '../../../../../envoy/api/v2/core/RuntimeUInt32';
+import type { RuntimeUInt32 as _envoy_api_v2_core_RuntimeUInt32, RuntimeUInt32__Output as _envoy_api_v2_core_RuntimeUInt32__Output } from '../../../../../envoy/api/v2/core/RuntimeUInt32';
 
 // Original file: deps/envoy-api/envoy/config/filter/accesslog/v2/accesslog.proto
 

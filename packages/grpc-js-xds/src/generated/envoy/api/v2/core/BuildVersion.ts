@@ -1,7 +1,7 @@
 // Original file: deps/envoy-api/envoy/api/v2/core/base.proto
 
-import { SemanticVersion as _envoy_type_SemanticVersion, SemanticVersion__Output as _envoy_type_SemanticVersion__Output } from '../../../../envoy/type/SemanticVersion';
-import { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_Struct__Output } from '../../../../google/protobuf/Struct';
+import type { SemanticVersion as _envoy_type_SemanticVersion, SemanticVersion__Output as _envoy_type_SemanticVersion__Output } from '../../../../envoy/type/SemanticVersion';
+import type { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_Struct__Output } from '../../../../google/protobuf/Struct';
 
 /**
  * BuildVersion combines SemVer version of extension with free-form build information

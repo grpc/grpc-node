@@ -1,6 +1,6 @@
 // Original file: deps/protoc-gen-validate/validate/validate.proto
 
-import { Long } from '@grpc/proto-loader';
+import type { Long } from '@grpc/proto-loader';
 
 /**
  * UInt64Rules describes the constraints applied to `uint64` values

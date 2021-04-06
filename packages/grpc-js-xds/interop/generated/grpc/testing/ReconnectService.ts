@@ -1,9 +1,9 @@
 // Original file: proto/grpc/testing/test.proto
 
-import * as grpc from '@grpc/grpc-js'
-import { Empty as _grpc_testing_Empty, Empty__Output as _grpc_testing_Empty__Output } from '../../grpc/testing/Empty';
-import { ReconnectInfo as _grpc_testing_ReconnectInfo, ReconnectInfo__Output as _grpc_testing_ReconnectInfo__Output } from '../../grpc/testing/ReconnectInfo';
-import { ReconnectParams as _grpc_testing_ReconnectParams, ReconnectParams__Output as _grpc_testing_ReconnectParams__Output } from '../../grpc/testing/ReconnectParams';
+import type * as grpc from '@grpc/grpc-js'
+import type { Empty as _grpc_testing_Empty, Empty__Output as _grpc_testing_Empty__Output } from '../../grpc/testing/Empty';
+import type { ReconnectInfo as _grpc_testing_ReconnectInfo, ReconnectInfo__Output as _grpc_testing_ReconnectInfo__Output } from '../../grpc/testing/ReconnectInfo';
+import type { ReconnectParams as _grpc_testing_ReconnectParams, ReconnectParams__Output as _grpc_testing_ReconnectParams__Output } from '../../grpc/testing/ReconnectParams';
 
 /**
  * A service used to control reconnect server.
@@ -33,8 +33,8 @@ export interface ReconnectServiceClient extends grpc.Client {
  * A service used to control reconnect server.
  */
 export interface ReconnectServiceHandlers extends grpc.UntypedServiceImplementation {
-  Start(call: grpc.ServerUnaryCall<_grpc_testing_ReconnectParams__Output, _grpc_testing_Empty>, callback: grpc.sendUnaryData<_grpc_testing_Empty>): void;
+  Start: grpc.handleUnaryCall<_grpc_testing_ReconnectParams__Output, _grpc_testing_Empty>;
   
-  Stop(call: grpc.ServerUnaryCall<_grpc_testing_Empty__Output, _grpc_testing_ReconnectInfo>, callback: grpc.sendUnaryData<_grpc_testing_ReconnectInfo>): void;
+  Stop: grpc.handleUnaryCall<_grpc_testing_Empty__Output, _grpc_testing_ReconnectInfo>;
   
 }

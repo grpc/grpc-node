@@ -1,7 +1,7 @@
 // Original file: proto/grpc/testing/test.proto
 
-import * as grpc from '@grpc/grpc-js'
-import { Empty as _grpc_testing_Empty, Empty__Output as _grpc_testing_Empty__Output } from '../../grpc/testing/Empty';
+import type * as grpc from '@grpc/grpc-js'
+import type { Empty as _grpc_testing_Empty, Empty__Output as _grpc_testing_Empty__Output } from '../../grpc/testing/Empty';
 
 /**
  * A simple service NOT implemented at servers so clients can test for
@@ -33,6 +33,6 @@ export interface UnimplementedServiceHandlers extends grpc.UntypedServiceImpleme
   /**
    * A call that no server should implement
    */
-  UnimplementedCall(call: grpc.ServerUnaryCall<_grpc_testing_Empty__Output, _grpc_testing_Empty>, callback: grpc.sendUnaryData<_grpc_testing_Empty>): void;
+  UnimplementedCall: grpc.handleUnaryCall<_grpc_testing_Empty__Output, _grpc_testing_Empty>;
   
 }

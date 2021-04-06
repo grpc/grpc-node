@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/config/filter/accesslog/v2/accesslog.proto
 
-import { FractionalPercent as _envoy_type_FractionalPercent, FractionalPercent__Output as _envoy_type_FractionalPercent__Output } from '../../../../../envoy/type/FractionalPercent';
+import type { FractionalPercent as _envoy_type_FractionalPercent, FractionalPercent__Output as _envoy_type_FractionalPercent__Output } from '../../../../../envoy/type/FractionalPercent';
 
 /**
  * Filters for random sampling of requests.

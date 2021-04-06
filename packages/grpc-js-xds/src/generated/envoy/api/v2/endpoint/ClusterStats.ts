@@ -1,8 +1,8 @@
 // Original file: deps/envoy-api/envoy/api/v2/endpoint/load_report.proto
 
-import { UpstreamLocalityStats as _envoy_api_v2_endpoint_UpstreamLocalityStats, UpstreamLocalityStats__Output as _envoy_api_v2_endpoint_UpstreamLocalityStats__Output } from '../../../../envoy/api/v2/endpoint/UpstreamLocalityStats';
-import { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
-import { Long } from '@grpc/proto-loader';
+import type { UpstreamLocalityStats as _envoy_api_v2_endpoint_UpstreamLocalityStats, UpstreamLocalityStats__Output as _envoy_api_v2_endpoint_UpstreamLocalityStats__Output } from '../../../../envoy/api/v2/endpoint/UpstreamLocalityStats';
+import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
+import type { Long } from '@grpc/proto-loader';
 
 export interface _envoy_api_v2_endpoint_ClusterStats_DroppedRequests {
   /**

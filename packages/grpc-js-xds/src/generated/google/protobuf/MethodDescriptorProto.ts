@@ -1,6 +1,6 @@
 // Original file: null
 
-import { MethodOptions as _google_protobuf_MethodOptions, MethodOptions__Output as _google_protobuf_MethodOptions__Output } from '../../google/protobuf/MethodOptions';
+import type { MethodOptions as _google_protobuf_MethodOptions, MethodOptions__Output as _google_protobuf_MethodOptions__Output } from '../../google/protobuf/MethodOptions';
 
 export interface MethodDescriptorProto {
   'name'?: (string);

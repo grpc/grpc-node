@@ -1,17 +1,17 @@
 // Original file: deps/envoy-api/envoy/api/v2/listener.proto
 
-import { Address as _envoy_api_v2_core_Address, Address__Output as _envoy_api_v2_core_Address__Output } from '../../../envoy/api/v2/core/Address';
-import { FilterChain as _envoy_api_v2_listener_FilterChain, FilterChain__Output as _envoy_api_v2_listener_FilterChain__Output } from '../../../envoy/api/v2/listener/FilterChain';
-import { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../google/protobuf/BoolValue';
-import { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../google/protobuf/UInt32Value';
-import { Metadata as _envoy_api_v2_core_Metadata, Metadata__Output as _envoy_api_v2_core_Metadata__Output } from '../../../envoy/api/v2/core/Metadata';
-import { ListenerFilter as _envoy_api_v2_listener_ListenerFilter, ListenerFilter__Output as _envoy_api_v2_listener_ListenerFilter__Output } from '../../../envoy/api/v2/listener/ListenerFilter';
-import { SocketOption as _envoy_api_v2_core_SocketOption, SocketOption__Output as _envoy_api_v2_core_SocketOption__Output } from '../../../envoy/api/v2/core/SocketOption';
-import { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../google/protobuf/Duration';
-import { TrafficDirection as _envoy_api_v2_core_TrafficDirection } from '../../../envoy/api/v2/core/TrafficDirection';
-import { UdpListenerConfig as _envoy_api_v2_listener_UdpListenerConfig, UdpListenerConfig__Output as _envoy_api_v2_listener_UdpListenerConfig__Output } from '../../../envoy/api/v2/listener/UdpListenerConfig';
-import { ApiListener as _envoy_config_listener_v2_ApiListener, ApiListener__Output as _envoy_config_listener_v2_ApiListener__Output } from '../../../envoy/config/listener/v2/ApiListener';
-import { AccessLog as _envoy_config_filter_accesslog_v2_AccessLog, AccessLog__Output as _envoy_config_filter_accesslog_v2_AccessLog__Output } from '../../../envoy/config/filter/accesslog/v2/AccessLog';
+import type { Address as _envoy_api_v2_core_Address, Address__Output as _envoy_api_v2_core_Address__Output } from '../../../envoy/api/v2/core/Address';
+import type { FilterChain as _envoy_api_v2_listener_FilterChain, FilterChain__Output as _envoy_api_v2_listener_FilterChain__Output } from '../../../envoy/api/v2/listener/FilterChain';
+import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../google/protobuf/BoolValue';
+import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../google/protobuf/UInt32Value';
+import type { Metadata as _envoy_api_v2_core_Metadata, Metadata__Output as _envoy_api_v2_core_Metadata__Output } from '../../../envoy/api/v2/core/Metadata';
+import type { ListenerFilter as _envoy_api_v2_listener_ListenerFilter, ListenerFilter__Output as _envoy_api_v2_listener_ListenerFilter__Output } from '../../../envoy/api/v2/listener/ListenerFilter';
+import type { SocketOption as _envoy_api_v2_core_SocketOption, SocketOption__Output as _envoy_api_v2_core_SocketOption__Output } from '../../../envoy/api/v2/core/SocketOption';
+import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../google/protobuf/Duration';
+import type { TrafficDirection as _envoy_api_v2_core_TrafficDirection } from '../../../envoy/api/v2/core/TrafficDirection';
+import type { UdpListenerConfig as _envoy_api_v2_listener_UdpListenerConfig, UdpListenerConfig__Output as _envoy_api_v2_listener_UdpListenerConfig__Output } from '../../../envoy/api/v2/listener/UdpListenerConfig';
+import type { ApiListener as _envoy_config_listener_v2_ApiListener, ApiListener__Output as _envoy_config_listener_v2_ApiListener__Output } from '../../../envoy/config/listener/v2/ApiListener';
+import type { AccessLog as _envoy_config_filter_accesslog_v2_AccessLog, AccessLog__Output as _envoy_config_filter_accesslog_v2_AccessLog__Output } from '../../../envoy/config/filter/accesslog/v2/AccessLog';
 
 /**
  * Configuration for listener connection balancing.

@@ -1,8 +1,8 @@
 // Original file: proto/grpc/testing/test.proto
 
-import * as grpc from '@grpc/grpc-js'
-import { ClientConfigureRequest as _grpc_testing_ClientConfigureRequest, ClientConfigureRequest__Output as _grpc_testing_ClientConfigureRequest__Output } from '../../grpc/testing/ClientConfigureRequest';
-import { ClientConfigureResponse as _grpc_testing_ClientConfigureResponse, ClientConfigureResponse__Output as _grpc_testing_ClientConfigureResponse__Output } from '../../grpc/testing/ClientConfigureResponse';
+import type * as grpc from '@grpc/grpc-js'
+import type { ClientConfigureRequest as _grpc_testing_ClientConfigureRequest, ClientConfigureRequest__Output as _grpc_testing_ClientConfigureRequest__Output } from '../../grpc/testing/ClientConfigureRequest';
+import type { ClientConfigureResponse as _grpc_testing_ClientConfigureResponse, ClientConfigureResponse__Output as _grpc_testing_ClientConfigureResponse__Output } from '../../grpc/testing/ClientConfigureResponse';
 
 /**
  * A service to dynamically update the configuration of an xDS test client.
@@ -32,6 +32,6 @@ export interface XdsUpdateClientConfigureServiceHandlers extends grpc.UntypedSer
   /**
    * Update the tes client's configuration.
    */
-  Configure(call: grpc.ServerUnaryCall<_grpc_testing_ClientConfigureRequest__Output, _grpc_testing_ClientConfigureResponse>, callback: grpc.sendUnaryData<_grpc_testing_ClientConfigureResponse>): void;
+  Configure: grpc.handleUnaryCall<_grpc_testing_ClientConfigureRequest__Output, _grpc_testing_ClientConfigureResponse>;
   
 }

@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/api/v2/endpoint/load_report.proto
 
-import { Long } from '@grpc/proto-loader';
+import type { Long } from '@grpc/proto-loader';
 
 /**
  * [#not-implemented-hide:] Not configuration. TBD how to doc proto APIs.

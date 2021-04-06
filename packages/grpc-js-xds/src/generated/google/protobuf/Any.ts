@@ -1,6 +1,6 @@
 // Original file: null
 
-import { AnyExtension } from '@grpc/proto-loader';
+import type { AnyExtension } from '@grpc/proto-loader';
 
 export type Any = AnyExtension | {
   type_url: string;

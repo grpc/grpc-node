@@ -1,8 +1,8 @@
 // Original file: deps/envoy-api/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.proto
 
-import { ConfigSource as _envoy_api_v2_core_ConfigSource, ConfigSource__Output as _envoy_api_v2_core_ConfigSource__Output } from '../../../../../../envoy/api/v2/core/ConfigSource';
-import { ScopedRouteConfigurationsList as _envoy_config_filter_network_http_connection_manager_v2_ScopedRouteConfigurationsList, ScopedRouteConfigurationsList__Output as _envoy_config_filter_network_http_connection_manager_v2_ScopedRouteConfigurationsList__Output } from '../../../../../../envoy/config/filter/network/http_connection_manager/v2/ScopedRouteConfigurationsList';
-import { ScopedRds as _envoy_config_filter_network_http_connection_manager_v2_ScopedRds, ScopedRds__Output as _envoy_config_filter_network_http_connection_manager_v2_ScopedRds__Output } from '../../../../../../envoy/config/filter/network/http_connection_manager/v2/ScopedRds';
+import type { ConfigSource as _envoy_api_v2_core_ConfigSource, ConfigSource__Output as _envoy_api_v2_core_ConfigSource__Output } from '../../../../../../envoy/api/v2/core/ConfigSource';
+import type { ScopedRouteConfigurationsList as _envoy_config_filter_network_http_connection_manager_v2_ScopedRouteConfigurationsList, ScopedRouteConfigurationsList__Output as _envoy_config_filter_network_http_connection_manager_v2_ScopedRouteConfigurationsList__Output } from '../../../../../../envoy/config/filter/network/http_connection_manager/v2/ScopedRouteConfigurationsList';
+import type { ScopedRds as _envoy_config_filter_network_http_connection_manager_v2_ScopedRds, ScopedRds__Output as _envoy_config_filter_network_http_connection_manager_v2_ScopedRds__Output } from '../../../../../../envoy/config/filter/network/http_connection_manager/v2/ScopedRds';
 
 /**
  * Specifies the mechanism for constructing key fragments which are composed into scope keys.
