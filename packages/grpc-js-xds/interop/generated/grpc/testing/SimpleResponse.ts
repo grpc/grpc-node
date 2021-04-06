@@ -1,7 +1,7 @@
 // Original file: proto/grpc/testing/messages.proto
 
-import { Payload as _grpc_testing_Payload, Payload__Output as _grpc_testing_Payload__Output } from '../../grpc/testing/Payload';
-import { GrpclbRouteType as _grpc_testing_GrpclbRouteType } from '../../grpc/testing/GrpclbRouteType';
+import type { Payload as _grpc_testing_Payload, Payload__Output as _grpc_testing_Payload__Output } from '../../grpc/testing/Payload';
+import type { GrpclbRouteType as _grpc_testing_GrpclbRouteType } from '../../grpc/testing/GrpclbRouteType';
 
 /**
  * Unary response, as configured by the request.

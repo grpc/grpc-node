@@ -1,8 +1,8 @@
 // Original file: deps/envoy-api/envoy/api/v2/cluster/circuit_breaker.proto
 
-import { RoutingPriority as _envoy_api_v2_core_RoutingPriority } from '../../../../envoy/api/v2/core/RoutingPriority';
-import { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
-import { Percent as _envoy_type_Percent, Percent__Output as _envoy_type_Percent__Output } from '../../../../envoy/type/Percent';
+import type { RoutingPriority as _envoy_api_v2_core_RoutingPriority } from '../../../../envoy/api/v2/core/RoutingPriority';
+import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
+import type { Percent as _envoy_type_Percent, Percent__Output as _envoy_type_Percent__Output } from '../../../../envoy/type/Percent';
 
 export interface _envoy_api_v2_cluster_CircuitBreakers_Thresholds_RetryBudget {
   /**

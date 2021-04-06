@@ -1,7 +1,7 @@
 // Original file: proto/grpc/testing/test.proto
 
-import * as grpc from '@grpc/grpc-js'
-import { Empty as _grpc_testing_Empty, Empty__Output as _grpc_testing_Empty__Output } from '../../grpc/testing/Empty';
+import type * as grpc from '@grpc/grpc-js'
+import type { Empty as _grpc_testing_Empty, Empty__Output as _grpc_testing_Empty__Output } from '../../grpc/testing/Empty';
 
 /**
  * A service to remotely control health status of an xDS test server.
@@ -31,8 +31,8 @@ export interface XdsUpdateHealthServiceClient extends grpc.Client {
  * A service to remotely control health status of an xDS test server.
  */
 export interface XdsUpdateHealthServiceHandlers extends grpc.UntypedServiceImplementation {
-  SetNotServing(call: grpc.ServerUnaryCall<_grpc_testing_Empty__Output, _grpc_testing_Empty>, callback: grpc.sendUnaryData<_grpc_testing_Empty>): void;
+  SetNotServing: grpc.handleUnaryCall<_grpc_testing_Empty__Output, _grpc_testing_Empty>;
   
-  SetServing(call: grpc.ServerUnaryCall<_grpc_testing_Empty__Output, _grpc_testing_Empty>, callback: grpc.sendUnaryData<_grpc_testing_Empty>): void;
+  SetServing: grpc.handleUnaryCall<_grpc_testing_Empty__Output, _grpc_testing_Empty>;
   
 }

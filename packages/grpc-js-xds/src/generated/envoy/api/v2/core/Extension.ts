@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/api/v2/core/base.proto
 
-import { BuildVersion as _envoy_api_v2_core_BuildVersion, BuildVersion__Output as _envoy_api_v2_core_BuildVersion__Output } from '../../../../envoy/api/v2/core/BuildVersion';
+import type { BuildVersion as _envoy_api_v2_core_BuildVersion, BuildVersion__Output as _envoy_api_v2_core_BuildVersion__Output } from '../../../../envoy/api/v2/core/BuildVersion';
 
 /**
  * Version and identification for an Envoy extension.

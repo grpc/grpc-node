@@ -1,9 +1,9 @@
 // Original file: proto/grpc/testing/messages.proto
 
-import { PayloadType as _grpc_testing_PayloadType } from '../../grpc/testing/PayloadType';
-import { ResponseParameters as _grpc_testing_ResponseParameters, ResponseParameters__Output as _grpc_testing_ResponseParameters__Output } from '../../grpc/testing/ResponseParameters';
-import { Payload as _grpc_testing_Payload, Payload__Output as _grpc_testing_Payload__Output } from '../../grpc/testing/Payload';
-import { EchoStatus as _grpc_testing_EchoStatus, EchoStatus__Output as _grpc_testing_EchoStatus__Output } from '../../grpc/testing/EchoStatus';
+import type { PayloadType as _grpc_testing_PayloadType } from '../../grpc/testing/PayloadType';
+import type { ResponseParameters as _grpc_testing_ResponseParameters, ResponseParameters__Output as _grpc_testing_ResponseParameters__Output } from '../../grpc/testing/ResponseParameters';
+import type { Payload as _grpc_testing_Payload, Payload__Output as _grpc_testing_Payload__Output } from '../../grpc/testing/Payload';
+import type { EchoStatus as _grpc_testing_EchoStatus, EchoStatus__Output as _grpc_testing_EchoStatus__Output } from '../../grpc/testing/EchoStatus';
 
 /**
  * Server-streaming request.

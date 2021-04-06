@@ -1,13 +1,13 @@
 // Original file: proto/grpc/testing/test.proto
 
-import * as grpc from '@grpc/grpc-js'
-import { Empty as _grpc_testing_Empty, Empty__Output as _grpc_testing_Empty__Output } from '../../grpc/testing/Empty';
-import { SimpleRequest as _grpc_testing_SimpleRequest, SimpleRequest__Output as _grpc_testing_SimpleRequest__Output } from '../../grpc/testing/SimpleRequest';
-import { SimpleResponse as _grpc_testing_SimpleResponse, SimpleResponse__Output as _grpc_testing_SimpleResponse__Output } from '../../grpc/testing/SimpleResponse';
-import { StreamingInputCallRequest as _grpc_testing_StreamingInputCallRequest, StreamingInputCallRequest__Output as _grpc_testing_StreamingInputCallRequest__Output } from '../../grpc/testing/StreamingInputCallRequest';
-import { StreamingInputCallResponse as _grpc_testing_StreamingInputCallResponse, StreamingInputCallResponse__Output as _grpc_testing_StreamingInputCallResponse__Output } from '../../grpc/testing/StreamingInputCallResponse';
-import { StreamingOutputCallRequest as _grpc_testing_StreamingOutputCallRequest, StreamingOutputCallRequest__Output as _grpc_testing_StreamingOutputCallRequest__Output } from '../../grpc/testing/StreamingOutputCallRequest';
-import { StreamingOutputCallResponse as _grpc_testing_StreamingOutputCallResponse, StreamingOutputCallResponse__Output as _grpc_testing_StreamingOutputCallResponse__Output } from '../../grpc/testing/StreamingOutputCallResponse';
+import type * as grpc from '@grpc/grpc-js'
+import type { Empty as _grpc_testing_Empty, Empty__Output as _grpc_testing_Empty__Output } from '../../grpc/testing/Empty';
+import type { SimpleRequest as _grpc_testing_SimpleRequest, SimpleRequest__Output as _grpc_testing_SimpleRequest__Output } from '../../grpc/testing/SimpleRequest';
+import type { SimpleResponse as _grpc_testing_SimpleResponse, SimpleResponse__Output as _grpc_testing_SimpleResponse__Output } from '../../grpc/testing/SimpleResponse';
+import type { StreamingInputCallRequest as _grpc_testing_StreamingInputCallRequest, StreamingInputCallRequest__Output as _grpc_testing_StreamingInputCallRequest__Output } from '../../grpc/testing/StreamingInputCallRequest';
+import type { StreamingInputCallResponse as _grpc_testing_StreamingInputCallResponse, StreamingInputCallResponse__Output as _grpc_testing_StreamingInputCallResponse__Output } from '../../grpc/testing/StreamingInputCallResponse';
+import type { StreamingOutputCallRequest as _grpc_testing_StreamingOutputCallRequest, StreamingOutputCallRequest__Output as _grpc_testing_StreamingOutputCallRequest__Output } from '../../grpc/testing/StreamingOutputCallRequest';
+import type { StreamingOutputCallResponse as _grpc_testing_StreamingOutputCallResponse, StreamingOutputCallResponse__Output as _grpc_testing_StreamingOutputCallResponse__Output } from '../../grpc/testing/StreamingOutputCallResponse';
 
 /**
  * A simple service to test the various types of RPCs and experiment with
@@ -84,18 +84,18 @@ export interface TestServiceClient extends grpc.Client {
    * A sequence of requests followed by one response (streamed upload).
    * The server returns the aggregated size of client payload as the result.
    */
-  StreamingInputCall(metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallResponse__Output>;
-  StreamingInputCall(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallResponse__Output>;
-  StreamingInputCall(options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallResponse__Output>;
-  StreamingInputCall(callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallResponse__Output>;
+  StreamingInputCall(metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
+  StreamingInputCall(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
+  StreamingInputCall(options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
+  StreamingInputCall(callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
   /**
    * A sequence of requests followed by one response (streamed upload).
    * The server returns the aggregated size of client payload as the result.
    */
-  streamingInputCall(metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallResponse__Output>;
-  streamingInputCall(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallResponse__Output>;
-  streamingInputCall(options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallResponse__Output>;
-  streamingInputCall(callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallResponse__Output>;
+  streamingInputCall(metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
+  streamingInputCall(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
+  streamingInputCall(options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
+  streamingInputCall(callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
   
   /**
    * One request followed by a sequence of responses (streamed download).
@@ -154,19 +154,19 @@ export interface TestServiceHandlers extends grpc.UntypedServiceImplementation {
    * headers set such that a caching HTTP proxy (such as GFE) can
    * satisfy subsequent requests.
    */
-  CacheableUnaryCall(call: grpc.ServerUnaryCall<_grpc_testing_SimpleRequest__Output, _grpc_testing_SimpleResponse>, callback: grpc.sendUnaryData<_grpc_testing_SimpleResponse>): void;
+  CacheableUnaryCall: grpc.handleUnaryCall<_grpc_testing_SimpleRequest__Output, _grpc_testing_SimpleResponse>;
   
   /**
    * One empty request followed by one empty response.
    */
-  EmptyCall(call: grpc.ServerUnaryCall<_grpc_testing_Empty__Output, _grpc_testing_Empty>, callback: grpc.sendUnaryData<_grpc_testing_Empty>): void;
+  EmptyCall: grpc.handleUnaryCall<_grpc_testing_Empty__Output, _grpc_testing_Empty>;
   
   /**
    * A sequence of requests with each request served by the server immediately.
    * As one request could lead to multiple responses, this interface
    * demonstrates the idea of full duplexing.
    */
-  FullDuplexCall(call: grpc.ServerDuplexStream<_grpc_testing_StreamingOutputCallRequest__Output, _grpc_testing_StreamingOutputCallResponse>): void;
+  FullDuplexCall: grpc.handleBidiStreamingCall<_grpc_testing_StreamingOutputCallRequest__Output, _grpc_testing_StreamingOutputCallResponse>;
   
   /**
    * A sequence of requests followed by a sequence of responses.
@@ -174,29 +174,29 @@ export interface TestServiceHandlers extends grpc.UntypedServiceImplementation {
    * stream of responses are returned to the client when the server starts with
    * first request.
    */
-  HalfDuplexCall(call: grpc.ServerDuplexStream<_grpc_testing_StreamingOutputCallRequest__Output, _grpc_testing_StreamingOutputCallResponse>): void;
+  HalfDuplexCall: grpc.handleBidiStreamingCall<_grpc_testing_StreamingOutputCallRequest__Output, _grpc_testing_StreamingOutputCallResponse>;
   
   /**
    * A sequence of requests followed by one response (streamed upload).
    * The server returns the aggregated size of client payload as the result.
    */
-  StreamingInputCall(call: grpc.ServerReadableStream<_grpc_testing_StreamingInputCallRequest__Output, _grpc_testing_StreamingInputCallResponse>, callback: grpc.sendUnaryData<_grpc_testing_StreamingInputCallResponse>): void;
+  StreamingInputCall: grpc.handleClientStreamingCall<_grpc_testing_StreamingInputCallRequest__Output, _grpc_testing_StreamingInputCallResponse>;
   
   /**
    * One request followed by a sequence of responses (streamed download).
    * The server returns the payload with client desired type and sizes.
    */
-  StreamingOutputCall(call: grpc.ServerWritableStream<_grpc_testing_StreamingOutputCallRequest__Output, _grpc_testing_StreamingOutputCallResponse>): void;
+  StreamingOutputCall: grpc.handleServerStreamingCall<_grpc_testing_StreamingOutputCallRequest__Output, _grpc_testing_StreamingOutputCallResponse>;
   
   /**
    * One request followed by one response.
    */
-  UnaryCall(call: grpc.ServerUnaryCall<_grpc_testing_SimpleRequest__Output, _grpc_testing_SimpleResponse>, callback: grpc.sendUnaryData<_grpc_testing_SimpleResponse>): void;
+  UnaryCall: grpc.handleUnaryCall<_grpc_testing_SimpleRequest__Output, _grpc_testing_SimpleResponse>;
   
   /**
    * The test server will not implement this method. It will be used
    * to test the behavior when clients call unimplemented methods.
    */
-  UnimplementedCall(call: grpc.ServerUnaryCall<_grpc_testing_Empty__Output, _grpc_testing_Empty>, callback: grpc.sendUnaryData<_grpc_testing_Empty>): void;
+  UnimplementedCall: grpc.handleUnaryCall<_grpc_testing_Empty__Output, _grpc_testing_Empty>;
   
 }

@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/api/v2/core/backoff.proto
 
-import { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
+import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
 
 /**
  * Configuration defining a jittered exponential back off strategy.

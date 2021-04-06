@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/api/v2/core/base.proto
 
-import { FractionalPercent as _envoy_type_FractionalPercent, FractionalPercent__Output as _envoy_type_FractionalPercent__Output } from '../../../../envoy/type/FractionalPercent';
+import type { FractionalPercent as _envoy_type_FractionalPercent, FractionalPercent__Output as _envoy_type_FractionalPercent__Output } from '../../../../envoy/type/FractionalPercent';
 
 /**
  * Runtime derived FractionalPercent with defaults for when the numerator or denominator is not

@@ -1,7 +1,7 @@
 // Original file: deps/envoy-api/envoy/api/v2/core/base.proto
 
-import { BackoffStrategy as _envoy_api_v2_core_BackoffStrategy, BackoffStrategy__Output as _envoy_api_v2_core_BackoffStrategy__Output } from '../../../../envoy/api/v2/core/BackoffStrategy';
-import { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
+import type { BackoffStrategy as _envoy_api_v2_core_BackoffStrategy, BackoffStrategy__Output as _envoy_api_v2_core_BackoffStrategy__Output } from '../../../../envoy/api/v2/core/BackoffStrategy';
+import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 
 /**
  * The message specifies the retry policy of remote data source when fetching fails.

@@ -1,16 +1,16 @@
 // Original file: deps/envoy-api/envoy/config/filter/accesslog/v2/accesslog.proto
 
-import { StatusCodeFilter as _envoy_config_filter_accesslog_v2_StatusCodeFilter, StatusCodeFilter__Output as _envoy_config_filter_accesslog_v2_StatusCodeFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/StatusCodeFilter';
-import { DurationFilter as _envoy_config_filter_accesslog_v2_DurationFilter, DurationFilter__Output as _envoy_config_filter_accesslog_v2_DurationFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/DurationFilter';
-import { NotHealthCheckFilter as _envoy_config_filter_accesslog_v2_NotHealthCheckFilter, NotHealthCheckFilter__Output as _envoy_config_filter_accesslog_v2_NotHealthCheckFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/NotHealthCheckFilter';
-import { TraceableFilter as _envoy_config_filter_accesslog_v2_TraceableFilter, TraceableFilter__Output as _envoy_config_filter_accesslog_v2_TraceableFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/TraceableFilter';
-import { RuntimeFilter as _envoy_config_filter_accesslog_v2_RuntimeFilter, RuntimeFilter__Output as _envoy_config_filter_accesslog_v2_RuntimeFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/RuntimeFilter';
-import { AndFilter as _envoy_config_filter_accesslog_v2_AndFilter, AndFilter__Output as _envoy_config_filter_accesslog_v2_AndFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/AndFilter';
-import { OrFilter as _envoy_config_filter_accesslog_v2_OrFilter, OrFilter__Output as _envoy_config_filter_accesslog_v2_OrFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/OrFilter';
-import { HeaderFilter as _envoy_config_filter_accesslog_v2_HeaderFilter, HeaderFilter__Output as _envoy_config_filter_accesslog_v2_HeaderFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/HeaderFilter';
-import { ResponseFlagFilter as _envoy_config_filter_accesslog_v2_ResponseFlagFilter, ResponseFlagFilter__Output as _envoy_config_filter_accesslog_v2_ResponseFlagFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/ResponseFlagFilter';
-import { GrpcStatusFilter as _envoy_config_filter_accesslog_v2_GrpcStatusFilter, GrpcStatusFilter__Output as _envoy_config_filter_accesslog_v2_GrpcStatusFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/GrpcStatusFilter';
-import { ExtensionFilter as _envoy_config_filter_accesslog_v2_ExtensionFilter, ExtensionFilter__Output as _envoy_config_filter_accesslog_v2_ExtensionFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/ExtensionFilter';
+import type { StatusCodeFilter as _envoy_config_filter_accesslog_v2_StatusCodeFilter, StatusCodeFilter__Output as _envoy_config_filter_accesslog_v2_StatusCodeFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/StatusCodeFilter';
+import type { DurationFilter as _envoy_config_filter_accesslog_v2_DurationFilter, DurationFilter__Output as _envoy_config_filter_accesslog_v2_DurationFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/DurationFilter';
+import type { NotHealthCheckFilter as _envoy_config_filter_accesslog_v2_NotHealthCheckFilter, NotHealthCheckFilter__Output as _envoy_config_filter_accesslog_v2_NotHealthCheckFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/NotHealthCheckFilter';
+import type { TraceableFilter as _envoy_config_filter_accesslog_v2_TraceableFilter, TraceableFilter__Output as _envoy_config_filter_accesslog_v2_TraceableFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/TraceableFilter';
+import type { RuntimeFilter as _envoy_config_filter_accesslog_v2_RuntimeFilter, RuntimeFilter__Output as _envoy_config_filter_accesslog_v2_RuntimeFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/RuntimeFilter';
+import type { AndFilter as _envoy_config_filter_accesslog_v2_AndFilter, AndFilter__Output as _envoy_config_filter_accesslog_v2_AndFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/AndFilter';
+import type { OrFilter as _envoy_config_filter_accesslog_v2_OrFilter, OrFilter__Output as _envoy_config_filter_accesslog_v2_OrFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/OrFilter';
+import type { HeaderFilter as _envoy_config_filter_accesslog_v2_HeaderFilter, HeaderFilter__Output as _envoy_config_filter_accesslog_v2_HeaderFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/HeaderFilter';
+import type { ResponseFlagFilter as _envoy_config_filter_accesslog_v2_ResponseFlagFilter, ResponseFlagFilter__Output as _envoy_config_filter_accesslog_v2_ResponseFlagFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/ResponseFlagFilter';
+import type { GrpcStatusFilter as _envoy_config_filter_accesslog_v2_GrpcStatusFilter, GrpcStatusFilter__Output as _envoy_config_filter_accesslog_v2_GrpcStatusFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/GrpcStatusFilter';
+import type { ExtensionFilter as _envoy_config_filter_accesslog_v2_ExtensionFilter, ExtensionFilter__Output as _envoy_config_filter_accesslog_v2_ExtensionFilter__Output } from '../../../../../envoy/config/filter/accesslog/v2/ExtensionFilter';
 
 /**
  * [#next-free-field: 12]

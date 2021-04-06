@@ -1,7 +1,7 @@
 // Original file: deps/protoc-gen-validate/validate/validate.proto
 
-import { KnownRegex as _validate_KnownRegex } from '../validate/KnownRegex';
-import { Long } from '@grpc/proto-loader';
+import type { KnownRegex as _validate_KnownRegex } from '../validate/KnownRegex';
+import type { Long } from '@grpc/proto-loader';
 
 /**
  * StringRules describe the constraints applied to `string` values

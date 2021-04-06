@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/api/v2/core/base.proto
 
-import { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../../google/protobuf/BoolValue';
+import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../../google/protobuf/BoolValue';
 
 /**
  * Runtime derived bool with a default when not specified.

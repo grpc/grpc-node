@@ -1,9 +1,9 @@
 // Original file: deps/envoy-api/envoy/api/v2/endpoint/load_report.proto
 
-import { Address as _envoy_api_v2_core_Address, Address__Output as _envoy_api_v2_core_Address__Output } from '../../../../envoy/api/v2/core/Address';
-import { EndpointLoadMetricStats as _envoy_api_v2_endpoint_EndpointLoadMetricStats, EndpointLoadMetricStats__Output as _envoy_api_v2_endpoint_EndpointLoadMetricStats__Output } from '../../../../envoy/api/v2/endpoint/EndpointLoadMetricStats';
-import { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_Struct__Output } from '../../../../google/protobuf/Struct';
-import { Long } from '@grpc/proto-loader';
+import type { Address as _envoy_api_v2_core_Address, Address__Output as _envoy_api_v2_core_Address__Output } from '../../../../envoy/api/v2/core/Address';
+import type { EndpointLoadMetricStats as _envoy_api_v2_endpoint_EndpointLoadMetricStats, EndpointLoadMetricStats__Output as _envoy_api_v2_endpoint_EndpointLoadMetricStats__Output } from '../../../../envoy/api/v2/endpoint/EndpointLoadMetricStats';
+import type { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_Struct__Output } from '../../../../google/protobuf/Struct';
+import type { Long } from '@grpc/proto-loader';
 
 /**
  * [#not-implemented-hide:] Not configuration. TBD how to doc proto APIs.

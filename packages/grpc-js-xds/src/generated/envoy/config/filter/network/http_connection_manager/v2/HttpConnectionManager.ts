@@ -1,20 +1,20 @@
 // Original file: deps/envoy-api/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.proto
 
-import { Rds as _envoy_config_filter_network_http_connection_manager_v2_Rds, Rds__Output as _envoy_config_filter_network_http_connection_manager_v2_Rds__Output } from '../../../../../../envoy/config/filter/network/http_connection_manager/v2/Rds';
-import { RouteConfiguration as _envoy_api_v2_RouteConfiguration, RouteConfiguration__Output as _envoy_api_v2_RouteConfiguration__Output } from '../../../../../../envoy/api/v2/RouteConfiguration';
-import { HttpFilter as _envoy_config_filter_network_http_connection_manager_v2_HttpFilter, HttpFilter__Output as _envoy_config_filter_network_http_connection_manager_v2_HttpFilter__Output } from '../../../../../../envoy/config/filter/network/http_connection_manager/v2/HttpFilter';
-import { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../../../../google/protobuf/BoolValue';
-import { Http1ProtocolOptions as _envoy_api_v2_core_Http1ProtocolOptions, Http1ProtocolOptions__Output as _envoy_api_v2_core_Http1ProtocolOptions__Output } from '../../../../../../envoy/api/v2/core/Http1ProtocolOptions';
-import { Http2ProtocolOptions as _envoy_api_v2_core_Http2ProtocolOptions, Http2ProtocolOptions__Output as _envoy_api_v2_core_Http2ProtocolOptions__Output } from '../../../../../../envoy/api/v2/core/Http2ProtocolOptions';
-import { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../../../google/protobuf/Duration';
-import { AccessLog as _envoy_config_filter_accesslog_v2_AccessLog, AccessLog__Output as _envoy_config_filter_accesslog_v2_AccessLog__Output } from '../../../../../../envoy/config/filter/accesslog/v2/AccessLog';
-import { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../../../google/protobuf/UInt32Value';
-import { ScopedRoutes as _envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes, ScopedRoutes__Output as _envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes__Output } from '../../../../../../envoy/config/filter/network/http_connection_manager/v2/ScopedRoutes';
-import { HttpProtocolOptions as _envoy_api_v2_core_HttpProtocolOptions, HttpProtocolOptions__Output as _envoy_api_v2_core_HttpProtocolOptions__Output } from '../../../../../../envoy/api/v2/core/HttpProtocolOptions';
-import { RequestIDExtension as _envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension, RequestIDExtension__Output as _envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension__Output } from '../../../../../../envoy/config/filter/network/http_connection_manager/v2/RequestIDExtension';
-import { Percent as _envoy_type_Percent, Percent__Output as _envoy_type_Percent__Output } from '../../../../../../envoy/type/Percent';
-import { CustomTag as _envoy_type_tracing_v2_CustomTag, CustomTag__Output as _envoy_type_tracing_v2_CustomTag__Output } from '../../../../../../envoy/type/tracing/v2/CustomTag';
-import { _envoy_config_trace_v2_Tracing_Http, _envoy_config_trace_v2_Tracing_Http__Output } from '../../../../../../envoy/config/trace/v2/Tracing';
+import type { Rds as _envoy_config_filter_network_http_connection_manager_v2_Rds, Rds__Output as _envoy_config_filter_network_http_connection_manager_v2_Rds__Output } from '../../../../../../envoy/config/filter/network/http_connection_manager/v2/Rds';
+import type { RouteConfiguration as _envoy_api_v2_RouteConfiguration, RouteConfiguration__Output as _envoy_api_v2_RouteConfiguration__Output } from '../../../../../../envoy/api/v2/RouteConfiguration';
+import type { HttpFilter as _envoy_config_filter_network_http_connection_manager_v2_HttpFilter, HttpFilter__Output as _envoy_config_filter_network_http_connection_manager_v2_HttpFilter__Output } from '../../../../../../envoy/config/filter/network/http_connection_manager/v2/HttpFilter';
+import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../../../../google/protobuf/BoolValue';
+import type { Http1ProtocolOptions as _envoy_api_v2_core_Http1ProtocolOptions, Http1ProtocolOptions__Output as _envoy_api_v2_core_Http1ProtocolOptions__Output } from '../../../../../../envoy/api/v2/core/Http1ProtocolOptions';
+import type { Http2ProtocolOptions as _envoy_api_v2_core_Http2ProtocolOptions, Http2ProtocolOptions__Output as _envoy_api_v2_core_Http2ProtocolOptions__Output } from '../../../../../../envoy/api/v2/core/Http2ProtocolOptions';
+import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../../../google/protobuf/Duration';
+import type { AccessLog as _envoy_config_filter_accesslog_v2_AccessLog, AccessLog__Output as _envoy_config_filter_accesslog_v2_AccessLog__Output } from '../../../../../../envoy/config/filter/accesslog/v2/AccessLog';
+import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../../../google/protobuf/UInt32Value';
+import type { ScopedRoutes as _envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes, ScopedRoutes__Output as _envoy_config_filter_network_http_connection_manager_v2_ScopedRoutes__Output } from '../../../../../../envoy/config/filter/network/http_connection_manager/v2/ScopedRoutes';
+import type { HttpProtocolOptions as _envoy_api_v2_core_HttpProtocolOptions, HttpProtocolOptions__Output as _envoy_api_v2_core_HttpProtocolOptions__Output } from '../../../../../../envoy/api/v2/core/HttpProtocolOptions';
+import type { RequestIDExtension as _envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension, RequestIDExtension__Output as _envoy_config_filter_network_http_connection_manager_v2_RequestIDExtension__Output } from '../../../../../../envoy/config/filter/network/http_connection_manager/v2/RequestIDExtension';
+import type { Percent as _envoy_type_Percent, Percent__Output as _envoy_type_Percent__Output } from '../../../../../../envoy/type/Percent';
+import type { CustomTag as _envoy_type_tracing_v2_CustomTag, CustomTag__Output as _envoy_type_tracing_v2_CustomTag__Output } from '../../../../../../envoy/type/tracing/v2/CustomTag';
+import type { _envoy_config_trace_v2_Tracing_Http, _envoy_config_trace_v2_Tracing_Http__Output } from '../../../../../../envoy/config/trace/v2/Tracing';
 
 // Original file: deps/envoy-api/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.proto
 
