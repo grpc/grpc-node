@@ -15,8 +15,8 @@ export interface FileDescriptorProto {
   'enumType'?: (_google_protobuf_EnumDescriptorProto)[];
   'service'?: (_google_protobuf_ServiceDescriptorProto)[];
   'extension'?: (_google_protobuf_FieldDescriptorProto)[];
-  'options'?: (_google_protobuf_FileOptions);
-  'sourceCodeInfo'?: (_google_protobuf_SourceCodeInfo);
+  'options'?: (_google_protobuf_FileOptions | null);
+  'sourceCodeInfo'?: (_google_protobuf_SourceCodeInfo | null);
   'publicDependency'?: (number)[];
   'weakDependency'?: (number)[];
   'syntax'?: (string);
@@ -30,8 +30,8 @@ export interface FileDescriptorProto__Output {
   'enumType': (_google_protobuf_EnumDescriptorProto__Output)[];
   'service': (_google_protobuf_ServiceDescriptorProto__Output)[];
   'extension': (_google_protobuf_FieldDescriptorProto__Output)[];
-  'options'?: (_google_protobuf_FileOptions__Output);
-  'sourceCodeInfo'?: (_google_protobuf_SourceCodeInfo__Output);
+  'options': (_google_protobuf_FileOptions__Output | null);
+  'sourceCodeInfo': (_google_protobuf_SourceCodeInfo__Output | null);
   'publicDependency': (number)[];
   'weakDependency': (number)[];
   'syntax': (string);

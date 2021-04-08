@@ -20,7 +20,7 @@ export interface Operation {
    * Some services might not provide such metadata.  Any method that returns a
    * long-running operation should document the metadata type, if any.
    */
-  'metadata'?: (_google_protobuf_Any);
+  'metadata'?: (_google_protobuf_Any | null);
   /**
    * If the value is `false`, it means the operation is still in progress.
    * If `true`, the operation is completed, and either `error` or `response` is
@@ -30,7 +30,7 @@ export interface Operation {
   /**
    * The error result of the operation in case of failure or cancellation.
    */
-  'error'?: (_google_rpc_Status);
+  'error'?: (_google_rpc_Status | null);
   /**
    * The normal response of the operation in case of success.  If the original
    * method returns no data on success, such as `Delete`, the response is
@@ -41,7 +41,7 @@ export interface Operation {
    * is `TakeSnapshot()`, the inferred response type is
    * `TakeSnapshotResponse`.
    */
-  'response'?: (_google_protobuf_Any);
+  'response'?: (_google_protobuf_Any | null);
   /**
    * The operation result, which can be either an `error` or a valid `response`.
    * If `done` == `false`, neither `error` nor `response` is set.
@@ -67,7 +67,7 @@ export interface Operation__Output {
    * Some services might not provide such metadata.  Any method that returns a
    * long-running operation should document the metadata type, if any.
    */
-  'metadata'?: (_google_protobuf_Any__Output);
+  'metadata': (_google_protobuf_Any__Output | null);
   /**
    * If the value is `false`, it means the operation is still in progress.
    * If `true`, the operation is completed, and either `error` or `response` is
@@ -77,7 +77,7 @@ export interface Operation__Output {
   /**
    * The error result of the operation in case of failure or cancellation.
    */
-  'error'?: (_google_rpc_Status__Output);
+  'error'?: (_google_rpc_Status__Output | null);
   /**
    * The normal response of the operation in case of success.  If the original
    * method returns no data on success, such as `Delete`, the response is
@@ -88,7 +88,7 @@ export interface Operation__Output {
    * is `TakeSnapshot()`, the inferred response type is
    * `TakeSnapshotResponse`.
    */
-  'response'?: (_google_protobuf_Any__Output);
+  'response'?: (_google_protobuf_Any__Output | null);
   /**
    * The operation result, which can be either an `error` or a valid `response`.
    * If `done` == `false`, neither `error` nor `response` is set.

@@ -13,7 +13,7 @@ export interface ExpandRequest {
   /**
    * The error that is thrown after all words are sent on the stream.
    */
-  'error'?: (_google_rpc_Status);
+  'error'?: (_google_rpc_Status | null);
 }
 
 /**
@@ -27,5 +27,5 @@ export interface ExpandRequest__Output {
   /**
    * The error that is thrown after all words are sent on the stream.
    */
-  'error'?: (_google_rpc_Status__Output);
+  'error': (_google_rpc_Status__Output | null);
 }

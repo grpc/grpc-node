@@ -17,7 +17,7 @@ export interface EchoRequest {
   /**
    * The error to be thrown by the server.
    */
-  'error'?: (_google_rpc_Status);
+  'error'?: (_google_rpc_Status | null);
   /**
    * The severity to be echoed by the server.
    */
@@ -39,7 +39,7 @@ export interface EchoRequest__Output {
   /**
    * The error to be thrown by the server.
    */
-  'error'?: (_google_rpc_Status__Output);
+  'error'?: (_google_rpc_Status__Output | null);
   /**
    * The severity to be echoed by the server.
    */

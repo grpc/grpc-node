@@ -11,16 +11,16 @@ export interface BlockRequest {
   /**
    * The amount of time to block before returning a response.
    */
-  'response_delay'?: (_google_protobuf_Duration);
+  'response_delay'?: (_google_protobuf_Duration | null);
   /**
    * The error that will be returned by the server. If this code is specified
    * to be the OK rpc code, an empty response will be returned.
    */
-  'error'?: (_google_rpc_Status);
+  'error'?: (_google_rpc_Status | null);
   /**
    * The response to be returned that will signify successful method call.
    */
-  'success'?: (_google_showcase_v1beta1_BlockResponse);
+  'success'?: (_google_showcase_v1beta1_BlockResponse | null);
   'response'?: "error"|"success";
 }
 
@@ -31,15 +31,15 @@ export interface BlockRequest__Output {
   /**
    * The amount of time to block before returning a response.
    */
-  'response_delay'?: (_google_protobuf_Duration__Output);
+  'response_delay': (_google_protobuf_Duration__Output | null);
   /**
    * The error that will be returned by the server. If this code is specified
    * to be the OK rpc code, an empty response will be returned.
    */
-  'error'?: (_google_rpc_Status__Output);
+  'error'?: (_google_rpc_Status__Output | null);
   /**
    * The response to be returned that will signify successful method call.
    */
-  'success'?: (_google_showcase_v1beta1_BlockResponse__Output);
+  'success'?: (_google_showcase_v1beta1_BlockResponse__Output | null);
   'response': "error"|"success";
 }
