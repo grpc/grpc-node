@@ -1,6 +1,7 @@
 // Original file: deps/googleapis/google/longrunning/operations.proto
 
 import type * as grpc from '@grpc/grpc-js'
+import type { MethodDefinition } from '@grpc/proto-loader'
 import type { CancelOperationRequest as _google_longrunning_CancelOperationRequest, CancelOperationRequest__Output as _google_longrunning_CancelOperationRequest__Output } from '../../google/longrunning/CancelOperationRequest';
 import type { DeleteOperationRequest as _google_longrunning_DeleteOperationRequest, DeleteOperationRequest__Output as _google_longrunning_DeleteOperationRequest__Output } from '../../google/longrunning/DeleteOperationRequest';
 import type { Empty as _google_protobuf_Empty, Empty__Output as _google_protobuf_Empty__Output } from '../../google/protobuf/Empty';
@@ -229,4 +230,12 @@ export interface OperationsHandlers extends grpc.UntypedServiceImplementation {
    */
   WaitOperation: grpc.handleUnaryCall<_google_longrunning_WaitOperationRequest__Output, _google_longrunning_Operation>;
   
+}
+
+export interface OperationsDefinition {
+  CancelOperation: MethodDefinition<_google_longrunning_CancelOperationRequest, _google_protobuf_Empty, _google_longrunning_CancelOperationRequest__Output, _google_protobuf_Empty__Output>
+  DeleteOperation: MethodDefinition<_google_longrunning_DeleteOperationRequest, _google_protobuf_Empty, _google_longrunning_DeleteOperationRequest__Output, _google_protobuf_Empty__Output>
+  GetOperation: MethodDefinition<_google_longrunning_GetOperationRequest, _google_longrunning_Operation, _google_longrunning_GetOperationRequest__Output, _google_longrunning_Operation__Output>
+  ListOperations: MethodDefinition<_google_longrunning_ListOperationsRequest, _google_longrunning_ListOperationsResponse, _google_longrunning_ListOperationsRequest__Output, _google_longrunning_ListOperationsResponse__Output>
+  WaitOperation: MethodDefinition<_google_longrunning_WaitOperationRequest, _google_longrunning_Operation, _google_longrunning_WaitOperationRequest__Output, _google_longrunning_Operation__Output>
 }

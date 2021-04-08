@@ -1,6 +1,7 @@
 // Original file: deps/gapic-showcase/schema/google/showcase/v1beta1/echo.proto
 
 import type * as grpc from '@grpc/grpc-js'
+import type { MethodDefinition } from '@grpc/proto-loader'
 import type { BlockRequest as _google_showcase_v1beta1_BlockRequest, BlockRequest__Output as _google_showcase_v1beta1_BlockRequest__Output } from '../../../google/showcase/v1beta1/BlockRequest';
 import type { BlockResponse as _google_showcase_v1beta1_BlockResponse, BlockResponse__Output as _google_showcase_v1beta1_BlockResponse__Output } from '../../../google/showcase/v1beta1/BlockResponse';
 import type { EchoRequest as _google_showcase_v1beta1_EchoRequest, EchoRequest__Output as _google_showcase_v1beta1_EchoRequest__Output } from '../../../google/showcase/v1beta1/EchoRequest';
@@ -188,4 +189,14 @@ export interface EchoHandlers extends grpc.UntypedServiceImplementation {
    */
   Wait: grpc.handleUnaryCall<_google_showcase_v1beta1_WaitRequest__Output, _google_longrunning_Operation>;
   
+}
+
+export interface EchoDefinition {
+  Block: MethodDefinition<_google_showcase_v1beta1_BlockRequest, _google_showcase_v1beta1_BlockResponse, _google_showcase_v1beta1_BlockRequest__Output, _google_showcase_v1beta1_BlockResponse__Output>
+  Chat: MethodDefinition<_google_showcase_v1beta1_EchoRequest, _google_showcase_v1beta1_EchoResponse, _google_showcase_v1beta1_EchoRequest__Output, _google_showcase_v1beta1_EchoResponse__Output>
+  Collect: MethodDefinition<_google_showcase_v1beta1_EchoRequest, _google_showcase_v1beta1_EchoResponse, _google_showcase_v1beta1_EchoRequest__Output, _google_showcase_v1beta1_EchoResponse__Output>
+  Echo: MethodDefinition<_google_showcase_v1beta1_EchoRequest, _google_showcase_v1beta1_EchoResponse, _google_showcase_v1beta1_EchoRequest__Output, _google_showcase_v1beta1_EchoResponse__Output>
+  Expand: MethodDefinition<_google_showcase_v1beta1_ExpandRequest, _google_showcase_v1beta1_EchoResponse, _google_showcase_v1beta1_ExpandRequest__Output, _google_showcase_v1beta1_EchoResponse__Output>
+  PagedExpand: MethodDefinition<_google_showcase_v1beta1_PagedExpandRequest, _google_showcase_v1beta1_PagedExpandResponse, _google_showcase_v1beta1_PagedExpandRequest__Output, _google_showcase_v1beta1_PagedExpandResponse__Output>
+  Wait: MethodDefinition<_google_showcase_v1beta1_WaitRequest, _google_longrunning_Operation, _google_showcase_v1beta1_WaitRequest__Output, _google_longrunning_Operation__Output>
 }

@@ -115,14 +115,14 @@ export interface EnumTypeDefinition extends ProtobufTypeDefinition {
   format: 'Protocol Buffer 3 EnumDescriptorProto';
 }
 
-export interface MethodDefinition<RequestType, ResponseType> {
+export interface MethodDefinition<RequestType, ResponseType, OutputRequestType=RequestType, OutputResponseType=ResponseType> {
   path: string;
   requestStream: boolean;
   responseStream: boolean;
   requestSerialize: Serialize<RequestType>;
   responseSerialize: Serialize<ResponseType>;
-  requestDeserialize: Deserialize<RequestType>;
-  responseDeserialize: Deserialize<ResponseType>;
+  requestDeserialize: Deserialize<OutputRequestType>;
+  responseDeserialize: Deserialize<OutputResponseType>;
   originalName?: string;
   requestType: MessageTypeDefinition;
   responseType: MessageTypeDefinition;
