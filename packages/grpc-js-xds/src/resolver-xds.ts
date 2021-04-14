@@ -26,20 +26,20 @@ import ResolverListener = experimental.ResolverListener;
 import uriToString = experimental.uriToString;
 import ServiceConfig = experimental.ServiceConfig;
 import registerResolver = experimental.registerResolver;
-import { Listener__Output } from './generated/envoy/api/v2/Listener';
+import { Listener__Output } from './generated/envoy/config/listener/v3/Listener';
 import { Watcher } from './xds-stream-state/xds-stream-state';
-import { RouteConfiguration__Output } from './generated/envoy/api/v2/RouteConfiguration';
-import { HttpConnectionManager__Output } from './generated/envoy/config/filter/network/http_connection_manager/v2/HttpConnectionManager';
+import { RouteConfiguration__Output } from './generated/envoy/config/route/v3/RouteConfiguration';
+import { HttpConnectionManager__Output } from './generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpConnectionManager';
 import { CdsLoadBalancingConfig } from './load-balancer-cds';
-import { VirtualHost__Output } from './generated/envoy/api/v2/route/VirtualHost';
-import { RouteMatch__Output } from './generated/envoy/api/v2/route/RouteMatch';
-import { HeaderMatcher__Output } from './generated/envoy/api/v2/route/HeaderMatcher';
+import { VirtualHost__Output } from './generated/envoy/config/route/v3/VirtualHost';
+import { RouteMatch__Output } from './generated/envoy/config/route/v3/RouteMatch';
+import { HeaderMatcher__Output } from './generated/envoy/config/route/v3/HeaderMatcher';
 import ConfigSelector = experimental.ConfigSelector;
 import LoadBalancingConfig = experimental.LoadBalancingConfig;
 import { XdsClusterManagerLoadBalancingConfig } from './load-balancer-xds-cluster-manager';
 import { ExactValueMatcher, Fraction, FullMatcher, HeaderMatcher, Matcher, PathExactValueMatcher, PathPrefixValueMatcher, PathSafeRegexValueMatcher, PrefixValueMatcher, PresentValueMatcher, RangeValueMatcher, RejectValueMatcher, SafeRegexValueMatcher, SuffixValueMatcher, ValueMatcher } from './matcher';
 import { RouteAction, SingleClusterRouteAction, WeightedCluster, WeightedClusterRouteAction } from './route-action';
-import { LogVerbosity } from '@grpc/grpc-js/build/src/constants';
+import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL_V3 } from './resources';
 
 const TRACER_NAME = 'xds_resolver';
 
@@ -210,9 +210,7 @@ class XdsResolver implements Resolver {
   ) {
     this.ldsWatcher = {
       onValidUpdate: (update: Listener__Output) => {
-        const httpConnectionManager = update.api_listener!
-            .api_listener as protoLoader.AnyExtension &
-            HttpConnectionManager__Output;
+        const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL_V3, update.api_listener!.api_listener!.value);
         switch (httpConnectionManager.route_specifier) {
           case 'rds': {
             const routeConfigName = httpConnectionManager.rds!.route_config_name;

@@ -16,7 +16,7 @@
  */
 
 import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
-import { RouteConfiguration__Output } from "../generated/envoy/api/v2/RouteConfiguration";
+import { RouteConfiguration__Output } from "../generated/envoy/config/route/v3/RouteConfiguration";
 import { CdsLoadBalancingConfig } from "../load-balancer-cds";
 import { Watcher, XdsStreamState } from "./xds-stream-state";
 import ServiceConfig = experimental.ServiceConfig;

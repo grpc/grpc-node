@@ -1,4 +1,5 @@
-# Copyright 2017 gRPC authors.
+#!/bin/bash
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,13 +12,5 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# Config file for Kokoro (in protobuf text format)
 
-# Location of the continuous shell script in repository.
-build_file: "grpc-node/test/kokoro.sh"
-timeout_mins: 60
-action {
-  define_artifacts {
-    regex: "github/grpc-node/reports/**/sponge_log.xml"
-  }
-}
+XDS_V3_OPT="--xds_v3_support" $(dirname $0)/xds.sh
