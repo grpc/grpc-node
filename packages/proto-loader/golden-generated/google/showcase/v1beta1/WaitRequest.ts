@@ -12,20 +12,20 @@ export interface WaitRequest {
   /**
    * The time that this operation will complete.
    */
-  'end_time'?: (_google_protobuf_Timestamp);
+  'end_time'?: (_google_protobuf_Timestamp | null);
   /**
    * The error that will be returned by the server. If this code is specified
    * to be the OK rpc code, an empty response will be returned.
    */
-  'error'?: (_google_rpc_Status);
+  'error'?: (_google_rpc_Status | null);
   /**
    * The response to be returned on operation completion.
    */
-  'success'?: (_google_showcase_v1beta1_WaitResponse);
+  'success'?: (_google_showcase_v1beta1_WaitResponse | null);
   /**
    * The duration of this operation.
    */
-  'ttl'?: (_google_protobuf_Duration);
+  'ttl'?: (_google_protobuf_Duration | null);
   'end'?: "end_time"|"ttl";
   'response'?: "error"|"success";
 }
@@ -37,20 +37,20 @@ export interface WaitRequest__Output {
   /**
    * The time that this operation will complete.
    */
-  'end_time'?: (_google_protobuf_Timestamp__Output);
+  'end_time'?: (_google_protobuf_Timestamp__Output | null);
   /**
    * The error that will be returned by the server. If this code is specified
    * to be the OK rpc code, an empty response will be returned.
    */
-  'error'?: (_google_rpc_Status__Output);
+  'error'?: (_google_rpc_Status__Output | null);
   /**
    * The response to be returned on operation completion.
    */
-  'success'?: (_google_showcase_v1beta1_WaitResponse__Output);
+  'success'?: (_google_showcase_v1beta1_WaitResponse__Output | null);
   /**
    * The duration of this operation.
    */
-  'ttl'?: (_google_protobuf_Duration__Output);
+  'ttl'?: (_google_protobuf_Duration__Output | null);
   'end': "end_time"|"ttl";
   'response': "error"|"success";
 }

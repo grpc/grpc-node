@@ -9,7 +9,7 @@ export interface WaitMetadata {
   /**
    * The time that this operation will complete.
    */
-  'end_time'?: (_google_protobuf_Timestamp);
+  'end_time'?: (_google_protobuf_Timestamp | null);
 }
 
 /**
@@ -19,5 +19,5 @@ export interface WaitMetadata__Output {
   /**
    * The time that this operation will complete.
    */
-  'end_time'?: (_google_protobuf_Timestamp__Output);
+  'end_time': (_google_protobuf_Timestamp__Output | null);
 }

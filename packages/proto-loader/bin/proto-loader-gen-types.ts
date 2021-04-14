@@ -170,7 +170,7 @@ function formatComment(formatter: TextFormatter, comment?: string | null) {
 
 // GENERATOR FUNCTIONS
 
-function getTypeNamePermissive(fieldType: string, resolvedType: Protobuf.Type | Protobuf.Enum | null): string {
+function getTypeNamePermissive(fieldType: string, resolvedType: Protobuf.Type | Protobuf.Enum | null, repeated: boolean, map: boolean): string {
   switch (fieldType) {
     case 'double':
     case 'float':
@@ -199,7 +199,11 @@ function getTypeNamePermissive(fieldType: string, resolvedType: Protobuf.Type | 
       }
       const typeInterfaceName = getTypeInterfaceName(resolvedType);
       if (resolvedType instanceof Protobuf.Type) {
-        return typeInterfaceName;
+        if (repeated || map) {
+          return typeInterfaceName;
+        } else {
+          return `${typeInterfaceName} | null`;
+        }
       } else {
         return `${typeInterfaceName} | keyof typeof ${typeInterfaceName}`;
       }
@@ -207,7 +211,7 @@ function getTypeNamePermissive(fieldType: string, resolvedType: Protobuf.Type | 
 }
 
 function getFieldTypePermissive(field: Protobuf.FieldBase): string {
-  const valueType = getTypeNamePermissive(field.type, field.resolvedType);
+  const valueType = getTypeNamePermissive(field.type, field.resolvedType, field.repeated, field.map);
   if (field instanceof Protobuf.MapField) {
     const keyType = field.keyType === 'string' ? 'string' : 'number';
     return `{[key: ${keyType}]: ${valueType}}`;
@@ -250,7 +254,7 @@ function generatePermissiveMessageInterface(formatter: TextFormatter, messageTyp
   formatter.writeLine('}');
 }
 
-function getTypeNameRestricted(fieldType: string, resolvedType: Protobuf.Type | Protobuf.Enum | null, options: GeneratorOptions): string {
+function getTypeNameRestricted(fieldType: string, resolvedType: Protobuf.Type | Protobuf.Enum | null, repeated: boolean, map: boolean, options: GeneratorOptions): string {
   switch (fieldType) {
     case 'double':
     case 'float':
@@ -295,7 +299,13 @@ function getTypeNameRestricted(fieldType: string, resolvedType: Protobuf.Type | 
       }
       const typeInterfaceName = getTypeInterfaceName(resolvedType);
       if (resolvedType instanceof Protobuf.Type) {
-        return typeInterfaceName + '__Output';
+        /* null is only used to represent absent message values if the defaults
+         * option is set, and only for non-repeated, non-map fields. */
+        if (options.defaults && !repeated && !map) {
+          return `${typeInterfaceName}__Output | null`;
+        } else {
+          return `${typeInterfaceName}__Output`;
+        }
       } else {
         if (options.enums == String) {
           return `keyof typeof ${typeInterfaceName}`;
@@ -307,7 +317,7 @@ function getTypeNameRestricted(fieldType: string, resolvedType: Protobuf.Type | 
 }
 
 function getFieldTypeRestricted(field: Protobuf.FieldBase, options: GeneratorOptions): string {
-  const valueType = getTypeNameRestricted(field.type, field.resolvedType, options);
+  const valueType = getTypeNameRestricted(field.type, field.resolvedType, field.repeated, field.map, options);
   if (field instanceof Protobuf.MapField) {
     const keyType = field.keyType === 'string' ? 'string' : 'number';
     return `{[key: ${keyType}]: ${valueType}}`;
@@ -326,7 +336,7 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
     let optionalString = options.defaults ? '' : '?';
     formatter.writeLine('export type Any__Output = AnyExtension | {');
     formatter.writeLine(`  type_url${optionalString}: string;`);
-    formatter.writeLine(`  value${optionalString}: ${getTypeNameRestricted('bytes', null, options)};`);
+    formatter.writeLine(`  value${optionalString}: ${getTypeNameRestricted('bytes', null, false, false, options)};`);
     formatter.writeLine('}');
     return;
   }
@@ -339,19 +349,10 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
       fieldGuaranteed = false;
     } else if (field.repeated) {
       fieldGuaranteed = (options.defaults || options.arrays) ?? false;
-    } else if (field.resolvedType) {
-      if (field.resolvedType instanceof Protobuf.Enum) {
-        fieldGuaranteed = options.defaults ?? false;
-      } else {
-        // Message fields can always be omitted
-        fieldGuaranteed = false;
-      }
+    } else if (field.map) {
+      fieldGuaranteed = (options.defaults || options.objects) ?? false;
     } else {
-      if (field.map) {
-        fieldGuaranteed = (options.defaults || options.objects) ?? false;
-      } else {
-        fieldGuaranteed = options.defaults ?? false;
-      }
+      fieldGuaranteed = options.defaults ?? false;
     }
     const optionalString = fieldGuaranteed ? '' : '?';
     const repeatedString = field.repeated ? '[]' : '';

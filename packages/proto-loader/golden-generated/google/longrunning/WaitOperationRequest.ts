@@ -15,7 +15,7 @@ export interface WaitOperationRequest {
    * will be at most the time permitted by the underlying HTTP/RPC protocol.
    * If RPC context deadline is also specified, the shorter one will be used.
    */
-  'timeout'?: (_google_protobuf_Duration);
+  'timeout'?: (_google_protobuf_Duration | null);
 }
 
 /**
@@ -31,5 +31,5 @@ export interface WaitOperationRequest__Output {
    * will be at most the time permitted by the underlying HTTP/RPC protocol.
    * If RPC context deadline is also specified, the shorter one will be used.
    */
-  'timeout'?: (_google_protobuf_Duration__Output);
+  'timeout': (_google_protobuf_Duration__Output | null);
 }

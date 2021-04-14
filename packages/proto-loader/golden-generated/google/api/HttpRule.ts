@@ -317,7 +317,7 @@ export interface HttpRule {
    * HTTP method unspecified for this rule. The wild-card rule is useful
    * for services that provide content to Web (HTML) clients.
    */
-  'custom'?: (_google_api_CustomHttpPattern);
+  'custom'?: (_google_api_CustomHttpPattern | null);
   /**
    * Additional HTTP bindings for the selector. Nested bindings must
    * not contain an `additional_bindings` field themselves (that is,
@@ -655,7 +655,7 @@ export interface HttpRule__Output {
    * HTTP method unspecified for this rule. The wild-card rule is useful
    * for services that provide content to Web (HTML) clients.
    */
-  'custom'?: (_google_api_CustomHttpPattern__Output);
+  'custom'?: (_google_api_CustomHttpPattern__Output | null);
   /**
    * Additional HTTP bindings for the selector. Nested bindings must
    * not contain an `additional_bindings` field themselves (that is,
