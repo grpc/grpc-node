@@ -14,7 +14,7 @@ export interface BuildVersion {
   'version'?: (_envoy_type_SemanticVersion);
   /**
    * Free-form build information.
-   * Envoy defines several well known keys in the source/common/common/version.h file
+   * Envoy defines several well known keys in the source/common/version/version.h file
    */
   'metadata'?: (_google_protobuf_Struct);
 }
@@ -30,7 +30,7 @@ export interface BuildVersion__Output {
   'version'?: (_envoy_type_SemanticVersion__Output);
   /**
    * Free-form build information.
-   * Envoy defines several well known keys in the source/common/common/version.h file
+   * Envoy defines several well known keys in the source/common/version/version.h file
    */
   'metadata'?: (_google_protobuf_Struct__Output);
 }

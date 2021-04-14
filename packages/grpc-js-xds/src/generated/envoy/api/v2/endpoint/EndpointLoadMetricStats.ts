@@ -37,5 +37,5 @@ export interface EndpointLoadMetricStats__Output {
    * Sum of metric values across all calls that finished with this metric for
    * load_reporting_interval.
    */
-  'total_metric_value': (number | string);
+  'total_metric_value': (number);
 }

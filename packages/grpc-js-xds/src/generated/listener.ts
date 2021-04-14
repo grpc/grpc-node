@@ -10,23 +10,28 @@ export interface ProtoGrpcType {
   envoy: {
     annotations: {
     }
-    api: {
-      v2: {
-        Listener: MessageTypeDefinition
-        auth: {
-          CertificateValidationContext: MessageTypeDefinition
-          CommonTlsContext: MessageTypeDefinition
-          DownstreamTlsContext: MessageTypeDefinition
-          GenericSecret: MessageTypeDefinition
-          PrivateKeyProvider: MessageTypeDefinition
-          SdsSecretConfig: MessageTypeDefinition
-          Secret: MessageTypeDefinition
-          TlsCertificate: MessageTypeDefinition
-          TlsParameters: MessageTypeDefinition
-          TlsSessionTicketKeys: MessageTypeDefinition
-          UpstreamTlsContext: MessageTypeDefinition
+    config: {
+      accesslog: {
+        v3: {
+          AccessLog: MessageTypeDefinition
+          AccessLogFilter: MessageTypeDefinition
+          AndFilter: MessageTypeDefinition
+          ComparisonFilter: MessageTypeDefinition
+          DurationFilter: MessageTypeDefinition
+          ExtensionFilter: MessageTypeDefinition
+          GrpcStatusFilter: MessageTypeDefinition
+          HeaderFilter: MessageTypeDefinition
+          MetadataFilter: MessageTypeDefinition
+          NotHealthCheckFilter: MessageTypeDefinition
+          OrFilter: MessageTypeDefinition
+          ResponseFlagFilter: MessageTypeDefinition
+          RuntimeFilter: MessageTypeDefinition
+          StatusCodeFilter: MessageTypeDefinition
+          TraceableFilter: MessageTypeDefinition
         }
-        core: {
+      }
+      core: {
+        v3: {
           Address: MessageTypeDefinition
           AggregatedConfigSource: MessageTypeDefinition
           ApiConfigSource: MessageTypeDefinition
@@ -39,7 +44,9 @@ export interface ProtoGrpcType {
           ConfigSource: MessageTypeDefinition
           ControlPlane: MessageTypeDefinition
           DataSource: MessageTypeDefinition
+          EnvoyInternalAddress: MessageTypeDefinition
           Extension: MessageTypeDefinition
+          ExtensionConfigSource: MessageTypeDefinition
           GrpcService: MessageTypeDefinition
           HeaderMap: MessageTypeDefinition
           HeaderValue: MessageTypeDefinition
@@ -49,6 +56,7 @@ export interface ProtoGrpcType {
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition
           Pipe: MessageTypeDefinition
+          ProxyProtocolConfig: MessageTypeDefinition
           RateLimitSettings: MessageTypeDefinition
           RemoteDataSource: MessageTypeDefinition
           RequestMethod: EnumTypeDefinition
@@ -57,6 +65,7 @@ export interface ProtoGrpcType {
           RuntimeDouble: MessageTypeDefinition
           RuntimeFeatureFlag: MessageTypeDefinition
           RuntimeFractionalPercent: MessageTypeDefinition
+          RuntimePercent: MessageTypeDefinition
           RuntimeUInt32: MessageTypeDefinition
           SelfConfigSource: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
@@ -64,23 +73,34 @@ export interface ProtoGrpcType {
           TcpKeepalive: MessageTypeDefinition
           TrafficDirection: EnumTypeDefinition
           TransportSocket: MessageTypeDefinition
+          TypedExtensionConfig: MessageTypeDefinition
+          WatchedDirectory: MessageTypeDefinition
         }
-        listener: {
+      }
+      listener: {
+        v3: {
           ActiveRawUdpListenerConfig: MessageTypeDefinition
+          ApiListener: MessageTypeDefinition
           Filter: MessageTypeDefinition
           FilterChain: MessageTypeDefinition
           FilterChainMatch: MessageTypeDefinition
+          Listener: MessageTypeDefinition
+          ListenerCollection: MessageTypeDefinition
           ListenerFilter: MessageTypeDefinition
           ListenerFilterChainMatchPredicate: MessageTypeDefinition
           UdpListenerConfig: MessageTypeDefinition
         }
-        route: {
+      }
+      route: {
+        v3: {
           CorsPolicy: MessageTypeDefinition
           Decorator: MessageTypeDefinition
           DirectResponseAction: MessageTypeDefinition
           FilterAction: MessageTypeDefinition
+          FilterConfig: MessageTypeDefinition
           HeaderMatcher: MessageTypeDefinition
           HedgePolicy: MessageTypeDefinition
+          InternalRedirectPolicy: MessageTypeDefinition
           QueryParameterMatcher: MessageTypeDefinition
           RateLimit: MessageTypeDefinition
           RedirectAction: MessageTypeDefinition
@@ -95,65 +115,41 @@ export interface ProtoGrpcType {
         }
       }
     }
-    config: {
-      filter: {
-        accesslog: {
-          v2: {
-            AccessLog: MessageTypeDefinition
-            AccessLogFilter: MessageTypeDefinition
-            AndFilter: MessageTypeDefinition
-            ComparisonFilter: MessageTypeDefinition
-            DurationFilter: MessageTypeDefinition
-            ExtensionFilter: MessageTypeDefinition
-            GrpcStatusFilter: MessageTypeDefinition
-            HeaderFilter: MessageTypeDefinition
-            NotHealthCheckFilter: MessageTypeDefinition
-            OrFilter: MessageTypeDefinition
-            ResponseFlagFilter: MessageTypeDefinition
-            RuntimeFilter: MessageTypeDefinition
-            StatusCodeFilter: MessageTypeDefinition
-            TraceableFilter: MessageTypeDefinition
-          }
-        }
-      }
-      listener: {
-        v2: {
-          ApiListener: MessageTypeDefinition
-        }
-      }
-    }
     type: {
-      DoubleRange: MessageTypeDefinition
-      FractionalPercent: MessageTypeDefinition
-      Int32Range: MessageTypeDefinition
-      Int64Range: MessageTypeDefinition
-      Percent: MessageTypeDefinition
-      SemanticVersion: MessageTypeDefinition
       matcher: {
-        ListStringMatcher: MessageTypeDefinition
-        RegexMatchAndSubstitute: MessageTypeDefinition
-        RegexMatcher: MessageTypeDefinition
-        StringMatcher: MessageTypeDefinition
+        v3: {
+          DoubleMatcher: MessageTypeDefinition
+          ListMatcher: MessageTypeDefinition
+          ListStringMatcher: MessageTypeDefinition
+          MetadataMatcher: MessageTypeDefinition
+          RegexMatchAndSubstitute: MessageTypeDefinition
+          RegexMatcher: MessageTypeDefinition
+          StringMatcher: MessageTypeDefinition
+          ValueMatcher: MessageTypeDefinition
+        }
       }
       metadata: {
-        v2: {
+        v3: {
           MetadataKey: MessageTypeDefinition
           MetadataKind: MessageTypeDefinition
         }
       }
       tracing: {
-        v2: {
+        v3: {
           CustomTag: MessageTypeDefinition
         }
+      }
+      v3: {
+        DoubleRange: MessageTypeDefinition
+        FractionalPercent: MessageTypeDefinition
+        Int32Range: MessageTypeDefinition
+        Int64Range: MessageTypeDefinition
+        Percent: MessageTypeDefinition
+        SemanticVersion: MessageTypeDefinition
       }
     }
   }
   google: {
-    api: {
-      CustomHttpPattern: MessageTypeDefinition
-      Http: MessageTypeDefinition
-      HttpRule: MessageTypeDefinition
-    }
     protobuf: {
       Any: MessageTypeDefinition
       BoolValue: MessageTypeDefinition
@@ -197,10 +193,12 @@ export interface ProtoGrpcType {
   udpa: {
     annotations: {
       FieldMigrateAnnotation: MessageTypeDefinition
+      FieldSecurityAnnotation: MessageTypeDefinition
       FileMigrateAnnotation: MessageTypeDefinition
       MigrateAnnotation: MessageTypeDefinition
       PackageVersionStatus: EnumTypeDefinition
       StatusAnnotation: MessageTypeDefinition
+      VersioningAnnotation: MessageTypeDefinition
     }
   }
   validate: {
@@ -228,6 +226,16 @@ export interface ProtoGrpcType {
     TimestampRules: MessageTypeDefinition
     UInt32Rules: MessageTypeDefinition
     UInt64Rules: MessageTypeDefinition
+  }
+  xds: {
+    core: {
+      v3: {
+        Authority: MessageTypeDefinition
+        CollectionEntry: MessageTypeDefinition
+        ContextParams: MessageTypeDefinition
+        ResourceLocator: MessageTypeDefinition
+      }
+    }
   }
 }
 

@@ -8,12 +8,9 @@ type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> 
 
 export interface ProtoGrpcType {
   envoy: {
-    annotations: {
-    }
-    api: {
-      v2: {
-        ClusterLoadAssignment: MessageTypeDefinition
-        core: {
+    config: {
+      core: {
+        v3: {
           Address: MessageTypeDefinition
           AsyncDataSource: MessageTypeDefinition
           BackoffStrategy: MessageTypeDefinition
@@ -22,6 +19,7 @@ export interface ProtoGrpcType {
           CidrRange: MessageTypeDefinition
           ControlPlane: MessageTypeDefinition
           DataSource: MessageTypeDefinition
+          EnvoyInternalAddress: MessageTypeDefinition
           EventServiceConfig: MessageTypeDefinition
           Extension: MessageTypeDefinition
           GrpcService: MessageTypeDefinition
@@ -42,14 +40,19 @@ export interface ProtoGrpcType {
           RuntimeDouble: MessageTypeDefinition
           RuntimeFeatureFlag: MessageTypeDefinition
           RuntimeFractionalPercent: MessageTypeDefinition
+          RuntimePercent: MessageTypeDefinition
           RuntimeUInt32: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
           SocketOption: MessageTypeDefinition
           TcpKeepalive: MessageTypeDefinition
           TrafficDirection: EnumTypeDefinition
           TransportSocket: MessageTypeDefinition
+          WatchedDirectory: MessageTypeDefinition
         }
-        endpoint: {
+      }
+      endpoint: {
+        v3: {
+          ClusterLoadAssignment: MessageTypeDefinition
           Endpoint: MessageTypeDefinition
           LbEndpoint: MessageTypeDefinition
           LocalityLbEndpoints: MessageTypeDefinition
@@ -57,27 +60,26 @@ export interface ProtoGrpcType {
       }
     }
     type: {
-      CodecClientType: EnumTypeDefinition
-      DoubleRange: MessageTypeDefinition
-      FractionalPercent: MessageTypeDefinition
-      Int32Range: MessageTypeDefinition
-      Int64Range: MessageTypeDefinition
-      Percent: MessageTypeDefinition
-      SemanticVersion: MessageTypeDefinition
       matcher: {
-        ListStringMatcher: MessageTypeDefinition
-        RegexMatchAndSubstitute: MessageTypeDefinition
-        RegexMatcher: MessageTypeDefinition
-        StringMatcher: MessageTypeDefinition
+        v3: {
+          ListStringMatcher: MessageTypeDefinition
+          RegexMatchAndSubstitute: MessageTypeDefinition
+          RegexMatcher: MessageTypeDefinition
+          StringMatcher: MessageTypeDefinition
+        }
+      }
+      v3: {
+        CodecClientType: EnumTypeDefinition
+        DoubleRange: MessageTypeDefinition
+        FractionalPercent: MessageTypeDefinition
+        Int32Range: MessageTypeDefinition
+        Int64Range: MessageTypeDefinition
+        Percent: MessageTypeDefinition
+        SemanticVersion: MessageTypeDefinition
       }
     }
   }
   google: {
-    api: {
-      CustomHttpPattern: MessageTypeDefinition
-      Http: MessageTypeDefinition
-      HttpRule: MessageTypeDefinition
-    }
     protobuf: {
       Any: MessageTypeDefinition
       BoolValue: MessageTypeDefinition
@@ -125,6 +127,7 @@ export interface ProtoGrpcType {
       MigrateAnnotation: MessageTypeDefinition
       PackageVersionStatus: EnumTypeDefinition
       StatusAnnotation: MessageTypeDefinition
+      VersioningAnnotation: MessageTypeDefinition
     }
   }
   validate: {

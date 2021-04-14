@@ -1,0 +1,44 @@
+// Original file: deps/envoy-api/envoy/config/listener/v3/listener_components.proto
+
+import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
+import type { ListenerFilterChainMatchPredicate as _envoy_config_listener_v3_ListenerFilterChainMatchPredicate, ListenerFilterChainMatchPredicate__Output as _envoy_config_listener_v3_ListenerFilterChainMatchPredicate__Output } from '../../../../envoy/config/listener/v3/ListenerFilterChainMatchPredicate';
+
+export interface ListenerFilter {
+  /**
+   * The name of the filter to instantiate. The name must match a
+   * :ref:`supported filter <config_listener_filters>`.
+   */
+  'name'?: (string);
+  'typed_config'?: (_google_protobuf_Any);
+  /**
+   * Optional match predicate used to disable the filter. The filter is enabled when this field is empty.
+   * See :ref:`ListenerFilterChainMatchPredicate <envoy_api_msg_config.listener.v3.ListenerFilterChainMatchPredicate>`
+   * for further examples.
+   */
+  'filter_disabled'?: (_envoy_config_listener_v3_ListenerFilterChainMatchPredicate);
+  /**
+   * Filter specific configuration which depends on the filter being instantiated.
+   * See the supported filters for further documentation.
+   */
+  'config_type'?: "typed_config";
+}
+
+export interface ListenerFilter__Output {
+  /**
+   * The name of the filter to instantiate. The name must match a
+   * :ref:`supported filter <config_listener_filters>`.
+   */
+  'name': (string);
+  'typed_config'?: (_google_protobuf_Any__Output);
+  /**
+   * Optional match predicate used to disable the filter. The filter is enabled when this field is empty.
+   * See :ref:`ListenerFilterChainMatchPredicate <envoy_api_msg_config.listener.v3.ListenerFilterChainMatchPredicate>`
+   * for further examples.
+   */
+  'filter_disabled'?: (_envoy_config_listener_v3_ListenerFilterChainMatchPredicate__Output);
+  /**
+   * Filter specific configuration which depends on the filter being instantiated.
+   * See the supported filters for further documentation.
+   */
+  'config_type': "typed_config";
+}

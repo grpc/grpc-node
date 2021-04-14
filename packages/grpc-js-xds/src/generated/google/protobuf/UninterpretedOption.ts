@@ -27,7 +27,7 @@ export interface UninterpretedOption__Output {
   'identifierValue': (string);
   'positiveIntValue': (string);
   'negativeIntValue': (string);
-  'doubleValue': (number | string);
+  'doubleValue': (number);
   'stringValue': (Buffer);
   'aggregateValue': (string);
 }

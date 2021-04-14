@@ -6,5 +6,5 @@ export interface FloatValue {
 }
 
 export interface FloatValue__Output {
-  'value': (number | string);
+  'value': (number);
 }

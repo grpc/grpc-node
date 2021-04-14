@@ -22,7 +22,7 @@ export interface RuntimeDouble__Output {
   /**
    * Default value if runtime value is not available.
    */
-  'default_value': (number | string);
+  'default_value': (number);
   /**
    * Runtime key to get value for comparison. This value is used if defined.
    */

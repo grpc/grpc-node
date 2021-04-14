@@ -12,5 +12,5 @@ export interface Percent {
  * Identifies a percentage, in the range [0.0, 100.0].
  */
 export interface Percent__Output {
-  'value': (number | string);
+  'value': (number);
 }

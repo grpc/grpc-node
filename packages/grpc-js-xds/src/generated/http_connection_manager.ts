@@ -10,12 +10,28 @@ export interface ProtoGrpcType {
   envoy: {
     annotations: {
     }
-    api: {
-      v2: {
-        RouteConfiguration: MessageTypeDefinition
-        ScopedRouteConfiguration: MessageTypeDefinition
-        Vhds: MessageTypeDefinition
-        core: {
+    config: {
+      accesslog: {
+        v3: {
+          AccessLog: MessageTypeDefinition
+          AccessLogFilter: MessageTypeDefinition
+          AndFilter: MessageTypeDefinition
+          ComparisonFilter: MessageTypeDefinition
+          DurationFilter: MessageTypeDefinition
+          ExtensionFilter: MessageTypeDefinition
+          GrpcStatusFilter: MessageTypeDefinition
+          HeaderFilter: MessageTypeDefinition
+          MetadataFilter: MessageTypeDefinition
+          NotHealthCheckFilter: MessageTypeDefinition
+          OrFilter: MessageTypeDefinition
+          ResponseFlagFilter: MessageTypeDefinition
+          RuntimeFilter: MessageTypeDefinition
+          StatusCodeFilter: MessageTypeDefinition
+          TraceableFilter: MessageTypeDefinition
+        }
+      }
+      core: {
+        v3: {
           Address: MessageTypeDefinition
           AggregatedConfigSource: MessageTypeDefinition
           ApiConfigSource: MessageTypeDefinition
@@ -28,7 +44,9 @@ export interface ProtoGrpcType {
           ConfigSource: MessageTypeDefinition
           ControlPlane: MessageTypeDefinition
           DataSource: MessageTypeDefinition
+          EnvoyInternalAddress: MessageTypeDefinition
           Extension: MessageTypeDefinition
+          ExtensionConfigSource: MessageTypeDefinition
           GrpcProtocolOptions: MessageTypeDefinition
           GrpcService: MessageTypeDefinition
           HeaderMap: MessageTypeDefinition
@@ -36,12 +54,15 @@ export interface ProtoGrpcType {
           HeaderValueOption: MessageTypeDefinition
           Http1ProtocolOptions: MessageTypeDefinition
           Http2ProtocolOptions: MessageTypeDefinition
+          Http3ProtocolOptions: MessageTypeDefinition
           HttpProtocolOptions: MessageTypeDefinition
           HttpUri: MessageTypeDefinition
+          KeepaliveSettings: MessageTypeDefinition
           Locality: MessageTypeDefinition
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition
           Pipe: MessageTypeDefinition
+          ProxyProtocolConfig: MessageTypeDefinition
           RateLimitSettings: MessageTypeDefinition
           RemoteDataSource: MessageTypeDefinition
           RequestMethod: EnumTypeDefinition
@@ -50,64 +71,64 @@ export interface ProtoGrpcType {
           RuntimeDouble: MessageTypeDefinition
           RuntimeFeatureFlag: MessageTypeDefinition
           RuntimeFractionalPercent: MessageTypeDefinition
+          RuntimePercent: MessageTypeDefinition
           RuntimeUInt32: MessageTypeDefinition
           SelfConfigSource: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
           SocketOption: MessageTypeDefinition
+          SubstitutionFormatString: MessageTypeDefinition
           TcpKeepalive: MessageTypeDefinition
           TcpProtocolOptions: MessageTypeDefinition
           TrafficDirection: EnumTypeDefinition
           TransportSocket: MessageTypeDefinition
+          TypedExtensionConfig: MessageTypeDefinition
           UpstreamHttpProtocolOptions: MessageTypeDefinition
+          WatchedDirectory: MessageTypeDefinition
         }
-        route: {
+      }
+      route: {
+        v3: {
           CorsPolicy: MessageTypeDefinition
           Decorator: MessageTypeDefinition
           DirectResponseAction: MessageTypeDefinition
           FilterAction: MessageTypeDefinition
+          FilterConfig: MessageTypeDefinition
           HeaderMatcher: MessageTypeDefinition
           HedgePolicy: MessageTypeDefinition
+          InternalRedirectPolicy: MessageTypeDefinition
           QueryParameterMatcher: MessageTypeDefinition
           RateLimit: MessageTypeDefinition
           RedirectAction: MessageTypeDefinition
           RetryPolicy: MessageTypeDefinition
           Route: MessageTypeDefinition
           RouteAction: MessageTypeDefinition
+          RouteConfiguration: MessageTypeDefinition
           RouteMatch: MessageTypeDefinition
+          ScopedRouteConfiguration: MessageTypeDefinition
           Tracing: MessageTypeDefinition
+          Vhds: MessageTypeDefinition
           VirtualCluster: MessageTypeDefinition
           VirtualHost: MessageTypeDefinition
           WeightedCluster: MessageTypeDefinition
         }
       }
-    }
-    config: {
-      filter: {
-        accesslog: {
-          v2: {
-            AccessLog: MessageTypeDefinition
-            AccessLogFilter: MessageTypeDefinition
-            AndFilter: MessageTypeDefinition
-            ComparisonFilter: MessageTypeDefinition
-            DurationFilter: MessageTypeDefinition
-            ExtensionFilter: MessageTypeDefinition
-            GrpcStatusFilter: MessageTypeDefinition
-            HeaderFilter: MessageTypeDefinition
-            NotHealthCheckFilter: MessageTypeDefinition
-            OrFilter: MessageTypeDefinition
-            ResponseFlagFilter: MessageTypeDefinition
-            RuntimeFilter: MessageTypeDefinition
-            StatusCodeFilter: MessageTypeDefinition
-            TraceableFilter: MessageTypeDefinition
-          }
+      trace: {
+        v3: {
+          Tracing: MessageTypeDefinition
         }
+      }
+    }
+    extensions: {
+      filters: {
         network: {
           http_connection_manager: {
-            v2: {
+            v3: {
               HttpConnectionManager: MessageTypeDefinition
               HttpFilter: MessageTypeDefinition
+              LocalReplyConfig: MessageTypeDefinition
               Rds: MessageTypeDefinition
               RequestIDExtension: MessageTypeDefinition
+              ResponseMapper: MessageTypeDefinition
               ScopedRds: MessageTypeDefinition
               ScopedRouteConfigurationsList: MessageTypeDefinition
               ScopedRoutes: MessageTypeDefinition
@@ -115,35 +136,38 @@ export interface ProtoGrpcType {
           }
         }
       }
-      trace: {
-        v2: {
-          Tracing: MessageTypeDefinition
-        }
-      }
     }
     type: {
-      DoubleRange: MessageTypeDefinition
-      FractionalPercent: MessageTypeDefinition
-      Int32Range: MessageTypeDefinition
-      Int64Range: MessageTypeDefinition
-      Percent: MessageTypeDefinition
-      SemanticVersion: MessageTypeDefinition
       matcher: {
-        ListStringMatcher: MessageTypeDefinition
-        RegexMatchAndSubstitute: MessageTypeDefinition
-        RegexMatcher: MessageTypeDefinition
-        StringMatcher: MessageTypeDefinition
+        v3: {
+          DoubleMatcher: MessageTypeDefinition
+          ListMatcher: MessageTypeDefinition
+          ListStringMatcher: MessageTypeDefinition
+          MetadataMatcher: MessageTypeDefinition
+          RegexMatchAndSubstitute: MessageTypeDefinition
+          RegexMatcher: MessageTypeDefinition
+          StringMatcher: MessageTypeDefinition
+          ValueMatcher: MessageTypeDefinition
+        }
       }
       metadata: {
-        v2: {
+        v3: {
           MetadataKey: MessageTypeDefinition
           MetadataKind: MessageTypeDefinition
         }
       }
       tracing: {
-        v2: {
+        v3: {
           CustomTag: MessageTypeDefinition
         }
+      }
+      v3: {
+        DoubleRange: MessageTypeDefinition
+        FractionalPercent: MessageTypeDefinition
+        Int32Range: MessageTypeDefinition
+        Int64Range: MessageTypeDefinition
+        Percent: MessageTypeDefinition
+        SemanticVersion: MessageTypeDefinition
       }
     }
   }
@@ -191,10 +215,12 @@ export interface ProtoGrpcType {
   udpa: {
     annotations: {
       FieldMigrateAnnotation: MessageTypeDefinition
+      FieldSecurityAnnotation: MessageTypeDefinition
       FileMigrateAnnotation: MessageTypeDefinition
       MigrateAnnotation: MessageTypeDefinition
       PackageVersionStatus: EnumTypeDefinition
       StatusAnnotation: MessageTypeDefinition
+      VersioningAnnotation: MessageTypeDefinition
     }
   }
   validate: {
@@ -222,6 +248,13 @@ export interface ProtoGrpcType {
     TimestampRules: MessageTypeDefinition
     UInt32Rules: MessageTypeDefinition
     UInt64Rules: MessageTypeDefinition
+  }
+  xds: {
+    core: {
+      v3: {
+        Authority: MessageTypeDefinition
+      }
+    }
   }
 }
 

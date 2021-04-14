@@ -2,6 +2,7 @@ import type * as grpc from '@grpc/grpc-js';
 import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
 
 import type { AggregatedDiscoveryServiceClient as _envoy_service_discovery_v2_AggregatedDiscoveryServiceClient } from './envoy/service/discovery/v2/AggregatedDiscoveryService';
+import type { AggregatedDiscoveryServiceClient as _envoy_service_discovery_v3_AggregatedDiscoveryServiceClient } from './envoy/service/discovery/v3/AggregatedDiscoveryService';
 
 type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {
   new(...args: ConstructorParameters<Constructor>): Subtype;
@@ -50,6 +51,45 @@ export interface ProtoGrpcType {
         }
       }
     }
+    config: {
+      core: {
+        v3: {
+          Address: MessageTypeDefinition
+          AsyncDataSource: MessageTypeDefinition
+          BackoffStrategy: MessageTypeDefinition
+          BindConfig: MessageTypeDefinition
+          BuildVersion: MessageTypeDefinition
+          CidrRange: MessageTypeDefinition
+          ControlPlane: MessageTypeDefinition
+          DataSource: MessageTypeDefinition
+          EnvoyInternalAddress: MessageTypeDefinition
+          Extension: MessageTypeDefinition
+          HeaderMap: MessageTypeDefinition
+          HeaderValue: MessageTypeDefinition
+          HeaderValueOption: MessageTypeDefinition
+          HttpUri: MessageTypeDefinition
+          Locality: MessageTypeDefinition
+          Metadata: MessageTypeDefinition
+          Node: MessageTypeDefinition
+          Pipe: MessageTypeDefinition
+          RemoteDataSource: MessageTypeDefinition
+          RequestMethod: EnumTypeDefinition
+          RetryPolicy: MessageTypeDefinition
+          RoutingPriority: EnumTypeDefinition
+          RuntimeDouble: MessageTypeDefinition
+          RuntimeFeatureFlag: MessageTypeDefinition
+          RuntimeFractionalPercent: MessageTypeDefinition
+          RuntimePercent: MessageTypeDefinition
+          RuntimeUInt32: MessageTypeDefinition
+          SocketAddress: MessageTypeDefinition
+          SocketOption: MessageTypeDefinition
+          TcpKeepalive: MessageTypeDefinition
+          TrafficDirection: EnumTypeDefinition
+          TransportSocket: MessageTypeDefinition
+          WatchedDirectory: MessageTypeDefinition
+        }
+      }
+    }
     service: {
       discovery: {
         v2: {
@@ -64,12 +104,34 @@ export interface ProtoGrpcType {
            */
           AggregatedDiscoveryService: SubtypeConstructor<typeof grpc.Client, _envoy_service_discovery_v2_AggregatedDiscoveryServiceClient> & { service: ServiceDefinition }
         }
+        v3: {
+          AdsDummy: MessageTypeDefinition
+          /**
+           * See https://github.com/lyft/envoy-api#apis for a description of the role of
+           * ADS and how it is intended to be used by a management server. ADS requests
+           * have the same structure as their singleton xDS counterparts, but can
+           * multiplex many resource types on a single stream. The type_url in the
+           * DiscoveryRequest/DiscoveryResponse provides sufficient information to recover
+           * the multiplexed singleton APIs at the Envoy instance and management server.
+           */
+          AggregatedDiscoveryService: SubtypeConstructor<typeof grpc.Client, _envoy_service_discovery_v3_AggregatedDiscoveryServiceClient> & { service: ServiceDefinition }
+          DeltaDiscoveryRequest: MessageTypeDefinition
+          DeltaDiscoveryResponse: MessageTypeDefinition
+          DiscoveryRequest: MessageTypeDefinition
+          DiscoveryResponse: MessageTypeDefinition
+          Resource: MessageTypeDefinition
+        }
       }
     }
     type: {
       FractionalPercent: MessageTypeDefinition
       Percent: MessageTypeDefinition
       SemanticVersion: MessageTypeDefinition
+      v3: {
+        FractionalPercent: MessageTypeDefinition
+        Percent: MessageTypeDefinition
+        SemanticVersion: MessageTypeDefinition
+      }
     }
   }
   google: {
@@ -122,6 +184,7 @@ export interface ProtoGrpcType {
       MigrateAnnotation: MessageTypeDefinition
       PackageVersionStatus: EnumTypeDefinition
       StatusAnnotation: MessageTypeDefinition
+      VersioningAnnotation: MessageTypeDefinition
     }
   }
   validate: {

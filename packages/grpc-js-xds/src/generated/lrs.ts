@@ -2,6 +2,7 @@ import type * as grpc from '@grpc/grpc-js';
 import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
 
 import type { LoadReportingServiceClient as _envoy_service_load_stats_v2_LoadReportingServiceClient } from './envoy/service/load_stats/v2/LoadReportingService';
+import type { LoadReportingServiceClient as _envoy_service_load_stats_v3_LoadReportingServiceClient } from './envoy/service/load_stats/v3/LoadReportingService';
 
 type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {
   new(...args: ConstructorParameters<Constructor>): Subtype;
@@ -51,10 +52,62 @@ export interface ProtoGrpcType {
         }
       }
     }
+    config: {
+      core: {
+        v3: {
+          Address: MessageTypeDefinition
+          AsyncDataSource: MessageTypeDefinition
+          BackoffStrategy: MessageTypeDefinition
+          BindConfig: MessageTypeDefinition
+          BuildVersion: MessageTypeDefinition
+          CidrRange: MessageTypeDefinition
+          ControlPlane: MessageTypeDefinition
+          DataSource: MessageTypeDefinition
+          EnvoyInternalAddress: MessageTypeDefinition
+          Extension: MessageTypeDefinition
+          HeaderMap: MessageTypeDefinition
+          HeaderValue: MessageTypeDefinition
+          HeaderValueOption: MessageTypeDefinition
+          HttpUri: MessageTypeDefinition
+          Locality: MessageTypeDefinition
+          Metadata: MessageTypeDefinition
+          Node: MessageTypeDefinition
+          Pipe: MessageTypeDefinition
+          RemoteDataSource: MessageTypeDefinition
+          RequestMethod: EnumTypeDefinition
+          RetryPolicy: MessageTypeDefinition
+          RoutingPriority: EnumTypeDefinition
+          RuntimeDouble: MessageTypeDefinition
+          RuntimeFeatureFlag: MessageTypeDefinition
+          RuntimeFractionalPercent: MessageTypeDefinition
+          RuntimePercent: MessageTypeDefinition
+          RuntimeUInt32: MessageTypeDefinition
+          SocketAddress: MessageTypeDefinition
+          SocketOption: MessageTypeDefinition
+          TcpKeepalive: MessageTypeDefinition
+          TrafficDirection: EnumTypeDefinition
+          TransportSocket: MessageTypeDefinition
+          WatchedDirectory: MessageTypeDefinition
+        }
+      }
+      endpoint: {
+        v3: {
+          ClusterStats: MessageTypeDefinition
+          EndpointLoadMetricStats: MessageTypeDefinition
+          UpstreamEndpointStats: MessageTypeDefinition
+          UpstreamLocalityStats: MessageTypeDefinition
+        }
+      }
+    }
     service: {
       load_stats: {
         v2: {
           LoadReportingService: SubtypeConstructor<typeof grpc.Client, _envoy_service_load_stats_v2_LoadReportingServiceClient> & { service: ServiceDefinition }
+          LoadStatsRequest: MessageTypeDefinition
+          LoadStatsResponse: MessageTypeDefinition
+        }
+        v3: {
+          LoadReportingService: SubtypeConstructor<typeof grpc.Client, _envoy_service_load_stats_v3_LoadReportingServiceClient> & { service: ServiceDefinition }
           LoadStatsRequest: MessageTypeDefinition
           LoadStatsResponse: MessageTypeDefinition
         }
@@ -64,6 +117,11 @@ export interface ProtoGrpcType {
       FractionalPercent: MessageTypeDefinition
       Percent: MessageTypeDefinition
       SemanticVersion: MessageTypeDefinition
+      v3: {
+        FractionalPercent: MessageTypeDefinition
+        Percent: MessageTypeDefinition
+        SemanticVersion: MessageTypeDefinition
+      }
     }
   }
   google: {
@@ -113,6 +171,7 @@ export interface ProtoGrpcType {
       MigrateAnnotation: MessageTypeDefinition
       PackageVersionStatus: EnumTypeDefinition
       StatusAnnotation: MessageTypeDefinition
+      VersioningAnnotation: MessageTypeDefinition
     }
   }
   validate: {
