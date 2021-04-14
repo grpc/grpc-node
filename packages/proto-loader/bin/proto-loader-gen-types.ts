@@ -126,7 +126,7 @@ function getImportLine(dependency: Protobuf.Type | Protobuf.Enum | Protobuf.Serv
     } else if (dependency instanceof Protobuf.Enum) {
       importedTypes = `${typeInterfaceName}`;
     } else if (dependency instanceof Protobuf.Service) {
-      importedTypes = `${typeInterfaceName}Client`;
+      importedTypes = `${typeInterfaceName}Client, ${typeInterfaceName}Definition`;
     } else {
       throw new Error('Invalid object passed to getImportLine');
     }
@@ -136,7 +136,7 @@ function getImportLine(dependency: Protobuf.Type | Protobuf.Enum | Protobuf.Serv
     } else if (dependency instanceof Protobuf.Enum) {
       importedTypes = `${dependency.name} as ${typeInterfaceName}`;
     } else if (dependency instanceof Protobuf.Service) {
-      importedTypes = `${dependency.name}Client as ${typeInterfaceName}Client`;
+      importedTypes = `${dependency.name}Client as ${typeInterfaceName}Client, ${dependency.name}Definition as ${typeInterfaceName}Definition`;
     } else {
       throw new Error('Invalid object passed to getImportLine');
     }
@@ -541,11 +541,25 @@ function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: 
   formatter.writeLine('}');
 }
 
+function generateServiceDefinitionInterface(formatter: TextFormatter, serviceType: Protobuf.Service) {
+  formatter.writeLine(`export interface ${serviceType.name}Definition {`);
+  formatter.indent();
+  for (const methodName of Object.keys(serviceType.methods).sort()) {
+    const method = serviceType.methods[methodName];
+    const requestType = getTypeInterfaceName(method.resolvedRequestType!);
+    const responseType = getTypeInterfaceName(method.resolvedResponseType!);
+    formatter.writeLine(`${methodName}: MethodDefinition<${requestType}, ${responseType}, ${requestType}__Output, ${responseType}__Output>`);
+  }
+  formatter.unindent();
+  formatter.writeLine('}')
+}
+
 function generateServiceInterfaces(formatter: TextFormatter, serviceType: Protobuf.Service, options: GeneratorOptions) {
   formatter.writeLine(`// Original file: ${serviceType.filename}`);
   formatter.writeLine('');
   const grpcImportPath = options.grpcLib.startsWith('.') ? getPathToRoot(serviceType) + options.grpcLib : options.grpcLib;
   formatter.writeLine(`import type * as grpc from '${grpcImportPath}'`);
+  formatter.writeLine(`import type { MethodDefinition } from '@grpc/proto-loader'`)
   const dependencies: Set<Protobuf.Type> = new Set<Protobuf.Type>();
   for (const method of serviceType.methodsArray) {
     dependencies.add(method.resolvedRequestType!);
@@ -560,6 +574,9 @@ function generateServiceInterfaces(formatter: TextFormatter, serviceType: Protob
   formatter.writeLine('');
 
   generateServiceHandlerInterface(formatter, serviceType, options);
+  formatter.writeLine('');
+
+  generateServiceDefinitionInterface(formatter, serviceType);
 }
 
 function generateServiceImports(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, options: GeneratorOptions) {
@@ -577,7 +594,8 @@ function generateSingleLoadedDefinitionType(formatter: TextFormatter, nested: Pr
     if (options.includeComments) {
       formatComment(formatter, nested.comment);
     }
-    formatter.writeLine(`${nested.name}: SubtypeConstructor<typeof grpc.Client, ${getTypeInterfaceName(nested)}Client> & { service: ServiceDefinition }`)
+    const typeInterfaceName = getTypeInterfaceName(nested);
+    formatter.writeLine(`${nested.name}: SubtypeConstructor<typeof grpc.Client, ${typeInterfaceName}Client> & { service: ${typeInterfaceName}Definition }`);
   } else if (nested instanceof Protobuf.Enum) {
     formatter.writeLine(`${nested.name}: EnumTypeDefinition`);
   } else if (nested instanceof Protobuf.Type) {

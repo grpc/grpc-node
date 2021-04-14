@@ -1,8 +1,8 @@
 import type * as grpc from '@grpc/grpc-js';
 import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
 
-import type { OperationsClient as _google_longrunning_OperationsClient } from './google/longrunning/Operations';
-import type { EchoClient as _google_showcase_v1beta1_EchoClient } from './google/showcase/v1beta1/Echo';
+import type { OperationsClient as _google_longrunning_OperationsClient, OperationsDefinition as _google_longrunning_OperationsDefinition } from './google/longrunning/Operations';
+import type { EchoClient as _google_showcase_v1beta1_EchoClient, EchoDefinition as _google_showcase_v1beta1_EchoDefinition } from './google/showcase/v1beta1/Echo';
 
 type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {
   new(...args: ConstructorParameters<Constructor>): Subtype;
@@ -35,7 +35,7 @@ export interface ProtoGrpcType {
        * returns long-running operations should implement the `Operations` interface
        * so developers can have a consistent client experience.
        */
-      Operations: SubtypeConstructor<typeof grpc.Client, _google_longrunning_OperationsClient> & { service: ServiceDefinition }
+      Operations: SubtypeConstructor<typeof grpc.Client, _google_longrunning_OperationsClient> & { service: _google_longrunning_OperationsDefinition }
       WaitOperationRequest: MessageTypeDefinition
     }
     protobuf: {
@@ -78,7 +78,7 @@ export interface ProtoGrpcType {
          * paginated calls. Set the 'showcase-trailer' metadata key on any method
          * to have the values echoed in the response trailers.
          */
-        Echo: SubtypeConstructor<typeof grpc.Client, _google_showcase_v1beta1_EchoClient> & { service: ServiceDefinition }
+        Echo: SubtypeConstructor<typeof grpc.Client, _google_showcase_v1beta1_EchoClient> & { service: _google_showcase_v1beta1_EchoDefinition }
         EchoRequest: MessageTypeDefinition
         EchoResponse: MessageTypeDefinition
         ExpandRequest: MessageTypeDefinition
