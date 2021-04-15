@@ -55,9 +55,6 @@ function handleError(call, error) {
     if (error.hasOwnProperty('details')) {
       status.details = error.details;
     }
-    if (status.code == constants.status.INTERNAL) {
-      common.log(constants.logVerbosity.ERROR, error);
-    }
   }
   if (error.hasOwnProperty('metadata')) {
     statusMetadata = error.metadata;
@@ -97,6 +94,7 @@ function sendUnaryResponse(call, value, serialize, metadata, flags) {
   try {
     message = serialize(value);
   } catch (e) {
+    common.log(constants.logVerbosity.ERROR, e);
     e.code = constants.status.INTERNAL;
     handleError(call, e);
     return;
@@ -310,6 +308,7 @@ function _write(chunk, encoding, callback) {
   try {
     message = this.serialize(chunk);
   } catch (e) {
+    common.log(constants.logVerbosity.ERROR, e);
     e.code = constants.status.INTERNAL;
     callback(e);
     return;
@@ -400,6 +399,7 @@ function _read(size) {
     try {
       deserialized = self.deserialize(data);
     } catch (e) {
+      common.log(constants.logVerbosity.ERROR, e);
       e.code = constants.status.INTERNAL;
       self.emit('error', e);
       return;
@@ -583,6 +583,7 @@ function handleUnary(call, handler, metadata) {
     try {
       emitter.request = handler.deserialize(result.read);
     } catch (e) {
+      common.log(constants.logVerbosity.ERROR, e);
       e.code = constants.status.INTERNAL;
       handleError(call, e);
       return;
@@ -635,6 +636,7 @@ function handleServerStreaming(call, handler, metadata) {
     try {
       stream.request = handler.deserialize(result.read);
     } catch (e) {
+      common.log(constants.logVerbosity.ERROR, e);
       e.code = constants.status.INTERNAL;
       stream.emit('error', e);
       return;
