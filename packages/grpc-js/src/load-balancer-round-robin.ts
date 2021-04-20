@@ -164,15 +164,17 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
       newState: ConnectivityState
     ) => {
       this.calculateAndUpdateState();
-      /* In this context, this should generally choose 0 subchannels if this
-       * subchannel is READY or CONNECTING, and 1 otherwise. Doing that
-       * explicitly could be more efficient, doing it this way is defense in
-       * depth to ensure that the target is reached consistently. */
-      this.connectToRandomSubchannels();
       if (newState === ConnectivityState.IDLE || 
           newState === ConnectivityState.TRANSIENT_FAILURE) {
         this.channelControlHelper.requestReresolution();
       }
+      process.nextTick(() => {
+        /* In this context, this should generally choose 0 subchannels if this
+         * subchannel is READY or CONNECTING, and 1 otherwise. Doing that
+         * explicitly could be more efficient, doing it this way is defense in
+         * depth to ensure that the target is reached consistently. */
+        this.connectToRandomSubchannels();
+      });
     };
   }
 
@@ -259,6 +261,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     if (readyOrConnectingCount < TARGET_CONNECTION_COUNT) {
       const notReadyOrConnecting = this.subchannels.filter(subchannel => !subchannelIsReadyOrTryingToConnect(subchannel));
       const subchannelsToConnect = chooseRandomSubset(notReadyOrConnecting, TARGET_CONNECTION_COUNT - readyOrConnectingCount);
+      trace('Connecting to subchannels ' + subchannelsToConnect.map(subchannel => subchannel.getAddress()));
       for (const subchannel of subchannelsToConnect) {
         subchannel.startConnecting();
       }
@@ -286,9 +289,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
   }
 
   exitIdle(): void {
-    for (const subchannel of this.subchannels) {
-      subchannel.startConnecting();
-    }
+    this.connectToRandomSubchannels();
   }
   resetBackoff(): void {
     /* The pick first load balancer does not have a connection backoff, so this

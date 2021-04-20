@@ -83,6 +83,7 @@ describe('Round robin load balancing policy', () => {
     server1.forceShutdown();
     server2.forceShutdown();
     server3.forceShutdown();
+    client.close();
   });
   it('Should send requests to all servers', (done) => {
     const responseCounts: {[serverName: string]: number} = {
