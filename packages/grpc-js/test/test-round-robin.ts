@@ -33,59 +33,79 @@ const protoFile = path.join(__dirname, 'fixtures', 'test_service.proto');
 const testServiceDef = loadProtoFile(protoFile);
 const TestServiceClient = testServiceDef.TestService as ServiceClientConstructor;
 
-describe('Round robin load balancing policy', () => {
-  const serviceImpl = {
+function makeServiceImpl(responseText: string) {
+  return {
     unary: (call: grpc.ServerUnaryCall<any, any>, callback: grpc.sendUnaryData<any>) => {
-      callback(null, {});
+      callback(null, {text: responseText});
     }
   };
-  let server: grpc.Server;
-  let port: number;
+}
+
+describe('Round robin load balancing policy', () => {
+  let server1: grpc.Server;
+  let server2: grpc.Server;
+  let server3: grpc.Server;
   let client: ServiceClient;
-  beforeEach((done) => {
-    server = new grpc.Server();
-    server.addService(TestServiceClient.service, {
-      unary: (call: grpc.ServerUnaryCall<any, any>, callback: grpc.sendUnaryData<any>) => {
-        callback(null, {});
-      }
-    });
-    server.bindAsync('localhost:0', grpc.ServerCredentials.createInsecure(), (error, serverPort) => {
+
+  before((done) => {
+    server1 = new grpc.Server();
+    server1.addService(TestServiceClient.service, makeServiceImpl('server1'));
+    server2 = new grpc.Server();
+    server2.addService(TestServiceClient.service, makeServiceImpl('server2'));
+    server3 = new grpc.Server();
+    server3.addService(TestServiceClient.service, makeServiceImpl('server3'));
+    const serverCredentials = grpc.ServerCredentials.createInsecure();
+    server1.bindAsync('localhost:0', serverCredentials, (error, port1) => {
       if (error) {
         done(error);
+        return;
       }
-      port = serverPort;
-      server.start();
-      client = new TestServiceClient(`localhost:${port}`, grpc.credentials.createInsecure(), {"grpc.service_config": ROUND_ROBIN_SERVICE_CONFIG});
-      done();
-    });
-  });
-  afterEach(() => {
-    server.forceShutdown();
-  });
-  it('Should connect to a server', (done) => {
-    client.unary({}, (error: grpc.ServiceError, response: any) => {
-      assert.ifError(error);
-      done();
-    });
-  });
-  /* Trace logs show that the client correctly tries to reconnect after losing
-   * the connection to the original server, but it gets ECONNREFUSED for some
-   * reason, so the test does not work. There may be some kind of interference
-   * between the two servers. */
-  it.skip('Should reconnect after a connection is dropped', (done) => {
-    client.unary({}, (error: grpc.ServiceError, response: any) => {
-      assert.ifError(error);
-      server.tryShutdown(() => {
-        server = new grpc.Server();
-        server.addService(TestServiceClient.service, serviceImpl);
-        server.bindAsync(`localhost:${port}`, grpc.ServerCredentials.createInsecure(), (error, port) => {
-          server.start();
-          client.unary({}, (error: grpc.ServiceError, response: any) => {
-            assert.ifError(error);
-            done();
-          });
+      server2.bindAsync('localhost:0', serverCredentials, (error, port2) => {
+        if (error) {
+          done(error);
+          return;
+        }
+        server3.bindAsync('localhost:0', serverCredentials, (error, port3) => {
+          if (error) {
+            done(error);
+            return;
+          }
+          server1.start();
+          server2.start();
+          server3.start();
+          client = new TestServiceClient(`ipv4:127.0.0.1:${port1},127.0.0.1:${port2},127.0.0.1:${port3}`, grpc.credentials.createInsecure(), {"grpc.service_config": ROUND_ROBIN_SERVICE_CONFIG});
+          done();
         });
       });
     });
+  });
+  after(() => {
+    server1.forceShutdown();
+    server2.forceShutdown();
+    server3.forceShutdown();
+  });
+  it('Should send requests to all servers', (done) => {
+    const responseCounts: {[serverName: string]: number} = {
+      'server1': 0,
+      'server2': 0,
+      'server3': 0
+    };
+    const totalRequestCount = 30;
+    let requestsSucceeded = 0;
+    function makeNextRequest() {
+      client.unary({}, (error: grpc.ServiceError, response: any) => {
+        assert.ifError(error);
+        responseCounts[response.text]++;
+        requestsSucceeded++;
+        if (requestsSucceeded >= totalRequestCount) {
+          console.log(responseCounts);
+          assert(responseCounts.server1 > 0 && responseCounts.server2 > 0 && responseCounts.server3 > 0);
+          done();
+        } else {
+          makeNextRequest();
+        }
+      });
+    }
+    makeNextRequest();
   });
 });

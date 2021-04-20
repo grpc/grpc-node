@@ -25,6 +25,7 @@ message Request {
 
 message Response {
   int32 count = 1;
+  string text = 2;
 }
 
 service TestService {
