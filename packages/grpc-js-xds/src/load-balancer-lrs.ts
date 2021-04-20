@@ -17,7 +17,7 @@
 
 import { connectivityState as ConnectivityState, StatusObject, status as Status, experimental } from '@grpc/grpc-js';
 import { Locality__Output } from './generated/envoy/api/v2/core/Locality';
-import { XdsClusterLocalityStats, XdsClient } from './xds-client';
+import { XdsClusterLocalityStats, XdsClient, getSingletonXdsClient } from './xds-client';
 import LoadBalancer = experimental.LoadBalancer;
 import ChannelControlHelper = experimental.ChannelControlHelper;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
@@ -207,10 +207,7 @@ export class LrsLoadBalancer implements LoadBalancer {
     if (!(lbConfig instanceof LrsLoadBalancingConfig)) {
       return;
     }
-    if (!(attributes.xdsClient instanceof XdsClient)) {
-      return;
-    }
-    this.localityStatsReporter = attributes.xdsClient.addClusterLocalityStats(
+    this.localityStatsReporter = getSingletonXdsClient().addClusterLocalityStats(
       lbConfig.getLrsLoadReportingServerName(),
       lbConfig.getClusterName(),
       lbConfig.getEdsServiceName(),

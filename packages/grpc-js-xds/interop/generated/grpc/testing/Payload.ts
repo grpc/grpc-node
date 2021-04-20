@@ -1,6 +1,6 @@
 // Original file: proto/grpc/testing/messages.proto
 
-import { PayloadType as _grpc_testing_PayloadType } from '../../grpc/testing/PayloadType';
+import type { PayloadType as _grpc_testing_PayloadType } from '../../grpc/testing/PayloadType';
 
 /**
  * A block of data, to simply increase gRPC message size.

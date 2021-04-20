@@ -1,6 +1,6 @@
 // Original file: deps/udpa/udpa/annotations/status.proto
 
-import { PackageVersionStatus as _udpa_annotations_PackageVersionStatus } from '../../udpa/annotations/PackageVersionStatus';
+import type { PackageVersionStatus as _udpa_annotations_PackageVersionStatus } from '../../udpa/annotations/PackageVersionStatus';
 
 export interface StatusAnnotation {
   /**

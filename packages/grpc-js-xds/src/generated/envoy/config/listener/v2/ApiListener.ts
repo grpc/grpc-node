@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/config/listener/v2/api_listener.proto
 
-import { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
+import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
 
 /**
  * Describes a type of API listener, which is used in non-proxy clients. The type of API

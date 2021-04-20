@@ -36,6 +36,7 @@ export interface ChannelOptions {
   'grpc.enable_http_proxy'?: number;
   'grpc.http_connect_target'?: string;
   'grpc.http_connect_creds'?: string;
+  'grpc-node.max_session_memory'?: number;
   [key: string]: any;
 }
 
@@ -59,6 +60,7 @@ export const recognizedOptions = {
   'grpc.max_send_message_length': true,
   'grpc.max_receive_message_length': true,
   'grpc.enable_http_proxy': true,
+  'grpc-node.max_session_memory': true,
 };
 
 export function channelOptionsEqual(

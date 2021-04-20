@@ -1,6 +1,6 @@
 // Original file: deps/protoc-gen-validate/validate/validate.proto
 
-import { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../google/protobuf/Duration';
+import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../google/protobuf/Duration';
 
 /**
  * DurationRules describe the constraints applied exclusively to the

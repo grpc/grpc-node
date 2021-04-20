@@ -65,6 +65,10 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     coded_out.WriteRaw(code.data(), code.size());
     return true;
   }
+
+  uint64_t GetSupportedFeatures() const override {
+    return FEATURE_PROTO3_OPTIONAL;
+  }
 };
 
 int main(int argc, char* argv[]) {

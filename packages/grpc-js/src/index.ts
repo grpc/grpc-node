@@ -15,8 +15,6 @@
  *
  */
 
-import * as semver from 'semver';
-
 import {
   ClientDuplexStream,
   ClientReadableStream,
@@ -65,11 +63,6 @@ import {
   ServerWritableStream,
   ServerDuplexStream,
 } from './server-call';
-
-const supportedNodeVersions = require('../../package.json').engines.node;
-if (!semver.satisfies(process.version, supportedNodeVersions)) {
-  throw new Error(`@grpc/grpc-js only works on Node ${supportedNodeVersions}`);
-}
 
 export { OAuth2Client };
 

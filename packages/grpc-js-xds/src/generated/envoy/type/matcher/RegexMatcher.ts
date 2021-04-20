@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/type/matcher/regex.proto
 
-import { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../google/protobuf/UInt32Value';
+import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../google/protobuf/UInt32Value';
 
 /**
  * Google's `RE2 <https://github.com/google/re2>`_ regex engine. The regex string must adhere to

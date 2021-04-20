@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/api/v2/discovery.proto
 
-import { Resource as _envoy_api_v2_Resource, Resource__Output as _envoy_api_v2_Resource__Output } from '../../../envoy/api/v2/Resource';
+import type { Resource as _envoy_api_v2_Resource, Resource__Output as _envoy_api_v2_Resource__Output } from '../../../envoy/api/v2/Resource';
 
 /**
  * [#next-free-field: 7]

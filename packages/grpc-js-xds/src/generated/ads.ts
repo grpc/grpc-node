@@ -1,11 +1,10 @@
-import * as grpc from '@grpc/grpc-js';
-import { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
+import type * as grpc from '@grpc/grpc-js';
+import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
 
-import { AggregatedDiscoveryServiceClient as _envoy_service_discovery_v2_AggregatedDiscoveryServiceClient } from './envoy/service/discovery/v2/AggregatedDiscoveryService';
+import type { AggregatedDiscoveryServiceClient as _envoy_service_discovery_v2_AggregatedDiscoveryServiceClient } from './envoy/service/discovery/v2/AggregatedDiscoveryService';
 
-type ConstructorArguments<Constructor> = Constructor extends new (...args: infer Args) => any ? Args: never;
-type SubtypeConstructor<Constructor, Subtype> = {
-  new(...args: ConstructorArguments<Constructor>): Subtype;
+type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {
+  new(...args: ConstructorParameters<Constructor>): Subtype;
 };
 
 export interface ProtoGrpcType {

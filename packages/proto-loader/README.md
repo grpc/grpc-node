@@ -38,6 +38,7 @@ The options parameter is an object that can have the following optional properti
 | `arrays` | `true` or `false` | Set empty arrays for missing array values even if `defaults` is `false` Defaults to `false`.
 | `objects` | `true` or `false` | Set empty objects for missing object values even if `defaults` is `false` Defaults to `false`.
 | `oneofs` | `true` or `false` | Set virtual oneof properties to the present field's name. Defaults to `false`.
+| `json` | `true` or `false` | Represent `Infinity` and `NaN` as strings in `float` fields, and automatically decode `google.protobuf.Any` values. Defaults to `false`
 | `includeDirs` | An array of strings | A list of search paths for imported `.proto` files.
 
 The following options object closely approximates the existing behavior of `grpc.load`:
@@ -50,4 +51,70 @@ const options = {
   defaults: true,
   oneofs: true
 }
+```
+
+## Generating TypeScript types
+
+The `proto-loader-gen-types` script distributed with this package can be used to generate TypeScript type information for the objects loaded at runtime. More information about how to use it can be found in [the *@grpc/proto-loader TypeScript Type Generator CLI Tool* proposal document](https://github.com/grpc/proposal/blob/master/L70-node-proto-loader-type-generator.md). The arguments mostly match the `load` function's options; the full usage information is as follows:
+
+```console
+proto-loader-gen-types.js [options] filenames...
+
+Options:
+      --help             Show help                                     [boolean]
+      --version          Show version number                           [boolean]
+      --keepCase         Preserve the case of field names
+                                                      [boolean] [default: false]
+      --longs            The type that should be used to output 64 bit integer
+                         values. Can be String, Number[string] [default: "Long"]
+      --enums            The type that should be used to output enum fields. Can
+                         be String                  [string] [default: "number"]
+      --bytes            The type that should be used to output bytes fields.
+                         Can be String, Array       [string] [default: "Buffer"]
+      --defaults         Output default values for omitted fields
+                                                      [boolean] [default: false]
+      --arrays           Output default values for omitted repeated fields even
+                         if --defaults is not set     [boolean] [default: false]
+      --objects          Output default values for omitted message fields even
+                         if --defaults is not set     [boolean] [default: false]
+      --oneofs           Output virtual oneof fields set to the present field's
+                         name                         [boolean] [default: false]
+      --json             Represent Infinity and NaN as strings in float fields.
+                         Also decode google.protobuf.Any automatically
+                                                      [boolean] [default: false]
+      --includeComments  Generate doc comments from comments in the original
+                         files                        [boolean] [default: false]
+  -I, --includeDirs      Directories to search for included files        [array]
+  -O, --outDir           Directory in which to output files  [string] [required]
+      --grpcLib          The gRPC implementation library that these types will
+                         be used with                        [string] [required]
+```
+
+### Example Usage
+
+Generate the types:
+
+```sh
+$(npm bin)/proto-loader-gen-types --longs=String --enums=String --defaults --oneofs --grpcLib=@grpc/grpc-js --outDir=proto/ proto/*.proto
+```
+
+Consume the types:
+
+```ts
+import * as grpc from '@grpc/grpc-js';
+import * as protoLoader from '@grpc/proto-loader';
+import { ProtoGrpcType } from './proto/example';
+import { ExampleHandlers } from './proto/example_package/Example';
+
+const exampleServer: ExampleHandlers = {
+  // server handlers implementation...
+};
+
+const packageDefinition = protoLoader.loadSync('./proto/example.proto');
+const proto = (grpc.loadPackageDefinition(
+  packageDefinition
+) as unknown) as ProtoGrpcType;
+
+const server = new grpc.Server();
+server.addService(proto.example_package.Example.service, exampleServer);
 ```

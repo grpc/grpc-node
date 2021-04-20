@@ -16,7 +16,7 @@
  */
 
 import { connectivityState, status, Metadata, logVerbosity, experimental } from '@grpc/grpc-js';
-import { XdsClient, Watcher } from './xds-client';
+import { getSingletonXdsClient, XdsClient } from './xds-client';
 import { Cluster__Output } from './generated/envoy/api/v2/Cluster';
 import SubchannelAddress = experimental.SubchannelAddress;
 import UnavailablePicker = experimental.UnavailablePicker;
@@ -26,6 +26,7 @@ import ChannelControlHelper = experimental.ChannelControlHelper;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
 import LoadBalancingConfig = experimental.LoadBalancingConfig;
 import { EdsLoadBalancingConfig } from './load-balancer-eds';
+import { Watcher } from './xds-stream-state/xds-stream-state';
 
 const TRACER_NAME = 'cds_balancer';
 
@@ -65,7 +66,6 @@ export class CdsLoadBalancingConfig implements LoadBalancingConfig {
 
 export class CdsLoadBalancer implements LoadBalancer {
   private childBalancer: ChildLoadBalancerHandler;
-  private xdsClient: XdsClient | null = null;
   private watcher: Watcher<Cluster__Output>;
 
   private isWatcherActive = false;
@@ -121,12 +121,7 @@ export class CdsLoadBalancer implements LoadBalancer {
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig, undefined, 2));
       return;
     }
-    if (!(attributes.xdsClient instanceof XdsClient)) {
-      trace('Discarding address list update missing xdsClient attribute');
-      return;
-    }
     trace('Received update with config ' + JSON.stringify(lbConfig, undefined, 2));
-    this.xdsClient = attributes.xdsClient;
     this.latestAttributes = attributes;
 
     /* If the cluster is changing, disable the old watcher before adding the new
@@ -136,7 +131,7 @@ export class CdsLoadBalancer implements LoadBalancer {
       this.latestConfig?.getCluster() !== lbConfig.getCluster()
     ) {
       trace('Removing old cluster watcher for cluster name ' + this.latestConfig!.getCluster());
-      this.xdsClient.removeClusterWatcher(
+      getSingletonXdsClient().removeClusterWatcher(
         this.latestConfig!.getCluster(),
         this.watcher
       );
@@ -152,7 +147,7 @@ export class CdsLoadBalancer implements LoadBalancer {
 
     if (!this.isWatcherActive) {
       trace('Adding new cluster watcher for cluster name ' + lbConfig.getCluster());
-      this.xdsClient.addClusterWatcher(lbConfig.getCluster(), this.watcher);
+      getSingletonXdsClient().addClusterWatcher(lbConfig.getCluster(), this.watcher);
       this.isWatcherActive = true;
     }
   }
@@ -166,7 +161,7 @@ export class CdsLoadBalancer implements LoadBalancer {
     trace('Destroying load balancer with cluster name ' + this.latestConfig?.getCluster());
     this.childBalancer.destroy();
     if (this.isWatcherActive) {
-      this.xdsClient?.removeClusterWatcher(
+      getSingletonXdsClient().removeClusterWatcher(
         this.latestConfig!.getCluster(),
         this.watcher
       );

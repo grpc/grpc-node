@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/api/v2/core/socket_option.proto
 
-import { Long } from '@grpc/proto-loader';
+import type { Long } from '@grpc/proto-loader';
 
 // Original file: deps/envoy-api/envoy/api/v2/core/socket_option.proto
 

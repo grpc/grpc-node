@@ -1,8 +1,8 @@
 // Original file: deps/envoy-api/envoy/service/load_stats/v2/lrs.proto
 
-import * as grpc from '@grpc/grpc-js'
-import { LoadStatsRequest as _envoy_service_load_stats_v2_LoadStatsRequest, LoadStatsRequest__Output as _envoy_service_load_stats_v2_LoadStatsRequest__Output } from '../../../../envoy/service/load_stats/v2/LoadStatsRequest';
-import { LoadStatsResponse as _envoy_service_load_stats_v2_LoadStatsResponse, LoadStatsResponse__Output as _envoy_service_load_stats_v2_LoadStatsResponse__Output } from '../../../../envoy/service/load_stats/v2/LoadStatsResponse';
+import type * as grpc from '@grpc/grpc-js'
+import type { LoadStatsRequest as _envoy_service_load_stats_v2_LoadStatsRequest, LoadStatsRequest__Output as _envoy_service_load_stats_v2_LoadStatsRequest__Output } from '../../../../envoy/service/load_stats/v2/LoadStatsRequest';
+import type { LoadStatsResponse as _envoy_service_load_stats_v2_LoadStatsResponse, LoadStatsResponse__Output as _envoy_service_load_stats_v2_LoadStatsResponse__Output } from '../../../../envoy/service/load_stats/v2/LoadStatsResponse';
 
 export interface LoadReportingServiceClient extends grpc.Client {
   /**
@@ -103,6 +103,6 @@ export interface LoadReportingServiceHandlers extends grpc.UntypedServiceImpleme
    * from around the world, computes global assignment and prepares traffic
    * assignment destined for each zone Envoys are located in. Goto 2.
    */
-  StreamLoadStats(call: grpc.ServerDuplexStream<_envoy_service_load_stats_v2_LoadStatsRequest__Output, _envoy_service_load_stats_v2_LoadStatsResponse>): void;
+  StreamLoadStats: grpc.handleBidiStreamingCall<_envoy_service_load_stats_v2_LoadStatsRequest__Output, _envoy_service_load_stats_v2_LoadStatsResponse>;
   
 }

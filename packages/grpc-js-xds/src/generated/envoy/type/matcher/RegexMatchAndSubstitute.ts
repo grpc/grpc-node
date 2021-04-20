@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/type/matcher/regex.proto
 
-import { RegexMatcher as _envoy_type_matcher_RegexMatcher, RegexMatcher__Output as _envoy_type_matcher_RegexMatcher__Output } from '../../../envoy/type/matcher/RegexMatcher';
+import type { RegexMatcher as _envoy_type_matcher_RegexMatcher, RegexMatcher__Output as _envoy_type_matcher_RegexMatcher__Output } from '../../../envoy/type/matcher/RegexMatcher';
 
 /**
  * Describes how to match a string and then produce a new string using a regular

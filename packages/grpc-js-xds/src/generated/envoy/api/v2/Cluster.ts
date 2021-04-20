@@ -1,29 +1,29 @@
 // Original file: deps/envoy-api/envoy/api/v2/cluster.proto
 
-import { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../google/protobuf/Duration';
-import { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../google/protobuf/UInt32Value';
-import { Address as _envoy_api_v2_core_Address, Address__Output as _envoy_api_v2_core_Address__Output } from '../../../envoy/api/v2/core/Address';
-import { HealthCheck as _envoy_api_v2_core_HealthCheck, HealthCheck__Output as _envoy_api_v2_core_HealthCheck__Output } from '../../../envoy/api/v2/core/HealthCheck';
-import { CircuitBreakers as _envoy_api_v2_cluster_CircuitBreakers, CircuitBreakers__Output as _envoy_api_v2_cluster_CircuitBreakers__Output } from '../../../envoy/api/v2/cluster/CircuitBreakers';
-import { UpstreamTlsContext as _envoy_api_v2_auth_UpstreamTlsContext, UpstreamTlsContext__Output as _envoy_api_v2_auth_UpstreamTlsContext__Output } from '../../../envoy/api/v2/auth/UpstreamTlsContext';
-import { Http1ProtocolOptions as _envoy_api_v2_core_Http1ProtocolOptions, Http1ProtocolOptions__Output as _envoy_api_v2_core_Http1ProtocolOptions__Output } from '../../../envoy/api/v2/core/Http1ProtocolOptions';
-import { Http2ProtocolOptions as _envoy_api_v2_core_Http2ProtocolOptions, Http2ProtocolOptions__Output as _envoy_api_v2_core_Http2ProtocolOptions__Output } from '../../../envoy/api/v2/core/Http2ProtocolOptions';
-import { OutlierDetection as _envoy_api_v2_cluster_OutlierDetection, OutlierDetection__Output as _envoy_api_v2_cluster_OutlierDetection__Output } from '../../../envoy/api/v2/cluster/OutlierDetection';
-import { BindConfig as _envoy_api_v2_core_BindConfig, BindConfig__Output as _envoy_api_v2_core_BindConfig__Output } from '../../../envoy/api/v2/core/BindConfig';
-import { TransportSocket as _envoy_api_v2_core_TransportSocket, TransportSocket__Output as _envoy_api_v2_core_TransportSocket__Output } from '../../../envoy/api/v2/core/TransportSocket';
-import { Metadata as _envoy_api_v2_core_Metadata, Metadata__Output as _envoy_api_v2_core_Metadata__Output } from '../../../envoy/api/v2/core/Metadata';
-import { HttpProtocolOptions as _envoy_api_v2_core_HttpProtocolOptions, HttpProtocolOptions__Output as _envoy_api_v2_core_HttpProtocolOptions__Output } from '../../../envoy/api/v2/core/HttpProtocolOptions';
-import { UpstreamConnectionOptions as _envoy_api_v2_UpstreamConnectionOptions, UpstreamConnectionOptions__Output as _envoy_api_v2_UpstreamConnectionOptions__Output } from '../../../envoy/api/v2/UpstreamConnectionOptions';
-import { ClusterLoadAssignment as _envoy_api_v2_ClusterLoadAssignment, ClusterLoadAssignment__Output as _envoy_api_v2_ClusterLoadAssignment__Output } from '../../../envoy/api/v2/ClusterLoadAssignment';
-import { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_Struct__Output } from '../../../google/protobuf/Struct';
-import { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../google/protobuf/Any';
-import { Filter as _envoy_api_v2_cluster_Filter, Filter__Output as _envoy_api_v2_cluster_Filter__Output } from '../../../envoy/api/v2/cluster/Filter';
-import { LoadBalancingPolicy as _envoy_api_v2_LoadBalancingPolicy, LoadBalancingPolicy__Output as _envoy_api_v2_LoadBalancingPolicy__Output } from '../../../envoy/api/v2/LoadBalancingPolicy';
-import { ConfigSource as _envoy_api_v2_core_ConfigSource, ConfigSource__Output as _envoy_api_v2_core_ConfigSource__Output } from '../../../envoy/api/v2/core/ConfigSource';
-import { UpstreamHttpProtocolOptions as _envoy_api_v2_core_UpstreamHttpProtocolOptions, UpstreamHttpProtocolOptions__Output as _envoy_api_v2_core_UpstreamHttpProtocolOptions__Output } from '../../../envoy/api/v2/core/UpstreamHttpProtocolOptions';
-import { UInt64Value as _google_protobuf_UInt64Value, UInt64Value__Output as _google_protobuf_UInt64Value__Output } from '../../../google/protobuf/UInt64Value';
-import { Percent as _envoy_type_Percent, Percent__Output as _envoy_type_Percent__Output } from '../../../envoy/type/Percent';
-import { Long } from '@grpc/proto-loader';
+import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../google/protobuf/Duration';
+import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../google/protobuf/UInt32Value';
+import type { Address as _envoy_api_v2_core_Address, Address__Output as _envoy_api_v2_core_Address__Output } from '../../../envoy/api/v2/core/Address';
+import type { HealthCheck as _envoy_api_v2_core_HealthCheck, HealthCheck__Output as _envoy_api_v2_core_HealthCheck__Output } from '../../../envoy/api/v2/core/HealthCheck';
+import type { CircuitBreakers as _envoy_api_v2_cluster_CircuitBreakers, CircuitBreakers__Output as _envoy_api_v2_cluster_CircuitBreakers__Output } from '../../../envoy/api/v2/cluster/CircuitBreakers';
+import type { UpstreamTlsContext as _envoy_api_v2_auth_UpstreamTlsContext, UpstreamTlsContext__Output as _envoy_api_v2_auth_UpstreamTlsContext__Output } from '../../../envoy/api/v2/auth/UpstreamTlsContext';
+import type { Http1ProtocolOptions as _envoy_api_v2_core_Http1ProtocolOptions, Http1ProtocolOptions__Output as _envoy_api_v2_core_Http1ProtocolOptions__Output } from '../../../envoy/api/v2/core/Http1ProtocolOptions';
+import type { Http2ProtocolOptions as _envoy_api_v2_core_Http2ProtocolOptions, Http2ProtocolOptions__Output as _envoy_api_v2_core_Http2ProtocolOptions__Output } from '../../../envoy/api/v2/core/Http2ProtocolOptions';
+import type { OutlierDetection as _envoy_api_v2_cluster_OutlierDetection, OutlierDetection__Output as _envoy_api_v2_cluster_OutlierDetection__Output } from '../../../envoy/api/v2/cluster/OutlierDetection';
+import type { BindConfig as _envoy_api_v2_core_BindConfig, BindConfig__Output as _envoy_api_v2_core_BindConfig__Output } from '../../../envoy/api/v2/core/BindConfig';
+import type { TransportSocket as _envoy_api_v2_core_TransportSocket, TransportSocket__Output as _envoy_api_v2_core_TransportSocket__Output } from '../../../envoy/api/v2/core/TransportSocket';
+import type { Metadata as _envoy_api_v2_core_Metadata, Metadata__Output as _envoy_api_v2_core_Metadata__Output } from '../../../envoy/api/v2/core/Metadata';
+import type { HttpProtocolOptions as _envoy_api_v2_core_HttpProtocolOptions, HttpProtocolOptions__Output as _envoy_api_v2_core_HttpProtocolOptions__Output } from '../../../envoy/api/v2/core/HttpProtocolOptions';
+import type { UpstreamConnectionOptions as _envoy_api_v2_UpstreamConnectionOptions, UpstreamConnectionOptions__Output as _envoy_api_v2_UpstreamConnectionOptions__Output } from '../../../envoy/api/v2/UpstreamConnectionOptions';
+import type { ClusterLoadAssignment as _envoy_api_v2_ClusterLoadAssignment, ClusterLoadAssignment__Output as _envoy_api_v2_ClusterLoadAssignment__Output } from '../../../envoy/api/v2/ClusterLoadAssignment';
+import type { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_Struct__Output } from '../../../google/protobuf/Struct';
+import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../google/protobuf/Any';
+import type { Filter as _envoy_api_v2_cluster_Filter, Filter__Output as _envoy_api_v2_cluster_Filter__Output } from '../../../envoy/api/v2/cluster/Filter';
+import type { LoadBalancingPolicy as _envoy_api_v2_LoadBalancingPolicy, LoadBalancingPolicy__Output as _envoy_api_v2_LoadBalancingPolicy__Output } from '../../../envoy/api/v2/LoadBalancingPolicy';
+import type { ConfigSource as _envoy_api_v2_core_ConfigSource, ConfigSource__Output as _envoy_api_v2_core_ConfigSource__Output } from '../../../envoy/api/v2/core/ConfigSource';
+import type { UpstreamHttpProtocolOptions as _envoy_api_v2_core_UpstreamHttpProtocolOptions, UpstreamHttpProtocolOptions__Output as _envoy_api_v2_core_UpstreamHttpProtocolOptions__Output } from '../../../envoy/api/v2/core/UpstreamHttpProtocolOptions';
+import type { UInt64Value as _google_protobuf_UInt64Value, UInt64Value__Output as _google_protobuf_UInt64Value__Output } from '../../../google/protobuf/UInt64Value';
+import type { Percent as _envoy_type_Percent, Percent__Output as _envoy_type_Percent__Output } from '../../../envoy/type/Percent';
+import type { Long } from '@grpc/proto-loader';
 
 // Original file: deps/envoy-api/envoy/api/v2/cluster.proto
 

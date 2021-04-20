@@ -1,8 +1,7 @@
 export { trace } from './logging';
-export { Resolver, ResolverListener, registerResolver } from './resolver';
+export { Resolver, ResolverListener, registerResolver, ConfigSelector } from './resolver';
 export { GrpcUri, uriToString } from './uri-parser';
 export { ServiceConfig } from './service-config';
-export { createGoogleDefaultCredentials } from './channel-credentials';
 export { BackoffTimeout } from './backoff-timeout';
 export { LoadBalancer, LoadBalancingConfig, ChannelControlHelper, registerLoadBalancerType, getFirstUsableConfig, validateLoadBalancingConfig } from './load-balancer';
 export { SubchannelAddress, subchannelAddressToString } from './subchannel';

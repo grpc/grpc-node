@@ -1,9 +1,9 @@
 // Original file: deps/envoy-api/envoy/api/v2/endpoint/load_report.proto
 
-import { Locality as _envoy_api_v2_core_Locality, Locality__Output as _envoy_api_v2_core_Locality__Output } from '../../../../envoy/api/v2/core/Locality';
-import { EndpointLoadMetricStats as _envoy_api_v2_endpoint_EndpointLoadMetricStats, EndpointLoadMetricStats__Output as _envoy_api_v2_endpoint_EndpointLoadMetricStats__Output } from '../../../../envoy/api/v2/endpoint/EndpointLoadMetricStats';
-import { UpstreamEndpointStats as _envoy_api_v2_endpoint_UpstreamEndpointStats, UpstreamEndpointStats__Output as _envoy_api_v2_endpoint_UpstreamEndpointStats__Output } from '../../../../envoy/api/v2/endpoint/UpstreamEndpointStats';
-import { Long } from '@grpc/proto-loader';
+import type { Locality as _envoy_api_v2_core_Locality, Locality__Output as _envoy_api_v2_core_Locality__Output } from '../../../../envoy/api/v2/core/Locality';
+import type { EndpointLoadMetricStats as _envoy_api_v2_endpoint_EndpointLoadMetricStats, EndpointLoadMetricStats__Output as _envoy_api_v2_endpoint_EndpointLoadMetricStats__Output } from '../../../../envoy/api/v2/endpoint/EndpointLoadMetricStats';
+import type { UpstreamEndpointStats as _envoy_api_v2_endpoint_UpstreamEndpointStats, UpstreamEndpointStats__Output as _envoy_api_v2_endpoint_UpstreamEndpointStats__Output } from '../../../../envoy/api/v2/endpoint/UpstreamEndpointStats';
+import type { Long } from '@grpc/proto-loader';
 
 /**
  * These are stats Envoy reports to GLB every so often. Report frequency is

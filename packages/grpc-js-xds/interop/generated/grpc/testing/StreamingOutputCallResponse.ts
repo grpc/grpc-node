@@ -1,6 +1,6 @@
 // Original file: proto/grpc/testing/messages.proto
 
-import { Payload as _grpc_testing_Payload, Payload__Output as _grpc_testing_Payload__Output } from '../../grpc/testing/Payload';
+import type { Payload as _grpc_testing_Payload, Payload__Output as _grpc_testing_Payload__Output } from '../../grpc/testing/Payload';
 
 /**
  * Server-streaming response, as configured by the request and parameters.

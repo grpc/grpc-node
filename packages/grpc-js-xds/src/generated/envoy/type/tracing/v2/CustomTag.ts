@@ -1,7 +1,7 @@
 // Original file: deps/envoy-api/envoy/type/tracing/v2/custom_tag.proto
 
-import { MetadataKind as _envoy_type_metadata_v2_MetadataKind, MetadataKind__Output as _envoy_type_metadata_v2_MetadataKind__Output } from '../../../../envoy/type/metadata/v2/MetadataKind';
-import { MetadataKey as _envoy_type_metadata_v2_MetadataKey, MetadataKey__Output as _envoy_type_metadata_v2_MetadataKey__Output } from '../../../../envoy/type/metadata/v2/MetadataKey';
+import type { MetadataKind as _envoy_type_metadata_v2_MetadataKind, MetadataKind__Output as _envoy_type_metadata_v2_MetadataKind__Output } from '../../../../envoy/type/metadata/v2/MetadataKind';
+import type { MetadataKey as _envoy_type_metadata_v2_MetadataKey, MetadataKey__Output as _envoy_type_metadata_v2_MetadataKey__Output } from '../../../../envoy/type/metadata/v2/MetadataKey';
 
 /**
  * Environment type custom tag with environment name and default value.

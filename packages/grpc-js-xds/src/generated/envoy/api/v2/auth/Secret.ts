@@ -1,9 +1,9 @@
 // Original file: deps/envoy-api/envoy/api/v2/auth/secret.proto
 
-import { TlsCertificate as _envoy_api_v2_auth_TlsCertificate, TlsCertificate__Output as _envoy_api_v2_auth_TlsCertificate__Output } from '../../../../envoy/api/v2/auth/TlsCertificate';
-import { TlsSessionTicketKeys as _envoy_api_v2_auth_TlsSessionTicketKeys, TlsSessionTicketKeys__Output as _envoy_api_v2_auth_TlsSessionTicketKeys__Output } from '../../../../envoy/api/v2/auth/TlsSessionTicketKeys';
-import { CertificateValidationContext as _envoy_api_v2_auth_CertificateValidationContext, CertificateValidationContext__Output as _envoy_api_v2_auth_CertificateValidationContext__Output } from '../../../../envoy/api/v2/auth/CertificateValidationContext';
-import { GenericSecret as _envoy_api_v2_auth_GenericSecret, GenericSecret__Output as _envoy_api_v2_auth_GenericSecret__Output } from '../../../../envoy/api/v2/auth/GenericSecret';
+import type { TlsCertificate as _envoy_api_v2_auth_TlsCertificate, TlsCertificate__Output as _envoy_api_v2_auth_TlsCertificate__Output } from '../../../../envoy/api/v2/auth/TlsCertificate';
+import type { TlsSessionTicketKeys as _envoy_api_v2_auth_TlsSessionTicketKeys, TlsSessionTicketKeys__Output as _envoy_api_v2_auth_TlsSessionTicketKeys__Output } from '../../../../envoy/api/v2/auth/TlsSessionTicketKeys';
+import type { CertificateValidationContext as _envoy_api_v2_auth_CertificateValidationContext, CertificateValidationContext__Output as _envoy_api_v2_auth_CertificateValidationContext__Output } from '../../../../envoy/api/v2/auth/CertificateValidationContext';
+import type { GenericSecret as _envoy_api_v2_auth_GenericSecret, GenericSecret__Output as _envoy_api_v2_auth_GenericSecret__Output } from '../../../../envoy/api/v2/auth/GenericSecret';
 
 /**
  * [#next-free-field: 6]

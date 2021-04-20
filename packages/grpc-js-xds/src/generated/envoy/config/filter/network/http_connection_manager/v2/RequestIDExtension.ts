@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.proto
 
-import { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../../../google/protobuf/Any';
+import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../../../google/protobuf/Any';
 
 export interface RequestIDExtension {
   /**

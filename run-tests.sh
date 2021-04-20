@@ -25,6 +25,8 @@ curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.4/install.sh | b
 set -ex
 cd $ROOT
 
+git submodule update --init --recursive
+
 if [ ! -n "$node_versions" ] ; then
   node_versions="8 10 12"
 fi

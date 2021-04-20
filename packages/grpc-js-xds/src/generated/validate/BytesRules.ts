@@ -1,6 +1,6 @@
 // Original file: deps/protoc-gen-validate/validate/validate.proto
 
-import { Long } from '@grpc/proto-loader';
+import type { Long } from '@grpc/proto-loader';
 
 /**
  * BytesRules describe the constraints applied to `bytes` values

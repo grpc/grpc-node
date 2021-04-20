@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/api/v2/core/protocol.proto
 
-import { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
+import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 
 /**
  * Defines a parameter to be sent in the SETTINGS frame.

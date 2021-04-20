@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.proto
 
-import { ConfigSource as _envoy_api_v2_core_ConfigSource, ConfigSource__Output as _envoy_api_v2_core_ConfigSource__Output } from '../../../../../../envoy/api/v2/core/ConfigSource';
+import type { ConfigSource as _envoy_api_v2_core_ConfigSource, ConfigSource__Output as _envoy_api_v2_core_ConfigSource__Output } from '../../../../../../envoy/api/v2/core/ConfigSource';
 
 export interface Rds {
   /**

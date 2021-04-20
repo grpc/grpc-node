@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/type/matcher/string.proto
 
-import { RegexMatcher as _envoy_type_matcher_RegexMatcher, RegexMatcher__Output as _envoy_type_matcher_RegexMatcher__Output } from '../../../envoy/type/matcher/RegexMatcher';
+import type { RegexMatcher as _envoy_type_matcher_RegexMatcher, RegexMatcher__Output as _envoy_type_matcher_RegexMatcher__Output } from '../../../envoy/type/matcher/RegexMatcher';
 
 /**
  * Specifies the way to match a string.

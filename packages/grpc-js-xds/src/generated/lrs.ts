@@ -1,11 +1,10 @@
-import * as grpc from '@grpc/grpc-js';
-import { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
+import type * as grpc from '@grpc/grpc-js';
+import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
 
-import { LoadReportingServiceClient as _envoy_service_load_stats_v2_LoadReportingServiceClient } from './envoy/service/load_stats/v2/LoadReportingService';
+import type { LoadReportingServiceClient as _envoy_service_load_stats_v2_LoadReportingServiceClient } from './envoy/service/load_stats/v2/LoadReportingService';
 
-type ConstructorArguments<Constructor> = Constructor extends new (...args: infer Args) => any ? Args: never;
-type SubtypeConstructor<Constructor, Subtype> = {
-  new(...args: ConstructorArguments<Constructor>): Subtype;
+type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {
+  new(...args: ConstructorParameters<Constructor>): Subtype;
 };
 
 export interface ProtoGrpcType {

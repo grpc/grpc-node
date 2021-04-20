@@ -1,24 +1,28 @@
-import * as grpc from '@grpc/grpc-js';
-import { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
+import type * as grpc from '@grpc/grpc-js';
+import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
 
-import { LoadBalancerStatsServiceClient as _grpc_testing_LoadBalancerStatsServiceClient } from './grpc/testing/LoadBalancerStatsService';
-import { ReconnectServiceClient as _grpc_testing_ReconnectServiceClient } from './grpc/testing/ReconnectService';
-import { TestServiceClient as _grpc_testing_TestServiceClient } from './grpc/testing/TestService';
-import { UnimplementedServiceClient as _grpc_testing_UnimplementedServiceClient } from './grpc/testing/UnimplementedService';
-import { XdsUpdateHealthServiceClient as _grpc_testing_XdsUpdateHealthServiceClient } from './grpc/testing/XdsUpdateHealthService';
+import type { LoadBalancerStatsServiceClient as _grpc_testing_LoadBalancerStatsServiceClient } from './grpc/testing/LoadBalancerStatsService';
+import type { ReconnectServiceClient as _grpc_testing_ReconnectServiceClient } from './grpc/testing/ReconnectService';
+import type { TestServiceClient as _grpc_testing_TestServiceClient } from './grpc/testing/TestService';
+import type { UnimplementedServiceClient as _grpc_testing_UnimplementedServiceClient } from './grpc/testing/UnimplementedService';
+import type { XdsUpdateClientConfigureServiceClient as _grpc_testing_XdsUpdateClientConfigureServiceClient } from './grpc/testing/XdsUpdateClientConfigureService';
+import type { XdsUpdateHealthServiceClient as _grpc_testing_XdsUpdateHealthServiceClient } from './grpc/testing/XdsUpdateHealthService';
 
-type ConstructorArguments<Constructor> = Constructor extends new (...args: infer Args) => any ? Args: never;
-type SubtypeConstructor<Constructor, Subtype> = {
-  new(...args: ConstructorArguments<Constructor>): Subtype;
+type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {
+  new(...args: ConstructorParameters<Constructor>): Subtype;
 };
 
 export interface ProtoGrpcType {
   grpc: {
     testing: {
       BoolValue: MessageTypeDefinition
+      ClientConfigureRequest: MessageTypeDefinition
+      ClientConfigureResponse: MessageTypeDefinition
       EchoStatus: MessageTypeDefinition
       Empty: MessageTypeDefinition
       GrpclbRouteType: EnumTypeDefinition
+      LoadBalancerAccumulatedStatsRequest: MessageTypeDefinition
+      LoadBalancerAccumulatedStatsResponse: MessageTypeDefinition
       LoadBalancerStatsRequest: MessageTypeDefinition
       LoadBalancerStatsResponse: MessageTypeDefinition
       /**
@@ -50,6 +54,10 @@ export interface ProtoGrpcType {
        * that case.
        */
       UnimplementedService: SubtypeConstructor<typeof grpc.Client, _grpc_testing_UnimplementedServiceClient> & { service: ServiceDefinition }
+      /**
+       * A service to dynamically update the configuration of an xDS test client.
+       */
+      XdsUpdateClientConfigureService: SubtypeConstructor<typeof grpc.Client, _grpc_testing_XdsUpdateClientConfigureServiceClient> & { service: ServiceDefinition }
       /**
        * A service to remotely control health status of an xDS test server.
        */

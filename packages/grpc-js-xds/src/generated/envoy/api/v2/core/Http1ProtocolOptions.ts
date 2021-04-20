@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/api/v2/core/protocol.proto
 
-import { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../../google/protobuf/BoolValue';
+import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../../google/protobuf/BoolValue';
 
 export interface _envoy_api_v2_core_Http1ProtocolOptions_HeaderKeyFormat {
   /**

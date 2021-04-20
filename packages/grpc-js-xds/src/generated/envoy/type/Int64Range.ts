@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/type/range.proto
 
-import { Long } from '@grpc/proto-loader';
+import type { Long } from '@grpc/proto-loader';
 
 /**
  * Specifies the int64 start and end of the range using half-open interval semantics [start,

@@ -1,6 +1,6 @@
 // Original file: proto/grpc/testing/messages.proto
 
-import { BoolValue as _grpc_testing_BoolValue, BoolValue__Output as _grpc_testing_BoolValue__Output } from '../../grpc/testing/BoolValue';
+import type { BoolValue as _grpc_testing_BoolValue, BoolValue__Output as _grpc_testing_BoolValue__Output } from '../../grpc/testing/BoolValue';
 
 /**
  * Configuration for a particular response.
