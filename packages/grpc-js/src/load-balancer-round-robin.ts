@@ -260,7 +260,13 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     const readyOrConnectingCount = this.subchannels.filter(subchannelIsReadyOrTryingToConnect).length;
     if (readyOrConnectingCount < TARGET_CONNECTION_COUNT) {
       const notReadyOrConnecting = this.subchannels.filter(subchannel => !subchannelIsReadyOrTryingToConnect(subchannel));
-      const subchannelsToConnect = chooseRandomSubset(notReadyOrConnecting, TARGET_CONNECTION_COUNT - readyOrConnectingCount);
+      // Prioritize subchannels that are not in TRANSIENT_FAILURE
+      const notReadyOrConnectingOrTf = notReadyOrConnecting.filter(subchannel => subchannel.getConnectivityState() !== ConnectivityState.TRANSIENT_FAILURE);
+      const subchannelsToConnect = chooseRandomSubset(notReadyOrConnectingOrTf, TARGET_CONNECTION_COUNT - readyOrConnectingCount);
+      if (readyOrConnectingCount + subchannelsToConnect.length < TARGET_CONNECTION_COUNT) {
+        const tfNotConnecting = notReadyOrConnecting.filter(subchannel => subchannel.getConnectivityState() === ConnectivityState.TRANSIENT_FAILURE);
+        subchannelsToConnect.push(...chooseRandomSubset(tfNotConnecting, TARGET_CONNECTION_COUNT - readyOrConnectingCount - subchannelsToConnect.length));
+      }
       trace('Connecting to subchannels ' + subchannelsToConnect.map(subchannel => subchannel.getAddress()));
       for (const subchannel of subchannelsToConnect) {
         subchannel.startConnecting();
