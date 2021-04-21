@@ -198,9 +198,9 @@ export class Client {
     options: CallOptions;
     callback: UnaryCallback<ResponseType>;
   } {
-    if (arg1 instanceof Function) {
+    if (Object.prototype.toString.call(arg1) === '[object Function]') {
       return { metadata: new Metadata(), options: {}, callback: arg1 };
-    } else if (arg2 instanceof Function) {
+    } else if (Object.prototype.toString.call(arg2) === '[object Function]') {
       if (arg1 instanceof Metadata) {
         return { metadata: arg1, options: {}, callback: arg2 };
       } else {
@@ -211,7 +211,7 @@ export class Client {
         !(
           arg1 instanceof Metadata &&
           arg2 instanceof Object &&
-          arg3 instanceof Function
+          Object.prototype.toString.call(arg3) === '[object Function]'
         )
       ) {
         throw new Error('Incorrect arguments passed');
