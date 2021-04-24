@@ -55,6 +55,10 @@ const INTERCEPTOR_SYMBOL = Symbol();
 const INTERCEPTOR_PROVIDER_SYMBOL = Symbol();
 const CALL_INVOCATION_TRANSFORMER_SYMBOL = Symbol();
 
+function isFunction<ResponseType>(arg: Metadata | CallOptions | UnaryCallback<ResponseType>): boolean {
+  return Object.prototype.toString.call(arg) === '[object Function]'
+}
+
 export interface UnaryCallback<ResponseType> {
   (err: ServiceError | null, value?: ResponseType): void;
 }
@@ -198,9 +202,9 @@ export class Client {
     options: CallOptions;
     callback: UnaryCallback<ResponseType>;
   } {
-    if (Object.prototype.toString.call(arg1) === '[object Function]') {
+    if (isFunction(arg1)) {
       return { metadata: new Metadata(), options: {}, callback: arg1 };
-    } else if (Object.prototype.toString.call(arg2) === '[object Function]') {
+    } else if (isFunction(arg2)) {
       if (arg1 instanceof Metadata) {
         return { metadata: arg1, options: {}, callback: arg2 };
       } else {
@@ -211,7 +215,7 @@ export class Client {
         !(
           arg1 instanceof Metadata &&
           arg2 instanceof Object &&
-          Object.prototype.toString.call(arg3) === '[object Function]'
+          isFunction(arg3)
         )
       ) {
         throw new Error('Incorrect arguments passed');
@@ -671,3 +675,4 @@ export class Client {
     return stream;
   }
 }
+
