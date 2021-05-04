@@ -542,7 +542,7 @@ function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: 
 }
 
 function generateServiceDefinitionInterface(formatter: TextFormatter, serviceType: Protobuf.Service) {
-  formatter.writeLine(`export interface ${serviceType.name}Definition {`);
+  formatter.writeLine(`export interface ${serviceType.name}Definition extends grpc.ServiceDefinition {`);
   formatter.indent();
   for (const methodName of Object.keys(serviceType.methods).sort()) {
     const method = serviceType.methods[methodName];
