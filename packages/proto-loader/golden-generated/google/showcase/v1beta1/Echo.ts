@@ -191,7 +191,7 @@ export interface EchoHandlers extends grpc.UntypedServiceImplementation {
   
 }
 
-export interface EchoDefinition {
+export interface EchoDefinition extends grpc.ServiceDefinition {
   Block: MethodDefinition<_google_showcase_v1beta1_BlockRequest, _google_showcase_v1beta1_BlockResponse, _google_showcase_v1beta1_BlockRequest__Output, _google_showcase_v1beta1_BlockResponse__Output>
   Chat: MethodDefinition<_google_showcase_v1beta1_EchoRequest, _google_showcase_v1beta1_EchoResponse, _google_showcase_v1beta1_EchoRequest__Output, _google_showcase_v1beta1_EchoResponse__Output>
   Collect: MethodDefinition<_google_showcase_v1beta1_EchoRequest, _google_showcase_v1beta1_EchoResponse, _google_showcase_v1beta1_EchoRequest__Output, _google_showcase_v1beta1_EchoResponse__Output>

@@ -232,7 +232,7 @@ export interface OperationsHandlers extends grpc.UntypedServiceImplementation {
   
 }
 
-export interface OperationsDefinition {
+export interface OperationsDefinition extends grpc.ServiceDefinition {
   CancelOperation: MethodDefinition<_google_longrunning_CancelOperationRequest, _google_protobuf_Empty, _google_longrunning_CancelOperationRequest__Output, _google_protobuf_Empty__Output>
   DeleteOperation: MethodDefinition<_google_longrunning_DeleteOperationRequest, _google_protobuf_Empty, _google_longrunning_DeleteOperationRequest__Output, _google_protobuf_Empty__Output>
   GetOperation: MethodDefinition<_google_longrunning_GetOperationRequest, _google_longrunning_Operation, _google_longrunning_GetOperationRequest__Output, _google_longrunning_Operation__Output>
