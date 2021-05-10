@@ -31,7 +31,7 @@ fi
 
 # the test command to run under an emulated aarch64 docker container.
 # we only run tests for a single version of node, since tests under an emulator are significantly slower.
-TEST_NODE_COMMAND="node_versions='8' ./run-tests.sh"
+TEST_NODE_COMMAND="node_versions='12' ./run-tests.sh"
 
 # use an actual aarch64 docker image (with a real aarch64 node) to run build & test grpc-js under an emulator
 # * mount the protobuf root as /work to be able to access the crosscompiled files
@@ -39,4 +39,4 @@ TEST_NODE_COMMAND="node_versions='8' ./run-tests.sh"
 #   running under current user's UID and GID. To be able to do that, we need to provide a home directory for the user
 #   otherwise the UID would be homeless under the docker container (which can lead to various issues). For simplicity,
 #   we just run map the user's home to a throwaway temporary directory.
-docker run $DOCKER_TTY_ARGS --rm --user "$(id -u):$(id -g)" -e "HOME=/home/fake-user" -v "$(mktemp -d):/home/fake-user" -v "$(pwd)":/work -w /work arm64v8/node:8-buster bash -c "$TEST_NODE_COMMAND"
+docker run $DOCKER_TTY_ARGS --rm --user "$(id -u):$(id -g)" -e "HOME=/home/fake-user" -v "$(mktemp -d):/home/fake-user" -v "$(pwd)":/work -w /work arm64v8/node:12-buster bash -c "$TEST_NODE_COMMAND"
