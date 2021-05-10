@@ -46,6 +46,7 @@ export JOBS=8
 export JUNIT_REPORT_STACK=1
 
 OS=$(uname)
+ARCH=$(uname -m)
 
 # TODO(mlumish): Add electron tests
 
@@ -87,7 +88,7 @@ if [ "$FAILED" = "true" ]
 then
   exit 1
 else
-  if [ "$OS" = "Linux" ]
+  if [ "$OS" = "Linux" ] && [ "$ARCH" != "aarch64"]
   then
     # If we can't download the token file, just skip reporting coverage
     gsutil cp gs://grpc-testing-secrets/coveralls_credentials/grpc-node.rc /tmp || exit 0
