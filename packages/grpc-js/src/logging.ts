@@ -22,7 +22,7 @@ let _logVerbosity: LogVerbosity = LogVerbosity.ERROR;
 
 const verbosityString = process.env.GRPC_NODE_VERBOSITY ?? process.env.GRPC_VERBOSITY ?? '';
 
-switch (verbosityString) {
+switch (verbosityString.toUpperCase()) {
   case 'DEBUG':
     _logVerbosity = LogVerbosity.DEBUG;
     break;
