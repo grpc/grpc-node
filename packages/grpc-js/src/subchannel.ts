@@ -598,7 +598,6 @@ export class Subchannel {
       this.transitionToState(
         [
           ConnectivityState.CONNECTING,
-          ConnectivityState.IDLE,
           ConnectivityState.READY,
         ],
         ConnectivityState.TRANSIENT_FAILURE
