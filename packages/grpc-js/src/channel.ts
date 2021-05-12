@@ -509,6 +509,11 @@ export class ChannelImplementation implements Channel {
   }
 
   private tryGetConfig(stream: Http2CallStream, metadata: Metadata) {
+    if (stream.getStatus() !== null) {
+      /* If the stream has a status, it has already finished and we don't need
+       * to take any more actions on it. */
+      return;
+    }
     if (this.configSelector === null) {
       /* This branch will only be taken at the beginning of the channel's life,
        * before the resolver ever returns a result. So, the
