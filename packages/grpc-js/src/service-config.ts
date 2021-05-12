@@ -34,10 +34,15 @@ export interface MethodConfigName {
   method?: string;
 }
 
+export interface Duration {
+  seconds: number;
+  nanos: number;
+}
+
 export interface MethodConfig {
   name: MethodConfigName[];
   waitForReady?: boolean;
-  timeout?: string;
+  timeout?: Duration;
   maxRequestBytes?: number;
   maxResponseBytes?: number;
 }
@@ -101,13 +106,25 @@ function validateMethodConfig(obj: any): MethodConfig {
     result.waitForReady = obj.waitForReady;
   }
   if ('timeout' in obj) {
-    if (
-      !(typeof obj.timeout === 'string') ||
-      !TIMEOUT_REGEX.test(obj.timeout)
+    if (typeof obj.timeout === 'object') {
+      if (!('seconds' in obj.timeout) || !(typeof obj.timeout.seconds === 'number')) {
+        throw new Error('Invalid method config: invalid timeout.seconds');
+      }
+      if (!('nanos' in obj.timeout) || !(typeof obj.timeout.nanos === 'number')) {
+        throw new Error('Invalid method config: invalid timeout.nanos');
+      }
+      result.timeout = obj.timeout;
+    } else if (
+      (typeof obj.timeout === 'string') && TIMEOUT_REGEX.test(obj.timeout)
     ) {
+      const timeoutParts = obj.timeout.substring(0, obj.timeout.length - 1).split('.');
+      result.timeout = {
+        seconds: timeoutParts[0] | 0,
+        nanos: (timeoutParts[1] ?? 0) | 0
+      }
+    } else {
       throw new Error('Invalid method config: invalid timeout');
     }
-    result.timeout = obj.timeout;
   }
   if ('maxRequestBytes' in obj) {
     if (typeof obj.maxRequestBytes !== 'number') {

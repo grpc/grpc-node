@@ -42,36 +42,52 @@ function getDeadline(deadline: number) {
 
 export class DeadlineFilter extends BaseFilter implements Filter {
   private timer: NodeJS.Timer | null = null;
-  private deadline: number;
+  private deadline: number = Infinity;
   constructor(
     private readonly channel: Channel,
     private readonly callStream: Call
   ) {
     super();
-    const callDeadline = callStream.getDeadline();
+    this.retreiveDeadline();
+    this.runTimer();
+  }
+
+  private retreiveDeadline() {
+    const callDeadline = this.callStream.getDeadline();
     if (callDeadline instanceof Date) {
       this.deadline = callDeadline.getTime();
     } else {
       this.deadline = callDeadline;
     }
+  }
+
+  private runTimer() {
+    if (this.timer) {
+      clearTimeout(this.timer);
+    }
     const now: number = new Date().getTime();
     let timeout = this.deadline - now;
     if (timeout <= 0) {
       process.nextTick(() => {
-        callStream.cancelWithStatus(
+        this.callStream.cancelWithStatus(
           Status.DEADLINE_EXCEEDED,
           'Deadline exceeded'
         );
       });
     } else if (this.deadline !== Infinity) {
       this.timer = setTimeout(() => {
-        callStream.cancelWithStatus(
+        this.callStream.cancelWithStatus(
           Status.DEADLINE_EXCEEDED,
           'Deadline exceeded'
         );
       }, timeout);
       this.timer.unref?.();
     }
+  }
+
+  refresh() {
+    this.retreiveDeadline();
+    this.runTimer();
   }
 
   async sendMetadata(metadata: Promise<Metadata>) {

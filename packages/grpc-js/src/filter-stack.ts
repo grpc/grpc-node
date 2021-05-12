@@ -71,6 +71,12 @@ export class FilterStack implements Filter {
 
     return result;
   }
+
+  refresh(): void {
+    for (const filter of this.filters) {
+      filter.refresh();
+    }
+  }
 }
 
 export class FilterStackFactory implements FilterFactory<FilterStack> {

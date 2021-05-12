@@ -523,6 +523,14 @@ export class ChannelImplementation implements Channel {
     } else {
       const callConfig = this.configSelector(stream.getMethod(), metadata);
       if (callConfig.status === Status.OK) {
+        if (callConfig.methodConfig.timeout) {
+          const deadline = new Date();
+          deadline.setSeconds(deadline.getSeconds() + callConfig.methodConfig.timeout.seconds);
+          deadline.setMilliseconds(deadline.getMilliseconds() + callConfig.methodConfig.timeout.nanos / 1_000_000);
+          stream.setConfigDeadline(deadline);
+          // Refreshing the filters makes the deadline filter pick up the new deadline
+          stream.filterStack.refresh();
+        }
         this.tryPick(stream, metadata, callConfig);
       } else {
         stream.cancelWithStatus(callConfig.status, "Failed to route call to method " + stream.getMethod());

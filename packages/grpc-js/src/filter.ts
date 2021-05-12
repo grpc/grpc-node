@@ -32,6 +32,8 @@ export interface Filter {
   receiveMessage(message: Promise<Buffer>): Promise<Buffer>;
 
   receiveTrailers(status: StatusObject): StatusObject;
+
+  refresh(): void;
 }
 
 export abstract class BaseFilter implements Filter {
@@ -53,6 +55,9 @@ export abstract class BaseFilter implements Filter {
 
   receiveTrailers(status: StatusObject): StatusObject {
     return status;
+  }
+
+  refresh(): void {
   }
 }
 
