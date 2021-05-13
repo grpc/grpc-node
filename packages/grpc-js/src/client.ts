@@ -56,7 +56,7 @@ const INTERCEPTOR_PROVIDER_SYMBOL = Symbol();
 const CALL_INVOCATION_TRANSFORMER_SYMBOL = Symbol();
 
 function isFunction<ResponseType>(arg: Metadata | CallOptions | UnaryCallback<ResponseType> | undefined): arg is UnaryCallback<ResponseType>{
-  return Object.prototype.toString.call(arg) === '[object Function]'
+  return typeof arg === 'function';
 }
 
 export interface UnaryCallback<ResponseType> {
