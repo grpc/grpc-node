@@ -16,7 +16,7 @@
  */
 
 import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
-import { Cluster__Output } from "../generated/envoy/api/v2/Cluster";
+import { Cluster__Output } from "../generated/envoy/config/cluster/v3/Cluster";
 import { EdsState } from "./eds-state";
 import { Watcher, XdsStreamState } from "./xds-stream-state";
 

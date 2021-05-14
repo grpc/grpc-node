@@ -17,7 +17,7 @@
 
 import { connectivityState, status, Metadata, logVerbosity, experimental } from '@grpc/grpc-js';
 import { getSingletonXdsClient, XdsClient } from './xds-client';
-import { Cluster__Output } from './generated/envoy/api/v2/Cluster';
+import { Cluster__Output } from './generated/envoy/config/cluster/v3/Cluster';
 import SubchannelAddress = experimental.SubchannelAddress;
 import UnavailablePicker = experimental.UnavailablePicker;
 import ChildLoadBalancerHandler = experimental.ChildLoadBalancerHandler;

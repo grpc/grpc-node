@@ -17,19 +17,17 @@
 
 import * as protoLoader from '@grpc/proto-loader';
 import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
-import { Listener__Output } from "../generated/envoy/api/v2/Listener";
+import { Listener__Output } from '../generated/envoy/config/listener/v3/Listener';
 import { RdsState } from "./rds-state";
 import { Watcher, XdsStreamState } from "./xds-stream-state";
-import { HttpConnectionManager__Output } from '../generated/envoy/config/filter/network/http_connection_manager/v2/HttpConnectionManager';
+import { HttpConnectionManager__Output } from '../generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpConnectionManager';
+import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL_V2, HTTP_CONNECTION_MANGER_TYPE_URL_V3 } from '../resources';
 
 const TRACER_NAME = 'xds_client';
 
 function trace(text: string): void {
   experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
 }
-
-const HTTP_CONNECTION_MANGER_TYPE_URL =
-  'type.googleapis.com/envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager';
 
 export class LdsState implements XdsStreamState<Listener__Output> {
   versionInfo = '';
@@ -95,16 +93,13 @@ export class LdsState implements XdsStreamState<Listener__Output> {
     if (
       !(
         message.api_listener?.api_listener &&
-        protoLoader.isAnyExtension(message.api_listener.api_listener) &&
-        message.api_listener?.api_listener['@type'] ===
-          HTTP_CONNECTION_MANGER_TYPE_URL
+        (message.api_listener.api_listener.type_url === HTTP_CONNECTION_MANGER_TYPE_URL_V2 ||
+          message.api_listener.api_listener.type_url === HTTP_CONNECTION_MANGER_TYPE_URL_V3)
       )
     ) {
       return false;
     }
-    const httpConnectionManager = message.api_listener
-      ?.api_listener as protoLoader.AnyExtension &
-      HttpConnectionManager__Output;
+    const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL_V3, message.api_listener!.api_listener.value);
     switch (httpConnectionManager.route_specifier) {
       case 'rds':
         return !!httpConnectionManager.rds?.config_source?.ads;

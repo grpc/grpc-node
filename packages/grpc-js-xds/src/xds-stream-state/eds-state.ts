@@ -17,7 +17,7 @@
 
 import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
 import { isIPv4, isIPv6 } from "net";
-import { ClusterLoadAssignment__Output } from "../generated/envoy/api/v2/ClusterLoadAssignment";
+import { ClusterLoadAssignment__Output } from "../generated/envoy/config/endpoint/v3/ClusterLoadAssignment";
 import { Watcher, XdsStreamState } from "./xds-stream-state";
 
 const TRACER_NAME = 'xds_client';

@@ -17,10 +17,22 @@
 
 import * as fs from 'fs';
 import { Struct } from './generated/google/protobuf/Struct';
-import { Node } from './generated/envoy/api/v2/core/Node';
 import { Value } from './generated/google/protobuf/Value';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+export interface Locality {
+  region?: string;
+  zone?: string;
+  sub_zone?: string;
+}
+
+export interface Node {
+  id: string,
+  locality: Locality;
+  cluster?: string;
+  metadata?: Struct;
+}
 
 export interface ChannelCredsConfig {
   type: string;
@@ -30,6 +42,7 @@ export interface ChannelCredsConfig {
 export interface XdsServerConfig {
   serverUri: string;
   channelCreds: ChannelCredsConfig[];
+  serverFeatures: string[];
 }
 
 export interface BootstrapInfo {
@@ -81,9 +94,22 @@ function validateXdsServerConfig(obj: any): XdsServerConfig {
       'xds_servers.channel_creds field: at least one entry is required'
     );
   }
+  if ('server_features' in obj) {
+    if (!Array.isArray(obj.server_features)) {
+      throw new Error(
+        `xds_servers.server_features field: expected array, got ${typeof obj.server_features}`
+      );
+    }
+    for (const feature of obj.server_features) {
+      if (typeof feature !== 'string') {
+        `xds_servers.server_features field element: expected string, got ${typeof feature}`
+      }
+    }
+  }
   return {
     serverUri: obj.server_uri,
     channelCreds: obj.channel_creds.map(validateChannelCredsConfig),
+    serverFeatures: obj.server_features
   };
 }
 
@@ -149,7 +175,10 @@ function getStructFromJson(obj: any): Struct {
  * @param obj
  */
 function validateNode(obj: any): Node {
-  const result: Node = {};
+  const result: Node = {
+    id: '',
+    locality: {}
+  };
   if (!('id' in obj)) {
     throw new Error('id field missing in node element');
   }

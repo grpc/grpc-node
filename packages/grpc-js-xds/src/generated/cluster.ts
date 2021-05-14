@@ -10,32 +10,22 @@ export interface ProtoGrpcType {
   envoy: {
     annotations: {
     }
-    api: {
-      v2: {
-        Cluster: MessageTypeDefinition
-        ClusterLoadAssignment: MessageTypeDefinition
-        LoadBalancingPolicy: MessageTypeDefinition
-        UpstreamBindConfig: MessageTypeDefinition
-        UpstreamConnectionOptions: MessageTypeDefinition
-        auth: {
-          CertificateValidationContext: MessageTypeDefinition
-          CommonTlsContext: MessageTypeDefinition
-          DownstreamTlsContext: MessageTypeDefinition
-          GenericSecret: MessageTypeDefinition
-          PrivateKeyProvider: MessageTypeDefinition
-          SdsSecretConfig: MessageTypeDefinition
-          Secret: MessageTypeDefinition
-          TlsCertificate: MessageTypeDefinition
-          TlsParameters: MessageTypeDefinition
-          TlsSessionTicketKeys: MessageTypeDefinition
-          UpstreamTlsContext: MessageTypeDefinition
-        }
-        cluster: {
+    config: {
+      cluster: {
+        v3: {
           CircuitBreakers: MessageTypeDefinition
+          Cluster: MessageTypeDefinition
+          ClusterCollection: MessageTypeDefinition
           Filter: MessageTypeDefinition
+          LoadBalancingPolicy: MessageTypeDefinition
           OutlierDetection: MessageTypeDefinition
+          TrackClusterStats: MessageTypeDefinition
+          UpstreamBindConfig: MessageTypeDefinition
+          UpstreamConnectionOptions: MessageTypeDefinition
         }
-        core: {
+      }
+      core: {
+        v3: {
           Address: MessageTypeDefinition
           AggregatedConfigSource: MessageTypeDefinition
           ApiConfigSource: MessageTypeDefinition
@@ -48,8 +38,10 @@ export interface ProtoGrpcType {
           ConfigSource: MessageTypeDefinition
           ControlPlane: MessageTypeDefinition
           DataSource: MessageTypeDefinition
+          EnvoyInternalAddress: MessageTypeDefinition
           EventServiceConfig: MessageTypeDefinition
           Extension: MessageTypeDefinition
+          ExtensionConfigSource: MessageTypeDefinition
           GrpcProtocolOptions: MessageTypeDefinition
           GrpcService: MessageTypeDefinition
           HeaderMap: MessageTypeDefinition
@@ -59,8 +51,10 @@ export interface ProtoGrpcType {
           HealthStatus: EnumTypeDefinition
           Http1ProtocolOptions: MessageTypeDefinition
           Http2ProtocolOptions: MessageTypeDefinition
+          Http3ProtocolOptions: MessageTypeDefinition
           HttpProtocolOptions: MessageTypeDefinition
           HttpUri: MessageTypeDefinition
+          KeepaliveSettings: MessageTypeDefinition
           Locality: MessageTypeDefinition
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition
@@ -73,6 +67,7 @@ export interface ProtoGrpcType {
           RuntimeDouble: MessageTypeDefinition
           RuntimeFeatureFlag: MessageTypeDefinition
           RuntimeFractionalPercent: MessageTypeDefinition
+          RuntimePercent: MessageTypeDefinition
           RuntimeUInt32: MessageTypeDefinition
           SelfConfigSource: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
@@ -81,9 +76,14 @@ export interface ProtoGrpcType {
           TcpProtocolOptions: MessageTypeDefinition
           TrafficDirection: EnumTypeDefinition
           TransportSocket: MessageTypeDefinition
+          TypedExtensionConfig: MessageTypeDefinition
           UpstreamHttpProtocolOptions: MessageTypeDefinition
+          WatchedDirectory: MessageTypeDefinition
         }
-        endpoint: {
+      }
+      endpoint: {
+        v3: {
+          ClusterLoadAssignment: MessageTypeDefinition
           Endpoint: MessageTypeDefinition
           LbEndpoint: MessageTypeDefinition
           LocalityLbEndpoints: MessageTypeDefinition
@@ -91,27 +91,26 @@ export interface ProtoGrpcType {
       }
     }
     type: {
-      CodecClientType: EnumTypeDefinition
-      DoubleRange: MessageTypeDefinition
-      FractionalPercent: MessageTypeDefinition
-      Int32Range: MessageTypeDefinition
-      Int64Range: MessageTypeDefinition
-      Percent: MessageTypeDefinition
-      SemanticVersion: MessageTypeDefinition
       matcher: {
-        ListStringMatcher: MessageTypeDefinition
-        RegexMatchAndSubstitute: MessageTypeDefinition
-        RegexMatcher: MessageTypeDefinition
-        StringMatcher: MessageTypeDefinition
+        v3: {
+          ListStringMatcher: MessageTypeDefinition
+          RegexMatchAndSubstitute: MessageTypeDefinition
+          RegexMatcher: MessageTypeDefinition
+          StringMatcher: MessageTypeDefinition
+        }
+      }
+      v3: {
+        CodecClientType: EnumTypeDefinition
+        DoubleRange: MessageTypeDefinition
+        FractionalPercent: MessageTypeDefinition
+        Int32Range: MessageTypeDefinition
+        Int64Range: MessageTypeDefinition
+        Percent: MessageTypeDefinition
+        SemanticVersion: MessageTypeDefinition
       }
     }
   }
   google: {
-    api: {
-      CustomHttpPattern: MessageTypeDefinition
-      Http: MessageTypeDefinition
-      HttpRule: MessageTypeDefinition
-    }
     protobuf: {
       Any: MessageTypeDefinition
       BoolValue: MessageTypeDefinition
@@ -155,10 +154,12 @@ export interface ProtoGrpcType {
   udpa: {
     annotations: {
       FieldMigrateAnnotation: MessageTypeDefinition
+      FieldSecurityAnnotation: MessageTypeDefinition
       FileMigrateAnnotation: MessageTypeDefinition
       MigrateAnnotation: MessageTypeDefinition
       PackageVersionStatus: EnumTypeDefinition
       StatusAnnotation: MessageTypeDefinition
+      VersioningAnnotation: MessageTypeDefinition
     }
   }
   validate: {
@@ -186,6 +187,16 @@ export interface ProtoGrpcType {
     TimestampRules: MessageTypeDefinition
     UInt32Rules: MessageTypeDefinition
     UInt64Rules: MessageTypeDefinition
+  }
+  xds: {
+    core: {
+      v3: {
+        Authority: MessageTypeDefinition
+        CollectionEntry: MessageTypeDefinition
+        ContextParams: MessageTypeDefinition
+        ResourceLocator: MessageTypeDefinition
+      }
+    }
   }
 }
 

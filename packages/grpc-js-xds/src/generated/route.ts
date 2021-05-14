@@ -10,11 +10,9 @@ export interface ProtoGrpcType {
   envoy: {
     annotations: {
     }
-    api: {
-      v2: {
-        RouteConfiguration: MessageTypeDefinition
-        Vhds: MessageTypeDefinition
-        core: {
+    config: {
+      core: {
+        v3: {
           Address: MessageTypeDefinition
           AggregatedConfigSource: MessageTypeDefinition
           ApiConfigSource: MessageTypeDefinition
@@ -27,7 +25,9 @@ export interface ProtoGrpcType {
           ConfigSource: MessageTypeDefinition
           ControlPlane: MessageTypeDefinition
           DataSource: MessageTypeDefinition
+          EnvoyInternalAddress: MessageTypeDefinition
           Extension: MessageTypeDefinition
+          ExtensionConfigSource: MessageTypeDefinition
           GrpcService: MessageTypeDefinition
           HeaderMap: MessageTypeDefinition
           HeaderValue: MessageTypeDefinition
@@ -37,6 +37,7 @@ export interface ProtoGrpcType {
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition
           Pipe: MessageTypeDefinition
+          ProxyProtocolConfig: MessageTypeDefinition
           RateLimitSettings: MessageTypeDefinition
           RemoteDataSource: MessageTypeDefinition
           RequestMethod: EnumTypeDefinition
@@ -45,6 +46,7 @@ export interface ProtoGrpcType {
           RuntimeDouble: MessageTypeDefinition
           RuntimeFeatureFlag: MessageTypeDefinition
           RuntimeFractionalPercent: MessageTypeDefinition
+          RuntimePercent: MessageTypeDefinition
           RuntimeUInt32: MessageTypeDefinition
           SelfConfigSource: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
@@ -52,22 +54,30 @@ export interface ProtoGrpcType {
           TcpKeepalive: MessageTypeDefinition
           TrafficDirection: EnumTypeDefinition
           TransportSocket: MessageTypeDefinition
+          TypedExtensionConfig: MessageTypeDefinition
+          WatchedDirectory: MessageTypeDefinition
         }
-        route: {
+      }
+      route: {
+        v3: {
           CorsPolicy: MessageTypeDefinition
           Decorator: MessageTypeDefinition
           DirectResponseAction: MessageTypeDefinition
           FilterAction: MessageTypeDefinition
+          FilterConfig: MessageTypeDefinition
           HeaderMatcher: MessageTypeDefinition
           HedgePolicy: MessageTypeDefinition
+          InternalRedirectPolicy: MessageTypeDefinition
           QueryParameterMatcher: MessageTypeDefinition
           RateLimit: MessageTypeDefinition
           RedirectAction: MessageTypeDefinition
           RetryPolicy: MessageTypeDefinition
           Route: MessageTypeDefinition
           RouteAction: MessageTypeDefinition
+          RouteConfiguration: MessageTypeDefinition
           RouteMatch: MessageTypeDefinition
           Tracing: MessageTypeDefinition
+          Vhds: MessageTypeDefinition
           VirtualCluster: MessageTypeDefinition
           VirtualHost: MessageTypeDefinition
           WeightedCluster: MessageTypeDefinition
@@ -75,28 +85,32 @@ export interface ProtoGrpcType {
       }
     }
     type: {
-      DoubleRange: MessageTypeDefinition
-      FractionalPercent: MessageTypeDefinition
-      Int32Range: MessageTypeDefinition
-      Int64Range: MessageTypeDefinition
-      Percent: MessageTypeDefinition
-      SemanticVersion: MessageTypeDefinition
       matcher: {
-        ListStringMatcher: MessageTypeDefinition
-        RegexMatchAndSubstitute: MessageTypeDefinition
-        RegexMatcher: MessageTypeDefinition
-        StringMatcher: MessageTypeDefinition
+        v3: {
+          ListStringMatcher: MessageTypeDefinition
+          RegexMatchAndSubstitute: MessageTypeDefinition
+          RegexMatcher: MessageTypeDefinition
+          StringMatcher: MessageTypeDefinition
+        }
       }
       metadata: {
-        v2: {
+        v3: {
           MetadataKey: MessageTypeDefinition
           MetadataKind: MessageTypeDefinition
         }
       }
       tracing: {
-        v2: {
+        v3: {
           CustomTag: MessageTypeDefinition
         }
+      }
+      v3: {
+        DoubleRange: MessageTypeDefinition
+        FractionalPercent: MessageTypeDefinition
+        Int32Range: MessageTypeDefinition
+        Int64Range: MessageTypeDefinition
+        Percent: MessageTypeDefinition
+        SemanticVersion: MessageTypeDefinition
       }
     }
   }
@@ -148,6 +162,7 @@ export interface ProtoGrpcType {
       MigrateAnnotation: MessageTypeDefinition
       PackageVersionStatus: EnumTypeDefinition
       StatusAnnotation: MessageTypeDefinition
+      VersioningAnnotation: MessageTypeDefinition
     }
   }
   validate: {
@@ -175,6 +190,13 @@ export interface ProtoGrpcType {
     TimestampRules: MessageTypeDefinition
     UInt32Rules: MessageTypeDefinition
     UInt64Rules: MessageTypeDefinition
+  }
+  xds: {
+    core: {
+      v3: {
+        Authority: MessageTypeDefinition
+      }
+    }
   }
 }
 

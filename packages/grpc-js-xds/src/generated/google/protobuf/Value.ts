@@ -16,7 +16,7 @@ export interface Value {
 
 export interface Value__Output {
   'nullValue'?: (keyof typeof _google_protobuf_NullValue);
-  'numberValue'?: (number | string);
+  'numberValue'?: (number);
   'stringValue'?: (string);
   'boolValue'?: (boolean);
   'structValue'?: (_google_protobuf_Struct__Output);

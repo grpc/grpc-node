@@ -17,7 +17,7 @@
 
 import { connectivityState as ConnectivityState, status as Status, Metadata, logVerbosity as LogVerbosity, experimental } from '@grpc/grpc-js';
 import { getSingletonXdsClient, XdsClient, XdsClusterDropStats } from './xds-client';
-import { ClusterLoadAssignment__Output } from './generated/envoy/api/v2/ClusterLoadAssignment';
+import { ClusterLoadAssignment__Output } from './generated/envoy/config/endpoint/v3/ClusterLoadAssignment';
 import { Locality__Output } from './generated/envoy/api/v2/core/Locality';
 import { LocalitySubchannelAddress, PriorityChild, PriorityLoadBalancingConfig } from './load-balancer-priority';
 import LoadBalancer = experimental.LoadBalancer;

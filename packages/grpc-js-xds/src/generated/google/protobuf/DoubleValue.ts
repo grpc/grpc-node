@@ -6,5 +6,5 @@ export interface DoubleValue {
 }
 
 export interface DoubleValue__Output {
-  'value': (number | string);
+  'value': (number);
 }
