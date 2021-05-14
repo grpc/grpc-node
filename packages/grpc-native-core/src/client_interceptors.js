@@ -1335,15 +1335,15 @@ var listenerGenerators = {
  * @return {grpc~Listener}
  */
 function getLastListener(method_definition, emitter, callback) {
-  if (toString.call(emitter) === '[object Function]') {
+  if (typeof emitter === 'function') {
     callback = emitter;
     callback = function() {};
   }
-  if (!(toString.call(callback) === '[object Function]')) {
+  if (typeof callback !== 'function') {
     callback = function() {};
   }
   if (!((emitter instanceof EventEmitter) &&
-       (toString.call(callback) === '[object Function]'))) {
+       (typeof callback === 'function'))) {
     throw new Error('Argument mismatch in getLastListener');
   }
   var method_type = common.getMethodType(method_definition);
@@ -1376,7 +1376,7 @@ function getInterceptingCall(method_definition, options,
  * @return {Interceptor}
  */
 function _getLastInterceptor(method_definition, channel, responder) {
-  var callback = (toString.call(responder) === '[object Function]') ? responder : function() {};
+  var callback = typeof responder === 'function' ? responder : function() {};
   var emitter = (responder instanceof EventEmitter) ? responder :
                                                       new EventEmitter();
   var method_type = common.getMethodType(method_definition);
