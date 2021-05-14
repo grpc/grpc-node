@@ -70,6 +70,17 @@ function getSystemErrorName(errno: number): string {
 
 export type Deadline = Date | number;
 
+function getMinDeadline(deadlineList: Deadline[]): Deadline {
+  let minValue: number = Infinity;
+  for (const deadline of deadlineList) {
+    const deadlineMsecs = deadline instanceof Date ? deadline.getTime() : deadline;
+    if (deadlineMsecs < minValue) {
+      minValue = deadlineMsecs;
+    }
+  }
+  return minValue;
+}
+
 export interface CallStreamOptions {
   deadline: Deadline;
   flags: number;
@@ -234,6 +245,8 @@ export class Http2CallStream implements Call {
   private listener: InterceptingListener | null = null;
 
   private internalError: SystemError | null = null;
+
+  private configDeadline: Deadline = Infinity;
 
   constructor(
     private readonly methodName: string,
@@ -675,15 +688,14 @@ export class Http2CallStream implements Call {
   }
 
   getDeadline(): Deadline {
+    const deadlineList = [this.options.deadline];
     if (this.options.parentCall && this.options.flags & Propagate.DEADLINE) {
-      const parentDeadline = this.options.parentCall.getDeadline();
-      const selfDeadline = this.options.deadline;
-      const parentDeadlineMsecs = parentDeadline instanceof Date ? parentDeadline.getTime() : parentDeadline;
-      const selfDeadlineMsecs = selfDeadline instanceof Date ? selfDeadline.getTime() : selfDeadline;
-      return Math.min(parentDeadlineMsecs, selfDeadlineMsecs);
-    } else {
-      return this.options.deadline;
+      deadlineList.push(this.options.parentCall.getDeadline());
     }
+    if (this.configDeadline) {
+      deadlineList.push(this.configDeadline);
+    }
+    return getMinDeadline(deadlineList);
   }
 
   getCredentials(): CallCredentials {
@@ -708,6 +720,10 @@ export class Http2CallStream implements Call {
 
   getHost(): string {
     return this.options.host;
+  }
+
+  setConfigDeadline(configDeadline: Deadline) {
+    this.configDeadline = configDeadline;
   }
 
   startRead() {

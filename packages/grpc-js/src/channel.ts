@@ -509,6 +509,11 @@ export class ChannelImplementation implements Channel {
   }
 
   private tryGetConfig(stream: Http2CallStream, metadata: Metadata) {
+    if (stream.getStatus() !== null) {
+      /* If the stream has a status, it has already finished and we don't need
+       * to take any more actions on it. */
+      return;
+    }
     if (this.configSelector === null) {
       /* This branch will only be taken at the beginning of the channel's life,
        * before the resolver ever returns a result. So, the
@@ -523,6 +528,14 @@ export class ChannelImplementation implements Channel {
     } else {
       const callConfig = this.configSelector(stream.getMethod(), metadata);
       if (callConfig.status === Status.OK) {
+        if (callConfig.methodConfig.timeout) {
+          const deadline = new Date();
+          deadline.setSeconds(deadline.getSeconds() + callConfig.methodConfig.timeout.seconds);
+          deadline.setMilliseconds(deadline.getMilliseconds() + callConfig.methodConfig.timeout.nanos / 1_000_000);
+          stream.setConfigDeadline(deadline);
+          // Refreshing the filters makes the deadline filter pick up the new deadline
+          stream.filterStack.refresh();
+        }
         this.tryPick(stream, metadata, callConfig);
       } else {
         stream.cancelWithStatus(callConfig.status, "Failed to route call to method " + stream.getMethod());
