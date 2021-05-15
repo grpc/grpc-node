@@ -43,6 +43,9 @@ exports.deserializeCls = function deserializeCls(cls, options) {
    * @return {cls} The resulting object
    */
   return function deserialize(arg_buf) {
+    if (!(arg_buf instanceof Buffer)) {
+      throw new Error('Invalid deserialize argument, got' + arg_buf);
+    }
     // Convert to a native object with binary fields as Buffers (first argument)
     // and longs as strings (second argument)
     return cls.decode(arg_buf).toRaw(options.binaryAsBase64,
