@@ -40,6 +40,8 @@ import { XdsClusterManagerLoadBalancingConfig } from './load-balancer-xds-cluste
 import { ExactValueMatcher, Fraction, FullMatcher, HeaderMatcher, Matcher, PathExactValueMatcher, PathPrefixValueMatcher, PathSafeRegexValueMatcher, PrefixValueMatcher, PresentValueMatcher, RangeValueMatcher, RejectValueMatcher, SafeRegexValueMatcher, SuffixValueMatcher, ValueMatcher } from './matcher';
 import { RouteAction, SingleClusterRouteAction, WeightedCluster, WeightedClusterRouteAction } from './route-action';
 import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL_V3 } from './resources';
+import Duration = experimental.Duration;
+import { Duration__Output } from './generated/google/protobuf/Duration';
 
 const TRACER_NAME = 'xds_resolver';
 
@@ -187,6 +189,20 @@ function getPredicateForMatcher(routeMatch: RouteMatch__Output): Matcher {
   return new FullMatcher(pathMatcher, headerMatchers, runtimeFraction);
 }
 
+/**
+ * Convert a Duration protobuf message object to a Duration object as used in
+ * the ServiceConfig definition. The difference is that the protobuf message
+ * defines seconds as a long, which is represented as a string in JavaScript,
+ * and the one used in the service config defines it as a number.
+ * @param duration 
+ */
+function protoDurationToDuration(duration: Duration__Output): Duration {
+  return {
+    seconds: Number.parseInt(duration.seconds),
+    nanos: duration.nanos
+  }
+}
+
 class XdsResolver implements Resolver {
   private hasReportedSuccess = false;
 
@@ -203,6 +219,8 @@ class XdsResolver implements Resolver {
 
   private clusterRefcounts = new Map<string, {inLastConfig: boolean, refCount: number}>();
 
+  private latestDefaultTimeout: Duration | undefined = undefined;
+
   constructor(
     private target: GrpcUri,
     private listener: ResolverListener,
@@ -211,6 +229,12 @@ class XdsResolver implements Resolver {
     this.ldsWatcher = {
       onValidUpdate: (update: Listener__Output) => {
         const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL_V3, update.api_listener!.api_listener!.value);
+        const defaultTimeout = httpConnectionManager.common_http_protocol_options?.idle_timeout;
+        if (defaultTimeout === undefined) {
+          this.latestDefaultTimeout = undefined;
+        } else {
+          this.latestDefaultTimeout = protoDurationToDuration(defaultTimeout);
+        }
         switch (httpConnectionManager.route_specifier) {
           case 'rds': {
             const routeConfigName = httpConnectionManager.rds!.route_config_name;
@@ -295,13 +319,28 @@ class XdsResolver implements Resolver {
     const matchList: {matcher: Matcher, action: RouteAction}[] = [];
     for (const route of virtualHost.routes) {
       let routeAction: RouteAction;
+      let timeout: Duration | undefined;
+      /* For field prioritization see
+       * https://github.com/grpc/proposal/blob/master/A31-xds-timeout-support-and-config-selector.md#supported-fields
+       */
+      if (route.route?.max_stream_duration?.grpc_timeout_header_max) {
+        timeout = protoDurationToDuration(route.route.max_stream_duration.grpc_timeout_header_max);
+      } else if (route.route?.max_stream_duration?.max_stream_duration) {
+        timeout = protoDurationToDuration(route.route.max_stream_duration.max_stream_duration);
+      } else {
+        timeout = this.latestDefaultTimeout;
+      }
+      // "A value of 0 indicates the application's deadline is used without modification."
+      if (timeout?.seconds === 0 && timeout.nanos === 0) {
+        timeout = undefined;
+      }
       switch (route.route!.cluster_specifier) {
         case 'cluster_header':
           continue;
         case 'cluster':{
           const cluster = route.route!.cluster!;
           allConfigClusters.add(cluster);
-          routeAction = new SingleClusterRouteAction(cluster);
+          routeAction = new SingleClusterRouteAction(cluster, timeout);
           break;
         }
         case 'weighted_clusters': {
@@ -310,7 +349,7 @@ class XdsResolver implements Resolver {
             allConfigClusters.add(clusterWeight.name);
             weightedClusters.push({name: clusterWeight.name, weight: clusterWeight.weight?.value ?? 0});
           }
-          routeAction = new WeightedClusterRouteAction(weightedClusters, route.route!.weighted_clusters!.total_weight?.value ?? 100);
+          routeAction = new WeightedClusterRouteAction(weightedClusters, route.route!.weighted_clusters!.total_weight?.value ?? 100, timeout);
         }
       }
       const routeMatcher = getPredicateForMatcher(route.match!);
@@ -343,7 +382,7 @@ class XdsResolver implements Resolver {
             this.unrefCluster(clusterName);
           }
           return {
-            methodConfig: {name: []},
+            methodConfig: {name: [], timeout: action.getTimeout()},
             onCommitted: onCommitted,
             pickInformation: {cluster: clusterName},
             status: status.OK

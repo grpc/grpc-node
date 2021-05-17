@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
+import { experimental } from '@grpc/grpc-js';
+import Duration = experimental.Duration;
+
 export interface RouteAction {
   toString(): string;
   getCluster(): string;
+  getTimeout(): Duration | undefined;
 }
 
 export class SingleClusterRouteAction implements RouteAction {
-  constructor(private cluster: string) {}
+  constructor(private cluster: string, private timeout: Duration | undefined) {}
 
   getCluster() {
     return this.cluster;
@@ -28,6 +32,10 @@ export class SingleClusterRouteAction implements RouteAction {
 
   toString() {
     return 'SingleCluster(' + this.cluster + ')';
+  }
+
+  getTimeout() {
+    return this.timeout;
   }
 }
 
@@ -46,7 +54,7 @@ export class WeightedClusterRouteAction implements RouteAction {
    * The weighted cluster choices represented as a CDF
    */
   private clusterChoices: ClusterChoice[];
-  constructor(private clusters: WeightedCluster[], private totalWeight: number) {
+  constructor(private clusters: WeightedCluster[], private totalWeight: number, private timeout: Duration | undefined) {
     this.clusterChoices = [];
     let lastNumerator = 0;
     for (const clusterWeight of clusters) {
@@ -68,5 +76,9 @@ export class WeightedClusterRouteAction implements RouteAction {
 
   toString() {
     return 'WeightedCluster(' + this.clusters.map(({name, weight}) => '(' + name + ':' + weight + ')').join(', ') + ')';
+  }
+
+  getTimeout() {
+    return this.timeout;
   }
 }
