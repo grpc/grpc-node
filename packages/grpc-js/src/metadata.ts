@@ -243,6 +243,18 @@ export class Metadata {
   }
 
   /**
+   * This modifies the behavior of JSON.stringify to show an object
+   * representation of the metadata map.
+   */
+  toJSON() {
+    const result: {[key: string]: MetadataValue[]} = {};
+    for (const [key, values] of this.internalRepr.entries()) {
+      result[key] = values;
+    }
+    return result;
+  }
+
+  /**
    * Returns a new Metadata object based fields in a given IncomingHttpHeaders
    * object.
    * @param headers An IncomingHttpHeaders object.

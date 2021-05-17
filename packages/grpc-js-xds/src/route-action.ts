@@ -23,6 +23,15 @@ export interface RouteAction {
   getTimeout(): Duration | undefined;
 }
 
+function durationToLogString(duration: Duration) {
+  const millis = Math.floor(duration.nanos / 1_000_000);
+  if (millis > 0) {
+    return duration.seconds + '.' + millis;
+  } else {
+    return '' + duration.seconds;
+  }
+}
+
 export class SingleClusterRouteAction implements RouteAction {
   constructor(private cluster: string, private timeout: Duration | undefined) {}
 
@@ -31,7 +40,11 @@ export class SingleClusterRouteAction implements RouteAction {
   }
 
   toString() {
-    return 'SingleCluster(' + this.cluster + ')';
+    if (this.timeout) {
+      return 'SingleCluster(' + this.cluster + ', ' + 'timeout=' + durationToLogString(this.timeout) + 's)';
+    } else {
+      return 'SingleCluster(' + this.cluster + ')';
+    }
   }
 
   getTimeout() {
@@ -75,7 +88,12 @@ export class WeightedClusterRouteAction implements RouteAction {
   }
 
   toString() {
-    return 'WeightedCluster(' + this.clusters.map(({name, weight}) => '(' + name + ':' + weight + ')').join(', ') + ')';
+    const clusterListString = this.clusters.map(({name, weight}) => '(' + name + ':' + weight + ')').join(', ')
+    if (this.timeout) {
+      return 'WeightedCluster(' + clusterListString + ', ' + 'timeout=' + durationToLogString(this.timeout) + 's)';
+    } else {
+      return 'WeightedCluster(' + clusterListString + ')';
+    }
   }
 
   getTimeout() {
