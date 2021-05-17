@@ -15,7 +15,7 @@
  *
  */
 
-import { connectivityState as ConnectivityState, status as Status, Metadata, logVerbosity as LogVerbosity, experimental } from '@grpc/grpc-js';
+import { connectivityState as ConnectivityState, status as Status, Metadata, logVerbosity as LogVerbosity, experimental, StatusObject } from '@grpc/grpc-js';
 import { getSingletonXdsClient, XdsClient, XdsClusterDropStats } from './xds-client';
 import { ClusterLoadAssignment__Output } from './generated/envoy/config/endpoint/v3/ClusterLoadAssignment';
 import { Locality__Output } from './generated/envoy/api/v2/core/Locality';
@@ -34,6 +34,10 @@ import { validateLoadBalancingConfig } from '@grpc/grpc-js/build/src/experimenta
 import { WeightedTarget, WeightedTargetLoadBalancingConfig } from './load-balancer-weighted-target';
 import { LrsLoadBalancingConfig } from './load-balancer-lrs';
 import { Watcher } from './xds-stream-state/xds-stream-state';
+import Filter = experimental.Filter;
+import BaseFilter = experimental.BaseFilter;
+import FilterFactory = experimental.FilterFactory;
+import CallStream = experimental.CallStream;
 
 const TRACER_NAME = 'eds_balancer';
 
@@ -47,7 +51,10 @@ function localityToName(locality: Locality__Output) {
   return `{region=${locality.region},zone=${locality.zone},sub_zone=${locality.sub_zone}}`;
 }
 
+const DEFAULT_MAX_CONCURRENT_REQUESTS = 1024;
+
 export class EdsLoadBalancingConfig implements LoadBalancingConfig {
+  private maxConcurrentRequests: number;
   getLoadBalancerName(): string {
     return TYPE_NAME;
   }
@@ -55,7 +62,8 @@ export class EdsLoadBalancingConfig implements LoadBalancingConfig {
     const jsonObj: {[key: string]: any} = {
       cluster: this.cluster,
       locality_picking_policy: this.localityPickingPolicy.map(policy => policy.toJsonObject()),
-      endpoint_picking_policy: this.endpointPickingPolicy.map(policy => policy.toJsonObject())
+      endpoint_picking_policy: this.endpointPickingPolicy.map(policy => policy.toJsonObject()),
+      max_concurrent_requests: this.maxConcurrentRequests
     };
     if (this.edsServiceName !== undefined) {
       jsonObj.eds_service_name = this.edsServiceName;
@@ -68,8 +76,8 @@ export class EdsLoadBalancingConfig implements LoadBalancingConfig {
     };
   }
 
-  constructor(private cluster: string, private localityPickingPolicy: LoadBalancingConfig[], private endpointPickingPolicy: LoadBalancingConfig[], private edsServiceName?: string, private lrsLoadReportingServerName?: string) {
-
+  constructor(private cluster: string, private localityPickingPolicy: LoadBalancingConfig[], private endpointPickingPolicy: LoadBalancingConfig[], private edsServiceName?: string, private lrsLoadReportingServerName?: string, maxConcurrentRequests?: number) {
+    this.maxConcurrentRequests = maxConcurrentRequests ?? DEFAULT_MAX_CONCURRENT_REQUESTS;
   }
 
   getCluster() {
@@ -92,6 +100,10 @@ export class EdsLoadBalancingConfig implements LoadBalancingConfig {
     return this.lrsLoadReportingServerName;
   }
 
+  getMaxConcurrentRequests() {
+    return this.maxConcurrentRequests;
+  }
+
   static createFromJson(obj: any): EdsLoadBalancingConfig {
     if (!('cluster' in obj && typeof obj.cluster === 'string')) {
       throw new Error('eds config must have a string field cluster');
@@ -108,7 +120,28 @@ export class EdsLoadBalancingConfig implements LoadBalancingConfig {
     if ('lrs_load_reporting_server_name' in obj && (!obj.lrs_load_reporting_server_name === undefined || typeof obj.lrs_load_reporting_server_name === 'string')) {
       throw new Error('eds config lrs_load_reporting_server_name must be a string if provided');
     }
-    return new EdsLoadBalancingConfig(obj.cluster, obj.locality_picking_policy.map(validateLoadBalancingConfig), obj.endpoint_picking_policy.map(validateLoadBalancingConfig), obj.eds_service_name, obj.lrs_load_reporting_server_name);
+    if ('max_concurrent_requests' in obj && (!obj.max_concurrent_requests === undefined || typeof obj.max_concurrent_requests === 'number')) {
+      throw new Error('eds config max_concurrent_requests must be a number if provided');
+    }
+    return new EdsLoadBalancingConfig(obj.cluster, obj.locality_picking_policy.map(validateLoadBalancingConfig), obj.endpoint_picking_policy.map(validateLoadBalancingConfig), obj.eds_service_name, obj.lrs_load_reporting_server_name, obj.max_concurrent_requests);
+  }
+}
+
+class CallEndTrackingFilter extends BaseFilter implements Filter {
+  constructor(private onCallEnd: () => void) {
+    super();
+  }
+  receiveTrailers(status: StatusObject) {
+    this.onCallEnd();
+    return status;
+  }
+}
+
+class CallTrackingFilterFactory implements FilterFactory<CallEndTrackingFilter> {
+  constructor(private onCallEnd: () => void) {}
+
+  createFilter(callStream: CallStream) {
+    return new CallEndTrackingFilter(this.onCallEnd);
   }
 }
 
@@ -149,6 +182,8 @@ export class EdsLoadBalancer implements LoadBalancer {
 
   private clusterDropStats: XdsClusterDropStats | null = null;
 
+  private concurrentRequests: number = 0;
+
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
     this.childBalancer = new ChildLoadBalancerHandler({
       createSubchannel: (subchannelAddress, subchannelArgs) =>
@@ -171,7 +206,11 @@ export class EdsLoadBalancer implements LoadBalancer {
             if (dropCategory === null) {
               return originalPicker.pick(pickArgs);
             } else {
-              this.clusterDropStats?.addCallDropped(dropCategory);
+              if (dropCategory === true) {
+                this.clusterDropStats?.addUncategorizedCallDropped();
+              } else {
+                this.clusterDropStats?.addCallDropped(dropCategory);
+              }
               return {
                 pickResultType: PickResultType.DROP,
                 status: {
@@ -180,8 +219,12 @@ export class EdsLoadBalancer implements LoadBalancer {
                   metadata: new Metadata(),
                 },
                 subchannel: null,
-                extraFilterFactory: null,
-                onCallStarted: null,
+                extraFilterFactory: new CallTrackingFilterFactory(() => {
+                  this.concurrentRequests -= 1;
+                }),
+                onCallStarted: () => {
+                  this.concurrentRequests += 1;
+                },
               };
             }
           },
@@ -218,11 +261,18 @@ export class EdsLoadBalancer implements LoadBalancer {
   /**
    * Check whether a single call should be dropped according to the current
    * policy, based on randomly chosen numbers. Returns the drop category if
-   * the call should be dropped, and null otherwise.
+   * the call should be dropped, and null otherwise. true is a valid
+   * output, as a sentinel value indicating a drop with no category.
    */
-  private checkForDrop(): string | null {
+  private checkForDrop(): string | true | null {
     if (!this.latestEdsUpdate?.policy) {
       return null;
+    }
+    if (!this.lastestConfig) {
+      return null;
+    }
+    if (this.concurrentRequests >= this.lastestConfig.getMaxConcurrentRequests()) {
+      return true;
     }
     /* The drop_overloads policy is a list of pairs of category names and
      * probabilities. For each one, if the random number is within that

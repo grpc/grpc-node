@@ -114,6 +114,7 @@ function localityEqual(
 }
 
 export interface XdsClusterDropStats {
+  addUncategorizedCallDropped(): void;
   addCallDropped(category: string): void;
 }
 
@@ -158,6 +159,7 @@ interface ClusterLocalityStats {
 
 interface ClusterLoadReport {
   callsDropped: Map<string, number>;
+  uncategorizedCallsDropped: number;
   localityStats: ClusterLocalityStats[];
   intervalStart: [number, number];
 }
@@ -195,6 +197,7 @@ class ClusterLoadReportMap {
     }
     const newStats: ClusterLoadReport = {
       callsDropped: new Map<string, number>(),
+      uncategorizedCallsDropped: 0,
       localityStats: [],
       intervalStart: process.hrtime(),
     };
@@ -871,8 +874,10 @@ export class XdsClient {
             totalDroppedRequests += count;
           }
         }
+        totalDroppedRequests += stats.uncategorizedCallsDropped;
         // Clear out dropped call stats after sending them
         stats.callsDropped.clear();
+        stats.uncategorizedCallsDropped = 0;
         const interval = process.hrtime(stats.intervalStart);
         stats.intervalStart = process.hrtime();
         // Skip clusters with 0 requests
@@ -957,6 +962,7 @@ export class XdsClient {
     trace('addClusterDropStats(lrsServer=' + lrsServer + ', clusterName=' + clusterName + ', edsServiceName=' + edsServiceName + ')');
     if (lrsServer !== '') {
       return {
+        addUncategorizedCallDropped: () => {},
         addCallDropped: (category) => {},
       };
     }
@@ -965,6 +971,9 @@ export class XdsClient {
       edsServiceName
     );
     return {
+      addUncategorizedCallDropped: () => {
+        clusterStats.uncategorizedCallsDropped += 1;
+      },
       addCallDropped: (category) => {
         const prevCount = clusterStats.callsDropped.get(category) ?? 0;
         clusterStats.callsDropped.set(category, prevCount + 1);
