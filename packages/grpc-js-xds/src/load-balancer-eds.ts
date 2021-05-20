@@ -37,6 +37,7 @@ import { Watcher } from './xds-stream-state/xds-stream-state';
 import Filter = experimental.Filter;
 import BaseFilter = experimental.BaseFilter;
 import FilterFactory = experimental.FilterFactory;
+import FilterStackFactory = experimental.FilterStackFactory;
 import CallStream = experimental.CallStream;
 
 const TRACER_NAME = 'eds_balancer';
@@ -204,27 +205,42 @@ export class EdsLoadBalancer implements LoadBalancer {
              * Otherwise, delegate picking the subchannel to the child
              * balancer. */
             if (dropCategory === null) {
-              return originalPicker.pick(pickArgs);
+              const originalPick = originalPicker.pick(pickArgs);
+              let extraFilterFactory: FilterFactory<Filter> = new CallTrackingFilterFactory(() => {
+                this.concurrentRequests -= 1;
+              });
+              if (originalPick.extraFilterFactory) {
+                extraFilterFactory = new FilterStackFactory([originalPick.extraFilterFactory, extraFilterFactory]);
+              }
+              return {
+                pickResultType: originalPick.pickResultType,
+                status: originalPick.status,
+                subchannel: originalPick.subchannel,
+                onCallStarted: () => {
+                  originalPick.onCallStarted?.();
+                  this.concurrentRequests += 1;
+                },
+                extraFilterFactory: extraFilterFactory
+              };
             } else {
+              let details: string;
               if (dropCategory === true) {
+                details = 'Call dropped by load balancing policy.';
                 this.clusterDropStats?.addUncategorizedCallDropped();
               } else {
+                details = `Call dropped by load balancing policy. Category: ${dropCategory}`;
                 this.clusterDropStats?.addCallDropped(dropCategory);
               }
               return {
                 pickResultType: PickResultType.DROP,
                 status: {
                   code: Status.UNAVAILABLE,
-                  details: `Call dropped by load balancing policy. Category: ${dropCategory}`,
+                  details: details,
                   metadata: new Metadata(),
                 },
                 subchannel: null,
-                extraFilterFactory: new CallTrackingFilterFactory(() => {
-                  this.concurrentRequests -= 1;
-                }),
-                onCallStarted: () => {
-                  this.concurrentRequests += 1;
-                },
+                extraFilterFactory: null,
+                onCallStarted: null
               };
             }
           },
@@ -265,14 +281,11 @@ export class EdsLoadBalancer implements LoadBalancer {
    * output, as a sentinel value indicating a drop with no category.
    */
   private checkForDrop(): string | true | null {
+    if (this.lastestConfig && this.concurrentRequests >= this.lastestConfig.getMaxConcurrentRequests()) {
+      return true;
+    }
     if (!this.latestEdsUpdate?.policy) {
       return null;
-    }
-    if (!this.lastestConfig) {
-      return null;
-    }
-    if (this.concurrentRequests >= this.lastestConfig.getMaxConcurrentRequests()) {
-      return true;
     }
     /* The drop_overloads policy is a list of pairs of category names and
      * probabilities. For each one, if the random number is within that
