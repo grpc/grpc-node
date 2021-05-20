@@ -197,29 +197,44 @@ let anyCallSucceeded = false;
 
 const accumulatedStats: LoadBalancerAccumulatedStatsResponse = {
   stats_per_method: {
-    EmptyCall: {
+    EMPTY_CALL: {
       rpcs_started: 0,
       result: {}
     },
-    UnaryCall: {
+    UNARY_CALL: {
       rpcs_started: 0,
       result: {}
     }
   }
 };
 
+const callTimeHistogram: {[callType: string]: {[status: number]: number[]}} = {
+  UnaryCall: {},
+  EmptyCall: {}
+}
+
 function makeSingleRequest(client: TestServiceClient, type: CallType, failOnFailedRpcs: boolean, callStatsTracker: CallStatsTracker) {
-  const callTypeStats = accumulatedStats.stats_per_method![type];
+  const callTypeStats = accumulatedStats.stats_per_method![callTypeEnumMapReverse[type]];
   callTypeStats.rpcs_started! += 1;
   const notifier = callStatsTracker.startCall();
   let gotMetadata: boolean = false;
   let hostname: string | null = null;
   let completed: boolean = false;
   let completedWithError: boolean = false;
+  const startTime = process.hrtime();
   const deadline = new Date();
   deadline.setSeconds(deadline.getSeconds() + currentConfig.timeoutSec);
   const callback = (error: grpc.ServiceError | undefined, value: Empty__Output | undefined) => {
     const statusCode = error?.code ?? grpc.status.OK;
+    const duration = process.hrtime(startTime);
+    if (!callTimeHistogram[type][statusCode]) {
+      callTimeHistogram[type][statusCode] = [];
+    }
+    if (callTimeHistogram[type][statusCode][duration[0]]) {
+      callTimeHistogram[type][statusCode][duration[0]] += 1;
+    } else {
+      callTimeHistogram[type][statusCode][duration[0]] = 1;
+    }
     callTypeStats.result![statusCode] = (callTypeStats.result![statusCode] ?? 0) + 1;
     if (error) {
       if (failOnFailedRpcs && anyCallSucceeded) {
@@ -269,18 +284,27 @@ const callTypeEnumMap = {
   'UNARY_CALL': 'UnaryCall' as CallType
 };
 
+const callTypeEnumMapReverse = {
+  'EmptyCall': 'EMPTY_CALL',
+  'UnaryCall': 'UNARY_CALL'
+}
+
+const DEFAULT_TIMEOUT_SEC = 20;
+
 function main() {
   const argv = yargs
     .string(['fail_on_failed_rpcs', 'server', 'stats_port', 'rpc', 'metadata'])
-    .number(['num_channels', 'qps'])
+    .number(['num_channels', 'qps', 'rpc_timeout_sec'])
     .demandOption(['server', 'stats_port'])
     .default('num_channels', 1)
     .default('qps', 1)
     .default('rpc', 'UnaryCall')
     .default('metadata', '')
+    .default('rpc_timeout_sec', DEFAULT_TIMEOUT_SEC)
     .argv;
   console.log('Starting xDS interop client. Args: ', argv);
   currentConfig.callTypes = argv.rpc.split(',').filter(value => value === 'EmptyCall' || value === 'UnaryCall') as CallType[];
+  currentConfig.timeoutSec = argv.rpc_timeout_sec;
   for (const item of argv.metadata.split(',')) {
     const [method, key, value] = item.split(':');
     if (value === undefined) {
@@ -316,23 +340,30 @@ function main() {
       });
     },
     GetClientAccumulatedStats: (call, callback) => {
+      console.log(`Sending accumulated stats response: ${JSON.stringify(accumulatedStats)}`);
+      console.log(`Call durations: ${JSON.stringify(callTimeHistogram, undefined, 2)}`);
       callback(null, accumulatedStats);
     }
   }
 
   const xdsUpdateClientConfigureServiceImpl: XdsUpdateClientConfigureServiceHandlers = {
     Configure: (call, callback) => {
+      console.log('Received new client configuration: ' + JSON.stringify(call.request, undefined, 2));
       const callMetadata = {
         EmptyCall: new grpc.Metadata(),
         UnaryCall: new grpc.Metadata()
-      }
+      };
       for (const metadataItem of call.request.metadata) {
         callMetadata[callTypeEnumMap[metadataItem.type]].add(metadataItem.key, metadataItem.value);
       }
       currentConfig.callTypes = call.request.types.map(value => callTypeEnumMap[value]);
       currentConfig.metadata = callMetadata;
-      currentConfig.timeoutSec = call.request.timeout_sec
-      console.log('Received new client configuration: ' + JSON.stringify(currentConfig, undefined, 2));
+      if (call.request.timeout_sec > 0) {
+        currentConfig.timeoutSec = call.request.timeout_sec;
+      } else {
+        currentConfig.timeoutSec = DEFAULT_TIMEOUT_SEC;
+      }
+      console.log('Updated to new client configuration: ' + JSON.stringify(currentConfig, undefined, 2));
       callback(null, {});
     }
   }
