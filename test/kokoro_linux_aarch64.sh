@@ -39,4 +39,8 @@ TEST_NODE_COMMAND="node_versions='12' ./run-tests.sh"
 #   running under current user's UID and GID. To be able to do that, we need to provide a home directory for the user
 #   otherwise the UID would be homeless under the docker container (which can lead to various issues). For simplicity,
 #   we just run map the user's home to a throwaway temporary directory.
-docker run $DOCKER_TTY_ARGS --rm --user "$(id -u):$(id -g)" -e "HOME=/home/fake-user" -v "$(mktemp -d):/home/fake-user" -v "$(pwd)":/work -w /work arm64v8/node:12-buster bash -c "$TEST_NODE_COMMAND"
+# TODO(jtattermusch): we're using arm64v8/node:12-stretch instead of arm64v8/node:12-buster because the buster-based image
+# has a newer version of ssl that considers some of the ssl keys used for testing too short, making the tests
+# fails with "error:140AB18F:SSL routines:SSL_CTX_use_certificate:ee key too small".
+# See https://github.com/grpc/grpc-node/issues/1795
+docker run $DOCKER_TTY_ARGS --rm --user "$(id -u):$(id -g)" -e "HOME=/home/fake-user" -v "$(mktemp -d):/home/fake-user" -v "$(pwd)":/work -w /work arm64v8/node:12-stretch bash -c "$TEST_NODE_COMMAND"
