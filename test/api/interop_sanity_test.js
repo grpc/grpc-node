@@ -48,7 +48,8 @@ var childExecArgv = [];
 
 describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, function() {
   describe('Interop tests', function() {
-    this.timeout(4000);
+    // with the default timeout the test times out under aarch64 emulator
+    this.timeout(10000);
     before(function(done) {
       for (let arg of process.argv) {
         if (arg.startsWith('--require=')) {
