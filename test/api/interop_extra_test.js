@@ -147,7 +147,8 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
       });
     });
     it('should receive all messages in a long stream', function(done) {
-      this.timeout(20000);
+      // the test is slow under aarch64 emulator
+      this.timeout(80000);
       var arg = {
         response_type: 'COMPRESSABLE',
         response_parameters: [
