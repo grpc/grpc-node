@@ -486,7 +486,7 @@ export class Http2ServerCallStream<
     return metadata;
   }
 
-  receiveUnaryMessage(): Promise<RequestType> {
+  receiveUnaryMessage(): Promise<RequestType | void> {
     return new Promise((resolve, reject) => {
       const stream = this.stream;
       const chunks: Buffer[] = [];
