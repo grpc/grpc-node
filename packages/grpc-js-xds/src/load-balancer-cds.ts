@@ -80,11 +80,17 @@ export class CdsLoadBalancer implements LoadBalancer {
     this.watcher = {
       onValidUpdate: (update) => {
         this.latestCdsUpdate = update;
+        let maxConcurrentRequests: number | undefined = undefined;
+        for (const threshold of update.circuit_breakers?.thresholds ?? []) {
+          if (threshold.priority === 'DEFAULT') {
+            maxConcurrentRequests = threshold.max_requests?.value;
+          }
+        }
         /* the lrs_server.self field indicates that the same server should be
          * used for load reporting as for other xDS operations. Setting
          * lrsLoadReportingServerName to the empty string sets that behavior.
          * Otherwise, if the field is omitted, load reporting is disabled. */
-        const edsConfig: EdsLoadBalancingConfig = new EdsLoadBalancingConfig(update.name, [], [], update.eds_cluster_config!.service_name === '' ? undefined : update.eds_cluster_config!.service_name, update.lrs_server?.self ? '' : undefined);
+        const edsConfig: EdsLoadBalancingConfig = new EdsLoadBalancingConfig(update.name, [], [], update.eds_cluster_config!.service_name === '' ? undefined : update.eds_cluster_config!.service_name, update.lrs_server?.self ? '' : undefined, maxConcurrentRequests);
         trace('Child update EDS config: ' + JSON.stringify(edsConfig));
         this.childBalancer.updateAddressList(
           [],

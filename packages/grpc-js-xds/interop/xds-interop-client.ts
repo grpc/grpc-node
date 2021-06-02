@@ -196,6 +196,18 @@ const currentConfig: ClientConfiguration = {
 let anyCallSucceeded = false;
 
 const accumulatedStats: LoadBalancerAccumulatedStatsResponse = {
+  num_rpcs_started_by_method: {
+    EMPTY_CALL: 0,
+    UNARY_CALL: 0
+  },
+  num_rpcs_succeeded_by_method: {
+    EMPTY_CALL: 0,
+    UNARY_CALL: 0
+  },
+  num_rpcs_failed_by_method: {
+    EMPTY_CALL: 0,
+    UNARY_CALL: 0
+  },
   stats_per_method: {
     EMPTY_CALL: {
       rpcs_started: 0,
@@ -208,14 +220,28 @@ const accumulatedStats: LoadBalancerAccumulatedStatsResponse = {
   }
 };
 
+function addAccumulatedCallStarted(callName: string) {
+  accumulatedStats.stats_per_method![callName].rpcs_started! += 1;
+  accumulatedStats.num_rpcs_started_by_method![callName] += 1;
+}
+
+function addAccumulatedCallEnded(callName: string, result: grpc.status) {
+  accumulatedStats.stats_per_method![callName].result![result] = (accumulatedStats.stats_per_method![callName].result![result] ?? 0) + 1;
+  if (result === grpc.status.OK) {
+    accumulatedStats.num_rpcs_succeeded_by_method![callName] += 1;
+  } else {
+    accumulatedStats.num_rpcs_failed_by_method![callName] += 1;
+  }
+}
+
 const callTimeHistogram: {[callType: string]: {[status: number]: number[]}} = {
   UnaryCall: {},
   EmptyCall: {}
 }
 
 function makeSingleRequest(client: TestServiceClient, type: CallType, failOnFailedRpcs: boolean, callStatsTracker: CallStatsTracker) {
-  const callTypeStats = accumulatedStats.stats_per_method![callTypeEnumMapReverse[type]];
-  callTypeStats.rpcs_started! += 1;
+  const callEnumName = callTypeEnumMapReverse[type];
+  addAccumulatedCallStarted(callEnumName);
   const notifier = callStatsTracker.startCall();
   let gotMetadata: boolean = false;
   let hostname: string | null = null;
@@ -235,7 +261,7 @@ function makeSingleRequest(client: TestServiceClient, type: CallType, failOnFail
     } else {
       callTimeHistogram[type][statusCode][duration[0]] = 1;
     }
-    callTypeStats.result![statusCode] = (callTypeStats.result![statusCode] ?? 0) + 1;
+    addAccumulatedCallEnded(callEnumName, statusCode);
     if (error) {
       if (failOnFailedRpcs && anyCallSucceeded) {
         console.error('A call failed after a call succeeded');
