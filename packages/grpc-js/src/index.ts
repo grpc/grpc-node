@@ -62,6 +62,7 @@ import {
   ServerReadableStream,
   ServerWritableStream,
   ServerDuplexStream,
+  ServerErrorResponse,
 } from './server-call';
 
 export { OAuth2Client };
@@ -173,6 +174,7 @@ export {
   ServerReadableStream,
   ServerWritableStream,
   ServerDuplexStream,
+  ServerErrorResponse,
   ServiceDefinition,
   UntypedHandleCall,
   UntypedServiceImplementation,
