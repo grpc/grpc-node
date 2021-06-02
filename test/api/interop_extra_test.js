@@ -197,6 +197,8 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
       });
     });
     describe('max message size', function() {
+      // with the default timeout the test times out under aarch64 emulator
+      this.timeout(6000);
       // A size that is larger than the default limit
       const largeMessageSize = 8 * 1024 * 1024;
       const largeMessage = Buffer.alloc(largeMessageSize);
@@ -238,6 +240,8 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
         });
       });
       describe('with a client with no message size limits', function() {
+        // with the default timeout the test times out under aarch64 emulator
+        this.timeout(6000);
         let unrestrictedClient;
         before(function() {
           const ca_path = path.join(__dirname, '../data/ca.pem');
@@ -283,6 +287,8 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
         });
       });
       describe('with a server with message size limits and a client without limits', function() {
+        // with the default timeout the test times out under aarch64 emulator
+        this.timeout(6000);
         let restrictedServer;
         let restrictedServerClient;
         let restrictedServerClient2;
