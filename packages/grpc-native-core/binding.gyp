@@ -645,7 +645,7 @@
             'deps/grpc/third_party/cares/config_openbsd'
           ],
           'defines': [
-            'HAVE_CONFIG_H'
+            'HAVE_CONFIG_H' 
           ]
         }],
         ['OS == "win"', {
