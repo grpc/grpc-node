@@ -632,6 +632,22 @@
             'HAVE_CONFIG_H'
           ]
         }],
+        ['OS == "freebsd"', {
+          'include_dirs': [
+            'deps/grpc/third_party/cares/config_freebsd'
+          ],
+          'defines': [
+            'HAVE_CONFIG_H'
+          ]
+        }],
+        ['OS == "openbsd"', {
+          'include_dirs': [
+            'deps/grpc/third_party/cares/config_openbsd'
+          ],
+          'defines': [
+            'HAVE_CONFIG_H'
+          ]
+        }],
         ['OS == "win"', {
           'include_dirs': [
             'deps/grpc/third_party/cares/config_windows'
