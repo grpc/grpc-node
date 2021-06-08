@@ -51,7 +51,17 @@ export const setLoggerVerbosity = (verbosity: LogVerbosity): void => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const log = (severity: LogVerbosity, ...args: any[]): void => {
   if (severity >= _logVerbosity && typeof _logger.error === 'function') {
-    _logger.error(...args);
+    switch (severity) {
+      case LogVerbosity.DEBUG:
+        _logger.debug(...args);
+        break;
+      case LogVerbosity.INFO:
+        _logger.info(...args);
+        break;
+      case LogVerbosity.ERROR:
+        _logger.error(...args);
+        break;
+    }
   }
 };
 
