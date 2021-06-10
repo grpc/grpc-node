@@ -77,10 +77,18 @@ export class FilterStack implements Filter {
       filter.refresh();
     }
   }
+
+  push(filters: Filter[]) {
+    this.filters.unshift(...filters);
+  }
 }
 
 export class FilterStackFactory implements FilterFactory<FilterStack> {
   constructor(private readonly factories: Array<FilterFactory<Filter>>) {}
+
+  push(filterFactories: FilterFactory<Filter>[]) {
+    this.factories.unshift(...filterFactories);
+  }
 
   createFilter(callStream: Call): FilterStack {
     return new FilterStack(

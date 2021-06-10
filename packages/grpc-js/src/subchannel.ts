@@ -688,7 +688,7 @@ export class Subchannel {
   startCallStream(
     metadata: Metadata,
     callStream: Http2CallStream,
-    extraFilterFactory?: FilterFactory<Filter>
+    extraFilterFactories: FilterFactory<Filter>[]
   ) {
     const headers = metadata.toHttp2Headers();
     headers[HTTP2_HEADER_AUTHORITY] = callStream.getHost();
@@ -720,7 +720,7 @@ export class Subchannel {
       headersString += '\t\t' + header + ': ' + headers[header] + '\n';
     }
     logging.trace(LogVerbosity.DEBUG, 'call_stream', 'Starting stream on subchannel ' + this.subchannelAddressString + ' with headers\n' + headersString);
-    callStream.attachHttp2Stream(http2Stream, this, extraFilterFactory);
+    callStream.attachHttp2Stream(http2Stream, this, extraFilterFactories);
   }
 
   /**

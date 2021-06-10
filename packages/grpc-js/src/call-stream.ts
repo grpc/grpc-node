@@ -210,7 +210,7 @@ export interface Call {
 
 export class Http2CallStream implements Call {
   credentials: CallCredentials;
-  filterStack: Filter;
+  filterStack: FilterStack;
   private http2Stream: http2.ClientHttp2Stream | null = null;
   private pendingRead = false;
   private isWriteFilterPending = false;
@@ -462,14 +462,9 @@ export class Http2CallStream implements Call {
   attachHttp2Stream(
     stream: http2.ClientHttp2Stream,
     subchannel: Subchannel,
-    extraFilterFactory?: FilterFactory<Filter>
+    extraFilters: FilterFactory<Filter>[]
   ): void {
-    if (extraFilterFactory !== undefined) {
-      this.filterStack = new FilterStack([
-        this.filterStack,
-        extraFilterFactory.createFilter(this),
-      ]);
-    }
+    this.filterStack.push(extraFilters.map(filterFactory => filterFactory.createFilter(this)));
     if (this.finalStatus !== null) {
       stream.close(NGHTTP2_CANCEL);
     } else {
