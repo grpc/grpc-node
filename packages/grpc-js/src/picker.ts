@@ -47,7 +47,7 @@ export interface PickResult {
    * provided by the load balancer to be used with the call. For technical
    * reasons filters from this factory will not see sendMetadata events.
    */
-  extraFilterFactory: FilterFactory<Filter> | null;
+  extraFilterFactories: FilterFactory<Filter>[];
   onCallStarted: (() => void) | null;
 }
 
@@ -55,7 +55,7 @@ export interface CompletePickResult extends PickResult {
   pickResultType: PickResultType.COMPLETE;
   subchannel: Subchannel | null;
   status: null;
-  extraFilterFactory: FilterFactory<Filter> | null;
+  extraFilterFactories: FilterFactory<Filter>[];
   onCallStarted: (() => void) | null;
 }
 
@@ -63,7 +63,7 @@ export interface QueuePickResult extends PickResult {
   pickResultType: PickResultType.QUEUE;
   subchannel: null;
   status: null;
-  extraFilterFactory: null;
+  extraFilterFactories: [];
   onCallStarted: null;
 }
 
@@ -71,7 +71,7 @@ export interface TransientFailurePickResult extends PickResult {
   pickResultType: PickResultType.TRANSIENT_FAILURE;
   subchannel: null;
   status: StatusObject;
-  extraFilterFactory: null;
+  extraFilterFactories: [];
   onCallStarted: null;
 }
 
@@ -79,7 +79,7 @@ export interface DropCallPickResult extends PickResult {
   pickResultType: PickResultType.DROP;
   subchannel: null;
   status: StatusObject;
-  extraFilterFactory: null;
+  extraFilterFactories: [];
   onCallStarted: null;
 }
 
@@ -119,7 +119,7 @@ export class UnavailablePicker implements Picker {
       pickResultType: PickResultType.TRANSIENT_FAILURE,
       subchannel: null,
       status: this.status,
-      extraFilterFactory: null,
+      extraFilterFactories: [],
       onCallStarted: null,
     };
   }
@@ -148,7 +148,7 @@ export class QueuePicker {
       pickResultType: PickResultType.QUEUE,
       subchannel: null,
       status: null,
-      extraFilterFactory: null,
+      extraFilterFactories: [],
       onCallStarted: null,
     };
   }

@@ -32,7 +32,6 @@ import PickResult = experimental.PickResult;
 import Filter = experimental.Filter;
 import BaseFilter = experimental.BaseFilter;
 import FilterFactory = experimental.FilterFactory;
-import FilterStackFactory = experimental.FilterStackFactory;
 import Call = experimental.CallStream;
 import validateLoadBalancingConfig = experimental.validateLoadBalancingConfig
 
@@ -148,14 +147,6 @@ class LoadReportingPicker implements Picker {
       const trackingFilterFactory = new CallEndTrackingFilterFactory(
         this.localityStatsReporter
       );
-      /* In the unlikely event that the wrappedPick already has an
-       * extraFilterFactory, preserve it in a FilterStackFactory. */
-      const extraFilterFactory = wrappedPick.extraFilterFactory
-        ? new FilterStackFactory([
-            wrappedPick.extraFilterFactory,
-            trackingFilterFactory,
-          ])
-        : trackingFilterFactory;
       return {
         pickResultType: PickResultType.COMPLETE,
         subchannel: wrappedPick.subchannel,
@@ -164,7 +155,7 @@ class LoadReportingPicker implements Picker {
           wrappedPick.onCallStarted?.();
           this.localityStatsReporter.addCallStarted();
         },
-        extraFilterFactory: extraFilterFactory,
+        extraFilterFactories: wrappedPick.extraFilterFactories.concat(trackingFilterFactory),
       };
     } else {
       return wrappedPick;

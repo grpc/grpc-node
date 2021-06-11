@@ -37,7 +37,6 @@ import { Watcher } from './xds-stream-state/xds-stream-state';
 import Filter = experimental.Filter;
 import BaseFilter = experimental.BaseFilter;
 import FilterFactory = experimental.FilterFactory;
-import FilterStackFactory = experimental.FilterStackFactory;
 import CallStream = experimental.CallStream;
 
 const TRACER_NAME = 'eds_balancer';
@@ -206,12 +205,9 @@ export class EdsLoadBalancer implements LoadBalancer {
              * balancer. */
             if (dropCategory === null) {
               const originalPick = originalPicker.pick(pickArgs);
-              let extraFilterFactory: FilterFactory<Filter> = new CallTrackingFilterFactory(() => {
+              const trackingFilterFactory: FilterFactory<Filter> = new CallTrackingFilterFactory(() => {
                 this.concurrentRequests -= 1;
               });
-              if (originalPick.extraFilterFactory) {
-                extraFilterFactory = new FilterStackFactory([originalPick.extraFilterFactory, extraFilterFactory]);
-              }
               return {
                 pickResultType: originalPick.pickResultType,
                 status: originalPick.status,
@@ -220,7 +216,7 @@ export class EdsLoadBalancer implements LoadBalancer {
                   originalPick.onCallStarted?.();
                   this.concurrentRequests += 1;
                 },
-                extraFilterFactory: extraFilterFactory
+                extraFilterFactories: originalPick.extraFilterFactories.concat(trackingFilterFactory)
               };
             } else {
               let details: string;
@@ -239,7 +235,7 @@ export class EdsLoadBalancer implements LoadBalancer {
                   metadata: new Metadata(),
                 },
                 subchannel: null,
-                extraFilterFactory: null,
+                extraFilterFactories: [],
                 onCallStarted: null
               };
             }

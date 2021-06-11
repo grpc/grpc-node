@@ -107,7 +107,7 @@ class XdsClusterManagerPicker implements Picker {
           metadata: new Metadata(),
         },
         subchannel: null,
-        extraFilterFactory: null,
+        extraFilterFactories: [],
         onCallStarted: null
       };
     }
