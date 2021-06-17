@@ -58,7 +58,8 @@ function getDefaultConfigSelector(serviceConfig: ServiceConfig | null): ConfigSe
             return {
               methodConfig: methodConfig,
               pickInformation: {},
-              status: Status.OK
+              status: Status.OK,
+              extraFilterFactories: []
             };
           }
         }
@@ -67,7 +68,8 @@ function getDefaultConfigSelector(serviceConfig: ServiceConfig | null): ConfigSe
     return {
       methodConfig: {name: []},
       pickInformation: {},
-      status: Status.OK
+      status: Status.OK,
+      extraFilterFactories: []
     };
   }
 }

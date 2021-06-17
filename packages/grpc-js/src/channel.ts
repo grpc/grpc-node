@@ -536,6 +536,7 @@ export class ChannelImplementation implements Channel {
           // Refreshing the filters makes the deadline filter pick up the new deadline
           stream.filterStack.refresh();
         }
+        stream.addFilterFactories(callConfig.extraFilterFactories);
         this.tryPick(stream, metadata, callConfig);
       } else {
         stream.cancelWithStatus(callConfig.status, "Failed to route call to method " + stream.getMethod());

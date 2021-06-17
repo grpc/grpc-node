@@ -16,7 +16,9 @@
  */
 
 import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
+import { EXPERIMENTAL_FAULT_INJECTION } from "../environment";
 import { RouteConfiguration__Output } from "../generated/envoy/config/route/v3/RouteConfiguration";
+import { validateOverrideFilter } from "../http-filter";
 import { CdsLoadBalancingConfig } from "../load-balancer-cds";
 import { Watcher, XdsStreamState } from "./xds-stream-state";
 import ServiceConfig = experimental.ServiceConfig;
@@ -112,6 +114,13 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
           return false;
         }
       }
+      if (EXPERIMENTAL_FAULT_INJECTION) {
+        for (const filterConfig of Object.values(virtualHost.typed_per_filter_config ?? {})) {
+          if (!validateOverrideFilter(filterConfig)) {
+            return false;
+          }
+        }
+      }
       for (const route of virtualHost.routes) {
         const match = route.match;
         if (!match) {
@@ -131,6 +140,13 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
         if ((route.route === undefined) || SUPPORTED_CLUSTER_SPECIFIERS.indexOf(route.route.cluster_specifier) < 0) {
           return false;
         }
+        if (EXPERIMENTAL_FAULT_INJECTION) {
+          for (const filterConfig of Object.values(route.typed_per_filter_config ?? {})) {
+            if (!validateOverrideFilter(filterConfig)) {
+              return false;
+            }
+          }
+        }
         if (route.route!.cluster_specifier === 'weighted_clusters') {
           let weightSum = 0;
           for (const clusterWeight of route.route.weighted_clusters!.clusters) {
@@ -138,6 +154,15 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
           }
           if (weightSum !== route.route.weighted_clusters!.total_weight?.value ?? 100) {
             return false;
+          }
+          if (EXPERIMENTAL_FAULT_INJECTION) {
+            for (const weightedCluster of route.route!.weighted_clusters!.clusters) {
+              for (const filterConfig of Object.values(weightedCluster.typed_per_filter_config ?? {})) {
+                if (!validateOverrideFilter(filterConfig)) {
+                  return false;
+                }
+              }
+            }
           }
         }
       }

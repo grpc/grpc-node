@@ -721,6 +721,10 @@ export class Http2CallStream implements Call {
     this.configDeadline = configDeadline;
   }
 
+  addFilterFactories(extraFilterFactories: FilterFactory<Filter>[]) {
+    this.filterStack.push(extraFilterFactories.map(filterFactory => filterFactory.createFilter(this)));
+  }
+
   startRead() {
     /* If the stream has ended with an error, we should not emit any more
      * messages and we should communicate that the stream has ended */
