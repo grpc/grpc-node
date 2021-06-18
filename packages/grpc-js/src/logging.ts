@@ -32,6 +32,9 @@ switch (verbosityString.toUpperCase()) {
   case 'ERROR':
     _logVerbosity = LogVerbosity.ERROR;
     break;
+  case 'NONE':
+    _logVerbosity = LogVerbosity.NONE;
+    break;
   default:
   // Ignore any other values
 }
@@ -56,15 +59,23 @@ export const log = (severity: LogVerbosity, ...args: any[]): void => {
 };
 
 const tracersString = process.env.GRPC_NODE_TRACE ?? process.env.GRPC_TRACE ?? '';
-const enabledTracers = tracersString.split(',');
-const allEnabled = enabledTracers.includes('all');
+const enabledTracers = new Set<string>();
+const disabledTracers = new Set<string>();
+for (const tracerName of tracersString.split(',')) {
+  if (tracerName.startsWith('-')) {
+    disabledTracers.add(tracerName.substring(1));
+  } else {
+    enabledTracers.add(tracerName)
+  }
+}
+const allEnabled = enabledTracers.has('all');
 
 export function trace(
   severity: LogVerbosity,
   tracer: string,
   text: string
 ): void {
-  if (allEnabled || enabledTracers.includes(tracer)) {
+  if (!disabledTracers.has(tracer) && (allEnabled || enabledTracers.has(tracer))) {
     log(severity, new Date().toISOString() + ' | ' + tracer + ' | ' + text);
   }
 }
