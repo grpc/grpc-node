@@ -120,9 +120,8 @@ export class Metadata {
     key = normalizeKey(key);
     validate(key, value);
 
-    const existingValue: MetadataValue[] | undefined = this.internalRepr.get(
-      key
-    );
+    const existingValue: MetadataValue[] | undefined =
+      this.internalRepr.get(key);
 
     if (existingValue === undefined) {
       this.internalRepr.set(key, [value]);
@@ -247,7 +246,7 @@ export class Metadata {
    * representation of the metadata map.
    */
   toJSON() {
-    const result: {[key: string]: MetadataValue[]} = {};
+    const result: { [key: string]: MetadataValue[] } = {};
     for (const [key, values] of this.internalRepr.entries()) {
       result[key] = values;
     }

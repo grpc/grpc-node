@@ -65,10 +65,8 @@ export type ClientWritableStream<RequestType> = {
 /**
  * A type representing the return value of a bidirectional stream method call.
  */
-export type ClientDuplexStream<
-  RequestType,
-  ResponseType
-> = ClientWritableStream<RequestType> & ClientReadableStream<ResponseType>;
+export type ClientDuplexStream<RequestType, ResponseType> =
+  ClientWritableStream<RequestType> & ClientReadableStream<ResponseType>;
 
 /**
  * Construct a ServiceError from a StatusObject. This function exists primarily
@@ -81,8 +79,10 @@ export function callErrorFromStatus(status: StatusObject): ServiceError {
   return Object.assign(new Error(message), status);
 }
 
-export class ClientUnaryCallImpl extends EventEmitter
-  implements ClientUnaryCall {
+export class ClientUnaryCallImpl
+  extends EventEmitter
+  implements ClientUnaryCall
+{
   public call?: InterceptingCallInterface;
   constructor() {
     super();
@@ -97,8 +97,10 @@ export class ClientUnaryCallImpl extends EventEmitter
   }
 }
 
-export class ClientReadableStreamImpl<ResponseType> extends Readable
-  implements ClientReadableStream<ResponseType> {
+export class ClientReadableStreamImpl<ResponseType>
+  extends Readable
+  implements ClientReadableStream<ResponseType>
+{
   public call?: InterceptingCallInterface;
   constructor(readonly deserialize: (chunk: Buffer) => ResponseType) {
     super({ objectMode: true });
@@ -117,8 +119,10 @@ export class ClientReadableStreamImpl<ResponseType> extends Readable
   }
 }
 
-export class ClientWritableStreamImpl<RequestType> extends Writable
-  implements ClientWritableStream<RequestType> {
+export class ClientWritableStreamImpl<RequestType>
+  extends Writable
+  implements ClientWritableStream<RequestType>
+{
   public call?: InterceptingCallInterface;
   constructor(readonly serialize: (value: RequestType) => Buffer) {
     super({ objectMode: true });
@@ -149,8 +153,10 @@ export class ClientWritableStreamImpl<RequestType> extends Writable
   }
 }
 
-export class ClientDuplexStreamImpl<RequestType, ResponseType> extends Duplex
-  implements ClientDuplexStream<RequestType, ResponseType> {
+export class ClientDuplexStreamImpl<RequestType, ResponseType>
+  extends Duplex
+  implements ClientDuplexStream<RequestType, ResponseType>
+{
   public call?: InterceptingCallInterface;
   constructor(
     readonly serialize: (value: RequestType) => Buffer,

@@ -84,24 +84,22 @@ export type ServerSurfaceCall = {
 export type ServerUnaryCall<RequestType, ResponseType> = ServerSurfaceCall & {
   request: RequestType;
 };
-export type ServerReadableStream<
-  RequestType,
-  ResponseType
-> = ServerSurfaceCall & ObjectReadable<RequestType>;
-export type ServerWritableStream<
-  RequestType,
-  ResponseType
-> = ServerSurfaceCall &
-  ObjectWritable<ResponseType> & {
-    request: RequestType;
-    end: (metadata?: Metadata) => void;
-  };
+export type ServerReadableStream<RequestType, ResponseType> =
+  ServerSurfaceCall & ObjectReadable<RequestType>;
+export type ServerWritableStream<RequestType, ResponseType> =
+  ServerSurfaceCall &
+    ObjectWritable<ResponseType> & {
+      request: RequestType;
+      end: (metadata?: Metadata) => void;
+    };
 export type ServerDuplexStream<RequestType, ResponseType> = ServerSurfaceCall &
   ObjectReadable<RequestType> &
   ObjectWritable<ResponseType> & { end: (metadata?: Metadata) => void };
 
-export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
-  implements ServerUnaryCall<RequestType, ResponseType> {
+export class ServerUnaryCallImpl<RequestType, ResponseType>
+  extends EventEmitter
+  implements ServerUnaryCall<RequestType, ResponseType>
+{
   cancelled: boolean;
 
   constructor(
@@ -129,7 +127,8 @@ export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
 
 export class ServerReadableStreamImpl<RequestType, ResponseType>
   extends Readable
-  implements ServerReadableStream<RequestType, ResponseType> {
+  implements ServerReadableStream<RequestType, ResponseType>
+{
   cancelled: boolean;
 
   constructor(
@@ -166,7 +165,8 @@ export class ServerReadableStreamImpl<RequestType, ResponseType>
 
 export class ServerWritableStreamImpl<RequestType, ResponseType>
   extends Writable
-  implements ServerWritableStream<RequestType, ResponseType> {
+  implements ServerWritableStream<RequestType, ResponseType>
+{
   cancelled: boolean;
   private trailingMetadata: Metadata;
 
@@ -239,8 +239,10 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
   }
 }
 
-export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
-  implements ServerDuplexStream<RequestType, ResponseType> {
+export class ServerDuplexStreamImpl<RequestType, ResponseType>
+  extends Duplex
+  implements ServerDuplexStream<RequestType, ResponseType>
+{
   cancelled: boolean;
   private trailingMetadata: Metadata;
 

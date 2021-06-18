@@ -56,7 +56,8 @@
     "posttest": "npm run check"
   },
   "dependencies": {
-    "@types/node": ">=12.12.47"
+    "@types/node": ">=12.12.47",
+    "@types/semver": "^7.3.6"
   },
   "files": [
     "src/**/*.ts",

@@ -129,7 +129,13 @@ class DnsResolver implements Resolver {
     if (this.ipResult !== null) {
       trace('Returning IP address for target ' + uriToString(this.target));
       setImmediate(() => {
-        this.listener.onSuccessfulResolution(this.ipResult!, null, null, null, {});
+        this.listener.onSuccessfulResolution(
+          this.ipResult!,
+          null,
+          null,
+          null,
+          {}
+        );
       });
       return;
     }
@@ -164,10 +170,9 @@ class DnsResolver implements Resolver {
           const ip6Addresses: dns.LookupAddress[] = addressList.filter(
             (addr) => addr.family === 6
           );
-          this.latestLookupResult = mergeArrays(
-            ip6Addresses,
-            ip4Addresses
-          ).map((addr) => ({ host: addr.address, port: +this.port! }));
+          this.latestLookupResult = mergeArrays(ip6Addresses, ip4Addresses).map(
+            (addr) => ({ host: addr.address, port: +this.port! })
+          );
           const allAddressesString: string =
             '[' +
             this.latestLookupResult

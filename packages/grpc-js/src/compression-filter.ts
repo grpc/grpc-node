@@ -215,7 +215,8 @@ export class CompressionFilter extends BaseFilter implements Filter {
 }
 
 export class CompressionFilterFactory
-  implements FilterFactory<CompressionFilter> {
+  implements FilterFactory<CompressionFilter>
+{
   constructor(private readonly channel: Channel) {}
   createFilter(callStream: Call): CompressionFilter {
     return new CompressionFilter();

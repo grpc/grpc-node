@@ -261,19 +261,20 @@ export class Client {
     options?: CallOptions | UnaryCallback<ResponseType>,
     callback?: UnaryCallback<ResponseType>
   ): ClientUnaryCall {
-    const checkedArguments = this.checkOptionalUnaryResponseArguments<
-      ResponseType
-    >(metadata, options, callback);
-    const methodDefinition: ClientMethodDefinition<
-      RequestType,
-      ResponseType
-    > = {
-      path: method,
-      requestStream: false,
-      responseStream: false,
-      requestSerialize: serialize,
-      responseDeserialize: deserialize,
-    };
+    const checkedArguments =
+      this.checkOptionalUnaryResponseArguments<ResponseType>(
+        metadata,
+        options,
+        callback
+      );
+    const methodDefinition: ClientMethodDefinition<RequestType, ResponseType> =
+      {
+        path: method,
+        requestStream: false,
+        responseStream: false,
+        requestSerialize: serialize,
+        responseDeserialize: deserialize,
+      };
     let callProperties: CallProperties<RequestType, ResponseType> = {
       argument: argument,
       metadata: checkedArguments.metadata,
@@ -377,19 +378,20 @@ export class Client {
     options?: CallOptions | UnaryCallback<ResponseType>,
     callback?: UnaryCallback<ResponseType>
   ): ClientWritableStream<RequestType> {
-    const checkedArguments = this.checkOptionalUnaryResponseArguments<
-      ResponseType
-    >(metadata, options, callback);
-    const methodDefinition: ClientMethodDefinition<
-      RequestType,
-      ResponseType
-    > = {
-      path: method,
-      requestStream: true,
-      responseStream: false,
-      requestSerialize: serialize,
-      responseDeserialize: deserialize,
-    };
+    const checkedArguments =
+      this.checkOptionalUnaryResponseArguments<ResponseType>(
+        metadata,
+        options,
+        callback
+      );
+    const methodDefinition: ClientMethodDefinition<RequestType, ResponseType> =
+      {
+        path: method,
+        requestStream: true,
+        responseStream: false,
+        requestSerialize: serialize,
+        responseDeserialize: deserialize,
+      };
     let callProperties: CallProperties<RequestType, ResponseType> = {
       metadata: checkedArguments.metadata,
       call: new ClientWritableStreamImpl<RequestType>(serialize),
@@ -403,9 +405,8 @@ export class Client {
         callProperties
       ) as CallProperties<RequestType, ResponseType>;
     }
-    const emitter: ClientWritableStream<RequestType> = callProperties.call as ClientWritableStream<
-      RequestType
-    >;
+    const emitter: ClientWritableStream<RequestType> =
+      callProperties.call as ClientWritableStream<RequestType>;
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
@@ -504,16 +505,14 @@ export class Client {
     options?: CallOptions
   ): ClientReadableStream<ResponseType> {
     const checkedArguments = this.checkMetadataAndOptions(metadata, options);
-    const methodDefinition: ClientMethodDefinition<
-      RequestType,
-      ResponseType
-    > = {
-      path: method,
-      requestStream: false,
-      responseStream: true,
-      requestSerialize: serialize,
-      responseDeserialize: deserialize,
-    };
+    const methodDefinition: ClientMethodDefinition<RequestType, ResponseType> =
+      {
+        path: method,
+        requestStream: false,
+        responseStream: true,
+        requestSerialize: serialize,
+        responseDeserialize: deserialize,
+      };
     let callProperties: CallProperties<RequestType, ResponseType> = {
       argument: argument,
       metadata: checkedArguments.metadata,
@@ -527,9 +526,8 @@ export class Client {
         callProperties
       ) as CallProperties<RequestType, ResponseType>;
     }
-    const stream: ClientReadableStream<ResponseType> = callProperties.call as ClientReadableStream<
-      ResponseType
-    >;
+    const stream: ClientReadableStream<ResponseType> =
+      callProperties.call as ClientReadableStream<ResponseType>;
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
@@ -598,16 +596,14 @@ export class Client {
     options?: CallOptions
   ): ClientDuplexStream<RequestType, ResponseType> {
     const checkedArguments = this.checkMetadataAndOptions(metadata, options);
-    const methodDefinition: ClientMethodDefinition<
-      RequestType,
-      ResponseType
-    > = {
-      path: method,
-      requestStream: true,
-      responseStream: true,
-      requestSerialize: serialize,
-      responseDeserialize: deserialize,
-    };
+    const methodDefinition: ClientMethodDefinition<RequestType, ResponseType> =
+      {
+        path: method,
+        requestStream: true,
+        responseStream: true,
+        requestSerialize: serialize,
+        responseDeserialize: deserialize,
+      };
     let callProperties: CallProperties<RequestType, ResponseType> = {
       metadata: checkedArguments.metadata,
       call: new ClientDuplexStreamImpl<RequestType, ResponseType>(
@@ -623,10 +619,8 @@ export class Client {
         callProperties
       ) as CallProperties<RequestType, ResponseType>;
     }
-    const stream: ClientDuplexStream<
-      RequestType,
-      ResponseType
-    > = callProperties.call as ClientDuplexStream<RequestType, ResponseType>;
+    const stream: ClientDuplexStream<RequestType, ResponseType> =
+      callProperties.call as ClientDuplexStream<RequestType, ResponseType>;
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
@@ -654,7 +648,7 @@ export class Client {
         stream.emit('metadata', metadata);
       },
       onReceiveMessage(message: Buffer) {
-        stream.push(message)
+        stream.push(message);
       },
       onReceiveStatus(status: StatusObject) {
         if (receivedStatus) {

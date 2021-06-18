@@ -19,7 +19,7 @@ import {
   LoadBalancer,
   ChannelControlHelper,
   createLoadBalancer,
-  LoadBalancingConfig
+  LoadBalancingConfig,
 } from './load-balancer';
 import { SubchannelAddress, Subchannel } from './subchannel';
 import { ChannelOptions } from './channel-options';

@@ -19,7 +19,7 @@ import {
   LoadBalancer,
   ChannelControlHelper,
   registerLoadBalancerType,
-  LoadBalancingConfig
+  LoadBalancingConfig,
 } from './load-balancer';
 import { ConnectivityState } from './channel';
 import {
@@ -56,7 +56,7 @@ class RoundRobinLoadBalancingConfig implements LoadBalancingConfig {
 
   toJsonObject(): object {
     return {
-      [TYPE_NAME]: {}
+      [TYPE_NAME]: {},
     };
   }
 
@@ -128,7 +128,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
       this.subchannelStateCounts[previousState] -= 1;
       this.subchannelStateCounts[newState] += 1;
       this.calculateAndUpdateState();
-      
+
       if (
         newState === ConnectivityState.TRANSIENT_FAILURE ||
         newState === ConnectivityState.IDLE
@@ -247,5 +247,9 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
 }
 
 export function setup() {
-  registerLoadBalancerType(TYPE_NAME, RoundRobinLoadBalancer, RoundRobinLoadBalancingConfig);
+  registerLoadBalancerType(
+    TYPE_NAME,
+    RoundRobinLoadBalancer,
+    RoundRobinLoadBalancingConfig
+  );
 }

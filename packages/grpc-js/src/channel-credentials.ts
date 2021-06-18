@@ -204,9 +204,8 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
   }
 
   compose(callCredentials: CallCredentials): ChannelCredentials {
-    const combinedCallCredentials = this.callCredentials.compose(
-      callCredentials
-    );
+    const combinedCallCredentials =
+      this.callCredentials.compose(callCredentials);
     return new ComposedChannelCredentialsImpl(this, combinedCallCredentials);
   }
 
@@ -249,9 +248,8 @@ class ComposedChannelCredentialsImpl extends ChannelCredentials {
     super(callCreds);
   }
   compose(callCredentials: CallCredentials) {
-    const combinedCallCredentials = this.callCredentials.compose(
-      callCredentials
-    );
+    const combinedCallCredentials =
+      this.callCredentials.compose(callCredentials);
     return new ComposedChannelCredentialsImpl(
       this.channelCredentials,
       combinedCallCredentials

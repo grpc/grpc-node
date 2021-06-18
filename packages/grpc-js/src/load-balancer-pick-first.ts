@@ -19,7 +19,7 @@ import {
   LoadBalancer,
   ChannelControlHelper,
   registerLoadBalancerType,
-  LoadBalancingConfig
+  LoadBalancingConfig,
 } from './load-balancer';
 import { ConnectivityState } from './channel';
 import {
@@ -62,7 +62,7 @@ export class PickFirstLoadBalancingConfig implements LoadBalancingConfig {
 
   toJsonObject(): object {
     return {
-      [TYPE_NAME]: {}
+      [TYPE_NAME]: {},
     };
   }
 
@@ -457,5 +457,9 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 }
 
 export function setup(): void {
-  registerLoadBalancerType(TYPE_NAME, PickFirstLoadBalancer, PickFirstLoadBalancingConfig);
+  registerLoadBalancerType(
+    TYPE_NAME,
+    PickFirstLoadBalancer,
+    PickFirstLoadBalancingConfig
+  );
 }

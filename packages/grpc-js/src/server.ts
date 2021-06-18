@@ -94,9 +94,8 @@ export interface UntypedServiceImplementation {
 }
 
 function getDefaultHandler(handlerType: HandlerType, methodName: string) {
-  const unimplementedStatusResponse = getUnimplementedStatusResponse(
-    methodName
-  );
+  const unimplementedStatusResponse =
+    getUnimplementedStatusResponse(methodName);
   switch (handlerType) {
     case 'unary':
       return (
@@ -209,10 +208,7 @@ export class Server {
   }
 
   removeService(service: ServiceDefinition): void {
-    if (
-      service === null ||
-      typeof service !== 'object'
-    ) {
+    if (service === null || typeof service !== 'object') {
       throw new Error('removeService() requires object as argument');
     }
 
@@ -258,10 +254,11 @@ export class Server {
     }
 
     const serverOptions: http2.ServerOptions = {
-      maxSendHeaderBlockLength: Number.MAX_SAFE_INTEGER
+      maxSendHeaderBlockLength: Number.MAX_SAFE_INTEGER,
     };
     if ('grpc-node.max_session_memory' in this.options) {
-      serverOptions.maxSessionMemory = this.options['grpc-node.max_session_memory'];
+      serverOptions.maxSessionMemory =
+        this.options['grpc-node.max_session_memory'];
     }
     if ('grpc.max_concurrent_streams' in this.options) {
       serverOptions.settings = {

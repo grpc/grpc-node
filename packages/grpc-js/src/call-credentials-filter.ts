@@ -66,14 +66,17 @@ export class CallCredentialsFilter extends BaseFilter implements Filter {
         Status.INTERNAL,
         '"authorization" metadata cannot have multiple values'
       );
-      return Promise.reject<Metadata>('"authorization" metadata cannot have multiple values');
+      return Promise.reject<Metadata>(
+        '"authorization" metadata cannot have multiple values'
+      );
     }
     return resultMetadata;
   }
 }
 
 export class CallCredentialsFilterFactory
-  implements FilterFactory<CallCredentialsFilter> {
+  implements FilterFactory<CallCredentialsFilter>
+{
   constructor(private readonly channel: Channel) {
     this.channel = channel;
   }

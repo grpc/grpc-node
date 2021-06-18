@@ -182,7 +182,12 @@ export {
 
 /**** Server ****/
 
-export { handleBidiStreamingCall, handleServerStreamingCall, handleUnaryCall, handleClientStreamingCall };
+export {
+  handleBidiStreamingCall,
+  handleServerStreamingCall,
+  handleUnaryCall,
+  handleClientStreamingCall,
+};
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type Call =

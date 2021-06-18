@@ -102,14 +102,14 @@ export interface LoadBalancingConfig {
 }
 
 export interface LoadBalancingConfigConstructor {
-  new(...args: any): LoadBalancingConfig;
+  new (...args: any): LoadBalancingConfig;
   createFromJson(obj: any): LoadBalancingConfig;
 }
 
 const registeredLoadBalancerTypes: {
   [name: string]: {
-    LoadBalancer: LoadBalancerConstructor,
-    LoadBalancingConfig: LoadBalancingConfigConstructor
+    LoadBalancer: LoadBalancerConstructor;
+    LoadBalancingConfig: LoadBalancingConfigConstructor;
   };
 } = {};
 
@@ -120,7 +120,7 @@ export function registerLoadBalancerType(
 ) {
   registeredLoadBalancerTypes[typeName] = {
     LoadBalancer: loadBalancerType,
-    LoadBalancingConfig: loadBalancingConfigType
+    LoadBalancingConfig: loadBalancingConfigType,
   };
 }
 
@@ -130,7 +130,9 @@ export function createLoadBalancer(
 ): LoadBalancer | null {
   const typeName = config.getLoadBalancerName();
   if (typeName in registeredLoadBalancerTypes) {
-    return new registeredLoadBalancerTypes[typeName].LoadBalancer(channelControlHelper);
+    return new registeredLoadBalancerTypes[typeName].LoadBalancer(
+      channelControlHelper
+    );
   } else {
     return null;
   }
@@ -140,10 +142,13 @@ export function isLoadBalancerNameRegistered(typeName: string): boolean {
   return typeName in registeredLoadBalancerTypes;
 }
 
-export function getFirstUsableConfig(configs: LoadBalancingConfig[], defaultPickFirst?: true): LoadBalancingConfig;
 export function getFirstUsableConfig(
   configs: LoadBalancingConfig[],
-  defaultPickFirst: boolean = false
+  defaultPickFirst?: true
+): LoadBalancingConfig;
+export function getFirstUsableConfig(
+  configs: LoadBalancingConfig[],
+  defaultPickFirst = false
 ): LoadBalancingConfig | null {
   for (const config of configs) {
     if (config.getLoadBalancerName() in registeredLoadBalancerTypes) {
@@ -151,23 +156,27 @@ export function getFirstUsableConfig(
     }
   }
   if (defaultPickFirst) {
-    return new load_balancer_pick_first.PickFirstLoadBalancingConfig()
+    return new load_balancer_pick_first.PickFirstLoadBalancingConfig();
   } else {
     return null;
   }
 }
 
 export function validateLoadBalancingConfig(obj: any): LoadBalancingConfig {
-  if (!(obj !== null  && (typeof obj === 'object'))) {
+  if (!(obj !== null && typeof obj === 'object')) {
     throw new Error('Load balancing config must be an object');
   }
   const keys = Object.keys(obj);
   if (keys.length !== 1) {
-    throw new Error('Provided load balancing config has multiple conflicting entries');
+    throw new Error(
+      'Provided load balancing config has multiple conflicting entries'
+    );
   }
   const typeName = keys[0];
   if (typeName in registeredLoadBalancerTypes) {
-    return registeredLoadBalancerTypes[typeName].LoadBalancingConfig.createFromJson(obj[typeName]);
+    return registeredLoadBalancerTypes[
+      typeName
+    ].LoadBalancingConfig.createFromJson(obj[typeName]);
   } else {
     throw new Error(`Unrecognized load balancing config name ${typeName}`);
   }

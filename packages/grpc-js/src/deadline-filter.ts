@@ -42,7 +42,7 @@ function getDeadline(deadline: number) {
 
 export class DeadlineFilter extends BaseFilter implements Filter {
   private timer: NodeJS.Timer | null = null;
-  private deadline: number = Infinity;
+  private deadline = Infinity;
   constructor(
     private readonly channel: Channel,
     private readonly callStream: Call
@@ -66,7 +66,7 @@ export class DeadlineFilter extends BaseFilter implements Filter {
       clearTimeout(this.timer);
     }
     const now: number = new Date().getTime();
-    let timeout = this.deadline - now;
+    const timeout = this.deadline - now;
     if (timeout <= 0) {
       process.nextTick(() => {
         this.callStream.cancelWithStatus(

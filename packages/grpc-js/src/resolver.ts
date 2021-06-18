@@ -28,7 +28,7 @@ import { Status } from './constants';
 export interface CallConfig {
   methodConfig: MethodConfig;
   onCommitted?: () => void;
-  pickInformation: {[key: string]: string};
+  pickInformation: { [key: string]: string };
   status: Status;
 }
 
@@ -80,7 +80,7 @@ export interface Resolver {
    * called synchronously with the constructor or updateResolution.
    */
   updateResolution(): void;
-  
+
   /**
    * Destroy the resolver. Should be called when the owning channel shuts down.
    */

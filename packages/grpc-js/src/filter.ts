@@ -57,8 +57,7 @@ export abstract class BaseFilter implements Filter {
     return status;
   }
 
-  refresh(): void {
-  }
+  refresh(): void {}
 }
 
 export interface FilterFactory<T extends Filter> {
