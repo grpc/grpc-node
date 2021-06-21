@@ -39,6 +39,7 @@ export enum LogVerbosity {
   DEBUG = 0,
   INFO,
   ERROR,
+  NONE,
 }
 
 /**
