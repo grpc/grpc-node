@@ -579,6 +579,34 @@ function generateServiceInterfaces(formatter: TextFormatter, serviceType: Protob
   generateServiceDefinitionInterface(formatter, serviceType);
 }
 
+function containsDefinition(definitionType: typeof Protobuf.Type | typeof Protobuf.Enum, namespace: Protobuf.NamespaceBase): boolean {
+  for (const nested of namespace.nestedArray.sort(compareName)) {
+    if (nested instanceof definitionType) {
+      return true;
+    } else if (isNamespaceBase(nested) && !(nested instanceof Protobuf.Type) && !(nested instanceof Protobuf.Enum)) {
+      return containsDefinition(definitionType, nested);
+    }
+  }
+
+  return false;
+}
+
+function generateDefinitionImports(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, options: GeneratorOptions) {
+  const imports = [];
+
+  if (containsDefinition(Protobuf.Enum, namespace)) {
+    imports.push('EnumTypeDefinition');
+  }
+
+  if (containsDefinition(Protobuf.Type, namespace)) {
+    imports.push('MessageTypeDefinition');
+  }
+
+  if (imports.length) {
+    formatter.writeLine(`import type { ${imports.join(', ')} } from '@grpc/proto-loader';`);
+  }
+}
+
 function generateServiceImports(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, options: GeneratorOptions) {
   for (const nested of namespace.nestedArray.sort(compareName)) {
     if (nested instanceof Protobuf.Service) {
@@ -617,7 +645,7 @@ function generateLoadedDefinitionTypes(formatter: TextFormatter, namespace: Prot
 
 function generateRootFile(formatter: TextFormatter, root: Protobuf.Root, options: GeneratorOptions) {
   formatter.writeLine(`import type * as grpc from '${options.grpcLib}';`);
-  formatter.writeLine("import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';");
+  generateDefinitionImports(formatter, root, options);
   formatter.writeLine('');
 
   generateServiceImports(formatter, root, options);
