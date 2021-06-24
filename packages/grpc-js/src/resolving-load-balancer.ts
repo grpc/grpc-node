@@ -18,11 +18,11 @@
 import {
   ChannelControlHelper,
   LoadBalancer,
-  getFirstUsableConfig,
-  LoadBalancingConfig
+  LoadBalancingConfig,
+  getFirstUsableConfig
 } from './load-balancer';
 import { ServiceConfig, validateServiceConfig } from './service-config';
-import { ConnectivityState } from './channel';
+import { ConnectivityState } from "./connectivity-state";
 import { ConfigSelector, createResolver, Resolver } from './resolver';
 import { ServiceError } from './call';
 import { Picker, UnavailablePicker, QueuePicker } from './picker';
@@ -32,7 +32,7 @@ import { StatusObject } from './call-stream';
 import { Metadata } from './metadata';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
-import { SubchannelAddress } from './subchannel';
+import { SubchannelAddress } from "./subchannel-address";
 import { GrpcUri, uriToString } from './uri-parser';
 import { ChildLoadBalancerHandler } from './load-balancer-child-handler';
 import { ChannelOptions } from './channel-options';

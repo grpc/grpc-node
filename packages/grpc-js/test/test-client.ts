@@ -20,7 +20,7 @@ import * as assert from 'assert';
 import * as grpc from '../src';
 import { Server, ServerCredentials } from '../src';
 import { Client } from '../src';
-import { ConnectivityState } from '../src/channel';
+import { ConnectivityState } from "../src/connectivity-state";
 
 const clientInsecureCreds = grpc.credentials.createInsecure();
 const serverInsecureCreds = ServerCredentials.createInsecure();

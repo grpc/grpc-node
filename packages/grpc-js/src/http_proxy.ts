@@ -25,8 +25,8 @@ import * as logging from './logging';
 import {
   SubchannelAddress,
   isTcpSubchannelAddress,
-  subchannelAddressToString,
-} from './subchannel';
+  subchannelAddressToString
+} from "./subchannel-address";
 import { ChannelOptions } from './channel-options';
 import { GrpcUri, parseUri, splitHostPort, uriToString } from './uri-parser';
 import { URL } from 'url';

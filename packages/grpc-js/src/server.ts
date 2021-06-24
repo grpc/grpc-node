@@ -55,8 +55,8 @@ import {
   SubchannelAddress,
   TcpSubchannelAddress,
   isTcpSubchannelAddress,
-  subchannelAddressToString,
-} from './subchannel';
+  subchannelAddressToString
+} from "./subchannel-address";
 import { parseUri } from './uri-parser';
 
 const TRACER_NAME = 'server';

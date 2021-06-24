@@ -18,9 +18,11 @@
 import { ChannelOptions, channelOptionsEqual } from './channel-options';
 import {
   Subchannel,
-  SubchannelAddress,
-  subchannelAddressEqual,
 } from './subchannel';
+import {
+  SubchannelAddress,
+  subchannelAddressEqual
+} from "./subchannel-address";
 import { ChannelCredentials } from './channel-credentials';
 import { GrpcUri, uriToString } from './uri-parser';
 

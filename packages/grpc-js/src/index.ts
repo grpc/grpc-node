@@ -24,7 +24,8 @@ import {
 } from './call';
 import { CallCredentials, OAuth2Client } from './call-credentials';
 import { Deadline, StatusObject } from './call-stream';
-import { Channel, ConnectivityState, ChannelImplementation } from './channel';
+import { Channel, ChannelImplementation } from './channel';
+import { ConnectivityState } from "./connectivity-state";
 import { ChannelCredentials } from './channel-credentials';
 import {
   CallOptions,
@@ -246,10 +247,14 @@ export { ChannelOptions } from './channel-options';
 import * as experimental from './experimental';
 export { experimental };
 
-import * as resolver from './resolver';
-import * as load_balancer from './load-balancer';
+import * as resolver_dns from './resolver-dns';
+import * as resolver_uds from './resolver-uds';
+import * as load_balancer_pick_first from './load-balancer-pick-first';
+import * as load_balancer_round_robin from './load-balancer-round-robin';
 
 (() => {
-  resolver.registerAll();
-  load_balancer.registerAll();
+  resolver_dns.setup();
+  resolver_uds.setup();
+  load_balancer_pick_first.setup();
+  load_balancer_round_robin.setup();
 })();

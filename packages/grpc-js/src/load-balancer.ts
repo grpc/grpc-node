@@ -16,11 +16,10 @@
  */
 
 import { ChannelOptions } from './channel-options';
-import { Subchannel, SubchannelAddress } from './subchannel';
-import { ConnectivityState } from './channel';
+import { Subchannel } from './subchannel';
+import { SubchannelAddress } from "./subchannel-address";
+import { ConnectivityState } from "./connectivity-state";
 import { Picker } from './picker';
-import * as load_balancer_pick_first from './load-balancer-pick-first';
-import * as load_balancer_round_robin from './load-balancer-round-robin';
 
 /**
  * A collection of functions associated with a channel that a load balancer
@@ -108,10 +107,12 @@ export interface LoadBalancingConfigConstructor {
 
 const registeredLoadBalancerTypes: {
   [name: string]: {
-    LoadBalancer: LoadBalancerConstructor,
-    LoadBalancingConfig: LoadBalancingConfigConstructor
+    LoadBalancer: LoadBalancerConstructor;
+    LoadBalancingConfig: LoadBalancingConfigConstructor;
   };
 } = {};
+
+let defaultLoadBalancerType: string | null = null;
 
 export function registerLoadBalancerType(
   typeName: string,
@@ -122,6 +123,10 @@ export function registerLoadBalancerType(
     LoadBalancer: loadBalancerType,
     LoadBalancingConfig: loadBalancingConfigType
   };
+}
+
+export function registerDefaultLoadBalancerType(typeName: string) {
+  defaultLoadBalancerType = typeName;
 }
 
 export function createLoadBalancer(
@@ -140,25 +145,29 @@ export function isLoadBalancerNameRegistered(typeName: string): boolean {
   return typeName in registeredLoadBalancerTypes;
 }
 
-export function getFirstUsableConfig(configs: LoadBalancingConfig[], defaultPickFirst?: true): LoadBalancingConfig;
+export function getFirstUsableConfig(configs: LoadBalancingConfig[], fallbackTodefault?: true): LoadBalancingConfig;
 export function getFirstUsableConfig(
   configs: LoadBalancingConfig[],
-  defaultPickFirst: boolean = false
+  fallbackTodefault: boolean = false
 ): LoadBalancingConfig | null {
   for (const config of configs) {
     if (config.getLoadBalancerName() in registeredLoadBalancerTypes) {
       return config;
     }
   }
-  if (defaultPickFirst) {
-    return new load_balancer_pick_first.PickFirstLoadBalancingConfig()
+  if (fallbackTodefault) {
+    if (defaultLoadBalancerType) {
+      return new registeredLoadBalancerTypes[defaultLoadBalancerType]!.LoadBalancingConfig();
+    } else {
+      return null;
+    }
   } else {
     return null;
   }
 }
 
 export function validateLoadBalancingConfig(obj: any): LoadBalancingConfig {
-  if (!(obj !== null  && (typeof obj === 'object'))) {
+  if (!(obj !== null && (typeof obj === 'object'))) {
     throw new Error('Load balancing config must be an object');
   }
   const keys = Object.keys(obj);
@@ -171,9 +180,4 @@ export function validateLoadBalancingConfig(obj: any): LoadBalancingConfig {
   } else {
     throw new Error(`Unrecognized load balancing config name ${typeName}`);
   }
-}
-
-export function registerAll() {
-  load_balancer_pick_first.setup();
-  load_balancer_round_robin.setup();
 }
