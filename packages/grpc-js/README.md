@@ -25,6 +25,8 @@ Documentation specifically for the `@grpc/grpc-js` package is currently not avai
 - Connection Keepalives
 - HTTP Connect support (proxies)
 
+If you need a feature from the `grpc` package that is not provided by the `@grpc/grpc-js`, please file a feature request with that information.
+
 This library does not directly handle `.proto` files. To use `.proto` files with this library we recommend using the `@grpc/proto-loader` package.
 
 ## Migrating from [`grpc`](https://www.npmjs.com/package/grpc)
