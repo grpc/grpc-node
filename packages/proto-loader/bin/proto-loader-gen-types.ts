@@ -583,8 +583,8 @@ function containsDefinition(definitionType: typeof Protobuf.Type | typeof Protob
   for (const nested of namespace.nestedArray.sort(compareName)) {
     if (nested instanceof definitionType) {
       return true;
-    } else if (isNamespaceBase(nested) && !(nested instanceof Protobuf.Type) && !(nested instanceof Protobuf.Enum)) {
-      return containsDefinition(definitionType, nested);
+    } else if (isNamespaceBase(nested) && !(nested instanceof Protobuf.Type) && !(nested instanceof Protobuf.Enum) && containsDefinition(definitionType, nested)) {
+      return true;
     }
   }
 
