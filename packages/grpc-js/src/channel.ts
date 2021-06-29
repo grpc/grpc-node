@@ -35,20 +35,13 @@ import { DeadlineFilterFactory } from './deadline-filter';
 import { CompressionFilterFactory } from './compression-filter';
 import { CallConfig, ConfigSelector, getDefaultAuthority, mapUriDefaultScheme } from './resolver';
 import { trace, log } from './logging';
-import { SubchannelAddress } from './subchannel';
+import { SubchannelAddress } from "./subchannel-address";
 import { MaxMessageSizeFilterFactory } from './max-message-size-filter';
 import { mapProxyName } from './http_proxy';
 import { GrpcUri, parseUri, uriToString } from './uri-parser';
 import { ServerSurfaceCall } from './server-call';
 import { SurfaceCall } from './call';
-
-export enum ConnectivityState {
-  IDLE,
-  CONNECTING,
-  READY,
-  TRANSIENT_FAILURE,
-  SHUTDOWN,
-}
+import { ConnectivityState } from './connectivity-state';
 
 /**
  * See https://nodejs.org/api/timers.html#timers_setinterval_callback_delay_args

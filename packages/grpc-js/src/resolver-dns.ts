@@ -28,7 +28,7 @@ import { StatusObject } from './call-stream';
 import { Metadata } from './metadata';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
-import { SubchannelAddress, TcpSubchannelAddress } from './subchannel';
+import { SubchannelAddress, TcpSubchannelAddress } from "./subchannel-address";
 import { GrpcUri, uriToString, splitHostPort } from './uri-parser';
 import { isIPv6, isIPv4 } from 'net';
 import { ChannelOptions } from './channel-options';

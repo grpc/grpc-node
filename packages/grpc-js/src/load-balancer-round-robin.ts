@@ -18,10 +18,10 @@
 import {
   LoadBalancer,
   ChannelControlHelper,
-  registerLoadBalancerType,
-  LoadBalancingConfig
+  LoadBalancingConfig,
+  registerLoadBalancerType
 } from './load-balancer';
-import { ConnectivityState } from './channel';
+import { ConnectivityState } from "./connectivity-state";
 import {
   QueuePicker,
   Picker,
@@ -33,9 +33,11 @@ import {
 import {
   Subchannel,
   ConnectivityStateListener,
-  SubchannelAddress,
-  subchannelAddressToString,
 } from './subchannel';
+import {
+  SubchannelAddress,
+  subchannelAddressToString
+} from "./subchannel-address";
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 

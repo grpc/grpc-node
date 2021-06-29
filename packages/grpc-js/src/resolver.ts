@@ -16,10 +16,8 @@
  */
 
 import { MethodConfig, ServiceConfig } from './service-config';
-import * as resolver_dns from './resolver-dns';
-import * as resolver_uds from './resolver-uds';
 import { StatusObject } from './call-stream';
-import { SubchannelAddress } from './subchannel';
+import { SubchannelAddress } from "./subchannel-address";
 import { GrpcUri, uriToString } from './uri-parser';
 import { ChannelOptions } from './channel-options';
 import { Metadata } from './metadata';
@@ -174,9 +172,4 @@ export function mapUriDefaultScheme(target: GrpcUri): GrpcUri | null {
     }
   }
   return target;
-}
-
-export function registerAll() {
-  resolver_dns.setup();
-  resolver_uds.setup();
 }

@@ -4,7 +4,7 @@ export { GrpcUri, uriToString } from './uri-parser';
 export { ServiceConfig, Duration } from './service-config';
 export { BackoffTimeout } from './backoff-timeout';
 export { LoadBalancer, LoadBalancingConfig, ChannelControlHelper, registerLoadBalancerType, getFirstUsableConfig, validateLoadBalancingConfig } from './load-balancer';
-export { SubchannelAddress, subchannelAddressToString } from './subchannel';
+export { SubchannelAddress, subchannelAddressToString } from './subchannel-address';
 export { ChildLoadBalancerHandler } from './load-balancer-child-handler';
 export { Picker, UnavailablePicker, QueuePicker, PickResult, PickArgs, PickResultType } from './picker';
 export { Call as CallStream } from './call-stream';

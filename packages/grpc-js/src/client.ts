@@ -30,7 +30,8 @@ import {
 } from './call';
 import { CallCredentials } from './call-credentials';
 import { Deadline, StatusObject } from './call-stream';
-import { Channel, ConnectivityState, ChannelImplementation } from './channel';
+import { Channel, ChannelImplementation } from './channel';
+import { ConnectivityState } from "./connectivity-state";
 import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
 import { Status } from './constants';
