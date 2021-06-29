@@ -22,3 +22,4 @@ const client = new MyServiceClient('xds:///example.com:123');
 ## Supported Features
 
  - [xDS-Based Global Load Balancing](https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md)
+ - [xDS traffic splitting and routing](https://github.com/grpc/proposal/blob/master/A28-xds-traffic-splitting-and-routing.md)
