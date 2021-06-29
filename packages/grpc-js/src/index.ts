@@ -25,7 +25,7 @@ import {
 import { CallCredentials, OAuth2Client } from './call-credentials';
 import { Deadline, StatusObject } from './call-stream';
 import { Channel, ChannelImplementation } from './channel';
-import { ConnectivityState } from "./connectivity-state";
+import { ConnectivityState } from './connectivity-state';
 import { ChannelCredentials } from './channel-credentials';
 import {
   CallOptions,
@@ -183,7 +183,12 @@ export {
 
 /**** Server ****/
 
-export { handleBidiStreamingCall, handleServerStreamingCall, handleUnaryCall, handleClientStreamingCall };
+export {
+  handleBidiStreamingCall,
+  handleServerStreamingCall,
+  handleUnaryCall,
+  handleClientStreamingCall,
+};
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type Call =

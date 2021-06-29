@@ -27,7 +27,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as os from 'os';
-import { LoadBalancingConfig, validateLoadBalancingConfig } from './load-balancer';
+import {
+  LoadBalancingConfig,
+  validateLoadBalancingConfig,
+} from './load-balancer';
 
 export interface MethodConfigName {
   service: string;
@@ -107,21 +110,30 @@ function validateMethodConfig(obj: any): MethodConfig {
   }
   if ('timeout' in obj) {
     if (typeof obj.timeout === 'object') {
-      if (!('seconds' in obj.timeout) || !(typeof obj.timeout.seconds === 'number')) {
+      if (
+        !('seconds' in obj.timeout) ||
+        !(typeof obj.timeout.seconds === 'number')
+      ) {
         throw new Error('Invalid method config: invalid timeout.seconds');
       }
-      if (!('nanos' in obj.timeout) || !(typeof obj.timeout.nanos === 'number')) {
+      if (
+        !('nanos' in obj.timeout) ||
+        !(typeof obj.timeout.nanos === 'number')
+      ) {
         throw new Error('Invalid method config: invalid timeout.nanos');
       }
       result.timeout = obj.timeout;
     } else if (
-      (typeof obj.timeout === 'string') && TIMEOUT_REGEX.test(obj.timeout)
+      typeof obj.timeout === 'string' &&
+      TIMEOUT_REGEX.test(obj.timeout)
     ) {
-      const timeoutParts = obj.timeout.substring(0, obj.timeout.length - 1).split('.');
+      const timeoutParts = obj.timeout
+        .substring(0, obj.timeout.length - 1)
+        .split('.');
       result.timeout = {
         seconds: timeoutParts[0] | 0,
-        nanos: (timeoutParts[1] ?? 0) | 0
-      }
+        nanos: (timeoutParts[1] ?? 0) | 0,
+      };
     } else {
       throw new Error('Invalid method config: invalid timeout');
     }

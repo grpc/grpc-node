@@ -19,12 +19,12 @@ import {
   LoadBalancer,
   ChannelControlHelper,
   LoadBalancingConfig,
-  createLoadBalancer
+  createLoadBalancer,
 } from './load-balancer';
 import { Subchannel } from './subchannel';
-import { SubchannelAddress } from "./subchannel-address";
+import { SubchannelAddress } from './subchannel-address';
 import { ChannelOptions } from './channel-options';
-import { ConnectivityState } from "./connectivity-state";
+import { ConnectivityState } from './connectivity-state';
 import { Picker } from './picker';
 
 const TYPE_NAME = 'child_load_balancer_helper';

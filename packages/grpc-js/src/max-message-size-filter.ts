@@ -15,10 +15,14 @@
  *
  */
 
-import { BaseFilter, Filter, FilterFactory } from "./filter";
-import { Call, WriteObject } from "./call-stream";
-import { Status, DEFAULT_MAX_SEND_MESSAGE_LENGTH, DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH } from "./constants";
-import { ChannelOptions } from "./channel-options";
+import { BaseFilter, Filter, FilterFactory } from './filter';
+import { Call, WriteObject } from './call-stream';
+import {
+  Status,
+  DEFAULT_MAX_SEND_MESSAGE_LENGTH,
+  DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
+} from './constants';
+import { ChannelOptions } from './channel-options';
 
 export class MaxMessageSizeFilter extends BaseFilter implements Filter {
   private maxSendMessageSize: number = DEFAULT_MAX_SEND_MESSAGE_LENGTH;
@@ -44,7 +48,10 @@ export class MaxMessageSizeFilter extends BaseFilter implements Filter {
     } else {
       const concreteMessage = await message;
       if (concreteMessage.message.length > this.maxSendMessageSize) {
-        this.callStream.cancelWithStatus(Status.RESOURCE_EXHAUSTED, `Sent message larger than max (${concreteMessage.message.length} vs. ${this.maxSendMessageSize})`);
+        this.callStream.cancelWithStatus(
+          Status.RESOURCE_EXHAUSTED,
+          `Sent message larger than max (${concreteMessage.message.length} vs. ${this.maxSendMessageSize})`
+        );
         return Promise.reject<WriteObject>('Message too large');
       } else {
         return concreteMessage;
@@ -60,7 +67,10 @@ export class MaxMessageSizeFilter extends BaseFilter implements Filter {
     } else {
       const concreteMessage = await message;
       if (concreteMessage.length > this.maxReceiveMessageSize) {
-        this.callStream.cancelWithStatus(Status.RESOURCE_EXHAUSTED, `Received message larger than max (${concreteMessage.length} vs. ${this.maxReceiveMessageSize})`);
+        this.callStream.cancelWithStatus(
+          Status.RESOURCE_EXHAUSTED,
+          `Received message larger than max (${concreteMessage.length} vs. ${this.maxReceiveMessageSize})`
+        );
         return Promise.reject<Buffer>('Message too large');
       } else {
         return concreteMessage;
@@ -69,7 +79,8 @@ export class MaxMessageSizeFilter extends BaseFilter implements Filter {
   }
 }
 
-export class MaxMessageSizeFilterFactory implements FilterFactory<MaxMessageSizeFilter> {
+export class MaxMessageSizeFilterFactory
+  implements FilterFactory<MaxMessageSizeFilter> {
   constructor(private readonly options: ChannelOptions) {}
 
   createFilter(callStream: Call): MaxMessageSizeFilter {

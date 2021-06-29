@@ -20,5 +20,5 @@ export enum ConnectivityState {
   CONNECTING,
   READY,
   TRANSIENT_FAILURE,
-  SHUTDOWN
+  SHUTDOWN,
 }

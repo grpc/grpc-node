@@ -19,10 +19,10 @@ import {
   ChannelControlHelper,
   LoadBalancer,
   LoadBalancingConfig,
-  getFirstUsableConfig
+  getFirstUsableConfig,
 } from './load-balancer';
 import { ServiceConfig, validateServiceConfig } from './service-config';
-import { ConnectivityState } from "./connectivity-state";
+import { ConnectivityState } from './connectivity-state';
 import { ConfigSelector, createResolver, Resolver } from './resolver';
 import { ServiceError } from './call';
 import { Picker, UnavailablePicker, QueuePicker } from './picker';
@@ -32,7 +32,7 @@ import { StatusObject } from './call-stream';
 import { Metadata } from './metadata';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
-import { SubchannelAddress } from "./subchannel-address";
+import { SubchannelAddress } from './subchannel-address';
 import { GrpcUri, uriToString } from './uri-parser';
 import { ChildLoadBalancerHandler } from './load-balancer-child-handler';
 import { ChannelOptions } from './channel-options';
@@ -46,30 +46,38 @@ function trace(text: string): void {
 
 const DEFAULT_LOAD_BALANCER_NAME = 'pick_first';
 
-function getDefaultConfigSelector(serviceConfig: ServiceConfig | null): ConfigSelector {
-  return function defaultConfigSelector(methodName: string, metadata: Metadata) {
-    const splitName = methodName.split('/').filter(x => x.length > 0);
+function getDefaultConfigSelector(
+  serviceConfig: ServiceConfig | null
+): ConfigSelector {
+  return function defaultConfigSelector(
+    methodName: string,
+    metadata: Metadata
+  ) {
+    const splitName = methodName.split('/').filter((x) => x.length > 0);
     const service = splitName[0] ?? '';
     const method = splitName[1] ?? '';
     if (serviceConfig && serviceConfig.methodConfig) {
       for (const methodConfig of serviceConfig.methodConfig) {
         for (const name of methodConfig.name) {
-          if (name.service === service && (name.method === undefined || name.method === method)) {
+          if (
+            name.service === service &&
+            (name.method === undefined || name.method === method)
+          ) {
             return {
               methodConfig: methodConfig,
               pickInformation: {},
-              status: Status.OK
+              status: Status.OK,
             };
           }
         }
       }
     }
     return {
-      methodConfig: {name: []},
+      methodConfig: { name: [] },
       pickInformation: {},
-      status: Status.OK
+      status: Status.OK,
     };
-  }
+  };
 }
 
 export interface ResolutionCallback {
@@ -201,7 +209,10 @@ export class ResolvingLoadBalancer implements LoadBalancer {
           }
           const workingConfigList =
             workingServiceConfig?.loadBalancingConfig ?? [];
-          const loadBalancingConfig = getFirstUsableConfig(workingConfigList, true);
+          const loadBalancingConfig = getFirstUsableConfig(
+            workingConfigList,
+            true
+          );
           if (loadBalancingConfig === null) {
             // There were load balancing configs but none are supported. This counts as a resolution failure
             this.handleResolutionFailure({
@@ -217,8 +228,11 @@ export class ResolvingLoadBalancer implements LoadBalancer {
             loadBalancingConfig,
             attributes
           );
-          const finalServiceConfig = workingServiceConfig ?? this.defaultServiceConfig;
-          this.onSuccessfulResolution(configSelector ?? getDefaultConfigSelector(finalServiceConfig));
+          const finalServiceConfig =
+            workingServiceConfig ?? this.defaultServiceConfig;
+          this.onSuccessfulResolution(
+            configSelector ?? getDefaultConfigSelector(finalServiceConfig)
+          );
         },
         onError: (error: StatusObject) => {
           this.handleResolutionFailure(error);

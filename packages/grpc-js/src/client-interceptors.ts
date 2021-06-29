@@ -348,7 +348,10 @@ class BaseInterceptingCall implements InterceptingCallInterface {
     try {
       serialized = this.methodDefinition.requestSerialize(message);
     } catch (e) {
-      this.call.cancelWithStatus(Status.INTERNAL, `Request message serialization failure: ${e.message}`);
+      this.call.cancelWithStatus(
+        Status.INTERNAL,
+        `Request message serialization failure: ${e.message}`
+      );
       return;
     }
     this.call.sendMessageWithContext(context, serialized);
@@ -403,7 +406,8 @@ class BaseInterceptingCall implements InterceptingCallInterface {
  * BaseInterceptingCall with special-cased behavior for methods with unary
  * responses.
  */
-class BaseUnaryInterceptingCall extends BaseInterceptingCall
+class BaseUnaryInterceptingCall
+  extends BaseInterceptingCall
   implements InterceptingCallInterface {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(call: Call, methodDefinition: ClientMethodDefinition<any, any>) {
@@ -435,7 +439,8 @@ class BaseUnaryInterceptingCall extends BaseInterceptingCall
  * BaseInterceptingCall with special-cased behavior for methods with streaming
  * responses.
  */
-class BaseStreamingInterceptingCall extends BaseInterceptingCall
+class BaseStreamingInterceptingCall
+  extends BaseInterceptingCall
   implements InterceptingCallInterface {}
 
 function getBottomInterceptingCall(
