@@ -235,6 +235,7 @@ export class Subchannel {
     this.keepaliveTimeoutId = setTimeout(() => {
       this.transitionToState([ConnectivityState.READY], ConnectivityState.IDLE);
     }, this.keepaliveTimeoutMs);
+    this.keepaliveTimeoutId.unref?.();
     this.session!.ping(
       (err: Error | null, duration: number, payload: Buffer) => {
         clearTimeout(this.keepaliveTimeoutId);
@@ -246,6 +247,7 @@ export class Subchannel {
     this.keepaliveIntervalId = setInterval(() => {
       this.sendPing();
     }, this.keepaliveTimeMs);
+    this.keepaliveIntervalId.unref?.()
     /* Don't send a ping immediately because whatever caused us to start
      * sending pings should also involve some network activity. */
   }
@@ -553,7 +555,6 @@ export class Subchannel {
       this.transitionToState(
         [
           ConnectivityState.CONNECTING,
-          ConnectivityState.IDLE,
           ConnectivityState.READY,
         ],
         ConnectivityState.TRANSIENT_FAILURE

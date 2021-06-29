@@ -197,8 +197,8 @@ export class PathExactValueMatcher {
 
 export class PathSafeRegexValueMatcher {
   private targetRegexImpl: RE2;
-  constructor(targetRegex: string, caseInsensitive: boolean) {
-    this.targetRegexImpl = new RE2(`^${targetRegex}$`, caseInsensitive ? 'iu' : 'u');
+  constructor(targetRegex: string) {
+    this.targetRegexImpl = new RE2(`^${targetRegex}$`, 'u');
   }
 
   apply(value: string) {
