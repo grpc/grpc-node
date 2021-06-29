@@ -20,7 +20,7 @@ import { ChannelOptions } from "./channel-options";
 import { LogVerbosity, Status } from "./constants";
 import { Metadata } from "./metadata";
 import { registerResolver, Resolver, ResolverListener } from "./resolver";
-import { SubchannelAddress } from "./subchannel";
+import { SubchannelAddress } from "./subchannel-address";
 import { GrpcUri, splitHostPort, uriToString } from "./uri-parser";
 import * as logging from './logging';
 

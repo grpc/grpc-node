@@ -19,21 +19,23 @@
 // tslint:disable no-any
 import * as assert from 'assert';
 import * as resolverManager from '../src/resolver';
-import * as load_balancer_pick_first from '../src/load-balancer-pick-first';
-import * as load_balancer_round_robin from '../src/load-balancer-round-robin';
+import * as resolver_dns from '../src/resolver-dns';
+import * as resolver_uds from '../src/resolver-uds';
+import * as resolver_ip from '../src/resolver-ip';
 import { ServiceConfig } from '../src/service-config';
 import { StatusObject } from '../src/call-stream';
 import { SubchannelAddress, isTcpSubchannelAddress } from "../src/subchannel-address";
 import { parseUri, GrpcUri } from '../src/uri-parser';
 
 describe('Name Resolver', () => {
+  before(() => {
+    resolver_dns.setup();
+    resolver_uds.setup();
+    resolver_ip.setup();
+  });
   describe('DNS Names', function() {
     // For some reason DNS queries sometimes take a long time on Windows
     this.timeout(4000);
-    before(() => {
-      load_balancer_pick_first.setup();
-      load_balancer_round_robin.setup();
-    });
     it('Should resolve localhost properly', done => {
       const target = resolverManager.mapUriDefaultScheme(parseUri('localhost:50051')!)!;
       const listener: resolverManager.ResolverListener = {
