@@ -31,7 +31,7 @@ import {
 import { CallCredentials } from './call-credentials';
 import { Deadline, StatusObject } from './call-stream';
 import { Channel, ChannelImplementation } from './channel';
-import { ConnectivityState } from "./connectivity-state";
+import { ConnectivityState } from './connectivity-state';
 import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
 import { Status } from './constants';
@@ -56,7 +56,9 @@ const INTERCEPTOR_SYMBOL = Symbol();
 const INTERCEPTOR_PROVIDER_SYMBOL = Symbol();
 const CALL_INVOCATION_TRANSFORMER_SYMBOL = Symbol();
 
-function isFunction<ResponseType>(arg: Metadata | CallOptions | UnaryCallback<ResponseType> | undefined): arg is UnaryCallback<ResponseType>{
+function isFunction<ResponseType>(
+  arg: Metadata | CallOptions | UnaryCallback<ResponseType> | undefined
+): arg is UnaryCallback<ResponseType> {
   return typeof arg === 'function';
 }
 
@@ -266,9 +268,11 @@ export class Client {
     options?: CallOptions | UnaryCallback<ResponseType>,
     callback?: UnaryCallback<ResponseType>
   ): ClientUnaryCall {
-    const checkedArguments = this.checkOptionalUnaryResponseArguments<
-      ResponseType
-    >(metadata, options, callback);
+    const checkedArguments = this.checkOptionalUnaryResponseArguments<ResponseType>(
+      metadata,
+      options,
+      callback
+    );
     const methodDefinition: ClientMethodDefinition<
       RequestType,
       ResponseType
@@ -382,9 +386,11 @@ export class Client {
     options?: CallOptions | UnaryCallback<ResponseType>,
     callback?: UnaryCallback<ResponseType>
   ): ClientWritableStream<RequestType> {
-    const checkedArguments = this.checkOptionalUnaryResponseArguments<
-      ResponseType
-    >(metadata, options, callback);
+    const checkedArguments = this.checkOptionalUnaryResponseArguments<ResponseType>(
+      metadata,
+      options,
+      callback
+    );
     const methodDefinition: ClientMethodDefinition<
       RequestType,
       ResponseType
@@ -408,9 +414,7 @@ export class Client {
         callProperties
       ) as CallProperties<RequestType, ResponseType>;
     }
-    const emitter: ClientWritableStream<RequestType> = callProperties.call as ClientWritableStream<
-      RequestType
-    >;
+    const emitter: ClientWritableStream<RequestType> = callProperties.call as ClientWritableStream<RequestType>;
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
@@ -532,9 +536,7 @@ export class Client {
         callProperties
       ) as CallProperties<RequestType, ResponseType>;
     }
-    const stream: ClientReadableStream<ResponseType> = callProperties.call as ClientReadableStream<
-      ResponseType
-    >;
+    const stream: ClientReadableStream<ResponseType> = callProperties.call as ClientReadableStream<ResponseType>;
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
@@ -659,7 +661,7 @@ export class Client {
         stream.emit('metadata', metadata);
       },
       onReceiveMessage(message: Buffer) {
-        stream.push(message)
+        stream.push(message);
       },
       onReceiveStatus(status: StatusObject) {
         if (receivedStatus) {
@@ -676,4 +678,3 @@ export class Client {
     return stream;
   }
 }
-

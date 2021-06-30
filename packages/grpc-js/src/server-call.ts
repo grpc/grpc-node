@@ -100,7 +100,8 @@ export type ServerDuplexStream<RequestType, ResponseType> = ServerSurfaceCall &
   ObjectReadable<RequestType> &
   ObjectWritable<ResponseType> & { end: (metadata?: Metadata) => void };
 
-export class ServerUnaryCallImpl<RequestType, ResponseType> extends EventEmitter
+export class ServerUnaryCallImpl<RequestType, ResponseType>
+  extends EventEmitter
   implements ServerUnaryCall<RequestType, ResponseType> {
   cancelled: boolean;
 
@@ -239,7 +240,8 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
   }
 }
 
-export class ServerDuplexStreamImpl<RequestType, ResponseType> extends Duplex
+export class ServerDuplexStreamImpl<RequestType, ResponseType>
+  extends Duplex
   implements ServerDuplexStream<RequestType, ResponseType> {
   cancelled: boolean;
   private trailingMetadata: Metadata;

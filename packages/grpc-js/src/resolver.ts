@@ -17,7 +17,7 @@
 
 import { MethodConfig, ServiceConfig } from './service-config';
 import { StatusObject } from './call-stream';
-import { SubchannelAddress } from "./subchannel-address";
+import { SubchannelAddress } from './subchannel-address';
 import { GrpcUri, uriToString } from './uri-parser';
 import { ChannelOptions } from './channel-options';
 import { Metadata } from './metadata';
@@ -26,7 +26,7 @@ import { Status } from './constants';
 export interface CallConfig {
   methodConfig: MethodConfig;
   onCommitted?: () => void;
-  pickInformation: {[key: string]: string};
+  pickInformation: { [key: string]: string };
   status: Status;
 }
 
@@ -78,7 +78,7 @@ export interface Resolver {
    * called synchronously with the constructor or updateResolution.
    */
   updateResolution(): void;
-  
+
   /**
    * Destroy the resolver. Should be called when the owning channel shuts down.
    */

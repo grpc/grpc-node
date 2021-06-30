@@ -37,6 +37,7 @@ export interface ChannelOptions {
   'grpc.http_connect_target'?: string;
   'grpc.http_connect_creds'?: string;
   'grpc-node.max_session_memory'?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 

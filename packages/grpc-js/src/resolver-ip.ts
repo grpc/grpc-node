@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import { isIPv4, isIPv6 } from "net";
-import { StatusObject } from "./call-stream";
-import { ChannelOptions } from "./channel-options";
-import { LogVerbosity, Status } from "./constants";
-import { Metadata } from "./metadata";
-import { registerResolver, Resolver, ResolverListener } from "./resolver";
-import { SubchannelAddress } from "./subchannel-address";
-import { GrpcUri, splitHostPort, uriToString } from "./uri-parser";
+import { isIPv4, isIPv6 } from 'net';
+import { StatusObject } from './call-stream';
+import { ChannelOptions } from './channel-options';
+import { LogVerbosity, Status } from './constants';
+import { Metadata } from './metadata';
+import { registerResolver, Resolver, ResolverListener } from './resolver';
+import { SubchannelAddress } from './subchannel-address';
+import { GrpcUri, splitHostPort, uriToString } from './uri-parser';
 import * as logging from './logging';
 
 const TRACER_NAME = 'ip_resolver';
@@ -52,7 +52,7 @@ class IpResolver implements Resolver {
       this.error = {
         code: Status.UNAVAILABLE,
         details: `Unrecognized scheme ${target.scheme} in IP resolver`,
-        metadata: new Metadata()
+        metadata: new Metadata(),
       };
       return;
     }
@@ -63,21 +63,24 @@ class IpResolver implements Resolver {
         this.error = {
           code: Status.UNAVAILABLE,
           details: `Failed to parse ${target.scheme} address ${path}`,
-          metadata: new Metadata()
+          metadata: new Metadata(),
         };
         return;
       }
-      if ((target.scheme === IPV4_SCHEME && !isIPv4(hostPort.host)) || (target.scheme === IPV6_SCHEME && !isIPv6(hostPort.host))) {
+      if (
+        (target.scheme === IPV4_SCHEME && !isIPv4(hostPort.host)) ||
+        (target.scheme === IPV6_SCHEME && !isIPv6(hostPort.host))
+      ) {
         this.error = {
           code: Status.UNAVAILABLE,
           details: `Failed to parse ${target.scheme} address ${path}`,
-          metadata: new Metadata()
+          metadata: new Metadata(),
         };
         return;
       }
       addresses.push({
         host: hostPort.host,
-        port: hostPort.port ?? DEFAULT_PORT
+        port: hostPort.port ?? DEFAULT_PORT,
       });
     }
     this.addresses = addresses;
@@ -86,9 +89,15 @@ class IpResolver implements Resolver {
   updateResolution(): void {
     process.nextTick(() => {
       if (this.error) {
-        this.listener.onError(this.error)
+        this.listener.onError(this.error);
       } else {
-        this.listener.onSuccessfulResolution(this.addresses, null, null, null, {});
+        this.listener.onSuccessfulResolution(
+          this.addresses,
+          null,
+          null,
+          null,
+          {}
+        );
       }
     });
   }
