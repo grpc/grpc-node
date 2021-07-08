@@ -244,7 +244,13 @@ export function getProxiedConnection(
               resolve({ socket: cts, realTarget: parsedTarget });
             }
           );
-          cts.on('error', () => {
+          cts.on('error', (error: Error) => {
+            trace('Failed to establish a TLS connection to ' +
+                    options.path +
+                    ' through proxy ' +
+                    proxyAddressString +
+                    ' with error ' +
+                    error.message);
             reject();
           });
         } else {
