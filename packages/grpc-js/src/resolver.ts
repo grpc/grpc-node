@@ -31,7 +31,7 @@ export interface CallConfig {
   onCommitted?: () => void;
   pickInformation: {[key: string]: string};
   status: Status;
-  extraFilterFactories: FilterFactory<Filter>[];
+  dynamicFilterFactories: FilterFactory<Filter>[];
 }
 
 /**

@@ -59,7 +59,7 @@ function getDefaultConfigSelector(serviceConfig: ServiceConfig | null): ConfigSe
               methodConfig: methodConfig,
               pickInformation: {},
               status: Status.OK,
-              extraFilterFactories: []
+              dynamicFilterFactories: []
             };
           }
         }
@@ -69,7 +69,7 @@ function getDefaultConfigSelector(serviceConfig: ServiceConfig | null): ConfigSe
       methodConfig: {name: []},
       pickInformation: {},
       status: Status.OK,
-      extraFilterFactories: []
+      dynamicFilterFactories: []
     };
   }
 }

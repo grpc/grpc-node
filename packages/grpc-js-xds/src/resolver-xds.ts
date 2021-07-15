@@ -468,7 +468,7 @@ class XdsResolver implements Resolver {
                 extraFilterFactories.push(new NoRouterFilterFactory());
               }
             }
-            weightedClusters.push({name: clusterWeight.name, weight: clusterWeight.weight?.value ?? 0, extraFilterFactories: extraFilterFactories});
+            weightedClusters.push({name: clusterWeight.name, weight: clusterWeight.weight?.value ?? 0, dynamicFilterFactories: extraFilterFactories});
           }
           routeAction = new WeightedClusterRouteAction(weightedClusters, route.route!.weighted_clusters!.total_weight?.value ?? 100, timeout);
         }
@@ -507,7 +507,7 @@ class XdsResolver implements Resolver {
             onCommitted: onCommitted,
             pickInformation: {cluster: clusterResult.name},
             status: status.OK,
-            extraFilterFactories: clusterResult.extraFilterFactories
+            dynamicFilterFactories: clusterResult.dynamicFilterFactories
           };
         }
       }
@@ -516,7 +516,7 @@ class XdsResolver implements Resolver {
         // cluster won't be used here, but it's set because of some TypeScript weirdness
         pickInformation: {cluster: ''},
         status: status.UNAVAILABLE,
-        extraFilterFactories: []
+        dynamicFilterFactories: []
       };
     };
     trace('Created ConfigSelector with configuration:');

@@ -21,7 +21,7 @@ import FilterFactory = experimental.FilterFactory;
 
 export interface ClusterResult {
   name: string;
-  extraFilterFactories: FilterFactory<Filter>[];
+  dynamicFilterFactories: FilterFactory<Filter>[];
 }
 
 export interface RouteAction {
@@ -45,7 +45,7 @@ export class SingleClusterRouteAction implements RouteAction {
   getCluster() {
     return {
       name: this.cluster,
-      extraFilterFactories: this.extraFilterFactories
+      dynamicFilterFactories: this.extraFilterFactories
     };
   }
 
@@ -65,13 +65,13 @@ export class SingleClusterRouteAction implements RouteAction {
 export interface WeightedCluster {
   name: string;
   weight: number;
-  extraFilterFactories: FilterFactory<Filter>[];
+  dynamicFilterFactories: FilterFactory<Filter>[];
 }
 
 interface ClusterChoice {
   name: string;
   numerator: number;
-  extraFilterFactories: FilterFactory<Filter>[];
+  dynamicFilterFactories: FilterFactory<Filter>[];
 }
 
 export class WeightedClusterRouteAction implements RouteAction {
@@ -84,7 +84,7 @@ export class WeightedClusterRouteAction implements RouteAction {
     let lastNumerator = 0;
     for (const clusterWeight of clusters) {
       lastNumerator += clusterWeight.weight;
-      this.clusterChoices.push({name: clusterWeight.name, numerator: lastNumerator, extraFilterFactories: clusterWeight.extraFilterFactories});
+      this.clusterChoices.push({name: clusterWeight.name, numerator: lastNumerator, dynamicFilterFactories: clusterWeight.dynamicFilterFactories});
     }
   }
 
@@ -94,12 +94,12 @@ export class WeightedClusterRouteAction implements RouteAction {
       if (randomNumber < choice.numerator) {
         return {
           name: choice.name,
-          extraFilterFactories: choice.extraFilterFactories
+          dynamicFilterFactories: choice.dynamicFilterFactories
         };
       }
     }
     // This should be prevented by the validation rules
-    return {name: '', extraFilterFactories: []};
+    return {name: '', dynamicFilterFactories: []};
   }
 
   toString() {

@@ -81,6 +81,10 @@ export class FilterStack implements Filter {
   push(filters: Filter[]) {
     this.filters.unshift(...filters);
   }
+
+  getFilters(): Filter[] {
+    return this.filters;
+  }
 }
 
 export class FilterStackFactory implements FilterFactory<FilterStack> {
