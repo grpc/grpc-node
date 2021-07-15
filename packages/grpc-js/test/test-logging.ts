@@ -27,10 +27,6 @@ describe('Logging', () => {
     grpc.setLogVerbosity(grpc.logVerbosity.DEBUG);
   });
 
-  it('logger defaults to console', () => {
-    assert.strictEqual(logging.getLogger(), console);
-  });
-
   it('sets the logger to a new value', () => {
     const logger: Partial<Console> = {};
 
