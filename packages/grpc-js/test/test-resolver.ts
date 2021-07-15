@@ -19,18 +19,23 @@
 // tslint:disable no-any
 import * as assert from 'assert';
 import * as resolverManager from '../src/resolver';
+import * as resolver_dns from '../src/resolver-dns';
+import * as resolver_uds from '../src/resolver-uds';
+import * as resolver_ip from '../src/resolver-ip';
 import { ServiceConfig } from '../src/service-config';
 import { StatusObject } from '../src/call-stream';
-import { SubchannelAddress, isTcpSubchannelAddress } from '../src/subchannel';
+import { SubchannelAddress, isTcpSubchannelAddress } from "../src/subchannel-address";
 import { parseUri, GrpcUri } from '../src/uri-parser';
 
 describe('Name Resolver', () => {
+  before(() => {
+    resolver_dns.setup();
+    resolver_uds.setup();
+    resolver_ip.setup();
+  });
   describe('DNS Names', function() {
     // For some reason DNS queries sometimes take a long time on Windows
     this.timeout(4000);
-    before(() => {
-      resolverManager.registerAll();
-    });
     it('Should resolve localhost properly', done => {
       const target = resolverManager.mapUriDefaultScheme(parseUri('localhost:50051')!)!;
       const listener: resolverManager.ResolverListener = {
@@ -376,6 +381,186 @@ describe('Name Resolver', () => {
             addressList.some(
               addr =>
                 !isTcpSubchannelAddress(addr) && addr.path === '/tmp/socket'
+            )
+          );
+          done();
+        },
+        onError: (error: StatusObject) => {
+          done(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver = resolverManager.createResolver(target, listener, {});
+      resolver.updateResolution();
+    });
+  });
+  describe('IP Addresses', () => {
+    it('should handle one IPv4 address with no port', done => {
+      const target = resolverManager.mapUriDefaultScheme(parseUri('ipv4:127.0.0.1')!)!;
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: SubchannelAddress[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
+          assert(
+            addressList.some(
+              addr =>
+                isTcpSubchannelAddress(addr) &&
+                addr.host === '127.0.0.1' &&
+                addr.port === 443
+            )
+          );
+          done();
+        },
+        onError: (error: StatusObject) => {
+          done(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver = resolverManager.createResolver(target, listener, {});
+      resolver.updateResolution();
+    });
+    it('should handle one IPv4 address with a port', done => {
+      const target = resolverManager.mapUriDefaultScheme(parseUri('ipv4:127.0.0.1:50051')!)!;
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: SubchannelAddress[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
+          assert(
+            addressList.some(
+              addr =>
+                isTcpSubchannelAddress(addr) &&
+                addr.host === '127.0.0.1' &&
+                addr.port === 50051
+            )
+          );
+          done();
+        },
+        onError: (error: StatusObject) => {
+          done(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver = resolverManager.createResolver(target, listener, {});
+      resolver.updateResolution();
+    });
+    it('should handle multiple IPv4 addresses with different ports', done => {
+      const target = resolverManager.mapUriDefaultScheme(parseUri('ipv4:127.0.0.1:50051,127.0.0.1:50052')!)!;
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: SubchannelAddress[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
+          assert(
+            addressList.some(
+              addr =>
+                isTcpSubchannelAddress(addr) &&
+                addr.host === '127.0.0.1' &&
+                addr.port === 50051
+            )
+          );
+          assert(
+            addressList.some(
+              addr =>
+                isTcpSubchannelAddress(addr) &&
+                addr.host === '127.0.0.1' &&
+                addr.port === 50052
+            )
+          );
+          done();
+        },
+        onError: (error: StatusObject) => {
+          done(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver = resolverManager.createResolver(target, listener, {});
+      resolver.updateResolution();
+    });
+    it('should handle one IPv6 address with no port', done => {
+      const target = resolverManager.mapUriDefaultScheme(parseUri('ipv6:::1')!)!;
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: SubchannelAddress[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
+          assert(
+            addressList.some(
+              addr =>
+                isTcpSubchannelAddress(addr) &&
+                addr.host === '::1' &&
+                addr.port === 443
+            )
+          );
+          done();
+        },
+        onError: (error: StatusObject) => {
+          done(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver = resolverManager.createResolver(target, listener, {});
+      resolver.updateResolution();
+    });
+    it('should handle one IPv6 address with a port', done => {
+      const target = resolverManager.mapUriDefaultScheme(parseUri('ipv6:[::1]:50051')!)!;
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: SubchannelAddress[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
+          assert(
+            addressList.some(
+              addr =>
+                isTcpSubchannelAddress(addr) &&
+                addr.host === '::1' &&
+                addr.port === 50051
+            )
+          );
+          done();
+        },
+        onError: (error: StatusObject) => {
+          done(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver = resolverManager.createResolver(target, listener, {});
+      resolver.updateResolution();
+    });
+    it('should handle multiple IPv6 addresses with different ports', done => {
+      const target = resolverManager.mapUriDefaultScheme(parseUri('ipv6:[::1]:50051,[::1]:50052')!)!;
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: SubchannelAddress[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          // Only handle the first resolution result
+          listener.onSuccessfulResolution = () => {};
+          assert(
+            addressList.some(
+              addr =>
+                isTcpSubchannelAddress(addr) &&
+                addr.host === '::1' &&
+                addr.port === 50051
+            )
+          );
+          assert(
+            addressList.some(
+              addr =>
+                isTcpSubchannelAddress(addr) &&
+                addr.host === '::1' &&
+                addr.port === 50052
             )
           );
           done();

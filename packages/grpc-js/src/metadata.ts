@@ -247,7 +247,7 @@ export class Metadata {
    * representation of the metadata map.
    */
   toJSON() {
-    const result: {[key: string]: MetadataValue[]} = {};
+    const result: { [key: string]: MetadataValue[] } = {};
     for (const [key, values] of this.internalRepr.entries()) {
       result[key] = values;
     }

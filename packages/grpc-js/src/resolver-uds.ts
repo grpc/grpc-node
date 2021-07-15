@@ -15,7 +15,7 @@
  */
 
 import { Resolver, ResolverListener, registerResolver } from './resolver';
-import { SubchannelAddress } from './subchannel';
+import { SubchannelAddress } from './subchannel-address';
 import { GrpcUri } from './uri-parser';
 import { ChannelOptions } from './channel-options';
 

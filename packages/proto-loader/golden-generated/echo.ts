@@ -1,5 +1,5 @@
 import type * as grpc from '@grpc/grpc-js';
-import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
+import type { EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
 
 import type { OperationsClient as _google_longrunning_OperationsClient, OperationsDefinition as _google_longrunning_OperationsDefinition } from './google/longrunning/Operations';
 import type { EchoClient as _google_showcase_v1beta1_EchoClient, EchoDefinition as _google_showcase_v1beta1_EchoDefinition } from './google/showcase/v1beta1/Echo';

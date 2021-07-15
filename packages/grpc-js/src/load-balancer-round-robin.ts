@@ -18,10 +18,10 @@
 import {
   LoadBalancer,
   ChannelControlHelper,
+  LoadBalancingConfig,
   registerLoadBalancerType,
-  LoadBalancingConfig
 } from './load-balancer';
-import { ConnectivityState } from './channel';
+import { ConnectivityState } from './connectivity-state';
 import {
   QueuePicker,
   Picker,
@@ -30,12 +30,11 @@ import {
   PickResultType,
   UnavailablePicker,
 } from './picker';
+import { Subchannel, ConnectivityStateListener } from './subchannel';
 import {
-  Subchannel,
-  ConnectivityStateListener,
   SubchannelAddress,
   subchannelAddressToString,
-} from './subchannel';
+} from './subchannel-address';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 
@@ -56,10 +55,11 @@ class RoundRobinLoadBalancingConfig implements LoadBalancingConfig {
 
   toJsonObject(): object {
     return {
-      [TYPE_NAME]: {}
+      [TYPE_NAME]: {},
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static createFromJson(obj: any) {
     return new RoundRobinLoadBalancingConfig();
   }
@@ -128,7 +128,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
       this.subchannelStateCounts[previousState] -= 1;
       this.subchannelStateCounts[newState] += 1;
       this.calculateAndUpdateState();
-      
+
       if (
         newState === ConnectivityState.TRANSIENT_FAILURE ||
         newState === ConnectivityState.IDLE
@@ -247,5 +247,9 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
 }
 
 export function setup() {
-  registerLoadBalancerType(TYPE_NAME, RoundRobinLoadBalancer, RoundRobinLoadBalancingConfig);
+  registerLoadBalancerType(
+    TYPE_NAME,
+    RoundRobinLoadBalancer,
+    RoundRobinLoadBalancingConfig
+  );
 }

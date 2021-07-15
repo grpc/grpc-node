@@ -39,6 +39,7 @@ export enum LogVerbosity {
   DEBUG = 0,
   INFO,
   ERROR,
+  NONE,
 }
 
 /**
@@ -51,7 +52,11 @@ export enum Propagate {
   CENSUS_TRACING_CONTEXT = 4,
   CANCELLATION = 8,
   // https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/propagation_bits.h#L43
-  DEFAULTS = 0xffff | Propagate.DEADLINE | Propagate.CENSUS_STATS_CONTEXT | Propagate.CENSUS_TRACING_CONTEXT | Propagate.CANCELLATION,
+  DEFAULTS = 0xffff |
+    Propagate.DEADLINE |
+    Propagate.CENSUS_STATS_CONTEXT |
+    Propagate.CENSUS_TRACING_CONTEXT |
+    Propagate.CANCELLATION,
 }
 
 // -1 means unlimited

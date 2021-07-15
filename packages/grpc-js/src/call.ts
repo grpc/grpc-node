@@ -81,7 +81,8 @@ export function callErrorFromStatus(status: StatusObject): ServiceError {
   return Object.assign(new Error(message), status);
 }
 
-export class ClientUnaryCallImpl extends EventEmitter
+export class ClientUnaryCallImpl
+  extends EventEmitter
   implements ClientUnaryCall {
   public call?: InterceptingCallInterface;
   constructor() {
@@ -97,7 +98,8 @@ export class ClientUnaryCallImpl extends EventEmitter
   }
 }
 
-export class ClientReadableStreamImpl<ResponseType> extends Readable
+export class ClientReadableStreamImpl<ResponseType>
+  extends Readable
   implements ClientReadableStream<ResponseType> {
   public call?: InterceptingCallInterface;
   constructor(readonly deserialize: (chunk: Buffer) => ResponseType) {
@@ -117,7 +119,8 @@ export class ClientReadableStreamImpl<ResponseType> extends Readable
   }
 }
 
-export class ClientWritableStreamImpl<RequestType> extends Writable
+export class ClientWritableStreamImpl<RequestType>
+  extends Writable
   implements ClientWritableStream<RequestType> {
   public call?: InterceptingCallInterface;
   constructor(readonly serialize: (value: RequestType) => Buffer) {
@@ -149,7 +152,8 @@ export class ClientWritableStreamImpl<RequestType> extends Writable
   }
 }
 
-export class ClientDuplexStreamImpl<RequestType, ResponseType> extends Duplex
+export class ClientDuplexStreamImpl<RequestType, ResponseType>
+  extends Duplex
   implements ClientDuplexStream<RequestType, ResponseType> {
   public call?: InterceptingCallInterface;
   constructor(

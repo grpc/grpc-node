@@ -30,7 +30,8 @@ import {
 } from './call';
 import { CallCredentials } from './call-credentials';
 import { Deadline, StatusObject } from './call-stream';
-import { Channel, ConnectivityState, ChannelImplementation } from './channel';
+import { Channel, ChannelImplementation } from './channel';
+import { ConnectivityState } from './connectivity-state';
 import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
 import { Status } from './constants';
@@ -54,6 +55,12 @@ const CHANNEL_SYMBOL = Symbol();
 const INTERCEPTOR_SYMBOL = Symbol();
 const INTERCEPTOR_PROVIDER_SYMBOL = Symbol();
 const CALL_INVOCATION_TRANSFORMER_SYMBOL = Symbol();
+
+function isFunction<ResponseType>(
+  arg: Metadata | CallOptions | UnaryCallback<ResponseType> | undefined
+): arg is UnaryCallback<ResponseType> {
+  return typeof arg === 'function';
+}
 
 export interface UnaryCallback<ResponseType> {
   (err: ServiceError | null, value?: ResponseType): void;
@@ -198,9 +205,9 @@ export class Client {
     options: CallOptions;
     callback: UnaryCallback<ResponseType>;
   } {
-    if (arg1 instanceof Function) {
+    if (isFunction(arg1)) {
       return { metadata: new Metadata(), options: {}, callback: arg1 };
-    } else if (arg2 instanceof Function) {
+    } else if (isFunction(arg2)) {
       if (arg1 instanceof Metadata) {
         return { metadata: arg1, options: {}, callback: arg2 };
       } else {
@@ -211,7 +218,7 @@ export class Client {
         !(
           arg1 instanceof Metadata &&
           arg2 instanceof Object &&
-          arg3 instanceof Function
+          isFunction(arg3)
         )
       ) {
         throw new Error('Incorrect arguments passed');
@@ -261,9 +268,11 @@ export class Client {
     options?: CallOptions | UnaryCallback<ResponseType>,
     callback?: UnaryCallback<ResponseType>
   ): ClientUnaryCall {
-    const checkedArguments = this.checkOptionalUnaryResponseArguments<
-      ResponseType
-    >(metadata, options, callback);
+    const checkedArguments = this.checkOptionalUnaryResponseArguments<ResponseType>(
+      metadata,
+      options,
+      callback
+    );
     const methodDefinition: ClientMethodDefinition<
       RequestType,
       ResponseType
@@ -377,9 +386,11 @@ export class Client {
     options?: CallOptions | UnaryCallback<ResponseType>,
     callback?: UnaryCallback<ResponseType>
   ): ClientWritableStream<RequestType> {
-    const checkedArguments = this.checkOptionalUnaryResponseArguments<
-      ResponseType
-    >(metadata, options, callback);
+    const checkedArguments = this.checkOptionalUnaryResponseArguments<ResponseType>(
+      metadata,
+      options,
+      callback
+    );
     const methodDefinition: ClientMethodDefinition<
       RequestType,
       ResponseType
@@ -403,9 +414,7 @@ export class Client {
         callProperties
       ) as CallProperties<RequestType, ResponseType>;
     }
-    const emitter: ClientWritableStream<RequestType> = callProperties.call as ClientWritableStream<
-      RequestType
-    >;
+    const emitter: ClientWritableStream<RequestType> = callProperties.call as ClientWritableStream<RequestType>;
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
@@ -527,9 +536,7 @@ export class Client {
         callProperties
       ) as CallProperties<RequestType, ResponseType>;
     }
-    const stream: ClientReadableStream<ResponseType> = callProperties.call as ClientReadableStream<
-      ResponseType
-    >;
+    const stream: ClientReadableStream<ResponseType> = callProperties.call as ClientReadableStream<ResponseType>;
     const interceptorArgs: InterceptorArguments = {
       clientInterceptors: this[INTERCEPTOR_SYMBOL],
       clientInterceptorProviders: this[INTERCEPTOR_PROVIDER_SYMBOL],
@@ -654,7 +661,7 @@ export class Client {
         stream.emit('metadata', metadata);
       },
       onReceiveMessage(message: Buffer) {
-        stream.push(message)
+        stream.push(message);
       },
       onReceiveStatus(status: StatusObject) {
         if (receivedStatus) {

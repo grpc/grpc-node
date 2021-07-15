@@ -18,10 +18,11 @@
 import {
   LoadBalancer,
   ChannelControlHelper,
+  LoadBalancingConfig,
+  registerDefaultLoadBalancerType,
   registerLoadBalancerType,
-  LoadBalancingConfig
 } from './load-balancer';
-import { ConnectivityState } from './channel';
+import { ConnectivityState } from './connectivity-state';
 import {
   QueuePicker,
   Picker,
@@ -30,12 +31,11 @@ import {
   PickResultType,
   UnavailablePicker,
 } from './picker';
+import { Subchannel, ConnectivityStateListener } from './subchannel';
 import {
-  Subchannel,
-  ConnectivityStateListener,
   SubchannelAddress,
   subchannelAddressToString,
-} from './subchannel';
+} from './subchannel-address';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 
@@ -62,10 +62,11 @@ export class PickFirstLoadBalancingConfig implements LoadBalancingConfig {
 
   toJsonObject(): object {
     return {
-      [TYPE_NAME]: {}
+      [TYPE_NAME]: {},
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static createFromJson(obj: any) {
     return new PickFirstLoadBalancingConfig();
   }
@@ -457,5 +458,10 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 }
 
 export function setup(): void {
-  registerLoadBalancerType(TYPE_NAME, PickFirstLoadBalancer, PickFirstLoadBalancingConfig);
+  registerLoadBalancerType(
+    TYPE_NAME,
+    PickFirstLoadBalancer,
+    PickFirstLoadBalancingConfig
+  );
+  registerDefaultLoadBalancerType(TYPE_NAME);
 }

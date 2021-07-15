@@ -20,9 +20,10 @@ import { LogVerbosity } from './constants';
 let _logger: Partial<Console> = console;
 let _logVerbosity: LogVerbosity = LogVerbosity.ERROR;
 
-const verbosityString = process.env.GRPC_NODE_VERBOSITY ?? process.env.GRPC_VERBOSITY ?? '';
+const verbosityString =
+  process.env.GRPC_NODE_VERBOSITY ?? process.env.GRPC_VERBOSITY ?? '';
 
-switch (verbosityString) {
+switch (verbosityString.toUpperCase()) {
   case 'DEBUG':
     _logVerbosity = LogVerbosity.DEBUG;
     break;
@@ -31,6 +32,9 @@ switch (verbosityString) {
     break;
   case 'ERROR':
     _logVerbosity = LogVerbosity.ERROR;
+    break;
+  case 'NONE':
+    _logVerbosity = LogVerbosity.NONE;
     break;
   default:
   // Ignore any other values
@@ -55,16 +59,28 @@ export const log = (severity: LogVerbosity, ...args: any[]): void => {
   }
 };
 
-const tracersString = process.env.GRPC_NODE_TRACE ?? process.env.GRPC_TRACE ?? '';
-const enabledTracers = tracersString.split(',');
-const allEnabled = enabledTracers.includes('all');
+const tracersString =
+  process.env.GRPC_NODE_TRACE ?? process.env.GRPC_TRACE ?? '';
+const enabledTracers = new Set<string>();
+const disabledTracers = new Set<string>();
+for (const tracerName of tracersString.split(',')) {
+  if (tracerName.startsWith('-')) {
+    disabledTracers.add(tracerName.substring(1));
+  } else {
+    enabledTracers.add(tracerName);
+  }
+}
+const allEnabled = enabledTracers.has('all');
 
 export function trace(
   severity: LogVerbosity,
   tracer: string,
   text: string
 ): void {
-  if (allEnabled || enabledTracers.includes(tracer)) {
+  if (
+    !disabledTracers.has(tracer) &&
+    (allEnabled || enabledTracers.has(tracer))
+  ) {
     log(severity, new Date().toISOString() + ' | ' + tracer + ' | ' + text);
   }
 }

@@ -98,7 +98,7 @@ export interface ServiceClientConstructor {
  * keys.
  * @param key key for check, string.
  */
-function isPrototypePolluted(key: string): Boolean {
+function isPrototypePolluted(key: string): boolean {
   return ['__proto__', 'prototype', 'constructor'].includes(key);
 }
 

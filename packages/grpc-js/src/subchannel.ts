@@ -21,7 +21,7 @@ import { Metadata } from './metadata';
 import { Http2CallStream } from './call-stream';
 import { ChannelOptions } from './channel-options';
 import { PeerCertificate, checkServerIdentity } from 'tls';
-import { ConnectivityState } from './channel';
+import { ConnectivityState } from './connectivity-state';
 import { BackoffTimeout, BackoffOptions } from './backoff-timeout';
 import { getDefaultAuthority } from './resolver';
 import * as logging from './logging';
@@ -31,6 +31,10 @@ import * as net from 'net';
 import { GrpcUri, parseUri, splitHostPort, uriToString } from './uri-parser';
 import { ConnectionOptions } from 'tls';
 import { FilterFactory, Filter } from './filter';
+import {
+  SubchannelAddress,
+  subchannelAddressToString,
+} from './subchannel-address';
 
 const clientVersion = require('../../package.json').version;
 
@@ -81,52 +85,6 @@ function uniformRandom(min: number, max: number) {
 }
 
 const tooManyPingsData: Buffer = Buffer.from('too_many_pings', 'ascii');
-
-export interface TcpSubchannelAddress {
-  port: number;
-  host: string;
-}
-
-export interface IpcSubchannelAddress {
-  path: string;
-}
-
-/**
- * This represents a single backend address to connect to. This interface is a
- * subset of net.SocketConnectOpts, i.e. the options described at
- * https://nodejs.org/api/net.html#net_socket_connect_options_connectlistener.
- * Those are in turn a subset of the options that can be passed to http2.connect.
- */
-export type SubchannelAddress = TcpSubchannelAddress | IpcSubchannelAddress;
-
-export function isTcpSubchannelAddress(
-  address: SubchannelAddress
-): address is TcpSubchannelAddress {
-  return 'port' in address;
-}
-
-export function subchannelAddressEqual(
-  address1: SubchannelAddress,
-  address2: SubchannelAddress
-): boolean {
-  if (isTcpSubchannelAddress(address1)) {
-    return (
-      isTcpSubchannelAddress(address2) &&
-      address1.host === address2.host &&
-      address1.port === address2.port
-    );
-  } else {
-    return !isTcpSubchannelAddress(address2) && address1.path === address2.path;
-  }
-}
-
-export function subchannelAddressToString(address: SubchannelAddress): string {
-  if (isTcpSubchannelAddress(address)) {
-    return address.host + ':' + address.port;
-  } else {
-    return address.path;
-  }
-}
 
 export class Subchannel {
   /**
@@ -183,7 +141,7 @@ export class Subchannel {
   /**
    * Indicates whether keepalive pings should be sent without any active calls
    */
-  private keepaliveWithoutCalls: boolean = false;
+  private keepaliveWithoutCalls = false;
 
   /**
    * Tracks calls with references to this subchannel
@@ -231,7 +189,8 @@ export class Subchannel {
       this.keepaliveTimeoutMs = options['grpc.keepalive_timeout_ms']!;
     }
     if ('grpc.keepalive_permit_without_calls' in options) {
-      this.keepaliveWithoutCalls = options['grpc.keepalive_permit_without_calls'] === 1;
+      this.keepaliveWithoutCalls =
+        options['grpc.keepalive_permit_without_calls'] === 1;
     } else {
       this.keepaliveWithoutCalls = false;
     }
@@ -276,10 +235,15 @@ export class Subchannel {
   }
 
   private sendPing() {
-    logging.trace(LogVerbosity.DEBUG, 'keepalive', 'Sending ping to ' + this.subchannelAddressString);
+    logging.trace(
+      LogVerbosity.DEBUG,
+      'keepalive',
+      'Sending ping to ' + this.subchannelAddressString
+    );
     this.keepaliveTimeoutId = setTimeout(() => {
       this.transitionToState([ConnectivityState.READY], ConnectivityState.IDLE);
     }, this.keepaliveTimeoutMs);
+    this.keepaliveTimeoutId.unref?.();
     this.session!.ping(
       (err: Error | null, duration: number, payload: Buffer) => {
         clearTimeout(this.keepaliveTimeoutId);
@@ -291,6 +255,7 @@ export class Subchannel {
     this.keepaliveIntervalId = setInterval(() => {
       this.sendPing();
     }, this.keepaliveTimeMs);
+    this.keepaliveIntervalId.unref?.();
     /* Don't send a ping immediately because whatever caused us to start
      * sending pings should also involve some network activity. */
   }
@@ -308,7 +273,9 @@ export class Subchannel {
       this.credentials._getConnectionOptions() || {};
     connectionOptions.maxSendHeaderBlockLength = Number.MAX_SAFE_INTEGER;
     if ('grpc-node.max_session_memory' in this.options) {
-      connectionOptions.maxSessionMemory = this.options['grpc-node.max_session_memory'];
+      connectionOptions.maxSessionMemory = this.options[
+        'grpc-node.max_session_memory'
+      ];
     }
     let addressScheme = 'http://';
     if ('secureContext' in connectionOptions) {
@@ -430,7 +397,11 @@ export class Subchannel {
             );
             logging.log(
               LogVerbosity.ERROR,
-              `Connection to ${uriToString(this.channelTarget)} at ${this.subchannelAddressString} rejected by server because of excess pings. Increasing ping interval to ${this.keepaliveTimeMs} ms`
+              `Connection to ${uriToString(this.channelTarget)} at ${
+                this.subchannelAddressString
+              } rejected by server because of excess pings. Increasing ping interval to ${
+                this.keepaliveTimeMs
+              } ms`
             );
           }
           trace(
@@ -596,11 +567,7 @@ export class Subchannel {
      * this subchannel, we can be sure it will never be used again. */
     if (this.callRefcount === 0 && this.refcount === 0) {
       this.transitionToState(
-        [
-          ConnectivityState.CONNECTING,
-          ConnectivityState.IDLE,
-          ConnectivityState.READY,
-        ],
+        [ConnectivityState.CONNECTING, ConnectivityState.READY],
         ConnectivityState.TRANSIENT_FAILURE
       );
     }
@@ -719,7 +686,14 @@ export class Subchannel {
     for (const header of Object.keys(headers)) {
       headersString += '\t\t' + header + ': ' + headers[header] + '\n';
     }
-    logging.trace(LogVerbosity.DEBUG, 'call_stream', 'Starting stream on subchannel ' + this.subchannelAddressString + ' with headers\n' + headersString);
+    logging.trace(
+      LogVerbosity.DEBUG,
+      'call_stream',
+      'Starting stream on subchannel ' +
+        this.subchannelAddressString +
+        ' with headers\n' +
+        headersString
+    );
     callStream.attachHttp2Stream(http2Stream, this, extraFilters);
   }
 

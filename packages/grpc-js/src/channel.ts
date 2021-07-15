@@ -33,9 +33,14 @@ import { FilterStackFactory } from './filter-stack';
 import { CallCredentialsFilterFactory } from './call-credentials-filter';
 import { DeadlineFilterFactory } from './deadline-filter';
 import { CompressionFilterFactory } from './compression-filter';
-import { CallConfig, ConfigSelector, getDefaultAuthority, mapUriDefaultScheme } from './resolver';
+import {
+  CallConfig,
+  ConfigSelector,
+  getDefaultAuthority,
+  mapUriDefaultScheme,
+} from './resolver';
 import { trace, log } from './logging';
-import { SubchannelAddress } from './subchannel';
+import { SubchannelAddress } from './subchannel-address';
 import { MaxMessageSizeFilterFactory } from './max-message-size-filter';
 import { mapProxyName } from './http_proxy';
 import { GrpcUri, parseUri, uriToString } from './uri-parser';
@@ -43,13 +48,7 @@ import { ServerSurfaceCall } from './server-call';
 import { SurfaceCall } from './call';
 import { Filter } from './filter';
 
-export enum ConnectivityState {
-  IDLE,
-  CONNECTING,
-  READY,
-  TRANSIENT_FAILURE,
-  SHUTDOWN,
-}
+import { ConnectivityState } from './connectivity-state';
 
 /**
  * See https://nodejs.org/api/timers.html#timers_setinterval_callback_delay_args
@@ -262,8 +261,8 @@ export class ChannelImplementation implements Channel {
         process.nextTick(() => {
           const localQueue = this.configSelectionQueue;
           this.configSelectionQueue = [];
-          this.callRefTimerUnref()
-          for (const {callStream, callMetadata} of localQueue) {
+          this.callRefTimerUnref();
+          for (const { callStream, callMetadata } of localQueue) {
             this.tryGetConfig(callStream, callMetadata);
           }
           this.configSelectionQueue = [];
@@ -271,15 +270,21 @@ export class ChannelImplementation implements Channel {
       },
       (status) => {
         if (this.configSelectionQueue.length > 0) {
-          trace(LogVerbosity.DEBUG, 'channel', 'Name resolution failed for target ' + uriToString(this.target) + ' with calls queued for config selection');
+          trace(
+            LogVerbosity.DEBUG,
+            'channel',
+            'Name resolution failed for target ' +
+              uriToString(this.target) +
+              ' with calls queued for config selection'
+          );
         }
         const localQueue = this.configSelectionQueue;
         this.configSelectionQueue = [];
         this.callRefTimerUnref();
-        for (const {callStream, callMetadata} of localQueue) {
+        for (const { callStream, callMetadata } of localQueue) {
           if (callMetadata.getOptions().waitForReady) {
             this.callRefTimerRef();
-            this.configSelectionQueue.push({callStream, callMetadata});
+            this.configSelectionQueue.push({ callStream, callMetadata });
           } else {
             callStream.cancelWithStatus(status.code, status.details);
           }
@@ -297,20 +302,39 @@ export class ChannelImplementation implements Channel {
   private callRefTimerRef() {
     // If the hasRef function does not exist, always run the code
     if (!this.callRefTimer.hasRef?.()) {
-      trace(LogVerbosity.DEBUG, 'channel', 'callRefTimer.ref | configSelectionQueue.length=' + this.configSelectionQueue.length + ' pickQueue.length=' + this.pickQueue.length);
+      trace(
+        LogVerbosity.DEBUG,
+        'channel',
+        'callRefTimer.ref | configSelectionQueue.length=' +
+          this.configSelectionQueue.length +
+          ' pickQueue.length=' +
+          this.pickQueue.length
+      );
       this.callRefTimer.ref?.();
     }
   }
 
   private callRefTimerUnref() {
     // If the hasRef function does not exist, always run the code
-    if ((!this.callRefTimer.hasRef) || (this.callRefTimer.hasRef())) {
-      trace(LogVerbosity.DEBUG, 'channel', 'callRefTimer.unref | configSelectionQueue.length=' + this.configSelectionQueue.length + ' pickQueue.length=' + this.pickQueue.length);
+    if (!this.callRefTimer.hasRef || this.callRefTimer.hasRef()) {
+      trace(
+        LogVerbosity.DEBUG,
+        'channel',
+        'callRefTimer.unref | configSelectionQueue.length=' +
+          this.configSelectionQueue.length +
+          ' pickQueue.length=' +
+          this.pickQueue.length
+      );
       this.callRefTimer.unref?.();
     }
   }
 
-  private pushPick(callStream: Http2CallStream, callMetadata: Metadata, callConfig: CallConfig, dynamicFilters: Filter[]) {
+  private pushPick(
+    callStream: Http2CallStream,
+    callMetadata: Metadata,
+    callConfig: CallConfig,
+    dynamicFilters: Filter[]
+  ) {
     this.pickQueue.push({ callStream, callMetadata, callConfig, dynamicFilters });
     this.callRefTimerRef();
   }
@@ -322,11 +346,16 @@ export class ChannelImplementation implements Channel {
    * @param callStream
    * @param callMetadata
    */
-  private tryPick(callStream: Http2CallStream, callMetadata: Metadata, callConfig: CallConfig, dynamicFilters: Filter[]) {
-    if (callStream.getStatus() !== null) {
-      return;
-    }
-    const pickResult = this.currentPicker.pick({ metadata: callMetadata, extraPickInfo: callConfig.pickInformation });
+  private tryPick(
+    callStream: Http2CallStream,
+    callMetadata: Metadata,
+    callConfig: CallConfig,
+    dynamicFilters: Filter[]
+  ) {
+    const pickResult = this.currentPicker.pick({
+      metadata: callMetadata,
+      extraPickInfo: callConfig.pickInformation,
+    });
     trace(
       LogVerbosity.DEBUG,
       'channel',
@@ -425,7 +454,9 @@ export class ChannelImplementation implements Channel {
                       );
                       callStream.cancelWithStatus(
                         Status.INTERNAL,
-                        `Failed to start HTTP/2 stream with error: ${(error as Error).message}`
+                        `Failed to start HTTP/2 stream with error: ${
+                          (error as Error).message
+                        }`
                       );
                     }
                   }
@@ -447,7 +478,7 @@ export class ChannelImplementation implements Channel {
               (error: Error & { code: number }) => {
                 // We assume the error code isn't 0 (Status.OK)
                 callStream.cancelWithStatus(
-                  (typeof error.code === 'number') ? error.code : Status.UNKNOWN,
+                  typeof error.code === 'number' ? error.code : Status.UNKNOWN,
                   `Getting metadata from plugin failed with error: ${error.message}`
                 );
               }
@@ -505,7 +536,7 @@ export class ChannelImplementation implements Channel {
     const watchersCopy = this.connectivityStateWatchers.slice();
     for (const watcherObject of watchersCopy) {
       if (newState !== watcherObject.currentState) {
-        if(watcherObject.timer) {
+        if (watcherObject.timer) {
           clearTimeout(watcherObject.timer);
         }
         this.removeConnectivityStateWatcher(watcherObject);
@@ -526,9 +557,9 @@ export class ChannelImplementation implements Channel {
        * ResolvingLoadBalancer may be idle and if so it needs to be kicked
        * because it now has a pending request. */
       this.resolvingLoadBalancer.exitIdle();
-      this.configSelectionQueue.push({ 
+      this.configSelectionQueue.push({
         callStream: stream,
-        callMetadata: metadata
+        callMetadata: metadata,
       });
       this.callRefTimerRef();
     } else {
@@ -536,8 +567,13 @@ export class ChannelImplementation implements Channel {
       if (callConfig.status === Status.OK) {
         if (callConfig.methodConfig.timeout) {
           const deadline = new Date();
-          deadline.setSeconds(deadline.getSeconds() + callConfig.methodConfig.timeout.seconds);
-          deadline.setMilliseconds(deadline.getMilliseconds() + callConfig.methodConfig.timeout.nanos / 1_000_000);
+          deadline.setSeconds(
+            deadline.getSeconds() + callConfig.methodConfig.timeout.seconds
+          );
+          deadline.setMilliseconds(
+            deadline.getMilliseconds() +
+              callConfig.methodConfig.timeout.nanos / 1_000_000
+          );
           stream.setConfigDeadline(deadline);
           // Refreshing the filters makes the deadline filter pick up the new deadline
           stream.filterStack.refresh();
@@ -564,7 +600,10 @@ export class ChannelImplementation implements Channel {
           this.tryPick(stream, metadata, callConfig, []);
         }
       } else {
-        stream.cancelWithStatus(callConfig.status, "Failed to route call to method " + stream.getMethod());
+        stream.cancelWithStatus(
+          callConfig.status,
+          'Failed to route call to method ' + stream.getMethod()
+        );
       }
     }
   }
@@ -602,7 +641,7 @@ export class ChannelImplementation implements Channel {
       throw new Error('Channel has been shut down');
     }
     let timer = null;
-    if(deadline !== Infinity) {
+    if (deadline !== Infinity) {
       const deadlineDate: Date =
         deadline instanceof Date ? deadline : new Date(deadline);
       const now = new Date();
@@ -618,12 +657,12 @@ export class ChannelImplementation implements Channel {
         callback(
           new Error('Deadline passed without connectivity state change')
         );
-      }, deadlineDate.getTime() - now.getTime())
+      }, deadlineDate.getTime() - now.getTime());
     }
     const watcherObject = {
       currentState,
       callback,
-      timer
+      timer,
     };
     this.connectivityStateWatchers.push(watcherObject);
   }

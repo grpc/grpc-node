@@ -26,7 +26,7 @@ import {
   SubchannelAddress,
   isTcpSubchannelAddress,
   subchannelAddressToString,
-} from './subchannel';
+} from './subchannel-address';
 import { ChannelOptions } from './channel-options';
 import { GrpcUri, parseUri, splitHostPort, uriToString } from './uri-parser';
 import { URL } from 'url';
@@ -93,7 +93,7 @@ function getProxyInfo(): ProxyInfo {
     port = '80';
   }
   const result: ProxyInfo = {
-    address: `${hostname}:${port}`
+    address: `${hostname}:${port}`,
   };
   if (userCred) {
     result.creds = userCred;
@@ -147,7 +147,9 @@ export function mapProxyName(
   const serverHost = hostPort.host;
   for (const host of getNoProxyHostList()) {
     if (host === serverHost) {
-      trace('Not using proxy for target in no_proxy list: ' + uriToString(target));
+      trace(
+        'Not using proxy for target in no_proxy list: ' + uriToString(target)
+      );
       return noProxyResult;
     }
   }
@@ -226,7 +228,7 @@ export function getProxiedConnection(
           const targetPath = getDefaultAuthority(parsedTarget);
           const hostPort = splitHostPort(targetPath);
           const remoteHost = hostPort?.host ?? targetPath;
-          
+
           const cts = tls.connect(
             {
               host: remoteHost,
@@ -244,7 +246,13 @@ export function getProxiedConnection(
               resolve({ socket: cts, realTarget: parsedTarget });
             }
           );
-          cts.on('error', () => {
+          cts.on('error', (error: Error) => {
+            trace('Failed to establish a TLS connection to ' +
+                    options.path +
+                    ' through proxy ' +
+                    proxyAddressString +
+                    ' with error ' +
+                    error.message);
             reject();
           });
         } else {

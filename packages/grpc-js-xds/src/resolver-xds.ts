@@ -177,7 +177,7 @@ function getPredicateForMatcher(routeMatch: RouteMatch__Output): Matcher {
       pathMatcher = new PathExactValueMatcher(routeMatch.path!, caseInsensitive);
       break;
     case 'safe_regex':
-      pathMatcher = new PathSafeRegexValueMatcher(routeMatch.safe_regex!.regex, caseInsensitive);
+      pathMatcher = new PathSafeRegexValueMatcher(routeMatch.safe_regex!.regex);
       break;
     default:
       pathMatcher = new RejectValueMatcher();

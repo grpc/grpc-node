@@ -57,7 +57,7 @@ interface SystemError extends Error {
  * Should do approximately the same thing as util.getSystemErrorName but the
  * TypeScript types don't have that function for some reason so I just made my
  * own.
- * @param errno 
+ * @param errno
  */
 function getSystemErrorName(errno: number): string {
   for (const [name, num] of Object.entries(os.constants.errno)) {
@@ -71,9 +71,10 @@ function getSystemErrorName(errno: number): string {
 export type Deadline = Date | number;
 
 function getMinDeadline(deadlineList: Deadline[]): Deadline {
-  let minValue: number = Infinity;
+  let minValue = Infinity;
   for (const deadline of deadlineList) {
-    const deadlineMsecs = deadline instanceof Date ? deadline.getTime() : deadline;
+    const deadlineMsecs =
+      deadline instanceof Date ? deadline.getTime() : deadline;
     if (deadlineMsecs < minValue) {
       minValue = deadlineMsecs;
     }
@@ -265,7 +266,10 @@ export class Http2CallStream implements Call {
         metadata: new Metadata(),
       });
     };
-    if (this.options.parentCall && this.options.flags & Propagate.CANCELLATION) {
+    if (
+      this.options.parentCall &&
+      this.options.flags & Propagate.CANCELLATION
+    ) {
       this.options.parentCall.on('cancelled', () => {
         this.cancelWithStatus(Status.CANCELLED, 'Cancelled by parent call');
       });
@@ -548,7 +552,7 @@ export class Http2CallStream implements Call {
       stream.on('close', () => {
         /* Use process.next tick to ensure that this code happens after any
          * "error" event that may be emitted at about the same time, so that
-         * we can bubble up the error message from that event. */ 
+         * we can bubble up the error message from that event. */
         process.nextTick(() => {
           this.trace('HTTP/2 stream closed with code ' + stream.rstCode);
           /* If we have a final status with an OK status code, that means that
@@ -597,7 +601,7 @@ export class Http2CallStream implements Call {
                  * "Internal server error" message. */
                 details = `Received RST_STREAM with code ${stream.rstCode} (Internal server error)`;
               } else {
-                if (this.internalError.errno === os.constants.errno.ECONNRESET) {
+                if (this.internalError.code === 'ECONNRESET') {
                   code = Status.UNAVAILABLE;
                   details = this.internalError.message;
                 } else {
@@ -629,7 +633,16 @@ export class Http2CallStream implements Call {
          * https://github.com/nodejs/node/blob/8b8620d580314050175983402dfddf2674e8e22a/lib/internal/http2/core.js#L2267
          */
         if (err.code !== 'ERR_HTTP2_STREAM_ERROR') {
-          this.trace('Node error event: message=' + err.message + ' code=' + err.code + ' errno=' + getSystemErrorName(err.errno) + ' syscall=' + err.syscall);
+          this.trace(
+            'Node error event: message=' +
+              err.message +
+              ' code=' +
+              err.code +
+              ' errno=' +
+              getSystemErrorName(err.errno) +
+              ' syscall=' +
+              err.syscall
+          );
           this.internalError = err;
         }
       });
