@@ -17,7 +17,19 @@
 
 import { LogVerbosity } from './constants';
 
-let _logger: Partial<Console> = console;
+const DEFAULT_LOGGER: Partial<Console> = {
+  error: (message?: any, ...optionalParams: any[]) => {
+    console.error('E ' + message, ...optionalParams);
+  },
+  info: (message?: any, ...optionalParams: any[]) => {
+    console.error('I ' + message, ...optionalParams);
+  },
+  debug: (message?: any, ...optionalParams: any[]) => {
+    console.error('D ' + message, ...optionalParams);
+  },
+}
+
+let _logger: Partial<Console> = DEFAULT_LOGGER;
 let _logVerbosity: LogVerbosity = LogVerbosity.ERROR;
 
 const verbosityString =
@@ -54,8 +66,27 @@ export const setLoggerVerbosity = (verbosity: LogVerbosity): void => {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const log = (severity: LogVerbosity, ...args: any[]): void => {
-  if (severity >= _logVerbosity && typeof _logger.error === 'function') {
-    _logger.error(...args);
+  let logFunction: typeof DEFAULT_LOGGER.error;
+  if (severity >= _logVerbosity) {
+    switch (severity) {
+      case LogVerbosity.DEBUG:
+        logFunction = _logger.debug;
+        break;
+      case LogVerbosity.INFO:
+        logFunction = _logger.info;
+        break;
+      case LogVerbosity.ERROR:
+        logFunction = _logger.error;
+        break;
+    }
+    /* Fall back to _logger.error when other methods are not available for
+     * compatiblity with older behavior that always logged to _logger.error */
+    if (!logFunction) {
+      logFunction = _logger.error;
+    }
+    if (logFunction) {
+      logFunction.bind(_logger)(...args);
+    }
   }
 };
 
