@@ -116,7 +116,7 @@ describe('Server', () => {
 
       assert.throws(() => {
         server.bindAsync('localhost:0', null as any, noop);
-      }, /creds must be an object/);
+      }, /creds must be a ServerCredentials object/);
 
       assert.throws(() => {
         server.bindAsync(
