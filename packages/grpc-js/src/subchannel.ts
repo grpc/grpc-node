@@ -655,14 +655,15 @@ export class Subchannel {
   startCallStream(
     metadata: Metadata,
     callStream: Http2CallStream,
-    extraFilterFactories: FilterFactory<Filter>[]
+    extraFilterFactories: FilterFactory<Filter>[],
+    options: ChannelOptions
   ) {
     const headers = metadata.toHttp2Headers();
     headers[HTTP2_HEADER_AUTHORITY] = callStream.getHost();
     headers[HTTP2_HEADER_USER_AGENT] = this.userAgent;
     headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
     headers[HTTP2_HEADER_METHOD] = 'POST';
-    headers[HTTP2_HEADER_PATH] = callStream.getMethod();
+    headers[HTTP2_HEADER_PATH] = options['grpc.http_content_type'] || callStream.getMethod();
     headers[HTTP2_HEADER_TE] = 'trailers';
     let http2Stream: http2.ClientHttp2Stream;
     /* In theory, if an error is thrown by session.request because session has

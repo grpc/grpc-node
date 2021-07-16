@@ -402,7 +402,8 @@ export class ChannelImplementation implements Channel {
                     pickResult.subchannel!.startCallStream(
                       finalMetadata,
                       callStream,
-                      pickResult.extraFilterFactories
+                      pickResult.extraFilterFactories,
+                      this.options
                     );
                     /* If we reach this point, the call stream has started
                      * successfully */
