@@ -237,8 +237,8 @@ export class Server {
       throw new TypeError('port must be a string');
     }
 
-    if (creds === null || typeof creds !== 'object') {
-      throw new TypeError('creds must be an object');
+    if (creds === null || !(creds instanceof ServerCredentials)) {
+      throw new TypeError('creds must be a ServerCredentials object');
     }
 
     if (typeof callback !== 'function') {
