@@ -119,6 +119,10 @@ describe('Server', () => {
       }, /creds must be a ServerCredentials object/);
 
       assert.throws(() => {
+        server.bindAsync('localhost:0', grpc.credentials.createInsecure() as any, noop);
+      }, /creds must be a ServerCredentials object/);
+
+      assert.throws(() => {
         server.bindAsync(
           'localhost:0',
           ServerCredentials.createInsecure(),
