@@ -16,7 +16,6 @@
 // limitations under the License.
 //
 'use strict';
-var grpc = require('grpc');
 var v1_health_pb = require('../v1/health_pb.js');
 
 function serialize_HealthCheckRequest(arg) {
@@ -41,8 +40,7 @@ function deserialize_HealthCheckResponse(buffer_arg) {
   return v1_health_pb.HealthCheckResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-
-var HealthService = exports.HealthService = {
+var HealthService = {
   check: {
     path: '/grpc.health.v1.Health/Check',
     requestStream: false,
@@ -56,4 +54,9 @@ var HealthService = exports.HealthService = {
   },
 };
 
-exports.HealthClient = grpc.makeGenericClientConstructor(HealthService);
+module.exports = function(grpc) {
+  return {
+    HealthClient: grpc.makeGenericClientConstructor(HealthService),
+    HealthService: HealthService,
+  };
+};

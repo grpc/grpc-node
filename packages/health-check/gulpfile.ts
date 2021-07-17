@@ -26,12 +26,7 @@ const healthCheckDir = __dirname;
 const baseDir = path.resolve(healthCheckDir, '..', '..');
 const testDir = path.resolve(healthCheckDir, 'test');
 
-const runInstall = () => execa('npm', ['install', '--unsafe-perm'], {cwd: healthCheckDir, stdio: 'inherit'});
-
-const runRebuild = () => execa('npm', ['rebuild', '--unsafe-perm'], {cwd: healthCheckDir, stdio: 'inherit'});
-
-const install = gulp.series(runInstall, runRebuild);
-
+const install = () => execa('npm', ['install', '--unsafe-perm'], {cwd: healthCheckDir, stdio: 'inherit'});
 const test = () => gulp.src(`${testDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
 
 export {

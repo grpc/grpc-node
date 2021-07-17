@@ -16,7 +16,7 @@
  */
 
 import * as gulp from 'gulp';
-import * as healthCheck from './packages/grpc-health-check/gulpfile';
+import * as healthCheck from './packages/health-check/gulpfile';
 import * as jsCore from './packages/grpc-js/gulpfile';
 import * as jsXds from './packages/grpc-js-xds/gulpfile';
 import * as protobuf from './packages/proto-loader/gulpfile';
