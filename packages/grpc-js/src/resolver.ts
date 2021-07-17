@@ -22,12 +22,14 @@ import { GrpcUri, uriToString } from './uri-parser';
 import { ChannelOptions } from './channel-options';
 import { Metadata } from './metadata';
 import { Status } from './constants';
+import { Filter, FilterFactory } from './filter';
 
 export interface CallConfig {
   methodConfig: MethodConfig;
   onCommitted?: () => void;
   pickInformation: { [key: string]: string };
   status: Status;
+  dynamicFilterFactories: FilterFactory<Filter>[];
 }
 
 /**

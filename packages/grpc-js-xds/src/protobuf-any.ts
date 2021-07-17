@@ -12,7 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-export const EXPERIMENTAL_FAULT_INJECTION = process.env.GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION;
+// This is a non-public, unstable API, but it's very convenient
+import { loadProtosWithOptionsSync } from '@grpc/proto-loader/build/src/util';
+import { Any__Output } from './generated/google/protobuf/Any';
+
+function parseAnyMessage(encodedMessage: Any__Output) {
+  
+}

@@ -22,6 +22,8 @@ import { RdsState } from "./rds-state";
 import { Watcher, XdsStreamState } from "./xds-stream-state";
 import { HttpConnectionManager__Output } from '../generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpConnectionManager';
 import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL_V2, HTTP_CONNECTION_MANGER_TYPE_URL_V3 } from '../resources';
+import { validateTopLevelFilter } from '../http-filter';
+import { EXPERIMENTAL_FAULT_INJECTION } from '../environment';
 
 const TRACER_NAME = 'xds_client';
 
@@ -100,6 +102,13 @@ export class LdsState implements XdsStreamState<Listener__Output> {
       return false;
     }
     const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL_V3, message.api_listener!.api_listener.value);
+    if (EXPERIMENTAL_FAULT_INJECTION) {
+      for (const httpFilter of httpConnectionManager.http_filters) {
+        if (!validateTopLevelFilter(httpFilter)) {
+          return false;
+        }
+      }
+    }
     switch (httpConnectionManager.route_specifier) {
       case 'rds':
         return !!httpConnectionManager.rds?.config_source?.ads;

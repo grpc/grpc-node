@@ -655,7 +655,7 @@ export class Subchannel {
   startCallStream(
     metadata: Metadata,
     callStream: Http2CallStream,
-    extraFilterFactories: FilterFactory<Filter>[]
+    extraFilters: Filter[]
   ) {
     const headers = metadata.toHttp2Headers();
     headers[HTTP2_HEADER_AUTHORITY] = callStream.getHost();
@@ -694,7 +694,7 @@ export class Subchannel {
         ' with headers\n' +
         headersString
     );
-    callStream.attachHttp2Stream(http2Stream, this, extraFilterFactories);
+    callStream.attachHttp2Stream(http2Stream, this, extraFilters);
   }
 
   /**

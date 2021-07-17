@@ -466,11 +466,9 @@ export class Http2CallStream implements Call {
   attachHttp2Stream(
     stream: http2.ClientHttp2Stream,
     subchannel: Subchannel,
-    extraFilters: FilterFactory<Filter>[]
+    extraFilters: Filter[]
   ): void {
-    this.filterStack.push(
-      extraFilters.map((filterFactory) => filterFactory.createFilter(this))
-    );
+    this.filterStack.push(extraFilters);
     if (this.finalStatus !== null) {
       stream.close(NGHTTP2_CANCEL);
     } else {
@@ -734,6 +732,10 @@ export class Http2CallStream implements Call {
 
   setConfigDeadline(configDeadline: Deadline) {
     this.configDeadline = configDeadline;
+  }
+
+  addFilters(extraFilters: Filter[]) {
+    this.filterStack.push(extraFilters);
   }
 
   startRead() {
