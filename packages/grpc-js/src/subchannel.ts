@@ -303,6 +303,11 @@ export class Subchannel {
   }
 
   private createSession(proxyConnectionResult: ProxyConnectionResult) {
+    if (proxyConnectionResult.realTarget) {
+      trace(this.subchannelAddressString + ' creating HTTP/2 session through proxy to ' + proxyConnectionResult.realTarget);
+    } else {
+      trace(this.subchannelAddressString + ' creating HTTP/2 session');
+    }
     const targetAuthority = getDefaultAuthority(
       proxyConnectionResult.realTarget ?? this.channelTarget
     );
@@ -403,6 +408,7 @@ export class Subchannel {
     });
     session.once('close', () => {
       if (this.session === session) {
+        trace(this.subchannelAddressString + ' connection closed');
         this.transitionToState(
           [ConnectivityState.CONNECTING],
           ConnectivityState.TRANSIENT_FAILURE
