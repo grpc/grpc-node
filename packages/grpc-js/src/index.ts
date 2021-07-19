@@ -247,7 +247,10 @@ export { experimental };
 import * as resolver from './resolver';
 import * as load_balancer from './load-balancer';
 
+const clientVersion = require('../../package.json').version;
+
 (() => {
+  logging.trace(LogVerbosity.DEBUG, 'index', 'Loading @grpc/grpc-js version ' + clientVersion);
   resolver.registerAll();
   load_balancer.registerAll();
 })();
