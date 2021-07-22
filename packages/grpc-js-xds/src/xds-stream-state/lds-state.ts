@@ -31,6 +31,8 @@ function trace(text: string): void {
   experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
 }
 
+const ROUTER_FILTER_URL = 'type.googleapis.com/envoy.extensions.filters.http.router.v3.Router';
+
 export class LdsState implements XdsStreamState<Listener__Output> {
   versionInfo = '';
   nonce = '';
@@ -103,9 +105,25 @@ export class LdsState implements XdsStreamState<Listener__Output> {
     }
     const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL_V3, message.api_listener!.api_listener.value);
     if (EXPERIMENTAL_FAULT_INJECTION) {
-      for (const httpFilter of httpConnectionManager.http_filters) {
+      const filterNames = new Set<string>();
+      for (const [index, httpFilter] of httpConnectionManager.http_filters.entries()) {
+        if (filterNames.has(httpFilter.name)) {
+          return false;
+        }
+        filterNames.add(httpFilter.name);
         if (!validateTopLevelFilter(httpFilter)) {
           return false;
+        }
+        /* Validate that the last filter, and only the last filter, is the
+         * router filter. */
+        if (index < httpConnectionManager.http_filters.length - 1) {
+          if (httpFilter.name === ROUTER_FILTER_URL) {
+            return false;
+          }
+        } else {
+          if (httpFilter.name !== ROUTER_FILTER_URL) {
+            return false;
+          }
         }
       }
     }

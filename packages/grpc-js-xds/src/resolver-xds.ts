@@ -46,8 +46,6 @@ import { createHttpFilter, HttpFilterConfig, parseOverrideFilterConfig, parseTop
 import { EXPERIMENTAL_FAULT_INJECTION } from './environment';
 import Filter = experimental.Filter;
 import FilterFactory = experimental.FilterFactory;
-import BaseFilter = experimental.BaseFilter;
-import CallStream = experimental.CallStream;
 
 const TRACER_NAME = 'xds_resolver';
 
@@ -209,25 +207,6 @@ function protoDurationToDuration(duration: Duration__Output): Duration {
   }
 }
 
-class NoRouterFilter extends BaseFilter implements Filter {
-  constructor(private call: CallStream) {
-    super();
-  }
-
-  sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    this.call.cancelWithStatus(status.UNAVAILABLE, 'no xDS HTTP router filter configured');
-    return Promise.reject<Metadata>(new Error('no xDS HTTP router filter configured'));
-  }
-}
-
-class NoRouterFilterFactory implements FilterFactory<NoRouterFilter> {
-  createFilter(callStream: CallStream): NoRouterFilter {
-    return new NoRouterFilter(callStream);
-  }
-}
-
-const ROUTER_FILTER_URL = 'type.googleapis.com/envoy.extensions.filters.http.router.v3.Router';
-
 class XdsResolver implements Resolver {
   private hasReportedSuccess = false;
 
@@ -247,7 +226,6 @@ class XdsResolver implements Resolver {
   private latestDefaultTimeout: Duration | undefined = undefined;
 
   private ldsHttpFilterConfigs: {name: string, config: HttpFilterConfig}[] = [];
-  private hasRouterFilter = false;
 
   constructor(
     private target: GrpcUri,
@@ -265,12 +243,7 @@ class XdsResolver implements Resolver {
         }
         if (EXPERIMENTAL_FAULT_INJECTION) {
           this.ldsHttpFilterConfigs = [];
-          this.hasRouterFilter = false;
           for (const filter of httpConnectionManager.http_filters) {
-            if (filter.typed_config?.type_url === ROUTER_FILTER_URL) {
-              this.hasRouterFilter = true;
-              break;
-            }
             // typed_config must be set here, or validation would have failed
             const filterConfig = parseTopLevelFilterConfig(filter.typed_config!);
             if (filterConfig) {
@@ -421,9 +394,6 @@ class XdsResolver implements Resolver {
                 }
               }
             }
-            if (!this.hasRouterFilter) {
-              extraFilterFactories.push(new NoRouterFilterFactory());
-            }
           }
           routeAction = new SingleClusterRouteAction(cluster, timeout, extraFilterFactories);
           break;
@@ -463,9 +433,6 @@ class XdsResolver implements Resolver {
                     extraFilterFactories.push(filter);
                   }
                 }
-              }
-              if (!this.hasRouterFilter) {
-                extraFilterFactories.push(new NoRouterFilterFactory());
               }
             }
             weightedClusters.push({name: clusterWeight.name, weight: clusterWeight.weight?.value ?? 0, dynamicFilterFactories: extraFilterFactories});

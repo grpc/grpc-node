@@ -141,12 +141,7 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
           return false;
         }
         if (EXPERIMENTAL_FAULT_INJECTION) {
-          const filterNames = new Set<string>();
           for (const [name, filterConfig] of Object.entries(route.typed_per_filter_config ?? {})) {
-            if (filterNames.has(name)) {
-              return false;
-            }
-            filterNames.add(name);
             if (!validateOverrideFilter(filterConfig)) {
               return false;
             }
