@@ -312,7 +312,7 @@ declare module "grpc" {
   /**
    * An object that completely defines a service.
    */
-  export type ServiceDefinition<ImplementationType> = {
+  export type ServiceDefinition<ImplementationType = UntypedServiceImplementation> = {
     readonly [I in keyof ImplementationType]: MethodDefinition<any, any>;
   }
 
