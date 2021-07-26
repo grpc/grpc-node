@@ -665,6 +665,11 @@ export class XdsClient {
         break;
     }
     if (serviceKind) {
+      this.adsState[serviceKind].reportStreamError({
+        code: status.UNAVAILABLE,
+        details: message,
+        metadata: new Metadata()
+      });
       resourceNames = this.adsState[serviceKind].getResourceNames();
       nonce = this.adsState[serviceKind].nonce;
       versionInfo = this.adsState[serviceKind].versionInfo;
