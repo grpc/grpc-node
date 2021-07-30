@@ -148,7 +148,7 @@ const descriptorOptions: Protobuf.IConversionOptions = {
   longs: String,
   enums: String,
   bytes: String,
-  defaults: true,
+  defaults: false,
   oneofs: true,
   json: true,
 };
