@@ -244,34 +244,66 @@ export async function loadBootstrapInfo(): Promise<BootstrapInfo> {
   if (loadedBootstrapInfo !== null) {
     return loadedBootstrapInfo;
   }
+
+  /**
+   * If GRPC_XDS_BOOTSTRAP exists
+   *  then use its value as the name of the bootstrap file.
+   *
+   * If the file is missing or the contents of the file are malformed,
+   *  return an error.
+   */
   const bootstrapPath = process.env.GRPC_XDS_BOOTSTRAP;
-  if (bootstrapPath === undefined) {
-    return Promise.reject(
-      new Error(
-        'The GRPC_XDS_BOOTSTRAP environment variable needs to be set to the path to the bootstrap file to use xDS'
-      )
-    );
-  }
-  loadedBootstrapInfo = new Promise((resolve, reject) => {
-    fs.readFile(bootstrapPath, { encoding: 'utf8' }, (err, data) => {
-      if (err) {
-        reject(
-          new Error(
-            `Failed to read xDS bootstrap file from path ${bootstrapPath} with error ${err.message}`
-          )
-        );
-      }
-      try {
-        const parsedFile = JSON.parse(data);
-        resolve(validateBootstrapFile(parsedFile));
-      } catch (e) {
-        reject(
-          new Error(
-            `Failed to parse xDS bootstrap file at path ${bootstrapPath} with error ${e.message}`
-          )
-        );
-      }
+  if (bootstrapPath) {
+    loadedBootstrapInfo = new Promise((resolve, reject) => {
+      fs.readFile(bootstrapPath, { encoding: 'utf8' }, (err, data) => {
+        if (err) {
+          reject(
+            new Error(
+              `Failed to read xDS bootstrap file from path ${bootstrapPath} with error ${err.message}`
+            )
+          );
+        }
+        try {
+          const parsedFile = JSON.parse(data);
+          resolve(validateBootstrapFile(parsedFile));
+        } catch (e) {
+          reject(
+            new Error(
+              `Failed to parse xDS bootstrap file at path ${bootstrapPath} with error ${e.message}`
+            )
+          );
+        }
+      });
     });
-  });
-  return loadedBootstrapInfo;
+    return loadedBootstrapInfo;
+  }
+
+  /**
+   * Else, if GRPC_XDS_BOOTSTRAP_CONFIG exists
+   *  then use its value as the bootstrap config.
+   *
+   * If the value is malformed, return an error.
+   *
+   * See: https://github.com/grpc/grpc-node/issues/1868
+   */
+  const bootstrapConfig = process.env.GRPC_XDS_BOOTSTRAP_CONFIG;
+  if (bootstrapConfig) {
+    try {
+      const parsedConfig = JSON.parse(bootstrapConfig);
+      const loadedBootstrapInfoValue = validateBootstrapFile(parsedConfig);
+      loadedBootstrapInfo = Promise.resolve(loadedBootstrapInfoValue);
+    } catch (e) {
+      throw new Error(
+        `Failed to parse xDS bootstrap config from process.env.GRPC_XDS_BOOTSTRAP_CONFIG with error ${e.message}`
+      );
+    }
+
+    return loadedBootstrapInfo;
+  }
+
+  return Promise.reject(
+    new Error(
+      'The GRPC_XDS_BOOTSTRAP environment variable needs to be set to the path to the bootstrap file to use xDS'
+    )
+  );
 }
