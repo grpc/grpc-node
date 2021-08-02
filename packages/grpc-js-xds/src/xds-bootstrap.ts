@@ -294,7 +294,7 @@ export async function loadBootstrapInfo(): Promise<BootstrapInfo> {
       loadedBootstrapInfo = Promise.resolve(loadedBootstrapInfoValue);
     } catch (e) {
       throw new Error(
-        `Failed to parse xDS bootstrap config from process.env.GRPC_XDS_BOOTSTRAP_CONFIG with error ${e.message}`
+        `Failed to parse xDS bootstrap config from environment variable GRPC_XDS_BOOTSTRAP_CONFIG with error ${e.message}`
       );
     }
 
