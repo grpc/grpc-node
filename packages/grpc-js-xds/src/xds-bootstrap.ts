@@ -303,7 +303,7 @@ export async function loadBootstrapInfo(): Promise<BootstrapInfo> {
 
   return Promise.reject(
     new Error(
-      'The GRPC_XDS_BOOTSTRAP environment variable needs to be set to the path to the bootstrap file to use xDS'
+      'The GRPC_XDS_BOOTSTRAP or GRPC_XDS_BOOTSTRAP_CONFIG environment variables need to be set to the path to the bootstrap file to use xDS'
     )
   );
 }
