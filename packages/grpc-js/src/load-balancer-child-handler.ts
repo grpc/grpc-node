@@ -26,6 +26,7 @@ import { SubchannelAddress } from './subchannel-address';
 import { ChannelOptions } from './channel-options';
 import { ConnectivityState } from './connectivity-state';
 import { Picker } from './picker';
+import { ChannelRef, SubchannelRef } from './channelz';
 
 const TYPE_NAME = 'child_load_balancer_helper';
 
@@ -67,6 +68,13 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
     setChild(newChild: LoadBalancer) {
       this.child = newChild;
     }
+    addChannelzChild(child: ChannelRef | SubchannelRef) {
+      this.parent.channelControlHelper.addChannelzChild(child);
+    }
+    removeChannelzChild(child: ChannelRef | SubchannelRef) {
+      this.parent.channelControlHelper.removeChannelzChild(child);
+    }
+    
     private calledByPendingChild(): boolean {
       return this.child === this.parent.pendingChild;
     }

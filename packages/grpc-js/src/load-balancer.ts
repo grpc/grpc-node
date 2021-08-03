@@ -20,6 +20,7 @@ import { Subchannel } from './subchannel';
 import { SubchannelAddress } from './subchannel-address';
 import { ConnectivityState } from './connectivity-state';
 import { Picker } from './picker';
+import { ChannelRef, SubchannelRef } from './channelz';
 
 /**
  * A collection of functions associated with a channel that a load balancer
@@ -47,6 +48,8 @@ export interface ChannelControlHelper {
    * Request new data from the resolver.
    */
   requestReresolution(): void;
+  addChannelzChild(child: ChannelRef | SubchannelRef): void;
+  removeChannelzChild(child: ChannelRef | SubchannelRef): void;
 }
 
 /**

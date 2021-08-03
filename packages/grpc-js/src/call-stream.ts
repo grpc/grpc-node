@@ -249,6 +249,9 @@ export class Http2CallStream implements Call {
 
   private configDeadline: Deadline = Infinity;
 
+  private statusWatchers: ((status: StatusObject) => void)[] = [];
+  private streamEndWatchers: ((success: boolean) => void)[] = [];
+
   constructor(
     private readonly methodName: string,
     private readonly channel: ChannelImplementation,
@@ -283,6 +286,7 @@ export class Http2CallStream implements Call {
       const filteredStatus = this.filterStack.receiveTrailers(
         this.finalStatus!
       );
+      this.statusWatchers.forEach(watcher => watcher(filteredStatus));
       /* We delay the actual action of bubbling up the status to insulate the
        * cleanup code in this class from any errors that may be thrown in the
        * upper layers as a result of bubbling up the status. In particular,
@@ -426,6 +430,7 @@ export class Http2CallStream implements Call {
   }
 
   private handleTrailers(headers: http2.IncomingHttpHeaders) {
+    this.streamEndWatchers.forEach(watcher => watcher(true));
     let headersString = '';
     for (const header of Object.keys(headers)) {
       headersString += '\t\t' + header + ': ' + headers[header] + '\n';
@@ -647,6 +652,7 @@ export class Http2CallStream implements Call {
           );
           this.internalError = err;
         }
+        this.streamEndWatchers.forEach(watcher => watcher(false));
       });
       if (!this.pendingRead) {
         stream.pause();
@@ -734,6 +740,14 @@ export class Http2CallStream implements Call {
 
   setConfigDeadline(configDeadline: Deadline) {
     this.configDeadline = configDeadline;
+  }
+
+  addStatusWatcher(watcher: (status: StatusObject) => void) {
+    this.statusWatchers.push(watcher);
+  }
+
+  addStreamEndWatcher(watcher: (success: boolean) => void) {
+    this.streamEndWatchers.push(watcher);
   }
 
   startRead() {

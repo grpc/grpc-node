@@ -47,6 +47,7 @@ import { GrpcUri, parseUri, uriToString } from './uri-parser';
 import { ServerSurfaceCall } from './server-call';
 import { SurfaceCall } from './call';
 import { ConnectivityState } from './connectivity-state';
+import { ChannelInfo, ChannelRef, ChannelzCallTracker, ChannelzChildrenTracker, ChannelzTrace, registerChannelzChannel, SubchannelRef, unregisterChannelzRef } from './channelz';
 
 /**
  * See https://nodejs.org/api/timers.html#timers_setinterval_callback_delay_args
@@ -160,6 +161,13 @@ export class ChannelImplementation implements Channel {
    */
   private callRefTimer: NodeJS.Timer;
   private configSelector: ConfigSelector | null = null;
+
+  // Channelz info
+  private channelzRef: ChannelRef;
+  private channelzTrace: ChannelzTrace;
+  private callTracker = new ChannelzCallTracker();
+  private childrenTracker = new ChannelzChildrenTracker();
+
   constructor(
     target: string,
     private readonly credentials: ChannelCredentials,
@@ -204,6 +212,10 @@ export class ChannelImplementation implements Channel {
     this.callRefTimer = setInterval(() => {}, MAX_TIMEOUT_TIME);
     this.callRefTimer.unref?.();
 
+    this.channelzRef = registerChannelzChannel(target, () => this.getChannelzInfo());
+    this.channelzTrace = new ChannelzTrace();
+    this.channelzTrace.addTrace('CT_INFO', 'Channel created');
+
     if (this.options['grpc.default_authority']) {
       this.defaultAuthority = this.options['grpc.default_authority'] as string;
     } else {
@@ -223,12 +235,14 @@ export class ChannelImplementation implements Channel {
         subchannelAddress: SubchannelAddress,
         subchannelArgs: ChannelOptions
       ) => {
-        return this.subchannelPool.getOrCreateSubchannel(
+        const subchannel = this.subchannelPool.getOrCreateSubchannel(
           this.target,
           subchannelAddress,
           Object.assign({}, this.options, subchannelArgs),
           this.credentials
         );
+        this.channelzTrace.addTrace('CT_INFO', 'Created or got existing subchannel', subchannel.getChannelzRef());
+        return subchannel;
       },
       updateState: (connectivityState: ConnectivityState, picker: Picker) => {
         this.currentPicker = picker;
@@ -246,12 +260,19 @@ export class ChannelImplementation implements Channel {
           'Resolving load balancer should never call requestReresolution'
         );
       },
+      addChannelzChild: (child: ChannelRef | SubchannelRef) => {
+        this.childrenTracker.refChild(child);
+      },
+      removeChannelzChild: (child: ChannelRef | SubchannelRef) => {
+        this.childrenTracker.unrefChild(child);
+      }
     };
     this.resolvingLoadBalancer = new ResolvingLoadBalancer(
       this.target,
       channelControlHelper,
       options,
       (configSelector) => {
+        this.channelzTrace.addTrace('CT_INFO', 'Address resolution succeeded');
         this.configSelector = configSelector;
         /* We process the queue asynchronously to ensure that the corresponding
          * load balancer update has completed. */
@@ -266,6 +287,7 @@ export class ChannelImplementation implements Channel {
         });
       },
       (status) => {
+        this.channelzTrace.addTrace('CT_WARNING', 'Address resolution failed with code ' + status.code + ' and details "' + status.details + '"');
         if (this.configSelectionQueue.length > 0) {
           trace(
             LogVerbosity.DEBUG,
@@ -294,6 +316,15 @@ export class ChannelImplementation implements Channel {
       new MaxMessageSizeFilterFactory(this.options),
       new CompressionFilterFactory(this),
     ]);
+  }
+
+  private getChannelzInfo(): ChannelInfo {
+    return {
+      state: this.connectivityState,
+      trace: this.channelzTrace,
+      callTracker: this.callTracker,
+      children: this.childrenTracker.getChildLists()
+    };
   }
 
   private callRefTimerRef() {
@@ -526,6 +557,7 @@ export class ChannelImplementation implements Channel {
         ' -> ' +
         ConnectivityState[newState]
     );
+    this.channelzTrace.addTrace('CT_INFO', ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[newState]);
     this.connectivityState = newState;
     const watchersCopy = this.connectivityStateWatchers.slice();
     for (const watcherObject of watchersCopy) {
@@ -590,6 +622,7 @@ export class ChannelImplementation implements Channel {
     this.resolvingLoadBalancer.destroy();
     this.updateState(ConnectivityState.SHUTDOWN);
     clearInterval(this.callRefTimer);
+    unregisterChannelzRef(this.channelzRef);
 
     this.subchannelPool.unrefUnusedSubchannels();
   }
@@ -685,6 +718,14 @@ export class ChannelImplementation implements Channel {
       this.credentials._getCallCredentials(),
       callNumber
     );
+    this.callTracker.addCallStarted();
+    stream.addStatusWatcher(status => {
+      if (status.code === Status.OK) {
+        this.callTracker.addCallSucceeded();
+      } else {
+        this.callTracker.addCallFailed();
+      }
+    });
     return stream;
   }
 }

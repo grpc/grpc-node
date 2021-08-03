@@ -229,6 +229,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
         subchannel.removeConnectivityStateListener(
           this.pickedSubchannelStateListener
         );
+        this.channelControlHelper.removeChannelzChild(subchannel.getChannelzRef());
         if (this.subchannels.length > 0) {
           if (this.triedAllSubchannels) {
             let newLBState: ConnectivityState;
@@ -321,6 +322,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     this.updateState(ConnectivityState.READY, new PickFirstPicker(subchannel));
     subchannel.addConnectivityStateListener(this.pickedSubchannelStateListener);
     subchannel.ref();
+    this.channelControlHelper.addChannelzChild(subchannel.getChannelzRef());
     this.resetSubchannelList();
     clearTimeout(this.connectionDelayTimeout);
   }
@@ -339,6 +341,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     for (const subchannel of this.subchannels) {
       subchannel.removeConnectivityStateListener(this.subchannelStateListener);
       subchannel.unref();
+      this.channelControlHelper.removeChannelzChild(subchannel.getChannelzRef());
     }
     this.currentSubchannelIndex = 0;
     this.subchannelStateCounts = {
@@ -369,6 +372,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     );
     for (const subchannel of this.subchannels) {
       subchannel.ref();
+      this.channelControlHelper.addChannelzChild(subchannel.getChannelzRef());
     }
     for (const subchannel of this.subchannels) {
       subchannel.addConnectivityStateListener(this.subchannelStateListener);
@@ -449,6 +453,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       this.currentPick.removeConnectivityStateListener(
         this.pickedSubchannelStateListener
       );
+      this.channelControlHelper.removeChannelzChild(this.currentPick.getChannelzRef());
     }
   }
 

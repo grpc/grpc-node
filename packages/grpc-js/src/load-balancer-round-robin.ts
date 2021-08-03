@@ -191,6 +191,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     for (const subchannel of this.subchannels) {
       subchannel.removeConnectivityStateListener(this.subchannelStateListener);
       subchannel.unref();
+      this.channelControlHelper.removeChannelzChild(subchannel.getChannelzRef());
     }
     this.subchannelStateCounts = {
       [ConnectivityState.CONNECTING]: 0,
@@ -217,6 +218,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     for (const subchannel of this.subchannels) {
       subchannel.ref();
       subchannel.addConnectivityStateListener(this.subchannelStateListener);
+      this.channelControlHelper.addChannelzChild(subchannel.getChannelzRef());
       const subchannelState = subchannel.getConnectivityState();
       this.subchannelStateCounts[subchannelState] += 1;
       if (

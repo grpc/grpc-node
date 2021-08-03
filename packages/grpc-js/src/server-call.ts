@@ -411,6 +411,8 @@ export class Http2ServerCallStream<
       );
       this.cancelled = true;
       this.emit('cancelled', 'cancelled');
+      this.emit('streamEnd', false);
+      this.sendStatus({code: Status.CANCELLED, details: 'Cancelled by client', metadata: new Metadata()});
     });
 
     this.stream.on('drain', () => {
@@ -513,6 +515,7 @@ export class Http2ServerCallStream<
             resolve();
           }
 
+          this.emit('receiveMessage');
           resolve(this.deserializeMessage(requestBytes));
         } catch (err) {
           err.code = Status.INTERNAL;
@@ -567,6 +570,7 @@ export class Http2ServerCallStream<
       const response = this.serializeMessage(value!);
 
       this.write(response);
+      this.emit('sendMessage');
       this.sendStatus({ code: Status.OK, details: 'OK', metadata });
     } catch (err) {
       err.code = Status.INTERNAL;
@@ -575,6 +579,8 @@ export class Http2ServerCallStream<
   }
 
   sendStatus(statusObj: StatusObject) {
+    this.emit('callEnd', statusObj.code);
+    this.emit('streamEnd', statusObj.code === Status.OK);
     if (this.checkCancelled()) {
       return;
     }
@@ -609,9 +615,6 @@ export class Http2ServerCallStream<
   }
 
   sendError(error: ServerErrorResponse | ServerStatusResponse) {
-    if (this.checkCancelled()) {
-      return;
-    }
     const status: StatusObject = {
       code: Status.UNKNOWN,
       details: 'message' in error ? error.message : 'Unknown Error',
@@ -653,6 +656,7 @@ export class Http2ServerCallStream<
     }
 
     this.sendMetadata();
+    this.emit('sendMessage');
     return this.stream.write(chunk);
   }
 
@@ -688,6 +692,7 @@ export class Http2ServerCallStream<
           });
           return;
         }
+        this.emit('receiveMessage');
         this.pushOrBufferMessage(readable, message);
       }
     });
