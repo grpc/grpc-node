@@ -228,7 +228,7 @@ class XdsResolver implements Resolver {
       onValidUpdate: (update: Listener__Output) => {
         const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL_V3, update.api_listener!.api_listener!.value);
         const defaultTimeout = httpConnectionManager.common_http_protocol_options?.idle_timeout;
-        if (defaultTimeout === undefined) {
+        if (defaultTimeout === null || defaultTimeout === undefined) {
           this.latestDefaultTimeout = undefined;
         } else {
           this.latestDefaultTimeout = protoDurationToDuration(defaultTimeout);
