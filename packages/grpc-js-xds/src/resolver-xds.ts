@@ -37,7 +37,8 @@ import { HeaderMatcher__Output } from './generated/envoy/config/route/v3/HeaderM
 import ConfigSelector = experimental.ConfigSelector;
 import LoadBalancingConfig = experimental.LoadBalancingConfig;
 import { XdsClusterManagerLoadBalancingConfig } from './load-balancer-xds-cluster-manager';
-import { ExactValueMatcher, Fraction, FullMatcher, HeaderMatcher, Matcher, PathExactValueMatcher, PathPrefixValueMatcher, PathSafeRegexValueMatcher, PrefixValueMatcher, PresentValueMatcher, RangeValueMatcher, RejectValueMatcher, SafeRegexValueMatcher, SuffixValueMatcher, ValueMatcher } from './matcher';
+import { ExactValueMatcher, FullMatcher, HeaderMatcher, Matcher, PathExactValueMatcher, PathPrefixValueMatcher, PathSafeRegexValueMatcher, PrefixValueMatcher, PresentValueMatcher, RangeValueMatcher, RejectValueMatcher, SafeRegexValueMatcher, SuffixValueMatcher, ValueMatcher } from './matcher';
+import { envoyFractionToFraction, Fraction } from "./fraction";
 import { RouteAction, SingleClusterRouteAction, WeightedCluster, WeightedClusterRouteAction } from './route-action';
 import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL_V3 } from './resources';
 import Duration = experimental.Duration;
@@ -158,12 +159,6 @@ function getPredicateForHeaderMatcher(headerMatch: HeaderMatcher__Output): Match
   return new HeaderMatcher(headerMatch.name, valueChecker, headerMatch.invert_match);
 }
 
-const RUNTIME_FRACTION_DENOMINATOR_VALUES = {
-  HUNDRED: 100,
-  TEN_THOUSAND: 10_000,
-  MILLION: 1_000_000
-}
-
 function getPredicateForMatcher(routeMatch: RouteMatch__Output): Matcher {
   let pathMatcher: ValueMatcher;
   const caseInsensitive = routeMatch.case_sensitive?.value === false;
@@ -185,10 +180,7 @@ function getPredicateForMatcher(routeMatch: RouteMatch__Output): Matcher {
   if (!routeMatch.runtime_fraction?.default_value) {
     runtimeFraction = null;
   } else {
-    runtimeFraction = {
-      numerator: routeMatch.runtime_fraction.default_value.numerator,
-      denominator: RUNTIME_FRACTION_DENOMINATOR_VALUES[routeMatch.runtime_fraction.default_value.denominator]
-    };
+    runtimeFraction = envoyFractionToFraction(routeMatch.runtime_fraction.default_value)
   }
   return new FullMatcher(pathMatcher, headerMatchers, runtimeFraction);
 }
