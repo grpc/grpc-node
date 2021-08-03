@@ -42,6 +42,10 @@ import { RouteAction, SingleClusterRouteAction, WeightedCluster, WeightedCluster
 import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL_V3 } from './resources';
 import Duration = experimental.Duration;
 import { Duration__Output } from './generated/google/protobuf/Duration';
+import { createHttpFilter, HttpFilterConfig, parseOverrideFilterConfig, parseTopLevelFilterConfig } from './http-filter';
+import { EXPERIMENTAL_FAULT_INJECTION } from './environment';
+import Filter = experimental.Filter;
+import FilterFactory = experimental.FilterFactory;
 
 const TRACER_NAME = 'xds_resolver';
 
@@ -221,6 +225,8 @@ class XdsResolver implements Resolver {
 
   private latestDefaultTimeout: Duration | undefined = undefined;
 
+  private ldsHttpFilterConfigs: {name: string, config: HttpFilterConfig}[] = [];
+
   constructor(
     private target: GrpcUri,
     private listener: ResolverListener,
@@ -234,6 +240,16 @@ class XdsResolver implements Resolver {
           this.latestDefaultTimeout = undefined;
         } else {
           this.latestDefaultTimeout = protoDurationToDuration(defaultTimeout);
+        }
+        if (EXPERIMENTAL_FAULT_INJECTION) {
+          this.ldsHttpFilterConfigs = [];
+          for (const filter of httpConnectionManager.http_filters) {
+            // typed_config must be set here, or validation would have failed
+            const filterConfig = parseTopLevelFilterConfig(filter.typed_config!);
+            if (filterConfig) {
+              this.ldsHttpFilterConfigs.push({name: filter.name, config: filterConfig});
+            }
+          }
         }
         switch (httpConnectionManager.route_specifier) {
           case 'rds': {
@@ -314,6 +330,15 @@ class XdsResolver implements Resolver {
       this.reportResolutionError('No matching route found');
       return;
     }
+    const virtualHostHttpFilterOverrides = new Map<string, HttpFilterConfig>();
+    if (EXPERIMENTAL_FAULT_INJECTION) {
+      for (const [name, filter] of Object.entries(virtualHost.typed_per_filter_config ?? {})) {
+        const parsedConfig = parseOverrideFilterConfig(filter);
+        if (parsedConfig) {
+          virtualHostHttpFilterOverrides.set(name, parsedConfig);
+        }
+      }
+    }
     trace('Received virtual host config ' + JSON.stringify(virtualHost, undefined, 2));
     const allConfigClusters = new Set<string>();
     const matchList: {matcher: Matcher, action: RouteAction}[] = [];
@@ -334,20 +359,83 @@ class XdsResolver implements Resolver {
       if (timeout?.seconds === 0 && timeout.nanos === 0) {
         timeout = undefined;
       }
+      const routeHttpFilterOverrides = new Map<string, HttpFilterConfig>();
+      if (EXPERIMENTAL_FAULT_INJECTION) {
+        for (const [name, filter] of Object.entries(route.typed_per_filter_config ?? {})) {
+          const parsedConfig = parseOverrideFilterConfig(filter);
+          if (parsedConfig) {
+            routeHttpFilterOverrides.set(name, parsedConfig);
+          }
+        }
+      }
       switch (route.route!.cluster_specifier) {
         case 'cluster_header':
           continue;
         case 'cluster':{
           const cluster = route.route!.cluster!;
           allConfigClusters.add(cluster);
-          routeAction = new SingleClusterRouteAction(cluster, timeout);
+          const extraFilterFactories: FilterFactory<Filter>[] = [];
+          if (EXPERIMENTAL_FAULT_INJECTION) {
+            for (const filterConfig of this.ldsHttpFilterConfigs) {
+              if (routeHttpFilterOverrides.has(filterConfig.name)) {
+                const filter = createHttpFilter(filterConfig.config, routeHttpFilterOverrides.get(filterConfig.name)!);
+                if (filter) {
+                  extraFilterFactories.push(filter);
+                }
+              } else if (virtualHostHttpFilterOverrides.has(filterConfig.name)) {
+                const filter = createHttpFilter(filterConfig.config, virtualHostHttpFilterOverrides.get(filterConfig.name)!);
+                if (filter) {
+                  extraFilterFactories.push(filter);
+                }
+              } else {
+                const filter = createHttpFilter(filterConfig.config);
+                if (filter) {
+                  extraFilterFactories.push(filter);
+                }
+              }
+            }
+          }
+          routeAction = new SingleClusterRouteAction(cluster, timeout, extraFilterFactories);
           break;
         }
         case 'weighted_clusters': {
           const weightedClusters: WeightedCluster[] = [];
           for (const clusterWeight of route.route!.weighted_clusters!.clusters) {
             allConfigClusters.add(clusterWeight.name);
-            weightedClusters.push({name: clusterWeight.name, weight: clusterWeight.weight?.value ?? 0});
+            const extraFilterFactories: FilterFactory<Filter>[] = [];
+            const clusterHttpFilterOverrides = new Map<string, HttpFilterConfig>();
+            if (EXPERIMENTAL_FAULT_INJECTION) {
+              for (const [name, filter] of Object.entries(clusterWeight.typed_per_filter_config ?? {})) {
+                const parsedConfig = parseOverrideFilterConfig(filter);
+                if (parsedConfig) {
+                  clusterHttpFilterOverrides.set(name, parsedConfig);
+                }
+              }
+              for (const filterConfig of this.ldsHttpFilterConfigs) {
+                if (clusterHttpFilterOverrides.has(filterConfig.name)) {
+                  const filter = createHttpFilter(filterConfig.config, clusterHttpFilterOverrides.get(filterConfig.name)!);
+                  if (filter) {
+                    extraFilterFactories.push(filter);
+                  }
+                } else if (routeHttpFilterOverrides.has(filterConfig.name)) {
+                  const filter = createHttpFilter(filterConfig.config, routeHttpFilterOverrides.get(filterConfig.name)!);
+                  if (filter) {
+                    extraFilterFactories.push(filter);
+                  }
+                } else if (virtualHostHttpFilterOverrides.has(filterConfig.name)) {
+                  const filter = createHttpFilter(filterConfig.config, virtualHostHttpFilterOverrides.get(filterConfig.name)!);
+                  if (filter) {
+                    extraFilterFactories.push(filter);
+                  }
+                } else {
+                  const filter = createHttpFilter(filterConfig.config);
+                  if (filter) {
+                    extraFilterFactories.push(filter);
+                  }
+                }
+              }
+            }
+            weightedClusters.push({name: clusterWeight.name, weight: clusterWeight.weight?.value ?? 0, dynamicFilterFactories: extraFilterFactories});
           }
           routeAction = new WeightedClusterRouteAction(weightedClusters, route.route!.weighted_clusters!.total_weight?.value ?? 100, timeout);
         }
@@ -376,16 +464,17 @@ class XdsResolver implements Resolver {
     const configSelector: ConfigSelector = (methodName, metadata) => {
       for (const {matcher, action} of matchList) {
         if (matcher.apply(methodName, metadata)) {
-          const clusterName = action.getCluster();
-          this.refCluster(clusterName);
+          const clusterResult = action.getCluster();
+          this.refCluster(clusterResult.name);
           const onCommitted = () => {
-            this.unrefCluster(clusterName);
+            this.unrefCluster(clusterResult.name);
           }
           return {
             methodConfig: {name: [], timeout: action.getTimeout()},
             onCommitted: onCommitted,
-            pickInformation: {cluster: clusterName},
-            status: status.OK
+            pickInformation: {cluster: clusterResult.name},
+            status: status.OK,
+            dynamicFilterFactories: clusterResult.dynamicFilterFactories
           };
         }
       }
@@ -393,7 +482,8 @@ class XdsResolver implements Resolver {
         methodConfig: {name: []},
         // cluster won't be used here, but it's set because of some TypeScript weirdness
         pickInformation: {cluster: ''},
-        status: status.UNAVAILABLE
+        status: status.UNAVAILABLE,
+        dynamicFilterFactories: []
       };
     };
     trace('Created ConfigSelector with configuration:');

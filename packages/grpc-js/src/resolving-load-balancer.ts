@@ -67,6 +67,7 @@ function getDefaultConfigSelector(
               methodConfig: methodConfig,
               pickInformation: {},
               status: Status.OK,
+              dynamicFilterFactories: []
             };
           }
         }
@@ -76,6 +77,7 @@ function getDefaultConfigSelector(
       methodConfig: { name: [] },
       pickInformation: {},
       status: Status.OK,
+      dynamicFilterFactories: []
     };
   };
 }
