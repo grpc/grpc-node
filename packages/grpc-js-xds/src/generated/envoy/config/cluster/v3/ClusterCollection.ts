@@ -7,7 +7,7 @@ import type { CollectionEntry as _xds_core_v3_CollectionEntry, CollectionEntry__
  * [#not-implemented-hide:]
  */
 export interface ClusterCollection {
-  'entries'?: (_xds_core_v3_CollectionEntry);
+  'entries'?: (_xds_core_v3_CollectionEntry | null);
 }
 
 /**
@@ -15,5 +15,5 @@ export interface ClusterCollection {
  * [#not-implemented-hide:]
  */
 export interface ClusterCollection__Output {
-  'entries'?: (_xds_core_v3_CollectionEntry__Output);
+  'entries': (_xds_core_v3_CollectionEntry__Output | null);
 }

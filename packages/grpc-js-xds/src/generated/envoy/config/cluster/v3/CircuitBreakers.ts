@@ -12,14 +12,14 @@ export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget
    * 
    * This parameter is optional. Defaults to 20%.
    */
-  'budget_percent'?: (_envoy_type_v3_Percent);
+  'budget_percent'?: (_envoy_type_v3_Percent | null);
   /**
    * Specifies the minimum retry concurrency allowed for the retry budget. The limit on the
    * number of active retries may never go below this number.
    * 
    * This parameter is optional. Defaults to 3.
    */
-  'min_retry_concurrency'?: (_google_protobuf_UInt32Value);
+  'min_retry_concurrency'?: (_google_protobuf_UInt32Value | null);
 }
 
 export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget__Output {
@@ -30,14 +30,14 @@ export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget
    * 
    * This parameter is optional. Defaults to 20%.
    */
-  'budget_percent'?: (_envoy_type_v3_Percent__Output);
+  'budget_percent': (_envoy_type_v3_Percent__Output | null);
   /**
    * Specifies the minimum retry concurrency allowed for the retry budget. The limit on the
    * number of active retries may never go below this number.
    * 
    * This parameter is optional. Defaults to 3.
    */
-  'min_retry_concurrency'?: (_google_protobuf_UInt32Value__Output);
+  'min_retry_concurrency': (_google_protobuf_UInt32Value__Output | null);
 }
 
 /**
@@ -55,22 +55,22 @@ export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds {
    * The maximum number of connections that Envoy will make to the upstream
    * cluster. If not specified, the default is 1024.
    */
-  'max_connections'?: (_google_protobuf_UInt32Value);
+  'max_connections'?: (_google_protobuf_UInt32Value | null);
   /**
    * The maximum number of pending requests that Envoy will allow to the
    * upstream cluster. If not specified, the default is 1024.
    */
-  'max_pending_requests'?: (_google_protobuf_UInt32Value);
+  'max_pending_requests'?: (_google_protobuf_UInt32Value | null);
   /**
    * The maximum number of parallel requests that Envoy will make to the
    * upstream cluster. If not specified, the default is 1024.
    */
-  'max_requests'?: (_google_protobuf_UInt32Value);
+  'max_requests'?: (_google_protobuf_UInt32Value | null);
   /**
    * The maximum number of parallel retries that Envoy will allow to the
    * upstream cluster. If not specified, the default is 3.
    */
-  'max_retries'?: (_google_protobuf_UInt32Value);
+  'max_retries'?: (_google_protobuf_UInt32Value | null);
   /**
    * Specifies a limit on concurrent retries in relation to the number of active requests. This
    * parameter is optional.
@@ -80,7 +80,7 @@ export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds {
    * If this field is set, the retry budget will override any configured retry circuit
    * breaker.
    */
-  'retry_budget'?: (_envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget);
+  'retry_budget'?: (_envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget | null);
   /**
    * If track_remaining is true, then stats will be published that expose
    * the number of resources remaining until the circuit breakers open. If
@@ -99,7 +99,7 @@ export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds {
    * :ref:`Circuit Breaking <arch_overview_circuit_break_cluster_maximum_connection_pools>` for
    * more details.
    */
-  'max_connection_pools'?: (_google_protobuf_UInt32Value);
+  'max_connection_pools'?: (_google_protobuf_UInt32Value | null);
 }
 
 /**
@@ -117,22 +117,22 @@ export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds__Output {
    * The maximum number of connections that Envoy will make to the upstream
    * cluster. If not specified, the default is 1024.
    */
-  'max_connections'?: (_google_protobuf_UInt32Value__Output);
+  'max_connections': (_google_protobuf_UInt32Value__Output | null);
   /**
    * The maximum number of pending requests that Envoy will allow to the
    * upstream cluster. If not specified, the default is 1024.
    */
-  'max_pending_requests'?: (_google_protobuf_UInt32Value__Output);
+  'max_pending_requests': (_google_protobuf_UInt32Value__Output | null);
   /**
    * The maximum number of parallel requests that Envoy will make to the
    * upstream cluster. If not specified, the default is 1024.
    */
-  'max_requests'?: (_google_protobuf_UInt32Value__Output);
+  'max_requests': (_google_protobuf_UInt32Value__Output | null);
   /**
    * The maximum number of parallel retries that Envoy will allow to the
    * upstream cluster. If not specified, the default is 3.
    */
-  'max_retries'?: (_google_protobuf_UInt32Value__Output);
+  'max_retries': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Specifies a limit on concurrent retries in relation to the number of active requests. This
    * parameter is optional.
@@ -142,7 +142,7 @@ export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds__Output {
    * If this field is set, the retry budget will override any configured retry circuit
    * breaker.
    */
-  'retry_budget'?: (_envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget__Output);
+  'retry_budget': (_envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget__Output | null);
   /**
    * If track_remaining is true, then stats will be published that expose
    * the number of resources remaining until the circuit breakers open. If
@@ -161,7 +161,7 @@ export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds__Output {
    * :ref:`Circuit Breaking <arch_overview_circuit_break_cluster_maximum_connection_pools>` for
    * more details.
    */
-  'max_connection_pools'?: (_google_protobuf_UInt32Value__Output);
+  'max_connection_pools': (_google_protobuf_UInt32Value__Output | null);
 }
 
 /**

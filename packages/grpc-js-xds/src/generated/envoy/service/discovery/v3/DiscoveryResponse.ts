@@ -51,7 +51,7 @@ export interface DiscoveryResponse {
   /**
    * The control plane instance that sent the response.
    */
-  'control_plane'?: (_envoy_config_core_v3_ControlPlane);
+  'control_plane'?: (_envoy_config_core_v3_ControlPlane | null);
 }
 
 /**
@@ -102,5 +102,5 @@ export interface DiscoveryResponse__Output {
   /**
    * The control plane instance that sent the response.
    */
-  'control_plane'?: (_envoy_config_core_v3_ControlPlane__Output);
+  'control_plane': (_envoy_config_core_v3_ControlPlane__Output | null);
 }

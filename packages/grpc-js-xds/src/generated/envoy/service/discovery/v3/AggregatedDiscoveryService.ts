@@ -1,6 +1,7 @@
 // Original file: deps/envoy-api/envoy/service/discovery/v3/ads.proto
 
 import type * as grpc from '@grpc/grpc-js'
+import type { MethodDefinition } from '@grpc/proto-loader'
 import type { DeltaDiscoveryRequest as _envoy_service_discovery_v3_DeltaDiscoveryRequest, DeltaDiscoveryRequest__Output as _envoy_service_discovery_v3_DeltaDiscoveryRequest__Output } from '../../../../envoy/service/discovery/v3/DeltaDiscoveryRequest';
 import type { DeltaDiscoveryResponse as _envoy_service_discovery_v3_DeltaDiscoveryResponse, DeltaDiscoveryResponse__Output as _envoy_service_discovery_v3_DeltaDiscoveryResponse__Output } from '../../../../envoy/service/discovery/v3/DeltaDiscoveryResponse';
 import type { DiscoveryRequest as _envoy_service_discovery_v3_DiscoveryRequest, DiscoveryRequest__Output as _envoy_service_discovery_v3_DiscoveryRequest__Output } from '../../../../envoy/service/discovery/v3/DiscoveryRequest';
@@ -49,4 +50,9 @@ export interface AggregatedDiscoveryServiceHandlers extends grpc.UntypedServiceI
    */
   StreamAggregatedResources: grpc.handleBidiStreamingCall<_envoy_service_discovery_v3_DiscoveryRequest__Output, _envoy_service_discovery_v3_DiscoveryResponse>;
   
+}
+
+export interface AggregatedDiscoveryServiceDefinition extends grpc.ServiceDefinition {
+  DeltaAggregatedResources: MethodDefinition<_envoy_service_discovery_v3_DeltaDiscoveryRequest, _envoy_service_discovery_v3_DeltaDiscoveryResponse, _envoy_service_discovery_v3_DeltaDiscoveryRequest__Output, _envoy_service_discovery_v3_DeltaDiscoveryResponse__Output>
+  StreamAggregatedResources: MethodDefinition<_envoy_service_discovery_v3_DiscoveryRequest, _envoy_service_discovery_v3_DiscoveryResponse, _envoy_service_discovery_v3_DiscoveryRequest__Output, _envoy_service_discovery_v3_DiscoveryResponse__Output>
 }

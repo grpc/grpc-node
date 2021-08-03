@@ -20,7 +20,7 @@ export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight {
    * the choice of an upstream cluster is determined by its weight. The sum of weights across all
    * entries in the clusters array must add up to the total_weight, which defaults to 100.
    */
-  'weight'?: (_google_protobuf_UInt32Value);
+  'weight'?: (_google_protobuf_UInt32Value | null);
   /**
    * Optional endpoint metadata match criteria used by the subset load balancer. Only endpoints in
    * the upstream cluster with metadata matching what is set in this field will be considered for
@@ -28,7 +28,7 @@ export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight {
    * :ref:`RouteAction.metadata_match <envoy_api_field_config.route.v3.RouteAction.metadata_match>`, with
    * values here taking precedence. The filter name should be specified as *envoy.lb*.
    */
-  'metadata_match'?: (_envoy_config_core_v3_Metadata);
+  'metadata_match'?: (_envoy_config_core_v3_Metadata | null);
   /**
    * Specifies a list of headers to be added to requests when this cluster is selected
    * through the enclosing :ref:`envoy_api_msg_config.route.v3.RouteAction`.
@@ -87,7 +87,7 @@ export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight__Output {
    * the choice of an upstream cluster is determined by its weight. The sum of weights across all
    * entries in the clusters array must add up to the total_weight, which defaults to 100.
    */
-  'weight'?: (_google_protobuf_UInt32Value__Output);
+  'weight': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Optional endpoint metadata match criteria used by the subset load balancer. Only endpoints in
    * the upstream cluster with metadata matching what is set in this field will be considered for
@@ -95,7 +95,7 @@ export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight__Output {
    * :ref:`RouteAction.metadata_match <envoy_api_field_config.route.v3.RouteAction.metadata_match>`, with
    * values here taking precedence. The filter name should be specified as *envoy.lb*.
    */
-  'metadata_match'?: (_envoy_config_core_v3_Metadata__Output);
+  'metadata_match': (_envoy_config_core_v3_Metadata__Output | null);
   /**
    * Specifies a list of headers to be added to requests when this cluster is selected
    * through the enclosing :ref:`envoy_api_msg_config.route.v3.RouteAction`.
@@ -136,7 +136,7 @@ export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight__Output {
    * :ref:`FilterConfig<envoy_api_msg_config.route.v3.FilterConfig>`
    * message to specify additional options.]
    */
-  'typed_per_filter_config'?: ({[key: string]: _google_protobuf_Any__Output});
+  'typed_per_filter_config': ({[key: string]: _google_protobuf_Any__Output});
 }
 
 /**
@@ -167,7 +167,7 @@ export interface WeightedCluster {
    * Specifies the total weight across all clusters. The sum of all cluster weights must equal this
    * value, which must be greater than 0. Defaults to 100.
    */
-  'total_weight'?: (_google_protobuf_UInt32Value);
+  'total_weight'?: (_google_protobuf_UInt32Value | null);
 }
 
 /**
@@ -198,5 +198,5 @@ export interface WeightedCluster__Output {
    * Specifies the total weight across all clusters. The sum of all cluster weights must equal this
    * value, which must be greater than 0. Defaults to 100.
    */
-  'total_weight'?: (_google_protobuf_UInt32Value__Output);
+  'total_weight': (_google_protobuf_UInt32Value__Output | null);
 }

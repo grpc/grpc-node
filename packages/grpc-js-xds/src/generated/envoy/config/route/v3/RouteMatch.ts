@@ -29,12 +29,12 @@ export interface _envoy_config_route_v3_RouteMatch_TlsContextMatchOptions {
    * If specified, the route will match against whether or not a certificate is presented.
    * If not specified, certificate presentation status (true or false) will not be considered when route matching.
    */
-  'presented'?: (_google_protobuf_BoolValue);
+  'presented'?: (_google_protobuf_BoolValue | null);
   /**
    * If specified, the route will match against whether or not a certificate is validated.
    * If not specified, certificate validation status (true or false) will not be considered when route matching.
    */
-  'validated'?: (_google_protobuf_BoolValue);
+  'validated'?: (_google_protobuf_BoolValue | null);
 }
 
 export interface _envoy_config_route_v3_RouteMatch_TlsContextMatchOptions__Output {
@@ -42,12 +42,12 @@ export interface _envoy_config_route_v3_RouteMatch_TlsContextMatchOptions__Outpu
    * If specified, the route will match against whether or not a certificate is presented.
    * If not specified, certificate presentation status (true or false) will not be considered when route matching.
    */
-  'presented'?: (_google_protobuf_BoolValue__Output);
+  'presented': (_google_protobuf_BoolValue__Output | null);
   /**
    * If specified, the route will match against whether or not a certificate is validated.
    * If not specified, certificate validation status (true or false) will not be considered when route matching.
    */
-  'validated'?: (_google_protobuf_BoolValue__Output);
+  'validated': (_google_protobuf_BoolValue__Output | null);
 }
 
 /**
@@ -68,7 +68,7 @@ export interface RouteMatch {
    * Indicates that prefix/path matching should be case sensitive. The default
    * is true.
    */
-  'case_sensitive'?: (_google_protobuf_BoolValue);
+  'case_sensitive'?: (_google_protobuf_BoolValue | null);
   /**
    * Specifies a set of headers that the route should match on. The router will
    * check the request’s headers against all the specified headers in the route
@@ -90,7 +90,7 @@ export interface RouteMatch {
    * that the content-type header has a application/grpc or one of the various
    * application/grpc+ values.
    */
-  'grpc'?: (_envoy_config_route_v3_RouteMatch_GrpcRouteMatchOptions);
+  'grpc'?: (_envoy_config_route_v3_RouteMatch_GrpcRouteMatchOptions | null);
   /**
    * Indicates that the route should additionally match on a runtime key. Every time the route
    * is considered for a match, it must also fall under the percentage of matches indicated by
@@ -109,7 +109,7 @@ export interface RouteMatch {
    * instance, a runtime key lookup returning the value "42" would parse as a FractionalPercent
    * whose numerator is 42 and denominator is HUNDRED. This preserves legacy semantics.
    */
-  'runtime_fraction'?: (_envoy_config_core_v3_RuntimeFractionalPercent);
+  'runtime_fraction'?: (_envoy_config_core_v3_RuntimeFractionalPercent | null);
   /**
    * If specified, the route is a regular expression rule meaning that the
    * regex must match the *:path* header once the query string is removed. The entire path
@@ -124,14 +124,14 @@ export interface RouteMatch {
    * on :path, etc. The issue with that is it is unclear how to generically deal with query string
    * stripping. This needs more thought.]
    */
-  'safe_regex'?: (_envoy_type_matcher_v3_RegexMatcher);
+  'safe_regex'?: (_envoy_type_matcher_v3_RegexMatcher | null);
   /**
    * If specified, the client tls context will be matched against the defined
    * match options.
    * 
    * [#next-major-version: unify with RBAC]
    */
-  'tls_context'?: (_envoy_config_route_v3_RouteMatch_TlsContextMatchOptions);
+  'tls_context'?: (_envoy_config_route_v3_RouteMatch_TlsContextMatchOptions | null);
   /**
    * If this is used as the matcher, the matcher will only match CONNECT requests.
    * Note that this will not match HTTP/2 upgrade-style CONNECT requests
@@ -143,7 +143,7 @@ export interface RouteMatch {
    * Note that CONNECT support is currently considered alpha in Envoy.
    * [#comment:TODO(htuch): Replace the above comment with an alpha tag.
    */
-  'connect_matcher'?: (_envoy_config_route_v3_RouteMatch_ConnectMatcher);
+  'connect_matcher'?: (_envoy_config_route_v3_RouteMatch_ConnectMatcher | null);
   'path_specifier'?: "prefix"|"path"|"safe_regex"|"connect_matcher";
 }
 
@@ -165,7 +165,7 @@ export interface RouteMatch__Output {
    * Indicates that prefix/path matching should be case sensitive. The default
    * is true.
    */
-  'case_sensitive'?: (_google_protobuf_BoolValue__Output);
+  'case_sensitive': (_google_protobuf_BoolValue__Output | null);
   /**
    * Specifies a set of headers that the route should match on. The router will
    * check the request’s headers against all the specified headers in the route
@@ -187,7 +187,7 @@ export interface RouteMatch__Output {
    * that the content-type header has a application/grpc or one of the various
    * application/grpc+ values.
    */
-  'grpc'?: (_envoy_config_route_v3_RouteMatch_GrpcRouteMatchOptions__Output);
+  'grpc': (_envoy_config_route_v3_RouteMatch_GrpcRouteMatchOptions__Output | null);
   /**
    * Indicates that the route should additionally match on a runtime key. Every time the route
    * is considered for a match, it must also fall under the percentage of matches indicated by
@@ -206,7 +206,7 @@ export interface RouteMatch__Output {
    * instance, a runtime key lookup returning the value "42" would parse as a FractionalPercent
    * whose numerator is 42 and denominator is HUNDRED. This preserves legacy semantics.
    */
-  'runtime_fraction'?: (_envoy_config_core_v3_RuntimeFractionalPercent__Output);
+  'runtime_fraction': (_envoy_config_core_v3_RuntimeFractionalPercent__Output | null);
   /**
    * If specified, the route is a regular expression rule meaning that the
    * regex must match the *:path* header once the query string is removed. The entire path
@@ -221,14 +221,14 @@ export interface RouteMatch__Output {
    * on :path, etc. The issue with that is it is unclear how to generically deal with query string
    * stripping. This needs more thought.]
    */
-  'safe_regex'?: (_envoy_type_matcher_v3_RegexMatcher__Output);
+  'safe_regex'?: (_envoy_type_matcher_v3_RegexMatcher__Output | null);
   /**
    * If specified, the client tls context will be matched against the defined
    * match options.
    * 
    * [#next-major-version: unify with RBAC]
    */
-  'tls_context'?: (_envoy_config_route_v3_RouteMatch_TlsContextMatchOptions__Output);
+  'tls_context': (_envoy_config_route_v3_RouteMatch_TlsContextMatchOptions__Output | null);
   /**
    * If this is used as the matcher, the matcher will only match CONNECT requests.
    * Note that this will not match HTTP/2 upgrade-style CONNECT requests
@@ -240,6 +240,6 @@ export interface RouteMatch__Output {
    * Note that CONNECT support is currently considered alpha in Envoy.
    * [#comment:TODO(htuch): Replace the above comment with an alpha tag.
    */
-  'connect_matcher'?: (_envoy_config_route_v3_RouteMatch_ConnectMatcher__Output);
+  'connect_matcher'?: (_envoy_config_route_v3_RouteMatch_ConnectMatcher__Output | null);
   'path_specifier': "prefix"|"path"|"safe_regex"|"connect_matcher";
 }

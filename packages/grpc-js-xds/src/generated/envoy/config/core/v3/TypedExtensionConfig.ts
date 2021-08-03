@@ -19,7 +19,7 @@ export interface TypedExtensionConfig {
    * :ref:`extension configuration overview
    * <config_overview_extension_configuration>` for further details.
    */
-  'typed_config'?: (_google_protobuf_Any);
+  'typed_config'?: (_google_protobuf_Any | null);
 }
 
 /**
@@ -39,5 +39,5 @@ export interface TypedExtensionConfig__Output {
    * :ref:`extension configuration overview
    * <config_overview_extension_configuration>` for further details.
    */
-  'typed_config'?: (_google_protobuf_Any__Output);
+  'typed_config': (_google_protobuf_Any__Output | null);
 }

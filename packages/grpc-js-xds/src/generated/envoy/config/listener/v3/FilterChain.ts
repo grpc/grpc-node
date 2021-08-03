@@ -23,7 +23,7 @@ export interface _envoy_config_listener_v3_FilterChain_OnDemandConfiguration {
    * Upon failure or timeout, all connections related to this filter chain will be closed.
    * Rebuilding will start again on the next new connection.
    */
-  'rebuild_timeout'?: (_google_protobuf_Duration);
+  'rebuild_timeout'?: (_google_protobuf_Duration | null);
 }
 
 /**
@@ -42,7 +42,7 @@ export interface _envoy_config_listener_v3_FilterChain_OnDemandConfiguration__Ou
    * Upon failure or timeout, all connections related to this filter chain will be closed.
    * Rebuilding will start again on the next new connection.
    */
-  'rebuild_timeout'?: (_google_protobuf_Duration__Output);
+  'rebuild_timeout': (_google_protobuf_Duration__Output | null);
 }
 
 /**
@@ -54,7 +54,7 @@ export interface FilterChain {
   /**
    * The criteria to use when matching a connection to this filter chain.
    */
-  'filter_chain_match'?: (_envoy_config_listener_v3_FilterChainMatch);
+  'filter_chain_match'?: (_envoy_config_listener_v3_FilterChainMatch | null);
   /**
    * A list of individual network filters that make up the filter chain for
    * connections established with the listener. Order matters as the filters are
@@ -74,11 +74,11 @@ export interface FilterChain {
    * :ref:`PROXY protocol listener filter <config_listener_filters_proxy_protocol>`
    * explicitly instead.
    */
-  'use_proxy_proto'?: (_google_protobuf_BoolValue);
+  'use_proxy_proto'?: (_google_protobuf_BoolValue | null);
   /**
    * [#not-implemented-hide:] filter chain metadata.
    */
-  'metadata'?: (_envoy_config_core_v3_Metadata);
+  'metadata'?: (_envoy_config_core_v3_Metadata | null);
   /**
    * Optional custom transport socket implementation to use for downstream connections.
    * To setup TLS, set a transport socket with name `tls` and
@@ -86,7 +86,7 @@ export interface FilterChain {
    * If no transport socket configuration is specified, new connections
    * will be set up with plaintext.
    */
-  'transport_socket'?: (_envoy_config_core_v3_TransportSocket);
+  'transport_socket'?: (_envoy_config_core_v3_TransportSocket | null);
   /**
    * [#not-implemented-hide:] The unique name (or empty) by which this filter chain is known. If no
    * name is provided, Envoy will allocate an internal UUID for the filter chain. If the filter
@@ -98,13 +98,13 @@ export interface FilterChain {
    * If this field is not empty, the filter chain will be built on-demand.
    * Otherwise, the filter chain will be built normally and block listener warming.
    */
-  'on_demand_configuration'?: (_envoy_config_listener_v3_FilterChain_OnDemandConfiguration);
+  'on_demand_configuration'?: (_envoy_config_listener_v3_FilterChain_OnDemandConfiguration | null);
   /**
    * If present and nonzero, the amount of time to allow incoming connections to complete any
    * transport socket negotiations. If this expires before the transport reports connection
    * establishment, the connection is summarily closed.
    */
-  'transport_socket_connect_timeout'?: (_google_protobuf_Duration);
+  'transport_socket_connect_timeout'?: (_google_protobuf_Duration | null);
 }
 
 /**
@@ -116,7 +116,7 @@ export interface FilterChain__Output {
   /**
    * The criteria to use when matching a connection to this filter chain.
    */
-  'filter_chain_match'?: (_envoy_config_listener_v3_FilterChainMatch__Output);
+  'filter_chain_match': (_envoy_config_listener_v3_FilterChainMatch__Output | null);
   /**
    * A list of individual network filters that make up the filter chain for
    * connections established with the listener. Order matters as the filters are
@@ -136,11 +136,11 @@ export interface FilterChain__Output {
    * :ref:`PROXY protocol listener filter <config_listener_filters_proxy_protocol>`
    * explicitly instead.
    */
-  'use_proxy_proto'?: (_google_protobuf_BoolValue__Output);
+  'use_proxy_proto': (_google_protobuf_BoolValue__Output | null);
   /**
    * [#not-implemented-hide:] filter chain metadata.
    */
-  'metadata'?: (_envoy_config_core_v3_Metadata__Output);
+  'metadata': (_envoy_config_core_v3_Metadata__Output | null);
   /**
    * Optional custom transport socket implementation to use for downstream connections.
    * To setup TLS, set a transport socket with name `tls` and
@@ -148,7 +148,7 @@ export interface FilterChain__Output {
    * If no transport socket configuration is specified, new connections
    * will be set up with plaintext.
    */
-  'transport_socket'?: (_envoy_config_core_v3_TransportSocket__Output);
+  'transport_socket': (_envoy_config_core_v3_TransportSocket__Output | null);
   /**
    * [#not-implemented-hide:] The unique name (or empty) by which this filter chain is known. If no
    * name is provided, Envoy will allocate an internal UUID for the filter chain. If the filter
@@ -160,11 +160,11 @@ export interface FilterChain__Output {
    * If this field is not empty, the filter chain will be built on-demand.
    * Otherwise, the filter chain will be built normally and block listener warming.
    */
-  'on_demand_configuration'?: (_envoy_config_listener_v3_FilterChain_OnDemandConfiguration__Output);
+  'on_demand_configuration': (_envoy_config_listener_v3_FilterChain_OnDemandConfiguration__Output | null);
   /**
    * If present and nonzero, the amount of time to allow incoming connections to complete any
    * transport socket negotiations. If this expires before the transport reports connection
    * establishment, the connection is summarily closed.
    */
-  'transport_socket_connect_timeout'?: (_google_protobuf_Duration__Output);
+  'transport_socket_connect_timeout': (_google_protobuf_Duration__Output | null);
 }

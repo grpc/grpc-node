@@ -96,7 +96,7 @@ export interface VirtualHost {
   /**
    * Indicates that the virtual host has a CORS policy.
    */
-  'cors'?: (_envoy_config_route_v3_CorsPolicy);
+  'cors'?: (_envoy_config_route_v3_CorsPolicy | null);
   /**
    * Specifies a list of HTTP headers that should be added to each response
    * handled by this virtual host. Headers specified at this level are applied
@@ -145,19 +145,19 @@ export interface VirtualHost {
    * route level entry will take precedence over this config and it'll be treated
    * independently (e.g.: values are not inherited).
    */
-  'retry_policy'?: (_envoy_config_route_v3_RetryPolicy);
+  'retry_policy'?: (_envoy_config_route_v3_RetryPolicy | null);
   /**
    * Indicates the hedge policy for all routes in this virtual host. Note that setting a
    * route level entry will take precedence over this config and it'll be treated
    * independently (e.g.: values are not inherited).
    */
-  'hedge_policy'?: (_envoy_config_route_v3_HedgePolicy);
+  'hedge_policy'?: (_envoy_config_route_v3_HedgePolicy | null);
   /**
    * The maximum bytes which will be buffered for retries and shadowing.
    * If set and a route-specific limit is not set, the bytes actually buffered will be the minimum
    * value of this and the listener per_connection_buffer_limit_bytes.
    */
-  'per_request_buffer_limit_bytes'?: (_google_protobuf_UInt32Value);
+  'per_request_buffer_limit_bytes'?: (_google_protobuf_UInt32Value | null);
   /**
    * Decides whether the :ref:`x-envoy-attempt-count
    * <config_http_filters_router_x-envoy-attempt-count>` header should be included
@@ -176,7 +176,7 @@ export interface VirtualHost {
    * inherited). :ref:`Retry policy <envoy_api_field_config.route.v3.VirtualHost.retry_policy>` should not be
    * set if this field is used.
    */
-  'retry_policy_typed_config'?: (_google_protobuf_Any);
+  'retry_policy_typed_config'?: (_google_protobuf_Any | null);
 }
 
 /**
@@ -246,7 +246,7 @@ export interface VirtualHost__Output {
   /**
    * Indicates that the virtual host has a CORS policy.
    */
-  'cors'?: (_envoy_config_route_v3_CorsPolicy__Output);
+  'cors': (_envoy_config_route_v3_CorsPolicy__Output | null);
   /**
    * Specifies a list of HTTP headers that should be added to each response
    * handled by this virtual host. Headers specified at this level are applied
@@ -289,25 +289,25 @@ export interface VirtualHost__Output {
    * :ref:`FilterConfig<envoy_api_msg_config.route.v3.FilterConfig>`
    * message to specify additional options.]
    */
-  'typed_per_filter_config'?: ({[key: string]: _google_protobuf_Any__Output});
+  'typed_per_filter_config': ({[key: string]: _google_protobuf_Any__Output});
   /**
    * Indicates the retry policy for all routes in this virtual host. Note that setting a
    * route level entry will take precedence over this config and it'll be treated
    * independently (e.g.: values are not inherited).
    */
-  'retry_policy'?: (_envoy_config_route_v3_RetryPolicy__Output);
+  'retry_policy': (_envoy_config_route_v3_RetryPolicy__Output | null);
   /**
    * Indicates the hedge policy for all routes in this virtual host. Note that setting a
    * route level entry will take precedence over this config and it'll be treated
    * independently (e.g.: values are not inherited).
    */
-  'hedge_policy'?: (_envoy_config_route_v3_HedgePolicy__Output);
+  'hedge_policy': (_envoy_config_route_v3_HedgePolicy__Output | null);
   /**
    * The maximum bytes which will be buffered for retries and shadowing.
    * If set and a route-specific limit is not set, the bytes actually buffered will be the minimum
    * value of this and the listener per_connection_buffer_limit_bytes.
    */
-  'per_request_buffer_limit_bytes'?: (_google_protobuf_UInt32Value__Output);
+  'per_request_buffer_limit_bytes': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Decides whether the :ref:`x-envoy-attempt-count
    * <config_http_filters_router_x-envoy-attempt-count>` header should be included
@@ -326,5 +326,5 @@ export interface VirtualHost__Output {
    * inherited). :ref:`Retry policy <envoy_api_field_config.route.v3.VirtualHost.retry_policy>` should not be
    * set if this field is used.
    */
-  'retry_policy_typed_config'?: (_google_protobuf_Any__Output);
+  'retry_policy_typed_config': (_google_protobuf_Any__Output | null);
 }

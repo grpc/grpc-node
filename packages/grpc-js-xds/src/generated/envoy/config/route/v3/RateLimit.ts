@@ -13,42 +13,42 @@ export interface _envoy_config_route_v3_RateLimit_Action {
   /**
    * Rate limit on source cluster.
    */
-  'source_cluster'?: (_envoy_config_route_v3_RateLimit_Action_SourceCluster);
+  'source_cluster'?: (_envoy_config_route_v3_RateLimit_Action_SourceCluster | null);
   /**
    * Rate limit on destination cluster.
    */
-  'destination_cluster'?: (_envoy_config_route_v3_RateLimit_Action_DestinationCluster);
+  'destination_cluster'?: (_envoy_config_route_v3_RateLimit_Action_DestinationCluster | null);
   /**
    * Rate limit on request headers.
    */
-  'request_headers'?: (_envoy_config_route_v3_RateLimit_Action_RequestHeaders);
+  'request_headers'?: (_envoy_config_route_v3_RateLimit_Action_RequestHeaders | null);
   /**
    * Rate limit on remote address.
    */
-  'remote_address'?: (_envoy_config_route_v3_RateLimit_Action_RemoteAddress);
+  'remote_address'?: (_envoy_config_route_v3_RateLimit_Action_RemoteAddress | null);
   /**
    * Rate limit on a generic key.
    */
-  'generic_key'?: (_envoy_config_route_v3_RateLimit_Action_GenericKey);
+  'generic_key'?: (_envoy_config_route_v3_RateLimit_Action_GenericKey | null);
   /**
    * Rate limit on the existence of request headers.
    */
-  'header_value_match'?: (_envoy_config_route_v3_RateLimit_Action_HeaderValueMatch);
+  'header_value_match'?: (_envoy_config_route_v3_RateLimit_Action_HeaderValueMatch | null);
   /**
    * Rate limit on dynamic metadata.
    * 
    * .. attention::
    * This field has been deprecated in favor of the :ref:`metadata <envoy_api_field_config.route.v3.RateLimit.Action.metadata>` field
    */
-  'dynamic_metadata'?: (_envoy_config_route_v3_RateLimit_Action_DynamicMetaData);
+  'dynamic_metadata'?: (_envoy_config_route_v3_RateLimit_Action_DynamicMetaData | null);
   /**
    * Rate limit on metadata.
    */
-  'metadata'?: (_envoy_config_route_v3_RateLimit_Action_MetaData);
+  'metadata'?: (_envoy_config_route_v3_RateLimit_Action_MetaData | null);
   /**
    * Rate limit descriptor extension. See the rate limit descriptor extensions documentation.
    */
-  'extension'?: (_envoy_config_core_v3_TypedExtensionConfig);
+  'extension'?: (_envoy_config_core_v3_TypedExtensionConfig | null);
   'action_specifier'?: "source_cluster"|"destination_cluster"|"request_headers"|"remote_address"|"generic_key"|"header_value_match"|"dynamic_metadata"|"metadata"|"extension";
 }
 
@@ -59,42 +59,42 @@ export interface _envoy_config_route_v3_RateLimit_Action__Output {
   /**
    * Rate limit on source cluster.
    */
-  'source_cluster'?: (_envoy_config_route_v3_RateLimit_Action_SourceCluster__Output);
+  'source_cluster'?: (_envoy_config_route_v3_RateLimit_Action_SourceCluster__Output | null);
   /**
    * Rate limit on destination cluster.
    */
-  'destination_cluster'?: (_envoy_config_route_v3_RateLimit_Action_DestinationCluster__Output);
+  'destination_cluster'?: (_envoy_config_route_v3_RateLimit_Action_DestinationCluster__Output | null);
   /**
    * Rate limit on request headers.
    */
-  'request_headers'?: (_envoy_config_route_v3_RateLimit_Action_RequestHeaders__Output);
+  'request_headers'?: (_envoy_config_route_v3_RateLimit_Action_RequestHeaders__Output | null);
   /**
    * Rate limit on remote address.
    */
-  'remote_address'?: (_envoy_config_route_v3_RateLimit_Action_RemoteAddress__Output);
+  'remote_address'?: (_envoy_config_route_v3_RateLimit_Action_RemoteAddress__Output | null);
   /**
    * Rate limit on a generic key.
    */
-  'generic_key'?: (_envoy_config_route_v3_RateLimit_Action_GenericKey__Output);
+  'generic_key'?: (_envoy_config_route_v3_RateLimit_Action_GenericKey__Output | null);
   /**
    * Rate limit on the existence of request headers.
    */
-  'header_value_match'?: (_envoy_config_route_v3_RateLimit_Action_HeaderValueMatch__Output);
+  'header_value_match'?: (_envoy_config_route_v3_RateLimit_Action_HeaderValueMatch__Output | null);
   /**
    * Rate limit on dynamic metadata.
    * 
    * .. attention::
    * This field has been deprecated in favor of the :ref:`metadata <envoy_api_field_config.route.v3.RateLimit.Action.metadata>` field
    */
-  'dynamic_metadata'?: (_envoy_config_route_v3_RateLimit_Action_DynamicMetaData__Output);
+  'dynamic_metadata'?: (_envoy_config_route_v3_RateLimit_Action_DynamicMetaData__Output | null);
   /**
    * Rate limit on metadata.
    */
-  'metadata'?: (_envoy_config_route_v3_RateLimit_Action_MetaData__Output);
+  'metadata'?: (_envoy_config_route_v3_RateLimit_Action_MetaData__Output | null);
   /**
    * Rate limit descriptor extension. See the rate limit descriptor extensions documentation.
    */
-  'extension'?: (_envoy_config_core_v3_TypedExtensionConfig__Output);
+  'extension'?: (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
   'action_specifier': "source_cluster"|"destination_cluster"|"request_headers"|"remote_address"|"generic_key"|"header_value_match"|"dynamic_metadata"|"metadata"|"extension";
 }
 
@@ -160,7 +160,7 @@ export interface _envoy_config_route_v3_RateLimit_Action_DynamicMetaData {
    * Metadata struct that defines the key and path to retrieve the string value. A match will
    * only happen if the value in the dynamic metadata is of type string.
    */
-  'metadata_key'?: (_envoy_type_metadata_v3_MetadataKey);
+  'metadata_key'?: (_envoy_type_metadata_v3_MetadataKey | null);
   /**
    * An optional value to use if *metadata_key* is empty. If not set and
    * no value is present under the metadata_key then no descriptor is generated.
@@ -188,7 +188,7 @@ export interface _envoy_config_route_v3_RateLimit_Action_DynamicMetaData__Output
    * Metadata struct that defines the key and path to retrieve the string value. A match will
    * only happen if the value in the dynamic metadata is of type string.
    */
-  'metadata_key'?: (_envoy_type_metadata_v3_MetadataKey__Output);
+  'metadata_key': (_envoy_type_metadata_v3_MetadataKey__Output | null);
   /**
    * An optional value to use if *metadata_key* is empty. If not set and
    * no value is present under the metadata_key then no descriptor is generated.
@@ -206,7 +206,7 @@ export interface _envoy_config_route_v3_RateLimit_Override_DynamicMetadata {
    * and a "unit" property with a value parseable to :ref:`RateLimitUnit
    * enum <envoy_api_enum_type.v3.RateLimitUnit>`
    */
-  'metadata_key'?: (_envoy_type_metadata_v3_MetadataKey);
+  'metadata_key'?: (_envoy_type_metadata_v3_MetadataKey | null);
 }
 
 /**
@@ -219,7 +219,7 @@ export interface _envoy_config_route_v3_RateLimit_Override_DynamicMetadata__Outp
    * and a "unit" property with a value parseable to :ref:`RateLimitUnit
    * enum <envoy_api_enum_type.v3.RateLimitUnit>`
    */
-  'metadata_key'?: (_envoy_type_metadata_v3_MetadataKey__Output);
+  'metadata_key': (_envoy_type_metadata_v3_MetadataKey__Output | null);
 }
 
 /**
@@ -278,7 +278,7 @@ export interface _envoy_config_route_v3_RateLimit_Action_HeaderValueMatch {
    * descriptor entry when the request does not match the headers. The
    * default value is true.
    */
-  'expect_match'?: (_google_protobuf_BoolValue);
+  'expect_match'?: (_google_protobuf_BoolValue | null);
   /**
    * Specifies a set of headers that the rate limit action should match
    * on. The action will check the request’s headers against all the
@@ -307,7 +307,7 @@ export interface _envoy_config_route_v3_RateLimit_Action_HeaderValueMatch__Outpu
    * descriptor entry when the request does not match the headers. The
    * default value is true.
    */
-  'expect_match'?: (_google_protobuf_BoolValue__Output);
+  'expect_match': (_google_protobuf_BoolValue__Output | null);
   /**
    * Specifies a set of headers that the rate limit action should match
    * on. The action will check the request’s headers against all the
@@ -334,7 +334,7 @@ export interface _envoy_config_route_v3_RateLimit_Action_MetaData {
    * Metadata struct that defines the key and path to retrieve the string value. A match will
    * only happen if the value in the metadata is of type string.
    */
-  'metadata_key'?: (_envoy_type_metadata_v3_MetadataKey);
+  'metadata_key'?: (_envoy_type_metadata_v3_MetadataKey | null);
   /**
    * An optional value to use if *metadata_key* is empty. If not set and
    * no value is present under the metadata_key then no descriptor is generated.
@@ -362,7 +362,7 @@ export interface _envoy_config_route_v3_RateLimit_Action_MetaData__Output {
    * Metadata struct that defines the key and path to retrieve the string value. A match will
    * only happen if the value in the metadata is of type string.
    */
-  'metadata_key'?: (_envoy_type_metadata_v3_MetadataKey__Output);
+  'metadata_key': (_envoy_type_metadata_v3_MetadataKey__Output | null);
   /**
    * An optional value to use if *metadata_key* is empty. If not set and
    * no value is present under the metadata_key then no descriptor is generated.
@@ -378,7 +378,7 @@ export interface _envoy_config_route_v3_RateLimit_Override {
   /**
    * Limit override from dynamic metadata.
    */
-  'dynamic_metadata'?: (_envoy_config_route_v3_RateLimit_Override_DynamicMetadata);
+  'dynamic_metadata'?: (_envoy_config_route_v3_RateLimit_Override_DynamicMetadata | null);
   'override_specifier'?: "dynamic_metadata";
 }
 
@@ -386,7 +386,7 @@ export interface _envoy_config_route_v3_RateLimit_Override__Output {
   /**
    * Limit override from dynamic metadata.
    */
-  'dynamic_metadata'?: (_envoy_config_route_v3_RateLimit_Override_DynamicMetadata__Output);
+  'dynamic_metadata'?: (_envoy_config_route_v3_RateLimit_Override_DynamicMetadata__Output | null);
   'override_specifier': "dynamic_metadata";
 }
 
@@ -517,7 +517,7 @@ export interface RateLimit {
    * 
    * The filter supports a range of 0 - 10 inclusively for stage numbers.
    */
-  'stage'?: (_google_protobuf_UInt32Value);
+  'stage'?: (_google_protobuf_UInt32Value | null);
   /**
    * The key to be set in runtime to disable this rate limit configuration.
    */
@@ -537,7 +537,7 @@ export interface RateLimit {
    * from metadata, no override is provided. See :ref:`rate limit override
    * <config_http_filters_rate_limit_rate_limit_override>` for more information.
    */
-  'limit'?: (_envoy_config_route_v3_RateLimit_Override);
+  'limit'?: (_envoy_config_route_v3_RateLimit_Override | null);
 }
 
 /**
@@ -554,7 +554,7 @@ export interface RateLimit__Output {
    * 
    * The filter supports a range of 0 - 10 inclusively for stage numbers.
    */
-  'stage'?: (_google_protobuf_UInt32Value__Output);
+  'stage': (_google_protobuf_UInt32Value__Output | null);
   /**
    * The key to be set in runtime to disable this rate limit configuration.
    */
@@ -574,5 +574,5 @@ export interface RateLimit__Output {
    * from metadata, no override is provided. See :ref:`rate limit override
    * <config_http_filters_rate_limit_rate_limit_override>` for more information.
    */
-  'limit'?: (_envoy_config_route_v3_RateLimit_Override__Output);
+  'limit': (_envoy_config_route_v3_RateLimit_Override__Output | null);
 }

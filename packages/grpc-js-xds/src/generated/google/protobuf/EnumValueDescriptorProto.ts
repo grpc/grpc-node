@@ -5,11 +5,11 @@ import type { EnumValueOptions as _google_protobuf_EnumValueOptions, EnumValueOp
 export interface EnumValueDescriptorProto {
   'name'?: (string);
   'number'?: (number);
-  'options'?: (_google_protobuf_EnumValueOptions);
+  'options'?: (_google_protobuf_EnumValueOptions | null);
 }
 
 export interface EnumValueDescriptorProto__Output {
   'name': (string);
   'number': (number);
-  'options'?: (_google_protobuf_EnumValueOptions__Output);
+  'options': (_google_protobuf_EnumValueOptions__Output | null);
 }

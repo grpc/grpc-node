@@ -22,7 +22,7 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials {
    * Google Compute Engine credentials.
    * https://grpc.io/grpc/cpp/namespacegrpc.html#a6beb3ac70ff94bd2ebbd89b8f21d1f61
    */
-  'google_compute_engine'?: (_google_protobuf_Empty);
+  'google_compute_engine'?: (_google_protobuf_Empty | null);
   /**
    * Google refresh token credentials.
    * https://grpc.io/grpc/cpp/namespacegrpc.html#a96901c997b91bc6513b08491e0dca37c.
@@ -32,24 +32,24 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials {
    * Service Account JWT Access credentials.
    * https://grpc.io/grpc/cpp/namespacegrpc.html#a92a9f959d6102461f66ee973d8e9d3aa.
    */
-  'service_account_jwt_access'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials);
+  'service_account_jwt_access'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials | null);
   /**
    * Google IAM credentials.
    * https://grpc.io/grpc/cpp/namespacegrpc.html#a9fc1fc101b41e680d47028166e76f9d0.
    */
-  'google_iam'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials);
+  'google_iam'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials | null);
   /**
    * Custom authenticator credentials.
    * https://grpc.io/grpc/cpp/namespacegrpc.html#a823c6a4b19ffc71fb33e90154ee2ad07.
    * https://grpc.io/docs/guides/auth.html#extending-grpc-to-support-other-authentication-mechanisms.
    */
-  'from_plugin'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin);
+  'from_plugin'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin | null);
   /**
    * Custom security token service which implements OAuth 2.0 token exchange.
    * https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16
    * See https://github.com/grpc/grpc/pull/19587.
    */
-  'sts_service'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_StsService);
+  'sts_service'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_StsService | null);
   'credential_specifier'?: "access_token"|"google_compute_engine"|"google_refresh_token"|"service_account_jwt_access"|"google_iam"|"from_plugin"|"sts_service";
 }
 
@@ -66,7 +66,7 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials__O
    * Google Compute Engine credentials.
    * https://grpc.io/grpc/cpp/namespacegrpc.html#a6beb3ac70ff94bd2ebbd89b8f21d1f61
    */
-  'google_compute_engine'?: (_google_protobuf_Empty__Output);
+  'google_compute_engine'?: (_google_protobuf_Empty__Output | null);
   /**
    * Google refresh token credentials.
    * https://grpc.io/grpc/cpp/namespacegrpc.html#a96901c997b91bc6513b08491e0dca37c.
@@ -76,24 +76,24 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials__O
    * Service Account JWT Access credentials.
    * https://grpc.io/grpc/cpp/namespacegrpc.html#a92a9f959d6102461f66ee973d8e9d3aa.
    */
-  'service_account_jwt_access'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials__Output);
+  'service_account_jwt_access'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials__Output | null);
   /**
    * Google IAM credentials.
    * https://grpc.io/grpc/cpp/namespacegrpc.html#a9fc1fc101b41e680d47028166e76f9d0.
    */
-  'google_iam'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials__Output);
+  'google_iam'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials__Output | null);
   /**
    * Custom authenticator credentials.
    * https://grpc.io/grpc/cpp/namespacegrpc.html#a823c6a4b19ffc71fb33e90154ee2ad07.
    * https://grpc.io/docs/guides/auth.html#extending-grpc-to-support-other-authentication-mechanisms.
    */
-  'from_plugin'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin__Output);
+  'from_plugin'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin__Output | null);
   /**
    * Custom security token service which implements OAuth 2.0 token exchange.
    * https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16
    * See https://github.com/grpc/grpc/pull/19587.
    */
-  'sts_service'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_StsService__Output);
+  'sts_service'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_StsService__Output | null);
   'credential_specifier': "access_token"|"google_compute_engine"|"google_refresh_token"|"service_account_jwt_access"|"google_iam"|"from_plugin"|"sts_service";
 }
 
@@ -114,7 +114,7 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs__Outpu
   /**
    * See grpc_types.h GRPC_ARG #defines for keys that work here.
    */
-  'args'?: ({[key: string]: _envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value__Output});
+  'args': ({[key: string]: _envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value__Output});
 }
 
 /**
@@ -122,12 +122,12 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs__Outpu
  * credential types.
  */
 export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials {
-  'ssl_credentials'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_SslCredentials);
+  'ssl_credentials'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_SslCredentials | null);
   /**
    * https://grpc.io/grpc/cpp/namespacegrpc.html#a6beb3ac70ff94bd2ebbd89b8f21d1f61
    */
-  'google_default'?: (_google_protobuf_Empty);
-  'local_credentials'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_GoogleLocalCredentials);
+  'google_default'?: (_google_protobuf_Empty | null);
+  'local_credentials'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_GoogleLocalCredentials | null);
   'credential_specifier'?: "ssl_credentials"|"google_default"|"local_credentials";
 }
 
@@ -136,12 +136,12 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials
  * credential types.
  */
 export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials__Output {
-  'ssl_credentials'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_SslCredentials__Output);
+  'ssl_credentials'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_SslCredentials__Output | null);
   /**
    * https://grpc.io/grpc/cpp/namespacegrpc.html#a6beb3ac70ff94bd2ebbd89b8f21d1f61
    */
-  'google_default'?: (_google_protobuf_Empty__Output);
-  'local_credentials'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_GoogleLocalCredentials__Output);
+  'google_default'?: (_google_protobuf_Empty__Output | null);
+  'local_credentials'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_GoogleLocalCredentials__Output | null);
   'credential_specifier': "ssl_credentials"|"google_default"|"local_credentials";
 }
 
@@ -183,7 +183,7 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc {
    * :ref:`channel_credentials <envoy_api_field_config.core.v3.GrpcService.GoogleGrpc.channel_credentials>`.
    */
   'target_uri'?: (string);
-  'channel_credentials'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials);
+  'channel_credentials'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials | null);
   /**
    * A set of call credentials that can be composed with `channel credentials
    * <https://grpc.io/docs/guides/auth.html#credential-types>`_.
@@ -211,16 +211,16 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc {
    * Additional configuration for site-specific customizations of the Google
    * gRPC library.
    */
-  'config'?: (_google_protobuf_Struct);
+  'config'?: (_google_protobuf_Struct | null);
   /**
    * How many bytes each stream can buffer internally.
    * If not set an implementation defined default is applied (1MiB).
    */
-  'per_stream_buffer_limit_bytes'?: (_google_protobuf_UInt32Value);
+  'per_stream_buffer_limit_bytes'?: (_google_protobuf_UInt32Value | null);
   /**
    * Custom channels args.
    */
-  'channel_args'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs);
+  'channel_args'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs | null);
 }
 
 /**
@@ -233,7 +233,7 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc__Output {
    * :ref:`channel_credentials <envoy_api_field_config.core.v3.GrpcService.GoogleGrpc.channel_credentials>`.
    */
   'target_uri': (string);
-  'channel_credentials'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials__Output);
+  'channel_credentials': (_envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials__Output | null);
   /**
    * A set of call credentials that can be composed with `channel credentials
    * <https://grpc.io/docs/guides/auth.html#credential-types>`_.
@@ -261,16 +261,16 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc__Output {
    * Additional configuration for site-specific customizations of the Google
    * gRPC library.
    */
-  'config'?: (_google_protobuf_Struct__Output);
+  'config': (_google_protobuf_Struct__Output | null);
   /**
    * How many bytes each stream can buffer internally.
    * If not set an implementation defined default is applied (1MiB).
    */
-  'per_stream_buffer_limit_bytes'?: (_google_protobuf_UInt32Value__Output);
+  'per_stream_buffer_limit_bytes': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Custom channels args.
    */
-  'channel_args'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs__Output);
+  'channel_args': (_envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs__Output | null);
 }
 
 export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials {
@@ -299,13 +299,13 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_GoogleLocalCredent
 
 export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin {
   'name'?: (string);
-  'typed_config'?: (_google_protobuf_Any);
+  'typed_config'?: (_google_protobuf_Any | null);
   'config_type'?: "typed_config";
 }
 
 export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin__Output {
   'name': (string);
-  'typed_config'?: (_google_protobuf_Any__Output);
+  'typed_config'?: (_google_protobuf_Any__Output | null);
   'config_type': "typed_config";
 }
 
@@ -326,15 +326,15 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_SslCredentials {
   /**
    * PEM encoded server root certificates.
    */
-  'root_certs'?: (_envoy_config_core_v3_DataSource);
+  'root_certs'?: (_envoy_config_core_v3_DataSource | null);
   /**
    * PEM encoded client private key.
    */
-  'private_key'?: (_envoy_config_core_v3_DataSource);
+  'private_key'?: (_envoy_config_core_v3_DataSource | null);
   /**
    * PEM encoded client certificate chain.
    */
-  'cert_chain'?: (_envoy_config_core_v3_DataSource);
+  'cert_chain'?: (_envoy_config_core_v3_DataSource | null);
 }
 
 /**
@@ -344,15 +344,15 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_SslCredentials__Ou
   /**
    * PEM encoded server root certificates.
    */
-  'root_certs'?: (_envoy_config_core_v3_DataSource__Output);
+  'root_certs': (_envoy_config_core_v3_DataSource__Output | null);
   /**
    * PEM encoded client private key.
    */
-  'private_key'?: (_envoy_config_core_v3_DataSource__Output);
+  'private_key': (_envoy_config_core_v3_DataSource__Output | null);
   /**
    * PEM encoded client certificate chain.
    */
-  'cert_chain'?: (_envoy_config_core_v3_DataSource__Output);
+  'cert_chain': (_envoy_config_core_v3_DataSource__Output | null);
 }
 
 /**
@@ -494,18 +494,18 @@ export interface GrpcService {
    * See the :ref:`gRPC services overview <arch_overview_grpc_services>`
    * documentation for discussion on gRPC client selection.
    */
-  'envoy_grpc'?: (_envoy_config_core_v3_GrpcService_EnvoyGrpc);
+  'envoy_grpc'?: (_envoy_config_core_v3_GrpcService_EnvoyGrpc | null);
   /**
    * `Google C++ gRPC client <https://github.com/grpc/grpc>`_
    * See the :ref:`gRPC services overview <arch_overview_grpc_services>`
    * documentation for discussion on gRPC client selection.
    */
-  'google_grpc'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc);
+  'google_grpc'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc | null);
   /**
    * The timeout for the gRPC request. This is the timeout for a specific
    * request.
    */
-  'timeout'?: (_google_protobuf_Duration);
+  'timeout'?: (_google_protobuf_Duration | null);
   /**
    * Additional metadata to include in streams initiated to the GrpcService. This can be used for
    * scenarios in which additional ad hoc authorization headers (e.g. ``x-foo-bar: baz-key``) are to
@@ -528,18 +528,18 @@ export interface GrpcService__Output {
    * See the :ref:`gRPC services overview <arch_overview_grpc_services>`
    * documentation for discussion on gRPC client selection.
    */
-  'envoy_grpc'?: (_envoy_config_core_v3_GrpcService_EnvoyGrpc__Output);
+  'envoy_grpc'?: (_envoy_config_core_v3_GrpcService_EnvoyGrpc__Output | null);
   /**
    * `Google C++ gRPC client <https://github.com/grpc/grpc>`_
    * See the :ref:`gRPC services overview <arch_overview_grpc_services>`
    * documentation for discussion on gRPC client selection.
    */
-  'google_grpc'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc__Output);
+  'google_grpc'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc__Output | null);
   /**
    * The timeout for the gRPC request. This is the timeout for a specific
    * request.
    */
-  'timeout'?: (_google_protobuf_Duration__Output);
+  'timeout': (_google_protobuf_Duration__Output | null);
   /**
    * Additional metadata to include in streams initiated to the GrpcService. This can be used for
    * scenarios in which additional ad hoc authorization headers (e.g. ``x-foo-bar: baz-key``) are to

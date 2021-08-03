@@ -10,7 +10,7 @@ export interface DoubleMatcher {
    * If specified, the input double value must be in the range specified here.
    * Note: The range is using half-open interval semantics [start, end).
    */
-  'range'?: (_envoy_type_v3_DoubleRange);
+  'range'?: (_envoy_type_v3_DoubleRange | null);
   /**
    * If specified, the input double value must be equal to the value specified here.
    */
@@ -26,7 +26,7 @@ export interface DoubleMatcher__Output {
    * If specified, the input double value must be in the range specified here.
    * Note: The range is using half-open interval semantics [start, end).
    */
-  'range'?: (_envoy_type_v3_DoubleRange__Output);
+  'range'?: (_envoy_type_v3_DoubleRange__Output | null);
   /**
    * If specified, the input double value must be equal to the value specified here.
    */

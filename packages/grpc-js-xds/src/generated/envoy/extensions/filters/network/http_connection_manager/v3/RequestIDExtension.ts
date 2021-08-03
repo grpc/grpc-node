@@ -6,12 +6,12 @@ export interface RequestIDExtension {
   /**
    * Request ID extension specific configuration.
    */
-  'typed_config'?: (_google_protobuf_Any);
+  'typed_config'?: (_google_protobuf_Any | null);
 }
 
 export interface RequestIDExtension__Output {
   /**
    * Request ID extension specific configuration.
    */
-  'typed_config'?: (_google_protobuf_Any__Output);
+  'typed_config': (_google_protobuf_Any__Output | null);
 }

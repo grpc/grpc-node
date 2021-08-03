@@ -41,7 +41,7 @@ export interface Resource {
   /**
    * The resource being tracked.
    */
-  'resource'?: (_google_protobuf_Any);
+  'resource'?: (_google_protobuf_Any | null);
   /**
    * The resource's name, to distinguish it from others of the same type of resource.
    */
@@ -65,12 +65,12 @@ export interface Resource {
    * testing where the fault injection should be terminated in the event that Envoy loses contact
    * with the management server.
    */
-  'ttl'?: (_google_protobuf_Duration);
+  'ttl'?: (_google_protobuf_Duration | null);
   /**
    * Cache control properties for the resource.
    * [#not-implemented-hide:]
    */
-  'cache_control'?: (_envoy_service_discovery_v3_Resource_CacheControl);
+  'cache_control'?: (_envoy_service_discovery_v3_Resource_CacheControl | null);
 }
 
 /**
@@ -85,7 +85,7 @@ export interface Resource__Output {
   /**
    * The resource being tracked.
    */
-  'resource'?: (_google_protobuf_Any__Output);
+  'resource': (_google_protobuf_Any__Output | null);
   /**
    * The resource's name, to distinguish it from others of the same type of resource.
    */
@@ -109,10 +109,10 @@ export interface Resource__Output {
    * testing where the fault injection should be terminated in the event that Envoy loses contact
    * with the management server.
    */
-  'ttl'?: (_google_protobuf_Duration__Output);
+  'ttl': (_google_protobuf_Duration__Output | null);
   /**
    * Cache control properties for the resource.
    * [#not-implemented-hide:]
    */
-  'cache_control'?: (_envoy_service_discovery_v3_Resource_CacheControl__Output);
+  'cache_control': (_envoy_service_discovery_v3_Resource_CacheControl__Output | null);
 }

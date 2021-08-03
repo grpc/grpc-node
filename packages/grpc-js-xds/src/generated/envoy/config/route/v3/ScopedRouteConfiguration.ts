@@ -123,7 +123,7 @@ export interface ScopedRouteConfiguration {
   /**
    * The key to match against.
    */
-  'key'?: (_envoy_config_route_v3_ScopedRouteConfiguration_Key);
+  'key'?: (_envoy_config_route_v3_ScopedRouteConfiguration_Key | null);
   /**
    * Whether the RouteConfiguration should be loaded on demand.
    */
@@ -204,7 +204,7 @@ export interface ScopedRouteConfiguration__Output {
   /**
    * The key to match against.
    */
-  'key'?: (_envoy_config_route_v3_ScopedRouteConfiguration_Key__Output);
+  'key': (_envoy_config_route_v3_ScopedRouteConfiguration_Key__Output | null);
   /**
    * Whether the RouteConfiguration should be loaded on demand.
    */

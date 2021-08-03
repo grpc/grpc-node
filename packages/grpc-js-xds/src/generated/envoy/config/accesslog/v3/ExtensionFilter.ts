@@ -11,7 +11,7 @@ export interface ExtensionFilter {
    * match a statically registered filter.
    */
   'name'?: (string);
-  'typed_config'?: (_google_protobuf_Any);
+  'typed_config'?: (_google_protobuf_Any | null);
   /**
    * Custom configuration that depends on the filter being instantiated.
    */
@@ -27,7 +27,7 @@ export interface ExtensionFilter__Output {
    * match a statically registered filter.
    */
   'name': (string);
-  'typed_config'?: (_google_protobuf_Any__Output);
+  'typed_config'?: (_google_protobuf_Any__Output | null);
   /**
    * Custom configuration that depends on the filter being instantiated.
    */

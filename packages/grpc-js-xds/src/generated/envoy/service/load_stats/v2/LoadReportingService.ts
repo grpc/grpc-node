@@ -1,6 +1,7 @@
 // Original file: deps/envoy-api/envoy/service/load_stats/v2/lrs.proto
 
 import type * as grpc from '@grpc/grpc-js'
+import type { MethodDefinition } from '@grpc/proto-loader'
 import type { LoadStatsRequest as _envoy_service_load_stats_v2_LoadStatsRequest, LoadStatsRequest__Output as _envoy_service_load_stats_v2_LoadStatsRequest__Output } from '../../../../envoy/service/load_stats/v2/LoadStatsRequest';
 import type { LoadStatsResponse as _envoy_service_load_stats_v2_LoadStatsResponse, LoadStatsResponse__Output as _envoy_service_load_stats_v2_LoadStatsResponse__Output } from '../../../../envoy/service/load_stats/v2/LoadStatsResponse';
 
@@ -105,4 +106,8 @@ export interface LoadReportingServiceHandlers extends grpc.UntypedServiceImpleme
    */
   StreamLoadStats: grpc.handleBidiStreamingCall<_envoy_service_load_stats_v2_LoadStatsRequest__Output, _envoy_service_load_stats_v2_LoadStatsResponse>;
   
+}
+
+export interface LoadReportingServiceDefinition extends grpc.ServiceDefinition {
+  StreamLoadStats: MethodDefinition<_envoy_service_load_stats_v2_LoadStatsRequest, _envoy_service_load_stats_v2_LoadStatsResponse, _envoy_service_load_stats_v2_LoadStatsRequest__Output, _envoy_service_load_stats_v2_LoadStatsResponse__Output>
 }

@@ -70,7 +70,7 @@ export interface ApiConfigSource {
   /**
    * For REST APIs, the delay between successive polls.
    */
-  'refresh_delay'?: (_google_protobuf_Duration);
+  'refresh_delay'?: (_google_protobuf_Duration | null);
   /**
    * Multiple gRPC services be provided for GRPC. If > 1 cluster is defined,
    * services will be cycled through if any kind of failure occurs.
@@ -79,12 +79,12 @@ export interface ApiConfigSource {
   /**
    * For REST APIs, the request timeout. If not set, a default value of 1s will be used.
    */
-  'request_timeout'?: (_google_protobuf_Duration);
+  'request_timeout'?: (_google_protobuf_Duration | null);
   /**
    * For GRPC APIs, the rate limit settings. If present, discovery requests made by Envoy will be
    * rate limited.
    */
-  'rate_limit_settings'?: (_envoy_config_core_v3_RateLimitSettings);
+  'rate_limit_settings'?: (_envoy_config_core_v3_RateLimitSettings | null);
   /**
    * Skip the node identifier in subsequent discovery requests for streaming gRPC config types.
    */
@@ -120,7 +120,7 @@ export interface ApiConfigSource__Output {
   /**
    * For REST APIs, the delay between successive polls.
    */
-  'refresh_delay'?: (_google_protobuf_Duration__Output);
+  'refresh_delay': (_google_protobuf_Duration__Output | null);
   /**
    * Multiple gRPC services be provided for GRPC. If > 1 cluster is defined,
    * services will be cycled through if any kind of failure occurs.
@@ -129,12 +129,12 @@ export interface ApiConfigSource__Output {
   /**
    * For REST APIs, the request timeout. If not set, a default value of 1s will be used.
    */
-  'request_timeout'?: (_google_protobuf_Duration__Output);
+  'request_timeout': (_google_protobuf_Duration__Output | null);
   /**
    * For GRPC APIs, the rate limit settings. If present, discovery requests made by Envoy will be
    * rate limited.
    */
-  'rate_limit_settings'?: (_envoy_config_core_v3_RateLimitSettings__Output);
+  'rate_limit_settings': (_envoy_config_core_v3_RateLimitSettings__Output | null);
   /**
    * Skip the node identifier in subsequent discovery requests for streaming gRPC config types.
    */

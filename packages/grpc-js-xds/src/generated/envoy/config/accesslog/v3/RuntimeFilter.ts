@@ -16,7 +16,7 @@ export interface RuntimeFilter {
    * The default sampling percentage. If not specified, defaults to 0% with
    * denominator of 100.
    */
-  'percent_sampled'?: (_envoy_type_v3_FractionalPercent);
+  'percent_sampled'?: (_envoy_type_v3_FractionalPercent | null);
   /**
    * By default, sampling pivots on the header
    * :ref:`x-request-id<config_http_conn_man_headers_x-request-id>` being
@@ -51,7 +51,7 @@ export interface RuntimeFilter__Output {
    * The default sampling percentage. If not specified, defaults to 0% with
    * denominator of 100.
    */
-  'percent_sampled'?: (_envoy_type_v3_FractionalPercent__Output);
+  'percent_sampled': (_envoy_type_v3_FractionalPercent__Output | null);
   /**
    * By default, sampling pivots on the header
    * :ref:`x-request-id<config_http_conn_man_headers_x-request-id>` being

@@ -56,7 +56,7 @@ export interface ClusterStats {
    * and the *LoadStatsResponse* message sent from the management server, this may be longer than
    * the requested load reporting interval in the *LoadStatsResponse*.
    */
-  'load_report_interval'?: (_google_protobuf_Duration);
+  'load_report_interval'?: (_google_protobuf_Duration | null);
   /**
    * Information about deliberately dropped requests for each category specified
    * in the DropOverload policy.
@@ -100,7 +100,7 @@ export interface ClusterStats__Output {
    * and the *LoadStatsResponse* message sent from the management server, this may be longer than
    * the requested load reporting interval in the *LoadStatsResponse*.
    */
-  'load_report_interval'?: (_google_protobuf_Duration__Output);
+  'load_report_interval': (_google_protobuf_Duration__Output | null);
   /**
    * Information about deliberately dropped requests for each category specified
    * in the DropOverload policy.

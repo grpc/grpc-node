@@ -12,11 +12,11 @@ export interface _envoy_config_core_v3_Http2ProtocolOptions_SettingsParameter {
   /**
    * The 16 bit parameter identifier.
    */
-  'identifier'?: (_google_protobuf_UInt32Value);
+  'identifier'?: (_google_protobuf_UInt32Value | null);
   /**
    * The 32 bit parameter value.
    */
-  'value'?: (_google_protobuf_UInt32Value);
+  'value'?: (_google_protobuf_UInt32Value | null);
 }
 
 /**
@@ -27,11 +27,11 @@ export interface _envoy_config_core_v3_Http2ProtocolOptions_SettingsParameter__O
   /**
    * The 16 bit parameter identifier.
    */
-  'identifier'?: (_google_protobuf_UInt32Value__Output);
+  'identifier': (_google_protobuf_UInt32Value__Output | null);
   /**
    * The 32 bit parameter value.
    */
-  'value'?: (_google_protobuf_UInt32Value__Output);
+  'value': (_google_protobuf_UInt32Value__Output | null);
 }
 
 /**
@@ -44,7 +44,7 @@ export interface Http2ProtocolOptions {
    * range from 0 to 4294967295 (2^32 - 1) and defaults to 4096. 0 effectively disables header
    * compression.
    */
-  'hpack_table_size'?: (_google_protobuf_UInt32Value);
+  'hpack_table_size'?: (_google_protobuf_UInt32Value | null);
   /**
    * `Maximum concurrent streams <https://httpwg.org/specs/rfc7540.html#rfc.section.5.1.2>`_
    * allowed for peer on one HTTP/2 connection. Valid values range from 1 to 2147483647 (2^31 - 1)
@@ -54,7 +54,7 @@ export interface Http2ProtocolOptions {
    * on a single connection. If the limit is reached, Envoy may queue requests or establish
    * additional connections (as allowed per circuit breaker limits).
    */
-  'max_concurrent_streams'?: (_google_protobuf_UInt32Value);
+  'max_concurrent_streams'?: (_google_protobuf_UInt32Value | null);
   /**
    * `Initial stream-level flow-control window
    * <https://httpwg.org/specs/rfc7540.html#rfc.section.6.9.2>`_ size. Valid values range from 65535
@@ -68,12 +68,12 @@ export interface Http2ProtocolOptions {
    * HTTP/2 codec buffers. Once the buffer reaches this pointer, watermark callbacks will fire to
    * stop the flow of data to the codec buffers.
    */
-  'initial_stream_window_size'?: (_google_protobuf_UInt32Value);
+  'initial_stream_window_size'?: (_google_protobuf_UInt32Value | null);
   /**
    * Similar to *initial_stream_window_size*, but for connection-level flow-control
    * window. Currently, this has the same minimum/maximum/default as *initial_stream_window_size*.
    */
-  'initial_connection_window_size'?: (_google_protobuf_UInt32Value);
+  'initial_connection_window_size'?: (_google_protobuf_UInt32Value | null);
   /**
    * Allows proxying Websocket and other upgrades over H2 connect.
    */
@@ -95,7 +95,7 @@ export interface Http2ProtocolOptions {
    * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
    * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
-  'max_outbound_frames'?: (_google_protobuf_UInt32Value);
+  'max_outbound_frames'?: (_google_protobuf_UInt32Value | null);
   /**
    * Limit the number of pending outbound downstream frames of types PING, SETTINGS and RST_STREAM,
    * preventing high memory utilization when receiving continuous stream of these frames. Exceeding
@@ -105,7 +105,7 @@ export interface Http2ProtocolOptions {
    * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
    * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
-  'max_outbound_control_frames'?: (_google_protobuf_UInt32Value);
+  'max_outbound_control_frames'?: (_google_protobuf_UInt32Value | null);
   /**
    * Limit the number of consecutive inbound frames of types HEADERS, CONTINUATION and DATA with an
    * empty payload and no end stream flag. Those frames have no legitimate use and are abusive, but
@@ -116,7 +116,7 @@ export interface Http2ProtocolOptions {
    * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
    * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
-  'max_consecutive_inbound_frames_with_empty_payload'?: (_google_protobuf_UInt32Value);
+  'max_consecutive_inbound_frames_with_empty_payload'?: (_google_protobuf_UInt32Value | null);
   /**
    * Limit the number of inbound PRIORITY frames allowed per each opened stream. If the number
    * of PRIORITY frames received over the lifetime of connection exceeds the value calculated
@@ -132,7 +132,7 @@ export interface Http2ProtocolOptions {
    * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
    * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
-  'max_inbound_priority_frames_per_stream'?: (_google_protobuf_UInt32Value);
+  'max_inbound_priority_frames_per_stream'?: (_google_protobuf_UInt32Value | null);
   /**
    * Limit the number of inbound WINDOW_UPDATE frames allowed per DATA frame sent. If the number
    * of WINDOW_UPDATE frames received over the lifetime of connection exceeds the value calculated
@@ -151,7 +151,7 @@ export interface Http2ProtocolOptions {
    * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
    * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
-  'max_inbound_window_update_frames_per_data_frame_sent'?: (_google_protobuf_UInt32Value);
+  'max_inbound_window_update_frames_per_data_frame_sent'?: (_google_protobuf_UInt32Value | null);
   /**
    * Allows invalid HTTP messaging and headers. When this option is disabled (default), then
    * the whole HTTP/2 connection is terminated upon receiving invalid HEADERS frame. However,
@@ -206,12 +206,12 @@ export interface Http2ProtocolOptions {
    * 
    * See `RFC7540, sec. 8.1 <https://tools.ietf.org/html/rfc7540#section-8.1>`_ for details.
    */
-  'override_stream_error_on_invalid_http_message'?: (_google_protobuf_BoolValue);
+  'override_stream_error_on_invalid_http_message'?: (_google_protobuf_BoolValue | null);
   /**
    * Send HTTP/2 PING frames to verify that the connection is still healthy. If the remote peer
    * does not respond within the configured timeout, the connection will be aborted.
    */
-  'connection_keepalive'?: (_envoy_config_core_v3_KeepaliveSettings);
+  'connection_keepalive'?: (_envoy_config_core_v3_KeepaliveSettings | null);
 }
 
 /**
@@ -224,7 +224,7 @@ export interface Http2ProtocolOptions__Output {
    * range from 0 to 4294967295 (2^32 - 1) and defaults to 4096. 0 effectively disables header
    * compression.
    */
-  'hpack_table_size'?: (_google_protobuf_UInt32Value__Output);
+  'hpack_table_size': (_google_protobuf_UInt32Value__Output | null);
   /**
    * `Maximum concurrent streams <https://httpwg.org/specs/rfc7540.html#rfc.section.5.1.2>`_
    * allowed for peer on one HTTP/2 connection. Valid values range from 1 to 2147483647 (2^31 - 1)
@@ -234,7 +234,7 @@ export interface Http2ProtocolOptions__Output {
    * on a single connection. If the limit is reached, Envoy may queue requests or establish
    * additional connections (as allowed per circuit breaker limits).
    */
-  'max_concurrent_streams'?: (_google_protobuf_UInt32Value__Output);
+  'max_concurrent_streams': (_google_protobuf_UInt32Value__Output | null);
   /**
    * `Initial stream-level flow-control window
    * <https://httpwg.org/specs/rfc7540.html#rfc.section.6.9.2>`_ size. Valid values range from 65535
@@ -248,12 +248,12 @@ export interface Http2ProtocolOptions__Output {
    * HTTP/2 codec buffers. Once the buffer reaches this pointer, watermark callbacks will fire to
    * stop the flow of data to the codec buffers.
    */
-  'initial_stream_window_size'?: (_google_protobuf_UInt32Value__Output);
+  'initial_stream_window_size': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Similar to *initial_stream_window_size*, but for connection-level flow-control
    * window. Currently, this has the same minimum/maximum/default as *initial_stream_window_size*.
    */
-  'initial_connection_window_size'?: (_google_protobuf_UInt32Value__Output);
+  'initial_connection_window_size': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Allows proxying Websocket and other upgrades over H2 connect.
    */
@@ -275,7 +275,7 @@ export interface Http2ProtocolOptions__Output {
    * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
    * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
-  'max_outbound_frames'?: (_google_protobuf_UInt32Value__Output);
+  'max_outbound_frames': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Limit the number of pending outbound downstream frames of types PING, SETTINGS and RST_STREAM,
    * preventing high memory utilization when receiving continuous stream of these frames. Exceeding
@@ -285,7 +285,7 @@ export interface Http2ProtocolOptions__Output {
    * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
    * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
-  'max_outbound_control_frames'?: (_google_protobuf_UInt32Value__Output);
+  'max_outbound_control_frames': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Limit the number of consecutive inbound frames of types HEADERS, CONTINUATION and DATA with an
    * empty payload and no end stream flag. Those frames have no legitimate use and are abusive, but
@@ -296,7 +296,7 @@ export interface Http2ProtocolOptions__Output {
    * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
    * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
-  'max_consecutive_inbound_frames_with_empty_payload'?: (_google_protobuf_UInt32Value__Output);
+  'max_consecutive_inbound_frames_with_empty_payload': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Limit the number of inbound PRIORITY frames allowed per each opened stream. If the number
    * of PRIORITY frames received over the lifetime of connection exceeds the value calculated
@@ -312,7 +312,7 @@ export interface Http2ProtocolOptions__Output {
    * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
    * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
-  'max_inbound_priority_frames_per_stream'?: (_google_protobuf_UInt32Value__Output);
+  'max_inbound_priority_frames_per_stream': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Limit the number of inbound WINDOW_UPDATE frames allowed per DATA frame sent. If the number
    * of WINDOW_UPDATE frames received over the lifetime of connection exceeds the value calculated
@@ -331,7 +331,7 @@ export interface Http2ProtocolOptions__Output {
    * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
    * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
-  'max_inbound_window_update_frames_per_data_frame_sent'?: (_google_protobuf_UInt32Value__Output);
+  'max_inbound_window_update_frames_per_data_frame_sent': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Allows invalid HTTP messaging and headers. When this option is disabled (default), then
    * the whole HTTP/2 connection is terminated upon receiving invalid HEADERS frame. However,
@@ -386,10 +386,10 @@ export interface Http2ProtocolOptions__Output {
    * 
    * See `RFC7540, sec. 8.1 <https://tools.ietf.org/html/rfc7540#section-8.1>`_ for details.
    */
-  'override_stream_error_on_invalid_http_message'?: (_google_protobuf_BoolValue__Output);
+  'override_stream_error_on_invalid_http_message': (_google_protobuf_BoolValue__Output | null);
   /**
    * Send HTTP/2 PING frames to verify that the connection is still healthy. If the remote peer
    * does not respond within the configured timeout, the connection will be aborted.
    */
-  'connection_keepalive'?: (_envoy_config_core_v3_KeepaliveSettings__Output);
+  'connection_keepalive': (_envoy_config_core_v3_KeepaliveSettings__Output | null);
 }

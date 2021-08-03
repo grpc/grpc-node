@@ -30,7 +30,7 @@ export interface ComparisonFilter {
   /**
    * Value to compare against.
    */
-  'value'?: (_envoy_config_core_v3_RuntimeUInt32);
+  'value'?: (_envoy_config_core_v3_RuntimeUInt32 | null);
 }
 
 /**
@@ -44,5 +44,5 @@ export interface ComparisonFilter__Output {
   /**
    * Value to compare against.
    */
-  'value'?: (_envoy_config_core_v3_RuntimeUInt32__Output);
+  'value': (_envoy_config_core_v3_RuntimeUInt32__Output | null);
 }

@@ -32,34 +32,34 @@ export interface FieldRules {
   /**
    * Scalar Field Types
    */
-  'float'?: (_validate_FloatRules);
-  'double'?: (_validate_DoubleRules);
-  'int32'?: (_validate_Int32Rules);
-  'int64'?: (_validate_Int64Rules);
-  'uint32'?: (_validate_UInt32Rules);
-  'uint64'?: (_validate_UInt64Rules);
-  'sint32'?: (_validate_SInt32Rules);
-  'sint64'?: (_validate_SInt64Rules);
-  'fixed32'?: (_validate_Fixed32Rules);
-  'fixed64'?: (_validate_Fixed64Rules);
-  'sfixed32'?: (_validate_SFixed32Rules);
-  'sfixed64'?: (_validate_SFixed64Rules);
-  'bool'?: (_validate_BoolRules);
-  'string'?: (_validate_StringRules);
-  'bytes'?: (_validate_BytesRules);
+  'float'?: (_validate_FloatRules | null);
+  'double'?: (_validate_DoubleRules | null);
+  'int32'?: (_validate_Int32Rules | null);
+  'int64'?: (_validate_Int64Rules | null);
+  'uint32'?: (_validate_UInt32Rules | null);
+  'uint64'?: (_validate_UInt64Rules | null);
+  'sint32'?: (_validate_SInt32Rules | null);
+  'sint64'?: (_validate_SInt64Rules | null);
+  'fixed32'?: (_validate_Fixed32Rules | null);
+  'fixed64'?: (_validate_Fixed64Rules | null);
+  'sfixed32'?: (_validate_SFixed32Rules | null);
+  'sfixed64'?: (_validate_SFixed64Rules | null);
+  'bool'?: (_validate_BoolRules | null);
+  'string'?: (_validate_StringRules | null);
+  'bytes'?: (_validate_BytesRules | null);
   /**
    * Complex Field Types
    */
-  'enum'?: (_validate_EnumRules);
-  'message'?: (_validate_MessageRules);
-  'repeated'?: (_validate_RepeatedRules);
-  'map'?: (_validate_MapRules);
+  'enum'?: (_validate_EnumRules | null);
+  'message'?: (_validate_MessageRules | null);
+  'repeated'?: (_validate_RepeatedRules | null);
+  'map'?: (_validate_MapRules | null);
   /**
    * Well-Known Field Types
    */
-  'any'?: (_validate_AnyRules);
-  'duration'?: (_validate_DurationRules);
-  'timestamp'?: (_validate_TimestampRules);
+  'any'?: (_validate_AnyRules | null);
+  'duration'?: (_validate_DurationRules | null);
+  'timestamp'?: (_validate_TimestampRules | null);
   'type'?: "float"|"double"|"int32"|"int64"|"uint32"|"uint64"|"sint32"|"sint64"|"fixed32"|"fixed64"|"sfixed32"|"sfixed64"|"bool"|"string"|"bytes"|"enum"|"repeated"|"map"|"any"|"duration"|"timestamp";
 }
 
@@ -71,33 +71,33 @@ export interface FieldRules__Output {
   /**
    * Scalar Field Types
    */
-  'float'?: (_validate_FloatRules__Output);
-  'double'?: (_validate_DoubleRules__Output);
-  'int32'?: (_validate_Int32Rules__Output);
-  'int64'?: (_validate_Int64Rules__Output);
-  'uint32'?: (_validate_UInt32Rules__Output);
-  'uint64'?: (_validate_UInt64Rules__Output);
-  'sint32'?: (_validate_SInt32Rules__Output);
-  'sint64'?: (_validate_SInt64Rules__Output);
-  'fixed32'?: (_validate_Fixed32Rules__Output);
-  'fixed64'?: (_validate_Fixed64Rules__Output);
-  'sfixed32'?: (_validate_SFixed32Rules__Output);
-  'sfixed64'?: (_validate_SFixed64Rules__Output);
-  'bool'?: (_validate_BoolRules__Output);
-  'string'?: (_validate_StringRules__Output);
-  'bytes'?: (_validate_BytesRules__Output);
+  'float'?: (_validate_FloatRules__Output | null);
+  'double'?: (_validate_DoubleRules__Output | null);
+  'int32'?: (_validate_Int32Rules__Output | null);
+  'int64'?: (_validate_Int64Rules__Output | null);
+  'uint32'?: (_validate_UInt32Rules__Output | null);
+  'uint64'?: (_validate_UInt64Rules__Output | null);
+  'sint32'?: (_validate_SInt32Rules__Output | null);
+  'sint64'?: (_validate_SInt64Rules__Output | null);
+  'fixed32'?: (_validate_Fixed32Rules__Output | null);
+  'fixed64'?: (_validate_Fixed64Rules__Output | null);
+  'sfixed32'?: (_validate_SFixed32Rules__Output | null);
+  'sfixed64'?: (_validate_SFixed64Rules__Output | null);
+  'bool'?: (_validate_BoolRules__Output | null);
+  'string'?: (_validate_StringRules__Output | null);
+  'bytes'?: (_validate_BytesRules__Output | null);
   /**
    * Complex Field Types
    */
-  'enum'?: (_validate_EnumRules__Output);
-  'message'?: (_validate_MessageRules__Output);
-  'repeated'?: (_validate_RepeatedRules__Output);
-  'map'?: (_validate_MapRules__Output);
+  'enum'?: (_validate_EnumRules__Output | null);
+  'message': (_validate_MessageRules__Output | null);
+  'repeated'?: (_validate_RepeatedRules__Output | null);
+  'map'?: (_validate_MapRules__Output | null);
   /**
    * Well-Known Field Types
    */
-  'any'?: (_validate_AnyRules__Output);
-  'duration'?: (_validate_DurationRules__Output);
-  'timestamp'?: (_validate_TimestampRules__Output);
+  'any'?: (_validate_AnyRules__Output | null);
+  'duration'?: (_validate_DurationRules__Output | null);
+  'timestamp'?: (_validate_TimestampRules__Output | null);
   'type': "float"|"double"|"int32"|"int64"|"uint32"|"uint64"|"sint32"|"sint64"|"fixed32"|"fixed64"|"sfixed32"|"sfixed64"|"bool"|"string"|"bytes"|"enum"|"repeated"|"map"|"any"|"duration"|"timestamp";
 }

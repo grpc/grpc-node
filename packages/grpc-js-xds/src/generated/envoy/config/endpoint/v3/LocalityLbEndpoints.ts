@@ -15,7 +15,7 @@ export interface LocalityLbEndpoints {
   /**
    * Identifies location of where the upstream hosts run.
    */
-  'locality'?: (_envoy_config_core_v3_Locality);
+  'locality'?: (_envoy_config_core_v3_Locality | null);
   /**
    * The group of endpoints belonging to the locality specified.
    */
@@ -33,7 +33,7 @@ export interface LocalityLbEndpoints {
    * specified when locality weighted load balancing is enabled, the locality is
    * assigned no load.
    */
-  'load_balancing_weight'?: (_google_protobuf_UInt32Value);
+  'load_balancing_weight'?: (_google_protobuf_UInt32Value | null);
   /**
    * Optional: the priority for this LocalityLbEndpoints. If unspecified this will
    * default to the highest priority (0).
@@ -54,7 +54,7 @@ export interface LocalityLbEndpoints {
    * to determine where to route the requests.
    * [#not-implemented-hide:]
    */
-  'proximity'?: (_google_protobuf_UInt32Value);
+  'proximity'?: (_google_protobuf_UInt32Value | null);
 }
 
 /**
@@ -68,7 +68,7 @@ export interface LocalityLbEndpoints__Output {
   /**
    * Identifies location of where the upstream hosts run.
    */
-  'locality'?: (_envoy_config_core_v3_Locality__Output);
+  'locality': (_envoy_config_core_v3_Locality__Output | null);
   /**
    * The group of endpoints belonging to the locality specified.
    */
@@ -86,7 +86,7 @@ export interface LocalityLbEndpoints__Output {
    * specified when locality weighted load balancing is enabled, the locality is
    * assigned no load.
    */
-  'load_balancing_weight'?: (_google_protobuf_UInt32Value__Output);
+  'load_balancing_weight': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Optional: the priority for this LocalityLbEndpoints. If unspecified this will
    * default to the highest priority (0).
@@ -107,5 +107,5 @@ export interface LocalityLbEndpoints__Output {
    * to determine where to route the requests.
    * [#not-implemented-hide:]
    */
-  'proximity'?: (_google_protobuf_UInt32Value__Output);
+  'proximity': (_google_protobuf_UInt32Value__Output | null);
 }

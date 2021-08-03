@@ -51,7 +51,7 @@ export interface LocalReplyConfig {
    * "path": "/foo"
    * }
    */
-  'body_format'?: (_envoy_config_core_v3_SubstitutionFormatString);
+  'body_format'?: (_envoy_config_core_v3_SubstitutionFormatString | null);
 }
 
 /**
@@ -102,5 +102,5 @@ export interface LocalReplyConfig__Output {
    * "path": "/foo"
    * }
    */
-  'body_format'?: (_envoy_config_core_v3_SubstitutionFormatString__Output);
+  'body_format': (_envoy_config_core_v3_SubstitutionFormatString__Output | null);
 }

@@ -58,19 +58,19 @@ export interface MetadataKind {
   /**
    * Request kind of metadata.
    */
-  'request'?: (_envoy_type_metadata_v3_MetadataKind_Request);
+  'request'?: (_envoy_type_metadata_v3_MetadataKind_Request | null);
   /**
    * Route kind of metadata.
    */
-  'route'?: (_envoy_type_metadata_v3_MetadataKind_Route);
+  'route'?: (_envoy_type_metadata_v3_MetadataKind_Route | null);
   /**
    * Cluster kind of metadata.
    */
-  'cluster'?: (_envoy_type_metadata_v3_MetadataKind_Cluster);
+  'cluster'?: (_envoy_type_metadata_v3_MetadataKind_Cluster | null);
   /**
    * Host kind of metadata.
    */
-  'host'?: (_envoy_type_metadata_v3_MetadataKind_Host);
+  'host'?: (_envoy_type_metadata_v3_MetadataKind_Host | null);
   'kind'?: "request"|"route"|"cluster"|"host";
 }
 
@@ -81,18 +81,18 @@ export interface MetadataKind__Output {
   /**
    * Request kind of metadata.
    */
-  'request'?: (_envoy_type_metadata_v3_MetadataKind_Request__Output);
+  'request'?: (_envoy_type_metadata_v3_MetadataKind_Request__Output | null);
   /**
    * Route kind of metadata.
    */
-  'route'?: (_envoy_type_metadata_v3_MetadataKind_Route__Output);
+  'route'?: (_envoy_type_metadata_v3_MetadataKind_Route__Output | null);
   /**
    * Cluster kind of metadata.
    */
-  'cluster'?: (_envoy_type_metadata_v3_MetadataKind_Cluster__Output);
+  'cluster'?: (_envoy_type_metadata_v3_MetadataKind_Cluster__Output | null);
   /**
    * Host kind of metadata.
    */
-  'host'?: (_envoy_type_metadata_v3_MetadataKind_Host__Output);
+  'host'?: (_envoy_type_metadata_v3_MetadataKind_Host__Output | null);
   'kind': "request"|"route"|"cluster"|"host";
 }

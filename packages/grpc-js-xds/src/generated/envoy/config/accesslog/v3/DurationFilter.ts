@@ -9,7 +9,7 @@ export interface DurationFilter {
   /**
    * Comparison.
    */
-  'comparison'?: (_envoy_config_accesslog_v3_ComparisonFilter);
+  'comparison'?: (_envoy_config_accesslog_v3_ComparisonFilter | null);
 }
 
 /**
@@ -19,5 +19,5 @@ export interface DurationFilter__Output {
   /**
    * Comparison.
    */
-  'comparison'?: (_envoy_config_accesslog_v3_ComparisonFilter__Output);
+  'comparison': (_envoy_config_accesslog_v3_ComparisonFilter__Output | null);
 }

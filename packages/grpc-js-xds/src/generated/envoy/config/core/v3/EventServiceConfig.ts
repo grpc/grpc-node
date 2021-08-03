@@ -10,7 +10,7 @@ export interface EventServiceConfig {
   /**
    * Specifies the gRPC service that hosts the event reporting service.
    */
-  'grpc_service'?: (_envoy_config_core_v3_GrpcService);
+  'grpc_service'?: (_envoy_config_core_v3_GrpcService | null);
   'config_source_specifier'?: "grpc_service";
 }
 
@@ -22,6 +22,6 @@ export interface EventServiceConfig__Output {
   /**
    * Specifies the gRPC service that hosts the event reporting service.
    */
-  'grpc_service'?: (_envoy_config_core_v3_GrpcService__Output);
+  'grpc_service'?: (_envoy_config_core_v3_GrpcService__Output | null);
   'config_source_specifier': "grpc_service";
 }
