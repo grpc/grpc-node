@@ -22,7 +22,7 @@ import { RdsState } from "./rds-state";
 import { Watcher, XdsStreamState } from "./xds-stream-state";
 import { HttpConnectionManager__Output } from '../generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpConnectionManager';
 import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL_V2, HTTP_CONNECTION_MANGER_TYPE_URL_V3 } from '../resources';
-import { validateTopLevelFilter } from '../http-filter';
+import { getTopLevelFilterUrl, validateTopLevelFilter } from '../http-filter';
 import { EXPERIMENTAL_FAULT_INJECTION } from '../environment';
 
 const TRACER_NAME = 'xds_client';
@@ -108,20 +108,25 @@ export class LdsState implements XdsStreamState<Listener__Output> {
       const filterNames = new Set<string>();
       for (const [index, httpFilter] of httpConnectionManager.http_filters.entries()) {
         if (filterNames.has(httpFilter.name)) {
+          trace('LDS response validation failed: duplicate HTTP filter name ' + httpFilter.name);
           return false;
         }
         filterNames.add(httpFilter.name);
         if (!validateTopLevelFilter(httpFilter)) {
+          trace('LDS response validation failed: ' + httpFilter.name + ' filter validation failed');
           return false;
         }
         /* Validate that the last filter, and only the last filter, is the
          * router filter. */
+        const filterUrl = getTopLevelFilterUrl(httpFilter.typed_config!)
         if (index < httpConnectionManager.http_filters.length - 1) {
-          if (httpFilter.name === ROUTER_FILTER_URL) {
+          if (filterUrl === ROUTER_FILTER_URL) {
+            trace('LDS response validation failed: router filter is before end of list');
             return false;
           }
         } else {
-          if (httpFilter.name !== ROUTER_FILTER_URL) {
+          if (filterUrl !== ROUTER_FILTER_URL) {
+            trace('LDS response validation failed: final filter is ' + filterUrl);
             return false;
           }
         }

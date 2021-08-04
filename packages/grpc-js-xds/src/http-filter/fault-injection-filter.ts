@@ -16,7 +16,7 @@
 
 // This is a non-public, unstable API, but it's very convenient
 import { loadProtosWithOptionsSync } from '@grpc/proto-loader/build/src/util';
-import { experimental, Metadata, status } from '@grpc/grpc-js';
+import { experimental, logVerbosity, Metadata, status } from '@grpc/grpc-js';
 import { Any__Output } from '../generated/google/protobuf/Any';
 import Filter = experimental.Filter;
 import FilterFactory = experimental.FilterFactory;
@@ -27,14 +27,20 @@ import { HTTPFault__Output } from '../generated/envoy/extensions/filters/http/fa
 import { envoyFractionToFraction, Fraction } from '../fraction';
 import { Duration__Output } from '../generated/google/protobuf/Duration';
 
+const TRACER_NAME = 'fault_injection';
+
+function trace(text: string): void {
+  experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
+}
+
 const resourceRoot = loadProtosWithOptionsSync([
-  'envoy/extendsion/filtesr/http/fault/v3/fault.proto'], {
+  'envoy/extensions/filters/http/fault/v3/fault.proto'], {
     keepCase: true,
     includeDirs: [
-      // Paths are relative to src/build
-      __dirname + '/../../deps/udpa/',
-      __dirname + '/../../deps/envoy-api/',
-      __dirname + '/../../deps/protoc-gen-validate/'
+      // Paths are relative to src/build/http-filter
+      __dirname + '/../../../deps/udpa/',
+      __dirname + '/../../../deps/envoy-api/',
+      __dirname + '/../../../deps/protoc-gen-validate/'
     ],
   }
 );
@@ -82,7 +88,8 @@ const toObjectOptions = {
 }
 
 function parseAnyMessage<MessageType>(message: Any__Output): MessageType | null {
-  const messageType = resourceRoot.lookup(message.type_url);
+  const typeName = message.type_url.substring(message.type_url.lastIndexOf('/') + 1);
+  const messageType = resourceRoot.lookup(typeName);
   if (messageType) {
     const decodedMessage = (messageType as any).decode(message.value);
     return decodedMessage.$type.toObject(decodedMessage, toObjectOptions) as MessageType;
@@ -111,12 +118,15 @@ function httpCodeToGrpcStatus(code: number): status {
 
 function parseHTTPFaultConfig(encodedConfig: Any__Output): FaultInjectionFilterConfig | null {
   if (encodedConfig.type_url !== FAULT_INJECTION_FILTER_URL) {
+    trace('Config parsing failed: unexpected type URL: ' + encodedConfig.type_url);
     return null;
   }
   const parsedMessage = parseAnyMessage<HTTPFault__Output>(encodedConfig);
   if (parsedMessage === null) {
+    trace('Config parsing failed: failed to parse HTTPFault message');
     return null;
   }
+  trace('Parsing HTTPFault message ' + JSON.stringify(parsedMessage, undefined, 2));
   const result: FaultInjectionConfig = {
     delay: null,
     abort: null,
@@ -125,6 +135,7 @@ function parseHTTPFaultConfig(encodedConfig: Any__Output): FaultInjectionFilterC
   // Parse delay field
   if (parsedMessage.delay !== null) {
     if (parsedMessage.delay.percentage === null) {
+      trace('Config parsing failed: delay.percentage unset');
       return null;
     }
     const percentage = envoyFractionToFraction(parsedMessage.delay.percentage);
@@ -143,6 +154,7 @@ function parseHTTPFaultConfig(encodedConfig: Any__Output): FaultInjectionFilterC
         };
         break;
       default:
+        trace('Config parsing failed: delay.fault_delay_secifier has unexpected value ' + parsedMessage.delay.fault_delay_secifier);
         // Should not be possible
         return null;
     }
@@ -150,6 +162,7 @@ function parseHTTPFaultConfig(encodedConfig: Any__Output): FaultInjectionFilterC
   // Parse abort field
   if (parsedMessage.abort !== null) {
     if (parsedMessage.abort.percentage === null) {
+      trace('Config parsing failed: abort.percentage unset');
       return null;
     }
     const percentage = envoyFractionToFraction(parsedMessage.abort.percentage);
@@ -175,6 +188,7 @@ function parseHTTPFaultConfig(encodedConfig: Any__Output): FaultInjectionFilterC
         };
         break;
       default:
+        trace('Config parsing failed: abort.error_type has unexpected value ' + parsedMessage.abort.error_type);
         // Should not be possible
         return null;
     }
