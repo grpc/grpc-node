@@ -637,7 +637,15 @@ export class Http2CallStream implements Call {
             this.pendingWrite.length +
             ' (deferred)'
         );
-        stream.write(this.pendingWrite, this.pendingWriteCallback);
+        try {
+          stream.write(this.pendingWrite, this.pendingWriteCallback);
+        } catch (error) {
+          this.endCall({
+            code: Status.UNAVAILABLE,
+            details: `Write failed with error ${error.message}`,
+            metadata: new Metadata()
+          });
+        }
       }
       this.maybeCloseWrites();
     }
@@ -762,7 +770,15 @@ export class Http2CallStream implements Call {
         this.pendingWriteCallback = cb;
       } else {
         this.trace('sending data chunk of length ' + message.message.length);
-        this.http2Stream.write(message.message, cb);
+        try {
+          this.http2Stream.write(message.message, cb);
+        }  catch (error) {
+          this.endCall({
+            code: Status.UNAVAILABLE,
+            details: `Write failed with error ${error.message}`,
+            metadata: new Metadata()
+          });
+        }
         this.maybeCloseWrites();
       }
     }, this.handleFilterError.bind(this));
