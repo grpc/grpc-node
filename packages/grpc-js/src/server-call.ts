@@ -429,7 +429,7 @@ export class Http2ServerCallStream<
   private checkCancelled(): boolean {
     /* In some cases the stream can become destroyed before the close event
      * fires. That creates a race condition that this check works around */
-    if (this.stream.destroyed) {
+    if (this.stream.destroyed || this.stream.closed) {
       this.cancelled = true;
     }
     return this.cancelled;
