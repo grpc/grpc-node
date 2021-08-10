@@ -601,7 +601,7 @@ export class Http2CallStream implements Call {
                  * "Internal server error" message. */
                 details = `Received RST_STREAM with code ${stream.rstCode} (Internal server error)`;
               } else {
-                if (this.internalError.code === 'ECONNRESET') {
+                if (this.internalError.code === 'ECONNRESET' || this.internalError.code === 'ETIMEDOUT') {
                   code = Status.UNAVAILABLE;
                   details = this.internalError.message;
                 } else {
