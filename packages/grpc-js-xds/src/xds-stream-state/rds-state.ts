@@ -137,7 +137,7 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
         if (route.action !== 'route') {
           return false;
         }
-        if ((route.route === undefined) || SUPPORTED_CLUSTER_SPECIFIERS.indexOf(route.route.cluster_specifier) < 0) {
+        if ((route.route === undefined) || (route.route === null) || SUPPORTED_CLUSTER_SPECIFIERS.indexOf(route.route.cluster_specifier) < 0) {
           return false;
         }
         if (EXPERIMENTAL_FAULT_INJECTION) {

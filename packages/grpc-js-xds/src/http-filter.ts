@@ -16,13 +16,19 @@
 
 // This is a non-public, unstable API, but it's very convenient
 import { loadProtosWithOptionsSync } from '@grpc/proto-loader/build/src/util';
-import { experimental } from '@grpc/grpc-js';
+import { experimental, logVerbosity } from '@grpc/grpc-js';
 import { Any__Output } from './generated/google/protobuf/Any';
 import Filter = experimental.Filter;
 import FilterFactory = experimental.FilterFactory;
 import { TypedStruct__Output } from './generated/udpa/type/v1/TypedStruct';
 import { FilterConfig__Output } from './generated/envoy/config/route/v3/FilterConfig';
 import { HttpFilter__Output } from './generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpFilter';
+
+const TRACER_NAME = 'http_filter';
+
+function trace(text: string): void {
+  experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 const TYPED_STRUCT_URL = 'type.googleapis.com/udpa.type.v1.TypedStruct';
 const TYPED_STRUCT_NAME = 'udpa.type.v1.TypedStruct';
@@ -37,7 +43,8 @@ const resourceRoot = loadProtosWithOptionsSync([
     includeDirs: [
       // Paths are relative to src/build
       __dirname + '/../../deps/udpa/',
-      __dirname + '/../../deps/envoy-api/'
+      __dirname + '/../../deps/envoy-api/',
+      __dirname + '/../../deps/protoc-gen-validate/'
     ],
   }
 );
@@ -60,6 +67,7 @@ export interface HttpFilterRegistryEntry {
 const FILTER_REGISTRY = new Map<string, HttpFilterRegistryEntry>();
 
 export function registerHttpFilter(typeName: string, entry: HttpFilterRegistryEntry) {
+  trace('Registered filter with type URL ' + typeName);
   FILTER_REGISTRY.set(typeName, entry);
 }
 
@@ -71,7 +79,8 @@ const toObjectOptions = {
 }
 
 function parseAnyMessage<MessageType>(message: Any__Output): MessageType | null {
-  const messageType = resourceRoot.lookup(message.type_url);
+  const typeName = message.type_url.substring(message.type_url.lastIndexOf('/') + 1);
+  const messageType = resourceRoot.lookup(typeName);
   if (messageType) {
     const decodedMessage = (messageType as any).decode(message.value);
     return decodedMessage.$type.toObject(decodedMessage, toObjectOptions) as MessageType;
@@ -80,7 +89,7 @@ function parseAnyMessage<MessageType>(message: Any__Output): MessageType | null 
   }
 }
 
-function getTopLevelFilterUrl(encodedConfig: Any__Output): string {
+export function getTopLevelFilterUrl(encodedConfig: Any__Output): string {
   let typeUrl: string;
   if (encodedConfig.type_url === TYPED_STRUCT_URL) {
     const typedStruct = parseAnyMessage<TypedStruct__Output>(encodedConfig)
@@ -96,6 +105,7 @@ function getTopLevelFilterUrl(encodedConfig: Any__Output): string {
 
 export function validateTopLevelFilter(httpFilter: HttpFilter__Output): boolean {
   if (!httpFilter.typed_config) {
+    trace(httpFilter.name + ' validation failed: typed_config unset');
     return false;
   }
   const encodedConfig = httpFilter.typed_config;
@@ -103,16 +113,21 @@ export function validateTopLevelFilter(httpFilter: HttpFilter__Output): boolean 
   try {
     typeUrl = getTopLevelFilterUrl(encodedConfig);
   } catch (e) {
+    trace(httpFilter.name + ' validation failed with error ' + e.message);
     return false;
   }
   const registryEntry = FILTER_REGISTRY.get(typeUrl);
   if (registryEntry) {
     const parsedConfig = registryEntry.parseTopLevelFilterConfig(encodedConfig);
+    if (parsedConfig === null) {
+      trace(httpFilter.name + ' validation failed: config parsing failed');
+    }
     return parsedConfig !== null;
   } else {
     if (httpFilter.is_optional) {
       return true;
     } else {
+      trace(httpFilter.name + ' validation failed: filter is not optional and registry does not contain type URL ' + typeUrl);
       return false;
     }
   }
@@ -129,9 +144,11 @@ export function validateOverrideFilter(encodedConfig: Any__Output): boolean {
       if (filterConfig.config) {
         realConfig = filterConfig.config;
       } else {
+        trace('Override filter validation failed: FilterConfig config field is empty');
         return false;
       }
     } else {
+      trace('Override filter validation failed: failed to parse FilterConfig message');
       return false;
     }
   } else {
@@ -142,6 +159,7 @@ export function validateOverrideFilter(encodedConfig: Any__Output): boolean {
     if (typedStruct) {
       typeUrl = typedStruct.type_url;
     } else {
+      trace('Override filter validation failed: failed to parse TypedStruct message');
       return false;
     }
   } else {
@@ -150,11 +168,15 @@ export function validateOverrideFilter(encodedConfig: Any__Output): boolean {
   const registryEntry = FILTER_REGISTRY.get(typeUrl);
   if (registryEntry) {
     const parsedConfig = registryEntry.parseOverrideFilterConfig(encodedConfig);
+    if (parsedConfig === null) {
+      trace('Override filter validation failed: config parsing failed. Type URL: ' + typeUrl);
+    }
     return parsedConfig !== null;
   } else {
     if (isOptional) {
       return true;
     } else {
+      trace('Override filter validation failed: filter is not optional and registry does not contain type URL ' + typeUrl);
       return false;
     }
   }
