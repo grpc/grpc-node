@@ -105,6 +105,7 @@ export class LdsState implements XdsStreamState<Listener__Output> {
     }
     const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL_V3, message.api_listener!.api_listener.value);
     if (EXPERIMENTAL_FAULT_INJECTION) {
+      trace('Running HTTP filter validation because EXPERIMENTAL_FAULT_INJECTION = ' + EXPERIMENTAL_FAULT_INJECTION);
       const filterNames = new Set<string>();
       for (const [index, httpFilter] of httpConnectionManager.http_filters.entries()) {
         if (filterNames.has(httpFilter.name)) {
