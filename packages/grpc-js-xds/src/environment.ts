@@ -15,7 +15,7 @@
  *
  */
 
-import { experimental, logVerbosity } from "../../grpc-js/build/src";
+import { experimental, logVerbosity } from "@grpc/grpc-js";
 import trace = experimental.trace;
 
 export const EXPERIMENTAL_FAULT_INJECTION = process.env.GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION;
