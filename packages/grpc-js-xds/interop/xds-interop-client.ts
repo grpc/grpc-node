@@ -329,6 +329,7 @@ function main() {
     .default('rpc_timeout_sec', DEFAULT_TIMEOUT_SEC)
     .argv;
   console.log('Starting xDS interop client. Args: ', argv);
+  console.log(process.env);
   currentConfig.callTypes = argv.rpc.split(',').filter(value => value === 'EmptyCall' || value === 'UnaryCall') as CallType[];
   currentConfig.timeoutSec = argv.rpc_timeout_sec;
   for (const item of argv.metadata.split(',')) {
