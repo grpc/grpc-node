@@ -98,11 +98,11 @@ export interface _envoy_type_tracing_v3_CustomTag_Metadata {
   /**
    * Specify what kind of metadata to obtain tag value from.
    */
-  'kind'?: (_envoy_type_metadata_v3_MetadataKind);
+  'kind'?: (_envoy_type_metadata_v3_MetadataKind | null);
   /**
    * Metadata key to define the path to retrieve the tag value.
    */
-  'metadata_key'?: (_envoy_type_metadata_v3_MetadataKey);
+  'metadata_key'?: (_envoy_type_metadata_v3_MetadataKey | null);
   /**
    * When no valid metadata is found,
    * the tag value would be populated with this default value if specified,
@@ -122,11 +122,11 @@ export interface _envoy_type_tracing_v3_CustomTag_Metadata__Output {
   /**
    * Specify what kind of metadata to obtain tag value from.
    */
-  'kind'?: (_envoy_type_metadata_v3_MetadataKind__Output);
+  'kind': (_envoy_type_metadata_v3_MetadataKind__Output | null);
   /**
    * Metadata key to define the path to retrieve the tag value.
    */
-  'metadata_key'?: (_envoy_type_metadata_v3_MetadataKey__Output);
+  'metadata_key': (_envoy_type_metadata_v3_MetadataKey__Output | null);
   /**
    * When no valid metadata is found,
    * the tag value would be populated with this default value if specified,
@@ -147,19 +147,19 @@ export interface CustomTag {
   /**
    * A literal custom tag.
    */
-  'literal'?: (_envoy_type_tracing_v3_CustomTag_Literal);
+  'literal'?: (_envoy_type_tracing_v3_CustomTag_Literal | null);
   /**
    * An environment custom tag.
    */
-  'environment'?: (_envoy_type_tracing_v3_CustomTag_Environment);
+  'environment'?: (_envoy_type_tracing_v3_CustomTag_Environment | null);
   /**
    * A request header custom tag.
    */
-  'request_header'?: (_envoy_type_tracing_v3_CustomTag_Header);
+  'request_header'?: (_envoy_type_tracing_v3_CustomTag_Header | null);
   /**
    * A custom tag to obtain tag value from the metadata.
    */
-  'metadata'?: (_envoy_type_tracing_v3_CustomTag_Metadata);
+  'metadata'?: (_envoy_type_tracing_v3_CustomTag_Metadata | null);
   /**
    * Used to specify what kind of custom tag.
    */
@@ -178,19 +178,19 @@ export interface CustomTag__Output {
   /**
    * A literal custom tag.
    */
-  'literal'?: (_envoy_type_tracing_v3_CustomTag_Literal__Output);
+  'literal'?: (_envoy_type_tracing_v3_CustomTag_Literal__Output | null);
   /**
    * An environment custom tag.
    */
-  'environment'?: (_envoy_type_tracing_v3_CustomTag_Environment__Output);
+  'environment'?: (_envoy_type_tracing_v3_CustomTag_Environment__Output | null);
   /**
    * A request header custom tag.
    */
-  'request_header'?: (_envoy_type_tracing_v3_CustomTag_Header__Output);
+  'request_header'?: (_envoy_type_tracing_v3_CustomTag_Header__Output | null);
   /**
    * A custom tag to obtain tag value from the metadata.
    */
-  'metadata'?: (_envoy_type_tracing_v3_CustomTag_Metadata__Output);
+  'metadata'?: (_envoy_type_tracing_v3_CustomTag_Metadata__Output | null);
   /**
    * Used to specify what kind of custom tag.
    */

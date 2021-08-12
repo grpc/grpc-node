@@ -36,7 +36,7 @@ export interface TypedStruct {
   /**
    * A JSON representation of the above specified type.
    */
-  'value'?: (_google_protobuf_Struct);
+  'value'?: (_google_protobuf_Struct | null);
 }
 
 /**
@@ -73,5 +73,5 @@ export interface TypedStruct__Output {
   /**
    * A JSON representation of the above specified type.
    */
-  'value'?: (_google_protobuf_Struct__Output);
+  'value': (_google_protobuf_Struct__Output | null);
 }

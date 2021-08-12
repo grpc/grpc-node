@@ -36,7 +36,7 @@ export interface StringMatcher {
   /**
    * The input string must match the regular expression specified here.
    */
-  'safe_regex'?: (_envoy_type_matcher_v3_RegexMatcher);
+  'safe_regex'?: (_envoy_type_matcher_v3_RegexMatcher | null);
   /**
    * If true, indicates the exact/prefix/suffix matching should be case insensitive. This has no
    * effect for the safe_regex match.
@@ -89,7 +89,7 @@ export interface StringMatcher__Output {
   /**
    * The input string must match the regular expression specified here.
    */
-  'safe_regex'?: (_envoy_type_matcher_v3_RegexMatcher__Output);
+  'safe_regex'?: (_envoy_type_matcher_v3_RegexMatcher__Output | null);
   /**
    * If true, indicates the exact/prefix/suffix matching should be case insensitive. This has no
    * effect for the safe_regex match.

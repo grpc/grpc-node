@@ -7,5 +7,5 @@ export interface Struct {
 }
 
 export interface Struct__Output {
-  'fields'?: ({[key: string]: _google_protobuf_Value__Output});
+  'fields': ({[key: string]: _google_protobuf_Value__Output});
 }

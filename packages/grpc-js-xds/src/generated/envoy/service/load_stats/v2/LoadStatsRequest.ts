@@ -11,7 +11,7 @@ export interface LoadStatsRequest {
   /**
    * Node identifier for Envoy instance.
    */
-  'node'?: (_envoy_api_v2_core_Node);
+  'node'?: (_envoy_api_v2_core_Node | null);
   /**
    * A list of load stats to report.
    */
@@ -26,7 +26,7 @@ export interface LoadStatsRequest__Output {
   /**
    * Node identifier for Envoy instance.
    */
-  'node'?: (_envoy_api_v2_core_Node__Output);
+  'node': (_envoy_api_v2_core_Node__Output | null);
   /**
    * A list of load stats to report.
    */

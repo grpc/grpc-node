@@ -6,12 +6,12 @@ export interface ScopedRds {
   /**
    * Configuration source specifier for scoped RDS.
    */
-  'scoped_rds_config_source'?: (_envoy_config_core_v3_ConfigSource);
+  'scoped_rds_config_source'?: (_envoy_config_core_v3_ConfigSource | null);
 }
 
 export interface ScopedRds__Output {
   /**
    * Configuration source specifier for scoped RDS.
    */
-  'scoped_rds_config_source'?: (_envoy_config_core_v3_ConfigSource__Output);
+  'scoped_rds_config_source': (_envoy_config_core_v3_ConfigSource__Output | null);
 }

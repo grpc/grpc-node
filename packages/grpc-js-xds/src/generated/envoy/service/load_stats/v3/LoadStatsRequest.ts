@@ -10,7 +10,7 @@ export interface LoadStatsRequest {
   /**
    * Node identifier for Envoy instance.
    */
-  'node'?: (_envoy_config_core_v3_Node);
+  'node'?: (_envoy_config_core_v3_Node | null);
   /**
    * A list of load stats to report.
    */
@@ -24,7 +24,7 @@ export interface LoadStatsRequest__Output {
   /**
    * Node identifier for Envoy instance.
    */
-  'node'?: (_envoy_config_core_v3_Node__Output);
+  'node': (_envoy_config_core_v3_Node__Output | null);
   /**
    * A list of load stats to report.
    */

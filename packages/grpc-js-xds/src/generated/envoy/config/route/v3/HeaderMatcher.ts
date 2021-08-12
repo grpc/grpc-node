@@ -53,7 +53,7 @@ export interface HeaderMatcher {
    * * For range [-10,0), route will match for header value -1, but not for 0, "somestring", 10.9,
    * "-1somestring"
    */
-  'range_match'?: (_envoy_type_v3_Int64Range);
+  'range_match'?: (_envoy_type_v3_Int64Range | null);
   /**
    * If specified, header match will be performed based on whether the header is in the
    * request.
@@ -91,7 +91,7 @@ export interface HeaderMatcher {
    * header value must match the regex. The rule will not match if only a subsequence of the
    * request header value matches the regex.
    */
-  'safe_regex_match'?: (_envoy_type_matcher_v3_RegexMatcher);
+  'safe_regex_match'?: (_envoy_type_matcher_v3_RegexMatcher | null);
   /**
    * If specified, header match will be performed based on whether the header value contains
    * the given value or not.
@@ -157,7 +157,7 @@ export interface HeaderMatcher__Output {
    * * For range [-10,0), route will match for header value -1, but not for 0, "somestring", 10.9,
    * "-1somestring"
    */
-  'range_match'?: (_envoy_type_v3_Int64Range__Output);
+  'range_match'?: (_envoy_type_v3_Int64Range__Output | null);
   /**
    * If specified, header match will be performed based on whether the header is in the
    * request.
@@ -195,7 +195,7 @@ export interface HeaderMatcher__Output {
    * header value must match the regex. The rule will not match if only a subsequence of the
    * request header value matches the regex.
    */
-  'safe_regex_match'?: (_envoy_type_matcher_v3_RegexMatcher__Output);
+  'safe_regex_match'?: (_envoy_type_matcher_v3_RegexMatcher__Output | null);
   /**
    * If specified, header match will be performed based on whether the header value contains
    * the given value or not.

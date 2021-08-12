@@ -6,7 +6,7 @@ export interface Rds {
   /**
    * Configuration source specifier for RDS.
    */
-  'config_source'?: (_envoy_config_core_v3_ConfigSource);
+  'config_source'?: (_envoy_config_core_v3_ConfigSource | null);
   /**
    * The name of the route configuration. This name will be passed to the RDS
    * API. This allows an Envoy configuration with multiple HTTP listeners (and
@@ -20,7 +20,7 @@ export interface Rds__Output {
   /**
    * Configuration source specifier for RDS.
    */
-  'config_source'?: (_envoy_config_core_v3_ConfigSource__Output);
+  'config_source': (_envoy_config_core_v3_ConfigSource__Output | null);
   /**
    * The name of the route configuration. This name will be passed to the RDS
    * API. This allows an Envoy configuration with multiple HTTP listeners (and

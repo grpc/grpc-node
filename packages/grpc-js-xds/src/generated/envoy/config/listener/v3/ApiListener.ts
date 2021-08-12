@@ -17,7 +17,7 @@ export interface ApiListener {
    * and http_connection_manager.proto depends on rds.proto, which is in the same directory as
    * lds.proto, so lds.proto cannot depend on this file.]
    */
-  'api_listener'?: (_google_protobuf_Any);
+  'api_listener'?: (_google_protobuf_Any | null);
 }
 
 /**
@@ -35,5 +35,5 @@ export interface ApiListener__Output {
    * and http_connection_manager.proto depends on rds.proto, which is in the same directory as
    * lds.proto, so lds.proto cannot depend on this file.]
    */
-  'api_listener'?: (_google_protobuf_Any__Output);
+  'api_listener': (_google_protobuf_Any__Output | null);
 }

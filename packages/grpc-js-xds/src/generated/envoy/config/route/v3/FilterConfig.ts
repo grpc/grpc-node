@@ -15,7 +15,7 @@ export interface FilterConfig {
   /**
    * The filter config.
    */
-  'config'?: (_google_protobuf_Any);
+  'config'?: (_google_protobuf_Any | null);
   /**
    * If true, the filter is optional, meaning that if the client does
    * not support the specified filter, it may ignore the map entry rather
@@ -37,7 +37,7 @@ export interface FilterConfig__Output {
   /**
    * The filter config.
    */
-  'config'?: (_google_protobuf_Any__Output);
+  'config': (_google_protobuf_Any__Output | null);
   /**
    * If true, the filter is optional, meaning that if the client does
    * not support the specified filter, it may ignore the map entry rather

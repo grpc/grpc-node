@@ -37,7 +37,7 @@ export interface _xds_core_v3_ResourceLocator_Directive {
    * resource, it will fallback to `bar`. Alternative resources do not need
    * to have equivalent content, but they should be functional substitutes.
    */
-  'alt'?: (_xds_core_v3_ResourceLocator);
+  'alt'?: (_xds_core_v3_ResourceLocator | null);
   /**
    * List collections support inlining of resources via the entry field in
    * Resource. These inlined Resource objects may have an optional name
@@ -83,7 +83,7 @@ export interface _xds_core_v3_ResourceLocator_Directive__Output {
    * resource, it will fallback to `bar`. Alternative resources do not need
    * to have equivalent content, but they should be functional substitutes.
    */
-  'alt'?: (_xds_core_v3_ResourceLocator__Output);
+  'alt'?: (_xds_core_v3_ResourceLocator__Output | null);
   /**
    * List collections support inlining of resources via the entry field in
    * Resource. These inlined Resource objects may have an optional name
@@ -150,7 +150,7 @@ export interface ResourceLocator {
    * there must be no additional context parameters set on the matched
    * resource.
    */
-  'exact_context'?: (_xds_core_v3_ContextParams);
+  'exact_context'?: (_xds_core_v3_ContextParams | null);
   /**
    * A list of directives that appear in the xDS resource locator #fragment.
    * 
@@ -208,7 +208,7 @@ export interface ResourceLocator__Output {
    * there must be no additional context parameters set on the matched
    * resource.
    */
-  'exact_context'?: (_xds_core_v3_ContextParams__Output);
+  'exact_context'?: (_xds_core_v3_ContextParams__Output | null);
   /**
    * A list of directives that appear in the xDS resource locator #fragment.
    * 

@@ -7,7 +7,7 @@ export interface _envoy_config_cluster_v3_LoadBalancingPolicy_Policy {
    * Required. The name of the LB policy.
    */
   'name'?: (string);
-  'typed_config'?: (_google_protobuf_Any);
+  'typed_config'?: (_google_protobuf_Any | null);
 }
 
 export interface _envoy_config_cluster_v3_LoadBalancingPolicy_Policy__Output {
@@ -15,7 +15,7 @@ export interface _envoy_config_cluster_v3_LoadBalancingPolicy_Policy__Output {
    * Required. The name of the LB policy.
    */
   'name': (string);
-  'typed_config'?: (_google_protobuf_Any__Output);
+  'typed_config': (_google_protobuf_Any__Output | null);
 }
 
 /**

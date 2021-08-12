@@ -57,16 +57,16 @@ export interface ListenerFilterChainMatchPredicate {
    * A set that describes a logical OR. If any member of the set matches, the match configuration
    * matches.
    */
-  'or_match'?: (_envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet);
+  'or_match'?: (_envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet | null);
   /**
    * A set that describes a logical AND. If all members of the set match, the match configuration
    * matches.
    */
-  'and_match'?: (_envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet);
+  'and_match'?: (_envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet | null);
   /**
    * A negation match. The match configuration will match if the negated match condition matches.
    */
-  'not_match'?: (_envoy_config_listener_v3_ListenerFilterChainMatchPredicate);
+  'not_match'?: (_envoy_config_listener_v3_ListenerFilterChainMatchPredicate | null);
   /**
    * The match configuration will always match.
    */
@@ -75,7 +75,7 @@ export interface ListenerFilterChainMatchPredicate {
    * Match destination port. Particularly, the match evaluation must use the recovered local port if
    * the owning listener filter is after :ref:`an original_dst listener filter <config_listener_filters_original_dst>`.
    */
-  'destination_port_range'?: (_envoy_type_v3_Int32Range);
+  'destination_port_range'?: (_envoy_type_v3_Int32Range | null);
   'rule'?: "or_match"|"and_match"|"not_match"|"any_match"|"destination_port_range";
 }
 
@@ -113,16 +113,16 @@ export interface ListenerFilterChainMatchPredicate__Output {
    * A set that describes a logical OR. If any member of the set matches, the match configuration
    * matches.
    */
-  'or_match'?: (_envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet__Output);
+  'or_match'?: (_envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet__Output | null);
   /**
    * A set that describes a logical AND. If all members of the set match, the match configuration
    * matches.
    */
-  'and_match'?: (_envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet__Output);
+  'and_match'?: (_envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet__Output | null);
   /**
    * A negation match. The match configuration will match if the negated match condition matches.
    */
-  'not_match'?: (_envoy_config_listener_v3_ListenerFilterChainMatchPredicate__Output);
+  'not_match'?: (_envoy_config_listener_v3_ListenerFilterChainMatchPredicate__Output | null);
   /**
    * The match configuration will always match.
    */
@@ -131,6 +131,6 @@ export interface ListenerFilterChainMatchPredicate__Output {
    * Match destination port. Particularly, the match evaluation must use the recovered local port if
    * the owning listener filter is after :ref:`an original_dst listener filter <config_listener_filters_original_dst>`.
    */
-  'destination_port_range'?: (_envoy_type_v3_Int32Range__Output);
+  'destination_port_range'?: (_envoy_type_v3_Int32Range__Output | null);
   'rule': "or_match"|"and_match"|"not_match"|"any_match"|"destination_port_range";
 }

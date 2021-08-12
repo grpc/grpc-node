@@ -11,12 +11,12 @@ export interface RateLimitSettings {
    * Maximum number of tokens to be used for rate limiting discovery request calls. If not set, a
    * default value of 100 will be used.
    */
-  'max_tokens'?: (_google_protobuf_UInt32Value);
+  'max_tokens'?: (_google_protobuf_UInt32Value | null);
   /**
    * Rate at which tokens will be filled per second. If not set, a default fill rate of 10 tokens
    * per second will be used.
    */
-  'fill_rate'?: (_google_protobuf_DoubleValue);
+  'fill_rate'?: (_google_protobuf_DoubleValue | null);
 }
 
 /**
@@ -27,10 +27,10 @@ export interface RateLimitSettings__Output {
    * Maximum number of tokens to be used for rate limiting discovery request calls. If not set, a
    * default value of 100 will be used.
    */
-  'max_tokens'?: (_google_protobuf_UInt32Value__Output);
+  'max_tokens': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Rate at which tokens will be filled per second. If not set, a default fill rate of 10 tokens
    * per second will be used.
    */
-  'fill_rate'?: (_google_protobuf_DoubleValue__Output);
+  'fill_rate': (_google_protobuf_DoubleValue__Output | null);
 }

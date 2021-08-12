@@ -64,7 +64,7 @@ export interface _envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff {
    * header contains an interval longer than this then it will be discarded and
    * the next header will be tried. Defaults to 300 seconds.
    */
-  'max_interval'?: (_google_protobuf_Duration);
+  'max_interval'?: (_google_protobuf_Duration | null);
 }
 
 /**
@@ -125,7 +125,7 @@ export interface _envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff__Out
    * header contains an interval longer than this then it will be discarded and
    * the next header will be tried. Defaults to 300 seconds.
    */
-  'max_interval'?: (_google_protobuf_Duration__Output);
+  'max_interval': (_google_protobuf_Duration__Output | null);
 }
 
 export interface _envoy_config_route_v3_RetryPolicy_ResetHeader {
@@ -172,14 +172,14 @@ export interface _envoy_config_route_v3_RetryPolicy_RetryBackOff {
    * See :ref:`config_http_filters_router_x-envoy-max-retries` for a discussion of Envoy's
    * back-off algorithm.
    */
-  'base_interval'?: (_google_protobuf_Duration);
+  'base_interval'?: (_google_protobuf_Duration | null);
   /**
    * Specifies the maximum interval between retries. This parameter is optional, but must be
    * greater than or equal to the `base_interval` if set. The default is 10 times the
    * `base_interval`. See :ref:`config_http_filters_router_x-envoy-max-retries` for a discussion
    * of Envoy's back-off algorithm.
    */
-  'max_interval'?: (_google_protobuf_Duration);
+  'max_interval'?: (_google_protobuf_Duration | null);
 }
 
 export interface _envoy_config_route_v3_RetryPolicy_RetryBackOff__Output {
@@ -189,37 +189,37 @@ export interface _envoy_config_route_v3_RetryPolicy_RetryBackOff__Output {
    * See :ref:`config_http_filters_router_x-envoy-max-retries` for a discussion of Envoy's
    * back-off algorithm.
    */
-  'base_interval'?: (_google_protobuf_Duration__Output);
+  'base_interval': (_google_protobuf_Duration__Output | null);
   /**
    * Specifies the maximum interval between retries. This parameter is optional, but must be
    * greater than or equal to the `base_interval` if set. The default is 10 times the
    * `base_interval`. See :ref:`config_http_filters_router_x-envoy-max-retries` for a discussion
    * of Envoy's back-off algorithm.
    */
-  'max_interval'?: (_google_protobuf_Duration__Output);
+  'max_interval': (_google_protobuf_Duration__Output | null);
 }
 
 export interface _envoy_config_route_v3_RetryPolicy_RetryHostPredicate {
   'name'?: (string);
-  'typed_config'?: (_google_protobuf_Any);
+  'typed_config'?: (_google_protobuf_Any | null);
   'config_type'?: "typed_config";
 }
 
 export interface _envoy_config_route_v3_RetryPolicy_RetryHostPredicate__Output {
   'name': (string);
-  'typed_config'?: (_google_protobuf_Any__Output);
+  'typed_config'?: (_google_protobuf_Any__Output | null);
   'config_type': "typed_config";
 }
 
 export interface _envoy_config_route_v3_RetryPolicy_RetryPriority {
   'name'?: (string);
-  'typed_config'?: (_google_protobuf_Any);
+  'typed_config'?: (_google_protobuf_Any | null);
   'config_type'?: "typed_config";
 }
 
 export interface _envoy_config_route_v3_RetryPolicy_RetryPriority__Output {
   'name': (string);
-  'typed_config'?: (_google_protobuf_Any__Output);
+  'typed_config'?: (_google_protobuf_Any__Output | null);
   'config_type': "typed_config";
 }
 
@@ -239,7 +239,7 @@ export interface RetryPolicy {
    * defaults to 1. These are the same conditions documented for
    * :ref:`config_http_filters_router_x-envoy-max-retries`.
    */
-  'num_retries'?: (_google_protobuf_UInt32Value);
+  'num_retries'?: (_google_protobuf_UInt32Value | null);
   /**
    * Specifies a non-zero upstream timeout per retry attempt. This parameter is optional. The
    * same conditions documented for
@@ -253,13 +253,13 @@ export interface RetryPolicy {
    * retry policy, a request that times out will not be retried as the total timeout budget
    * would have been exhausted.
    */
-  'per_try_timeout'?: (_google_protobuf_Duration);
+  'per_try_timeout'?: (_google_protobuf_Duration | null);
   /**
    * Specifies an implementation of a RetryPriority which is used to determine the
    * distribution of load across priorities used for retries. Refer to
    * :ref:`retry plugin configuration <arch_overview_http_retry_plugins>` for more details.
    */
-  'retry_priority'?: (_envoy_config_route_v3_RetryPolicy_RetryPriority);
+  'retry_priority'?: (_envoy_config_route_v3_RetryPolicy_RetryPriority | null);
   /**
    * Specifies a collection of RetryHostPredicates that will be consulted when selecting a host
    * for retries. If any of the predicates reject the host, host selection will be reattempted.
@@ -284,7 +284,7 @@ export interface RetryPolicy {
    * the base interval. The documentation for :ref:`config_http_filters_router_x-envoy-max-retries`
    * describes Envoy's back-off algorithm.
    */
-  'retry_back_off'?: (_envoy_config_route_v3_RetryPolicy_RetryBackOff);
+  'retry_back_off'?: (_envoy_config_route_v3_RetryPolicy_RetryBackOff | null);
   /**
    * HTTP response headers that trigger a retry if present in the response. A retry will be
    * triggered if any of the header matches match the upstream response headers.
@@ -304,7 +304,7 @@ export interface RetryPolicy {
    * default exponential back off strategy (configured using `retry_back_off`)
    * whenever a response includes the matching headers.
    */
-  'rate_limited_retry_back_off'?: (_envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff);
+  'rate_limited_retry_back_off'?: (_envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff | null);
 }
 
 /**
@@ -323,7 +323,7 @@ export interface RetryPolicy__Output {
    * defaults to 1. These are the same conditions documented for
    * :ref:`config_http_filters_router_x-envoy-max-retries`.
    */
-  'num_retries'?: (_google_protobuf_UInt32Value__Output);
+  'num_retries': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Specifies a non-zero upstream timeout per retry attempt. This parameter is optional. The
    * same conditions documented for
@@ -337,13 +337,13 @@ export interface RetryPolicy__Output {
    * retry policy, a request that times out will not be retried as the total timeout budget
    * would have been exhausted.
    */
-  'per_try_timeout'?: (_google_protobuf_Duration__Output);
+  'per_try_timeout': (_google_protobuf_Duration__Output | null);
   /**
    * Specifies an implementation of a RetryPriority which is used to determine the
    * distribution of load across priorities used for retries. Refer to
    * :ref:`retry plugin configuration <arch_overview_http_retry_plugins>` for more details.
    */
-  'retry_priority'?: (_envoy_config_route_v3_RetryPolicy_RetryPriority__Output);
+  'retry_priority': (_envoy_config_route_v3_RetryPolicy_RetryPriority__Output | null);
   /**
    * Specifies a collection of RetryHostPredicates that will be consulted when selecting a host
    * for retries. If any of the predicates reject the host, host selection will be reattempted.
@@ -368,7 +368,7 @@ export interface RetryPolicy__Output {
    * the base interval. The documentation for :ref:`config_http_filters_router_x-envoy-max-retries`
    * describes Envoy's back-off algorithm.
    */
-  'retry_back_off'?: (_envoy_config_route_v3_RetryPolicy_RetryBackOff__Output);
+  'retry_back_off': (_envoy_config_route_v3_RetryPolicy_RetryBackOff__Output | null);
   /**
    * HTTP response headers that trigger a retry if present in the response. A retry will be
    * triggered if any of the header matches match the upstream response headers.
@@ -388,5 +388,5 @@ export interface RetryPolicy__Output {
    * default exponential back off strategy (configured using `retry_back_off`)
    * whenever a response includes the matching headers.
    */
-  'rate_limited_retry_back_off'?: (_envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff__Output);
+  'rate_limited_retry_back_off': (_envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff__Output | null);
 }

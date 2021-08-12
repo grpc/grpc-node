@@ -17,13 +17,13 @@ export interface HttpFilter {
    * Filter specific configuration which depends on the filter being instantiated. See the supported
    * filters for further documentation.
    */
-  'typed_config'?: (_google_protobuf_Any);
+  'typed_config'?: (_google_protobuf_Any | null);
   /**
    * Configuration source specifier for an extension configuration discovery service.
    * In case of a failure and without the default configuration, the HTTP listener responds with code 500.
    * Extension configs delivered through this mechanism are not expected to require warming (see https://github.com/envoyproxy/envoy/issues/12061).
    */
-  'config_discovery'?: (_envoy_config_core_v3_ExtensionConfigSource);
+  'config_discovery'?: (_envoy_config_core_v3_ExtensionConfigSource | null);
   /**
    * If true, clients that do not support this filter may ignore the
    * filter but otherwise accept the config.
@@ -48,13 +48,13 @@ export interface HttpFilter__Output {
    * Filter specific configuration which depends on the filter being instantiated. See the supported
    * filters for further documentation.
    */
-  'typed_config'?: (_google_protobuf_Any__Output);
+  'typed_config'?: (_google_protobuf_Any__Output | null);
   /**
    * Configuration source specifier for an extension configuration discovery service.
    * In case of a failure and without the default configuration, the HTTP listener responds with code 500.
    * Extension configs delivered through this mechanism are not expected to require warming (see https://github.com/envoyproxy/envoy/issues/12061).
    */
-  'config_discovery'?: (_envoy_config_core_v3_ExtensionConfigSource__Output);
+  'config_discovery'?: (_envoy_config_core_v3_ExtensionConfigSource__Output | null);
   /**
    * If true, clients that do not support this filter may ignore the
    * filter but otherwise accept the config.

@@ -15,8 +15,8 @@ export interface TransportSocket {
    * socket implementation.
    */
   'name'?: (string);
-  'config'?: (_google_protobuf_Struct);
-  'typed_config'?: (_google_protobuf_Any);
+  'config'?: (_google_protobuf_Struct | null);
+  'typed_config'?: (_google_protobuf_Any | null);
   /**
    * Implementation specific configuration which depends on the implementation being instantiated.
    * See the supported transport socket implementations for further documentation.
@@ -36,8 +36,8 @@ export interface TransportSocket__Output {
    * socket implementation.
    */
   'name': (string);
-  'config'?: (_google_protobuf_Struct__Output);
-  'typed_config'?: (_google_protobuf_Any__Output);
+  'config'?: (_google_protobuf_Struct__Output | null);
+  'typed_config'?: (_google_protobuf_Any__Output | null);
   /**
    * Implementation specific configuration which depends on the implementation being instantiated.
    * See the supported transport socket implementations for further documentation.

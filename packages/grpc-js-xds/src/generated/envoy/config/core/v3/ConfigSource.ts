@@ -36,12 +36,12 @@ export interface ConfigSource {
   /**
    * API configuration source.
    */
-  'api_config_source'?: (_envoy_config_core_v3_ApiConfigSource);
+  'api_config_source'?: (_envoy_config_core_v3_ApiConfigSource | null);
   /**
    * When set, ADS will be used to fetch resources. The ADS API configuration
    * source in the bootstrap configuration is used.
    */
-  'ads'?: (_envoy_config_core_v3_AggregatedConfigSource);
+  'ads'?: (_envoy_config_core_v3_AggregatedConfigSource | null);
   /**
    * When this timeout is specified, Envoy will wait no longer than the specified time for first
    * config response on this xDS subscription during the :ref:`initialization process
@@ -51,7 +51,7 @@ export interface ConfigSource {
    * means no timeout - Envoy will wait indefinitely for the first xDS config (unless another
    * timeout applies). The default is 15s.
    */
-  'initial_fetch_timeout'?: (_google_protobuf_Duration);
+  'initial_fetch_timeout'?: (_google_protobuf_Duration | null);
   /**
    * [#not-implemented-hide:]
    * When set, the client will access the resources from the same server it got the
@@ -65,7 +65,7 @@ export interface ConfigSource {
    * this field can implicitly mean to use the same stream in the case where the ConfigSource
    * is provided via ADS and the specified data can also be obtained via ADS.]
    */
-  'self'?: (_envoy_config_core_v3_SelfConfigSource);
+  'self'?: (_envoy_config_core_v3_SelfConfigSource | null);
   /**
    * API version for xDS resources. This implies the type URLs that the client
    * will request for resources and the resource type that the client will in
@@ -111,12 +111,12 @@ export interface ConfigSource__Output {
   /**
    * API configuration source.
    */
-  'api_config_source'?: (_envoy_config_core_v3_ApiConfigSource__Output);
+  'api_config_source'?: (_envoy_config_core_v3_ApiConfigSource__Output | null);
   /**
    * When set, ADS will be used to fetch resources. The ADS API configuration
    * source in the bootstrap configuration is used.
    */
-  'ads'?: (_envoy_config_core_v3_AggregatedConfigSource__Output);
+  'ads'?: (_envoy_config_core_v3_AggregatedConfigSource__Output | null);
   /**
    * When this timeout is specified, Envoy will wait no longer than the specified time for first
    * config response on this xDS subscription during the :ref:`initialization process
@@ -126,7 +126,7 @@ export interface ConfigSource__Output {
    * means no timeout - Envoy will wait indefinitely for the first xDS config (unless another
    * timeout applies). The default is 15s.
    */
-  'initial_fetch_timeout'?: (_google_protobuf_Duration__Output);
+  'initial_fetch_timeout': (_google_protobuf_Duration__Output | null);
   /**
    * [#not-implemented-hide:]
    * When set, the client will access the resources from the same server it got the
@@ -140,7 +140,7 @@ export interface ConfigSource__Output {
    * this field can implicitly mean to use the same stream in the case where the ConfigSource
    * is provided via ADS and the specified data can also be obtained via ADS.]
    */
-  'self'?: (_envoy_config_core_v3_SelfConfigSource__Output);
+  'self'?: (_envoy_config_core_v3_SelfConfigSource__Output | null);
   /**
    * API version for xDS resources. This implies the type URLs that the client
    * will request for resources and the resource type that the client will in

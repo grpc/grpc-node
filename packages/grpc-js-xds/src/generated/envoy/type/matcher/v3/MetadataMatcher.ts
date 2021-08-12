@@ -43,7 +43,7 @@ export interface MetadataMatcher {
   /**
    * The MetadataMatcher is matched if the value retrieved by path is matched to this value.
    */
-  'value'?: (_envoy_type_matcher_v3_ValueMatcher);
+  'value'?: (_envoy_type_matcher_v3_ValueMatcher | null);
 }
 
 /**
@@ -61,5 +61,5 @@ export interface MetadataMatcher__Output {
   /**
    * The MetadataMatcher is matched if the value retrieved by path is matched to this value.
    */
-  'value'?: (_envoy_type_matcher_v3_ValueMatcher__Output);
+  'value': (_envoy_type_matcher_v3_ValueMatcher__Output | null);
 }

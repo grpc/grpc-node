@@ -9,8 +9,8 @@ export interface Value {
   'numberValue'?: (number | string);
   'stringValue'?: (string);
   'boolValue'?: (boolean);
-  'structValue'?: (_google_protobuf_Struct);
-  'listValue'?: (_google_protobuf_ListValue);
+  'structValue'?: (_google_protobuf_Struct | null);
+  'listValue'?: (_google_protobuf_ListValue | null);
   'kind'?: "nullValue"|"numberValue"|"stringValue"|"boolValue"|"structValue"|"listValue";
 }
 
@@ -19,7 +19,7 @@ export interface Value__Output {
   'numberValue'?: (number);
   'stringValue'?: (string);
   'boolValue'?: (boolean);
-  'structValue'?: (_google_protobuf_Struct__Output);
-  'listValue'?: (_google_protobuf_ListValue__Output);
+  'structValue'?: (_google_protobuf_Struct__Output | null);
+  'listValue'?: (_google_protobuf_ListValue__Output | null);
   'kind': "nullValue"|"numberValue"|"stringValue"|"boolValue"|"structValue"|"listValue";
 }

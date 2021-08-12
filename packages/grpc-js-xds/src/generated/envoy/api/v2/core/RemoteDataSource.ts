@@ -10,7 +10,7 @@ export interface RemoteDataSource {
   /**
    * The HTTP URI to fetch the remote data.
    */
-  'http_uri'?: (_envoy_api_v2_core_HttpUri);
+  'http_uri'?: (_envoy_api_v2_core_HttpUri | null);
   /**
    * SHA256 string for verifying data.
    */
@@ -18,7 +18,7 @@ export interface RemoteDataSource {
   /**
    * Retry policy for fetching remote data.
    */
-  'retry_policy'?: (_envoy_api_v2_core_RetryPolicy);
+  'retry_policy'?: (_envoy_api_v2_core_RetryPolicy | null);
 }
 
 /**
@@ -28,7 +28,7 @@ export interface RemoteDataSource__Output {
   /**
    * The HTTP URI to fetch the remote data.
    */
-  'http_uri'?: (_envoy_api_v2_core_HttpUri__Output);
+  'http_uri': (_envoy_api_v2_core_HttpUri__Output | null);
   /**
    * SHA256 string for verifying data.
    */
@@ -36,5 +36,5 @@ export interface RemoteDataSource__Output {
   /**
    * Retry policy for fetching remote data.
    */
-  'retry_policy'?: (_envoy_api_v2_core_RetryPolicy__Output);
+  'retry_policy': (_envoy_api_v2_core_RetryPolicy__Output | null);
 }

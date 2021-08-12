@@ -18,7 +18,7 @@ export interface UpstreamLocalityStats {
    * Name of zone, region and optionally endpoint group these metrics were
    * collected from. Zone and region names could be empty if unknown.
    */
-  'locality'?: (_envoy_api_v2_core_Locality);
+  'locality'?: (_envoy_api_v2_core_Locality | null);
   /**
    * The total number of requests successfully completed by the endpoints in the
    * locality.
@@ -69,7 +69,7 @@ export interface UpstreamLocalityStats__Output {
    * Name of zone, region and optionally endpoint group these metrics were
    * collected from. Zone and region names could be empty if unknown.
    */
-  'locality'?: (_envoy_api_v2_core_Locality__Output);
+  'locality': (_envoy_api_v2_core_Locality__Output | null);
   /**
    * The total number of requests successfully completed by the endpoints in the
    * locality.
