@@ -36,6 +36,7 @@ export class CdsState implements XdsStreamState<Cluster__Output> {
   >();
 
   private latestResponses: Cluster__Output[] = [];
+  private latestIsV2 = false;
 
   constructor(
     private edsState: EdsState,
@@ -61,13 +62,14 @@ export class CdsState implements XdsStreamState<Cluster__Output> {
 
     /* If we have already received an update for the requested edsServiceName,
      * immediately pass that update along to the watcher */
+    const isV2 = this.latestIsV2;
     for (const message of this.latestResponses) {
       if (message.name === clusterName) {
         /* These updates normally occur asynchronously, so we ensure that
          * the same happens here */
         process.nextTick(() => {
           trace('Reporting existing CDS update for new watcher for clusterName ' + clusterName);
-          watcher.onValidUpdate(message);
+          watcher.onValidUpdate(message, isV2);
         });
       }
     }
@@ -134,7 +136,7 @@ export class CdsState implements XdsStreamState<Cluster__Output> {
     }
   }
 
-  handleResponses(responses: Cluster__Output[]): string | null {
+  handleResponses(responses: Cluster__Output[], isV2: boolean): string | null {
     for (const message of responses) {
       if (!this.validateResponse(message)) {
         trace('CDS validation failed for message ' + JSON.stringify(message));
@@ -142,6 +144,7 @@ export class CdsState implements XdsStreamState<Cluster__Output> {
       }
     }
     this.latestResponses = responses;
+    this.latestIsV2 = isV2;
     const allEdsServiceNames: Set<string> = new Set<string>();
     const allClusterNames: Set<string> = new Set<string>();
     for (const message of responses) {
@@ -152,7 +155,7 @@ export class CdsState implements XdsStreamState<Cluster__Output> {
       );
       const watchers = this.watchers.get(message.name) ?? [];
       for (const watcher of watchers) {
-        watcher.onValidUpdate(message);
+        watcher.onValidUpdate(message, isV2);
       }
     }
     trace('Received CDS updates for cluster names ' + Array.from(allClusterNames));

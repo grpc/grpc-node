@@ -212,6 +212,7 @@ class XdsResolver implements Resolver {
   private latestRouteConfigName: string | null = null;
 
   private latestRouteConfig: RouteConfiguration__Output | null = null;
+  private latestRouteConfigIsV2 = false;
 
   private clusterRefcounts = new Map<string, {inLastConfig: boolean, refCount: number}>();
 
@@ -225,7 +226,7 @@ class XdsResolver implements Resolver {
     private channelOptions: ChannelOptions
   ) {
     this.ldsWatcher = {
-      onValidUpdate: (update: Listener__Output) => {
+      onValidUpdate: (update: Listener__Output, isV2: boolean) => {
         const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL_V3, update.api_listener!.api_listener!.value);
         const defaultTimeout = httpConnectionManager.common_http_protocol_options?.idle_timeout;
         if (defaultTimeout === null || defaultTimeout === undefined) {
@@ -233,7 +234,7 @@ class XdsResolver implements Resolver {
         } else {
           this.latestDefaultTimeout = protoDurationToDuration(defaultTimeout);
         }
-        if (EXPERIMENTAL_FAULT_INJECTION) {
+        if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
           this.ldsHttpFilterConfigs = [];
           for (const filter of httpConnectionManager.http_filters) {
             // typed_config must be set here, or validation would have failed
@@ -259,7 +260,7 @@ class XdsResolver implements Resolver {
             if (this.latestRouteConfigName) {
               getSingletonXdsClient().removeRouteWatcher(this.latestRouteConfigName, this.rdsWatcher);
             }
-            this.handleRouteConfig(httpConnectionManager.route_config!);
+            this.handleRouteConfig(httpConnectionManager.route_config!, isV2);
             break;
           default:
             // This is prevented by the validation rules
@@ -279,8 +280,8 @@ class XdsResolver implements Resolver {
       }
     };
     this.rdsWatcher = {
-      onValidUpdate: (update: RouteConfiguration__Output) => {
-        this.handleRouteConfig(update);
+      onValidUpdate: (update: RouteConfiguration__Output, isV2: boolean) => {
+        this.handleRouteConfig(update, isV2);
       },
       onTransientError: (error: StatusObject) => {
         /* A transient error only needs to bubble up as a failure if we have
@@ -310,20 +311,21 @@ class XdsResolver implements Resolver {
       refCount.refCount -= 1;
       if (!refCount.inLastConfig && refCount.refCount === 0) {
         this.clusterRefcounts.delete(clusterName);
-        this.handleRouteConfig(this.latestRouteConfig!);
+        this.handleRouteConfig(this.latestRouteConfig!, this.latestRouteConfigIsV2);
       }
     }
   }
 
-  private handleRouteConfig(routeConfig: RouteConfiguration__Output) {
+  private handleRouteConfig(routeConfig: RouteConfiguration__Output, isV2: boolean) {
     this.latestRouteConfig = routeConfig;
+    this.latestRouteConfigIsV2 = isV2;
     const virtualHost = findVirtualHostForDomain(routeConfig.virtual_hosts, this.target.path);
     if (virtualHost === null) {
       this.reportResolutionError('No matching route found');
       return;
     }
     const virtualHostHttpFilterOverrides = new Map<string, HttpFilterConfig>();
-    if (EXPERIMENTAL_FAULT_INJECTION) {
+    if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
       for (const [name, filter] of Object.entries(virtualHost.typed_per_filter_config ?? {})) {
         const parsedConfig = parseOverrideFilterConfig(filter);
         if (parsedConfig) {
@@ -352,7 +354,7 @@ class XdsResolver implements Resolver {
         timeout = undefined;
       }
       const routeHttpFilterOverrides = new Map<string, HttpFilterConfig>();
-      if (EXPERIMENTAL_FAULT_INJECTION) {
+      if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
         for (const [name, filter] of Object.entries(route.typed_per_filter_config ?? {})) {
           const parsedConfig = parseOverrideFilterConfig(filter);
           if (parsedConfig) {
@@ -367,7 +369,7 @@ class XdsResolver implements Resolver {
           const cluster = route.route!.cluster!;
           allConfigClusters.add(cluster);
           const extraFilterFactories: FilterFactory<Filter>[] = [];
-          if (EXPERIMENTAL_FAULT_INJECTION) {
+          if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
             for (const filterConfig of this.ldsHttpFilterConfigs) {
               if (routeHttpFilterOverrides.has(filterConfig.name)) {
                 const filter = createHttpFilter(filterConfig.config, routeHttpFilterOverrides.get(filterConfig.name)!);
@@ -396,7 +398,7 @@ class XdsResolver implements Resolver {
             allConfigClusters.add(clusterWeight.name);
             const extraFilterFactories: FilterFactory<Filter>[] = [];
             const clusterHttpFilterOverrides = new Map<string, HttpFilterConfig>();
-            if (EXPERIMENTAL_FAULT_INJECTION) {
+            if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
               for (const [name, filter] of Object.entries(clusterWeight.typed_per_filter_config ?? {})) {
                 const parsedConfig = parseOverrideFilterConfig(filter);
                 if (parsedConfig) {
