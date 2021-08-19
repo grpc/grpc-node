@@ -39,6 +39,7 @@ export class LdsState implements XdsStreamState<Listener__Output> {
 
   private watchers: Map<string, Watcher<Listener__Output>[]> = new Map<string, Watcher<Listener__Output>[]>();
   private latestResponses: Listener__Output[] = [];
+  private latestIsV2 = false;
 
   constructor(private rdsState: RdsState, private updateResourceNames: () => void) {}
 
@@ -55,13 +56,14 @@ export class LdsState implements XdsStreamState<Listener__Output> {
 
     /* If we have already received an update for the requested edsServiceName,
      * immediately pass that update along to the watcher */
+    const isV2 = this.latestIsV2;
     for (const message of this.latestResponses) {
       if (message.name === targetName) {
         /* These updates normally occur asynchronously, so we ensure that
          * the same happens here */
         process.nextTick(() => {
           trace('Reporting existing RDS update for new watcher for targetName ' + targetName);
-          watcher.onValidUpdate(message);
+          watcher.onValidUpdate(message, isV2);
         });
       }
     }
@@ -93,7 +95,7 @@ export class LdsState implements XdsStreamState<Listener__Output> {
     return Array.from(this.watchers.keys());
   }
 
-  private validateResponse(message: Listener__Output): boolean {
+  private validateResponse(message: Listener__Output, isV2: boolean): boolean {
     if (
       !(
         message.api_listener?.api_listener &&
@@ -104,7 +106,7 @@ export class LdsState implements XdsStreamState<Listener__Output> {
       return false;
     }
     const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL_V3, message.api_listener!.api_listener.value);
-    if (EXPERIMENTAL_FAULT_INJECTION) {
+    if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
       const filterNames = new Set<string>();
       for (const [index, httpFilter] of httpConnectionManager.http_filters.entries()) {
         if (filterNames.has(httpFilter.name)) {
@@ -136,7 +138,7 @@ export class LdsState implements XdsStreamState<Listener__Output> {
       case 'rds':
         return !!httpConnectionManager.rds?.config_source?.ads;
       case 'route_config':
-        return this.rdsState.validateResponse(httpConnectionManager.route_config!);
+        return this.rdsState.validateResponse(httpConnectionManager.route_config!, isV2);
     }
     return false;
   }
@@ -151,20 +153,21 @@ export class LdsState implements XdsStreamState<Listener__Output> {
     }
   }
 
-  handleResponses(responses: Listener__Output[]): string | null {
+  handleResponses(responses: Listener__Output[], isV2: boolean): string | null {
     for (const message of responses) {
-      if (!this.validateResponse(message)) {
+      if (!this.validateResponse(message, isV2)) {
         trace('LDS validation failed for message ' + JSON.stringify(message));
         return 'LDS Error: Route validation failed';
       }
     }
     this.latestResponses = responses;
+    this.latestIsV2 = isV2;
     const allTargetNames = new Set<string>();
     for (const message of responses) {
       allTargetNames.add(message.name);
       const watchers = this.watchers.get(message.name) ?? [];
       for (const watcher of watchers) {
-        watcher.onValidUpdate(message);
+        watcher.onValidUpdate(message, isV2);
       }
     }
     trace('Received RDS response with route config names ' + Array.from(allTargetNames));

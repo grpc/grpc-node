@@ -45,6 +45,7 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
 
   private watchers: Map<string, Watcher<RouteConfiguration__Output>[]> = new Map<string, Watcher<RouteConfiguration__Output>[]>();
   private latestResponses: RouteConfiguration__Output[] = [];
+  private latestIsV2 = false;
 
   constructor(private updateResourceNames: () => void) {}
 
@@ -61,13 +62,14 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
 
     /* If we have already received an update for the requested edsServiceName,
      * immediately pass that update along to the watcher */
+    const isV2 = this.latestIsV2;
     for (const message of this.latestResponses) {
       if (message.name === routeConfigName) {
         /* These updates normally occur asynchronously, so we ensure that
          * the same happens here */
         process.nextTick(() => {
           trace('Reporting existing RDS update for new watcher for routeConfigName ' + routeConfigName);
-          watcher.onValidUpdate(message);
+          watcher.onValidUpdate(message, isV2);
         });
       }
     }
@@ -99,7 +101,7 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
     return Array.from(this.watchers.keys());
   }
 
-  validateResponse(message: RouteConfiguration__Output): boolean {
+  validateResponse(message: RouteConfiguration__Output, isV2: boolean): boolean {
     // https://github.com/grpc/proposal/blob/master/A28-xds-traffic-splitting-and-routing.md#response-validation
     for (const virtualHost of message.virtual_hosts) {
       for (const domainPattern of virtualHost.domains) {
@@ -114,7 +116,7 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
           return false;
         }
       }
-      if (EXPERIMENTAL_FAULT_INJECTION) {
+      if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
         for (const filterConfig of Object.values(virtualHost.typed_per_filter_config ?? {})) {
           if (!validateOverrideFilter(filterConfig)) {
             return false;
@@ -140,7 +142,7 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
         if ((route.route === undefined) || (route.route === null) || SUPPORTED_CLUSTER_SPECIFIERS.indexOf(route.route.cluster_specifier) < 0) {
           return false;
         }
-        if (EXPERIMENTAL_FAULT_INJECTION) {
+        if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
           for (const [name, filterConfig] of Object.entries(route.typed_per_filter_config ?? {})) {
             if (!validateOverrideFilter(filterConfig)) {
               return false;
@@ -155,7 +157,7 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
           if (weightSum !== route.route.weighted_clusters!.total_weight?.value ?? 100) {
             return false;
           }
-          if (EXPERIMENTAL_FAULT_INJECTION) {
+          if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
             for (const weightedCluster of route.route!.weighted_clusters!.clusters) {
               for (const filterConfig of Object.values(weightedCluster.typed_per_filter_config ?? {})) {
                 if (!validateOverrideFilter(filterConfig)) {
@@ -180,20 +182,21 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
     }
   }
 
-  handleResponses(responses: RouteConfiguration__Output[]): string | null {
+  handleResponses(responses: RouteConfiguration__Output[], isV2: boolean): string | null {
     for (const message of responses) {
-      if (!this.validateResponse(message)) {
+      if (!this.validateResponse(message, isV2)) {
         trace('RDS validation failed for message ' + JSON.stringify(message));
         return 'RDS Error: Route validation failed';
       }
     }
     this.latestResponses = responses;
+    this.latestIsV2 = isV2;
     const allRouteConfigNames = new Set<string>();
     for (const message of responses) {
       allRouteConfigNames.add(message.name);
       const watchers = this.watchers.get(message.name) ?? [];
       for (const watcher of watchers) {
-        watcher.onValidUpdate(message);
+        watcher.onValidUpdate(message, isV2);
       }
     }
     trace('Received RDS response with route config names ' + Array.from(allRouteConfigNames));
