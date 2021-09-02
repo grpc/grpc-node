@@ -4,7 +4,7 @@ This guide is for troubleshooting the `grpc-js` library for Node.js
 
 ## Enabling extra logging and tracing
 
-Extra logging can be very useful for diagnosing problems. `grpc-js` supporst
+Extra logging can be very useful for diagnosing problems. `grpc-js` support
 the `GRPC_VERBOSITY` and `GRPC_TRACE` environment variables that can be used to increase the amount of information
 that gets printed to stderr.
 
