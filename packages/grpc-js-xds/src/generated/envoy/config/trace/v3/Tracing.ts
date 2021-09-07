@@ -23,7 +23,7 @@ export interface _envoy_config_trace_v3_Tracing_Http {
    * - *envoy.tracers.xray*
    */
   'name'?: (string);
-  'typed_config'?: (_google_protobuf_Any);
+  'typed_config'?: (_google_protobuf_Any | null);
   /**
    * Trace driver specific configuration which depends on the driver being instantiated.
    * See the trace drivers for examples:
@@ -59,7 +59,7 @@ export interface _envoy_config_trace_v3_Tracing_Http__Output {
    * - *envoy.tracers.xray*
    */
   'name': (string);
-  'typed_config'?: (_google_protobuf_Any__Output);
+  'typed_config'?: (_google_protobuf_Any__Output | null);
   /**
    * Trace driver specific configuration which depends on the driver being instantiated.
    * See the trace drivers for examples:
@@ -89,7 +89,7 @@ export interface Tracing {
   /**
    * Provides configuration for the HTTP tracer.
    */
-  'http'?: (_envoy_config_trace_v3_Tracing_Http);
+  'http'?: (_envoy_config_trace_v3_Tracing_Http | null);
 }
 
 /**
@@ -107,5 +107,5 @@ export interface Tracing__Output {
   /**
    * Provides configuration for the HTTP tracer.
    */
-  'http'?: (_envoy_config_trace_v3_Tracing_Http__Output);
+  'http': (_envoy_config_trace_v3_Tracing_Http__Output | null);
 }

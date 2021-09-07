@@ -256,6 +256,12 @@ export function getProxiedConnection(
             reject();
           });
         } else {
+          trace(
+            'Successfully established a plaintext connection to ' +
+              options.path +
+              ' through proxy ' +
+              proxyAddressString
+          );
           resolve({
             socket,
             realTarget: parsedTarget,

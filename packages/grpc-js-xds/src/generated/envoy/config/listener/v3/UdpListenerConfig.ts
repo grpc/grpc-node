@@ -9,7 +9,7 @@ export interface UdpListenerConfig {
    * If not specified, treat as "raw_udp_listener".
    */
   'udp_listener_name'?: (string);
-  'typed_config'?: (_google_protobuf_Any);
+  'typed_config'?: (_google_protobuf_Any | null);
   /**
    * Used to create a specific listener factory. To some factory, e.g.
    * "raw_udp_listener", config is not needed.
@@ -24,7 +24,7 @@ export interface UdpListenerConfig__Output {
    * If not specified, treat as "raw_udp_listener".
    */
   'udp_listener_name': (string);
-  'typed_config'?: (_google_protobuf_Any__Output);
+  'typed_config'?: (_google_protobuf_Any__Output | null);
   /**
    * Used to create a specific listener factory. To some factory, e.g.
    * "raw_udp_listener", config is not needed.

@@ -16,14 +16,14 @@ export interface Filter {
    * Filter specific configuration which depends on the filter being
    * instantiated. See the supported filters for further documentation.
    */
-  'typed_config'?: (_google_protobuf_Any);
+  'typed_config'?: (_google_protobuf_Any | null);
   /**
    * Configuration source specifier for an extension configuration discovery
    * service. In case of a failure and without the default configuration, the
    * listener closes the connections.
    * [#not-implemented-hide:]
    */
-  'config_discovery'?: (_envoy_config_core_v3_ExtensionConfigSource);
+  'config_discovery'?: (_envoy_config_core_v3_ExtensionConfigSource | null);
   'config_type'?: "typed_config"|"config_discovery";
 }
 
@@ -40,13 +40,13 @@ export interface Filter__Output {
    * Filter specific configuration which depends on the filter being
    * instantiated. See the supported filters for further documentation.
    */
-  'typed_config'?: (_google_protobuf_Any__Output);
+  'typed_config'?: (_google_protobuf_Any__Output | null);
   /**
    * Configuration source specifier for an extension configuration discovery
    * service. In case of a failure and without the default configuration, the
    * listener closes the connections.
    * [#not-implemented-hide:]
    */
-  'config_discovery'?: (_envoy_config_core_v3_ExtensionConfigSource__Output);
+  'config_discovery'?: (_envoy_config_core_v3_ExtensionConfigSource__Output | null);
   'config_type': "typed_config"|"config_discovery";
 }

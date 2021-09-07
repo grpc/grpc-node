@@ -9,7 +9,7 @@ export interface ListMatcher {
   /**
    * If specified, at least one of the values in the list must match the value specified.
    */
-  'one_of'?: (_envoy_type_matcher_v3_ValueMatcher);
+  'one_of'?: (_envoy_type_matcher_v3_ValueMatcher | null);
   'match_pattern'?: "one_of";
 }
 
@@ -20,6 +20,6 @@ export interface ListMatcher__Output {
   /**
    * If specified, at least one of the values in the list must match the value specified.
    */
-  'one_of'?: (_envoy_type_matcher_v3_ValueMatcher__Output);
+  'one_of'?: (_envoy_type_matcher_v3_ValueMatcher__Output | null);
   'match_pattern': "one_of";
 }

@@ -17,7 +17,7 @@ export interface InternalRedirectPolicy {
    * 
    * If not specified, at most one redirect will be followed.
    */
-  'max_internal_redirects'?: (_google_protobuf_UInt32Value);
+  'max_internal_redirects'?: (_google_protobuf_UInt32Value | null);
   /**
    * Defines what upstream response codes are allowed to trigger internal redirect. If unspecified,
    * only 302 will be treated as internal redirect.
@@ -51,7 +51,7 @@ export interface InternalRedirectPolicy__Output {
    * 
    * If not specified, at most one redirect will be followed.
    */
-  'max_internal_redirects'?: (_google_protobuf_UInt32Value__Output);
+  'max_internal_redirects': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Defines what upstream response codes are allowed to trigger internal redirect. If unspecified,
    * only 302 will be treated as internal redirect.

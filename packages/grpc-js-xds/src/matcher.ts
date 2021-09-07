@@ -16,6 +16,7 @@
 
 import { Metadata } from "@grpc/grpc-js";
 import { RE2 } from "re2-wasm";
+import { Fraction, fractionToString } from "./fraction";
 
 /**
  * An object representing a predicate that determines whether a given
@@ -208,15 +209,6 @@ export class PathSafeRegexValueMatcher {
   toString() {
     return 'SafeRegex(' + this.targetRegexImpl.toString() + ')';
   }
-}
-
-export interface Fraction {
-  numerator: number;
-  denominator: number;
-}
-
-function fractionToString(fraction: Fraction): string {
-  return `${fraction.numerator}/${fraction.denominator}`;
 }
 
 export class FullMatcher implements Matcher {

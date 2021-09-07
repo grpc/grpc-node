@@ -8,7 +8,7 @@ export interface BindConfig {
   /**
    * The address to bind to when creating a socket.
    */
-  'source_address'?: (_envoy_config_core_v3_SocketAddress);
+  'source_address'?: (_envoy_config_core_v3_SocketAddress | null);
   /**
    * Whether to set the *IP_FREEBIND* option when creating the socket. When this
    * flag is set to true, allows the :ref:`source_address
@@ -18,7 +18,7 @@ export interface BindConfig {
    * flag is not set (default), the socket is not modified, i.e. the option is
    * neither enabled nor disabled.
    */
-  'freebind'?: (_google_protobuf_BoolValue);
+  'freebind'?: (_google_protobuf_BoolValue | null);
   /**
    * Additional socket options that may not be present in Envoy source code or
    * precompiled binaries.
@@ -30,7 +30,7 @@ export interface BindConfig__Output {
   /**
    * The address to bind to when creating a socket.
    */
-  'source_address'?: (_envoy_config_core_v3_SocketAddress__Output);
+  'source_address': (_envoy_config_core_v3_SocketAddress__Output | null);
   /**
    * Whether to set the *IP_FREEBIND* option when creating the socket. When this
    * flag is set to true, allows the :ref:`source_address
@@ -40,7 +40,7 @@ export interface BindConfig__Output {
    * flag is not set (default), the socket is not modified, i.e. the option is
    * neither enabled nor disabled.
    */
-  'freebind'?: (_google_protobuf_BoolValue__Output);
+  'freebind': (_google_protobuf_BoolValue__Output | null);
   /**
    * Additional socket options that may not be present in Envoy source code or
    * precompiled binaries.

@@ -42,7 +42,7 @@ export interface DeltaDiscoveryRequest {
   /**
    * The node making the request.
    */
-  'node'?: (_envoy_config_core_v3_Node);
+  'node'?: (_envoy_config_core_v3_Node | null);
   /**
    * Type of the resource that is being requested, e.g.
    * "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment". This does not need to be set if
@@ -101,7 +101,7 @@ export interface DeltaDiscoveryRequest {
    * failed to update configuration. The *message* field in *error_details*
    * provides the Envoy internal exception related to the failure.
    */
-  'error_detail'?: (_google_rpc_Status);
+  'error_detail'?: (_google_rpc_Status | null);
 }
 
 /**
@@ -143,7 +143,7 @@ export interface DeltaDiscoveryRequest__Output {
   /**
    * The node making the request.
    */
-  'node'?: (_envoy_config_core_v3_Node__Output);
+  'node': (_envoy_config_core_v3_Node__Output | null);
   /**
    * Type of the resource that is being requested, e.g.
    * "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment". This does not need to be set if
@@ -202,5 +202,5 @@ export interface DeltaDiscoveryRequest__Output {
    * failed to update configuration. The *message* field in *error_details*
    * provides the Envoy internal exception related to the failure.
    */
-  'error_detail'?: (_google_rpc_Status__Output);
+  'error_detail': (_google_rpc_Status__Output | null);
 }

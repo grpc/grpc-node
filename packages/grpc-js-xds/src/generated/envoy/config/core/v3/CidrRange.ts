@@ -14,7 +14,7 @@ export interface CidrRange {
   /**
    * Length of prefix, e.g. 0, 32.
    */
-  'prefix_len'?: (_google_protobuf_UInt32Value);
+  'prefix_len'?: (_google_protobuf_UInt32Value | null);
 }
 
 /**
@@ -29,5 +29,5 @@ export interface CidrRange__Output {
   /**
    * Length of prefix, e.g. 0, 32.
    */
-  'prefix_len'?: (_google_protobuf_UInt32Value__Output);
+  'prefix_len': (_google_protobuf_UInt32Value__Output | null);
 }

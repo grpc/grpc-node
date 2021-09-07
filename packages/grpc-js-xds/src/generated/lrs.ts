@@ -1,8 +1,8 @@
 import type * as grpc from '@grpc/grpc-js';
-import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
+import type { EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
 
-import type { LoadReportingServiceClient as _envoy_service_load_stats_v2_LoadReportingServiceClient } from './envoy/service/load_stats/v2/LoadReportingService';
-import type { LoadReportingServiceClient as _envoy_service_load_stats_v3_LoadReportingServiceClient } from './envoy/service/load_stats/v3/LoadReportingService';
+import type { LoadReportingServiceClient as _envoy_service_load_stats_v2_LoadReportingServiceClient, LoadReportingServiceDefinition as _envoy_service_load_stats_v2_LoadReportingServiceDefinition } from './envoy/service/load_stats/v2/LoadReportingService';
+import type { LoadReportingServiceClient as _envoy_service_load_stats_v3_LoadReportingServiceClient, LoadReportingServiceDefinition as _envoy_service_load_stats_v3_LoadReportingServiceDefinition } from './envoy/service/load_stats/v3/LoadReportingService';
 
 type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {
   new(...args: ConstructorParameters<Constructor>): Subtype;
@@ -102,12 +102,12 @@ export interface ProtoGrpcType {
     service: {
       load_stats: {
         v2: {
-          LoadReportingService: SubtypeConstructor<typeof grpc.Client, _envoy_service_load_stats_v2_LoadReportingServiceClient> & { service: ServiceDefinition }
+          LoadReportingService: SubtypeConstructor<typeof grpc.Client, _envoy_service_load_stats_v2_LoadReportingServiceClient> & { service: _envoy_service_load_stats_v2_LoadReportingServiceDefinition }
           LoadStatsRequest: MessageTypeDefinition
           LoadStatsResponse: MessageTypeDefinition
         }
         v3: {
-          LoadReportingService: SubtypeConstructor<typeof grpc.Client, _envoy_service_load_stats_v3_LoadReportingServiceClient> & { service: ServiceDefinition }
+          LoadReportingService: SubtypeConstructor<typeof grpc.Client, _envoy_service_load_stats_v3_LoadReportingServiceClient> & { service: _envoy_service_load_stats_v3_LoadReportingServiceDefinition }
           LoadStatsRequest: MessageTypeDefinition
           LoadStatsResponse: MessageTypeDefinition
         }

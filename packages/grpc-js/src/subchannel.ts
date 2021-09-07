@@ -266,6 +266,11 @@ export class Subchannel {
   }
 
   private createSession(proxyConnectionResult: ProxyConnectionResult) {
+    if (proxyConnectionResult.realTarget) {
+      trace(this.subchannelAddressString + ' creating HTTP/2 session through proxy to ' + proxyConnectionResult.realTarget);
+    } else {
+      trace(this.subchannelAddressString + ' creating HTTP/2 session');
+    }
     const targetAuthority = getDefaultAuthority(
       proxyConnectionResult.realTarget ?? this.channelTarget
     );
@@ -368,6 +373,7 @@ export class Subchannel {
     });
     session.once('close', () => {
       if (this.session === session) {
+        trace(this.subchannelAddressString + ' connection closed');
         this.transitionToState(
           [ConnectivityState.CONNECTING],
           ConnectivityState.TRANSIENT_FAILURE
@@ -655,7 +661,7 @@ export class Subchannel {
   startCallStream(
     metadata: Metadata,
     callStream: Http2CallStream,
-    extraFilterFactories: FilterFactory<Filter>[],
+    extraFilters: Filter[],
     options: ChannelOptions
   ) {
     const headers = metadata.toHttp2Headers();
@@ -695,7 +701,7 @@ export class Subchannel {
         ' with headers\n' +
         headersString
     );
-    callStream.attachHttp2Stream(http2Stream, this, extraFilterFactories);
+    callStream.attachHttp2Stream(http2Stream, this, extraFilters);
   }
 
   /**

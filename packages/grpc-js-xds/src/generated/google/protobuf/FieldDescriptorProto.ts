@@ -41,7 +41,7 @@ export interface FieldDescriptorProto {
   'type'?: (_google_protobuf_FieldDescriptorProto_Type | keyof typeof _google_protobuf_FieldDescriptorProto_Type);
   'typeName'?: (string);
   'defaultValue'?: (string);
-  'options'?: (_google_protobuf_FieldOptions);
+  'options'?: (_google_protobuf_FieldOptions | null);
   'oneofIndex'?: (number);
   'jsonName'?: (string);
 }
@@ -54,7 +54,7 @@ export interface FieldDescriptorProto__Output {
   'type': (keyof typeof _google_protobuf_FieldDescriptorProto_Type);
   'typeName': (string);
   'defaultValue': (string);
-  'options'?: (_google_protobuf_FieldOptions__Output);
+  'options': (_google_protobuf_FieldOptions__Output | null);
   'oneofIndex': (number);
   'jsonName': (string);
 }

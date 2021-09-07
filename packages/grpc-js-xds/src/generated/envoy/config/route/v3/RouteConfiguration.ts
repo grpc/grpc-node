@@ -66,7 +66,7 @@ export interface RouteConfiguration {
    * option. Users may wish to override the default behavior in certain cases (for example when
    * using CDS with a static route table).
    */
-  'validate_clusters'?: (_google_protobuf_BoolValue);
+  'validate_clusters'?: (_google_protobuf_BoolValue | null);
   /**
    * Specifies a list of HTTP headers that should be removed from each request
    * routed by the HTTP connection manager.
@@ -80,7 +80,7 @@ export interface RouteConfiguration {
    * generate a routing table for a given RouteConfiguration, with *vhds* derived configuration
    * taking precedence.
    */
-  'vhds'?: (_envoy_config_route_v3_Vhds);
+  'vhds'?: (_envoy_config_route_v3_Vhds | null);
   /**
    * By default, headers that should be added/removed are evaluated from most to least specific:
    * 
@@ -106,7 +106,7 @@ export interface RouteConfiguration {
    * this to be larger than the default 4KB, since the allocated memory for direct response body
    * is not subject to data plane buffering controls.
    */
-  'max_direct_response_body_size_bytes'?: (_google_protobuf_UInt32Value);
+  'max_direct_response_body_size_bytes'?: (_google_protobuf_UInt32Value | null);
 }
 
 /**
@@ -169,7 +169,7 @@ export interface RouteConfiguration__Output {
    * option. Users may wish to override the default behavior in certain cases (for example when
    * using CDS with a static route table).
    */
-  'validate_clusters'?: (_google_protobuf_BoolValue__Output);
+  'validate_clusters': (_google_protobuf_BoolValue__Output | null);
   /**
    * Specifies a list of HTTP headers that should be removed from each request
    * routed by the HTTP connection manager.
@@ -183,7 +183,7 @@ export interface RouteConfiguration__Output {
    * generate a routing table for a given RouteConfiguration, with *vhds* derived configuration
    * taking precedence.
    */
-  'vhds'?: (_envoy_config_route_v3_Vhds__Output);
+  'vhds': (_envoy_config_route_v3_Vhds__Output | null);
   /**
    * By default, headers that should be added/removed are evaluated from most to least specific:
    * 
@@ -209,5 +209,5 @@ export interface RouteConfiguration__Output {
    * this to be larger than the default 4KB, since the allocated memory for direct response body
    * is not subject to data plane buffering controls.
    */
-  'max_direct_response_body_size_bytes'?: (_google_protobuf_UInt32Value__Output);
+  'max_direct_response_body_size_bytes': (_google_protobuf_UInt32Value__Output | null);
 }

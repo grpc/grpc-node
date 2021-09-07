@@ -6,12 +6,12 @@ export interface Vhds {
   /**
    * Configuration source specifier for VHDS.
    */
-  'config_source'?: (_envoy_config_core_v3_ConfigSource);
+  'config_source'?: (_envoy_config_core_v3_ConfigSource | null);
 }
 
 export interface Vhds__Output {
   /**
    * Configuration source specifier for VHDS.
    */
-  'config_source'?: (_envoy_config_core_v3_ConfigSource__Output);
+  'config_source': (_envoy_config_core_v3_ConfigSource__Output | null);
 }

@@ -22,7 +22,7 @@ export interface DiscoveryRequest {
   /**
    * The node making the request.
    */
-  'node'?: (_envoy_api_v2_core_Node);
+  'node'?: (_envoy_api_v2_core_Node | null);
   /**
    * List of resources to subscribe to, e.g. list of cluster names or a route
    * configuration name. If this is empty, all resources for the API are
@@ -53,7 +53,7 @@ export interface DiscoveryRequest {
    * internal exception related to the failure. It is only intended for consumption during manual
    * debugging, the string provided is not guaranteed to be stable across Envoy versions.
    */
-  'error_detail'?: (_google_rpc_Status);
+  'error_detail'?: (_google_rpc_Status | null);
 }
 
 /**
@@ -75,7 +75,7 @@ export interface DiscoveryRequest__Output {
   /**
    * The node making the request.
    */
-  'node'?: (_envoy_api_v2_core_Node__Output);
+  'node': (_envoy_api_v2_core_Node__Output | null);
   /**
    * List of resources to subscribe to, e.g. list of cluster names or a route
    * configuration name. If this is empty, all resources for the API are
@@ -106,5 +106,5 @@ export interface DiscoveryRequest__Output {
    * internal exception related to the failure. It is only intended for consumption during manual
    * debugging, the string provided is not guaranteed to be stable across Envoy versions.
    */
-  'error_detail'?: (_google_rpc_Status__Output);
+  'error_detail': (_google_rpc_Status__Output | null);
 }

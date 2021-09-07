@@ -13,14 +13,14 @@ export interface HedgePolicy {
    * Defaults to 1.
    * [#not-implemented-hide:]
    */
-  'initial_requests'?: (_google_protobuf_UInt32Value);
+  'initial_requests'?: (_google_protobuf_UInt32Value | null);
   /**
    * Specifies a probability that an additional upstream request should be sent
    * on top of what is specified by initial_requests.
    * Defaults to 0.
    * [#not-implemented-hide:]
    */
-  'additional_request_chance'?: (_envoy_type_v3_FractionalPercent);
+  'additional_request_chance'?: (_envoy_type_v3_FractionalPercent | null);
   /**
    * Indicates that a hedged request should be sent when the per-try timeout is hit.
    * This means that a retry will be issued without resetting the original request, leaving multiple upstream requests in flight.
@@ -49,14 +49,14 @@ export interface HedgePolicy__Output {
    * Defaults to 1.
    * [#not-implemented-hide:]
    */
-  'initial_requests'?: (_google_protobuf_UInt32Value__Output);
+  'initial_requests': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Specifies a probability that an additional upstream request should be sent
    * on top of what is specified by initial_requests.
    * Defaults to 0.
    * [#not-implemented-hide:]
    */
-  'additional_request_chance'?: (_envoy_type_v3_FractionalPercent__Output);
+  'additional_request_chance': (_envoy_type_v3_FractionalPercent__Output | null);
   /**
    * Indicates that a hedged request should be sent when the per-try timeout is hit.
    * This means that a retry will be issued without resetting the original request, leaving multiple upstream requests in flight.

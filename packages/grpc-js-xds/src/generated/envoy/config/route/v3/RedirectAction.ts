@@ -112,7 +112,7 @@ export interface RedirectAction {
    * would do a case-insensitive match and transform path ``/aaa/XxX/bbb`` to
    * ``/aaa/yyy/bbb``.
    */
-  'regex_rewrite'?: (_envoy_type_matcher_v3_RegexMatchAndSubstitute);
+  'regex_rewrite'?: (_envoy_type_matcher_v3_RegexMatchAndSubstitute | null);
   /**
    * When the scheme redirection take place, the following rules apply:
    * 1. If the source URI scheme is `http` and the port is explicitly
@@ -209,7 +209,7 @@ export interface RedirectAction__Output {
    * would do a case-insensitive match and transform path ``/aaa/XxX/bbb`` to
    * ``/aaa/yyy/bbb``.
    */
-  'regex_rewrite'?: (_envoy_type_matcher_v3_RegexMatchAndSubstitute__Output);
+  'regex_rewrite'?: (_envoy_type_matcher_v3_RegexMatchAndSubstitute__Output | null);
   /**
    * When the scheme redirection take place, the following rules apply:
    * 1. If the source URI scheme is `http` and the port is explicitly

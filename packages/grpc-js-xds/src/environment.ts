@@ -14,3 +14,5 @@
  * limitations under the License.
  *
  */
+
+export const EXPERIMENTAL_FAULT_INJECTION = (process.env.GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION ?? 'true') === 'true';

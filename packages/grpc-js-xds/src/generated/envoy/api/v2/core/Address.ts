@@ -9,8 +9,8 @@ import type { Pipe as _envoy_api_v2_core_Pipe, Pipe__Output as _envoy_api_v2_cor
  * management servers.
  */
 export interface Address {
-  'socket_address'?: (_envoy_api_v2_core_SocketAddress);
-  'pipe'?: (_envoy_api_v2_core_Pipe);
+  'socket_address'?: (_envoy_api_v2_core_SocketAddress | null);
+  'pipe'?: (_envoy_api_v2_core_Pipe | null);
   'address'?: "socket_address"|"pipe";
 }
 
@@ -20,7 +20,7 @@ export interface Address {
  * management servers.
  */
 export interface Address__Output {
-  'socket_address'?: (_envoy_api_v2_core_SocketAddress__Output);
-  'pipe'?: (_envoy_api_v2_core_Pipe__Output);
+  'socket_address'?: (_envoy_api_v2_core_SocketAddress__Output | null);
+  'pipe'?: (_envoy_api_v2_core_Pipe__Output | null);
   'address': "socket_address"|"pipe";
 }

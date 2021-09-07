@@ -22,7 +22,7 @@ export interface _xds_core_v3_CollectionEntry_InlineEntry {
   /**
    * The resource payload, including type URL.
    */
-  'resource'?: (_google_protobuf_Any);
+  'resource'?: (_google_protobuf_Any | null);
 }
 
 /**
@@ -44,7 +44,7 @@ export interface _xds_core_v3_CollectionEntry_InlineEntry__Output {
   /**
    * The resource payload, including type URL.
    */
-  'resource'?: (_google_protobuf_Any__Output);
+  'resource': (_google_protobuf_Any__Output | null);
 }
 
 /**
@@ -60,11 +60,11 @@ export interface CollectionEntry {
   /**
    * A resource locator describing how the member resource is to be located.
    */
-  'locator'?: (_xds_core_v3_ResourceLocator);
+  'locator'?: (_xds_core_v3_ResourceLocator | null);
   /**
    * The resource is inlined in the list collection.
    */
-  'inline_entry'?: (_xds_core_v3_CollectionEntry_InlineEntry);
+  'inline_entry'?: (_xds_core_v3_CollectionEntry_InlineEntry | null);
   'resource_specifier'?: "locator"|"inline_entry";
 }
 
@@ -81,10 +81,10 @@ export interface CollectionEntry__Output {
   /**
    * A resource locator describing how the member resource is to be located.
    */
-  'locator'?: (_xds_core_v3_ResourceLocator__Output);
+  'locator'?: (_xds_core_v3_ResourceLocator__Output | null);
   /**
    * The resource is inlined in the list collection.
    */
-  'inline_entry'?: (_xds_core_v3_CollectionEntry_InlineEntry__Output);
+  'inline_entry'?: (_xds_core_v3_CollectionEntry_InlineEntry__Output | null);
   'resource_specifier': "locator"|"inline_entry";
 }

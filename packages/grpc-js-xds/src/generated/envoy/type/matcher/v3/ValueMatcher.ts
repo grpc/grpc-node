@@ -25,17 +25,17 @@ export interface ValueMatcher {
   /**
    * If specified, a match occurs if and only if the target value is a NullValue.
    */
-  'null_match'?: (_envoy_type_matcher_v3_ValueMatcher_NullMatch);
+  'null_match'?: (_envoy_type_matcher_v3_ValueMatcher_NullMatch | null);
   /**
    * If specified, a match occurs if and only if the target value is a double value and is
    * matched to this field.
    */
-  'double_match'?: (_envoy_type_matcher_v3_DoubleMatcher);
+  'double_match'?: (_envoy_type_matcher_v3_DoubleMatcher | null);
   /**
    * If specified, a match occurs if and only if the target value is a string value and is
    * matched to this field.
    */
-  'string_match'?: (_envoy_type_matcher_v3_StringMatcher);
+  'string_match'?: (_envoy_type_matcher_v3_StringMatcher | null);
   /**
    * If specified, a match occurs if and only if the target value is a bool value and is equal
    * to this field.
@@ -51,7 +51,7 @@ export interface ValueMatcher {
    * If specified, a match occurs if and only if the target value is a list value and
    * is matched to this field.
    */
-  'list_match'?: (_envoy_type_matcher_v3_ListMatcher);
+  'list_match'?: (_envoy_type_matcher_v3_ListMatcher | null);
   /**
    * Specifies how to match a value.
    */
@@ -67,17 +67,17 @@ export interface ValueMatcher__Output {
   /**
    * If specified, a match occurs if and only if the target value is a NullValue.
    */
-  'null_match'?: (_envoy_type_matcher_v3_ValueMatcher_NullMatch__Output);
+  'null_match'?: (_envoy_type_matcher_v3_ValueMatcher_NullMatch__Output | null);
   /**
    * If specified, a match occurs if and only if the target value is a double value and is
    * matched to this field.
    */
-  'double_match'?: (_envoy_type_matcher_v3_DoubleMatcher__Output);
+  'double_match'?: (_envoy_type_matcher_v3_DoubleMatcher__Output | null);
   /**
    * If specified, a match occurs if and only if the target value is a string value and is
    * matched to this field.
    */
-  'string_match'?: (_envoy_type_matcher_v3_StringMatcher__Output);
+  'string_match'?: (_envoy_type_matcher_v3_StringMatcher__Output | null);
   /**
    * If specified, a match occurs if and only if the target value is a bool value and is equal
    * to this field.
@@ -93,7 +93,7 @@ export interface ValueMatcher__Output {
    * If specified, a match occurs if and only if the target value is a list value and
    * is matched to this field.
    */
-  'list_match'?: (_envoy_type_matcher_v3_ListMatcher__Output);
+  'list_match'?: (_envoy_type_matcher_v3_ListMatcher__Output | null);
   /**
    * Specifies how to match a value.
    */

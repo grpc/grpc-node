@@ -7,34 +7,34 @@ export interface KeepaliveSettings {
   /**
    * Send HTTP/2 PING frames at this period, in order to test that the connection is still alive.
    */
-  'interval'?: (_google_protobuf_Duration);
+  'interval'?: (_google_protobuf_Duration | null);
   /**
    * How long to wait for a response to a keepalive PING. If a response is not received within this
    * time period, the connection will be aborted.
    */
-  'timeout'?: (_google_protobuf_Duration);
+  'timeout'?: (_google_protobuf_Duration | null);
   /**
    * A random jitter amount as a percentage of interval that will be added to each interval.
    * A value of zero means there will be no jitter.
    * The default value is 15%.
    */
-  'interval_jitter'?: (_envoy_type_v3_Percent);
+  'interval_jitter'?: (_envoy_type_v3_Percent | null);
 }
 
 export interface KeepaliveSettings__Output {
   /**
    * Send HTTP/2 PING frames at this period, in order to test that the connection is still alive.
    */
-  'interval'?: (_google_protobuf_Duration__Output);
+  'interval': (_google_protobuf_Duration__Output | null);
   /**
    * How long to wait for a response to a keepalive PING. If a response is not received within this
    * time period, the connection will be aborted.
    */
-  'timeout'?: (_google_protobuf_Duration__Output);
+  'timeout': (_google_protobuf_Duration__Output | null);
   /**
    * A random jitter amount as a percentage of interval that will be added to each interval.
    * A value of zero means there will be no jitter.
    * The default value is 15%.
    */
-  'interval_jitter'?: (_envoy_type_v3_Percent__Output);
+  'interval_jitter': (_envoy_type_v3_Percent__Output | null);
 }

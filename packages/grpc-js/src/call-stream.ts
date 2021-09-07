@@ -466,11 +466,9 @@ export class Http2CallStream implements Call {
   attachHttp2Stream(
     stream: http2.ClientHttp2Stream,
     subchannel: Subchannel,
-    extraFilters: FilterFactory<Filter>[]
+    extraFilters: Filter[]
   ): void {
-    this.filterStack.push(
-      extraFilters.map((filterFactory) => filterFactory.createFilter(this))
-    );
+    this.filterStack.push(extraFilters);
     if (this.finalStatus !== null) {
       stream.close(NGHTTP2_CANCEL);
     } else {
@@ -603,7 +601,7 @@ export class Http2CallStream implements Call {
                  * "Internal server error" message. */
                 details = `Received RST_STREAM with code ${stream.rstCode} (Internal server error)`;
               } else {
-                if (this.internalError.code === 'ECONNRESET') {
+                if (this.internalError.code === 'ECONNRESET' || this.internalError.code === 'ETIMEDOUT') {
                   code = Status.UNAVAILABLE;
                   details = this.internalError.message;
                 } else {
@@ -660,7 +658,15 @@ export class Http2CallStream implements Call {
             this.pendingWrite.length +
             ' (deferred)'
         );
-        stream.write(this.pendingWrite, this.pendingWriteCallback);
+        try {
+          stream.write(this.pendingWrite, this.pendingWriteCallback);
+        } catch (error) {
+          this.endCall({
+            code: Status.UNAVAILABLE,
+            details: `Write failed with error ${error.message}`,
+            metadata: new Metadata()
+          });
+        }
       }
       this.maybeCloseWrites();
     }
@@ -736,6 +742,10 @@ export class Http2CallStream implements Call {
     this.configDeadline = configDeadline;
   }
 
+  addFilters(extraFilters: Filter[]) {
+    this.filterStack.push(extraFilters);
+  }
+
   startRead() {
     /* If the stream has ended with an error, we should not emit any more
      * messages and we should communicate that the stream has ended */
@@ -788,7 +798,15 @@ export class Http2CallStream implements Call {
         this.pendingWriteCallback = cb;
       } else {
         this.trace('sending data chunk of length ' + message.message.length);
-        this.http2Stream.write(message.message, cb);
+        try {
+          this.http2Stream.write(message.message, cb);
+        }  catch (error) {
+          this.endCall({
+            code: Status.UNAVAILABLE,
+            details: `Write failed with error ${error.message}`,
+            metadata: new Metadata()
+          });
+        }
         this.maybeCloseWrites();
       }
     }, this.handleFilterError.bind(this));

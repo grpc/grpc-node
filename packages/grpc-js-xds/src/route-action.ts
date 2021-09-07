@@ -16,10 +16,17 @@
 
 import { experimental } from '@grpc/grpc-js';
 import Duration = experimental.Duration;
+import Filter = experimental.Filter;
+import FilterFactory = experimental.FilterFactory;
+
+export interface ClusterResult {
+  name: string;
+  dynamicFilterFactories: FilterFactory<Filter>[];
+}
 
 export interface RouteAction {
   toString(): string;
-  getCluster(): string;
+  getCluster(): ClusterResult;
   getTimeout(): Duration | undefined;
 }
 
@@ -33,10 +40,13 @@ function durationToLogString(duration: Duration) {
 }
 
 export class SingleClusterRouteAction implements RouteAction {
-  constructor(private cluster: string, private timeout: Duration | undefined) {}
+  constructor(private cluster: string, private timeout: Duration | undefined, private extraFilterFactories: FilterFactory<Filter>[]) {}
 
   getCluster() {
-    return this.cluster;
+    return {
+      name: this.cluster,
+      dynamicFilterFactories: this.extraFilterFactories
+    };
   }
 
   toString() {
@@ -55,11 +65,13 @@ export class SingleClusterRouteAction implements RouteAction {
 export interface WeightedCluster {
   name: string;
   weight: number;
+  dynamicFilterFactories: FilterFactory<Filter>[];
 }
 
 interface ClusterChoice {
   name: string;
   numerator: number;
+  dynamicFilterFactories: FilterFactory<Filter>[];
 }
 
 export class WeightedClusterRouteAction implements RouteAction {
@@ -72,7 +84,7 @@ export class WeightedClusterRouteAction implements RouteAction {
     let lastNumerator = 0;
     for (const clusterWeight of clusters) {
       lastNumerator += clusterWeight.weight;
-      this.clusterChoices.push({name: clusterWeight.name, numerator: lastNumerator});
+      this.clusterChoices.push({name: clusterWeight.name, numerator: lastNumerator, dynamicFilterFactories: clusterWeight.dynamicFilterFactories});
     }
   }
 
@@ -80,11 +92,14 @@ export class WeightedClusterRouteAction implements RouteAction {
     const randomNumber = Math.random() * this.totalWeight;
     for (const choice of this.clusterChoices) {
       if (randomNumber < choice.numerator) {
-        return choice.name;
+        return {
+          name: choice.name,
+          dynamicFilterFactories: choice.dynamicFilterFactories
+        };
       }
     }
     // This should be prevented by the validation rules
-    return '';
+    return {name: '', dynamicFilterFactories: []};
   }
 
   toString() {

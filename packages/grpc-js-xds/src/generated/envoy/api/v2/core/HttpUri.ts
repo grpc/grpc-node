@@ -30,7 +30,7 @@ export interface HttpUri {
   /**
    * Sets the maximum duration in milliseconds that a response can take to arrive upon request.
    */
-  'timeout'?: (_google_protobuf_Duration);
+  'timeout'?: (_google_protobuf_Duration | null);
   /**
    * Specify how `uri` is to be fetched. Today, this requires an explicit
    * cluster, but in the future we may support dynamic cluster creation or
@@ -68,7 +68,7 @@ export interface HttpUri__Output {
   /**
    * Sets the maximum duration in milliseconds that a response can take to arrive upon request.
    */
-  'timeout'?: (_google_protobuf_Duration__Output);
+  'timeout': (_google_protobuf_Duration__Output | null);
   /**
    * Specify how `uri` is to be fetched. Today, this requires an explicit
    * cluster, but in the future we may support dynamic cluster creation or

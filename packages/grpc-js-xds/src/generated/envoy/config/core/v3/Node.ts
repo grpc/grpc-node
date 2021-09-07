@@ -41,11 +41,11 @@ export interface Node {
    * Opaque metadata extending the node identifier. Envoy will pass this
    * directly to the management server.
    */
-  'metadata'?: (_google_protobuf_Struct);
+  'metadata'?: (_google_protobuf_Struct | null);
   /**
    * Locality specifying where the Envoy instance is running.
    */
-  'locality'?: (_envoy_config_core_v3_Locality);
+  'locality'?: (_envoy_config_core_v3_Locality | null);
   /**
    * Free-form string that identifies the entity requesting config.
    * E.g. "envoy" or "grpc"
@@ -59,7 +59,7 @@ export interface Node {
   /**
    * Structured version of the entity requesting config.
    */
-  'user_agent_build_version'?: (_envoy_config_core_v3_BuildVersion);
+  'user_agent_build_version'?: (_envoy_config_core_v3_BuildVersion | null);
   /**
    * List of extensions and their versions supported by the node.
    */
@@ -117,11 +117,11 @@ export interface Node__Output {
    * Opaque metadata extending the node identifier. Envoy will pass this
    * directly to the management server.
    */
-  'metadata'?: (_google_protobuf_Struct__Output);
+  'metadata': (_google_protobuf_Struct__Output | null);
   /**
    * Locality specifying where the Envoy instance is running.
    */
-  'locality'?: (_envoy_config_core_v3_Locality__Output);
+  'locality': (_envoy_config_core_v3_Locality__Output | null);
   /**
    * Free-form string that identifies the entity requesting config.
    * E.g. "envoy" or "grpc"
@@ -135,7 +135,7 @@ export interface Node__Output {
   /**
    * Structured version of the entity requesting config.
    */
-  'user_agent_build_version'?: (_envoy_config_core_v3_BuildVersion__Output);
+  'user_agent_build_version'?: (_envoy_config_core_v3_BuildVersion__Output | null);
   /**
    * List of extensions and their versions supported by the node.
    */

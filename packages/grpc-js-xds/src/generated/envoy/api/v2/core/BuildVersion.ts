@@ -11,12 +11,12 @@ export interface BuildVersion {
   /**
    * SemVer version of extension.
    */
-  'version'?: (_envoy_type_SemanticVersion);
+  'version'?: (_envoy_type_SemanticVersion | null);
   /**
    * Free-form build information.
    * Envoy defines several well known keys in the source/common/version/version.h file
    */
-  'metadata'?: (_google_protobuf_Struct);
+  'metadata'?: (_google_protobuf_Struct | null);
 }
 
 /**
@@ -27,10 +27,10 @@ export interface BuildVersion__Output {
   /**
    * SemVer version of extension.
    */
-  'version'?: (_envoy_type_SemanticVersion__Output);
+  'version': (_envoy_type_SemanticVersion__Output | null);
   /**
    * Free-form build information.
    * Envoy defines several well known keys in the source/common/version/version.h file
    */
-  'metadata'?: (_google_protobuf_Struct__Output);
+  'metadata': (_google_protobuf_Struct__Output | null);
 }

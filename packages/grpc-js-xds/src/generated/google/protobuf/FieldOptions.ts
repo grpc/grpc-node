@@ -2,7 +2,6 @@
 
 import type { UninterpretedOption as _google_protobuf_UninterpretedOption, UninterpretedOption__Output as _google_protobuf_UninterpretedOption__Output } from '../../google/protobuf/UninterpretedOption';
 import type { FieldRules as _validate_FieldRules, FieldRules__Output as _validate_FieldRules__Output } from '../../validate/FieldRules';
-import type { FieldSecurityAnnotation as _udpa_annotations_FieldSecurityAnnotation, FieldSecurityAnnotation__Output as _udpa_annotations_FieldSecurityAnnotation__Output } from '../../udpa/annotations/FieldSecurityAnnotation';
 import type { FieldMigrateAnnotation as _udpa_annotations_FieldMigrateAnnotation, FieldMigrateAnnotation__Output as _udpa_annotations_FieldMigrateAnnotation__Output } from '../../udpa/annotations/FieldMigrateAnnotation';
 
 // Original file: null
@@ -29,10 +28,9 @@ export interface FieldOptions {
   'jstype'?: (_google_protobuf_FieldOptions_JSType | keyof typeof _google_protobuf_FieldOptions_JSType);
   'weak'?: (boolean);
   'uninterpretedOption'?: (_google_protobuf_UninterpretedOption)[];
-  '.validate.rules'?: (_validate_FieldRules);
-  '.udpa.annotations.security'?: (_udpa_annotations_FieldSecurityAnnotation);
+  '.validate.rules'?: (_validate_FieldRules | null);
   '.udpa.annotations.sensitive'?: (boolean);
-  '.udpa.annotations.field_migrate'?: (_udpa_annotations_FieldMigrateAnnotation);
+  '.udpa.annotations.field_migrate'?: (_udpa_annotations_FieldMigrateAnnotation | null);
   '.envoy.annotations.disallowed_by_default'?: (boolean);
 }
 
@@ -44,9 +42,8 @@ export interface FieldOptions__Output {
   'jstype': (keyof typeof _google_protobuf_FieldOptions_JSType);
   'weak': (boolean);
   'uninterpretedOption': (_google_protobuf_UninterpretedOption__Output)[];
-  '.validate.rules'?: (_validate_FieldRules__Output);
-  '.udpa.annotations.security'?: (_udpa_annotations_FieldSecurityAnnotation__Output);
+  '.validate.rules': (_validate_FieldRules__Output | null);
   '.udpa.annotations.sensitive': (boolean);
-  '.udpa.annotations.field_migrate'?: (_udpa_annotations_FieldMigrateAnnotation__Output);
+  '.udpa.annotations.field_migrate': (_udpa_annotations_FieldMigrateAnnotation__Output | null);
   '.envoy.annotations.disallowed_by_default': (boolean);
 }

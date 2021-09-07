@@ -41,11 +41,11 @@ export interface Node {
    * Opaque metadata extending the node identifier. Envoy will pass this
    * directly to the management server.
    */
-  'metadata'?: (_google_protobuf_Struct);
+  'metadata'?: (_google_protobuf_Struct | null);
   /**
    * Locality specifying where the Envoy instance is running.
    */
-  'locality'?: (_envoy_api_v2_core_Locality);
+  'locality'?: (_envoy_api_v2_core_Locality | null);
   /**
    * This is motivated by informing a management server during canary which
    * version of Envoy is being tested in a heterogeneous fleet. This will be set
@@ -66,7 +66,7 @@ export interface Node {
   /**
    * Structured version of the entity requesting config.
    */
-  'user_agent_build_version'?: (_envoy_api_v2_core_BuildVersion);
+  'user_agent_build_version'?: (_envoy_api_v2_core_BuildVersion | null);
   /**
    * List of extensions and their versions supported by the node.
    */
@@ -124,11 +124,11 @@ export interface Node__Output {
    * Opaque metadata extending the node identifier. Envoy will pass this
    * directly to the management server.
    */
-  'metadata'?: (_google_protobuf_Struct__Output);
+  'metadata': (_google_protobuf_Struct__Output | null);
   /**
    * Locality specifying where the Envoy instance is running.
    */
-  'locality'?: (_envoy_api_v2_core_Locality__Output);
+  'locality': (_envoy_api_v2_core_Locality__Output | null);
   /**
    * This is motivated by informing a management server during canary which
    * version of Envoy is being tested in a heterogeneous fleet. This will be set
@@ -149,7 +149,7 @@ export interface Node__Output {
   /**
    * Structured version of the entity requesting config.
    */
-  'user_agent_build_version'?: (_envoy_api_v2_core_BuildVersion__Output);
+  'user_agent_build_version'?: (_envoy_api_v2_core_BuildVersion__Output | null);
   /**
    * List of extensions and their versions supported by the node.
    */

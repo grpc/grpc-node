@@ -17,13 +17,13 @@ import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__
  * filter chain with a disabled extension filter rejects all incoming streams.
  */
 export interface ExtensionConfigSource {
-  'config_source'?: (_envoy_config_core_v3_ConfigSource);
+  'config_source'?: (_envoy_config_core_v3_ConfigSource | null);
   /**
    * Optional default configuration to use as the initial configuration if
    * there is a failure to receive the initial extension configuration or if
    * `apply_default_config_without_warming` flag is set.
    */
-  'default_config'?: (_google_protobuf_Any);
+  'default_config'?: (_google_protobuf_Any | null);
   /**
    * Use the default config as the initial configuration without warming and
    * waiting for the first discovery response. Requires the default configuration
@@ -51,13 +51,13 @@ export interface ExtensionConfigSource {
  * filter chain with a disabled extension filter rejects all incoming streams.
  */
 export interface ExtensionConfigSource__Output {
-  'config_source'?: (_envoy_config_core_v3_ConfigSource__Output);
+  'config_source': (_envoy_config_core_v3_ConfigSource__Output | null);
   /**
    * Optional default configuration to use as the initial configuration if
    * there is a failure to receive the initial extension configuration or if
    * `apply_default_config_without_warming` flag is set.
    */
-  'default_config'?: (_google_protobuf_Any__Output);
+  'default_config': (_google_protobuf_Any__Output | null);
   /**
    * Use the default config as the initial configuration without warming and
    * waiting for the first discovery response. Requires the default configuration

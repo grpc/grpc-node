@@ -17,7 +17,7 @@ export interface DirectResponseAction {
    * :ref:`envoy_api_msg_config.route.v3.Route`, :ref:`envoy_api_msg_config.route.v3.RouteConfiguration` or
    * :ref:`envoy_api_msg_config.route.v3.VirtualHost`.
    */
-  'body'?: (_envoy_config_core_v3_DataSource);
+  'body'?: (_envoy_config_core_v3_DataSource | null);
 }
 
 export interface DirectResponseAction__Output {
@@ -35,5 +35,5 @@ export interface DirectResponseAction__Output {
    * :ref:`envoy_api_msg_config.route.v3.Route`, :ref:`envoy_api_msg_config.route.v3.RouteConfiguration` or
    * :ref:`envoy_api_msg_config.route.v3.VirtualHost`.
    */
-  'body'?: (_envoy_config_core_v3_DataSource__Output);
+  'body': (_envoy_config_core_v3_DataSource__Output | null);
 }
