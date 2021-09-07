@@ -15,7 +15,6 @@
   "types": "build/src/index.d.ts",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@grpc/proto-loader": "^0.5.5",
     "@types/gulp": "^4.0.6",
     "@types/gulp-mocha": "0.0.32",
     "@types/lodash": "^4.14.108",
@@ -54,9 +53,11 @@
     "check": "gts check src/**/*.ts",
     "fix": "gts fix src/*.ts",
     "pretest": "npm run compile",
-    "posttest": "npm run check && madge -c ./build/src"
+    "posttest": "npm run check && madge -c ./build/src",
+    "generate-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --includeComments --includeDirs proto/ -O src/generated/ --grpcLib ../index channelz.proto"
   },
   "dependencies": {
+    "@grpc/proto-loader": "^0.6.4",
     "@types/node": ">=12.12.47"
   },
   "files": [
