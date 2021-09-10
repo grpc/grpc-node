@@ -280,7 +280,17 @@ export class Server {
         http2Server = http2.createServer(serverOptions);
       }
 
+      // if ('grpc.keepalive_time_ms' in this.options) {
+      //   http2Server.setTimeout(Number(this.options['grpc.keepalive_time_ms']), ()=>{
+          
+      //   });
+      // } else {
+      //   http2Server.setTimeout(0, noop);
+      // }
+
       http2Server.setTimeout(0, noop);
+
+
       this._setupHandlers(http2Server);
       return http2Server;
     };
@@ -638,6 +648,41 @@ export class Server {
       }
 
       this.sessions.add(session);
+
+      // TODO: Maybe also implement support for grpc.keepalive_permit_without_calls?
+
+      if ('grpc.keepalive_time_ms' in this.options) {
+        // This timeout gets cleaned up as a part of session closing.
+        session.setTimeout(Number(this.options['grpc.keepalive_time_ms']), () => {
+          let pingSuccess = false;
+
+          // Default 20s timeout matches grpc implementation documented here:
+          // https://github.com/grpc/grpc/blob/master/doc/keepalive.md
+          const pingTimeoutMs = 'grpc.keepalive_timeout_ms' in this.options ?
+            this.options['grpc.keepalive_timeout_ms'] : 20000;
+          
+          const pingWatchdog = setTimeout(()=>{
+            if (!pingSuccess) {
+              session.close();
+            }
+          }, pingTimeoutMs)
+
+          const wasPingSent = session.ping((err: Error | null, duration: number) => {
+            if (!err) {
+              pingSuccess = true;
+              clearTimeout(pingWatchdog);
+              return;
+            }
+            // TODO: Log the ping error
+
+            // TODO: Maybe cancel pingWatchdog in certain possible error states. 
+            // E.g., from https://github.com/nodejs/node/blob/master/lib/internal/http2/core.js#L1342:
+            //   If ping is called while we are still connecting, or after close() has
+            //   been called, the ping callback will be invoked immediately with a ping
+            //   cancelled error and a duration of 0.0.
+          });
+        })
+      }
 
       session.on('close', () => {
         this.sessions.delete(session);
