@@ -280,17 +280,7 @@ export class Server {
         http2Server = http2.createServer(serverOptions);
       }
 
-      // if ('grpc.keepalive_time_ms' in this.options) {
-      //   http2Server.setTimeout(Number(this.options['grpc.keepalive_time_ms']), ()=>{
-          
-      //   });
-      // } else {
-      //   http2Server.setTimeout(0, noop);
-      // }
-
       http2Server.setTimeout(0, noop);
-
-
       this._setupHandlers(http2Server);
       return http2Server;
     };
