@@ -454,6 +454,38 @@ function generateEnumInterface(formatter: TextFormatter, enumType: Protobuf.Enum
   formatter.writeLine('}');
 }
 
+/**
+ * This is a list of methods that are exist in the generic Client class in the
+ * gRPC libraries. TypeScript has a problem with methods in subclasses with the
+ * same names as methods in the superclass, but with mismatched APIs. So, we
+ * avoid generating methods with these names in the service client interfaces.
+ * We always generate two service client methods per service method: one camel
+ * cased, and one with the original casing. So we will still generate one
+ * service client method for any conflicting name.
+ * 
+ * Technically, at runtime conflicting name in the service client method
+ * actually shadows the original method, but TypeScript does not have a good
+ * way to represent that. So this change is not 100% accurate, but it gets the
+ * generated code to compile.
+ * 
+ * This is just a list of the methods in the Client class definitions in
+ * grpc@1.24.11 and @grpc/grpc-js@1.4.0.
+ */
+const CLIENT_RESERVED_METHOD_NAMES = new Set([
+  'close',
+  'getChannel',
+  'waitForReady',
+  'makeUnaryRequest',
+  'makeClientStreamRequest',
+  'makeServerStreamRequest',
+  'makeBidiStreamRequest',
+  'resolveCallInterceptors',
+  /* These methods are private, but TypeScript is not happy with overriding even
+   * private methods with mismatched APIs. */
+  'checkOptionalUnaryResponseArguments',
+  'checkMetadataAndOptions'
+]);
+
 function generateServiceClientInterface(formatter: TextFormatter, serviceType: Protobuf.Service, options: GeneratorOptions) {
   if (options.includeComments) {
     formatComment(formatter, serviceType.comment);
@@ -463,6 +495,9 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
   for (const methodName of Object.keys(serviceType.methods).sort()) {
     const method = serviceType.methods[methodName];
     for (const name of [methodName, camelCase(methodName)]) {
+      if (CLIENT_RESERVED_METHOD_NAMES.has(name)) {
+        continue;
+      }
       if (options.includeComments) {
         formatComment(formatter, method.comment);
       }
