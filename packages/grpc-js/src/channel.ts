@@ -163,6 +163,7 @@ export class ChannelImplementation implements Channel {
   private configSelector: ConfigSelector | null = null;
 
   // Channelz info
+  private originalTarget: string;
   private channelzRef: ChannelRef;
   private channelzTrace: ChannelzTrace;
   private callTracker = new ChannelzCallTracker();
@@ -196,6 +197,7 @@ export class ChannelImplementation implements Channel {
         );
       }
     }
+    this.originalTarget = target;
     const originalTargetUri = parseUri(target);
     if (originalTargetUri === null) {
       throw new Error(`Could not parse target name "${target}"`);
@@ -320,6 +322,7 @@ export class ChannelImplementation implements Channel {
 
   private getChannelzInfo(): ChannelInfo {
     return {
+      target: this.originalTarget,
       state: this.connectivityState,
       trace: this.channelzTrace,
       callTracker: this.callTracker,

@@ -156,7 +156,8 @@ export class Server {
   private channelzRef: ServerRef;
   private channelzTrace = new ChannelzTrace();
   private callTracker = new ChannelzCallTracker();
-  private childrenTracker = new ChannelzChildrenTracker();
+  private listenerChildrenTracker = new ChannelzChildrenTracker();
+  private sessionChildrenTracker = new ChannelzChildrenTracker();
 
   constructor(options?: ChannelOptions) {
     this.options = options ?? {};
@@ -168,7 +169,8 @@ export class Server {
     return {
       trace: this.channelzTrace,
       callTracker: this.callTracker,
-      children: this.childrenTracker.getChildLists()
+      listenerChildren: this.listenerChildrenTracker.getChildLists(),
+      sessionChildren: this.sessionChildrenTracker.getChildLists()
     };
   }
 
@@ -568,7 +570,7 @@ export class Server {
     for (const {server: http2Server, channelzRef: ref} of this.http2ServerList) {
       if (http2Server.listening) {
         http2Server.close(() => {
-          this.childrenTracker.unrefChild(ref);
+          this.listenerChildrenTracker.unrefChild(ref);
           unregisterChannelzRef(ref);
         });
       }
@@ -652,7 +654,7 @@ export class Server {
       if (http2Server.listening) {
         pendingChecks++;
         http2Server.close(() => {
-          this.childrenTracker.unrefChild(ref);
+          this.listenerChildrenTracker.unrefChild(ref);
           unregisterChannelzRef(ref);
           maybeCallback();
         });
@@ -826,10 +828,10 @@ export class Server {
       this.sessions.set(session, channelzSessionInfo);
       const clientAddress = session.socket.remoteAddress;
       this.channelzTrace.addTrace('CT_INFO', 'Connection established by client ' + clientAddress);
-      this.childrenTracker.refChild(channelzRef);
+      this.sessionChildrenTracker.refChild(channelzRef);
       session.on('close', () => {
         this.channelzTrace.addTrace('CT_INFO', 'Connection dropped by client ' + clientAddress);
-        this.childrenTracker.unrefChild(channelzRef);
+        this.sessionChildrenTracker.unrefChild(channelzRef);
         unregisterChannelzRef(channelzRef);
         this.sessions.delete(session);
       });

@@ -266,7 +266,8 @@ export class Subchannel {
       state: this.connectivityState,
       trace: this.channelzTrace,
       callTracker: this.callTracker,
-      children: this.childrenTracker.getChildLists()
+      children: this.childrenTracker.getChildLists(),
+      target: this.subchannelAddressString
     };
   }
 
@@ -285,7 +286,7 @@ export class Subchannel {
       const peerCertificate = tlsSocket.getPeerCertificate();
       tlsInfo = {
         cipherSuiteStandardName: cipherInfo.standardName ?? null,
-        cipherSuiteOtherName: cipherInfo.standardName ? cipherInfo.name: null,
+        cipherSuiteOtherName: cipherInfo.standardName ? null : cipherInfo.name,
         localCertificate: (certificate && 'raw' in certificate) ? certificate.raw : null,
         remoteCertificate: (peerCertificate && 'raw' in peerCertificate) ? peerCertificate.raw : null
       };
