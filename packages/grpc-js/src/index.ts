@@ -249,6 +249,13 @@ export { GrpcObject } from './make-client';
 
 export { ChannelOptions } from './channel-options';
 
+export {
+  getChannelzServiceDefinition,
+  getChannelzHandlers
+} from './channelz';
+
+export { addAdminServicesToServer } from './admin';
+
 import * as experimental from './experimental';
 export { experimental };
 
@@ -257,6 +264,7 @@ import * as resolver_uds from './resolver-uds';
 import * as resolver_ip from './resolver-ip';
 import * as load_balancer_pick_first from './load-balancer-pick-first';
 import * as load_balancer_round_robin from './load-balancer-round-robin';
+import * as channelz from './channelz';
 
 (() => {
   resolver_dns.setup();
@@ -264,4 +272,5 @@ import * as load_balancer_round_robin from './load-balancer-round-robin';
   resolver_ip.setup();
   load_balancer_pick_first.setup();
   load_balancer_round_robin.setup();
+  channelz.setup();
 })();

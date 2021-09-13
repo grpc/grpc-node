@@ -50,6 +50,7 @@ import { GetServerSocketsResponse } from "./generated/grpc/channelz/v1/GetServer
 import { ChannelzDefinition, ChannelzHandlers } from "./generated/grpc/channelz/v1/Channelz";
 import { ProtoGrpcType as ChannelzProtoGrpcType } from "./generated/channelz";
 import type { loadSync } from '@grpc/proto-loader';
+import { registerAdminService } from "./admin";
 
 export type TraceSeverity = 'CT_UNKNOWN' | 'CT_INFO' | 'CT_WARNING' | 'CT_ERROR';
 
@@ -713,4 +714,8 @@ export function getChannelzServiceDefinition(): ChannelzDefinition {
   }) as unknown as ChannelzProtoGrpcType;
   loadedChannelzDefinition = loadedProto.grpc.channelz.v1.Channelz.service;
   return loadedChannelzDefinition;
+}
+
+export function setup() {
+  registerAdminService(getChannelzServiceDefinition, getChannelzHandlers);
 }
