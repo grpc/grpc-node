@@ -163,7 +163,14 @@ export class SubchannelPool {
   }
 }
 
-const globalSubchannelPool = new SubchannelPool(true);
+let globalSubchannelPool = new SubchannelPool(true);
+
+/**
+ * Recreate the global subchannel pool.
+ */
+export function resetGlobalSubchannelPool(): void {
+  globalSubchannelPool = new SubchannelPool(true);
+}
 
 /**
  * Get either the global subchannel pool, or a new subchannel pool.

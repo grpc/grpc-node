@@ -268,3 +268,5 @@ const clientVersion = require('../../package.json').version;
   load_balancer_pick_first.setup();
   load_balancer_round_robin.setup();
 })();
+
+export { resetGlobalSubchannelPool } from './subchannel-pool';
