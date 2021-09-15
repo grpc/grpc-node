@@ -190,6 +190,9 @@ export function getProxiedConnection(
     method: 'CONNECT',
     path: parsedTarget.path,
   };
+  const headers: http.OutgoingHttpHeaders = {
+    Host: parsedTarget.path,
+  };
   // Connect to the subchannel address as a proxy
   if (isTcpSubchannelAddress(address)) {
     options.host = address.host;
@@ -198,14 +201,13 @@ export function getProxiedConnection(
     options.socketPath = address.path;
   }
   if ('grpc.http_connect_creds' in channelOptions) {
-    options.headers = {
-      'Proxy-Authorization':
-        'Basic ' +
-        Buffer.from(
-          channelOptions['grpc.http_connect_creds'] as string
-        ).toString('base64'),
-    };
+    headers['Proxy-Authorization'] =
+      'Basic ' +
+      Buffer.from(
+        channelOptions['grpc.http_connect_creds'] as string
+      ).toString('base64');
   }
+  options.headers = headers
   const proxyAddressString = subchannelAddressToString(address);
   trace('Using proxy ' + proxyAddressString + ' to connect to ' + options.path);
   return new Promise<ProxyConnectionResult>((resolve, reject) => {
