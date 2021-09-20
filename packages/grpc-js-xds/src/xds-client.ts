@@ -340,6 +340,7 @@ export class XdsClient {
         if (this.hasShutdown) {
           return;
         }
+        trace('Loaded bootstrap info: ' + JSON.stringify(bootstrapInfo, undefined, 2));
         if (bootstrapInfo.xdsServers[0].serverFeatures.indexOf('xds_v3') >= 0) {
           this.apiVersion = XdsApiVersion.V3;
         } else {
