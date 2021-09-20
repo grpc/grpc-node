@@ -340,6 +340,7 @@ export class XdsClient {
         if (this.hasShutdown) {
           return;
         }
+        trace('Loaded bootstrap info: ' + JSON.stringify(bootstrapInfo, undefined, 2));
         if (bootstrapInfo.xdsServers[0].serverFeatures.indexOf('xds_v3') >= 0) {
           this.apiVersion = XdsApiVersion.V3;
         } else {
@@ -370,6 +371,13 @@ export class XdsClient {
           ...nodeV3,
           client_features: ['envoy.lrs.supports_send_all_clusters'],
         };
+        if (this.apiVersion === XdsApiVersion.V2) {
+          trace('ADS Node: ' + JSON.stringify(this.adsNodeV2, undefined, 2));
+          trace('LRS Node: ' + JSON.stringify(this.lrsNodeV2, undefined, 2));
+        } else {
+          trace('ADS Node: ' + JSON.stringify(this.adsNodeV3, undefined, 2));
+          trace('LRS Node: ' + JSON.stringify(this.lrsNodeV3, undefined, 2));
+        }
         const credentialsConfigs = bootstrapInfo.xdsServers[0].channelCreds;
         let channelCreds: ChannelCredentials | null = null;
         for (const config of credentialsConfigs) {
