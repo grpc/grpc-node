@@ -322,6 +322,7 @@ export class XdsClient {
         if (this.hasShutdown) {
           return;
         }
+        trace('Loaded bootstrap info: ' + JSON.stringify(bootstrapInfo, undefined, 2));
         const node: Node = {
           ...bootstrapInfo.node,
           build_version: `gRPC Node Pure JS ${clientVersion}`,
