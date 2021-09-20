@@ -336,6 +336,8 @@ export class XdsClient {
           ...node,
           client_features: ['envoy.lrs.supports_send_all_clusters'],
         };
+        trace('ADS Node: ' + JSON.stringify(this.adsNode, undefined, 2));
+        trace('LRS Node: ' + JSON.stringify(this.lrsNode, undefined, 2));
         const credentialsConfigs = bootstrapInfo.xdsServers[0].channelCreds;
         let channelCreds: ChannelCredentials | null = null;
         for (const config of credentialsConfigs) {
