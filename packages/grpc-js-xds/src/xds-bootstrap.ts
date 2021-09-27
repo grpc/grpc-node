@@ -109,7 +109,7 @@ function validateXdsServerConfig(obj: any): XdsServerConfig {
   return {
     serverUri: obj.server_uri,
     channelCreds: obj.channel_creds.map(validateChannelCredsConfig),
-    serverFeatures: obj.server_features
+    serverFeatures: obj.server_features ?? []
   };
 }
 

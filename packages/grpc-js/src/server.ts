@@ -309,6 +309,7 @@ export class Server {
           const http2Server = setupServer();
           return new Promise<number | Error>((resolve, reject) => {
             function onError(err: Error): void {
+              trace('Failed to bind ' + subchannelAddressToString(address) + ' with error ' + err.message);
               resolve(err);
             }
 
@@ -356,6 +357,7 @@ export class Server {
       const http2Server = setupServer();
       return new Promise<BindResult>((resolve, reject) => {
         function onError(err: Error): void {
+          trace('Failed to bind ' + subchannelAddressToString(address) + ' with error ' + err.message);
           resolve(bindWildcardPort(addressList.slice(1)));
         }
 
