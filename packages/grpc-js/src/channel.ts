@@ -297,13 +297,7 @@ export class ChannelImplementation implements Channel {
       (status) => {
         this.channelzTrace.addTrace('CT_WARNING', 'Address resolution failed with code ' + status.code + ' and details "' + status.details + '"');
         if (this.configSelectionQueue.length > 0) {
-          trace(
-            LogVerbosity.DEBUG,
-            'channel',
-            'Name resolution failed for target ' +
-              uriToString(this.target) +
-              ' with calls queued for config selection'
-          );
+          this.trace('Name resolution failed with calls queued for config selection');
         }
         const localQueue = this.configSelectionQueue;
         this.configSelectionQueue = [];
@@ -324,6 +318,7 @@ export class ChannelImplementation implements Channel {
       new MaxMessageSizeFilterFactory(this.options),
       new CompressionFilterFactory(this),
     ]);
+    this.trace('Constructed channel');
   }
 
   private getChannelzInfo(): ChannelInfo {
@@ -336,12 +331,14 @@ export class ChannelImplementation implements Channel {
     };
   }
 
+  private trace(text: string, verbosityOverride?: LogVerbosity) {
+    trace(verbosityOverride ?? LogVerbosity.DEBUG, 'channel', '(' + this.channelzRef.id + ') ' + uriToString(this.target) + ' ' + text);
+  }
+
   private callRefTimerRef() {
     // If the hasRef function does not exist, always run the code
     if (!this.callRefTimer.hasRef?.()) {
-      trace(
-        LogVerbosity.DEBUG,
-        'channel',
+      this.trace(
         'callRefTimer.ref | configSelectionQueue.length=' +
           this.configSelectionQueue.length +
           ' pickQueue.length=' +
@@ -354,9 +351,7 @@ export class ChannelImplementation implements Channel {
   private callRefTimerUnref() {
     // If the hasRef function does not exist, always run the code
     if (!this.callRefTimer.hasRef || this.callRefTimer.hasRef()) {
-      trace(
-        LogVerbosity.DEBUG,
-        'channel',
+      this.trace(
         'callRefTimer.unref | configSelectionQueue.length=' +
           this.configSelectionQueue.length +
           ' pickQueue.length=' +
@@ -391,9 +386,7 @@ export class ChannelImplementation implements Channel {
       metadata: callMetadata,
       extraPickInfo: callConfig.pickInformation,
     });
-    trace(
-      LogVerbosity.DEBUG,
-      'channel',
+    this.trace(
       'Pick result: ' +
         PickResultType[pickResult.pickResultType] +
         ' subchannel: ' +
@@ -466,25 +459,23 @@ export class ChannelImplementation implements Channel {
                        * the stream because the correct behavior may be
                        * re-queueing instead, based on the logic in the rest of
                        * tryPick */
-                      trace(
-                        LogVerbosity.INFO,
-                        'channel',
+                      this.trace(
                         'Failed to start call on picked subchannel ' +
                           pickResult.subchannel!.getAddress() +
                           ' with error ' +
                           (error as Error).message +
-                          '. Retrying pick'
+                          '. Retrying pick',
+                          LogVerbosity.INFO
                       );
                       this.tryPick(callStream, callMetadata, callConfig);
                     } else {
-                      trace(
-                        LogVerbosity.INFO,
-                        'channel',
+                      this.trace(
                         'Failed to start call on picked subchanel ' +
                           pickResult.subchannel!.getAddress() +
                           ' with error ' +
                           (error as Error).message +
-                          '. Ending call'
+                          '. Ending call',
+                          LogVerbosity.INFO
                       );
                       callStream.cancelWithStatus(
                         Status.INTERNAL,
@@ -497,14 +488,13 @@ export class ChannelImplementation implements Channel {
                 } else {
                   /* The logic for doing this here is the same as in the catch
                    * block above */
-                  trace(
-                    LogVerbosity.INFO,
-                    'channel',
+                  this.trace(
                     'Picked subchannel ' +
                       pickResult.subchannel!.getAddress() +
                       ' has state ' +
                       ConnectivityState[subchannelState] +
-                      ' after metadata filters. Retrying pick'
+                      ' after metadata filters. Retrying pick',
+                      LogVerbosity.INFO
                   );
                   this.tryPick(callStream, callMetadata, callConfig);
                 }
@@ -560,7 +550,8 @@ export class ChannelImplementation implements Channel {
     trace(
       LogVerbosity.DEBUG,
       'connectivity_state',
-      uriToString(this.target) +
+      '(' + this.channelzRef.id + ') ' + 
+        uriToString(this.target) +
         ' ' +
         ConnectivityState[this.connectivityState] +
         ' -> ' +
@@ -706,11 +697,8 @@ export class ChannelImplementation implements Channel {
       throw new Error('Channel has been shut down');
     }
     const callNumber = getNewCallNumber();
-    trace(
-      LogVerbosity.DEBUG,
-      'channel',
-      uriToString(this.target) +
-        ' createCall [' +
+    this.trace(
+      'createCall [' +
         callNumber +
         '] method="' +
         method +

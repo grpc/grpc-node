@@ -64,10 +64,6 @@ import { CipherNameAndProtocol, TLSSocket } from 'tls';
 
 const TRACER_NAME = 'server';
 
-function trace(text: string): void {
-  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
-}
-
 interface BindResult {
   port: number;
   count: number;
@@ -163,6 +159,7 @@ export class Server {
     this.options = options ?? {};
     this.channelzRef = registerChannelzServer(() => this.getChannelzInfo());
     this.channelzTrace.addTrace('CT_INFO', 'Server created');
+    this.trace('Server constructed');
   }
 
   private getChannelzInfo(): ServerInfo {
@@ -216,6 +213,11 @@ export class Server {
       return socketInfo;
     };
   }
+
+  private trace(text: string): void {
+    logging.trace(LogVerbosity.DEBUG, TRACER_NAME, '(' + this.channelzRef.id + ') ' + text);
+  }
+  
 
   addProtoService(): void {
     throw new Error('Not implemented. Use addService() instead');
@@ -372,7 +374,7 @@ export class Server {
       }
       return Promise.all(
         addressList.map((address) => {
-          trace('Attempting to bind ' + subchannelAddressToString(address));
+          this.trace('Attempting to bind ' + subchannelAddressToString(address));
           let addr: SubchannelAddress;
           if (isTcpSubchannelAddress(address)) {
             addr = {
@@ -426,7 +428,7 @@ export class Server {
               });
               this.listenerChildrenTracker.refChild(channelzRef);
               this.http2ServerList.push({server: http2Server, channelzRef: channelzRef});
-              trace('Successfully bound ' + subchannelAddressToString(boundSubchannelAddress));
+              this.trace('Successfully bound ' + subchannelAddressToString(boundSubchannelAddress));
               resolve('port' in boundSubchannelAddress ? boundSubchannelAddress.port : portNum);
               http2Server.removeListener('error', onError);
             });
@@ -494,7 +496,7 @@ export class Server {
           });
           this.listenerChildrenTracker.refChild(channelzRef);
           this.http2ServerList.push({server: http2Server, channelzRef: channelzRef});
-          trace('Successfully bound ' + subchannelAddressToString(boundSubchannelAddress));
+          this.trace('Successfully bound ' + subchannelAddressToString(boundSubchannelAddress));
           resolve(
             bindSpecificPort(
               addressList.slice(1),
@@ -727,7 +729,7 @@ export class Server {
                 serverAddress.address + ':' + serverAddress.port;
             }
           }
-          trace(
+          this.trace(
             'Received call to method ' +
               path +
               ' at address ' +
@@ -736,7 +738,7 @@ export class Server {
           const handler = this.handlers.get(path);
 
           if (handler === undefined) {
-            trace(
+            this.trace(
               'No handler registered for method ' +
                 path +
                 '. Sending UNIMPLEMENTED status.'

@@ -42,14 +42,6 @@ const clientVersion = require('../../package.json').version;
 
 const TRACER_NAME = 'subchannel';
 
-function trace(text: string): void {
-  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
-}
-
-function refTrace(text: string): void {
-  logging.trace(LogVerbosity.DEBUG, 'subchannel_refcount', text);
-}
-
 const MIN_CONNECT_TIMEOUT_MS = 20000;
 const INITIAL_BACKOFF_MS = 1000;
 const BACKOFF_MULTIPLIER = 1.6;
@@ -237,6 +229,7 @@ export class Subchannel {
     this.channelzRef = registerChannelzSubchannel(this.subchannelAddressString, () => this.getChannelzInfo());
     this.channelzTrace = new ChannelzTrace();
     this.channelzTrace.addTrace('CT_INFO', 'Subchannel created');
+    this.trace('Subchannel constructed');
   }
 
   private getChannelzInfo(): SubchannelInfo {
@@ -307,6 +300,14 @@ export class Subchannel {
     this.lastMessageReceivedTimestamp = null;
   }
 
+  private trace(text: string): void {
+    logging.trace(LogVerbosity.DEBUG, TRACER_NAME, '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
+  }
+
+  private refTrace(text: string): void {
+    logging.trace(LogVerbosity.DEBUG, 'subchannel_refcount', '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
+  }
+
   private handleBackoffTimer() {
     if (this.continueConnecting) {
       this.transitionToState(
@@ -338,7 +339,8 @@ export class Subchannel {
     logging.trace(
       LogVerbosity.DEBUG,
       'keepalive',
-      'Sending ping to ' + this.subchannelAddressString
+      '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' +
+      'Sending ping'
     );
     this.keepaliveTimeoutId = setTimeout(() => {
       this.transitionToState([ConnectivityState.READY], ConnectivityState.IDLE);
@@ -511,9 +513,8 @@ export class Subchannel {
               } ms`
             );
           }
-          trace(
-            this.subchannelAddressString +
-              ' connection closed by GOAWAY with code ' +
+          this.trace(
+            'connection closed by GOAWAY with code ' +
               errorCode
           );
           this.transitionToState(
@@ -526,9 +527,8 @@ export class Subchannel {
     session.once('error', (error) => {
       /* Do nothing here. Any error should also trigger a close event, which is
        * where we want to handle that.  */
-      trace(
-        this.subchannelAddressString +
-          ' connection closed with error ' +
+      this.trace(
+        'connection closed with error ' +
           (error as Error).message
       );
     });
@@ -607,10 +607,8 @@ export class Subchannel {
     if (oldStates.indexOf(this.connectivityState) === -1) {
       return false;
     }
-    trace(
-      this.subchannelAddressString +
-        ' ' +
-        ConnectivityState[this.connectivityState] +
+    this.trace(
+      ConnectivityState[this.connectivityState] +
         ' -> ' +
         ConnectivityState[newState]
     );
@@ -687,9 +685,8 @@ export class Subchannel {
   }
 
   callRef() {
-    refTrace(
-      this.subchannelAddressString +
-        ' callRefcount ' +
+    this.refTrace(
+      'callRefcount ' +
         this.callRefcount +
         ' -> ' +
         (this.callRefcount + 1)
@@ -707,9 +704,8 @@ export class Subchannel {
   }
 
   callUnref() {
-    refTrace(
-      this.subchannelAddressString +
-        ' callRefcount ' +
+    this.refTrace(
+      'callRefcount ' +
         this.callRefcount +
         ' -> ' +
         (this.callRefcount - 1)
@@ -728,9 +724,8 @@ export class Subchannel {
   }
 
   ref() {
-    refTrace(
-      this.subchannelAddressString +
-        ' refcount ' +
+    this.refTrace(
+      'refcount ' +
         this.refcount +
         ' -> ' +
         (this.refcount + 1)
@@ -739,9 +734,8 @@ export class Subchannel {
   }
 
   unref() {
-    refTrace(
-      this.subchannelAddressString +
-        ' refcount ' +
+    this.refTrace(
+      'refcount ' +
         this.refcount +
         ' -> ' +
         (this.refcount - 1)
@@ -803,6 +797,7 @@ export class Subchannel {
       LogVerbosity.DEBUG,
       'call_stream',
       'Starting stream on subchannel ' +
+        '(' + this.channelzRef.id + ') ' +
         this.subchannelAddressString +
         ' with headers\n' +
         headersString
