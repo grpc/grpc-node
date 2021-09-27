@@ -131,17 +131,11 @@ class XdsClusterManager implements LoadBalancer {
     private childBalancer: ChildLoadBalancerHandler;
 
     constructor(private parent: XdsClusterManager, private name: string) {
-      this.childBalancer = new ChildLoadBalancerHandler({
-        createSubchannel: (subchannelAddress, subchannelOptions) => {
-          return this.parent.channelControlHelper.createSubchannel(subchannelAddress, subchannelOptions);
-        },
-        updateState: (connectivityState, picker) => {
+      this.childBalancer = new ChildLoadBalancerHandler(experimental.createChildChannelControlHelper(this.parent.channelControlHelper, {
+        updateState: (connectivityState: ConnectivityState, picker: Picker) => {
           this.updateState(connectivityState, picker);
         },
-        requestReresolution: () => {
-          this.parent.channelControlHelper.requestReresolution();
-        }
-      });
+      }));
 
       this.picker = new QueuePicker(this.childBalancer);
     }

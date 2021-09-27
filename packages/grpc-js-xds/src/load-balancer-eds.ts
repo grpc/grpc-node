@@ -185,14 +185,7 @@ export class EdsLoadBalancer implements LoadBalancer {
   private concurrentRequests: number = 0;
 
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
-    this.childBalancer = new ChildLoadBalancerHandler({
-      createSubchannel: (subchannelAddress, subchannelArgs) =>
-        this.channelControlHelper.createSubchannel(
-          subchannelAddress,
-          subchannelArgs
-        ),
-      requestReresolution: () =>
-        this.channelControlHelper.requestReresolution(),
+    this.childBalancer = new ChildLoadBalancerHandler(experimental.createChildChannelControlHelper(this.channelControlHelper, {
       updateState: (connectivityState, originalPicker) => {
         if (this.latestEdsUpdate === null) {
           return;
@@ -243,7 +236,7 @@ export class EdsLoadBalancer implements LoadBalancer {
         };
         this.channelControlHelper.updateState(connectivityState, edsPicker);
       },
-    });
+    }));
     this.watcher = {
       onValidUpdate: (update) => {
         trace('Received EDS update for ' + this.edsServiceName + ': ' + JSON.stringify(update, undefined, 2));

@@ -139,23 +139,11 @@ export class PriorityLoadBalancer implements LoadBalancer {
     private failoverTimer: NodeJS.Timer | null = null;
     private deactivationTimer: NodeJS.Timer | null = null;
     constructor(private parent: PriorityLoadBalancer, private name: string) {
-      this.childBalancer = new ChildLoadBalancerHandler({
-        createSubchannel: (
-          subchannelAddress: SubchannelAddress,
-          subchannelArgs: ChannelOptions
-        ) => {
-          return this.parent.channelControlHelper.createSubchannel(
-            subchannelAddress,
-            subchannelArgs
-          );
-        },
+      this.childBalancer = new ChildLoadBalancerHandler(experimental.createChildChannelControlHelper(this.parent.channelControlHelper, {
         updateState: (connectivityState: ConnectivityState, picker: Picker) => {
           this.updateState(connectivityState, picker);
         },
-        requestReresolution: () => {
-          this.parent.channelControlHelper.requestReresolution();
-        },
-      });
+      }));
       this.picker = new QueuePicker(this.childBalancer);
     }
 

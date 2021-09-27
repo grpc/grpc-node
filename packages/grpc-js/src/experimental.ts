@@ -12,6 +12,7 @@ export {
   LoadBalancer,
   LoadBalancingConfig,
   ChannelControlHelper,
+  createChildChannelControlHelper,
   registerLoadBalancerType,
   getFirstUsableConfig,
   validateLoadBalancingConfig,
