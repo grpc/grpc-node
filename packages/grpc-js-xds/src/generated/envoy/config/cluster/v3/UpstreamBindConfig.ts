@@ -10,7 +10,7 @@ export interface UpstreamBindConfig {
   /**
    * The address Envoy should bind to when establishing upstream connections.
    */
-  'source_address'?: (_envoy_config_core_v3_Address);
+  'source_address'?: (_envoy_config_core_v3_Address | null);
 }
 
 /**
@@ -21,5 +21,5 @@ export interface UpstreamBindConfig__Output {
   /**
    * The address Envoy should bind to when establishing upstream connections.
    */
-  'source_address'?: (_envoy_config_core_v3_Address__Output);
+  'source_address': (_envoy_config_core_v3_Address__Output | null);
 }

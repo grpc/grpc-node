@@ -20,51 +20,51 @@ export interface AccessLogFilter {
   /**
    * Status code filter.
    */
-  'status_code_filter'?: (_envoy_config_accesslog_v3_StatusCodeFilter);
+  'status_code_filter'?: (_envoy_config_accesslog_v3_StatusCodeFilter | null);
   /**
    * Duration filter.
    */
-  'duration_filter'?: (_envoy_config_accesslog_v3_DurationFilter);
+  'duration_filter'?: (_envoy_config_accesslog_v3_DurationFilter | null);
   /**
    * Not health check filter.
    */
-  'not_health_check_filter'?: (_envoy_config_accesslog_v3_NotHealthCheckFilter);
+  'not_health_check_filter'?: (_envoy_config_accesslog_v3_NotHealthCheckFilter | null);
   /**
    * Traceable filter.
    */
-  'traceable_filter'?: (_envoy_config_accesslog_v3_TraceableFilter);
+  'traceable_filter'?: (_envoy_config_accesslog_v3_TraceableFilter | null);
   /**
    * Runtime filter.
    */
-  'runtime_filter'?: (_envoy_config_accesslog_v3_RuntimeFilter);
+  'runtime_filter'?: (_envoy_config_accesslog_v3_RuntimeFilter | null);
   /**
    * And filter.
    */
-  'and_filter'?: (_envoy_config_accesslog_v3_AndFilter);
+  'and_filter'?: (_envoy_config_accesslog_v3_AndFilter | null);
   /**
    * Or filter.
    */
-  'or_filter'?: (_envoy_config_accesslog_v3_OrFilter);
+  'or_filter'?: (_envoy_config_accesslog_v3_OrFilter | null);
   /**
    * Header filter.
    */
-  'header_filter'?: (_envoy_config_accesslog_v3_HeaderFilter);
+  'header_filter'?: (_envoy_config_accesslog_v3_HeaderFilter | null);
   /**
    * Response flag filter.
    */
-  'response_flag_filter'?: (_envoy_config_accesslog_v3_ResponseFlagFilter);
+  'response_flag_filter'?: (_envoy_config_accesslog_v3_ResponseFlagFilter | null);
   /**
    * gRPC status filter.
    */
-  'grpc_status_filter'?: (_envoy_config_accesslog_v3_GrpcStatusFilter);
+  'grpc_status_filter'?: (_envoy_config_accesslog_v3_GrpcStatusFilter | null);
   /**
    * Extension filter.
    */
-  'extension_filter'?: (_envoy_config_accesslog_v3_ExtensionFilter);
+  'extension_filter'?: (_envoy_config_accesslog_v3_ExtensionFilter | null);
   /**
    * Metadata Filter
    */
-  'metadata_filter'?: (_envoy_config_accesslog_v3_MetadataFilter);
+  'metadata_filter'?: (_envoy_config_accesslog_v3_MetadataFilter | null);
   'filter_specifier'?: "status_code_filter"|"duration_filter"|"not_health_check_filter"|"traceable_filter"|"runtime_filter"|"and_filter"|"or_filter"|"header_filter"|"response_flag_filter"|"grpc_status_filter"|"extension_filter"|"metadata_filter";
 }
 
@@ -75,50 +75,50 @@ export interface AccessLogFilter__Output {
   /**
    * Status code filter.
    */
-  'status_code_filter'?: (_envoy_config_accesslog_v3_StatusCodeFilter__Output);
+  'status_code_filter'?: (_envoy_config_accesslog_v3_StatusCodeFilter__Output | null);
   /**
    * Duration filter.
    */
-  'duration_filter'?: (_envoy_config_accesslog_v3_DurationFilter__Output);
+  'duration_filter'?: (_envoy_config_accesslog_v3_DurationFilter__Output | null);
   /**
    * Not health check filter.
    */
-  'not_health_check_filter'?: (_envoy_config_accesslog_v3_NotHealthCheckFilter__Output);
+  'not_health_check_filter'?: (_envoy_config_accesslog_v3_NotHealthCheckFilter__Output | null);
   /**
    * Traceable filter.
    */
-  'traceable_filter'?: (_envoy_config_accesslog_v3_TraceableFilter__Output);
+  'traceable_filter'?: (_envoy_config_accesslog_v3_TraceableFilter__Output | null);
   /**
    * Runtime filter.
    */
-  'runtime_filter'?: (_envoy_config_accesslog_v3_RuntimeFilter__Output);
+  'runtime_filter'?: (_envoy_config_accesslog_v3_RuntimeFilter__Output | null);
   /**
    * And filter.
    */
-  'and_filter'?: (_envoy_config_accesslog_v3_AndFilter__Output);
+  'and_filter'?: (_envoy_config_accesslog_v3_AndFilter__Output | null);
   /**
    * Or filter.
    */
-  'or_filter'?: (_envoy_config_accesslog_v3_OrFilter__Output);
+  'or_filter'?: (_envoy_config_accesslog_v3_OrFilter__Output | null);
   /**
    * Header filter.
    */
-  'header_filter'?: (_envoy_config_accesslog_v3_HeaderFilter__Output);
+  'header_filter'?: (_envoy_config_accesslog_v3_HeaderFilter__Output | null);
   /**
    * Response flag filter.
    */
-  'response_flag_filter'?: (_envoy_config_accesslog_v3_ResponseFlagFilter__Output);
+  'response_flag_filter'?: (_envoy_config_accesslog_v3_ResponseFlagFilter__Output | null);
   /**
    * gRPC status filter.
    */
-  'grpc_status_filter'?: (_envoy_config_accesslog_v3_GrpcStatusFilter__Output);
+  'grpc_status_filter'?: (_envoy_config_accesslog_v3_GrpcStatusFilter__Output | null);
   /**
    * Extension filter.
    */
-  'extension_filter'?: (_envoy_config_accesslog_v3_ExtensionFilter__Output);
+  'extension_filter'?: (_envoy_config_accesslog_v3_ExtensionFilter__Output | null);
   /**
    * Metadata Filter
    */
-  'metadata_filter'?: (_envoy_config_accesslog_v3_MetadataFilter__Output);
+  'metadata_filter'?: (_envoy_config_accesslog_v3_MetadataFilter__Output | null);
   'filter_specifier': "status_code_filter"|"duration_filter"|"not_health_check_filter"|"traceable_filter"|"runtime_filter"|"and_filter"|"or_filter"|"header_filter"|"response_flag_filter"|"grpc_status_filter"|"extension_filter"|"metadata_filter";
 }

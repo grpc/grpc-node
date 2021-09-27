@@ -340,6 +340,7 @@ export class XdsClient {
         if (this.hasShutdown) {
           return;
         }
+        trace('Loaded bootstrap info: ' + JSON.stringify(bootstrapInfo, undefined, 2));
         if (bootstrapInfo.xdsServers[0].serverFeatures.indexOf('xds_v3') >= 0) {
           this.apiVersion = XdsApiVersion.V3;
         } else {
@@ -370,6 +371,13 @@ export class XdsClient {
           ...nodeV3,
           client_features: ['envoy.lrs.supports_send_all_clusters'],
         };
+        if (this.apiVersion === XdsApiVersion.V2) {
+          trace('ADS Node: ' + JSON.stringify(this.adsNodeV2, undefined, 2));
+          trace('LRS Node: ' + JSON.stringify(this.lrsNodeV2, undefined, 2));
+        } else {
+          trace('ADS Node: ' + JSON.stringify(this.adsNodeV3, undefined, 2));
+          trace('LRS Node: ' + JSON.stringify(this.lrsNodeV3, undefined, 2));
+        }
         const credentialsConfigs = bootstrapInfo.xdsServers[0].channelCreds;
         let channelCreds: ChannelCredentials | null = null;
         for (const config of credentialsConfigs) {
@@ -435,32 +443,47 @@ export class XdsClient {
   private handleAdsResponse(message: DiscoveryResponse__Output) {
     let errorString: string | null;
     let serviceKind: AdsServiceKind;
+    let isV2: boolean;
+    switch (message.type_url) {
+      case EDS_TYPE_URL_V2:
+      case CDS_TYPE_URL_V2:
+      case RDS_TYPE_URL_V2:
+      case LDS_TYPE_URL_V2:
+        isV2 = true;
+        break;
+      default:
+        isV2 = false;
+    }
     switch (message.type_url) {
       case EDS_TYPE_URL_V2:
       case EDS_TYPE_URL_V3:
         errorString = this.adsState.eds.handleResponses(
-          getResponseMessages(EDS_TYPE_URL_V3, [EDS_TYPE_URL_V2, EDS_TYPE_URL_V3], message.resources)
+          getResponseMessages(EDS_TYPE_URL_V3, [EDS_TYPE_URL_V2, EDS_TYPE_URL_V3], message.resources),
+          isV2
         );
         serviceKind = 'eds';
         break;
       case CDS_TYPE_URL_V2:
       case CDS_TYPE_URL_V3:
         errorString = this.adsState.cds.handleResponses(
-          getResponseMessages(CDS_TYPE_URL_V3, [CDS_TYPE_URL_V2, CDS_TYPE_URL_V3], message.resources)
+          getResponseMessages(CDS_TYPE_URL_V3, [CDS_TYPE_URL_V2, CDS_TYPE_URL_V3], message.resources),
+          isV2
         );
         serviceKind = 'cds';
         break;
       case RDS_TYPE_URL_V2:
       case RDS_TYPE_URL_V3:
         errorString = this.adsState.rds.handleResponses(
-          getResponseMessages(RDS_TYPE_URL_V3, [RDS_TYPE_URL_V2, RDS_TYPE_URL_V3], message.resources)
+          getResponseMessages(RDS_TYPE_URL_V3, [RDS_TYPE_URL_V2, RDS_TYPE_URL_V3], message.resources),
+          isV2
         );
         serviceKind = 'rds';
         break;
       case LDS_TYPE_URL_V2:
       case LDS_TYPE_URL_V3:
         errorString = this.adsState.lds.handleResponses(
-          getResponseMessages(LDS_TYPE_URL_V3, [LDS_TYPE_URL_V2, LDS_TYPE_URL_V3], message.resources)
+          getResponseMessages(LDS_TYPE_URL_V3, [LDS_TYPE_URL_V2, LDS_TYPE_URL_V3], message.resources),
+          isV2
         );
         serviceKind = 'lds';
         break;

@@ -9,7 +9,7 @@ export interface RuntimePercent {
   /**
    * Default value if runtime value is not available.
    */
-  'default_value'?: (_envoy_type_v3_Percent);
+  'default_value'?: (_envoy_type_v3_Percent | null);
   /**
    * Runtime key to get value for comparison. This value is used if defined.
    */
@@ -23,7 +23,7 @@ export interface RuntimePercent__Output {
   /**
    * Default value if runtime value is not available.
    */
-  'default_value'?: (_envoy_type_v3_Percent__Output);
+  'default_value': (_envoy_type_v3_Percent__Output | null);
   /**
    * Runtime key to get value for comparison. This value is used if defined.
    */

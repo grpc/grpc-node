@@ -132,7 +132,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
   /**
    * Whether to forward the subject of the client cert. Defaults to false.
    */
-  'subject'?: (_google_protobuf_BoolValue);
+  'subject'?: (_google_protobuf_BoolValue | null);
   /**
    * Whether to forward the entire client cert in URL encoded PEM format. This will appear in the
    * XFCC header comma separated from other values with the value Cert="PEM".
@@ -165,7 +165,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
   /**
    * Whether to forward the subject of the client cert. Defaults to false.
    */
-  'subject'?: (_google_protobuf_BoolValue__Output);
+  'subject': (_google_protobuf_BoolValue__Output | null);
   /**
    * Whether to forward the entire client cert in URL encoded PEM format. This will appear in the
    * XFCC header comma separated from other values with the value Cert="PEM".
@@ -203,7 +203,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * <config_http_conn_man_runtime>`.
    * Default: 100%
    */
-  'client_sampling'?: (_envoy_type_v3_Percent);
+  'client_sampling'?: (_envoy_type_v3_Percent | null);
   /**
    * Target percentage of requests managed by this HTTP connection manager that will be randomly
    * selected for trace generation, if not requested by the client or not forced. This field is
@@ -211,7 +211,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * :ref:`HTTP Connection Manager <config_http_conn_man_runtime>`.
    * Default: 100%
    */
-  'random_sampling'?: (_envoy_type_v3_Percent);
+  'random_sampling'?: (_envoy_type_v3_Percent | null);
   /**
    * Target percentage of requests managed by this HTTP connection manager that will be traced
    * after all other sampling checks have been applied (client-directed, force tracing, random
@@ -222,7 +222,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * :ref:`HTTP Connection Manager <config_http_conn_man_runtime>`.
    * Default: 100%
    */
-  'overall_sampling'?: (_envoy_type_v3_Percent);
+  'overall_sampling'?: (_envoy_type_v3_Percent | null);
   /**
    * Whether to annotate spans with additional data. If true, spans will include logs for stream
    * events.
@@ -233,7 +233,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * truncate lengthy request paths to meet the needs of a tracing backend.
    * Default: 256
    */
-  'max_path_tag_length'?: (_google_protobuf_UInt32Value);
+  'max_path_tag_length'?: (_google_protobuf_UInt32Value | null);
   /**
    * A list of custom tags with unique tag name to create tags for the active span.
    */
@@ -250,7 +250,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * Such a constraint is inherent to OpenCensus itself. It cannot be overcome without changes
    * on OpenCensus side.
    */
-  'provider'?: (_envoy_config_trace_v3_Tracing_Http);
+  'provider'?: (_envoy_config_trace_v3_Tracing_Http | null);
 }
 
 /**
@@ -265,7 +265,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * <config_http_conn_man_runtime>`.
    * Default: 100%
    */
-  'client_sampling'?: (_envoy_type_v3_Percent__Output);
+  'client_sampling': (_envoy_type_v3_Percent__Output | null);
   /**
    * Target percentage of requests managed by this HTTP connection manager that will be randomly
    * selected for trace generation, if not requested by the client or not forced. This field is
@@ -273,7 +273,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * :ref:`HTTP Connection Manager <config_http_conn_man_runtime>`.
    * Default: 100%
    */
-  'random_sampling'?: (_envoy_type_v3_Percent__Output);
+  'random_sampling': (_envoy_type_v3_Percent__Output | null);
   /**
    * Target percentage of requests managed by this HTTP connection manager that will be traced
    * after all other sampling checks have been applied (client-directed, force tracing, random
@@ -284,7 +284,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * :ref:`HTTP Connection Manager <config_http_conn_man_runtime>`.
    * Default: 100%
    */
-  'overall_sampling'?: (_envoy_type_v3_Percent__Output);
+  'overall_sampling': (_envoy_type_v3_Percent__Output | null);
   /**
    * Whether to annotate spans with additional data. If true, spans will include logs for stream
    * events.
@@ -295,7 +295,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * truncate lengthy request paths to meet the needs of a tracing backend.
    * Default: 256
    */
-  'max_path_tag_length'?: (_google_protobuf_UInt32Value__Output);
+  'max_path_tag_length': (_google_protobuf_UInt32Value__Output | null);
   /**
    * A list of custom tags with unique tag name to create tags for the active span.
    */
@@ -312,7 +312,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * Such a constraint is inherent to OpenCensus itself. It cannot be overcome without changes
    * on OpenCensus side.
    */
-  'provider'?: (_envoy_config_trace_v3_Tracing_Http__Output);
+  'provider': (_envoy_config_trace_v3_Tracing_Http__Output | null);
 }
 
 /**
@@ -349,7 +349,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * <envoy_api_field_config.route.v3.RouteAction.upgrade_configs>` as documented in the
    * :ref:`upgrade documentation <arch_overview_upgrades>`.
    */
-  'enabled'?: (_google_protobuf_BoolValue);
+  'enabled'?: (_google_protobuf_BoolValue | null);
 }
 
 /**
@@ -386,7 +386,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * <envoy_api_field_config.route.v3.RouteAction.upgrade_configs>` as documented in the
    * :ref:`upgrade documentation <arch_overview_upgrades>`.
    */
-  'enabled'?: (_google_protobuf_BoolValue__Output);
+  'enabled': (_google_protobuf_BoolValue__Output | null);
 }
 
 /**
@@ -406,11 +406,11 @@ export interface HttpConnectionManager {
   /**
    * The connection manager’s route table will be dynamically loaded via the RDS API.
    */
-  'rds'?: (_envoy_extensions_filters_network_http_connection_manager_v3_Rds);
+  'rds'?: (_envoy_extensions_filters_network_http_connection_manager_v3_Rds | null);
   /**
    * The route table for the connection manager is static and is specified in this property.
    */
-  'route_config'?: (_envoy_config_route_v3_RouteConfiguration);
+  'route_config'?: (_envoy_config_route_v3_RouteConfiguration | null);
   /**
    * A list of individual HTTP filters that make up the filter chain for
    * requests made to the connection manager. :ref:`Order matters <arch_overview_http_filters_ordering>`
@@ -422,21 +422,21 @@ export interface HttpConnectionManager {
    * and :ref:`config_http_conn_man_headers_downstream-service-cluster` headers. See the linked
    * documentation for more information. Defaults to false.
    */
-  'add_user_agent'?: (_google_protobuf_BoolValue);
+  'add_user_agent'?: (_google_protobuf_BoolValue | null);
   /**
    * Presence of the object defines whether the connection manager
    * emits :ref:`tracing <arch_overview_tracing>` data to the :ref:`configured tracing provider
    * <envoy_api_msg_config.trace.v3.Tracing>`.
    */
-  'tracing'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing);
+  'tracing'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing | null);
   /**
    * Additional HTTP/1 settings that are passed to the HTTP/1 codec.
    */
-  'http_protocol_options'?: (_envoy_config_core_v3_Http1ProtocolOptions);
+  'http_protocol_options'?: (_envoy_config_core_v3_Http1ProtocolOptions | null);
   /**
    * Additional HTTP/2 settings that are passed directly to the HTTP/2 codec.
    */
-  'http2_protocol_options'?: (_envoy_config_core_v3_Http2ProtocolOptions);
+  'http2_protocol_options'?: (_envoy_config_core_v3_Http2ProtocolOptions | null);
   /**
    * An optional override that the connection manager will write to the server
    * header in responses. If not set, the default is *envoy*.
@@ -453,7 +453,7 @@ export interface HttpConnectionManager {
    * draining. The default grace period is 5000 milliseconds (5 seconds) if this
    * option is not specified.
    */
-  'drain_timeout'?: (_google_protobuf_Duration);
+  'drain_timeout'?: (_google_protobuf_Duration | null);
   /**
    * Configuration for :ref:`HTTP access logs <arch_overview_access_logs>`
    * emitted by the connection manager.
@@ -468,14 +468,14 @@ export interface HttpConnectionManager {
    * :ref:`config_http_conn_man_headers_x-envoy-internal`, and
    * :ref:`config_http_conn_man_headers_x-envoy-external-address` for more information.
    */
-  'use_remote_address'?: (_google_protobuf_BoolValue);
+  'use_remote_address'?: (_google_protobuf_BoolValue | null);
   /**
    * Whether the connection manager will generate the :ref:`x-request-id
    * <config_http_conn_man_headers_x-request-id>` header if it does not exist. This defaults to
    * true. Generating a random UUID4 is expensive so in high throughput scenarios where this feature
    * is not desired it can be disabled.
    */
-  'generate_request_id'?: (_google_protobuf_BoolValue);
+  'generate_request_id'?: (_google_protobuf_BoolValue | null);
   /**
    * How to handle the :ref:`config_http_conn_man_headers_x-forwarded-client-cert` (XFCC) HTTP
    * header.
@@ -490,7 +490,7 @@ export interface HttpConnectionManager {
    * *By* is always set when the client certificate presents the URI type Subject Alternative Name
    * value.
    */
-  'set_current_client_cert_details'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails);
+  'set_current_client_cert_details'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails | null);
   /**
    * If proxy_100_continue is true, Envoy will proxy incoming "Expect:
    * 100-continue" headers upstream, and forward "100 Continue" responses
@@ -580,14 +580,14 @@ export interface HttpConnectionManager {
    * A value of 0 will completely disable the connection manager stream idle
    * timeout, although per-route idle timeout overrides will continue to apply.
    */
-  'stream_idle_timeout'?: (_google_protobuf_Duration);
+  'stream_idle_timeout'?: (_google_protobuf_Duration | null);
   /**
    * Configures what network addresses are considered internal for stats and header sanitation
    * purposes. If unspecified, only RFC1918 IP addresses will be considered internal.
    * See the documentation for :ref:`config_http_conn_man_headers_x-envoy-internal` for more
    * information about internal/external addresses.
    */
-  'internal_address_config'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig);
+  'internal_address_config'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig | null);
   /**
    * The delayed close timeout is for downstream connections managed by the HTTP connection manager.
    * It is defined as a grace period after connection close processing has been locally initiated
@@ -620,14 +620,14 @@ export interface HttpConnectionManager {
    * connection's socket will be closed immediately after the write flush is completed or will
    * never close if the write flush does not complete.
    */
-  'delayed_close_timeout'?: (_google_protobuf_Duration);
+  'delayed_close_timeout'?: (_google_protobuf_Duration | null);
   /**
    * The amount of time that Envoy will wait for the entire request to be received.
    * The timer is activated when the request is initiated, and is disarmed when the last byte of the
    * request is sent upstream (i.e. all decoding filters have processed the request), OR when the
    * response is initiated. If not specified or set to 0, this timeout is disabled.
    */
-  'request_timeout'?: (_google_protobuf_Duration);
+  'request_timeout'?: (_google_protobuf_Duration | null);
   /**
    * The maximum request headers size for incoming connections.
    * If unconfigured, the default max request headers allowed is 60 KiB.
@@ -635,7 +635,7 @@ export interface HttpConnectionManager {
    * The max configurable limit is 96 KiB, based on current implementation
    * constraints.
    */
-  'max_request_headers_kb'?: (_google_protobuf_UInt32Value);
+  'max_request_headers_kb'?: (_google_protobuf_UInt32Value | null);
   /**
    * Should paths be normalized according to RFC 3986 before any processing of
    * requests by HTTP filters or routing? This affects the upstream *:path* header
@@ -649,13 +649,13 @@ export interface HttpConnectionManager {
    * Note that Envoy does not perform
    * `case normalization <https://tools.ietf.org/html/rfc3986#section-6.2.2.1>`_
    */
-  'normalize_path'?: (_google_protobuf_BoolValue);
+  'normalize_path'?: (_google_protobuf_BoolValue | null);
   /**
    * A route table will be dynamically assigned to each request based on request attributes
    * (e.g., the value of a header). The "routing scopes" (i.e., route tables) and "scope keys" are
    * specified in this message.
    */
-  'scoped_routes'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes);
+  'scoped_routes'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes | null);
   /**
    * Whether the connection manager will keep the :ref:`x-request-id
    * <config_http_conn_man_headers_x-request-id>` header if passed for a request that is edge
@@ -681,7 +681,7 @@ export interface HttpConnectionManager {
    * Additional settings for HTTP requests handled by the connection manager. These will be
    * applicable to both HTTP1 and HTTP2 requests.
    */
-  'common_http_protocol_options'?: (_envoy_config_core_v3_HttpProtocolOptions);
+  'common_http_protocol_options'?: (_envoy_config_core_v3_HttpProtocolOptions | null);
   /**
    * The configuration of the request ID extension. This includes operations such as
    * generation, validation, and associated tracing operations.
@@ -694,7 +694,7 @@ export interface HttpConnectionManager {
    * 
    * 3. Tracing decision (sampled, forced, etc) is set in 14th byte of the UUID.
    */
-  'request_id_extension'?: (_envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension);
+  'request_id_extension'?: (_envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension | null);
   /**
    * If set, Envoy will always set :ref:`x-request-id <config_http_conn_man_headers_x-request-id>` header in response.
    * If this is false or not set, the request ID is returned in responses only if tracing is forced using
@@ -706,7 +706,7 @@ export interface HttpConnectionManager {
    * body text and response content type. If not specified, status code and text body are hard
    * coded in Envoy, the response content type is plain text.
    */
-  'local_reply_config'?: (_envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig);
+  'local_reply_config'?: (_envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig | null);
   /**
    * Determines if the port part should be removed from host/authority header before any processing
    * of request by HTTP filters or routing. The port would be removed only if it is equal to the :ref:`listener's<envoy_api_field_config.listener.v3.Listener.address>`
@@ -735,13 +735,13 @@ export interface HttpConnectionManager {
    * *not* the deprecated but similarly named :ref:`stream_error_on_invalid_http_messaging
    * <envoy_v3_api_field_config.core.v3.Http2ProtocolOptions.stream_error_on_invalid_http_messaging>`
    */
-  'stream_error_on_invalid_http_message'?: (_google_protobuf_BoolValue);
+  'stream_error_on_invalid_http_message'?: (_google_protobuf_BoolValue | null);
   /**
    * The amount of time that Envoy will wait for the request headers to be received. The timer is
    * activated when the first byte of the headers is received, and is disarmed when the last byte of
    * the headers has been received. If not specified or set to 0, this timeout is disabled.
    */
-  'request_headers_timeout'?: (_google_protobuf_Duration);
+  'request_headers_timeout'?: (_google_protobuf_Duration | null);
   /**
    * Determines if the port part should be removed from host/authority header before any processing
    * of request by HTTP filters or routing. The port would be removed only if request method is not CONNECT.
@@ -773,11 +773,11 @@ export interface HttpConnectionManager__Output {
   /**
    * The connection manager’s route table will be dynamically loaded via the RDS API.
    */
-  'rds'?: (_envoy_extensions_filters_network_http_connection_manager_v3_Rds__Output);
+  'rds'?: (_envoy_extensions_filters_network_http_connection_manager_v3_Rds__Output | null);
   /**
    * The route table for the connection manager is static and is specified in this property.
    */
-  'route_config'?: (_envoy_config_route_v3_RouteConfiguration__Output);
+  'route_config'?: (_envoy_config_route_v3_RouteConfiguration__Output | null);
   /**
    * A list of individual HTTP filters that make up the filter chain for
    * requests made to the connection manager. :ref:`Order matters <arch_overview_http_filters_ordering>`
@@ -789,21 +789,21 @@ export interface HttpConnectionManager__Output {
    * and :ref:`config_http_conn_man_headers_downstream-service-cluster` headers. See the linked
    * documentation for more information. Defaults to false.
    */
-  'add_user_agent'?: (_google_protobuf_BoolValue__Output);
+  'add_user_agent': (_google_protobuf_BoolValue__Output | null);
   /**
    * Presence of the object defines whether the connection manager
    * emits :ref:`tracing <arch_overview_tracing>` data to the :ref:`configured tracing provider
    * <envoy_api_msg_config.trace.v3.Tracing>`.
    */
-  'tracing'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing__Output);
+  'tracing': (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing__Output | null);
   /**
    * Additional HTTP/1 settings that are passed to the HTTP/1 codec.
    */
-  'http_protocol_options'?: (_envoy_config_core_v3_Http1ProtocolOptions__Output);
+  'http_protocol_options': (_envoy_config_core_v3_Http1ProtocolOptions__Output | null);
   /**
    * Additional HTTP/2 settings that are passed directly to the HTTP/2 codec.
    */
-  'http2_protocol_options'?: (_envoy_config_core_v3_Http2ProtocolOptions__Output);
+  'http2_protocol_options': (_envoy_config_core_v3_Http2ProtocolOptions__Output | null);
   /**
    * An optional override that the connection manager will write to the server
    * header in responses. If not set, the default is *envoy*.
@@ -820,7 +820,7 @@ export interface HttpConnectionManager__Output {
    * draining. The default grace period is 5000 milliseconds (5 seconds) if this
    * option is not specified.
    */
-  'drain_timeout'?: (_google_protobuf_Duration__Output);
+  'drain_timeout': (_google_protobuf_Duration__Output | null);
   /**
    * Configuration for :ref:`HTTP access logs <arch_overview_access_logs>`
    * emitted by the connection manager.
@@ -835,14 +835,14 @@ export interface HttpConnectionManager__Output {
    * :ref:`config_http_conn_man_headers_x-envoy-internal`, and
    * :ref:`config_http_conn_man_headers_x-envoy-external-address` for more information.
    */
-  'use_remote_address'?: (_google_protobuf_BoolValue__Output);
+  'use_remote_address': (_google_protobuf_BoolValue__Output | null);
   /**
    * Whether the connection manager will generate the :ref:`x-request-id
    * <config_http_conn_man_headers_x-request-id>` header if it does not exist. This defaults to
    * true. Generating a random UUID4 is expensive so in high throughput scenarios where this feature
    * is not desired it can be disabled.
    */
-  'generate_request_id'?: (_google_protobuf_BoolValue__Output);
+  'generate_request_id': (_google_protobuf_BoolValue__Output | null);
   /**
    * How to handle the :ref:`config_http_conn_man_headers_x-forwarded-client-cert` (XFCC) HTTP
    * header.
@@ -857,7 +857,7 @@ export interface HttpConnectionManager__Output {
    * *By* is always set when the client certificate presents the URI type Subject Alternative Name
    * value.
    */
-  'set_current_client_cert_details'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails__Output);
+  'set_current_client_cert_details': (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails__Output | null);
   /**
    * If proxy_100_continue is true, Envoy will proxy incoming "Expect:
    * 100-continue" headers upstream, and forward "100 Continue" responses
@@ -947,14 +947,14 @@ export interface HttpConnectionManager__Output {
    * A value of 0 will completely disable the connection manager stream idle
    * timeout, although per-route idle timeout overrides will continue to apply.
    */
-  'stream_idle_timeout'?: (_google_protobuf_Duration__Output);
+  'stream_idle_timeout': (_google_protobuf_Duration__Output | null);
   /**
    * Configures what network addresses are considered internal for stats and header sanitation
    * purposes. If unspecified, only RFC1918 IP addresses will be considered internal.
    * See the documentation for :ref:`config_http_conn_man_headers_x-envoy-internal` for more
    * information about internal/external addresses.
    */
-  'internal_address_config'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig__Output);
+  'internal_address_config': (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig__Output | null);
   /**
    * The delayed close timeout is for downstream connections managed by the HTTP connection manager.
    * It is defined as a grace period after connection close processing has been locally initiated
@@ -987,14 +987,14 @@ export interface HttpConnectionManager__Output {
    * connection's socket will be closed immediately after the write flush is completed or will
    * never close if the write flush does not complete.
    */
-  'delayed_close_timeout'?: (_google_protobuf_Duration__Output);
+  'delayed_close_timeout': (_google_protobuf_Duration__Output | null);
   /**
    * The amount of time that Envoy will wait for the entire request to be received.
    * The timer is activated when the request is initiated, and is disarmed when the last byte of the
    * request is sent upstream (i.e. all decoding filters have processed the request), OR when the
    * response is initiated. If not specified or set to 0, this timeout is disabled.
    */
-  'request_timeout'?: (_google_protobuf_Duration__Output);
+  'request_timeout': (_google_protobuf_Duration__Output | null);
   /**
    * The maximum request headers size for incoming connections.
    * If unconfigured, the default max request headers allowed is 60 KiB.
@@ -1002,7 +1002,7 @@ export interface HttpConnectionManager__Output {
    * The max configurable limit is 96 KiB, based on current implementation
    * constraints.
    */
-  'max_request_headers_kb'?: (_google_protobuf_UInt32Value__Output);
+  'max_request_headers_kb': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Should paths be normalized according to RFC 3986 before any processing of
    * requests by HTTP filters or routing? This affects the upstream *:path* header
@@ -1016,13 +1016,13 @@ export interface HttpConnectionManager__Output {
    * Note that Envoy does not perform
    * `case normalization <https://tools.ietf.org/html/rfc3986#section-6.2.2.1>`_
    */
-  'normalize_path'?: (_google_protobuf_BoolValue__Output);
+  'normalize_path': (_google_protobuf_BoolValue__Output | null);
   /**
    * A route table will be dynamically assigned to each request based on request attributes
    * (e.g., the value of a header). The "routing scopes" (i.e., route tables) and "scope keys" are
    * specified in this message.
    */
-  'scoped_routes'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes__Output);
+  'scoped_routes'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes__Output | null);
   /**
    * Whether the connection manager will keep the :ref:`x-request-id
    * <config_http_conn_man_headers_x-request-id>` header if passed for a request that is edge
@@ -1048,7 +1048,7 @@ export interface HttpConnectionManager__Output {
    * Additional settings for HTTP requests handled by the connection manager. These will be
    * applicable to both HTTP1 and HTTP2 requests.
    */
-  'common_http_protocol_options'?: (_envoy_config_core_v3_HttpProtocolOptions__Output);
+  'common_http_protocol_options': (_envoy_config_core_v3_HttpProtocolOptions__Output | null);
   /**
    * The configuration of the request ID extension. This includes operations such as
    * generation, validation, and associated tracing operations.
@@ -1061,7 +1061,7 @@ export interface HttpConnectionManager__Output {
    * 
    * 3. Tracing decision (sampled, forced, etc) is set in 14th byte of the UUID.
    */
-  'request_id_extension'?: (_envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension__Output);
+  'request_id_extension': (_envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension__Output | null);
   /**
    * If set, Envoy will always set :ref:`x-request-id <config_http_conn_man_headers_x-request-id>` header in response.
    * If this is false or not set, the request ID is returned in responses only if tracing is forced using
@@ -1073,7 +1073,7 @@ export interface HttpConnectionManager__Output {
    * body text and response content type. If not specified, status code and text body are hard
    * coded in Envoy, the response content type is plain text.
    */
-  'local_reply_config'?: (_envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig__Output);
+  'local_reply_config': (_envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig__Output | null);
   /**
    * Determines if the port part should be removed from host/authority header before any processing
    * of request by HTTP filters or routing. The port would be removed only if it is equal to the :ref:`listener's<envoy_api_field_config.listener.v3.Listener.address>`
@@ -1102,13 +1102,13 @@ export interface HttpConnectionManager__Output {
    * *not* the deprecated but similarly named :ref:`stream_error_on_invalid_http_messaging
    * <envoy_v3_api_field_config.core.v3.Http2ProtocolOptions.stream_error_on_invalid_http_messaging>`
    */
-  'stream_error_on_invalid_http_message'?: (_google_protobuf_BoolValue__Output);
+  'stream_error_on_invalid_http_message': (_google_protobuf_BoolValue__Output | null);
   /**
    * The amount of time that Envoy will wait for the request headers to be received. The timer is
    * activated when the first byte of the headers is received, and is disarmed when the last byte of
    * the headers has been received. If not specified or set to 0, this timeout is disabled.
    */
-  'request_headers_timeout'?: (_google_protobuf_Duration__Output);
+  'request_headers_timeout': (_google_protobuf_Duration__Output | null);
   /**
    * Determines if the port part should be removed from host/authority header before any processing
    * of request by HTTP filters or routing. The port would be removed only if request method is not CONNECT.

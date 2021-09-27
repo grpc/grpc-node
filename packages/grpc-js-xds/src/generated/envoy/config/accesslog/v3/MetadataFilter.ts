@@ -17,12 +17,12 @@ export interface MetadataFilter {
    * access_log_hint metadata, set the filter to "envoy.common" and the path to
    * "access_log_hint", and the value to "true".
    */
-  'matcher'?: (_envoy_type_matcher_v3_MetadataMatcher);
+  'matcher'?: (_envoy_type_matcher_v3_MetadataMatcher | null);
   /**
    * Default result if the key does not exist in dynamic metadata: if unset or
    * true, then log; if false, then don't log.
    */
-  'match_if_key_not_found'?: (_google_protobuf_BoolValue);
+  'match_if_key_not_found'?: (_google_protobuf_BoolValue | null);
 }
 
 /**
@@ -39,10 +39,10 @@ export interface MetadataFilter__Output {
    * access_log_hint metadata, set the filter to "envoy.common" and the path to
    * "access_log_hint", and the value to "true".
    */
-  'matcher'?: (_envoy_type_matcher_v3_MetadataMatcher__Output);
+  'matcher': (_envoy_type_matcher_v3_MetadataMatcher__Output | null);
   /**
    * Default result if the key does not exist in dynamic metadata: if unset or
    * true, then log; if false, then don't log.
    */
-  'match_if_key_not_found'?: (_google_protobuf_BoolValue__Output);
+  'match_if_key_not_found': (_google_protobuf_BoolValue__Output | null);
 }

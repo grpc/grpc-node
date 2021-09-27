@@ -53,7 +53,7 @@ export interface SubstitutionFormatString {
    * "message": "My error message"
    * }
    */
-  'json_format'?: (_google_protobuf_Struct);
+  'json_format'?: (_google_protobuf_Struct | null);
   /**
    * If set to true, when command operators are evaluated to null,
    * 
@@ -91,7 +91,7 @@ export interface SubstitutionFormatString {
    * 
    * upstream connect error:503:path=/foo
    */
-  'text_format_source'?: (_envoy_config_core_v3_DataSource);
+  'text_format_source'?: (_envoy_config_core_v3_DataSource | null);
   /**
    * Specifies a collection of Formatter plugins that can be called from the access log configuration.
    * See the formatters extensions documentation for details.
@@ -149,7 +149,7 @@ export interface SubstitutionFormatString__Output {
    * "message": "My error message"
    * }
    */
-  'json_format'?: (_google_protobuf_Struct__Output);
+  'json_format'?: (_google_protobuf_Struct__Output | null);
   /**
    * If set to true, when command operators are evaluated to null,
    * 
@@ -187,7 +187,7 @@ export interface SubstitutionFormatString__Output {
    * 
    * upstream connect error:503:path=/foo
    */
-  'text_format_source'?: (_envoy_config_core_v3_DataSource__Output);
+  'text_format_source'?: (_envoy_config_core_v3_DataSource__Output | null);
   /**
    * Specifies a collection of Formatter plugins that can be called from the access log configuration.
    * See the formatters extensions documentation for details.

@@ -10,12 +10,12 @@ export interface HeaderValueOption {
   /**
    * Header name/value pair that this option applies to.
    */
-  'header'?: (_envoy_config_core_v3_HeaderValue);
+  'header'?: (_envoy_config_core_v3_HeaderValue | null);
   /**
    * Should the value be appended? If true (default), the value is appended to
    * existing values. Otherwise it replaces any existing values.
    */
-  'append'?: (_google_protobuf_BoolValue);
+  'append'?: (_google_protobuf_BoolValue | null);
 }
 
 /**
@@ -25,10 +25,10 @@ export interface HeaderValueOption__Output {
   /**
    * Header name/value pair that this option applies to.
    */
-  'header'?: (_envoy_config_core_v3_HeaderValue__Output);
+  'header': (_envoy_config_core_v3_HeaderValue__Output | null);
   /**
    * Should the value be appended? If true (default), the value is appended to
    * existing values. Otherwise it replaces any existing values.
    */
-  'append'?: (_google_protobuf_BoolValue__Output);
+  'append': (_google_protobuf_BoolValue__Output | null);
 }

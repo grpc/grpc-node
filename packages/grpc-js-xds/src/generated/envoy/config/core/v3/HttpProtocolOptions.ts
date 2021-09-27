@@ -53,13 +53,13 @@ export interface HttpProtocolOptions {
    * is configured, this timeout is scaled for downstream connections according to the value for
    * :ref:`HTTP_DOWNSTREAM_CONNECTION_IDLE <envoy_api_enum_value_config.overload.v3.ScaleTimersOverloadActionConfig.TimerType.HTTP_DOWNSTREAM_CONNECTION_IDLE>`.
    */
-  'idle_timeout'?: (_google_protobuf_Duration);
+  'idle_timeout'?: (_google_protobuf_Duration | null);
   /**
    * The maximum number of headers. If unconfigured, the default
    * maximum number of request headers allowed is 100. Requests that exceed this limit will receive
    * a 431 response for HTTP/1.x and cause a stream reset for HTTP/2.
    */
-  'max_headers_count'?: (_google_protobuf_UInt32Value);
+  'max_headers_count'?: (_google_protobuf_UInt32Value | null);
   /**
    * The maximum duration of a connection. The duration is defined as a period since a connection
    * was established. If not set, there is no max duration. When max_connection_duration is reached
@@ -68,12 +68,12 @@ export interface HttpProtocolOptions {
    * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.drain_timeout>`.
    * Note: not implemented for upstream connections.
    */
-  'max_connection_duration'?: (_google_protobuf_Duration);
+  'max_connection_duration'?: (_google_protobuf_Duration | null);
   /**
    * Total duration to keep alive an HTTP request/response stream. If the time limit is reached the stream will be
    * reset independent of any other timeouts. If not specified, this value is not set.
    */
-  'max_stream_duration'?: (_google_protobuf_Duration);
+  'max_stream_duration'?: (_google_protobuf_Duration | null);
   /**
    * Action to take when a client request with a header name containing underscore characters is received.
    * If this setting is not specified, the value defaults to ALLOW.
@@ -104,13 +104,13 @@ export interface HttpProtocolOptions__Output {
    * is configured, this timeout is scaled for downstream connections according to the value for
    * :ref:`HTTP_DOWNSTREAM_CONNECTION_IDLE <envoy_api_enum_value_config.overload.v3.ScaleTimersOverloadActionConfig.TimerType.HTTP_DOWNSTREAM_CONNECTION_IDLE>`.
    */
-  'idle_timeout'?: (_google_protobuf_Duration__Output);
+  'idle_timeout': (_google_protobuf_Duration__Output | null);
   /**
    * The maximum number of headers. If unconfigured, the default
    * maximum number of request headers allowed is 100. Requests that exceed this limit will receive
    * a 431 response for HTTP/1.x and cause a stream reset for HTTP/2.
    */
-  'max_headers_count'?: (_google_protobuf_UInt32Value__Output);
+  'max_headers_count': (_google_protobuf_UInt32Value__Output | null);
   /**
    * The maximum duration of a connection. The duration is defined as a period since a connection
    * was established. If not set, there is no max duration. When max_connection_duration is reached
@@ -119,12 +119,12 @@ export interface HttpProtocolOptions__Output {
    * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.drain_timeout>`.
    * Note: not implemented for upstream connections.
    */
-  'max_connection_duration'?: (_google_protobuf_Duration__Output);
+  'max_connection_duration': (_google_protobuf_Duration__Output | null);
   /**
    * Total duration to keep alive an HTTP request/response stream. If the time limit is reached the stream will be
    * reset independent of any other timeouts. If not specified, this value is not set.
    */
-  'max_stream_duration'?: (_google_protobuf_Duration__Output);
+  'max_stream_duration': (_google_protobuf_Duration__Output | null);
   /**
    * Action to take when a client request with a header name containing underscore characters is received.
    * If this setting is not specified, the value defaults to ALLOW.

@@ -36,6 +36,7 @@ export class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
   > = new Map<string, Watcher<ClusterLoadAssignment__Output>[]>();
 
   private latestResponses: ClusterLoadAssignment__Output[] = [];
+  private latestIsV2 = false;
 
   constructor(private updateResourceNames: () => void) {}
 
@@ -61,13 +62,14 @@ export class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
 
     /* If we have already received an update for the requested edsServiceName,
      * immediately pass that update along to the watcher */
+    const isV2 = this.latestIsV2;
     for (const message of this.latestResponses) {
       if (message.cluster_name === edsServiceName) {
         /* These updates normally occur asynchronously, so we ensure that
          * the same happens here */
         process.nextTick(() => {
           trace('Reporting existing EDS update for new watcher for edsServiceName ' + edsServiceName);
-          watcher.onValidUpdate(message);
+          watcher.onValidUpdate(message, isV2);
         });
       }
     }
@@ -143,7 +145,7 @@ export class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
     }
   }
 
-  handleResponses(responses: ClusterLoadAssignment__Output[]) {
+  handleResponses(responses: ClusterLoadAssignment__Output[], isV2: boolean) {
     for (const message of responses) {
       if (!this.validateResponse(message)) {
         trace('EDS validation failed for message ' + JSON.stringify(message));
@@ -151,12 +153,13 @@ export class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
       }
     }
     this.latestResponses = responses;
+    this.latestIsV2 = isV2;
     const allClusterNames: Set<string> = new Set<string>();
     for (const message of responses) {
       allClusterNames.add(message.cluster_name);
       const watchers = this.watchers.get(message.cluster_name) ?? [];
       for (const watcher of watchers) {
-        watcher.onValidUpdate(message);
+        watcher.onValidUpdate(message, isV2);
       }
     }
     trace('Received EDS updates for cluster names ' + Array.from(allClusterNames));

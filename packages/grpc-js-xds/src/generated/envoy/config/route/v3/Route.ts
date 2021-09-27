@@ -26,15 +26,15 @@ export interface Route {
   /**
    * Route matching parameters.
    */
-  'match'?: (_envoy_config_route_v3_RouteMatch);
+  'match'?: (_envoy_config_route_v3_RouteMatch | null);
   /**
    * Route request to some upstream cluster.
    */
-  'route'?: (_envoy_config_route_v3_RouteAction);
+  'route'?: (_envoy_config_route_v3_RouteAction | null);
   /**
    * Return a redirect.
    */
-  'redirect'?: (_envoy_config_route_v3_RedirectAction);
+  'redirect'?: (_envoy_config_route_v3_RedirectAction | null);
   /**
    * The Metadata field can be used to provide additional information
    * about the route. It can be used for configuration, stats, and logging.
@@ -42,15 +42,15 @@ export interface Route {
    * For instance, if the metadata is intended for the Router filter,
    * the filter name should be specified as *envoy.filters.http.router*.
    */
-  'metadata'?: (_envoy_config_core_v3_Metadata);
+  'metadata'?: (_envoy_config_core_v3_Metadata | null);
   /**
    * Decorator for the matched route.
    */
-  'decorator'?: (_envoy_config_route_v3_Decorator);
+  'decorator'?: (_envoy_config_route_v3_Decorator | null);
   /**
    * Return an arbitrary HTTP response directly, without proxying.
    */
-  'direct_response'?: (_envoy_config_route_v3_DirectResponseAction);
+  'direct_response'?: (_envoy_config_route_v3_DirectResponseAction | null);
   /**
    * Specifies a set of headers that will be added to requests matching this
    * route. Headers specified at this level are applied before headers from the
@@ -98,13 +98,13 @@ export interface Route {
    * Presence of the object defines whether the connection manager's tracing configuration
    * is overridden by this route specific instance.
    */
-  'tracing'?: (_envoy_config_route_v3_Tracing);
+  'tracing'?: (_envoy_config_route_v3_Tracing | null);
   /**
    * The maximum bytes which will be buffered for retries and shadowing.
    * If set, the bytes actually buffered will be the minimum value of this and the
    * listener per_connection_buffer_limit_bytes.
    */
-  'per_request_buffer_limit_bytes'?: (_google_protobuf_UInt32Value);
+  'per_request_buffer_limit_bytes'?: (_google_protobuf_UInt32Value | null);
   /**
    * [#not-implemented-hide:]
    * If true, a filter will define the action (e.g., it could dynamically generate the
@@ -112,7 +112,7 @@ export interface Route {
    * [#comment: TODO(samflattery): Remove cleanup in route_fuzz_test.cc when
    * implemented]
    */
-  'filter_action'?: (_envoy_config_route_v3_FilterAction);
+  'filter_action'?: (_envoy_config_route_v3_FilterAction | null);
   'action'?: "route"|"redirect"|"direct_response"|"filter_action";
 }
 
@@ -130,15 +130,15 @@ export interface Route__Output {
   /**
    * Route matching parameters.
    */
-  'match'?: (_envoy_config_route_v3_RouteMatch__Output);
+  'match': (_envoy_config_route_v3_RouteMatch__Output | null);
   /**
    * Route request to some upstream cluster.
    */
-  'route'?: (_envoy_config_route_v3_RouteAction__Output);
+  'route'?: (_envoy_config_route_v3_RouteAction__Output | null);
   /**
    * Return a redirect.
    */
-  'redirect'?: (_envoy_config_route_v3_RedirectAction__Output);
+  'redirect'?: (_envoy_config_route_v3_RedirectAction__Output | null);
   /**
    * The Metadata field can be used to provide additional information
    * about the route. It can be used for configuration, stats, and logging.
@@ -146,15 +146,15 @@ export interface Route__Output {
    * For instance, if the metadata is intended for the Router filter,
    * the filter name should be specified as *envoy.filters.http.router*.
    */
-  'metadata'?: (_envoy_config_core_v3_Metadata__Output);
+  'metadata': (_envoy_config_core_v3_Metadata__Output | null);
   /**
    * Decorator for the matched route.
    */
-  'decorator'?: (_envoy_config_route_v3_Decorator__Output);
+  'decorator': (_envoy_config_route_v3_Decorator__Output | null);
   /**
    * Return an arbitrary HTTP response directly, without proxying.
    */
-  'direct_response'?: (_envoy_config_route_v3_DirectResponseAction__Output);
+  'direct_response'?: (_envoy_config_route_v3_DirectResponseAction__Output | null);
   /**
    * Specifies a set of headers that will be added to requests matching this
    * route. Headers specified at this level are applied before headers from the
@@ -193,7 +193,7 @@ export interface Route__Output {
    * :ref:`FilterConfig<envoy_api_msg_config.route.v3.FilterConfig>`
    * message to specify additional options.]
    */
-  'typed_per_filter_config'?: ({[key: string]: _google_protobuf_Any__Output});
+  'typed_per_filter_config': ({[key: string]: _google_protobuf_Any__Output});
   /**
    * Name for the route.
    */
@@ -202,13 +202,13 @@ export interface Route__Output {
    * Presence of the object defines whether the connection manager's tracing configuration
    * is overridden by this route specific instance.
    */
-  'tracing'?: (_envoy_config_route_v3_Tracing__Output);
+  'tracing': (_envoy_config_route_v3_Tracing__Output | null);
   /**
    * The maximum bytes which will be buffered for retries and shadowing.
    * If set, the bytes actually buffered will be the minimum value of this and the
    * listener per_connection_buffer_limit_bytes.
    */
-  'per_request_buffer_limit_bytes'?: (_google_protobuf_UInt32Value__Output);
+  'per_request_buffer_limit_bytes': (_google_protobuf_UInt32Value__Output | null);
   /**
    * [#not-implemented-hide:]
    * If true, a filter will define the action (e.g., it could dynamically generate the
@@ -216,6 +216,6 @@ export interface Route__Output {
    * [#comment: TODO(samflattery): Remove cleanup in route_fuzz_test.cc when
    * implemented]
    */
-  'filter_action'?: (_envoy_config_route_v3_FilterAction__Output);
+  'filter_action'?: (_envoy_config_route_v3_FilterAction__Output | null);
   'action': "route"|"redirect"|"direct_response"|"filter_action";
 }

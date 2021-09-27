@@ -10,12 +10,12 @@ import type { EnvoyInternalAddress as _envoy_config_core_v3_EnvoyInternalAddress
  * management servers.
  */
 export interface Address {
-  'socket_address'?: (_envoy_config_core_v3_SocketAddress);
-  'pipe'?: (_envoy_config_core_v3_Pipe);
+  'socket_address'?: (_envoy_config_core_v3_SocketAddress | null);
+  'pipe'?: (_envoy_config_core_v3_Pipe | null);
   /**
    * [#not-implemented-hide:]
    */
-  'envoy_internal_address'?: (_envoy_config_core_v3_EnvoyInternalAddress);
+  'envoy_internal_address'?: (_envoy_config_core_v3_EnvoyInternalAddress | null);
   'address'?: "socket_address"|"pipe"|"envoy_internal_address";
 }
 
@@ -25,11 +25,11 @@ export interface Address {
  * management servers.
  */
 export interface Address__Output {
-  'socket_address'?: (_envoy_config_core_v3_SocketAddress__Output);
-  'pipe'?: (_envoy_config_core_v3_Pipe__Output);
+  'socket_address'?: (_envoy_config_core_v3_SocketAddress__Output | null);
+  'pipe'?: (_envoy_config_core_v3_Pipe__Output | null);
   /**
    * [#not-implemented-hide:]
    */
-  'envoy_internal_address'?: (_envoy_config_core_v3_EnvoyInternalAddress__Output);
+  'envoy_internal_address'?: (_envoy_config_core_v3_EnvoyInternalAddress__Output | null);
   'address': "socket_address"|"pipe"|"envoy_internal_address";
 }

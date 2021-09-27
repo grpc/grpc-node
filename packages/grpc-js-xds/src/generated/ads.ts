@@ -1,8 +1,8 @@
 import type * as grpc from '@grpc/grpc-js';
-import type { ServiceDefinition, EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
+import type { EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
 
-import type { AggregatedDiscoveryServiceClient as _envoy_service_discovery_v2_AggregatedDiscoveryServiceClient } from './envoy/service/discovery/v2/AggregatedDiscoveryService';
-import type { AggregatedDiscoveryServiceClient as _envoy_service_discovery_v3_AggregatedDiscoveryServiceClient } from './envoy/service/discovery/v3/AggregatedDiscoveryService';
+import type { AggregatedDiscoveryServiceClient as _envoy_service_discovery_v2_AggregatedDiscoveryServiceClient, AggregatedDiscoveryServiceDefinition as _envoy_service_discovery_v2_AggregatedDiscoveryServiceDefinition } from './envoy/service/discovery/v2/AggregatedDiscoveryService';
+import type { AggregatedDiscoveryServiceClient as _envoy_service_discovery_v3_AggregatedDiscoveryServiceClient, AggregatedDiscoveryServiceDefinition as _envoy_service_discovery_v3_AggregatedDiscoveryServiceDefinition } from './envoy/service/discovery/v3/AggregatedDiscoveryService';
 
 type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {
   new(...args: ConstructorParameters<Constructor>): Subtype;
@@ -102,7 +102,7 @@ export interface ProtoGrpcType {
            * DiscoveryRequest/DiscoveryResponse provides sufficient information to recover
            * the multiplexed singleton APIs at the Envoy instance and management server.
            */
-          AggregatedDiscoveryService: SubtypeConstructor<typeof grpc.Client, _envoy_service_discovery_v2_AggregatedDiscoveryServiceClient> & { service: ServiceDefinition }
+          AggregatedDiscoveryService: SubtypeConstructor<typeof grpc.Client, _envoy_service_discovery_v2_AggregatedDiscoveryServiceClient> & { service: _envoy_service_discovery_v2_AggregatedDiscoveryServiceDefinition }
         }
         v3: {
           AdsDummy: MessageTypeDefinition
@@ -114,7 +114,7 @@ export interface ProtoGrpcType {
            * DiscoveryRequest/DiscoveryResponse provides sufficient information to recover
            * the multiplexed singleton APIs at the Envoy instance and management server.
            */
-          AggregatedDiscoveryService: SubtypeConstructor<typeof grpc.Client, _envoy_service_discovery_v3_AggregatedDiscoveryServiceClient> & { service: ServiceDefinition }
+          AggregatedDiscoveryService: SubtypeConstructor<typeof grpc.Client, _envoy_service_discovery_v3_AggregatedDiscoveryServiceClient> & { service: _envoy_service_discovery_v3_AggregatedDiscoveryServiceDefinition }
           DeltaDiscoveryRequest: MessageTypeDefinition
           DeltaDiscoveryResponse: MessageTypeDefinition
           DiscoveryRequest: MessageTypeDefinition

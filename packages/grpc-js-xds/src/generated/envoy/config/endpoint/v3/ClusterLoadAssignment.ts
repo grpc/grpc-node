@@ -17,7 +17,7 @@ export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOver
   /**
    * Percentage of traffic that should be dropped for the category.
    */
-  'drop_percentage'?: (_envoy_type_v3_FractionalPercent);
+  'drop_percentage'?: (_envoy_type_v3_FractionalPercent | null);
 }
 
 /**
@@ -31,7 +31,7 @@ export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOver
   /**
    * Percentage of traffic that should be dropped for the category.
    */
-  'drop_percentage'?: (_envoy_type_v3_FractionalPercent__Output);
+  'drop_percentage': (_envoy_type_v3_FractionalPercent__Output | null);
 }
 
 /**
@@ -78,14 +78,14 @@ export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy {
    * Read more at :ref:`priority levels <arch_overview_load_balancing_priority_levels>` and
    * :ref:`localities <arch_overview_load_balancing_locality_weighted_lb>`.
    */
-  'overprovisioning_factor'?: (_google_protobuf_UInt32Value);
+  'overprovisioning_factor'?: (_google_protobuf_UInt32Value | null);
   /**
    * The max time until which the endpoints from this assignment can be used.
    * If no new assignments are received before this time expires the endpoints
    * are considered stale and should be marked unhealthy.
    * Defaults to 0 which means endpoints never go stale.
    */
-  'endpoint_stale_after'?: (_google_protobuf_Duration);
+  'endpoint_stale_after'?: (_google_protobuf_Duration | null);
 }
 
 /**
@@ -132,14 +132,14 @@ export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__Output 
    * Read more at :ref:`priority levels <arch_overview_load_balancing_priority_levels>` and
    * :ref:`localities <arch_overview_load_balancing_locality_weighted_lb>`.
    */
-  'overprovisioning_factor'?: (_google_protobuf_UInt32Value__Output);
+  'overprovisioning_factor': (_google_protobuf_UInt32Value__Output | null);
   /**
    * The max time until which the endpoints from this assignment can be used.
    * If no new assignments are received before this time expires the endpoints
    * are considered stale and should be marked unhealthy.
    * Defaults to 0 which means endpoints never go stale.
    */
-  'endpoint_stale_after'?: (_google_protobuf_Duration__Output);
+  'endpoint_stale_after': (_google_protobuf_Duration__Output | null);
 }
 
 /**
@@ -169,7 +169,7 @@ export interface ClusterLoadAssignment {
   /**
    * Load balancing policy settings.
    */
-  'policy'?: (_envoy_config_endpoint_v3_ClusterLoadAssignment_Policy);
+  'policy'?: (_envoy_config_endpoint_v3_ClusterLoadAssignment_Policy | null);
   /**
    * Map of named endpoints that can be referenced in LocalityLbEndpoints.
    * [#not-implemented-hide:]
@@ -204,10 +204,10 @@ export interface ClusterLoadAssignment__Output {
   /**
    * Load balancing policy settings.
    */
-  'policy'?: (_envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__Output);
+  'policy': (_envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__Output | null);
   /**
    * Map of named endpoints that can be referenced in LocalityLbEndpoints.
    * [#not-implemented-hide:]
    */
-  'named_endpoints'?: ({[key: string]: _envoy_config_endpoint_v3_Endpoint__Output});
+  'named_endpoints': ({[key: string]: _envoy_config_endpoint_v3_Endpoint__Output});
 }

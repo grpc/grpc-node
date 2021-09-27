@@ -10,7 +10,7 @@ export interface HeaderFilter {
    * Only requests with a header which matches the specified HeaderMatcher will
    * pass the filter check.
    */
-  'header'?: (_envoy_config_route_v3_HeaderMatcher);
+  'header'?: (_envoy_config_route_v3_HeaderMatcher | null);
 }
 
 /**
@@ -21,5 +21,5 @@ export interface HeaderFilter__Output {
    * Only requests with a header which matches the specified HeaderMatcher will
    * pass the filter check.
    */
-  'header'?: (_envoy_config_route_v3_HeaderMatcher__Output);
+  'header': (_envoy_config_route_v3_HeaderMatcher__Output | null);
 }

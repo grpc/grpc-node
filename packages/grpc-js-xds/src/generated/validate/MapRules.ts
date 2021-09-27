@@ -25,13 +25,13 @@ export interface MapRules {
   /**
    * Keys specifies the constraints to be applied to each key in the field.
    */
-  'keys'?: (_validate_FieldRules);
+  'keys'?: (_validate_FieldRules | null);
   /**
    * Values specifies the constraints to be applied to the value of each key
    * in the field. Message values will still have their validations evaluated
    * unless skip is specified here.
    */
-  'values'?: (_validate_FieldRules);
+  'values'?: (_validate_FieldRules | null);
 }
 
 /**
@@ -56,11 +56,11 @@ export interface MapRules__Output {
   /**
    * Keys specifies the constraints to be applied to each key in the field.
    */
-  'keys'?: (_validate_FieldRules__Output);
+  'keys': (_validate_FieldRules__Output | null);
   /**
    * Values specifies the constraints to be applied to the value of each key
    * in the field. Message values will still have their validations evaluated
    * unless skip is specified here.
    */
-  'values'?: (_validate_FieldRules__Output);
+  'values': (_validate_FieldRules__Output | null);
 }

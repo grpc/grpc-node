@@ -33,7 +33,7 @@ export interface DescriptorProto {
   'enumType'?: (_google_protobuf_EnumDescriptorProto)[];
   'extensionRange'?: (_google_protobuf_DescriptorProto_ExtensionRange)[];
   'extension'?: (_google_protobuf_FieldDescriptorProto)[];
-  'options'?: (_google_protobuf_MessageOptions);
+  'options'?: (_google_protobuf_MessageOptions | null);
   'oneofDecl'?: (_google_protobuf_OneofDescriptorProto)[];
   'reservedRange'?: (_google_protobuf_DescriptorProto_ReservedRange)[];
   'reservedName'?: (string)[];
@@ -46,7 +46,7 @@ export interface DescriptorProto__Output {
   'enumType': (_google_protobuf_EnumDescriptorProto__Output)[];
   'extensionRange': (_google_protobuf_DescriptorProto_ExtensionRange__Output)[];
   'extension': (_google_protobuf_FieldDescriptorProto__Output)[];
-  'options'?: (_google_protobuf_MessageOptions__Output);
+  'options': (_google_protobuf_MessageOptions__Output | null);
   'oneofDecl': (_google_protobuf_OneofDescriptorProto__Output)[];
   'reservedRange': (_google_protobuf_DescriptorProto_ReservedRange__Output)[];
   'reservedName': (string)[];

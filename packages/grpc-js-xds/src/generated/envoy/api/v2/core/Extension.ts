@@ -31,7 +31,7 @@ export interface Extension {
    * of other extensions and the Envoy API.
    * This field is not set when extension did not provide version information.
    */
-  'version'?: (_envoy_api_v2_core_BuildVersion);
+  'version'?: (_envoy_api_v2_core_BuildVersion | null);
   /**
    * Indicates that the extension is present but was disabled via dynamic configuration.
    */
@@ -67,7 +67,7 @@ export interface Extension__Output {
    * of other extensions and the Envoy API.
    * This field is not set when extension did not provide version information.
    */
-  'version'?: (_envoy_api_v2_core_BuildVersion__Output);
+  'version': (_envoy_api_v2_core_BuildVersion__Output | null);
   /**
    * Indicates that the extension is present but was disabled via dynamic configuration.
    */

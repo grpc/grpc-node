@@ -27,7 +27,7 @@ export interface _envoy_type_matcher_v3_RegexMatcher_GoogleRE2 {
    * This field is deprecated; regexp validation should be performed on the management server
    * instead of being done by each individual client.
    */
-  'max_program_size'?: (_google_protobuf_UInt32Value);
+  'max_program_size'?: (_google_protobuf_UInt32Value | null);
 }
 
 /**
@@ -55,7 +55,7 @@ export interface _envoy_type_matcher_v3_RegexMatcher_GoogleRE2__Output {
    * This field is deprecated; regexp validation should be performed on the management server
    * instead of being done by each individual client.
    */
-  'max_program_size'?: (_google_protobuf_UInt32Value__Output);
+  'max_program_size': (_google_protobuf_UInt32Value__Output | null);
 }
 
 /**
@@ -65,7 +65,7 @@ export interface RegexMatcher {
   /**
    * Google's RE2 regex engine.
    */
-  'google_re2'?: (_envoy_type_matcher_v3_RegexMatcher_GoogleRE2);
+  'google_re2'?: (_envoy_type_matcher_v3_RegexMatcher_GoogleRE2 | null);
   /**
    * The regex match string. The string must be supported by the configured engine.
    */
@@ -80,7 +80,7 @@ export interface RegexMatcher__Output {
   /**
    * Google's RE2 regex engine.
    */
-  'google_re2'?: (_envoy_type_matcher_v3_RegexMatcher_GoogleRE2__Output);
+  'google_re2'?: (_envoy_type_matcher_v3_RegexMatcher_GoogleRE2__Output | null);
   /**
    * The regex match string. The string must be supported by the configured engine.
    */

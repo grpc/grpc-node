@@ -370,8 +370,10 @@ export class Subchannel {
   private createSession(proxyConnectionResult: ProxyConnectionResult) {
     if (proxyConnectionResult.realTarget) {
       this.remoteName = uriToString(proxyConnectionResult.realTarget);
+      this.trace('creating HTTP/2 session through proxy to ' + proxyConnectionResult.realTarget);
     } else {
       this.remoteName = null;
+      this.trace('creating HTTP/2 session');
     }
     const targetAuthority = getDefaultAuthority(
       proxyConnectionResult.realTarget ?? this.channelTarget
@@ -477,6 +479,7 @@ export class Subchannel {
     });
     session.once('close', () => {
       if (this.session === session) {
+        this.trace('connection closed');
         this.transitionToState(
           [ConnectivityState.CONNECTING],
           ConnectivityState.TRANSIENT_FAILURE
@@ -762,7 +765,7 @@ export class Subchannel {
   startCallStream(
     metadata: Metadata,
     callStream: Http2CallStream,
-    extraFilterFactories: FilterFactory<Filter>[]
+    extraFilters: Filter[]
   ) {
     const headers = metadata.toHttp2Headers();
     headers[HTTP2_HEADER_AUTHORITY] = callStream.getHost();
@@ -821,7 +824,7 @@ export class Subchannel {
         }
       }
     });
-    callStream.attachHttp2Stream(http2Stream, this, extraFilterFactories, {
+    callStream.attachHttp2Stream(http2Stream, this, extraFilters, {
       addMessageSent: () => {
         this.messagesSent += 1;
         this.lastMessageSentTimestamp = new Date();

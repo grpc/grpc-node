@@ -266,7 +266,10 @@ import * as load_balancer_pick_first from './load-balancer-pick-first';
 import * as load_balancer_round_robin from './load-balancer-round-robin';
 import * as channelz from './channelz';
 
+const clientVersion = require('../../package.json').version;
+
 (() => {
+  logging.trace(LogVerbosity.DEBUG, 'index', 'Loading @grpc/grpc-js version ' + clientVersion);
   resolver_dns.setup();
   resolver_uds.setup();
   resolver_ip.setup();

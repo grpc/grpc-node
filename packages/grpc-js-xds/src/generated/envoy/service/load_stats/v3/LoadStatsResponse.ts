@@ -22,7 +22,7 @@ export interface LoadStatsResponse {
    * of inobservability that might otherwise exists between the messages. New clusters are not
    * subject to this consideration.
    */
-  'load_reporting_interval'?: (_google_protobuf_Duration);
+  'load_reporting_interval'?: (_google_protobuf_Duration | null);
   /**
    * Set to *true* if the management server supports endpoint granularity
    * report.
@@ -56,7 +56,7 @@ export interface LoadStatsResponse__Output {
    * of inobservability that might otherwise exists between the messages. New clusters are not
    * subject to this consideration.
    */
-  'load_reporting_interval'?: (_google_protobuf_Duration__Output);
+  'load_reporting_interval': (_google_protobuf_Duration__Output | null);
   /**
    * Set to *true* if the management server supports endpoint granularity
    * report.

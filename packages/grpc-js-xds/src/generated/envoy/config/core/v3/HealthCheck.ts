@@ -20,7 +20,7 @@ export interface _envoy_config_core_v3_HealthCheck_CustomHealthCheck {
    * The registered name of the custom health checker.
    */
   'name'?: (string);
-  'typed_config'?: (_google_protobuf_Any);
+  'typed_config'?: (_google_protobuf_Any | null);
   /**
    * A custom health checker specific configuration which depends on the custom health checker
    * being instantiated. See :api:`envoy/config/health_checker` for reference.
@@ -36,7 +36,7 @@ export interface _envoy_config_core_v3_HealthCheck_CustomHealthCheck__Output {
    * The registered name of the custom health checker.
    */
   'name': (string);
-  'typed_config'?: (_google_protobuf_Any__Output);
+  'typed_config'?: (_google_protobuf_Any__Output | null);
   /**
    * A custom health checker specific configuration which depends on the custom health checker
    * being instantiated. See :api:`envoy/config/health_checker` for reference.
@@ -111,11 +111,11 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck {
   /**
    * [#not-implemented-hide:] HTTP specific payload.
    */
-  'send'?: (_envoy_config_core_v3_HealthCheck_Payload);
+  'send'?: (_envoy_config_core_v3_HealthCheck_Payload | null);
   /**
    * [#not-implemented-hide:] HTTP specific response.
    */
-  'receive'?: (_envoy_config_core_v3_HealthCheck_Payload);
+  'receive'?: (_envoy_config_core_v3_HealthCheck_Payload | null);
   /**
    * Specifies a list of HTTP headers that should be added to each request that is sent to the
    * health checked cluster. For more information, including details on header value syntax, see
@@ -145,7 +145,7 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck {
    * <envoy_api_msg_type.matcher.v3.StringMatcher>`. See the :ref:`architecture overview
    * <arch_overview_health_checking_identity>` for more information.
    */
-  'service_name_matcher'?: (_envoy_type_matcher_v3_StringMatcher);
+  'service_name_matcher'?: (_envoy_type_matcher_v3_StringMatcher | null);
 }
 
 /**
@@ -167,11 +167,11 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck__Output {
   /**
    * [#not-implemented-hide:] HTTP specific payload.
    */
-  'send'?: (_envoy_config_core_v3_HealthCheck_Payload__Output);
+  'send': (_envoy_config_core_v3_HealthCheck_Payload__Output | null);
   /**
    * [#not-implemented-hide:] HTTP specific response.
    */
-  'receive'?: (_envoy_config_core_v3_HealthCheck_Payload__Output);
+  'receive': (_envoy_config_core_v3_HealthCheck_Payload__Output | null);
   /**
    * Specifies a list of HTTP headers that should be added to each request that is sent to the
    * health checked cluster. For more information, including details on header value syntax, see
@@ -201,7 +201,7 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck__Output {
    * <envoy_api_msg_type.matcher.v3.StringMatcher>`. See the :ref:`architecture overview
    * <arch_overview_health_checking_identity>` for more information.
    */
-  'service_name_matcher'?: (_envoy_type_matcher_v3_StringMatcher__Output);
+  'service_name_matcher': (_envoy_type_matcher_v3_StringMatcher__Output | null);
 }
 
 /**
@@ -258,7 +258,7 @@ export interface _envoy_config_core_v3_HealthCheck_TcpHealthCheck {
   /**
    * Empty payloads imply a connect-only health check.
    */
-  'send'?: (_envoy_config_core_v3_HealthCheck_Payload);
+  'send'?: (_envoy_config_core_v3_HealthCheck_Payload | null);
   /**
    * When checking the response, “fuzzy” matching is performed such that each
    * binary block must be found, and in the order specified, but not
@@ -271,7 +271,7 @@ export interface _envoy_config_core_v3_HealthCheck_TcpHealthCheck__Output {
   /**
    * Empty payloads imply a connect-only health check.
    */
-  'send'?: (_envoy_config_core_v3_HealthCheck_Payload__Output);
+  'send': (_envoy_config_core_v3_HealthCheck_Payload__Output | null);
   /**
    * When checking the response, “fuzzy” matching is performed such that each
    * binary block must be found, and in the order specified, but not
@@ -320,48 +320,48 @@ export interface HealthCheck {
    * The time to wait for a health check response. If the timeout is reached the
    * health check attempt will be considered a failure.
    */
-  'timeout'?: (_google_protobuf_Duration);
+  'timeout'?: (_google_protobuf_Duration | null);
   /**
    * The interval between health checks.
    */
-  'interval'?: (_google_protobuf_Duration);
+  'interval'?: (_google_protobuf_Duration | null);
   /**
    * An optional jitter amount in milliseconds. If specified, during every
    * interval Envoy will add interval_jitter to the wait time.
    */
-  'interval_jitter'?: (_google_protobuf_Duration);
+  'interval_jitter'?: (_google_protobuf_Duration | null);
   /**
    * The number of unhealthy health checks required before a host is marked
    * unhealthy. Note that for *http* health checking if a host responds with 503
    * this threshold is ignored and the host is considered unhealthy immediately.
    */
-  'unhealthy_threshold'?: (_google_protobuf_UInt32Value);
+  'unhealthy_threshold'?: (_google_protobuf_UInt32Value | null);
   /**
    * The number of healthy health checks required before a host is marked
    * healthy. Note that during startup, only a single successful health check is
    * required to mark a host healthy.
    */
-  'healthy_threshold'?: (_google_protobuf_UInt32Value);
+  'healthy_threshold'?: (_google_protobuf_UInt32Value | null);
   /**
    * [#not-implemented-hide:] Non-serving port for health checking.
    */
-  'alt_port'?: (_google_protobuf_UInt32Value);
+  'alt_port'?: (_google_protobuf_UInt32Value | null);
   /**
    * Reuse health check connection between health checks. Default is true.
    */
-  'reuse_connection'?: (_google_protobuf_BoolValue);
+  'reuse_connection'?: (_google_protobuf_BoolValue | null);
   /**
    * HTTP health check.
    */
-  'http_health_check'?: (_envoy_config_core_v3_HealthCheck_HttpHealthCheck);
+  'http_health_check'?: (_envoy_config_core_v3_HealthCheck_HttpHealthCheck | null);
   /**
    * TCP health check.
    */
-  'tcp_health_check'?: (_envoy_config_core_v3_HealthCheck_TcpHealthCheck);
+  'tcp_health_check'?: (_envoy_config_core_v3_HealthCheck_TcpHealthCheck | null);
   /**
    * gRPC health check.
    */
-  'grpc_health_check'?: (_envoy_config_core_v3_HealthCheck_GrpcHealthCheck);
+  'grpc_health_check'?: (_envoy_config_core_v3_HealthCheck_GrpcHealthCheck | null);
   /**
    * The "no traffic interval" is a special health check interval that is used when a cluster has
    * never had traffic routed to it. This lower interval allows cluster information to be kept up to
@@ -372,11 +372,11 @@ export interface HealthCheck {
    * 
    * The default value for "no traffic interval" is 60 seconds.
    */
-  'no_traffic_interval'?: (_google_protobuf_Duration);
+  'no_traffic_interval'?: (_google_protobuf_Duration | null);
   /**
    * Custom health check.
    */
-  'custom_health_check'?: (_envoy_config_core_v3_HealthCheck_CustomHealthCheck);
+  'custom_health_check'?: (_envoy_config_core_v3_HealthCheck_CustomHealthCheck | null);
   /**
    * The "unhealthy interval" is a health check interval that is used for hosts that are marked as
    * unhealthy. As soon as the host is marked as healthy, Envoy will shift back to using the
@@ -384,7 +384,7 @@ export interface HealthCheck {
    * 
    * The default value for "unhealthy interval" is the same as "interval".
    */
-  'unhealthy_interval'?: (_google_protobuf_Duration);
+  'unhealthy_interval'?: (_google_protobuf_Duration | null);
   /**
    * The "unhealthy edge interval" is a special health check interval that is used for the first
    * health check right after a host is marked as unhealthy. For subsequent health checks
@@ -393,7 +393,7 @@ export interface HealthCheck {
    * 
    * The default value for "unhealthy edge interval" is the same as "unhealthy interval".
    */
-  'unhealthy_edge_interval'?: (_google_protobuf_Duration);
+  'unhealthy_edge_interval'?: (_google_protobuf_Duration | null);
   /**
    * The "healthy edge interval" is a special health check interval that is used for the first
    * health check right after a host is marked as healthy. For subsequent health checks
@@ -401,7 +401,7 @@ export interface HealthCheck {
    * 
    * The default value for "healthy edge interval" is the same as the default interval.
    */
-  'healthy_edge_interval'?: (_google_protobuf_Duration);
+  'healthy_edge_interval'?: (_google_protobuf_Duration | null);
   /**
    * Specifies the path to the :ref:`health check event log <arch_overview_health_check_logging>`.
    * If empty, no event log will be written.
@@ -427,17 +427,17 @@ export interface HealthCheck {
    * checking after for a random time in ms between 0 and initial_jitter. This only
    * applies to the first health check.
    */
-  'initial_jitter'?: (_google_protobuf_Duration);
+  'initial_jitter'?: (_google_protobuf_Duration | null);
   /**
    * This allows overriding the cluster TLS settings, just for health check connections.
    */
-  'tls_options'?: (_envoy_config_core_v3_HealthCheck_TlsOptions);
+  'tls_options'?: (_envoy_config_core_v3_HealthCheck_TlsOptions | null);
   /**
    * [#not-implemented-hide:]
    * The gRPC service for the health check event service.
    * If empty, health check events won't be sent to a remote endpoint.
    */
-  'event_service'?: (_envoy_config_core_v3_EventServiceConfig);
+  'event_service'?: (_envoy_config_core_v3_EventServiceConfig | null);
   /**
    * Optional key/value pairs that will be used to match a transport socket from those specified in the cluster's
    * :ref:`tranport socket matches <envoy_api_field_config.cluster.v3.Cluster.transport_socket_matches>`.
@@ -470,7 +470,7 @@ export interface HealthCheck {
    * the cluster's :ref:`transport socket <envoy_api_field_config.cluster.v3.Cluster.transport_socket>`
    * will be used for health check socket configuration.
    */
-  'transport_socket_match_criteria'?: (_google_protobuf_Struct);
+  'transport_socket_match_criteria'?: (_google_protobuf_Struct | null);
   /**
    * The "no traffic healthy interval" is a special health check interval that
    * is used for hosts that are currently passing active health checking
@@ -486,7 +486,7 @@ export interface HealthCheck {
    * If no_traffic_healthy_interval is not set, it will default to the
    * no traffic interval and send that interval regardless of health state.
    */
-  'no_traffic_healthy_interval'?: (_google_protobuf_Duration);
+  'no_traffic_healthy_interval'?: (_google_protobuf_Duration | null);
   'health_checker'?: "http_health_check"|"tcp_health_check"|"grpc_health_check"|"custom_health_check";
 }
 
@@ -498,48 +498,48 @@ export interface HealthCheck__Output {
    * The time to wait for a health check response. If the timeout is reached the
    * health check attempt will be considered a failure.
    */
-  'timeout'?: (_google_protobuf_Duration__Output);
+  'timeout': (_google_protobuf_Duration__Output | null);
   /**
    * The interval between health checks.
    */
-  'interval'?: (_google_protobuf_Duration__Output);
+  'interval': (_google_protobuf_Duration__Output | null);
   /**
    * An optional jitter amount in milliseconds. If specified, during every
    * interval Envoy will add interval_jitter to the wait time.
    */
-  'interval_jitter'?: (_google_protobuf_Duration__Output);
+  'interval_jitter': (_google_protobuf_Duration__Output | null);
   /**
    * The number of unhealthy health checks required before a host is marked
    * unhealthy. Note that for *http* health checking if a host responds with 503
    * this threshold is ignored and the host is considered unhealthy immediately.
    */
-  'unhealthy_threshold'?: (_google_protobuf_UInt32Value__Output);
+  'unhealthy_threshold': (_google_protobuf_UInt32Value__Output | null);
   /**
    * The number of healthy health checks required before a host is marked
    * healthy. Note that during startup, only a single successful health check is
    * required to mark a host healthy.
    */
-  'healthy_threshold'?: (_google_protobuf_UInt32Value__Output);
+  'healthy_threshold': (_google_protobuf_UInt32Value__Output | null);
   /**
    * [#not-implemented-hide:] Non-serving port for health checking.
    */
-  'alt_port'?: (_google_protobuf_UInt32Value__Output);
+  'alt_port': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Reuse health check connection between health checks. Default is true.
    */
-  'reuse_connection'?: (_google_protobuf_BoolValue__Output);
+  'reuse_connection': (_google_protobuf_BoolValue__Output | null);
   /**
    * HTTP health check.
    */
-  'http_health_check'?: (_envoy_config_core_v3_HealthCheck_HttpHealthCheck__Output);
+  'http_health_check'?: (_envoy_config_core_v3_HealthCheck_HttpHealthCheck__Output | null);
   /**
    * TCP health check.
    */
-  'tcp_health_check'?: (_envoy_config_core_v3_HealthCheck_TcpHealthCheck__Output);
+  'tcp_health_check'?: (_envoy_config_core_v3_HealthCheck_TcpHealthCheck__Output | null);
   /**
    * gRPC health check.
    */
-  'grpc_health_check'?: (_envoy_config_core_v3_HealthCheck_GrpcHealthCheck__Output);
+  'grpc_health_check'?: (_envoy_config_core_v3_HealthCheck_GrpcHealthCheck__Output | null);
   /**
    * The "no traffic interval" is a special health check interval that is used when a cluster has
    * never had traffic routed to it. This lower interval allows cluster information to be kept up to
@@ -550,11 +550,11 @@ export interface HealthCheck__Output {
    * 
    * The default value for "no traffic interval" is 60 seconds.
    */
-  'no_traffic_interval'?: (_google_protobuf_Duration__Output);
+  'no_traffic_interval': (_google_protobuf_Duration__Output | null);
   /**
    * Custom health check.
    */
-  'custom_health_check'?: (_envoy_config_core_v3_HealthCheck_CustomHealthCheck__Output);
+  'custom_health_check'?: (_envoy_config_core_v3_HealthCheck_CustomHealthCheck__Output | null);
   /**
    * The "unhealthy interval" is a health check interval that is used for hosts that are marked as
    * unhealthy. As soon as the host is marked as healthy, Envoy will shift back to using the
@@ -562,7 +562,7 @@ export interface HealthCheck__Output {
    * 
    * The default value for "unhealthy interval" is the same as "interval".
    */
-  'unhealthy_interval'?: (_google_protobuf_Duration__Output);
+  'unhealthy_interval': (_google_protobuf_Duration__Output | null);
   /**
    * The "unhealthy edge interval" is a special health check interval that is used for the first
    * health check right after a host is marked as unhealthy. For subsequent health checks
@@ -571,7 +571,7 @@ export interface HealthCheck__Output {
    * 
    * The default value for "unhealthy edge interval" is the same as "unhealthy interval".
    */
-  'unhealthy_edge_interval'?: (_google_protobuf_Duration__Output);
+  'unhealthy_edge_interval': (_google_protobuf_Duration__Output | null);
   /**
    * The "healthy edge interval" is a special health check interval that is used for the first
    * health check right after a host is marked as healthy. For subsequent health checks
@@ -579,7 +579,7 @@ export interface HealthCheck__Output {
    * 
    * The default value for "healthy edge interval" is the same as the default interval.
    */
-  'healthy_edge_interval'?: (_google_protobuf_Duration__Output);
+  'healthy_edge_interval': (_google_protobuf_Duration__Output | null);
   /**
    * Specifies the path to the :ref:`health check event log <arch_overview_health_check_logging>`.
    * If empty, no event log will be written.
@@ -605,17 +605,17 @@ export interface HealthCheck__Output {
    * checking after for a random time in ms between 0 and initial_jitter. This only
    * applies to the first health check.
    */
-  'initial_jitter'?: (_google_protobuf_Duration__Output);
+  'initial_jitter': (_google_protobuf_Duration__Output | null);
   /**
    * This allows overriding the cluster TLS settings, just for health check connections.
    */
-  'tls_options'?: (_envoy_config_core_v3_HealthCheck_TlsOptions__Output);
+  'tls_options': (_envoy_config_core_v3_HealthCheck_TlsOptions__Output | null);
   /**
    * [#not-implemented-hide:]
    * The gRPC service for the health check event service.
    * If empty, health check events won't be sent to a remote endpoint.
    */
-  'event_service'?: (_envoy_config_core_v3_EventServiceConfig__Output);
+  'event_service': (_envoy_config_core_v3_EventServiceConfig__Output | null);
   /**
    * Optional key/value pairs that will be used to match a transport socket from those specified in the cluster's
    * :ref:`tranport socket matches <envoy_api_field_config.cluster.v3.Cluster.transport_socket_matches>`.
@@ -648,7 +648,7 @@ export interface HealthCheck__Output {
    * the cluster's :ref:`transport socket <envoy_api_field_config.cluster.v3.Cluster.transport_socket>`
    * will be used for health check socket configuration.
    */
-  'transport_socket_match_criteria'?: (_google_protobuf_Struct__Output);
+  'transport_socket_match_criteria': (_google_protobuf_Struct__Output | null);
   /**
    * The "no traffic healthy interval" is a special health check interval that
    * is used for hosts that are currently passing active health checking
@@ -664,6 +664,6 @@ export interface HealthCheck__Output {
    * If no_traffic_healthy_interval is not set, it will default to the
    * no traffic interval and send that interval regardless of health state.
    */
-  'no_traffic_healthy_interval'?: (_google_protobuf_Duration__Output);
+  'no_traffic_healthy_interval': (_google_protobuf_Duration__Output | null);
   'health_checker': "http_health_check"|"tcp_health_check"|"grpc_health_check"|"custom_health_check";
 }

@@ -63,7 +63,7 @@ export interface Endpoint {
    * in the Address). For LOGICAL or STRICT DNS, it is expected to be hostname,
    * and will be resolved via DNS.
    */
-  'address'?: (_envoy_config_core_v3_Address);
+  'address'?: (_envoy_config_core_v3_Address | null);
   /**
    * The optional health check configuration is used as configuration for the
    * health checker to contact the health checked host.
@@ -73,7 +73,7 @@ export interface Endpoint {
    * This takes into effect only for upstream clusters with
    * :ref:`active health checking <arch_overview_health_checking>` enabled.
    */
-  'health_check_config'?: (_envoy_config_endpoint_v3_Endpoint_HealthCheckConfig);
+  'health_check_config'?: (_envoy_config_endpoint_v3_Endpoint_HealthCheckConfig | null);
   /**
    * The hostname associated with this endpoint. This hostname is not used for routing or address
    * resolution. If provided, it will be associated with the endpoint, and can be used for features
@@ -98,7 +98,7 @@ export interface Endpoint__Output {
    * in the Address). For LOGICAL or STRICT DNS, it is expected to be hostname,
    * and will be resolved via DNS.
    */
-  'address'?: (_envoy_config_core_v3_Address__Output);
+  'address': (_envoy_config_core_v3_Address__Output | null);
   /**
    * The optional health check configuration is used as configuration for the
    * health checker to contact the health checked host.
@@ -108,7 +108,7 @@ export interface Endpoint__Output {
    * This takes into effect only for upstream clusters with
    * :ref:`active health checking <arch_overview_health_checking>` enabled.
    */
-  'health_check_config'?: (_envoy_config_endpoint_v3_Endpoint_HealthCheckConfig__Output);
+  'health_check_config': (_envoy_config_endpoint_v3_Endpoint_HealthCheckConfig__Output | null);
   /**
    * The hostname associated with this endpoint. This hostname is not used for routing or address
    * resolution. If provided, it will be associated with the endpoint, and can be used for features

@@ -46,6 +46,8 @@ import { mapProxyName } from './http_proxy';
 import { GrpcUri, parseUri, uriToString } from './uri-parser';
 import { ServerSurfaceCall } from './server-call';
 import { SurfaceCall } from './call';
+import { Filter } from './filter';
+
 import { ConnectivityState } from './connectivity-state';
 import { ChannelInfo, ChannelRef, ChannelzCallTracker, ChannelzChildrenTracker, ChannelzTrace, registerChannelzChannel, SubchannelRef, unregisterChannelzRef } from './channelz';
 
@@ -153,6 +155,7 @@ export class ChannelImplementation implements Channel {
     callStream: Http2CallStream;
     callMetadata: Metadata;
     callConfig: CallConfig;
+    dynamicFilters: Filter[];
   }> = [];
   private connectivityStateWatchers: ConnectivityStateWatcher[] = [];
   private defaultAuthority: string;
@@ -257,8 +260,8 @@ export class ChannelImplementation implements Channel {
         const queueCopy = this.pickQueue.slice();
         this.pickQueue = [];
         this.callRefTimerUnref();
-        for (const { callStream, callMetadata, callConfig } of queueCopy) {
-          this.tryPick(callStream, callMetadata, callConfig);
+        for (const { callStream, callMetadata, callConfig, dynamicFilters } of queueCopy) {
+          this.tryPick(callStream, callMetadata, callConfig, dynamicFilters);
         }
         this.updateState(connectivityState);
       },
@@ -364,9 +367,10 @@ export class ChannelImplementation implements Channel {
   private pushPick(
     callStream: Http2CallStream,
     callMetadata: Metadata,
-    callConfig: CallConfig
+    callConfig: CallConfig,
+    dynamicFilters: Filter[]
   ) {
-    this.pickQueue.push({ callStream, callMetadata, callConfig });
+    this.pickQueue.push({ callStream, callMetadata, callConfig, dynamicFilters });
     this.callRefTimerRef();
   }
 
@@ -380,7 +384,8 @@ export class ChannelImplementation implements Channel {
   private tryPick(
     callStream: Http2CallStream,
     callMetadata: Metadata,
-    callConfig: CallConfig
+    callConfig: CallConfig,
+    dynamicFilters: Filter[]
   ) {
     const pickResult = this.currentPicker.pick({
       metadata: callMetadata,
@@ -419,7 +424,7 @@ export class ChannelImplementation implements Channel {
                 ' has state ' +
                 ConnectivityState[pickResult.subchannel!.getConnectivityState()]
             );
-            this.pushPick(callStream, callMetadata, callConfig);
+            this.pushPick(callStream, callMetadata, callConfig, dynamicFilters);
             break;
           }
           /* We need to clone the callMetadata here because the transparent
@@ -432,10 +437,11 @@ export class ChannelImplementation implements Channel {
                 const subchannelState: ConnectivityState = pickResult.subchannel!.getConnectivityState();
                 if (subchannelState === ConnectivityState.READY) {
                   try {
+                    const pickExtraFilters = pickResult.extraFilterFactories.map(factory => factory.createFilter(callStream));
                     pickResult.subchannel!.startCallStream(
                       finalMetadata,
                       callStream,
-                      pickResult.extraFilterFactories
+                      [...dynamicFilters, ...pickExtraFilters]
                     );
                     /* If we reach this point, the call stream has started
                      * successfully */
@@ -467,7 +473,7 @@ export class ChannelImplementation implements Channel {
                           '. Retrying pick',
                           LogVerbosity.INFO
                       );
-                      this.tryPick(callStream, callMetadata, callConfig);
+                      this.tryPick(callStream, callMetadata, callConfig, dynamicFilters);
                     } else {
                       this.trace(
                         'Failed to start call on picked subchanel ' +
@@ -496,7 +502,7 @@ export class ChannelImplementation implements Channel {
                       ' after metadata filters. Retrying pick',
                       LogVerbosity.INFO
                   );
-                  this.tryPick(callStream, callMetadata, callConfig);
+                  this.tryPick(callStream, callMetadata, callConfig, dynamicFilters);
                 }
               },
               (error: Error & { code: number }) => {
@@ -510,11 +516,11 @@ export class ChannelImplementation implements Channel {
         }
         break;
       case PickResultType.QUEUE:
-        this.pushPick(callStream, callMetadata, callConfig);
+        this.pushPick(callStream, callMetadata, callConfig, dynamicFilters);
         break;
       case PickResultType.TRANSIENT_FAILURE:
         if (callMetadata.getOptions().waitForReady) {
-          this.pushPick(callStream, callMetadata, callConfig);
+          this.pushPick(callStream, callMetadata, callConfig, dynamicFilters);
         } else {
           callStream.cancelWithStatus(
             pickResult.status!.code,
@@ -604,7 +610,27 @@ export class ChannelImplementation implements Channel {
           // Refreshing the filters makes the deadline filter pick up the new deadline
           stream.filterStack.refresh();
         }
-        this.tryPick(stream, metadata, callConfig);
+        if (callConfig.dynamicFilterFactories.length > 0) {
+          /* These dynamicFilters are the mechanism for implementing gRFC A39:
+           * https://github.com/grpc/proposal/blob/master/A39-xds-http-filters.md
+           * We run them here instead of with the rest of the filters because
+           * that spec says "the xDS HTTP filters will run in between name 
+           * resolution and load balancing".
+           * 
+           * We use the filter stack here to simplify the multi-filter async
+           * waterfall logic, but we pass along the underlying list of filters
+           * to avoid having nested filter stacks when combining it with the
+           * original filter stack. We do not pass along the original filter
+           * factory list because these filters may need to persist data
+           * between sending headers and other operations. */
+          const dynamicFilterStackFactory = new FilterStackFactory(callConfig.dynamicFilterFactories);
+          const dynamicFilterStack = dynamicFilterStackFactory.createFilter(stream);
+          dynamicFilterStack.sendMetadata(Promise.resolve(metadata)).then(filteredMetadata => {
+            this.tryPick(stream, filteredMetadata, callConfig, dynamicFilterStack.getFilters());
+          });
+        } else {
+          this.tryPick(stream, metadata, callConfig, []);
+        }
       } else {
         stream.cancelWithStatus(
           callConfig.status,

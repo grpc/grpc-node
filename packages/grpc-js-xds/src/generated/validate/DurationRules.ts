@@ -14,27 +14,27 @@ export interface DurationRules {
   /**
    * Const specifies that this field must be exactly the specified value
    */
-  'const'?: (_google_protobuf_Duration);
+  'const'?: (_google_protobuf_Duration | null);
   /**
    * Lt specifies that this field must be less than the specified value,
    * exclusive
    */
-  'lt'?: (_google_protobuf_Duration);
+  'lt'?: (_google_protobuf_Duration | null);
   /**
    * Lt specifies that this field must be less than the specified value,
    * inclusive
    */
-  'lte'?: (_google_protobuf_Duration);
+  'lte'?: (_google_protobuf_Duration | null);
   /**
    * Gt specifies that this field must be greater than the specified value,
    * exclusive
    */
-  'gt'?: (_google_protobuf_Duration);
+  'gt'?: (_google_protobuf_Duration | null);
   /**
    * Gte specifies that this field must be greater than the specified value,
    * inclusive
    */
-  'gte'?: (_google_protobuf_Duration);
+  'gte'?: (_google_protobuf_Duration | null);
   /**
    * In specifies that this field must be equal to one of the specified
    * values
@@ -59,27 +59,27 @@ export interface DurationRules__Output {
   /**
    * Const specifies that this field must be exactly the specified value
    */
-  'const'?: (_google_protobuf_Duration__Output);
+  'const': (_google_protobuf_Duration__Output | null);
   /**
    * Lt specifies that this field must be less than the specified value,
    * exclusive
    */
-  'lt'?: (_google_protobuf_Duration__Output);
+  'lt': (_google_protobuf_Duration__Output | null);
   /**
    * Lt specifies that this field must be less than the specified value,
    * inclusive
    */
-  'lte'?: (_google_protobuf_Duration__Output);
+  'lte': (_google_protobuf_Duration__Output | null);
   /**
    * Gt specifies that this field must be greater than the specified value,
    * exclusive
    */
-  'gt'?: (_google_protobuf_Duration__Output);
+  'gt': (_google_protobuf_Duration__Output | null);
   /**
    * Gte specifies that this field must be greater than the specified value,
    * inclusive
    */
-  'gte'?: (_google_protobuf_Duration__Output);
+  'gte': (_google_protobuf_Duration__Output | null);
   /**
    * In specifies that this field must be equal to one of the specified
    * values

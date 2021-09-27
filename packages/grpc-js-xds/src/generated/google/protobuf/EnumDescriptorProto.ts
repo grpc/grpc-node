@@ -6,11 +6,11 @@ import type { EnumOptions as _google_protobuf_EnumOptions, EnumOptions__Output a
 export interface EnumDescriptorProto {
   'name'?: (string);
   'value'?: (_google_protobuf_EnumValueDescriptorProto)[];
-  'options'?: (_google_protobuf_EnumOptions);
+  'options'?: (_google_protobuf_EnumOptions | null);
 }
 
 export interface EnumDescriptorProto__Output {
   'name': (string);
   'value': (_google_protobuf_EnumValueDescriptorProto__Output)[];
-  'options'?: (_google_protobuf_EnumOptions__Output);
+  'options': (_google_protobuf_EnumOptions__Output | null);
 }

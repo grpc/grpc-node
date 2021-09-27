@@ -14,21 +14,21 @@ export interface ResponseMapper {
   /**
    * Filter to determine if this mapper should apply.
    */
-  'filter'?: (_envoy_config_accesslog_v3_AccessLogFilter);
+  'filter'?: (_envoy_config_accesslog_v3_AccessLogFilter | null);
   /**
    * The new response status code if specified.
    */
-  'status_code'?: (_google_protobuf_UInt32Value);
+  'status_code'?: (_google_protobuf_UInt32Value | null);
   /**
    * The new local reply body text if specified. It will be used in the `%LOCAL_REPLY_BODY%`
    * command operator in the `body_format`.
    */
-  'body'?: (_envoy_config_core_v3_DataSource);
+  'body'?: (_envoy_config_core_v3_DataSource | null);
   /**
    * A per mapper `body_format` to override the :ref:`body_format <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.LocalReplyConfig.body_format>`.
    * It will be used when this mapper is matched.
    */
-  'body_format_override'?: (_envoy_config_core_v3_SubstitutionFormatString);
+  'body_format_override'?: (_envoy_config_core_v3_SubstitutionFormatString | null);
   /**
    * HTTP headers to add to a local reply. This allows the response mapper to append, to add
    * or to override headers of any local reply before it is sent to a downstream client.
@@ -44,21 +44,21 @@ export interface ResponseMapper__Output {
   /**
    * Filter to determine if this mapper should apply.
    */
-  'filter'?: (_envoy_config_accesslog_v3_AccessLogFilter__Output);
+  'filter': (_envoy_config_accesslog_v3_AccessLogFilter__Output | null);
   /**
    * The new response status code if specified.
    */
-  'status_code'?: (_google_protobuf_UInt32Value__Output);
+  'status_code': (_google_protobuf_UInt32Value__Output | null);
   /**
    * The new local reply body text if specified. It will be used in the `%LOCAL_REPLY_BODY%`
    * command operator in the `body_format`.
    */
-  'body'?: (_envoy_config_core_v3_DataSource__Output);
+  'body': (_envoy_config_core_v3_DataSource__Output | null);
   /**
    * A per mapper `body_format` to override the :ref:`body_format <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.LocalReplyConfig.body_format>`.
    * It will be used when this mapper is matched.
    */
-  'body_format_override'?: (_envoy_config_core_v3_SubstitutionFormatString__Output);
+  'body_format_override': (_envoy_config_core_v3_SubstitutionFormatString__Output | null);
   /**
    * HTTP headers to add to a local reply. This allows the response mapper to append, to add
    * or to override headers of any local reply before it is sent to a downstream client.

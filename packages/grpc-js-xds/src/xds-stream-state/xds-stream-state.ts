@@ -18,7 +18,12 @@
 import { StatusObject } from "@grpc/grpc-js";
 
 export interface Watcher<UpdateType> {
-  onValidUpdate(update: UpdateType): void;
+  /* Including the isV2 flag here is a bit of a kludge. It would probably be
+   * better for XdsStreamState#handleResponses to transform the protobuf
+   * message type into a library-specific configuration object type, to
+   * remove a lot of duplicate logic, including logic for handling that
+   * flag. */
+  onValidUpdate(update: UpdateType, isV2: boolean): void;
   onTransientError(error: StatusObject): void;
   onResourceDoesNotExist(): void;
 }
@@ -32,7 +37,7 @@ export interface XdsStreamState<ResponseType> {
    * or null if it should be acked.
    * @param responses
    */
-  handleResponses(responses: ResponseType[]): string | null;
+  handleResponses(responses: ResponseType[], isV2: boolean): string | null;
 
   reportStreamError(status: StatusObject): void;
 }

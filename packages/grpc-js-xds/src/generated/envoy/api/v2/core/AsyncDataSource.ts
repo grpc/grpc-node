@@ -10,11 +10,11 @@ export interface AsyncDataSource {
   /**
    * Local async data source.
    */
-  'local'?: (_envoy_api_v2_core_DataSource);
+  'local'?: (_envoy_api_v2_core_DataSource | null);
   /**
    * Remote async data source.
    */
-  'remote'?: (_envoy_api_v2_core_RemoteDataSource);
+  'remote'?: (_envoy_api_v2_core_RemoteDataSource | null);
   'specifier'?: "local"|"remote";
 }
 
@@ -25,10 +25,10 @@ export interface AsyncDataSource__Output {
   /**
    * Local async data source.
    */
-  'local'?: (_envoy_api_v2_core_DataSource__Output);
+  'local'?: (_envoy_api_v2_core_DataSource__Output | null);
   /**
    * Remote async data source.
    */
-  'remote'?: (_envoy_api_v2_core_RemoteDataSource__Output);
+  'remote'?: (_envoy_api_v2_core_RemoteDataSource__Output | null);
   'specifier': "local"|"remote";
 }

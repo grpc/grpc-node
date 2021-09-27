@@ -16,7 +16,7 @@ export interface QueryParameterMatcher {
   /**
    * Specifies whether a query parameter value should match against a string.
    */
-  'string_match'?: (_envoy_type_matcher_v3_StringMatcher);
+  'string_match'?: (_envoy_type_matcher_v3_StringMatcher | null);
   /**
    * Specifies whether a query parameter should be present.
    */
@@ -38,7 +38,7 @@ export interface QueryParameterMatcher__Output {
   /**
    * Specifies whether a query parameter value should match against a string.
    */
-  'string_match'?: (_envoy_type_matcher_v3_StringMatcher__Output);
+  'string_match'?: (_envoy_type_matcher_v3_StringMatcher__Output | null);
   /**
    * Specifies whether a query parameter should be present.
    */

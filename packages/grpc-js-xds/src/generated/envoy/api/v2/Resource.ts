@@ -11,7 +11,7 @@ export interface Resource {
   /**
    * The resource being tracked.
    */
-  'resource'?: (_google_protobuf_Any);
+  'resource'?: (_google_protobuf_Any | null);
   /**
    * The resource's name, to distinguish it from others of the same type of resource.
    */
@@ -31,7 +31,7 @@ export interface Resource__Output {
   /**
    * The resource being tracked.
    */
-  'resource'?: (_google_protobuf_Any__Output);
+  'resource': (_google_protobuf_Any__Output | null);
   /**
    * The resource's name, to distinguish it from others of the same type of resource.
    */

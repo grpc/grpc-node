@@ -13,7 +13,7 @@ export interface UpstreamEndpointStats {
   /**
    * Upstream host address.
    */
-  'address'?: (_envoy_api_v2_core_Address);
+  'address'?: (_envoy_api_v2_core_Address | null);
   /**
    * The total number of requests successfully completed by the endpoints in the
    * locality. These include non-5xx responses for HTTP, where errors
@@ -46,7 +46,7 @@ export interface UpstreamEndpointStats {
    * Opaque and implementation dependent metadata of the
    * endpoint. Envoy will pass this directly to the management server.
    */
-  'metadata'?: (_google_protobuf_Struct);
+  'metadata'?: (_google_protobuf_Struct | null);
   /**
    * The total number of requests that were issued to this endpoint
    * since the last report. A single TCP connection, HTTP or gRPC
@@ -63,7 +63,7 @@ export interface UpstreamEndpointStats__Output {
   /**
    * Upstream host address.
    */
-  'address'?: (_envoy_api_v2_core_Address__Output);
+  'address': (_envoy_api_v2_core_Address__Output | null);
   /**
    * The total number of requests successfully completed by the endpoints in the
    * locality. These include non-5xx responses for HTTP, where errors
@@ -96,7 +96,7 @@ export interface UpstreamEndpointStats__Output {
    * Opaque and implementation dependent metadata of the
    * endpoint. Envoy will pass this directly to the management server.
    */
-  'metadata'?: (_google_protobuf_Struct__Output);
+  'metadata': (_google_protobuf_Struct__Output | null);
   /**
    * The total number of requests that were issued to this endpoint
    * since the last report. A single TCP connection, HTTP or gRPC

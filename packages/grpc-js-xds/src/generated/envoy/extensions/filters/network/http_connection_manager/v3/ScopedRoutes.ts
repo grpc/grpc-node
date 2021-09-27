@@ -11,7 +11,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Sc
   /**
    * Specifies how a header field's value should be extracted.
    */
-  'header_value_extractor'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor);
+  'header_value_extractor'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor | null);
   'type'?: "header_value_extractor";
 }
 
@@ -22,7 +22,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Sc
   /**
    * Specifies how a header field's value should be extracted.
    */
-  'header_value_extractor'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor__Output);
+  'header_value_extractor'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor__Output | null);
   'type': "header_value_extractor";
 }
 
@@ -70,7 +70,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Sc
   /**
    * Specifies the key value pair to extract the value from.
    */
-  'element'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement);
+  'element'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement | null);
   'extract_type'?: "index"|"element";
 }
 
@@ -118,7 +118,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Sc
   /**
    * Specifies the key value pair to extract the value from.
    */
-  'element'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement__Output);
+  'element'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement__Output | null);
   'extract_type': "index"|"element";
 }
 
@@ -209,13 +209,13 @@ export interface ScopedRoutes {
   /**
    * The algorithm to use for constructing a scope key for each request.
    */
-  'scope_key_builder'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder);
+  'scope_key_builder'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder | null);
   /**
    * Configuration source specifier for RDS.
    * This config source is used to subscribe to RouteConfiguration resources specified in
    * ScopedRouteConfiguration messages.
    */
-  'rds_config_source'?: (_envoy_config_core_v3_ConfigSource);
+  'rds_config_source'?: (_envoy_config_core_v3_ConfigSource | null);
   /**
    * The set of routing scopes corresponding to the HCM. A scope is assigned to a request by
    * matching a key constructed from the request's attributes according to the algorithm specified
@@ -223,7 +223,7 @@ export interface ScopedRoutes {
    * :ref:`ScopeKeyBuilder<envoy_api_msg_extensions.filters.network.http_connection_manager.v3.ScopedRoutes.ScopeKeyBuilder>`
    * in this message.
    */
-  'scoped_route_configurations_list'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList);
+  'scoped_route_configurations_list'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList | null);
   /**
    * The set of routing scopes associated with the HCM will be dynamically loaded via the SRDS
    * API. A scope is assigned to a request by matching a key constructed from the request's
@@ -231,7 +231,7 @@ export interface ScopedRoutes {
    * :ref:`ScopeKeyBuilder<envoy_api_msg_extensions.filters.network.http_connection_manager.v3.ScopedRoutes.ScopeKeyBuilder>`
    * in this message.
    */
-  'scoped_rds'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds);
+  'scoped_rds'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds | null);
   'config_specifier'?: "scoped_route_configurations_list"|"scoped_rds";
 }
 
@@ -246,13 +246,13 @@ export interface ScopedRoutes__Output {
   /**
    * The algorithm to use for constructing a scope key for each request.
    */
-  'scope_key_builder'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder__Output);
+  'scope_key_builder': (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder__Output | null);
   /**
    * Configuration source specifier for RDS.
    * This config source is used to subscribe to RouteConfiguration resources specified in
    * ScopedRouteConfiguration messages.
    */
-  'rds_config_source'?: (_envoy_config_core_v3_ConfigSource__Output);
+  'rds_config_source': (_envoy_config_core_v3_ConfigSource__Output | null);
   /**
    * The set of routing scopes corresponding to the HCM. A scope is assigned to a request by
    * matching a key constructed from the request's attributes according to the algorithm specified
@@ -260,7 +260,7 @@ export interface ScopedRoutes__Output {
    * :ref:`ScopeKeyBuilder<envoy_api_msg_extensions.filters.network.http_connection_manager.v3.ScopedRoutes.ScopeKeyBuilder>`
    * in this message.
    */
-  'scoped_route_configurations_list'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList__Output);
+  'scoped_route_configurations_list'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList__Output | null);
   /**
    * The set of routing scopes associated with the HCM will be dynamically loaded via the SRDS
    * API. A scope is assigned to a request by matching a key constructed from the request's
@@ -268,6 +268,6 @@ export interface ScopedRoutes__Output {
    * :ref:`ScopeKeyBuilder<envoy_api_msg_extensions.filters.network.http_connection_manager.v3.ScopedRoutes.ScopeKeyBuilder>`
    * in this message.
    */
-  'scoped_rds'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds__Output);
+  'scoped_rds'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds__Output | null);
   'config_specifier': "scoped_route_configurations_list"|"scoped_rds";
 }

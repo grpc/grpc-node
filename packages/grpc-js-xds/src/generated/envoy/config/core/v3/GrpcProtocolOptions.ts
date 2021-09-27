@@ -6,12 +6,12 @@ import type { Http2ProtocolOptions as _envoy_config_core_v3_Http2ProtocolOptions
  * [#not-implemented-hide:]
  */
 export interface GrpcProtocolOptions {
-  'http2_protocol_options'?: (_envoy_config_core_v3_Http2ProtocolOptions);
+  'http2_protocol_options'?: (_envoy_config_core_v3_Http2ProtocolOptions | null);
 }
 
 /**
  * [#not-implemented-hide:]
  */
 export interface GrpcProtocolOptions__Output {
-  'http2_protocol_options'?: (_envoy_config_core_v3_Http2ProtocolOptions__Output);
+  'http2_protocol_options': (_envoy_config_core_v3_Http2ProtocolOptions__Output | null);
 }

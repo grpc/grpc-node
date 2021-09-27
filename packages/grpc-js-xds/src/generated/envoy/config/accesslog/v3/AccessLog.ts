@@ -16,8 +16,8 @@ export interface AccessLog {
   /**
    * Filter which is used to determine if the access log needs to be written.
    */
-  'filter'?: (_envoy_config_accesslog_v3_AccessLogFilter);
-  'typed_config'?: (_google_protobuf_Any);
+  'filter'?: (_envoy_config_accesslog_v3_AccessLogFilter | null);
+  'typed_config'?: (_google_protobuf_Any | null);
   /**
    * Custom configuration that depends on the access log being instantiated.
    * Built-in configurations include:
@@ -45,8 +45,8 @@ export interface AccessLog__Output {
   /**
    * Filter which is used to determine if the access log needs to be written.
    */
-  'filter'?: (_envoy_config_accesslog_v3_AccessLogFilter__Output);
-  'typed_config'?: (_google_protobuf_Any__Output);
+  'filter': (_envoy_config_accesslog_v3_AccessLogFilter__Output | null);
+  'typed_config'?: (_google_protobuf_Any__Output | null);
   /**
    * Custom configuration that depends on the access log being instantiated.
    * Built-in configurations include:

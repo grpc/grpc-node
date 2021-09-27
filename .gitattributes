@@ -1,0 +1,2 @@
+packages/grpc-js-xds/src/generated/** linguist-generated
+packages/grpc-js-xds/interop/generated/** linguist-generated
