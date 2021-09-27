@@ -25,7 +25,7 @@ import { FilterStackFactory, FilterStack } from './filter-stack';
 import { Metadata } from './metadata';
 import { StreamDecoder } from './stream-decoder';
 import { ChannelImplementation } from './channel';
-import { Subchannel } from './subchannel';
+import { SubchannelCallStatsTracker, Subchannel } from './subchannel';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { ServerSurfaceCall } from './server-call';
@@ -252,6 +252,8 @@ export class Http2CallStream implements Call {
   private statusWatchers: ((status: StatusObject) => void)[] = [];
   private streamEndWatchers: ((success: boolean) => void)[] = [];
 
+  private callStatsTracker: SubchannelCallStatsTracker | null = null;
+
   constructor(
     private readonly methodName: string,
     private readonly channel: ChannelImplementation,
@@ -468,10 +470,16 @@ export class Http2CallStream implements Call {
     this.endCall(status);
   }
 
+  private writeMessageToStream(message: Buffer, callback: WriteCallback) {
+    this.callStatsTracker?.addMessageSent();
+    this.http2Stream!.write(message, callback);
+  }
+
   attachHttp2Stream(
     stream: http2.ClientHttp2Stream,
     subchannel: Subchannel,
-    extraFilters: FilterFactory<Filter>[]
+    extraFilters: FilterFactory<Filter>[],
+    callStatsTracker: SubchannelCallStatsTracker
   ): void {
     this.filterStack.push(
       extraFilters.map((filterFactory) => filterFactory.createFilter(this))
@@ -484,6 +492,7 @@ export class Http2CallStream implements Call {
       );
       this.http2Stream = stream;
       this.subchannel = subchannel;
+      this.callStatsTracker = callStatsTracker;
       subchannel.addDisconnectListener(this.disconnectListener);
       subchannel.callRef();
       stream.on('response', (headers, flags) => {
@@ -549,6 +558,7 @@ export class Http2CallStream implements Call {
 
         for (const message of messages) {
           this.trace('parsed message of length ' + message.length);
+          this.callStatsTracker!.addMessageReceived();
           this.tryPush(message);
         }
       });
@@ -666,7 +676,7 @@ export class Http2CallStream implements Call {
             this.pendingWrite.length +
             ' (deferred)'
         );
-        stream.write(this.pendingWrite, this.pendingWriteCallback);
+        this.writeMessageToStream(this.pendingWrite, this.pendingWriteCallback);
       }
       this.maybeCloseWrites();
     }
@@ -802,7 +812,7 @@ export class Http2CallStream implements Call {
         this.pendingWriteCallback = cb;
       } else {
         this.trace('sending data chunk of length ' + message.message.length);
-        this.http2Stream.write(message.message, cb);
+        this.writeMessageToStream(message.message, cb);
         this.maybeCloseWrites();
       }
     }, this.handleFilterError.bind(this));

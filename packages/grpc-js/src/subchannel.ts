@@ -68,6 +68,11 @@ export type ConnectivityStateListener = (
   newState: ConnectivityState
 ) => void;
 
+export interface SubchannelCallStatsTracker {
+  addMessageSent(): void;
+  addMessageReceived(): void;
+}
+
 const {
   HTTP2_HEADER_AUTHORITY,
   HTTP2_HEADER_CONTENT_TYPE,
@@ -178,33 +183,6 @@ export class Subchannel {
   private messagesReceived = 0;
   private lastMessageSentTimestamp: Date | null = null;
   private lastMessageReceivedTimestamp: Date | null = null;
-  private MessageCountFilter = class extends BaseFilter implements Filter {
-    private session: http2.ClientHttp2Session;
-    constructor(private parent: Subchannel) {
-      super();
-      this.session = parent.session!;
-    }
-    sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
-      if (this.parent.session === this.session) {
-        this.parent.messagesSent += 1;
-        this.parent.lastMessageSentTimestamp = new Date();
-      }
-      return message;
-    }
-    receiveMessage(message: Promise<Buffer>): Promise<Buffer> {
-      if (this.parent.session === this.session) {
-        this.parent.messagesReceived += 1;
-        this.parent.lastMessageReceivedTimestamp = new Date();
-      }
-      return message;
-    }
-  };
-  private MessageCountFilterFactory = class implements FilterFactory<Filter> {
-    constructor(private parent: Subchannel) {}
-    createFilter(callStream: Call): Filter {
-      return new this.parent.MessageCountFilter(this.parent);
-    }
-  }
 
   /**
    * A class representing a connection to a single backend.
@@ -848,8 +826,15 @@ export class Subchannel {
         }
       }
     });
-    extraFilterFactories.push(new this.MessageCountFilterFactory(this));
-    callStream.attachHttp2Stream(http2Stream, this, extraFilterFactories);
+    callStream.attachHttp2Stream(http2Stream, this, extraFilterFactories, {
+      addMessageSent: () => {
+        this.messagesSent += 1;
+        this.lastMessageSentTimestamp = new Date();
+      },
+      addMessageReceived: () => {
+        this.messagesReceived += 1;
+      }
+    });
   }
 
   /**

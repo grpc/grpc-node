@@ -51,6 +51,7 @@ import { ChannelzDefinition, ChannelzHandlers } from "./generated/grpc/channelz/
 import { ProtoGrpcType as ChannelzProtoGrpcType } from "./generated/channelz";
 import type { loadSync } from '@grpc/proto-loader';
 import { registerAdminService } from "./admin";
+import { loadPackageDefinition } from "./make-client";
 
 export type TraceSeverity = 'CT_UNKNOWN' | 'CT_INFO' | 'CT_WARNING' | 'CT_ERROR';
 
@@ -455,9 +456,10 @@ function dateToProtoTimestamp(date?: Date | null): Timestamp | null {
   if (!date) {
     return null;
   }
+  const millisSinceEpoch = date.getTime();
   return {
-    seconds: date.getSeconds(),
-    nanos: date.getMilliseconds() * 1_000_000
+    seconds: (millisSinceEpoch / 1000) | 0,
+    nanos: (millisSinceEpoch % 1000) * 1_000_000
   }
 }
 
@@ -664,7 +666,10 @@ function GetServerSockets(call: ServerUnaryCall<GetServerSocketsRequest__Output,
   const startId = Number.parseInt(call.request.start_socket_id);
   const maxResults = Number.parseInt(call.request.max_results);
   const resolvedInfo = serverEntry.getInfo();
-  const allSockets = resolvedInfo.listenerChildren.sockets.concat(resolvedInfo.sessionChildren.sockets).sort((ref1, ref2) => ref1.id - ref2.id);
+  // If we wanted to include listener sockets in the result, this line would
+  // instead say
+  // const allSockets = resolvedInfo.listenerChildren.sockets.concat(resolvedInfo.sessionChildren.sockets).sort((ref1, ref2) => ref1.id - ref2.id);
+  const allSockets = resolvedInfo.sessionChildren.sockets.sort((ref1, ref2) => ref1.id - ref2.id);
   const resultList: SocketRefMessage[] = [];
   let i = 0;
   for (; i < allSockets.length; i++) {
@@ -709,10 +714,11 @@ export function getChannelzServiceDefinition(): ChannelzDefinition {
     defaults: true,
     oneofs: true,
     includeDirs: [
-      '../../proto'
+      `${__dirname}/../../proto`
     ]
-  }) as unknown as ChannelzProtoGrpcType;
-  loadedChannelzDefinition = loadedProto.grpc.channelz.v1.Channelz.service;
+  });
+  const channelzGrpcObject = loadPackageDefinition(loadedProto) as unknown as ChannelzProtoGrpcType;
+  loadedChannelzDefinition = channelzGrpcObject.grpc.channelz.v1.Channelz.service;
   return loadedChannelzDefinition;
 }
 

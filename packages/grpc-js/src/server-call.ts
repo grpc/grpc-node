@@ -570,7 +570,6 @@ export class Http2ServerCallStream<
       const response = this.serializeMessage(value!);
 
       this.write(response);
-      this.emit('sendMessage');
       this.sendStatus({ code: Status.OK, details: 'OK', metadata });
     } catch (err) {
       err.code = Status.INTERNAL;

@@ -200,7 +200,7 @@ function handleHalfDuplex(call) {
  * Get a server object bound to the given port
  * @param {string} port Port to which to bind
  * @param {boolean} tls Indicates that the bound port should use TLS
- * @param {function(Error, {{server: Server, port: number}})} callback Callback
+ * @param {function(Error, {server: Server, port: number})} callback Callback
  *     to call with result or error
  * @param {object?} options Optional additional options to use when
  *     constructing the server

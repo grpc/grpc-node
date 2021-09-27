@@ -104,6 +104,12 @@ export interface Channel {
     callback: (error?: Error) => void
   ): void;
   /**
+   * Get the channelz reference object for this channel. A request to the
+   * channelz service for the id in this object will provide information
+   * about this channel.
+   */
+  getChannelzRef(): ChannelRef;
+  /**
    * Create a call object. Call is an opaque type that is used by the Client
    * class. This function is called by the gRPC library when starting a
    * request. Implementers should return an instance of Call that is returned
@@ -243,7 +249,7 @@ export class ChannelImplementation implements Channel {
           Object.assign({}, this.options, subchannelArgs),
           this.credentials
         );
-        this.channelzTrace.addTrace('CT_INFO', 'Created or got existing subchannel', subchannel.getChannelzRef());
+        this.channelzTrace.addTrace('CT_INFO', 'Created subchannel or used existing subchannel', subchannel.getChannelzRef());
         return subchannel;
       },
       updateState: (connectivityState: ConnectivityState, picker: Picker) => {
@@ -675,6 +681,10 @@ export class ChannelImplementation implements Channel {
       timer,
     };
     this.connectivityStateWatchers.push(watcherObject);
+  }
+
+  getChannelzRef() {
+    return this.channelzRef;
   }
 
   createCall(

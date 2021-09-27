@@ -188,7 +188,7 @@ export class Server {
         const peerCertificate = tlsSocket.getPeerCertificate();
         tlsInfo = {
           cipherSuiteStandardName: cipherInfo.standardName ?? null,
-          cipherSuiteOtherName: cipherInfo.standardName ? cipherInfo.name: null,
+          cipherSuiteOtherName: cipherInfo.standardName ? null : cipherInfo.name,
           localCertificate: (certificate && 'raw' in certificate) ? certificate.raw : null,
           remoteCertificate: (peerCertificate && 'raw' in peerCertificate) ? peerCertificate.raw : null
         };
@@ -424,6 +424,7 @@ export class Server {
                   remoteFlowControlWindow: null
                 };
               });
+              this.listenerChildrenTracker.refChild(channelzRef);
               this.http2ServerList.push({server: http2Server, channelzRef: channelzRef});
               trace('Successfully bound ' + subchannelAddressToString(boundSubchannelAddress));
               resolve('port' in boundSubchannelAddress ? boundSubchannelAddress.port : portNum);
@@ -491,6 +492,7 @@ export class Server {
               remoteFlowControlWindow: null
             };
           });
+          this.listenerChildrenTracker.refChild(channelzRef);
           this.http2ServerList.push({server: http2Server, channelzRef: channelzRef});
           trace('Successfully bound ' + subchannelAddressToString(boundSubchannelAddress));
           resolve(
@@ -674,6 +676,10 @@ export class Server {
 
   addHttp2Port(): void {
     throw new Error('Not yet implemented');
+  }
+
+  getChannelzRef() {
+    return this.channelzRef;
   }
 
   private _setupHandlers(
