@@ -268,6 +268,10 @@ export class Server {
       };
     }
 
+    const deferredCallback = (error: Error | null, port: number) => {
+      process.nextTick(() => callback(error, port));
+    }
+
     const setupServer = (): http2.Http2Server | http2.Http2SecureServer => {
       let http2Server: http2.Http2Server | http2.Http2SecureServer;
       if (creds._isSecure()) {
@@ -386,7 +390,7 @@ export class Server {
         // We only want one resolution result. Discard all future results
         resolverListener.onSuccessfulResolution = () => {};
         if (addressList.length === 0) {
-          callback(new Error(`No addresses resolved for port ${port}`), 0);
+          deferredCallback(new Error(`No addresses resolved for port ${port}`), 0);
           return;
         }
         let bindResultPromise: Promise<BindResult>;
@@ -409,7 +413,7 @@ export class Server {
             if (bindResult.count === 0) {
               const errorString = `No address added out of total ${addressList.length} resolved`;
               logging.log(LogVerbosity.ERROR, errorString);
-              callback(new Error(errorString), 0);
+              deferredCallback(new Error(errorString), 0);
             } else {
               if (bindResult.count < addressList.length) {
                 logging.log(
@@ -417,18 +421,18 @@ export class Server {
                   `WARNING Only ${bindResult.count} addresses added out of total ${addressList.length} resolved`
                 );
               }
-              callback(null, bindResult.port);
+              deferredCallback(null, bindResult.port);
             }
           },
           (error) => {
             const errorString = `No address added out of total ${addressList.length} resolved`;
             logging.log(LogVerbosity.ERROR, errorString);
-            callback(new Error(errorString), 0);
+            deferredCallback(new Error(errorString), 0);
           }
         );
       },
       onError: (error) => {
-        callback(new Error(error.details), 0);
+        deferredCallback(new Error(error.details), 0);
       },
     };
 
