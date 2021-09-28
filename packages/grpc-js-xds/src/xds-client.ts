@@ -341,6 +341,16 @@ export class XdsClient {
           return;
         }
         trace('Loaded bootstrap info: ' + JSON.stringify(bootstrapInfo, undefined, 2));
+        if (bootstrapInfo.xdsServers.length < 1) {
+          trace('Failed to initialize xDS Client. No servers provided in bootstrap info.');
+          // Bubble this error up to any listeners
+          this.reportStreamError({
+            code: status.INTERNAL,
+            details: 'Failed to initialize xDS Client. No servers provided in bootstrap info.',
+            metadata: new Metadata(),
+          });
+          return;
+        }
         if (bootstrapInfo.xdsServers[0].serverFeatures.indexOf('xds_v3') >= 0) {
           this.apiVersion = XdsApiVersion.V3;
         } else {
@@ -425,8 +435,7 @@ export class XdsClient {
           {channelOverride: channel}
         );
         this.maybeStartLrsStream();
-      },
-      (error) => {
+      }).catch((error) => {
         trace('Failed to initialize xDS Client. ' + error.message);
         // Bubble this error up to any listeners
         this.reportStreamError({
