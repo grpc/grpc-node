@@ -916,18 +916,22 @@ export class XdsClient {
     this.adsCall.on('data', (message: DiscoveryResponse__Output) => {
       this.handleAdsResponse(message);
     });
-    this.adsCall.on('error', (error: ServiceError) => {
+    this.adsCall.on('status', (streamStatus: StatusObject) => {
       trace(
-        'ADS stream ended. code=' + error.code + ' details= ' + error.details
+        'ADS stream ended. code=' + streamStatus.code + ' details= ' + streamStatus.details
       );
       this.adsCall = null;
-      this.reportStreamError(error);
+      if (streamStatus.code !== status.OK) {
+        this.reportStreamError(streamStatus);
+      }
       /* If the backoff timer is no longer running, we do not need to wait any
        * more to start the new call. */
       if (!this.adsBackoff.isRunning()) {
         this.maybeStartAdsStream();
       }
+
     });
+    this.adsCall.on('error', () => {});
 
     const allTypeUrls: AdsTypeUrl[] = [
       EDS_TYPE_URL,
@@ -1052,9 +1056,9 @@ export class XdsClient {
       this.latestLrsSettings = message;
       receivedSettingsForThisStream = true;
     });
-    this.lrsCall.on('error', (error: ServiceError) => {
+    this.lrsCall.on('status', (streamStatus: StatusObject) => {
       trace(
-        'LRS stream ended. code=' + error.code + ' details= ' + error.details
+        'LRS stream ended. code=' + streamStatus.code + ' details= ' + streamStatus.details
       );
       this.lrsCall = null;
       clearInterval(this.statsTimer);
@@ -1064,6 +1068,7 @@ export class XdsClient {
         this.maybeStartLrsStream();
       }
     });
+    this.lrsCall.on('error', () => {});
     /* Send buffered stats information when starting LRS stream. If there is no
      * buffered stats information, it will still send the node field. */
     this.sendStats();
