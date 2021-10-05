@@ -163,7 +163,6 @@ export class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
       }
     }
     trace('Received EDS updates for cluster names ' + Array.from(allClusterNames));
-    this.handleMissingNames(allClusterNames);
     return null;
   }
 
