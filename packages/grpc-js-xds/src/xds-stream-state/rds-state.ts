@@ -172,7 +172,7 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
     return true;
   }
 
-  private handleMissingNames(allRouteConfigNames: Set<string>) {
+  handleMissingNames(allRouteConfigNames: Set<string>) {
     for (const [routeConfigName, watcherList] of this.watchers.entries()) {
       if (!allRouteConfigNames.has(routeConfigName)) {
         for (const watcher of watcherList) {
@@ -200,7 +200,6 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
       }
     }
     trace('Received RDS response with route config names ' + Array.from(allRouteConfigNames));
-    this.handleMissingNames(allRouteConfigNames);
     return null;
   }
 
