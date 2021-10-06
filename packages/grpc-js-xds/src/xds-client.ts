@@ -341,6 +341,16 @@ export class XdsClient {
           return;
         }
         trace('Loaded bootstrap info: ' + JSON.stringify(bootstrapInfo, undefined, 2));
+        if (bootstrapInfo.xdsServers.length < 1) {
+          trace('Failed to initialize xDS Client. No servers provided in bootstrap info.');
+          // Bubble this error up to any listeners
+          this.reportStreamError({
+            code: status.INTERNAL,
+            details: 'Failed to initialize xDS Client. No servers provided in bootstrap info.',
+            metadata: new Metadata(),
+          });
+          return;
+        }
         if (bootstrapInfo.xdsServers[0].serverFeatures.indexOf('xds_v3') >= 0) {
           this.apiVersion = XdsApiVersion.V3;
         } else {
@@ -425,8 +435,7 @@ export class XdsClient {
           {channelOverride: channel}
         );
         this.maybeStartLrsStream();
-      },
-      (error) => {
+      }).catch((error) => {
         trace('Failed to initialize xDS Client. ' + error.message);
         // Bubble this error up to any listeners
         this.reportStreamError({
@@ -507,13 +516,15 @@ export class XdsClient {
     }
   }
 
-  private handleAdsCallError(error: ServiceError) {
+  private handleAdsCallStatus(streamStatus: StatusObject) {
     trace(
-      'ADS stream ended. code=' + error.code + ' details= ' + error.details
+      'ADS stream ended. code=' + streamStatus.code + ' details= ' + streamStatus.details
     );
     this.adsCallV2 = null;
     this.adsCallV3 = null;
-    this.reportStreamError(error);
+    if (streamStatus.code !== status.OK) {
+      this.reportStreamError(streamStatus);
+    }
     /* If the backoff timer is no longer running, we do not need to wait any
      * more to start the new call. */
     if (!this.adsBackoff.isRunning()) {
@@ -535,9 +546,10 @@ export class XdsClient {
     this.adsCallV2.on('data', (message: DiscoveryResponse__Output) => {
       this.handleAdsResponse(message);
     });
-    this.adsCallV2.on('error', (error: ServiceError) => {
-      this.handleAdsCallError(error);
+    this.adsCallV2.on('status', (status: StatusObject) => {
+      this.handleAdsCallStatus(status);
     });
+    this.adsCallV2.on('error', () => {});
     return true;
   }
 
@@ -555,9 +567,10 @@ export class XdsClient {
     this.adsCallV3.on('data', (message: DiscoveryResponse__Output) => {
       this.handleAdsResponse(message);
     });
-    this.adsCallV3.on('error', (error: ServiceError) => {
-      this.handleAdsCallError(error);
+    this.adsCallV3.on('status', (status: StatusObject) => {
+      this.handleAdsCallStatus(status);
     });
+    this.adsCallV3.on('error', () => {});
     return true;
   }
 
@@ -763,9 +776,9 @@ export class XdsClient {
     this.receivedLrsSettingsForCurrentStream = true;
   }
 
-  private handleLrsCallError(error: ServiceError) {
+  private handleLrsCallStatus(streamStatus: StatusObject) {
     trace(
-      'LRS stream ended. code=' + error.code + ' details= ' + error.details
+      'LRS stream ended. code=' + streamStatus.code + ' details= ' + streamStatus.details
     );
     this.lrsCallV2 = null;
     this.lrsCallV3 = null;
@@ -789,9 +802,10 @@ export class XdsClient {
     this.lrsCallV2.on('data', (message: LoadStatsResponse__Output) => {
       this.handleLrsResponse(message);
     });
-    this.lrsCallV2.on('error', (error: ServiceError) => {
-      this.handleLrsCallError(error);
+    this.lrsCallV2.on('status', (status: StatusObject) => {
+      this.handleLrsCallStatus(status);
     });
+    this.lrsCallV2.on('error', () => {});
     return true;
   }
 
@@ -807,9 +821,10 @@ export class XdsClient {
     this.lrsCallV3.on('data', (message: LoadStatsResponse__Output) => {
       this.handleLrsResponse(message);
     });
-    this.lrsCallV3.on('error', (error: ServiceError) => {
-      this.handleLrsCallError(error);
+    this.lrsCallV3.on('status', (status: StatusObject) => {
+      this.handleLrsCallStatus(status);
     });
+    this.lrsCallV3.on('error', () => {});
     return true;
   }
 

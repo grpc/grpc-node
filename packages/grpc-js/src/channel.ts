@@ -192,18 +192,8 @@ export class ChannelImplementation implements Channel {
       );
     }
     if (options) {
-      if (
-        typeof options !== 'object' ||
-        !Object.values(options).every(
-          (value) =>
-            typeof value === 'string' ||
-            typeof value === 'number' ||
-            typeof value === 'undefined'
-        )
-      ) {
-        throw new TypeError(
-          'Channel options must be an object with string or number values'
-        );
+      if (typeof options !== 'object') {
+        throw new TypeError('Channel options must be an object');
       }
     }
     this.originalTarget = target;

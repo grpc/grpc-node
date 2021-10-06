@@ -130,6 +130,13 @@ class CallStatsTracker {
 
   private subscribers: CallSubscriber[] = [];
 
+  private removeSubscriber(subscriber: CallSubscriber) {
+    const index = this.subscribers.indexOf(subscriber);
+    if (index >= 0) {
+      this.subscribers.splice(index, 1);
+    }
+  }
+
   getCallStats(callCount: number, timeoutSec: number): Promise<LoadBalancerStatsResponse> {
     return new Promise((resolve, reject) => {
       let finished = false;
@@ -142,7 +149,7 @@ class CallStatsTracker {
       setTimeout(() => {
         if (!finished) {
           finished = true;
-          this.subscribers.splice(this.subscribers.indexOf(subscriber), 1);
+          this.removeSubscriber(subscriber);
           resolve(subscriber.getFinalStats());
         }
       }, timeoutSec * 1000)
@@ -155,7 +162,7 @@ class CallStatsTracker {
     for (const subscriber of callSubscribers) {
       subscriber.addCallStarted();
       if (!subscriber.needsMoreCalls()) {
-        this.subscribers.splice(this.subscribers.indexOf(subscriber), 1);
+        this.removeSubscriber(subscriber);
       }
     }
     return {
