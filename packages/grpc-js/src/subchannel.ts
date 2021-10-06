@@ -18,35 +18,29 @@
 import * as http2 from 'http2';
 import { ChannelCredentials } from './channel-credentials';
 import { Metadata } from './metadata';
-import { Http2CallStream } from './call-stream';
+import { Call, Http2CallStream, WriteObject } from './call-stream';
 import { ChannelOptions } from './channel-options';
-import { PeerCertificate, checkServerIdentity } from 'tls';
+import { PeerCertificate, checkServerIdentity, TLSSocket, CipherNameAndProtocol } from 'tls';
 import { ConnectivityState } from './connectivity-state';
 import { BackoffTimeout, BackoffOptions } from './backoff-timeout';
 import { getDefaultAuthority } from './resolver';
 import * as logging from './logging';
-import { LogVerbosity } from './constants';
+import { LogVerbosity, Status } from './constants';
 import { getProxiedConnection, ProxyConnectionResult } from './http_proxy';
 import * as net from 'net';
 import { GrpcUri, parseUri, splitHostPort, uriToString } from './uri-parser';
 import { ConnectionOptions } from 'tls';
-import { FilterFactory, Filter } from './filter';
+import { FilterFactory, Filter, BaseFilter } from './filter';
 import {
+  stringToSubchannelAddress,
   SubchannelAddress,
   subchannelAddressToString,
 } from './subchannel-address';
+import { SubchannelRef, ChannelzTrace, ChannelzChildrenTracker, SubchannelInfo, registerChannelzSubchannel, ChannelzCallTracker, SocketInfo, SocketRef, unregisterChannelzRef, registerChannelzSocket, TlsInfo } from './channelz';
 
 const clientVersion = require('../../package.json').version;
 
 const TRACER_NAME = 'subchannel';
-
-function trace(text: string): void {
-  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
-}
-
-function refTrace(text: string): void {
-  logging.trace(LogVerbosity.DEBUG, 'subchannel_refcount', text);
-}
 
 const MIN_CONNECT_TIMEOUT_MS = 20000;
 const INITIAL_BACKOFF_MS = 1000;
@@ -65,6 +59,11 @@ export type ConnectivityStateListener = (
   previousState: ConnectivityState,
   newState: ConnectivityState
 ) => void;
+
+export interface SubchannelCallStatsTracker {
+  addMessageSent(): void;
+  addMessageReceived(): void;
+}
 
 const {
   HTTP2_HEADER_AUTHORITY,
@@ -157,6 +156,26 @@ export class Subchannel {
    */
   private subchannelAddressString: string;
 
+  // Channelz info
+  private channelzRef: SubchannelRef;
+  private channelzTrace: ChannelzTrace;
+  private callTracker = new ChannelzCallTracker();
+  private childrenTracker = new ChannelzChildrenTracker();
+
+  // Channelz socket info
+  private channelzSocketRef: SocketRef | null = null;
+  /**
+   * Name of the remote server, if it is not the same as the subchannel
+   * address, i.e. if connecting through an HTTP CONNECT proxy.
+   */
+  private remoteName: string | null = null;
+  private streamTracker = new ChannelzCallTracker();
+  private keepalivesSent = 0;
+  private messagesSent = 0;
+  private messagesReceived = 0;
+  private lastMessageSentTimestamp: Date | null = null;
+  private lastMessageReceivedTimestamp: Date | null = null;
+
   /**
    * A class representing a connection to a single backend.
    * @param channelTarget The target string for the channel as a whole
@@ -206,6 +225,87 @@ export class Subchannel {
       this.handleBackoffTimer();
     }, backoffOptions);
     this.subchannelAddressString = subchannelAddressToString(subchannelAddress);
+
+    this.channelzRef = registerChannelzSubchannel(this.subchannelAddressString, () => this.getChannelzInfo());
+    this.channelzTrace = new ChannelzTrace();
+    this.channelzTrace.addTrace('CT_INFO', 'Subchannel created');
+    this.trace('Subchannel constructed');
+  }
+
+  private getChannelzInfo(): SubchannelInfo {
+    return {
+      state: this.connectivityState,
+      trace: this.channelzTrace,
+      callTracker: this.callTracker,
+      children: this.childrenTracker.getChildLists(),
+      target: this.subchannelAddressString
+    };
+  }
+
+  private getChannelzSocketInfo(): SocketInfo | null {
+    if (this.session === null) {
+      return null;
+    }
+    const sessionSocket = this.session.socket;
+    const remoteAddress = sessionSocket.remoteAddress ? stringToSubchannelAddress(sessionSocket.remoteAddress, sessionSocket.remotePort) : null;
+    const localAddress = stringToSubchannelAddress(sessionSocket.localAddress, sessionSocket.localPort);
+    let tlsInfo: TlsInfo | null;
+    if (this.session.encrypted) {
+      const tlsSocket: TLSSocket = sessionSocket as TLSSocket;
+      const cipherInfo: CipherNameAndProtocol & {standardName?: string} = tlsSocket.getCipher();
+      const certificate = tlsSocket.getCertificate();
+      const peerCertificate = tlsSocket.getPeerCertificate();
+      tlsInfo = {
+        cipherSuiteStandardName: cipherInfo.standardName ?? null,
+        cipherSuiteOtherName: cipherInfo.standardName ? null : cipherInfo.name,
+        localCertificate: (certificate && 'raw' in certificate) ? certificate.raw : null,
+        remoteCertificate: (peerCertificate && 'raw' in peerCertificate) ? peerCertificate.raw : null
+      };
+    } else {
+      tlsInfo = null;
+    }
+    const socketInfo: SocketInfo = {
+      remoteAddress: remoteAddress,
+      localAddress: localAddress,
+      security: tlsInfo,
+      remoteName: this.remoteName,
+      streamsStarted: this.streamTracker.callsStarted,
+      streamsSucceeded: this.streamTracker.callsSucceeded,
+      streamsFailed: this.streamTracker.callsFailed,
+      messagesSent: this.messagesSent,
+      messagesReceived: this.messagesReceived,
+      keepAlivesSent: this.keepalivesSent,
+      lastLocalStreamCreatedTimestamp: this.streamTracker.lastCallStartedTimestamp,
+      lastRemoteStreamCreatedTimestamp: null,
+      lastMessageSentTimestamp: this.lastMessageSentTimestamp,
+      lastMessageReceivedTimestamp: this.lastMessageReceivedTimestamp,
+      localFlowControlWindow: this.session.state.localWindowSize ?? null,
+      remoteFlowControlWindow: this.session.state.remoteWindowSize ?? null
+    };
+    return socketInfo;
+  }
+
+  private resetChannelzSocketInfo() {
+    if (this.channelzSocketRef) {
+      unregisterChannelzRef(this.channelzSocketRef);
+      this.childrenTracker.unrefChild(this.channelzSocketRef);
+      this.channelzSocketRef = null;
+    }
+    this.remoteName = null;
+    this.streamTracker = new ChannelzCallTracker();
+    this.keepalivesSent = 0;
+    this.messagesSent = 0;
+    this.messagesReceived = 0;
+    this.lastMessageSentTimestamp = null;
+    this.lastMessageReceivedTimestamp = null;
+  }
+
+  private trace(text: string): void {
+    logging.trace(LogVerbosity.DEBUG, TRACER_NAME, '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
+  }
+
+  private refTrace(text: string): void {
+    logging.trace(LogVerbosity.DEBUG, 'subchannel_refcount', '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
   }
 
   private handleBackoffTimer() {
@@ -235,10 +335,12 @@ export class Subchannel {
   }
 
   private sendPing() {
+    this.keepalivesSent += 1;
     logging.trace(
       LogVerbosity.DEBUG,
       'keepalive',
-      'Sending ping to ' + this.subchannelAddressString
+      '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' +
+      'Sending ping'
     );
     this.keepaliveTimeoutId = setTimeout(() => {
       this.transitionToState([ConnectivityState.READY], ConnectivityState.IDLE);
@@ -267,9 +369,11 @@ export class Subchannel {
 
   private createSession(proxyConnectionResult: ProxyConnectionResult) {
     if (proxyConnectionResult.realTarget) {
-      trace(this.subchannelAddressString + ' creating HTTP/2 session through proxy to ' + proxyConnectionResult.realTarget);
+      this.remoteName = uriToString(proxyConnectionResult.realTarget);
+      this.trace('creating HTTP/2 session through proxy to ' + proxyConnectionResult.realTarget);
     } else {
-      trace(this.subchannelAddressString + ' creating HTTP/2 session');
+      this.remoteName = null;
+      this.trace('creating HTTP/2 session');
     }
     const targetAuthority = getDefaultAuthority(
       proxyConnectionResult.realTarget ?? this.channelTarget
@@ -358,6 +462,8 @@ export class Subchannel {
       connectionOptions
     );
     this.session = session;
+    this.channelzSocketRef = registerChannelzSocket(this.subchannelAddressString, () => this.getChannelzSocketInfo()!);
+    this.childrenTracker.refChild(this.channelzSocketRef);
     session.unref();
     /* For all of these events, check if the session at the time of the event
      * is the same one currently attached to this subchannel, to ensure that
@@ -373,7 +479,7 @@ export class Subchannel {
     });
     session.once('close', () => {
       if (this.session === session) {
-        trace(this.subchannelAddressString + ' connection closed');
+        this.trace('connection closed');
         this.transitionToState(
           [ConnectivityState.CONNECTING],
           ConnectivityState.TRANSIENT_FAILURE
@@ -410,9 +516,8 @@ export class Subchannel {
               } ms`
             );
           }
-          trace(
-            this.subchannelAddressString +
-              ' connection closed by GOAWAY with code ' +
+          this.trace(
+            'connection closed by GOAWAY with code ' +
               errorCode
           );
           this.transitionToState(
@@ -425,12 +530,12 @@ export class Subchannel {
     session.once('error', (error) => {
       /* Do nothing here. Any error should also trigger a close event, which is
        * where we want to handle that.  */
-      trace(
-        this.subchannelAddressString +
-          ' connection closed with error ' +
+      this.trace(
+        'connection closed with error ' +
           (error as Error).message
       );
     });
+    registerChannelzSocket(this.subchannelAddressString, () => this.getChannelzSocketInfo()!);
   }
 
   private startConnectingInternal() {
@@ -505,13 +610,12 @@ export class Subchannel {
     if (oldStates.indexOf(this.connectivityState) === -1) {
       return false;
     }
-    trace(
-      this.subchannelAddressString +
-        ' ' +
-        ConnectivityState[this.connectivityState] +
+    this.trace(
+      ConnectivityState[this.connectivityState] +
         ' -> ' +
         ConnectivityState[newState]
     );
+    this.channelzTrace.addTrace('CT_INFO', ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[newState]);
     const previousState = this.connectivityState;
     this.connectivityState = newState;
     switch (newState) {
@@ -536,6 +640,7 @@ export class Subchannel {
           this.session.close();
         }
         this.session = null;
+        this.resetChannelzSocketInfo();
         this.stopKeepalivePings();
         /* If the backoff timer has already ended by the time we get to the
          * TRANSIENT_FAILURE state, we want to immediately transition out of
@@ -551,6 +656,7 @@ export class Subchannel {
           this.session.close();
         }
         this.session = null;
+        this.resetChannelzSocketInfo();
         this.stopKeepalivePings();
         break;
       default:
@@ -572,17 +678,18 @@ export class Subchannel {
     /* If no calls, channels, or subchannel pools have any more references to
      * this subchannel, we can be sure it will never be used again. */
     if (this.callRefcount === 0 && this.refcount === 0) {
+      this.channelzTrace.addTrace('CT_INFO', 'Shutting down');
       this.transitionToState(
         [ConnectivityState.CONNECTING, ConnectivityState.READY],
         ConnectivityState.TRANSIENT_FAILURE
       );
+      unregisterChannelzRef(this.channelzRef);
     }
   }
 
   callRef() {
-    refTrace(
-      this.subchannelAddressString +
-        ' callRefcount ' +
+    this.refTrace(
+      'callRefcount ' +
         this.callRefcount +
         ' -> ' +
         (this.callRefcount + 1)
@@ -600,9 +707,8 @@ export class Subchannel {
   }
 
   callUnref() {
-    refTrace(
-      this.subchannelAddressString +
-        ' callRefcount ' +
+    this.refTrace(
+      'callRefcount ' +
         this.callRefcount +
         ' -> ' +
         (this.callRefcount - 1)
@@ -621,9 +727,8 @@ export class Subchannel {
   }
 
   ref() {
-    refTrace(
-      this.subchannelAddressString +
-        ' refcount ' +
+    this.refTrace(
+      'refcount ' +
         this.refcount +
         ' -> ' +
         (this.refcount + 1)
@@ -632,9 +737,8 @@ export class Subchannel {
   }
 
   unref() {
-    refTrace(
-      this.subchannelAddressString +
-        ' refcount ' +
+    this.refTrace(
+      'refcount ' +
         this.refcount +
         ' -> ' +
         (this.refcount - 1)
@@ -696,11 +800,39 @@ export class Subchannel {
       LogVerbosity.DEBUG,
       'call_stream',
       'Starting stream on subchannel ' +
+        '(' + this.channelzRef.id + ') ' +
         this.subchannelAddressString +
         ' with headers\n' +
         headersString
     );
-    callStream.attachHttp2Stream(http2Stream, this, extraFilters);
+    this.callTracker.addCallStarted();
+    callStream.addStatusWatcher(status => {
+      if (status.code === Status.OK) {
+        this.callTracker.addCallSucceeded();
+      } else {
+        this.callTracker.addCallFailed();
+      }
+    });
+    const streamSession = this.session;
+    this.streamTracker.addCallStarted();
+    callStream.addStreamEndWatcher(success => {
+      if (streamSession === this.session) {
+        if (success) {
+          this.streamTracker.addCallSucceeded();
+        } else {
+          this.streamTracker.addCallFailed();
+        }
+      }
+    });
+    callStream.attachHttp2Stream(http2Stream, this, extraFilters, {
+      addMessageSent: () => {
+        this.messagesSent += 1;
+        this.lastMessageSentTimestamp = new Date();
+      },
+      addMessageReceived: () => {
+        this.messagesReceived += 1;
+      }
+    });
   }
 
   /**
@@ -778,5 +910,9 @@ export class Subchannel {
 
   getAddress(): string {
     return this.subchannelAddressString;
+  }
+
+  getChannelzRef(): SubchannelRef {
+    return this.channelzRef;
   }
 }

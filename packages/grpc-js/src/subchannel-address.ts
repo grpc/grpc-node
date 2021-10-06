@@ -15,6 +15,8 @@
  *
  */
 
+import { isIP } from "net";
+
 export interface TcpSubchannelAddress {
   port: number;
   host: string;
@@ -58,5 +60,20 @@ export function subchannelAddressToString(address: SubchannelAddress): string {
     return address.host + ':' + address.port;
   } else {
     return address.path;
+  }
+}
+
+const DEFAULT_PORT = 443;
+
+export function stringToSubchannelAddress(addressString: string, port?: number): SubchannelAddress {
+  if (isIP(addressString)) {
+    return {
+      host: addressString,
+      port: port ?? DEFAULT_PORT
+    };
+  } else {
+    return {
+      path: addressString
+    };
   }
 }

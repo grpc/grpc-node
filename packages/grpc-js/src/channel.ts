@@ -49,6 +49,7 @@ import { SurfaceCall } from './call';
 import { Filter } from './filter';
 
 import { ConnectivityState } from './connectivity-state';
+import { ChannelInfo, ChannelRef, ChannelzCallTracker, ChannelzChildrenTracker, ChannelzTrace, registerChannelzChannel, SubchannelRef, unregisterChannelzRef } from './channelz';
 
 /**
  * See https://nodejs.org/api/timers.html#timers_setinterval_callback_delay_args
@@ -104,6 +105,12 @@ export interface Channel {
     deadline: Date | number,
     callback: (error?: Error) => void
   ): void;
+  /**
+   * Get the channelz reference object for this channel. A request to the
+   * channelz service for the id in this object will provide information
+   * about this channel.
+   */
+  getChannelzRef(): ChannelRef;
   /**
    * Create a call object. Call is an opaque type that is used by the Client
    * class. This function is called by the gRPC library when starting a
@@ -163,6 +170,14 @@ export class ChannelImplementation implements Channel {
    */
   private callRefTimer: NodeJS.Timer;
   private configSelector: ConfigSelector | null = null;
+
+  // Channelz info
+  private originalTarget: string;
+  private channelzRef: ChannelRef;
+  private channelzTrace: ChannelzTrace;
+  private callTracker = new ChannelzCallTracker();
+  private childrenTracker = new ChannelzChildrenTracker();
+
   constructor(
     target: string,
     private readonly credentials: ChannelCredentials,
@@ -191,6 +206,7 @@ export class ChannelImplementation implements Channel {
         );
       }
     }
+    this.originalTarget = target;
     const originalTargetUri = parseUri(target);
     if (originalTargetUri === null) {
       throw new Error(`Could not parse target name "${target}"`);
@@ -206,6 +222,10 @@ export class ChannelImplementation implements Channel {
 
     this.callRefTimer = setInterval(() => {}, MAX_TIMEOUT_TIME);
     this.callRefTimer.unref?.();
+
+    this.channelzRef = registerChannelzChannel(target, () => this.getChannelzInfo());
+    this.channelzTrace = new ChannelzTrace();
+    this.channelzTrace.addTrace('CT_INFO', 'Channel created');
 
     if (this.options['grpc.default_authority']) {
       this.defaultAuthority = this.options['grpc.default_authority'] as string;
@@ -226,12 +246,14 @@ export class ChannelImplementation implements Channel {
         subchannelAddress: SubchannelAddress,
         subchannelArgs: ChannelOptions
       ) => {
-        return this.subchannelPool.getOrCreateSubchannel(
+        const subchannel = this.subchannelPool.getOrCreateSubchannel(
           this.target,
           subchannelAddress,
           Object.assign({}, this.options, subchannelArgs),
           this.credentials
         );
+        this.channelzTrace.addTrace('CT_INFO', 'Created subchannel or used existing subchannel', subchannel.getChannelzRef());
+        return subchannel;
       },
       updateState: (connectivityState: ConnectivityState, picker: Picker) => {
         this.currentPicker = picker;
@@ -249,12 +271,19 @@ export class ChannelImplementation implements Channel {
           'Resolving load balancer should never call requestReresolution'
         );
       },
+      addChannelzChild: (child: ChannelRef | SubchannelRef) => {
+        this.childrenTracker.refChild(child);
+      },
+      removeChannelzChild: (child: ChannelRef | SubchannelRef) => {
+        this.childrenTracker.unrefChild(child);
+      }
     };
     this.resolvingLoadBalancer = new ResolvingLoadBalancer(
       this.target,
       channelControlHelper,
       options,
       (configSelector) => {
+        this.channelzTrace.addTrace('CT_INFO', 'Address resolution succeeded');
         this.configSelector = configSelector;
         /* We process the queue asynchronously to ensure that the corresponding
          * load balancer update has completed. */
@@ -269,14 +298,9 @@ export class ChannelImplementation implements Channel {
         });
       },
       (status) => {
+        this.channelzTrace.addTrace('CT_WARNING', 'Address resolution failed with code ' + status.code + ' and details "' + status.details + '"');
         if (this.configSelectionQueue.length > 0) {
-          trace(
-            LogVerbosity.DEBUG,
-            'channel',
-            'Name resolution failed for target ' +
-              uriToString(this.target) +
-              ' with calls queued for config selection'
-          );
+          this.trace('Name resolution failed with calls queued for config selection');
         }
         const localQueue = this.configSelectionQueue;
         this.configSelectionQueue = [];
@@ -297,14 +321,27 @@ export class ChannelImplementation implements Channel {
       new MaxMessageSizeFilterFactory(this.options),
       new CompressionFilterFactory(this),
     ]);
+    this.trace('Constructed channel');
+  }
+
+  private getChannelzInfo(): ChannelInfo {
+    return {
+      target: this.originalTarget,
+      state: this.connectivityState,
+      trace: this.channelzTrace,
+      callTracker: this.callTracker,
+      children: this.childrenTracker.getChildLists()
+    };
+  }
+
+  private trace(text: string, verbosityOverride?: LogVerbosity) {
+    trace(verbosityOverride ?? LogVerbosity.DEBUG, 'channel', '(' + this.channelzRef.id + ') ' + uriToString(this.target) + ' ' + text);
   }
 
   private callRefTimerRef() {
     // If the hasRef function does not exist, always run the code
     if (!this.callRefTimer.hasRef?.()) {
-      trace(
-        LogVerbosity.DEBUG,
-        'channel',
+      this.trace(
         'callRefTimer.ref | configSelectionQueue.length=' +
           this.configSelectionQueue.length +
           ' pickQueue.length=' +
@@ -317,9 +354,7 @@ export class ChannelImplementation implements Channel {
   private callRefTimerUnref() {
     // If the hasRef function does not exist, always run the code
     if (!this.callRefTimer.hasRef || this.callRefTimer.hasRef()) {
-      trace(
-        LogVerbosity.DEBUG,
-        'channel',
+      this.trace(
         'callRefTimer.unref | configSelectionQueue.length=' +
           this.configSelectionQueue.length +
           ' pickQueue.length=' +
@@ -356,9 +391,7 @@ export class ChannelImplementation implements Channel {
       metadata: callMetadata,
       extraPickInfo: callConfig.pickInformation,
     });
-    trace(
-      LogVerbosity.DEBUG,
-      'channel',
+    this.trace(
       'Pick result: ' +
         PickResultType[pickResult.pickResultType] +
         ' subchannel: ' +
@@ -432,25 +465,23 @@ export class ChannelImplementation implements Channel {
                        * the stream because the correct behavior may be
                        * re-queueing instead, based on the logic in the rest of
                        * tryPick */
-                      trace(
-                        LogVerbosity.INFO,
-                        'channel',
+                      this.trace(
                         'Failed to start call on picked subchannel ' +
                           pickResult.subchannel!.getAddress() +
                           ' with error ' +
                           (error as Error).message +
-                          '. Retrying pick'
+                          '. Retrying pick',
+                          LogVerbosity.INFO
                       );
                       this.tryPick(callStream, callMetadata, callConfig, dynamicFilters);
                     } else {
-                      trace(
-                        LogVerbosity.INFO,
-                        'channel',
+                      this.trace(
                         'Failed to start call on picked subchanel ' +
                           pickResult.subchannel!.getAddress() +
                           ' with error ' +
                           (error as Error).message +
-                          '. Ending call'
+                          '. Ending call',
+                          LogVerbosity.INFO
                       );
                       callStream.cancelWithStatus(
                         Status.INTERNAL,
@@ -463,14 +494,13 @@ export class ChannelImplementation implements Channel {
                 } else {
                   /* The logic for doing this here is the same as in the catch
                    * block above */
-                  trace(
-                    LogVerbosity.INFO,
-                    'channel',
+                  this.trace(
                     'Picked subchannel ' +
                       pickResult.subchannel!.getAddress() +
                       ' has state ' +
                       ConnectivityState[subchannelState] +
-                      ' after metadata filters. Retrying pick'
+                      ' after metadata filters. Retrying pick',
+                      LogVerbosity.INFO
                   );
                   this.tryPick(callStream, callMetadata, callConfig, dynamicFilters);
                 }
@@ -526,12 +556,14 @@ export class ChannelImplementation implements Channel {
     trace(
       LogVerbosity.DEBUG,
       'connectivity_state',
-      uriToString(this.target) +
+      '(' + this.channelzRef.id + ') ' + 
+        uriToString(this.target) +
         ' ' +
         ConnectivityState[this.connectivityState] +
         ' -> ' +
         ConnectivityState[newState]
     );
+    this.channelzTrace.addTrace('CT_INFO', ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[newState]);
     this.connectivityState = newState;
     const watchersCopy = this.connectivityStateWatchers.slice();
     for (const watcherObject of watchersCopy) {
@@ -616,6 +648,7 @@ export class ChannelImplementation implements Channel {
     this.resolvingLoadBalancer.destroy();
     this.updateState(ConnectivityState.SHUTDOWN);
     clearInterval(this.callRefTimer);
+    unregisterChannelzRef(this.channelzRef);
 
     this.subchannelPool.unrefUnusedSubchannels();
   }
@@ -667,6 +700,10 @@ export class ChannelImplementation implements Channel {
     this.connectivityStateWatchers.push(watcherObject);
   }
 
+  getChannelzRef() {
+    return this.channelzRef;
+  }
+
   createCall(
     method: string,
     deadline: Deadline,
@@ -686,11 +723,8 @@ export class ChannelImplementation implements Channel {
       throw new Error('Channel has been shut down');
     }
     const callNumber = getNewCallNumber();
-    trace(
-      LogVerbosity.DEBUG,
-      'channel',
-      uriToString(this.target) +
-        ' createCall [' +
+    this.trace(
+      'createCall [' +
         callNumber +
         '] method="' +
         method +
@@ -711,6 +745,14 @@ export class ChannelImplementation implements Channel {
       this.credentials._getCallCredentials(),
       callNumber
     );
+    this.callTracker.addCallStarted();
+    stream.addStatusWatcher(status => {
+      if (status.code === Status.OK) {
+        this.callTracker.addCallSucceeded();
+      } else {
+        this.callTracker.addCallFailed();
+      }
+    });
     return stream;
   }
 }

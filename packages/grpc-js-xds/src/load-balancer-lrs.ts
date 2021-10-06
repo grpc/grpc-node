@@ -174,20 +174,14 @@ export class LrsLoadBalancer implements LoadBalancer {
   private localityStatsReporter: XdsClusterLocalityStats | null = null;
 
   constructor(private channelControlHelper: ChannelControlHelper) {
-    this.childBalancer = new ChildLoadBalancerHandler({
-      createSubchannel: (subchannelAddress, subchannelArgs) =>
-        channelControlHelper.createSubchannel(
-          subchannelAddress,
-          subchannelArgs
-        ),
-      requestReresolution: () => channelControlHelper.requestReresolution(),
+    this.childBalancer = new ChildLoadBalancerHandler(experimental.createChildChannelControlHelper(channelControlHelper, {
       updateState: (connectivityState: ConnectivityState, picker: Picker) => {
         if (this.localityStatsReporter !== null) {
           picker = new LoadReportingPicker(picker, this.localityStatsReporter);
         }
         channelControlHelper.updateState(connectivityState, picker);
       },
-    });
+    }));
   }
 
   updateAddressList(
