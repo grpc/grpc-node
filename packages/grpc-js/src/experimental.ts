@@ -12,6 +12,7 @@ export {
   LoadBalancer,
   LoadBalancingConfig,
   ChannelControlHelper,
+  createChildChannelControlHelper,
   registerLoadBalancerType,
   getFirstUsableConfig,
   validateLoadBalancingConfig,
@@ -32,3 +33,4 @@ export {
 export { Call as CallStream } from './call-stream';
 export { Filter, BaseFilter, FilterFactory } from './filter';
 export { FilterStackFactory } from './filter-stack';
+export { registerAdminService } from './admin';

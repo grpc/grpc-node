@@ -25,7 +25,7 @@ import { FilterStackFactory, FilterStack } from './filter-stack';
 import { Metadata } from './metadata';
 import { StreamDecoder } from './stream-decoder';
 import { ChannelImplementation } from './channel';
-import { Subchannel } from './subchannel';
+import { SubchannelCallStatsTracker, Subchannel } from './subchannel';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { ServerSurfaceCall } from './server-call';
@@ -249,6 +249,11 @@ export class Http2CallStream implements Call {
 
   private configDeadline: Deadline = Infinity;
 
+  private statusWatchers: ((status: StatusObject) => void)[] = [];
+  private streamEndWatchers: ((success: boolean) => void)[] = [];
+
+  private callStatsTracker: SubchannelCallStatsTracker | null = null;
+
   constructor(
     private readonly methodName: string,
     private readonly channel: ChannelImplementation,
@@ -283,6 +288,7 @@ export class Http2CallStream implements Call {
       const filteredStatus = this.filterStack.receiveTrailers(
         this.finalStatus!
       );
+      this.statusWatchers.forEach(watcher => watcher(filteredStatus));
       /* We delay the actual action of bubbling up the status to insulate the
        * cleanup code in this class from any errors that may be thrown in the
        * upper layers as a result of bubbling up the status. In particular,
@@ -426,6 +432,7 @@ export class Http2CallStream implements Call {
   }
 
   private handleTrailers(headers: http2.IncomingHttpHeaders) {
+    this.streamEndWatchers.forEach(watcher => watcher(true));
     let headersString = '';
     for (const header of Object.keys(headers)) {
       headersString += '\t\t' + header + ': ' + headers[header] + '\n';
@@ -463,10 +470,16 @@ export class Http2CallStream implements Call {
     this.endCall(status);
   }
 
+  private writeMessageToStream(message: Buffer, callback: WriteCallback) {
+    this.callStatsTracker?.addMessageSent();
+    this.http2Stream!.write(message, callback);
+  }
+
   attachHttp2Stream(
     stream: http2.ClientHttp2Stream,
     subchannel: Subchannel,
-    extraFilters: Filter[]
+    extraFilters: Filter[],
+    callStatsTracker: SubchannelCallStatsTracker
   ): void {
     this.filterStack.push(extraFilters);
     if (this.finalStatus !== null) {
@@ -477,6 +490,7 @@ export class Http2CallStream implements Call {
       );
       this.http2Stream = stream;
       this.subchannel = subchannel;
+      this.callStatsTracker = callStatsTracker;
       subchannel.addDisconnectListener(this.disconnectListener);
       subchannel.callRef();
       stream.on('response', (headers, flags) => {
@@ -542,6 +556,7 @@ export class Http2CallStream implements Call {
 
         for (const message of messages) {
           this.trace('parsed message of length ' + message.length);
+          this.callStatsTracker!.addMessageReceived();
           this.tryPush(message);
         }
       });
@@ -645,6 +660,7 @@ export class Http2CallStream implements Call {
           );
           this.internalError = err;
         }
+        this.streamEndWatchers.forEach(watcher => watcher(false));
       });
       if (!this.pendingRead) {
         stream.pause();
@@ -659,7 +675,7 @@ export class Http2CallStream implements Call {
             ' (deferred)'
         );
         try {
-          stream.write(this.pendingWrite, this.pendingWriteCallback);
+          this.writeMessageToStream(this.pendingWrite, this.pendingWriteCallback);
         } catch (error) {
           this.endCall({
             code: Status.UNAVAILABLE,
@@ -742,6 +758,14 @@ export class Http2CallStream implements Call {
     this.configDeadline = configDeadline;
   }
 
+  addStatusWatcher(watcher: (status: StatusObject) => void) {
+    this.statusWatchers.push(watcher);
+  }
+
+  addStreamEndWatcher(watcher: (success: boolean) => void) {
+    this.streamEndWatchers.push(watcher);
+  }
+
   addFilters(extraFilters: Filter[]) {
     this.filterStack.push(extraFilters);
   }
@@ -799,7 +823,7 @@ export class Http2CallStream implements Call {
       } else {
         this.trace('sending data chunk of length ' + message.message.length);
         try {
-          this.http2Stream.write(message.message, cb);
+        this.writeMessageToStream(message.message, cb);
         }  catch (error) {
           this.endCall({
             code: Status.UNAVAILABLE,

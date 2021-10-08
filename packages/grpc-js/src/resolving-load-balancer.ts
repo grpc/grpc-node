@@ -172,6 +172,12 @@ export class ResolvingLoadBalancer implements LoadBalancer {
         this.latestChildPicker = picker;
         this.updateState(newState, picker);
       },
+      addChannelzChild: channelControlHelper.addChannelzChild.bind(
+        channelControlHelper
+      ),
+      removeChannelzChild: channelControlHelper.removeChannelzChild.bind(
+        channelControlHelper
+      )
     });
     this.innerResolver = createResolver(
       target,
