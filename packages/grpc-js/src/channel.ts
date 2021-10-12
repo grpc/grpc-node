@@ -290,6 +290,7 @@ export class ChannelImplementation implements Channel {
       new MaxMessageSizeFilterFactory(this.options),
       new CompressionFilterFactory(this),
     ]);
+    trace(LogVerbosity.DEBUG, 'channel', 'Channel constructed with options ' + JSON.stringify(options, undefined, 2));
   }
 
   private callRefTimerRef() {
