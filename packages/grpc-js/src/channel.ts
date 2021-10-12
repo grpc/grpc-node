@@ -311,7 +311,7 @@ export class ChannelImplementation implements Channel {
       new MaxMessageSizeFilterFactory(this.options),
       new CompressionFilterFactory(this),
     ]);
-    this.trace('Constructed channel');
+    this.trace('Channel constructed with options ' + JSON.stringify(options, undefined, 2));
   }
 
   private getChannelzInfo(): ChannelInfo {
