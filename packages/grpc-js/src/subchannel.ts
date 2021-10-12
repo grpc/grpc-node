@@ -247,6 +247,7 @@ export class Subchannel {
       this.handleBackoffTimer();
     }, backoffOptions);
     this.subchannelAddressString = subchannelAddressToString(subchannelAddress);
+    trace('Subchannel constructed with options ' + JSON.stringify(options, undefined, 2));
   }
 
   private handleBackoffTimer() {
