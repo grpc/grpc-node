@@ -1,6 +1,6 @@
 {
   "name": "@grpc/grpc-js",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "gRPC Library for Node - pure JS implementation",
   "homepage": "https://grpc.io/",
   "repository": "https://github.com/grpc/grpc-node/tree/master/packages/grpc-js",
@@ -48,11 +48,11 @@
     "compile": "tsc -p .",
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
     "lint": "npm run check",
-    "prepare": "npm run compile",
+    "prepare": "npm run generate-types && npm run compile",
     "test": "gulp test",
     "check": "gts check src/**/*.ts",
     "fix": "gts fix src/*.ts",
-    "pretest": "npm run compile",
+    "pretest": "npm run generate-types && npm run compile",
     "posttest": "npm run check && madge -c ./build/src",
     "generate-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --includeComments --includeDirs proto/ -O src/generated/ --grpcLib ../index channelz.proto"
   },
@@ -62,7 +62,8 @@
   },
   "files": [
     "src/**/*.ts",
-    "build/src/*.{js,d.ts,js.map}",
+    "build/src/**/*.{js,d.ts,js.map}",
+    "proto/*.proto",
     "LICENSE",
     "deps/envoy-api/envoy/api/v2/**/*.proto",
     "deps/envoy-api/envoy/config/**/*.proto",
