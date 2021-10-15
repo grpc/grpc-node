@@ -229,7 +229,7 @@ export class Subchannel {
     this.channelzRef = registerChannelzSubchannel(this.subchannelAddressString, () => this.getChannelzInfo());
     this.channelzTrace = new ChannelzTrace();
     this.channelzTrace.addTrace('CT_INFO', 'Subchannel created');
-    this.trace('Subchannel constructed');
+    this.trace('Subchannel constructed with options ' + JSON.stringify(options, undefined, 2));
   }
 
   private getChannelzInfo(): SubchannelInfo {
