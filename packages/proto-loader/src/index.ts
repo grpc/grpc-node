@@ -212,6 +212,9 @@ function createDeserializer(
 
 function createSerializer(cls: Protobuf.Type): Serialize<object> {
   return function serialize(arg: object): Buffer {
+    if (Array.isArray(arg)) {
+      throw new Error(`Failed to serialize message: expected object with ${cls.name} structure, got array instead`);
+    }
     const message = cls.fromObject(arg);
     return cls.encode(message).finish() as Buffer;
   };
