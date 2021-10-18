@@ -157,6 +157,7 @@ export class Subchannel {
   private subchannelAddressString: string;
 
   // Channelz info
+  private readonly channelzEnabled: boolean = true;
   private channelzRef: SubchannelRef;
   private channelzTrace: ChannelzTrace;
   private callTracker = new ChannelzCallTracker();
@@ -226,9 +227,21 @@ export class Subchannel {
     }, backoffOptions);
     this.subchannelAddressString = subchannelAddressToString(subchannelAddress);
 
-    this.channelzRef = registerChannelzSubchannel(this.subchannelAddressString, () => this.getChannelzInfo());
+    if (options['grpc.enable_channelz'] === 0) {
+      this.channelzEnabled = false;
+    }
     this.channelzTrace = new ChannelzTrace();
-    this.channelzTrace.addTrace('CT_INFO', 'Subchannel created');
+    if (this.channelzEnabled) {
+      this.channelzRef = registerChannelzSubchannel(this.subchannelAddressString, () => this.getChannelzInfo());
+      this.channelzTrace.addTrace('CT_INFO', 'Subchannel created');
+    } else {
+      // Dummy channelz ref that will never be used
+      this.channelzRef = {
+        kind: 'subchannel',
+        id: -1,
+        name: ''
+      };
+    }
     this.trace('Subchannel constructed with options ' + JSON.stringify(options, undefined, 2));
   }
 
@@ -286,6 +299,9 @@ export class Subchannel {
   }
 
   private resetChannelzSocketInfo() {
+    if (!this.channelzEnabled) {
+      return;
+    }
     if (this.channelzSocketRef) {
       unregisterChannelzRef(this.channelzSocketRef);
       this.childrenTracker.unrefChild(this.channelzSocketRef);
@@ -335,7 +351,9 @@ export class Subchannel {
   }
 
   private sendPing() {
-    this.keepalivesSent += 1;
+    if (this.channelzEnabled) {
+      this.keepalivesSent += 1;
+    }
     logging.trace(
       LogVerbosity.DEBUG,
       'keepalive',
@@ -462,8 +480,10 @@ export class Subchannel {
       connectionOptions
     );
     this.session = session;
-    this.channelzSocketRef = registerChannelzSocket(this.subchannelAddressString, () => this.getChannelzSocketInfo()!);
-    this.childrenTracker.refChild(this.channelzSocketRef);
+    if (this.channelzEnabled) {
+      this.channelzSocketRef = registerChannelzSocket(this.subchannelAddressString, () => this.getChannelzSocketInfo()!);
+      this.childrenTracker.refChild(this.channelzSocketRef);
+    }
     session.unref();
     /* For all of these events, check if the session at the time of the event
      * is the same one currently attached to this subchannel, to ensure that
@@ -615,7 +635,9 @@ export class Subchannel {
         ' -> ' +
         ConnectivityState[newState]
     );
-    this.channelzTrace.addTrace('CT_INFO', ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[newState]);
+    if (this.channelzEnabled) {
+      this.channelzTrace.addTrace('CT_INFO', ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[newState]);
+    }
     const previousState = this.connectivityState;
     this.connectivityState = newState;
     switch (newState) {
@@ -678,12 +700,16 @@ export class Subchannel {
     /* If no calls, channels, or subchannel pools have any more references to
      * this subchannel, we can be sure it will never be used again. */
     if (this.callRefcount === 0 && this.refcount === 0) {
-      this.channelzTrace.addTrace('CT_INFO', 'Shutting down');
+      if (this.channelzEnabled) {
+        this.channelzTrace.addTrace('CT_INFO', 'Shutting down');
+      }
       this.transitionToState(
         [ConnectivityState.CONNECTING, ConnectivityState.READY],
         ConnectivityState.TRANSIENT_FAILURE
       );
-      unregisterChannelzRef(this.channelzRef);
+      if (this.channelzEnabled) {
+        unregisterChannelzRef(this.channelzRef);
+      }
     }
   }
 
@@ -805,34 +831,36 @@ export class Subchannel {
         ' with headers\n' +
         headersString
     );
-    this.callTracker.addCallStarted();
-    callStream.addStatusWatcher(status => {
-      if (status.code === Status.OK) {
-        this.callTracker.addCallSucceeded();
-      } else {
-        this.callTracker.addCallFailed();
-      }
-    });
     const streamSession = this.session;
-    this.streamTracker.addCallStarted();
-    callStream.addStreamEndWatcher(success => {
-      if (streamSession === this.session) {
-        if (success) {
-          this.streamTracker.addCallSucceeded();
+    if (this.channelzEnabled) {
+      this.callTracker.addCallStarted();
+      callStream.addStatusWatcher(status => {
+        if (status.code === Status.OK) {
+          this.callTracker.addCallSucceeded();
         } else {
-          this.streamTracker.addCallFailed();
+          this.callTracker.addCallFailed();
         }
-      }
-    });
-    callStream.attachHttp2Stream(http2Stream, this, extraFilters, {
-      addMessageSent: () => {
-        this.messagesSent += 1;
-        this.lastMessageSentTimestamp = new Date();
-      },
-      addMessageReceived: () => {
-        this.messagesReceived += 1;
-      }
-    });
+      });
+      this.streamTracker.addCallStarted();
+      callStream.addStreamEndWatcher(success => {
+        if (streamSession === this.session) {
+          if (success) {
+            this.streamTracker.addCallSucceeded();
+          } else {
+            this.streamTracker.addCallFailed();
+          }
+        }
+      });
+      callStream.attachHttp2Stream(http2Stream, this, extraFilters, {
+        addMessageSent: () => {
+          this.messagesSent += 1;
+          this.lastMessageSentTimestamp = new Date();
+        },
+        addMessageReceived: () => {
+          this.messagesReceived += 1;
+        }
+      });
+    }
   }
 
   /**
