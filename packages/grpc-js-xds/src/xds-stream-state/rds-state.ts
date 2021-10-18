@@ -199,7 +199,7 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
         watcher.onValidUpdate(message, isV2);
       }
     }
-    trace('Received RDS response with route config names ' + Array.from(allRouteConfigNames));
+    trace('Received RDS response with route config names [' + Array.from(allRouteConfigNames) + ']');
     return null;
   }
 

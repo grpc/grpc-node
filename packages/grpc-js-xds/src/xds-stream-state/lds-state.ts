@@ -175,7 +175,7 @@ export class LdsState implements XdsStreamState<Listener__Output> {
         watcher.onValidUpdate(message, isV2);
       }
     }
-    trace('Received RDS response with route config names ' + Array.from(allTargetNames));
+    trace('Received LDS response with listener names [' + Array.from(allTargetNames) + ']');
     this.handleMissingNames(allTargetNames);
     this.rdsState.handleMissingNames(allRouteConfigNames);
     return null;

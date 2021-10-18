@@ -158,7 +158,7 @@ export class CdsState implements XdsStreamState<Cluster__Output> {
         watcher.onValidUpdate(message, isV2);
       }
     }
-    trace('Received CDS updates for cluster names ' + Array.from(allClusterNames));
+    trace('Received CDS updates for cluster names [' + Array.from(allClusterNames) + ']');
     this.handleMissingNames(allClusterNames);
     this.edsState.handleMissingNames(allEdsServiceNames);
     return null;
