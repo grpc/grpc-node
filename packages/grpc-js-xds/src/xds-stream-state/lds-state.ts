@@ -154,17 +154,21 @@ export class LdsState implements XdsStreamState<Listener__Output> {
   }
 
   handleResponses(responses: Listener__Output[], isV2: boolean): string | null {
+    const validResponses: Listener__Output[] = [];
+    let errorMessage: string | null = null;
     for (const message of responses) {
-      if (!this.validateResponse(message, isV2)) {
+      if (this.validateResponse(message, isV2)) {
+        validResponses.push(message);
+      } else {
         trace('LDS validation failed for message ' + JSON.stringify(message));
-        return 'LDS Error: Route validation failed';
+        errorMessage = 'LDS Error: Route validation failed';
       }
     }
-    this.latestResponses = responses;
+    this.latestResponses = validResponses;
     this.latestIsV2 = isV2;
     const allTargetNames = new Set<string>();
     const allRouteConfigNames = new Set<string>();
-    for (const message of responses) {
+    for (const message of validResponses) {
       allTargetNames.add(message.name);
       const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL_V3, message.api_listener!.api_listener!.value);
       if (httpConnectionManager.rds) {
@@ -178,7 +182,7 @@ export class LdsState implements XdsStreamState<Listener__Output> {
     trace('Received RDS response with route config names ' + Array.from(allTargetNames));
     this.handleMissingNames(allTargetNames);
     this.rdsState.handleMissingNames(allRouteConfigNames);
-    return null;
+    return errorMessage;
   }
 
   reportStreamError(status: StatusObject): void {
