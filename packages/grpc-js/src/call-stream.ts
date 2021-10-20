@@ -600,7 +600,7 @@ export class Http2CallStream implements Call {
               break;
             case http2.constants.NGHTTP2_ENHANCE_YOUR_CALM:
               code = Status.RESOURCE_EXHAUSTED;
-              details = 'Bandwidth exhausted';
+              details = 'Bandwidth exhausted or memory limit exceeded';
               break;
             case http2.constants.NGHTTP2_INADEQUATE_SECURITY:
               code = Status.PERMISSION_DENIED;
