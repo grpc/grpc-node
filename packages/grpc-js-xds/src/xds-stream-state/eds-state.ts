@@ -162,7 +162,7 @@ export class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
         watcher.onValidUpdate(message, isV2);
       }
     }
-    trace('Received EDS updates for cluster names ' + Array.from(allClusterNames));
+    trace('Received EDS updates for cluster names [' + Array.from(allClusterNames) + ']');
     return null;
   }
 
