@@ -113,6 +113,14 @@ interface TraceEvent {
   childSubchannel?: SubchannelRef;
 }
 
+/**
+ * The loose upper bound on the number of events that should be retained in a
+ * trace. This may be exceeded by up to a factor of 2. Arbitrarily chosen as a
+ * number that should be large enough to contain the recent relevant
+ * information, but small enough to not use excessive memory.
+ */
+const TARGET_RETAINED_TRACES = 32;
+
 export class ChannelzTrace {
   events: TraceEvent[] = [];
   creationTimestamp: Date;
@@ -131,6 +139,10 @@ export class ChannelzTrace {
       childChannel: child?.kind === 'channel' ? child : undefined,
       childSubchannel: child?.kind === 'subchannel' ? child : undefined
     });
+    // Whenever the trace array gets too large, discard the first half
+    if (this.events.length >= TARGET_RETAINED_TRACES * 2) {
+      this.events = this.events.slice(TARGET_RETAINED_TRACES);
+    }
     this.eventsLogged += 1;
   }
 
@@ -378,20 +390,6 @@ export function unregisterChannelzRef(ref: ChannelRef | SubchannelRef | ServerRe
       delete sockets[ref.id];
       return;
   }
-}
-
-export interface ChannelzClientView {
-  updateState(connectivityState: ConnectivityState): void;
-  addTrace(severity: TraceSeverity, description: string, child?: ChannelRef | SubchannelRef): void;
-  addCallStarted(): void;
-  addCallSucceeded(): void;
-  addCallFailed(): void;
-  addChild(child: ChannelRef | SubchannelRef): void;
-  removeChild(child: ChannelRef | SubchannelRef): void;
-}
-
-export interface ChannelzSubchannelView extends ChannelzClientView {
-  getRef(): SubchannelRef;
 }
 
 /**
