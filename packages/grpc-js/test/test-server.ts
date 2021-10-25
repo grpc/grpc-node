@@ -31,22 +31,8 @@ import { sendUnaryData, ServerUnaryCall } from '../src/server-call';
 
 import { loadProtoFile } from './common';
 import { TestServiceClient, TestServiceHandlers } from '../src/generated/TestService';
-import { ProtoGrpcType as ChannelzGrpcType } from '../src/generated/channelz';
 import { ProtoGrpcType as TestServiceGrpcType } from '../src/generated/test_service';
 import { Request__Output } from '../src/generated/Request';
-
-const loadedChannelzProto = protoLoader.loadSync('channelz.proto', {
-  keepCase: true,
-  longs: String,
-  enums: String,
-  defaults: true,
-  oneofs: true,
-  includeDirs: [
-    `${__dirname}/../../proto`
-  ]
-});
-
-const channelzGrpcObject = grpc.loadPackageDefinition(loadedChannelzProto) as unknown as ChannelzGrpcType;
 
 const loadedTestServiceProto = protoLoader.loadSync('test_service.proto', {
   keepCase: true,
@@ -639,9 +625,6 @@ describe('Generic client and server', () => {
 describe('Compressed requests', () => {
   const testServiceHandlers: TestServiceHandlers = {
     Unary(call, callback) {
-      const { metadata, request } = call;
-      console.log({ metadata, request });
-
       callback(null, { count: 500000 });
     },
 
@@ -650,18 +633,15 @@ describe('Compressed requests', () => {
 
       call.on('data', () => {
         timesCalled += 1;
-        console.log('clientStream received another call', { timesCalled });
       });
 
       call.on('end', () => {
-        console.log('Returning from clientStream: ', { timesCalled });
         callback(null, { count: timesCalled });
       });
     },
 
     ServerStream(call) {
       const { metadata, request } = call;
-      console.log({ metadata, request });
 
       for (let i = 0; i < 5; i++) {
         call.write({ count: request.message.length });
@@ -672,12 +652,10 @@ describe('Compressed requests', () => {
 
     BidiStream(call) {
       call.on('data', (data: Request__Output) => {
-        console.log('Bidi stream data received, writing response', { data });
         call.write({ count: data.message.length });
       });
 
       call.on('end', () => {
-        console.log('Server received end event for bidi stream, ending server-side call');
         call.end();
       });
     }
@@ -775,7 +753,6 @@ describe('Compressed requests', () => {
       });
 
       bidiStream.on('end', () => {
-        console.log('Client received end event for bidi stream', { timesResponded, timesRequested });
         assert.equal(timesResponded, timesRequested);
         done();
       });
@@ -857,7 +834,6 @@ describe('Compressed requests', () => {
       });
 
       bidiStream.on('end', () => {
-        console.log('Client received end event for bidi stream', { timesResponded, timesRequested });
         assert.equal(timesResponded, timesRequested);
         done();
       });
