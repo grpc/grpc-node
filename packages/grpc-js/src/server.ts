@@ -176,7 +176,7 @@ export class Server {
       const sessionInfo = this.sessions.get(session)!;
       const sessionSocket = session.socket;
       const remoteAddress = sessionSocket.remoteAddress ? stringToSubchannelAddress(sessionSocket.remoteAddress, sessionSocket.remotePort) : null;
-      const localAddress = stringToSubchannelAddress(sessionSocket.localAddress, sessionSocket.localPort);
+      const localAddress = sessionSocket.localAddress ? stringToSubchannelAddress(sessionSocket.localAddress!, sessionSocket.localPort) : null;
       let tlsInfo: TlsInfo | null;
       if (session.encrypted) {
         const tlsSocket: TLSSocket = sessionSocket as TLSSocket;
