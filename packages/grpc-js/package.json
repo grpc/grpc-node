@@ -54,11 +54,12 @@
     "fix": "gts fix src/*.ts",
     "pretest": "npm run generate-types && npm run compile",
     "posttest": "npm run check && madge -c ./build/src",
-    "generate-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --includeComments --includeDirs proto/ -O src/generated/ --grpcLib ../index channelz.proto"
+    "generate-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --includeComments --includeDirs proto/ -O src/generated/ --grpcLib ../index channelz.proto test_service.proto"
   },
   "dependencies": {
     "@grpc/proto-loader": "^0.6.4",
-    "@types/node": ">=12.12.47"
+    "@types/node": "16.10.0",
+    "@types/semver": "^7.3.9"
   },
   "files": [
     "src/**/*.ts",

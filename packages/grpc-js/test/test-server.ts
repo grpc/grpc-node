@@ -21,6 +21,7 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as http2 from 'http2';
 import * as path from 'path';
+import * as protoLoader from '@grpc/proto-loader';
 
 import * as grpc from '../src';
 import { Server, ServerCredentials } from '../src';
@@ -29,6 +30,36 @@ import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
 import { sendUnaryData, ServerUnaryCall } from '../src/server-call';
 
 import { loadProtoFile } from './common';
+import { TestServiceClient, TestServiceHandlers } from '../src/generated/TestService';
+import { ProtoGrpcType as ChannelzGrpcType } from '../src/generated/channelz';
+import { ProtoGrpcType as TestServiceGrpcType } from '../src/generated/test_service';
+import { Request__Output } from '../src/generated/Request';
+
+const loadedChannelzProto = protoLoader.loadSync('channelz.proto', {
+  keepCase: true,
+  longs: String,
+  enums: String,
+  defaults: true,
+  oneofs: true,
+  includeDirs: [
+    `${__dirname}/../../proto`
+  ]
+});
+
+const channelzGrpcObject = grpc.loadPackageDefinition(loadedChannelzProto) as unknown as ChannelzGrpcType;
+
+const loadedTestServiceProto = protoLoader.loadSync('test_service.proto', {
+  keepCase: true,
+  longs: String,
+  enums: String,
+  defaults: true,
+  oneofs: true,
+  includeDirs: [
+    `${__dirname}/../../proto`
+  ]
+});
+
+const testServiceGrpcObject = grpc.loadPackageDefinition(loadedTestServiceProto) as unknown as TestServiceGrpcType;
 
 const ca = fs.readFileSync(path.join(__dirname, 'fixtures', 'ca.pem'));
 const key = fs.readFileSync(path.join(__dirname, 'fixtures', 'server1.key'));
@@ -601,6 +632,261 @@ describe('Generic client and server', () => {
       makeRequest({ ':path': '/' });
       // Invalid Content-Type header.
       makeRequest({ ':path': '/', 'content-type': 'application/not-grpc' });
+    });
+  });
+});
+
+describe('Compressed requests', () => {
+  const testServiceHandlers: TestServiceHandlers = {
+    Unary(call, callback) {
+      const { metadata, request } = call;
+      console.log({ metadata, request });
+
+      callback(null, { count: 500000 });
+    },
+
+    ClientStream(call, callback) {
+      let timesCalled = 0;
+
+      call.on('data', () => {
+        timesCalled += 1;
+        console.log('clientStream received another call', { timesCalled });
+      });
+
+      call.on('end', () => {
+        console.log('Returning from clientStream: ', { timesCalled });
+        callback(null, { count: timesCalled });
+      });
+    },
+
+    ServerStream(call) {
+      const { metadata, request } = call;
+      console.log({ metadata, request });
+
+      for (let i = 0; i < 5; i++) {
+        call.write({ count: request.message.length });
+      }
+
+      call.end();
+    },
+
+    BidiStream(call) {
+      call.on('data', (data: Request__Output) => {
+        console.log('Bidi stream data received, writing response', { data });
+        call.write({ count: data.message.length });
+      });
+
+      call.on('end', () => {
+        console.log('Server received end event for bidi stream, ending server-side call');
+        call.end();
+      });
+    }
+  };
+
+  describe('Test service client and server with deflate', () => {
+    let client: TestServiceClient;
+    let server: Server;
+    let assignedPort: number;
+
+    before(done => {
+      server = new Server();
+      server.addService(
+        testServiceGrpcObject.TestService.service,
+        testServiceHandlers
+      );
+      server.bindAsync(
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert.ifError(err);
+          server.start();
+          assignedPort = port;
+          client = new testServiceGrpcObject.TestService(
+            `localhost:${assignedPort}`,
+            grpc.credentials.createInsecure(),
+            {
+              'grpc.default_compression_algorithm': 1
+            }
+          );
+          done();
+        }
+      );
+    });
+
+    after(done => {
+      client.close();
+      server.tryShutdown(done);
+    });
+
+    it('Should compress and decompress when performing unary call', done => {
+      client.unary({ message: 'foo' }, (err, response) => {
+        assert.ifError(err);
+        done();
+      });
+    });
+
+    it('Should compress and decompress when performing client stream', done => {
+      const clientStream = client.clientStream((err, res) => {
+        assert.ifError(err);
+        assert.equal(res?.count, 3);
+        done();
+      });
+
+      clientStream.write({ message: 'foo' }, () => {
+        clientStream.write({ message: 'bar' }, () => {
+          clientStream.write({ message: 'baz' }, () => {
+            setTimeout(() => clientStream.end(), 10);
+          });
+        });
+      });
+    });
+
+    it('Should compress and decompress when performing server stream', done => {
+      const serverStream = client.serverStream({ message: 'foobar' });
+      let timesResponded = 0;
+
+      serverStream.on('data', () => {
+        timesResponded += 1;
+      });
+
+      serverStream.on('error', (err) => {
+        assert.ifError(err);
+        done();
+      });
+
+      serverStream.on('end', () => {
+        assert.equal(timesResponded, 5);
+        done();
+      });
+    });
+
+    it('Should compress and decompress when performing bidi stream', done => {
+      const bidiStream = client.bidiStream();
+      let timesRequested = 0;
+      let timesResponded = 0;
+
+      bidiStream.on('data', () => {
+        timesResponded += 1;
+      });
+
+      bidiStream.on('error', (err) => {
+        assert.ifError(err);
+        done();
+      });
+
+      bidiStream.on('end', () => {
+        console.log('Client received end event for bidi stream', { timesResponded, timesRequested });
+        assert.equal(timesResponded, timesRequested);
+        done();
+      });
+
+      bidiStream.write({ message: 'foo' }, () => {
+        timesRequested += 1;
+        bidiStream.write({ message: 'bar' }, () => {
+          timesRequested += 1;
+          bidiStream.write({ message: 'baz' }, () => {
+            timesRequested += 1;
+            setTimeout(() => bidiStream.end(), 10);
+          })
+        })
+      });
+    });
+
+    it('Should compress and decompress with gzip', done => {
+      client = new testServiceGrpcObject.TestService(
+        `localhost:${assignedPort}`,
+        grpc.credentials.createInsecure(),
+        {
+          'grpc.default_compression_algorithm': 2
+        }
+      );
+
+      client.unary({ message: 'foo' }, (err, response) => {
+        assert.ifError(err);
+        done();
+      });
+    });
+
+    it('Should compress and decompress when performing client stream', done => {
+      const clientStream = client.clientStream((err, res) => {
+        assert.ifError(err);
+        assert.equal(res?.count, 3);
+        done();
+      });
+
+      clientStream.write({ message: 'foo' }, () => {
+        clientStream.write({ message: 'bar' }, () => {
+          clientStream.write({ message: 'baz' }, () => {
+            setTimeout(() => clientStream.end(), 10);
+          });
+        });
+      });
+    });
+
+    it('Should compress and decompress when performing server stream', done => {
+      const serverStream = client.serverStream({ message: 'foobar' });
+      let timesResponded = 0;
+
+      serverStream.on('data', () => {
+        timesResponded += 1;
+      });
+
+      serverStream.on('error', (err) => {
+        assert.ifError(err);
+        done();
+      });
+
+      serverStream.on('end', () => {
+        assert.equal(timesResponded, 5);
+        done();
+      });
+    });
+
+    it('Should compress and decompress when performing bidi stream', done => {
+      const bidiStream = client.bidiStream();
+      let timesRequested = 0;
+      let timesResponded = 0;
+
+      bidiStream.on('data', () => {
+        timesResponded += 1;
+      });
+
+      bidiStream.on('error', (err) => {
+        assert.ifError(err);
+        done();
+      });
+
+      bidiStream.on('end', () => {
+        console.log('Client received end event for bidi stream', { timesResponded, timesRequested });
+        assert.equal(timesResponded, timesRequested);
+        done();
+      });
+
+      bidiStream.write({ message: 'foo' }, () => {
+        timesRequested += 1;
+        bidiStream.write({ message: 'bar' }, () => {
+          timesRequested += 1;
+          bidiStream.write({ message: 'baz' }, () => {
+            timesRequested += 1;
+            setTimeout(() => bidiStream.end(), 10);
+          })
+        })
+      });
+    });
+
+    it('Should fail when attempting to use an unsupported compression method', done => {
+      client = new testServiceGrpcObject.TestService(
+        `localhost:${assignedPort}`,
+        grpc.credentials.createInsecure(),
+        {
+          'grpc.default_compression_algorithm': 3
+        }
+      );
+
+      client.unary({ message: 'foo' }, (err, response) => {
+        assert.ok(err);
+        done();
+      });
     });
   });
 });

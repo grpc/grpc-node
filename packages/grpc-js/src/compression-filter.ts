@@ -17,10 +17,27 @@
 
 import * as zlib from 'zlib';
 
-import { Call, WriteFlags, WriteObject } from './call-stream';
+import { Call, WriteObject } from './call-stream';
 import { Channel } from './channel';
 import { BaseFilter, Filter, FilterFactory } from './filter';
 import { Metadata, MetadataValue } from './metadata';
+import { ChannelOptions } from './channel-options';
+
+const CompressionAlgorithms = {
+  '0': 'identity',
+  '1': 'deflate',
+  '2': 'gzip',
+  // Streaming compression is unimplemented
+  '3': 'stream-gzip'
+} as const;
+
+const CompressionAlgorithKeys = new Set(Object.keys(CompressionAlgorithms));
+
+const isCompressionAlgorithmKey = (key: string | undefined): key is keyof typeof CompressionAlgorithms => {
+  return typeof key === 'string' && CompressionAlgorithKeys.has(key);
+}
+
+type CompressionAlgorithm = (typeof CompressionAlgorithms)[keyof typeof CompressionAlgorithms];
 
 abstract class CompressionHandler {
   protected abstract compressMessage(message: Buffer): Promise<Buffer>;
@@ -167,10 +184,29 @@ function getCompressionHandler(compressionName: string): CompressionHandler {
 export class CompressionFilter extends BaseFilter implements Filter {
   private sendCompression: CompressionHandler = new IdentityHandler();
   private receiveCompression: CompressionHandler = new IdentityHandler();
+  private defaultCompressionAlgorithm: CompressionAlgorithm | undefined;
+
+  constructor(channelOptions: ChannelOptions) {
+    super();
+
+    const compressionAlgorithmKey = channelOptions['grpc.default_compression_algorithm']?.toString();
+    if (isCompressionAlgorithmKey(compressionAlgorithmKey)) {
+      this.defaultCompressionAlgorithm = CompressionAlgorithms[compressionAlgorithmKey];
+      this.sendCompression = getCompressionHandler(this.defaultCompressionAlgorithm);
+    }
+  }
+
   async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
     const headers: Metadata = await metadata;
     headers.set('grpc-accept-encoding', 'identity,deflate,gzip');
-    headers.set('accept-encoding', 'identity');
+    headers.set('accept-encoding', 'identity,deflate,gzip');
+
+    if (this.defaultCompressionAlgorithm && ['deflate', 'gzip'].includes(this.defaultCompressionAlgorithm)) {
+      headers.set('grpc-encoding', this.defaultCompressionAlgorithm);
+    } else {
+      headers.remove('grpc-encoding');
+    }
+
     return headers;
   }
 
@@ -192,10 +228,10 @@ export class CompressionFilter extends BaseFilter implements Filter {
      * and the output is a framed and possibly compressed message. For this
      * reason, this filter should be at the bottom of the filter stack */
     const resolvedMessage: WriteObject = await message;
-    const compress =
-      resolvedMessage.flags === undefined
-        ? false
-        : (resolvedMessage.flags & WriteFlags.NoCompress) === 0;
+    const compress = !(this.sendCompression instanceof IdentityHandler);
+      // resolvedMessage.flags === undefined
+      //   ? false
+      //   : (resolvedMessage.flags & WriteFlags.NoCompress) === 0;
     return {
       message: await this.sendCompression.writeMessage(
         resolvedMessage.message,
@@ -216,8 +252,8 @@ export class CompressionFilter extends BaseFilter implements Filter {
 
 export class CompressionFilterFactory
   implements FilterFactory<CompressionFilter> {
-  constructor(private readonly channel: Channel) {}
+  constructor(private readonly channel: Channel, private readonly options: ChannelOptions) {}
   createFilter(callStream: Call): CompressionFilter {
-    return new CompressionFilter();
+    return new CompressionFilter(this.options);
   }
 }
