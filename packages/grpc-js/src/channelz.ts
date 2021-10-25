@@ -298,7 +298,7 @@ export interface TlsInfo {
 }
 
 export interface SocketInfo {
-  localAddress: SubchannelAddress;
+  localAddress: SubchannelAddress | null;
   remoteAddress: SubchannelAddress | null;
   security: TlsInfo | null;
   remoteName: string | null;
@@ -629,7 +629,7 @@ function GetSocket(call: ServerUnaryCall<GetSocketRequest__Output, GetSocketResp
   } : null;
   const socketMessage: SocketMessage = {
     ref: socketRefToMessage(socketEntry.ref),
-    local: subchannelAddressToAddressMessage(resolvedInfo.localAddress),
+    local: resolvedInfo.localAddress ? subchannelAddressToAddressMessage(resolvedInfo.localAddress) : null,
     remote: resolvedInfo.remoteAddress ? subchannelAddressToAddressMessage(resolvedInfo.remoteAddress) : null,
     remote_name: resolvedInfo.remoteName ?? undefined,
     security: securityMessage,
