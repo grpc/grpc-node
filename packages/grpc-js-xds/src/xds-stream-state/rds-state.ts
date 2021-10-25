@@ -183,16 +183,20 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
   }
 
   handleResponses(responses: RouteConfiguration__Output[], isV2: boolean): string | null {
+    const validResponses: RouteConfiguration__Output[] = [];
+    let errorMessage: string | null = null;
     for (const message of responses) {
-      if (!this.validateResponse(message, isV2)) {
+      if (this.validateResponse(message, isV2)) {
+        validResponses.push(message);
+      } else {
         trace('RDS validation failed for message ' + JSON.stringify(message));
-        return 'RDS Error: Route validation failed';
+        errorMessage = 'RDS Error: Route validation failed';
       }
     }
-    this.latestResponses = responses;
+    this.latestResponses = validResponses;
     this.latestIsV2 = isV2;
     const allRouteConfigNames = new Set<string>();
-    for (const message of responses) {
+    for (const message of validResponses) {
       allRouteConfigNames.add(message.name);
       const watchers = this.watchers.get(message.name) ?? [];
       for (const watcher of watchers) {
@@ -200,7 +204,7 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
       }
     }
     trace('Received RDS response with route config names ' + Array.from(allRouteConfigNames));
-    return null;
+    return errorMessage;
   }
 
   reportStreamError(status: StatusObject): void {
