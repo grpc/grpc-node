@@ -23,16 +23,16 @@ import { BaseFilter, Filter, FilterFactory } from './filter';
 import { Metadata, MetadataValue } from './metadata';
 import { ChannelOptions } from './channel-options';
 
-const CompressionAlgorithms = {
-  '0': 'identity',
-  '1': 'deflate',
-  '2': 'gzip'
+export const CompressionAlgorithms = {
+  0: 'identity',
+  1: 'deflate',
+  2: 'gzip'
 } as const;
 
 const CompressionAlgorithKeys = new Set(Object.keys(CompressionAlgorithms));
 
-const isCompressionAlgorithmKey = (key: string | undefined): key is keyof typeof CompressionAlgorithms => {
-  return typeof key === 'string' && CompressionAlgorithKeys.has(key);
+const isCompressionAlgorithmKey = (key: number | undefined): key is keyof typeof CompressionAlgorithms => {
+  return typeof key === 'number' && CompressionAlgorithKeys.has(key.toString());
 }
 
 type CompressionAlgorithm = (typeof CompressionAlgorithms)[keyof typeof CompressionAlgorithms];
@@ -187,7 +187,7 @@ export class CompressionFilter extends BaseFilter implements Filter {
   constructor(channelOptions: ChannelOptions) {
     super();
 
-    const compressionAlgorithmKey = channelOptions['grpc.default_compression_algorithm']?.toString();
+    const compressionAlgorithmKey = channelOptions['grpc.default_compression_algorithm'];
     if (isCompressionAlgorithmKey(compressionAlgorithmKey)) {
       this.defaultCompressionAlgorithm = CompressionAlgorithms[compressionAlgorithmKey];
       this.sendCompression = getCompressionHandler(this.defaultCompressionAlgorithm);

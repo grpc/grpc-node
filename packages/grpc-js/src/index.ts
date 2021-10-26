@@ -25,6 +25,7 @@ import {
 import { CallCredentials, OAuth2Client } from './call-credentials';
 import { Deadline, StatusObject } from './call-stream';
 import { Channel, ChannelImplementation } from './channel';
+import { CompressionAlgorithms } from './compression-filter';
 import { ConnectivityState } from './connectivity-state';
 import { ChannelCredentials } from './channel-credentials';
 import {
@@ -124,6 +125,7 @@ export {
   Status as status,
   ConnectivityState as connectivityState,
   Propagate as propagate,
+  CompressionAlgorithms as compressionAlgorithms
   // TODO: Other constants as well
 };
 
