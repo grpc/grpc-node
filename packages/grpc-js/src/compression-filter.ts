@@ -19,10 +19,12 @@ import * as zlib from 'zlib';
 
 import { Call, WriteObject, WriteFlags } from './call-stream';
 import { Channel } from './channel';
-import { CompressionAlgorithms } from './compression-algorithms';
-import { BaseFilter, Filter, FilterFactory } from './filter';
-import { Metadata, MetadataValue } from './metadata';
 import { ChannelOptions } from './channel-options';
+import { CompressionAlgorithms } from './compression-algorithms';
+import { LogVerbosity } from './constants';
+import { BaseFilter, Filter, FilterFactory } from './filter';
+import * as logging from './logging';
+import { Metadata, MetadataValue } from './metadata';
 
 const CompressionAlgorithKeys = new Set(Object.keys(CompressionAlgorithms));
 
@@ -186,6 +188,8 @@ export class CompressionFilter extends BaseFilter implements Filter {
     if (isCompressionAlgorithmKey(compressionAlgorithmKey)) {
       this.defaultCompressionAlgorithm = CompressionAlgorithms[compressionAlgorithmKey];
       this.sendCompression = getCompressionHandler(this.defaultCompressionAlgorithm);
+    } else {
+      logging.log(LogVerbosity.ERROR, 'Invalid value provided for grpc.default_compression_algorithm option');
     }
   }
 
