@@ -217,6 +217,18 @@ export class CompressionFilter extends BaseFilter implements Filter {
       }
     }
     metadata.remove('grpc-encoding');
+
+    /* Check to see if the compression we're using to send messages is supported by the server
+     * If not, reset the sendCompression filter and have it use the default IdentityHandler */
+    const serverSupportedEncodingsHeader = metadata.get('grpc-accept-encoding')[0] as string | undefined;
+    if (serverSupportedEncodingsHeader) {
+      const serverSupportedEncodings = serverSupportedEncodingsHeader.split(',');
+
+      if ((this.sendCompression instanceof DeflateHandler && !serverSupportedEncodings.includes('deflate'))
+          || (this.sendCompression instanceof GzipHandler && !serverSupportedEncodings.includes('gzip'))) {
+          this.sendCompression = new IdentityHandler();
+        }
+    }
     metadata.remove('grpc-accept-encoding');
     return metadata;
   }

@@ -1,4 +1,4 @@
-import type * as grpc from '../index';
+import type * as grpc from '../../src/index';
 import type { MessageTypeDefinition } from '@grpc/proto-loader';
 
 import type { TestServiceClient as _TestServiceClient, TestServiceDefinition as _TestServiceDefinition } from './TestService';

@@ -30,11 +30,11 @@ import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
 import { sendUnaryData, ServerUnaryCall } from '../src/server-call';
 
 import { loadProtoFile } from './common';
-import { TestServiceClient, TestServiceHandlers } from '../src/generated/TestService';
-import { ProtoGrpcType as TestServiceGrpcType } from '../src/generated/test_service';
-import { Request__Output } from '../src/generated/Request';
+import { TestServiceClient, TestServiceHandlers } from './generated/TestService';
+import { ProtoGrpcType as TestServiceGrpcType } from './generated/test_service';
+import { Request__Output } from './generated/Request';
 
-const loadedTestServiceProto = protoLoader.loadSync('test_service.proto', {
+const loadedTestServiceProto = protoLoader.loadSync('test/fixtures/test_service.proto', {
   keepCase: true,
   longs: String,
   enums: String,
@@ -847,21 +847,6 @@ describe('Compressed requests', () => {
             setTimeout(() => bidiStream.end(), 10);
           })
         })
-      });
-    });
-
-    it('Should fail when attempting to use an unsupported compression method', done => {
-      client = new testServiceGrpcObject.TestService(
-        `localhost:${assignedPort}`,
-        grpc.credentials.createInsecure(),
-        {
-          'grpc.default_compression_algorithm': 3
-        }
-      );
-
-      client.unary({ message: 'foo' }, (err, response) => {
-        assert.ok(err);
-        done();
       });
     });
   });
