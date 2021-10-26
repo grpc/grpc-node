@@ -33,7 +33,6 @@ import { StreamDecoder } from './stream-decoder';
 import { ObjectReadable, ObjectWritable } from './object-stream';
 import { ChannelOptions } from './channel-options';
 import * as logging from './logging';
-import { MetadataValue } from '.';
 
 const TRACER_NAME = 'server_call';
 
@@ -139,7 +138,7 @@ export class ServerReadableStreamImpl<RequestType, ResponseType>
     private call: Http2ServerCallStream<RequestType, ResponseType>,
     public metadata: Metadata,
     public deserialize: Deserialize<RequestType>,
-    encoding?: MetadataValue
+    encoding?: string
   ) {
     super({ objectMode: true });
     this.cancelled = false;
@@ -254,7 +253,7 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType>
     public metadata: Metadata,
     public serialize: Serialize<ResponseType>,
     public deserialize: Deserialize<RequestType>,
-    encoding?: MetadataValue
+    encoding?: string
   ) {
     super({ objectMode: true });
     this.cancelled = false;
@@ -443,7 +442,7 @@ export class Http2ServerCallStream<
     return this.cancelled;
   }
 
-  private getDecompressedMessage(message: Buffer, encoding?: MetadataValue) {
+  private getDecompressedMessage(message: Buffer, encoding?: string) {
     switch (encoding) {
       case 'deflate': {
         return new Promise<Buffer | undefined>((resolve, reject) => {
@@ -534,7 +533,7 @@ export class Http2ServerCallStream<
     return metadata;
   }
 
-  receiveUnaryMessage(encoding?: MetadataValue): Promise<RequestType> {
+  receiveUnaryMessage(encoding?: string): Promise<RequestType> {
     return new Promise((resolve, reject) => {
       const stream = this.stream;
       const chunks: Buffer[] = [];
@@ -730,7 +729,7 @@ export class Http2ServerCallStream<
     readable:
       | ServerReadableStream<RequestType, ResponseType>
       | ServerDuplexStream<RequestType, ResponseType>,
-    encoding?: MetadataValue
+    encoding?: string
   ) {
     const decoder = new StreamDecoder();
 
