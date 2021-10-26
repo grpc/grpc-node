@@ -199,7 +199,7 @@ export class CompressionFilter extends BaseFilter implements Filter {
   async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
     const headers: Metadata = await metadata;
     headers.set('grpc-accept-encoding', 'identity,deflate,gzip');
-    headers.set('accept-encoding', 'identity,deflate,gzip');
+    headers.set('accept-encoding', 'identity');
 
     if (this.defaultCompressionAlgorithm && ['deflate', 'gzip'].includes(this.defaultCompressionAlgorithm)) {
       headers.set('grpc-encoding', this.defaultCompressionAlgorithm);
