@@ -869,7 +869,7 @@ describe('Compressed requests', () => {
         done();
       });
 
-      bidiStream._write({ message: 'foo' }, '2', (err: any) => {
+      bidiStream.write({ message: 'foo' }, '2', (err: any) => {
         assert.ifError(err);
         timesRequested += 1;
         setTimeout(() => bidiStream.end(), 10);
