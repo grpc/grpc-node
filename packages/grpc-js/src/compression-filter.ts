@@ -17,7 +17,7 @@
 
 import * as zlib from 'zlib';
 
-import { Call, WriteObject } from './call-stream';
+import { Call, WriteObject, WriteFlags } from './call-stream';
 import { Channel } from './channel';
 import { BaseFilter, Filter, FilterFactory } from './filter';
 import { Metadata, MetadataValue } from './metadata';
@@ -238,10 +238,10 @@ export class CompressionFilter extends BaseFilter implements Filter {
      * and the output is a framed and possibly compressed message. For this
      * reason, this filter should be at the bottom of the filter stack */
     const resolvedMessage: WriteObject = await message;
-    const compress = !(this.sendCompression instanceof IdentityHandler);
-      // resolvedMessage.flags === undefined
-      //   ? false
-      //   : (resolvedMessage.flags & WriteFlags.NoCompress) === 0;
+    const compress =
+      resolvedMessage.flags === undefined
+        ? !(this.sendCompression instanceof IdentityHandler)
+        : (resolvedMessage.flags & WriteFlags.NoCompress) === 0;
     return {
       message: await this.sendCompression.writeMessage(
         resolvedMessage.message,

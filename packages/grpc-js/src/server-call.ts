@@ -561,7 +561,9 @@ export class Http2ServerCallStream<
 
           this.emit('receiveMessage');
 
-          const decompressedMessage = await this.getDecompressedMessage(requestBytes, encoding);
+          const compressed = requestBytes.readUInt8(0) === 1;
+          const compressedMessageEncoding = compressed ? encoding : undefined;
+          const decompressedMessage = await this.getDecompressedMessage(requestBytes, compressedMessageEncoding);
 
           // Encountered an error with decompression; it'll already have been propogated back
           // Just return early
@@ -748,7 +750,9 @@ export class Http2ServerCallStream<
         }
         this.emit('receiveMessage');
 
-        const decompressedMessage = await this.getDecompressedMessage(message, encoding);
+        const compressed = message.readUInt8(0) === 1;
+        const compressedMessageEncoding = compressed ? encoding : undefined;
+        const decompressedMessage = await this.getDecompressedMessage(message, compressedMessageEncoding);
 
         // Encountered an error with decompression; it'll already have been propogated back
         // Just return early

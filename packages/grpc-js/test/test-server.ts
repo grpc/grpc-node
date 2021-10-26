@@ -849,5 +849,31 @@ describe('Compressed requests', () => {
         })
       });
     });
+    
+    it('Should not compress requests when the NoCompress write flag is used', done => {
+      const bidiStream = client.bidiStream();
+      let timesRequested = 0;
+      let timesResponded = 0;
+
+      bidiStream.on('data', () => {
+        timesResponded += 1;
+      });
+
+      bidiStream.on('error', (err) => {
+        assert.ifError(err);
+        done();
+      });
+
+      bidiStream.on('end', () => {
+        assert.equal(timesResponded, timesRequested);
+        done();
+      });
+
+      bidiStream._write({ message: 'foo' }, '2', (err: any) => {
+        assert.ifError(err);
+        timesRequested += 1;
+        setTimeout(() => bidiStream.end(), 10);
+      });
+    });
   });
 });
