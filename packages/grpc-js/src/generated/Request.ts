@@ -1,4 +1,4 @@
-// Original file: proto/test_service.proto
+// Original file: test/fixtures/test_service.proto
 
 
 export interface Request {

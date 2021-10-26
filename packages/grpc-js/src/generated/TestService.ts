@@ -1,4 +1,4 @@
-// Original file: proto/test_service.proto
+// Original file: test/fixtures/test_service.proto
 
 import type * as grpc from './../index'
 import type { MethodDefinition } from '@grpc/proto-loader'
