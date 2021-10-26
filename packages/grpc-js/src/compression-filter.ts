@@ -26,9 +26,7 @@ import { ChannelOptions } from './channel-options';
 const CompressionAlgorithms = {
   '0': 'identity',
   '1': 'deflate',
-  '2': 'gzip',
-  // Streaming compression is unimplemented
-  '3': 'stream-gzip'
+  '2': 'gzip'
 } as const;
 
 const CompressionAlgorithKeys = new Set(Object.keys(CompressionAlgorithms));
