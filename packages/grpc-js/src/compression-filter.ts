@@ -189,7 +189,7 @@ export class CompressionFilter extends BaseFilter implements Filter {
       this.defaultCompressionAlgorithm = CompressionAlgorithms[compressionAlgorithmKey];
       this.sendCompression = getCompressionHandler(this.defaultCompressionAlgorithm);
     } else {
-      logging.log(LogVerbosity.ERROR, 'Invalid value provided for grpc.default_compression_algorithm option');
+      logging.log(LogVerbosity.ERROR, `Invalid value provided for grpc.default_compression_algorithm option: ${compressionAlgorithmKey}`);
     }
   }
 
