@@ -19,15 +19,10 @@ import * as zlib from 'zlib';
 
 import { Call, WriteObject, WriteFlags } from './call-stream';
 import { Channel } from './channel';
+import { CompressionAlgorithms } from './compression-algorithms';
 import { BaseFilter, Filter, FilterFactory } from './filter';
 import { Metadata, MetadataValue } from './metadata';
 import { ChannelOptions } from './channel-options';
-
-export const CompressionAlgorithms = {
-  0: 'identity',
-  1: 'deflate',
-  2: 'gzip'
-} as const;
 
 const CompressionAlgorithKeys = new Set(Object.keys(CompressionAlgorithms));
 

@@ -25,7 +25,7 @@ import {
 import { CallCredentials, OAuth2Client } from './call-credentials';
 import { Deadline, StatusObject } from './call-stream';
 import { Channel, ChannelImplementation } from './channel';
-import { CompressionAlgorithms } from './compression-filter';
+import { CompressionAlgorithms } from './compression-algorithms';
 import { ConnectivityState } from './connectivity-state';
 import { ChannelCredentials } from './channel-credentials';
 import {
