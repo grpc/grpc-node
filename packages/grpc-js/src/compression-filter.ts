@@ -188,11 +188,11 @@ export class CompressionFilter extends BaseFilter implements Filter {
   constructor(channelOptions: ChannelOptions, private sharedFilterConfig: SharedCompressionFilterConfig) {
     super();
 
-    const serverSupportedEncodings = sharedFilterConfig.serverSupportedEncodingHeader?.split(',');
     const compressionAlgorithmKey = channelOptions['grpc.default_compression_algorithm'];
     if (compressionAlgorithmKey !== undefined) {
       if (isCompressionAlgorithmKey(compressionAlgorithmKey)) {
         const clientSelectedEncoding = CompressionAlgorithms[compressionAlgorithmKey];
+        const serverSupportedEncodings = sharedFilterConfig.serverSupportedEncodingHeader?.split(',');
         /**
          * There are two possible situations here:
          * 1) We don't have any info yet from the server about what compression it supports
