@@ -34,6 +34,10 @@ const isCompressionAlgorithmKey = (key: number | undefined): key is keyof typeof
 
 type CompressionAlgorithm = (typeof CompressionAlgorithms)[keyof typeof CompressionAlgorithms];
 
+type SharedCompressionFilterConfig = {
+  serverSupportedEncodingHeader?: string;
+};
+
 abstract class CompressionHandler {
   protected abstract compressMessage(message: Buffer): Promise<Buffer>;
   protected abstract decompressMessage(data: Buffer): Promise<Buffer>;
@@ -181,14 +185,25 @@ export class CompressionFilter extends BaseFilter implements Filter {
   private receiveCompression: CompressionHandler = new IdentityHandler();
   private defaultCompressionAlgorithm: CompressionAlgorithm | undefined;
 
-  constructor(channelOptions: ChannelOptions) {
+  constructor(channelOptions: ChannelOptions, private sharedFilterConfig: SharedCompressionFilterConfig) {
     super();
 
+    const serverSupportedEncodings = sharedFilterConfig.serverSupportedEncodingHeader?.split(',');
     const compressionAlgorithmKey = channelOptions['grpc.default_compression_algorithm'];
     if (compressionAlgorithmKey !== undefined) {
       if (isCompressionAlgorithmKey(compressionAlgorithmKey)) {
-        this.defaultCompressionAlgorithm = CompressionAlgorithms[compressionAlgorithmKey];
-        this.sendCompression = getCompressionHandler(this.defaultCompressionAlgorithm);
+        const clientSelectedEncoding = CompressionAlgorithms[compressionAlgorithmKey];
+        /**
+         * There are two possible situations here:
+         * 1) We don't have any info yet from the server about what compression it supports
+         *    In that case we should just use what the client tells us to use
+         * 2) We've previously received a response from the server including a grpc-accept-encoding header
+         *    In that case we only want to use the encoding chosen by the client if the server supports it
+         */
+        if (!serverSupportedEncodings || serverSupportedEncodings.includes(clientSelectedEncoding)) {
+          this.defaultCompressionAlgorithm = clientSelectedEncoding;
+          this.sendCompression = getCompressionHandler(this.defaultCompressionAlgorithm);
+        }
       } else {
         logging.log(LogVerbosity.ERROR, `Invalid value provided for grpc.default_compression_algorithm option: ${compressionAlgorithmKey}`);
       }
@@ -223,6 +238,7 @@ export class CompressionFilter extends BaseFilter implements Filter {
      * If not, reset the sendCompression filter and have it use the default IdentityHandler */
     const serverSupportedEncodingsHeader = metadata.get('grpc-accept-encoding')[0] as string | undefined;
     if (serverSupportedEncodingsHeader) {
+      this.sharedFilterConfig.serverSupportedEncodingHeader = serverSupportedEncodingsHeader;
       const serverSupportedEncodings = serverSupportedEncodingsHeader.split(',');
 
       if ((this.sendCompression instanceof DeflateHandler && !serverSupportedEncodings.includes('deflate'))
@@ -263,8 +279,9 @@ export class CompressionFilter extends BaseFilter implements Filter {
 
 export class CompressionFilterFactory
   implements FilterFactory<CompressionFilter> {
+    private sharedFilterConfig: SharedCompressionFilterConfig = {};
   constructor(private readonly channel: Channel, private readonly options: ChannelOptions) {}
   createFilter(callStream: Call): CompressionFilter {
-    return new CompressionFilter(this.options);
+    return new CompressionFilter(this.options, this.sharedFilterConfig);
   }
 }
