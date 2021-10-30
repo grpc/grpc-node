@@ -778,7 +778,7 @@ export class Server {
             });
           }
           const metadata = call.receiveMetadata(headers);
-          const encoding = metadata.get('grpc-encoding')[0] as string | undefined;
+          const encoding = (metadata.get('grpc-encoding')[0] as string | undefined) ?? 'identity';
           metadata.remove('grpc-encoding');
 
           switch (handler.type) {
@@ -863,7 +863,7 @@ async function handleUnary<RequestType, ResponseType>(
   call: Http2ServerCallStream<RequestType, ResponseType>,
   handler: UnaryHandler<RequestType, ResponseType>,
   metadata: Metadata,
-  encoding?: string
+  encoding: string
 ): Promise<void> {
   const request = await call.receiveUnaryMessage(encoding);
 
@@ -894,7 +894,7 @@ function handleClientStreaming<RequestType, ResponseType>(
   call: Http2ServerCallStream<RequestType, ResponseType>,
   handler: ClientStreamingHandler<RequestType, ResponseType>,
   metadata: Metadata,
-  encoding?: string
+  encoding: string
 ): void {
   const stream = new ServerReadableStreamImpl<RequestType, ResponseType>(
     call,
@@ -925,7 +925,7 @@ async function handleServerStreaming<RequestType, ResponseType>(
   call: Http2ServerCallStream<RequestType, ResponseType>,
   handler: ServerStreamingHandler<RequestType, ResponseType>,
   metadata: Metadata,
-  encoding?: string
+  encoding: string
 ): Promise<void> {
   const request = await call.receiveUnaryMessage(encoding);
 
@@ -947,7 +947,7 @@ function handleBidiStreaming<RequestType, ResponseType>(
   call: Http2ServerCallStream<RequestType, ResponseType>,
   handler: BidiStreamingHandler<RequestType, ResponseType>,
   metadata: Metadata,
-  encoding?: string
+  encoding: string
 ): void {
   const stream = new ServerDuplexStreamImpl<RequestType, ResponseType>(
     call,

@@ -138,7 +138,7 @@ export class ServerReadableStreamImpl<RequestType, ResponseType>
     private call: Http2ServerCallStream<RequestType, ResponseType>,
     public metadata: Metadata,
     public deserialize: Deserialize<RequestType>,
-    encoding?: string
+    encoding: string
   ) {
     super({ objectMode: true });
     this.cancelled = false;
@@ -253,7 +253,7 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType>
     public metadata: Metadata,
     public serialize: Serialize<ResponseType>,
     public deserialize: Deserialize<RequestType>,
-    encoding?: string
+    encoding: string
   ) {
     super({ objectMode: true });
     this.cancelled = false;
@@ -442,7 +442,7 @@ export class Http2ServerCallStream<
     return this.cancelled;
   }
 
-  private getDecompressedMessage(message: Buffer, encoding?: string) {
+  private getDecompressedMessage(message: Buffer, encoding: string) {
     switch (encoding) {
       case 'deflate': {
         return new Promise<Buffer | undefined>((resolve, reject) => {
@@ -477,9 +477,18 @@ export class Http2ServerCallStream<
           });
         });
       }
-  
-      default:
+
+      case 'identity': {
         return Promise.resolve(message);
+      }
+  
+      default: {
+        this.sendError({
+          code: Status.UNIMPLEMENTED,
+          details: `Received "grpc-encoding" header "${encoding}", which is not supported`,
+        });
+        return Promise.resolve();
+      }
     }
   }
 
@@ -533,7 +542,7 @@ export class Http2ServerCallStream<
     return metadata;
   }
 
-  receiveUnaryMessage(encoding?: string): Promise<RequestType> {
+  receiveUnaryMessage(encoding: string): Promise<RequestType> {
     return new Promise((resolve, reject) => {
       const stream = this.stream;
       const chunks: Buffer[] = [];
@@ -561,7 +570,7 @@ export class Http2ServerCallStream<
           this.emit('receiveMessage');
 
           const compressed = requestBytes.readUInt8(0) === 1;
-          const compressedMessageEncoding = compressed ? encoding : undefined;
+          const compressedMessageEncoding = compressed ? encoding : 'identity';
           const decompressedMessage = await this.getDecompressedMessage(requestBytes, compressedMessageEncoding);
 
           // Encountered an error with decompression; it'll already have been propogated back
@@ -729,7 +738,7 @@ export class Http2ServerCallStream<
     readable:
       | ServerReadableStream<RequestType, ResponseType>
       | ServerDuplexStream<RequestType, ResponseType>,
-    encoding?: string
+    encoding: string
   ) {
     const decoder = new StreamDecoder();
 
@@ -750,7 +759,7 @@ export class Http2ServerCallStream<
         this.emit('receiveMessage');
 
         const compressed = message.readUInt8(0) === 1;
-        const compressedMessageEncoding = compressed ? encoding : undefined;
+        const compressedMessageEncoding = compressed ? encoding : 'identity';
         const decompressedMessage = await this.getDecompressedMessage(message, compressedMessageEncoding);
 
         // Encountered an error with decompression; it'll already have been propogated back

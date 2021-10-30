@@ -183,7 +183,7 @@ function getCompressionHandler(compressionName: string): CompressionHandler {
 export class CompressionFilter extends BaseFilter implements Filter {
   private sendCompression: CompressionHandler = new IdentityHandler();
   private receiveCompression: CompressionHandler = new IdentityHandler();
-  private defaultCompressionAlgorithm: CompressionAlgorithm | undefined;
+  private currentCompressionAlgorithm: CompressionAlgorithm = 'identity';
 
   constructor(channelOptions: ChannelOptions, private sharedFilterConfig: SharedCompressionFilterConfig) {
     super();
@@ -201,8 +201,8 @@ export class CompressionFilter extends BaseFilter implements Filter {
          *    In that case we only want to use the encoding chosen by the client if the server supports it
          */
         if (!serverSupportedEncodings || serverSupportedEncodings.includes(clientSelectedEncoding)) {
-          this.defaultCompressionAlgorithm = clientSelectedEncoding;
-          this.sendCompression = getCompressionHandler(this.defaultCompressionAlgorithm);
+          this.currentCompressionAlgorithm = clientSelectedEncoding;
+          this.sendCompression = getCompressionHandler(this.currentCompressionAlgorithm);
         }
       } else {
         logging.log(LogVerbosity.ERROR, `Invalid value provided for grpc.default_compression_algorithm option: ${compressionAlgorithmKey}`);
@@ -215,10 +215,11 @@ export class CompressionFilter extends BaseFilter implements Filter {
     headers.set('grpc-accept-encoding', 'identity,deflate,gzip');
     headers.set('accept-encoding', 'identity');
 
-    if (this.defaultCompressionAlgorithm && ['deflate', 'gzip'].includes(this.defaultCompressionAlgorithm)) {
-      headers.set('grpc-encoding', this.defaultCompressionAlgorithm);
-    } else {
+    // No need to send the header if it's "identity" -  behavior is identical; save the bandwidth
+    if (this.currentCompressionAlgorithm === 'identity') {
       headers.remove('grpc-encoding');
+    } else {
+      headers.set('grpc-encoding', this.currentCompressionAlgorithm);
     }
 
     return headers;
@@ -255,10 +256,13 @@ export class CompressionFilter extends BaseFilter implements Filter {
      * and the output is a framed and possibly compressed message. For this
      * reason, this filter should be at the bottom of the filter stack */
     const resolvedMessage: WriteObject = await message;
-    const compress =
-      resolvedMessage.flags === undefined
-        ? !(this.sendCompression instanceof IdentityHandler)
-        : (resolvedMessage.flags & WriteFlags.NoCompress) === 0;
+    let compress: boolean;
+    if (this.sendCompression instanceof IdentityHandler) {
+      compress = false;
+    } else {
+      compress = ((resolvedMessage.flags ?? 0) & WriteFlags.NoCompress) === 0;
+    }
+
     return {
       message: await this.sendCompression.writeMessage(
         resolvedMessage.message,
