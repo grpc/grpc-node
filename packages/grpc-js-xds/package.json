@@ -63,7 +63,11 @@
     "deps/googleapis/google/api/**/*.proto",
     "deps/googleapis/google/protobuf/**/*.proto",
     "deps/googleapis/google/rpc/**/*.proto",
-    "deps/udpa/udpa/annotations/**/*.proto",
+    "deps/xds/udpa/annotations/**/*.proto",
+    "deps/xds/udpa/type/**/*.proto",
+    "deps/xds/xds/annotations/**/*.proto",
+    "deps/xds/xds/core/**/*.proto",
+    "deps/xds/xds/type/**/*.proto",
     "deps/protoc-gen-validate/validate/**/*.proto"
   ]
 }
