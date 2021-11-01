@@ -1,4 +1,4 @@
-// Original file: deps/udpa/udpa/annotations/migrate.proto
+// Original file: deps/xds/udpa/annotations/migrate.proto
 
 
 export interface FieldMigrateAnnotation {

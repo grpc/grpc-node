@@ -87,7 +87,7 @@ function loadAdsProtos(): Promise<
         includeDirs: [
           // Paths are relative to src/build
           __dirname + '/../../deps/envoy-api/',
-          __dirname + '/../../deps/udpa/',
+          __dirname + '/../../deps/xds/',
           __dirname + '/../../deps/googleapis/',
           __dirname + '/../../deps/protoc-gen-validate/',
         ],

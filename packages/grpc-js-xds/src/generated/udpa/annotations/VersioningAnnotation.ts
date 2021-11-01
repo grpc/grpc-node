@@ -1,4 +1,4 @@
-// Original file: deps/udpa/udpa/annotations/versioning.proto
+// Original file: deps/xds/udpa/annotations/versioning.proto
 
 
 export interface VersioningAnnotation {

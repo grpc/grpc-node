@@ -10,12 +10,12 @@
 [submodule "packages/grpc-js-xds/deps/envoy-api"]
 	path = packages/grpc-js-xds/deps/envoy-api
 	url = https://github.com/envoyproxy/data-plane-api.git
-[submodule "packages/grpc-js-xds/deps/udpa"]
-	path = packages/grpc-js-xds/deps/udpa
-	url = https://github.com/cncf/udpa.git
 [submodule "packages/grpc-js-xds/deps/googleapis"]
 	path = packages/grpc-js-xds/deps/googleapis
 	url = https://github.com/googleapis/googleapis.git
 [submodule "packages/grpc-js-xds/deps/protoc-gen-validate"]
 	path = packages/grpc-js-xds/deps/protoc-gen-validate
 	url = https://github.com/envoyproxy/protoc-gen-validate.git
+[submodule "packages/grpc-js-xds/deps/xds"]
+	path = packages/grpc-js-xds/deps/xds
+	url = https://github.com/cncf/xds.git

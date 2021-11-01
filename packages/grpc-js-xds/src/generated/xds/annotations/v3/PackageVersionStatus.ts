@@ -1,4 +1,4 @@
-// Original file: deps/xds/udpa/annotations/status.proto
+// Original file: deps/xds/xds/annotations/v3/status.proto
 
 export enum PackageVersionStatus {
   /**
