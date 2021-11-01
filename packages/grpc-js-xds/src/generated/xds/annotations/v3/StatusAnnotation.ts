@@ -1,6 +1,6 @@
-// Original file: deps/xds/udpa/annotations/status.proto
+// Original file: deps/xds/xds/annotations/v3/status.proto
 
-import type { PackageVersionStatus as _udpa_annotations_PackageVersionStatus } from '../../udpa/annotations/PackageVersionStatus';
+import type { PackageVersionStatus as _xds_annotations_v3_PackageVersionStatus } from '../../../xds/annotations/v3/PackageVersionStatus';
 
 export interface StatusAnnotation {
   /**
@@ -10,7 +10,7 @@ export interface StatusAnnotation {
   /**
    * The entity belongs to a package with the given version status.
    */
-  'package_version_status'?: (_udpa_annotations_PackageVersionStatus | keyof typeof _udpa_annotations_PackageVersionStatus);
+  'package_version_status'?: (_xds_annotations_v3_PackageVersionStatus | keyof typeof _xds_annotations_v3_PackageVersionStatus);
 }
 
 export interface StatusAnnotation__Output {
@@ -21,5 +21,5 @@ export interface StatusAnnotation__Output {
   /**
    * The entity belongs to a package with the given version status.
    */
-  'package_version_status': (keyof typeof _udpa_annotations_PackageVersionStatus);
+  'package_version_status': (keyof typeof _xds_annotations_v3_PackageVersionStatus);
 }

@@ -20,7 +20,7 @@ import { experimental, logVerbosity } from '@grpc/grpc-js';
 import { Any__Output } from './generated/google/protobuf/Any';
 import Filter = experimental.Filter;
 import FilterFactory = experimental.FilterFactory;
-import { TypedStruct__Output } from './generated/udpa/type/v1/TypedStruct';
+import { TypedStruct__Output as TypedStruct__Output } from './generated/xds/type/v3/TypedStruct';
 import { FilterConfig__Output } from './generated/envoy/config/route/v3/FilterConfig';
 import { HttpFilter__Output } from './generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpFilter';
 
@@ -30,19 +30,22 @@ function trace(text: string): void {
   experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
 }
 
-const TYPED_STRUCT_URL = 'type.googleapis.com/udpa.type.v1.TypedStruct';
-const TYPED_STRUCT_NAME = 'udpa.type.v1.TypedStruct';
+const TYPED_STRUCT_UDPA_URL = 'type.googleapis.com/udpa.type.v1.TypedStruct';
+const TYPED_STRUCT_UDPA_NAME = 'udpa.type.v1.TypedStruct';
+const TYPED_STRUCT_XDS_URL = 'type.googleapis.com/xds.type.v3.TypedStruct';
+const TYPED_STRUCT_XDS_NAME = 'xds.type.v3.TypedStruct';
 
 const FILTER_CONFIG_URL = 'type.googleapis.com/envoy.config.route.v3.FilterConfig';
 const FILTER_CONFIG_NAME = 'envoy.config.route.v3.FilterConfig';
 
 const resourceRoot = loadProtosWithOptionsSync([
   'udpa/type/v1/typed_struct.proto',
+  'xds/type/v3/typed_struct.proto',
   'envoy/config/route/v3/route_components.proto'], {
     keepCase: true,
     includeDirs: [
       // Paths are relative to src/build
-      __dirname + '/../../deps/udpa/',
+      __dirname + '/../../deps/xds/',
       __dirname + '/../../deps/envoy-api/',
       __dirname + '/../../deps/protoc-gen-validate/'
     ],
@@ -91,7 +94,7 @@ function parseAnyMessage<MessageType>(message: Any__Output): MessageType | null 
 
 export function getTopLevelFilterUrl(encodedConfig: Any__Output): string {
   let typeUrl: string;
-  if (encodedConfig.type_url === TYPED_STRUCT_URL) {
+  if (encodedConfig.type_url === TYPED_STRUCT_UDPA_URL || encodedConfig.type_url === TYPED_STRUCT_XDS_URL) {
     const typedStruct = parseAnyMessage<TypedStruct__Output>(encodedConfig)
     if (typedStruct) {
       return typedStruct.type_url;
@@ -154,7 +157,7 @@ export function validateOverrideFilter(encodedConfig: Any__Output): boolean {
   } else {
     realConfig = encodedConfig;
   }
-  if (realConfig.type_url === TYPED_STRUCT_URL) {
+  if (realConfig.type_url === TYPED_STRUCT_UDPA_URL || realConfig.type_url === TYPED_STRUCT_XDS_URL) {
     const typedStruct = parseAnyMessage<TypedStruct__Output>(encodedConfig);
     if (typedStruct) {
       typeUrl = typedStruct.type_url;
@@ -215,7 +218,7 @@ export function parseOverrideFilterConfig(encodedConfig: Any__Output) {
   } else {
     realConfig = encodedConfig;
   }
-  if (realConfig.type_url === TYPED_STRUCT_URL) {
+  if (realConfig.type_url === TYPED_STRUCT_UDPA_URL || realConfig.type_url === TYPED_STRUCT_XDS_URL) {
     const typedStruct = parseAnyMessage<TypedStruct__Output>(encodedConfig);
     if (typedStruct) {
       typeUrl = typedStruct.type_url;

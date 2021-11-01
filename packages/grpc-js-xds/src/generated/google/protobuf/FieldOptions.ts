@@ -3,6 +3,7 @@
 import type { UninterpretedOption as _google_protobuf_UninterpretedOption, UninterpretedOption__Output as _google_protobuf_UninterpretedOption__Output } from '../../google/protobuf/UninterpretedOption';
 import type { FieldRules as _validate_FieldRules, FieldRules__Output as _validate_FieldRules__Output } from '../../validate/FieldRules';
 import type { FieldMigrateAnnotation as _udpa_annotations_FieldMigrateAnnotation, FieldMigrateAnnotation__Output as _udpa_annotations_FieldMigrateAnnotation__Output } from '../../udpa/annotations/FieldMigrateAnnotation';
+import type { FieldStatusAnnotation as _xds_annotations_v3_FieldStatusAnnotation, FieldStatusAnnotation__Output as _xds_annotations_v3_FieldStatusAnnotation__Output } from '../../xds/annotations/v3/FieldStatusAnnotation';
 
 // Original file: null
 
@@ -32,6 +33,7 @@ export interface FieldOptions {
   '.udpa.annotations.sensitive'?: (boolean);
   '.udpa.annotations.field_migrate'?: (_udpa_annotations_FieldMigrateAnnotation | null);
   '.envoy.annotations.disallowed_by_default'?: (boolean);
+  '.xds.annotations.v3.field_status'?: (_xds_annotations_v3_FieldStatusAnnotation | null);
 }
 
 export interface FieldOptions__Output {
@@ -46,4 +48,5 @@ export interface FieldOptions__Output {
   '.udpa.annotations.sensitive': (boolean);
   '.udpa.annotations.field_migrate': (_udpa_annotations_FieldMigrateAnnotation__Output | null);
   '.envoy.annotations.disallowed_by_default': (boolean);
+  '.xds.annotations.v3.field_status': (_xds_annotations_v3_FieldStatusAnnotation__Output | null);
 }

@@ -38,7 +38,7 @@ const resourceRoot = loadProtosWithOptionsSync([
     keepCase: true,
     includeDirs: [
       // Paths are relative to src/build/http-filter
-      __dirname + '/../../../deps/udpa/',
+      __dirname + '/../../../deps/xds/',
       __dirname + '/../../../deps/envoy-api/',
       __dirname + '/../../../deps/protoc-gen-validate/'
     ],

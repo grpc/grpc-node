@@ -70,5 +70,12 @@ export interface ProtoGrpcType {
     UInt32Rules: MessageTypeDefinition
     UInt64Rules: MessageTypeDefinition
   }
+  xds: {
+    type: {
+      v3: {
+        TypedStruct: MessageTypeDefinition
+      }
+    }
+  }
 }
 
