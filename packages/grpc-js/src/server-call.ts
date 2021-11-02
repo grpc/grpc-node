@@ -485,7 +485,7 @@ export class Http2ServerCallStream<
       default: {
         this.sendError({
           code: Status.UNIMPLEMENTED,
-          details: `Received "grpc-encoding" header "${encoding}", which is not supported`,
+          details: `Received message compressed with unsupported encoding "${encoding}"`,
         });
         return Promise.resolve();
       }
