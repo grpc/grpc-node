@@ -15,8 +15,8 @@
  *
  */
 
-export const CompressionAlgorithms = {
-  0: 'identity',
-  1: 'deflate',
-  2: 'gzip'
-} as const;
+export enum CompressionAlgorithms {
+  identity = 0,
+  deflate = 1,
+  gzip = 2
+};

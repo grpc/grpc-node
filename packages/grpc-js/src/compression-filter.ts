@@ -26,13 +26,11 @@ import { BaseFilter, Filter, FilterFactory } from './filter';
 import * as logging from './logging';
 import { Metadata, MetadataValue } from './metadata';
 
-const CompressionAlgorithKeys = new Set(Object.keys(CompressionAlgorithms));
-
-const isCompressionAlgorithmKey = (key: number | undefined): key is keyof typeof CompressionAlgorithms => {
-  return typeof key === 'number' && CompressionAlgorithKeys.has(key.toString());
+const isCompressionAlgorithmKey = (key: number): key is CompressionAlgorithms => {
+  return typeof key === 'number' && typeof CompressionAlgorithms[key] === 'string';
 }
 
-type CompressionAlgorithm = (typeof CompressionAlgorithms)[keyof typeof CompressionAlgorithms];
+type CompressionAlgorithm = keyof typeof CompressionAlgorithms;
 
 type SharedCompressionFilterConfig = {
   serverSupportedEncodingHeader?: string;
@@ -191,7 +189,7 @@ export class CompressionFilter extends BaseFilter implements Filter {
     const compressionAlgorithmKey = channelOptions['grpc.default_compression_algorithm'];
     if (compressionAlgorithmKey !== undefined) {
       if (isCompressionAlgorithmKey(compressionAlgorithmKey)) {
-        const clientSelectedEncoding = CompressionAlgorithms[compressionAlgorithmKey];
+        const clientSelectedEncoding = CompressionAlgorithms[compressionAlgorithmKey] as CompressionAlgorithm;
         const serverSupportedEncodings = sharedFilterConfig.serverSupportedEncodingHeader?.split(',');
         /**
          * There are two possible situations here:

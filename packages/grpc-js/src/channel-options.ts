@@ -38,7 +38,7 @@ export interface ChannelOptions {
   'grpc.enable_http_proxy'?: number;
   'grpc.http_connect_target'?: string;
   'grpc.http_connect_creds'?: string;
-  'grpc.default_compression_algorithm'?: keyof typeof CompressionAlgorithms;
+  'grpc.default_compression_algorithm'?: CompressionAlgorithms;
   'grpc-node.max_session_memory'?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
