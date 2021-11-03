@@ -240,10 +240,10 @@ export class CompressionFilter extends BaseFilter implements Filter {
       this.sharedFilterConfig.serverSupportedEncodingHeader = serverSupportedEncodingsHeader;
       const serverSupportedEncodings = serverSupportedEncodingsHeader.split(',');
 
-      if ((this.sendCompression instanceof DeflateHandler && !serverSupportedEncodings.includes('deflate'))
-          || (this.sendCompression instanceof GzipHandler && !serverSupportedEncodings.includes('gzip'))) {
-          this.sendCompression = new IdentityHandler();
-        }
+      if (!serverSupportedEncodings.includes(this.currentCompressionAlgorithm)) {
+        this.sendCompression = new IdentityHandler();
+        this.currentCompressionAlgorithm = 'identity';
+      }
     }
     metadata.remove('grpc-accept-encoding');
     return metadata;

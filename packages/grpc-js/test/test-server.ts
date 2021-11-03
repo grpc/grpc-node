@@ -33,6 +33,7 @@ import { loadProtoFile } from './common';
 import { TestServiceClient, TestServiceHandlers } from './generated/TestService';
 import { ProtoGrpcType as TestServiceGrpcType } from './generated/test_service';
 import { Request__Output } from './generated/Request';
+import { CompressionAlgorithms } from '../src/compression-algorithms';
 
 const loadedTestServiceProto = protoLoader.loadSync('test/fixtures/test_service.proto', {
   keepCase: true,
@@ -683,7 +684,7 @@ describe('Compressed requests', () => {
             `localhost:${assignedPort}`,
             grpc.credentials.createInsecure(),
             {
-              'grpc.default_compression_algorithm': 1
+              'grpc.default_compression_algorithm': CompressionAlgorithms.deflate
             }
           );
           done();
@@ -774,7 +775,7 @@ describe('Compressed requests', () => {
         `localhost:${assignedPort}`,
         grpc.credentials.createInsecure(),
         {
-          'grpc.default_compression_algorithm': 2
+          'grpc.default_compression_algorithm': CompressionAlgorithms.gzip
         }
       );
 
