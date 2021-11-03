@@ -524,6 +524,10 @@ export class Http2CallStream implements Call {
         }
 
         if (flags & http2.constants.NGHTTP2_FLAG_END_STREAM) {
+          /* NGHTTP2_FLAG_END_STREAM indicates that this is a trailers-only
+           * response, so we know that we will not be receiving any messages
+           * after this. */
+          this.readsClosed = true;
           this.handleTrailers(headers);
         } else {
           let metadata: Metadata;
@@ -561,6 +565,7 @@ export class Http2CallStream implements Call {
         }
       });
       stream.on('end', () => {
+        this.trace('finished receiving HTTP/2 data frames');
         this.readsClosed = true;
         this.maybeOutputStatus();
       });
