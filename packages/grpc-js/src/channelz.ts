@@ -393,6 +393,16 @@ export function unregisterChannelzRef(ref: ChannelRef | SubchannelRef | ServerRe
 }
 
 /**
+ * Parses a single section of an IPv6 address as two bytes
+ * @param addressSection A hexadecimal string of length up to 4
+ * @returns The pair of bytes representing this address section
+ */
+function parseIPv6Section(addressSection: string): [number, number] {
+  const numberValue = Number.parseInt(addressSection, 16);
+  return [numberValue / 256 | 0, numberValue % 256];
+}
+
+/**
  * Converts an IPv4 or IPv6 address from string representation to binary
  * representation
  * @param ipAddress an IP address in standard IPv4 or IPv6 text format
@@ -412,8 +422,8 @@ function ipAddressStringToBuffer(ipAddress: string): Buffer | null {
       leftSection = ipAddress.substring(0, doubleColonIndex);
       rightSection = ipAddress.substring(doubleColonIndex + 2);
     }
-    const leftBuffer = Uint8Array.from(leftSection.split(':').map(segment => Number.parseInt(segment, 16)));
-    const rightBuffer = rightSection ? Uint8Array.from(rightSection.split(':').map(segment => Number.parseInt(segment, 16))) : new Uint8Array();
+    const leftBuffer = Buffer.from(leftSection.split(':').map(segment => parseIPv6Section(segment)).flat());
+    const rightBuffer = rightSection ? Buffer.from(rightSection.split(':').map(segment => parseIPv6Section(segment)).flat()) : Buffer.alloc(0);
     const middleBuffer = Buffer.alloc(16 - leftBuffer.length - rightBuffer.length, 0);
     return Buffer.concat([leftBuffer, middleBuffer, rightBuffer]);
   } else {
