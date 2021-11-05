@@ -393,6 +393,31 @@ export function unregisterChannelzRef(ref: ChannelRef | SubchannelRef | ServerRe
 }
 
 /**
+ * Parse a single section of an IPv6 address as two bytes
+ * @param addressSection A hexadecimal string of length up to 4
+ * @returns The pair of bytes representing this address section
+ */
+function parseIPv6Section(addressSection: string): [number, number] {
+  const numberValue = Number.parseInt(addressSection, 16);
+  return [numberValue / 256 | 0, numberValue % 256];
+}
+
+/**
+ * Parse a chunk of an IPv6 address string to some number of bytes
+ * @param addressChunk Some number of segments of up to 4 hexadecimal
+ *   characters each, joined by colons.
+ * @returns The list of bytes representing this address chunk
+ */
+function parseIPv6Chunk(addressChunk: string): number[] {
+  if (addressChunk === '') {
+    return [];
+  }
+  const bytePairs = addressChunk.split(':').map(section => parseIPv6Section(section));
+  const result: number[] = [];
+  return result.concat(...bytePairs);
+}
+
+/**
  * Converts an IPv4 or IPv6 address from string representation to binary
  * representation
  * @param ipAddress an IP address in standard IPv4 or IPv6 text format
@@ -403,17 +428,17 @@ function ipAddressStringToBuffer(ipAddress: string): Buffer | null {
     return Buffer.from(Uint8Array.from(ipAddress.split('.').map(segment => Number.parseInt(segment))));
   } else if (isIPv6(ipAddress)) {
     let leftSection: string;
-    let rightSection: string | null;
+    let rightSection: string;
     const doubleColonIndex = ipAddress.indexOf('::');
     if (doubleColonIndex === -1) {
       leftSection = ipAddress;
-      rightSection = null;
+      rightSection = '';
     } else {
       leftSection = ipAddress.substring(0, doubleColonIndex);
       rightSection = ipAddress.substring(doubleColonIndex + 2);
     }
-    const leftBuffer = Uint8Array.from(leftSection.split(':').map(segment => Number.parseInt(segment, 16)));
-    const rightBuffer = rightSection ? Uint8Array.from(rightSection.split(':').map(segment => Number.parseInt(segment, 16))) : new Uint8Array();
+    const leftBuffer = Buffer.from(parseIPv6Chunk(leftSection));
+    const rightBuffer = Buffer.from(parseIPv6Chunk(rightSection));
     const middleBuffer = Buffer.alloc(16 - leftBuffer.length - rightBuffer.length, 0);
     return Buffer.concat([leftBuffer, middleBuffer, rightBuffer]);
   } else {
