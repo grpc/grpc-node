@@ -149,6 +149,7 @@ export class Server {
   private options: ChannelOptions;
 
   // Channelz Info
+  private readonly channelzEnabled: boolean = true;
   private channelzRef: ServerRef;
   private channelzTrace = new ChannelzTrace();
   private callTracker = new ChannelzCallTracker();
@@ -157,9 +158,20 @@ export class Server {
 
   constructor(options?: ChannelOptions) {
     this.options = options ?? {};
-    this.channelzRef = registerChannelzServer(() => this.getChannelzInfo());
-    this.channelzTrace.addTrace('CT_INFO', 'Server created');
-    this.trace('Server constructed');
+    if (this.options['grpc.enable_channelz'] === 0) {
+      this.channelzEnabled = false;
+    }
+    if (this.channelzEnabled) {
+      this.channelzRef = registerChannelzServer(() => this.getChannelzInfo());
+      this.channelzTrace.addTrace('CT_INFO', 'Server created');
+      this.trace('Server constructed');
+    } else {
+      // Dummy channelz ref that will never be used
+      this.channelzRef = {
+        kind: 'server',
+        id: -1
+      };
+    }
   }
 
   private getChannelzInfo(): ServerInfo {
@@ -638,7 +650,9 @@ export class Server {
     if (this.started === true) {
       throw new Error('server is already started');
     }
-    this.channelzTrace.addTrace('CT_INFO', 'Starting');
+    if (this.channelzEnabled) {
+      this.channelzTrace.addTrace('CT_INFO', 'Starting');
+    }
     this.started = true;
   }
 
@@ -686,6 +700,11 @@ export class Server {
     throw new Error('Not yet implemented');
   }
 
+  /**
+   * Get the channelz reference object for this server. The returned value is
+   * garbage if channelz is disabled for this server.
+   * @returns 
+   */
   getChannelzRef() {
     return this.channelzRef;
   }
@@ -841,12 +860,16 @@ export class Server {
 
       this.sessions.set(session, channelzSessionInfo);
       const clientAddress = session.socket.remoteAddress;
-      this.channelzTrace.addTrace('CT_INFO', 'Connection established by client ' + clientAddress);
-      this.sessionChildrenTracker.refChild(channelzRef);
+      if (this.channelzEnabled) {
+        this.channelzTrace.addTrace('CT_INFO', 'Connection established by client ' + clientAddress);
+        this.sessionChildrenTracker.refChild(channelzRef);
+      }
       session.on('close', () => {
-        this.channelzTrace.addTrace('CT_INFO', 'Connection dropped by client ' + clientAddress);
-        this.sessionChildrenTracker.unrefChild(channelzRef);
-        unregisterChannelzRef(channelzRef);
+        if (this.channelzEnabled) {
+          this.channelzTrace.addTrace('CT_INFO', 'Connection dropped by client ' + clientAddress);
+          this.sessionChildrenTracker.unrefChild(channelzRef);
+          unregisterChannelzRef(channelzRef);
+        }
         this.sessions.delete(session);
       });
     });
