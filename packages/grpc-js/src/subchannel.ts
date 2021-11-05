@@ -832,6 +832,7 @@ export class Subchannel {
         headersString
     );
     const streamSession = this.session;
+    let statsTracker: SubchannelCallStatsTracker;
     if (this.channelzEnabled) {
       this.callTracker.addCallStarted();
       callStream.addStatusWatcher(status => {
@@ -851,7 +852,7 @@ export class Subchannel {
           }
         }
       });
-      callStream.attachHttp2Stream(http2Stream, this, extraFilters, {
+      statsTracker = {
         addMessageSent: () => {
           this.messagesSent += 1;
           this.lastMessageSentTimestamp = new Date();
@@ -859,8 +860,14 @@ export class Subchannel {
         addMessageReceived: () => {
           this.messagesReceived += 1;
         }
-      });
+      }
+    } else {
+      statsTracker = {
+        addMessageSent: () => {},
+        addMessageReceived: () => {}
+      }
     }
+    callStream.attachHttp2Stream(http2Stream, this, extraFilters, statsTracker);
   }
 
   /**

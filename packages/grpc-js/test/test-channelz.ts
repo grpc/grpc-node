@@ -287,3 +287,35 @@ describe('Channelz', () => {
     });
   });
 });
+
+describe('Disabling channelz', () => {
+  let testServer: grpc.Server;
+  let testClient: ServiceClient;
+  beforeEach((done) => {
+    testServer = new grpc.Server({'grpc.enable_channelz': 0});
+    testServer.addService(TestServiceClient.service, testServiceImpl);
+    testServer.bindAsync('localhost:0', grpc.ServerCredentials.createInsecure(), (error, port) => {
+      if (error) {
+        done(error);
+        return;
+      }
+      testServer.start();
+      testClient = new TestServiceClient(`localhost:${port}`, grpc.credentials.createInsecure(), {'grpc.enable_channelz': 0});
+      done();
+    });
+  });
+
+  afterEach(() => {
+    testClient.close();
+    testServer.forceShutdown();
+  });
+
+  it('Should still work', (done) => {
+    const deadline = new Date();
+    deadline.setSeconds(deadline.getSeconds() + 1);
+    testClient.unary({}, {deadline}, (error: grpc.ServiceError, value: unknown) => {
+      assert.ifError(error);
+      done();
+    });
+  });
+});
