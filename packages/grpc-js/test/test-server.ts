@@ -35,15 +35,12 @@ import { ProtoGrpcType as TestServiceGrpcType } from './generated/test_service';
 import { Request__Output } from './generated/Request';
 import { CompressionAlgorithms } from '../src/compression-algorithms';
 
-const loadedTestServiceProto = protoLoader.loadSync('test/fixtures/test_service.proto', {
+const loadedTestServiceProto = protoLoader.loadSync(path.join(__dirname, 'fixtures/test_service.proto'), {
   keepCase: true,
   longs: String,
   enums: String,
   defaults: true,
-  oneofs: true,
-  includeDirs: [
-    `${__dirname}/../../proto`
-  ]
+  oneofs: true
 });
 
 const testServiceGrpcObject = grpc.loadPackageDefinition(loadedTestServiceProto) as unknown as TestServiceGrpcType;
