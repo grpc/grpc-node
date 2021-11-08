@@ -250,6 +250,15 @@ export interface ProtoGrpcType {
     UInt64Rules: MessageTypeDefinition
   }
   xds: {
+    annotations: {
+      v3: {
+        FieldStatusAnnotation: MessageTypeDefinition
+        FileStatusAnnotation: MessageTypeDefinition
+        MessageStatusAnnotation: MessageTypeDefinition
+        PackageVersionStatus: EnumTypeDefinition
+        StatusAnnotation: MessageTypeDefinition
+      }
+    }
     core: {
       v3: {
         Authority: MessageTypeDefinition

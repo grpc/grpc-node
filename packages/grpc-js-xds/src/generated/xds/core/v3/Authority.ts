@@ -1,4 +1,4 @@
-// Original file: deps/udpa/xds/core/v3/authority.proto
+// Original file: deps/xds/xds/core/v3/authority.proto
 
 
 /**

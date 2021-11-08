@@ -1,4 +1,4 @@
-// Original file: deps/udpa/udpa/annotations/security.proto
+// Original file: deps/xds/udpa/annotations/security.proto
 
 
 /**

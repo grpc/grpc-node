@@ -1,4 +1,4 @@
-// Original file: deps/udpa/xds/core/v3/resource_locator.proto
+// Original file: deps/xds/xds/core/v3/resource_locator.proto
 
 import type { ContextParams as _xds_core_v3_ContextParams, ContextParams__Output as _xds_core_v3_ContextParams__Output } from '../../../xds/core/v3/ContextParams';
 import type { ResourceLocator as _xds_core_v3_ResourceLocator, ResourceLocator__Output as _xds_core_v3_ResourceLocator__Output } from '../../../xds/core/v3/ResourceLocator';
@@ -95,7 +95,7 @@ export interface _xds_core_v3_ResourceLocator_Directive__Output {
   'directive': "alt"|"entry";
 }
 
-// Original file: deps/udpa/xds/core/v3/resource_locator.proto
+// Original file: deps/xds/xds/core/v3/resource_locator.proto
 
 export enum _xds_core_v3_ResourceLocator_Scheme {
   XDSTP = 0,

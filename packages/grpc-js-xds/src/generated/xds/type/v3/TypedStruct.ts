@@ -1,4 +1,4 @@
-// Original file: deps/xds/udpa/type/v1/typed_struct.proto
+// Original file: deps/xds/xds/type/v3/typed_struct.proto
 
 import type { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_Struct__Output } from '../../../google/protobuf/Struct';
 

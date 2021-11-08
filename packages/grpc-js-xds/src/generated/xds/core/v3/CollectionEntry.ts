@@ -1,4 +1,4 @@
-// Original file: deps/udpa/xds/core/v3/collection_entry.proto
+// Original file: deps/xds/xds/core/v3/collection_entry.proto
 
 import type { ResourceLocator as _xds_core_v3_ResourceLocator, ResourceLocator__Output as _xds_core_v3_ResourceLocator__Output } from '../../../xds/core/v3/ResourceLocator';
 import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../google/protobuf/Any';

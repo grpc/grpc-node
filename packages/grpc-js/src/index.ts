@@ -43,7 +43,9 @@ import {
   loadPackageDefinition,
   makeClientConstructor,
   MethodDefinition,
+  ProtobufTypeDefinition,
   Serialize,
+  ServiceClientConstructor,
   ServiceDefinition,
 } from './make-client';
 import { Metadata, MetadataValue } from './metadata';
@@ -247,7 +249,11 @@ export {
   InterceptorConfigurationError,
 } from './client-interceptors';
 
-export { GrpcObject } from './make-client';
+export {
+  GrpcObject,
+  ServiceClientConstructor,
+  ProtobufTypeDefinition
+} from './make-client';
 
 export { ChannelOptions } from './channel-options';
 

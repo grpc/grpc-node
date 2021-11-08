@@ -113,6 +113,14 @@ interface TraceEvent {
   childSubchannel?: SubchannelRef;
 }
 
+/**
+ * The loose upper bound on the number of events that should be retained in a
+ * trace. This may be exceeded by up to a factor of 2. Arbitrarily chosen as a
+ * number that should be large enough to contain the recent relevant
+ * information, but small enough to not use excessive memory.
+ */
+const TARGET_RETAINED_TRACES = 32;
+
 export class ChannelzTrace {
   events: TraceEvent[] = [];
   creationTimestamp: Date;
@@ -131,6 +139,10 @@ export class ChannelzTrace {
       childChannel: child?.kind === 'channel' ? child : undefined,
       childSubchannel: child?.kind === 'subchannel' ? child : undefined
     });
+    // Whenever the trace array gets too large, discard the first half
+    if (this.events.length >= TARGET_RETAINED_TRACES * 2) {
+      this.events = this.events.slice(TARGET_RETAINED_TRACES);
+    }
     this.eventsLogged += 1;
   }
 
@@ -286,7 +298,7 @@ export interface TlsInfo {
 }
 
 export interface SocketInfo {
-  localAddress: SubchannelAddress;
+  localAddress: SubchannelAddress | null;
   remoteAddress: SubchannelAddress | null;
   security: TlsInfo | null;
   remoteName: string | null;
@@ -380,18 +392,29 @@ export function unregisterChannelzRef(ref: ChannelRef | SubchannelRef | ServerRe
   }
 }
 
-export interface ChannelzClientView {
-  updateState(connectivityState: ConnectivityState): void;
-  addTrace(severity: TraceSeverity, description: string, child?: ChannelRef | SubchannelRef): void;
-  addCallStarted(): void;
-  addCallSucceeded(): void;
-  addCallFailed(): void;
-  addChild(child: ChannelRef | SubchannelRef): void;
-  removeChild(child: ChannelRef | SubchannelRef): void;
+/**
+ * Parse a single section of an IPv6 address as two bytes
+ * @param addressSection A hexadecimal string of length up to 4
+ * @returns The pair of bytes representing this address section
+ */
+function parseIPv6Section(addressSection: string): [number, number] {
+  const numberValue = Number.parseInt(addressSection, 16);
+  return [numberValue / 256 | 0, numberValue % 256];
 }
 
-export interface ChannelzSubchannelView extends ChannelzClientView {
-  getRef(): SubchannelRef;
+/**
+ * Parse a chunk of an IPv6 address string to some number of bytes
+ * @param addressChunk Some number of segments of up to 4 hexadecimal
+ *   characters each, joined by colons.
+ * @returns The list of bytes representing this address chunk
+ */
+function parseIPv6Chunk(addressChunk: string): number[] {
+  if (addressChunk === '') {
+    return [];
+  }
+  const bytePairs = addressChunk.split(':').map(section => parseIPv6Section(section));
+  const result: number[] = [];
+  return result.concat(...bytePairs);
 }
 
 /**
@@ -405,17 +428,17 @@ function ipAddressStringToBuffer(ipAddress: string): Buffer | null {
     return Buffer.from(Uint8Array.from(ipAddress.split('.').map(segment => Number.parseInt(segment))));
   } else if (isIPv6(ipAddress)) {
     let leftSection: string;
-    let rightSection: string | null;
+    let rightSection: string;
     const doubleColonIndex = ipAddress.indexOf('::');
     if (doubleColonIndex === -1) {
       leftSection = ipAddress;
-      rightSection = null;
+      rightSection = '';
     } else {
       leftSection = ipAddress.substring(0, doubleColonIndex);
       rightSection = ipAddress.substring(doubleColonIndex + 2);
     }
-    const leftBuffer = Uint8Array.from(leftSection.split(':').map(segment => Number.parseInt(segment, 16)));
-    const rightBuffer = rightSection ? Uint8Array.from(rightSection.split(':').map(segment => Number.parseInt(segment, 16))) : new Uint8Array();
+    const leftBuffer = Buffer.from(parseIPv6Chunk(leftSection));
+    const rightBuffer = Buffer.from(parseIPv6Chunk(rightSection));
     const middleBuffer = Buffer.alloc(16 - leftBuffer.length - rightBuffer.length, 0);
     return Buffer.concat([leftBuffer, middleBuffer, rightBuffer]);
   } else {
@@ -631,7 +654,7 @@ function GetSocket(call: ServerUnaryCall<GetSocketRequest__Output, GetSocketResp
   } : null;
   const socketMessage: SocketMessage = {
     ref: socketRefToMessage(socketEntry.ref),
-    local: subchannelAddressToAddressMessage(resolvedInfo.localAddress),
+    local: resolvedInfo.localAddress ? subchannelAddressToAddressMessage(resolvedInfo.localAddress) : null,
     remote: resolvedInfo.remoteAddress ? subchannelAddressToAddressMessage(resolvedInfo.remoteAddress) : null,
     remote_name: resolvedInfo.remoteName ?? undefined,
     security: securityMessage,

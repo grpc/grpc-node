@@ -137,17 +137,21 @@ export class CdsState implements XdsStreamState<Cluster__Output> {
   }
 
   handleResponses(responses: Cluster__Output[], isV2: boolean): string | null {
+    const validResponses: Cluster__Output[] = [];
+    let errorMessage: string | null = null;
     for (const message of responses) {
-      if (!this.validateResponse(message)) {
+      if (this.validateResponse(message)) {
+        validResponses.push(message);
+      } else {
         trace('CDS validation failed for message ' + JSON.stringify(message));
-        return 'CDS Error: Cluster validation failed';
+        errorMessage = 'CDS Error: Cluster validation failed';
       }
     }
-    this.latestResponses = responses;
+    this.latestResponses = validResponses;
     this.latestIsV2 = isV2;
     const allEdsServiceNames: Set<string> = new Set<string>();
     const allClusterNames: Set<string> = new Set<string>();
-    for (const message of responses) {
+    for (const message of validResponses) {
       allClusterNames.add(message.name);
       const edsServiceName = message.eds_cluster_config?.service_name ?? '';
       allEdsServiceNames.add(
@@ -161,7 +165,7 @@ export class CdsState implements XdsStreamState<Cluster__Output> {
     trace('Received CDS updates for cluster names [' + Array.from(allClusterNames) + ']');
     this.handleMissingNames(allClusterNames);
     this.edsState.handleMissingNames(allEdsServiceNames);
-    return null;
+    return errorMessage;
   }
 
   reportStreamError(status: StatusObject): void {
