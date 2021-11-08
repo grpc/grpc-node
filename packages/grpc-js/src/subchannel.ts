@@ -555,7 +555,6 @@ export class Subchannel {
           (error as Error).message
       );
     });
-    registerChannelzSocket(this.subchannelAddressString, () => this.getChannelzSocketInfo()!);
   }
 
   private startConnectingInternal() {
