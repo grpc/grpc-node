@@ -146,16 +146,20 @@ export class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
   }
 
   handleResponses(responses: ClusterLoadAssignment__Output[], isV2: boolean) {
+    const validResponses: ClusterLoadAssignment__Output[] = [];
+    let errorMessage: string | null = null;
     for (const message of responses) {
-      if (!this.validateResponse(message)) {
+      if (this.validateResponse(message)) {
+        validResponses.push(message);
+      } else {
         trace('EDS validation failed for message ' + JSON.stringify(message));
-        return 'EDS Error: ClusterLoadAssignment validation failed';
+        errorMessage = 'EDS Error: ClusterLoadAssignment validation failed';
       }
     }
-    this.latestResponses = responses;
+    this.latestResponses = validResponses;
     this.latestIsV2 = isV2;
     const allClusterNames: Set<string> = new Set<string>();
-    for (const message of responses) {
+    for (const message of validResponses) {
       allClusterNames.add(message.cluster_name);
       const watchers = this.watchers.get(message.cluster_name) ?? [];
       for (const watcher of watchers) {
@@ -163,7 +167,7 @@ export class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
       }
     }
     trace('Received EDS updates for cluster names [' + Array.from(allClusterNames) + ']');
-    return null;
+    return errorMessage;
   }
 
   reportStreamError(status: StatusObject): void {
