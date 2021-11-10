@@ -454,8 +454,7 @@ export class Http2ServerCallStream<
               });
               resolve();
             } else {
-              const joined = Buffer.concat([message.slice(0, 5), output]);
-              resolve(joined);
+              resolve(output);
             }
           });
         });
@@ -471,15 +470,14 @@ export class Http2ServerCallStream<
               });
               resolve();
             } else {
-              const joined = Buffer.concat([message.slice(0, 5), output]);
-              resolve(joined);
+              resolve(output);
             }
           });
         });
       }
 
       case 'identity': {
-        return Promise.resolve(message);
+        return Promise.resolve(message.slice(5));
       }
   
       default: {
@@ -603,10 +601,7 @@ export class Http2ServerCallStream<
   }
 
   deserializeMessage(bytes: Buffer) {
-    // TODO(cjihrig): Call compression aware deserializeMessage().
-    const receivedMessage = bytes.slice(5);
-
-    return this.handler.deserialize(receivedMessage);
+    return this.handler.deserialize(bytes);
   }
 
   async sendUnaryMessage(
