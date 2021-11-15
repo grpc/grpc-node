@@ -503,7 +503,7 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
       }
       const requestType = getTypeInterfaceName(method.resolvedRequestType!);
       const responseType = getTypeInterfaceName(method.resolvedResponseType!) + '__Output';
-      const callbackType = `(error?: grpc.ServiceError, result?: ${responseType}) => void`;
+      const callbackType = `grpc.requestCallback<${responseType}>`;
       if (method.requestStream) {
         if (method.responseStream) {
           // Bidi streaming
