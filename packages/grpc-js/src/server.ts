@@ -796,30 +796,36 @@ export class Server {
               channelzSessionInfo.lastMessageReceivedTimestamp = new Date();
             });
           }
-          const metadata: Metadata = call.receiveMetadata(headers) as Metadata;
+          const metadata = call.receiveMetadata(headers);
+          const encoding = (metadata.get('grpc-encoding')[0] as string | undefined) ?? 'identity';
+          metadata.remove('grpc-encoding');
+
           switch (handler.type) {
             case 'unary':
-              handleUnary(call, handler as UntypedUnaryHandler, metadata);
+              handleUnary(call, handler as UntypedUnaryHandler, metadata, encoding);
               break;
             case 'clientStream':
               handleClientStreaming(
                 call,
                 handler as UntypedClientStreamingHandler,
-                metadata
+                metadata,
+                encoding
               );
               break;
             case 'serverStream':
               handleServerStreaming(
                 call,
                 handler as UntypedServerStreamingHandler,
-                metadata
+                metadata,
+                encoding
               );
               break;
             case 'bidi':
               handleBidiStreaming(
                 call,
                 handler as UntypedBidiStreamingHandler,
-                metadata
+                metadata,
+                encoding
               );
               break;
             default:
@@ -879,9 +885,10 @@ export class Server {
 async function handleUnary<RequestType, ResponseType>(
   call: Http2ServerCallStream<RequestType, ResponseType>,
   handler: UnaryHandler<RequestType, ResponseType>,
-  metadata: Metadata
+  metadata: Metadata,
+  encoding: string
 ): Promise<void> {
-  const request = await call.receiveUnaryMessage();
+  const request = await call.receiveUnaryMessage(encoding);
 
   if (request === undefined || call.cancelled) {
     return;
@@ -909,12 +916,14 @@ async function handleUnary<RequestType, ResponseType>(
 function handleClientStreaming<RequestType, ResponseType>(
   call: Http2ServerCallStream<RequestType, ResponseType>,
   handler: ClientStreamingHandler<RequestType, ResponseType>,
-  metadata: Metadata
+  metadata: Metadata,
+  encoding: string
 ): void {
   const stream = new ServerReadableStreamImpl<RequestType, ResponseType>(
     call,
     metadata,
-    handler.deserialize
+    handler.deserialize,
+    encoding
   );
 
   function respond(
@@ -938,9 +947,10 @@ function handleClientStreaming<RequestType, ResponseType>(
 async function handleServerStreaming<RequestType, ResponseType>(
   call: Http2ServerCallStream<RequestType, ResponseType>,
   handler: ServerStreamingHandler<RequestType, ResponseType>,
-  metadata: Metadata
+  metadata: Metadata,
+  encoding: string
 ): Promise<void> {
-  const request = await call.receiveUnaryMessage();
+  const request = await call.receiveUnaryMessage(encoding);
 
   if (request === undefined || call.cancelled) {
     return;
@@ -959,13 +969,15 @@ async function handleServerStreaming<RequestType, ResponseType>(
 function handleBidiStreaming<RequestType, ResponseType>(
   call: Http2ServerCallStream<RequestType, ResponseType>,
   handler: BidiStreamingHandler<RequestType, ResponseType>,
-  metadata: Metadata
+  metadata: Metadata,
+  encoding: string
 ): void {
   const stream = new ServerDuplexStreamImpl<RequestType, ResponseType>(
     call,
     metadata,
     handler.serialize,
-    handler.deserialize
+    handler.deserialize,
+    encoding
   );
 
   if (call.cancelled) {

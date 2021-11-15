@@ -45,7 +45,6 @@ import { MaxMessageSizeFilterFactory } from './max-message-size-filter';
 import { mapProxyName } from './http_proxy';
 import { GrpcUri, parseUri, uriToString } from './uri-parser';
 import { ServerSurfaceCall } from './server-call';
-import { SurfaceCall } from './call';
 import { Filter } from './filter';
 
 import { ConnectivityState } from './connectivity-state';
@@ -333,7 +332,7 @@ export class ChannelImplementation implements Channel {
       new CallCredentialsFilterFactory(this),
       new DeadlineFilterFactory(this),
       new MaxMessageSizeFilterFactory(this.options),
-      new CompressionFilterFactory(this),
+      new CompressionFilterFactory(this, this.options),
     ]);
     this.trace('Channel constructed with options ' + JSON.stringify(options, undefined, 2));
   }

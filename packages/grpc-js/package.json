@@ -52,13 +52,15 @@
     "test": "gulp test",
     "check": "gts check src/**/*.ts",
     "fix": "gts fix src/*.ts",
-    "pretest": "npm run generate-types && npm run compile",
+    "pretest": "npm run generate-types && npm run generate-test-types && npm run compile",
     "posttest": "npm run check && madge -c ./build/src",
-    "generate-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --includeComments --includeDirs proto/ -O src/generated/ --grpcLib ../index channelz.proto"
+    "generate-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --includeComments --includeDirs proto/ --include-dirs test/fixtures/ -O src/generated/ --grpcLib ../index channelz.proto",
+    "generate-test-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --includeComments --include-dirs test/fixtures/ -O test/generated/ --grpcLib ../../src/index test_service.proto"
   },
   "dependencies": {
     "@grpc/proto-loader": "^0.6.4",
-    "@types/node": ">=12.12.47"
+    "@types/node": ">=12.12.47",
+    "@types/semver": "^7.3.9"
   },
   "files": [
     "src/**/*.ts",

@@ -17,10 +17,24 @@
 
 import * as zlib from 'zlib';
 
-import { Call, WriteFlags, WriteObject } from './call-stream';
+import { Call, WriteObject, WriteFlags } from './call-stream';
 import { Channel } from './channel';
+import { ChannelOptions } from './channel-options';
+import { CompressionAlgorithms } from './compression-algorithms';
+import { LogVerbosity } from './constants';
 import { BaseFilter, Filter, FilterFactory } from './filter';
+import * as logging from './logging';
 import { Metadata, MetadataValue } from './metadata';
+
+const isCompressionAlgorithmKey = (key: number): key is CompressionAlgorithms => {
+  return typeof key === 'number' && typeof CompressionAlgorithms[key] === 'string';
+}
+
+type CompressionAlgorithm = keyof typeof CompressionAlgorithms;
+
+type SharedCompressionFilterConfig = {
+  serverSupportedEncodingHeader?: string;
+};
 
 abstract class CompressionHandler {
   protected abstract compressMessage(message: Buffer): Promise<Buffer>;
@@ -167,10 +181,45 @@ function getCompressionHandler(compressionName: string): CompressionHandler {
 export class CompressionFilter extends BaseFilter implements Filter {
   private sendCompression: CompressionHandler = new IdentityHandler();
   private receiveCompression: CompressionHandler = new IdentityHandler();
+  private currentCompressionAlgorithm: CompressionAlgorithm = 'identity';
+
+  constructor(channelOptions: ChannelOptions, private sharedFilterConfig: SharedCompressionFilterConfig) {
+    super();
+
+    const compressionAlgorithmKey = channelOptions['grpc.default_compression_algorithm'];
+    if (compressionAlgorithmKey !== undefined) {
+      if (isCompressionAlgorithmKey(compressionAlgorithmKey)) {
+        const clientSelectedEncoding = CompressionAlgorithms[compressionAlgorithmKey] as CompressionAlgorithm;
+        const serverSupportedEncodings = sharedFilterConfig.serverSupportedEncodingHeader?.split(',');
+        /**
+         * There are two possible situations here:
+         * 1) We don't have any info yet from the server about what compression it supports
+         *    In that case we should just use what the client tells us to use
+         * 2) We've previously received a response from the server including a grpc-accept-encoding header
+         *    In that case we only want to use the encoding chosen by the client if the server supports it
+         */
+        if (!serverSupportedEncodings || serverSupportedEncodings.includes(clientSelectedEncoding)) {
+          this.currentCompressionAlgorithm = clientSelectedEncoding;
+          this.sendCompression = getCompressionHandler(this.currentCompressionAlgorithm);
+        }
+      } else {
+        logging.log(LogVerbosity.ERROR, `Invalid value provided for grpc.default_compression_algorithm option: ${compressionAlgorithmKey}`);
+      }
+    }
+  }
+
   async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
     const headers: Metadata = await metadata;
     headers.set('grpc-accept-encoding', 'identity,deflate,gzip');
     headers.set('accept-encoding', 'identity');
+
+    // No need to send the header if it's "identity" -  behavior is identical; save the bandwidth
+    if (this.currentCompressionAlgorithm === 'identity') {
+      headers.remove('grpc-encoding');
+    } else {
+      headers.set('grpc-encoding', this.currentCompressionAlgorithm);
+    }
+
     return headers;
   }
 
@@ -183,6 +232,19 @@ export class CompressionFilter extends BaseFilter implements Filter {
       }
     }
     metadata.remove('grpc-encoding');
+
+    /* Check to see if the compression we're using to send messages is supported by the server
+     * If not, reset the sendCompression filter and have it use the default IdentityHandler */
+    const serverSupportedEncodingsHeader = metadata.get('grpc-accept-encoding')[0] as string | undefined;
+    if (serverSupportedEncodingsHeader) {
+      this.sharedFilterConfig.serverSupportedEncodingHeader = serverSupportedEncodingsHeader;
+      const serverSupportedEncodings = serverSupportedEncodingsHeader.split(',');
+
+      if (!serverSupportedEncodings.includes(this.currentCompressionAlgorithm)) {
+        this.sendCompression = new IdentityHandler();
+        this.currentCompressionAlgorithm = 'identity';
+      }
+    }
     metadata.remove('grpc-accept-encoding');
     return metadata;
   }
@@ -192,10 +254,13 @@ export class CompressionFilter extends BaseFilter implements Filter {
      * and the output is a framed and possibly compressed message. For this
      * reason, this filter should be at the bottom of the filter stack */
     const resolvedMessage: WriteObject = await message;
-    const compress =
-      resolvedMessage.flags === undefined
-        ? false
-        : (resolvedMessage.flags & WriteFlags.NoCompress) === 0;
+    let compress: boolean;
+    if (this.sendCompression instanceof IdentityHandler) {
+      compress = false;
+    } else {
+      compress = ((resolvedMessage.flags ?? 0) & WriteFlags.NoCompress) === 0;
+    }
+
     return {
       message: await this.sendCompression.writeMessage(
         resolvedMessage.message,
@@ -216,8 +281,9 @@ export class CompressionFilter extends BaseFilter implements Filter {
 
 export class CompressionFilterFactory
   implements FilterFactory<CompressionFilter> {
-  constructor(private readonly channel: Channel) {}
+    private sharedFilterConfig: SharedCompressionFilterConfig = {};
+  constructor(private readonly channel: Channel, private readonly options: ChannelOptions) {}
   createFilter(callStream: Call): CompressionFilter {
-    return new CompressionFilter();
+    return new CompressionFilter(this.options, this.sharedFilterConfig);
   }
 }
