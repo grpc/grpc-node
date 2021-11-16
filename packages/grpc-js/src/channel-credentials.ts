@@ -28,16 +28,6 @@ function verifyIsBufferOrNull(obj: any, friendlyName: string): void {
 }
 
 /**
- * A certificate as received by the checkServerIdentity callback.
- */
-export interface Certificate {
-  /**
-   * The raw certificate in DER form.
-   */
-  raw: Buffer;
-}
-
-/**
  * A callback that will receive the expected hostname and presented peer
  * certificate as parameters. The callback should return an error to
  * indicate that the presented certificate is considered invalid and
@@ -45,7 +35,7 @@ export interface Certificate {
  */
 export type CheckServerIdentityCallback = (
   hostname: string,
-  cert: Certificate
+  cert: PeerCertificate
 ) => Error | undefined;
 
 function bufferOrNullEqual(buf1: Buffer | null, buf2: Buffer | null) {
@@ -192,15 +182,10 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
       cert: certChain || undefined,
       ciphers: CIPHER_SUITES,
     });
-    this.connectionOptions = { secureContext };
-    if (verifyOptions && verifyOptions.checkServerIdentity) {
-      this.connectionOptions.checkServerIdentity = (
-        host: string,
-        cert: PeerCertificate
-      ) => {
-        return verifyOptions.checkServerIdentity!(host, { raw: cert.raw });
-      };
-    }
+    this.connectionOptions = { 
+      secureContext,
+      checkServerIdentity: verifyOptions?.checkServerIdentity
+    };
   }
 
   compose(callCredentials: CallCredentials): ChannelCredentials {
