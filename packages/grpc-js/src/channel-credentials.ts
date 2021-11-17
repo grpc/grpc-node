@@ -183,9 +183,12 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
       ciphers: CIPHER_SUITES,
     });
     this.connectionOptions = { 
-      secureContext,
-      checkServerIdentity: verifyOptions?.checkServerIdentity
+      secureContext
     };
+    // Node asserts that this option is a function, so we cannot pass undefined
+    if (verifyOptions?.checkServerIdentity) {
+      this.connectionOptions.checkServerIdentity = verifyOptions.checkServerIdentity;
+    }
   }
 
   compose(callCredentials: CallCredentials): ChannelCredentials {
