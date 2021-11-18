@@ -128,23 +128,6 @@ export class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
     return true;
   }
 
-  /**
-   * Given a list of edsServiceNames (which may actually be the cluster name),
-   * for each watcher watching a name not on the list, call that watcher's
-   * onResourceDoesNotExist method.
-   * @param allClusterNames
-   */
-  handleMissingNames(allEdsServiceNames: Set<string>) {
-    for (const [edsServiceName, watcherList] of this.watchers.entries()) {
-      if (!allEdsServiceNames.has(edsServiceName)) {
-        trace('Reporting EDS resource does not exist for edsServiceName ' + edsServiceName);
-        for (const watcher of watcherList) {
-          watcher.onResourceDoesNotExist();
-        }
-      }
-    }
-  }
-
   handleResponses(responses: ClusterLoadAssignment__Output[], isV2: boolean) {
     const validResponses: ClusterLoadAssignment__Output[] = [];
     let errorMessage: string | null = null;

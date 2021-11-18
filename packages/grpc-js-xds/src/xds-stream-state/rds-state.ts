@@ -172,16 +172,6 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
     return true;
   }
 
-  handleMissingNames(allRouteConfigNames: Set<string>) {
-    for (const [routeConfigName, watcherList] of this.watchers.entries()) {
-      if (!allRouteConfigNames.has(routeConfigName)) {
-        for (const watcher of watcherList) {
-          watcher.onResourceDoesNotExist();
-        }
-      }
-    }
-  }
-
   handleResponses(responses: RouteConfiguration__Output[], isV2: boolean): string | null {
     const validResponses: RouteConfiguration__Output[] = [];
     let errorMessage: string | null = null;
