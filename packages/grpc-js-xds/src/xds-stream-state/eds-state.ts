@@ -18,7 +18,8 @@
 import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
 import { isIPv4, isIPv6 } from "net";
 import { ClusterLoadAssignment__Output } from "../generated/envoy/config/endpoint/v3/ClusterLoadAssignment";
-import { Watcher, XdsStreamState } from "./xds-stream-state";
+import { Any__Output } from "../generated/google/protobuf/Any";
+import { HandleResponseResult, RejectedResourceEntry, ResourcePair, Watcher, XdsStreamState } from "./xds-stream-state";
 
 const TRACER_NAME = 'xds_client';
 
@@ -145,15 +146,26 @@ export class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
     }
   }
 
-  handleResponses(responses: ClusterLoadAssignment__Output[], isV2: boolean) {
+  handleResponses(responses: ResourcePair<ClusterLoadAssignment__Output>[], isV2: boolean): HandleResponseResult {
     const validResponses: ClusterLoadAssignment__Output[] = [];
-    let errorMessage: string | null = null;
-    for (const message of responses) {
-      if (this.validateResponse(message)) {
-        validResponses.push(message);
+    let result: HandleResponseResult = {
+      accepted: [],
+      rejected: [],
+      missing: []
+    }
+    for (const {resource, raw} of responses) {
+      if (this.validateResponse(resource)) {
+        validResponses.push(resource);
+        result.accepted.push({
+          name: resource.cluster_name,
+          raw: raw});
       } else {
-        trace('EDS validation failed for message ' + JSON.stringify(message));
-        errorMessage = 'EDS Error: ClusterLoadAssignment validation failed';
+        trace('EDS validation failed for message ' + JSON.stringify(resource));
+        result.rejected.push({
+          name: resource.cluster_name, 
+          raw: raw,
+          error: `ClusterLoadAssignment validation failed for resource ${resource.cluster_name}`
+        });
       }
     }
     this.latestResponses = validResponses;
@@ -167,7 +179,7 @@ export class EdsState implements XdsStreamState<ClusterLoadAssignment__Output> {
       }
     }
     trace('Received EDS updates for cluster names [' + Array.from(allClusterNames) + ']');
-    return errorMessage;
+    return result;
   }
 
   reportStreamError(status: StatusObject): void {

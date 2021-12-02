@@ -17,8 +17,9 @@
 
 import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
 import { Cluster__Output } from "../generated/envoy/config/cluster/v3/Cluster";
+import { Any__Output } from "../generated/google/protobuf/Any";
 import { EdsState } from "./eds-state";
-import { Watcher, XdsStreamState } from "./xds-stream-state";
+import { HandleResponseResult, RejectedResourceEntry, ResourcePair, Watcher, XdsStreamState } from "./xds-stream-state";
 
 const TRACER_NAME = 'xds_client';
 
@@ -125,26 +126,40 @@ export class CdsState implements XdsStreamState<Cluster__Output> {
    * onResourceDoesNotExist method.
    * @param allClusterNames
    */
-  private handleMissingNames(allClusterNames: Set<string>) {
+  private handleMissingNames(allClusterNames: Set<string>): string[] {
+    const missingNames: string[] = [];
     for (const [clusterName, watcherList] of this.watchers.entries()) {
       if (!allClusterNames.has(clusterName)) {
         trace('Reporting CDS resource does not exist for clusterName ' + clusterName);
+        missingNames.push(clusterName);
         for (const watcher of watcherList) {
           watcher.onResourceDoesNotExist();
         }
       }
     }
+    return missingNames;
   }
 
-  handleResponses(responses: Cluster__Output[], isV2: boolean): string | null {
+  handleResponses(responses: ResourcePair<Cluster__Output>[], isV2: boolean): HandleResponseResult {
     const validResponses: Cluster__Output[] = [];
-    let errorMessage: string | null = null;
-    for (const message of responses) {
-      if (this.validateResponse(message)) {
-        validResponses.push(message);
+    const result: HandleResponseResult = {
+      accepted: [],
+      rejected: [],
+      missing: []
+    }
+    for (const {resource, raw} of responses) {
+      if (this.validateResponse(resource)) {
+        validResponses.push(resource);
+        result.accepted.push({
+          name: resource.name, 
+          raw: raw});
       } else {
-        trace('CDS validation failed for message ' + JSON.stringify(message));
-        errorMessage = 'CDS Error: Cluster validation failed';
+        trace('CDS validation failed for message ' + JSON.stringify(resource));
+        result.rejected.push({
+          name: resource.name, 
+          raw: raw,
+          error: `Cluster validation failed for resource ${resource.name}`
+        });
       }
     }
     this.latestResponses = validResponses;
@@ -163,9 +178,9 @@ export class CdsState implements XdsStreamState<Cluster__Output> {
       }
     }
     trace('Received CDS updates for cluster names [' + Array.from(allClusterNames) + ']');
-    this.handleMissingNames(allClusterNames);
+    result.missing = this.handleMissingNames(allClusterNames);
     this.edsState.handleMissingNames(allEdsServiceNames);
-    return errorMessage;
+    return result;
   }
 
   reportStreamError(status: StatusObject): void {

@@ -19,11 +19,12 @@ import * as protoLoader from '@grpc/proto-loader';
 import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
 import { Listener__Output } from '../generated/envoy/config/listener/v3/Listener';
 import { RdsState } from "./rds-state";
-import { Watcher, XdsStreamState } from "./xds-stream-state";
+import { HandleResponseResult, RejectedResourceEntry, ResourcePair, Watcher, XdsStreamState } from "./xds-stream-state";
 import { HttpConnectionManager__Output } from '../generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpConnectionManager';
 import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL_V2, HTTP_CONNECTION_MANGER_TYPE_URL_V3 } from '../resources';
 import { getTopLevelFilterUrl, validateTopLevelFilter } from '../http-filter';
 import { EXPERIMENTAL_FAULT_INJECTION } from '../environment';
+import { Any__Output } from '../generated/google/protobuf/Any';
 
 const TRACER_NAME = 'xds_client';
 
@@ -143,25 +144,40 @@ export class LdsState implements XdsStreamState<Listener__Output> {
     return false;
   }
 
-  private handleMissingNames(allTargetNames: Set<string>) {
+  private handleMissingNames(allTargetNames: Set<string>): string[] {
+    const missingNames: string[] = [];
     for (const [targetName, watcherList] of this.watchers.entries()) {
       if (!allTargetNames.has(targetName)) {
+        missingNames.push(targetName);
         for (const watcher of watcherList) {
           watcher.onResourceDoesNotExist();
         }
       }
     }
+    return missingNames;
   }
 
-  handleResponses(responses: Listener__Output[], isV2: boolean): string | null {
+  handleResponses(responses: ResourcePair<Listener__Output>[], isV2: boolean): HandleResponseResult {
     const validResponses: Listener__Output[] = [];
-    let errorMessage: string | null = null;
-    for (const message of responses) {
-      if (this.validateResponse(message, isV2)) {
-        validResponses.push(message);
+    let result: HandleResponseResult = {
+      accepted: [],
+      rejected: [],
+      missing: []
+    }
+    for (const {resource, raw} of responses) {
+      if (this.validateResponse(resource, isV2)) {
+        validResponses.push(resource);
+        result.accepted.push({
+          name: resource.name,
+          raw: raw
+        });
       } else {
-        trace('LDS validation failed for message ' + JSON.stringify(message));
-        errorMessage = 'LDS Error: Route validation failed';
+        trace('LDS validation failed for message ' + JSON.stringify(resource));
+        result.rejected.push({
+          name: resource.name,
+          raw: raw,
+          error: `Listener validation failed for resource ${resource.name}`
+        });
       }
     }
     this.latestResponses = validResponses;
@@ -180,9 +196,9 @@ export class LdsState implements XdsStreamState<Listener__Output> {
       }
     }
     trace('Received LDS response with listener names [' + Array.from(allTargetNames) + ']');
-    this.handleMissingNames(allTargetNames);
+    result.missing = this.handleMissingNames(allTargetNames);
     this.rdsState.handleMissingNames(allRouteConfigNames);
-    return errorMessage;
+    return result;
   }
 
   reportStreamError(status: StatusObject): void {
