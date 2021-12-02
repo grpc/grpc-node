@@ -404,6 +404,7 @@ function main() {
   const server = new grpc.Server();
   server.addService(loadedProto.grpc.testing.LoadBalancerStatsService.service, loadBalancerStatsServiceImpl);
   server.addService(loadedProto.grpc.testing.XdsUpdateClientConfigureService.service, xdsUpdateClientConfigureServiceImpl);
+  grpc.addAdminServicesToServer(server);
   server.bindAsync(`0.0.0.0:${argv.stats_port}`, grpc.ServerCredentials.createInsecure(), (error, port) => {
     if (error) {
       throw error;
