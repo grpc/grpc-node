@@ -8,7 +8,7 @@
  */
 export interface EnvoyInternalAddress {
   /**
-   * [#not-implemented-hide:] The :ref:`listener name <envoy_api_field_config.listener.v3.Listener.name>` of the destination internal listener.
+   * [#not-implemented-hide:] The :ref:`listener name <envoy_v3_api_field_config.listener.v3.Listener.name>` of the destination internal listener.
    */
   'server_listener_name'?: (string);
   'address_name_specifier'?: "server_listener_name";
@@ -21,7 +21,7 @@ export interface EnvoyInternalAddress {
  */
 export interface EnvoyInternalAddress__Output {
   /**
-   * [#not-implemented-hide:] The :ref:`listener name <envoy_api_field_config.listener.v3.Listener.name>` of the destination internal listener.
+   * [#not-implemented-hide:] The :ref:`listener name <envoy_v3_api_field_config.listener.v3.Listener.name>` of the destination internal listener.
    */
   'server_listener_name'?: (string);
   'address_name_specifier': "server_listener_name";

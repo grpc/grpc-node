@@ -28,7 +28,7 @@ export interface _envoy_config_endpoint_v3_ClusterStats_DroppedRequests__Output 
 
 /**
  * Per cluster load stats. Envoy reports these stats a management server in a
- * :ref:`LoadStatsRequest<envoy_api_msg_service.load_stats.v3.LoadStatsRequest>`
+ * :ref:`LoadStatsRequest<envoy_v3_api_msg_service.load_stats.v3.LoadStatsRequest>`
  * Next ID: 7
  * [#next-free-field: 7]
  */
@@ -72,7 +72,7 @@ export interface ClusterStats {
 
 /**
  * Per cluster load stats. Envoy reports these stats a management server in a
- * :ref:`LoadStatsRequest<envoy_api_msg_service.load_stats.v3.LoadStatsRequest>`
+ * :ref:`LoadStatsRequest<envoy_v3_api_msg_service.load_stats.v3.LoadStatsRequest>`
  * Next ID: 7
  * [#next-free-field: 7]
  */

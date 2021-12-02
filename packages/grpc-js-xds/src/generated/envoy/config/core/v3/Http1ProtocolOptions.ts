@@ -1,7 +1,11 @@
 // Original file: deps/envoy-api/envoy/config/core/v3/protocol.proto
 
 import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../../google/protobuf/BoolValue';
+import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig, TypedExtensionConfig__Output as _envoy_config_core_v3_TypedExtensionConfig__Output } from '../../../../envoy/config/core/v3/TypedExtensionConfig';
 
+/**
+ * [#next-free-field: 9]
+ */
 export interface _envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat {
   /**
    * Formats the header by proper casing words: the first character and any character following
@@ -11,9 +15,18 @@ export interface _envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat {
    * are not covered. For example, the "TE" header will be formatted as "Te".
    */
   'proper_case_words'?: (_envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords | null);
-  'header_format'?: "proper_case_words";
+  /**
+   * Configuration for stateful formatter extensions that allow using received headers to
+   * affect the output of encoding headers. E.g., preserving case during proxying.
+   * [#extension-category: envoy.http.stateful_header_formatters]
+   */
+  'stateful_formatter'?: (_envoy_config_core_v3_TypedExtensionConfig | null);
+  'header_format'?: "proper_case_words"|"stateful_formatter";
 }
 
+/**
+ * [#next-free-field: 9]
+ */
 export interface _envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat__Output {
   /**
    * Formats the header by proper casing words: the first character and any character following
@@ -23,7 +36,13 @@ export interface _envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat__Out
    * are not covered. For example, the "TE" header will be formatted as "Te".
    */
   'proper_case_words'?: (_envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords__Output | null);
-  'header_format': "proper_case_words";
+  /**
+   * Configuration for stateful formatter extensions that allow using received headers to
+   * affect the output of encoding headers. E.g., preserving case during proxying.
+   * [#extension-category: envoy.http.stateful_header_formatters]
+   */
+  'stateful_formatter'?: (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
+  'header_format': "proper_case_words"|"stateful_formatter";
 }
 
 export interface _envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords {

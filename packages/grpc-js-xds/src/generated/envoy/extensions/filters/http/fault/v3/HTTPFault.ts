@@ -7,7 +7,7 @@ import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output a
 import type { FaultRateLimit as _envoy_extensions_filters_common_fault_v3_FaultRateLimit, FaultRateLimit__Output as _envoy_extensions_filters_common_fault_v3_FaultRateLimit__Output } from '../../../../../../envoy/extensions/filters/common/fault/v3/FaultRateLimit';
 
 /**
- * [#next-free-field: 15]
+ * [#next-free-field: 16]
  */
 export interface HTTPFault {
   /**
@@ -31,7 +31,7 @@ export interface HTTPFault {
    * injection filter can be applied selectively to requests that match a set of
    * headers specified in the fault filter config. The chances of actual fault
    * injection further depend on the value of the :ref:`percentage
-   * <envoy_api_field_extensions.filters.http.fault.v3.FaultAbort.percentage>` field.
+   * <envoy_v3_api_field_extensions.filters.http.fault.v3.FaultAbort.percentage>` field.
    * The filter will check the request's headers against all the specified
    * headers in the filter config. A match will happen if all the headers in the
    * config are present in the request with the same values (or based on
@@ -107,10 +107,17 @@ export interface HTTPFault {
    * runtime. The default is: fault.http.abort.grpc_status
    */
   'abort_grpc_status_runtime'?: (string);
+  /**
+   * To control whether stats storage is allocated dynamically for each downstream server.
+   * If set to true, "x-envoy-downstream-service-cluster" field of header will be ignored by this filter.
+   * If set to false, dynamic stats storage will be allocated for the downstream cluster name.
+   * Default value is false.
+   */
+  'disable_downstream_cluster_stats'?: (boolean);
 }
 
 /**
- * [#next-free-field: 15]
+ * [#next-free-field: 16]
  */
 export interface HTTPFault__Output {
   /**
@@ -134,7 +141,7 @@ export interface HTTPFault__Output {
    * injection filter can be applied selectively to requests that match a set of
    * headers specified in the fault filter config. The chances of actual fault
    * injection further depend on the value of the :ref:`percentage
-   * <envoy_api_field_extensions.filters.http.fault.v3.FaultAbort.percentage>` field.
+   * <envoy_v3_api_field_extensions.filters.http.fault.v3.FaultAbort.percentage>` field.
    * The filter will check the request's headers against all the specified
    * headers in the filter config. A match will happen if all the headers in the
    * config are present in the request with the same values (or based on
@@ -210,4 +217,11 @@ export interface HTTPFault__Output {
    * runtime. The default is: fault.http.abort.grpc_status
    */
   'abort_grpc_status_runtime': (string);
+  /**
+   * To control whether stats storage is allocated dynamically for each downstream server.
+   * If set to true, "x-envoy-downstream-service-cluster" field of header will be ignored by this filter.
+   * If set to false, dynamic stats storage will be allocated for the downstream cluster name.
+   * Default value is false.
+   */
+  'disable_downstream_cluster_stats': (boolean);
 }

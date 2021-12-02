@@ -1,33 +1,48 @@
 // Original file: deps/envoy-api/envoy/config/listener/v3/udp_listener_config.proto
 
-import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
+import type { UdpSocketConfig as _envoy_config_core_v3_UdpSocketConfig, UdpSocketConfig__Output as _envoy_config_core_v3_UdpSocketConfig__Output } from '../../../../envoy/config/core/v3/UdpSocketConfig';
+import type { QuicProtocolOptions as _envoy_config_listener_v3_QuicProtocolOptions, QuicProtocolOptions__Output as _envoy_config_listener_v3_QuicProtocolOptions__Output } from '../../../../envoy/config/listener/v3/QuicProtocolOptions';
 
+/**
+ * [#next-free-field: 8]
+ */
 export interface UdpListenerConfig {
   /**
-   * Used to look up UDP listener factory, matches "raw_udp_listener" or
-   * "quic_listener" to create a specific udp listener.
-   * If not specified, treat as "raw_udp_listener".
+   * UDP socket configuration for the listener. The default for
+   * :ref:`prefer_gro <envoy_v3_api_field_config.core.v3.UdpSocketConfig.prefer_gro>` is false for
+   * listener sockets. If receiving a large amount of datagrams from a small number of sources, it
+   * may be worthwhile to enable this option after performance testing.
    */
-  'udp_listener_name'?: (string);
-  'typed_config'?: (_google_protobuf_Any | null);
+  'downstream_socket_config'?: (_envoy_config_core_v3_UdpSocketConfig | null);
   /**
-   * Used to create a specific listener factory. To some factory, e.g.
-   * "raw_udp_listener", config is not needed.
+   * Configuration for QUIC protocol. If empty, QUIC will not be enabled on this listener. Set
+   * to the default object to enable QUIC without modifying any additional options.
+   * 
+   * .. warning::
+   * QUIC support is currently alpha and should be used with caution. Please
+   * see :ref:`here <arch_overview_http3>` for details.
    */
-  'config_type'?: "typed_config";
+  'quic_options'?: (_envoy_config_listener_v3_QuicProtocolOptions | null);
 }
 
+/**
+ * [#next-free-field: 8]
+ */
 export interface UdpListenerConfig__Output {
   /**
-   * Used to look up UDP listener factory, matches "raw_udp_listener" or
-   * "quic_listener" to create a specific udp listener.
-   * If not specified, treat as "raw_udp_listener".
+   * UDP socket configuration for the listener. The default for
+   * :ref:`prefer_gro <envoy_v3_api_field_config.core.v3.UdpSocketConfig.prefer_gro>` is false for
+   * listener sockets. If receiving a large amount of datagrams from a small number of sources, it
+   * may be worthwhile to enable this option after performance testing.
    */
-  'udp_listener_name': (string);
-  'typed_config'?: (_google_protobuf_Any__Output | null);
+  'downstream_socket_config': (_envoy_config_core_v3_UdpSocketConfig__Output | null);
   /**
-   * Used to create a specific listener factory. To some factory, e.g.
-   * "raw_udp_listener", config is not needed.
+   * Configuration for QUIC protocol. If empty, QUIC will not be enabled on this listener. Set
+   * to the default object to enable QUIC without modifying any additional options.
+   * 
+   * .. warning::
+   * QUIC support is currently alpha and should be used with caution. Please
+   * see :ref:`here <arch_overview_http3>` for details.
    */
-  'config_type': "typed_config";
+  'quic_options': (_envoy_config_listener_v3_QuicProtocolOptions__Output | null);
 }

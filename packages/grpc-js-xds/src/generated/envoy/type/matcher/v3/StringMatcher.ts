@@ -38,8 +38,8 @@ export interface StringMatcher {
    */
   'safe_regex'?: (_envoy_type_matcher_v3_RegexMatcher | null);
   /**
-   * If true, indicates the exact/prefix/suffix matching should be case insensitive. This has no
-   * effect for the safe_regex match.
+   * If true, indicates the exact/prefix/suffix/contains matching should be case insensitive. This
+   * has no effect for the safe_regex match.
    * For example, the matcher *data* will match both input string *Data* and *data* if set to true.
    */
   'ignore_case'?: (boolean);
@@ -91,8 +91,8 @@ export interface StringMatcher__Output {
    */
   'safe_regex'?: (_envoy_type_matcher_v3_RegexMatcher__Output | null);
   /**
-   * If true, indicates the exact/prefix/suffix matching should be case insensitive. This has no
-   * effect for the safe_regex match.
+   * If true, indicates the exact/prefix/suffix/contains matching should be case insensitive. This
+   * has no effect for the safe_regex match.
    * For example, the matcher *data* will match both input string *Data* and *data* if set to true.
    */
   'ignore_case': (boolean);

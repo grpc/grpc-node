@@ -38,6 +38,7 @@ export interface ProtoGrpcType {
           Node: MessageTypeDefinition
           Pipe: MessageTypeDefinition
           ProxyProtocolConfig: MessageTypeDefinition
+          QueryParameter: MessageTypeDefinition
           RateLimitSettings: MessageTypeDefinition
           RemoteDataSource: MessageTypeDefinition
           RequestMethod: EnumTypeDefinition
@@ -60,6 +61,7 @@ export interface ProtoGrpcType {
       }
       route: {
         v3: {
+          ClusterSpecifierPlugin: MessageTypeDefinition
           CorsPolicy: MessageTypeDefinition
           Decorator: MessageTypeDefinition
           DirectResponseAction: MessageTypeDefinition
@@ -68,6 +70,7 @@ export interface ProtoGrpcType {
           HeaderMatcher: MessageTypeDefinition
           HedgePolicy: MessageTypeDefinition
           InternalRedirectPolicy: MessageTypeDefinition
+          NonForwardingAction: MessageTypeDefinition
           QueryParameterMatcher: MessageTypeDefinition
           RateLimit: MessageTypeDefinition
           RedirectAction: MessageTypeDefinition
@@ -87,10 +90,14 @@ export interface ProtoGrpcType {
     type: {
       matcher: {
         v3: {
+          DoubleMatcher: MessageTypeDefinition
+          ListMatcher: MessageTypeDefinition
           ListStringMatcher: MessageTypeDefinition
+          MetadataMatcher: MessageTypeDefinition
           RegexMatchAndSubstitute: MessageTypeDefinition
           RegexMatcher: MessageTypeDefinition
           StringMatcher: MessageTypeDefinition
+          ValueMatcher: MessageTypeDefinition
         }
       }
       metadata: {
@@ -204,6 +211,7 @@ export interface ProtoGrpcType {
     core: {
       v3: {
         Authority: MessageTypeDefinition
+        ContextParams: MessageTypeDefinition
       }
     }
   }

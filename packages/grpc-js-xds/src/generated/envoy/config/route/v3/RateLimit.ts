@@ -38,7 +38,7 @@ export interface _envoy_config_route_v3_RateLimit_Action {
    * Rate limit on dynamic metadata.
    * 
    * .. attention::
-   * This field has been deprecated in favor of the :ref:`metadata <envoy_api_field_config.route.v3.RateLimit.Action.metadata>` field
+   * This field has been deprecated in favor of the :ref:`metadata <envoy_v3_api_field_config.route.v3.RateLimit.Action.metadata>` field
    */
   'dynamic_metadata'?: (_envoy_config_route_v3_RateLimit_Action_DynamicMetaData | null);
   /**
@@ -47,6 +47,7 @@ export interface _envoy_config_route_v3_RateLimit_Action {
   'metadata'?: (_envoy_config_route_v3_RateLimit_Action_MetaData | null);
   /**
    * Rate limit descriptor extension. See the rate limit descriptor extensions documentation.
+   * [#extension-category: envoy.rate_limit_descriptors]
    */
   'extension'?: (_envoy_config_core_v3_TypedExtensionConfig | null);
   'action_specifier'?: "source_cluster"|"destination_cluster"|"request_headers"|"remote_address"|"generic_key"|"header_value_match"|"dynamic_metadata"|"metadata"|"extension";
@@ -84,7 +85,7 @@ export interface _envoy_config_route_v3_RateLimit_Action__Output {
    * Rate limit on dynamic metadata.
    * 
    * .. attention::
-   * This field has been deprecated in favor of the :ref:`metadata <envoy_api_field_config.route.v3.RateLimit.Action.metadata>` field
+   * This field has been deprecated in favor of the :ref:`metadata <envoy_v3_api_field_config.route.v3.RateLimit.Action.metadata>` field
    */
   'dynamic_metadata'?: (_envoy_config_route_v3_RateLimit_Action_DynamicMetaData__Output | null);
   /**
@@ -93,6 +94,7 @@ export interface _envoy_config_route_v3_RateLimit_Action__Output {
   'metadata'?: (_envoy_config_route_v3_RateLimit_Action_MetaData__Output | null);
   /**
    * Rate limit descriptor extension. See the rate limit descriptor extensions documentation.
+   * [#extension-category: envoy.rate_limit_descriptors]
    */
   'extension'?: (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
   'action_specifier': "source_cluster"|"destination_cluster"|"request_headers"|"remote_address"|"generic_key"|"header_value_match"|"dynamic_metadata"|"metadata"|"extension";
@@ -106,14 +108,14 @@ export interface _envoy_config_route_v3_RateLimit_Action__Output {
  * ("destination_cluster", "<routed target cluster>")
  * 
  * Once a request matches against a route table rule, a routed cluster is determined by one of
- * the following :ref:`route table configuration <envoy_api_msg_config.route.v3.RouteConfiguration>`
+ * the following :ref:`route table configuration <envoy_v3_api_msg_config.route.v3.RouteConfiguration>`
  * settings:
  * 
- * * :ref:`cluster <envoy_api_field_config.route.v3.RouteAction.cluster>` indicates the upstream cluster
+ * * :ref:`cluster <envoy_v3_api_field_config.route.v3.RouteAction.cluster>` indicates the upstream cluster
  * to route to.
- * * :ref:`weighted_clusters <envoy_api_field_config.route.v3.RouteAction.weighted_clusters>`
+ * * :ref:`weighted_clusters <envoy_v3_api_field_config.route.v3.RouteAction.weighted_clusters>`
  * chooses a cluster randomly from a set of clusters with attributed weight.
- * * :ref:`cluster_header <envoy_api_field_config.route.v3.RouteAction.cluster_header>` indicates which
+ * * :ref:`cluster_header <envoy_v3_api_field_config.route.v3.RouteAction.cluster_header>` indicates which
  * header in the request contains the target cluster.
  */
 export interface _envoy_config_route_v3_RateLimit_Action_DestinationCluster {
@@ -127,14 +129,14 @@ export interface _envoy_config_route_v3_RateLimit_Action_DestinationCluster {
  * ("destination_cluster", "<routed target cluster>")
  * 
  * Once a request matches against a route table rule, a routed cluster is determined by one of
- * the following :ref:`route table configuration <envoy_api_msg_config.route.v3.RouteConfiguration>`
+ * the following :ref:`route table configuration <envoy_v3_api_msg_config.route.v3.RouteConfiguration>`
  * settings:
  * 
- * * :ref:`cluster <envoy_api_field_config.route.v3.RouteAction.cluster>` indicates the upstream cluster
+ * * :ref:`cluster <envoy_v3_api_field_config.route.v3.RouteAction.cluster>` indicates the upstream cluster
  * to route to.
- * * :ref:`weighted_clusters <envoy_api_field_config.route.v3.RouteAction.weighted_clusters>`
+ * * :ref:`weighted_clusters <envoy_v3_api_field_config.route.v3.RouteAction.weighted_clusters>`
  * chooses a cluster randomly from a set of clusters with attributed weight.
- * * :ref:`cluster_header <envoy_api_field_config.route.v3.RouteAction.cluster_header>` indicates which
+ * * :ref:`cluster_header <envoy_v3_api_field_config.route.v3.RouteAction.cluster_header>` indicates which
  * header in the request contains the target cluster.
  */
 export interface _envoy_config_route_v3_RateLimit_Action_DestinationCluster__Output {
@@ -149,7 +151,7 @@ export interface _envoy_config_route_v3_RateLimit_Action_DestinationCluster__Out
  * ("<descriptor_key>", "<value_queried_from_dynamic_metadata>")
  * 
  * .. attention::
- * This action has been deprecated in favor of the :ref:`metadata <envoy_api_msg_config.route.v3.RateLimit.Action.MetaData>` action
+ * This action has been deprecated in favor of the :ref:`metadata <envoy_v3_api_msg_config.route.v3.RateLimit.Action.MetaData>` action
  */
 export interface _envoy_config_route_v3_RateLimit_Action_DynamicMetaData {
   /**
@@ -177,7 +179,7 @@ export interface _envoy_config_route_v3_RateLimit_Action_DynamicMetaData {
  * ("<descriptor_key>", "<value_queried_from_dynamic_metadata>")
  * 
  * .. attention::
- * This action has been deprecated in favor of the :ref:`metadata <envoy_api_msg_config.route.v3.RateLimit.Action.MetaData>` action
+ * This action has been deprecated in favor of the :ref:`metadata <envoy_v3_api_msg_config.route.v3.RateLimit.Action.MetaData>` action
  */
 export interface _envoy_config_route_v3_RateLimit_Action_DynamicMetaData__Output {
   /**
@@ -204,7 +206,7 @@ export interface _envoy_config_route_v3_RateLimit_Override_DynamicMetadata {
    * Metadata struct that defines the key and path to retrieve the struct value.
    * The value must be a struct containing an integer "requests_per_unit" property
    * and a "unit" property with a value parseable to :ref:`RateLimitUnit
-   * enum <envoy_api_enum_type.v3.RateLimitUnit>`
+   * enum <envoy_v3_api_enum_type.v3.RateLimitUnit>`
    */
   'metadata_key'?: (_envoy_type_metadata_v3_MetadataKey | null);
 }
@@ -217,7 +219,7 @@ export interface _envoy_config_route_v3_RateLimit_Override_DynamicMetadata__Outp
    * Metadata struct that defines the key and path to retrieve the struct value.
    * The value must be a struct containing an integer "requests_per_unit" property
    * and a "unit" property with a value parseable to :ref:`RateLimitUnit
-   * enum <envoy_api_enum_type.v3.RateLimitUnit>`
+   * enum <envoy_v3_api_enum_type.v3.RateLimitUnit>`
    */
   'metadata_key': (_envoy_type_metadata_v3_MetadataKey__Output | null);
 }
@@ -474,7 +476,7 @@ export enum _envoy_config_route_v3_RateLimit_Action_MetaData_Source {
    */
   DYNAMIC = 0,
   /**
-   * Query :ref:`route entry metadata <envoy_api_field_config.route.v3.Route.metadata>`
+   * Query :ref:`route entry metadata <envoy_v3_api_field_config.route.v3.Route.metadata>`
    */
   ROUTE_ENTRY = 1,
 }

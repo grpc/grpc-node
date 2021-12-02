@@ -10,7 +10,7 @@ import type { Authority as _xds_core_v3_Authority, Authority__Output as _xds_cor
 /**
  * Configuration for :ref:`listeners <config_listeners>`, :ref:`clusters
  * <config_cluster_manager>`, :ref:`routes
- * <envoy_api_msg_config.route.v3.RouteConfiguration>`, :ref:`endpoints
+ * <envoy_v3_api_msg_config.route.v3.RouteConfiguration>`, :ref:`endpoints
  * <arch_overview_service_discovery>` etc. may either be sourced from the
  * filesystem or from an xDS API source. Filesystem configs are watched with
  * inotify for updates.
@@ -19,7 +19,7 @@ import type { Authority as _xds_core_v3_Authority, Authority__Output as _xds_cor
 export interface ConfigSource {
   /**
    * Path on the filesystem to source and watch for configuration updates.
-   * When sourcing configuration for :ref:`secret <envoy_api_msg_extensions.transport_sockets.tls.v3.Secret>`,
+   * When sourcing configuration for :ref:`secret <envoy_v3_api_msg_extensions.transport_sockets.tls.v3.Secret>`,
    * the certificate and key files are also watched for updates.
    * 
    * .. note::
@@ -56,7 +56,7 @@ export interface ConfigSource {
    * [#not-implemented-hide:]
    * When set, the client will access the resources from the same server it got the
    * ConfigSource from, although not necessarily from the same stream. This is similar to the
-   * :ref:`ads<envoy_api_field.ConfigSource.ads>` field, except that the client may use a
+   * :ref:`ads<envoy_v3_api_field.ConfigSource.ads>` field, except that the client may use a
    * different stream to the same server. As a result, this field can be used for things
    * like LRS that cannot be sent on an ADS stream. It can also be used to link from (e.g.)
    * LDS to RDS on the same server without requiring the management server to know its name
@@ -85,7 +85,7 @@ export interface ConfigSource {
 /**
  * Configuration for :ref:`listeners <config_listeners>`, :ref:`clusters
  * <config_cluster_manager>`, :ref:`routes
- * <envoy_api_msg_config.route.v3.RouteConfiguration>`, :ref:`endpoints
+ * <envoy_v3_api_msg_config.route.v3.RouteConfiguration>`, :ref:`endpoints
  * <arch_overview_service_discovery>` etc. may either be sourced from the
  * filesystem or from an xDS API source. Filesystem configs are watched with
  * inotify for updates.
@@ -94,7 +94,7 @@ export interface ConfigSource {
 export interface ConfigSource__Output {
   /**
    * Path on the filesystem to source and watch for configuration updates.
-   * When sourcing configuration for :ref:`secret <envoy_api_msg_extensions.transport_sockets.tls.v3.Secret>`,
+   * When sourcing configuration for :ref:`secret <envoy_v3_api_msg_extensions.transport_sockets.tls.v3.Secret>`,
    * the certificate and key files are also watched for updates.
    * 
    * .. note::
@@ -131,7 +131,7 @@ export interface ConfigSource__Output {
    * [#not-implemented-hide:]
    * When set, the client will access the resources from the same server it got the
    * ConfigSource from, although not necessarily from the same stream. This is similar to the
-   * :ref:`ads<envoy_api_field.ConfigSource.ads>` field, except that the client may use a
+   * :ref:`ads<envoy_v3_api_field.ConfigSource.ads>` field, except that the client may use a
    * different stream to the same server. As a result, this field can be used for things
    * like LRS that cannot be sent on an ADS stream. It can also be used to link from (e.g.)
    * LDS to RDS on the same server without requiring the management server to know its name

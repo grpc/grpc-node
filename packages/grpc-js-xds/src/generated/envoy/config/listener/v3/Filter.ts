@@ -15,6 +15,7 @@ export interface Filter {
   /**
    * Filter specific configuration which depends on the filter being
    * instantiated. See the supported filters for further documentation.
+   * [#extension-category: envoy.filters.network]
    */
   'typed_config'?: (_google_protobuf_Any | null);
   /**
@@ -39,6 +40,7 @@ export interface Filter__Output {
   /**
    * Filter specific configuration which depends on the filter being
    * instantiated. See the supported filters for further documentation.
+   * [#extension-category: envoy.filters.network]
    */
   'typed_config'?: (_google_protobuf_Any__Output | null);
   /**

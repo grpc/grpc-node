@@ -81,10 +81,11 @@ export interface FilterChain {
   'metadata'?: (_envoy_config_core_v3_Metadata | null);
   /**
    * Optional custom transport socket implementation to use for downstream connections.
-   * To setup TLS, set a transport socket with name `tls` and
-   * :ref:`DownstreamTlsContext <envoy_api_msg_extensions.transport_sockets.tls.v3.DownstreamTlsContext>` in the `typed_config`.
+   * To setup TLS, set a transport socket with name `envoy.transport_sockets.tls` and
+   * :ref:`DownstreamTlsContext <envoy_v3_api_msg_extensions.transport_sockets.tls.v3.DownstreamTlsContext>` in the `typed_config`.
    * If no transport socket configuration is specified, new connections
    * will be set up with plaintext.
+   * [#extension-category: envoy.transport_sockets.downstream]
    */
   'transport_socket'?: (_envoy_config_core_v3_TransportSocket | null);
   /**
@@ -143,10 +144,11 @@ export interface FilterChain__Output {
   'metadata': (_envoy_config_core_v3_Metadata__Output | null);
   /**
    * Optional custom transport socket implementation to use for downstream connections.
-   * To setup TLS, set a transport socket with name `tls` and
-   * :ref:`DownstreamTlsContext <envoy_api_msg_extensions.transport_sockets.tls.v3.DownstreamTlsContext>` in the `typed_config`.
+   * To setup TLS, set a transport socket with name `envoy.transport_sockets.tls` and
+   * :ref:`DownstreamTlsContext <envoy_v3_api_msg_extensions.transport_sockets.tls.v3.DownstreamTlsContext>` in the `typed_config`.
    * If no transport socket configuration is specified, new connections
    * will be set up with plaintext.
+   * [#extension-category: envoy.transport_sockets.downstream]
    */
   'transport_socket': (_envoy_config_core_v3_TransportSocket__Output | null);
   /**

@@ -8,7 +8,7 @@ import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output a
  */
 export interface RetryPolicy {
   /**
-   * Specifies parameters that control :ref:`retry backoff strategy <envoy_api_msg_config.core.v3.BackoffStrategy>`.
+   * Specifies parameters that control :ref:`retry backoff strategy <envoy_v3_api_msg_config.core.v3.BackoffStrategy>`.
    * This parameter is optional, in which case the default base interval is 1000 milliseconds. The
    * default maximum interval is 10 times the base interval.
    */
@@ -25,7 +25,7 @@ export interface RetryPolicy {
  */
 export interface RetryPolicy__Output {
   /**
-   * Specifies parameters that control :ref:`retry backoff strategy <envoy_api_msg_config.core.v3.BackoffStrategy>`.
+   * Specifies parameters that control :ref:`retry backoff strategy <envoy_v3_api_msg_config.core.v3.BackoffStrategy>`.
    * This parameter is optional, in which case the default base interval is 1000 milliseconds. The
    * default maximum interval is 10 times the base interval.
    */

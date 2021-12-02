@@ -7,7 +7,7 @@ import type { Long } from '@grpc/proto-loader';
 
 /**
  * These are stats Envoy reports to the management server at a frequency defined by
- * :ref:`LoadStatsResponse.load_reporting_interval<envoy_api_field_service.load_stats.v3.LoadStatsResponse.load_reporting_interval>`.
+ * :ref:`LoadStatsResponse.load_reporting_interval<envoy_v3_api_field_service.load_stats.v3.LoadStatsResponse.load_reporting_interval>`.
  * Stats per upstream region/zone and optionally per subzone.
  * [#next-free-field: 9]
  */
@@ -43,7 +43,7 @@ export interface UpstreamLocalityStats {
   /**
    * Endpoint granularity stats information for this locality. This information
    * is populated if the Server requests it by setting
-   * :ref:`LoadStatsResponse.report_endpoint_granularity<envoy_api_field_service.load_stats.v3.LoadStatsResponse.report_endpoint_granularity>`.
+   * :ref:`LoadStatsResponse.report_endpoint_granularity<envoy_v3_api_field_service.load_stats.v3.LoadStatsResponse.report_endpoint_granularity>`.
    */
   'upstream_endpoint_stats'?: (_envoy_config_endpoint_v3_UpstreamEndpointStats)[];
   /**
@@ -56,7 +56,7 @@ export interface UpstreamLocalityStats {
 
 /**
  * These are stats Envoy reports to the management server at a frequency defined by
- * :ref:`LoadStatsResponse.load_reporting_interval<envoy_api_field_service.load_stats.v3.LoadStatsResponse.load_reporting_interval>`.
+ * :ref:`LoadStatsResponse.load_reporting_interval<envoy_v3_api_field_service.load_stats.v3.LoadStatsResponse.load_reporting_interval>`.
  * Stats per upstream region/zone and optionally per subzone.
  * [#next-free-field: 9]
  */
@@ -92,7 +92,7 @@ export interface UpstreamLocalityStats__Output {
   /**
    * Endpoint granularity stats information for this locality. This information
    * is populated if the Server requests it by setting
-   * :ref:`LoadStatsResponse.report_endpoint_granularity<envoy_api_field_service.load_stats.v3.LoadStatsResponse.report_endpoint_granularity>`.
+   * :ref:`LoadStatsResponse.report_endpoint_granularity<envoy_v3_api_field_service.load_stats.v3.LoadStatsResponse.report_endpoint_granularity>`.
    */
   'upstream_endpoint_stats': (_envoy_config_endpoint_v3_UpstreamEndpointStats__Output)[];
   /**

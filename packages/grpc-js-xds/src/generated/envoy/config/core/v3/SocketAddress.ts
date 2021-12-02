@@ -18,19 +18,19 @@ export interface SocketAddress {
    * to the address. An empty address is not allowed. Specify ``0.0.0.0`` or ``::``
    * to bind to any address. [#comment:TODO(zuercher) reinstate when implemented:
    * It is possible to distinguish a Listener address via the prefix/suffix matching
-   * in :ref:`FilterChainMatch <envoy_api_msg_config.listener.v3.FilterChainMatch>`.] When used
-   * within an upstream :ref:`BindConfig <envoy_api_msg_config.core.v3.BindConfig>`, the address
+   * in :ref:`FilterChainMatch <envoy_v3_api_msg_config.listener.v3.FilterChainMatch>`.] When used
+   * within an upstream :ref:`BindConfig <envoy_v3_api_msg_config.core.v3.BindConfig>`, the address
    * controls the source address of outbound connections. For :ref:`clusters
-   * <envoy_api_msg_config.cluster.v3.Cluster>`, the cluster type determines whether the
+   * <envoy_v3_api_msg_config.cluster.v3.Cluster>`, the cluster type determines whether the
    * address must be an IP (*STATIC* or *EDS* clusters) or a hostname resolved by DNS
    * (*STRICT_DNS* or *LOGICAL_DNS* clusters). Address resolution can be customized
-   * via :ref:`resolver_name <envoy_api_field_config.core.v3.SocketAddress.resolver_name>`.
+   * via :ref:`resolver_name <envoy_v3_api_field_config.core.v3.SocketAddress.resolver_name>`.
    */
   'address'?: (string);
   'port_value'?: (number);
   /**
    * This is only valid if :ref:`resolver_name
-   * <envoy_api_field_config.core.v3.SocketAddress.resolver_name>` is specified below and the
+   * <envoy_v3_api_field_config.core.v3.SocketAddress.resolver_name>` is specified below and the
    * named resolver is capable of named port resolution.
    */
   'named_port'?: (string);
@@ -62,19 +62,19 @@ export interface SocketAddress__Output {
    * to the address. An empty address is not allowed. Specify ``0.0.0.0`` or ``::``
    * to bind to any address. [#comment:TODO(zuercher) reinstate when implemented:
    * It is possible to distinguish a Listener address via the prefix/suffix matching
-   * in :ref:`FilterChainMatch <envoy_api_msg_config.listener.v3.FilterChainMatch>`.] When used
-   * within an upstream :ref:`BindConfig <envoy_api_msg_config.core.v3.BindConfig>`, the address
+   * in :ref:`FilterChainMatch <envoy_v3_api_msg_config.listener.v3.FilterChainMatch>`.] When used
+   * within an upstream :ref:`BindConfig <envoy_v3_api_msg_config.core.v3.BindConfig>`, the address
    * controls the source address of outbound connections. For :ref:`clusters
-   * <envoy_api_msg_config.cluster.v3.Cluster>`, the cluster type determines whether the
+   * <envoy_v3_api_msg_config.cluster.v3.Cluster>`, the cluster type determines whether the
    * address must be an IP (*STATIC* or *EDS* clusters) or a hostname resolved by DNS
    * (*STRICT_DNS* or *LOGICAL_DNS* clusters). Address resolution can be customized
-   * via :ref:`resolver_name <envoy_api_field_config.core.v3.SocketAddress.resolver_name>`.
+   * via :ref:`resolver_name <envoy_v3_api_field_config.core.v3.SocketAddress.resolver_name>`.
    */
   'address': (string);
   'port_value'?: (number);
   /**
    * This is only valid if :ref:`resolver_name
-   * <envoy_api_field_config.core.v3.SocketAddress.resolver_name>` is specified below and the
+   * <envoy_v3_api_field_config.core.v3.SocketAddress.resolver_name>` is specified below and the
    * named resolver is capable of named port resolution.
    */
   'named_port'?: (string);

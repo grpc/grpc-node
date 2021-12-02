@@ -148,8 +148,8 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials
 export interface _envoy_config_core_v3_GrpcService_EnvoyGrpc {
   /**
    * The name of the upstream gRPC cluster. SSL credentials will be supplied
-   * in the :ref:`Cluster <envoy_api_msg_config.cluster.v3.Cluster>` :ref:`transport_socket
-   * <envoy_api_field_config.cluster.v3.Cluster.transport_socket>`.
+   * in the :ref:`Cluster <envoy_v3_api_msg_config.cluster.v3.Cluster>` :ref:`transport_socket
+   * <envoy_v3_api_field_config.cluster.v3.Cluster.transport_socket>`.
    */
   'cluster_name'?: (string);
   /**
@@ -162,8 +162,8 @@ export interface _envoy_config_core_v3_GrpcService_EnvoyGrpc {
 export interface _envoy_config_core_v3_GrpcService_EnvoyGrpc__Output {
   /**
    * The name of the upstream gRPC cluster. SSL credentials will be supplied
-   * in the :ref:`Cluster <envoy_api_msg_config.cluster.v3.Cluster>` :ref:`transport_socket
-   * <envoy_api_field_config.cluster.v3.Cluster.transport_socket>`.
+   * in the :ref:`Cluster <envoy_v3_api_msg_config.cluster.v3.Cluster>` :ref:`transport_socket
+   * <envoy_v3_api_field_config.cluster.v3.Cluster.transport_socket>`.
    */
   'cluster_name': (string);
   /**
@@ -180,7 +180,7 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc {
   /**
    * The target URI when using the `Google C++ gRPC client
    * <https://github.com/grpc/grpc>`_. SSL credentials will be supplied in
-   * :ref:`channel_credentials <envoy_api_field_config.core.v3.GrpcService.GoogleGrpc.channel_credentials>`.
+   * :ref:`channel_credentials <envoy_v3_api_field_config.core.v3.GrpcService.GoogleGrpc.channel_credentials>`.
    */
   'target_uri'?: (string);
   'channel_credentials'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials | null);
@@ -230,7 +230,7 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc__Output {
   /**
    * The target URI when using the `Google C++ gRPC client
    * <https://github.com/grpc/grpc>`_. SSL credentials will be supplied in
-   * :ref:`channel_credentials <envoy_api_field_config.core.v3.GrpcService.GoogleGrpc.channel_credentials>`.
+   * :ref:`channel_credentials <envoy_v3_api_field_config.core.v3.GrpcService.GoogleGrpc.channel_credentials>`.
    */
   'target_uri': (string);
   'channel_credentials': (_envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials__Output | null);
@@ -300,12 +300,18 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_GoogleLocalCredent
 export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin {
   'name'?: (string);
   'typed_config'?: (_google_protobuf_Any | null);
+  /**
+   * [#extension-category: envoy.grpc_credentials]
+   */
   'config_type'?: "typed_config";
 }
 
 export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin__Output {
   'name': (string);
   'typed_config'?: (_google_protobuf_Any__Output | null);
+  /**
+   * [#extension-category: envoy.grpc_credentials]
+   */
   'config_type': "typed_config";
 }
 
@@ -485,7 +491,7 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_
 
 /**
  * gRPC service configuration. This is used by :ref:`ApiConfigSource
- * <envoy_api_msg_config.core.v3.ApiConfigSource>` and filter configurations.
+ * <envoy_v3_api_msg_config.core.v3.ApiConfigSource>` and filter configurations.
  * [#next-free-field: 6]
  */
 export interface GrpcService {
@@ -519,7 +525,7 @@ export interface GrpcService {
 
 /**
  * gRPC service configuration. This is used by :ref:`ApiConfigSource
- * <envoy_api_msg_config.core.v3.ApiConfigSource>` and filter configurations.
+ * <envoy_v3_api_msg_config.core.v3.ApiConfigSource>` and filter configurations.
  * [#next-free-field: 6]
  */
 export interface GrpcService__Output {

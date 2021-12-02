@@ -21,7 +21,7 @@ export interface LbEndpoint {
    * name should be specified as *envoy.lb*. An example boolean key-value pair
    * is *canary*, providing the optional canary status of the upstream host.
    * This may be matched against in a route's
-   * :ref:`RouteAction <envoy_api_msg_config.route.v3.RouteAction>` metadata_match field
+   * :ref:`RouteAction <envoy_v3_api_msg_config.route.v3.RouteAction>` metadata_match field
    * to subset the endpoints considered in cluster load balancing.
    */
   'metadata'?: (_envoy_config_core_v3_Metadata | null);
@@ -63,7 +63,7 @@ export interface LbEndpoint__Output {
    * name should be specified as *envoy.lb*. An example boolean key-value pair
    * is *canary*, providing the optional canary status of the upstream host.
    * This may be matched against in a route's
-   * :ref:`RouteAction <envoy_api_msg_config.route.v3.RouteAction>` metadata_match field
+   * :ref:`RouteAction <envoy_v3_api_msg_config.route.v3.RouteAction>` metadata_match field
    * to subset the endpoints considered in cluster load balancing.
    */
   'metadata': (_envoy_config_core_v3_Metadata__Output | null);

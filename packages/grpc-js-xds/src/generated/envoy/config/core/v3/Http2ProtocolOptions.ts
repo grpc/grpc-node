@@ -53,6 +53,10 @@ export interface Http2ProtocolOptions {
    * For upstream connections, this also limits how many streams Envoy will initiate concurrently
    * on a single connection. If the limit is reached, Envoy may queue requests or establish
    * additional connections (as allowed per circuit breaker limits).
+   * 
+   * This acts as an upper bound: Envoy will lower the max concurrent streams allowed on a given
+   * connection based on upstream settings. Config dumps will reflect the configured upper bound,
+   * not the per-connection negotiated limits.
    */
   'max_concurrent_streams'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -233,6 +237,10 @@ export interface Http2ProtocolOptions__Output {
    * For upstream connections, this also limits how many streams Envoy will initiate concurrently
    * on a single connection. If the limit is reached, Envoy may queue requests or establish
    * additional connections (as allowed per circuit breaker limits).
+   * 
+   * This acts as an upper bound: Envoy will lower the max concurrent streams allowed on a given
+   * connection based on upstream settings. Config dumps will reflect the configured upper bound,
+   * not the per-connection negotiated limits.
    */
   'max_concurrent_streams': (_google_protobuf_UInt32Value__Output | null);
   /**

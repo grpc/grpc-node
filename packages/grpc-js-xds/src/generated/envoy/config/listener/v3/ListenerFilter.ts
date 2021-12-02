@@ -9,17 +9,18 @@ export interface ListenerFilter {
    * :ref:`supported filter <config_listener_filters>`.
    */
   'name'?: (string);
+  /**
+   * Filter specific configuration which depends on the filter being
+   * instantiated. See the supported filters for further documentation.
+   * [#extension-category: envoy.filters.listener,envoy.filters.udp_listener]
+   */
   'typed_config'?: (_google_protobuf_Any | null);
   /**
    * Optional match predicate used to disable the filter. The filter is enabled when this field is empty.
-   * See :ref:`ListenerFilterChainMatchPredicate <envoy_api_msg_config.listener.v3.ListenerFilterChainMatchPredicate>`
+   * See :ref:`ListenerFilterChainMatchPredicate <envoy_v3_api_msg_config.listener.v3.ListenerFilterChainMatchPredicate>`
    * for further examples.
    */
   'filter_disabled'?: (_envoy_config_listener_v3_ListenerFilterChainMatchPredicate | null);
-  /**
-   * Filter specific configuration which depends on the filter being instantiated.
-   * See the supported filters for further documentation.
-   */
   'config_type'?: "typed_config";
 }
 
@@ -29,16 +30,17 @@ export interface ListenerFilter__Output {
    * :ref:`supported filter <config_listener_filters>`.
    */
   'name': (string);
+  /**
+   * Filter specific configuration which depends on the filter being
+   * instantiated. See the supported filters for further documentation.
+   * [#extension-category: envoy.filters.listener,envoy.filters.udp_listener]
+   */
   'typed_config'?: (_google_protobuf_Any__Output | null);
   /**
    * Optional match predicate used to disable the filter. The filter is enabled when this field is empty.
-   * See :ref:`ListenerFilterChainMatchPredicate <envoy_api_msg_config.listener.v3.ListenerFilterChainMatchPredicate>`
+   * See :ref:`ListenerFilterChainMatchPredicate <envoy_v3_api_msg_config.listener.v3.ListenerFilterChainMatchPredicate>`
    * for further examples.
    */
   'filter_disabled': (_envoy_config_listener_v3_ListenerFilterChainMatchPredicate__Output | null);
-  /**
-   * Filter specific configuration which depends on the filter being instantiated.
-   * See the supported filters for further documentation.
-   */
   'config_type': "typed_config";
 }

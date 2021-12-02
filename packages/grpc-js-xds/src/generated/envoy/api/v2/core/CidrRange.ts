@@ -12,7 +12,7 @@ export interface CidrRange {
    */
   'address_prefix'?: (string);
   /**
-   * Length of prefix, e.g. 0, 32.
+   * Length of prefix, e.g. 0, 32. Defaults to 0 when unset.
    */
   'prefix_len'?: (_google_protobuf_UInt32Value | null);
 }
@@ -27,7 +27,7 @@ export interface CidrRange__Output {
    */
   'address_prefix': (string);
   /**
-   * Length of prefix, e.g. 0, 32.
+   * Length of prefix, e.g. 0, 32. Defaults to 0 when unset.
    */
   'prefix_len': (_google_protobuf_UInt32Value__Output | null);
 }

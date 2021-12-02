@@ -71,7 +71,7 @@ export interface RedirectAction {
    * .. attention::
    * 
    * Pay attention to the use of trailing slashes as mentioned in
-   * :ref:`RouteAction's prefix_rewrite <envoy_api_field_config.route.v3.RouteAction.prefix_rewrite>`.
+   * :ref:`RouteAction's prefix_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.prefix_rewrite>`.
    */
   'prefix_rewrite'?: (string);
   /**
@@ -168,7 +168,7 @@ export interface RedirectAction__Output {
    * .. attention::
    * 
    * Pay attention to the use of trailing slashes as mentioned in
-   * :ref:`RouteAction's prefix_rewrite <envoy_api_field_config.route.v3.RouteAction.prefix_rewrite>`.
+   * :ref:`RouteAction's prefix_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.prefix_rewrite>`.
    */
   'prefix_rewrite'?: (string);
   /**

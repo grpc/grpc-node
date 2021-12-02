@@ -44,6 +44,10 @@ export interface MetadataMatcher {
    * The MetadataMatcher is matched if the value retrieved by path is matched to this value.
    */
   'value'?: (_envoy_type_matcher_v3_ValueMatcher | null);
+  /**
+   * If true, the match result will be inverted.
+   */
+  'invert'?: (boolean);
 }
 
 /**
@@ -62,4 +66,8 @@ export interface MetadataMatcher__Output {
    * The MetadataMatcher is matched if the value retrieved by path is matched to this value.
    */
   'value': (_envoy_type_matcher_v3_ValueMatcher__Output | null);
+  /**
+   * If true, the match result will be inverted.
+   */
+  'invert': (boolean);
 }

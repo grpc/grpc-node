@@ -9,7 +9,7 @@ import type { FractionalPercent as _envoy_type_v3_FractionalPercent, FractionalP
  * .. note::
  * 
  * Parsing of the runtime key's data is implemented such that it may be represented as a
- * :ref:`FractionalPercent <envoy_api_msg_type.v3.FractionalPercent>` proto represented as JSON/YAML
+ * :ref:`FractionalPercent <envoy_v3_api_msg_type.v3.FractionalPercent>` proto represented as JSON/YAML
  * and may also be represented as an integer with the assumption that the value is an integral
  * percentage out of 100. For instance, a runtime key lookup returning the value "42" would parse
  * as a `FractionalPercent` whose numerator is 42 and denominator is HUNDRED.
@@ -32,7 +32,7 @@ export interface RuntimeFractionalPercent {
  * .. note::
  * 
  * Parsing of the runtime key's data is implemented such that it may be represented as a
- * :ref:`FractionalPercent <envoy_api_msg_type.v3.FractionalPercent>` proto represented as JSON/YAML
+ * :ref:`FractionalPercent <envoy_v3_api_msg_type.v3.FractionalPercent>` proto represented as JSON/YAML
  * and may also be represented as an integer with the assumption that the value is an integral
  * percentage out of 100. For instance, a runtime key lookup returning the value "42" would parse
  * as a `FractionalPercent` whose numerator is 42 and denominator is HUNDRED.

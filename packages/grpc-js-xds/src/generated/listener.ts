@@ -34,6 +34,7 @@ export interface ProtoGrpcType {
         v3: {
           Address: MessageTypeDefinition
           AggregatedConfigSource: MessageTypeDefinition
+          AlternateProtocolsCacheOptions: MessageTypeDefinition
           ApiConfigSource: MessageTypeDefinition
           ApiVersion: EnumTypeDefinition
           AsyncDataSource: MessageTypeDefinition
@@ -47,16 +48,24 @@ export interface ProtoGrpcType {
           EnvoyInternalAddress: MessageTypeDefinition
           Extension: MessageTypeDefinition
           ExtensionConfigSource: MessageTypeDefinition
+          GrpcProtocolOptions: MessageTypeDefinition
           GrpcService: MessageTypeDefinition
           HeaderMap: MessageTypeDefinition
           HeaderValue: MessageTypeDefinition
           HeaderValueOption: MessageTypeDefinition
+          Http1ProtocolOptions: MessageTypeDefinition
+          Http2ProtocolOptions: MessageTypeDefinition
+          Http3ProtocolOptions: MessageTypeDefinition
+          HttpProtocolOptions: MessageTypeDefinition
           HttpUri: MessageTypeDefinition
+          KeepaliveSettings: MessageTypeDefinition
           Locality: MessageTypeDefinition
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition
           Pipe: MessageTypeDefinition
           ProxyProtocolConfig: MessageTypeDefinition
+          QueryParameter: MessageTypeDefinition
+          QuicProtocolOptions: MessageTypeDefinition
           RateLimitSettings: MessageTypeDefinition
           RemoteDataSource: MessageTypeDefinition
           RequestMethod: EnumTypeDefinition
@@ -67,13 +76,17 @@ export interface ProtoGrpcType {
           RuntimeFractionalPercent: MessageTypeDefinition
           RuntimePercent: MessageTypeDefinition
           RuntimeUInt32: MessageTypeDefinition
+          SchemeHeaderTransformation: MessageTypeDefinition
           SelfConfigSource: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
           SocketOption: MessageTypeDefinition
           TcpKeepalive: MessageTypeDefinition
+          TcpProtocolOptions: MessageTypeDefinition
           TrafficDirection: EnumTypeDefinition
           TransportSocket: MessageTypeDefinition
           TypedExtensionConfig: MessageTypeDefinition
+          UdpSocketConfig: MessageTypeDefinition
+          UpstreamHttpProtocolOptions: MessageTypeDefinition
           WatchedDirectory: MessageTypeDefinition
         }
       }
@@ -88,6 +101,7 @@ export interface ProtoGrpcType {
           ListenerCollection: MessageTypeDefinition
           ListenerFilter: MessageTypeDefinition
           ListenerFilterChainMatchPredicate: MessageTypeDefinition
+          QuicProtocolOptions: MessageTypeDefinition
           UdpListenerConfig: MessageTypeDefinition
         }
       }
@@ -101,6 +115,7 @@ export interface ProtoGrpcType {
           HeaderMatcher: MessageTypeDefinition
           HedgePolicy: MessageTypeDefinition
           InternalRedirectPolicy: MessageTypeDefinition
+          NonForwardingAction: MessageTypeDefinition
           QueryParameterMatcher: MessageTypeDefinition
           RateLimit: MessageTypeDefinition
           RedirectAction: MessageTypeDefinition

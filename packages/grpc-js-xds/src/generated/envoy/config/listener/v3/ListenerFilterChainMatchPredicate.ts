@@ -45,7 +45,7 @@ export interface _envoy_config_listener_v3_ListenerFilterChainMatchPredicate_Mat
  * rules:
  * - destination_port_range:
  * start: 3306
- * end: 3306
+ * end: 3307
  * - destination_port_range:
  * start: 15000
  * end: 15001
@@ -101,7 +101,7 @@ export interface ListenerFilterChainMatchPredicate {
  * rules:
  * - destination_port_range:
  * start: 3306
- * end: 3306
+ * end: 3307
  * - destination_port_range:
  * start: 15000
  * end: 15001

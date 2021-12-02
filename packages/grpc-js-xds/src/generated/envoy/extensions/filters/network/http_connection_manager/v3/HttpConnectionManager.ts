@@ -13,9 +13,13 @@ import type { ScopedRoutes as _envoy_extensions_filters_network_http_connection_
 import type { HttpProtocolOptions as _envoy_config_core_v3_HttpProtocolOptions, HttpProtocolOptions__Output as _envoy_config_core_v3_HttpProtocolOptions__Output } from '../../../../../../envoy/config/core/v3/HttpProtocolOptions';
 import type { RequestIDExtension as _envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension, RequestIDExtension__Output as _envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension__Output } from '../../../../../../envoy/extensions/filters/network/http_connection_manager/v3/RequestIDExtension';
 import type { LocalReplyConfig as _envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig, LocalReplyConfig__Output as _envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig__Output } from '../../../../../../envoy/extensions/filters/network/http_connection_manager/v3/LocalReplyConfig';
+import type { Http3ProtocolOptions as _envoy_config_core_v3_Http3ProtocolOptions, Http3ProtocolOptions__Output as _envoy_config_core_v3_Http3ProtocolOptions__Output } from '../../../../../../envoy/config/core/v3/Http3ProtocolOptions';
+import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig, TypedExtensionConfig__Output as _envoy_config_core_v3_TypedExtensionConfig__Output } from '../../../../../../envoy/config/core/v3/TypedExtensionConfig';
+import type { SchemeHeaderTransformation as _envoy_config_core_v3_SchemeHeaderTransformation, SchemeHeaderTransformation__Output as _envoy_config_core_v3_SchemeHeaderTransformation__Output } from '../../../../../../envoy/config/core/v3/SchemeHeaderTransformation';
 import type { Percent as _envoy_type_v3_Percent, Percent__Output as _envoy_type_v3_Percent__Output } from '../../../../../../envoy/type/v3/Percent';
 import type { CustomTag as _envoy_type_tracing_v3_CustomTag, CustomTag__Output as _envoy_type_tracing_v3_CustomTag__Output } from '../../../../../../envoy/type/tracing/v3/CustomTag';
 import type { _envoy_config_trace_v3_Tracing_Http, _envoy_config_trace_v3_Tracing_Http__Output } from '../../../../../../envoy/config/trace/v3/Tracing';
+import type { PathTransformation as _envoy_type_http_v3_PathTransformation, PathTransformation__Output as _envoy_type_http_v3_PathTransformation__Output } from '../../../../../../envoy/type/http/v3/PathTransformation';
 
 // Original file: deps/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
 
@@ -104,6 +108,120 @@ export enum _envoy_extensions_filters_network_http_connection_manager_v3_HttpCon
    * The HTTP listener is used for egress/outgoing requests.
    */
   EGRESS = 1,
+}
+
+/**
+ * [#not-implemented-hide:] Transformations that apply to path headers. Transformations are applied
+ * before any processing of requests by HTTP filters, routing, and matching. Only the normalized
+ * path will be visible internally if a transformation is enabled. Any path rewrites that the
+ * router performs (e.g. :ref:`regex_rewrite
+ * <envoy_v3_api_field_config.route.v3.RouteAction.regex_rewrite>` or :ref:`prefix_rewrite
+ * <envoy_v3_api_field_config.route.v3.RouteAction.prefix_rewrite>`) will apply to the *:path* header
+ * destined for the upstream.
+ * 
+ * Note: access logging and tracing will show the original *:path* header.
+ */
+export interface _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions {
+  /**
+   * [#not-implemented-hide:] Normalization applies internally before any processing of requests by
+   * HTTP filters, routing, and matching *and* will affect the forwarded *:path* header. Defaults
+   * to :ref:`NormalizePathRFC3986
+   * <envoy_v3_api_msg_type.http.v3.PathTransformation.Operation.NormalizePathRFC3986>`. When not
+   * specified, this value may be overridden by the runtime variable
+   * :ref:`http_connection_manager.normalize_path<config_http_conn_man_runtime_normalize_path>`.
+   * Envoy will respond with 400 to paths that are malformed (e.g. for paths that fail RFC 3986
+   * normalization due to disallowed characters.)
+   */
+  'forwarding_transformation'?: (_envoy_type_http_v3_PathTransformation | null);
+  /**
+   * [#not-implemented-hide:] Normalization only applies internally before any processing of
+   * requests by HTTP filters, routing, and matching. These will be applied after full
+   * transformation is applied. The *:path* header before this transformation will be restored in
+   * the router filter and sent upstream unless it was mutated by a filter. Defaults to no
+   * transformations.
+   * Multiple actions can be applied in the same Transformation, forming a sequential
+   * pipeline. The transformations will be performed in the order that they appear. Envoy will
+   * respond with 400 to paths that are malformed (e.g. for paths that fail RFC 3986
+   * normalization due to disallowed characters.)
+   */
+  'http_filter_transformation'?: (_envoy_type_http_v3_PathTransformation | null);
+}
+
+/**
+ * [#not-implemented-hide:] Transformations that apply to path headers. Transformations are applied
+ * before any processing of requests by HTTP filters, routing, and matching. Only the normalized
+ * path will be visible internally if a transformation is enabled. Any path rewrites that the
+ * router performs (e.g. :ref:`regex_rewrite
+ * <envoy_v3_api_field_config.route.v3.RouteAction.regex_rewrite>` or :ref:`prefix_rewrite
+ * <envoy_v3_api_field_config.route.v3.RouteAction.prefix_rewrite>`) will apply to the *:path* header
+ * destined for the upstream.
+ * 
+ * Note: access logging and tracing will show the original *:path* header.
+ */
+export interface _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions__Output {
+  /**
+   * [#not-implemented-hide:] Normalization applies internally before any processing of requests by
+   * HTTP filters, routing, and matching *and* will affect the forwarded *:path* header. Defaults
+   * to :ref:`NormalizePathRFC3986
+   * <envoy_v3_api_msg_type.http.v3.PathTransformation.Operation.NormalizePathRFC3986>`. When not
+   * specified, this value may be overridden by the runtime variable
+   * :ref:`http_connection_manager.normalize_path<config_http_conn_man_runtime_normalize_path>`.
+   * Envoy will respond with 400 to paths that are malformed (e.g. for paths that fail RFC 3986
+   * normalization due to disallowed characters.)
+   */
+  'forwarding_transformation': (_envoy_type_http_v3_PathTransformation__Output | null);
+  /**
+   * [#not-implemented-hide:] Normalization only applies internally before any processing of
+   * requests by HTTP filters, routing, and matching. These will be applied after full
+   * transformation is applied. The *:path* header before this transformation will be restored in
+   * the router filter and sent upstream unless it was mutated by a filter. Defaults to no
+   * transformations.
+   * Multiple actions can be applied in the same Transformation, forming a sequential
+   * pipeline. The transformations will be performed in the order that they appear. Envoy will
+   * respond with 400 to paths that are malformed (e.g. for paths that fail RFC 3986
+   * normalization due to disallowed characters.)
+   */
+  'http_filter_transformation': (_envoy_type_http_v3_PathTransformation__Output | null);
+}
+
+// Original file: deps/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+
+/**
+ * Determines the action for request that contain %2F, %2f, %5C or %5c sequences in the URI path.
+ * This operation occurs before URL normalization and the merge slashes transformations if they were enabled.
+ */
+export enum _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathWithEscapedSlashesAction {
+  /**
+   * Default behavior specific to implementation (i.e. Envoy) of this configuration option.
+   * Envoy, by default, takes the KEEP_UNCHANGED action.
+   * NOTE: the implementation may change the default behavior at-will.
+   */
+  IMPLEMENTATION_SPECIFIC_DEFAULT = 0,
+  /**
+   * Keep escaped slashes.
+   */
+  KEEP_UNCHANGED = 1,
+  /**
+   * Reject client request with the 400 status. gRPC requests will be rejected with the INTERNAL (13) error code.
+   * The "httpN.downstream_rq_failed_path_normalization" counter is incremented for each rejected request.
+   */
+  REJECT_REQUEST = 2,
+  /**
+   * Unescape %2F and %5C sequences and redirect request to the new path if these sequences were present.
+   * Redirect occurs after path normalization and merge slashes transformations if they were configured.
+   * NOTE: gRPC requests will be rejected with the INTERNAL (13) error code.
+   * This option minimizes possibility of path confusion exploits by forcing request with unescaped slashes to
+   * traverse all parties: downstream client, intermediate proxies, Envoy and upstream server.
+   * The "httpN.downstream_rq_redirected_with_normalized_path" counter is incremented for each
+   * redirected request.
+   */
+  UNESCAPE_AND_REDIRECT = 3,
+  /**
+   * Unescape %2F and %5C sequences.
+   * Note: this option should not be enabled if intermediaries perform path based access control as
+   * it may lead to path confusion vulnerabilities.
+   */
+  UNESCAPE_AND_FORWARD = 4,
 }
 
 // Original file: deps/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
@@ -346,7 +464,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
   /**
    * Determines if upgrades are enabled or disabled by default. Defaults to true.
    * This can be overridden on a per-route basis with :ref:`cluster
-   * <envoy_api_field_config.route.v3.RouteAction.upgrade_configs>` as documented in the
+   * <envoy_v3_api_field_config.route.v3.RouteAction.upgrade_configs>` as documented in the
    * :ref:`upgrade documentation <arch_overview_upgrades>`.
    */
   'enabled'?: (_google_protobuf_BoolValue | null);
@@ -383,14 +501,14 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
   /**
    * Determines if upgrades are enabled or disabled by default. Defaults to true.
    * This can be overridden on a per-route basis with :ref:`cluster
-   * <envoy_api_field_config.route.v3.RouteAction.upgrade_configs>` as documented in the
+   * <envoy_v3_api_field_config.route.v3.RouteAction.upgrade_configs>` as documented in the
    * :ref:`upgrade documentation <arch_overview_upgrades>`.
    */
   'enabled': (_google_protobuf_BoolValue__Output | null);
 }
 
 /**
- * [#next-free-field: 43]
+ * [#next-free-field: 49]
  */
 export interface HttpConnectionManager {
   /**
@@ -426,7 +544,7 @@ export interface HttpConnectionManager {
   /**
    * Presence of the object defines whether the connection manager
    * emits :ref:`tracing <arch_overview_tracing>` data to the :ref:`configured tracing provider
-   * <envoy_api_msg_config.trace.v3.Tracing>`.
+   * <envoy_v3_api_msg_config.trace.v3.Tracing>`.
    */
   'tracing'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing | null);
   /**
@@ -483,7 +601,7 @@ export interface HttpConnectionManager {
   'forward_client_cert_details'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ForwardClientCertDetails | keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ForwardClientCertDetails);
   /**
    * This field is valid only when :ref:`forward_client_cert_details
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.forward_client_cert_details>`
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.forward_client_cert_details>`
    * is APPEND_FORWARD or SANITIZE_SET and the client connection is mTLS. It specifies the fields in
    * the client certificate to be forwarded. Note that in the
    * :ref:`config_http_conn_man_headers_x-forwarded-client-cert` header, *Hash* is always set, and
@@ -509,7 +627,7 @@ export interface HttpConnectionManager {
   /**
    * If
    * :ref:`use_remote_address
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.use_remote_address>`
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.use_remote_address>`
    * is true and represent_ipv4_remote_address_as_ipv4_mapped_ipv6 is true and the remote address is
    * an IPv4 address, the address will be mapped to IPv6 before it is appended to *x-forwarded-for*.
    * This is useful for testing compatibility of upstream services that parse the header value. For
@@ -527,7 +645,7 @@ export interface HttpConnectionManager {
    * :ref:`config_http_conn_man_headers_x-forwarded-for` HTTP header. This may be used in
    * conjunction with HTTP filters that explicitly manipulate XFF after the HTTP connection manager
    * has mutated the request headers. While :ref:`use_remote_address
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.use_remote_address>`
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.use_remote_address>`
    * will also suppress XFF addition, it has consequences for logging and other
    * Envoy uses of the remote address, so *skip_xff_append* should be used
    * when only an elision of XFF addition is intended.
@@ -548,10 +666,10 @@ export interface HttpConnectionManager {
    * 
    * This idle timeout applies to new streams and is overridable by the
    * :ref:`route-level idle_timeout
-   * <envoy_api_field_config.route.v3.RouteAction.idle_timeout>`. Even on a stream in
+   * <envoy_v3_api_field_config.route.v3.RouteAction.idle_timeout>`. Even on a stream in
    * which the override applies, prior to receipt of the initial request
    * headers, the :ref:`stream_idle_timeout
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.stream_idle_timeout>`
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.stream_idle_timeout>`
    * applies. Each time an encode/decode event for headers or data is processed
    * for the stream, the timer will be reset. If the timeout fires, the stream
    * is terminated with a 408 Request Timeout error code if no upstream response
@@ -564,12 +682,12 @@ export interface HttpConnectionManager {
    * data has been proxied within available flow control windows. If the timeout is hit in this
    * case, the :ref:`tx_flush_timeout <config_http_conn_man_stats_per_codec>` counter will be
    * incremented. Note that :ref:`max_stream_duration
-   * <envoy_api_field_config.core.v3.HttpProtocolOptions.max_stream_duration>` does not apply to
+   * <envoy_v3_api_field_config.core.v3.HttpProtocolOptions.max_stream_duration>` does not apply to
    * this corner case.
    * 
    * If the :ref:`overload action <config_overload_manager_overload_actions>` "envoy.overload_actions.reduce_timeouts"
    * is configured, this timeout is scaled according to the value for
-   * :ref:`HTTP_DOWNSTREAM_STREAM_IDLE <envoy_api_enum_value_config.overload.v3.ScaleTimersOverloadActionConfig.TimerType.HTTP_DOWNSTREAM_STREAM_IDLE>`.
+   * :ref:`HTTP_DOWNSTREAM_STREAM_IDLE <envoy_v3_api_enum_value_config.overload.v3.ScaleTimersOverloadActionConfig.TimerType.HTTP_DOWNSTREAM_STREAM_IDLE>`.
    * 
    * Note that it is possible to idle timeout even if the wire traffic for a stream is non-idle, due
    * to the granularity of events presented to the connection manager. For example, while receiving
@@ -632,8 +750,6 @@ export interface HttpConnectionManager {
    * The maximum request headers size for incoming connections.
    * If unconfigured, the default max request headers allowed is 60 KiB.
    * Requests that exceed this limit will receive a 431 response.
-   * The max configurable limit is 96 KiB, based on current implementation
-   * constraints.
    */
   'max_request_headers_kb'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -684,15 +800,21 @@ export interface HttpConnectionManager {
   'common_http_protocol_options'?: (_envoy_config_core_v3_HttpProtocolOptions | null);
   /**
    * The configuration of the request ID extension. This includes operations such as
-   * generation, validation, and associated tracing operations.
+   * generation, validation, and associated tracing operations. If empty, the
+   * :ref:`UuidRequestIdConfig <envoy_v3_api_msg_extensions.request_id.uuid.v3.UuidRequestIdConfig>`
+   * default extension is used with default parameters. See the documentation for that extension
+   * for details on what it does. Customizing the configuration for the default extension can be
+   * achieved by configuring it explicitly here. For example, to disable trace reason packing,
+   * the following configuration can be used:
    * 
-   * If not set, Envoy uses the default UUID-based behavior:
+   * .. validated-code-block:: yaml
+   * :type-name: envoy.extensions.filters.network.http_connection_manager.v3.RequestIDExtension
    * 
-   * 1. Request ID is propagated using *x-request-id* header.
+   * typed_config:
+   * "@type": type.googleapis.com/envoy.extensions.request_id.uuid.v3.UuidRequestIdConfig
+   * pack_trace_reason: false
    * 
-   * 2. Request ID is a universally unique identifier (UUID).
-   * 
-   * 3. Tracing decision (sampled, forced, etc) is set in 14th byte of the UUID.
+   * [#extension-category: envoy.request_id]
    */
   'request_id_extension'?: (_envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension | null);
   /**
@@ -709,10 +831,12 @@ export interface HttpConnectionManager {
   'local_reply_config'?: (_envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig | null);
   /**
    * Determines if the port part should be removed from host/authority header before any processing
-   * of request by HTTP filters or routing. The port would be removed only if it is equal to the :ref:`listener's<envoy_api_field_config.listener.v3.Listener.address>`
-   * local port and request method is not CONNECT. This affects the upstream host header as well.
+   * of request by HTTP filters or routing. The port would be removed only if it is equal to the :ref:`listener's<envoy_v3_api_field_config.listener.v3.Listener.address>`
+   * local port. This affects the upstream host header unless the method is
+   * CONNECT in which case if no filter adds a port the original port will be restored before headers are
+   * sent upstream.
    * Without setting this option, incoming requests with host `example:443` will not match against
-   * route with :ref:`domains<envoy_api_field_config.route.v3.VirtualHost.domains>` match set to `example`. Defaults to `false`. Note that port removal is not part
+   * route with :ref:`domains<envoy_v3_api_field_config.route.v3.VirtualHost.domains>` match set to `example`. Defaults to `false`. Note that port removal is not part
    * of `HTTP spec <https://tools.ietf.org/html/rfc3986>`_ and is provided for convenience.
    * Only one of `strip_matching_host_port` or `strip_any_host_port` can be set.
    */
@@ -744,20 +868,82 @@ export interface HttpConnectionManager {
   'request_headers_timeout'?: (_google_protobuf_Duration | null);
   /**
    * Determines if the port part should be removed from host/authority header before any processing
-   * of request by HTTP filters or routing. The port would be removed only if request method is not CONNECT.
-   * This affects the upstream host header as well.
+   * of request by HTTP filters or routing.
+   * This affects the upstream host header unless the method is CONNECT in
+   * which case if no filter adds a port the original port will be restored before headers are sent upstream.
    * Without setting this option, incoming requests with host `example:443` will not match against
-   * route with :ref:`domains<envoy_api_field_config.route.v3.VirtualHost.domains>` match set to `example`. Defaults to `false`. Note that port removal is not part
+   * route with :ref:`domains<envoy_v3_api_field_config.route.v3.VirtualHost.domains>` match set to `example`. Defaults to `false`. Note that port removal is not part
    * of `HTTP spec <https://tools.ietf.org/html/rfc3986>`_ and is provided for convenience.
    * Only one of `strip_matching_host_port` or `strip_any_host_port` can be set.
    */
   'strip_any_host_port'?: (boolean);
+  /**
+   * [#not-implemented-hide:] Path normalization configuration. This includes
+   * configurations for transformations (e.g. RFC 3986 normalization or merge
+   * adjacent slashes) and the policy to apply them. The policy determines
+   * whether transformations affect the forwarded *:path* header. RFC 3986 path
+   * normalization is enabled by default and the default policy is that the
+   * normalized header will be forwarded. See :ref:`PathNormalizationOptions
+   * <envoy_v3_api_msg_extensions.filters.network.http_connection_manager.v3.PathNormalizationOptions>`
+   * for details.
+   */
+  'path_normalization_options'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions | null);
+  /**
+   * Additional HTTP/3 settings that are passed directly to the HTTP/3 codec.
+   * [#not-implemented-hide:]
+   */
+  'http3_protocol_options'?: (_envoy_config_core_v3_Http3ProtocolOptions | null);
+  /**
+   * Action to take when request URL path contains escaped slash sequences (%2F, %2f, %5C and %5c).
+   * The default value can be overridden by the :ref:`http_connection_manager.path_with_escaped_slashes_action<config_http_conn_man_runtime_path_with_escaped_slashes_action>`
+   * runtime variable.
+   * The :ref:`http_connection_manager.path_with_escaped_slashes_action_sampling<config_http_conn_man_runtime_path_with_escaped_slashes_action_enabled>` runtime
+   * variable can be used to apply the action to a portion of all requests.
+   */
+  'path_with_escaped_slashes_action'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathWithEscapedSlashesAction | keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathWithEscapedSlashesAction);
+  /**
+   * The configuration for the original IP detection extensions.
+   * 
+   * When configured the extensions will be called along with the request headers
+   * and information about the downstream connection, such as the directly connected address.
+   * Each extension will then use these parameters to decide the request's effective remote address.
+   * If an extension fails to detect the original IP address and isn't configured to reject
+   * the request, the HCM will try the remaining extensions until one succeeds or rejects
+   * the request. If the request isn't rejected nor any extension succeeds, the HCM will
+   * fallback to using the remote address.
+   * 
+   * .. WARNING::
+   * Extensions cannot be used in conjunction with :ref:`use_remote_address
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.use_remote_address>`
+   * nor :ref:`xff_num_trusted_hops
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.xff_num_trusted_hops>`.
+   * 
+   * [#extension-category: envoy.http.original_ip_detection]
+   */
+  'original_ip_detection_extensions'?: (_envoy_config_core_v3_TypedExtensionConfig)[];
+  /**
+   * Determines if trailing dot of the host should be removed from host/authority header before any
+   * processing of request by HTTP filters or routing.
+   * This affects the upstream host header.
+   * Without setting this option, incoming requests with host `example.com.` will not match against
+   * route with :ref:`domains<envoy_v3_api_field_config.route.v3.VirtualHost.domains>` match set to `example.com`. Defaults to `false`.
+   * When the incoming request contains a host/authority header that includes a port number,
+   * setting this option will strip a trailing dot, if present, from the host section,
+   * leaving the port as is (e.g. host value `example.com.:443` will be updated to `example.com:443`).
+   */
+  'strip_trailing_host_dot'?: (boolean);
+  /**
+   * Allows for explicit transformation of the :scheme header on the request path.
+   * If not set, Envoy's default :ref:`scheme  <config_http_conn_man_headers_scheme>`
+   * handling applies.
+   */
+  'scheme_header_transformation'?: (_envoy_config_core_v3_SchemeHeaderTransformation | null);
   'route_specifier'?: "rds"|"route_config"|"scoped_routes";
   'strip_port_mode'?: "strip_any_host_port";
 }
 
 /**
- * [#next-free-field: 43]
+ * [#next-free-field: 49]
  */
 export interface HttpConnectionManager__Output {
   /**
@@ -793,7 +979,7 @@ export interface HttpConnectionManager__Output {
   /**
    * Presence of the object defines whether the connection manager
    * emits :ref:`tracing <arch_overview_tracing>` data to the :ref:`configured tracing provider
-   * <envoy_api_msg_config.trace.v3.Tracing>`.
+   * <envoy_v3_api_msg_config.trace.v3.Tracing>`.
    */
   'tracing': (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing__Output | null);
   /**
@@ -850,7 +1036,7 @@ export interface HttpConnectionManager__Output {
   'forward_client_cert_details': (keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ForwardClientCertDetails);
   /**
    * This field is valid only when :ref:`forward_client_cert_details
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.forward_client_cert_details>`
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.forward_client_cert_details>`
    * is APPEND_FORWARD or SANITIZE_SET and the client connection is mTLS. It specifies the fields in
    * the client certificate to be forwarded. Note that in the
    * :ref:`config_http_conn_man_headers_x-forwarded-client-cert` header, *Hash* is always set, and
@@ -876,7 +1062,7 @@ export interface HttpConnectionManager__Output {
   /**
    * If
    * :ref:`use_remote_address
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.use_remote_address>`
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.use_remote_address>`
    * is true and represent_ipv4_remote_address_as_ipv4_mapped_ipv6 is true and the remote address is
    * an IPv4 address, the address will be mapped to IPv6 before it is appended to *x-forwarded-for*.
    * This is useful for testing compatibility of upstream services that parse the header value. For
@@ -894,7 +1080,7 @@ export interface HttpConnectionManager__Output {
    * :ref:`config_http_conn_man_headers_x-forwarded-for` HTTP header. This may be used in
    * conjunction with HTTP filters that explicitly manipulate XFF after the HTTP connection manager
    * has mutated the request headers. While :ref:`use_remote_address
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.use_remote_address>`
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.use_remote_address>`
    * will also suppress XFF addition, it has consequences for logging and other
    * Envoy uses of the remote address, so *skip_xff_append* should be used
    * when only an elision of XFF addition is intended.
@@ -915,10 +1101,10 @@ export interface HttpConnectionManager__Output {
    * 
    * This idle timeout applies to new streams and is overridable by the
    * :ref:`route-level idle_timeout
-   * <envoy_api_field_config.route.v3.RouteAction.idle_timeout>`. Even on a stream in
+   * <envoy_v3_api_field_config.route.v3.RouteAction.idle_timeout>`. Even on a stream in
    * which the override applies, prior to receipt of the initial request
    * headers, the :ref:`stream_idle_timeout
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.stream_idle_timeout>`
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.stream_idle_timeout>`
    * applies. Each time an encode/decode event for headers or data is processed
    * for the stream, the timer will be reset. If the timeout fires, the stream
    * is terminated with a 408 Request Timeout error code if no upstream response
@@ -931,12 +1117,12 @@ export interface HttpConnectionManager__Output {
    * data has been proxied within available flow control windows. If the timeout is hit in this
    * case, the :ref:`tx_flush_timeout <config_http_conn_man_stats_per_codec>` counter will be
    * incremented. Note that :ref:`max_stream_duration
-   * <envoy_api_field_config.core.v3.HttpProtocolOptions.max_stream_duration>` does not apply to
+   * <envoy_v3_api_field_config.core.v3.HttpProtocolOptions.max_stream_duration>` does not apply to
    * this corner case.
    * 
    * If the :ref:`overload action <config_overload_manager_overload_actions>` "envoy.overload_actions.reduce_timeouts"
    * is configured, this timeout is scaled according to the value for
-   * :ref:`HTTP_DOWNSTREAM_STREAM_IDLE <envoy_api_enum_value_config.overload.v3.ScaleTimersOverloadActionConfig.TimerType.HTTP_DOWNSTREAM_STREAM_IDLE>`.
+   * :ref:`HTTP_DOWNSTREAM_STREAM_IDLE <envoy_v3_api_enum_value_config.overload.v3.ScaleTimersOverloadActionConfig.TimerType.HTTP_DOWNSTREAM_STREAM_IDLE>`.
    * 
    * Note that it is possible to idle timeout even if the wire traffic for a stream is non-idle, due
    * to the granularity of events presented to the connection manager. For example, while receiving
@@ -999,8 +1185,6 @@ export interface HttpConnectionManager__Output {
    * The maximum request headers size for incoming connections.
    * If unconfigured, the default max request headers allowed is 60 KiB.
    * Requests that exceed this limit will receive a 431 response.
-   * The max configurable limit is 96 KiB, based on current implementation
-   * constraints.
    */
   'max_request_headers_kb': (_google_protobuf_UInt32Value__Output | null);
   /**
@@ -1051,15 +1235,21 @@ export interface HttpConnectionManager__Output {
   'common_http_protocol_options': (_envoy_config_core_v3_HttpProtocolOptions__Output | null);
   /**
    * The configuration of the request ID extension. This includes operations such as
-   * generation, validation, and associated tracing operations.
+   * generation, validation, and associated tracing operations. If empty, the
+   * :ref:`UuidRequestIdConfig <envoy_v3_api_msg_extensions.request_id.uuid.v3.UuidRequestIdConfig>`
+   * default extension is used with default parameters. See the documentation for that extension
+   * for details on what it does. Customizing the configuration for the default extension can be
+   * achieved by configuring it explicitly here. For example, to disable trace reason packing,
+   * the following configuration can be used:
    * 
-   * If not set, Envoy uses the default UUID-based behavior:
+   * .. validated-code-block:: yaml
+   * :type-name: envoy.extensions.filters.network.http_connection_manager.v3.RequestIDExtension
    * 
-   * 1. Request ID is propagated using *x-request-id* header.
+   * typed_config:
+   * "@type": type.googleapis.com/envoy.extensions.request_id.uuid.v3.UuidRequestIdConfig
+   * pack_trace_reason: false
    * 
-   * 2. Request ID is a universally unique identifier (UUID).
-   * 
-   * 3. Tracing decision (sampled, forced, etc) is set in 14th byte of the UUID.
+   * [#extension-category: envoy.request_id]
    */
   'request_id_extension': (_envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension__Output | null);
   /**
@@ -1076,10 +1266,12 @@ export interface HttpConnectionManager__Output {
   'local_reply_config': (_envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig__Output | null);
   /**
    * Determines if the port part should be removed from host/authority header before any processing
-   * of request by HTTP filters or routing. The port would be removed only if it is equal to the :ref:`listener's<envoy_api_field_config.listener.v3.Listener.address>`
-   * local port and request method is not CONNECT. This affects the upstream host header as well.
+   * of request by HTTP filters or routing. The port would be removed only if it is equal to the :ref:`listener's<envoy_v3_api_field_config.listener.v3.Listener.address>`
+   * local port. This affects the upstream host header unless the method is
+   * CONNECT in which case if no filter adds a port the original port will be restored before headers are
+   * sent upstream.
    * Without setting this option, incoming requests with host `example:443` will not match against
-   * route with :ref:`domains<envoy_api_field_config.route.v3.VirtualHost.domains>` match set to `example`. Defaults to `false`. Note that port removal is not part
+   * route with :ref:`domains<envoy_v3_api_field_config.route.v3.VirtualHost.domains>` match set to `example`. Defaults to `false`. Note that port removal is not part
    * of `HTTP spec <https://tools.ietf.org/html/rfc3986>`_ and is provided for convenience.
    * Only one of `strip_matching_host_port` or `strip_any_host_port` can be set.
    */
@@ -1111,14 +1303,76 @@ export interface HttpConnectionManager__Output {
   'request_headers_timeout': (_google_protobuf_Duration__Output | null);
   /**
    * Determines if the port part should be removed from host/authority header before any processing
-   * of request by HTTP filters or routing. The port would be removed only if request method is not CONNECT.
-   * This affects the upstream host header as well.
+   * of request by HTTP filters or routing.
+   * This affects the upstream host header unless the method is CONNECT in
+   * which case if no filter adds a port the original port will be restored before headers are sent upstream.
    * Without setting this option, incoming requests with host `example:443` will not match against
-   * route with :ref:`domains<envoy_api_field_config.route.v3.VirtualHost.domains>` match set to `example`. Defaults to `false`. Note that port removal is not part
+   * route with :ref:`domains<envoy_v3_api_field_config.route.v3.VirtualHost.domains>` match set to `example`. Defaults to `false`. Note that port removal is not part
    * of `HTTP spec <https://tools.ietf.org/html/rfc3986>`_ and is provided for convenience.
    * Only one of `strip_matching_host_port` or `strip_any_host_port` can be set.
    */
   'strip_any_host_port'?: (boolean);
+  /**
+   * [#not-implemented-hide:] Path normalization configuration. This includes
+   * configurations for transformations (e.g. RFC 3986 normalization or merge
+   * adjacent slashes) and the policy to apply them. The policy determines
+   * whether transformations affect the forwarded *:path* header. RFC 3986 path
+   * normalization is enabled by default and the default policy is that the
+   * normalized header will be forwarded. See :ref:`PathNormalizationOptions
+   * <envoy_v3_api_msg_extensions.filters.network.http_connection_manager.v3.PathNormalizationOptions>`
+   * for details.
+   */
+  'path_normalization_options': (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions__Output | null);
+  /**
+   * Additional HTTP/3 settings that are passed directly to the HTTP/3 codec.
+   * [#not-implemented-hide:]
+   */
+  'http3_protocol_options': (_envoy_config_core_v3_Http3ProtocolOptions__Output | null);
+  /**
+   * Action to take when request URL path contains escaped slash sequences (%2F, %2f, %5C and %5c).
+   * The default value can be overridden by the :ref:`http_connection_manager.path_with_escaped_slashes_action<config_http_conn_man_runtime_path_with_escaped_slashes_action>`
+   * runtime variable.
+   * The :ref:`http_connection_manager.path_with_escaped_slashes_action_sampling<config_http_conn_man_runtime_path_with_escaped_slashes_action_enabled>` runtime
+   * variable can be used to apply the action to a portion of all requests.
+   */
+  'path_with_escaped_slashes_action': (keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathWithEscapedSlashesAction);
+  /**
+   * The configuration for the original IP detection extensions.
+   * 
+   * When configured the extensions will be called along with the request headers
+   * and information about the downstream connection, such as the directly connected address.
+   * Each extension will then use these parameters to decide the request's effective remote address.
+   * If an extension fails to detect the original IP address and isn't configured to reject
+   * the request, the HCM will try the remaining extensions until one succeeds or rejects
+   * the request. If the request isn't rejected nor any extension succeeds, the HCM will
+   * fallback to using the remote address.
+   * 
+   * .. WARNING::
+   * Extensions cannot be used in conjunction with :ref:`use_remote_address
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.use_remote_address>`
+   * nor :ref:`xff_num_trusted_hops
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.xff_num_trusted_hops>`.
+   * 
+   * [#extension-category: envoy.http.original_ip_detection]
+   */
+  'original_ip_detection_extensions': (_envoy_config_core_v3_TypedExtensionConfig__Output)[];
+  /**
+   * Determines if trailing dot of the host should be removed from host/authority header before any
+   * processing of request by HTTP filters or routing.
+   * This affects the upstream host header.
+   * Without setting this option, incoming requests with host `example.com.` will not match against
+   * route with :ref:`domains<envoy_v3_api_field_config.route.v3.VirtualHost.domains>` match set to `example.com`. Defaults to `false`.
+   * When the incoming request contains a host/authority header that includes a port number,
+   * setting this option will strip a trailing dot, if present, from the host section,
+   * leaving the port as is (e.g. host value `example.com.:443` will be updated to `example.com:443`).
+   */
+  'strip_trailing_host_dot': (boolean);
+  /**
+   * Allows for explicit transformation of the :scheme header on the request path.
+   * If not set, Envoy's default :ref:`scheme  <config_http_conn_man_headers_scheme>`
+   * handling applies.
+   */
+  'scheme_header_transformation': (_envoy_config_core_v3_SchemeHeaderTransformation__Output | null);
   'route_specifier': "rds"|"route_config"|"scoped_routes";
   'strip_port_mode': "strip_any_host_port";
 }

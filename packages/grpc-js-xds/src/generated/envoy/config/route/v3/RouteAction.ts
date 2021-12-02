@@ -306,9 +306,9 @@ export interface _envoy_config_route_v3_RouteAction_MaxStreamDuration {
   /**
    * Specifies the maximum duration allowed for streams on the route. If not specified, the value
    * from the :ref:`max_stream_duration
-   * <envoy_api_field_config.core.v3.HttpProtocolOptions.max_stream_duration>` field in
+   * <envoy_v3_api_field_config.core.v3.HttpProtocolOptions.max_stream_duration>` field in
    * :ref:`HttpConnectionManager.common_http_protocol_options
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.common_http_protocol_options>`
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.common_http_protocol_options>`
    * is used. If this field is set explicitly to zero, any
    * HttpConnectionManager max_stream_duration timeout will be disabled for
    * this route.
@@ -336,9 +336,9 @@ export interface _envoy_config_route_v3_RouteAction_MaxStreamDuration__Output {
   /**
    * Specifies the maximum duration allowed for streams on the route. If not specified, the value
    * from the :ref:`max_stream_duration
-   * <envoy_api_field_config.core.v3.HttpProtocolOptions.max_stream_duration>` field in
+   * <envoy_v3_api_field_config.core.v3.HttpProtocolOptions.max_stream_duration>` field in
    * :ref:`HttpConnectionManager.common_http_protocol_options
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.common_http_protocol_options>`
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.common_http_protocol_options>`
    * is used. If this field is set explicitly to zero, any
    * HttpConnectionManager max_stream_duration timeout will be disabled for
    * this route.
@@ -457,7 +457,7 @@ export interface _envoy_config_route_v3_RouteAction_RequestMirrorPolicy__Output 
  * This overrides any enabled/disabled upgrade filter chain specified in the
  * HttpConnectionManager
  * :ref:`upgrade_configs
- * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.upgrade_configs>`
+ * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.upgrade_configs>`
  * but does not affect any custom filter chain specified there.
  */
 export interface _envoy_config_route_v3_RouteAction_UpgradeConfig {
@@ -475,7 +475,7 @@ export interface _envoy_config_route_v3_RouteAction_UpgradeConfig {
    * Configuration for sending data upstream as a raw data payload. This is used for
    * CONNECT requests, when forwarding CONNECT payload as raw TCP.
    * Note that CONNECT support is currently considered alpha in Envoy.
-   * [#comment:TODO(htuch): Replace the above comment with an alpha tag.
+   * [#comment: TODO(htuch): Replace the above comment with an alpha tag.]
    */
   'connect_config'?: (_envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig | null);
 }
@@ -485,7 +485,7 @@ export interface _envoy_config_route_v3_RouteAction_UpgradeConfig {
  * This overrides any enabled/disabled upgrade filter chain specified in the
  * HttpConnectionManager
  * :ref:`upgrade_configs
- * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.upgrade_configs>`
+ * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.upgrade_configs>`
  * but does not affect any custom filter chain specified there.
  */
 export interface _envoy_config_route_v3_RouteAction_UpgradeConfig__Output {
@@ -503,13 +503,13 @@ export interface _envoy_config_route_v3_RouteAction_UpgradeConfig__Output {
    * Configuration for sending data upstream as a raw data payload. This is used for
    * CONNECT requests, when forwarding CONNECT payload as raw TCP.
    * Note that CONNECT support is currently considered alpha in Envoy.
-   * [#comment:TODO(htuch): Replace the above comment with an alpha tag.
+   * [#comment: TODO(htuch): Replace the above comment with an alpha tag.]
    */
   'connect_config': (_envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig__Output | null);
 }
 
 /**
- * [#next-free-field: 37]
+ * [#next-free-field: 38]
  */
 export interface RouteAction {
   /**
@@ -545,7 +545,7 @@ export interface RouteAction {
    * Optional endpoint metadata match criteria used by the subset load balancer. Only endpoints
    * in the upstream cluster with metadata matching what's set in this field will be considered
    * for load balancing. If using :ref:`weighted_clusters
-   * <envoy_api_field_config.route.v3.RouteAction.weighted_clusters>`, metadata will be merged, with values
+   * <envoy_v3_api_field_config.route.v3.RouteAction.weighted_clusters>`, metadata will be merged, with values
    * provided there taking precedence. The filter name should be specified as *envoy.lb*.
    */
   'metadata_match'?: (_envoy_config_core_v3_Metadata | null);
@@ -557,16 +557,16 @@ export interface RouteAction {
    * <config_http_filters_router_x-envoy-original-path>` header.
    * 
    * Only one of *prefix_rewrite* or
-   * :ref:`regex_rewrite <envoy_api_field_config.route.v3.RouteAction.regex_rewrite>`
+   * :ref:`regex_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.regex_rewrite>`
    * may be specified.
    * 
    * .. attention::
    * 
    * Pay careful attention to the use of trailing slashes in the
-   * :ref:`route's match <envoy_api_field_config.route.v3.Route.match>` prefix value.
+   * :ref:`route's match <envoy_v3_api_field_config.route.v3.Route.match>` prefix value.
    * Stripping a prefix from a path requires multiple Routes to handle all cases. For example,
    * rewriting * /prefix* to * /* and * /prefix/etc* to * /etc* cannot be done in a single
-   * :ref:`Route <envoy_api_msg_config.route.v3.Route>`, as shown by the below config entries:
+   * :ref:`Route <envoy_v3_api_msg_config.route.v3.Route>`, as shown by the below config entries:
    * 
    * .. code-block:: yaml
    * 
@@ -628,7 +628,7 @@ export interface RouteAction {
   /**
    * Specifies if the rate limit filter should include the virtual host rate
    * limits. By default, if the route configured rate limits, the virtual host
-   * :ref:`rate_limits <envoy_api_field_config.route.v3.VirtualHost.rate_limits>` are not applied to the
+   * :ref:`rate_limits <envoy_v3_api_field_config.route.v3.VirtualHost.rate_limits>` are not applied to the
    * request.
    * 
    * This field is deprecated. Please use :ref:`vh_rate_limits <envoy_v3_api_field_extensions.filters.http.ratelimit.v3.RateLimitPerRoute.vh_rate_limits>`
@@ -659,15 +659,15 @@ export interface RouteAction {
    */
   'cluster_not_found_response_code'?: (_envoy_config_route_v3_RouteAction_ClusterNotFoundResponseCode | keyof typeof _envoy_config_route_v3_RouteAction_ClusterNotFoundResponseCode);
   /**
-   * Deprecated by :ref:`grpc_timeout_header_max <envoy_api_field_config.route.v3.RouteAction.MaxStreamDuration.grpc_timeout_header_max>`
+   * Deprecated by :ref:`grpc_timeout_header_max <envoy_v3_api_field_config.route.v3.RouteAction.MaxStreamDuration.grpc_timeout_header_max>`
    * If present, and the request is a gRPC request, use the
    * `grpc-timeout header <https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md>`_,
    * or its default value (infinity) instead of
-   * :ref:`timeout <envoy_api_field_config.route.v3.RouteAction.timeout>`, but limit the applied timeout
+   * :ref:`timeout <envoy_v3_api_field_config.route.v3.RouteAction.timeout>`, but limit the applied timeout
    * to the maximum value specified here. If configured as 0, the maximum allowed timeout for
    * gRPC requests is infinity. If not configured at all, the `grpc-timeout` header is not used
    * and gRPC requests time out like any other requests using
-   * :ref:`timeout <envoy_api_field_config.route.v3.RouteAction.timeout>` or its default.
+   * :ref:`timeout <envoy_v3_api_field_config.route.v3.RouteAction.timeout>` or its default.
    * This can be used to prevent unexpected upstream request timeouts due to potentially long
    * time gaps between gRPC request and response in gRPC streaming mode.
    * 
@@ -684,14 +684,14 @@ export interface RouteAction {
   /**
    * Specifies the idle timeout for the route. If not specified, there is no per-route idle timeout,
    * although the connection manager wide :ref:`stream_idle_timeout
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.stream_idle_timeout>`
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.stream_idle_timeout>`
    * will still apply. A value of 0 will completely disable the route's idle timeout, even if a
    * connection manager stream idle timeout is configured.
    * 
    * The idle timeout is distinct to :ref:`timeout
-   * <envoy_api_field_config.route.v3.RouteAction.timeout>`, which provides an upper bound
+   * <envoy_v3_api_field_config.route.v3.RouteAction.timeout>`, which provides an upper bound
    * on the upstream response time; :ref:`idle_timeout
-   * <envoy_api_field_config.route.v3.RouteAction.idle_timeout>` instead bounds the amount
+   * <envoy_v3_api_field_config.route.v3.RouteAction.idle_timeout>` instead bounds the amount
    * of time the request's stream may be idle.
    * 
    * After header decoding, the idle timeout will apply on downstream and
@@ -703,7 +703,7 @@ export interface RouteAction {
    * 
    * If the :ref:`overload action <config_overload_manager_overload_actions>` "envoy.overload_actions.reduce_timeouts"
    * is configured, this timeout is scaled according to the value for
-   * :ref:`HTTP_DOWNSTREAM_STREAM_IDLE <envoy_api_enum_value_config.overload.v3.ScaleTimersOverloadActionConfig.TimerType.HTTP_DOWNSTREAM_STREAM_IDLE>`.
+   * :ref:`HTTP_DOWNSTREAM_STREAM_IDLE <envoy_v3_api_enum_value_config.overload.v3.ScaleTimersOverloadActionConfig.TimerType.HTTP_DOWNSTREAM_STREAM_IDLE>`.
    */
   'idle_timeout'?: (_google_protobuf_Duration | null);
   'upgrade_configs'?: (_envoy_config_route_v3_RouteAction_UpgradeConfig)[];
@@ -715,7 +715,7 @@ export interface RouteAction {
    */
   'hedge_policy'?: (_envoy_config_route_v3_HedgePolicy | null);
   /**
-   * Deprecated by :ref:`grpc_timeout_header_offset <envoy_api_field_config.route.v3.RouteAction.MaxStreamDuration.grpc_timeout_header_offset>`.
+   * Deprecated by :ref:`grpc_timeout_header_offset <envoy_v3_api_field_config.route.v3.RouteAction.MaxStreamDuration.grpc_timeout_header_offset>`.
    * If present, Envoy will adjust the timeout provided by the `grpc-timeout` header by subtracting
    * the provided duration from the header. This is useful in allowing Envoy to set its global
    * timeout to be less than that of the deadline imposed by the calling client, which makes it more
@@ -747,15 +747,15 @@ export interface RouteAction {
   /**
    * An internal redirect is handled, iff the number of previous internal redirects that a
    * downstream request has encountered is lower than this value, and
-   * :ref:`internal_redirect_action <envoy_api_field_config.route.v3.RouteAction.internal_redirect_action>`
+   * :ref:`internal_redirect_action <envoy_v3_api_field_config.route.v3.RouteAction.internal_redirect_action>`
    * is set to :ref:`HANDLE_INTERNAL_REDIRECT
-   * <envoy_api_enum_value_config.route.v3.RouteAction.InternalRedirectAction.HANDLE_INTERNAL_REDIRECT>`
+   * <envoy_v3_api_enum_value_config.route.v3.RouteAction.InternalRedirectAction.HANDLE_INTERNAL_REDIRECT>`
    * In the case where a downstream request is bounced among multiple routes by internal redirect,
    * the first route that hits this threshold, or has
-   * :ref:`internal_redirect_action <envoy_api_field_config.route.v3.RouteAction.internal_redirect_action>`
+   * :ref:`internal_redirect_action <envoy_v3_api_field_config.route.v3.RouteAction.internal_redirect_action>`
    * set to
    * :ref:`PASS_THROUGH_INTERNAL_REDIRECT
-   * <envoy_api_enum_value_config.route.v3.RouteAction.InternalRedirectAction.PASS_THROUGH_INTERNAL_REDIRECT>`
+   * <envoy_v3_api_enum_value_config.route.v3.RouteAction.InternalRedirectAction.PASS_THROUGH_INTERNAL_REDIRECT>`
    * will pass the redirect back to downstream.
    * 
    * If not specified, at most one redirect will be followed.
@@ -771,7 +771,7 @@ export interface RouteAction {
    * before the rewrite into the :ref:`x-envoy-original-path
    * <config_http_filters_router_x-envoy-original-path>` header.
    * 
-   * Only one of :ref:`prefix_rewrite <envoy_api_field_config.route.v3.RouteAction.prefix_rewrite>`
+   * Only one of :ref:`prefix_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.prefix_rewrite>`
    * or *regex_rewrite* may be specified.
    * 
    * Examples using Google's `RE2 <https://github.com/google/re2>`_ engine:
@@ -796,7 +796,7 @@ export interface RouteAction {
    * [#not-implemented-hide:]
    * Specifies the configuration for retry policy extension. Note that if this is set, it'll take
    * precedence over the virtual host level retry policy entirely (e.g.: policies are not merged,
-   * most internal one becomes the enforced policy). :ref:`Retry policy <envoy_api_field_config.route.v3.VirtualHost.retry_policy>`
+   * most internal one becomes the enforced policy). :ref:`Retry policy <envoy_v3_api_field_config.route.v3.VirtualHost.retry_policy>`
    * should not be set if this field is used.
    */
   'retry_policy_typed_config'?: (_google_protobuf_Any | null);
@@ -804,7 +804,7 @@ export interface RouteAction {
    * If present, Envoy will try to follow an upstream redirect response instead of proxying the
    * response back to the downstream. An upstream redirect response is defined
    * by :ref:`redirect_response_codes
-   * <envoy_api_field_config.route.v3.InternalRedirectPolicy.redirect_response_codes>`.
+   * <envoy_v3_api_field_config.route.v3.InternalRedirectPolicy.redirect_response_codes>`.
    */
   'internal_redirect_policy'?: (_envoy_config_route_v3_InternalRedirectPolicy | null);
   /**
@@ -829,12 +829,21 @@ export interface RouteAction {
    * Specifies the maximum stream duration for this route.
    */
   'max_stream_duration'?: (_envoy_config_route_v3_RouteAction_MaxStreamDuration | null);
-  'cluster_specifier'?: "cluster"|"cluster_header"|"weighted_clusters";
+  /**
+   * [#not-implemented-hide:]
+   * Name of the cluster specifier plugin to use to determine the cluster for
+   * requests on this route. The plugin name must be defined in the associated
+   * :ref:`envoy_v3_api_field_config.route.v3.RouteConfiguration.cluster_specifier_plugins`
+   * in the
+   * :ref:`envoy_v3_api_field_config.core.v3.TypedExtensionConfig.name` field.
+   */
+  'cluster_specifier_plugin'?: (string);
+  'cluster_specifier'?: "cluster"|"cluster_header"|"weighted_clusters"|"cluster_specifier_plugin";
   'host_rewrite_specifier'?: "host_rewrite_literal"|"auto_host_rewrite"|"host_rewrite_header"|"host_rewrite_path_regex";
 }
 
 /**
- * [#next-free-field: 37]
+ * [#next-free-field: 38]
  */
 export interface RouteAction__Output {
   /**
@@ -870,7 +879,7 @@ export interface RouteAction__Output {
    * Optional endpoint metadata match criteria used by the subset load balancer. Only endpoints
    * in the upstream cluster with metadata matching what's set in this field will be considered
    * for load balancing. If using :ref:`weighted_clusters
-   * <envoy_api_field_config.route.v3.RouteAction.weighted_clusters>`, metadata will be merged, with values
+   * <envoy_v3_api_field_config.route.v3.RouteAction.weighted_clusters>`, metadata will be merged, with values
    * provided there taking precedence. The filter name should be specified as *envoy.lb*.
    */
   'metadata_match': (_envoy_config_core_v3_Metadata__Output | null);
@@ -882,16 +891,16 @@ export interface RouteAction__Output {
    * <config_http_filters_router_x-envoy-original-path>` header.
    * 
    * Only one of *prefix_rewrite* or
-   * :ref:`regex_rewrite <envoy_api_field_config.route.v3.RouteAction.regex_rewrite>`
+   * :ref:`regex_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.regex_rewrite>`
    * may be specified.
    * 
    * .. attention::
    * 
    * Pay careful attention to the use of trailing slashes in the
-   * :ref:`route's match <envoy_api_field_config.route.v3.Route.match>` prefix value.
+   * :ref:`route's match <envoy_v3_api_field_config.route.v3.Route.match>` prefix value.
    * Stripping a prefix from a path requires multiple Routes to handle all cases. For example,
    * rewriting * /prefix* to * /* and * /prefix/etc* to * /etc* cannot be done in a single
-   * :ref:`Route <envoy_api_msg_config.route.v3.Route>`, as shown by the below config entries:
+   * :ref:`Route <envoy_v3_api_msg_config.route.v3.Route>`, as shown by the below config entries:
    * 
    * .. code-block:: yaml
    * 
@@ -953,7 +962,7 @@ export interface RouteAction__Output {
   /**
    * Specifies if the rate limit filter should include the virtual host rate
    * limits. By default, if the route configured rate limits, the virtual host
-   * :ref:`rate_limits <envoy_api_field_config.route.v3.VirtualHost.rate_limits>` are not applied to the
+   * :ref:`rate_limits <envoy_v3_api_field_config.route.v3.VirtualHost.rate_limits>` are not applied to the
    * request.
    * 
    * This field is deprecated. Please use :ref:`vh_rate_limits <envoy_v3_api_field_extensions.filters.http.ratelimit.v3.RateLimitPerRoute.vh_rate_limits>`
@@ -984,15 +993,15 @@ export interface RouteAction__Output {
    */
   'cluster_not_found_response_code': (keyof typeof _envoy_config_route_v3_RouteAction_ClusterNotFoundResponseCode);
   /**
-   * Deprecated by :ref:`grpc_timeout_header_max <envoy_api_field_config.route.v3.RouteAction.MaxStreamDuration.grpc_timeout_header_max>`
+   * Deprecated by :ref:`grpc_timeout_header_max <envoy_v3_api_field_config.route.v3.RouteAction.MaxStreamDuration.grpc_timeout_header_max>`
    * If present, and the request is a gRPC request, use the
    * `grpc-timeout header <https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md>`_,
    * or its default value (infinity) instead of
-   * :ref:`timeout <envoy_api_field_config.route.v3.RouteAction.timeout>`, but limit the applied timeout
+   * :ref:`timeout <envoy_v3_api_field_config.route.v3.RouteAction.timeout>`, but limit the applied timeout
    * to the maximum value specified here. If configured as 0, the maximum allowed timeout for
    * gRPC requests is infinity. If not configured at all, the `grpc-timeout` header is not used
    * and gRPC requests time out like any other requests using
-   * :ref:`timeout <envoy_api_field_config.route.v3.RouteAction.timeout>` or its default.
+   * :ref:`timeout <envoy_v3_api_field_config.route.v3.RouteAction.timeout>` or its default.
    * This can be used to prevent unexpected upstream request timeouts due to potentially long
    * time gaps between gRPC request and response in gRPC streaming mode.
    * 
@@ -1009,14 +1018,14 @@ export interface RouteAction__Output {
   /**
    * Specifies the idle timeout for the route. If not specified, there is no per-route idle timeout,
    * although the connection manager wide :ref:`stream_idle_timeout
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.stream_idle_timeout>`
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.stream_idle_timeout>`
    * will still apply. A value of 0 will completely disable the route's idle timeout, even if a
    * connection manager stream idle timeout is configured.
    * 
    * The idle timeout is distinct to :ref:`timeout
-   * <envoy_api_field_config.route.v3.RouteAction.timeout>`, which provides an upper bound
+   * <envoy_v3_api_field_config.route.v3.RouteAction.timeout>`, which provides an upper bound
    * on the upstream response time; :ref:`idle_timeout
-   * <envoy_api_field_config.route.v3.RouteAction.idle_timeout>` instead bounds the amount
+   * <envoy_v3_api_field_config.route.v3.RouteAction.idle_timeout>` instead bounds the amount
    * of time the request's stream may be idle.
    * 
    * After header decoding, the idle timeout will apply on downstream and
@@ -1028,7 +1037,7 @@ export interface RouteAction__Output {
    * 
    * If the :ref:`overload action <config_overload_manager_overload_actions>` "envoy.overload_actions.reduce_timeouts"
    * is configured, this timeout is scaled according to the value for
-   * :ref:`HTTP_DOWNSTREAM_STREAM_IDLE <envoy_api_enum_value_config.overload.v3.ScaleTimersOverloadActionConfig.TimerType.HTTP_DOWNSTREAM_STREAM_IDLE>`.
+   * :ref:`HTTP_DOWNSTREAM_STREAM_IDLE <envoy_v3_api_enum_value_config.overload.v3.ScaleTimersOverloadActionConfig.TimerType.HTTP_DOWNSTREAM_STREAM_IDLE>`.
    */
   'idle_timeout': (_google_protobuf_Duration__Output | null);
   'upgrade_configs': (_envoy_config_route_v3_RouteAction_UpgradeConfig__Output)[];
@@ -1040,7 +1049,7 @@ export interface RouteAction__Output {
    */
   'hedge_policy': (_envoy_config_route_v3_HedgePolicy__Output | null);
   /**
-   * Deprecated by :ref:`grpc_timeout_header_offset <envoy_api_field_config.route.v3.RouteAction.MaxStreamDuration.grpc_timeout_header_offset>`.
+   * Deprecated by :ref:`grpc_timeout_header_offset <envoy_v3_api_field_config.route.v3.RouteAction.MaxStreamDuration.grpc_timeout_header_offset>`.
    * If present, Envoy will adjust the timeout provided by the `grpc-timeout` header by subtracting
    * the provided duration from the header. This is useful in allowing Envoy to set its global
    * timeout to be less than that of the deadline imposed by the calling client, which makes it more
@@ -1072,15 +1081,15 @@ export interface RouteAction__Output {
   /**
    * An internal redirect is handled, iff the number of previous internal redirects that a
    * downstream request has encountered is lower than this value, and
-   * :ref:`internal_redirect_action <envoy_api_field_config.route.v3.RouteAction.internal_redirect_action>`
+   * :ref:`internal_redirect_action <envoy_v3_api_field_config.route.v3.RouteAction.internal_redirect_action>`
    * is set to :ref:`HANDLE_INTERNAL_REDIRECT
-   * <envoy_api_enum_value_config.route.v3.RouteAction.InternalRedirectAction.HANDLE_INTERNAL_REDIRECT>`
+   * <envoy_v3_api_enum_value_config.route.v3.RouteAction.InternalRedirectAction.HANDLE_INTERNAL_REDIRECT>`
    * In the case where a downstream request is bounced among multiple routes by internal redirect,
    * the first route that hits this threshold, or has
-   * :ref:`internal_redirect_action <envoy_api_field_config.route.v3.RouteAction.internal_redirect_action>`
+   * :ref:`internal_redirect_action <envoy_v3_api_field_config.route.v3.RouteAction.internal_redirect_action>`
    * set to
    * :ref:`PASS_THROUGH_INTERNAL_REDIRECT
-   * <envoy_api_enum_value_config.route.v3.RouteAction.InternalRedirectAction.PASS_THROUGH_INTERNAL_REDIRECT>`
+   * <envoy_v3_api_enum_value_config.route.v3.RouteAction.InternalRedirectAction.PASS_THROUGH_INTERNAL_REDIRECT>`
    * will pass the redirect back to downstream.
    * 
    * If not specified, at most one redirect will be followed.
@@ -1096,7 +1105,7 @@ export interface RouteAction__Output {
    * before the rewrite into the :ref:`x-envoy-original-path
    * <config_http_filters_router_x-envoy-original-path>` header.
    * 
-   * Only one of :ref:`prefix_rewrite <envoy_api_field_config.route.v3.RouteAction.prefix_rewrite>`
+   * Only one of :ref:`prefix_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.prefix_rewrite>`
    * or *regex_rewrite* may be specified.
    * 
    * Examples using Google's `RE2 <https://github.com/google/re2>`_ engine:
@@ -1121,7 +1130,7 @@ export interface RouteAction__Output {
    * [#not-implemented-hide:]
    * Specifies the configuration for retry policy extension. Note that if this is set, it'll take
    * precedence over the virtual host level retry policy entirely (e.g.: policies are not merged,
-   * most internal one becomes the enforced policy). :ref:`Retry policy <envoy_api_field_config.route.v3.VirtualHost.retry_policy>`
+   * most internal one becomes the enforced policy). :ref:`Retry policy <envoy_v3_api_field_config.route.v3.VirtualHost.retry_policy>`
    * should not be set if this field is used.
    */
   'retry_policy_typed_config': (_google_protobuf_Any__Output | null);
@@ -1129,7 +1138,7 @@ export interface RouteAction__Output {
    * If present, Envoy will try to follow an upstream redirect response instead of proxying the
    * response back to the downstream. An upstream redirect response is defined
    * by :ref:`redirect_response_codes
-   * <envoy_api_field_config.route.v3.InternalRedirectPolicy.redirect_response_codes>`.
+   * <envoy_v3_api_field_config.route.v3.InternalRedirectPolicy.redirect_response_codes>`.
    */
   'internal_redirect_policy': (_envoy_config_route_v3_InternalRedirectPolicy__Output | null);
   /**
@@ -1154,6 +1163,15 @@ export interface RouteAction__Output {
    * Specifies the maximum stream duration for this route.
    */
   'max_stream_duration': (_envoy_config_route_v3_RouteAction_MaxStreamDuration__Output | null);
-  'cluster_specifier': "cluster"|"cluster_header"|"weighted_clusters";
+  /**
+   * [#not-implemented-hide:]
+   * Name of the cluster specifier plugin to use to determine the cluster for
+   * requests on this route. The plugin name must be defined in the associated
+   * :ref:`envoy_v3_api_field_config.route.v3.RouteConfiguration.cluster_specifier_plugins`
+   * in the
+   * :ref:`envoy_v3_api_field_config.core.v3.TypedExtensionConfig.name` field.
+   */
+  'cluster_specifier_plugin'?: (string);
+  'cluster_specifier': "cluster"|"cluster_header"|"weighted_clusters"|"cluster_specifier_plugin";
   'host_rewrite_specifier': "host_rewrite_literal"|"auto_host_rewrite"|"host_rewrite_header"|"host_rewrite_path_regex";
 }

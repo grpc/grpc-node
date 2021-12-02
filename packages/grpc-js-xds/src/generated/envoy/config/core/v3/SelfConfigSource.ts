@@ -5,7 +5,7 @@ import type { ApiVersion as _envoy_config_core_v3_ApiVersion } from '../../../..
 /**
  * [#not-implemented-hide:]
  * Self-referencing config source options. This is currently empty, but when
- * set in :ref:`ConfigSource <envoy_api_msg_config.core.v3.ConfigSource>` can be used to
+ * set in :ref:`ConfigSource <envoy_v3_api_msg_config.core.v3.ConfigSource>` can be used to
  * specify that other data can be obtained from the same server.
  */
 export interface SelfConfigSource {
@@ -19,7 +19,7 @@ export interface SelfConfigSource {
 /**
  * [#not-implemented-hide:]
  * Self-referencing config source options. This is currently empty, but when
- * set in :ref:`ConfigSource <envoy_api_msg_config.core.v3.ConfigSource>` can be used to
+ * set in :ref:`ConfigSource <envoy_v3_api_msg_config.core.v3.ConfigSource>` can be used to
  * specify that other data can be obtained from the same server.
  */
 export interface SelfConfigSource__Output {
