@@ -51,6 +51,7 @@ import { Cluster__Output } from './generated/envoy/config/cluster/v3/Cluster';
 import { RouteConfiguration__Output } from './generated/envoy/config/route/v3/RouteConfiguration';
 import { Duration } from './generated/google/protobuf/Duration';
 import { AdsOutputType, AdsTypeUrl, CDS_TYPE_URL_V2, CDS_TYPE_URL_V3, decodeSingleResource, EDS_TYPE_URL_V2, EDS_TYPE_URL_V3, LDS_TYPE_URL_V2, LDS_TYPE_URL_V3, RDS_TYPE_URL_V2, RDS_TYPE_URL_V3 } from './resources';
+import { setCsdsClientNode, updateCsdsRequestedNameList, updateCsdsResourceResponse } from './csds';
 
 const TRACER_NAME = 'xds_client';
 
@@ -384,6 +385,7 @@ export class XdsClient {
           ...nodeV3,
           client_features: ['envoy.lrs.supports_send_all_clusters'],
         };
+        setCsdsClientNode(this.adsNodeV3);
         if (this.apiVersion === XdsApiVersion.V2) {
           trace('ADS Node: ' + JSON.stringify(this.adsNodeV2, undefined, 2));
           trace('LRS Node: ' + JSON.stringify(this.lrsNodeV2, undefined, 2));
@@ -514,12 +516,14 @@ export class XdsClient {
     } catch (e) {
       trace('Nacking message with protobuf parsing error: ' + e.message);
       this.nack(message.type_url, e.message);
+      return;
     }
     if (handleResponseResult === null) {
       // Null handleResponseResult means that the type_url was unrecognized
       trace('Nacking message with unknown type URL ' + message.type_url);
       this.nack(message.type_url, `Unknown type_url ${message.type_url}`);
     } else {
+      updateCsdsResourceResponse(message.type_url as AdsTypeUrl, message.version_info, handleResponseResult.result);
       if (handleResponseResult.result.rejected.length > 0) {
         // rejected.length > 0 means that at least one message validation failed
         const errorString = `${handleResponseResult.serviceKind.toUpperCase()} Error: ${handleResponseResult.result.rejected[0].error}`;
@@ -754,8 +758,16 @@ export class XdsClient {
     }
     this.maybeStartAdsStream();
     this.maybeStartLrsStream();
+    if (!this.adsCallV2 && !this.adsCallV3) {
+      /* If the stream is not set up yet at this point, shortcut the rest
+       * becuase nothing will actually be sent. This would mainly happen if
+       * the bootstrap file has not been read yet. In that case, the output
+       * of getTypeUrl is garbage and everything after that is invalid. */
+      return;
+    }
     trace('Sending update for ' + serviceKind + ' with names ' + this.adsState[serviceKind].getResourceNames());
     const typeUrl = this.getTypeUrl(serviceKind);
+    updateCsdsRequestedNameList(typeUrl, this.adsState[serviceKind].getResourceNames());
     this.maybeSendAdsMessage(typeUrl, this.adsState[serviceKind].getResourceNames(), this.adsState[serviceKind].nonce, this.adsState[serviceKind].versionInfo);
   }
 

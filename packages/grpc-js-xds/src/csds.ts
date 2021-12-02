@@ -23,11 +23,17 @@ import { ClientStatusResponse } from "./generated/envoy/service/status/v3/Client
 import { Timestamp } from "./generated/google/protobuf/Timestamp";
 import { AdsTypeUrl, CDS_TYPE_URL_V2, CDS_TYPE_URL_V3, EDS_TYPE_URL_V2, EDS_TYPE_URL_V3, LDS_TYPE_URL_V2, LDS_TYPE_URL_V3, RDS_TYPE_URL_V2, RDS_TYPE_URL_V3 } from "./resources";
 import { HandleResponseResult } from "./xds-stream-state/xds-stream-state";
-import { sendUnaryData, ServerDuplexStream, ServerUnaryCall, status, experimental, loadPackageDefinition } from '@grpc/grpc-js';
+import { sendUnaryData, ServerDuplexStream, ServerUnaryCall, status, experimental, loadPackageDefinition, logVerbosity } from '@grpc/grpc-js';
 import { loadSync } from "@grpc/proto-loader";
 import { ProtoGrpcType as CsdsProtoGrpcType } from "./generated/csds";
 
 import registerAdminService = experimental.registerAdminService;
+
+const TRACER_NAME = 'csds';
+
+function trace(text: string): void {
+  experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 
 function dateToProtoTimestamp(date?: Date | null): Timestamp | null {
@@ -72,7 +78,8 @@ export function setCsdsClientNode(node: Node) {
  * @param typeUrl The resource type URL
  * @param names The list of resource names that are being requested
  */
-export function updateRequestedNameList(typeUrl: AdsTypeUrl, names: string[]) {
+export function updateCsdsRequestedNameList(typeUrl: AdsTypeUrl, names: string[]) {
+  trace('Update type URL ' + typeUrl + ' with names [' + names + ']');
   const currentTime = dateToProtoTimestamp(new Date());
   const configMap = configStatus[typeUrl];
   for (const name of names) {
@@ -100,12 +107,13 @@ export function updateRequestedNameList(typeUrl: AdsTypeUrl, names: string[]) {
  * @param versionInfo The version info field from this response
  * @param updates The lists of resources that passed and failed validation
  */
-export function updateResourceResponse(typeUrl: AdsTypeUrl, versionInfo: string, updates: HandleResponseResult) {
+export function updateCsdsResourceResponse(typeUrl: AdsTypeUrl, versionInfo: string, updates: HandleResponseResult) {
   const currentTime = dateToProtoTimestamp(new Date());
   const configMap = configStatus[typeUrl];
   for (const {name, raw} of updates.accepted) {
     const mapEntry = configMap.get(name);
     if (mapEntry) {
+      trace('Updated ' + typeUrl + ' resource ' + name + ' to state ACKED');
       mapEntry.client_status = 'ACKED';
       mapEntry.version_info = versionInfo;
       mapEntry.xds_config = raw;
@@ -116,6 +124,7 @@ export function updateResourceResponse(typeUrl: AdsTypeUrl, versionInfo: string,
   for (const {name, error, raw} of updates.rejected) {
     const mapEntry = configMap.get(name);
     if (mapEntry) {
+      trace('Updated ' + typeUrl + ' resource ' + name + ' to state NACKED');
       mapEntry.client_status = 'NACKED';
       mapEntry.error_state = {
         failed_configuration: raw,
@@ -128,6 +137,7 @@ export function updateResourceResponse(typeUrl: AdsTypeUrl, versionInfo: string,
   for (const name of updates.missing) {
     const mapEntry = configMap.get(name);
     if (mapEntry) {
+      trace('Updated ' + typeUrl + ' resource ' + name + ' to state DOES_NOT_EXIST');
       mapEntry.client_status = 'DOES_NOT_EXIST';
       mapEntry.version_info = versionInfo;
       mapEntry.xds_config = null;
@@ -144,16 +154,18 @@ function getCurrentConfig(): ClientConfig {
       genericConfigList.push(configValue);
     }
   }
-  return {
+  const config = {
     node: clientNode,
     generic_xds_configs: genericConfigList
   };
+  trace('Sending curent config ' + JSON.stringify(config, undefined, 2));
+  return config;
 }
 
 const csdsImplementation: ClientStatusDiscoveryServiceHandlers = {
   FetchClientStatus(call: ServerUnaryCall<ClientStatusRequest__Output, ClientStatusResponse>, callback: sendUnaryData<ClientStatusResponse>) {
     const request = call.request;
-    if (request.node_matchers !== null) {
+    if (request.node_matchers.length > 0) {
       callback({
         code: status.INVALID_ARGUMENT,
         details: 'Node matchers not supported'
@@ -166,7 +178,7 @@ const csdsImplementation: ClientStatusDiscoveryServiceHandlers = {
   },
   StreamClientStatus(call: ServerDuplexStream<ClientStatusRequest__Output, ClientStatusResponse>) {
     call.on('data', (request: ClientStatusRequest__Output) => {
-      if (request.node_matchers !== null) {
+      if (request.node_matchers.length > 0) {
         call.emit('error', {
           code: status.INVALID_ARGUMENT,
           details: 'Node matchers not supported'
