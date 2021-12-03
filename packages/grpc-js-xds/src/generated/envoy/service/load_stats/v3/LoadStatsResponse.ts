@@ -31,7 +31,7 @@ export interface LoadStatsResponse {
   /**
    * If true, the client should send all clusters it knows about.
    * Only clients that advertise the "envoy.lrs.supports_send_all_clusters" capability in their
-   * :ref:`client_features<envoy_api_field_config.core.v3.Node.client_features>` field will honor this field.
+   * :ref:`client_features<envoy_v3_api_field_config.core.v3.Node.client_features>` field will honor this field.
    */
   'send_all_clusters'?: (boolean);
 }
@@ -65,7 +65,7 @@ export interface LoadStatsResponse__Output {
   /**
    * If true, the client should send all clusters it knows about.
    * Only clients that advertise the "envoy.lrs.supports_send_all_clusters" capability in their
-   * :ref:`client_features<envoy_api_field_config.core.v3.Node.client_features>` field will honor this field.
+   * :ref:`client_features<envoy_v3_api_field_config.core.v3.Node.client_features>` field will honor this field.
    */
   'send_all_clusters': (boolean);
 }

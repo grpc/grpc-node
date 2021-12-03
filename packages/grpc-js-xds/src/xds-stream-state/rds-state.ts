@@ -18,9 +18,10 @@
 import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
 import { EXPERIMENTAL_FAULT_INJECTION } from "../environment";
 import { RouteConfiguration__Output } from "../generated/envoy/config/route/v3/RouteConfiguration";
+import { Any__Output } from "../generated/google/protobuf/Any";
 import { validateOverrideFilter } from "../http-filter";
 import { CdsLoadBalancingConfig } from "../load-balancer-cds";
-import { Watcher, XdsStreamState } from "./xds-stream-state";
+import { HandleResponseResult, RejectedResourceEntry, ResourcePair, Watcher, XdsStreamState } from "./xds-stream-state";
 import ServiceConfig = experimental.ServiceConfig;
 
 const TRACER_NAME = 'xds_client';
@@ -182,15 +183,26 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
     }
   }
 
-  handleResponses(responses: RouteConfiguration__Output[], isV2: boolean): string | null {
+  handleResponses(responses: ResourcePair<RouteConfiguration__Output>[], isV2: boolean): HandleResponseResult {
     const validResponses: RouteConfiguration__Output[] = [];
-    let errorMessage: string | null = null;
-    for (const message of responses) {
-      if (this.validateResponse(message, isV2)) {
-        validResponses.push(message);
+    let result: HandleResponseResult = {
+      accepted: [],
+      rejected: [],
+      missing: []
+    }
+    for (const {resource, raw} of responses) {
+      if (this.validateResponse(resource, isV2)) {
+        validResponses.push(resource);
+        result.accepted.push({
+          name: resource.name, 
+          raw: raw});
       } else {
-        trace('RDS validation failed for message ' + JSON.stringify(message));
-        errorMessage = 'RDS Error: Route validation failed';
+        trace('RDS validation failed for message ' + JSON.stringify(resource));
+        result.rejected.push({
+          name: resource.name, 
+          raw: raw,
+          error: `Route validation failed for resource ${resource.name}`
+        });
       }
     }
     this.latestResponses = validResponses;
@@ -204,7 +216,7 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
       }
     }
     trace('Received RDS response with route config names [' + Array.from(allRouteConfigNames) + ']');
-    return errorMessage;
+    return result;
   }
 
   reportStreamError(status: StatusObject): void {

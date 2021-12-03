@@ -5,12 +5,9 @@ import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__
 
 export interface AccessLog {
   /**
-   * The name of the access log implementation to instantiate. The name must
-   * match a statically registered access log. Current built-in loggers include:
-   * 
-   * #. "envoy.access_loggers.file"
-   * #. "envoy.access_loggers.http_grpc"
-   * #. "envoy.access_loggers.tcp_grpc"
+   * The name of the access log extension to instantiate.
+   * The name must match one of the compiled in loggers.
+   * See the :ref:`extensions listed in typed_config below <extension_category_envoy.access_loggers>` for the default list of available loggers.
    */
   'name'?: (string);
   /**
@@ -19,27 +16,17 @@ export interface AccessLog {
   'filter'?: (_envoy_config_accesslog_v3_AccessLogFilter | null);
   'typed_config'?: (_google_protobuf_Any | null);
   /**
-   * Custom configuration that depends on the access log being instantiated.
-   * Built-in configurations include:
-   * 
-   * #. "envoy.access_loggers.file": :ref:`FileAccessLog
-   * <envoy_api_msg_extensions.access_loggers.file.v3.FileAccessLog>`
-   * #. "envoy.access_loggers.http_grpc": :ref:`HttpGrpcAccessLogConfig
-   * <envoy_api_msg_extensions.access_loggers.grpc.v3.HttpGrpcAccessLogConfig>`
-   * #. "envoy.access_loggers.tcp_grpc": :ref:`TcpGrpcAccessLogConfig
-   * <envoy_api_msg_extensions.access_loggers.grpc.v3.TcpGrpcAccessLogConfig>`
+   * Custom configuration that must be set according to the access logger extension being instantiated.
+   * [#extension-category: envoy.access_loggers]
    */
   'config_type'?: "typed_config";
 }
 
 export interface AccessLog__Output {
   /**
-   * The name of the access log implementation to instantiate. The name must
-   * match a statically registered access log. Current built-in loggers include:
-   * 
-   * #. "envoy.access_loggers.file"
-   * #. "envoy.access_loggers.http_grpc"
-   * #. "envoy.access_loggers.tcp_grpc"
+   * The name of the access log extension to instantiate.
+   * The name must match one of the compiled in loggers.
+   * See the :ref:`extensions listed in typed_config below <extension_category_envoy.access_loggers>` for the default list of available loggers.
    */
   'name': (string);
   /**
@@ -48,15 +35,8 @@ export interface AccessLog__Output {
   'filter': (_envoy_config_accesslog_v3_AccessLogFilter__Output | null);
   'typed_config'?: (_google_protobuf_Any__Output | null);
   /**
-   * Custom configuration that depends on the access log being instantiated.
-   * Built-in configurations include:
-   * 
-   * #. "envoy.access_loggers.file": :ref:`FileAccessLog
-   * <envoy_api_msg_extensions.access_loggers.file.v3.FileAccessLog>`
-   * #. "envoy.access_loggers.http_grpc": :ref:`HttpGrpcAccessLogConfig
-   * <envoy_api_msg_extensions.access_loggers.grpc.v3.HttpGrpcAccessLogConfig>`
-   * #. "envoy.access_loggers.tcp_grpc": :ref:`TcpGrpcAccessLogConfig
-   * <envoy_api_msg_extensions.access_loggers.grpc.v3.TcpGrpcAccessLogConfig>`
+   * Custom configuration that must be set according to the access logger extension being instantiated.
+   * [#extension-category: envoy.access_loggers]
    */
   'config_type': "typed_config";
 }

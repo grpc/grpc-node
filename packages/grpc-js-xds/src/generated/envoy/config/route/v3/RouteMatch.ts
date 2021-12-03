@@ -5,6 +5,7 @@ import type { HeaderMatcher as _envoy_config_route_v3_HeaderMatcher, HeaderMatch
 import type { QueryParameterMatcher as _envoy_config_route_v3_QueryParameterMatcher, QueryParameterMatcher__Output as _envoy_config_route_v3_QueryParameterMatcher__Output } from '../../../../envoy/config/route/v3/QueryParameterMatcher';
 import type { RuntimeFractionalPercent as _envoy_config_core_v3_RuntimeFractionalPercent, RuntimeFractionalPercent__Output as _envoy_config_core_v3_RuntimeFractionalPercent__Output } from '../../../../envoy/config/core/v3/RuntimeFractionalPercent';
 import type { RegexMatcher as _envoy_type_matcher_v3_RegexMatcher, RegexMatcher__Output as _envoy_type_matcher_v3_RegexMatcher__Output } from '../../../../envoy/type/matcher/v3/RegexMatcher';
+import type { MetadataMatcher as _envoy_type_matcher_v3_MetadataMatcher, MetadataMatcher__Output as _envoy_type_matcher_v3_MetadataMatcher__Output } from '../../../../envoy/type/matcher/v3/MetadataMatcher';
 
 /**
  * An extensible message for matching CONNECT requests.
@@ -51,7 +52,7 @@ export interface _envoy_config_route_v3_RouteMatch_TlsContextMatchOptions__Outpu
 }
 
 /**
- * [#next-free-field: 13]
+ * [#next-free-field: 14]
  */
 export interface RouteMatch {
   /**
@@ -66,7 +67,7 @@ export interface RouteMatch {
   'path'?: (string);
   /**
    * Indicates that prefix/path matching should be case sensitive. The default
-   * is true.
+   * is true. Ignored for safe_regex matching.
    */
   'case_sensitive'?: (_google_protobuf_BoolValue | null);
   /**
@@ -83,6 +84,14 @@ export interface RouteMatch {
    * against all the specified query parameters. If the number of specified
    * query parameters is nonzero, they all must match the *path* header's
    * query string for a match to occur.
+   * 
+   * .. note::
+   * 
+   * If query parameters are used to pass request message fields when
+   * `grpc_json_transcoder <https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/grpc_json_transcoder_filter>`_
+   * is used, the transcoded message fields maybe different. The query parameters are
+   * url encoded, but the message fields are not. For example, if a query
+   * parameter is "foo%20bar", the message field will be "foo bar".
    */
   'query_parameters'?: (_envoy_config_route_v3_QueryParameterMatcher)[];
   /**
@@ -141,14 +150,21 @@ export interface RouteMatch {
    * where Extended CONNECT requests may have a path, the path matchers will work if
    * there is a path present.
    * Note that CONNECT support is currently considered alpha in Envoy.
-   * [#comment:TODO(htuch): Replace the above comment with an alpha tag.
+   * [#comment: TODO(htuch): Replace the above comment with an alpha tag.]
    */
   'connect_matcher'?: (_envoy_config_route_v3_RouteMatch_ConnectMatcher | null);
+  /**
+   * Specifies a set of dynamic metadata matchers on which the route should match.
+   * The router will check the dynamic metadata against all the specified dynamic metadata matchers.
+   * If the number of specified dynamic metadata matchers is nonzero, they all must match the
+   * dynamic metadata for a match to occur.
+   */
+  'dynamic_metadata'?: (_envoy_type_matcher_v3_MetadataMatcher)[];
   'path_specifier'?: "prefix"|"path"|"safe_regex"|"connect_matcher";
 }
 
 /**
- * [#next-free-field: 13]
+ * [#next-free-field: 14]
  */
 export interface RouteMatch__Output {
   /**
@@ -163,7 +179,7 @@ export interface RouteMatch__Output {
   'path'?: (string);
   /**
    * Indicates that prefix/path matching should be case sensitive. The default
-   * is true.
+   * is true. Ignored for safe_regex matching.
    */
   'case_sensitive': (_google_protobuf_BoolValue__Output | null);
   /**
@@ -180,6 +196,14 @@ export interface RouteMatch__Output {
    * against all the specified query parameters. If the number of specified
    * query parameters is nonzero, they all must match the *path* header's
    * query string for a match to occur.
+   * 
+   * .. note::
+   * 
+   * If query parameters are used to pass request message fields when
+   * `grpc_json_transcoder <https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/grpc_json_transcoder_filter>`_
+   * is used, the transcoded message fields maybe different. The query parameters are
+   * url encoded, but the message fields are not. For example, if a query
+   * parameter is "foo%20bar", the message field will be "foo bar".
    */
   'query_parameters': (_envoy_config_route_v3_QueryParameterMatcher__Output)[];
   /**
@@ -238,8 +262,15 @@ export interface RouteMatch__Output {
    * where Extended CONNECT requests may have a path, the path matchers will work if
    * there is a path present.
    * Note that CONNECT support is currently considered alpha in Envoy.
-   * [#comment:TODO(htuch): Replace the above comment with an alpha tag.
+   * [#comment: TODO(htuch): Replace the above comment with an alpha tag.]
    */
   'connect_matcher'?: (_envoy_config_route_v3_RouteMatch_ConnectMatcher__Output | null);
+  /**
+   * Specifies a set of dynamic metadata matchers on which the route should match.
+   * The router will check the dynamic metadata against all the specified dynamic metadata matchers.
+   * If the number of specified dynamic metadata matchers is nonzero, they all must match the
+   * dynamic metadata for a match to occur.
+   */
+  'dynamic_metadata': (_envoy_type_matcher_v3_MetadataMatcher__Output)[];
   'path_specifier': "prefix"|"path"|"safe_regex"|"connect_matcher";
 }

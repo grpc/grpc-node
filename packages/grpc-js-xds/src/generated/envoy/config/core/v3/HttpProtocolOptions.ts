@@ -32,7 +32,7 @@ export enum _envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresActi
 }
 
 /**
- * [#next-free-field: 6]
+ * [#next-free-field: 7]
  */
 export interface HttpProtocolOptions {
   /**
@@ -41,7 +41,7 @@ export interface HttpProtocolOptions {
    * idle timeout is reached the connection will be closed. If the connection is an HTTP/2
    * downstream connection a drain sequence will occur prior to closing the connection, see
    * :ref:`drain_timeout
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.drain_timeout>`.
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.drain_timeout>`.
    * Note that request based timeouts mean that HTTP/2 PINGs will not keep the connection alive.
    * If not specified, this defaults to 1 hour. To disable idle timeouts explicitly set this to 0.
    * 
@@ -51,7 +51,7 @@ export interface HttpProtocolOptions {
    * 
    * If the :ref:`overload action <config_overload_manager_overload_actions>` "envoy.overload_actions.reduce_timeouts"
    * is configured, this timeout is scaled for downstream connections according to the value for
-   * :ref:`HTTP_DOWNSTREAM_CONNECTION_IDLE <envoy_api_enum_value_config.overload.v3.ScaleTimersOverloadActionConfig.TimerType.HTTP_DOWNSTREAM_CONNECTION_IDLE>`.
+   * :ref:`HTTP_DOWNSTREAM_CONNECTION_IDLE <envoy_v3_api_enum_value_config.overload.v3.ScaleTimersOverloadActionConfig.TimerType.HTTP_DOWNSTREAM_CONNECTION_IDLE>`.
    */
   'idle_timeout'?: (_google_protobuf_Duration | null);
   /**
@@ -63,10 +63,11 @@ export interface HttpProtocolOptions {
   /**
    * The maximum duration of a connection. The duration is defined as a period since a connection
    * was established. If not set, there is no max duration. When max_connection_duration is reached
-   * the connection will be closed. Drain sequence will occur prior to closing the connection if
-   * if's applicable. See :ref:`drain_timeout
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.drain_timeout>`.
-   * Note: not implemented for upstream connections.
+   * and if there are no active streams, the connection will be closed. If there are any active streams,
+   * the drain sequence will kick-in, and the connection will be force-closed after the drain period.
+   * See :ref:`drain_timeout
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.drain_timeout>`.
+   * Note: This feature is not yet implemented for the upstream connections.
    */
   'max_connection_duration'?: (_google_protobuf_Duration | null);
   /**
@@ -80,10 +81,17 @@ export interface HttpProtocolOptions {
    * Note: upstream responses are not affected by this setting.
    */
   'headers_with_underscores_action'?: (_envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction | keyof typeof _envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction);
+  /**
+   * Optional maximum requests for both upstream and downstream connections.
+   * If not specified, there is no limit.
+   * Setting this parameter to 1 will effectively disable keep alive.
+   * For HTTP/2 and HTTP/3, due to concurrent stream processing, the limit is approximate.
+   */
+  'max_requests_per_connection'?: (_google_protobuf_UInt32Value | null);
 }
 
 /**
- * [#next-free-field: 6]
+ * [#next-free-field: 7]
  */
 export interface HttpProtocolOptions__Output {
   /**
@@ -92,7 +100,7 @@ export interface HttpProtocolOptions__Output {
    * idle timeout is reached the connection will be closed. If the connection is an HTTP/2
    * downstream connection a drain sequence will occur prior to closing the connection, see
    * :ref:`drain_timeout
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.drain_timeout>`.
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.drain_timeout>`.
    * Note that request based timeouts mean that HTTP/2 PINGs will not keep the connection alive.
    * If not specified, this defaults to 1 hour. To disable idle timeouts explicitly set this to 0.
    * 
@@ -102,7 +110,7 @@ export interface HttpProtocolOptions__Output {
    * 
    * If the :ref:`overload action <config_overload_manager_overload_actions>` "envoy.overload_actions.reduce_timeouts"
    * is configured, this timeout is scaled for downstream connections according to the value for
-   * :ref:`HTTP_DOWNSTREAM_CONNECTION_IDLE <envoy_api_enum_value_config.overload.v3.ScaleTimersOverloadActionConfig.TimerType.HTTP_DOWNSTREAM_CONNECTION_IDLE>`.
+   * :ref:`HTTP_DOWNSTREAM_CONNECTION_IDLE <envoy_v3_api_enum_value_config.overload.v3.ScaleTimersOverloadActionConfig.TimerType.HTTP_DOWNSTREAM_CONNECTION_IDLE>`.
    */
   'idle_timeout': (_google_protobuf_Duration__Output | null);
   /**
@@ -114,10 +122,11 @@ export interface HttpProtocolOptions__Output {
   /**
    * The maximum duration of a connection. The duration is defined as a period since a connection
    * was established. If not set, there is no max duration. When max_connection_duration is reached
-   * the connection will be closed. Drain sequence will occur prior to closing the connection if
-   * if's applicable. See :ref:`drain_timeout
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.drain_timeout>`.
-   * Note: not implemented for upstream connections.
+   * and if there are no active streams, the connection will be closed. If there are any active streams,
+   * the drain sequence will kick-in, and the connection will be force-closed after the drain period.
+   * See :ref:`drain_timeout
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.drain_timeout>`.
+   * Note: This feature is not yet implemented for the upstream connections.
    */
   'max_connection_duration': (_google_protobuf_Duration__Output | null);
   /**
@@ -131,4 +140,11 @@ export interface HttpProtocolOptions__Output {
    * Note: upstream responses are not affected by this setting.
    */
   'headers_with_underscores_action': (keyof typeof _envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction);
+  /**
+   * Optional maximum requests for both upstream and downstream connections.
+   * If not specified, there is no limit.
+   * Setting this parameter to 1 will effectively disable keep alive.
+   * For HTTP/2 and HTTP/3, due to concurrent stream processing, the limit is approximate.
+   */
+  'max_requests_per_connection': (_google_protobuf_UInt32Value__Output | null);
 }

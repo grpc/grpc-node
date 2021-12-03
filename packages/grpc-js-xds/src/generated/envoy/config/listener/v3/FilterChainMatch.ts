@@ -35,9 +35,12 @@ export enum _envoy_config_listener_v3_FilterChainMatch_ConnectionSourceType {
  * 3. Server name (e.g. SNI for TLS protocol),
  * 4. Transport protocol.
  * 5. Application protocols (e.g. ALPN for TLS protocol).
- * 6. Source type (e.g. any, local or external network).
- * 7. Source IP address.
- * 8. Source port.
+ * 6. Directly connected source IP address (this will only be different from the source IP address
+ * when using a listener filter that overrides the source address, such as the :ref:`Proxy Protocol
+ * listener filter <config_listener_filters_proxy_protocol>`).
+ * 7. Source type (e.g. any, local or external network).
+ * 8. Source IP address.
+ * 9. Source port.
  * 
  * For criteria that allow ranges or wildcards, the most specific value in any
  * of the configured filter chains that matches the incoming connection is going
@@ -61,7 +64,7 @@ export enum _envoy_config_listener_v3_FilterChainMatch_ConnectionSourceType {
  * listed at the end, because that's how we want to list them in the docs.
  * 
  * [#comment:TODO(PiotrSikora): Add support for configurable precedence of the rules]
- * [#next-free-field: 13]
+ * [#next-free-field: 14]
  */
 export interface FilterChainMatch {
   /**
@@ -151,6 +154,12 @@ export interface FilterChainMatch {
    * Specifies the connection source IP match type. Can be any, local or external network.
    */
   'source_type'?: (_envoy_config_listener_v3_FilterChainMatch_ConnectionSourceType | keyof typeof _envoy_config_listener_v3_FilterChainMatch_ConnectionSourceType);
+  /**
+   * The criteria is satisfied if the directly connected source IP address of the downstream
+   * connection is contained in at least one of the specified subnets. If the parameter is not
+   * specified or the list is empty, the directly connected source IP address is ignored.
+   */
+  'direct_source_prefix_ranges'?: (_envoy_config_core_v3_CidrRange)[];
 }
 
 /**
@@ -168,9 +177,12 @@ export interface FilterChainMatch {
  * 3. Server name (e.g. SNI for TLS protocol),
  * 4. Transport protocol.
  * 5. Application protocols (e.g. ALPN for TLS protocol).
- * 6. Source type (e.g. any, local or external network).
- * 7. Source IP address.
- * 8. Source port.
+ * 6. Directly connected source IP address (this will only be different from the source IP address
+ * when using a listener filter that overrides the source address, such as the :ref:`Proxy Protocol
+ * listener filter <config_listener_filters_proxy_protocol>`).
+ * 7. Source type (e.g. any, local or external network).
+ * 8. Source IP address.
+ * 9. Source port.
  * 
  * For criteria that allow ranges or wildcards, the most specific value in any
  * of the configured filter chains that matches the incoming connection is going
@@ -194,7 +206,7 @@ export interface FilterChainMatch {
  * listed at the end, because that's how we want to list them in the docs.
  * 
  * [#comment:TODO(PiotrSikora): Add support for configurable precedence of the rules]
- * [#next-free-field: 13]
+ * [#next-free-field: 14]
  */
 export interface FilterChainMatch__Output {
   /**
@@ -284,4 +296,10 @@ export interface FilterChainMatch__Output {
    * Specifies the connection source IP match type. Can be any, local or external network.
    */
   'source_type': (keyof typeof _envoy_config_listener_v3_FilterChainMatch_ConnectionSourceType);
+  /**
+   * The criteria is satisfied if the directly connected source IP address of the downstream
+   * connection is contained in at least one of the specified subnets. If the parameter is not
+   * specified or the list is empty, the directly connected source IP address is ignored.
+   */
+  'direct_source_prefix_ranges': (_envoy_config_core_v3_CidrRange__Output)[];
 }

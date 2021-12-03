@@ -24,7 +24,7 @@ export interface OutlierDetection {
   /**
    * The base time that a host is ejected for. The real time is equal to the
    * base time multiplied by the number of times the host has been ejected and is
-   * capped by :ref:`max_ejection_time<envoy_api_field_config.cluster.v3.OutlierDetection.max_ejection_time>`.
+   * capped by :ref:`max_ejection_time<envoy_v3_api_field_config.cluster.v3.OutlierDetection.max_ejection_time>`.
    * Defaults to 30000ms or 30s.
    */
   'base_ejection_time'?: (_google_protobuf_Duration | null);
@@ -84,17 +84,17 @@ export interface OutlierDetection {
   /**
    * Determines whether to distinguish local origin failures from external errors. If set to true
    * the following configuration parameters are taken into account:
-   * :ref:`consecutive_local_origin_failure<envoy_api_field_config.cluster.v3.OutlierDetection.consecutive_local_origin_failure>`,
-   * :ref:`enforcing_consecutive_local_origin_failure<envoy_api_field_config.cluster.v3.OutlierDetection.enforcing_consecutive_local_origin_failure>`
+   * :ref:`consecutive_local_origin_failure<envoy_v3_api_field_config.cluster.v3.OutlierDetection.consecutive_local_origin_failure>`,
+   * :ref:`enforcing_consecutive_local_origin_failure<envoy_v3_api_field_config.cluster.v3.OutlierDetection.enforcing_consecutive_local_origin_failure>`
    * and
-   * :ref:`enforcing_local_origin_success_rate<envoy_api_field_config.cluster.v3.OutlierDetection.enforcing_local_origin_success_rate>`.
+   * :ref:`enforcing_local_origin_success_rate<envoy_v3_api_field_config.cluster.v3.OutlierDetection.enforcing_local_origin_success_rate>`.
    * Defaults to false.
    */
   'split_external_local_origin_errors'?: (boolean);
   /**
    * The number of consecutive locally originated failures before ejection
    * occurs. Defaults to 5. Parameter takes effect only when
-   * :ref:`split_external_local_origin_errors<envoy_api_field_config.cluster.v3.OutlierDetection.split_external_local_origin_errors>`
+   * :ref:`split_external_local_origin_errors<envoy_v3_api_field_config.cluster.v3.OutlierDetection.split_external_local_origin_errors>`
    * is set to true.
    */
   'consecutive_local_origin_failure'?: (_google_protobuf_UInt32Value | null);
@@ -103,7 +103,7 @@ export interface OutlierDetection {
    * is detected through consecutive locally originated failures. This setting can be
    * used to disable ejection or to ramp it up slowly. Defaults to 100.
    * Parameter takes effect only when
-   * :ref:`split_external_local_origin_errors<envoy_api_field_config.cluster.v3.OutlierDetection.split_external_local_origin_errors>`
+   * :ref:`split_external_local_origin_errors<envoy_v3_api_field_config.cluster.v3.OutlierDetection.split_external_local_origin_errors>`
    * is set to true.
    */
   'enforcing_consecutive_local_origin_failure'?: (_google_protobuf_UInt32Value | null);
@@ -112,7 +112,7 @@ export interface OutlierDetection {
    * is detected through success rate statistics for locally originated errors.
    * This setting can be used to disable ejection or to ramp it up slowly. Defaults to 100.
    * Parameter takes effect only when
-   * :ref:`split_external_local_origin_errors<envoy_api_field_config.cluster.v3.OutlierDetection.split_external_local_origin_errors>`
+   * :ref:`split_external_local_origin_errors<envoy_v3_api_field_config.cluster.v3.OutlierDetection.split_external_local_origin_errors>`
    * is set to true.
    */
   'enforcing_local_origin_success_rate'?: (_google_protobuf_UInt32Value | null);
@@ -151,9 +151,9 @@ export interface OutlierDetection {
    */
   'failure_percentage_request_volume'?: (_google_protobuf_UInt32Value | null);
   /**
-   * The maximum time that a host is ejected for. See :ref:`base_ejection_time<envoy_api_field_config.cluster.v3.OutlierDetection.base_ejection_time>`
-   * for more information.
-   * Defaults to 300000ms or 300s.
+   * The maximum time that a host is ejected for. See :ref:`base_ejection_time<envoy_v3_api_field_config.cluster.v3.OutlierDetection.base_ejection_time>`
+   * for more information. If not specified, the default value (300000ms or 300s) or
+   * :ref:`base_ejection_time<envoy_v3_api_field_config.cluster.v3.OutlierDetection.base_ejection_time>` value is applied, whatever is larger.
    */
   'max_ejection_time'?: (_google_protobuf_Duration | null);
 }
@@ -179,7 +179,7 @@ export interface OutlierDetection__Output {
   /**
    * The base time that a host is ejected for. The real time is equal to the
    * base time multiplied by the number of times the host has been ejected and is
-   * capped by :ref:`max_ejection_time<envoy_api_field_config.cluster.v3.OutlierDetection.max_ejection_time>`.
+   * capped by :ref:`max_ejection_time<envoy_v3_api_field_config.cluster.v3.OutlierDetection.max_ejection_time>`.
    * Defaults to 30000ms or 30s.
    */
   'base_ejection_time': (_google_protobuf_Duration__Output | null);
@@ -239,17 +239,17 @@ export interface OutlierDetection__Output {
   /**
    * Determines whether to distinguish local origin failures from external errors. If set to true
    * the following configuration parameters are taken into account:
-   * :ref:`consecutive_local_origin_failure<envoy_api_field_config.cluster.v3.OutlierDetection.consecutive_local_origin_failure>`,
-   * :ref:`enforcing_consecutive_local_origin_failure<envoy_api_field_config.cluster.v3.OutlierDetection.enforcing_consecutive_local_origin_failure>`
+   * :ref:`consecutive_local_origin_failure<envoy_v3_api_field_config.cluster.v3.OutlierDetection.consecutive_local_origin_failure>`,
+   * :ref:`enforcing_consecutive_local_origin_failure<envoy_v3_api_field_config.cluster.v3.OutlierDetection.enforcing_consecutive_local_origin_failure>`
    * and
-   * :ref:`enforcing_local_origin_success_rate<envoy_api_field_config.cluster.v3.OutlierDetection.enforcing_local_origin_success_rate>`.
+   * :ref:`enforcing_local_origin_success_rate<envoy_v3_api_field_config.cluster.v3.OutlierDetection.enforcing_local_origin_success_rate>`.
    * Defaults to false.
    */
   'split_external_local_origin_errors': (boolean);
   /**
    * The number of consecutive locally originated failures before ejection
    * occurs. Defaults to 5. Parameter takes effect only when
-   * :ref:`split_external_local_origin_errors<envoy_api_field_config.cluster.v3.OutlierDetection.split_external_local_origin_errors>`
+   * :ref:`split_external_local_origin_errors<envoy_v3_api_field_config.cluster.v3.OutlierDetection.split_external_local_origin_errors>`
    * is set to true.
    */
   'consecutive_local_origin_failure': (_google_protobuf_UInt32Value__Output | null);
@@ -258,7 +258,7 @@ export interface OutlierDetection__Output {
    * is detected through consecutive locally originated failures. This setting can be
    * used to disable ejection or to ramp it up slowly. Defaults to 100.
    * Parameter takes effect only when
-   * :ref:`split_external_local_origin_errors<envoy_api_field_config.cluster.v3.OutlierDetection.split_external_local_origin_errors>`
+   * :ref:`split_external_local_origin_errors<envoy_v3_api_field_config.cluster.v3.OutlierDetection.split_external_local_origin_errors>`
    * is set to true.
    */
   'enforcing_consecutive_local_origin_failure': (_google_protobuf_UInt32Value__Output | null);
@@ -267,7 +267,7 @@ export interface OutlierDetection__Output {
    * is detected through success rate statistics for locally originated errors.
    * This setting can be used to disable ejection or to ramp it up slowly. Defaults to 100.
    * Parameter takes effect only when
-   * :ref:`split_external_local_origin_errors<envoy_api_field_config.cluster.v3.OutlierDetection.split_external_local_origin_errors>`
+   * :ref:`split_external_local_origin_errors<envoy_v3_api_field_config.cluster.v3.OutlierDetection.split_external_local_origin_errors>`
    * is set to true.
    */
   'enforcing_local_origin_success_rate': (_google_protobuf_UInt32Value__Output | null);
@@ -306,9 +306,9 @@ export interface OutlierDetection__Output {
    */
   'failure_percentage_request_volume': (_google_protobuf_UInt32Value__Output | null);
   /**
-   * The maximum time that a host is ejected for. See :ref:`base_ejection_time<envoy_api_field_config.cluster.v3.OutlierDetection.base_ejection_time>`
-   * for more information.
-   * Defaults to 300000ms or 300s.
+   * The maximum time that a host is ejected for. See :ref:`base_ejection_time<envoy_v3_api_field_config.cluster.v3.OutlierDetection.base_ejection_time>`
+   * for more information. If not specified, the default value (300000ms or 300s) or
+   * :ref:`base_ejection_time<envoy_v3_api_field_config.cluster.v3.OutlierDetection.base_ejection_time>` value is applied, whatever is larger.
    */
   'max_ejection_time': (_google_protobuf_Duration__Output | null);
 }

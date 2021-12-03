@@ -42,12 +42,12 @@ export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget
 
 /**
  * A Thresholds defines CircuitBreaker settings for a
- * :ref:`RoutingPriority<envoy_api_enum_config.core.v3.RoutingPriority>`.
+ * :ref:`RoutingPriority<envoy_v3_api_enum_config.core.v3.RoutingPriority>`.
  * [#next-free-field: 9]
  */
 export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds {
   /**
-   * The :ref:`RoutingPriority<envoy_api_enum_config.core.v3.RoutingPriority>`
+   * The :ref:`RoutingPriority<envoy_v3_api_enum_config.core.v3.RoutingPriority>`
    * the specified CircuitBreaker settings apply to.
    */
   'priority'?: (_envoy_config_core_v3_RoutingPriority | keyof typeof _envoy_config_core_v3_RoutingPriority);
@@ -104,12 +104,12 @@ export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds {
 
 /**
  * A Thresholds defines CircuitBreaker settings for a
- * :ref:`RoutingPriority<envoy_api_enum_config.core.v3.RoutingPriority>`.
+ * :ref:`RoutingPriority<envoy_v3_api_enum_config.core.v3.RoutingPriority>`.
  * [#next-free-field: 9]
  */
 export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds__Output {
   /**
-   * The :ref:`RoutingPriority<envoy_api_enum_config.core.v3.RoutingPriority>`
+   * The :ref:`RoutingPriority<envoy_v3_api_enum_config.core.v3.RoutingPriority>`
    * the specified CircuitBreaker settings apply to.
    */
   'priority': (keyof typeof _envoy_config_core_v3_RoutingPriority);
@@ -170,10 +170,10 @@ export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds__Output {
  */
 export interface CircuitBreakers {
   /**
-   * If multiple :ref:`Thresholds<envoy_api_msg_config.cluster.v3.CircuitBreakers.Thresholds>`
-   * are defined with the same :ref:`RoutingPriority<envoy_api_enum_config.core.v3.RoutingPriority>`,
+   * If multiple :ref:`Thresholds<envoy_v3_api_msg_config.cluster.v3.CircuitBreakers.Thresholds>`
+   * are defined with the same :ref:`RoutingPriority<envoy_v3_api_enum_config.core.v3.RoutingPriority>`,
    * the first one in the list is used. If no Thresholds is defined for a given
-   * :ref:`RoutingPriority<envoy_api_enum_config.core.v3.RoutingPriority>`, the default values
+   * :ref:`RoutingPriority<envoy_v3_api_enum_config.core.v3.RoutingPriority>`, the default values
    * are used.
    */
   'thresholds'?: (_envoy_config_cluster_v3_CircuitBreakers_Thresholds)[];
@@ -185,10 +185,10 @@ export interface CircuitBreakers {
  */
 export interface CircuitBreakers__Output {
   /**
-   * If multiple :ref:`Thresholds<envoy_api_msg_config.cluster.v3.CircuitBreakers.Thresholds>`
-   * are defined with the same :ref:`RoutingPriority<envoy_api_enum_config.core.v3.RoutingPriority>`,
+   * If multiple :ref:`Thresholds<envoy_v3_api_msg_config.cluster.v3.CircuitBreakers.Thresholds>`
+   * are defined with the same :ref:`RoutingPriority<envoy_v3_api_enum_config.core.v3.RoutingPriority>`,
    * the first one in the list is used. If no Thresholds is defined for a given
-   * :ref:`RoutingPriority<envoy_api_enum_config.core.v3.RoutingPriority>`, the default values
+   * :ref:`RoutingPriority<envoy_v3_api_enum_config.core.v3.RoutingPriority>`, the default values
    * are used.
    */
   'thresholds': (_envoy_config_cluster_v3_CircuitBreakers_Thresholds__Output)[];

@@ -7,6 +7,11 @@ export interface ScopedRds {
    * Configuration source specifier for scoped RDS.
    */
   'scoped_rds_config_source'?: (_envoy_config_core_v3_ConfigSource | null);
+  /**
+   * xdstp:// resource locator for scoped RDS collection.
+   * [#not-implemented-hide:]
+   */
+  'srds_resources_locator'?: (string);
 }
 
 export interface ScopedRds__Output {
@@ -14,4 +19,9 @@ export interface ScopedRds__Output {
    * Configuration source specifier for scoped RDS.
    */
   'scoped_rds_config_source': (_envoy_config_core_v3_ConfigSource__Output | null);
+  /**
+   * xdstp:// resource locator for scoped RDS collection.
+   * [#not-implemented-hide:]
+   */
+  'srds_resources_locator': (string);
 }

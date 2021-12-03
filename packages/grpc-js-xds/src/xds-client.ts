@@ -45,12 +45,13 @@ import { EdsState } from './xds-stream-state/eds-state';
 import { CdsState } from './xds-stream-state/cds-state';
 import { RdsState } from './xds-stream-state/rds-state';
 import { LdsState } from './xds-stream-state/lds-state';
-import { Watcher } from './xds-stream-state/xds-stream-state';
+import { HandleResponseResult, ResourcePair, Watcher } from './xds-stream-state/xds-stream-state';
 import { ClusterLoadAssignment__Output } from './generated/envoy/config/endpoint/v3/ClusterLoadAssignment';
 import { Cluster__Output } from './generated/envoy/config/cluster/v3/Cluster';
 import { RouteConfiguration__Output } from './generated/envoy/config/route/v3/RouteConfiguration';
 import { Duration } from './generated/google/protobuf/Duration';
 import { AdsOutputType, AdsTypeUrl, CDS_TYPE_URL_V2, CDS_TYPE_URL_V3, decodeSingleResource, EDS_TYPE_URL_V2, EDS_TYPE_URL_V3, LDS_TYPE_URL_V2, LDS_TYPE_URL_V3, RDS_TYPE_URL_V2, RDS_TYPE_URL_V3 } from './resources';
+import { setCsdsClientNode, updateCsdsRequestedNameList, updateCsdsResourceResponse } from './csds';
 
 const TRACER_NAME = 'xds_client';
 
@@ -242,11 +243,14 @@ function getResponseMessages<T extends AdsTypeUrl>(
   targetTypeUrl: T,
   allowedTypeUrls: string[],
   resources: Any__Output[]
-): AdsOutputType<T>[] {
-  const result: AdsOutputType<T>[] = [];
+): ResourcePair<AdsOutputType<T>>[] {
+  const result: ResourcePair<AdsOutputType<T>>[] = [];
   for (const resource of resources) {
     if (allowedTypeUrls.includes(resource.type_url)) {
-      result.push(decodeSingleResource(targetTypeUrl, resource.value));
+      result.push({
+        resource: decodeSingleResource(targetTypeUrl, resource.value),
+        raw: resource
+      });
     } else {
       throw new Error(
         `ADS Error: Invalid resource type ${resource.type_url}, expected ${allowedTypeUrls}`
@@ -381,6 +385,7 @@ export class XdsClient {
           ...nodeV3,
           client_features: ['envoy.lrs.supports_send_all_clusters'],
         };
+        setCsdsClientNode(this.adsNodeV3);
         if (this.apiVersion === XdsApiVersion.V2) {
           trace('ADS Node: ' + JSON.stringify(this.adsNodeV2, undefined, 2));
           trace('LRS Node: ' + JSON.stringify(this.lrsNodeV2, undefined, 2));
@@ -450,8 +455,10 @@ export class XdsClient {
   }
 
   private handleAdsResponse(message: DiscoveryResponse__Output) {
-    let errorString: string | null;
-    let serviceKind: AdsServiceKind;
+    let handleResponseResult: {
+      result: HandleResponseResult;
+      serviceKind: AdsServiceKind;
+    } | null = null;
     let isV2: boolean;
     switch (message.type_url) {
       case EDS_TYPE_URL_V2:
@@ -463,56 +470,73 @@ export class XdsClient {
       default:
         isV2 = false;
     }
-    switch (message.type_url) {
-      case EDS_TYPE_URL_V2:
-      case EDS_TYPE_URL_V3:
-        errorString = this.adsState.eds.handleResponses(
-          getResponseMessages(EDS_TYPE_URL_V3, [EDS_TYPE_URL_V2, EDS_TYPE_URL_V3], message.resources),
-          isV2
-        );
-        serviceKind = 'eds';
-        break;
-      case CDS_TYPE_URL_V2:
-      case CDS_TYPE_URL_V3:
-        errorString = this.adsState.cds.handleResponses(
-          getResponseMessages(CDS_TYPE_URL_V3, [CDS_TYPE_URL_V2, CDS_TYPE_URL_V3], message.resources),
-          isV2
-        );
-        serviceKind = 'cds';
-        break;
-      case RDS_TYPE_URL_V2:
-      case RDS_TYPE_URL_V3:
-        errorString = this.adsState.rds.handleResponses(
-          getResponseMessages(RDS_TYPE_URL_V3, [RDS_TYPE_URL_V2, RDS_TYPE_URL_V3], message.resources),
-          isV2
-        );
-        serviceKind = 'rds';
-        break;
-      case LDS_TYPE_URL_V2:
-      case LDS_TYPE_URL_V3:
-        errorString = this.adsState.lds.handleResponses(
-          getResponseMessages(LDS_TYPE_URL_V3, [LDS_TYPE_URL_V2, LDS_TYPE_URL_V3], message.resources),
-          isV2
-        );
-        serviceKind = 'lds';
-        break;
-      default:
-        errorString = `Unknown type_url ${message.type_url}`;
-        // This is not used in this branch, but setting it makes the types easier to handle
-        serviceKind = 'eds';
+    try {
+      switch (message.type_url) {
+        case EDS_TYPE_URL_V2:
+        case EDS_TYPE_URL_V3:
+          handleResponseResult = {
+            result: this.adsState.eds.handleResponses(
+              getResponseMessages(EDS_TYPE_URL_V3, [EDS_TYPE_URL_V2, EDS_TYPE_URL_V3], message.resources),
+              isV2
+            ),
+            serviceKind: 'eds'
+          };
+          break;
+        case CDS_TYPE_URL_V2:
+        case CDS_TYPE_URL_V3: 
+          handleResponseResult = {
+            result: this.adsState.cds.handleResponses(
+              getResponseMessages(CDS_TYPE_URL_V3, [CDS_TYPE_URL_V2, CDS_TYPE_URL_V3], message.resources),
+              isV2
+            ),
+            serviceKind: 'cds'
+          };
+          break;
+        case RDS_TYPE_URL_V2:
+        case RDS_TYPE_URL_V3: 
+          handleResponseResult = {
+            result: this.adsState.rds.handleResponses(
+              getResponseMessages(RDS_TYPE_URL_V3, [RDS_TYPE_URL_V2, RDS_TYPE_URL_V3], message.resources),
+              isV2
+            ),
+            serviceKind: 'rds'
+          };
+          break;
+        case LDS_TYPE_URL_V2:
+        case LDS_TYPE_URL_V3:
+          handleResponseResult = {
+            result: this.adsState.lds.handleResponses(
+              getResponseMessages(LDS_TYPE_URL_V3, [LDS_TYPE_URL_V2, LDS_TYPE_URL_V3], message.resources),
+              isV2
+            ),
+            serviceKind: 'lds'
+          }
+          break;
+      }
+    } catch (e) {
+      trace('Nacking message with protobuf parsing error: ' + e.message);
+      this.nack(message.type_url, e.message);
+      return;
     }
-    if (errorString === null) {
-      trace('Acking message with type URL ' + message.type_url);
-      /* errorString can only be null in one of the first 4 cases, which
-       * implies that message.type_url is one of the 4 known type URLs, which
-       * means that this type assertion is valid. */
-      const typeUrl = message.type_url as AdsTypeUrl;
-      this.adsState[serviceKind].nonce = message.nonce;
-      this.adsState[serviceKind].versionInfo = message.version_info;
-      this.ack(serviceKind);
+    if (handleResponseResult === null) {
+      // Null handleResponseResult means that the type_url was unrecognized
+      trace('Nacking message with unknown type URL ' + message.type_url);
+      this.nack(message.type_url, `Unknown type_url ${message.type_url}`);
     } else {
-      trace('Nacking message with type URL ' + message.type_url + ': "' + errorString + '"');
-      this.nack(message.type_url, errorString);
+      updateCsdsResourceResponse(message.type_url as AdsTypeUrl, message.version_info, handleResponseResult.result);
+      if (handleResponseResult.result.rejected.length > 0) {
+        // rejected.length > 0 means that at least one message validation failed
+        const errorString = `${handleResponseResult.serviceKind.toUpperCase()} Error: ${handleResponseResult.result.rejected[0].error}`;
+        trace('Nacking message with type URL ' + message.type_url + ': ' + errorString);
+        this.nack(message.type_url, errorString);
+      } else {
+        // If we get here, all message validation succeeded
+        trace('Acking message with type URL ' + message.type_url);
+        const serviceKind = handleResponseResult.serviceKind;
+        this.adsState[serviceKind].nonce = message.nonce;
+        this.adsState[serviceKind].versionInfo = message.version_info;
+        this.ack(serviceKind);
+      }
     }
   }
 
@@ -734,8 +758,16 @@ export class XdsClient {
     }
     this.maybeStartAdsStream();
     this.maybeStartLrsStream();
+    if (!this.adsCallV2 && !this.adsCallV3) {
+      /* If the stream is not set up yet at this point, shortcut the rest
+       * becuase nothing will actually be sent. This would mainly happen if
+       * the bootstrap file has not been read yet. In that case, the output
+       * of getTypeUrl is garbage and everything after that is invalid. */
+      return;
+    }
     trace('Sending update for ' + serviceKind + ' with names ' + this.adsState[serviceKind].getResourceNames());
     const typeUrl = this.getTypeUrl(serviceKind);
+    updateCsdsRequestedNameList(typeUrl, this.adsState[serviceKind].getResourceNames());
     this.maybeSendAdsMessage(typeUrl, this.adsState[serviceKind].getResourceNames(), this.adsState[serviceKind].nonce, this.adsState[serviceKind].versionInfo);
   }
 

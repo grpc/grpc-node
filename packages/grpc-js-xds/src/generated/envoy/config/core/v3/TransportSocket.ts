@@ -4,7 +4,7 @@ import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__
 
 /**
  * Configuration for transport socket in :ref:`listeners <config_listeners>` and
- * :ref:`clusters <envoy_api_msg_config.cluster.v3.Cluster>`. If the configuration is
+ * :ref:`clusters <envoy_v3_api_msg_config.cluster.v3.Cluster>`. If the configuration is
  * empty, a default transport socket implementation and configuration will be
  * chosen based on the platform and existence of tls_context.
  */
@@ -24,7 +24,7 @@ export interface TransportSocket {
 
 /**
  * Configuration for transport socket in :ref:`listeners <config_listeners>` and
- * :ref:`clusters <envoy_api_msg_config.cluster.v3.Cluster>`. If the configuration is
+ * :ref:`clusters <envoy_v3_api_msg_config.cluster.v3.Cluster>`. If the configuration is
  * empty, a default transport socket implementation and configuration will be
  * chosen based on the platform and existence of tls_context.
  */

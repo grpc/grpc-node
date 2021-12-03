@@ -10,6 +10,8 @@ type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> 
 
 export interface ProtoGrpcType {
   envoy: {
+    annotations: {
+    }
     api: {
       v2: {
         DeltaDiscoveryRequest: MessageTypeDefinition
@@ -72,6 +74,7 @@ export interface ProtoGrpcType {
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition
           Pipe: MessageTypeDefinition
+          QueryParameter: MessageTypeDefinition
           RemoteDataSource: MessageTypeDefinition
           RequestMethod: EnumTypeDefinition
           RetryPolicy: MessageTypeDefinition
@@ -212,6 +215,22 @@ export interface ProtoGrpcType {
     TimestampRules: MessageTypeDefinition
     UInt32Rules: MessageTypeDefinition
     UInt64Rules: MessageTypeDefinition
+  }
+  xds: {
+    annotations: {
+      v3: {
+        FieldStatusAnnotation: MessageTypeDefinition
+        FileStatusAnnotation: MessageTypeDefinition
+        MessageStatusAnnotation: MessageTypeDefinition
+        PackageVersionStatus: EnumTypeDefinition
+        StatusAnnotation: MessageTypeDefinition
+      }
+    }
+    core: {
+      v3: {
+        ContextParams: MessageTypeDefinition
+      }
+    }
   }
 }
 

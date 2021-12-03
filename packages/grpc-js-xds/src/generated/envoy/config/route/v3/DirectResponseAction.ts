@@ -14,8 +14,8 @@ export interface DirectResponseAction {
    * .. note::
    * 
    * Headers can be specified using *response_headers_to_add* in the enclosing
-   * :ref:`envoy_api_msg_config.route.v3.Route`, :ref:`envoy_api_msg_config.route.v3.RouteConfiguration` or
-   * :ref:`envoy_api_msg_config.route.v3.VirtualHost`.
+   * :ref:`envoy_v3_api_msg_config.route.v3.Route`, :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration` or
+   * :ref:`envoy_v3_api_msg_config.route.v3.VirtualHost`.
    */
   'body'?: (_envoy_config_core_v3_DataSource | null);
 }
@@ -32,8 +32,8 @@ export interface DirectResponseAction__Output {
    * .. note::
    * 
    * Headers can be specified using *response_headers_to_add* in the enclosing
-   * :ref:`envoy_api_msg_config.route.v3.Route`, :ref:`envoy_api_msg_config.route.v3.RouteConfiguration` or
-   * :ref:`envoy_api_msg_config.route.v3.VirtualHost`.
+   * :ref:`envoy_v3_api_msg_config.route.v3.Route`, :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration` or
+   * :ref:`envoy_v3_api_msg_config.route.v3.VirtualHost`.
    */
   'body': (_envoy_config_core_v3_DataSource__Output | null);
 }

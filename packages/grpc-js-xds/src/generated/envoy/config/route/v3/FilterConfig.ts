@@ -5,9 +5,9 @@ import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__
 /**
  * A simple wrapper for an HTTP filter config. This is intended to be used as a wrapper for the
  * map value in
- * :ref:`VirtualHost.typed_per_filter_config<envoy_api_field_config.route.v3.VirtualHost.typed_per_filter_config>`,
- * :ref:`Route.typed_per_filter_config<envoy_api_field_config.route.v3.Route.typed_per_filter_config>`,
- * or :ref:`WeightedCluster.ClusterWeight.typed_per_filter_config<envoy_api_field_config.route.v3.WeightedCluster.ClusterWeight.typed_per_filter_config>`
+ * :ref:`VirtualHost.typed_per_filter_config<envoy_v3_api_field_config.route.v3.VirtualHost.typed_per_filter_config>`,
+ * :ref:`Route.typed_per_filter_config<envoy_v3_api_field_config.route.v3.Route.typed_per_filter_config>`,
+ * or :ref:`WeightedCluster.ClusterWeight.typed_per_filter_config<envoy_v3_api_field_config.route.v3.WeightedCluster.ClusterWeight.typed_per_filter_config>`
  * to add additional flags to the filter.
  * [#not-implemented-hide:]
  */
@@ -27,9 +27,9 @@ export interface FilterConfig {
 /**
  * A simple wrapper for an HTTP filter config. This is intended to be used as a wrapper for the
  * map value in
- * :ref:`VirtualHost.typed_per_filter_config<envoy_api_field_config.route.v3.VirtualHost.typed_per_filter_config>`,
- * :ref:`Route.typed_per_filter_config<envoy_api_field_config.route.v3.Route.typed_per_filter_config>`,
- * or :ref:`WeightedCluster.ClusterWeight.typed_per_filter_config<envoy_api_field_config.route.v3.WeightedCluster.ClusterWeight.typed_per_filter_config>`
+ * :ref:`VirtualHost.typed_per_filter_config<envoy_v3_api_field_config.route.v3.VirtualHost.typed_per_filter_config>`,
+ * :ref:`Route.typed_per_filter_config<envoy_v3_api_field_config.route.v3.Route.typed_per_filter_config>`,
+ * or :ref:`WeightedCluster.ClusterWeight.typed_per_filter_config<envoy_v3_api_field_config.route.v3.WeightedCluster.ClusterWeight.typed_per_filter_config>`
  * to add additional flags to the filter.
  * [#not-implemented-hide:]
  */

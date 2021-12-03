@@ -12,7 +12,7 @@ export interface BindConfig {
   /**
    * Whether to set the *IP_FREEBIND* option when creating the socket. When this
    * flag is set to true, allows the :ref:`source_address
-   * <envoy_api_field_config.cluster.v3.UpstreamBindConfig.source_address>` to be an IP address
+   * <envoy_v3_api_field_config.cluster.v3.UpstreamBindConfig.source_address>` to be an IP address
    * that is not configured on the system running Envoy. When this flag is set
    * to false, the option *IP_FREEBIND* is disabled on the socket. When this
    * flag is not set (default), the socket is not modified, i.e. the option is
@@ -34,7 +34,7 @@ export interface BindConfig__Output {
   /**
    * Whether to set the *IP_FREEBIND* option when creating the socket. When this
    * flag is set to true, allows the :ref:`source_address
-   * <envoy_api_field_config.cluster.v3.UpstreamBindConfig.source_address>` to be an IP address
+   * <envoy_v3_api_field_config.cluster.v3.UpstreamBindConfig.source_address>` to be an IP address
    * that is not configured on the system running Envoy. When this flag is set
    * to false, the option *IP_FREEBIND* is disabled on the socket. When this
    * flag is not set (default), the socket is not modified, i.e. the option is

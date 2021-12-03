@@ -28,6 +28,7 @@ export interface ProtoGrpcType {
         v3: {
           Address: MessageTypeDefinition
           AggregatedConfigSource: MessageTypeDefinition
+          AlternateProtocolsCacheOptions: MessageTypeDefinition
           ApiConfigSource: MessageTypeDefinition
           ApiVersion: EnumTypeDefinition
           AsyncDataSource: MessageTypeDefinition
@@ -38,6 +39,8 @@ export interface ProtoGrpcType {
           ConfigSource: MessageTypeDefinition
           ControlPlane: MessageTypeDefinition
           DataSource: MessageTypeDefinition
+          DnsResolutionConfig: MessageTypeDefinition
+          DnsResolverOptions: MessageTypeDefinition
           EnvoyInternalAddress: MessageTypeDefinition
           EventServiceConfig: MessageTypeDefinition
           Extension: MessageTypeDefinition
@@ -59,6 +62,8 @@ export interface ProtoGrpcType {
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition
           Pipe: MessageTypeDefinition
+          QueryParameter: MessageTypeDefinition
+          QuicProtocolOptions: MessageTypeDefinition
           RateLimitSettings: MessageTypeDefinition
           RemoteDataSource: MessageTypeDefinition
           RequestMethod: EnumTypeDefinition
@@ -69,6 +74,7 @@ export interface ProtoGrpcType {
           RuntimeFractionalPercent: MessageTypeDefinition
           RuntimePercent: MessageTypeDefinition
           RuntimeUInt32: MessageTypeDefinition
+          SchemeHeaderTransformation: MessageTypeDefinition
           SelfConfigSource: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
           SocketOption: MessageTypeDefinition
@@ -86,6 +92,7 @@ export interface ProtoGrpcType {
           ClusterLoadAssignment: MessageTypeDefinition
           Endpoint: MessageTypeDefinition
           LbEndpoint: MessageTypeDefinition
+          LedsClusterLocalityConfig: MessageTypeDefinition
           LocalityLbEndpoints: MessageTypeDefinition
         }
       }

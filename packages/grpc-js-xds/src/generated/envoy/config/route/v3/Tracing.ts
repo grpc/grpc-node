@@ -35,7 +35,7 @@ export interface Tracing {
   /**
    * A list of custom tags with unique tag name to create tags for the active span.
    * It will take effect after merging with the :ref:`corresponding configuration
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.Tracing.custom_tags>`
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.Tracing.custom_tags>`
    * configured in the HTTP connection manager. If two tags with the same name are configured
    * each in the HTTP connection manager and the route level, the one configured here takes
    * priority.
@@ -75,7 +75,7 @@ export interface Tracing__Output {
   /**
    * A list of custom tags with unique tag name to create tags for the active span.
    * It will take effect after merging with the :ref:`corresponding configuration
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.Tracing.custom_tags>`
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.Tracing.custom_tags>`
    * configured in the HTTP connection manager. If two tags with the same name are configured
    * each in the HTTP connection manager and the route level, the one configured here takes
    * priority.

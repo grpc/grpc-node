@@ -3,7 +3,7 @@
 
 /**
  * Aggregated Discovery Service (ADS) options. This is currently empty, but when
- * set in :ref:`ConfigSource <envoy_api_msg_config.core.v3.ConfigSource>` can be used to
+ * set in :ref:`ConfigSource <envoy_v3_api_msg_config.core.v3.ConfigSource>` can be used to
  * specify that ADS is to be used.
  */
 export interface AggregatedConfigSource {
@@ -11,7 +11,7 @@ export interface AggregatedConfigSource {
 
 /**
  * Aggregated Discovery Service (ADS) options. This is currently empty, but when
- * set in :ref:`ConfigSource <envoy_api_msg_config.core.v3.ConfigSource>` can be used to
+ * set in :ref:`ConfigSource <envoy_v3_api_msg_config.core.v3.ConfigSource>` can be used to
  * specify that ADS is to be used.
  */
 export interface AggregatedConfigSource__Output {

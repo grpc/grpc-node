@@ -34,6 +34,7 @@ export interface ProtoGrpcType {
         v3: {
           Address: MessageTypeDefinition
           AggregatedConfigSource: MessageTypeDefinition
+          AlternateProtocolsCacheOptions: MessageTypeDefinition
           ApiConfigSource: MessageTypeDefinition
           ApiVersion: EnumTypeDefinition
           AsyncDataSource: MessageTypeDefinition
@@ -63,6 +64,8 @@ export interface ProtoGrpcType {
           Node: MessageTypeDefinition
           Pipe: MessageTypeDefinition
           ProxyProtocolConfig: MessageTypeDefinition
+          QueryParameter: MessageTypeDefinition
+          QuicProtocolOptions: MessageTypeDefinition
           RateLimitSettings: MessageTypeDefinition
           RemoteDataSource: MessageTypeDefinition
           RequestMethod: EnumTypeDefinition
@@ -73,6 +76,7 @@ export interface ProtoGrpcType {
           RuntimeFractionalPercent: MessageTypeDefinition
           RuntimePercent: MessageTypeDefinition
           RuntimeUInt32: MessageTypeDefinition
+          SchemeHeaderTransformation: MessageTypeDefinition
           SelfConfigSource: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
           SocketOption: MessageTypeDefinition
@@ -88,6 +92,7 @@ export interface ProtoGrpcType {
       }
       route: {
         v3: {
+          ClusterSpecifierPlugin: MessageTypeDefinition
           CorsPolicy: MessageTypeDefinition
           Decorator: MessageTypeDefinition
           DirectResponseAction: MessageTypeDefinition
@@ -96,6 +101,7 @@ export interface ProtoGrpcType {
           HeaderMatcher: MessageTypeDefinition
           HedgePolicy: MessageTypeDefinition
           InternalRedirectPolicy: MessageTypeDefinition
+          NonForwardingAction: MessageTypeDefinition
           QueryParameterMatcher: MessageTypeDefinition
           RateLimit: MessageTypeDefinition
           RedirectAction: MessageTypeDefinition
@@ -123,6 +129,7 @@ export interface ProtoGrpcType {
         network: {
           http_connection_manager: {
             v3: {
+              EnvoyMobileHttpConnectionManager: MessageTypeDefinition
               HttpConnectionManager: MessageTypeDefinition
               HttpFilter: MessageTypeDefinition
               LocalReplyConfig: MessageTypeDefinition
@@ -138,6 +145,11 @@ export interface ProtoGrpcType {
       }
     }
     type: {
+      http: {
+        v3: {
+          PathTransformation: MessageTypeDefinition
+        }
+      }
       matcher: {
         v3: {
           DoubleMatcher: MessageTypeDefinition
@@ -262,6 +274,7 @@ export interface ProtoGrpcType {
     core: {
       v3: {
         Authority: MessageTypeDefinition
+        ContextParams: MessageTypeDefinition
       }
     }
   }

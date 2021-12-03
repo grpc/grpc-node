@@ -34,7 +34,7 @@ export interface CorsPolicy {
    * If neither ``enabled``, ``filter_enabled``, nor ``shadow_enabled`` are specified, the CORS
    * filter will be enabled for 100% of the requests.
    * 
-   * If :ref:`runtime_key <envoy_api_field_config.core.v3.RuntimeFractionalPercent.runtime_key>` is
+   * If :ref:`runtime_key <envoy_v3_api_field_config.core.v3.RuntimeFractionalPercent.runtime_key>` is
    * specified, Envoy will lookup the runtime key to get the percentage of requests to filter.
    */
   'filter_enabled'?: (_envoy_config_core_v3_RuntimeFractionalPercent | null);
@@ -45,7 +45,7 @@ export interface CorsPolicy {
    * This field is intended to be used when ``filter_enabled`` and ``enabled`` are off. One of those
    * fields have to explicitly disable the filter in order for this setting to take effect.
    * 
-   * If :ref:`runtime_key <envoy_api_field_config.core.v3.RuntimeFractionalPercent.runtime_key>` is specified,
+   * If :ref:`runtime_key <envoy_v3_api_field_config.core.v3.RuntimeFractionalPercent.runtime_key>` is specified,
    * Envoy will lookup the runtime key to get the percentage of requests for which it will evaluate
    * and track the request's *Origin* to determine if it's valid but will not enforce any policies.
    */
@@ -88,7 +88,7 @@ export interface CorsPolicy__Output {
    * If neither ``enabled``, ``filter_enabled``, nor ``shadow_enabled`` are specified, the CORS
    * filter will be enabled for 100% of the requests.
    * 
-   * If :ref:`runtime_key <envoy_api_field_config.core.v3.RuntimeFractionalPercent.runtime_key>` is
+   * If :ref:`runtime_key <envoy_v3_api_field_config.core.v3.RuntimeFractionalPercent.runtime_key>` is
    * specified, Envoy will lookup the runtime key to get the percentage of requests to filter.
    */
   'filter_enabled'?: (_envoy_config_core_v3_RuntimeFractionalPercent__Output | null);
@@ -99,7 +99,7 @@ export interface CorsPolicy__Output {
    * This field is intended to be used when ``filter_enabled`` and ``enabled`` are off. One of those
    * fields have to explicitly disable the filter in order for this setting to take effect.
    * 
-   * If :ref:`runtime_key <envoy_api_field_config.core.v3.RuntimeFractionalPercent.runtime_key>` is specified,
+   * If :ref:`runtime_key <envoy_v3_api_field_config.core.v3.RuntimeFractionalPercent.runtime_key>` is specified,
    * Envoy will lookup the runtime key to get the percentage of requests for which it will evaluate
    * and track the request's *Origin* to determine if it's valid but will not enforce any policies.
    */

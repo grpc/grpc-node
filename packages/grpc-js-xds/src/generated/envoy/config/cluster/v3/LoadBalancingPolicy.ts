@@ -1,25 +1,17 @@
 // Original file: deps/envoy-api/envoy/config/cluster/v3/cluster.proto
 
-import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
+import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig, TypedExtensionConfig__Output as _envoy_config_core_v3_TypedExtensionConfig__Output } from '../../../../envoy/config/core/v3/TypedExtensionConfig';
 
 export interface _envoy_config_cluster_v3_LoadBalancingPolicy_Policy {
-  /**
-   * Required. The name of the LB policy.
-   */
-  'name'?: (string);
-  'typed_config'?: (_google_protobuf_Any | null);
+  'typed_extension_config'?: (_envoy_config_core_v3_TypedExtensionConfig | null);
 }
 
 export interface _envoy_config_cluster_v3_LoadBalancingPolicy_Policy__Output {
-  /**
-   * Required. The name of the LB policy.
-   */
-  'name': (string);
-  'typed_config': (_google_protobuf_Any__Output | null);
+  'typed_extension_config': (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
 }
 
 /**
- * [#not-implemented-hide:] Extensible load balancing policy configuration.
+ * Extensible load balancing policy configuration.
  * 
  * Every LB policy defined via this mechanism will be identified via a unique name using reverse
  * DNS notation. If the policy needs configuration parameters, it must define a message for its
@@ -49,7 +41,7 @@ export interface LoadBalancingPolicy {
 }
 
 /**
- * [#not-implemented-hide:] Extensible load balancing policy configuration.
+ * Extensible load balancing policy configuration.
  * 
  * Every LB policy defined via this mechanism will be identified via a unique name using reverse
  * DNS notation. If the policy needs configuration parameters, it must define a message for its

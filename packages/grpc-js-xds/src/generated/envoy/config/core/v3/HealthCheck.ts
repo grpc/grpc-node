@@ -24,6 +24,7 @@ export interface _envoy_config_core_v3_HealthCheck_CustomHealthCheck {
   /**
    * A custom health checker specific configuration which depends on the custom health checker
    * being instantiated. See :api:`envoy/config/health_checker` for reference.
+   * [#extension-category: envoy.health_checkers]
    */
   'config_type'?: "typed_config";
 }
@@ -40,6 +41,7 @@ export interface _envoy_config_core_v3_HealthCheck_CustomHealthCheck__Output {
   /**
    * A custom health checker specific configuration which depends on the custom health checker
    * being instantiated. See :api:`envoy/config/health_checker` for reference.
+   * [#extension-category: envoy.health_checkers]
    */
   'config_type': "typed_config";
 }
@@ -63,7 +65,7 @@ export interface _envoy_config_core_v3_HealthCheck_GrpcHealthCheck {
    * The value of the :authority header in the gRPC health check request. If
    * left empty (default value), the name of the cluster this health check is associated
    * with will be used. The authority header can be customized for a specific endpoint by setting
-   * the :ref:`hostname <envoy_api_field_config.endpoint.v3.Endpoint.HealthCheckConfig.hostname>` field.
+   * the :ref:`hostname <envoy_v3_api_field_config.endpoint.v3.Endpoint.HealthCheckConfig.hostname>` field.
    */
   'authority'?: (string);
 }
@@ -87,20 +89,20 @@ export interface _envoy_config_core_v3_HealthCheck_GrpcHealthCheck__Output {
    * The value of the :authority header in the gRPC health check request. If
    * left empty (default value), the name of the cluster this health check is associated
    * with will be used. The authority header can be customized for a specific endpoint by setting
-   * the :ref:`hostname <envoy_api_field_config.endpoint.v3.Endpoint.HealthCheckConfig.hostname>` field.
+   * the :ref:`hostname <envoy_v3_api_field_config.endpoint.v3.Endpoint.HealthCheckConfig.hostname>` field.
    */
   'authority': (string);
 }
 
 /**
- * [#next-free-field: 12]
+ * [#next-free-field: 13]
  */
 export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck {
   /**
    * The value of the host header in the HTTP health check request. If
    * left empty (default value), the name of the cluster this health check is associated
    * with will be used. The host header can be customized for a specific endpoint by setting the
-   * :ref:`hostname <envoy_api_field_config.endpoint.v3.Endpoint.HealthCheckConfig.hostname>` field.
+   * :ref:`hostname <envoy_v3_api_field_config.endpoint.v3.Endpoint.HealthCheckConfig.hostname>` field.
    */
   'host'?: (string);
   /**
@@ -131,10 +133,23 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck {
   /**
    * Specifies a list of HTTP response statuses considered healthy. If provided, replaces default
    * 200-only policy - 200 must be included explicitly as needed. Ranges follow half-open
-   * semantics of :ref:`Int64Range <envoy_api_msg_type.v3.Int64Range>`. The start and end of each
+   * semantics of :ref:`Int64Range <envoy_v3_api_msg_type.v3.Int64Range>`. The start and end of each
    * range are required. Only statuses in the range [100, 600) are allowed.
    */
   'expected_statuses'?: (_envoy_type_v3_Int64Range)[];
+  /**
+   * Specifies a list of HTTP response statuses considered retriable. If provided, responses in this range
+   * will count towards the configured :ref:`unhealthy_threshold <envoy_v3_api_field_config.core.v3.HealthCheck.unhealthy_threshold>`,
+   * but will not result in the host being considered immediately unhealthy. Ranges follow half-open semantics of
+   * :ref:`Int64Range <envoy_v3_api_msg_type.v3.Int64Range>`. The start and end of each range are required.
+   * Only statuses in the range [100, 600) are allowed. The :ref:`expected_statuses <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.expected_statuses>`
+   * field takes precedence for any range overlaps with this field i.e. if status code 200 is both retriable and expected, a 200 response will
+   * be considered a successful health check. By default all responses not in
+   * :ref:`expected_statuses <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.expected_statuses>` will result in
+   * the host being considered immediately unhealthy i.e. if status code 200 is expected and there are no configured retriable statuses, any
+   * non-200 response will result in the host being marked unhealthy.
+   */
+  'retriable_statuses'?: (_envoy_type_v3_Int64Range)[];
   /**
    * Use specified application protocol for health checks.
    */
@@ -142,21 +157,21 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck {
   /**
    * An optional service name parameter which is used to validate the identity of
    * the health checked cluster using a :ref:`StringMatcher
-   * <envoy_api_msg_type.matcher.v3.StringMatcher>`. See the :ref:`architecture overview
+   * <envoy_v3_api_msg_type.matcher.v3.StringMatcher>`. See the :ref:`architecture overview
    * <arch_overview_health_checking_identity>` for more information.
    */
   'service_name_matcher'?: (_envoy_type_matcher_v3_StringMatcher | null);
 }
 
 /**
- * [#next-free-field: 12]
+ * [#next-free-field: 13]
  */
 export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck__Output {
   /**
    * The value of the host header in the HTTP health check request. If
    * left empty (default value), the name of the cluster this health check is associated
    * with will be used. The host header can be customized for a specific endpoint by setting the
-   * :ref:`hostname <envoy_api_field_config.endpoint.v3.Endpoint.HealthCheckConfig.hostname>` field.
+   * :ref:`hostname <envoy_v3_api_field_config.endpoint.v3.Endpoint.HealthCheckConfig.hostname>` field.
    */
   'host': (string);
   /**
@@ -187,10 +202,23 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck__Output {
   /**
    * Specifies a list of HTTP response statuses considered healthy. If provided, replaces default
    * 200-only policy - 200 must be included explicitly as needed. Ranges follow half-open
-   * semantics of :ref:`Int64Range <envoy_api_msg_type.v3.Int64Range>`. The start and end of each
+   * semantics of :ref:`Int64Range <envoy_v3_api_msg_type.v3.Int64Range>`. The start and end of each
    * range are required. Only statuses in the range [100, 600) are allowed.
    */
   'expected_statuses': (_envoy_type_v3_Int64Range__Output)[];
+  /**
+   * Specifies a list of HTTP response statuses considered retriable. If provided, responses in this range
+   * will count towards the configured :ref:`unhealthy_threshold <envoy_v3_api_field_config.core.v3.HealthCheck.unhealthy_threshold>`,
+   * but will not result in the host being considered immediately unhealthy. Ranges follow half-open semantics of
+   * :ref:`Int64Range <envoy_v3_api_msg_type.v3.Int64Range>`. The start and end of each range are required.
+   * Only statuses in the range [100, 600) are allowed. The :ref:`expected_statuses <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.expected_statuses>`
+   * field takes precedence for any range overlaps with this field i.e. if status code 200 is both retriable and expected, a 200 response will
+   * be considered a successful health check. By default all responses not in
+   * :ref:`expected_statuses <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.expected_statuses>` will result in
+   * the host being considered immediately unhealthy i.e. if status code 200 is expected and there are no configured retriable statuses, any
+   * non-200 response will result in the host being marked unhealthy.
+   */
+  'retriable_statuses': (_envoy_type_v3_Int64Range__Output)[];
   /**
    * Use specified application protocol for health checks.
    */
@@ -198,7 +226,7 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck__Output {
   /**
    * An optional service name parameter which is used to validate the identity of
    * the health checked cluster using a :ref:`StringMatcher
-   * <envoy_api_msg_type.matcher.v3.StringMatcher>`. See the :ref:`architecture overview
+   * <envoy_v3_api_msg_type.matcher.v3.StringMatcher>`. See the :ref:`architecture overview
    * <arch_overview_health_checking_identity>` for more information.
    */
   'service_name_matcher': (_envoy_type_matcher_v3_StringMatcher__Output | null);
@@ -290,7 +318,7 @@ export interface _envoy_config_core_v3_HealthCheck_TlsOptions {
   /**
    * Specifies the ALPN protocols for health check connections. This is useful if the
    * corresponding upstream is using ALPN-based :ref:`FilterChainMatch
-   * <envoy_api_msg_config.listener.v3.FilterChainMatch>` along with different protocols for health checks
+   * <envoy_v3_api_msg_config.listener.v3.FilterChainMatch>` along with different protocols for health checks
    * versus data connections. If empty, no ALPN protocols will be set on health check connections.
    */
   'alpn_protocols'?: (string)[];
@@ -306,7 +334,7 @@ export interface _envoy_config_core_v3_HealthCheck_TlsOptions__Output {
   /**
    * Specifies the ALPN protocols for health check connections. This is useful if the
    * corresponding upstream is using ALPN-based :ref:`FilterChainMatch
-   * <envoy_api_msg_config.listener.v3.FilterChainMatch>` along with different protocols for health checks
+   * <envoy_v3_api_msg_config.listener.v3.FilterChainMatch>` along with different protocols for health checks
    * versus data connections. If empty, no ALPN protocols will be set on health check connections.
    */
   'alpn_protocols': (string)[];
@@ -332,8 +360,10 @@ export interface HealthCheck {
   'interval_jitter'?: (_google_protobuf_Duration | null);
   /**
    * The number of unhealthy health checks required before a host is marked
-   * unhealthy. Note that for *http* health checking if a host responds with 503
-   * this threshold is ignored and the host is considered unhealthy immediately.
+   * unhealthy. Note that for *http* health checking if a host responds with a code not in
+   * :ref:`expected_statuses <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.expected_statuses>`
+   * or :ref:`retriable_statuses <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.retriable_statuses>`,
+   * this threshold is ignored and the host is considered immediately unhealthy.
    */
   'unhealthy_threshold'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -440,7 +470,7 @@ export interface HealthCheck {
   'event_service'?: (_envoy_config_core_v3_EventServiceConfig | null);
   /**
    * Optional key/value pairs that will be used to match a transport socket from those specified in the cluster's
-   * :ref:`tranport socket matches <envoy_api_field_config.cluster.v3.Cluster.transport_socket_matches>`.
+   * :ref:`tranport socket matches <envoy_v3_api_field_config.cluster.v3.Cluster.transport_socket_matches>`.
    * For example, the following match criteria
    * 
    * .. code-block:: yaml
@@ -448,7 +478,7 @@ export interface HealthCheck {
    * transport_socket_match_criteria:
    * useMTLS: true
    * 
-   * Will match the following :ref:`cluster socket match <envoy_api_msg_config.cluster.v3.Cluster.TransportSocketMatch>`
+   * Will match the following :ref:`cluster socket match <envoy_v3_api_msg_config.cluster.v3.Cluster.TransportSocketMatch>`
    * 
    * .. code-block:: yaml
    * 
@@ -461,13 +491,13 @@ export interface HealthCheck {
    * config: { ... } # tls socket configuration
    * 
    * If this field is set, then for health checks it will supersede an entry of *envoy.transport_socket* in the
-   * :ref:`LbEndpoint.Metadata <envoy_api_field_config.endpoint.v3.LbEndpoint.metadata>`.
+   * :ref:`LbEndpoint.Metadata <envoy_v3_api_field_config.endpoint.v3.LbEndpoint.metadata>`.
    * This allows using different transport socket capabilities for health checking versus proxying to the
    * endpoint.
    * 
    * If the key/values pairs specified do not match any
-   * :ref:`transport socket matches <envoy_api_field_config.cluster.v3.Cluster.transport_socket_matches>`,
-   * the cluster's :ref:`transport socket <envoy_api_field_config.cluster.v3.Cluster.transport_socket>`
+   * :ref:`transport socket matches <envoy_v3_api_field_config.cluster.v3.Cluster.transport_socket_matches>`,
+   * the cluster's :ref:`transport socket <envoy_v3_api_field_config.cluster.v3.Cluster.transport_socket>`
    * will be used for health check socket configuration.
    */
   'transport_socket_match_criteria'?: (_google_protobuf_Struct | null);
@@ -510,8 +540,10 @@ export interface HealthCheck__Output {
   'interval_jitter': (_google_protobuf_Duration__Output | null);
   /**
    * The number of unhealthy health checks required before a host is marked
-   * unhealthy. Note that for *http* health checking if a host responds with 503
-   * this threshold is ignored and the host is considered unhealthy immediately.
+   * unhealthy. Note that for *http* health checking if a host responds with a code not in
+   * :ref:`expected_statuses <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.expected_statuses>`
+   * or :ref:`retriable_statuses <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.retriable_statuses>`,
+   * this threshold is ignored and the host is considered immediately unhealthy.
    */
   'unhealthy_threshold': (_google_protobuf_UInt32Value__Output | null);
   /**
@@ -618,7 +650,7 @@ export interface HealthCheck__Output {
   'event_service': (_envoy_config_core_v3_EventServiceConfig__Output | null);
   /**
    * Optional key/value pairs that will be used to match a transport socket from those specified in the cluster's
-   * :ref:`tranport socket matches <envoy_api_field_config.cluster.v3.Cluster.transport_socket_matches>`.
+   * :ref:`tranport socket matches <envoy_v3_api_field_config.cluster.v3.Cluster.transport_socket_matches>`.
    * For example, the following match criteria
    * 
    * .. code-block:: yaml
@@ -626,7 +658,7 @@ export interface HealthCheck__Output {
    * transport_socket_match_criteria:
    * useMTLS: true
    * 
-   * Will match the following :ref:`cluster socket match <envoy_api_msg_config.cluster.v3.Cluster.TransportSocketMatch>`
+   * Will match the following :ref:`cluster socket match <envoy_v3_api_msg_config.cluster.v3.Cluster.TransportSocketMatch>`
    * 
    * .. code-block:: yaml
    * 
@@ -639,13 +671,13 @@ export interface HealthCheck__Output {
    * config: { ... } # tls socket configuration
    * 
    * If this field is set, then for health checks it will supersede an entry of *envoy.transport_socket* in the
-   * :ref:`LbEndpoint.Metadata <envoy_api_field_config.endpoint.v3.LbEndpoint.metadata>`.
+   * :ref:`LbEndpoint.Metadata <envoy_v3_api_field_config.endpoint.v3.LbEndpoint.metadata>`.
    * This allows using different transport socket capabilities for health checking versus proxying to the
    * endpoint.
    * 
    * If the key/values pairs specified do not match any
-   * :ref:`transport socket matches <envoy_api_field_config.cluster.v3.Cluster.transport_socket_matches>`,
-   * the cluster's :ref:`transport socket <envoy_api_field_config.cluster.v3.Cluster.transport_socket>`
+   * :ref:`transport socket matches <envoy_v3_api_field_config.cluster.v3.Cluster.transport_socket_matches>`,
+   * the cluster's :ref:`transport socket <envoy_v3_api_field_config.cluster.v3.Cluster.transport_socket>`
    * will be used for health check socket configuration.
    */
   'transport_socket_match_criteria': (_google_protobuf_Struct__Output | null);

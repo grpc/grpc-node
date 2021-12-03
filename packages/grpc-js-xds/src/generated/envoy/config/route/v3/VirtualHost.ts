@@ -87,8 +87,8 @@ export interface VirtualHost {
   /**
    * Specifies a list of HTTP headers that should be added to each request
    * handled by this virtual host. Headers specified at this level are applied
-   * after headers from enclosed :ref:`envoy_api_msg_config.route.v3.Route` and before headers from the
-   * enclosing :ref:`envoy_api_msg_config.route.v3.RouteConfiguration`. For more information, including
+   * after headers from enclosed :ref:`envoy_v3_api_msg_config.route.v3.Route` and before headers from the
+   * enclosing :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration`. For more information, including
    * details on header value syntax, see the documentation on :ref:`custom request headers
    * <config_http_conn_man_headers_custom_request_headers>`.
    */
@@ -100,8 +100,8 @@ export interface VirtualHost {
   /**
    * Specifies a list of HTTP headers that should be added to each response
    * handled by this virtual host. Headers specified at this level are applied
-   * after headers from enclosed :ref:`envoy_api_msg_config.route.v3.Route` and before headers from the
-   * enclosing :ref:`envoy_api_msg_config.route.v3.RouteConfiguration`. For more information, including
+   * after headers from enclosed :ref:`envoy_v3_api_msg_config.route.v3.Route` and before headers from the
+   * enclosing :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration`. For more information, including
    * details on header value syntax, see the documentation on :ref:`custom request headers
    * <config_http_conn_man_headers_custom_request_headers>`.
    */
@@ -124,7 +124,7 @@ export interface VirtualHost {
    * will see the attempt count as perceived by the second Envoy. Defaults to false.
    * This header is unaffected by the
    * :ref:`suppress_envoy_headers
-   * <envoy_api_field_extensions.filters.http.router.v3.Router.suppress_envoy_headers>` flag.
+   * <envoy_v3_api_field_extensions.filters.http.router.v3.Router.suppress_envoy_headers>` flag.
    * 
    * [#next-major-version: rename to include_attempt_count_in_request.]
    */
@@ -136,7 +136,7 @@ export interface VirtualHost {
    * specific; see the :ref:`HTTP filter documentation <config_http_filters>`
    * for if and how it is utilized.
    * [#comment: An entry's value may be wrapped in a
-   * :ref:`FilterConfig<envoy_api_msg_config.route.v3.FilterConfig>`
+   * :ref:`FilterConfig<envoy_v3_api_msg_config.route.v3.FilterConfig>`
    * message to specify additional options.]
    */
   'typed_per_filter_config'?: ({[key: string]: _google_protobuf_Any});
@@ -166,14 +166,14 @@ export interface VirtualHost {
    * will see the attempt count as perceived by the Envoy closest upstream from itself. Defaults to false.
    * This header is unaffected by the
    * :ref:`suppress_envoy_headers
-   * <envoy_api_field_extensions.filters.http.router.v3.Router.suppress_envoy_headers>` flag.
+   * <envoy_v3_api_field_extensions.filters.http.router.v3.Router.suppress_envoy_headers>` flag.
    */
   'include_attempt_count_in_response'?: (boolean);
   /**
    * [#not-implemented-hide:]
    * Specifies the configuration for retry policy extension. Note that setting a route level entry
    * will take precedence over this config and it'll be treated independently (e.g.: values are not
-   * inherited). :ref:`Retry policy <envoy_api_field_config.route.v3.VirtualHost.retry_policy>` should not be
+   * inherited). :ref:`Retry policy <envoy_v3_api_field_config.route.v3.VirtualHost.retry_policy>` should not be
    * set if this field is used.
    */
   'retry_policy_typed_config'?: (_google_protobuf_Any | null);
@@ -237,8 +237,8 @@ export interface VirtualHost__Output {
   /**
    * Specifies a list of HTTP headers that should be added to each request
    * handled by this virtual host. Headers specified at this level are applied
-   * after headers from enclosed :ref:`envoy_api_msg_config.route.v3.Route` and before headers from the
-   * enclosing :ref:`envoy_api_msg_config.route.v3.RouteConfiguration`. For more information, including
+   * after headers from enclosed :ref:`envoy_v3_api_msg_config.route.v3.Route` and before headers from the
+   * enclosing :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration`. For more information, including
    * details on header value syntax, see the documentation on :ref:`custom request headers
    * <config_http_conn_man_headers_custom_request_headers>`.
    */
@@ -250,8 +250,8 @@ export interface VirtualHost__Output {
   /**
    * Specifies a list of HTTP headers that should be added to each response
    * handled by this virtual host. Headers specified at this level are applied
-   * after headers from enclosed :ref:`envoy_api_msg_config.route.v3.Route` and before headers from the
-   * enclosing :ref:`envoy_api_msg_config.route.v3.RouteConfiguration`. For more information, including
+   * after headers from enclosed :ref:`envoy_v3_api_msg_config.route.v3.Route` and before headers from the
+   * enclosing :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration`. For more information, including
    * details on header value syntax, see the documentation on :ref:`custom request headers
    * <config_http_conn_man_headers_custom_request_headers>`.
    */
@@ -274,7 +274,7 @@ export interface VirtualHost__Output {
    * will see the attempt count as perceived by the second Envoy. Defaults to false.
    * This header is unaffected by the
    * :ref:`suppress_envoy_headers
-   * <envoy_api_field_extensions.filters.http.router.v3.Router.suppress_envoy_headers>` flag.
+   * <envoy_v3_api_field_extensions.filters.http.router.v3.Router.suppress_envoy_headers>` flag.
    * 
    * [#next-major-version: rename to include_attempt_count_in_request.]
    */
@@ -286,7 +286,7 @@ export interface VirtualHost__Output {
    * specific; see the :ref:`HTTP filter documentation <config_http_filters>`
    * for if and how it is utilized.
    * [#comment: An entry's value may be wrapped in a
-   * :ref:`FilterConfig<envoy_api_msg_config.route.v3.FilterConfig>`
+   * :ref:`FilterConfig<envoy_v3_api_msg_config.route.v3.FilterConfig>`
    * message to specify additional options.]
    */
   'typed_per_filter_config': ({[key: string]: _google_protobuf_Any__Output});
@@ -316,14 +316,14 @@ export interface VirtualHost__Output {
    * will see the attempt count as perceived by the Envoy closest upstream from itself. Defaults to false.
    * This header is unaffected by the
    * :ref:`suppress_envoy_headers
-   * <envoy_api_field_extensions.filters.http.router.v3.Router.suppress_envoy_headers>` flag.
+   * <envoy_v3_api_field_extensions.filters.http.router.v3.Router.suppress_envoy_headers>` flag.
    */
   'include_attempt_count_in_response': (boolean);
   /**
    * [#not-implemented-hide:]
    * Specifies the configuration for retry policy extension. Note that setting a route level entry
    * will take precedence over this config and it'll be treated independently (e.g.: values are not
-   * inherited). :ref:`Retry policy <envoy_api_field_config.route.v3.VirtualHost.retry_policy>` should not be
+   * inherited). :ref:`Retry policy <envoy_v3_api_field_config.route.v3.VirtualHost.retry_policy>` should not be
    * set if this field is used.
    */
   'retry_policy_typed_config': (_google_protobuf_Any__Output | null);

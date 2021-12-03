@@ -6,6 +6,7 @@ import type { Percent as _envoy_type_v3_Percent, Percent__Output as _envoy_type_
 export interface KeepaliveSettings {
   /**
    * Send HTTP/2 PING frames at this period, in order to test that the connection is still alive.
+   * If this is zero, interval PINGs will not be sent.
    */
   'interval'?: (_google_protobuf_Duration | null);
   /**
@@ -19,11 +20,20 @@ export interface KeepaliveSettings {
    * The default value is 15%.
    */
   'interval_jitter'?: (_envoy_type_v3_Percent | null);
+  /**
+   * If the connection has been idle for this duration, send a HTTP/2 ping ahead
+   * of new stream creation, to quickly detect dead connections.
+   * If this is zero, this type of PING will not be sent.
+   * If an interval ping is outstanding, a second ping will not be sent as the
+   * interval ping will determine if the connection is dead.
+   */
+  'connection_idle_interval'?: (_google_protobuf_Duration | null);
 }
 
 export interface KeepaliveSettings__Output {
   /**
    * Send HTTP/2 PING frames at this period, in order to test that the connection is still alive.
+   * If this is zero, interval PINGs will not be sent.
    */
   'interval': (_google_protobuf_Duration__Output | null);
   /**
@@ -37,4 +47,12 @@ export interface KeepaliveSettings__Output {
    * The default value is 15%.
    */
   'interval_jitter': (_envoy_type_v3_Percent__Output | null);
+  /**
+   * If the connection has been idle for this duration, send a HTTP/2 ping ahead
+   * of new stream creation, to quickly detect dead connections.
+   * If this is zero, this type of PING will not be sent.
+   * If an interval ping is outstanding, a second ping will not be sent as the
+   * interval ping will determine if the connection is dead.
+   */
+  'connection_idle_interval': (_google_protobuf_Duration__Output | null);
 }

@@ -11,6 +11,7 @@ import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__
 import type { Tracing as _envoy_config_route_v3_Tracing, Tracing__Output as _envoy_config_route_v3_Tracing__Output } from '../../../../envoy/config/route/v3/Tracing';
 import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 import type { FilterAction as _envoy_config_route_v3_FilterAction, FilterAction__Output as _envoy_config_route_v3_FilterAction__Output } from '../../../../envoy/config/route/v3/FilterAction';
+import type { NonForwardingAction as _envoy_config_route_v3_NonForwardingAction, NonForwardingAction__Output as _envoy_config_route_v3_NonForwardingAction__Output } from '../../../../envoy/config/route/v3/NonForwardingAction';
 
 /**
  * A route is both a specification of how to match a request as well as an indication of what to do
@@ -19,8 +20,8 @@ import type { FilterAction as _envoy_config_route_v3_FilterAction, FilterAction_
  * .. attention::
  * 
  * Envoy supports routing on HTTP method via :ref:`header matching
- * <envoy_api_msg_config.route.v3.HeaderMatcher>`.
- * [#next-free-field: 18]
+ * <envoy_v3_api_msg_config.route.v3.HeaderMatcher>`.
+ * [#next-free-field: 19]
  */
 export interface Route {
   /**
@@ -54,8 +55,8 @@ export interface Route {
   /**
    * Specifies a set of headers that will be added to requests matching this
    * route. Headers specified at this level are applied before headers from the
-   * enclosing :ref:`envoy_api_msg_config.route.v3.VirtualHost` and
-   * :ref:`envoy_api_msg_config.route.v3.RouteConfiguration`. For more information, including details on
+   * enclosing :ref:`envoy_v3_api_msg_config.route.v3.VirtualHost` and
+   * :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration`. For more information, including details on
    * header value syntax, see the documentation on :ref:`custom request headers
    * <config_http_conn_man_headers_custom_request_headers>`.
    */
@@ -63,8 +64,8 @@ export interface Route {
   /**
    * Specifies a set of headers that will be added to responses to requests
    * matching this route. Headers specified at this level are applied before
-   * headers from the enclosing :ref:`envoy_api_msg_config.route.v3.VirtualHost` and
-   * :ref:`envoy_api_msg_config.route.v3.RouteConfiguration`. For more information, including
+   * headers from the enclosing :ref:`envoy_v3_api_msg_config.route.v3.VirtualHost` and
+   * :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration`. For more information, including
    * details on header value syntax, see the documentation on
    * :ref:`custom request headers <config_http_conn_man_headers_custom_request_headers>`.
    */
@@ -86,7 +87,7 @@ export interface Route {
    * specific; see the :ref:`HTTP filter documentation <config_http_filters>` for
    * if and how it is utilized.
    * [#comment: An entry's value may be wrapped in a
-   * :ref:`FilterConfig<envoy_api_msg_config.route.v3.FilterConfig>`
+   * :ref:`FilterConfig<envoy_v3_api_msg_config.route.v3.FilterConfig>`
    * message to specify additional options.]
    */
   'typed_per_filter_config'?: ({[key: string]: _google_protobuf_Any});
@@ -107,13 +108,20 @@ export interface Route {
   'per_request_buffer_limit_bytes'?: (_google_protobuf_UInt32Value | null);
   /**
    * [#not-implemented-hide:]
-   * If true, a filter will define the action (e.g., it could dynamically generate the
-   * RouteAction).
+   * A filter-defined action (e.g., it could dynamically generate the RouteAction).
    * [#comment: TODO(samflattery): Remove cleanup in route_fuzz_test.cc when
    * implemented]
    */
   'filter_action'?: (_envoy_config_route_v3_FilterAction | null);
-  'action'?: "route"|"redirect"|"direct_response"|"filter_action";
+  /**
+   * [#not-implemented-hide:]
+   * An action used when the route will generate a response directly,
+   * without forwarding to an upstream host. This will be used in non-proxy
+   * xDS clients like the gRPC server. It could also be used in the future
+   * in Envoy for a filter that directly generates responses for requests.
+   */
+  'non_forwarding_action'?: (_envoy_config_route_v3_NonForwardingAction | null);
+  'action'?: "route"|"redirect"|"direct_response"|"filter_action"|"non_forwarding_action";
 }
 
 /**
@@ -123,8 +131,8 @@ export interface Route {
  * .. attention::
  * 
  * Envoy supports routing on HTTP method via :ref:`header matching
- * <envoy_api_msg_config.route.v3.HeaderMatcher>`.
- * [#next-free-field: 18]
+ * <envoy_v3_api_msg_config.route.v3.HeaderMatcher>`.
+ * [#next-free-field: 19]
  */
 export interface Route__Output {
   /**
@@ -158,8 +166,8 @@ export interface Route__Output {
   /**
    * Specifies a set of headers that will be added to requests matching this
    * route. Headers specified at this level are applied before headers from the
-   * enclosing :ref:`envoy_api_msg_config.route.v3.VirtualHost` and
-   * :ref:`envoy_api_msg_config.route.v3.RouteConfiguration`. For more information, including details on
+   * enclosing :ref:`envoy_v3_api_msg_config.route.v3.VirtualHost` and
+   * :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration`. For more information, including details on
    * header value syntax, see the documentation on :ref:`custom request headers
    * <config_http_conn_man_headers_custom_request_headers>`.
    */
@@ -167,8 +175,8 @@ export interface Route__Output {
   /**
    * Specifies a set of headers that will be added to responses to requests
    * matching this route. Headers specified at this level are applied before
-   * headers from the enclosing :ref:`envoy_api_msg_config.route.v3.VirtualHost` and
-   * :ref:`envoy_api_msg_config.route.v3.RouteConfiguration`. For more information, including
+   * headers from the enclosing :ref:`envoy_v3_api_msg_config.route.v3.VirtualHost` and
+   * :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration`. For more information, including
    * details on header value syntax, see the documentation on
    * :ref:`custom request headers <config_http_conn_man_headers_custom_request_headers>`.
    */
@@ -190,7 +198,7 @@ export interface Route__Output {
    * specific; see the :ref:`HTTP filter documentation <config_http_filters>` for
    * if and how it is utilized.
    * [#comment: An entry's value may be wrapped in a
-   * :ref:`FilterConfig<envoy_api_msg_config.route.v3.FilterConfig>`
+   * :ref:`FilterConfig<envoy_v3_api_msg_config.route.v3.FilterConfig>`
    * message to specify additional options.]
    */
   'typed_per_filter_config': ({[key: string]: _google_protobuf_Any__Output});
@@ -211,11 +219,18 @@ export interface Route__Output {
   'per_request_buffer_limit_bytes': (_google_protobuf_UInt32Value__Output | null);
   /**
    * [#not-implemented-hide:]
-   * If true, a filter will define the action (e.g., it could dynamically generate the
-   * RouteAction).
+   * A filter-defined action (e.g., it could dynamically generate the RouteAction).
    * [#comment: TODO(samflattery): Remove cleanup in route_fuzz_test.cc when
    * implemented]
    */
   'filter_action'?: (_envoy_config_route_v3_FilterAction__Output | null);
-  'action': "route"|"redirect"|"direct_response"|"filter_action";
+  /**
+   * [#not-implemented-hide:]
+   * An action used when the route will generate a response directly,
+   * without forwarding to an upstream host. This will be used in non-proxy
+   * xDS clients like the gRPC server. It could also be used in the future
+   * in Envoy for a filter that directly generates responses for requests.
+   */
+  'non_forwarding_action'?: (_envoy_config_route_v3_NonForwardingAction__Output | null);
+  'action': "route"|"redirect"|"direct_response"|"filter_action"|"non_forwarding_action";
 }

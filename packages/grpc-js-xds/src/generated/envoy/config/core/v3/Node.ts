@@ -5,12 +5,13 @@ import type { Locality as _envoy_config_core_v3_Locality, Locality__Output as _e
 import type { BuildVersion as _envoy_config_core_v3_BuildVersion, BuildVersion__Output as _envoy_config_core_v3_BuildVersion__Output } from '../../../../envoy/config/core/v3/BuildVersion';
 import type { Extension as _envoy_config_core_v3_Extension, Extension__Output as _envoy_config_core_v3_Extension__Output } from '../../../../envoy/config/core/v3/Extension';
 import type { Address as _envoy_config_core_v3_Address, Address__Output as _envoy_config_core_v3_Address__Output } from '../../../../envoy/config/core/v3/Address';
+import type { ContextParams as _xds_core_v3_ContextParams, ContextParams__Output as _xds_core_v3_ContextParams__Output } from '../../../../xds/core/v3/ContextParams';
 
 /**
  * Identifies a specific Envoy instance. The node identifier is presented to the
  * management server, which may use this identifier to distinguish per Envoy
  * configuration for serving.
- * [#next-free-field: 12]
+ * [#next-free-field: 13]
  */
 export interface Node {
   /**
@@ -27,10 +28,10 @@ export interface Node {
    * optional, it should be set if any of the following features are used:
    * :ref:`statsd <arch_overview_statistics>`, :ref:`health check cluster
    * verification
-   * <envoy_api_field_config.core.v3.HealthCheck.HttpHealthCheck.service_name_matcher>`,
-   * :ref:`runtime override directory <envoy_api_msg_config.bootstrap.v3.Runtime>`,
+   * <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.service_name_matcher>`,
+   * :ref:`runtime override directory <envoy_v3_api_msg_config.bootstrap.v3.Runtime>`,
    * :ref:`user agent addition
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.add_user_agent>`,
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.add_user_agent>`,
    * :ref:`HTTP global rate limiting <config_http_filters_rate_limit>`,
    * :ref:`CDS <config_cluster_manager_cds>`, and :ref:`HTTP tracing
    * <arch_overview_tracing>`, either in this message or via
@@ -79,6 +80,14 @@ export interface Node {
    * SocketAddress `(0.0.0.0,80)`. The field is optional and just a hint.
    */
   'listening_addresses'?: (_envoy_config_core_v3_Address)[];
+  /**
+   * Map from xDS resource type URL to dynamic context parameters. These may vary at runtime (unlike
+   * other fields in this message). For example, the xDS client may have a shard identifier that
+   * changes during the lifetime of the xDS client. In Envoy, this would be achieved by updating the
+   * dynamic context on the Server::Instance's LocalInfo context provider. The shard ID dynamic
+   * parameter then appears in this field during future discovery requests.
+   */
+  'dynamic_parameters'?: ({[key: string]: _xds_core_v3_ContextParams});
   'user_agent_version_type'?: "user_agent_version"|"user_agent_build_version";
 }
 
@@ -86,7 +95,7 @@ export interface Node {
  * Identifies a specific Envoy instance. The node identifier is presented to the
  * management server, which may use this identifier to distinguish per Envoy
  * configuration for serving.
- * [#next-free-field: 12]
+ * [#next-free-field: 13]
  */
 export interface Node__Output {
   /**
@@ -103,10 +112,10 @@ export interface Node__Output {
    * optional, it should be set if any of the following features are used:
    * :ref:`statsd <arch_overview_statistics>`, :ref:`health check cluster
    * verification
-   * <envoy_api_field_config.core.v3.HealthCheck.HttpHealthCheck.service_name_matcher>`,
-   * :ref:`runtime override directory <envoy_api_msg_config.bootstrap.v3.Runtime>`,
+   * <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.service_name_matcher>`,
+   * :ref:`runtime override directory <envoy_v3_api_msg_config.bootstrap.v3.Runtime>`,
    * :ref:`user agent addition
-   * <envoy_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.add_user_agent>`,
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.add_user_agent>`,
    * :ref:`HTTP global rate limiting <config_http_filters_rate_limit>`,
    * :ref:`CDS <config_cluster_manager_cds>`, and :ref:`HTTP tracing
    * <arch_overview_tracing>`, either in this message or via
@@ -155,5 +164,13 @@ export interface Node__Output {
    * SocketAddress `(0.0.0.0,80)`. The field is optional and just a hint.
    */
   'listening_addresses': (_envoy_config_core_v3_Address__Output)[];
+  /**
+   * Map from xDS resource type URL to dynamic context parameters. These may vary at runtime (unlike
+   * other fields in this message). For example, the xDS client may have a shard identifier that
+   * changes during the lifetime of the xDS client. In Envoy, this would be achieved by updating the
+   * dynamic context on the Server::Instance's LocalInfo context provider. The shard ID dynamic
+   * parameter then appears in this field during future discovery requests.
+   */
+  'dynamic_parameters': ({[key: string]: _xds_core_v3_ContextParams__Output});
   'user_agent_version_type': "user_agent_version"|"user_agent_build_version";
 }

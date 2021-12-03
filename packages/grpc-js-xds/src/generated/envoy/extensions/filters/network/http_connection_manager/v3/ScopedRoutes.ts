@@ -160,19 +160,19 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Sc
 
 /**
  * Specifies the mechanism for constructing "scope keys" based on HTTP request attributes. These
- * keys are matched against a set of :ref:`Key<envoy_api_msg_config.route.v3.ScopedRouteConfiguration.Key>`
- * objects assembled from :ref:`ScopedRouteConfiguration<envoy_api_msg_config.route.v3.ScopedRouteConfiguration>`
+ * keys are matched against a set of :ref:`Key<envoy_v3_api_msg_config.route.v3.ScopedRouteConfiguration.Key>`
+ * objects assembled from :ref:`ScopedRouteConfiguration<envoy_v3_api_msg_config.route.v3.ScopedRouteConfiguration>`
  * messages distributed via SRDS (the Scoped Route Discovery Service) or assigned statically via
- * :ref:`scoped_route_configurations_list<envoy_api_field_extensions.filters.network.http_connection_manager.v3.ScopedRoutes.scoped_route_configurations_list>`.
+ * :ref:`scoped_route_configurations_list<envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.ScopedRoutes.scoped_route_configurations_list>`.
  * 
  * Upon receiving a request's headers, the Router will build a key using the algorithm specified
  * by this message. This key will be used to look up the routing table (i.e., the
- * :ref:`RouteConfiguration<envoy_api_msg_config.route.v3.RouteConfiguration>`) to use for the request.
+ * :ref:`RouteConfiguration<envoy_v3_api_msg_config.route.v3.RouteConfiguration>`) to use for the request.
  */
 export interface _envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder {
   /**
    * The final(built) scope key consists of the ordered union of these fragments, which are compared in order with the
-   * fragments of a :ref:`ScopedRouteConfiguration<envoy_api_msg_config.route.v3.ScopedRouteConfiguration>`.
+   * fragments of a :ref:`ScopedRouteConfiguration<envoy_v3_api_msg_config.route.v3.ScopedRouteConfiguration>`.
    * A missing fragment during comparison will make the key invalid, i.e., the computed key doesn't match any key.
    */
   'fragments'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder)[];
@@ -180,19 +180,19 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Sc
 
 /**
  * Specifies the mechanism for constructing "scope keys" based on HTTP request attributes. These
- * keys are matched against a set of :ref:`Key<envoy_api_msg_config.route.v3.ScopedRouteConfiguration.Key>`
- * objects assembled from :ref:`ScopedRouteConfiguration<envoy_api_msg_config.route.v3.ScopedRouteConfiguration>`
+ * keys are matched against a set of :ref:`Key<envoy_v3_api_msg_config.route.v3.ScopedRouteConfiguration.Key>`
+ * objects assembled from :ref:`ScopedRouteConfiguration<envoy_v3_api_msg_config.route.v3.ScopedRouteConfiguration>`
  * messages distributed via SRDS (the Scoped Route Discovery Service) or assigned statically via
- * :ref:`scoped_route_configurations_list<envoy_api_field_extensions.filters.network.http_connection_manager.v3.ScopedRoutes.scoped_route_configurations_list>`.
+ * :ref:`scoped_route_configurations_list<envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.ScopedRoutes.scoped_route_configurations_list>`.
  * 
  * Upon receiving a request's headers, the Router will build a key using the algorithm specified
  * by this message. This key will be used to look up the routing table (i.e., the
- * :ref:`RouteConfiguration<envoy_api_msg_config.route.v3.RouteConfiguration>`) to use for the request.
+ * :ref:`RouteConfiguration<envoy_v3_api_msg_config.route.v3.RouteConfiguration>`) to use for the request.
  */
 export interface _envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder__Output {
   /**
    * The final(built) scope key consists of the ordered union of these fragments, which are compared in order with the
-   * fragments of a :ref:`ScopedRouteConfiguration<envoy_api_msg_config.route.v3.ScopedRouteConfiguration>`.
+   * fragments of a :ref:`ScopedRouteConfiguration<envoy_v3_api_msg_config.route.v3.ScopedRouteConfiguration>`.
    * A missing fragment during comparison will make the key invalid, i.e., the computed key doesn't match any key.
    */
   'fragments': (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder__Output)[];
@@ -220,7 +220,7 @@ export interface ScopedRoutes {
    * The set of routing scopes corresponding to the HCM. A scope is assigned to a request by
    * matching a key constructed from the request's attributes according to the algorithm specified
    * by the
-   * :ref:`ScopeKeyBuilder<envoy_api_msg_extensions.filters.network.http_connection_manager.v3.ScopedRoutes.ScopeKeyBuilder>`
+   * :ref:`ScopeKeyBuilder<envoy_v3_api_msg_extensions.filters.network.http_connection_manager.v3.ScopedRoutes.ScopeKeyBuilder>`
    * in this message.
    */
   'scoped_route_configurations_list'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList | null);
@@ -228,7 +228,7 @@ export interface ScopedRoutes {
    * The set of routing scopes associated with the HCM will be dynamically loaded via the SRDS
    * API. A scope is assigned to a request by matching a key constructed from the request's
    * attributes according to the algorithm specified by the
-   * :ref:`ScopeKeyBuilder<envoy_api_msg_extensions.filters.network.http_connection_manager.v3.ScopedRoutes.ScopeKeyBuilder>`
+   * :ref:`ScopeKeyBuilder<envoy_v3_api_msg_extensions.filters.network.http_connection_manager.v3.ScopedRoutes.ScopeKeyBuilder>`
    * in this message.
    */
   'scoped_rds'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds | null);
@@ -257,7 +257,7 @@ export interface ScopedRoutes__Output {
    * The set of routing scopes corresponding to the HCM. A scope is assigned to a request by
    * matching a key constructed from the request's attributes according to the algorithm specified
    * by the
-   * :ref:`ScopeKeyBuilder<envoy_api_msg_extensions.filters.network.http_connection_manager.v3.ScopedRoutes.ScopeKeyBuilder>`
+   * :ref:`ScopeKeyBuilder<envoy_v3_api_msg_extensions.filters.network.http_connection_manager.v3.ScopedRoutes.ScopeKeyBuilder>`
    * in this message.
    */
   'scoped_route_configurations_list'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList__Output | null);
@@ -265,7 +265,7 @@ export interface ScopedRoutes__Output {
    * The set of routing scopes associated with the HCM will be dynamically loaded via the SRDS
    * API. A scope is assigned to a request by matching a key constructed from the request's
    * attributes according to the algorithm specified by the
-   * :ref:`ScopeKeyBuilder<envoy_api_msg_extensions.filters.network.http_connection_manager.v3.ScopedRoutes.ScopeKeyBuilder>`
+   * :ref:`ScopeKeyBuilder<envoy_v3_api_msg_extensions.filters.network.http_connection_manager.v3.ScopedRoutes.ScopeKeyBuilder>`
    * in this message.
    */
   'scoped_rds'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds__Output | null);

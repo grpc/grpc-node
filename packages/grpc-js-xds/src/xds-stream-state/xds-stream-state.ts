@@ -16,6 +16,7 @@
  */
 
 import { StatusObject } from "@grpc/grpc-js";
+import { Any__Output } from "../generated/google/protobuf/Any";
 
 export interface Watcher<UpdateType> {
   /* Including the isV2 flag here is a bit of a kludge. It would probably be
@@ -28,6 +29,28 @@ export interface Watcher<UpdateType> {
   onResourceDoesNotExist(): void;
 }
 
+export interface ResourcePair<ResourceType> {
+  resource: ResourceType;
+  raw: Any__Output;
+}
+
+export interface AcceptedResourceEntry {
+  name: string;
+  raw: Any__Output;
+}
+
+export interface RejectedResourceEntry {
+  name: string;
+  raw: Any__Output;
+  error: string;
+}
+
+export interface HandleResponseResult {
+  accepted: AcceptedResourceEntry[];
+  rejected: RejectedResourceEntry[];
+  missing: string[];
+}
+
 export interface XdsStreamState<ResponseType> {
   versionInfo: string;
   nonce: string;
@@ -37,7 +60,7 @@ export interface XdsStreamState<ResponseType> {
    * or null if it should be acked.
    * @param responses
    */
-  handleResponses(responses: ResponseType[], isV2: boolean): string | null;
+  handleResponses(responses: ResourcePair<ResponseType>[], isV2: boolean): HandleResponseResult;
 
   reportStreamError(status: StatusObject): void;
 }

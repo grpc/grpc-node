@@ -157,9 +157,9 @@ export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__Output 
 export interface ClusterLoadAssignment {
   /**
    * Name of the cluster. This will be the :ref:`service_name
-   * <envoy_api_field_config.cluster.v3.Cluster.EdsClusterConfig.service_name>` value if specified
+   * <envoy_v3_api_field_config.cluster.v3.Cluster.EdsClusterConfig.service_name>` value if specified
    * in the cluster :ref:`EdsClusterConfig
-   * <envoy_api_msg_config.cluster.v3.Cluster.EdsClusterConfig>`.
+   * <envoy_v3_api_msg_config.cluster.v3.Cluster.EdsClusterConfig>`.
    */
   'cluster_name'?: (string);
   /**
@@ -192,9 +192,9 @@ export interface ClusterLoadAssignment {
 export interface ClusterLoadAssignment__Output {
   /**
    * Name of the cluster. This will be the :ref:`service_name
-   * <envoy_api_field_config.cluster.v3.Cluster.EdsClusterConfig.service_name>` value if specified
+   * <envoy_v3_api_field_config.cluster.v3.Cluster.EdsClusterConfig.service_name>` value if specified
    * in the cluster :ref:`EdsClusterConfig
-   * <envoy_api_msg_config.cluster.v3.Cluster.EdsClusterConfig>`.
+   * <envoy_v3_api_msg_config.cluster.v3.Cluster.EdsClusterConfig>`.
    */
   'cluster_name': (string);
   /**

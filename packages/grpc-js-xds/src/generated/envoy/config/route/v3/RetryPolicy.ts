@@ -3,6 +3,7 @@
 import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
 import type { HeaderMatcher as _envoy_config_route_v3_HeaderMatcher, HeaderMatcher__Output as _envoy_config_route_v3_HeaderMatcher__Output } from '../../../../envoy/config/route/v3/HeaderMatcher';
+import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig, TypedExtensionConfig__Output as _envoy_config_core_v3_TypedExtensionConfig__Output } from '../../../../envoy/config/core/v3/TypedExtensionConfig';
 import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
 import type { Long } from '@grpc/proto-loader';
 
@@ -202,30 +203,42 @@ export interface _envoy_config_route_v3_RetryPolicy_RetryBackOff__Output {
 export interface _envoy_config_route_v3_RetryPolicy_RetryHostPredicate {
   'name'?: (string);
   'typed_config'?: (_google_protobuf_Any | null);
+  /**
+   * [#extension-category: envoy.retry_host_predicates]
+   */
   'config_type'?: "typed_config";
 }
 
 export interface _envoy_config_route_v3_RetryPolicy_RetryHostPredicate__Output {
   'name': (string);
   'typed_config'?: (_google_protobuf_Any__Output | null);
+  /**
+   * [#extension-category: envoy.retry_host_predicates]
+   */
   'config_type': "typed_config";
 }
 
 export interface _envoy_config_route_v3_RetryPolicy_RetryPriority {
   'name'?: (string);
   'typed_config'?: (_google_protobuf_Any | null);
+  /**
+   * [#extension-category: envoy.retry_priorities]
+   */
   'config_type'?: "typed_config";
 }
 
 export interface _envoy_config_route_v3_RetryPolicy_RetryPriority__Output {
   'name': (string);
   'typed_config'?: (_google_protobuf_Any__Output | null);
+  /**
+   * [#extension-category: envoy.retry_priorities]
+   */
   'config_type': "typed_config";
 }
 
 /**
  * HTTP retry :ref:`architecture overview <arch_overview_http_routing_retry>`.
- * [#next-free-field: 12]
+ * [#next-free-field: 14]
  */
 export interface RetryPolicy {
   /**
@@ -241,14 +254,14 @@ export interface RetryPolicy {
    */
   'num_retries'?: (_google_protobuf_UInt32Value | null);
   /**
-   * Specifies a non-zero upstream timeout per retry attempt. This parameter is optional. The
-   * same conditions documented for
+   * Specifies a non-zero upstream timeout per retry attempt (including the initial attempt). This
+   * parameter is optional. The same conditions documented for
    * :ref:`config_http_filters_router_x-envoy-upstream-rq-per-try-timeout-ms` apply.
    * 
    * .. note::
    * 
    * If left unspecified, Envoy will use the global
-   * :ref:`route timeout <envoy_api_field_config.route.v3.RouteAction.timeout>` for the request.
+   * :ref:`route timeout <envoy_v3_api_field_config.route.v3.RouteAction.timeout>` for the request.
    * Consequently, when using a :ref:`5xx <config_http_filters_router_x-envoy-retry-on>` based
    * retry policy, a request that times out will not be retried as the total timeout budget
    * would have been exhausted.
@@ -305,11 +318,39 @@ export interface RetryPolicy {
    * whenever a response includes the matching headers.
    */
   'rate_limited_retry_back_off'?: (_envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff | null);
+  /**
+   * Retry options predicates that will be applied prior to retrying a request. These predicates
+   * allow customizing request behavior between retries.
+   * [#comment: add [#extension-category: envoy.retry_options_predicates] when there are built-in extensions]
+   */
+  'retry_options_predicates'?: (_envoy_config_core_v3_TypedExtensionConfig)[];
+  /**
+   * Specifies an upstream idle timeout per retry attempt (including the initial attempt). This
+   * parameter is optional and if absent there is no per try idle timeout. The semantics of the per
+   * try idle timeout are similar to the
+   * :ref:`route idle timeout <envoy_v3_api_field_config.route.v3.RouteAction.timeout>` and
+   * :ref:`stream idle timeout
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.stream_idle_timeout>`
+   * both enforced by the HTTP connection manager. The difference is that this idle timeout
+   * is enforced by the router for each individual attempt and thus after all previous filters have
+   * run, as opposed to *before* all previous filters run for the other idle timeouts. This timeout
+   * is useful in cases in which total request timeout is bounded by a number of retries and a
+   * :ref:`per_try_timeout <envoy_v3_api_field_config.route.v3.RetryPolicy.per_try_timeout>`, but
+   * there is a desire to ensure each try is making incremental progress. Note also that similar
+   * to :ref:`per_try_timeout <envoy_v3_api_field_config.route.v3.RetryPolicy.per_try_timeout>`,
+   * this idle timeout does not start until after both the entire request has been received by the
+   * router *and* a connection pool connection has been obtained. Unlike
+   * :ref:`per_try_timeout <envoy_v3_api_field_config.route.v3.RetryPolicy.per_try_timeout>`,
+   * the idle timer continues once the response starts streaming back to the downstream client.
+   * This ensures that response data continues to make progress without using one of the HTTP
+   * connection manager idle timeouts.
+   */
+  'per_try_idle_timeout'?: (_google_protobuf_Duration | null);
 }
 
 /**
  * HTTP retry :ref:`architecture overview <arch_overview_http_routing_retry>`.
- * [#next-free-field: 12]
+ * [#next-free-field: 14]
  */
 export interface RetryPolicy__Output {
   /**
@@ -325,14 +366,14 @@ export interface RetryPolicy__Output {
    */
   'num_retries': (_google_protobuf_UInt32Value__Output | null);
   /**
-   * Specifies a non-zero upstream timeout per retry attempt. This parameter is optional. The
-   * same conditions documented for
+   * Specifies a non-zero upstream timeout per retry attempt (including the initial attempt). This
+   * parameter is optional. The same conditions documented for
    * :ref:`config_http_filters_router_x-envoy-upstream-rq-per-try-timeout-ms` apply.
    * 
    * .. note::
    * 
    * If left unspecified, Envoy will use the global
-   * :ref:`route timeout <envoy_api_field_config.route.v3.RouteAction.timeout>` for the request.
+   * :ref:`route timeout <envoy_v3_api_field_config.route.v3.RouteAction.timeout>` for the request.
    * Consequently, when using a :ref:`5xx <config_http_filters_router_x-envoy-retry-on>` based
    * retry policy, a request that times out will not be retried as the total timeout budget
    * would have been exhausted.
@@ -389,4 +430,32 @@ export interface RetryPolicy__Output {
    * whenever a response includes the matching headers.
    */
   'rate_limited_retry_back_off': (_envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff__Output | null);
+  /**
+   * Retry options predicates that will be applied prior to retrying a request. These predicates
+   * allow customizing request behavior between retries.
+   * [#comment: add [#extension-category: envoy.retry_options_predicates] when there are built-in extensions]
+   */
+  'retry_options_predicates': (_envoy_config_core_v3_TypedExtensionConfig__Output)[];
+  /**
+   * Specifies an upstream idle timeout per retry attempt (including the initial attempt). This
+   * parameter is optional and if absent there is no per try idle timeout. The semantics of the per
+   * try idle timeout are similar to the
+   * :ref:`route idle timeout <envoy_v3_api_field_config.route.v3.RouteAction.timeout>` and
+   * :ref:`stream idle timeout
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.stream_idle_timeout>`
+   * both enforced by the HTTP connection manager. The difference is that this idle timeout
+   * is enforced by the router for each individual attempt and thus after all previous filters have
+   * run, as opposed to *before* all previous filters run for the other idle timeouts. This timeout
+   * is useful in cases in which total request timeout is bounded by a number of retries and a
+   * :ref:`per_try_timeout <envoy_v3_api_field_config.route.v3.RetryPolicy.per_try_timeout>`, but
+   * there is a desire to ensure each try is making incremental progress. Note also that similar
+   * to :ref:`per_try_timeout <envoy_v3_api_field_config.route.v3.RetryPolicy.per_try_timeout>`,
+   * this idle timeout does not start until after both the entire request has been received by the
+   * router *and* a connection pool connection has been obtained. Unlike
+   * :ref:`per_try_timeout <envoy_v3_api_field_config.route.v3.RetryPolicy.per_try_timeout>`,
+   * the idle timer continues once the response starts streaming back to the downstream client.
+   * This ensures that response data continues to make progress without using one of the HTTP
+   * connection manager idle timeouts.
+   */
+  'per_try_idle_timeout': (_google_protobuf_Duration__Output | null);
 }

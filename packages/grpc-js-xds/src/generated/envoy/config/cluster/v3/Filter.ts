@@ -5,7 +5,8 @@ import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__
 export interface Filter {
   /**
    * The name of the filter to instantiate. The name must match a
-   * :ref:`supported filter <config_network_filters>`.
+   * supported upstream filter. Note that Envoy's :ref:`downstream network
+   * filters <config_network_filters>` are not valid upstream filters.
    */
   'name'?: (string);
   /**
@@ -18,7 +19,8 @@ export interface Filter {
 export interface Filter__Output {
   /**
    * The name of the filter to instantiate. The name must match a
-   * :ref:`supported filter <config_network_filters>`.
+   * supported upstream filter. Note that Envoy's :ref:`downstream network
+   * filters <config_network_filters>` are not valid upstream filters.
    */
   'name': (string);
   /**

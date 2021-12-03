@@ -2,6 +2,7 @@
 
 import type { Int64Range as _envoy_type_v3_Int64Range, Int64Range__Output as _envoy_type_v3_Int64Range__Output } from '../../../../envoy/type/v3/Int64Range';
 import type { RegexMatcher as _envoy_type_matcher_v3_RegexMatcher, RegexMatcher__Output as _envoy_type_matcher_v3_RegexMatcher__Output } from '../../../../envoy/type/matcher/v3/RegexMatcher';
+import type { StringMatcher as _envoy_type_matcher_v3_StringMatcher, StringMatcher__Output as _envoy_type_matcher_v3_StringMatcher__Output } from '../../../../envoy/type/matcher/v3/StringMatcher';
 import type { Long } from '@grpc/proto-loader';
 
 /**
@@ -24,12 +25,12 @@ import type { Long } from '@grpc/proto-loader';
  * 
  * .. attention::
  * In the absence of any header match specifier, match will default to :ref:`present_match
- * <envoy_api_field_config.route.v3.HeaderMatcher.present_match>`. i.e, a request that has the :ref:`name
- * <envoy_api_field_config.route.v3.HeaderMatcher.name>` header will match, regardless of the header's
+ * <envoy_v3_api_field_config.route.v3.HeaderMatcher.present_match>`. i.e, a request that has the :ref:`name
+ * <envoy_v3_api_field_config.route.v3.HeaderMatcher.name>` header will match, regardless of the header's
  * value.
  * 
  * [#next-major-version: HeaderMatcher should be refactored to use StringMatcher.]
- * [#next-free-field: 13]
+ * [#next-free-field: 14]
  */
 export interface HeaderMatcher {
   /**
@@ -38,6 +39,7 @@ export interface HeaderMatcher {
   'name'?: (string);
   /**
    * If specified, header match will be performed based on the value of the header.
+   * This field is deprecated. Please use :ref:`string_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.string_match>`.
    */
   'exact_match'?: (string);
   /**
@@ -55,8 +57,8 @@ export interface HeaderMatcher {
    */
   'range_match'?: (_envoy_type_v3_Int64Range | null);
   /**
-   * If specified, header match will be performed based on whether the header is in the
-   * request.
+   * If specified as true, header match will be performed based on whether the header is in the
+   * request. If specified as false, header match will be performed based on whether the header is absent.
    */
   'present_match'?: (boolean);
   /**
@@ -71,6 +73,7 @@ export interface HeaderMatcher {
   /**
    * If specified, header match will be performed based on the prefix of the header value.
    * Note: empty prefix is not allowed, please use present_match instead.
+   * This field is deprecated. Please use :ref:`string_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.string_match>`.
    * 
    * Examples:
    * 
@@ -80,6 +83,7 @@ export interface HeaderMatcher {
   /**
    * If specified, header match will be performed based on the suffix of the header value.
    * Note: empty suffix is not allowed, please use present_match instead.
+   * This field is deprecated. Please use :ref:`string_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.string_match>`.
    * 
    * Examples:
    * 
@@ -90,12 +94,14 @@ export interface HeaderMatcher {
    * If specified, this regex string is a regular expression rule which implies the entire request
    * header value must match the regex. The rule will not match if only a subsequence of the
    * request header value matches the regex.
+   * This field is deprecated. Please use :ref:`string_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.string_match>`.
    */
   'safe_regex_match'?: (_envoy_type_matcher_v3_RegexMatcher | null);
   /**
    * If specified, header match will be performed based on whether the header value contains
    * the given value or not.
    * Note: empty contains match is not allowed, please use present_match instead.
+   * This field is deprecated. Please use :ref:`string_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.string_match>`.
    * 
    * Examples:
    * 
@@ -103,9 +109,13 @@ export interface HeaderMatcher {
    */
   'contains_match'?: (string);
   /**
+   * If specified, header match will be performed based on the string match of the header value.
+   */
+  'string_match'?: (_envoy_type_matcher_v3_StringMatcher | null);
+  /**
    * Specifies how the header match will be performed to route the request.
    */
-  'header_match_specifier'?: "exact_match"|"safe_regex_match"|"range_match"|"present_match"|"prefix_match"|"suffix_match"|"contains_match";
+  'header_match_specifier'?: "exact_match"|"safe_regex_match"|"range_match"|"present_match"|"prefix_match"|"suffix_match"|"contains_match"|"string_match";
 }
 
 /**
@@ -128,12 +138,12 @@ export interface HeaderMatcher {
  * 
  * .. attention::
  * In the absence of any header match specifier, match will default to :ref:`present_match
- * <envoy_api_field_config.route.v3.HeaderMatcher.present_match>`. i.e, a request that has the :ref:`name
- * <envoy_api_field_config.route.v3.HeaderMatcher.name>` header will match, regardless of the header's
+ * <envoy_v3_api_field_config.route.v3.HeaderMatcher.present_match>`. i.e, a request that has the :ref:`name
+ * <envoy_v3_api_field_config.route.v3.HeaderMatcher.name>` header will match, regardless of the header's
  * value.
  * 
  * [#next-major-version: HeaderMatcher should be refactored to use StringMatcher.]
- * [#next-free-field: 13]
+ * [#next-free-field: 14]
  */
 export interface HeaderMatcher__Output {
   /**
@@ -142,6 +152,7 @@ export interface HeaderMatcher__Output {
   'name': (string);
   /**
    * If specified, header match will be performed based on the value of the header.
+   * This field is deprecated. Please use :ref:`string_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.string_match>`.
    */
   'exact_match'?: (string);
   /**
@@ -159,8 +170,8 @@ export interface HeaderMatcher__Output {
    */
   'range_match'?: (_envoy_type_v3_Int64Range__Output | null);
   /**
-   * If specified, header match will be performed based on whether the header is in the
-   * request.
+   * If specified as true, header match will be performed based on whether the header is in the
+   * request. If specified as false, header match will be performed based on whether the header is absent.
    */
   'present_match'?: (boolean);
   /**
@@ -175,6 +186,7 @@ export interface HeaderMatcher__Output {
   /**
    * If specified, header match will be performed based on the prefix of the header value.
    * Note: empty prefix is not allowed, please use present_match instead.
+   * This field is deprecated. Please use :ref:`string_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.string_match>`.
    * 
    * Examples:
    * 
@@ -184,6 +196,7 @@ export interface HeaderMatcher__Output {
   /**
    * If specified, header match will be performed based on the suffix of the header value.
    * Note: empty suffix is not allowed, please use present_match instead.
+   * This field is deprecated. Please use :ref:`string_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.string_match>`.
    * 
    * Examples:
    * 
@@ -194,12 +207,14 @@ export interface HeaderMatcher__Output {
    * If specified, this regex string is a regular expression rule which implies the entire request
    * header value must match the regex. The rule will not match if only a subsequence of the
    * request header value matches the regex.
+   * This field is deprecated. Please use :ref:`string_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.string_match>`.
    */
   'safe_regex_match'?: (_envoy_type_matcher_v3_RegexMatcher__Output | null);
   /**
    * If specified, header match will be performed based on whether the header value contains
    * the given value or not.
    * Note: empty contains match is not allowed, please use present_match instead.
+   * This field is deprecated. Please use :ref:`string_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.string_match>`.
    * 
    * Examples:
    * 
@@ -207,7 +222,11 @@ export interface HeaderMatcher__Output {
    */
   'contains_match'?: (string);
   /**
+   * If specified, header match will be performed based on the string match of the header value.
+   */
+  'string_match'?: (_envoy_type_matcher_v3_StringMatcher__Output | null);
+  /**
    * Specifies how the header match will be performed to route the request.
    */
-  'header_match_specifier': "exact_match"|"safe_regex_match"|"range_match"|"present_match"|"prefix_match"|"suffix_match"|"contains_match";
+  'header_match_specifier': "exact_match"|"safe_regex_match"|"range_match"|"present_match"|"prefix_match"|"suffix_match"|"contains_match"|"string_match";
 }

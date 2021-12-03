@@ -12,7 +12,7 @@ export interface InternalRedirectPolicy {
    * downstream request has encountered is lower than this value.
    * In the case where a downstream request is bounced among multiple routes by internal redirect,
    * the first route that hits this threshold, or does not set :ref:`internal_redirect_policy
-   * <envoy_api_field_config.route.v3.RouteAction.internal_redirect_policy>`
+   * <envoy_v3_api_field_config.route.v3.RouteAction.internal_redirect_policy>`
    * will pass the redirect back to downstream.
    * 
    * If not specified, at most one redirect will be followed.
@@ -28,6 +28,7 @@ export interface InternalRedirectPolicy {
    * Specifies a list of predicates that are queried when an upstream response is deemed
    * to trigger an internal redirect by all other criteria. Any predicate in the list can reject
    * the redirect, causing the response to be proxied to downstream.
+   * [#extension-category: envoy.internal_redirect_predicates]
    */
   'predicates'?: (_envoy_config_core_v3_TypedExtensionConfig)[];
   /**
@@ -46,7 +47,7 @@ export interface InternalRedirectPolicy__Output {
    * downstream request has encountered is lower than this value.
    * In the case where a downstream request is bounced among multiple routes by internal redirect,
    * the first route that hits this threshold, or does not set :ref:`internal_redirect_policy
-   * <envoy_api_field_config.route.v3.RouteAction.internal_redirect_policy>`
+   * <envoy_v3_api_field_config.route.v3.RouteAction.internal_redirect_policy>`
    * will pass the redirect back to downstream.
    * 
    * If not specified, at most one redirect will be followed.
@@ -62,6 +63,7 @@ export interface InternalRedirectPolicy__Output {
    * Specifies a list of predicates that are queried when an upstream response is deemed
    * to trigger an internal redirect by all other criteria. Any predicate in the list can reject
    * the redirect, causing the response to be proxied to downstream.
+   * [#extension-category: envoy.internal_redirect_predicates]
    */
   'predicates': (_envoy_config_core_v3_TypedExtensionConfig__Output)[];
   /**

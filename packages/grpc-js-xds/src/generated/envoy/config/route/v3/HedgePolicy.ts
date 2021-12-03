@@ -31,7 +31,7 @@ export interface HedgePolicy {
    * if there are no more retries left.
    * * After per-try timeout, an error response would be discarded, as a retry in the form of a hedged request is already in progress.
    * 
-   * Note: For this to have effect, you must have a :ref:`RetryPolicy <envoy_api_msg_config.route.v3.RetryPolicy>` that retries at least
+   * Note: For this to have effect, you must have a :ref:`RetryPolicy <envoy_v3_api_msg_config.route.v3.RetryPolicy>` that retries at least
    * one error code and specifies a maximum number of retries.
    * 
    * Defaults to false.
@@ -67,7 +67,7 @@ export interface HedgePolicy__Output {
    * if there are no more retries left.
    * * After per-try timeout, an error response would be discarded, as a retry in the form of a hedged request is already in progress.
    * 
-   * Note: For this to have effect, you must have a :ref:`RetryPolicy <envoy_api_msg_config.route.v3.RetryPolicy>` that retries at least
+   * Note: For this to have effect, you must have a :ref:`RetryPolicy <envoy_v3_api_msg_config.route.v3.RetryPolicy>` that retries at least
    * one error code and specifies a maximum number of retries.
    * 
    * Defaults to false.

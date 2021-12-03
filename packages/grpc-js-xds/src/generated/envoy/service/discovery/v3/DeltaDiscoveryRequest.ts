@@ -97,7 +97,7 @@ export interface DeltaDiscoveryRequest {
    */
   'response_nonce'?: (string);
   /**
-   * This is populated when the previous :ref:`DiscoveryResponse <envoy_api_msg_service.discovery.v3.DiscoveryResponse>`
+   * This is populated when the previous :ref:`DiscoveryResponse <envoy_v3_api_msg_service.discovery.v3.DiscoveryResponse>`
    * failed to update configuration. The *message* field in *error_details*
    * provides the Envoy internal exception related to the failure.
    */
@@ -198,7 +198,7 @@ export interface DeltaDiscoveryRequest__Output {
    */
   'response_nonce': (string);
   /**
-   * This is populated when the previous :ref:`DiscoveryResponse <envoy_api_msg_service.discovery.v3.DiscoveryResponse>`
+   * This is populated when the previous :ref:`DiscoveryResponse <envoy_v3_api_msg_service.discovery.v3.DiscoveryResponse>`
    * failed to update configuration. The *message* field in *error_details*
    * provides the Envoy internal exception related to the failure.
    */

@@ -432,7 +432,12 @@ class XdsResolver implements Resolver {
             weightedClusters.push({name: clusterWeight.name, weight: clusterWeight.weight?.value ?? 0, dynamicFilterFactories: extraFilterFactories});
           }
           routeAction = new WeightedClusterRouteAction(weightedClusters, route.route!.weighted_clusters!.total_weight?.value ?? 100, timeout);
+          break;
         }
+        default:
+          /* The validation logic should prevent us from reaching this point.
+           * This is just for the type checker. */
+          continue;
       }
       const routeMatcher = getPredicateForMatcher(route.match!);
       matchList.push({matcher: routeMatcher, action: routeAction});

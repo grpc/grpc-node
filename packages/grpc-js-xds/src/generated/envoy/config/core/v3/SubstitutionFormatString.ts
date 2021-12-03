@@ -95,6 +95,7 @@ export interface SubstitutionFormatString {
   /**
    * Specifies a collection of Formatter plugins that can be called from the access log configuration.
    * See the formatters extensions documentation for details.
+   * [#extension-category: envoy.formatter]
    */
   'formatters'?: (_envoy_config_core_v3_TypedExtensionConfig)[];
   'format'?: "text_format"|"json_format"|"text_format_source";
@@ -191,6 +192,7 @@ export interface SubstitutionFormatString__Output {
   /**
    * Specifies a collection of Formatter plugins that can be called from the access log configuration.
    * See the formatters extensions documentation for details.
+   * [#extension-category: envoy.formatter]
    */
   'formatters': (_envoy_config_core_v3_TypedExtensionConfig__Output)[];
   'format': "text_format"|"json_format"|"text_format_source";

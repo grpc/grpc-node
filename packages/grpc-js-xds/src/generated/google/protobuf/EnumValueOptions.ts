@@ -8,6 +8,7 @@ export interface EnumValueOptions {
   'uninterpretedOption'?: (_google_protobuf_UninterpretedOption)[];
   '.envoy.annotations.disallowed_by_default_enum'?: (boolean);
   '.udpa.annotations.enum_value_migrate'?: (_udpa_annotations_MigrateAnnotation | null);
+  '.envoy.annotations.deprecated_at_minor_version_enum'?: (string);
 }
 
 export interface EnumValueOptions__Output {
@@ -15,4 +16,5 @@ export interface EnumValueOptions__Output {
   'uninterpretedOption': (_google_protobuf_UninterpretedOption__Output)[];
   '.envoy.annotations.disallowed_by_default_enum': (boolean);
   '.udpa.annotations.enum_value_migrate': (_udpa_annotations_MigrateAnnotation__Output | null);
+  '.envoy.annotations.deprecated_at_minor_version_enum': (string);
 }
