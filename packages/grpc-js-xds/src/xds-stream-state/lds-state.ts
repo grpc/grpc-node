@@ -183,13 +183,8 @@ export class LdsState implements XdsStreamState<Listener__Output> {
     this.latestResponses = validResponses;
     this.latestIsV2 = isV2;
     const allTargetNames = new Set<string>();
-    const allRouteConfigNames = new Set<string>();
     for (const message of validResponses) {
       allTargetNames.add(message.name);
-      const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL_V3, message.api_listener!.api_listener!.value);
-      if (httpConnectionManager.rds) {
-        allRouteConfigNames.add(httpConnectionManager.rds.route_config_name);
-      }
       const watchers = this.watchers.get(message.name) ?? [];
       for (const watcher of watchers) {
         watcher.onValidUpdate(message, isV2);
@@ -197,7 +192,6 @@ export class LdsState implements XdsStreamState<Listener__Output> {
     }
     trace('Received LDS response with listener names [' + Array.from(allTargetNames) + ']');
     result.missing = this.handleMissingNames(allTargetNames);
-    this.rdsState.handleMissingNames(allRouteConfigNames);
     return result;
   }
 
