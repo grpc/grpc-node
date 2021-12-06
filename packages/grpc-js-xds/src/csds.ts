@@ -205,6 +205,8 @@ const loadedProto = loadSync('envoy/service/status/v3/csds.proto', {
     // Paths are relative to src/build
     __dirname + '/../../deps/envoy-api/',
     __dirname + '/../../deps/xds/',
+    __dirname + '/../../deps/protoc-gen-validate/',
+    __dirname + '/../../deps/googleapis/'
   ],
 });
 
