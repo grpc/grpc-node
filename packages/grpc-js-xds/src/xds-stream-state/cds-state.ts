@@ -164,14 +164,9 @@ export class CdsState implements XdsStreamState<Cluster__Output> {
     }
     this.latestResponses = validResponses;
     this.latestIsV2 = isV2;
-    const allEdsServiceNames: Set<string> = new Set<string>();
     const allClusterNames: Set<string> = new Set<string>();
     for (const message of validResponses) {
       allClusterNames.add(message.name);
-      const edsServiceName = message.eds_cluster_config?.service_name ?? '';
-      allEdsServiceNames.add(
-        edsServiceName === '' ? message.name : edsServiceName
-      );
       const watchers = this.watchers.get(message.name) ?? [];
       for (const watcher of watchers) {
         watcher.onValidUpdate(message, isV2);
@@ -179,7 +174,6 @@ export class CdsState implements XdsStreamState<Cluster__Output> {
     }
     trace('Received CDS updates for cluster names [' + Array.from(allClusterNames) + ']');
     result.missing = this.handleMissingNames(allClusterNames);
-    this.edsState.handleMissingNames(allEdsServiceNames);
     return result;
   }
 
