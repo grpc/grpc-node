@@ -848,7 +848,11 @@ describe('Compressed requests', () => {
       });
     });
     
-    it('Should not compress requests when the NoCompress write flag is used', done => {
+    /* As of Node 16, Writable and Duplex streams validate the encoding
+     * argument to write, and the flags values we are passing there are not
+     * valid. We don't currently have an alternative way to pass that flag
+     * down, so for now this feature is not supported. */
+    it.skip('Should not compress requests when the NoCompress write flag is used', done => {
       const bidiStream = client.bidiStream();
       let timesRequested = 0;
       let timesResponded = 0;
