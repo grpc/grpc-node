@@ -47,3 +47,8 @@ In addition, all channel arguments defined in [this header file](https://github.
  - `grpc.enable_http_proxy`
  - `channelOverride`
  - `channelFactoryOverride`
+
+Notably, these options are not supported:
+
+- `max_connection_age_grace_ms`
+- `grpc.max_connection_age_ms`
