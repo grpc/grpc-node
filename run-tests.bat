@@ -21,7 +21,7 @@ powershell -c "[System.Environment]::OSVersion"
 powershell -c "Get-WmiObject -Class Win32_ComputerSystem"
 powershell -c "(Get-WmiObject -Class Win32_ComputerSystem).SystemType"
 
-powershell -c "& { iwr https://raw.githubusercontent.com/grumpycoders/nvm-ps/master/nvm.ps1 | iex }"
+powershell -c "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; & { iwr https://raw.githubusercontent.com/grumpycoders/nvm-ps/master/nvm.ps1 | iex }"
 
 SET PATH=%APPDATA%\nvm-ps;%APPDATA%\nvm-ps\nodejs;%PATH%
 SET JOBS=8
