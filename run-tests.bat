@@ -31,6 +31,8 @@ call nvm version
 call nvm install 10
 call nvm use 10
 
+git submodule update --init --recursive
+
 SET npm_config_fetch_retries=5
 
 call npm install || goto :error
