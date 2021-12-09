@@ -208,8 +208,18 @@ export class InterceptingCall implements InterceptingCallInterface {
    */
   private requester: FullRequester;
   /**
-   * Indicates that a message has been passed to the listener's onReceiveMessage
-   * method it has not been passed to the corresponding next callback
+   * Indicates that metadata has been passed to the requester's start
+   * method but it has not been passed to the corresponding next callback
+   */
+  private processingMetadata = false;
+  /**
+   * Message context for a pending message that is waiting for
+   */
+  private pendingMessageContext: MessageContext | null = null;
+  private pendingMessage: any;
+  /**
+   * Indicates that a message has been passed to the requester's sendMessage
+   * method but it has not been passed to the corresponding next callback
    */
   private processingMessage = false;
   /**
@@ -242,6 +252,21 @@ export class InterceptingCall implements InterceptingCallInterface {
   getPeer() {
     return this.nextCall.getPeer();
   }
+
+  private processPendingMessage() {
+    if (this.pendingMessageContext) {
+      this.nextCall.sendMessageWithContext(this.pendingMessageContext, this.pendingMessage);
+      this.pendingMessageContext = null;
+      this.pendingMessage = null;
+    }
+  }
+
+  private processPendingHalfClose() {
+    if (this.pendingHalfClose) {
+      this.nextCall.halfClose();
+    }
+  }
+
   start(
     metadata: Metadata,
     interceptingListener?: Partial<InterceptingListener>
@@ -257,7 +282,9 @@ export class InterceptingCall implements InterceptingCallInterface {
         interceptingListener?.onReceiveStatus?.bind(interceptingListener) ??
         ((status) => {}),
     };
+    this.processingMetadata = true;
     this.requester.start(metadata, fullInterceptingListener, (md, listener) => {
+      this.processingMetadata = false;
       let finalInterceptingListener: InterceptingListener;
       if (isInterceptingListener(listener)) {
         finalInterceptingListener = listener;
@@ -276,6 +303,8 @@ export class InterceptingCall implements InterceptingCallInterface {
         );
       }
       this.nextCall.start(md, finalInterceptingListener);
+      this.processPendingMessage();
+      this.processPendingHalfClose();
     });
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -283,9 +312,12 @@ export class InterceptingCall implements InterceptingCallInterface {
     this.processingMessage = true;
     this.requester.sendMessage(message, (finalMessage) => {
       this.processingMessage = false;
-      this.nextCall.sendMessageWithContext(context, finalMessage);
-      if (this.pendingHalfClose) {
-        this.nextCall.halfClose();
+      if (this.processingMetadata) {
+        this.pendingMessageContext = context;
+        this.pendingMessage = message;
+      } else {
+        this.nextCall.sendMessageWithContext(context, finalMessage);
+        this.processPendingHalfClose();
       }
     });
   }
@@ -298,7 +330,7 @@ export class InterceptingCall implements InterceptingCallInterface {
   }
   halfClose(): void {
     this.requester.halfClose(() => {
-      if (this.processingMessage) {
+      if (this.processingMetadata || this.processingMessage) {
         this.pendingHalfClose = true;
       } else {
         this.nextCall.halfClose();

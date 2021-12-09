@@ -149,6 +149,9 @@ export function isInterceptingListener(
 }
 
 export class InterceptingListenerImpl implements InterceptingListener {
+  private processingMetadata = false;
+  private hasPendingMessage = false;
+  private pendingMessage: any;
   private processingMessage = false;
   private pendingStatus: StatusObject | null = null;
   constructor(
@@ -156,9 +159,27 @@ export class InterceptingListenerImpl implements InterceptingListener {
     private nextListener: InterceptingListener
   ) {}
 
+  private processPendingMessage() {
+    if (this.hasPendingMessage) {
+      this.nextListener.onReceiveMessage(this.pendingMessage);
+      this.pendingMessage = null;
+      this.hasPendingMessage = false;
+    }
+  }
+
+  private processPendingStatus() {
+    if (this.pendingStatus) {
+      this.nextListener.onReceiveStatus(this.pendingStatus);
+    }
+  }
+
   onReceiveMetadata(metadata: Metadata): void {
+    this.processingMetadata = true;
     this.listener.onReceiveMetadata(metadata, (metadata) => {
+      this.processingMetadata = false;
       this.nextListener.onReceiveMetadata(metadata);
+      this.processPendingMessage();
+      this.processPendingStatus();
     });
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -168,15 +189,18 @@ export class InterceptingListenerImpl implements InterceptingListener {
     this.processingMessage = true;
     this.listener.onReceiveMessage(message, (msg) => {
       this.processingMessage = false;
-      this.nextListener.onReceiveMessage(msg);
-      if (this.pendingStatus) {
-        this.nextListener.onReceiveStatus(this.pendingStatus);
+      if (this.processingMetadata) {
+        this.pendingMessage = msg;
+        this.hasPendingMessage = true;
+      } else {
+        this.nextListener.onReceiveMessage(msg);
+        this.processPendingStatus();
       }
     });
   }
   onReceiveStatus(status: StatusObject): void {
     this.listener.onReceiveStatus(status, (processedStatus) => {
-      if (this.processingMessage) {
+      if (this.processingMetadata || this.processingMessage) {
         this.pendingStatus = processedStatus;
       } else {
         this.nextListener.onReceiveStatus(processedStatus);
@@ -283,7 +307,7 @@ export class Http2CallStream implements Call {
 
   private outputStatus() {
     /* Precondition: this.finalStatus !== null */
-    if (!this.statusOutput) {
+    if (this.listener && !this.statusOutput) {
       this.statusOutput = true;
       const filteredStatus = this.filterStack.receiveTrailers(
         this.finalStatus!
@@ -692,6 +716,7 @@ export class Http2CallStream implements Call {
     this.trace('Sending metadata');
     this.listener = listener;
     this.channel._startCallStream(this, metadata);
+    this.maybeOutputStatus();
   }
 
   private destroyHttp2Stream() {
