@@ -207,7 +207,15 @@ describe('Name Resolver', () => {
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
-    it('Should resolve a name with multiple dots', done => {
+    /* The DNS entry for loopback4.unittest.grpc.io only has a single A record
+     * with the address 127.0.0.1, but the Mac DNS resolver appears to use
+     * NAT64 to create an IPv6 address in that case, so it instead returns
+     * 64:ff9b::7f00:1. Handling that kind of translation is outside of the
+     * scope of this test, so we are skipping it. The test primarily exists
+     * as a regression test for https://github.com/grpc/grpc-node/issues/1044,
+     * and the test 'Should resolve gRPC interop servers' tests the same thing.
+     */
+    it.skip('Should resolve a name with multiple dots', done => {
       const target = resolverManager.mapUriDefaultScheme(parseUri('loopback4.unittest.grpc.io')!)!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
@@ -317,6 +325,10 @@ describe('Name Resolver', () => {
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
+    /* This test also serves as a regression test for
+     * https://github.com/grpc/grpc-node/issues/1044, specifically handling
+     * hyphens and multiple periods in a DNS name. It should not be skipped
+     * unless there is another test for the same issue. */
     it('Should resolve gRPC interop servers', done => {
       let completeCount = 0;
       const target1 = resolverManager.mapUriDefaultScheme(parseUri('grpc-test.sandbox.googleapis.com')!)!;
