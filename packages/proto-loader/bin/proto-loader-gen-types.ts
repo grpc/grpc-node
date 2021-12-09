@@ -379,7 +379,7 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
   let usesLong: boolean = false;
   let seenDeps: Set<string> = new Set<string>();
   const childTypes = getChildMessagesAndEnums(messageType);
-  formatter.writeLine(`// Original file: ${messageType.filename}`);
+  formatter.writeLine(`// Original file: ${messageType.filename?.replace(/\\/g, '/')}`);
   formatter.writeLine('');
   messageType.fieldsArray.sort((fieldA, fieldB) => fieldA.id - fieldB.id);
   for (const field of messageType.fieldsArray) {
@@ -437,7 +437,7 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
 }
 
 function generateEnumInterface(formatter: TextFormatter, enumType: Protobuf.Enum, options: GeneratorOptions, nameOverride?: string) {
-  formatter.writeLine(`// Original file: ${enumType.filename}`);
+  formatter.writeLine(`// Original file: ${enumType.filename?.replace(/\\/g, '/')}`);
   formatter.writeLine('');
   if (options.includeComments) {
     formatComment(formatter, enumType.comment);
@@ -590,7 +590,7 @@ function generateServiceDefinitionInterface(formatter: TextFormatter, serviceTyp
 }
 
 function generateServiceInterfaces(formatter: TextFormatter, serviceType: Protobuf.Service, options: GeneratorOptions) {
-  formatter.writeLine(`// Original file: ${serviceType.filename}`);
+  formatter.writeLine(`// Original file: ${serviceType.filename?.replace(/\\/g, '/')}`);
   formatter.writeLine('');
   const grpcImportPath = options.grpcLib.startsWith('.') ? getPathToRoot(serviceType) + options.grpcLib : options.grpcLib;
   formatter.writeLine(`import type * as grpc from '${grpcImportPath}'`);
