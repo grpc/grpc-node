@@ -21,15 +21,17 @@ powershell -c "[System.Environment]::OSVersion"
 powershell -c "Get-WmiObject -Class Win32_ComputerSystem"
 powershell -c "(Get-WmiObject -Class Win32_ComputerSystem).SystemType"
 
-powershell -c "& { iwr https://raw.githubusercontent.com/grumpycoders/nvm-ps/master/nvm.ps1 | iex }"
+powershell -c "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; & { iwr https://raw.githubusercontent.com/grumpycoders/nvm-ps/master/nvm.ps1 | iex }"
 
 SET PATH=%APPDATA%\nvm-ps;%APPDATA%\nvm-ps\nodejs;%PATH%
 SET JOBS=8
 
 call nvm version
 
-call nvm install 8
-call nvm use 8
+call nvm install 10
+call nvm use 10
+
+git submodule update --init --recursive
 
 SET npm_config_fetch_retries=5
 
@@ -38,7 +40,7 @@ call npm install || goto :error
 SET JUNIT_REPORT_STACK=1
 SET FAILED=0
 
-for %%v in (8 10 12) do (
+for %%v in (10 12) do (
   call nvm install %%v
   call nvm use %%v
   if "%%v"=="4" (
@@ -53,7 +55,6 @@ for %%v in (8 10 12) do (
 
   node -e "process.exit(process.version.startsWith('v%%v') ? 0 : -1)" || goto :error
 
-  call .\node_modules\.bin\gulp cleanAll || SET FAILED=1
   call .\node_modules\.bin\gulp setup || SET FAILED=1
   call .\node_modules\.bin\gulp test || SET FAILED=1
   cmd.exe /c "SET GRPC_DNS_RESOLVER=ares& call .\node_modules\.bin\gulp nativeTestOnly" || SET FAILED=1

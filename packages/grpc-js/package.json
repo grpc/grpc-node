@@ -44,7 +44,7 @@
   ],
   "scripts": {
     "build": "npm run compile",
-    "clean": "node -e 'require(\"rimraf\")(\"./build\", () => {})'",
+    "clean": "rimraf ./build",
     "compile": "tsc -p .",
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
     "lint": "npm run check",

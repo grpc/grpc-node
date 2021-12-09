@@ -24,7 +24,7 @@ import * as resolver_uds from '../src/resolver-uds';
 import * as resolver_ip from '../src/resolver-ip';
 import { ServiceConfig } from '../src/service-config';
 import { StatusObject } from '../src/call-stream';
-import { SubchannelAddress, isTcpSubchannelAddress } from "../src/subchannel-address";
+import { SubchannelAddress, isTcpSubchannelAddress, subchannelAddressToString } from "../src/subchannel-address";
 import { parseUri, GrpcUri } from '../src/uri-parser';
 
 describe('Name Resolver', () => {
@@ -207,7 +207,15 @@ describe('Name Resolver', () => {
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
-    it('Should resolve a name with multiple dots', done => {
+    /* The DNS entry for loopback4.unittest.grpc.io only has a single A record
+     * with the address 127.0.0.1, but the Mac DNS resolver appears to use
+     * NAT64 to create an IPv6 address in that case, so it instead returns
+     * 64:ff9b::7f00:1. Handling that kind of translation is outside of the
+     * scope of this test, so we are skipping it. The test primarily exists
+     * as a regression test for https://github.com/grpc/grpc-node/issues/1044,
+     * and the test 'Should resolve gRPC interop servers' tests the same thing.
+     */
+    it.skip('Should resolve a name with multiple dots', done => {
       const target = resolverManager.mapUriDefaultScheme(parseUri('loopback4.unittest.grpc.io')!)!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
@@ -223,7 +231,7 @@ describe('Name Resolver', () => {
                 isTcpSubchannelAddress(addr) &&
                 addr.host === '127.0.0.1' &&
                 addr.port === 443
-            )
+            ), `None of [${addressList.map(addr => subchannelAddressToString(addr))}] matched '127.0.0.1:443'`
           );
           done();
         },
@@ -263,7 +271,10 @@ describe('Name Resolver', () => {
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
-    it('Should resolve a DNS name to IPv4 and IPv6 addresses', done => {
+    /* This DNS name resolves to only the IPv4 address on Windows, and only the
+     * IPv6 address on Mac. There is no result that we can consistently test
+     * for here. */
+    it.skip('Should resolve a DNS name to IPv4 and IPv6 addresses', done => {
       const target = resolverManager.mapUriDefaultScheme(parseUri('loopback46.unittest.grpc.io')!)!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
@@ -279,7 +290,7 @@ describe('Name Resolver', () => {
                 isTcpSubchannelAddress(addr) &&
                 addr.host === '127.0.0.1' &&
                 addr.port === 443
-            )
+            ), `None of [${addressList.map(addr => subchannelAddressToString(addr))}] matched '127.0.0.1:443'`
           );
           /* TODO(murgatroid99): check for IPv6 result, once we can get that
            * consistently */
@@ -314,6 +325,10 @@ describe('Name Resolver', () => {
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
+    /* This test also serves as a regression test for
+     * https://github.com/grpc/grpc-node/issues/1044, specifically handling
+     * hyphens and multiple periods in a DNS name. It should not be skipped
+     * unless there is another test for the same issue. */
     it('Should resolve gRPC interop servers', done => {
       let completeCount = 0;
       const target1 = resolverManager.mapUriDefaultScheme(parseUri('grpc-test.sandbox.googleapis.com')!)!;

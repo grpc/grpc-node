@@ -79,7 +79,8 @@ describe('Client without a server', () => {
   after(() => {
     client.close();
   });
-  it('should fail multiple calls to the nonexistent server', done => {
+  it('should fail multiple calls to the nonexistent server', function(done) {
+    this.timeout(5000);
     // Regression test for https://github.com/grpc/grpc-node/issues/1411
     client.makeUnaryRequest('/service/method', x => x, x => x, Buffer.from([]), (error, value) => {
       assert(error);

@@ -25,6 +25,10 @@ import * as semver from 'semver';
 const testDir = __dirname;
 const apiTestDir = path.resolve(testDir, 'api');
 
+/* The native library has some misbehavior in specific tests when running in
+ * Node 14 and above. */
+const NATIVE_SUPPORT_RANGE = '<14';
+
 const runInstall = () => {
   return execa('npm', ['install'], {cwd: testDir, stdio: 'inherit'});
 };
@@ -51,11 +55,11 @@ const testJsClientNativeServer = runTestsWithFixture('native', 'js');
 const testNativeClientJsServer = runTestsWithFixture('js', 'native');
 const testJsClientJsServer = runTestsWithFixture('js', 'js');
 
-const test = gulp.series(
+const test = semver.satisfies(process.version, NATIVE_SUPPORT_RANGE)? gulp.series(
                testJsClientJsServer,
                testJsClientNativeServer,
                testNativeClientJsServer
-              );
+              ) : testJsClientJsServer;
 
 export {
   install,
