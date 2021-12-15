@@ -21,7 +21,7 @@
     "@types/mocha": "^5.2.6",
     "@types/ncp": "^2.0.1",
     "@types/pify": "^3.0.2",
-    "@types/yargs": "^15.0.5",
+    "@types/semver": "^7.3.9",
     "clang-format": "^1.0.55",
     "execa": "^2.0.3",
     "gts": "^2.0.0",
@@ -33,9 +33,9 @@
     "ncp": "^2.0.0",
     "pify": "^4.0.1",
     "rimraf": "^3.0.2",
+    "semver": "^7.3.5",
     "ts-node": "^8.3.0",
-    "typescript": "^3.7.2",
-    "yargs": "^15.4.1"
+    "typescript": "^3.7.2"
   },
   "contributors": [
     {
@@ -59,8 +59,7 @@
   },
   "dependencies": {
     "@grpc/proto-loader": "^0.6.4",
-    "@types/node": ">=12.12.47",
-    "@types/semver": "^7.3.9"
+    "@types/node": ">=12.12.47"
   },
   "files": [
     "src/**/*.ts",
