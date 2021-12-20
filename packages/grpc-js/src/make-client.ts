@@ -93,6 +93,8 @@ export interface ServiceClientConstructor {
   service: ServiceDefinition;
 }
 
+type ClientClassOptions = Record<string, unknown>;
+
 /**
  * Returns true, if given key is included in the blacklisted
  * keys.
@@ -119,14 +121,13 @@ function isPrototypePolluted(key: string): boolean {
 export function makeClientConstructor(
   methods: ServiceDefinition,
   serviceName: string,
-  classOptions?: {}
+  classOptions: ClientClassOptions = {}
 ): ServiceClientConstructor {
-  if (!classOptions) {
-    classOptions = {};
-  }
+  classOptions.serviceName = serviceName;
 
   class ServiceClientImpl extends Client implements ServiceClient {
     static service: ServiceDefinition;
+    static options: ClientClassOptions
     [methodName: string]: Function;
   }
 
@@ -171,6 +172,7 @@ export function makeClientConstructor(
   });
 
   ServiceClientImpl.service = methods;
+  ServiceClientImpl.options = classOptions;
 
   return ServiceClientImpl;
 }
