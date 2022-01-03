@@ -34,7 +34,8 @@ case $(uname -s) in
     ;;
   Darwin)
     platform=darwin
-    arch_list=( x64 )
+    # arch_list=( x64 )
+    arch_list=( arm64 )
     ;;
 esac
 

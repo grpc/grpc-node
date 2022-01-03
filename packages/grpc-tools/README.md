@@ -20,3 +20,20 @@ one of the following:
    gRPC library, and instead generates `PackageDefinition` objects that can
    be passed to the `loadPackageDefinition` function provided by both the
    `grpc` and `@grpc/grpc-js` libraries.
+
+### Building gprc-tools
+
+I needed to compile `gprc-tools` from source to be able to run it on Apple Silicon because builds are not provided.
+
+My steps:
+
+```sh
+git clone git@github.com:grpc/grpc-node.git
+cd grpc-node
+brew install cmake # ./build_binaries.sh needs cmake. also tried xcode-select --install but it didn't seem to work
+cd packages/grpc-tools && git submodule update --init --recursive && ./build_binaries.sh
+# then to install in pnpm (does not support npm flag)
+npm_config_grpc_tools_binary_host_mirror="https://github.com/maschwenk/grpc-node/raw/2dd28e1ab8211533007dd2df5ae632de60006983/artifacts/" pnpm install
+# checkout https://github.com/mapbox/node-pre-gyp/blob/master/lib/util/versioning.js#L316
+# seems passing as an ENV also works (so will probably work for PNPM and Yarn)
+```

@@ -1,6 +1,10 @@
 [![Build Status](https://travis-ci.org/grpc/grpc-node.svg?branch=master)](https://travis-ci.org/grpc/grpc-node)
 # gRPC on Node.js
 
+## Fork details
+
+This fork exists as a temporary grpc-tools artifact Node repository while we await Google publishing their own darwin-arm64 binaries for grpc-tools. See the additional details in update-grpc-tools-artifacts.sh or https://github.com/grpc/grpc-node/issues/1880 .
+
 ## Implementations
 
 For a comparison of the features available in these two libraries, see [this document](https://github.com/grpc/grpc-node/tree/master/PACKAGE-COMPARISON.md)
