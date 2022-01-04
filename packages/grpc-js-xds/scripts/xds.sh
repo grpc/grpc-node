@@ -54,7 +54,7 @@ GRPC_NODE_TRACE=xds_client,xds_resolver,cds_balancer,eds_balancer,priority,weigh
   python3 grpc/tools/run_tests/run_xds_tests.py \
     --test_case="backends_restart,change_backend_service,gentle_failover,ping_pong,remove_instance_group,round_robin,secondary_locality_gets_no_requests_on_partial_primary_failure,secondary_locality_gets_requests_on_primary_failure,load_report_based_failover" \
     --project_id=grpc-testing \
-    --source_image=projects/grpc-testing/global/images/xds-test-server-2 \
+    --source_image=projects/grpc-testing/global/images/xds-test-server-5 \
     --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
     --gcp_suffix=$(date '+%s') \
     --verbose \
