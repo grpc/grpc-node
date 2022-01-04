@@ -36,9 +36,9 @@ export interface IntermediateObjectWritable<T> extends Writable {
   write(chunk: any & T, cb?: WriteCallback): boolean;
   write(chunk: any & T, encoding?: any, cb?: WriteCallback): boolean;
   setDefaultEncoding(encoding: string): this;
-  end(): this;
-  end(chunk: any & T, cb?: Function): this;
-  end(chunk: any & T, encoding?: any, cb?: Function): this;
+  end(): ReturnType<Writable['end']> extends Writable ? this : void;
+  end(chunk: any & T, cb?: Function): ReturnType<Writable['end']> extends Writable ? this : void;
+  end(chunk: any & T, encoding?: any, cb?: Function): ReturnType<Writable['end']> extends Writable ? this : void;
 }
 
 export interface ObjectWritable<T> extends IntermediateObjectWritable<T> {
@@ -46,7 +46,7 @@ export interface ObjectWritable<T> extends IntermediateObjectWritable<T> {
   write(chunk: T, cb?: Function): boolean;
   write(chunk: T, encoding?: any, cb?: Function): boolean;
   setDefaultEncoding(encoding: string): this;
-  end(): this;
-  end(chunk: T, cb?: Function): this;
-  end(chunk: T, encoding?: any, cb?: Function): this;
+  end(): ReturnType<Writable['end']> extends Writable ? this : void;
+  end(chunk: T, cb?: Function): ReturnType<Writable['end']> extends Writable ? this : void;
+  end(chunk: T, encoding?: any, cb?: Function): ReturnType<Writable['end']> extends Writable ? this : void;
 }
