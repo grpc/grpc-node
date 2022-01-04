@@ -49,14 +49,14 @@
     "lodash.camelcase": "^4.3.0",
     "long": "^4.0.0",
     "protobufjs": "^6.10.0",
-    "yargs": "^16.1.1"
+    "yargs": "^17.3.1"
   },
   "devDependencies": {
     "@types/lodash.camelcase": "^4.3.4",
     "@types/mkdirp": "^1.0.1",
     "@types/mocha": "^5.2.7",
     "@types/node": "^10.17.26",
-    "@types/yargs": "^15.0.5",
+    "@types/yargs": "^17.0.8",
     "clang-format": "^1.2.2",
     "gts": "^1.1.0",
     "rimraf": "^3.0.2",
