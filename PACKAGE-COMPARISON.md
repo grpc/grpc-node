@@ -28,22 +28,5 @@ Supported Electron Versions | All | >= 3
 Supported Platforms | Linux, Windows, MacOS | All
 Supported Architectures | x86, x86-64, ARM7+ | All
 
-In addition, all channel arguments defined in [this header file](https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/grpc_types.h) are handled by the `grpc` library. Of those, the following are handled by the `@grpc/grpc-js` library:
-
- - `grpc.ssl_target_name_override`
- - `grpc.primary_user_agent`
- - `grpc.secondary_user_agent`
- - `grpc.default_authority`
- - `grpc.keepalive_time_ms`
- - `grpc.keepalive_timeout_ms`
- - `grpc.keepalive_permit_without_calls`
- - `grpc.service_config`
- - `grpc.max_concurrent_streams`
- - `grpc.initial_reconnect_backoff_ms`
- - `grpc.max_reconnect_backoff_ms`
- - `grpc.use_local_subchannel_pool`
- - `grpc.max_send_message_length`
- - `grpc.max_receive_message_length`
- - `grpc.enable_http_proxy`
- - `channelOverride`
- - `channelFactoryOverride`
+In addition, all channel arguments defined in [this header file](https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/grpc_types.h) are handled by the `grpc` library.
+Of those, a subset are handled by the `@grpc/grpc-js` library. See [the README](https://github.com/grpc/grpc-node/blob/master/packages/grpc-js/README.md#supported-channel-options) for `@grpc/grpc-js` for the list of supported channel options.
