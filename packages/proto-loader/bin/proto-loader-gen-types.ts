@@ -768,7 +768,7 @@ async function writeAllFiles(protoFiles: string[], options: GeneratorOptions) {
 }
 
 async function runScript() {
-  const argv = await yargs
+  const argv = yargs
     .parserConfiguration({
       'parse-positional-numbers': false
     })
