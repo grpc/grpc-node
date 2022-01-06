@@ -36,9 +36,9 @@ export interface IntermediateObjectWritable<T> extends Writable {
   write(chunk: any & T, cb?: WriteCallback): boolean;
   write(chunk: any & T, encoding?: any, cb?: WriteCallback): boolean;
   setDefaultEncoding(encoding: string): this;
-  end(): void;
-  end(chunk: any & T, cb?: Function): void;
-  end(chunk: any & T, encoding?: any, cb?: Function): void;
+  end(): ReturnType<Writable['end']> extends Writable ? this : void;
+  end(chunk: any & T, cb?: Function): ReturnType<Writable['end']> extends Writable ? this : void;
+  end(chunk: any & T, encoding?: any, cb?: Function): ReturnType<Writable['end']> extends Writable ? this : void;
 }
 
 export interface ObjectWritable<T> extends IntermediateObjectWritable<T> {
@@ -46,20 +46,7 @@ export interface ObjectWritable<T> extends IntermediateObjectWritable<T> {
   write(chunk: T, cb?: Function): boolean;
   write(chunk: T, encoding?: any, cb?: Function): boolean;
   setDefaultEncoding(encoding: string): this;
-  end(): void;
-  end(chunk: T, cb?: Function): void;
-  end(chunk: T, encoding?: any, cb?: Function): void;
+  end(): ReturnType<Writable['end']> extends Writable ? this : void;
+  end(chunk: T, cb?: Function): ReturnType<Writable['end']> extends Writable ? this : void;
+  end(chunk: T, encoding?: any, cb?: Function): ReturnType<Writable['end']> extends Writable ? this : void;
 }
-
-export type ObjectDuplex<T, U> = {
-  read(size?: number): U;
-
-  _write(chunk: T, encoding: string, callback: Function): void;
-  write(chunk: T, cb?: Function): boolean;
-  write(chunk: T, encoding?: any, cb?: Function): boolean;
-  end(): void;
-  end(chunk: T, cb?: Function): void;
-  end(chunk: T, encoding?: any, cb?: Function): void;
-} & Duplex &
-  ObjectWritable<T> &
-  ObjectReadable<U>;
