@@ -27,3 +27,4 @@ const client = new MyServiceClient('xds:///example.com:123');
  - [xDS Timeouts](https://github.com/grpc/proposal/blob/master/A31-xds-timeout-support-and-config-selector.md)
  - [xDS Circuit Breaking](https://github.com/grpc/proposal/blob/master/A32-xds-circuit-breaking.md)
  - [xDS Client-Side Fault Injection](https://github.com/grpc/proposal/blob/master/A33-Fault-Injection.md)
+ - [Client Status Discovery Service](https://github.com/grpc/proposal/blob/master/A40-csds-support.md)
