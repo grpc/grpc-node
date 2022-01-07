@@ -56,6 +56,7 @@ Many channel arguments supported in `grpc` are not supported in `@grpc/grpc-js`.
   - `grpc.max_send_message_length`
   - `grpc.max_receive_message_length`
   - `grpc.enable_http_proxy`
+  - `grpc-node.max_session_memory`
   - `channelOverride`
   - `channelFactoryOverride`
 
