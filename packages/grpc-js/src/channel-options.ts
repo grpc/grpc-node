@@ -36,6 +36,9 @@ export interface ChannelOptions {
   'grpc.max_send_message_length'?: number;
   'grpc.max_receive_message_length'?: number;
   'grpc.enable_http_proxy'?: number;
+  /* http_connect_target and http_connect_creds are used for passing data
+   * around internally, and should not be documented as public-facing options
+   */
   'grpc.http_connect_target'?: string;
   'grpc.http_connect_creds'?: string;
   'grpc.default_compression_algorithm'?: CompressionAlgorithms;
