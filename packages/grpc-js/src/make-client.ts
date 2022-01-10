@@ -91,6 +91,7 @@ export interface ServiceClientConstructor {
     options?: Partial<ChannelOptions>
   ): ServiceClient;
   service: ServiceDefinition;
+  serviceName: string;
 }
 
 /**
@@ -127,6 +128,7 @@ export function makeClientConstructor(
 
   class ServiceClientImpl extends Client implements ServiceClient {
     static service: ServiceDefinition;
+    static serviceName: string;
     [methodName: string]: Function;
   }
 
@@ -171,6 +173,7 @@ export function makeClientConstructor(
   });
 
   ServiceClientImpl.service = methods;
+  ServiceClientImpl.serviceName = serviceName;
 
   return ServiceClientImpl;
 }
