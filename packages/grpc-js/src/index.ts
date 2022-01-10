@@ -109,6 +109,7 @@ export const credentials = {
   // from channel-credentials.ts
   createInsecure: ChannelCredentials.createInsecure,
   createSsl: ChannelCredentials.createSsl,
+  createFromSecureContext: ChannelCredentials.createFromSecureContext,
 
   // from call-credentials.ts
   createFromMetadataGenerator: CallCredentials.createFromMetadataGenerator,
