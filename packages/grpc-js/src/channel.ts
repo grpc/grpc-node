@@ -49,6 +49,7 @@ import { Filter } from './filter';
 
 import { ConnectivityState } from './connectivity-state';
 import { ChannelInfo, ChannelRef, ChannelzCallTracker, ChannelzChildrenTracker, ChannelzTrace, registerChannelzChannel, SubchannelRef, unregisterChannelzRef } from './channelz';
+import { Subchannel } from './subchannel';
 
 /**
  * See https://nodejs.org/api/timers.html#timers_setinterval_callback_delay_args
@@ -451,7 +452,7 @@ export class ChannelImplementation implements Channel {
                 if (subchannelState === ConnectivityState.READY) {
                   try {
                     const pickExtraFilters = pickResult.extraFilterFactories.map(factory => factory.createFilter(callStream));
-                    pickResult.subchannel!.startCallStream(
+                    pickResult.subchannel?.getRealSubchannel().startCallStream(
                       finalMetadata,
                       callStream,
                       [...dynamicFilters, ...pickExtraFilters]

@@ -34,3 +34,4 @@ export { Call as CallStream } from './call-stream';
 export { Filter, BaseFilter, FilterFactory } from './filter';
 export { FilterStackFactory } from './filter-stack';
 export { registerAdminService } from './admin';
+export { SubchannelInterface, BaseSubchannelWrapper, ConnectivityStateListener } from './subchannel-interface'
