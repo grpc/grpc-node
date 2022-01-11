@@ -60,6 +60,7 @@
     "deps/envoy-api/envoy/service/**/*.proto",
     "deps/envoy-api/envoy/type/**/*.proto",
     "deps/envoy-api/envoy/annotations/**/*.proto",
+    "deps/envoy-api/envoy/extensions/**/*.proto",
     "deps/googleapis/google/api/**/*.proto",
     "deps/googleapis/google/protobuf/**/*.proto",
     "deps/googleapis/google/rpc/**/*.proto",
