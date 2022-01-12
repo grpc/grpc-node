@@ -75,6 +75,8 @@ do
 
   # npm test calls nyc gulp test
   npm test || FAILED="true"
+
+  ./test/distrib/run-distrib-test.sh || FAILED="true"
 done
 
 set +ex
