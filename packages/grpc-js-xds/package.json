@@ -1,6 +1,6 @@
 {
   "name": "@grpc/grpc-js-xds",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "Plugin for @grpc/grpc-js. Adds the xds:// URL scheme and associated features.",
   "main": "build/src/index.js",
   "scripts": {
@@ -55,6 +55,7 @@
   "files": [
     "src/**/*.ts",
     "build/src/**/*.{js,d.ts,js.map}",
+    "deps/envoy-api/envoy/admin/v3/**/*.proto",
     "deps/envoy-api/envoy/api/v2/**/*.proto",
     "deps/envoy-api/envoy/config/**/*.proto",
     "deps/envoy-api/envoy/service/**/*.proto",
