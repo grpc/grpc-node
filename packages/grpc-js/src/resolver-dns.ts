@@ -32,6 +32,7 @@ import { SubchannelAddress, TcpSubchannelAddress } from './subchannel-address';
 import { GrpcUri, uriToString, splitHostPort } from './uri-parser';
 import { isIPv6, isIPv4 } from 'net';
 import { ChannelOptions } from './channel-options';
+import { BackoffOptions, BackoffTimeout } from './backoff-timeout';
 
 const TRACER_NAME = 'dns_resolver';
 
@@ -85,6 +86,8 @@ class DnsResolver implements Resolver {
   private latestServiceConfigError: StatusObject | null = null;
   private percentage: number;
   private defaultResolutionError: StatusObject;
+  private backoff: BackoffTimeout;
+  private continueResolving = false;
   constructor(
     private target: GrpcUri,
     private listener: ResolverListener,
@@ -119,6 +122,18 @@ class DnsResolver implements Resolver {
       details: `Name resolution failed for target ${uriToString(this.target)}`,
       metadata: new Metadata(),
     };
+    
+    const backoffOptions: BackoffOptions = {
+      initialDelay: channelOptions['grpc.initial_reconnect_backoff_ms'],
+      maxDelay: channelOptions['grpc.max_reconnect_backoff_ms'],
+    };
+
+    this.backoff = new BackoffTimeout(() => {
+      if (this.continueResolving) {
+        this.startResolutionWithBackoff();
+      }
+    }, backoffOptions);
+    this.backoff.unref();
   }
 
   /**
@@ -140,6 +155,7 @@ class DnsResolver implements Resolver {
       return;
     }
     if (this.dnsHostname === null) {
+      trace('Failed to parse DNS address ' + uriToString(this.target));
       setImmediate(() => {
         this.listener.onError({
           code: Status.UNAVAILABLE,
@@ -148,6 +164,7 @@ class DnsResolver implements Resolver {
         });
       });
     } else {
+      trace('Looking up DNS hostname ' + this.dnsHostname);
       /* We clear out latestLookupResult here to ensure that it contains the
        * latest result since the last time we started resolving. That way, the
        * TXT resolution handler can use it, but only if it finishes second. We
@@ -164,6 +181,7 @@ class DnsResolver implements Resolver {
       this.pendingLookupPromise.then(
         (addressList) => {
           this.pendingLookupPromise = null;
+          this.backoff.reset();
           const ip4Addresses: dns.LookupAddress[] = addressList.filter(
             (addr) => addr.family === 4
           );
@@ -263,10 +281,21 @@ class DnsResolver implements Resolver {
     }
   }
 
-  updateResolution() {
-    trace('Resolution update requested for target ' + uriToString(this.target));
-    if (this.pendingLookupPromise === null) {
+  private startResolutionWithBackoff() {
       this.startResolution();
+      this.backoff.runOnce();
+  }
+
+  updateResolution() {
+    /* If there is a pending lookup, just let it finish. Otherwise, if the
+     * backoff timer is running, do another lookup when it ends, and if not,
+     * do another lookup immeidately. */
+    if (this.pendingLookupPromise === null) {
+      if (this.backoff.isRunning()) {
+        this.continueResolving = true;
+      } else {
+        this.startResolutionWithBackoff();
+      }
     }
   }
 
