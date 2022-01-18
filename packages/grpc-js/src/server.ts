@@ -371,6 +371,13 @@ export class Server {
           creds._getSettings()!
         );
         http2Server = http2.createSecureServer(secureServerOptions);
+        http2Server.on('secureConnection', (socket: TLSSocket) => {
+          /* These errors need to be handled by the user of Http2SecureServer,
+           * according to https://github.com/nodejs/node/issues/35824 */
+          socket.on('error', (e: Error) => {
+            this.trace('An incoming TLS connection closed with error: ' + e.message);
+          });
+        });
       } else {
         http2Server = http2.createServer(serverOptions);
       }
