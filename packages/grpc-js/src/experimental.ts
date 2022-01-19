@@ -6,7 +6,8 @@ export {
   ConfigSelector,
 } from './resolver';
 export { GrpcUri, uriToString } from './uri-parser';
-export { ServiceConfig, Duration } from './service-config';
+export { Duration } from './duration';
+export { ServiceConfig } from './service-config';
 export { BackoffTimeout } from './backoff-timeout';
 export {
   LoadBalancer,

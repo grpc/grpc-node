@@ -50,7 +50,7 @@ export interface SubchannelInterface {
 }
 
 export abstract class BaseSubchannelWrapper implements SubchannelInterface {
-  constructor(private child: SubchannelInterface) {}
+  constructor(protected child: SubchannelInterface) {}
 
   getConnectivityState(): ConnectivityState {
     return this.child.getConnectivityState();

@@ -67,6 +67,7 @@ const compile = checkTask(() => execNpmCommand('compile'));
 const copyTestFixtures = checkTask(() => ncpP(`${jsCoreDir}/test/fixtures`, `${outDir}/test/fixtures`));
 
 const runTests = checkTask(() => {
+  process.env.GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION = 'true';
   return gulp.src(`${outDir}/test/**/*.js`)
     .pipe(mocha({reporter: 'mocha-jenkins-reporter',
                  require: ['ts-node/register']}));
