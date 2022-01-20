@@ -449,11 +449,15 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   destroy() {
     this.resetSubchannelList();
     if (this.currentPick !== null) {
-      this.currentPick.unref();
-      this.currentPick.removeConnectivityStateListener(
+      /* Unref can cause a state change, which can cause a change in the value
+       * of this.currentPick, so we hold a local reference to make sure that
+       * does not impact this function. */
+      const currentPick = this.currentPick;
+      currentPick.unref();
+      currentPick.removeConnectivityStateListener(
         this.pickedSubchannelStateListener
       );
-      this.channelControlHelper.removeChannelzChild(this.currentPick.getChannelzRef());
+      this.channelControlHelper.removeChannelzChild(currentPick.getChannelzRef());
     }
   }
 
