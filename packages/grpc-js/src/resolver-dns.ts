@@ -144,6 +144,7 @@ class DnsResolver implements Resolver {
     if (this.ipResult !== null) {
       trace('Returning IP address for target ' + uriToString(this.target));
       setImmediate(() => {
+        this.backoff.reset();
         this.listener.onSuccessfulResolution(
           this.ipResult!,
           null,
