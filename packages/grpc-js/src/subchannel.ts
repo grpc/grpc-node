@@ -555,6 +555,24 @@ export class Subchannel {
           (error as Error).message
       );
     });
+    if (logging.isTracerEnabled(TRACER_NAME)) {
+      session.on('remoteSettings', (settings: http2.Settings) => {
+        this.trace(
+          'new settings received' +
+            (this.session !== session ? ' on the old connection' : '') +
+            ': ' +
+            JSON.stringify(settings)
+        );
+      });
+      session.on('localSettings', (settings: http2.Settings) => {
+        this.trace(
+          'local settings acknowledged by remote' +
+            (this.session !== session ? ' on the old connection' : '') +
+            ': ' +
+            JSON.stringify(settings)
+        );
+      });
+    }
   }
 
   private startConnectingInternal() {
