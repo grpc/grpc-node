@@ -41,6 +41,7 @@ import { SubchannelRef, ChannelzTrace, ChannelzChildrenTracker, SubchannelInfo, 
 const clientVersion = require('../../package.json').version;
 
 const TRACER_NAME = 'subchannel';
+const FLOW_CONTROL_TRACER_NAME = 'subchannel_flowctrl';
 
 const MIN_CONNECT_TIMEOUT_MS = 20000;
 const INITIAL_BACKOFF_MS = 1000;
@@ -322,6 +323,10 @@ export class Subchannel {
 
   private refTrace(text: string): void {
     logging.trace(LogVerbosity.DEBUG, 'subchannel_refcount', '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
+  }
+
+  private flowControlTrace(text: string): void {
+    logging.trace(LogVerbosity.DEBUG, FLOW_CONTROL_TRACER_NAME, '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
   }
 
   private handleBackoffTimer() {
@@ -847,6 +852,12 @@ export class Subchannel {
         this.subchannelAddressString +
         ' with headers\n' +
         headersString
+    );
+    this.flowControlTrace(
+      'local window size: ' +
+        this.session!.state.localWindowSize +
+        ' remote window size: ' +
+        this.session!.state.remoteWindowSize
     );
     const streamSession = this.session;
     let statsTracker: SubchannelCallStatsTracker;
