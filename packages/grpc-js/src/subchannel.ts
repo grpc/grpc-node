@@ -329,6 +329,10 @@ export class Subchannel {
     logging.trace(LogVerbosity.DEBUG, FLOW_CONTROL_TRACER_NAME, '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
   }
 
+  private internalsTrace(text: string): void {
+    logging.trace(LogVerbosity.DEBUG, 'subchannel_internals', '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
+  }
+
   private handleBackoffTimer() {
     if (this.continueConnecting) {
       this.transitionToState(
@@ -860,6 +864,13 @@ export class Subchannel {
         this.session!.state.remoteWindowSize
     );
     const streamSession = this.session;
+    this.internalsTrace(
+      'session.closed=' + 
+      streamSession!.closed + 
+      ' session.destroyed=' + 
+      streamSession!.destroyed + 
+      ' session.socket.destroyed=' + 
+      streamSession!.socket.destroyed);
     let statsTracker: SubchannelCallStatsTracker;
     if (this.channelzEnabled) {
       this.callTracker.addCallStarted();
