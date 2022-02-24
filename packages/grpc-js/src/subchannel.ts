@@ -669,9 +669,15 @@ export class Subchannel {
     switch (newState) {
       case ConnectivityState.READY:
         this.stopBackoff();
-        this.session!.socket.once('close', () => {
-          for (const listener of this.disconnectListeners) {
-            listener();
+        const session = this.session!;
+        session.socket.once('close', () => {
+          if (this.session === session) {
+            this.transitionToState(
+              [ConnectivityState.READY],
+              ConnectivityState.TRANSIENT_FAILURE);
+            for (const listener of this.disconnectListeners) {
+              listener();
+            }
           }
         });
         if (this.keepaliveWithoutCalls) {
