@@ -207,13 +207,13 @@ export type Call =
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export const loadObject = (value: any, options: any) => {
+export const loadObject = (value: any, options: any): never => {
   throw new Error(
     'Not available in this library. Use @grpc/proto-loader and loadPackageDefinition instead'
   );
 };
 
-export const load = (filename: any, format: any, options: any) => {
+export const load = (filename: any, format: any, options: any): never => {
   throw new Error(
     'Not available in this library. Use @grpc/proto-loader and loadPackageDefinition instead'
   );
