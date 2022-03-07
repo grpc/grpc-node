@@ -312,7 +312,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   updateAddressList(
     addressList: SubchannelAddress[],
     lbConfig: LoadBalancingConfig | null
-  ) {
+  ): never {
     throw new Error('updateAddressList not supported on ResolvingLoadBalancer');
   }
 

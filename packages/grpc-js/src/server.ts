@@ -231,7 +231,7 @@ export class Server {
   }
   
 
-  addProtoService(): void {
+  addProtoService(): never {
     throw new Error('Not implemented. Use addService() instead');
   }
 
@@ -311,7 +311,7 @@ export class Server {
     });
   }
 
-  bind(port: string, creds: ServerCredentials): void {
+  bind(port: string, creds: ServerCredentials): never {
     throw new Error('Not implemented. Use bindAsync() instead');
   }
 
@@ -696,7 +696,7 @@ export class Server {
     }
   }
 
-  addHttp2Port(): void {
+  addHttp2Port(): never {
     throw new Error('Not yet implemented');
   }
 

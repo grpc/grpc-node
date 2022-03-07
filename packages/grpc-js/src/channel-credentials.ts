@@ -173,7 +173,7 @@ class InsecureChannelCredentialsImpl extends ChannelCredentials {
     super(callCredentials);
   }
 
-  compose(callCredentials: CallCredentials): ChannelCredentials {
+  compose(callCredentials: CallCredentials): never {
     throw new Error('Cannot compose insecure credentials');
   }
 
