@@ -27,6 +27,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as os from 'os';
+import { Duration } from './duration';
 import {
   LoadBalancingConfig,
   validateLoadBalancingConfig,
@@ -35,11 +36,6 @@ import {
 export interface MethodConfigName {
   service: string;
   method?: string;
-}
-
-export interface Duration {
-  seconds: number;
-  nanos: number;
 }
 
 export interface MethodConfig {

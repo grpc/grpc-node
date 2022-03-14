@@ -21,6 +21,7 @@ import { SubchannelAddress } from './subchannel-address';
 import { ConnectivityState } from './connectivity-state';
 import { Picker } from './picker';
 import { ChannelRef, SubchannelRef } from './channelz';
+import { SubchannelInterface } from './subchannel-interface';
 
 /**
  * A collection of functions associated with a channel that a load balancer
@@ -35,7 +36,7 @@ export interface ChannelControlHelper {
   createSubchannel(
     subchannelAddress: SubchannelAddress,
     subchannelArgs: ChannelOptions
-  ): Subchannel;
+  ): SubchannelInterface;
   /**
    * Passes a new subchannel picker up to the channel. This is called if either
    * the connectivity state changes or if a different picker is needed for any

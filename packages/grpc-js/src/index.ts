@@ -273,6 +273,7 @@ import * as resolver_uds from './resolver-uds';
 import * as resolver_ip from './resolver-ip';
 import * as load_balancer_pick_first from './load-balancer-pick-first';
 import * as load_balancer_round_robin from './load-balancer-round-robin';
+import * as load_balancer_outlier_detection from './load-balancer-outlier-detection';
 import * as channelz from './channelz';
 
 const clientVersion = require('../../package.json').version;
@@ -284,5 +285,6 @@ const clientVersion = require('../../package.json').version;
   resolver_ip.setup();
   load_balancer_pick_first.setup();
   load_balancer_round_robin.setup();
+  load_balancer_outlier_detection.setup();
   channelz.setup();
 })();

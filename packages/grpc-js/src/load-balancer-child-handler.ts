@@ -21,12 +21,12 @@ import {
   LoadBalancingConfig,
   createLoadBalancer,
 } from './load-balancer';
-import { Subchannel } from './subchannel';
 import { SubchannelAddress } from './subchannel-address';
 import { ChannelOptions } from './channel-options';
 import { ConnectivityState } from './connectivity-state';
 import { Picker } from './picker';
 import { ChannelRef, SubchannelRef } from './channelz';
+import { SubchannelInterface } from './subchannel-interface';
 
 const TYPE_NAME = 'child_load_balancer_helper';
 
@@ -40,7 +40,7 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
     createSubchannel(
       subchannelAddress: SubchannelAddress,
       subchannelArgs: ChannelOptions
-    ): Subchannel {
+    ): SubchannelInterface {
       return this.parent.channelControlHelper.createSubchannel(
         subchannelAddress,
         subchannelArgs
