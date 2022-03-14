@@ -857,7 +857,7 @@ export class Subchannel {
     logging.trace(
       LogVerbosity.DEBUG,
       'call_stream',
-      'Starting stream on subchannel ' +
+      'Starting stream [' + callStream.getCallNumber() + '] on subchannel ' +
         '(' + this.channelzRef.id + ') ' +
         this.subchannelAddressString +
         ' with headers\n' +

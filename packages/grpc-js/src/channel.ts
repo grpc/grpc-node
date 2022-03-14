@@ -404,11 +404,16 @@ export class ChannelImplementation implements Channel {
       metadata: callMetadata,
       extraPickInfo: callConfig.pickInformation,
     });
+    const subchannelString = pickResult.subchannel ? 
+      '(' + pickResult.subchannel.getChannelzRef().id + ') ' + pickResult.subchannel.getAddress() : 
+      '' + pickResult.subchannel; 
     this.trace(
-      'Pick result: ' +
+      'Pick result for call [' + 
+        callStream.getCallNumber() + 
+        ']: ' +
         PickResultType[pickResult.pickResultType] +
         ' subchannel: ' +
-        pickResult.subchannel?.getAddress() +
+        subchannelString +
         ' status: ' +
         pickResult.status?.code +
         ' ' +
@@ -433,7 +438,7 @@ export class ChannelImplementation implements Channel {
             log(
               LogVerbosity.ERROR,
               'Error: COMPLETE pick result subchannel ' +
-                pickResult.subchannel!.getAddress() +
+                subchannelString +
                 ' has state ' +
                 ConnectivityState[pickResult.subchannel!.getConnectivityState()]
             );
@@ -480,7 +485,7 @@ export class ChannelImplementation implements Channel {
                        * tryPick */
                       this.trace(
                         'Failed to start call on picked subchannel ' +
-                          pickResult.subchannel!.getAddress() +
+                          subchannelString +
                           ' with error ' +
                           (error as Error).message +
                           '. Retrying pick',
@@ -490,7 +495,7 @@ export class ChannelImplementation implements Channel {
                     } else {
                       this.trace(
                         'Failed to start call on picked subchanel ' +
-                          pickResult.subchannel!.getAddress() +
+                          subchannelString +
                           ' with error ' +
                           (error as Error).message +
                           '. Ending call',
@@ -509,7 +514,7 @@ export class ChannelImplementation implements Channel {
                    * block above */
                   this.trace(
                     'Picked subchannel ' +
-                      pickResult.subchannel!.getAddress() +
+                      subchannelString +
                       ' has state ' +
                       ConnectivityState[subchannelState] +
                       ' after metadata filters. Retrying pick',
