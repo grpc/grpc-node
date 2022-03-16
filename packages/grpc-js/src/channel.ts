@@ -466,9 +466,9 @@ export class ChannelImplementation implements Channel {
                     callConfig.onCommitted?.();
                     pickResult.onCallStarted?.();
                   } catch (error) {
-                    if (
-                      (error as NodeJS.ErrnoException).code ===
-                      'ERR_HTTP2_GOAWAY_SESSION'
+                    const errorCode = (error as NodeJS.ErrnoException).code;
+                    if (errorCode === 'ERR_HTTP2_GOAWAY_SESSION' ||
+                        errorCode === 'ERR_HTTP2_INVALID_SESSION'
                     ) {
                       /* An error here indicates that something went wrong with
                        * the picked subchannel's http2 stream right before we
