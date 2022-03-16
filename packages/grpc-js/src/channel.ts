@@ -335,6 +335,8 @@ export class ChannelImplementation implements Channel {
       new CompressionFilterFactory(this, this.options),
     ]);
     this.trace('Channel constructed with options ' + JSON.stringify(options, undefined, 2));
+    const error = new Error();
+    trace(LogVerbosity.DEBUG, 'channel_stacktrace', '(' + this.channelzRef.id + ') ' + 'Channel constructed \n' + error.stack?.substring(error.stack.indexOf('\n')+1));
   }
 
   private getChannelzInfo(): ChannelInfo {
