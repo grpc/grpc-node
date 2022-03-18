@@ -6,7 +6,7 @@ export {
   ConfigSelector,
 } from './resolver';
 export { GrpcUri, uriToString } from './uri-parser';
-export { Duration } from './duration';
+export { Duration, durationToMs } from './duration';
 export { ServiceConfig } from './service-config';
 export { BackoffTimeout } from './backoff-timeout';
 export {
@@ -35,4 +35,5 @@ export { Call as CallStream } from './call-stream';
 export { Filter, BaseFilter, FilterFactory } from './filter';
 export { FilterStackFactory } from './filter-stack';
 export { registerAdminService } from './admin';
-export { SubchannelInterface, BaseSubchannelWrapper, ConnectivityStateListener } from './subchannel-interface'
+export { SubchannelInterface, BaseSubchannelWrapper, ConnectivityStateListener } from './subchannel-interface';
+export { OutlierDetectionLoadBalancingConfig, SuccessRateEjectionConfig, FailurePercentageEjectionConfig } from './load-balancer-outlier-detection';

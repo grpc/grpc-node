@@ -38,6 +38,8 @@ import Filter = experimental.Filter;
 import BaseFilter = experimental.BaseFilter;
 import FilterFactory = experimental.FilterFactory;
 import CallStream = experimental.CallStream;
+import OutlierDetectionLoadBalancingConfig = experimental.OutlierDetectionLoadBalancingConfig;
+import { EXPERIMENTAL_OUTLIER_DETECTION } from './environment';
 
 const TRACER_NAME = 'eds_balancer';
 
@@ -71,12 +73,15 @@ export class EdsLoadBalancingConfig implements LoadBalancingConfig {
     if (this.lrsLoadReportingServerName !== undefined) {
       jsonObj.lrs_load_reporting_server_name = this.lrsLoadReportingServerName;
     }
+    if (this.outlierDetection !== undefined) {
+      jsonObj.outlier_detection = this.outlierDetection.toJsonObject();
+    }
     return {
       [TYPE_NAME]: jsonObj
     };
   }
 
-  constructor(private cluster: string, private localityPickingPolicy: LoadBalancingConfig[], private endpointPickingPolicy: LoadBalancingConfig[], private edsServiceName?: string, private lrsLoadReportingServerName?: string, maxConcurrentRequests?: number) {
+  constructor(private cluster: string, private localityPickingPolicy: LoadBalancingConfig[], private endpointPickingPolicy: LoadBalancingConfig[], private edsServiceName?: string, private lrsLoadReportingServerName?: string, maxConcurrentRequests?: number, private outlierDetection?: OutlierDetectionLoadBalancingConfig) {
     this.maxConcurrentRequests = maxConcurrentRequests ?? DEFAULT_MAX_CONCURRENT_REQUESTS;
   }
 
@@ -104,6 +109,10 @@ export class EdsLoadBalancingConfig implements LoadBalancingConfig {
     return this.maxConcurrentRequests;
   }
 
+  getOutlierDetection() {
+    return this.outlierDetection;
+  }
+
   static createFromJson(obj: any): EdsLoadBalancingConfig {
     if (!('cluster' in obj && typeof obj.cluster === 'string')) {
       throw new Error('eds config must have a string field cluster');
@@ -123,7 +132,17 @@ export class EdsLoadBalancingConfig implements LoadBalancingConfig {
     if ('max_concurrent_requests' in obj && (!obj.max_concurrent_requests === undefined || typeof obj.max_concurrent_requests === 'number')) {
       throw new Error('eds config max_concurrent_requests must be a number if provided');
     }
-    return new EdsLoadBalancingConfig(obj.cluster, obj.locality_picking_policy.map(validateLoadBalancingConfig), obj.endpoint_picking_policy.map(validateLoadBalancingConfig), obj.eds_service_name, obj.lrs_load_reporting_server_name, obj.max_concurrent_requests);
+    let validatedOutlierDetectionConfig: OutlierDetectionLoadBalancingConfig | undefined = undefined;
+    if (EXPERIMENTAL_OUTLIER_DETECTION) {
+      if ('outlier_detection' in obj) {
+        const outlierDetectionConfig = validateLoadBalancingConfig(obj.outlier_detection);
+        if (!(outlierDetectionConfig instanceof OutlierDetectionLoadBalancingConfig)) {
+          throw new Error('eds config outlier_detection must be a valid outlier detection config if provided');
+        }
+        validatedOutlierDetectionConfig = outlierDetectionConfig;
+      }
+    }
+    return new EdsLoadBalancingConfig(obj.cluster, obj.locality_picking_policy.map(validateLoadBalancingConfig), obj.endpoint_picking_policy.map(validateLoadBalancingConfig), obj.eds_service_name, obj.lrs_load_reporting_server_name, obj.max_concurrent_requests, validatedOutlierDetectionConfig);
   }
 }
 
@@ -449,10 +468,15 @@ export class EdsLoadBalancer implements LoadBalancer {
         }
       }
 
+      const weightedTargetConfig = new WeightedTargetLoadBalancingConfig(childTargets);
+      let outlierDetectionConfig: OutlierDetectionLoadBalancingConfig | undefined;
+      if (EXPERIMENTAL_OUTLIER_DETECTION) {
+        outlierDetectionConfig = this.lastestConfig.getOutlierDetection()?.copyWithChildPolicy([weightedTargetConfig]);
+      }
+      const priorityChildConfig = outlierDetectionConfig ?? weightedTargetConfig;
+
       priorityChildren.set(newPriorityName, {
-        config: [
-          new WeightedTargetLoadBalancingConfig(childTargets),
-        ],
+        config: [priorityChildConfig],
       });
     }
     /* Contract the priority names array if it is sparse. This config only

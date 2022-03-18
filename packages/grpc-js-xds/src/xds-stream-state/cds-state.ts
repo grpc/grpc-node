@@ -16,8 +16,11 @@
  */
 
 import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
+import { EXPERIMENTAL_OUTLIER_DETECTION } from "../environment";
 import { Cluster__Output } from "../generated/envoy/config/cluster/v3/Cluster";
 import { Any__Output } from "../generated/google/protobuf/Any";
+import { Duration__Output } from "../generated/google/protobuf/Duration";
+import { UInt32Value__Output } from "../generated/google/protobuf/UInt32Value";
 import { EdsState } from "./eds-state";
 import { HandleResponseResult, RejectedResourceEntry, ResourcePair, Watcher, XdsStreamState } from "./xds-stream-state";
 
@@ -102,6 +105,26 @@ export class CdsState implements XdsStreamState<Cluster__Output> {
     return Array.from(this.watchers.keys());
   }
 
+  private validateNonnegativeDuration(duration: Duration__Output | null): boolean {
+    if (!duration) {
+      return true;
+    }
+    /* The maximum values here come from the official Protobuf documentation:
+     * https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#google.protobuf.Duration
+     */
+    return Number(duration.seconds) >= 0 && 
+           Number(duration.seconds) <= 315_576_000_000 &&
+           duration.nanos >= 0 &&
+           duration.nanos <= 999_999_999;
+  }
+
+  private validatePercentage(percentage: UInt32Value__Output | null): boolean {
+    if (!percentage) {
+      return true;
+    }
+    return percentage.value >=0 && percentage.value <= 100;
+  }
+
   private validateResponse(message: Cluster__Output): boolean {
     if (message.type !== 'EDS') {
       return false;
@@ -115,6 +138,31 @@ export class CdsState implements XdsStreamState<Cluster__Output> {
     if (message.lrs_server) {
       if (!message.lrs_server.self) {
         return false;
+      }
+    }
+    if (EXPERIMENTAL_OUTLIER_DETECTION) {
+      if (message.outlier_detection) {
+        if (!this.validateNonnegativeDuration(message.outlier_detection.interval)) {
+          return false;
+        }
+        if (!this.validateNonnegativeDuration(message.outlier_detection.base_ejection_time)) {
+          return false;
+        }
+        if (!this.validateNonnegativeDuration(message.outlier_detection.max_ejection_time)) {
+          return false;
+        }
+        if (!this.validatePercentage(message.outlier_detection.max_ejection_percent)) {
+          return false;
+        }
+        if (!this.validatePercentage(message.outlier_detection.enforcing_success_rate)) {
+          return false;
+        }
+        if (!this.validatePercentage(message.outlier_detection.failure_percentage_threshold)) {
+          return false;
+        }
+        if (!this.validatePercentage(message.outlier_detection.enforcing_failure_percentage)) {
+          return false;
+        }
       }
     }
     return true;

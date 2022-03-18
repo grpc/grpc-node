@@ -25,8 +25,14 @@ import LoadBalancer = experimental.LoadBalancer;
 import ChannelControlHelper = experimental.ChannelControlHelper;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
 import LoadBalancingConfig = experimental.LoadBalancingConfig;
+import OutlierDetectionLoadBalancingConfig = experimental.OutlierDetectionLoadBalancingConfig;
+import SuccessRateEjectionConfig = experimental.SuccessRateEjectionConfig;
+import FailurePercentageEjectionConfig = experimental.FailurePercentageEjectionConfig;
 import { EdsLoadBalancingConfig } from './load-balancer-eds';
 import { Watcher } from './xds-stream-state/xds-stream-state';
+import { OutlierDetection__Output } from './generated/envoy/config/cluster/v3/OutlierDetection';
+import { Duration__Output } from './generated/google/protobuf/Duration';
+import { EXPERIMENTAL_OUTLIER_DETECTION } from './environment';
 
 const TRACER_NAME = 'cds_balancer';
 
@@ -64,6 +70,52 @@ export class CdsLoadBalancingConfig implements LoadBalancingConfig {
   }
 }
 
+function durationToMs(duration: Duration__Output): number {
+  return (Number(duration.seconds) * 1_000 + duration.nanos / 1_000_000) | 0;
+}
+
+function translateOutlierDetectionConfig(outlierDetection: OutlierDetection__Output | null): OutlierDetectionLoadBalancingConfig | undefined {
+  if (!EXPERIMENTAL_OUTLIER_DETECTION) {
+    return undefined;
+  }
+  if (!outlierDetection) {
+    /* No-op outlier detection config, with max possible interval and no
+     * ejection criteria configured. */
+    return new OutlierDetectionLoadBalancingConfig(~(1<<31), null, null, null, null, null, []);
+  }
+  let successRateConfig: Partial<SuccessRateEjectionConfig> | null = null;
+  /* Success rate ejection is enabled by default, so we only disable it if
+   * enforcing_success_rate is set and it has the value 0 */
+  if (!outlierDetection.enforcing_success_rate || outlierDetection.enforcing_success_rate.value > 0) {
+    successRateConfig = {
+      enforcement_percentage: outlierDetection.enforcing_success_rate?.value,
+      minimum_hosts: outlierDetection.success_rate_minimum_hosts?.value,
+      request_volume: outlierDetection.success_rate_request_volume?.value,
+      stdev_factor: outlierDetection.success_rate_stdev_factor?.value
+    };
+  }
+  let failurePercentageConfig: Partial<FailurePercentageEjectionConfig> | null = null;
+  /* Failure percentage ejection is disabled by default, so we only enable it
+   * if enforcing_failure_percentage is set and it has a value greater than 0 */
+  if (outlierDetection.enforcing_failure_percentage && outlierDetection.enforcing_failure_percentage.value > 0) {
+    failurePercentageConfig = {
+      enforcement_percentage: outlierDetection.enforcing_failure_percentage.value,
+      minimum_hosts: outlierDetection.failure_percentage_minimum_hosts?.value,
+      request_volume: outlierDetection.failure_percentage_request_volume?.value,
+      threshold: outlierDetection.failure_percentage_threshold?.value
+    }
+  }
+  return new OutlierDetectionLoadBalancingConfig(
+    outlierDetection.interval ? durationToMs(outlierDetection.interval) : null,
+    outlierDetection.base_ejection_time ? durationToMs(outlierDetection.base_ejection_time) : null,
+    outlierDetection.max_ejection_time ? durationToMs(outlierDetection.max_ejection_time) : null,
+    outlierDetection.max_ejection_percent?.value ?? null,
+    successRateConfig,
+    failurePercentageConfig,
+    []
+  );
+}
+
 export class CdsLoadBalancer implements LoadBalancer {
   private childBalancer: ChildLoadBalancerHandler;
   private watcher: Watcher<Cluster__Output>;
@@ -90,7 +142,15 @@ export class CdsLoadBalancer implements LoadBalancer {
          * used for load reporting as for other xDS operations. Setting
          * lrsLoadReportingServerName to the empty string sets that behavior.
          * Otherwise, if the field is omitted, load reporting is disabled. */
-        const edsConfig: EdsLoadBalancingConfig = new EdsLoadBalancingConfig(update.name, [], [], update.eds_cluster_config!.service_name === '' ? undefined : update.eds_cluster_config!.service_name, update.lrs_server?.self ? '' : undefined, maxConcurrentRequests);
+        const edsConfig: EdsLoadBalancingConfig = new EdsLoadBalancingConfig(
+          /* cluster= */ update.name, 
+          /* localityPickingPolicy= */ [], 
+          /* endpointPickingPolicy= */ [], 
+          /* edsServiceName= */ update.eds_cluster_config!.service_name === '' ? undefined : update.eds_cluster_config!.service_name, 
+          /* lrsLoadReportingServerName= */update.lrs_server?.self ? '' : undefined, 
+          /* maxConcurrentRequests= */ maxConcurrentRequests, 
+          /* outlierDetection= */ translateOutlierDetectionConfig(update.outlier_detection)
+        );
         trace('Child update EDS config: ' + JSON.stringify(edsConfig));
         this.childBalancer.updateAddressList(
           [],
