@@ -34,14 +34,14 @@ const TYPE_NAME = 'outlier_detection';
 
 const OUTLIER_DETECTION_ENABLED = process.env.GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION === 'true';
 
-interface SuccessRateEjectionConfig {
+export interface SuccessRateEjectionConfig {
   readonly stdev_factor: number;
   readonly enforcement_percentage: number;
   readonly minimum_hosts: number;
   readonly request_volume: number;
 }
 
-interface FailurePercentageEjectionConfig {
+export interface FailurePercentageEjectionConfig {
   readonly threshold: number;
   readonly enforcement_percentage: number;
   readonly minimum_hosts: number;
@@ -92,15 +92,29 @@ function validatePercentage(obj: any, fieldName: string, objectName?: string) {
 }
 
 export class OutlierDetectionLoadBalancingConfig implements LoadBalancingConfig {
+  private readonly intervalMs: number;
+  private readonly baseEjectionTimeMs: number;
+  private readonly maxEjectionTimeMs: number;
+  private readonly maxEjectionPercent: number;
+  private readonly successRateEjection: SuccessRateEjectionConfig | null;
+  private readonly failurePercentageEjection: FailurePercentageEjectionConfig | null;
+
   constructor(
-    private readonly intervalMs: number,
-    private readonly baseEjectionTimeMs: number,
-    private readonly maxEjectionTimeMs: number,
-    private readonly maxEjectionPercent: number,
-    private readonly successRateEjection: SuccessRateEjectionConfig | null,
-    private readonly failurePercentageEjection: FailurePercentageEjectionConfig | null,
+    intervalMs: number | null,
+    baseEjectionTimeMs: number | null,
+    maxEjectionTimeMs: number | null,
+    maxEjectionPercent: number | null,
+    successRateEjection: Partial<SuccessRateEjectionConfig> | null,
+    failurePercentageEjection: Partial<FailurePercentageEjectionConfig> | null,
     private readonly childPolicy: LoadBalancingConfig[]
-  ) {}
+  ) {
+    this.intervalMs = intervalMs ?? 10_000;
+    this.baseEjectionTimeMs = baseEjectionTimeMs ?? 30_000;
+    this.maxEjectionTimeMs = maxEjectionTimeMs ?? 300_000;
+    this.maxEjectionPercent = maxEjectionPercent ?? 10;
+    this.successRateEjection = successRateEjection ? {...defaultSuccessRateEjectionConfig, ...successRateEjection} : null;
+    this.failurePercentageEjection = failurePercentageEjection ? {...defaultFailurePercentageEjectionConfig, ...failurePercentageEjection}: null;
+  }
   getLoadBalancerName(): string {
     return TYPE_NAME;
   }
@@ -137,6 +151,11 @@ export class OutlierDetectionLoadBalancingConfig implements LoadBalancingConfig 
   getChildPolicy(): LoadBalancingConfig[] {
     return this.childPolicy;
   }
+
+  copyWithChildPolicy(childPolicy: LoadBalancingConfig[]): OutlierDetectionLoadBalancingConfig {
+    return new OutlierDetectionLoadBalancingConfig(this.intervalMs, this.baseEjectionTimeMs, this.maxEjectionTimeMs, this.maxEjectionPercent, this.successRateEjection, this.failurePercentageEjection, childPolicy);
+  }
+
   static createFromJson(obj: any): OutlierDetectionLoadBalancingConfig {
     validatePositiveDuration(obj, 'interval');
     validatePositiveDuration(obj, 'base_ejection_time');
@@ -162,12 +181,12 @@ export class OutlierDetectionLoadBalancingConfig implements LoadBalancingConfig 
     }
 
     return new OutlierDetectionLoadBalancingConfig(
-      obj.interval ? durationToMs(obj.interval) : 10_000,
-      obj.base_ejection_time ? durationToMs(obj.base_ejection_time) : 30_000,
-      obj.max_ejection_time ? durationToMs(obj.max_ejection_time) : 300_000,
-      obj.max_ejection_percent ?? 10,
-      obj.success_rate_ejection ? {...defaultSuccessRateEjectionConfig, ...obj.success_rate_ejection} : null,
-      obj.failure_percentage_ejection ? {...defaultFailurePercentageEjectionConfig, ...obj.failure_percentage_ejection} : null,
+      obj.interval ? durationToMs(obj.interval) : null,
+      obj.base_ejection_time ? durationToMs(obj.base_ejection_time) : null,
+      obj.max_ejection_time ? durationToMs(obj.max_ejection_time) : null,
+      obj.max_ejection_percent ?? null,
+      obj.success_rate_ejection,
+      obj.failure_percentage_ejection,
       obj.child_policy.map(validateLoadBalancingConfig)
     );
   }
