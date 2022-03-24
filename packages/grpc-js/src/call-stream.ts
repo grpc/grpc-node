@@ -312,6 +312,13 @@ export class Http2CallStream implements Call {
       const filteredStatus = this.filterStack.receiveTrailers(
         this.finalStatus!
       );
+      this.trace(
+        'ended with status: code=' +
+          filteredStatus.code +
+          ' details="' +
+          filteredStatus.details +
+          '"'
+      );
       this.statusWatchers.forEach(watcher => watcher(filteredStatus));
       /* We delay the actual action of bubbling up the status to insulate the
        * cleanup code in this class from any errors that may be thrown in the
@@ -346,13 +353,6 @@ export class Http2CallStream implements Call {
     /* If the status is OK and a new status comes in (e.g. from a
      * deserialization failure), that new status takes priority */
     if (this.finalStatus === null || this.finalStatus.code === Status.OK) {
-      this.trace(
-        'ended with status: code=' +
-          status.code +
-          ' details="' +
-          status.details +
-          '"'
-      );
       this.finalStatus = status;
       this.maybeOutputStatus();
     }
@@ -793,6 +793,10 @@ export class Http2CallStream implements Call {
 
   addFilters(extraFilters: Filter[]) {
     this.filterStack.push(extraFilters);
+  }
+
+  getCallNumber() {
+    return this.callNumber;
   }
 
   startRead() {

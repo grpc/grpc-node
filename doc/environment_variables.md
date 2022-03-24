@@ -36,7 +36,10 @@ can be set.
   - `server` - Traces high-level server events
   - `server_call` - Traces server handling of individual requests
   - `subchannel` - Traces subchannel connectivity state and errors
-  - `subchannel_refcount` - Traces subchannel refcount changes
+  - `subchannel_refcount` - Traces subchannel refcount changes. Includes per-call logs.
+  - `subchannel_flowctrl` - Traces HTTP/2 flow control. Includes per-call logs.
+  - `subchannel_internals` - Traces HTTP/2 session state. Includes per-call logs.
+  - `channel_stacktrace` - Traces channel construction events with stack traces.
 
   The following tracers are added by the `@grpc/grpc-js-xds` library:
   - `cds_balancer` - Traces the CDS load balancing policy

@@ -42,6 +42,7 @@ import { ConnectivityStateListener } from './subchannel-interface';
 const clientVersion = require('../../package.json').version;
 
 const TRACER_NAME = 'subchannel';
+const FLOW_CONTROL_TRACER_NAME = 'subchannel_flowctrl';
 
 const MIN_CONNECT_TIMEOUT_MS = 20000;
 const INITIAL_BACKOFF_MS = 1000;
@@ -319,6 +320,14 @@ export class Subchannel {
     logging.trace(LogVerbosity.DEBUG, 'subchannel_refcount', '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
   }
 
+  private flowControlTrace(text: string): void {
+    logging.trace(LogVerbosity.DEBUG, FLOW_CONTROL_TRACER_NAME, '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
+  }
+
+  private internalsTrace(text: string): void {
+    logging.trace(LogVerbosity.DEBUG, 'subchannel_internals', '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
+  }
+
   private handleBackoffTimer() {
     if (this.continueConnecting) {
       this.transitionToState(
@@ -550,6 +559,24 @@ export class Subchannel {
           (error as Error).message
       );
     });
+    if (logging.isTracerEnabled(TRACER_NAME)) {
+      session.on('remoteSettings', (settings: http2.Settings) => {
+        this.trace(
+          'new settings received' +
+            (this.session !== session ? ' on the old connection' : '') +
+            ': ' +
+            JSON.stringify(settings)
+        );
+      });
+      session.on('localSettings', (settings: http2.Settings) => {
+        this.trace(
+          'local settings acknowledged by remote' +
+            (this.session !== session ? ' on the old connection' : '') +
+            ': ' +
+            JSON.stringify(settings)
+        );
+      });
+    }
   }
 
   private startConnectingInternal() {
@@ -637,9 +664,15 @@ export class Subchannel {
     switch (newState) {
       case ConnectivityState.READY:
         this.stopBackoff();
-        this.session!.socket.once('close', () => {
-          for (const listener of this.disconnectListeners) {
-            listener();
+        const session = this.session!;
+        session.socket.once('close', () => {
+          if (this.session === session) {
+            this.transitionToState(
+              [ConnectivityState.READY],
+              ConnectivityState.TRANSIENT_FAILURE);
+            for (const listener of this.disconnectListeners) {
+              listener();
+            }
           }
         });
         if (this.keepaliveWithoutCalls) {
@@ -819,13 +852,26 @@ export class Subchannel {
     logging.trace(
       LogVerbosity.DEBUG,
       'call_stream',
-      'Starting stream on subchannel ' +
+      'Starting stream [' + callStream.getCallNumber() + '] on subchannel ' +
         '(' + this.channelzRef.id + ') ' +
         this.subchannelAddressString +
         ' with headers\n' +
         headersString
     );
+    this.flowControlTrace(
+      'local window size: ' +
+        this.session!.state.localWindowSize +
+        ' remote window size: ' +
+        this.session!.state.remoteWindowSize
+    );
     const streamSession = this.session;
+    this.internalsTrace(
+      'session.closed=' + 
+      streamSession!.closed + 
+      ' session.destroyed=' + 
+      streamSession!.destroyed + 
+      ' session.socket.destroyed=' + 
+      streamSession!.socket.destroyed);
     let statsTracker: SubchannelCallStatsTracker;
     if (this.channelzEnabled) {
       this.callTracker.addCallStarted();
