@@ -48,7 +48,7 @@ import {
   ServiceClientConstructor,
   ServiceDefinition,
 } from './make-client';
-import { Metadata, MetadataValue } from './metadata';
+import { Metadata, MetadataOptions, MetadataValue } from './metadata';
 import {
   Server,
   UntypedHandleCall,
