@@ -125,9 +125,9 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
   }
   exitIdle(): void {
     if (this.currentChild) {
-      this.currentChild.resetBackoff();
+      this.currentChild.exitIdle();
       if (this.pendingChild) {
-        this.pendingChild.resetBackoff();
+        this.pendingChild.exitIdle();
       }
     }
   }

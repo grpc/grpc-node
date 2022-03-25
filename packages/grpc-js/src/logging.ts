@@ -108,10 +108,12 @@ export function trace(
   tracer: string,
   text: string
 ): void {
-  if (
-    !disabledTracers.has(tracer) &&
-    (allEnabled || enabledTracers.has(tracer))
-  ) {
+  if (isTracerEnabled(tracer)) {
     log(severity, new Date().toISOString() + ' | ' + tracer + ' | ' + text);
   }
+}
+
+export function isTracerEnabled(tracer: string): boolean {
+  return !disabledTracers.has(tracer) &&
+    (allEnabled || enabledTracers.has(tracer));
 }
