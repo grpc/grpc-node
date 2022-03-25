@@ -119,7 +119,7 @@ export const credentials = {
 
 /**** Metadata ****/
 
-export { Metadata, MetadataValue };
+export { Metadata, MetadataOptions, MetadataValue };
 
 /**** Constants ****/
 
