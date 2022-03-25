@@ -48,7 +48,7 @@ import {
   ServiceClientConstructor,
   ServiceDefinition,
 } from './make-client';
-import { Metadata, MetadataValue } from './metadata';
+import { Metadata, MetadataOptions, MetadataValue } from './metadata';
 import {
   Server,
   UntypedHandleCall,
@@ -119,7 +119,7 @@ export const credentials = {
 
 /**** Metadata ****/
 
-export { Metadata, MetadataValue };
+export { Metadata, MetadataOptions, MetadataValue };
 
 /**** Constants ****/
 
