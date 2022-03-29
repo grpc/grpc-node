@@ -1,6 +1,6 @@
 {
   "name": "@grpc/grpc-js-xds",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "Plugin for @grpc/grpc-js. Adds the xds:// URL scheme and associated features.",
   "main": "build/src/index.js",
   "scripts": {
@@ -47,7 +47,7 @@
     "re2-wasm": "^1.0.1"
   },
   "peerDependencies": {
-    "@grpc/grpc-js": "~1.5.0"
+    "@grpc/grpc-js": "~1.6.0"
   },
   "engines": {
     "node": ">=10.10.0"
