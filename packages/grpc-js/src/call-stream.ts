@@ -839,7 +839,16 @@ export class Http2CallStream implements Call {
       message,
       flags: context.flags,
     };
-    const cb: WriteCallback = context.callback ?? (() => {});
+    const cb: WriteCallback = (error?: Error | null) => {
+      let code: Status = Status.UNAVAILABLE;
+      if ((error as NodeJS.ErrnoException)?.code === 'ERR_STREAM_WRITE_AFTER_END') {
+        code = Status.INTERNAL;
+      }
+      if (error) {
+        this.cancelWithStatus(code, `Write error: ${error.message}`);
+      }
+      context.callback?.();
+    };
     this.isWriteFilterPending = true;
     this.filterStack.sendMessage(Promise.resolve(writeObj)).then((message) => {
       this.isWriteFilterPending = false;
