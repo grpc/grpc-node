@@ -43,6 +43,7 @@ export interface ChannelOptions {
   'grpc.http_connect_creds'?: string;
   'grpc.default_compression_algorithm'?: CompressionAlgorithms;
   'grpc.enable_channelz'?: number;
+  'grpc.dns_min_time_between_resolutions_ms'?: number;
   'grpc-node.max_session_memory'?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
@@ -69,6 +70,7 @@ export const recognizedOptions = {
   'grpc.max_receive_message_length': true,
   'grpc.enable_http_proxy': true,
   'grpc.enable_channelz': true,
+  'grpc.dns_min_time_between_resolutions_ms': true,
   'grpc-node.max_session_memory': true,
 };
 
