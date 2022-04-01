@@ -37,14 +37,47 @@ export interface BackoffOptions {
 }
 
 export class BackoffTimeout {
-  private initialDelay: number = INITIAL_BACKOFF_MS;
-  private multiplier: number = BACKOFF_MULTIPLIER;
-  private maxDelay: number = MAX_BACKOFF_MS;
-  private jitter: number = BACKOFF_JITTER;
+  /**
+   * The delay time at the start, and after each reset.
+   */
+  private readonly initialDelay: number = INITIAL_BACKOFF_MS;
+  /**
+   * The exponential backoff multiplier.
+   */
+  private readonly multiplier: number = BACKOFF_MULTIPLIER;
+  /**
+   * The maximum delay time
+   */
+  private readonly maxDelay: number = MAX_BACKOFF_MS;
+  /**
+   * The maximum fraction by which the delay time can randomly vary after
+   * applying the multiplier.
+   */
+  private readonly jitter: number = BACKOFF_JITTER;
+  /**
+   * The delay time for the next time the timer runs.
+   */
   private nextDelay: number;
+  /**
+   * The handle of the underlying timer. If running is false, this value refers
+   * to an object representing a timer that has ended, but it can still be
+   * interacted with without error.
+   */
   private timerId: NodeJS.Timer;
+  /**
+   * Indicates whether the timer is currently running.
+   */
   private running = false;
+  /**
+   * Indicates whether the timer should keep the Node process running if no
+   * other async operation is doing so.
+   */
   private hasRef = true;
+  /**
+   * The time that the currently running timer was started. Only valid if
+   * running is true.
+   */
+  private startTime: Date = new Date();
 
   constructor(private callback: () => void, options?: BackoffOptions) {
     if (options) {
@@ -66,18 +99,23 @@ export class BackoffTimeout {
     clearTimeout(this.timerId);
   }
 
+  private runTimer(delay: number) {
+    this.timerId = setTimeout(() => {
+      this.callback();
+      this.running = false;
+    }, delay);
+    if (!this.hasRef) {
+      this.timerId.unref?.();
+    }
+  }
+
   /**
    * Call the callback after the current amount of delay time
    */
   runOnce() {
     this.running = true;
-    this.timerId = setTimeout(() => {
-      this.callback();
-      this.running = false;
-    }, this.nextDelay);
-    if (!this.hasRef) {
-      this.timerId.unref?.();
-    }
+    this.startTime = new Date();
+    this.runTimer(this.nextDelay);
     const nextBackoff = Math.min(
       this.nextDelay * this.multiplier,
       this.maxDelay
@@ -97,21 +135,44 @@ export class BackoffTimeout {
   }
 
   /**
-   * Reset the delay time to its initial value.
+   * Reset the delay time to its initial value. If the timer is still running,
+   * retroactively apply that reset to the current timer.
    */
   reset() {
     this.nextDelay = this.initialDelay;
+    if (this.running) {
+      const now = new Date();
+      const newEndTime = this.startTime;
+      newEndTime.setMilliseconds(newEndTime.getMilliseconds() + this.nextDelay);
+      clearTimeout(this.timerId);
+      if (now < newEndTime) {
+        this.runTimer(newEndTime.getTime() - now.getTime());
+      } else {
+        this.running = false;
+      }
+    }
   }
 
+  /**
+   * Check whether the timer is currently running.
+   */
   isRunning() {
     return this.running;
   }
 
+  /**
+   * Set that while the timer is running, it should keep the Node process
+   * running.
+   */
   ref() {
     this.hasRef = true;
     this.timerId.ref?.();
   }
 
+  /**
+   * Set that while the timer is running, it should not keep the Node process
+   * running.
+   */
   unref() {
     this.hasRef = false;
     this.timerId.unref?.();
