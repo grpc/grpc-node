@@ -58,6 +58,7 @@ Many channel arguments supported in `grpc` are not supported in `@grpc/grpc-js`.
   - `grpc.enable_http_proxy`
   - `grpc.default_compression_algorithm`
   - `grpc.enable_channelz`
+  - `grpc.dns_min_time_between_resolutions_ms`
   - `grpc-node.max_session_memory`
   - `channelOverride`
   - `channelFactoryOverride`
