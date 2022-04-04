@@ -688,7 +688,6 @@ export class XdsClient {
   ack(serviceKind: AdsServiceKind) {
     /* An ack is the best indication of a successful interaction between the
      * client and the server, so we can reset the backoff timer here. */
-    this.adsBackoff.stop();
     this.adsBackoff.reset();
 
     this.updateNames(serviceKind);
