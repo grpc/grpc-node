@@ -45,6 +45,8 @@ function trace(text: string): void {
  */
 const DEFAULT_PORT = 443;
 
+const DEFAULT_MIN_TIME_BETWEEN_RESOLUTIONS_MS = 30_000;
+
 const resolveTxtPromise = util.promisify(dns.resolveTxt);
 const dnsLookupPromise = util.promisify(dns.lookup);
 
@@ -79,6 +81,12 @@ class DnsResolver implements Resolver {
   private readonly ipResult: SubchannelAddress[] | null;
   private readonly dnsHostname: string | null;
   private readonly port: number | null;
+  /**
+   * Minimum time between resolutions, measured as the time between starting
+   * successive resolution requests. Only applies to successful resolutions.
+   * Failures are handled by the backoff timer.
+   */
+  private readonly minTimeBetweenResolutionsMs: number;
   private pendingLookupPromise: Promise<dns.LookupAddress[]> | null = null;
   private pendingTxtPromise: Promise<string[][]> | null = null;
   private latestLookupResult: TcpSubchannelAddress[] | null = null;
@@ -88,6 +96,8 @@ class DnsResolver implements Resolver {
   private defaultResolutionError: StatusObject;
   private backoff: BackoffTimeout;
   private continueResolving = false;
+  private nextResolutionTimer: NodeJS.Timer;
+  private isNextResolutionTimerRunning = false;
   constructor(
     private target: GrpcUri,
     private listener: ResolverListener,
@@ -134,6 +144,10 @@ class DnsResolver implements Resolver {
       }
     }, backoffOptions);
     this.backoff.unref();
+
+    this.minTimeBetweenResolutionsMs = channelOptions['grpc.dns_min_time_between_resolutions_ms'] ?? DEFAULT_MIN_TIME_BETWEEN_RESOLUTIONS_MS;
+    this.nextResolutionTimer = setTimeout(() => {}, 0);
+    clearTimeout(this.nextResolutionTimer);
   }
 
   /**
@@ -183,6 +197,7 @@ class DnsResolver implements Resolver {
         (addressList) => {
           this.pendingLookupPromise = null;
           this.backoff.reset();
+          this.backoff.stop();
           const ip4Addresses: dns.LookupAddress[] = addressList.filter(
             (addr) => addr.family === 4
           );
@@ -229,6 +244,7 @@ class DnsResolver implements Resolver {
               (err as Error).message
           );
           this.pendingLookupPromise = null;
+          this.stopNextResolutionTimer();
           this.listener.onError(this.defaultResolutionError);
         }
       );
@@ -282,17 +298,34 @@ class DnsResolver implements Resolver {
     }
   }
 
+  private startNextResolutionTimer() {
+    this.nextResolutionTimer = setTimeout(() => {
+      this.stopNextResolutionTimer();
+      if (this.continueResolving) {
+        this.startResolutionWithBackoff();
+      }
+    }, this.minTimeBetweenResolutionsMs).unref?.();
+    this.isNextResolutionTimerRunning = true;
+  }
+
+  private stopNextResolutionTimer() {
+    clearTimeout(this.nextResolutionTimer);
+    this.isNextResolutionTimerRunning = false;
+  }
+
   private startResolutionWithBackoff() {
       this.startResolution();
       this.backoff.runOnce();
+      this.startNextResolutionTimer();
   }
 
   updateResolution() {
     /* If there is a pending lookup, just let it finish. Otherwise, if the
-     * backoff timer is running, do another lookup when it ends, and if not,
-     * do another lookup immeidately. */
+     * nextResolutionTimer or backoff timer is running, set the
+     * continueResolving flag to resolve when whichever of those timers
+     * fires. Otherwise, start resolving immediately. */
     if (this.pendingLookupPromise === null) {
-      if (this.backoff.isRunning()) {
+      if (this.isNextResolutionTimerRunning || this.backoff.isRunning()) {
         this.continueResolving = true;
       } else {
         this.startResolutionWithBackoff();
@@ -301,9 +334,9 @@ class DnsResolver implements Resolver {
   }
 
   destroy() {
-    /* Do nothing. There is not a practical way to cancel in-flight DNS
-     * requests, and after this function is called we can expect that
-     * updateResolution will not be called again. */
+    this.continueResolving = false;
+    this.backoff.stop();
+    this.stopNextResolutionTimer();
   }
 
   /**
