@@ -227,16 +227,9 @@ export class Subchannel {
       this.channelzEnabled = false;
     }
     this.channelzTrace = new ChannelzTrace();
+    this.channelzRef = registerChannelzSubchannel(this.subchannelAddressString, () => this.getChannelzInfo(), this.channelzEnabled);
     if (this.channelzEnabled) {
-      this.channelzRef = registerChannelzSubchannel(this.subchannelAddressString, () => this.getChannelzInfo());
       this.channelzTrace.addTrace('CT_INFO', 'Subchannel created');
-    } else {
-      // Dummy channelz ref that will never be used
-      this.channelzRef = {
-        kind: 'subchannel',
-        id: -1,
-        name: ''
-      };
     }
     this.trace('Subchannel constructed with options ' + JSON.stringify(options, undefined, 2));
   }
@@ -484,8 +477,8 @@ export class Subchannel {
       connectionOptions
     );
     this.session = session;
+    this.channelzSocketRef = registerChannelzSocket(this.subchannelAddressString, () => this.getChannelzSocketInfo()!, this.channelzEnabled);
     if (this.channelzEnabled) {
-      this.channelzSocketRef = registerChannelzSocket(this.subchannelAddressString, () => this.getChannelzSocketInfo()!);
       this.childrenTracker.refChild(this.channelzSocketRef);
     }
     session.unref();
