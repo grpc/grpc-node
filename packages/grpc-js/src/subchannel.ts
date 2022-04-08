@@ -328,6 +328,10 @@ export class Subchannel {
     logging.trace(LogVerbosity.DEBUG, 'subchannel_internals', '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
   }
 
+  private keepaliveTrace(text: string): void {
+    logging.trace(LogVerbosity.DEBUG, 'keepalive', '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
+  }
+
   private handleBackoffTimer() {
     if (this.continueConnecting) {
       this.transitionToState(
@@ -358,18 +362,15 @@ export class Subchannel {
     if (this.channelzEnabled) {
       this.keepalivesSent += 1;
     }
-    logging.trace(
-      LogVerbosity.DEBUG,
-      'keepalive',
-      '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' +
-      'Sending ping'
-    );
+    this.keepaliveTrace('Sending ping with timeout ' + this.keepaliveTimeoutMs + 'ms');
     this.keepaliveTimeoutId = setTimeout(() => {
+      this.keepaliveTrace('Ping timeout passed without response');
       this.transitionToState([ConnectivityState.READY], ConnectivityState.IDLE);
     }, this.keepaliveTimeoutMs);
     this.keepaliveTimeoutId.unref?.();
     this.session!.ping(
       (err: Error | null, duration: number, payload: Buffer) => {
+        this.keepaliveTrace('Received ping response');
         clearTimeout(this.keepaliveTimeoutId);
       }
     );
