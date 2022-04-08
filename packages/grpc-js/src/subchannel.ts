@@ -773,7 +773,7 @@ export class Subchannel {
       }
       this.backoffTimeout.unref();
       if (!this.keepaliveWithoutCalls) {
-        this.stopKeepalivePings();
+        clearInterval(this.keepaliveIntervalId);
       }
       this.checkBothRefcounts();
     }
