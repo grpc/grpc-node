@@ -781,7 +781,6 @@ export class XdsClient {
     trace('Received LRS response');
     /* Once we get any response from the server, we assume that the stream is
      * in a good state, so we can reset the backoff timer. */
-    this.lrsBackoff.stop();
     this.lrsBackoff.reset();
     if (
       !this.receivedLrsSettingsForCurrentStream ||
