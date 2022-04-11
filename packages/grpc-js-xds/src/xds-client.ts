@@ -726,7 +726,7 @@ export class XdsClient {
     if (serviceKind) {
       this.adsState[serviceKind].reportStreamError({
         code: status.UNAVAILABLE,
-        details: message,
+        details: message + ' Node ID=' + this.adsNodeV3!.id,
         metadata: new Metadata()
       });
       resourceNames = this.adsState[serviceKind].getResourceNames();
@@ -771,6 +771,7 @@ export class XdsClient {
   }
 
   private reportStreamError(status: StatusObject) {
+    status = {...status, details: status.details + ' Node ID=' + this.adsNodeV3!.id};
     this.adsState.eds.reportStreamError(status);
     this.adsState.cds.reportStreamError(status);
     this.adsState.rds.reportStreamError(status);
