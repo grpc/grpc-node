@@ -378,6 +378,11 @@ export class Subchannel {
      * sending pings should also involve some network activity. */
   }
 
+  /**
+   * Stop keepalive pings when terminating a connection. This discards the
+   * outstanding ping timeout, so it should not be called if the same
+   * connection will still be used.
+   */
   private stopKeepalivePings() {
     clearInterval(this.keepaliveIntervalId);
     clearTimeout(this.keepaliveTimeoutId);
@@ -767,7 +772,7 @@ export class Subchannel {
       }
       this.backoffTimeout.unref();
       if (!this.keepaliveWithoutCalls) {
-        this.stopKeepalivePings();
+        clearInterval(this.keepaliveIntervalId);
       }
       this.checkBothRefcounts();
     }
