@@ -219,16 +219,9 @@ export class ChannelImplementation implements Channel {
     }
 
     this.channelzTrace = new ChannelzTrace();
+    this.channelzRef = registerChannelzChannel(target, () => this.getChannelzInfo(), this.channelzEnabled);
     if (this.channelzEnabled) {
-      this.channelzRef = registerChannelzChannel(target, () => this.getChannelzInfo());
       this.channelzTrace.addTrace('CT_INFO', 'Channel created');
-    } else {
-      // Dummy channelz ref that will never be used
-      this.channelzRef = {
-        kind: 'channel',
-        id: -1,
-        name: ''
-      };
     }
 
     if (this.options['grpc.default_authority']) {
