@@ -406,6 +406,12 @@ export class Subchannel {
       connectionOptions.maxSessionMemory = this.options[
         'grpc-node.max_session_memory'
       ];
+    } else {
+      /* By default, set a very large max session memory limit, to effectively
+       * disable enforcement of the limit. Some testing indicates that Node's
+       * behavior degrades badly when this limit is reached, so we solve that
+       * by disabling the check entirely. */
+      connectionOptions.maxSessionMemory = Number.MAX_SAFE_INTEGER;
     }
     let addressScheme = 'http://';
     if ('secureContext' in connectionOptions) {
