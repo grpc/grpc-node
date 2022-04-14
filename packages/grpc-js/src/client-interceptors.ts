@@ -379,7 +379,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
     let serialized: Buffer;
     try {
       serialized = this.methodDefinition.requestSerialize(message);
-    } catch (e) {
+    } catch (e: any) {
       this.call.cancelWithStatus(
         Status.INTERNAL,
         `Request message serialization failure: ${e.message}`
@@ -406,7 +406,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
         let deserialized: any;
         try {
           deserialized = this.methodDefinition.responseDeserialize(message);
-        } catch (e) {
+        } catch (e: any) {
           readError = {
             code: Status.INTERNAL,
             details: `Response message parsing error: ${e.message}`,

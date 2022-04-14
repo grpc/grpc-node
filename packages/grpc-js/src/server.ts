@@ -868,7 +868,7 @@ export class Server {
             default:
               throw new Error(`Unknown handler type: ${handler.type}`);
           }
-        } catch (err) {
+        } catch (err: any) {
           if (!call) {
             call = new Http2ServerCallStream(stream, null!, this.options);
             if (this.channelzEnabled) {

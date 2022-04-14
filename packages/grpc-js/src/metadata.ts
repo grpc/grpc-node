@@ -293,7 +293,7 @@ export class Metadata {
             result.add(key, values);
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         const message = `Failed to add metadata entry ${key}: ${values}. ${error.message}. For more information see https://github.com/grpc/grpc-node/issues/1173`;
         log(LogVerbosity.ERROR, message);
       }

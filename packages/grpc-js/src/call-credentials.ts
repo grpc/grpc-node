@@ -115,7 +115,7 @@ export abstract class CallCredentials {
                 reject(err);
                 return;
               }
-              resolve(headers);
+              resolve(headers || {});
             }
           );
         });

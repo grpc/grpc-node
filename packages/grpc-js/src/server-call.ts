@@ -215,7 +215,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
         this.call.once('drain', callback);
         return;
       }
-    } catch (err) {
+    } catch (err: any) {
       err.code = Status.INTERNAL;
       this.emit('error', err);
     }
@@ -444,7 +444,7 @@ export class Http2ServerCallStream<
   private getDecompressedMessage(message: Buffer, encoding: string) {
     switch (encoding) {
       case 'deflate': {
-        return new Promise<Buffer | undefined>((resolve, reject) => {
+        return new Promise<Buffer | undefined | void>((resolve, reject) => {
           zlib.inflate(message.slice(5), (err, output) => {
             if (err) {
               this.sendError({
@@ -460,7 +460,7 @@ export class Http2ServerCallStream<
       }
   
       case 'gzip': {
-        return new Promise<Buffer | undefined>((resolve, reject) => {
+        return new Promise<Buffer | undefined | void>((resolve, reject) => {
           zlib.unzip(message.slice(5), (err, output) => {
             if (err) {
               this.sendError({
@@ -539,7 +539,7 @@ export class Http2ServerCallStream<
     return metadata;
   }
 
-  receiveUnaryMessage(encoding: string): Promise<RequestType> {
+  receiveUnaryMessage(encoding: string): Promise<RequestType|void> {
     return new Promise((resolve, reject) => {
       const stream = this.stream;
       const chunks: Buffer[] = [];
@@ -578,7 +578,7 @@ export class Http2ServerCallStream<
           else {
             resolve(this.deserializeMessage(decompressedMessage));
           }
-        } catch (err) {
+        } catch (err: any) {
           err.code = Status.INTERNAL;
           this.sendError(err);
           resolve();
@@ -629,7 +629,7 @@ export class Http2ServerCallStream<
 
       this.write(response);
       this.sendStatus({ code: Status.OK, details: 'OK', metadata });
-    } catch (err) {
+    } catch (err: any) {
       err.code = Status.INTERNAL;
       this.sendError(err);
     }
@@ -853,7 +853,7 @@ export class Http2ServerCallStream<
       } else {
         this.messagesToPush.push(deserialized);
       }
-    } catch (error) {
+    } catch (error: any) {
       // Ignore any remaining messages when errors occur.
       this.bufferedMessages.length = 0;
 

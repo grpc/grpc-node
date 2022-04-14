@@ -553,7 +553,7 @@ export class Http2CallStream implements Call {
           let metadata: Metadata;
           try {
             metadata = Metadata.fromHttp2Headers(headers);
-          } catch (error) {
+          } catch (error: any) {
             this.endCall({
               code: Status.UNKNOWN,
               details: error.message,
@@ -564,7 +564,7 @@ export class Http2CallStream implements Call {
           try {
             const finalMetadata = this.filterStack.receiveMetadata(metadata);
             this.listener?.onReceiveMetadata(finalMetadata);
-          } catch (error) {
+          } catch (error: any) {
             this.endCall({
               code: Status.UNKNOWN,
               details: error.message,
@@ -700,7 +700,7 @@ export class Http2CallStream implements Call {
         );
         try {
           this.writeMessageToStream(this.pendingWrite, this.pendingWriteCallback);
-        } catch (error) {
+        } catch (error: any) {
           this.endCall({
             code: Status.UNAVAILABLE,
             details: `Write failed with error ${error.message}`,
@@ -862,7 +862,7 @@ export class Http2CallStream implements Call {
         this.trace('sending data chunk of length ' + message.message.length);
         try {
         this.writeMessageToStream(message.message, cb);
-        }  catch (error) {
+        }  catch (error: any) {
           this.endCall({
             code: Status.UNAVAILABLE,
             details: `Write failed with error ${error.message}`,

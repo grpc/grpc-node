@@ -54,7 +54,7 @@ export class CallCredentialsFilter extends BaseFilter implements Filter {
     const resultMetadata = await metadata;
     try {
       resultMetadata.merge(await credsMetadata);
-    } catch (error) {
+    } catch (error: any) {
       this.stream.cancelWithStatus(
         Status.UNAUTHENTICATED,
         `Failed to retrieve auth metadata with error: ${error.message}`
