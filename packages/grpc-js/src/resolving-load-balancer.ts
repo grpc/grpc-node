@@ -298,7 +298,6 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   }
 
   exitIdle() {
-    this.childLoadBalancer.exitIdle();
     if (this.currentState === ConnectivityState.IDLE || this.currentState === ConnectivityState.TRANSIENT_FAILURE) {
       if (this.backoffTimeout.isRunning()) {
         this.continueResolving = true;
@@ -306,6 +305,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
         this.updateResolution();
       }
     }
+    this.childLoadBalancer.exitIdle();
   }
 
   updateAddressList(
