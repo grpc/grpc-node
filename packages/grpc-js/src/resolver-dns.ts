@@ -314,6 +314,7 @@ class DnsResolver implements Resolver {
   }
 
   private startResolutionWithBackoff() {
+      this.continueResolving = false;
       this.startResolution();
       this.backoff.runOnce();
       this.startNextResolutionTimer();
