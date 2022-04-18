@@ -358,7 +358,7 @@ export class Subchannel {
     this.keepaliveTrace('Sending ping with timeout ' + this.keepaliveTimeoutMs + 'ms');
     this.keepaliveTimeoutId = setTimeout(() => {
       this.keepaliveTrace('Ping timeout passed without response');
-      this.transitionToState([ConnectivityState.READY], ConnectivityState.IDLE);
+      this.handleDisconnect();
     }, this.keepaliveTimeoutMs);
     this.keepaliveTimeoutId.unref?.();
     this.session!.ping(
@@ -642,6 +642,15 @@ export class Subchannel {
     );
   }
 
+  private handleDisconnect() {
+    this.transitionToState(
+      [ConnectivityState.READY],
+      ConnectivityState.TRANSIENT_FAILURE);
+    for (const listener of this.disconnectListeners) {
+      listener();
+    }
+  }
+
   /**
    * Initiate a state transition from any element of oldStates to the new
    * state. If the current connectivityState is not in oldStates, do nothing.
@@ -672,12 +681,7 @@ export class Subchannel {
         const session = this.session!;
         session.socket.once('close', () => {
           if (this.session === session) {
-            this.transitionToState(
-              [ConnectivityState.READY],
-              ConnectivityState.TRANSIENT_FAILURE);
-            for (const listener of this.disconnectListeners) {
-              listener();
-            }
+            this.handleDisconnect();
           }
         });
         if (this.keepaliveWithoutCalls) {
