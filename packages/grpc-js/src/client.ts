@@ -338,7 +338,15 @@ export class Client {
         }
         receivedStatus = true;
         if (status.code === Status.OK) {
-          callProperties.callback!(null, responseMessage!);
+          if (responseMessage === null) {
+            callProperties.callback!(callErrorFromStatus({
+              code: Status.INTERNAL,
+              details: 'No message received',
+              metadata: status.metadata
+            }));
+          } else {
+            callProperties.callback!(null, responseMessage);
+          }
         } else {
           callProperties.callback!(callErrorFromStatus(status));
         }
@@ -455,7 +463,15 @@ export class Client {
         }
         receivedStatus = true;
         if (status.code === Status.OK) {
-          callProperties.callback!(null, responseMessage!);
+          if (responseMessage === null) {
+            callProperties.callback!(callErrorFromStatus({
+              code: Status.INTERNAL,
+              details: 'No message received',
+              metadata: status.metadata
+            }));
+          } else {
+            callProperties.callback!(null, responseMessage);
+          }
         } else {
           callProperties.callback!(callErrorFromStatus(status));
         }
