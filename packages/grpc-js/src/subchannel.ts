@@ -741,7 +741,7 @@ export class Subchannel {
       }
       this.transitionToState(
         [ConnectivityState.CONNECTING, ConnectivityState.READY],
-        ConnectivityState.TRANSIENT_FAILURE
+        ConnectivityState.IDLE
       );
       if (this.channelzEnabled) {
         unregisterChannelzRef(this.channelzRef);
