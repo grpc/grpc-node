@@ -23,7 +23,7 @@ import * as resolver_dns from '../src/resolver-dns';
 import * as resolver_uds from '../src/resolver-uds';
 import * as resolver_ip from '../src/resolver-ip';
 import { ServiceConfig } from '../src/service-config';
-import { StatusObject } from '../src/call-stream';
+import { StatusObject } from '../src/call-interface';
 import { SubchannelAddress, isTcpSubchannelAddress, subchannelAddressToString } from "../src/subchannel-address";
 import { parseUri, GrpcUri } from '../src/uri-parser';
 

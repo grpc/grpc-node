@@ -15,14 +15,14 @@
  *
  */
 
-import { Call, StatusObject, WriteObject } from './call-stream';
+import { StatusObject, WriteObject } from './call-interface';
 import { Filter, FilterFactory } from './filter';
 import { Metadata } from './metadata';
 
 export class FilterStack implements Filter {
   constructor(private readonly filters: Filter[]) {}
 
-  sendMetadata(metadata: Promise<Metadata>) {
+  sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
     let result: Promise<Metadata> = metadata;
 
     for (let i = 0; i < this.filters.length; i++) {
@@ -72,12 +72,6 @@ export class FilterStack implements Filter {
     return result;
   }
 
-  refresh(): void {
-    for (const filter of this.filters) {
-      filter.refresh();
-    }
-  }
-
   push(filters: Filter[]) {
     this.filters.unshift(...filters);
   }
@@ -94,9 +88,9 @@ export class FilterStackFactory implements FilterFactory<FilterStack> {
     this.factories.unshift(...filterFactories);
   }
 
-  createFilter(callStream: Call): FilterStack {
+  createFilter(): FilterStack {
     return new FilterStack(
-      this.factories.map((factory) => factory.createFilter(callStream))
+      this.factories.map((factory) => factory.createFilter())
     );
   }
 }

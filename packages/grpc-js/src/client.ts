@@ -29,7 +29,7 @@ import {
   SurfaceCall,
 } from './call';
 import { CallCredentials } from './call-credentials';
-import { Deadline, StatusObject } from './call-stream';
+import { StatusObject } from './call-interface';
 import { Channel, ChannelImplementation } from './channel';
 import { ConnectivityState } from './connectivity-state';
 import { ChannelCredentials } from './channel-credentials';
@@ -50,6 +50,7 @@ import {
   ServerWritableStream,
   ServerDuplexStream,
 } from './server-call';
+import { Deadline } from './deadline';
 
 const CHANNEL_SYMBOL = Symbol();
 const INTERCEPTOR_SYMBOL = Symbol();

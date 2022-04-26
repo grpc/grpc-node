@@ -24,7 +24,7 @@ import * as dns from 'dns';
 import * as util from 'util';
 import { extractAndSelectServiceConfig, ServiceConfig } from './service-config';
 import { Status } from './constants';
-import { StatusObject } from './call-stream';
+import { StatusObject } from './call-interface';
 import { Metadata } from './metadata';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';

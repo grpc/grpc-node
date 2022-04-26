@@ -18,7 +18,6 @@
 import * as http2 from 'http2';
 import { ChannelCredentials } from './channel-credentials';
 import { Metadata } from './metadata';
-import { Call, Http2CallStream, WriteObject } from './call-stream';
 import { ChannelOptions } from './channel-options';
 import { PeerCertificate, checkServerIdentity, TLSSocket, CipherNameAndProtocol } from 'tls';
 import { ConnectivityState } from './connectivity-state';
@@ -30,7 +29,6 @@ import { getProxiedConnection, ProxyConnectionResult } from './http_proxy';
 import * as net from 'net';
 import { GrpcUri, parseUri, splitHostPort, uriToString } from './uri-parser';
 import { ConnectionOptions } from 'tls';
-import { FilterFactory, Filter, BaseFilter } from './filter';
 import {
   stringToSubchannelAddress,
   SubchannelAddress,
@@ -38,17 +36,15 @@ import {
 } from './subchannel-address';
 import { SubchannelRef, ChannelzTrace, ChannelzChildrenTracker, SubchannelInfo, registerChannelzSubchannel, ChannelzCallTracker, SocketInfo, SocketRef, unregisterChannelzRef, registerChannelzSocket, TlsInfo } from './channelz';
 import { ConnectivityStateListener } from './subchannel-interface';
+import { Http2SubchannelCall } from './subchannel-call';
+import { getNextCallNumber } from './call-number';
+import { SubchannelCall } from './subchannel-call';
+import { InterceptingListener, StatusObject } from './call-interface';
 
 const clientVersion = require('../../package.json').version;
 
 const TRACER_NAME = 'subchannel';
 const FLOW_CONTROL_TRACER_NAME = 'subchannel_flowctrl';
-
-const MIN_CONNECT_TIMEOUT_MS = 20000;
-const INITIAL_BACKOFF_MS = 1000;
-const BACKOFF_MULTIPLIER = 1.6;
-const MAX_BACKOFF_MS = 120000;
-const BACKOFF_JITTER = 0.2;
 
 /* setInterval and setTimeout only accept signed 32 bit integers. JS doesn't
  * have a constant for the max signed 32 bit integer, so this is a simple way
@@ -59,6 +55,8 @@ const KEEPALIVE_TIMEOUT_MS = 20000;
 export interface SubchannelCallStatsTracker {
   addMessageSent(): void;
   addMessageReceived(): void;
+  onCallEnd(status: StatusObject): void;
+  onStreamEnd(success: boolean): void;
 }
 
 const {
@@ -69,15 +67,6 @@ const {
   HTTP2_HEADER_TE,
   HTTP2_HEADER_USER_AGENT,
 } = http2.constants;
-
-/**
- * Get a number uniformly at random in the range [min, max)
- * @param min
- * @param max
- */
-function uniformRandom(min: number, max: number) {
-  return Math.random() * (max - min) + min;
-}
 
 const tooManyPingsData: Buffer = Buffer.from('too_many_pings', 'ascii');
 
@@ -808,24 +797,13 @@ export class Subchannel {
     return false;
   }
 
-  /**
-   * Start a stream on the current session with the given `metadata` as headers
-   * and then attach it to the `callStream`. Must only be called if the
-   * subchannel's current connectivity state is READY.
-   * @param metadata
-   * @param callStream
-   */
-  startCallStream(
-    metadata: Metadata,
-    callStream: Http2CallStream,
-    extraFilters: Filter[]
-  ) {
+  createCall(metadata: Metadata, host: string, method: string, listener: InterceptingListener): SubchannelCall {
     const headers = metadata.toHttp2Headers();
-    headers[HTTP2_HEADER_AUTHORITY] = callStream.getHost();
+    headers[HTTP2_HEADER_AUTHORITY] = host;
     headers[HTTP2_HEADER_USER_AGENT] = this.userAgent;
     headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
     headers[HTTP2_HEADER_METHOD] = 'POST';
-    headers[HTTP2_HEADER_PATH] = callStream.getMethod();
+    headers[HTTP2_HEADER_PATH] = method;
     headers[HTTP2_HEADER_TE] = 'trailers';
     let http2Stream: http2.ClientHttp2Stream;
     /* In theory, if an error is thrown by session.request because session has
@@ -845,19 +823,6 @@ export class Subchannel {
       );
       throw e;
     }
-    let headersString = '';
-    for (const header of Object.keys(headers)) {
-      headersString += '\t\t' + header + ': ' + headers[header] + '\n';
-    }
-    logging.trace(
-      LogVerbosity.DEBUG,
-      'call_stream',
-      'Starting stream [' + callStream.getCallNumber() + '] on subchannel ' +
-        '(' + this.channelzRef.id + ') ' +
-        this.subchannelAddressString +
-        ' with headers\n' +
-        headersString
-    );
     this.flowControlTrace(
       'local window size: ' +
         this.session!.state.localWindowSize +
@@ -875,23 +840,7 @@ export class Subchannel {
     let statsTracker: SubchannelCallStatsTracker;
     if (this.channelzEnabled) {
       this.callTracker.addCallStarted();
-      callStream.addStatusWatcher(status => {
-        if (status.code === Status.OK) {
-          this.callTracker.addCallSucceeded();
-        } else {
-          this.callTracker.addCallFailed();
-        }
-      });
       this.streamTracker.addCallStarted();
-      callStream.addStreamEndWatcher(success => {
-        if (streamSession === this.session) {
-          if (success) {
-            this.streamTracker.addCallSucceeded();
-          } else {
-            this.streamTracker.addCallFailed();
-          }
-        }
-      });
       statsTracker = {
         addMessageSent: () => {
           this.messagesSent += 1;
@@ -899,15 +848,33 @@ export class Subchannel {
         },
         addMessageReceived: () => {
           this.messagesReceived += 1;
+        },
+        onCallEnd: status => {
+          if (status.code === Status.OK) {
+            this.callTracker.addCallSucceeded();
+          } else {
+            this.callTracker.addCallFailed();
+          }
+        },
+        onStreamEnd: success => {
+          if (streamSession === this.session) {
+            if (success) {
+              this.streamTracker.addCallSucceeded();
+            } else {
+              this.streamTracker.addCallFailed();
+            }
+          }
         }
       }
     } else {
       statsTracker = {
         addMessageSent: () => {},
-        addMessageReceived: () => {}
+        addMessageReceived: () => {},
+        onCallEnd: () => {},
+        onStreamEnd: () => {}
       }
     }
-    callStream.attachHttp2Stream(http2Stream, this, extraFilters, statsTracker);
+    return new Http2SubchannelCall(http2Stream, statsTracker, listener, this, getNextCallNumber());
   }
 
   /**

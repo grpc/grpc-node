@@ -28,7 +28,7 @@ import {
   isInterceptingListener,
   MessageContext,
   Call,
-} from './call-stream';
+} from './call-interface';
 import { Status } from './constants';
 import { Channel } from './channel';
 import { CallOptions } from './client';

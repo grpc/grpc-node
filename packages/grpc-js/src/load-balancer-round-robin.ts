@@ -78,8 +78,8 @@ class RoundRobinPicker implements Picker {
       pickResultType: PickResultType.COMPLETE,
       subchannel: pickedSubchannel,
       status: null,
-      extraFilterFactories: [],
       onCallStarted: null,
+      onCallEnded: null
     };
   }
 

@@ -27,6 +27,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as os from 'os';
+import { Status } from './constants';
 import { Duration } from './duration';
 import {
   LoadBalancingConfig,
@@ -38,18 +39,40 @@ export interface MethodConfigName {
   method?: string;
 }
 
+export interface RetryPolicy {
+  maxAttempts: number;
+  initialBackoff: string;
+  maxBackoff: string;
+  backoffMultiplier: number;
+  retryableStatusCodes: (Status | string)[];
+}
+
+export interface HedgingPolicy {
+  maxAttempts: number;
+  hedgingDelay?: string;
+  nonFatalStatusCodes: (Status | string)[];
+}
+
 export interface MethodConfig {
   name: MethodConfigName[];
   waitForReady?: boolean;
   timeout?: Duration;
   maxRequestBytes?: number;
   maxResponseBytes?: number;
+  retryPolicy?: RetryPolicy;
+  hedgingPolicy?: HedgingPolicy;
+}
+
+export interface RetryThrottling {
+  maxTokens: number;
+  tokenRatio: number;
 }
 
 export interface ServiceConfig {
   loadBalancingPolicy?: string;
   loadBalancingConfig: LoadBalancingConfig[];
   methodConfig: MethodConfig[];
+  retryThrottling?: RetryThrottling;
 }
 
 export interface ServiceConfigCanaryConfig {

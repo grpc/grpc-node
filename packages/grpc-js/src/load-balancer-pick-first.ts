@@ -84,8 +84,8 @@ class PickFirstPicker implements Picker {
       pickResultType: PickResultType.COMPLETE,
       subchannel: this.subchannel,
       status: null,
-      extraFilterFactories: [],
       onCallStarted: null,
+      onCallEnded: null
     };
   }
 }

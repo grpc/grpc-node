@@ -28,7 +28,7 @@ import { ServiceError } from './call';
 import { Picker, UnavailablePicker, QueuePicker } from './picker';
 import { BackoffOptions, BackoffTimeout } from './backoff-timeout';
 import { Status } from './constants';
-import { StatusObject } from './call-stream';
+import { StatusObject } from './call-interface';
 import { Metadata } from './metadata';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
