@@ -429,7 +429,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     }
 
     // Step 2
-    const successRateMean = successRates.reduce((a, b) => a + b);
+    const successRateMean = successRates.reduce((a, b) => a + b) / successRates.length;
     let successRateVariance = 0;
     for (const rate of successRates) {
       const deviation = rate - successRateMean;
