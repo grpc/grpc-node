@@ -321,6 +321,7 @@ export class Client {
     }
     let responseMessage: ResponseType | null = null;
     let receivedStatus = false;
+    const callerStack = (new Error().stack!).split('\n').slice(1).join('\n');
     call.start(callProperties.metadata, {
       onReceiveMetadata: (metadata) => {
         emitter.emit('metadata', metadata);
@@ -343,12 +344,12 @@ export class Client {
               code: Status.INTERNAL,
               details: 'No message received',
               metadata: status.metadata
-            }));
+            }, callerStack));
           } else {
             callProperties.callback!(null, responseMessage);
           }
         } else {
-          callProperties.callback!(callErrorFromStatus(status));
+          callProperties.callback!(callErrorFromStatus(status, callerStack));
         }
         emitter.emit('status', status);
       },
@@ -446,6 +447,7 @@ export class Client {
     }
     let responseMessage: ResponseType | null = null;
     let receivedStatus = false;
+    const callerStack = (new Error().stack!).split('\n').slice(1).join('\n');
     call.start(callProperties.metadata, {
       onReceiveMetadata: (metadata) => {
         emitter.emit('metadata', metadata);
@@ -468,12 +470,12 @@ export class Client {
               code: Status.INTERNAL,
               details: 'No message received',
               metadata: status.metadata
-            }));
+            }, callerStack));
           } else {
             callProperties.callback!(null, responseMessage);
           }
         } else {
-          callProperties.callback!(callErrorFromStatus(status));
+          callProperties.callback!(callErrorFromStatus(status, callerStack));
         }
         emitter.emit('status', status);
       },
@@ -575,6 +577,7 @@ export class Client {
       call.setCredentials(callProperties.callOptions.credentials);
     }
     let receivedStatus = false;
+    const callerStack = (new Error().stack!).split('\n').slice(1).join('\n');
     call.start(callProperties.metadata, {
       onReceiveMetadata(metadata: Metadata) {
         stream.emit('metadata', metadata);
@@ -590,7 +593,7 @@ export class Client {
         receivedStatus = true;
         stream.push(null);
         if (status.code !== Status.OK) {
-          stream.emit('error', callErrorFromStatus(status));
+          stream.emit('error', callErrorFromStatus(status, callerStack));
         }
         stream.emit('status', status);
       },
@@ -672,6 +675,7 @@ export class Client {
       call.setCredentials(callProperties.callOptions.credentials);
     }
     let receivedStatus = false;
+    const callerStack = (new Error().stack!).split('\n').slice(1).join('\n');
     call.start(callProperties.metadata, {
       onReceiveMetadata(metadata: Metadata) {
         stream.emit('metadata', metadata);
@@ -686,7 +690,7 @@ export class Client {
         receivedStatus = true;
         stream.push(null);
         if (status.code !== Status.OK) {
-          stream.emit('error', callErrorFromStatus(status));
+          stream.emit('error', callErrorFromStatus(status, callerStack));
         }
         stream.emit('status', status);
       },
