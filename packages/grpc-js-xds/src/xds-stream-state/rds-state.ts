@@ -15,20 +15,10 @@
  *
  */
 
-import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
 import { EXPERIMENTAL_FAULT_INJECTION } from "../environment";
 import { RouteConfiguration__Output } from "../generated/envoy/config/route/v3/RouteConfiguration";
-import { Any__Output } from "../generated/google/protobuf/Any";
 import { validateOverrideFilter } from "../http-filter";
-import { CdsLoadBalancingConfig } from "../load-balancer-cds";
-import { HandleResponseResult, RejectedResourceEntry, ResourcePair, Watcher, XdsStreamState } from "./xds-stream-state";
-import ServiceConfig = experimental.ServiceConfig;
-
-const TRACER_NAME = 'xds_client';
-
-function trace(text: string): void {
-  experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
-}
+import { BaseXdsStreamState, XdsStreamState } from "./xds-stream-state";
 
 const SUPPORTED_PATH_SPECIFIERS = ['prefix', 'path', 'safe_regex'];
 const SUPPPORTED_HEADER_MATCH_SPECIFIERS = [
@@ -40,68 +30,16 @@ const SUPPPORTED_HEADER_MATCH_SPECIFIERS = [
   'suffix_match'];
 const SUPPORTED_CLUSTER_SPECIFIERS = ['cluster', 'weighted_clusters', 'cluster_header'];
 
-export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
-  versionInfo = '';
-  nonce = '';
-
-  private watchers: Map<string, Watcher<RouteConfiguration__Output>[]> = new Map<string, Watcher<RouteConfiguration__Output>[]>();
-  private latestResponses: RouteConfiguration__Output[] = [];
-  private latestIsV2 = false;
-
-  constructor(private updateResourceNames: () => void) {}
-
-  addWatcher(routeConfigName: string, watcher: Watcher<RouteConfiguration__Output>) {
-    trace('Adding RDS watcher for routeConfigName ' + routeConfigName);
-    let watchersEntry = this.watchers.get(routeConfigName);
-    let addedServiceName = false;
-    if (watchersEntry === undefined) {
-      addedServiceName = true;
-      watchersEntry = [];
-      this.watchers.set(routeConfigName, watchersEntry);
-    }
-    watchersEntry.push(watcher);
-
-    /* If we have already received an update for the requested edsServiceName,
-     * immediately pass that update along to the watcher */
-    const isV2 = this.latestIsV2;
-    for (const message of this.latestResponses) {
-      if (message.name === routeConfigName) {
-        /* These updates normally occur asynchronously, so we ensure that
-         * the same happens here */
-        process.nextTick(() => {
-          trace('Reporting existing RDS update for new watcher for routeConfigName ' + routeConfigName);
-          watcher.onValidUpdate(message, isV2);
-        });
-      }
-    }
-    if (addedServiceName) {
-      this.updateResourceNames();
-    }
+export class RdsState extends BaseXdsStreamState<RouteConfiguration__Output> implements XdsStreamState<RouteConfiguration__Output> {
+  protected isStateOfTheWorld(): boolean {
+    return false;
   }
-
-  removeWatcher(routeConfigName: string, watcher: Watcher<RouteConfiguration__Output>): void {
-    trace('Removing RDS watcher for routeConfigName ' + routeConfigName);
-    const watchersEntry = this.watchers.get(routeConfigName);
-    let removedServiceName = false;
-    if (watchersEntry !== undefined) {
-      const entryIndex = watchersEntry.indexOf(watcher);
-      if (entryIndex >= 0) {
-        watchersEntry.splice(entryIndex, 1);
-      }
-      if (watchersEntry.length === 0) {
-        removedServiceName = true;
-        this.watchers.delete(routeConfigName);
-      }
-    }
-    if (removedServiceName) {
-      this.updateResourceNames();
-    }
+  protected getResourceName(resource: RouteConfiguration__Output): string {
+    return resource.name;
   }
-
-  getResourceNames(): string[] {
-    return Array.from(this.watchers.keys());
+  protected getProtocolName(): string {
+    return 'RDS';
   }
-
   validateResponse(message: RouteConfiguration__Output, isV2: boolean): boolean {
     // https://github.com/grpc/proposal/blob/master/A28-xds-traffic-splitting-and-routing.md#response-validation
     for (const virtualHost of message.virtual_hosts) {
@@ -171,49 +109,5 @@ export class RdsState implements XdsStreamState<RouteConfiguration__Output> {
       }
     }
     return true;
-  }
-
-  handleResponses(responses: ResourcePair<RouteConfiguration__Output>[], isV2: boolean): HandleResponseResult {
-    const validResponses: RouteConfiguration__Output[] = [];
-    let result: HandleResponseResult = {
-      accepted: [],
-      rejected: [],
-      missing: []
-    }
-    for (const {resource, raw} of responses) {
-      if (this.validateResponse(resource, isV2)) {
-        validResponses.push(resource);
-        result.accepted.push({
-          name: resource.name, 
-          raw: raw});
-      } else {
-        trace('RDS validation failed for message ' + JSON.stringify(resource));
-        result.rejected.push({
-          name: resource.name, 
-          raw: raw,
-          error: `Route validation failed for resource ${resource.name}`
-        });
-      }
-    }
-    this.latestResponses = validResponses;
-    this.latestIsV2 = isV2;
-    const allRouteConfigNames = new Set<string>();
-    for (const message of validResponses) {
-      allRouteConfigNames.add(message.name);
-      const watchers = this.watchers.get(message.name) ?? [];
-      for (const watcher of watchers) {
-        watcher.onValidUpdate(message, isV2);
-      }
-    }
-    trace('Received RDS response with route config names [' + Array.from(allRouteConfigNames) + ']');
-    return result;
-  }
-
-  reportStreamError(status: StatusObject): void {
-    for (const watcherList of this.watchers.values()) {
-      for (const watcher of watcherList) {
-        watcher.onTransientError(status);
-      }
-    }
   }
 }

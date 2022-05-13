@@ -309,7 +309,7 @@ export class XdsClient {
     const edsState = new EdsState(() => {
       this.updateNames('eds');
     });
-    const cdsState = new CdsState(edsState, () => {
+    const cdsState = new CdsState(() => {
       this.updateNames('cds');
     });
     const rdsState = new RdsState(() => {
@@ -630,6 +630,7 @@ export class XdsClient {
           this.updateNames(service);
         }
       }
+      this.reportAdsStreamStarted();
     }
   }
 
@@ -775,6 +776,13 @@ export class XdsClient {
     this.adsState.cds.reportStreamError(status);
     this.adsState.rds.reportStreamError(status);
     this.adsState.lds.reportStreamError(status);
+  }
+
+  private reportAdsStreamStarted() {
+    this.adsState.eds.reportAdsStreamStart();
+    this.adsState.cds.reportAdsStreamStart();
+    this.adsState.rds.reportAdsStreamStart();
+    this.adsState.lds.reportAdsStreamStart();
   }
 
   private handleLrsResponse(message: LoadStatsResponse__Output) {
