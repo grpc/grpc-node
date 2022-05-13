@@ -113,7 +113,9 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
         cachedResponse: null,
         resourceTimer: setTimeout(() => {}, 0)
       };
-      this.startResourceTimer(subscriptionEntry);
+      if (this.isAdsStreamRunning) {
+        this.startResourceTimer(subscriptionEntry);
+      }
       this.subscriptions.set(name, subscriptionEntry);
     }
     subscriptionEntry.watchers.push(watcher);
