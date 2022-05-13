@@ -201,6 +201,7 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
       clearTimeout(subscriptionEntry.resourceTimer);
     }
     this.isAdsStreamRunning = false;
+    this.nonce = '';
   }
 
   reportAdsStreamStart() {
