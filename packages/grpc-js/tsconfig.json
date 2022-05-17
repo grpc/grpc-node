@@ -6,7 +6,8 @@
     "target": "es2017",
     "module": "commonjs",
     "resolveJsonModule": true,
-    "incremental": true
+    "incremental": true,
+    "types": ["mocha"]
   },
   "include": [
     "src/**/*.ts",
