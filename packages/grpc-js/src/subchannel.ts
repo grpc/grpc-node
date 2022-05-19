@@ -646,7 +646,8 @@ export class Subchannel {
     this.transitionToState(
       [ConnectivityState.READY],
       ConnectivityState.TRANSIENT_FAILURE);
-    for (const listener of this.disconnectListeners) {
+    for (let i = this.disconnectListeners.length - 1; i >= 0; i--) {
+      const listener = this.disconnectListeners[i];
       listener();
     }
   }
