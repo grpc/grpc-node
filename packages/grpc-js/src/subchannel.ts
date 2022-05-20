@@ -108,7 +108,7 @@ export class Subchannel {
    * socket disconnects. Used for ending active calls with an UNAVAILABLE
    * status.
    */
-  private disconnectListeners: Array<() => void> = [];
+  private disconnectListeners: Set<() => void> = new Set();
 
   private backoffTimeout: BackoffTimeout;
 
@@ -646,7 +646,7 @@ export class Subchannel {
     this.transitionToState(
       [ConnectivityState.READY],
       ConnectivityState.TRANSIENT_FAILURE);
-    for (const listener of this.disconnectListeners) {
+    for (const listener of this.disconnectListeners.values()) {
       listener();
     }
   }
@@ -971,14 +971,11 @@ export class Subchannel {
   }
 
   addDisconnectListener(listener: () => void) {
-    this.disconnectListeners.push(listener);
+    this.disconnectListeners.add(listener);
   }
 
   removeDisconnectListener(listener: () => void) {
-    const listenerIndex = this.disconnectListeners.indexOf(listener);
-    if (listenerIndex > -1) {
-      this.disconnectListeners.splice(listenerIndex, 1);
-    }
+    this.disconnectListeners.delete(listener);
   }
 
   /**
