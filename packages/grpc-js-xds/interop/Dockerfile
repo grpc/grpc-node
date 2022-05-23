@@ -22,10 +22,8 @@ FROM node:16-alpine as build
 WORKDIR /node/src/grpc-node
 COPY . .
 
-WORKDIR /node/src/grpc-node/packages/grpc-js
-RUN npm install
-WORKDIR /node/src/grpc-node/packages/grpc-js-xds
-RUN npm install
+RUN cd packages/grpc-js && npm install
+RUN cd packages/grpc-js-xds && npm install
 
 FROM node:16-alpine
 WORKDIR /node/src/grpc-node
