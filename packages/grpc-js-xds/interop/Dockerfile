@@ -16,7 +16,7 @@
 # following command from grpc-node directory:
 # docker build -t <TAG> -f packages/grpc-js-xds/interop/Dockerfile .
 
-FROM node:16-alpine
+FROM node:16-alpine as build
 
 # Make a grpc-node directory and copy the repo into it.
 WORKDIR /node/src/grpc-node
@@ -26,5 +26,10 @@ WORKDIR /node/src/grpc-node/packages/grpc-js
 RUN npm install
 WORKDIR /node/src/grpc-node/packages/grpc-js-xds
 RUN npm install
+
+FROM node:16-alpine
+WORKDIR /node/src/grpc-node
+COPY --from=build /node/src/grpc-node/packages/grpc-js ./packages/grpc-js/
+COPY --from=build /node/src/grpc-node/packages/grpc-js-xds ./packages/grpc-js-xds/
 
 ENTRYPOINT [ "node", "/node/src/grpc-node/packages/grpc-js-xds/build/interop/xds-interop-client" ]
