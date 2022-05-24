@@ -135,6 +135,8 @@ main() {
   local script_dir
   script_dir="$(dirname "$0")"
 
+  git submodule update --init --recursive
+
   # Source the test driver from the master branch.
   echo "Sourcing test driver install script from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
