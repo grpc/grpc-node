@@ -135,6 +135,8 @@ main() {
   local script_dir
   script_dir="$(dirname "$0")"
 
+  cd "${script_dir}"
+
   git submodule update --init --recursive
 
   # Source the test driver from the master branch.
