@@ -726,6 +726,8 @@ export class Http2ServerCallStream<
       call.cancelled = true;
       call.emit('cancelled', reason);
     });
+
+    this.once('callEnd', (status) => call.emit('callEnd', status));
   }
 
   setupReadable(
