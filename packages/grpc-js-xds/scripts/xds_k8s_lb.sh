@@ -45,6 +45,11 @@ build_test_app_docker_images() {
     -t "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     .
 
+  if [[ -n $KOKORO_JOB_NAME ]]; then
+    branch_name=$(echo "$KOKORO_JOB_NAME" | sed -E 's|^grpc/node/([^/]+)/.*|\1|')
+    tag_and_push_docker_image "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}" "${branch_name}"
+  fi
+
   popd
 
   gcloud -q auth configure-docker
