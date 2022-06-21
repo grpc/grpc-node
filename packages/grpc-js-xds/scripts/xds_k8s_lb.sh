@@ -45,9 +45,8 @@ build_test_app_docker_images() {
     -t "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     .
 
-  if [[ -n $KOKORO_JOB_NAME ]]; then
-    branch_name=$(echo "$KOKORO_JOB_NAME" | sed -E 's|^grpc/node/([^/]+)/.*|\1|')
-    tag_and_push_docker_image "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}" "${branch_name}"
+  if is_version_branch "${TESTING_VERSION}"; then
+    tag_and_push_docker_image "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}" "${TESTING_VERSION}"
   fi
 
   popd
@@ -111,7 +110,7 @@ run_test() {
     --secondary_kube_context="${SECONDARY_KUBE_CONTEXT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     --server_image="${SERVER_IMAGE_NAME}" \
-    --testing_version=$(echo "$KOKORO_JOB_NAME" | sed -E 's|^grpc/node/([^/]+)/.*|\1|') \
+    --testing_version="${TESTING_VERSION}" \
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml"
 }
 
