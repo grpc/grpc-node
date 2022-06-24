@@ -40,7 +40,7 @@ build_test_app_docker_images() {
 
   pushd "${SRC_DIR}"
   docker build \
-    -f ${BUILD_APP_PATH} \
+    -f "${BUILD_APP_PATH}" \
     -t "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     .
 
