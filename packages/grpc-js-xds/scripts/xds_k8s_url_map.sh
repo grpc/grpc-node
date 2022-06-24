@@ -30,6 +30,7 @@ readonly LANGUAGE_NAME="Node"
 #   BUILD_APP_PATH
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
+#   TESTING_VERSION: version branch under test, f.e. v1.42.x, master
 # Arguments:
 #   None
 # Outputs:
@@ -44,11 +45,12 @@ build_test_app_docker_images() {
     -t "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     .
 
-  popd
-
   gcloud -q auth configure-docker
-
   docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
+  if is_version_branch "${TESTING_VERSION}"; then
+    tag_and_push_docker_image "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}" "${TESTING_VERSION}"
+  fi
+  popd
 }
 
 #######################################
