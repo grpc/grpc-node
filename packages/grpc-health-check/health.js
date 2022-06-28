@@ -18,13 +18,14 @@
 
 'use strict';
 
-var grpc = require('grpc');
-
 var _get = require('lodash.get');
 var _clone = require('lodash.clone')
 
 var health_messages = require('./v1/health_pb');
 var health_service = require('./v1/health_grpc_pb');
+
+// https://github.com/grpc/grpc-node/blob/master/packages/grpc-js/src/constants.ts
+const NOT_FOUND_STATUS_CODE = 5;
 
 function HealthImplementation(statusMap) {
   this.statusMap = _clone(statusMap);
@@ -38,8 +39,7 @@ HealthImplementation.prototype.check = function(call, callback){
   var service = call.request.getService();
   var status = _get(this.statusMap, service, null);
   if (status === null) {
-    // TODO(murgatroid99): Do this without an explicit reference to grpc.
-    callback({code:grpc.status.NOT_FOUND});
+    callback({ code: NOT_FOUND_STATUS_CODE });
   } else {
     var response = new health_messages.HealthCheckResponse();
     response.setStatus(status);
