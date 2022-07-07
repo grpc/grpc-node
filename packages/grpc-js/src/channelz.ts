@@ -347,31 +347,39 @@ const subchannels: (SubchannelEntry | undefined)[] = [];
 const servers: (ServerEntry | undefined)[] = [];
 const sockets: (SocketEntry | undefined)[] = [];
 
-export function registerChannelzChannel(name: string, getInfo: () => ChannelInfo): ChannelRef {
+export function registerChannelzChannel(name: string, getInfo: () => ChannelInfo, channelzEnabled: boolean): ChannelRef {
   const id = getNextId();
   const ref: ChannelRef = {id, name, kind: 'channel'};
-  channels[id] = { ref, getInfo };
+  if (channelzEnabled) {
+    channels[id] = { ref, getInfo };
+  }
   return ref;
 }
 
-export function registerChannelzSubchannel(name: string, getInfo:() => SubchannelInfo): SubchannelRef {
+export function registerChannelzSubchannel(name: string, getInfo:() => SubchannelInfo, channelzEnabled: boolean): SubchannelRef {
   const id = getNextId();
   const ref: SubchannelRef = {id, name, kind: 'subchannel'};
-  subchannels[id] = { ref, getInfo };
+  if (channelzEnabled) {
+    subchannels[id] = { ref, getInfo };
+  }
   return ref;
 }
 
-export function registerChannelzServer(getInfo: () => ServerInfo): ServerRef {
+export function registerChannelzServer(getInfo: () => ServerInfo, channelzEnabled: boolean): ServerRef {
   const id = getNextId();
   const ref: ServerRef = {id, kind: 'server'};
-  servers[id] = { ref, getInfo };
+  if (channelzEnabled) {
+    servers[id] = { ref, getInfo };
+  }
   return ref;
 }
 
-export function registerChannelzSocket(name: string, getInfo: () => SocketInfo): SocketRef {
+export function registerChannelzSocket(name: string, getInfo: () => SocketInfo, channelzEnabled: boolean): SocketRef {
   const id = getNextId();
   const ref: SocketRef = {id, name, kind: 'socket'};
-  sockets[id] = { ref, getInfo};
+  if (channelzEnabled) {
+    sockets[id] = { ref, getInfo};
+  }
   return ref;
 }
 

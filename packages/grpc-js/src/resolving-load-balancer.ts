@@ -268,6 +268,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
     if (this.currentState === ConnectivityState.IDLE) {
       this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
     }
+    this.backoffTimeout.runOnce();
   }
 
   private updateState(connectivityState: ConnectivityState, picker: Picker) {
@@ -294,19 +295,17 @@ export class ResolvingLoadBalancer implements LoadBalancer {
       );
       this.onFailedResolution(error);
     }
-    this.backoffTimeout.runOnce();
   }
 
   exitIdle() {
-    this.childLoadBalancer.exitIdle();
-    if (this.currentState === ConnectivityState.IDLE) {
+    if (this.currentState === ConnectivityState.IDLE || this.currentState === ConnectivityState.TRANSIENT_FAILURE) {
       if (this.backoffTimeout.isRunning()) {
         this.continueResolving = true;
       } else {
         this.updateResolution();
       }
-      this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
     }
+    this.childLoadBalancer.exitIdle();
   }
 
   updateAddressList(

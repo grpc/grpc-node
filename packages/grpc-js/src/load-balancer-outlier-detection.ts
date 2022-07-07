@@ -334,17 +334,21 @@ class OutlierDetectionCounterFilterFactory implements FilterFactory<OutlierDetec
 }
 
 class OutlierDetectionPicker implements Picker {
-  constructor(private wrappedPicker: Picker) {}
+  constructor(private wrappedPicker: Picker, private countCalls: boolean) {}
   pick(pickArgs: PickArgs): PickResult {
     const wrappedPick = this.wrappedPicker.pick(pickArgs);
     if (wrappedPick.pickResultType === PickResultType.COMPLETE) {
       const subchannelWrapper = wrappedPick.subchannel as OutlierDetectionSubchannelWrapper;
       const mapEntry = subchannelWrapper.getMapEntry();
       if (mapEntry) {
+        const extraFilterFactories = [...wrappedPick.extraFilterFactories];
+        if (this.countCalls) {
+          extraFilterFactories.push(new OutlierDetectionCounterFilterFactory(mapEntry.counter));
+        }
         return {
           ...wrappedPick,
           subchannel: subchannelWrapper.getWrappedSubchannel(),
-          extraFilterFactories: [...wrappedPick.extraFilterFactories, new OutlierDetectionCounterFilterFactory(mapEntry.counter)]
+          extraFilterFactories: extraFilterFactories
         };
       } else {
         return wrappedPick;
@@ -361,6 +365,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
   private addressMap: Map<string, MapEntry> = new Map<string, MapEntry>();
   private latestConfig: OutlierDetectionLoadBalancingConfig | null = null;
   private ejectionTimer: NodeJS.Timer;
+  private timerStartTime: Date | null = null;
 
   constructor(channelControlHelper: ChannelControlHelper) {
     this.childBalancer = new ChildLoadBalancerHandler(createChildChannelControlHelper(channelControlHelper, {
@@ -373,7 +378,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
       },
       updateState: (connectivityState: ConnectivityState, picker: Picker) => {
         if (connectivityState === ConnectivityState.READY) {
-          channelControlHelper.updateState(connectivityState, new OutlierDetectionPicker(picker));
+          channelControlHelper.updateState(connectivityState, new OutlierDetectionPicker(picker, this.isCountingEnabled()));
         } else {
           channelControlHelper.updateState(connectivityState, picker);
         }
@@ -381,6 +386,12 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     }));
     this.ejectionTimer = setInterval(() => {}, 0);
     clearInterval(this.ejectionTimer);
+  }
+
+  private isCountingEnabled(): boolean {
+    return this.latestConfig !== null && 
+      (this.latestConfig.getSuccessRateEjectionConfig() !== null || 
+       this.latestConfig.getFailurePercentageEjectionConfig() !== null);
   }
 
   private getCurrentEjectionPercent() {
@@ -418,7 +429,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     }
 
     // Step 2
-    const successRateMean = successRates.reduce((a, b) => a + b);
+    const successRateMean = successRates.reduce((a, b) => a + b) / successRates.length;
     let successRateVariance = 0;
     for (const rate of successRates) {
       const deviation = rate - successRateMean;
@@ -501,16 +512,26 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     }
   }
 
-  private runChecks() {
-    const ejectionTimestamp = new Date();
-
+  private switchAllBuckets() {
     for (const mapEntry of this.addressMap.values()) {
       mapEntry.counter.switchBuckets();
     }
+  }
+
+  private startTimer(delayMs: number) {
+    this.ejectionTimer = setTimeout(() => this.runChecks(), delayMs);
+  }
+
+  private runChecks() {
+    const ejectionTimestamp = new Date();
+
+    this.switchAllBuckets();
 
     if (!this.latestConfig) {
       return;
     }
+    this.timerStartTime = ejectionTimestamp;
+    this.startTimer(this.latestConfig.getIntervalMs());
 
     this.runSuccessRateCheck(ejectionTimestamp);
     this.runFailurePercentageCheck(ejectionTimestamp);
@@ -561,10 +582,21 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     );
     this.childBalancer.updateAddressList(addressList, childPolicy, attributes);
 
-    if (this.latestConfig === null || this.latestConfig.getIntervalMs() !== lbConfig.getIntervalMs()) {
-      clearInterval(this.ejectionTimer);
-      this.ejectionTimer = setInterval(() => this.runChecks(), lbConfig.getIntervalMs());
+    if (lbConfig.getSuccessRateEjectionConfig() || lbConfig.getFailurePercentageEjectionConfig()) {
+      if (this.timerStartTime) {
+        clearTimeout(this.ejectionTimer);
+        const remainingDelay = lbConfig.getIntervalMs() - ((new Date()).getTime() - this.timerStartTime.getTime());
+        this.startTimer(remainingDelay);
+      } else {
+        this.timerStartTime = new Date();
+        this.startTimer(lbConfig.getIntervalMs());
+        this.switchAllBuckets();
+      }
+    } else {
+      this.timerStartTime = null;
+      clearTimeout(this.ejectionTimer);
     }
+
     this.latestConfig = lbConfig;
   }
   exitIdle(): void {
@@ -574,6 +606,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     this.childBalancer.resetBackoff();
   }
   destroy(): void {
+    clearTimeout(this.ejectionTimer);
     this.childBalancer.destroy();
   }
   getTypeName(): string {
