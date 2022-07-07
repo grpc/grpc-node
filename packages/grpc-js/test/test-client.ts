@@ -93,3 +93,27 @@ describe('Client without a server', () => {
     });
   });
 });
+
+describe('Client with a nonexistent target domain', () => {
+  let client: Client;
+  before(() => {
+    // DNS name that does not exist per RFC 6761 section 6.4
+    client = new Client('host.invalid', clientInsecureCreds);
+  });
+  after(() => {
+    client.close();
+  });
+  it('should fail multiple calls', function(done) {
+    this.timeout(5000);
+    // Regression test for https://github.com/grpc/grpc-node/issues/1411
+    client.makeUnaryRequest('/service/method', x => x, x => x, Buffer.from([]), (error, value) => {
+      assert(error);
+      assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
+      client.makeUnaryRequest('/service/method', x => x, x => x, Buffer.from([]), (error, value) => {
+        assert(error);
+        assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
+        done();
+      });
+    });
+  });
+});

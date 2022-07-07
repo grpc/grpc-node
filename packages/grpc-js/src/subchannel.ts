@@ -108,7 +108,7 @@ export class Subchannel {
    * socket disconnects. Used for ending active calls with an UNAVAILABLE
    * status.
    */
-  private disconnectListeners: Array<() => void> = [];
+  private disconnectListeners: Set<() => void> = new Set();
 
   private backoffTimeout: BackoffTimeout;
 
@@ -227,16 +227,9 @@ export class Subchannel {
       this.channelzEnabled = false;
     }
     this.channelzTrace = new ChannelzTrace();
+    this.channelzRef = registerChannelzSubchannel(this.subchannelAddressString, () => this.getChannelzInfo(), this.channelzEnabled);
     if (this.channelzEnabled) {
-      this.channelzRef = registerChannelzSubchannel(this.subchannelAddressString, () => this.getChannelzInfo());
       this.channelzTrace.addTrace('CT_INFO', 'Subchannel created');
-    } else {
-      // Dummy channelz ref that will never be used
-      this.channelzRef = {
-        kind: 'subchannel',
-        id: -1,
-        name: ''
-      };
     }
     this.trace('Subchannel constructed with options ' + JSON.stringify(options, undefined, 2));
   }
@@ -328,6 +321,10 @@ export class Subchannel {
     logging.trace(LogVerbosity.DEBUG, 'subchannel_internals', '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
   }
 
+  private keepaliveTrace(text: string): void {
+    logging.trace(LogVerbosity.DEBUG, 'keepalive', '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
+  }
+
   private handleBackoffTimer() {
     if (this.continueConnecting) {
       this.transitionToState(
@@ -358,18 +355,15 @@ export class Subchannel {
     if (this.channelzEnabled) {
       this.keepalivesSent += 1;
     }
-    logging.trace(
-      LogVerbosity.DEBUG,
-      'keepalive',
-      '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' +
-      'Sending ping'
-    );
+    this.keepaliveTrace('Sending ping with timeout ' + this.keepaliveTimeoutMs + 'ms');
     this.keepaliveTimeoutId = setTimeout(() => {
-      this.transitionToState([ConnectivityState.READY], ConnectivityState.IDLE);
+      this.keepaliveTrace('Ping timeout passed without response');
+      this.handleDisconnect();
     }, this.keepaliveTimeoutMs);
     this.keepaliveTimeoutId.unref?.();
     this.session!.ping(
       (err: Error | null, duration: number, payload: Buffer) => {
+        this.keepaliveTrace('Received ping response');
         clearTimeout(this.keepaliveTimeoutId);
       }
     );
@@ -384,6 +378,11 @@ export class Subchannel {
      * sending pings should also involve some network activity. */
   }
 
+  /**
+   * Stop keepalive pings when terminating a connection. This discards the
+   * outstanding ping timeout, so it should not be called if the same
+   * connection will still be used.
+   */
   private stopKeepalivePings() {
     clearInterval(this.keepaliveIntervalId);
     clearTimeout(this.keepaliveTimeoutId);
@@ -407,6 +406,12 @@ export class Subchannel {
       connectionOptions.maxSessionMemory = this.options[
         'grpc-node.max_session_memory'
       ];
+    } else {
+      /* By default, set a very large max session memory limit, to effectively
+       * disable enforcement of the limit. Some testing indicates that Node's
+       * behavior degrades badly when this limit is reached, so we solve that
+       * by disabling the check entirely. */
+      connectionOptions.maxSessionMemory = Number.MAX_SAFE_INTEGER;
     }
     let addressScheme = 'http://';
     if ('secureContext' in connectionOptions) {
@@ -484,8 +489,8 @@ export class Subchannel {
       connectionOptions
     );
     this.session = session;
+    this.channelzSocketRef = registerChannelzSocket(this.subchannelAddressString, () => this.getChannelzSocketInfo()!, this.channelzEnabled);
     if (this.channelzEnabled) {
-      this.channelzSocketRef = registerChannelzSocket(this.subchannelAddressString, () => this.getChannelzSocketInfo()!);
       this.childrenTracker.refChild(this.channelzSocketRef);
     }
     session.unref();
@@ -637,6 +642,15 @@ export class Subchannel {
     );
   }
 
+  private handleDisconnect() {
+    this.transitionToState(
+      [ConnectivityState.READY],
+      ConnectivityState.TRANSIENT_FAILURE);
+    for (const listener of this.disconnectListeners.values()) {
+      listener();
+    }
+  }
+
   /**
    * Initiate a state transition from any element of oldStates to the new
    * state. If the current connectivityState is not in oldStates, do nothing.
@@ -667,12 +681,7 @@ export class Subchannel {
         const session = this.session!;
         session.socket.once('close', () => {
           if (this.session === session) {
-            this.transitionToState(
-              [ConnectivityState.READY],
-              ConnectivityState.TRANSIENT_FAILURE);
-            for (const listener of this.disconnectListeners) {
-              listener();
-            }
+            this.handleDisconnect();
           }
         });
         if (this.keepaliveWithoutCalls) {
@@ -732,7 +741,7 @@ export class Subchannel {
       }
       this.transitionToState(
         [ConnectivityState.CONNECTING, ConnectivityState.READY],
-        ConnectivityState.TRANSIENT_FAILURE
+        ConnectivityState.IDLE
       );
       if (this.channelzEnabled) {
         unregisterChannelzRef(this.channelzRef);
@@ -773,7 +782,7 @@ export class Subchannel {
       }
       this.backoffTimeout.unref();
       if (!this.keepaliveWithoutCalls) {
-        this.stopKeepalivePings();
+        clearInterval(this.keepaliveIntervalId);
       }
       this.checkBothRefcounts();
     }
@@ -962,14 +971,11 @@ export class Subchannel {
   }
 
   addDisconnectListener(listener: () => void) {
-    this.disconnectListeners.push(listener);
+    this.disconnectListeners.add(listener);
   }
 
   removeDisconnectListener(listener: () => void) {
-    const listenerIndex = this.disconnectListeners.indexOf(listener);
-    if (listenerIndex > -1) {
-      this.disconnectListeners.splice(listenerIndex, 1);
-    }
+    this.disconnectListeners.delete(listener);
   }
 
   /**
