@@ -38,7 +38,7 @@
   "files": [
     "LICENSE",
     "build/src/*.d.ts",
-    "build/src/*.js",
+    "build/src/*.{js,js.map}",
     "build/bin/*.js"
   ],
   "bin": {
