@@ -46,6 +46,7 @@
     "build": "npm run compile",
     "clean": "rimraf ./build",
     "compile": "tsc -p .",
+    "dev": "tsc -p . --project tsconfig.dev.json",
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
     "lint": "npm run check",
     "prepare": "npm run generate-types && npm run compile",

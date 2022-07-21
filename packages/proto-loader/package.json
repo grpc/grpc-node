@@ -16,6 +16,7 @@
     "build": "npm run compile",
     "clean": "rimraf ./build",
     "compile": "tsc -p .",
+    "dev": "tsc -p . --project tsconfig.dev.json",
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
     "lint": "tslint -c node_modules/google-ts-style/tslint.json -p . -t codeFrame --type-check",
     "prepare": "npm run compile",
