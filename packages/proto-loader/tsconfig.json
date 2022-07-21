@@ -3,6 +3,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "build",
+    "sourceMap": false,
     "lib": ["es2017"],
     "target": "es2017"
   },

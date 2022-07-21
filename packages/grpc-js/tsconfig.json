@@ -4,6 +4,7 @@
     "lib": ["es2017"],
     "outDir": "build",
     "target": "es2017",
+    "sourceMap": false,
     "module": "commonjs",
     "resolveJsonModule": true,
     "incremental": true
