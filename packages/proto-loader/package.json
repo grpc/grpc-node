@@ -39,7 +39,7 @@
     "LICENSE",
     "build/src/*.d.ts",
     "build/src/*.{js,js.map}",
-    "build/bin/*.js"
+    "build/bin/*.{js,js.map}"
   ],
   "bin": {
     "proto-loader-gen-types": "./build/bin/proto-loader-gen-types.js"
