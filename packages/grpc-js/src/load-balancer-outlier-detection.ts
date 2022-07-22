@@ -430,11 +430,12 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
 
     // Step 2
     const successRateMean = successRates.reduce((a, b) => a + b) / successRates.length;
-    let successRateVariance = 0;
+    let successRateDeviationSum = 0;
     for (const rate of successRates) {
       const deviation = rate - successRateMean;
-      successRateVariance += deviation * deviation;
+      successRateDeviationSum += deviation * deviation;
     }
+    const successRateVariance = successRateDeviationSum / successRates.length;
     const successRateStdev = Math.sqrt(successRateVariance);
     const ejectionThreshold = successRateMean - successRateStdev * (successRateConfig.stdev_factor / 1000);
 
