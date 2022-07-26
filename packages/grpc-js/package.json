@@ -1,6 +1,6 @@
 {
   "name": "@grpc/grpc-js",
-  "version": "1.6.7",
+  "version": "1.6.8",
   "description": "gRPC Library for Node - pure JS implementation",
   "homepage": "https://grpc.io/",
   "repository": "https://github.com/grpc/grpc-node/tree/master/packages/grpc-js",
@@ -58,7 +58,7 @@
     "generate-test-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --includeComments --include-dirs test/fixtures/ -O test/generated/ --grpcLib ../../src/index test_service.proto"
   },
   "dependencies": {
-    "@grpc/proto-loader": "^0.6.4",
+    "@grpc/proto-loader": "^0.7.0",
     "@types/node": ">=12.12.47"
   },
   "files": [
