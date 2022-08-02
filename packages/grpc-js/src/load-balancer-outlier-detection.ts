@@ -18,7 +18,7 @@
 import { ChannelOptions, connectivityState, StatusObject } from ".";
 import { Call } from "./call-stream";
 import { ConnectivityState } from "./connectivity-state";
-import { Status } from "./constants";
+import { LogVerbosity, Status } from "./constants";
 import { durationToMs, isDuration, msToDuration } from "./duration";
 import { ChannelControlHelper, createChildChannelControlHelper, registerLoadBalancerType } from "./experimental";
 import { BaseFilter, Filter, FilterFactory } from "./filter";
@@ -28,7 +28,13 @@ import { PickArgs, Picker, PickResult, PickResultType, QueuePicker, UnavailableP
 import { Subchannel } from "./subchannel";
 import { SubchannelAddress, subchannelAddressToString } from "./subchannel-address";
 import { BaseSubchannelWrapper, ConnectivityStateListener, SubchannelInterface } from "./subchannel-interface";
+import * as logging from './logging';
 
+const TRACER_NAME = 'outlier_detection';
+
+function trace(text: string): void {
+  logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 const TYPE_NAME = 'outlier_detection';
 
@@ -412,6 +418,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     if (!successRateConfig) {
       return;
     }
+    trace('Running success rate check');
     // Step 1
     const targetRequestVolume = successRateConfig.request_volume;
     let addresesWithTargetVolume = 0;
@@ -424,6 +431,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
         successRates.push(successes/(successes + failures));
       }
     }
+    trace('Found ' + addresesWithTargetVolume + ' success rate candidates; currentEjectionPercent=' + this.getCurrentEjectionPercent() + ' successRates=[' + successRates + ']');
     if (addresesWithTargetVolume < successRateConfig.minimum_hosts) {
       return;
     }
@@ -438,9 +446,10 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     const successRateVariance = successRateDeviationSum / successRates.length;
     const successRateStdev = Math.sqrt(successRateVariance);
     const ejectionThreshold = successRateMean - successRateStdev * (successRateConfig.stdev_factor / 1000);
+    trace('stdev=' + successRateStdev + ' ejectionThreshold=' + ejectionThreshold);
 
     // Step 3
-    for (const mapEntry of this.addressMap.values()) {
+    for (const [address, mapEntry] of this.addressMap.entries()) {
       // Step 3.i
       if (this.getCurrentEjectionPercent() > this.latestConfig.getMaxEjectionPercent()) {
         break;
@@ -453,9 +462,12 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
       }
       // Step 3.iii
       const successRate = successes / (successes + failures);
+      trace('Checking candidate ' + address + ' successRate=' + successRate);
       if (successRate < ejectionThreshold) {
         const randomNumber = Math.random() * 100;
+        trace('Candidate ' + address + ' randomNumber=' + randomNumber + ' enforcement_percentage=' + successRateConfig.enforcement_percentage);
         if (randomNumber < successRateConfig.enforcement_percentage) {
+          trace('Ejecting candidate ' + address);
           this.eject(mapEntry, ejectionTimestamp);
         }
       }
@@ -470,13 +482,14 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     if (!failurePercentageConfig) {
       return;
     }
+    trace('Running failure percentage check. threshold=' + failurePercentageConfig.threshold + ' request volume threshold=' + failurePercentageConfig.request_volume);
     // Step 1
     if (this.addressMap.size < failurePercentageConfig.minimum_hosts) {
       return;
     }
     
     // Step 2
-    for (const mapEntry of this.addressMap.values()) {
+    for (const [address, mapEntry] of this.addressMap.entries()) {
       // Step 2.i
       if (this.getCurrentEjectionPercent() > this.latestConfig.getMaxEjectionPercent()) {
         break;
@@ -484,6 +497,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
       // Step 2.ii
       const successes = mapEntry.counter.getLastSuccesses();
       const failures = mapEntry.counter.getLastFailures();
+      trace('Candidate successes=' + successes + ' failures=' + failures);
       if (successes + failures < failurePercentageConfig.request_volume) {
         continue;
       }
@@ -491,7 +505,9 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
       const failurePercentage = (failures * 100) / (failures + successes);
       if (failurePercentage > failurePercentageConfig.threshold) {
         const randomNumber = Math.random() * 100;
+        trace('Candidate ' + address + ' randomNumber=' + randomNumber + ' enforcement_percentage=' + failurePercentageConfig.enforcement_percentage);
         if (randomNumber < failurePercentageConfig.enforcement_percentage) {
+          trace('Ejecting candidate ' + address);
           this.eject(mapEntry, ejectionTimestamp);
         }
       }
@@ -525,6 +541,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
 
   private runChecks() {
     const ejectionTimestamp = new Date();
+    trace('Ejection timer running');
 
     this.switchAllBuckets();
 
@@ -537,7 +554,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     this.runSuccessRateCheck(ejectionTimestamp);
     this.runFailurePercentageCheck(ejectionTimestamp);
 
-    for (const mapEntry of this.addressMap.values()) {
+    for (const [address, mapEntry] of this.addressMap.entries()) {
       if (mapEntry.currentEjectionTimestamp === null) {
         if (mapEntry.ejectionTimeMultiplier > 0) {
           mapEntry.ejectionTimeMultiplier -= 1;
@@ -548,6 +565,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
         const returnTime = new Date(mapEntry.currentEjectionTimestamp.getTime());
         returnTime.setMilliseconds(returnTime.getMilliseconds() + Math.min(baseEjectionTimeMs * mapEntry.ejectionTimeMultiplier, Math.max(baseEjectionTimeMs, maxEjectionTimeMs)));
         if (returnTime < new Date()) {
+          trace('Unejecting ' + address);
           this.uneject(mapEntry);
         }
       }
@@ -564,6 +582,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     }
     for (const address of subchannelAddresses) {
       if (!this.addressMap.has(address)) {
+        trace('Adding map entry for ' + address);
         this.addressMap.set(address, {
           counter: new CallCounter(),
           currentEjectionTimestamp: null,
@@ -574,6 +593,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     }
     for (const key of this.addressMap.keys()) {
       if (!subchannelAddresses.has(key)) {
+        trace('Removing map entry for ' + key);
         this.addressMap.delete(key);
       }
     }
@@ -585,15 +605,18 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
 
     if (lbConfig.getSuccessRateEjectionConfig() || lbConfig.getFailurePercentageEjectionConfig()) {
       if (this.timerStartTime) {
+        trace('Previous timer existed. Replacing timer');
         clearTimeout(this.ejectionTimer);
         const remainingDelay = lbConfig.getIntervalMs() - ((new Date()).getTime() - this.timerStartTime.getTime());
         this.startTimer(remainingDelay);
       } else {
+        trace('Starting new timer');
         this.timerStartTime = new Date();
         this.startTimer(lbConfig.getIntervalMs());
         this.switchAllBuckets();
       }
     } else {
+      trace('Counting disabled. Cancelling timer.');
       this.timerStartTime = null;
       clearTimeout(this.ejectionTimer);
     }
