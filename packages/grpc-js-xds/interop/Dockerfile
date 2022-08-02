@@ -33,6 +33,6 @@ COPY --from=build /node/src/grpc-node/packages/grpc-js ./packages/grpc-js/
 COPY --from=build /node/src/grpc-node/packages/grpc-js-xds ./packages/grpc-js-xds/
 
 ENV GRPC_VERBOSITY="DEBUG"
-ENV GRPC_TRACE=xds_client,xds_resolver,cds_balancer,eds_balancer,priority,weighted_target,round_robin,resolving_load_balancer,subchannel,keepalive,dns_resolver,fault_injection,http_filter,csds
+ENV GRPC_TRACE=xds_client,xds_resolver,cds_balancer,eds_balancer,priority,weighted_target,round_robin,resolving_load_balancer,subchannel,keepalive,dns_resolver,fault_injection,http_filter,csds,outlier_detection
 
 ENTRYPOINT [ "node", "/node/src/grpc-node/packages/grpc-js-xds/build/interop/xds-interop-client" ]
