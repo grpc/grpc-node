@@ -357,7 +357,10 @@ class OutlierDetectionPicker implements Picker {
           extraFilterFactories: extraFilterFactories
         };
       } else {
-        return wrappedPick;
+        return {
+          ...wrappedPick,
+          subchannel: subchannelWrapper.getWrappedSubchannel()
+        }
       }
     } else {
       return wrappedPick;
@@ -619,6 +622,10 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
       trace('Counting disabled. Cancelling timer.');
       this.timerStartTime = null;
       clearTimeout(this.ejectionTimer);
+      for (const mapEntry of this.addressMap.values()) {
+        this.uneject(mapEntry);
+        mapEntry.ejectionTimeMultiplier = 0;
+      }
     }
 
     this.latestConfig = lbConfig;
