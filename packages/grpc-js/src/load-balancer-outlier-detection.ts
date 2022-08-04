@@ -215,6 +215,14 @@ class OutlierDetectionSubchannelWrapper extends BaseSubchannelWrapper implements
     });
   }
 
+  getConnectivityState(): connectivityState {
+    if (this.ejected) {
+      return ConnectivityState.TRANSIENT_FAILURE;
+    } else {
+      return this.childSubchannelState;
+    }
+  }
+
   /**
    * Add a listener function to be called whenever the wrapper's
    * connectivity state changes.
