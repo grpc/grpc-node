@@ -391,6 +391,10 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
         const originalSubchannel = channelControlHelper.createSubchannel(subchannelAddress, subchannelArgs);
         const mapEntry = this.addressMap.get(subchannelAddressToString(subchannelAddress));
         const subchannelWrapper = new OutlierDetectionSubchannelWrapper(originalSubchannel, mapEntry);
+        if (mapEntry?.currentEjectionTimestamp !== null) {
+          // If the address is ejected, propagate that to the new subchannel wrapper
+          subchannelWrapper.eject();
+        }
         mapEntry?.subchannelWrappers.push(subchannelWrapper);
         return subchannelWrapper;
       },
