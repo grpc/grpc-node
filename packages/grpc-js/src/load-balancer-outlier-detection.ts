@@ -199,12 +199,13 @@ export class OutlierDetectionLoadBalancingConfig implements LoadBalancingConfig 
 }
 
 class OutlierDetectionSubchannelWrapper extends BaseSubchannelWrapper implements SubchannelInterface {
-  private childSubchannelState: ConnectivityState = ConnectivityState.IDLE;
+  private childSubchannelState: ConnectivityState;
   private stateListeners: ConnectivityStateListener[] = [];
   private ejected: boolean = false;
   private refCount: number = 0;
   constructor(childSubchannel: SubchannelInterface, private mapEntry?: MapEntry) {
     super(childSubchannel);
+    this.childSubchannelState = childSubchannel.getConnectivityState();
     childSubchannel.addConnectivityStateListener((subchannel, previousState, newState) => {
       this.childSubchannelState = newState;
       if (!this.ejected) {
@@ -390,6 +391,10 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
         const originalSubchannel = channelControlHelper.createSubchannel(subchannelAddress, subchannelArgs);
         const mapEntry = this.addressMap.get(subchannelAddressToString(subchannelAddress));
         const subchannelWrapper = new OutlierDetectionSubchannelWrapper(originalSubchannel, mapEntry);
+        if (mapEntry?.currentEjectionTimestamp !== null) {
+          // If the address is ejected, propagate that to the new subchannel wrapper
+          subchannelWrapper.eject();
+        }
         mapEntry?.subchannelWrappers.push(subchannelWrapper);
         return subchannelWrapper;
       },
