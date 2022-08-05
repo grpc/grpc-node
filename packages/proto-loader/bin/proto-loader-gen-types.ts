@@ -26,12 +26,25 @@ import * as yargs from 'yargs';
 import camelCase = require('lodash.camelcase');
 import { loadProtosWithOptions, addCommonProtos } from '../src/util';
 
+const templateStr = "%s";
+const useNameFmter = ({outputTemplate, inputTemplate}: GeneratorOptions) => {
+  if (outputTemplate === inputTemplate) {
+    throw new Error('inputTemplate and outputTemplate must differ')
+  }
+  return {
+    outputName: (n: string) => outputTemplate.replace(templateStr, n),
+    inputName: (n: string) => inputTemplate.replace(templateStr, n)
+  };
+}
+
 type GeneratorOptions = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
   includeDirs?: string[];
   grpcLib: string;
   outDir: string;
   verbose?: boolean;
   includeComments?: boolean;
+  inputTemplate: string;
+  outputTemplate: string;
 }
 
 class TextFormatter {
@@ -114,15 +127,16 @@ function getTypeInterfaceName(type: Protobuf.Type | Protobuf.Enum | Protobuf.Ser
   return type.fullName.replace(/\./g, '_');
 }
 
-function getImportLine(dependency: Protobuf.Type | Protobuf.Enum | Protobuf.Service, from?: Protobuf.Type | Protobuf.Service) {
+function getImportLine(dependency: Protobuf.Type | Protobuf.Enum | Protobuf.Service, from: Protobuf.Type | Protobuf.Service | undefined, options: GeneratorOptions) {
   const filePath = from === undefined ? './' + getImportPath(dependency) : getRelativeImportPath(from, dependency);
+  const {outputName, inputName} = useNameFmter(options);
   const typeInterfaceName = getTypeInterfaceName(dependency);
   let importedTypes: string;
   /* If the dependency is defined within a message, it will be generated in that
    * message's file and exported using its typeInterfaceName. */
   if (dependency.parent instanceof Protobuf.Type) {
     if (dependency instanceof Protobuf.Type) {
-      importedTypes = `${typeInterfaceName}, ${typeInterfaceName}__Output`;
+      importedTypes = `${typeInterfaceName}, ${outputName(typeInterfaceName)}`;
     } else if (dependency instanceof Protobuf.Enum) {
       importedTypes = `${typeInterfaceName}`;
     } else if (dependency instanceof Protobuf.Service) {
@@ -132,11 +146,11 @@ function getImportLine(dependency: Protobuf.Type | Protobuf.Enum | Protobuf.Serv
     }
   } else {
     if (dependency instanceof Protobuf.Type) {
-      importedTypes = `${dependency.name} as ${typeInterfaceName}, ${dependency.name}__Output as ${typeInterfaceName}__Output`;
+      importedTypes = `${inputName(dependency.name)} as ${inputName(typeInterfaceName)}, ${outputName(dependency.name)} as ${outputName(typeInterfaceName)}`;
     } else if (dependency instanceof Protobuf.Enum) {
       importedTypes = `${dependency.name} as ${typeInterfaceName}`;
     } else if (dependency instanceof Protobuf.Service) {
-      importedTypes = `${dependency.name}Client as ${typeInterfaceName}Client, ${dependency.name}Definition as ${typeInterfaceName}Definition`;
+      importedTypes = `${inputName(dependency.name)}Client as ${inputName(typeInterfaceName)}Client, ${inputName(dependency.name)}Definition as ${inputName(typeInterfaceName)}Definition`;
     } else {
       throw new Error('Invalid object passed to getImportLine');
     }
@@ -170,7 +184,8 @@ function formatComment(formatter: TextFormatter, comment?: string | null) {
 
 // GENERATOR FUNCTIONS
 
-function getTypeNamePermissive(fieldType: string, resolvedType: Protobuf.Type | Protobuf.Enum | null, repeated: boolean, map: boolean): string {
+function getTypeNamePermissive(fieldType: string, resolvedType: Protobuf.Type | Protobuf.Enum | null, repeated: boolean, map: boolean, options: GeneratorOptions): string {
+  const {inputName} = useNameFmter(options);
   switch (fieldType) {
     case 'double':
     case 'float':
@@ -200,9 +215,9 @@ function getTypeNamePermissive(fieldType: string, resolvedType: Protobuf.Type | 
       const typeInterfaceName = getTypeInterfaceName(resolvedType);
       if (resolvedType instanceof Protobuf.Type) {
         if (repeated || map) {
-          return typeInterfaceName;
+          return inputName(typeInterfaceName);
         } else {
-          return `${typeInterfaceName} | null`;
+          return `${inputName(typeInterfaceName)} | null`;
         }
       } else {
         return `${typeInterfaceName} | keyof typeof ${typeInterfaceName}`;
@@ -210,8 +225,8 @@ function getTypeNamePermissive(fieldType: string, resolvedType: Protobuf.Type | 
   }
 }
 
-function getFieldTypePermissive(field: Protobuf.FieldBase): string {
-  const valueType = getTypeNamePermissive(field.type, field.resolvedType, field.repeated, field.map);
+function getFieldTypePermissive(field: Protobuf.FieldBase, options: GeneratorOptions): string {
+  const valueType = getTypeNamePermissive(field.type, field.resolvedType, field.repeated, field.map, options);
   if (field instanceof Protobuf.MapField) {
     const keyType = field.keyType === 'string' ? 'string' : 'number';
     return `{[key: ${keyType}]: ${valueType}}`;
@@ -221,6 +236,7 @@ function getFieldTypePermissive(field: Protobuf.FieldBase): string {
 }
 
 function generatePermissiveMessageInterface(formatter: TextFormatter, messageType: Protobuf.Type, options: GeneratorOptions, nameOverride?: string) {
+  const {inputName} = useNameFmter(options);
   if (options.includeComments) {
     formatComment(formatter, messageType.comment);
   }
@@ -233,11 +249,11 @@ function generatePermissiveMessageInterface(formatter: TextFormatter, messageTyp
     formatter.writeLine('}');
     return;
   }
-  formatter.writeLine(`export interface ${nameOverride ?? messageType.name} {`);
+  formatter.writeLine(`export interface ${inputName(nameOverride ?? messageType.name)} {`);
   formatter.indent();
   for (const field of messageType.fieldsArray) {
     const repeatedString = field.repeated ? '[]' : '';
-    const type: string = getFieldTypePermissive(field);
+    const type: string = getFieldTypePermissive(field, options);
     if (options.includeComments) {
       formatComment(formatter, field.comment);
     }
@@ -255,6 +271,7 @@ function generatePermissiveMessageInterface(formatter: TextFormatter, messageTyp
 }
 
 function getTypeNameRestricted(fieldType: string, resolvedType: Protobuf.Type | Protobuf.Enum | null, repeated: boolean, map: boolean, options: GeneratorOptions): string {
+  const {outputName} = useNameFmter(options);
   switch (fieldType) {
     case 'double':
     case 'float':
@@ -302,9 +319,9 @@ function getTypeNameRestricted(fieldType: string, resolvedType: Protobuf.Type | 
         /* null is only used to represent absent message values if the defaults
          * option is set, and only for non-repeated, non-map fields. */
         if (options.defaults && !repeated && !map) {
-          return `${typeInterfaceName}__Output | null`;
+          return `${outputName(typeInterfaceName)} | null`;
         } else {
-          return `${typeInterfaceName}__Output`;
+          return `${outputName(typeInterfaceName)}`;
         }
       } else {
         if (options.enums == String) {
@@ -327,6 +344,7 @@ function getFieldTypeRestricted(field: Protobuf.FieldBase, options: GeneratorOpt
 }
 
 function generateRestrictedMessageInterface(formatter: TextFormatter, messageType: Protobuf.Type, options: GeneratorOptions, nameOverride?: string) {
+  const {outputName} = useNameFmter(options);
   if (options.includeComments) {
     formatComment(formatter, messageType.comment);
   }
@@ -334,13 +352,13 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
     /* This describes the behavior of the Protobuf.js Any wrapper toObject
      * replacement function */
     let optionalString = options.defaults ? '' : '?';
-    formatter.writeLine('export type Any__Output = AnyExtension | {');
+    formatter.writeLine(`export type ${outputName('Any')} = AnyExtension | {`);
     formatter.writeLine(`  type_url${optionalString}: string;`);
     formatter.writeLine(`  value${optionalString}: ${getTypeNameRestricted('bytes', null, false, false, options)};`);
     formatter.writeLine('}');
     return;
   }
-  formatter.writeLine(`export interface ${nameOverride ?? messageType.name}__Output {`);
+  formatter.writeLine(`export interface ${outputName(nameOverride ?? messageType.name)} {`);
   formatter.indent();
   for (const field of messageType.fieldsArray) {
     let fieldGuaranteed: boolean;
@@ -389,7 +407,7 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
         continue;
       }
       seenDeps.add(dependency.fullName);
-      formatter.writeLine(getImportLine(dependency, messageType));
+      formatter.writeLine(getImportLine(dependency, messageType, options));
     }
     if (field.type.indexOf('64') >= 0) {
       usesLong = true;
@@ -404,7 +422,7 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
             continue;
           }
           seenDeps.add(dependency.fullName);
-          formatter.writeLine(getImportLine(dependency, messageType));
+          formatter.writeLine(getImportLine(dependency, messageType, options));
         }
         if (field.type.indexOf('64') >= 0) {
           usesLong = true;
@@ -487,6 +505,7 @@ const CLIENT_RESERVED_METHOD_NAMES = new Set([
 ]);
 
 function generateServiceClientInterface(formatter: TextFormatter, serviceType: Protobuf.Service, options: GeneratorOptions) {
+  const {outputName, inputName} = useNameFmter(options);
   if (options.includeComments) {
     formatComment(formatter, serviceType.comment);
   }
@@ -501,8 +520,8 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
       if (options.includeComments) {
         formatComment(formatter, method.comment);
       }
-      const requestType = getTypeInterfaceName(method.resolvedRequestType!);
-      const responseType = getTypeInterfaceName(method.resolvedResponseType!) + '__Output';
+      const requestType = inputName(getTypeInterfaceName(method.resolvedRequestType!));
+      const responseType = outputName(getTypeInterfaceName(method.resolvedResponseType!));
       const callbackType = `grpc.requestCallback<${responseType}>`;
       if (method.requestStream) {
         if (method.responseStream) {
@@ -541,6 +560,7 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
 }
 
 function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: Protobuf.Service, options: GeneratorOptions) {
+  const {inputName, outputName} = useNameFmter(options);
   if (options.includeComments) {
     formatComment(formatter, serviceType.comment);
   }
@@ -551,8 +571,8 @@ function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: 
     if (options.includeComments) {
       formatComment(formatter, method.comment);
     }
-    const requestType = getTypeInterfaceName(method.resolvedRequestType!) + '__Output';
-    const responseType = getTypeInterfaceName(method.resolvedResponseType!);
+    const requestType = outputName(getTypeInterfaceName(method.resolvedRequestType!));
+    const responseType = inputName(getTypeInterfaceName(method.resolvedResponseType!));
     if (method.requestStream) {
       if (method.responseStream) {
         // Bidi streaming
@@ -576,14 +596,15 @@ function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: 
   formatter.writeLine('}');
 }
 
-function generateServiceDefinitionInterface(formatter: TextFormatter, serviceType: Protobuf.Service) {
+function generateServiceDefinitionInterface(formatter: TextFormatter, serviceType: Protobuf.Service, options: GeneratorOptions) {
+  const {inputName, outputName} = useNameFmter(options);
   formatter.writeLine(`export interface ${serviceType.name}Definition extends grpc.ServiceDefinition {`);
   formatter.indent();
   for (const methodName of Object.keys(serviceType.methods).sort()) {
     const method = serviceType.methods[methodName];
     const requestType = getTypeInterfaceName(method.resolvedRequestType!);
     const responseType = getTypeInterfaceName(method.resolvedResponseType!);
-    formatter.writeLine(`${methodName}: MethodDefinition<${requestType}, ${responseType}, ${requestType}__Output, ${responseType}__Output>`);
+    formatter.writeLine(`${methodName}: MethodDefinition<${inputName(requestType)}, ${inputName(responseType)}, ${outputName(requestType)}, ${outputName(responseType)}>`);
   }
   formatter.unindent();
   formatter.writeLine('}')
@@ -601,7 +622,7 @@ function generateServiceInterfaces(formatter: TextFormatter, serviceType: Protob
     dependencies.add(method.resolvedResponseType!);
   }
   for (const dep of Array.from(dependencies.values()).sort(compareName)) {
-    formatter.writeLine(getImportLine(dep, serviceType));
+    formatter.writeLine(getImportLine(dep, serviceType, options));
   }
   formatter.writeLine('');
 
@@ -611,7 +632,7 @@ function generateServiceInterfaces(formatter: TextFormatter, serviceType: Protob
   generateServiceHandlerInterface(formatter, serviceType, options);
   formatter.writeLine('');
 
-  generateServiceDefinitionInterface(formatter, serviceType);
+  generateServiceDefinitionInterface(formatter, serviceType, options);
 }
 
 function containsDefinition(definitionType: typeof Protobuf.Type | typeof Protobuf.Enum, namespace: Protobuf.NamespaceBase): boolean {
@@ -645,7 +666,7 @@ function generateDefinitionImports(formatter: TextFormatter, namespace: Protobuf
 function generateServiceImports(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, options: GeneratorOptions) {
   for (const nested of namespace.nestedArray.sort(compareName)) {
     if (nested instanceof Protobuf.Service) {
-      formatter.writeLine(getImportLine(nested));
+      formatter.writeLine(getImportLine(nested, undefined, options));
     } else if (isNamespaceBase(nested) && !(nested instanceof Protobuf.Type) && !(nested instanceof Protobuf.Enum)) {
       generateServiceImports(formatter, nested, options);
     }
@@ -805,7 +826,11 @@ async function runScript() {
         case 'String': return String;
         default: return undefined;
       }
-    }).alias({
+    })
+    .string(['inputTemplate', 'outputTemplate'])
+    .default('inputTemplate', `${templateStr}`)
+    .default('outputTemplate', `${templateStr}__Output`)
+    .alias({
       includeDirs: 'I',
       outDir: 'O',
       verbose: 'v'
@@ -822,7 +847,9 @@ async function runScript() {
       includeComments: 'Generate doc comments from comments in the original files',
       includeDirs: 'Directories to search for included files',
       outDir: 'Directory in which to output files',
-      grpcLib: 'The gRPC implementation library that these types will be used with'
+      grpcLib: 'The gRPC implementation library that these types will be used with',
+      inputTemplate: 'Template for mapping input or "permissive" type names',
+      outputTemplate: 'Template for mapping output or "restricted" type names',
     }).demandOption(['outDir', 'grpcLib'])
     .demand(1)
     .usage('$0 [options] filenames...')
