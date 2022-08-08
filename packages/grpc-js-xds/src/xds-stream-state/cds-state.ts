@@ -15,94 +15,21 @@
  *
  */
 
-import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
 import { EXPERIMENTAL_OUTLIER_DETECTION } from "../environment";
 import { Cluster__Output } from "../generated/envoy/config/cluster/v3/Cluster";
-import { Any__Output } from "../generated/google/protobuf/Any";
 import { Duration__Output } from "../generated/google/protobuf/Duration";
 import { UInt32Value__Output } from "../generated/google/protobuf/UInt32Value";
-import { EdsState } from "./eds-state";
-import { HandleResponseResult, RejectedResourceEntry, ResourcePair, Watcher, XdsStreamState } from "./xds-stream-state";
+import { BaseXdsStreamState, XdsStreamState } from "./xds-stream-state";
 
-const TRACER_NAME = 'xds_client';
-
-function trace(text: string): void {
-  experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
-}
-
-export class CdsState implements XdsStreamState<Cluster__Output> {
-  versionInfo = '';
-  nonce = '';
-
-  private watchers: Map<string, Watcher<Cluster__Output>[]> = new Map<
-    string,
-    Watcher<Cluster__Output>[]
-  >();
-
-  private latestResponses: Cluster__Output[] = [];
-  private latestIsV2 = false;
-
-  constructor(
-    private edsState: EdsState,
-    private updateResourceNames: () => void
-  ) {}
-
-  /**
-   * Add the watcher to the watcher list. Returns true if the list of resource
-   * names has changed, and false otherwise.
-   * @param clusterName
-   * @param watcher
-   */
-  addWatcher(clusterName: string, watcher: Watcher<Cluster__Output>): void {
-    trace('Adding CDS watcher for clusterName ' + clusterName);
-    let watchersEntry = this.watchers.get(clusterName);
-    let addedServiceName = false;
-    if (watchersEntry === undefined) {
-      addedServiceName = true;
-      watchersEntry = [];
-      this.watchers.set(clusterName, watchersEntry);
-    }
-    watchersEntry.push(watcher);
-
-    /* If we have already received an update for the requested edsServiceName,
-     * immediately pass that update along to the watcher */
-    const isV2 = this.latestIsV2;
-    for (const message of this.latestResponses) {
-      if (message.name === clusterName) {
-        /* These updates normally occur asynchronously, so we ensure that
-         * the same happens here */
-        process.nextTick(() => {
-          trace('Reporting existing CDS update for new watcher for clusterName ' + clusterName);
-          watcher.onValidUpdate(message, isV2);
-        });
-      }
-    }
-    if (addedServiceName) {
-      this.updateResourceNames();
-    }
+export class CdsState extends BaseXdsStreamState<Cluster__Output> implements XdsStreamState<Cluster__Output> {
+  protected isStateOfTheWorld(): boolean {
+    return true;
   }
-
-  removeWatcher(clusterName: string, watcher: Watcher<Cluster__Output>): void {
-    trace('Removing CDS watcher for clusterName ' + clusterName);
-    const watchersEntry = this.watchers.get(clusterName);
-    let removedServiceName = false;
-    if (watchersEntry !== undefined) {
-      const entryIndex = watchersEntry.indexOf(watcher);
-      if (entryIndex >= 0) {
-        watchersEntry.splice(entryIndex, 1);
-      }
-      if (watchersEntry.length === 0) {
-        removedServiceName = true;
-        this.watchers.delete(clusterName);
-      }
-    }
-    if (removedServiceName) {
-      this.updateResourceNames();
-    }
+  protected getResourceName(resource: Cluster__Output): string {
+    return resource.name;
   }
-
-  getResourceNames(): string[] {
-    return Array.from(this.watchers.keys());
+  protected getProtocolName(): string {
+    return 'CDS';
   }
 
   private validateNonnegativeDuration(duration: Duration__Output | null): boolean {
@@ -125,7 +52,7 @@ export class CdsState implements XdsStreamState<Cluster__Output> {
     return percentage.value >=0 && percentage.value <= 100;
   }
 
-  private validateResponse(message: Cluster__Output): boolean {
+  public validateResponse(message: Cluster__Output): boolean {
     if (message.type !== 'EDS') {
       return false;
     }
@@ -166,70 +93,5 @@ export class CdsState implements XdsStreamState<Cluster__Output> {
       }
     }
     return true;
-  }
-
-  /**
-   * Given a list of clusterNames (which may actually be the cluster name),
-   * for each watcher watching a name not on the list, call that watcher's
-   * onResourceDoesNotExist method.
-   * @param allClusterNames
-   */
-  private handleMissingNames(allClusterNames: Set<string>): string[] {
-    const missingNames: string[] = [];
-    for (const [clusterName, watcherList] of this.watchers.entries()) {
-      if (!allClusterNames.has(clusterName)) {
-        trace('Reporting CDS resource does not exist for clusterName ' + clusterName);
-        missingNames.push(clusterName);
-        for (const watcher of watcherList) {
-          watcher.onResourceDoesNotExist();
-        }
-      }
-    }
-    return missingNames;
-  }
-
-  handleResponses(responses: ResourcePair<Cluster__Output>[], isV2: boolean): HandleResponseResult {
-    const validResponses: Cluster__Output[] = [];
-    const result: HandleResponseResult = {
-      accepted: [],
-      rejected: [],
-      missing: []
-    }
-    for (const {resource, raw} of responses) {
-      if (this.validateResponse(resource)) {
-        validResponses.push(resource);
-        result.accepted.push({
-          name: resource.name, 
-          raw: raw});
-      } else {
-        trace('CDS validation failed for message ' + JSON.stringify(resource));
-        result.rejected.push({
-          name: resource.name, 
-          raw: raw,
-          error: `Cluster validation failed for resource ${resource.name}`
-        });
-      }
-    }
-    this.latestResponses = validResponses;
-    this.latestIsV2 = isV2;
-    const allClusterNames: Set<string> = new Set<string>();
-    for (const message of validResponses) {
-      allClusterNames.add(message.name);
-      const watchers = this.watchers.get(message.name) ?? [];
-      for (const watcher of watchers) {
-        watcher.onValidUpdate(message, isV2);
-      }
-    }
-    trace('Received CDS updates for cluster names [' + Array.from(allClusterNames) + ']');
-    result.missing = this.handleMissingNames(allClusterNames);
-    return result;
-  }
-
-  reportStreamError(status: StatusObject): void {
-    for (const watcherList of this.watchers.values()) {
-      for (const watcher of watcherList) {
-        watcher.onTransientError(status);
-      }
-    }
   }
 }
