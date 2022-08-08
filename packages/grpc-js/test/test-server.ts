@@ -623,7 +623,7 @@ describe('Generic client and server', () => {
 describe('Compressed requests', () => {
   const testServiceHandlers: TestServiceHandlers = {
     Unary(call, callback) {
-      callback(null, { count: 500000 });
+      callback(null, { count: 500000, message: call.request.message });
     },
 
     ClientStream(call, callback) {
@@ -847,6 +847,20 @@ describe('Compressed requests', () => {
         })
       });
     });
+
+    it('Should handle large messages', done => {
+      let longMessage = '';
+      for (let i = 0; i < 400000; i++) {
+        const letter = 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)];
+        longMessage = longMessage + letter.repeat(10);
+      }
+
+      client.unary({message: longMessage}, (err, response) => {
+        assert.ifError(err);
+        assert.strictEqual(response?.message, longMessage);
+        done();
+      })
+    })
     
     /* As of Node 16, Writable and Duplex streams validate the encoding
      * argument to write, and the flags values we are passing there are not

@@ -727,7 +727,7 @@ export class XdsClient {
     if (serviceKind) {
       this.adsState[serviceKind].reportStreamError({
         code: status.UNAVAILABLE,
-        details: message,
+        details: message + ' Node ID=' + this.adsNodeV3!.id,
         metadata: new Metadata()
       });
       resourceNames = this.adsState[serviceKind].getResourceNames();
@@ -772,6 +772,7 @@ export class XdsClient {
   }
 
   private reportStreamError(status: StatusObject) {
+    status = {...status, details: status.details + ' Node ID=' + this.adsNodeV3!.id};
     this.adsState.eds.reportStreamError(status);
     this.adsState.cds.reportStreamError(status);
     this.adsState.rds.reportStreamError(status);
@@ -789,7 +790,6 @@ export class XdsClient {
     trace('Received LRS response');
     /* Once we get any response from the server, we assume that the stream is
      * in a good state, so we can reset the backoff timer. */
-    this.lrsBackoff.stop();
     this.lrsBackoff.reset();
     if (
       !this.receivedLrsSettingsForCurrentStream ||

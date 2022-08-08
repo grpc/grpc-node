@@ -20,6 +20,7 @@ import {
   Call,
   Http2CallStream,
   CallStreamOptions,
+  StatusObject,
 } from './call-stream';
 import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
@@ -170,6 +171,14 @@ export class ChannelImplementation implements Channel {
    */
   private callRefTimer: NodeJS.Timer;
   private configSelector: ConfigSelector | null = null;
+  /**
+   * This is the error from the name resolver if it failed most recently. It
+   * is only used to end calls that start while there is no config selector
+   * and the name resolver is in backoff, so it should be nulled if
+   * configSelector becomes set or the channel state becomes anything other
+   * than TRANSIENT_FAILURE.
+   */
+  private currentResolutionError: StatusObject | null = null;
 
   // Channelz info
   private readonly channelzEnabled: boolean = true;
@@ -219,16 +228,9 @@ export class ChannelImplementation implements Channel {
     }
 
     this.channelzTrace = new ChannelzTrace();
+    this.channelzRef = registerChannelzChannel(target, () => this.getChannelzInfo(), this.channelzEnabled);
     if (this.channelzEnabled) {
-      this.channelzRef = registerChannelzChannel(target, () => this.getChannelzInfo());
       this.channelzTrace.addTrace('CT_INFO', 'Channel created');
-    } else {
-      // Dummy channelz ref that will never be used
-      this.channelzRef = {
-        kind: 'channel',
-        id: -1,
-        name: ''
-      };
     }
 
     if (this.options['grpc.default_authority']) {
@@ -297,6 +299,7 @@ export class ChannelImplementation implements Channel {
           this.channelzTrace.addTrace('CT_INFO', 'Address resolution succeeded');
         }
         this.configSelector = configSelector;
+        this.currentResolutionError = null;
         /* We process the queue asynchronously to ensure that the corresponding
          * load balancer update has completed. */
         process.nextTick(() => {
@@ -315,6 +318,9 @@ export class ChannelImplementation implements Channel {
         }
         if (this.configSelectionQueue.length > 0) {
           this.trace('Name resolution failed with calls queued for config selection');
+        }
+        if (this.configSelector === null) {
+          this.currentResolutionError = status;
         }
         const localQueue = this.configSelectionQueue;
         this.configSelectionQueue = [];
@@ -598,6 +604,9 @@ export class ChannelImplementation implements Channel {
         watcherObject.callback();
       }
     }
+    if (newState !== ConnectivityState.TRANSIENT_FAILURE) {
+      this.currentResolutionError = null;
+    }
   }
 
   private tryGetConfig(stream: Http2CallStream, metadata: Metadata) {
@@ -612,11 +621,15 @@ export class ChannelImplementation implements Channel {
        * ResolvingLoadBalancer may be idle and if so it needs to be kicked
        * because it now has a pending request. */
       this.resolvingLoadBalancer.exitIdle();
-      this.configSelectionQueue.push({
-        callStream: stream,
-        callMetadata: metadata,
-      });
-      this.callRefTimerRef();
+      if (this.currentResolutionError && !metadata.getOptions().waitForReady) {
+        stream.cancelWithStatus(this.currentResolutionError.code, this.currentResolutionError.details);
+      } else {
+        this.configSelectionQueue.push({
+          callStream: stream,
+          callMetadata: metadata,
+        });
+        this.callRefTimerRef();
+      }
     } else {
       const callConfig = this.configSelector(stream.getMethod(), metadata);
       if (callConfig.status === Status.OK) {

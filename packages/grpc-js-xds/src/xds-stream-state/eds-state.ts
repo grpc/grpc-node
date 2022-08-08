@@ -17,6 +17,7 @@
 
 import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
 import { isIPv4, isIPv6 } from "net";
+import { Locality__Output } from "../generated/envoy/config/core/v3/Locality";
 import { ClusterLoadAssignment__Output } from "../generated/envoy/config/endpoint/v3/ClusterLoadAssignment";
 import { Any__Output } from "../generated/google/protobuf/Any";
 import { BaseXdsStreamState, HandleResponseResult, RejectedResourceEntry, ResourcePair, Watcher, XdsStreamState } from "./xds-stream-state";
@@ -25,6 +26,10 @@ const TRACER_NAME = 'xds_client';
 
 function trace(text: string): void {
   experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
+}
+
+function localitiesEqual(a: Locality__Output, b: Locality__Output) {
+  return a.region === b.region && a.sub_zone === b.sub_zone && a.zone === b.zone;
 }
 
 export class EdsState extends BaseXdsStreamState<ClusterLoadAssignment__Output> implements XdsStreamState<ClusterLoadAssignment__Output> {
@@ -44,7 +49,17 @@ export class EdsState extends BaseXdsStreamState<ClusterLoadAssignment__Output> 
    * @param message
    */
   public validateResponse(message: ClusterLoadAssignment__Output) {
+    const seenLocalities: {locality: Locality__Output, priority: number}[] = [];
     for (const endpoint of message.endpoints) {
+      if (!endpoint.locality) {
+        return false;
+      }
+      for (const {locality, priority} of seenLocalities) {
+        if (localitiesEqual(endpoint.locality, locality) && endpoint.priority === priority) {
+          return false;
+        }
+      }
+      seenLocalities.push({locality: endpoint.locality, priority: endpoint.priority});
       for (const lb of endpoint.lb_endpoints) {
         const socketAddress = lb.endpoint?.address?.socket_address;
         if (!socketAddress) {

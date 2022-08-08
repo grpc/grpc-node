@@ -184,8 +184,10 @@ export class PickFirstLoadBalancer implements LoadBalancer {
         ) {
           /* If all of the subchannels are IDLE we should go back to a
            * basic IDLE state where there is no subchannel list to avoid
-           * holding unused resources */
-          this.resetSubchannelList();
+           * holding unused resources. We do not reset triedAllSubchannels
+           * because that is a reminder to request reresolution the next time
+           * this LB policy needs to connect. */
+          this.resetSubchannelList(false);
           this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
           return;
         }
@@ -337,7 +339,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     this.channelControlHelper.updateState(newState, picker);
   }
 
-  private resetSubchannelList() {
+  private resetSubchannelList(resetTriedAllSubchannels = true) {
     for (const subchannel of this.subchannels) {
       subchannel.removeConnectivityStateListener(this.subchannelStateListener);
       subchannel.unref();
@@ -352,7 +354,9 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       [ConnectivityState.TRANSIENT_FAILURE]: 0,
     };
     this.subchannels = [];
-    this.triedAllSubchannels = false;
+    if (resetTriedAllSubchannels) {
+      this.triedAllSubchannels = false;
+    }
   }
 
   /**
@@ -425,6 +429,12 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   }
 
   exitIdle() {
+    if (
+      this.currentState === ConnectivityState.IDLE ||
+      this.triedAllSubchannels
+    ) {
+      this.channelControlHelper.requestReresolution();
+    }
     for (const subchannel of this.subchannels) {
       subchannel.startConnecting();
     }
@@ -432,12 +442,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       if (this.latestAddressList.length > 0) {
         this.connectToAddressList();
       }
-    }
-    if (
-      this.currentState === ConnectivityState.IDLE ||
-      this.triedAllSubchannels
-    ) {
-      this.channelControlHelper.requestReresolution();
     }
   }
 
