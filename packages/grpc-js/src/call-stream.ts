@@ -573,7 +573,9 @@ export class Http2CallStream implements Call {
           }
         }
       });
-      stream.on('trailers', this.handleTrailers.bind(this));
+      stream.on('trailers', (headers: http2.IncomingHttpHeaders) => {
+        this.handleTrailers(headers);
+      });
       stream.on('data', (data: Buffer) => {
         this.trace('receive HTTP/2 data frame of length ' + data.length);
         const messages = this.decoder.write(data);
