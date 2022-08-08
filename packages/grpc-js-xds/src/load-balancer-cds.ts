@@ -79,9 +79,8 @@ function translateOutlierDetectionConfig(outlierDetection: OutlierDetection__Out
     return undefined;
   }
   if (!outlierDetection) {
-    /* No-op outlier detection config, with max possible interval and no
-     * ejection criteria configured. */
-    return new OutlierDetectionLoadBalancingConfig(~(1<<31), null, null, null, null, null, []);
+    /* No-op outlier detection config, with all fields unset. */
+    return new OutlierDetectionLoadBalancingConfig(null, null, null, null, null, null, []);
   }
   let successRateConfig: Partial<SuccessRateEjectionConfig> | null = null;
   /* Success rate ejection is enabled by default, so we only disable it if
