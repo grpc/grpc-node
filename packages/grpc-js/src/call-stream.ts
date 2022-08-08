@@ -736,6 +736,7 @@ export class Http2CallStream implements Call {
       }
       this.trace('close http2 stream with code ' + code);
       this.http2Stream.close(code);
+      this.http2Stream.destroy();
     }
   }
 
