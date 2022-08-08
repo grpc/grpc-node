@@ -361,12 +361,21 @@ export class Subchannel {
       this.handleDisconnect();
     }, this.keepaliveTimeoutMs);
     this.keepaliveTimeoutId.unref?.();
-    this.session!.ping(
-      (err: Error | null, duration: number, payload: Buffer) => {
-        this.keepaliveTrace('Received ping response');
-        clearTimeout(this.keepaliveTimeoutId);
-      }
-    );
+    try {
+      this.session!.ping(
+        (err: Error | null, duration: number, payload: Buffer) => {
+          this.keepaliveTrace('Received ping response');
+          clearTimeout(this.keepaliveTimeoutId);
+        }
+      );
+    } catch (e) {
+      /* If we fail to send a ping, the connection is no longer functional, so
+       * we should discard it. */
+      this.transitionToState(
+        [ConnectivityState.READY],
+        ConnectivityState.TRANSIENT_FAILURE
+      );
+    }
   }
 
   private startKeepalivePings() {
