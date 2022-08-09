@@ -45,7 +45,6 @@
     "proto-loader-gen-types": "./build/bin/proto-loader-gen-types.js"
   },
   "dependencies": {
-    "@types/long": "^4.0.1",
     "lodash.camelcase": "^4.3.0",
     "long": "^5.0.0",
     "protobufjs": "^7.0.0",
