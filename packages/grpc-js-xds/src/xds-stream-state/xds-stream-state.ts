@@ -75,6 +75,7 @@ interface SubscriptionEntry<ResponseType> {
   watchers: Watcher<ResponseType>[];
   cachedResponse: ResponseType | null;
   resourceTimer: NodeJS.Timer;
+  deletionIgnored: boolean;
 }
 
 const RESOURCE_TIMEOUT_MS = 15_000;
@@ -86,11 +87,12 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
   private subscriptions: Map<string, SubscriptionEntry<ResponseType>> = new Map<string, SubscriptionEntry<ResponseType>>();
   private latestIsV2 = false;
   private isAdsStreamRunning = false;
+  private ignoreResourceDeletion = false;
 
   constructor(private updateResourceNames: () => void) {}
 
-  protected trace(text: string) {
-    experimental.trace(logVerbosity.DEBUG, TRACER_NAME, this.getProtocolName() + ' | ' + text);
+  protected trace(text: string, verbosity = logVerbosity.DEBUG) {
+    experimental.trace(verbosity, TRACER_NAME, this.getProtocolName() + ' | ' + text);
   }
 
   private startResourceTimer(subscriptionEntry: SubscriptionEntry<ResponseType>) {
@@ -111,7 +113,8 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
       subscriptionEntry = {
         watchers: [],
         cachedResponse: null,
-        resourceTimer: setTimeout(() => {}, 0)
+        resourceTimer: setTimeout(() => {}, 0),
+        deletionIgnored: false
       };
       if (this.isAdsStreamRunning) {
         this.startResourceTimer(subscriptionEntry);
@@ -142,6 +145,9 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
       }
       if (subscriptionEntry.watchers.length === 0) {
         clearTimeout(subscriptionEntry.resourceTimer);
+        if (subscriptionEntry.deletionIgnored) {
+          this.trace('Unsubscribing from resource with previously ignored deletion: ' + resourceName, logVerbosity.INFO);
+        }
         this.subscriptions.delete(resourceName);
         this.updateResourceNames();
       }
@@ -187,6 +193,10 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
         }
         clearTimeout(subscriptionEntry.resourceTimer);
         subscriptionEntry.cachedResponse = resource;
+        if (subscriptionEntry.deletionIgnored) {
+          this.trace('Received resource with previously ignored deletion: ' + resourceName, logVerbosity.INFO);
+          subscriptionEntry.deletionIgnored = false;
+        }
       }
     }
     result.missing = this.handleMissingNames(allResourceNames);
@@ -218,10 +228,18 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
       const missingNames: string[] = [];
       for (const [resourceName, subscriptionEntry] of this.subscriptions.entries()) {
         if (!allResponseNames.has(resourceName) && subscriptionEntry.cachedResponse !== null) {
-          this.trace('Reporting resource does not exist named ' + resourceName);
-          missingNames.push(resourceName);
-          for (const watcher of subscriptionEntry.watchers) {
-            watcher.onResourceDoesNotExist();
+          if (this.ignoreResourceDeletion) {
+            if (!subscriptionEntry.deletionIgnored) {
+              this.trace('Ignoring nonexistent resource ' + resourceName, logVerbosity.ERROR);
+              subscriptionEntry.deletionIgnored = true;
+            }
+          } else {
+            this.trace('Reporting resource does not exist named ' + resourceName);
+            missingNames.push(resourceName);
+            for (const watcher of subscriptionEntry.watchers) {
+              watcher.onResourceDoesNotExist();
+            }
+            subscriptionEntry.cachedResponse = null;
           }
         }
       }
@@ -229,6 +247,10 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
     } else {
       return [];
     }
+  }
+
+  enableIgnoreResourceDeletion() {
+    this.ignoreResourceDeletion = true;
   }
 
   /**

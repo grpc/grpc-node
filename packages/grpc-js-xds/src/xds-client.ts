@@ -360,6 +360,10 @@ export class XdsClient {
         } else {
           this.apiVersion = XdsApiVersion.V2;
         }
+        if (bootstrapInfo.xdsServers[0].serverFeatures.indexOf('ignore_resource_deletion') >= 0) {
+          this.adsState.lds.enableIgnoreResourceDeletion();
+          this.adsState.cds.enableIgnoreResourceDeletion();
+        }
         const nodeV2: NodeV2 = {
           ...bootstrapInfo.node,
           build_version: `gRPC Node Pure JS ${clientVersion}`,
