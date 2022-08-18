@@ -91,8 +91,8 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
 
   constructor(private updateResourceNames: () => void) {}
 
-  protected trace(text: string, verbosity = logVerbosity.DEBUG) {
-    experimental.trace(verbosity, TRACER_NAME, this.getProtocolName() + ' | ' + text);
+  protected trace(text: string) {
+    experimental.trace(logVerbosity.DEBUG, TRACER_NAME, this.getProtocolName() + ' | ' + text);
   }
 
   private startResourceTimer(subscriptionEntry: SubscriptionEntry<ResponseType>) {
@@ -146,7 +146,7 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
       if (subscriptionEntry.watchers.length === 0) {
         clearTimeout(subscriptionEntry.resourceTimer);
         if (subscriptionEntry.deletionIgnored) {
-          this.trace('Unsubscribing from resource with previously ignored deletion: ' + resourceName, logVerbosity.INFO);
+          experimental.log(logVerbosity.INFO, 'Unsubscribing from resource with previously ignored deletion: ' + resourceName);
         }
         this.subscriptions.delete(resourceName);
         this.updateResourceNames();
@@ -194,7 +194,7 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
         clearTimeout(subscriptionEntry.resourceTimer);
         subscriptionEntry.cachedResponse = resource;
         if (subscriptionEntry.deletionIgnored) {
-          this.trace('Received resource with previously ignored deletion: ' + resourceName, logVerbosity.INFO);
+          experimental.log(logVerbosity.INFO, 'Received resource with previously ignored deletion: ' + resourceName);
           subscriptionEntry.deletionIgnored = false;
         }
       }
@@ -230,7 +230,7 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
         if (!allResponseNames.has(resourceName) && subscriptionEntry.cachedResponse !== null) {
           if (this.ignoreResourceDeletion) {
             if (!subscriptionEntry.deletionIgnored) {
-              this.trace('Ignoring nonexistent resource ' + resourceName, logVerbosity.ERROR);
+              experimental.log(logVerbosity.ERROR, 'Ignoring nonexistent resource ' + resourceName);
               subscriptionEntry.deletionIgnored = true;
             }
           } else {
