@@ -48,7 +48,7 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
     }
     updateState(connectivityState: ConnectivityState, picker: Picker): void {
       if (this.calledByPendingChild()) {
-        if (connectivityState !== ConnectivityState.READY) {
+        if (connectivityState === ConnectivityState.CONNECTING) {
           return;
         }
         this.parent.currentChild?.destroy();
