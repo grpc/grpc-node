@@ -144,7 +144,7 @@ class XdsClusterManager implements LoadBalancer {
       trace('Child ' + this.name + ' ' + ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[connectivityState]);
       this.connectivityState = connectivityState;
       this.picker = picker;
-      this.parent.updateState();
+      this.parent.maybeUpdateState();
     }
     updateAddressList(addressList: SubchannelAddress[], lbConfig: ClusterManagerChild, attributes: { [key: string]: unknown; }): void {
       const childConfig = getFirstUsableConfig(lbConfig.child_policy);
@@ -173,7 +173,14 @@ class XdsClusterManager implements LoadBalancer {
   private children: Map<string, XdsClusterManagerChild> = new Map<string, XdsClusterManagerChild>();
   // Shutdown is a placeholder value that will never appear in normal operation.
   private currentState: ConnectivityState = ConnectivityState.SHUTDOWN;
+  private updatesPaused = false;
   constructor(private channelControlHelper: ChannelControlHelper) {}
+
+  private maybeUpdateState() {
+    if (!this.updatesPaused) {
+      this.updateState();
+    }
+  }
 
   private updateState() {
     const pickerMap: Map<string, Picker> = new Map<string, Picker>();
@@ -250,6 +257,7 @@ class XdsClusterManager implements LoadBalancer {
         namesToRemove.push(name);
       }
     }
+    this.updatesPaused = true;
     for (const name of namesToRemove) {
       this.children.get(name)!.destroy();
       this.children.delete(name);
@@ -262,6 +270,7 @@ class XdsClusterManager implements LoadBalancer {
         this.children.set(name, newChild);
       }
     }
+    this.updatesPaused = false;
     this.updateState();
   }
   exitIdle(): void {

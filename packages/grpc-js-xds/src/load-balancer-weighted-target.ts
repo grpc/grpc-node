@@ -181,7 +181,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
       trace('Target ' + this.name + ' ' + ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[connectivityState]);
       this.connectivityState = connectivityState;
       this.picker = picker;
-      this.parent.updateState();
+      this.parent.maybeUpdateState();
     }
 
     updateAddressList(addressList: SubchannelAddress[], lbConfig: WeightedTarget, attributes: { [key: string]: unknown; }): void {
@@ -238,8 +238,15 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
    * List of current target names.
    */
   private targetList: string[] = [];
+  private updatesPaused = false;
 
   constructor(private channelControlHelper: ChannelControlHelper) {}
+
+  private maybeUpdateState() {
+    if (!this.updatesPaused) {
+      this.updateState()
+    }
+  }
 
   private updateState() {
     const pickerList: WeightedPicker[] = [];
@@ -343,6 +350,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
       childAddressList.push(childAddress);
     }
 
+    this.updatesPaused = true;
     this.targetList = Array.from(lbConfig.getTargets().keys());
     for (const [targetName, targetConfig] of lbConfig.getTargets()) {
       let target = this.targets.get(targetName);
@@ -364,6 +372,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
         target.deactivate();
       }
     }
+    this.updatesPaused = false;
 
     this.updateState();
   }
