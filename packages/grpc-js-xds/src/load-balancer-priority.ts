@@ -115,7 +115,6 @@ interface PriorityChildBalancer {
   resetBackoff(): void;
   deactivate(): void;
   maybeReactivate(): void;
-  cancelFailoverTimer(): void;
   isFailoverTimerPending(): boolean;
   getConnectivityState(): ConnectivityState;
   getPicker(): Picker;
@@ -138,6 +137,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
     private childBalancer: ChildLoadBalancerHandler;
     private failoverTimer: NodeJS.Timer | null = null;
     private deactivationTimer: NodeJS.Timer | null = null;
+    private seenReadyOrIdleSinceTransientFailure = false;
     constructor(private parent: PriorityLoadBalancer, private name: string) {
       this.childBalancer = new ChildLoadBalancerHandler(experimental.createChildChannelControlHelper(this.parent.channelControlHelper, {
         updateState: (connectivityState: ConnectivityState, picker: Picker) => {
@@ -145,12 +145,24 @@ export class PriorityLoadBalancer implements LoadBalancer {
         },
       }));
       this.picker = new QueuePicker(this.childBalancer);
+      this.startFailoverTimer();
     }
 
     private updateState(connectivityState: ConnectivityState, picker: Picker) {
       trace('Child ' + this.name + ' ' + ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[connectivityState]);
       this.connectivityState = connectivityState;
       this.picker = picker;
+      if (connectivityState === ConnectivityState.CONNECTING) {
+        if (this.seenReadyOrIdleSinceTransientFailure && this.failoverTimer === null) {
+          this.startFailoverTimer();
+        }
+      } else if (connectivityState === ConnectivityState.READY || connectivityState === ConnectivityState.IDLE) {
+        this.seenReadyOrIdleSinceTransientFailure = true;
+        this.cancelFailoverTimer();
+      } else if (connectivityState === ConnectivityState.TRANSIENT_FAILURE) {
+        this.seenReadyOrIdleSinceTransientFailure = false;
+        this.cancelFailoverTimer();
+      }
       this.parent.onChildStateChange(this);
     }
 
@@ -174,13 +186,9 @@ export class PriorityLoadBalancer implements LoadBalancer {
       attributes: { [key: string]: unknown }
     ): void {
       this.childBalancer.updateAddressList(addressList, lbConfig, attributes);
-      this.startFailoverTimer();
     }
 
     exitIdle() {
-      if (this.connectivityState === ConnectivityState.IDLE) {
-        this.startFailoverTimer();
-      }
       this.childBalancer.exitIdle();
     }
 
@@ -204,7 +212,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
       }
     }
 
-    cancelFailoverTimer() {
+    private cancelFailoverTimer() {
       if (this.failoverTimer !== null) {
         clearTimeout(this.failoverTimer);
         this.failoverTimer = null;
@@ -267,6 +275,8 @@ export class PriorityLoadBalancer implements LoadBalancer {
    */
   private currentChildFromBeforeUpdate: PriorityChildBalancer | null = null;
 
+  private updatesPaused = false;
+
   constructor(private channelControlHelper: ChannelControlHelper) {}
 
   private updateState(state: ConnectivityState, picker: Picker) {
@@ -286,6 +296,9 @@ export class PriorityLoadBalancer implements LoadBalancer {
   private onChildStateChange(child: PriorityChildBalancer) {
     const childState = child.getConnectivityState();
     trace('Child ' + child.getName() + ' transitioning to ' + ConnectivityState[childState]);
+    if (this.updatesPaused) {
+      return;
+    }
     if (child === this.currentChildFromBeforeUpdate) {
       if (
         childState === ConnectivityState.READY ||
@@ -294,40 +307,11 @@ export class PriorityLoadBalancer implements LoadBalancer {
         this.updateState(childState, child.getPicker());
       } else {
         this.currentChildFromBeforeUpdate = null;
-        this.tryNextPriority(true);
+        this.choosePriority();
       }
       return;
     }
-    const childPriority = this.priorities.indexOf(child.getName());
-    if (childPriority < 0) {
-      // child is not in the priority list, ignore updates
-      return;
-    }
-    if (this.currentPriority !== null && childPriority > this.currentPriority) {
-      // child is lower priority than the currently selected child, ignore updates
-      return;
-    }
-    if (childState === ConnectivityState.TRANSIENT_FAILURE) {
-      /* Report connecting if and only if the currently selected child is the
-       * one entering TRANSIENT_FAILURE */
-      this.tryNextPriority(childPriority === this.currentPriority);
-      return;
-    }
-    if (this.currentPriority === null || childPriority < this.currentPriority) {
-      /* In this case, either there is no currently selected child or this
-       * child is higher priority than the currently selected child, so we want
-       * to switch to it if it is READY or IDLE. */
-      if (
-        childState === ConnectivityState.READY ||
-        childState === ConnectivityState.IDLE
-      ) {
-        this.selectPriority(childPriority);
-      }
-      return;
-    }
-    /* The currently selected child has updated state to something other than
-     * TRANSIENT_FAILURE, so we pass that update along */
-    this.updateState(childState, child.getPicker());
+    this.choosePriority();
   }
 
   private deleteChild(child: PriorityChildBalancer) {
@@ -335,7 +319,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
       this.currentChildFromBeforeUpdate = null;
       /* If we get to this point, the currentChildFromBeforeUpdate was still in
        * use, so we are still trying to connect to the specified priorities */
-      this.tryNextPriority(true);
+      this.choosePriority();
     }
   }
 
@@ -348,7 +332,6 @@ export class PriorityLoadBalancer implements LoadBalancer {
   private selectPriority(priority: number) {
     this.currentPriority = priority;
     const chosenChild = this.children.get(this.priorities[priority])!;
-    chosenChild.cancelFailoverTimer();
     this.updateState(
       chosenChild.getConnectivityState(),
       chosenChild.getPicker()
@@ -360,20 +343,22 @@ export class PriorityLoadBalancer implements LoadBalancer {
     }
   }
 
-  /**
-   * Check each child in priority order until we find one to use
-   * @param reportConnecting Whether we should report a CONNECTING state if we
-   *     stop before picking a specific child. This should be true when we have
-   *     not already selected a child.
-   */
-  private tryNextPriority(reportConnecting: boolean) {
-    for (const [index, childName] of this.priorities.entries()) {
+  private choosePriority() {
+    if (this.priorities.length === 0) {
+      this.updateState(ConnectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: Status.UNAVAILABLE, details: 'priority policy has empty priority list', metadata: new Metadata()}));
+      return;
+    }
+
+    this.currentPriority = null;
+    for (const [priority, childName] of this.priorities.entries()) {
+      trace('Trying priority ' + priority + ' child ' + childName);
       let child = this.children.get(childName);
       /* If the child doesn't already exist, create it and update it.  */
       if (child === undefined) {
-        if (reportConnecting) {
+        if (this.currentChildFromBeforeUpdate === null) {
           this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
         }
+        this.currentPriority = priority;
         child = new this.PriorityChildImpl(this, childName);
         this.children.set(childName, child);
         const childUpdate = this.latestUpdates.get(childName);
@@ -383,6 +368,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
             childUpdate.lbConfig,
             this.latestAttributes
           );
+          return;
         }
       }
       /* We're going to try to use this child, so reactivate it if it has been
@@ -392,28 +378,33 @@ export class PriorityLoadBalancer implements LoadBalancer {
         child.getConnectivityState() === ConnectivityState.READY ||
         child.getConnectivityState() === ConnectivityState.IDLE
       ) {
-        this.selectPriority(index);
+        this.selectPriority(priority);
         return;
       }
       if (child.isFailoverTimerPending()) {
-        /* This child is still trying to connect. Wait until its failover timer
-         * has ended to continue to the next one */
-        if (reportConnecting) {
+        this.currentPriority = priority;
+        if (this.currentChildFromBeforeUpdate === null) {
+          /* This child is still trying to connect. Wait until its failover timer
+           * has ended to continue to the next one */
           this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
+          return;
         }
+      }
+    }
+
+    /* If we didn't find any priority to try, pick the first one in the state
+     * CONNECTING */
+    for (const [priority, childName] of this.priorities.entries()) {
+      let child = this.children.get(childName)!;
+      if (child.getConnectivityState() === ConnectivityState.CONNECTING) {
+        this.updateState(child.getConnectivityState(), child.getPicker());
         return;
       }
     }
-    this.currentPriority = null;
-    this.currentChildFromBeforeUpdate = null;
-    this.updateState(
-      ConnectivityState.TRANSIENT_FAILURE,
-      new UnavailablePicker({
-        code: Status.UNAVAILABLE,
-        details: 'No ready priority',
-        metadata: new Metadata(),
-      })
-    );
+
+    // Did not find any child in CONNECTING, delegate to last child
+    const child = this.children.get(this.priorities[this.priorities.length - 1])!;
+    this.updateState(child.getConnectivityState(), child.getPicker());
   }
 
   updateAddressList(
@@ -464,6 +455,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
     this.latestAttributes = attributes;
     this.latestUpdates.clear();
     this.priorities = lbConfig.getPriorities();
+    this.updatesPaused = true;
     /* Pair up the new child configs with the corresponding address lists, and
      * update all existing children with their new configs */
     for (const [childName, childConfig] of lbConfig.getChildren()) {
@@ -492,8 +484,8 @@ export class PriorityLoadBalancer implements LoadBalancer {
         child.deactivate();
       }
     }
-    // Only report connecting if there are no existing children
-    this.tryNextPriority(this.children.size === 0);
+    this.updatesPaused = false;
+    this.choosePriority();
   }
   exitIdle(): void {
     if (this.currentPriority !== null) {
