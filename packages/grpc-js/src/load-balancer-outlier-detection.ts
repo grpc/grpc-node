@@ -500,15 +500,15 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     }
     trace('Running failure percentage check. threshold=' + failurePercentageConfig.threshold + ' request volume threshold=' + failurePercentageConfig.request_volume);
     // Step 1
-    let addresesWithTargetVolume = 0;
+    let addressesWithTargetVolume = 0;
     for (const mapEntry of this.addressMap.values()) {
       const successes = mapEntry.counter.getLastSuccesses();
       const failures = mapEntry.counter.getLastFailures();
       if (successes + failures >= failurePercentageConfig.request_volume) {
-        addresesWithTargetVolume += 1;
+        addressesWithTargetVolume += 1;
       }
     }
-    if (addresesWithTargetVolume < failurePercentageConfig.minimum_hosts) {
+    if (addressesWithTargetVolume < failurePercentageConfig.minimum_hosts) {
       return;
     }
     
