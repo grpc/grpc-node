@@ -467,7 +467,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     // Step 3
     for (const [address, mapEntry] of this.addressMap.entries()) {
       // Step 3.i
-      if (this.getCurrentEjectionPercent() > this.latestConfig.getMaxEjectionPercent()) {
+      if (this.getCurrentEjectionPercent() >= this.latestConfig.getMaxEjectionPercent()) {
         break;
       }
       // Step 3.ii
@@ -515,7 +515,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     // Step 2
     for (const [address, mapEntry] of this.addressMap.entries()) {
       // Step 2.i
-      if (this.getCurrentEjectionPercent() > this.latestConfig.getMaxEjectionPercent()) {
+      if (this.getCurrentEjectionPercent() >= this.latestConfig.getMaxEjectionPercent()) {
         break;
       }
       // Step 2.ii
