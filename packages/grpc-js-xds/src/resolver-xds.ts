@@ -319,9 +319,12 @@ class XdsResolver implements Resolver {
   private handleRouteConfig(routeConfig: RouteConfiguration__Output, isV2: boolean) {
     this.latestRouteConfig = routeConfig;
     this.latestRouteConfigIsV2 = isV2;
-    const virtualHost = findVirtualHostForDomain(routeConfig.virtual_hosts, this.target.path);
+    /* Select the virtual host using the default authority override if it
+     * exists, and the channel target otherwise. */
+    const hostDomain = this.channelOptions['grpc.default_authority'] ?? this.target.path;
+    const virtualHost = findVirtualHostForDomain(routeConfig.virtual_hosts, hostDomain);
     if (virtualHost === null) {
-      this.reportResolutionError('No matching route found');
+      this.reportResolutionError('No matching route found for ' + hostDomain);
       return;
     }
     const virtualHostHttpFilterOverrides = new Map<string, HttpFilterConfig>();
