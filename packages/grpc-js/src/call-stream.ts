@@ -488,7 +488,11 @@ export class Http2CallStream implements Call {
     }
     let details = '';
     if (typeof metadataMap['grpc-message'] === 'string') {
-      details = decodeURI(metadataMap['grpc-message']);
+      try {
+        details = decodeURI(metadataMap['grpc-message']);
+      } catch (e) {
+        details = metadataMap['grpc-messages'] as string;
+      }
       metadata.remove('grpc-message');
       this.trace(
         'received status details string "' + details + '" from server'
