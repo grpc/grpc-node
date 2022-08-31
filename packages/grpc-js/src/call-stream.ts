@@ -491,7 +491,7 @@ export class Http2CallStream implements Call {
       try {
         details = decodeURI(metadataMap['grpc-message']);
       } catch (e) {
-        details = metadataMap['grpc-messages'] as string;
+        details = metadataMap['grpc-message'];
       }
       metadata.remove('grpc-message');
       this.trace(
