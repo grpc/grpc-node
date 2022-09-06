@@ -80,6 +80,7 @@ export type ServerSurfaceCall = {
   getPeer(): string;
   sendMetadata(responseMetadata: Metadata): void;
   getDeadline(): Deadline;
+  getPath(): string;
 } & EventEmitter;
 
 export type ServerUnaryCall<RequestType, ResponseType> = ServerSurfaceCall & {
@@ -127,6 +128,10 @@ export class ServerUnaryCallImpl<RequestType, ResponseType>
   getDeadline(): Deadline {
     return this.call.getDeadline();
   }
+
+  getPath(): string {
+    return this.call.getPath();
+  }
 }
 
 export class ServerReadableStreamImpl<RequestType, ResponseType>
@@ -165,6 +170,10 @@ export class ServerReadableStreamImpl<RequestType, ResponseType>
   getDeadline(): Deadline {
     return this.call.getDeadline();
   }
+
+  getPath(): string {
+    return this.call.getPath();
+  }
 }
 
 export class ServerWritableStreamImpl<RequestType, ResponseType>
@@ -200,6 +209,10 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
 
   getDeadline(): Deadline {
     return this.call.getDeadline();
+  }
+
+  getPath(): string {
+    return this.call.getPath();
   }
 
   _write(
@@ -277,6 +290,10 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType>
 
   getDeadline(): Deadline {
     return this.call.getDeadline();
+  }
+
+  getPath(): string {
+    return this.call.getPath();
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -726,6 +743,8 @@ export class Http2ServerCallStream<
       call.cancelled = true;
       call.emit('cancelled', reason);
     });
+
+    this.once('callEnd', (status) => call.emit('callEnd', status));
   }
 
   setupReadable(
@@ -898,6 +917,10 @@ export class Http2ServerCallStream<
 
   getDeadline(): Deadline {
     return this.deadline;
+  }
+
+  getPath(): string {
+    return this.handler.path;
   }
 }
 
