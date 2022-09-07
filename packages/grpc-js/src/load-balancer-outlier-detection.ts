@@ -38,7 +38,7 @@ function trace(text: string): void {
 
 const TYPE_NAME = 'outlier_detection';
 
-const OUTLIER_DETECTION_ENABLED = process.env.GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION !== 'false';
+const OUTLIER_DETECTION_ENABLED = (process.env.GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION ?? 'true') === 'true';
 
 export interface SuccessRateEjectionConfig {
   readonly stdev_factor: number;
