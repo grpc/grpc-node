@@ -1,13 +1,13 @@
 // Original file: null
 
-import type { UninterpretedOption as _google_protobuf_UninterpretedOption, UninterpretedOption__Output as _google_protobuf_UninterpretedOption__Output } from '../../google/protobuf/UninterpretedOption';
+import type { IUninterpretedOption as I_google_protobuf_UninterpretedOption, OUninterpretedOption as O_google_protobuf_UninterpretedOption } from '../../google/protobuf/UninterpretedOption';
 
-export interface EnumValueOptions {
+export interface IEnumValueOptions {
   'deprecated'?: (boolean);
-  'uninterpretedOption'?: (_google_protobuf_UninterpretedOption)[];
+  'uninterpretedOption'?: (I_google_protobuf_UninterpretedOption)[];
 }
 
-export interface EnumValueOptions__Output {
+export interface OEnumValueOptions {
   'deprecated': (boolean);
-  'uninterpretedOption': (_google_protobuf_UninterpretedOption__Output)[];
+  'uninterpretedOption': (O_google_protobuf_UninterpretedOption)[];
 }

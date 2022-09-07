@@ -4,7 +4,7 @@
 /**
  * The request for the PagedExpand method.
  */
-export interface PagedExpandRequest {
+export interface IPagedExpandRequest {
   /**
    * The string to expand.
    */
@@ -22,7 +22,7 @@ export interface PagedExpandRequest {
 /**
  * The request for the PagedExpand method.
  */
-export interface PagedExpandRequest__Output {
+export interface OPagedExpandRequest {
   /**
    * The string to expand.
    */

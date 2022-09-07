@@ -2,12 +2,12 @@
 
 import type { Long } from '@grpc/proto-loader';
 
-export interface Duration {
+export interface IDuration {
   'seconds'?: (number | string | Long);
   'nanos'?: (number);
 }
 
-export interface Duration__Output {
+export interface ODuration {
   'seconds': (string);
   'nanos': (number);
 }

@@ -5,7 +5,7 @@ import type { Severity as _google_showcase_v1beta1_Severity } from '../../../goo
 /**
  * The response message for the Echo methods.
  */
-export interface EchoResponse {
+export interface IEchoResponse {
   /**
    * The content specified in the request.
    */
@@ -19,7 +19,7 @@ export interface EchoResponse {
 /**
  * The response message for the Echo methods.
  */
-export interface EchoResponse__Output {
+export interface OEchoResponse {
   /**
    * The content specified in the request.
    */

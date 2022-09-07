@@ -2,12 +2,12 @@
 
 import type { Long } from '@grpc/proto-loader';
 
-export interface Timestamp {
+export interface ITimestamp {
   'seconds'?: (number | string | Long);
   'nanos'?: (number);
 }
 
-export interface Timestamp__Output {
+export interface OTimestamp {
   'seconds': (string);
   'nanos': (number);
 }

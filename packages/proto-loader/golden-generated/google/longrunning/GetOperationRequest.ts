@@ -4,7 +4,7 @@
 /**
  * The request message for [Operations.GetOperation][google.longrunning.Operations.GetOperation].
  */
-export interface GetOperationRequest {
+export interface IGetOperationRequest {
   /**
    * The name of the operation resource.
    */
@@ -14,7 +14,7 @@ export interface GetOperationRequest {
 /**
  * The request message for [Operations.GetOperation][google.longrunning.Operations.GetOperation].
  */
-export interface GetOperationRequest__Output {
+export interface OGetOperationRequest {
   /**
    * The name of the operation resource.
    */

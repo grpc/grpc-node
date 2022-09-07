@@ -1,7 +1,7 @@
 // Original file: null
 
 
-export interface _google_protobuf_SourceCodeInfo_Location {
+export interface I_google_protobuf_SourceCodeInfo_Location {
   'path'?: (number)[];
   'span'?: (number)[];
   'leadingComments'?: (string);
@@ -9,7 +9,7 @@ export interface _google_protobuf_SourceCodeInfo_Location {
   'leadingDetachedComments'?: (string)[];
 }
 
-export interface _google_protobuf_SourceCodeInfo_Location__Output {
+export interface O_google_protobuf_SourceCodeInfo_Location {
   'path': (number)[];
   'span': (number)[];
   'leadingComments': (string);
@@ -17,10 +17,10 @@ export interface _google_protobuf_SourceCodeInfo_Location__Output {
   'leadingDetachedComments': (string)[];
 }
 
-export interface SourceCodeInfo {
-  'location'?: (_google_protobuf_SourceCodeInfo_Location)[];
+export interface ISourceCodeInfo {
+  'location'?: (I_google_protobuf_SourceCodeInfo_Location)[];
 }
 
-export interface SourceCodeInfo__Output {
-  'location': (_google_protobuf_SourceCodeInfo_Location__Output)[];
+export interface OSourceCodeInfo {
+  'location': (O_google_protobuf_SourceCodeInfo_Location)[];
 }

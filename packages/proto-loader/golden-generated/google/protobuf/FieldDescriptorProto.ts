@@ -1,6 +1,6 @@
 // Original file: null
 
-import type { FieldOptions as _google_protobuf_FieldOptions, FieldOptions__Output as _google_protobuf_FieldOptions__Output } from '../../google/protobuf/FieldOptions';
+import type { IFieldOptions as I_google_protobuf_FieldOptions, OFieldOptions as O_google_protobuf_FieldOptions } from '../../google/protobuf/FieldOptions';
 
 // Original file: null
 
@@ -33,7 +33,7 @@ export enum _google_protobuf_FieldDescriptorProto_Type {
   TYPE_SINT64 = 18,
 }
 
-export interface FieldDescriptorProto {
+export interface IFieldDescriptorProto {
   'name'?: (string);
   'extendee'?: (string);
   'number'?: (number);
@@ -41,12 +41,12 @@ export interface FieldDescriptorProto {
   'type'?: (_google_protobuf_FieldDescriptorProto_Type | keyof typeof _google_protobuf_FieldDescriptorProto_Type);
   'typeName'?: (string);
   'defaultValue'?: (string);
-  'options'?: (_google_protobuf_FieldOptions | null);
+  'options'?: (I_google_protobuf_FieldOptions | null);
   'oneofIndex'?: (number);
   'jsonName'?: (string);
 }
 
-export interface FieldDescriptorProto__Output {
+export interface OFieldDescriptorProto {
   'name': (string);
   'extendee': (string);
   'number': (number);
@@ -54,7 +54,7 @@ export interface FieldDescriptorProto__Output {
   'type': (keyof typeof _google_protobuf_FieldDescriptorProto_Type);
   'typeName': (string);
   'defaultValue': (string);
-  'options': (_google_protobuf_FieldOptions__Output | null);
+  'options': (O_google_protobuf_FieldOptions | null);
   'oneofIndex': (number);
   'jsonName': (string);
 }

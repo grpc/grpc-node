@@ -14,7 +14,7 @@
  * };
  * }
  */
-export interface OperationInfo {
+export interface IOperationInfo {
   /**
    * Required. The message name of the primary return type for this
    * long-running operation.
@@ -51,7 +51,7 @@ export interface OperationInfo {
  * };
  * }
  */
-export interface OperationInfo__Output {
+export interface OOperationInfo {
   /**
    * Required. The message name of the primary return type for this
    * long-running operation.

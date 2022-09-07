@@ -4,7 +4,7 @@
 /**
  * A custom pattern is used for defining custom HTTP verb.
  */
-export interface CustomHttpPattern {
+export interface ICustomHttpPattern {
   /**
    * The name of this custom HTTP verb.
    */
@@ -18,7 +18,7 @@ export interface CustomHttpPattern {
 /**
  * A custom pattern is used for defining custom HTTP verb.
  */
-export interface CustomHttpPattern__Output {
+export interface OCustomHttpPattern {
   /**
    * The name of this custom HTTP verb.
    */

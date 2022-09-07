@@ -1,11 +1,11 @@
 // Original file: null
 
-import type { FileDescriptorProto as _google_protobuf_FileDescriptorProto, FileDescriptorProto__Output as _google_protobuf_FileDescriptorProto__Output } from '../../google/protobuf/FileDescriptorProto';
+import type { IFileDescriptorProto as I_google_protobuf_FileDescriptorProto, OFileDescriptorProto as O_google_protobuf_FileDescriptorProto } from '../../google/protobuf/FileDescriptorProto';
 
-export interface FileDescriptorSet {
-  'file'?: (_google_protobuf_FileDescriptorProto)[];
+export interface IFileDescriptorSet {
+  'file'?: (I_google_protobuf_FileDescriptorProto)[];
 }
 
-export interface FileDescriptorSet__Output {
-  'file': (_google_protobuf_FileDescriptorProto__Output)[];
+export interface OFileDescriptorSet {
+  'file': (O_google_protobuf_FileDescriptorProto)[];
 }

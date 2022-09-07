@@ -1,15 +1,15 @@
 // Original file: deps/gapic-showcase/schema/google/showcase/v1beta1/echo.proto
 
-import type { EchoResponse as _google_showcase_v1beta1_EchoResponse, EchoResponse__Output as _google_showcase_v1beta1_EchoResponse__Output } from '../../../google/showcase/v1beta1/EchoResponse';
+import type { IEchoResponse as I_google_showcase_v1beta1_EchoResponse, OEchoResponse as O_google_showcase_v1beta1_EchoResponse } from '../../../google/showcase/v1beta1/EchoResponse';
 
 /**
  * The response for the PagedExpand method.
  */
-export interface PagedExpandResponse {
+export interface IPagedExpandResponse {
   /**
    * The words that were expanded.
    */
-  'responses'?: (_google_showcase_v1beta1_EchoResponse)[];
+  'responses'?: (I_google_showcase_v1beta1_EchoResponse)[];
   /**
    * The next page token.
    */
@@ -19,11 +19,11 @@ export interface PagedExpandResponse {
 /**
  * The response for the PagedExpand method.
  */
-export interface PagedExpandResponse__Output {
+export interface OPagedExpandResponse {
   /**
    * The words that were expanded.
    */
-  'responses': (_google_showcase_v1beta1_EchoResponse__Output)[];
+  'responses': (O_google_showcase_v1beta1_EchoResponse)[];
   /**
    * The next page token.
    */

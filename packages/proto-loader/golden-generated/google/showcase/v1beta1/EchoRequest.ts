@@ -1,6 +1,6 @@
 // Original file: deps/gapic-showcase/schema/google/showcase/v1beta1/echo.proto
 
-import type { Status as _google_rpc_Status, Status__Output as _google_rpc_Status__Output } from '../../../google/rpc/Status';
+import type { IStatus as I_google_rpc_Status, OStatus as O_google_rpc_Status } from '../../../google/rpc/Status';
 import type { Severity as _google_showcase_v1beta1_Severity } from '../../../google/showcase/v1beta1/Severity';
 
 /**
@@ -9,7 +9,7 @@ import type { Severity as _google_showcase_v1beta1_Severity } from '../../../goo
  * If status is set in this message
  * then the status will be returned as an error.
  */
-export interface EchoRequest {
+export interface IEchoRequest {
   /**
    * The content to be echoed by the server.
    */
@@ -17,7 +17,7 @@ export interface EchoRequest {
   /**
    * The error to be thrown by the server.
    */
-  'error'?: (_google_rpc_Status | null);
+  'error'?: (I_google_rpc_Status | null);
   /**
    * The severity to be echoed by the server.
    */
@@ -31,7 +31,7 @@ export interface EchoRequest {
  * If status is set in this message
  * then the status will be returned as an error.
  */
-export interface EchoRequest__Output {
+export interface OEchoRequest {
   /**
    * The content to be echoed by the server.
    */
@@ -39,7 +39,7 @@ export interface EchoRequest__Output {
   /**
    * The error to be thrown by the server.
    */
-  'error'?: (_google_rpc_Status__Output | null);
+  'error'?: (O_google_rpc_Status | null);
   /**
    * The severity to be echoed by the server.
    */
