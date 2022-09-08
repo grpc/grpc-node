@@ -28,4 +28,4 @@ const client = new MyServiceClient('xds:///example.com:123');
  - [xDS Circuit Breaking](https://github.com/grpc/proposal/blob/master/A32-xds-circuit-breaking.md)
  - [xDS Client-Side Fault Injection](https://github.com/grpc/proposal/blob/master/A33-Fault-Injection.md)
  - [Client Status Discovery Service](https://github.com/grpc/proposal/blob/master/A40-csds-support.md)
- - [Outlier Detection](https://github.com/grpc/proposal/blob/master/A50-xds-outlier-detection.md) (experimental, disabled by default, enabled by setting the environment variable `GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION=true`)
+ - [Outlier Detection](https://github.com/grpc/proposal/blob/master/A50-xds-outlier-detection.md)
