@@ -89,6 +89,9 @@ export class RdsState extends BaseXdsStreamState<RouteConfiguration__Output> imp
           }
         }
         if (route.route!.cluster_specifier === 'weighted_clusters') {
+          if (route.route.weighted_clusters!.total_weight?.value === 0) {
+            return false;
+          }
           let weightSum = 0;
           for (const clusterWeight of route.route.weighted_clusters!.clusters) {
             weightSum += clusterWeight.weight?.value ?? 0;
