@@ -68,7 +68,7 @@ function getNewCallNumber(): number {
   return callNumber;
 }
 
-const INAPPPROPRIATE_CONTROL_PLANE_CODES: Status[] = [
+const INAPPROPRIATE_CONTROL_PLANE_CODES: Status[] = [
   Status.OK,
   Status.INVALID_ARGUMENT,
   Status.NOT_FOUND,
@@ -80,7 +80,7 @@ const INAPPPROPRIATE_CONTROL_PLANE_CODES: Status[] = [
 ]
 
 function restrictControlPlaneStatusCode(code: Status, details: string): {code: Status, details: string} {
-  if (INAPPPROPRIATE_CONTROL_PLANE_CODES.includes(code)) {
+  if (INAPPROPRIATE_CONTROL_PLANE_CODES.includes(code)) {
     return {
       code: Status.INTERNAL,
       details: `Invalid status from control plane: ${code} ${Status[code]} ${details}`
