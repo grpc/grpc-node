@@ -126,6 +126,8 @@ export interface MethodDefinition<RequestType, ResponseType, OutputRequestType=R
   originalName?: string;
   requestType: MessageTypeDefinition;
   responseType: MessageTypeDefinition;
+  options?: Protobuf.IMethod['options'];
+  parsedOptions?: Protobuf.IMethod['parsedOptions'];
 }
 
 export interface ServiceDefinition {
@@ -242,6 +244,8 @@ function createMethodDefinition(
     originalName: camelCase(method.name),
     requestType: createMessageDefinition(requestType, fileDescriptors),
     responseType: createMessageDefinition(responseType, fileDescriptors),
+    options: method.options,
+    parsedOptions: method.parsedOptions,
   };
 }
 
