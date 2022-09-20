@@ -126,8 +126,8 @@ export interface MethodDefinition<RequestType, ResponseType, OutputRequestType=R
   originalName?: string;
   requestType: MessageTypeDefinition;
   responseType: MessageTypeDefinition;
-  options?: Protobuf.IMethod['options'];
-  parsedOptions?: Protobuf.IMethod['parsedOptions'];
+  options?: { [k: string]: any };
+  parsedOptions?: { [k: string]: any };
 }
 
 export interface ServiceDefinition {
