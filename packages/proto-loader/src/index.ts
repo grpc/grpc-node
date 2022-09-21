@@ -115,18 +115,18 @@ export interface EnumTypeDefinition extends ProtobufTypeDefinition {
   format: 'Protocol Buffer 3 EnumDescriptorProto';
 }
 
-enum IdempotencyLevel {
+export enum IdempotencyLevel {
   IDEMPOTENCY_UNKNOWN = 0,
   NO_SIDE_EFFECTS = 1,
   IDEMPOTENT = 2
 }
 
-interface NamePart {
+export interface NamePart {
   namePart: string;
   isExtension: boolean;
 }
 
-interface UninterpretedOption {
+export interface UninterpretedOption {
   name?: (NamePart[]|null);
   identifierValue?: (string|null);
   positiveIntValue?: (number|Long|string|null);
@@ -136,12 +136,12 @@ interface UninterpretedOption {
   aggregateValue?: (string|null);
 }
 
-interface CustomHttpPattern {
+export interface CustomHttpPattern {
   kind?: (string|null);
   path?: (string|null);
 }
 
-interface HttpRule {
+export interface HttpRule {
   selector?: (string|null);
   get?: (string|null);
   put?: (string|null);
@@ -154,7 +154,7 @@ interface HttpRule {
   additionalBindings?: (HttpRule[]|null);
 }
 
-interface MethodOptions {
+export interface MethodOptions {
   deprecated?: (boolean|null);
   idempotency_level?: (IdempotencyLevel|keyof typeof IdempotencyLevel|null);
   uninterpreted_option?: (UninterpretedOption[]|null);
