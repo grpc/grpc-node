@@ -20,6 +20,7 @@ import { rpcFileDescriptorSet } from '../test_protos/rpc.desc';
 import { readFileSync } from 'fs';
 
 import * as proto_loader from '../src/index';
+import { dirname } from "path";
 
 // Relative path from build output directory to test_protos directory
 const TEST_PROTO_DIR = `${__dirname}/../../test_protos/`;
@@ -128,4 +129,20 @@ describe('Descriptor types', () => {
     // This will throw if the file descriptor object cannot be parsed
     proto_loader.loadFileDescriptorSetFromObject(rpcFileDescriptorSet);
   });
+
+  it('Can parse method options into object correctly', () => {
+    const includeDirs = [
+      dirname(require.resolve('google-proto-files/package.json'))
+    ];
+    const packageDefinition = proto_loader.loadSync(`${TEST_PROTO_DIR}/method_options.proto`, { includeDirs });
+    assert('Hello' in packageDefinition);
+    const service = packageDefinition.Hello as proto_loader.ServiceDefinition
+    assert.deepStrictEqual(service.Hello.options, {
+      deprecated: true,
+      idempotency_level: 'IDEMPOTENCY_UNKNOWN',
+      uninterpreted_option: { identifier_value: 'foo' },
+      '(google.api.http)': { post: '/hello' },
+      '(google.api.method_signature)': 'bar'
+    })
+  })
 });

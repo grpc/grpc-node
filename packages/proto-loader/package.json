@@ -57,6 +57,7 @@
     "@types/node": "^10.17.26",
     "@types/yargs": "^17.0.24",
     "clang-format": "^1.2.2",
+    "google-proto-files": "^3.0.2",
     "gts": "^3.1.0",
     "rimraf": "^3.0.2",
     "ts-node": "^10.9.2",
