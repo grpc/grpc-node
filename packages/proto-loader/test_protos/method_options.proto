@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/httpbody.proto";
+
+message Empty {}
+
+message MethodSignature {
+  repeated string method_signature = 0;
+}
+
+service Hello {
+  rpc Hello (Empty) returns (Empty) {
+    option deprecated = true;
+    option idempotency_level = IDEMPOTENCY_UNKNOWN;
+    option uninterpreted_option = {
+      identifier_value: 'foo'
+    };
+    option (google.api.http) = {
+      post: "/hello"
+    };
+    option (google.api.method_signature) = 'bar';
+  }
+}
