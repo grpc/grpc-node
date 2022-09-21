@@ -20,7 +20,7 @@ import { rpcFileDescriptorSet } from '../test_protos/rpc.desc';
 import { readFileSync } from 'fs';
 
 import * as proto_loader from '../src/index';
-import { dirname } from "path";
+import { dirname } from 'path';
 
 // Relative path from build output directory to test_protos directory
 const TEST_PROTO_DIR = `${__dirname}/../../test_protos/`;
