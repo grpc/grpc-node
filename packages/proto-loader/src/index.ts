@@ -115,6 +115,53 @@ export interface EnumTypeDefinition extends ProtobufTypeDefinition {
   format: 'Protocol Buffer 3 EnumDescriptorProto';
 }
 
+enum IdempotencyLevel {
+  IDEMPOTENCY_UNKNOWN = 0,
+  NO_SIDE_EFFECTS = 1,
+  IDEMPOTENT = 2
+}
+
+interface NamePart {
+  namePart: string;
+  isExtension: boolean;
+}
+
+interface UninterpretedOption {
+  name?: (NamePart[]|null);
+  identifierValue?: (string|null);
+  positiveIntValue?: (number|Long|string|null);
+  negativeIntValue?: (number|Long|string|null);
+  doubleValue?: (number|null);
+  stringValue?: (Uint8Array|string|null);
+  aggregateValue?: (string|null);
+}
+
+interface CustomHttpPattern {
+  kind?: (string|null);
+  path?: (string|null);
+}
+
+interface HttpRule {
+  selector?: (string|null);
+  get?: (string|null);
+  put?: (string|null);
+  post?: (string|null);
+  delete?: (string|null);
+  patch?: (string|null);
+  custom?: (CustomHttpPattern|null);
+  body?: (string|null);
+  responseBody?: (string|null);
+  additionalBindings?: (HttpRule[]|null);
+}
+
+interface MethodOptions {
+  deprecated?: (boolean|null);
+  idempotency_level?: (IdempotencyLevel|keyof typeof IdempotencyLevel|null);
+  uninterpreted_option?: (UninterpretedOption[]|null);
+  "(google.api.http)"?: (HttpRule|null);
+  "(google.api.method_signature)"?: (string[]|null);
+}
+
 export interface MethodDefinition<RequestType, ResponseType, OutputRequestType=RequestType, OutputResponseType=ResponseType> {
   path: string;
   requestStream: boolean;
@@ -126,8 +173,7 @@ export interface MethodDefinition<RequestType, ResponseType, OutputRequestType=R
   originalName?: string;
   requestType: MessageTypeDefinition;
   responseType: MessageTypeDefinition;
-  options?: { [k: string]: any };
-  parsedOptions?: { [k: string]: any };
+  options?: MethodOptions;
 }
 
 export interface ServiceDefinition {
@@ -222,6 +268,12 @@ function createSerializer(cls: Protobuf.Type): Serialize<object> {
   };
 }
 
+function mapMethodOptions(options: Partial<MethodOptions>[] | undefined): MethodOptions | undefined {
+  return Array.isArray(options) ?
+    options.reduce((obj: MethodOptions, item: Partial<MethodOptions>) => ({ ...obj, ...item  }), {}) :
+    undefined;
+}
+
 function createMethodDefinition(
   method: Protobuf.Method,
   serviceName: string,
@@ -244,8 +296,7 @@ function createMethodDefinition(
     originalName: camelCase(method.name),
     requestType: createMessageDefinition(requestType, fileDescriptors),
     responseType: createMessageDefinition(responseType, fileDescriptors),
-    options: method.options,
-    parsedOptions: method.parsedOptions,
+    options: mapMethodOptions(method.parsedOptions),
   };
 }
 
