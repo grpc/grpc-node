@@ -1,8 +1,8 @@
 // Original file: null
 
 
-export interface Empty {
+export interface IEmpty {
 }
 
-export interface Empty__Output {
+export interface OEmpty {
 }

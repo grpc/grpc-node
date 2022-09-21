@@ -1,11 +1,11 @@
 // Original file: deps/googleapis/google/longrunning/operations.proto
 
-import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../google/protobuf/Duration';
+import type { IDuration as I_google_protobuf_Duration, ODuration as O_google_protobuf_Duration } from '../../google/protobuf/Duration';
 
 /**
  * The request message for [Operations.WaitOperation][google.longrunning.Operations.WaitOperation].
  */
-export interface WaitOperationRequest {
+export interface IWaitOperationRequest {
   /**
    * The name of the operation resource to wait on.
    */
@@ -15,13 +15,13 @@ export interface WaitOperationRequest {
    * will be at most the time permitted by the underlying HTTP/RPC protocol.
    * If RPC context deadline is also specified, the shorter one will be used.
    */
-  'timeout'?: (_google_protobuf_Duration | null);
+  'timeout'?: (I_google_protobuf_Duration | null);
 }
 
 /**
  * The request message for [Operations.WaitOperation][google.longrunning.Operations.WaitOperation].
  */
-export interface WaitOperationRequest__Output {
+export interface OWaitOperationRequest {
   /**
    * The name of the operation resource to wait on.
    */
@@ -31,5 +31,5 @@ export interface WaitOperationRequest__Output {
    * will be at most the time permitted by the underlying HTTP/RPC protocol.
    * If RPC context deadline is also specified, the shorter one will be used.
    */
-  'timeout': (_google_protobuf_Duration__Output | null);
+  'timeout': (O_google_protobuf_Duration | null);
 }

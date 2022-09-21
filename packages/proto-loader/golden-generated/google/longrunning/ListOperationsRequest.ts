@@ -4,7 +4,7 @@
 /**
  * The request message for [Operations.ListOperations][google.longrunning.Operations.ListOperations].
  */
-export interface ListOperationsRequest {
+export interface IListOperationsRequest {
   /**
    * The standard list filter.
    */
@@ -26,7 +26,7 @@ export interface ListOperationsRequest {
 /**
  * The request message for [Operations.ListOperations][google.longrunning.Operations.ListOperations].
  */
-export interface ListOperationsRequest__Output {
+export interface OListOperationsRequest {
   /**
    * The standard list filter.
    */

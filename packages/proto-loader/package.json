@@ -24,7 +24,7 @@
     "fix": "gts fix",
     "pretest": "npm run compile",
     "posttest": "npm run check",
-    "generate-golden": "node ./build/bin/proto-loader-gen-types.js --keepCase --longs=String --enums=String --defaults --oneofs --json --includeComments -I deps/gapic-showcase/schema/ deps/googleapis/ -O ./golden-generated --grpcLib @grpc/grpc-js google/showcase/v1beta1/echo.proto",
+    "generate-golden": "node ./build/bin/proto-loader-gen-types.js --keepCase --longs=String --enums=String --defaults --oneofs --json --includeComments --inputTemplate=I%s --outputTemplate=O%s -I deps/gapic-showcase/schema/ deps/googleapis/ -O ./golden-generated --grpcLib @grpc/grpc-js google/showcase/v1beta1/echo.proto",
     "validate-golden": "rm -rf ./golden-generated-old && mv ./golden-generated/ ./golden-generated-old && npm run generate-golden && diff -rb ./golden-generated ./golden-generated-old"
   },
   "repository": {

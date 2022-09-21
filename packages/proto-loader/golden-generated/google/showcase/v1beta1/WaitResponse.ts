@@ -4,7 +4,7 @@
 /**
  * The result of the Wait operation.
  */
-export interface WaitResponse {
+export interface IWaitResponse {
   /**
    * This content of the result.
    */
@@ -14,7 +14,7 @@ export interface WaitResponse {
 /**
  * The result of the Wait operation.
  */
-export interface WaitResponse__Output {
+export interface OWaitResponse {
   /**
    * This content of the result.
    */

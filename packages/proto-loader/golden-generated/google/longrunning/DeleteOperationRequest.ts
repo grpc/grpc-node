@@ -4,7 +4,7 @@
 /**
  * The request message for [Operations.DeleteOperation][google.longrunning.Operations.DeleteOperation].
  */
-export interface DeleteOperationRequest {
+export interface IDeleteOperationRequest {
   /**
    * The name of the operation resource to be deleted.
    */
@@ -14,7 +14,7 @@ export interface DeleteOperationRequest {
 /**
  * The request message for [Operations.DeleteOperation][google.longrunning.Operations.DeleteOperation].
  */
-export interface DeleteOperationRequest__Output {
+export interface ODeleteOperationRequest {
   /**
    * The name of the operation resource to be deleted.
    */

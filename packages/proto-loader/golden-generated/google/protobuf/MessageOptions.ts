@@ -1,19 +1,19 @@
 // Original file: null
 
-import type { UninterpretedOption as _google_protobuf_UninterpretedOption, UninterpretedOption__Output as _google_protobuf_UninterpretedOption__Output } from '../../google/protobuf/UninterpretedOption';
+import type { IUninterpretedOption as I_google_protobuf_UninterpretedOption, OUninterpretedOption as O_google_protobuf_UninterpretedOption } from '../../google/protobuf/UninterpretedOption';
 
-export interface MessageOptions {
+export interface IMessageOptions {
   'messageSetWireFormat'?: (boolean);
   'noStandardDescriptorAccessor'?: (boolean);
   'deprecated'?: (boolean);
   'mapEntry'?: (boolean);
-  'uninterpretedOption'?: (_google_protobuf_UninterpretedOption)[];
+  'uninterpretedOption'?: (I_google_protobuf_UninterpretedOption)[];
 }
 
-export interface MessageOptions__Output {
+export interface OMessageOptions {
   'messageSetWireFormat': (boolean);
   'noStandardDescriptorAccessor': (boolean);
   'deprecated': (boolean);
   'mapEntry': (boolean);
-  'uninterpretedOption': (_google_protobuf_UninterpretedOption__Output)[];
+  'uninterpretedOption': (O_google_protobuf_UninterpretedOption)[];
 }

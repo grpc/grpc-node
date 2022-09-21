@@ -4,7 +4,7 @@
 /**
  * The response for Block method.
  */
-export interface BlockResponse {
+export interface IBlockResponse {
   /**
    * This content can contain anything, the server will not depend on a value
    * here.
@@ -15,7 +15,7 @@ export interface BlockResponse {
 /**
  * The response for Block method.
  */
-export interface BlockResponse__Output {
+export interface OBlockResponse {
   /**
    * This content can contain anything, the server will not depend on a value
    * here.

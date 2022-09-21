@@ -1,13 +1,13 @@
 // Original file: null
 
-import type { OneofOptions as _google_protobuf_OneofOptions, OneofOptions__Output as _google_protobuf_OneofOptions__Output } from '../../google/protobuf/OneofOptions';
+import type { IOneofOptions as I_google_protobuf_OneofOptions, OOneofOptions as O_google_protobuf_OneofOptions } from '../../google/protobuf/OneofOptions';
 
-export interface OneofDescriptorProto {
+export interface IOneofDescriptorProto {
   'name'?: (string);
-  'options'?: (_google_protobuf_OneofOptions | null);
+  'options'?: (I_google_protobuf_OneofOptions | null);
 }
 
-export interface OneofDescriptorProto__Output {
+export interface OOneofDescriptorProto {
   'name': (string);
-  'options': (_google_protobuf_OneofOptions__Output | null);
+  'options': (O_google_protobuf_OneofOptions | null);
 }

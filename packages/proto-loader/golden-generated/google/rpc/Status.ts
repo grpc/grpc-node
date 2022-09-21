@@ -1,6 +1,6 @@
 // Original file: deps/googleapis/google/rpc/status.proto
 
-import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../google/protobuf/Any';
+import type { IAny as I_google_protobuf_Any, OAny as O_google_protobuf_Any } from '../../google/protobuf/Any';
 
 /**
  * The `Status` type defines a logical error model that is suitable for
@@ -11,7 +11,7 @@ import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__
  * You can find out more about this error model and how to work with it in the
  * [API Design Guide](https://cloud.google.com/apis/design/errors).
  */
-export interface Status {
+export interface IStatus {
   /**
    * The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].
    */
@@ -26,7 +26,7 @@ export interface Status {
    * A list of messages that carry the error details.  There is a common set of
    * message types for APIs to use.
    */
-  'details'?: (_google_protobuf_Any)[];
+  'details'?: (I_google_protobuf_Any)[];
 }
 
 /**
@@ -38,7 +38,7 @@ export interface Status {
  * You can find out more about this error model and how to work with it in the
  * [API Design Guide](https://cloud.google.com/apis/design/errors).
  */
-export interface Status__Output {
+export interface OStatus {
   /**
    * The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].
    */
@@ -53,5 +53,5 @@ export interface Status__Output {
    * A list of messages that carry the error details.  There is a common set of
    * message types for APIs to use.
    */
-  'details': (_google_protobuf_Any__Output)[];
+  'details': (O_google_protobuf_Any)[];
 }
