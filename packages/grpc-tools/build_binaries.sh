@@ -27,38 +27,45 @@ tools_version=$(jq '.version' < package.json | tr -d '"')
 out_dir=$base/../../artifacts/grpc-tools/v$tools_version
 mkdir -p "$out_dir"
 
-case $(uname -s) in
-  Linux)
-    platform=linux
-    arch_list=( ia32 x64 )
-    ;;
-  Darwin)
-    platform=darwin
-    arch_list=( x64 )
-    ;;
-esac
+build () {
+  cmake_flag=$*
 
-for arch in "${arch_list[@]}"; do
-  case $arch in
-    ia32)
-      toolchain_flag=-DCMAKE_TOOLCHAIN_FILE=linux_32bit.toolchain.cmake
-      ;;
-    *)
-      toolchain_flag=-DCMAKE_TOOLCHAIN_FILE=linux_64bit.toolchain.cmake
-      ;;
-  esac
-  rm -f $base/build/bin/protoc
-  rm -f $base/build/bin/grpc_node_plugin
+  rm -rf $base/build/bin
   rm -f $base/CMakeCache.txt
   rm -rf $base/CMakeFiles
   rm -f $protobuf_base/CMakeCache.txt
   rm -rf $protobuf_base/CMakeFiles
-  cmake $toolchain_flag . && cmake --build . --target clean && cmake --build . -- -j 12
-  mkdir -p "$base/build/bin"
+  cmake $cmake_flag . && cmake --build . --target clean && cmake --build . -- -j 12
+  mkdir -p $base/build/bin
   cp -L $protobuf_base/protoc $base/build/bin/protoc
   cp $base/grpc_node_plugin $base/build/bin/
   file $base/build/bin/*
-  cd $base/build
-  tar -czf "$out_dir/$platform-$arch.tar.gz" bin/
-  cd $base
-done
+}
+
+artifacts() {
+  platform=$1
+  arch=$2
+  dir=$3
+
+  tar -czf $out_dir/$platform-$arch.tar.gz -C $(dirname $dir) $(basename $dir)
+}
+
+case $(uname -s) in
+  Linux)
+    build -DCMAKE_TOOLCHAIN_FILE=linux_32bit.toolchain.cmake
+    artifacts linux ia32 $base/build/bin
+    build -DCMAKE_TOOLCHAIN_FILE=linux_64bit.toolchain.cmake
+    artifacts linux x64 $base/build/bin
+    ;;
+  Darwin)
+    build -DCMAKE_TOOLCHAIN_FILE=linux_64bit.toolchain.cmake -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+
+    for arch in "x86_64" "arm64"; do
+      mkdir $base/build/bin/$arch
+      for bin in protoc grpc_node_plugin; do
+        lipo -extract x86_64 $base/build/bin/$bin -o $base/build/bin/$arch/$bin
+      done
+      artifacts darwin $arch $base/build/bin/$arch/
+    done
+    ;;
+esac
