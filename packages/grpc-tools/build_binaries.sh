@@ -60,7 +60,7 @@ case $(uname -s) in
   Darwin)
     build -DCMAKE_TOOLCHAIN_FILE=linux_64bit.toolchain.cmake -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
 
-    for arch in "x86_64" "arm64"; do
+    for arch in "x64" "arm64"; do
       mkdir $base/build/bin/$arch
       for bin in protoc grpc_node_plugin; do
         lipo -extract x86_64 $base/build/bin/$bin -o $base/build/bin/$arch/$bin
