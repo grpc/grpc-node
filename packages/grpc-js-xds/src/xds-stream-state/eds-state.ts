@@ -50,6 +50,7 @@ export class EdsState extends BaseXdsStreamState<ClusterLoadAssignment__Output> 
    */
   public validateResponse(message: ClusterLoadAssignment__Output) {
     const seenLocalities: {locality: Locality__Output, priority: number}[] = [];
+    const priorityTotalWeights: Map<number,  number> = new Map();
     for (const endpoint of message.endpoints) {
       if (!endpoint.locality) {
         return false;
@@ -71,6 +72,12 @@ export class EdsState extends BaseXdsStreamState<ClusterLoadAssignment__Output> 
         if (!(isIPv4(socketAddress.address) || isIPv6(socketAddress.address))) {
           return false;
         }
+      }
+      priorityTotalWeights.set(endpoint.priority, (priorityTotalWeights.get(endpoint.priority) ?? 0) + (endpoint.load_balancing_weight?.value ?? 0));
+    }
+    for (const totalWeight of priorityTotalWeights.values()) {
+      if (totalWeight >= 1<<32) {
+        return false;
       }
     }
     return true;
