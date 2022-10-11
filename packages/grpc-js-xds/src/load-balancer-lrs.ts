@@ -109,29 +109,6 @@ export class LrsLoadBalancingConfig implements LoadBalancingConfig {
 }
 
 /**
- * Filter class that reports when the call ends.
- */
-class CallEndTrackingFilter extends BaseFilter implements Filter {
-  constructor(private localityStatsReporter: XdsClusterLocalityStats) {
-    super();
-  }
-
-  receiveTrailers(status: StatusObject) {
-    this.localityStatsReporter.addCallFinished(status.code !== Status.OK);
-    return status;
-  }
-}
-
-class CallEndTrackingFilterFactory
-  implements FilterFactory<CallEndTrackingFilter> {
-  constructor(private localityStatsReporter: XdsClusterLocalityStats) {}
-
-  createFilter(callStream: Call): CallEndTrackingFilter {
-    return new CallEndTrackingFilter(this.localityStatsReporter);
-  }
-}
-
-/**
  * Picker that delegates picking to another picker, and reports when calls
  * created using those picks start and end.
  */
@@ -144,9 +121,6 @@ class LoadReportingPicker implements Picker {
   pick(pickArgs: PickArgs): PickResult {
     const wrappedPick = this.wrappedPicker.pick(pickArgs);
     if (wrappedPick.pickResultType === PickResultType.COMPLETE) {
-      const trackingFilterFactory = new CallEndTrackingFilterFactory(
-        this.localityStatsReporter
-      );
       return {
         pickResultType: PickResultType.COMPLETE,
         subchannel: wrappedPick.subchannel,
@@ -155,7 +129,10 @@ class LoadReportingPicker implements Picker {
           wrappedPick.onCallStarted?.();
           this.localityStatsReporter.addCallStarted();
         },
-        extraFilterFactories: wrappedPick.extraFilterFactories.concat(trackingFilterFactory),
+        onCallEnded: status => {
+          wrappedPick.onCallEnded?.(status);
+          this.localityStatsReporter.addCallFinished(status !== Status.OK);
+        }
       };
     } else {
       return wrappedPick;
