@@ -167,6 +167,11 @@ export class Http2SubchannelCall implements SubchannelCall {
       this.handleTrailers(headers);
     });
     http2Stream.on('data', (data: Buffer) => {
+      /* If the status has already been output, allow the http2 stream to
+       * drain without processing the data. */
+      if (this.statusOutput) {
+        return;
+      }
       this.trace('receive HTTP/2 data frame of length ' + data.length);
       const messages = this.decoder.write(data);
 
@@ -301,6 +306,11 @@ export class Http2SubchannelCall implements SubchannelCall {
       process.nextTick(() => {
         this.listener.onReceiveStatus(this.finalStatus!);
       });
+      /* Leave the http2 stream in flowing state to drain incoming messages, to
+       * ensure that the stream closure completes. The call stream already does
+       * not push more messages after the status is output, so the messages go
+       * nowhere either way. */
+      this.http2Stream.resume();
       this.subchannel.callUnref();
       this.subchannel.removeDisconnectListener(this.disconnectListener);
     }
@@ -404,7 +414,11 @@ export class Http2SubchannelCall implements SubchannelCall {
     }
     let details = '';
     if (typeof metadataMap['grpc-message'] === 'string') {
-      details = decodeURI(metadataMap['grpc-message']);
+      try {
+        details = decodeURI(metadataMap['grpc-message']);
+      } catch (e) {
+        details = metadataMap['grpc-message'];
+      }
       metadata.remove('grpc-message');
       this.trace(
         'received status details string "' + details + '" from server'

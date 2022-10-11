@@ -1,16 +1,16 @@
 // Original file: null
 
-import type { EnumValueDescriptorProto as _google_protobuf_EnumValueDescriptorProto, EnumValueDescriptorProto__Output as _google_protobuf_EnumValueDescriptorProto__Output } from '../../google/protobuf/EnumValueDescriptorProto';
-import type { EnumOptions as _google_protobuf_EnumOptions, EnumOptions__Output as _google_protobuf_EnumOptions__Output } from '../../google/protobuf/EnumOptions';
+import type { IEnumValueDescriptorProto as I_google_protobuf_EnumValueDescriptorProto, OEnumValueDescriptorProto as O_google_protobuf_EnumValueDescriptorProto } from '../../google/protobuf/EnumValueDescriptorProto';
+import type { IEnumOptions as I_google_protobuf_EnumOptions, OEnumOptions as O_google_protobuf_EnumOptions } from '../../google/protobuf/EnumOptions';
 
-export interface EnumDescriptorProto {
+export interface IEnumDescriptorProto {
   'name'?: (string);
-  'value'?: (_google_protobuf_EnumValueDescriptorProto)[];
-  'options'?: (_google_protobuf_EnumOptions | null);
+  'value'?: (I_google_protobuf_EnumValueDescriptorProto)[];
+  'options'?: (I_google_protobuf_EnumOptions | null);
 }
 
-export interface EnumDescriptorProto__Output {
+export interface OEnumDescriptorProto {
   'name': (string);
-  'value': (_google_protobuf_EnumValueDescriptorProto__Output)[];
-  'options': (_google_protobuf_EnumOptions__Output | null);
+  'value': (O_google_protobuf_EnumValueDescriptorProto)[];
+  'options': (O_google_protobuf_EnumOptions | null);
 }

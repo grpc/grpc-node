@@ -2,12 +2,12 @@
 
 import type { AnyExtension } from '@grpc/proto-loader';
 
-export type Any = AnyExtension | {
+export type IAny = AnyExtension | {
   type_url: string;
   value: Buffer | Uint8Array | string;
 }
 
-export type Any__Output = AnyExtension | {
+export type OAny = AnyExtension | {
   type_url: string;
   value: Buffer;
 }

@@ -2,18 +2,18 @@
 
 import type { Long } from '@grpc/proto-loader';
 
-export interface _google_protobuf_UninterpretedOption_NamePart {
+export interface I_google_protobuf_UninterpretedOption_NamePart {
   'namePart'?: (string);
   'isExtension'?: (boolean);
 }
 
-export interface _google_protobuf_UninterpretedOption_NamePart__Output {
+export interface O_google_protobuf_UninterpretedOption_NamePart {
   'namePart': (string);
   'isExtension': (boolean);
 }
 
-export interface UninterpretedOption {
-  'name'?: (_google_protobuf_UninterpretedOption_NamePart)[];
+export interface IUninterpretedOption {
+  'name'?: (I_google_protobuf_UninterpretedOption_NamePart)[];
   'identifierValue'?: (string);
   'positiveIntValue'?: (number | string | Long);
   'negativeIntValue'?: (number | string | Long);
@@ -22,8 +22,8 @@ export interface UninterpretedOption {
   'aggregateValue'?: (string);
 }
 
-export interface UninterpretedOption__Output {
-  'name': (_google_protobuf_UninterpretedOption_NamePart__Output)[];
+export interface OUninterpretedOption {
+  'name': (O_google_protobuf_UninterpretedOption_NamePart)[];
   'identifierValue': (string);
   'positiveIntValue': (string);
   'negativeIntValue': (string);

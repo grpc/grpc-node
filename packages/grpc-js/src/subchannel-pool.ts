@@ -49,10 +49,8 @@ export class SubchannelPool {
   /**
    * A pool of subchannels use for making connections. Subchannels with the
    * exact same parameters will be reused.
-   * @param global If true, this is the global subchannel pool. Otherwise, it
-   * is the pool for a single channel.
    */
-  constructor(private global: boolean) {}
+  constructor() {}
 
   /**
    * Unrefs all unused subchannels and cancels the cleanup task if all
@@ -95,7 +93,7 @@ export class SubchannelPool {
    * Ensures that the cleanup task is spawned.
    */
   ensureCleanupTask(): void {
-    if (this.global && this.cleanupTimer === null) {
+    if (this.cleanupTimer === null) {
       this.cleanupTimer = setInterval(() => {
         this.unrefUnusedSubchannels();
       }, REF_CHECK_INTERVAL);
@@ -156,14 +154,12 @@ export class SubchannelPool {
       channelCredentials,
       subchannel,
     });
-    if (this.global) {
-      subchannel.ref();
-    }
+    subchannel.ref();
     return subchannel;
   }
 }
 
-const globalSubchannelPool = new SubchannelPool(true);
+const globalSubchannelPool = new SubchannelPool();
 
 /**
  * Get either the global subchannel pool, or a new subchannel pool.
@@ -173,6 +169,6 @@ export function getSubchannelPool(global: boolean): SubchannelPool {
   if (global) {
     return globalSubchannelPool;
   } else {
-    return new SubchannelPool(false);
+    return new SubchannelPool();
   }
 }

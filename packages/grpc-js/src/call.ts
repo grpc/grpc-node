@@ -76,9 +76,11 @@ export type ClientDuplexStream<
  * error is not necessarily a problem in gRPC itself.
  * @param status
  */
-export function callErrorFromStatus(status: StatusObject): ServiceError {
+export function callErrorFromStatus(status: StatusObject, callerStack: string): ServiceError {
   const message = `${status.code} ${Status[status.code]}: ${status.details}`;
-  return Object.assign(new Error(message), status);
+  const error = new Error(message);
+  const stack = `${error.stack}\nfor call at\n${callerStack}`;
+  return Object.assign(new Error(message), status, {stack});
 }
 
 export class ClientUnaryCallImpl

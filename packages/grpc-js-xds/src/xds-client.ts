@@ -309,7 +309,7 @@ export class XdsClient {
     const edsState = new EdsState(() => {
       this.updateNames('eds');
     });
-    const cdsState = new CdsState(edsState, () => {
+    const cdsState = new CdsState(() => {
       this.updateNames('cds');
     });
     const rdsState = new RdsState(() => {
@@ -359,6 +359,10 @@ export class XdsClient {
           this.apiVersion = XdsApiVersion.V3;
         } else {
           this.apiVersion = XdsApiVersion.V2;
+        }
+        if (bootstrapInfo.xdsServers[0].serverFeatures.indexOf('ignore_resource_deletion') >= 0) {
+          this.adsState.lds.enableIgnoreResourceDeletion();
+          this.adsState.cds.enableIgnoreResourceDeletion();
         }
         const nodeV2: NodeV2 = {
           ...bootstrapInfo.node,
@@ -630,6 +634,7 @@ export class XdsClient {
           this.updateNames(service);
         }
       }
+      this.reportAdsStreamStarted();
     }
   }
 
@@ -726,7 +731,7 @@ export class XdsClient {
     if (serviceKind) {
       this.adsState[serviceKind].reportStreamError({
         code: status.UNAVAILABLE,
-        details: message,
+        details: message + ' Node ID=' + this.adsNodeV3!.id,
         metadata: new Metadata()
       });
       resourceNames = this.adsState[serviceKind].getResourceNames();
@@ -771,17 +776,24 @@ export class XdsClient {
   }
 
   private reportStreamError(status: StatusObject) {
+    status = {...status, details: status.details + ' Node ID=' + this.adsNodeV3!.id};
     this.adsState.eds.reportStreamError(status);
     this.adsState.cds.reportStreamError(status);
     this.adsState.rds.reportStreamError(status);
     this.adsState.lds.reportStreamError(status);
   }
 
+  private reportAdsStreamStarted() {
+    this.adsState.eds.reportAdsStreamStart();
+    this.adsState.cds.reportAdsStreamStart();
+    this.adsState.rds.reportAdsStreamStart();
+    this.adsState.lds.reportAdsStreamStart();
+  }
+
   private handleLrsResponse(message: LoadStatsResponse__Output) {
     trace('Received LRS response');
     /* Once we get any response from the server, we assume that the stream is
      * in a good state, so we can reset the backoff timer. */
-    this.lrsBackoff.stop();
     this.lrsBackoff.reset();
     if (
       !this.receivedLrsSettingsForCurrentStream ||

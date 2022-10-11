@@ -1,7 +1,7 @@
 // Original file: deps/googleapis/google/api/http.proto
 
-import type { CustomHttpPattern as _google_api_CustomHttpPattern, CustomHttpPattern__Output as _google_api_CustomHttpPattern__Output } from '../../google/api/CustomHttpPattern';
-import type { HttpRule as _google_api_HttpRule, HttpRule__Output as _google_api_HttpRule__Output } from '../../google/api/HttpRule';
+import type { ICustomHttpPattern as I_google_api_CustomHttpPattern, OCustomHttpPattern as O_google_api_CustomHttpPattern } from '../../google/api/CustomHttpPattern';
+import type { IHttpRule as I_google_api_HttpRule, OHttpRule as O_google_api_HttpRule } from '../../google/api/HttpRule';
 
 /**
  * # gRPC Transcoding
@@ -274,7 +274,7 @@ import type { HttpRule as _google_api_HttpRule, HttpRule__Output as _google_api_
  * the request or response body to a repeated field. However, some gRPC
  * Transcoding implementations may not support this feature.
  */
-export interface HttpRule {
+export interface IHttpRule {
   /**
    * Selects a method to which this rule applies.
    * 
@@ -317,13 +317,13 @@ export interface HttpRule {
    * HTTP method unspecified for this rule. The wild-card rule is useful
    * for services that provide content to Web (HTML) clients.
    */
-  'custom'?: (_google_api_CustomHttpPattern | null);
+  'custom'?: (I_google_api_CustomHttpPattern | null);
   /**
    * Additional HTTP bindings for the selector. Nested bindings must
    * not contain an `additional_bindings` field themselves (that is,
    * the nesting may only be one level deep).
    */
-  'additional_bindings'?: (_google_api_HttpRule)[];
+  'additional_bindings'?: (I_google_api_HttpRule)[];
   /**
    * Optional. The name of the response field whose value is mapped to the HTTP
    * response body. When omitted, the entire response message will be used
@@ -612,7 +612,7 @@ export interface HttpRule {
  * the request or response body to a repeated field. However, some gRPC
  * Transcoding implementations may not support this feature.
  */
-export interface HttpRule__Output {
+export interface OHttpRule {
   /**
    * Selects a method to which this rule applies.
    * 
@@ -655,13 +655,13 @@ export interface HttpRule__Output {
    * HTTP method unspecified for this rule. The wild-card rule is useful
    * for services that provide content to Web (HTML) clients.
    */
-  'custom'?: (_google_api_CustomHttpPattern__Output | null);
+  'custom'?: (O_google_api_CustomHttpPattern | null);
   /**
    * Additional HTTP bindings for the selector. Nested bindings must
    * not contain an `additional_bindings` field themselves (that is,
    * the nesting may only be one level deep).
    */
-  'additional_bindings': (_google_api_HttpRule__Output)[];
+  'additional_bindings': (O_google_api_HttpRule)[];
   /**
    * Optional. The name of the response field whose value is mapped to the HTTP
    * response body. When omitted, the entire response message will be used

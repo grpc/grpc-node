@@ -23,6 +23,7 @@ import { FilterStackFactory } from "./filter-stack";
 import { InternalChannel } from "./internal-channel";
 import { Metadata } from "./metadata";
 import * as logging from './logging';
+import { restrictControlPlaneStatusCode } from "./control-plane-status";
 
 const TRACER_NAME = 'resolving_call';
 
@@ -110,15 +111,25 @@ export class ResolvingCall implements Call {
     if (!this.metadata || !this.listener) {
       throw new Error('getConfig called before start');
     }
-    const config = this.channel.getConfig(this.method, this.metadata);
-    if (!config) {
+    const configResult = this.channel.getConfig(this.method, this.metadata);
+    if (configResult.type === 'NONE') {
       this.channel.queueCallForConfig(this);
       return;
+    } else if (configResult.type === 'ERROR') {
+      if (this.metadata.getOptions().waitForReady) {
+        this.channel.queueCallForConfig(this);
+      } else {
+        this.outputStatus(configResult.error);
+      }
+      return;
     }
+    // configResult.type === 'SUCCESS'
+    const config = configResult.config;
     if (config.status !== Status.OK) {
+      const {code, details} = restrictControlPlaneStatusCode(config.status, 'Failed to route call to method ' + this.method);
       this.outputStatus({
-        code: config.status,
-        details: 'Failed to route call to ' + this.method,
+        code: code,
+        details: details,
         metadata: new Metadata()
       });
       return;

@@ -1,17 +1,17 @@
 // Original file: null
 
-import type { UninterpretedOption as _google_protobuf_UninterpretedOption, UninterpretedOption__Output as _google_protobuf_UninterpretedOption__Output } from '../../google/protobuf/UninterpretedOption';
+import type { IUninterpretedOption as I_google_protobuf_UninterpretedOption, OUninterpretedOption as O_google_protobuf_UninterpretedOption } from '../../google/protobuf/UninterpretedOption';
 
-export interface ServiceOptions {
+export interface IServiceOptions {
   'deprecated'?: (boolean);
-  'uninterpretedOption'?: (_google_protobuf_UninterpretedOption)[];
+  'uninterpretedOption'?: (I_google_protobuf_UninterpretedOption)[];
   '.google.api.default_host'?: (string);
   '.google.api.oauth_scopes'?: (string);
 }
 
-export interface ServiceOptions__Output {
+export interface OServiceOptions {
   'deprecated': (boolean);
-  'uninterpretedOption': (_google_protobuf_UninterpretedOption__Output)[];
+  'uninterpretedOption': (O_google_protobuf_UninterpretedOption)[];
   '.google.api.default_host': (string);
   '.google.api.oauth_scopes': (string);
 }

@@ -1,31 +1,31 @@
 // Original file: deps/gapic-showcase/schema/google/showcase/v1beta1/echo.proto
 
-import type { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../../google/protobuf/Timestamp';
-import type { Status as _google_rpc_Status, Status__Output as _google_rpc_Status__Output } from '../../../google/rpc/Status';
-import type { WaitResponse as _google_showcase_v1beta1_WaitResponse, WaitResponse__Output as _google_showcase_v1beta1_WaitResponse__Output } from '../../../google/showcase/v1beta1/WaitResponse';
-import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../google/protobuf/Duration';
+import type { ITimestamp as I_google_protobuf_Timestamp, OTimestamp as O_google_protobuf_Timestamp } from '../../../google/protobuf/Timestamp';
+import type { IStatus as I_google_rpc_Status, OStatus as O_google_rpc_Status } from '../../../google/rpc/Status';
+import type { IWaitResponse as I_google_showcase_v1beta1_WaitResponse, OWaitResponse as O_google_showcase_v1beta1_WaitResponse } from '../../../google/showcase/v1beta1/WaitResponse';
+import type { IDuration as I_google_protobuf_Duration, ODuration as O_google_protobuf_Duration } from '../../../google/protobuf/Duration';
 
 /**
  * The request for Wait method.
  */
-export interface WaitRequest {
+export interface IWaitRequest {
   /**
    * The time that this operation will complete.
    */
-  'end_time'?: (_google_protobuf_Timestamp | null);
+  'end_time'?: (I_google_protobuf_Timestamp | null);
   /**
    * The error that will be returned by the server. If this code is specified
    * to be the OK rpc code, an empty response will be returned.
    */
-  'error'?: (_google_rpc_Status | null);
+  'error'?: (I_google_rpc_Status | null);
   /**
    * The response to be returned on operation completion.
    */
-  'success'?: (_google_showcase_v1beta1_WaitResponse | null);
+  'success'?: (I_google_showcase_v1beta1_WaitResponse | null);
   /**
    * The duration of this operation.
    */
-  'ttl'?: (_google_protobuf_Duration | null);
+  'ttl'?: (I_google_protobuf_Duration | null);
   'end'?: "end_time"|"ttl";
   'response'?: "error"|"success";
 }
@@ -33,24 +33,24 @@ export interface WaitRequest {
 /**
  * The request for Wait method.
  */
-export interface WaitRequest__Output {
+export interface OWaitRequest {
   /**
    * The time that this operation will complete.
    */
-  'end_time'?: (_google_protobuf_Timestamp__Output | null);
+  'end_time'?: (O_google_protobuf_Timestamp | null);
   /**
    * The error that will be returned by the server. If this code is specified
    * to be the OK rpc code, an empty response will be returned.
    */
-  'error'?: (_google_rpc_Status__Output | null);
+  'error'?: (O_google_rpc_Status | null);
   /**
    * The response to be returned on operation completion.
    */
-  'success'?: (_google_showcase_v1beta1_WaitResponse__Output | null);
+  'success'?: (O_google_showcase_v1beta1_WaitResponse | null);
   /**
    * The duration of this operation.
    */
-  'ttl'?: (_google_protobuf_Duration__Output | null);
+  'ttl'?: (O_google_protobuf_Duration | null);
   'end': "end_time"|"ttl";
   'response': "error"|"success";
 }

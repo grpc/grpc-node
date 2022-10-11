@@ -15,16 +15,13 @@
  *
  */
 
-import * as protoLoader from '@grpc/proto-loader';
-import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
+import { experimental, logVerbosity } from "@grpc/grpc-js";
 import { Listener__Output } from '../generated/envoy/config/listener/v3/Listener';
 import { RdsState } from "./rds-state";
-import { HandleResponseResult, RejectedResourceEntry, ResourcePair, Watcher, XdsStreamState } from "./xds-stream-state";
-import { HttpConnectionManager__Output } from '../generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpConnectionManager';
+import { BaseXdsStreamState, XdsStreamState } from "./xds-stream-state";
 import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL_V2, HTTP_CONNECTION_MANGER_TYPE_URL_V3 } from '../resources';
 import { getTopLevelFilterUrl, validateTopLevelFilter } from '../http-filter';
 import { EXPERIMENTAL_FAULT_INJECTION } from '../environment';
-import { Any__Output } from '../generated/google/protobuf/Any';
 
 const TRACER_NAME = 'xds_client';
 
@@ -34,69 +31,22 @@ function trace(text: string): void {
 
 const ROUTER_FILTER_URL = 'type.googleapis.com/envoy.extensions.filters.http.router.v3.Router';
 
-export class LdsState implements XdsStreamState<Listener__Output> {
-  versionInfo = '';
-  nonce = '';
-
-  private watchers: Map<string, Watcher<Listener__Output>[]> = new Map<string, Watcher<Listener__Output>[]>();
-  private latestResponses: Listener__Output[] = [];
-  private latestIsV2 = false;
-
-  constructor(private rdsState: RdsState, private updateResourceNames: () => void) {}
-
-  addWatcher(targetName: string, watcher: Watcher<Listener__Output>) {
-    trace('Adding RDS watcher for targetName ' + targetName);
-    let watchersEntry = this.watchers.get(targetName);
-    let addedServiceName = false;
-    if (watchersEntry === undefined) {
-      addedServiceName = true;
-      watchersEntry = [];
-      this.watchers.set(targetName, watchersEntry);
-    }
-    watchersEntry.push(watcher);
-
-    /* If we have already received an update for the requested edsServiceName,
-     * immediately pass that update along to the watcher */
-    const isV2 = this.latestIsV2;
-    for (const message of this.latestResponses) {
-      if (message.name === targetName) {
-        /* These updates normally occur asynchronously, so we ensure that
-         * the same happens here */
-        process.nextTick(() => {
-          trace('Reporting existing RDS update for new watcher for targetName ' + targetName);
-          watcher.onValidUpdate(message, isV2);
-        });
-      }
-    }
-    if (addedServiceName) {
-      this.updateResourceNames();
-    }
+export class LdsState extends BaseXdsStreamState<Listener__Output> implements XdsStreamState<Listener__Output> {
+  protected getResourceName(resource: Listener__Output): string {
+    return resource.name;
+  }
+  protected getProtocolName(): string {
+    return 'LDS';
+  }
+  protected isStateOfTheWorld(): boolean {
+    return true;
   }
 
-  removeWatcher(targetName: string, watcher: Watcher<Listener__Output>): void {
-    trace('Removing RDS watcher for targetName ' + targetName);
-    const watchersEntry = this.watchers.get(targetName);
-    let removedServiceName = false;
-    if (watchersEntry !== undefined) {
-      const entryIndex = watchersEntry.indexOf(watcher);
-      if (entryIndex >= 0) {
-        watchersEntry.splice(entryIndex, 1);
-      }
-      if (watchersEntry.length === 0) {
-        removedServiceName = true;
-        this.watchers.delete(targetName);
-      }
-    }
-    if (removedServiceName) {
-      this.updateResourceNames();
-    }
+  constructor(private rdsState: RdsState, updateResourceNames: () => void) {
+    super(updateResourceNames);
   }
 
-  getResourceNames(): string[] {
-    return Array.from(this.watchers.keys());
-  }
-
-  private validateResponse(message: Listener__Output, isV2: boolean): boolean {
+  public validateResponse(message: Listener__Output, isV2: boolean): boolean {
     if (
       !(
         message.api_listener?.api_listener &&
@@ -142,64 +92,5 @@ export class LdsState implements XdsStreamState<Listener__Output> {
         return this.rdsState.validateResponse(httpConnectionManager.route_config!, isV2);
     }
     return false;
-  }
-
-  private handleMissingNames(allTargetNames: Set<string>): string[] {
-    const missingNames: string[] = [];
-    for (const [targetName, watcherList] of this.watchers.entries()) {
-      if (!allTargetNames.has(targetName)) {
-        missingNames.push(targetName);
-        for (const watcher of watcherList) {
-          watcher.onResourceDoesNotExist();
-        }
-      }
-    }
-    return missingNames;
-  }
-
-  handleResponses(responses: ResourcePair<Listener__Output>[], isV2: boolean): HandleResponseResult {
-    const validResponses: Listener__Output[] = [];
-    let result: HandleResponseResult = {
-      accepted: [],
-      rejected: [],
-      missing: []
-    }
-    for (const {resource, raw} of responses) {
-      if (this.validateResponse(resource, isV2)) {
-        validResponses.push(resource);
-        result.accepted.push({
-          name: resource.name,
-          raw: raw
-        });
-      } else {
-        trace('LDS validation failed for message ' + JSON.stringify(resource));
-        result.rejected.push({
-          name: resource.name,
-          raw: raw,
-          error: `Listener validation failed for resource ${resource.name}`
-        });
-      }
-    }
-    this.latestResponses = validResponses;
-    this.latestIsV2 = isV2;
-    const allTargetNames = new Set<string>();
-    for (const message of validResponses) {
-      allTargetNames.add(message.name);
-      const watchers = this.watchers.get(message.name) ?? [];
-      for (const watcher of watchers) {
-        watcher.onValidUpdate(message, isV2);
-      }
-    }
-    trace('Received LDS response with listener names [' + Array.from(allTargetNames) + ']');
-    result.missing = this.handleMissingNames(allTargetNames);
-    return result;
-  }
-
-  reportStreamError(status: StatusObject): void {
-    for (const watcherList of this.watchers.values()) {
-      for (const watcher of watcherList) {
-        watcher.onTransientError(status);
-      }
-    }
   }
 }

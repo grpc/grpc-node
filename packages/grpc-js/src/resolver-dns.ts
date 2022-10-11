@@ -158,7 +158,6 @@ class DnsResolver implements Resolver {
     if (this.ipResult !== null) {
       trace('Returning IP address for target ' + uriToString(this.target));
       setImmediate(() => {
-        this.backoff.reset();
         this.listener.onSuccessfulResolution(
           this.ipResult!,
           null,
@@ -167,6 +166,8 @@ class DnsResolver implements Resolver {
           {}
         );
       });
+      this.backoff.stop();
+      this.backoff.reset();
       return;
     }
     if (this.dnsHostname === null) {
@@ -178,7 +179,11 @@ class DnsResolver implements Resolver {
           metadata: new Metadata(),
         });
       });
+      this.stopNextResolutionTimer();
     } else {
+      if (this.pendingLookupPromise !== null) {
+        return;
+      }
       trace('Looking up DNS hostname ' + this.dnsHostname);
       /* We clear out latestLookupResult here to ensure that it contains the
        * latest result since the last time we started resolving. That way, the
@@ -299,6 +304,7 @@ class DnsResolver implements Resolver {
   }
 
   private startNextResolutionTimer() {
+    clearTimeout(this.nextResolutionTimer);
     this.nextResolutionTimer = setTimeout(() => {
       this.stopNextResolutionTimer();
       if (this.continueResolving) {
@@ -314,9 +320,12 @@ class DnsResolver implements Resolver {
   }
 
   private startResolutionWithBackoff() {
+    if (this.pendingLookupPromise === null) {
+      this.continueResolving = false;
       this.startResolution();
       this.backoff.runOnce();
       this.startNextResolutionTimer();
+    }
   }
 
   updateResolution() {

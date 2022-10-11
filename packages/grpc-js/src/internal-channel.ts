@@ -49,6 +49,7 @@ import { SubchannelCall } from './subchannel-call';
 import { Deadline, getDeadlineTimeoutString } from './deadline';
 import { ResolvingCall } from './resolving-call';
 import { getNextCallNumber } from './call-number';
+import { restrictControlPlaneStatusCode } from './control-plane-status';
 
 /**
  * See https://nodejs.org/api/timers.html#timers_setinterval_callback_delay_args
@@ -60,6 +61,22 @@ interface ConnectivityStateWatcher {
   timer: NodeJS.Timeout | null;
   callback: (error?: Error) => void;
 }
+
+interface NoneConfigResult {
+  type: 'NONE';
+}
+
+interface SuccessConfigResult {
+  type: 'SUCCESS';
+  config: CallConfig;
+}
+
+interface ErrorConfigResult {
+  type: 'ERROR';
+  error: StatusObject;
+}
+
+type GetConfigResult = NoneConfigResult | SuccessConfigResult | ErrorConfigResult;
 
 export class InternalChannel {
   
@@ -86,6 +103,14 @@ export class InternalChannel {
    */
   private callRefTimer: NodeJS.Timer;
   private configSelector: ConfigSelector | null = null;
+  /**
+   * This is the error from the name resolver if it failed most recently. It
+   * is only used to end calls that start while there is no config selector
+   * and the name resolver is in backoff, so it should be nulled if
+   * configSelector becomes set or the channel state becomes anything other
+   * than TRANSIENT_FAILURE.
+   */
+   private currentResolutionError: StatusObject | null = null;
 
   // Channelz info
   private readonly channelzEnabled: boolean = true;
@@ -135,16 +160,9 @@ export class InternalChannel {
     }
 
     this.channelzTrace = new ChannelzTrace();
+    this.channelzRef = registerChannelzChannel(target, () => this.getChannelzInfo(), this.channelzEnabled);
     if (this.channelzEnabled) {
-      this.channelzRef = registerChannelzChannel(target, () => this.getChannelzInfo());
       this.channelzTrace.addTrace('CT_INFO', 'Channel created');
-    } else {
-      // Dummy channelz ref that will never be used
-      this.channelzRef = {
-        kind: 'channel',
-        id: -1,
-        name: ''
-      };
     }
 
     if (this.options['grpc.default_authority']) {
@@ -213,6 +231,7 @@ export class InternalChannel {
           this.channelzTrace.addTrace('CT_INFO', 'Address resolution succeeded');
         }
         this.configSelector = configSelector;
+        this.currentResolutionError = null;
         /* We process the queue asynchronously to ensure that the corresponding
          * load balancer update has completed. */
         process.nextTick(() => {
@@ -231,6 +250,9 @@ export class InternalChannel {
         }
         if (this.configSelectionQueue.length > 0) {
           this.trace('Name resolution failed with calls queued for config selection');
+        }
+        if (this.configSelector === null) {
+          this.currentResolutionError = {...restrictControlPlaneStatusCode(status.code, status.details), metadata: status.metadata};
         }
         const localQueue = this.configSelectionQueue;
         this.configSelectionQueue = [];
@@ -325,6 +347,9 @@ export class InternalChannel {
         watcherObject.callback();
       }
     }
+    if (newState !== ConnectivityState.TRANSIENT_FAILURE) {
+      this.currentResolutionError = null;
+    }
   }
 
   doPick(metadata: Metadata, extraPickInfo: {[key: string]: string}) {
@@ -336,9 +361,25 @@ export class InternalChannel {
     this.callRefTimerRef();
   }
 
-  getConfig(method: string, metadata: Metadata) {
+  getConfig(method: string, metadata: Metadata): GetConfigResult {
     this.resolvingLoadBalancer.exitIdle();
-    return this.configSelector?.(method, metadata) ?? null;
+    if (this.configSelector) {
+      return {
+        type: 'SUCCESS',
+        config: this.configSelector(method, metadata)
+      };
+    } else {
+      if (this.currentResolutionError) {
+        return {
+          type: 'ERROR',
+          error: this.currentResolutionError
+        }
+      } else {
+        return {
+          type: 'NONE'
+        }
+      }
+    }
   }
 
   queueCallForConfig(call: ResolvingCall) {

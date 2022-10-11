@@ -28,6 +28,7 @@ import { PickResultType } from "./picker";
 import { CallConfig } from "./resolver";
 import { splitHostPort } from "./uri-parser";
 import * as logging from './logging';
+import { restrictControlPlaneStatusCode } from "./control-plane-status";
 
 const TRACER_NAME = 'load_balancing_call';
 
@@ -194,10 +195,14 @@ export class LoadBalancingCall implements Call {
             }
           }, (error: Error & { code: number }) => {
             // We assume the error code isn't 0 (Status.OK)
+            const {code, details} = restrictControlPlaneStatusCode(
+              typeof error.code === 'number' ? error.code : Status.UNKNOWN,
+              `Getting metadata from plugin failed with error: ${error.message}`
+            )
             this.outputStatus(
               {
-                code: typeof error.code === 'number' ? error.code : Status.UNKNOWN,
-                details: `Getting metadata from plugin failed with error: ${error.message}`,
+                code: code,
+                details: details,
                 metadata: new Metadata()
               },
               'PROCESSED'
@@ -206,13 +211,15 @@ export class LoadBalancingCall implements Call {
         );
         break;
       case PickResultType.DROP:
-        this.outputStatus(pickResult.status!, 'DROP');
+        const {code, details} = restrictControlPlaneStatusCode(pickResult.status!.code, pickResult.status!.details);
+        this.outputStatus({code, details, metadata: pickResult.status!.metadata}, 'DROP');
         break;
       case PickResultType.TRANSIENT_FAILURE:
         if (this.metadata.getOptions().waitForReady) {
           this.channel.queueCallForPick(this);
         } else {
-          this.outputStatus(pickResult.status!, 'PROCESSED');
+          const {code, details} = restrictControlPlaneStatusCode(pickResult.status!.code, pickResult.status!.details);
+          this.outputStatus({code, details, metadata: pickResult.status!.metadata}, 'PROCESSED');
         }
         break;
       case PickResultType.QUEUE:

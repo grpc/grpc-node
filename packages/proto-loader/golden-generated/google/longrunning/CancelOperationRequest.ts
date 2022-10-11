@@ -4,7 +4,7 @@
 /**
  * The request message for [Operations.CancelOperation][google.longrunning.Operations.CancelOperation].
  */
-export interface CancelOperationRequest {
+export interface ICancelOperationRequest {
   /**
    * The name of the operation resource to be cancelled.
    */
@@ -14,7 +14,7 @@ export interface CancelOperationRequest {
 /**
  * The request message for [Operations.CancelOperation][google.longrunning.Operations.CancelOperation].
  */
-export interface CancelOperationRequest__Output {
+export interface OCancelOperationRequest {
   /**
    * The name of the operation resource to be cancelled.
    */

@@ -1,15 +1,15 @@
 // Original file: null
 
-import type { EnumValueOptions as _google_protobuf_EnumValueOptions, EnumValueOptions__Output as _google_protobuf_EnumValueOptions__Output } from '../../google/protobuf/EnumValueOptions';
+import type { IEnumValueOptions as I_google_protobuf_EnumValueOptions, OEnumValueOptions as O_google_protobuf_EnumValueOptions } from '../../google/protobuf/EnumValueOptions';
 
-export interface EnumValueDescriptorProto {
+export interface IEnumValueDescriptorProto {
   'name'?: (string);
   'number'?: (number);
-  'options'?: (_google_protobuf_EnumValueOptions | null);
+  'options'?: (I_google_protobuf_EnumValueOptions | null);
 }
 
-export interface EnumValueDescriptorProto__Output {
+export interface OEnumValueDescriptorProto {
   'name': (string);
   'number': (number);
-  'options': (_google_protobuf_EnumValueOptions__Output | null);
+  'options': (O_google_protobuf_EnumValueOptions | null);
 }

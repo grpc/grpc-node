@@ -1,4 +1,4 @@
-export { trace } from './logging';
+export { trace, log } from './logging';
 export {
   Resolver,
   ResolverListener,

@@ -19,6 +19,7 @@ import * as assert from 'assert';
 import * as path from 'path';
 import * as grpc from '../src';
 import { loadProtoFile } from './common';
+import { OutlierDetectionLoadBalancingConfig } from '../src/load-balancer-outlier-detection'
 
 function multiDone(done: Mocha.Done, target: number) {
   let count = 0;
@@ -66,6 +67,251 @@ const badService = {
 const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
 const EchoService = loadProtoFile(protoFile)
   .EchoService as grpc.ServiceClientConstructor;
+
+describe('Outlier detection config validation', () => {
+  describe('interval', () => {
+    it('Should reject a negative interval', () => {
+      const loadBalancingConfig = {
+        interval: {
+          seconds: -1,
+          nanos: 0
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /interval parse error: values out of range for non-negative Duaration/);
+    });
+    it('Should reject a large interval', () => {
+      const loadBalancingConfig = {
+        interval: {
+          seconds: 1e12,
+          nanos: 0
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /interval parse error: values out of range for non-negative Duaration/);
+    });
+    it('Should reject a negative interval.nanos', () => {
+      const loadBalancingConfig = {
+        interval: {
+          seconds: 0,
+          nanos: -1
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /interval parse error: values out of range for non-negative Duaration/);
+    });
+    it('Should reject a large interval.nanos', () => {
+      const loadBalancingConfig = {
+        interval: {
+          seconds: 0,
+          nanos: 1e12
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /interval parse error: values out of range for non-negative Duaration/);
+    });
+  });
+  describe('base_ejection_time', () => {
+    it('Should reject a negative base_ejection_time', () => {
+      const loadBalancingConfig = {
+        base_ejection_time: {
+          seconds: -1,
+          nanos: 0
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /base_ejection_time parse error: values out of range for non-negative Duaration/);
+    });
+    it('Should reject a large base_ejection_time', () => {
+      const loadBalancingConfig = {
+        base_ejection_time: {
+          seconds: 1e12,
+          nanos: 0
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /base_ejection_time parse error: values out of range for non-negative Duaration/);
+    });
+    it('Should reject a negative base_ejection_time.nanos', () => {
+      const loadBalancingConfig = {
+        base_ejection_time: {
+          seconds: 0,
+          nanos: -1
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /base_ejection_time parse error: values out of range for non-negative Duaration/);
+    });
+    it('Should reject a large base_ejection_time.nanos', () => {
+      const loadBalancingConfig = {
+        base_ejection_time: {
+          seconds: 0,
+          nanos: 1e12
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /base_ejection_time parse error: values out of range for non-negative Duaration/);
+    });
+  });
+  describe('max_ejection_time', () => {
+    it('Should reject a negative max_ejection_time', () => {
+      const loadBalancingConfig = {
+        max_ejection_time: {
+          seconds: -1,
+          nanos: 0
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /max_ejection_time parse error: values out of range for non-negative Duaration/);
+    });
+    it('Should reject a large max_ejection_time', () => {
+      const loadBalancingConfig = {
+        max_ejection_time: {
+          seconds: 1e12,
+          nanos: 0
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /max_ejection_time parse error: values out of range for non-negative Duaration/);
+    });
+    it('Should reject a negative max_ejection_time.nanos', () => {
+      const loadBalancingConfig = {
+        max_ejection_time: {
+          seconds: 0,
+          nanos: -1
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /max_ejection_time parse error: values out of range for non-negative Duaration/);
+    });
+    it('Should reject a large max_ejection_time.nanos', () => {
+      const loadBalancingConfig = {
+        max_ejection_time: {
+          seconds: 0,
+          nanos: 1e12
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /max_ejection_time parse error: values out of range for non-negative Duaration/);
+    });
+  });
+  describe('max_ejection_percent', () => {
+    it('Should reject a value above 100', () => {
+      const loadBalancingConfig = {
+        max_ejection_percent: 101,
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /max_ejection_percent parse error: value out of range for percentage/);
+    });
+    it('Should reject a negative value', () => {
+      const loadBalancingConfig = {
+        max_ejection_percent: -1,
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /max_ejection_percent parse error: value out of range for percentage/);
+    });
+  });
+  describe('success_rate_ejection.enforcement_percentage', () => {
+    it('Should reject a value above 100', () => {
+      const loadBalancingConfig = {
+        success_rate_ejection: {
+          enforcement_percentage: 101
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /success_rate_ejection\.enforcement_percentage parse error: value out of range for percentage/);
+    });
+    it('Should reject a negative value', () => {
+      const loadBalancingConfig = {
+        success_rate_ejection: {
+          enforcement_percentage: -1
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /success_rate_ejection\.enforcement_percentage parse error: value out of range for percentage/);
+    });
+  });
+  describe('failure_percentage_ejection.threshold', () => {
+    it('Should reject a value above 100', () => {
+      const loadBalancingConfig = {
+        failure_percentage_ejection: {
+          threshold: 101
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /failure_percentage_ejection\.threshold parse error: value out of range for percentage/);
+    });
+    it('Should reject a negative value', () => {
+      const loadBalancingConfig = {
+        failure_percentage_ejection: {
+          threshold: -1
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /failure_percentage_ejection\.threshold parse error: value out of range for percentage/);
+    });
+  });
+  describe('failure_percentage_ejection.enforcement_percentage', () => {
+    it('Should reject a value above 100', () => {
+      const loadBalancingConfig = {
+        failure_percentage_ejection: {
+          enforcement_percentage: 101
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /failure_percentage_ejection\.enforcement_percentage parse error: value out of range for percentage/);
+    });
+    it('Should reject a negative value', () => {
+      const loadBalancingConfig = {
+        failure_percentage_ejection: {
+          enforcement_percentage: -1
+        },
+        child_policy: [{round_robin: {}}]
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /failure_percentage_ejection\.enforcement_percentage parse error: value out of range for percentage/);
+    });
+  });
+});
 
 describe('Outlier detection', () => {
   const GOOD_PORTS = 4;

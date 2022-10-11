@@ -109,6 +109,10 @@ export type ClientOptions = Partial<ChannelOptions> & {
   callInvocationTransformer?: CallInvocationTransformer;
 };
 
+function getErrorStackString(error: Error): string {
+  return error.stack!.split('\n').slice(1).join('\n');
+}
+
 /**
  * A generic gRPC client. Primarily useful as a base class for all generated
  * clients.
@@ -322,6 +326,7 @@ export class Client {
     }
     let responseMessage: ResponseType | null = null;
     let receivedStatus = false;
+    const callerStackError = new Error();
     call.start(callProperties.metadata, {
       onReceiveMetadata: (metadata) => {
         emitter.emit('metadata', metadata);
@@ -339,9 +344,19 @@ export class Client {
         }
         receivedStatus = true;
         if (status.code === Status.OK) {
-          callProperties.callback!(null, responseMessage!);
+          if (responseMessage === null) {
+            const callerStack = getErrorStackString(callerStackError);
+            callProperties.callback!(callErrorFromStatus({
+              code: Status.INTERNAL,
+              details: 'No message received',
+              metadata: status.metadata
+            }, callerStack));
+          } else {
+            callProperties.callback!(null, responseMessage);
+          }
         } else {
-          callProperties.callback!(callErrorFromStatus(status));
+          const callerStack = getErrorStackString(callerStackError);
+          callProperties.callback!(callErrorFromStatus(status, callerStack));
         }
         emitter.emit('status', status);
       },
@@ -439,6 +454,7 @@ export class Client {
     }
     let responseMessage: ResponseType | null = null;
     let receivedStatus = false;
+    const callerStackError = new Error();
     call.start(callProperties.metadata, {
       onReceiveMetadata: (metadata) => {
         emitter.emit('metadata', metadata);
@@ -456,9 +472,19 @@ export class Client {
         }
         receivedStatus = true;
         if (status.code === Status.OK) {
-          callProperties.callback!(null, responseMessage!);
+          if (responseMessage === null) {
+            const callerStack = getErrorStackString(callerStackError);
+            callProperties.callback!(callErrorFromStatus({
+              code: Status.INTERNAL,
+              details: 'No message received',
+              metadata: status.metadata
+            }, callerStack));
+          } else {
+            callProperties.callback!(null, responseMessage);
+          }
         } else {
-          callProperties.callback!(callErrorFromStatus(status));
+          const callerStack = getErrorStackString(callerStackError);
+          callProperties.callback!(callErrorFromStatus(status, callerStack));
         }
         emitter.emit('status', status);
       },
@@ -560,6 +586,7 @@ export class Client {
       call.setCredentials(callProperties.callOptions.credentials);
     }
     let receivedStatus = false;
+    const callerStackError = new Error();
     call.start(callProperties.metadata, {
       onReceiveMetadata(metadata: Metadata) {
         stream.emit('metadata', metadata);
@@ -575,7 +602,8 @@ export class Client {
         receivedStatus = true;
         stream.push(null);
         if (status.code !== Status.OK) {
-          stream.emit('error', callErrorFromStatus(status));
+          const callerStack = getErrorStackString(callerStackError);
+          stream.emit('error', callErrorFromStatus(status, callerStack));
         }
         stream.emit('status', status);
       },
@@ -657,6 +685,7 @@ export class Client {
       call.setCredentials(callProperties.callOptions.credentials);
     }
     let receivedStatus = false;
+    const callerStackError = new Error();
     call.start(callProperties.metadata, {
       onReceiveMetadata(metadata: Metadata) {
         stream.emit('metadata', metadata);
@@ -671,7 +700,8 @@ export class Client {
         receivedStatus = true;
         stream.push(null);
         if (status.code !== Status.OK) {
-          stream.emit('error', callErrorFromStatus(status));
+          const callerStack = getErrorStackString(callerStackError);
+          stream.emit('error', callErrorFromStatus(status, callerStack));
         }
         stream.emit('status', status);
       },

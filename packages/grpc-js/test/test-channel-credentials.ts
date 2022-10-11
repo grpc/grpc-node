@@ -17,12 +17,22 @@
 
 import * as assert from 'assert';
 import * as fs from 'fs';
+import * as path from 'path';
 import { promisify } from 'util';
+import * as protoLoader from '@grpc/proto-loader';
 
 import { CallCredentials } from '../src/call-credentials';
 import { ChannelCredentials } from '../src/channel-credentials';
+import * as grpc from '../src';
+import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
+import { TestServiceClient, TestServiceHandlers } from './generated/TestService';
+import { ProtoGrpcType as TestServiceGrpcType } from './generated/test_service';
 
-import { assert2, mockFunction } from './common';
+import { assert2, loadProtoFile, mockFunction } from './common';
+import { sendUnaryData, ServerUnaryCall, ServiceError } from '../src';
+
+const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
+const echoService = loadProtoFile(protoFile).EchoService as ServiceClientConstructor;
 
 class CallCredentialsMock implements CallCredentials {
   child: CallCredentialsMock | null = null;
@@ -136,5 +146,67 @@ describe('ChannelCredentials Implementation', () => {
         )
       );
     });
+  });
+});
+
+describe('ChannelCredentials usage', () => {
+  let client: ServiceClient;
+  let server: grpc.Server;
+  before(async () => {
+    const {ca, key, cert} = await pFixtures;
+    const serverCreds = grpc.ServerCredentials.createSsl(null, [{private_key: key, cert_chain: cert}]);
+    const channelCreds = ChannelCredentials.createSsl(ca);
+    const callCreds = CallCredentials.createFromMetadataGenerator((options, cb) => {
+      const metadata = new grpc.Metadata();
+      metadata.set('test-key', 'test-value');
+      cb(null, metadata);
+    });
+    const combinedCreds = channelCreds.compose(callCreds);
+    return new Promise<void>((resolve, reject) => {
+
+      server = new grpc.Server();
+      server.addService(echoService.service, {
+        echo(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
+          call.sendMetadata(call.metadata);
+          callback(null, call.request);
+        },
+      });
+  
+      server.bindAsync(
+        'localhost:0',
+        serverCreds,
+        (err, port) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          client = new echoService(
+            `localhost:${port}`,
+            combinedCreds,
+            {'grpc.ssl_target_name_override': 'foo.test.google.fr', 'grpc.default_authority': 'foo.test.google.fr'}
+          );
+          server.start();
+          resolve();
+        }
+      );
+    });
+  });
+  after(() => {
+    server.forceShutdown();
+  });
+
+  it('Should send the metadata from call credentials attached to channel credentials', (done) => {
+    const call = client.echo(
+      { value: 'test value', value2: 3 },
+      assert2.mustCall((error: ServiceError, response: any) => {
+        assert.ifError(error);
+        assert.deepStrictEqual(response, { value: 'test value', value2: 3 });
+      })
+    );
+    call.on('metadata', assert2.mustCall((metadata: grpc.Metadata) => {
+      assert.deepStrictEqual(metadata.get('test-key'), ['test-value']);
+
+    }));
+    assert2.afterMustCallsSatisfied(done);
   });
 });

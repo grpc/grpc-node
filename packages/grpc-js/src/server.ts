@@ -161,17 +161,11 @@ export class Server {
     if (this.options['grpc.enable_channelz'] === 0) {
       this.channelzEnabled = false;
     }
+    this.channelzRef = registerChannelzServer(() => this.getChannelzInfo(), this.channelzEnabled);
     if (this.channelzEnabled) {
-      this.channelzRef = registerChannelzServer(() => this.getChannelzInfo());
       this.channelzTrace.addTrace('CT_INFO', 'Server created');
-      this.trace('Server constructed');
-    } else {
-      // Dummy channelz ref that will never be used
-      this.channelzRef = {
-        kind: 'server',
-        id: -1
-      };
     }
+    this.trace('Server constructed');
   }
 
   private getChannelzInfo(): ServerInfo {
@@ -431,34 +425,28 @@ export class Server {
                 }
               }
               let channelzRef: SocketRef;
-              if (this.channelzEnabled) {
-                channelzRef = registerChannelzSocket(subchannelAddressToString(boundSubchannelAddress), () => {
-                  return {
-                    localAddress: boundSubchannelAddress,
-                    remoteAddress: null,
-                    security: null,
-                    remoteName: null,
-                    streamsStarted: 0,
-                    streamsSucceeded: 0,
-                    streamsFailed: 0,
-                    messagesSent: 0,
-                    messagesReceived: 0,
-                    keepAlivesSent: 0,
-                    lastLocalStreamCreatedTimestamp: null,
-                    lastRemoteStreamCreatedTimestamp: null,
-                    lastMessageSentTimestamp: null,
-                    lastMessageReceivedTimestamp: null,
-                    localFlowControlWindow: null,
-                    remoteFlowControlWindow: null
-                  };
-                });
-                this.listenerChildrenTracker.refChild(channelzRef);
-              } else {
-                channelzRef = {
-                  kind: 'socket',
-                  id: -1,
-                  name: ''
+              channelzRef = registerChannelzSocket(subchannelAddressToString(boundSubchannelAddress), () => {
+                return {
+                  localAddress: boundSubchannelAddress,
+                  remoteAddress: null,
+                  security: null,
+                  remoteName: null,
+                  streamsStarted: 0,
+                  streamsSucceeded: 0,
+                  streamsFailed: 0,
+                  messagesSent: 0,
+                  messagesReceived: 0,
+                  keepAlivesSent: 0,
+                  lastLocalStreamCreatedTimestamp: null,
+                  lastRemoteStreamCreatedTimestamp: null,
+                  lastMessageSentTimestamp: null,
+                  lastMessageReceivedTimestamp: null,
+                  localFlowControlWindow: null,
+                  remoteFlowControlWindow: null
                 };
+              }, this.channelzEnabled);
+              if (this.channelzEnabled) {
+                this.listenerChildrenTracker.refChild(channelzRef);
               }
               this.http2ServerList.push({server: http2Server, channelzRef: channelzRef});
               this.trace('Successfully bound ' + subchannelAddressToString(boundSubchannelAddress));
@@ -509,34 +497,28 @@ export class Server {
             port: boundAddress.port
           };
           let channelzRef: SocketRef;
-          if (this.channelzEnabled) {
-            channelzRef = registerChannelzSocket(subchannelAddressToString(boundSubchannelAddress), () => {
-              return {
-                localAddress: boundSubchannelAddress,
-                remoteAddress: null,
-                security: null,
-                remoteName: null,
-                streamsStarted: 0,
-                streamsSucceeded: 0,
-                streamsFailed: 0,
-                messagesSent: 0,
-                messagesReceived: 0,
-                keepAlivesSent: 0,
-                lastLocalStreamCreatedTimestamp: null,
-                lastRemoteStreamCreatedTimestamp: null,
-                lastMessageSentTimestamp: null,
-                lastMessageReceivedTimestamp: null,
-                localFlowControlWindow: null,
-                remoteFlowControlWindow: null
-              };
-            });
-            this.listenerChildrenTracker.refChild(channelzRef);
-          } else {
-            channelzRef = {
-              kind: 'socket',
-              id: -1,
-              name: ''
+          channelzRef = registerChannelzSocket(subchannelAddressToString(boundSubchannelAddress), () => {
+            return {
+              localAddress: boundSubchannelAddress,
+              remoteAddress: null,
+              security: null,
+              remoteName: null,
+              streamsStarted: 0,
+              streamsSucceeded: 0,
+              streamsFailed: 0,
+              messagesSent: 0,
+              messagesReceived: 0,
+              keepAlivesSent: 0,
+              lastLocalStreamCreatedTimestamp: null,
+              lastRemoteStreamCreatedTimestamp: null,
+              lastMessageSentTimestamp: null,
+              lastMessageReceivedTimestamp: null,
+              localFlowControlWindow: null,
+              remoteFlowControlWindow: null
             };
+          }, this.channelzEnabled);
+          if (this.channelzEnabled) {
+            this.listenerChildrenTracker.refChild(channelzRef);
           }
           this.http2ServerList.push({server: http2Server, channelzRef: channelzRef});
           this.trace('Successfully bound ' + subchannelAddressToString(boundSubchannelAddress));
@@ -893,15 +875,7 @@ export class Server {
       }
 
       let channelzRef: SocketRef;
-      if (this.channelzEnabled) {
-        channelzRef = registerChannelzSocket(session.socket.remoteAddress ?? 'unknown', this.getChannelzSessionInfoGetter(session));
-      } else {
-        channelzRef = {
-          kind: 'socket',
-          id: -1,
-          name: ''
-        }
-      }
+      channelzRef = registerChannelzSocket(session.socket.remoteAddress ?? 'unknown', this.getChannelzSessionInfoGetter(session), this.channelzEnabled);
 
       const channelzSessionInfo: ChannelzSessionInfo = {
         ref: channelzRef,

@@ -29,6 +29,7 @@ can be set.
   - `channel` - Traces channel events
   - `connectivity_state` - Traces channel connectivity state changes
   - `dns_resolver` - Traces DNS resolution
+  - `ip_resolver` - Traces IPv4/v6 resolution
   - `pick_first` - Traces the pick first load balancing policy
   - `proxy` - Traces proxy operations
   - `resolving_load_balancer` - Traces the resolving load balancer
@@ -40,6 +41,9 @@ can be set.
   - `subchannel_flowctrl` - Traces HTTP/2 flow control. Includes per-call logs.
   - `subchannel_internals` - Traces HTTP/2 session state. Includes per-call logs.
   - `channel_stacktrace` - Traces channel construction events with stack traces.
+  - `keepalive` - Traces gRPC keepalive pings
+  - `index` - Traces module loading
+  - `outlier_detection` - Traces outlier detection events
 
   The following tracers are added by the `@grpc/grpc-js-xds` library:
   - `cds_balancer` - Traces the CDS load balancing policy

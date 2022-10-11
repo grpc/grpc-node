@@ -88,6 +88,10 @@ Options:
   -O, --outDir           Directory in which to output files  [string] [required]
       --grpcLib          The gRPC implementation library that these types will
                          be used with                        [string] [required]
+      --inputTemplate    Template for mapping input or "permissive" type names
+                                                        [string] [default: "%s"]
+      --outputTemplate   Template for mapping output or "restricted" type names
+                                                [string] [default: "%s__Output"]
 ```
 
 ### Example Usage
