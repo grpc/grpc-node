@@ -68,6 +68,28 @@ function getNewCallNumber(): number {
   return callNumber;
 }
 
+const INAPPROPRIATE_CONTROL_PLANE_CODES: Status[] = [
+  Status.OK,
+  Status.INVALID_ARGUMENT,
+  Status.NOT_FOUND,
+  Status.ALREADY_EXISTS,
+  Status.FAILED_PRECONDITION,
+  Status.ABORTED,
+  Status.OUT_OF_RANGE,
+  Status.DATA_LOSS
+]
+
+function restrictControlPlaneStatusCode(code: Status, details: string): {code: Status, details: string} {
+  if (INAPPROPRIATE_CONTROL_PLANE_CODES.includes(code)) {
+    return {
+      code: Status.INTERNAL,
+      details: `Invalid status from control plane: ${code} ${Status[code]} ${details}`
+    }
+  } else {
+    return {code, details};
+  }
+}
+
 /**
  * An interface that represents a communication channel to a server specified
  * by a given address.
@@ -320,7 +342,7 @@ export class ChannelImplementation implements Channel {
           this.trace('Name resolution failed with calls queued for config selection');
         }
         if (this.configSelector === null) {
-          this.currentResolutionError = status;
+          this.currentResolutionError = {...restrictControlPlaneStatusCode(status.code, status.details), metadata: status.metadata};
         }
         const localQueue = this.configSelectionQueue;
         this.configSelectionQueue = [];
@@ -534,10 +556,11 @@ export class ChannelImplementation implements Channel {
               },
               (error: Error & { code: number }) => {
                 // We assume the error code isn't 0 (Status.OK)
-                callStream.cancelWithStatus(
+                const {code, details} = restrictControlPlaneStatusCode(
                   typeof error.code === 'number' ? error.code : Status.UNKNOWN,
                   `Getting metadata from plugin failed with error: ${error.message}`
-                );
+                )
+                callStream.cancelWithStatus(code, details);
               }
             );
         }
@@ -549,17 +572,13 @@ export class ChannelImplementation implements Channel {
         if (callMetadata.getOptions().waitForReady) {
           this.pushPick(callStream, callMetadata, callConfig, dynamicFilters);
         } else {
-          callStream.cancelWithStatus(
-            pickResult.status!.code,
-            pickResult.status!.details
-          );
+          const {code, details} = restrictControlPlaneStatusCode(pickResult.status!.code, pickResult.status!.details);
+          callStream.cancelWithStatus(code, details);
         }
         break;
       case PickResultType.DROP:
-        callStream.cancelWithStatus(
-          pickResult.status!.code,
-          pickResult.status!.details
-        );
+        const {code, details} = restrictControlPlaneStatusCode(pickResult.status!.code, pickResult.status!.details);
+        callStream.cancelWithStatus(code, details);
         break;
       default:
         throw new Error(
@@ -668,10 +687,8 @@ export class ChannelImplementation implements Channel {
           this.tryPick(stream, metadata, callConfig, []);
         }
       } else {
-        stream.cancelWithStatus(
-          callConfig.status,
-          'Failed to route call to method ' + stream.getMethod()
-        );
+        const {code, details} = restrictControlPlaneStatusCode(callConfig.status, 'Failed to route call to method ' + stream.getMethod());
+        stream.cancelWithStatus(code, details);
       }
     }
   }
