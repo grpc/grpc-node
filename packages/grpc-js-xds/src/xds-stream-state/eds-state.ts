@@ -18,6 +18,7 @@
 import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
 import { isIPv4, isIPv6 } from "net";
 import { Locality__Output } from "../generated/envoy/config/core/v3/Locality";
+import { SocketAddress__Output } from "../generated/envoy/config/core/v3/SocketAddress";
 import { ClusterLoadAssignment__Output } from "../generated/envoy/config/endpoint/v3/ClusterLoadAssignment";
 import { Any__Output } from "../generated/google/protobuf/Any";
 import { BaseXdsStreamState, HandleResponseResult, RejectedResourceEntry, ResourcePair, Watcher, XdsStreamState } from "./xds-stream-state";
@@ -30,6 +31,10 @@ function trace(text: string): void {
 
 function localitiesEqual(a: Locality__Output, b: Locality__Output) {
   return a.region === b.region && a.sub_zone === b.sub_zone && a.zone === b.zone;
+}
+
+function addressesEqual(a: SocketAddress__Output, b: SocketAddress__Output) {
+  return a.address === b.address && a.port_value === b.port_value;
 }
 
 export class EdsState extends BaseXdsStreamState<ClusterLoadAssignment__Output> implements XdsStreamState<ClusterLoadAssignment__Output> {
@@ -50,6 +55,7 @@ export class EdsState extends BaseXdsStreamState<ClusterLoadAssignment__Output> 
    */
   public validateResponse(message: ClusterLoadAssignment__Output) {
     const seenLocalities: {locality: Locality__Output, priority: number}[] = [];
+    const seenAddresses: SocketAddress__Output[] = [];
     const priorityTotalWeights: Map<number,  number> = new Map();
     for (const endpoint of message.endpoints) {
       if (!endpoint.locality) {
@@ -72,11 +78,22 @@ export class EdsState extends BaseXdsStreamState<ClusterLoadAssignment__Output> 
         if (!(isIPv4(socketAddress.address) || isIPv6(socketAddress.address))) {
           return false;
         }
+        for (const address of seenAddresses) {
+          if (addressesEqual(socketAddress, address)) {
+            return false;
+          }
+        }
+        seenAddresses.push(socketAddress);
       }
       priorityTotalWeights.set(endpoint.priority, (priorityTotalWeights.get(endpoint.priority) ?? 0) + (endpoint.load_balancing_weight?.value ?? 0));
     }
     for (const totalWeight of priorityTotalWeights.values()) {
       if (totalWeight >= 1<<32) {
+        return false;
+      }
+    }
+    for (const priority of priorityTotalWeights.keys()) {
+      if (priority > 0 && !priorityTotalWeights.has(priority - 1)) {
         return false;
       }
     }
