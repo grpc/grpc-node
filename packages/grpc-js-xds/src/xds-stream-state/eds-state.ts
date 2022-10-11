@@ -92,6 +92,11 @@ export class EdsState extends BaseXdsStreamState<ClusterLoadAssignment__Output> 
         return false;
       }
     }
+    for (const priority of priorityTotalWeights.keys()) {
+      if (priority > 0 && !priorityTotalWeights.has(priority - 1)) {
+        return false;
+      }
+    }
     return true;
   }
 }
