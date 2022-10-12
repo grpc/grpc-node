@@ -40,7 +40,7 @@ import { XdsClusterManagerLoadBalancingConfig } from './load-balancer-xds-cluste
 import { ExactValueMatcher, FullMatcher, HeaderMatcher, Matcher, PathExactValueMatcher, PathPrefixValueMatcher, PathSafeRegexValueMatcher, PrefixValueMatcher, PresentValueMatcher, RangeValueMatcher, RejectValueMatcher, SafeRegexValueMatcher, SuffixValueMatcher, ValueMatcher } from './matcher';
 import { envoyFractionToFraction, Fraction } from "./fraction";
 import { RouteAction, SingleClusterRouteAction, WeightedCluster, WeightedClusterRouteAction } from './route-action';
-import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL_V3 } from './resources';
+import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL } from './resources';
 import Duration = experimental.Duration;
 import { Duration__Output } from './generated/google/protobuf/Duration';
 import { createHttpFilter, HttpFilterConfig, parseOverrideFilterConfig, parseTopLevelFilterConfig } from './http-filter';
@@ -212,7 +212,6 @@ class XdsResolver implements Resolver {
   private latestRouteConfigName: string | null = null;
 
   private latestRouteConfig: RouteConfiguration__Output | null = null;
-  private latestRouteConfigIsV2 = false;
 
   private clusterRefcounts = new Map<string, {inLastConfig: boolean, refCount: number}>();
 
@@ -226,15 +225,15 @@ class XdsResolver implements Resolver {
     private channelOptions: ChannelOptions
   ) {
     this.ldsWatcher = {
-      onValidUpdate: (update: Listener__Output, isV2: boolean) => {
-        const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL_V3, update.api_listener!.api_listener!.value);
+      onValidUpdate: (update: Listener__Output) => {
+        const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, update.api_listener!.api_listener!.value);
         const defaultTimeout = httpConnectionManager.common_http_protocol_options?.idle_timeout;
         if (defaultTimeout === null || defaultTimeout === undefined) {
           this.latestDefaultTimeout = undefined;
         } else {
           this.latestDefaultTimeout = protoDurationToDuration(defaultTimeout);
         }
-        if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
+        if (EXPERIMENTAL_FAULT_INJECTION) {
           this.ldsHttpFilterConfigs = [];
           for (const filter of httpConnectionManager.http_filters) {
             // typed_config must be set here, or validation would have failed
@@ -260,7 +259,7 @@ class XdsResolver implements Resolver {
             if (this.latestRouteConfigName) {
               getSingletonXdsClient().removeRouteWatcher(this.latestRouteConfigName, this.rdsWatcher);
             }
-            this.handleRouteConfig(httpConnectionManager.route_config!, isV2);
+            this.handleRouteConfig(httpConnectionManager.route_config!);
             break;
           default:
             // This is prevented by the validation rules
@@ -280,8 +279,8 @@ class XdsResolver implements Resolver {
       }
     };
     this.rdsWatcher = {
-      onValidUpdate: (update: RouteConfiguration__Output, isV2: boolean) => {
-        this.handleRouteConfig(update, isV2);
+      onValidUpdate: (update: RouteConfiguration__Output) => {
+        this.handleRouteConfig(update);
       },
       onTransientError: (error: StatusObject) => {
         /* A transient error only needs to bubble up as a failure if we have
@@ -311,14 +310,13 @@ class XdsResolver implements Resolver {
       refCount.refCount -= 1;
       if (!refCount.inLastConfig && refCount.refCount === 0) {
         this.clusterRefcounts.delete(clusterName);
-        this.handleRouteConfig(this.latestRouteConfig!, this.latestRouteConfigIsV2);
+        this.handleRouteConfig(this.latestRouteConfig!);
       }
     }
   }
 
-  private handleRouteConfig(routeConfig: RouteConfiguration__Output, isV2: boolean) {
+  private handleRouteConfig(routeConfig: RouteConfiguration__Output) {
     this.latestRouteConfig = routeConfig;
-    this.latestRouteConfigIsV2 = isV2;
     /* Select the virtual host using the default authority override if it
      * exists, and the channel target otherwise. */
     const hostDomain = this.channelOptions['grpc.default_authority'] ?? this.target.path;
@@ -328,7 +326,7 @@ class XdsResolver implements Resolver {
       return;
     }
     const virtualHostHttpFilterOverrides = new Map<string, HttpFilterConfig>();
-    if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
+    if (EXPERIMENTAL_FAULT_INJECTION) {
       for (const [name, filter] of Object.entries(virtualHost.typed_per_filter_config ?? {})) {
         const parsedConfig = parseOverrideFilterConfig(filter);
         if (parsedConfig) {
@@ -357,7 +355,7 @@ class XdsResolver implements Resolver {
         timeout = undefined;
       }
       const routeHttpFilterOverrides = new Map<string, HttpFilterConfig>();
-      if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
+      if (EXPERIMENTAL_FAULT_INJECTION) {
         for (const [name, filter] of Object.entries(route.typed_per_filter_config ?? {})) {
           const parsedConfig = parseOverrideFilterConfig(filter);
           if (parsedConfig) {
@@ -372,7 +370,7 @@ class XdsResolver implements Resolver {
           const cluster = route.route!.cluster!;
           allConfigClusters.add(cluster);
           const extraFilterFactories: FilterFactory<Filter>[] = [];
-          if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
+          if (EXPERIMENTAL_FAULT_INJECTION) {
             for (const filterConfig of this.ldsHttpFilterConfigs) {
               if (routeHttpFilterOverrides.has(filterConfig.name)) {
                 const filter = createHttpFilter(filterConfig.config, routeHttpFilterOverrides.get(filterConfig.name)!);
@@ -401,7 +399,7 @@ class XdsResolver implements Resolver {
             allConfigClusters.add(clusterWeight.name);
             const extraFilterFactories: FilterFactory<Filter>[] = [];
             const clusterHttpFilterOverrides = new Map<string, HttpFilterConfig>();
-            if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
+            if (EXPERIMENTAL_FAULT_INJECTION) {
               for (const [name, filter] of Object.entries(clusterWeight.typed_per_filter_config ?? {})) {
                 const parsedConfig = parseOverrideFilterConfig(filter);
                 if (parsedConfig) {

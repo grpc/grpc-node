@@ -26,7 +26,7 @@ export interface Watcher<UpdateType> {
    * message type into a library-specific configuration object type, to
    * remove a lot of duplicate logic, including logic for handling that
    * flag. */
-  onValidUpdate(update: UpdateType, isV2: boolean): void;
+  onValidUpdate(update: UpdateType): void;
   onTransientError(error: StatusObject): void;
   onResourceDoesNotExist(): void;
 }
@@ -85,7 +85,6 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
   nonce = '';
 
   private subscriptions: Map<string, SubscriptionEntry<ResponseType>> = new Map<string, SubscriptionEntry<ResponseType>>();
-  private latestIsV2 = false;
   private isAdsStreamRunning = false;
   private ignoreResourceDeletion = false;
 
@@ -128,7 +127,7 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
        * the same happens here */
       process.nextTick(() => {
         this.trace('Reporting existing update for new watcher for name ' + name);
-        watcher.onValidUpdate(cachedResponse, this.latestIsV2);
+        watcher.onValidUpdate(cachedResponse);
       });
     }
     if (addedName) {
@@ -157,7 +156,7 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
   getResourceNames(): string[] {
     return Array.from(this.subscriptions.keys());
   }
-  handleResponses(responses: ResourcePair<ResponseType>[], isV2: boolean): HandleResponseResult {
+  handleResponses(responses: ResourcePair<ResponseType>[]): HandleResponseResult {
     const validResponses: ResponseType[] = [];
     let result: HandleResponseResult = {
       accepted: [],
@@ -166,7 +165,7 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
     }
     for (const {resource, raw} of responses) {
       const resourceName = this.getResourceName(resource);
-      if (this.validateResponse(resource, isV2)) {
+      if (this.validateResponse(resource)) {
         validResponses.push(resource);
         result.accepted.push({
           name: resourceName,
@@ -180,7 +179,6 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
         });
       }
     }
-    this.latestIsV2 = isV2;
     const allResourceNames = new Set<string>();
     for (const resource of validResponses) {
       const resourceName = this.getResourceName(resource);
@@ -189,7 +187,7 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
       if (subscriptionEntry) {
         const watchers = subscriptionEntry.watchers;
         for (const watcher of watchers) {
-          watcher.onValidUpdate(resource, isV2);
+          watcher.onValidUpdate(resource);
         }
         clearTimeout(subscriptionEntry.resourceTimer);
         subscriptionEntry.cachedResponse = resource;
@@ -259,9 +257,8 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
    * This function is public so that the LDS validateResponse can call into
    * the RDS validateResponse.
    * @param resource The resource object sent by the xDS server
-   * @param isV2 If true, the resource is an xDS V2 resource instead of xDS V3
    */
-  public abstract validateResponse(resource: ResponseType, isV2: boolean): boolean;
+  public abstract validateResponse(resource: ResponseType): boolean;
   /**
    * Get the name of a resource object. The name is some field of the object, so
    * getting it depends on the specific type.

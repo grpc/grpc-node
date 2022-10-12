@@ -40,7 +40,7 @@ export class RdsState extends BaseXdsStreamState<RouteConfiguration__Output> imp
   protected getProtocolName(): string {
     return 'RDS';
   }
-  validateResponse(message: RouteConfiguration__Output, isV2: boolean): boolean {
+  validateResponse(message: RouteConfiguration__Output): boolean {
     // https://github.com/grpc/proposal/blob/master/A28-xds-traffic-splitting-and-routing.md#response-validation
     for (const virtualHost of message.virtual_hosts) {
       for (const domainPattern of virtualHost.domains) {
@@ -55,7 +55,7 @@ export class RdsState extends BaseXdsStreamState<RouteConfiguration__Output> imp
           return false;
         }
       }
-      if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
+      if (EXPERIMENTAL_FAULT_INJECTION) {
         for (const filterConfig of Object.values(virtualHost.typed_per_filter_config ?? {})) {
           if (!validateOverrideFilter(filterConfig)) {
             return false;
@@ -81,7 +81,7 @@ export class RdsState extends BaseXdsStreamState<RouteConfiguration__Output> imp
         if ((route.route === undefined) || (route.route === null) || SUPPORTED_CLUSTER_SPECIFIERS.indexOf(route.route.cluster_specifier) < 0) {
           return false;
         }
-        if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
+        if (EXPERIMENTAL_FAULT_INJECTION) {
           for (const [name, filterConfig] of Object.entries(route.typed_per_filter_config ?? {})) {
             if (!validateOverrideFilter(filterConfig)) {
               return false;
@@ -99,7 +99,7 @@ export class RdsState extends BaseXdsStreamState<RouteConfiguration__Output> imp
           if (weightSum !== route.route.weighted_clusters!.total_weight?.value ?? 100) {
             return false;
           }
-          if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
+          if (EXPERIMENTAL_FAULT_INJECTION) {
             for (const weightedCluster of route.route!.weighted_clusters!.clusters) {
               for (const filterConfig of Object.values(weightedCluster.typed_per_filter_config ?? {})) {
                 if (!validateOverrideFilter(filterConfig)) {

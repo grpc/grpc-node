@@ -19,7 +19,7 @@ import { experimental, logVerbosity } from "@grpc/grpc-js";
 import { Listener__Output } from '../generated/envoy/config/listener/v3/Listener';
 import { RdsState } from "./rds-state";
 import { BaseXdsStreamState, XdsStreamState } from "./xds-stream-state";
-import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL_V2, HTTP_CONNECTION_MANGER_TYPE_URL_V3 } from '../resources';
+import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL } from '../resources';
 import { getTopLevelFilterUrl, validateTopLevelFilter } from '../http-filter';
 import { EXPERIMENTAL_FAULT_INJECTION } from '../environment';
 
@@ -46,18 +46,17 @@ export class LdsState extends BaseXdsStreamState<Listener__Output> implements Xd
     super(updateResourceNames);
   }
 
-  public validateResponse(message: Listener__Output, isV2: boolean): boolean {
+  public validateResponse(message: Listener__Output): boolean {
     if (
       !(
         message.api_listener?.api_listener &&
-        (message.api_listener.api_listener.type_url === HTTP_CONNECTION_MANGER_TYPE_URL_V2 ||
-          message.api_listener.api_listener.type_url === HTTP_CONNECTION_MANGER_TYPE_URL_V3)
+        message.api_listener.api_listener.type_url === HTTP_CONNECTION_MANGER_TYPE_URL
       )
     ) {
       return false;
     }
-    const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL_V3, message.api_listener!.api_listener.value);
-    if (!isV2 && EXPERIMENTAL_FAULT_INJECTION) {
+    const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, message.api_listener!.api_listener.value);
+    if (EXPERIMENTAL_FAULT_INJECTION) {
       const filterNames = new Set<string>();
       for (const [index, httpFilter] of httpConnectionManager.http_filters.entries()) {
         if (filterNames.has(httpFilter.name)) {
@@ -89,7 +88,7 @@ export class LdsState extends BaseXdsStreamState<Listener__Output> implements Xd
       case 'rds':
         return !!httpConnectionManager.rds?.config_source?.ads;
       case 'route_config':
-        return this.rdsState.validateResponse(httpConnectionManager.route_config!, isV2);
+        return this.rdsState.validateResponse(httpConnectionManager.route_config!);
     }
     return false;
   }
