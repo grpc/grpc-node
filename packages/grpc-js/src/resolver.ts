@@ -16,7 +16,7 @@
  */
 
 import { MethodConfig, ServiceConfig } from './service-config';
-import { StatusObject } from './call-stream';
+import { StatusObject } from './call-interface';
 import { SubchannelAddress } from './subchannel-address';
 import { GrpcUri, uriToString } from './uri-parser';
 import { ChannelOptions } from './channel-options';

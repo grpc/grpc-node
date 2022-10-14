@@ -26,7 +26,7 @@ class RouterFilter extends BaseFilter implements Filter {}
 class RouterFilterFactory implements FilterFactory<RouterFilter> {
   constructor(config: HttpFilterConfig, overrideConfig?: HttpFilterConfig) {}
 
-  createFilter(callStream: experimental.CallStream): RouterFilter {
+  createFilter(): RouterFilter {
     return new RouterFilter();
   }
 }

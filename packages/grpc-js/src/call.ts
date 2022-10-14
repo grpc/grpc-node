@@ -18,7 +18,7 @@
 import { EventEmitter } from 'events';
 import { Duplex, Readable, Writable } from 'stream';
 
-import { StatusObject, MessageContext } from './call-stream';
+import { StatusObject, MessageContext } from './call-interface';
 import { Status } from './constants';
 import { EmitterAugmentation1 } from './events';
 import { Metadata } from './metadata';

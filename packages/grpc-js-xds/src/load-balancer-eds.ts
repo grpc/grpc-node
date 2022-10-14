@@ -146,24 +146,6 @@ export class EdsLoadBalancingConfig implements LoadBalancingConfig {
   }
 }
 
-class CallEndTrackingFilter extends BaseFilter implements Filter {
-  constructor(private onCallEnd: () => void) {
-    super();
-  }
-  receiveTrailers(status: StatusObject) {
-    this.onCallEnd();
-    return status;
-  }
-}
-
-class CallTrackingFilterFactory implements FilterFactory<CallEndTrackingFilter> {
-  constructor(private onCallEnd: () => void) {}
-
-  createFilter(callStream: CallStream) {
-    return new CallEndTrackingFilter(this.onCallEnd);
-  }
-}
-
 /**
  * This class load balances over a cluster by making an EDS request and then
  * transforming the result into a configuration for another load balancing
@@ -217,9 +199,6 @@ export class EdsLoadBalancer implements LoadBalancer {
              * balancer. */
             if (dropCategory === null) {
               const originalPick = originalPicker.pick(pickArgs);
-              const trackingFilterFactory: FilterFactory<Filter> = new CallTrackingFilterFactory(() => {
-                this.concurrentRequests -= 1;
-              });
               return {
                 pickResultType: originalPick.pickResultType,
                 status: originalPick.status,
@@ -228,7 +207,10 @@ export class EdsLoadBalancer implements LoadBalancer {
                   originalPick.onCallStarted?.();
                   this.concurrentRequests += 1;
                 },
-                extraFilterFactories: originalPick.extraFilterFactories.concat(trackingFilterFactory)
+                onCallEnded: status => {
+                  originalPick.onCallEnded?.(status);
+                  this.concurrentRequests -= 1;
+                }
               };
             } else {
               let details: string;
@@ -247,7 +229,7 @@ export class EdsLoadBalancer implements LoadBalancer {
                   metadata: new Metadata(),
                 },
                 subchannel: null,
-                extraFilterFactories: [],
+                onCallEnded: null,
                 onCallStarted: null
               };
             }

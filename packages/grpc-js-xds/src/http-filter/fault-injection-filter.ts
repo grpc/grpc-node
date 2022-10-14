@@ -231,7 +231,7 @@ const NUMBER_REGEX = /\d+/;
 let totalActiveFaults = 0;
 
 class FaultInjectionFilter extends BaseFilter implements Filter {
-  constructor(private callStream: CallStream, private config: FaultInjectionConfig) {
+  constructor(private config: FaultInjectionConfig) {
     super();
   }
 
@@ -316,7 +316,7 @@ class FaultInjectionFilter extends BaseFilter implements Filter {
         }
       }
       if (abortStatus !== null && rollRandomPercentage(numerator, denominator)) {
-        this.callStream.cancelWithStatus(abortStatus, 'Fault injected');
+        return Promise.reject({code: abortStatus, details: 'Fault injected', metadata: new Metadata()});
       }
     }
     return metadata;
@@ -333,8 +333,8 @@ class FaultInjectionFilterFactory implements FilterFactory<FaultInjectionFilter>
     }
   }
 
-  createFilter(callStream: experimental.CallStream): FaultInjectionFilter {
-    return new FaultInjectionFilter(callStream, this.config);
+  createFilter(): FaultInjectionFilter {
+    return new FaultInjectionFilter(this.config);
   }
 }
 

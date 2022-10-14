@@ -29,7 +29,7 @@ import {
   SurfaceCall,
 } from './call';
 import { CallCredentials } from './call-credentials';
-import { Deadline, StatusObject } from './call-stream';
+import { StatusObject } from './call-interface';
 import { Channel, ChannelImplementation } from './channel';
 import { ConnectivityState } from './connectivity-state';
 import { ChannelCredentials } from './channel-credentials';
@@ -50,6 +50,7 @@ import {
   ServerWritableStream,
   ServerDuplexStream,
 } from './server-call';
+import { Deadline } from './deadline';
 
 const CHANNEL_SYMBOL = Symbol();
 const INTERCEPTOR_SYMBOL = Symbol();
@@ -320,9 +321,6 @@ export class Client {
      * before calling the CallInvocationTransformer, and we need to create the
      * call after that. */
     emitter.call = call;
-    if (callProperties.callOptions.credentials) {
-      call.setCredentials(callProperties.callOptions.credentials);
-    }
     let responseMessage: ResponseType | null = null;
     let receivedStatus = false;
     const callerStackError = new Error();
@@ -448,9 +446,6 @@ export class Client {
      * before calling the CallInvocationTransformer, and we need to create the
      * call after that. */
     emitter.call = call;
-    if (callProperties.callOptions.credentials) {
-      call.setCredentials(callProperties.callOptions.credentials);
-    }
     let responseMessage: ResponseType | null = null;
     let receivedStatus = false;
     const callerStackError = new Error();
@@ -581,9 +576,6 @@ export class Client {
      * before calling the CallInvocationTransformer, and we need to create the
      * call after that. */
     stream.call = call;
-    if (callProperties.callOptions.credentials) {
-      call.setCredentials(callProperties.callOptions.credentials);
-    }
     let receivedStatus = false;
     const callerStackError = new Error();
     call.start(callProperties.metadata, {
@@ -680,9 +672,6 @@ export class Client {
      * before calling the CallInvocationTransformer, and we need to create the
      * call after that. */
     stream.call = call;
-    if (callProperties.callOptions.credentials) {
-      call.setCredentials(callProperties.callOptions.credentials);
-    }
     let receivedStatus = false;
     const callerStackError = new Error();
     call.start(callProperties.metadata, {

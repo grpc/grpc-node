@@ -15,7 +15,7 @@
  */
 
 import { isIPv4, isIPv6 } from 'net';
-import { StatusObject } from './call-stream';
+import { StatusObject } from './call-interface';
 import { ChannelOptions } from './channel-options';
 import { LogVerbosity, Status } from './constants';
 import { Metadata } from './metadata';

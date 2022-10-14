@@ -15,7 +15,7 @@
  *
  */
 
-import { StatusObject } from './call-stream';
+import { StatusObject } from './call-interface';
 import { Status } from './constants';
 import { Metadata } from './metadata';
 

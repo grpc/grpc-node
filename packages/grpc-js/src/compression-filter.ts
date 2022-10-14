@@ -17,7 +17,7 @@
 
 import * as zlib from 'zlib';
 
-import { Call, WriteObject, WriteFlags } from './call-stream';
+import { WriteObject, WriteFlags } from './call-interface';
 import { Channel } from './channel';
 import { ChannelOptions } from './channel-options';
 import { CompressionAlgorithms } from './compression-algorithms';
@@ -283,7 +283,7 @@ export class CompressionFilterFactory
   implements FilterFactory<CompressionFilter> {
     private sharedFilterConfig: SharedCompressionFilterConfig = {};
   constructor(private readonly channel: Channel, private readonly options: ChannelOptions) {}
-  createFilter(callStream: Call): CompressionFilter {
+  createFilter(): CompressionFilter {
     return new CompressionFilter(this.options, this.sharedFilterConfig);
   }
 }

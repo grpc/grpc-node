@@ -20,7 +20,6 @@ import * as http2 from 'http2';
 import { Duplex, Readable, Writable } from 'stream';
 import * as zlib from 'zlib';
 
-import { Deadline, StatusObject } from './call-stream';
 import {
   Status,
   DEFAULT_MAX_SEND_MESSAGE_LENGTH,
@@ -33,6 +32,8 @@ import { StreamDecoder } from './stream-decoder';
 import { ObjectReadable, ObjectWritable } from './object-stream';
 import { ChannelOptions } from './channel-options';
 import * as logging from './logging';
+import { StatusObject } from './call-interface';
+import { Deadline } from './deadline';
 
 const TRACER_NAME = 'server_call';
 
@@ -524,6 +525,8 @@ export class Http2ServerCallStream<
 
   receiveMetadata(headers: http2.IncomingHttpHeaders) {
     const metadata = Metadata.fromHttp2Headers(headers);
+
+    trace('Request to ' + this.handler.path + ' received headers ' + JSON.stringify(metadata.toJSON()));
 
     // TODO(cjihrig): Receive compression metadata.
 

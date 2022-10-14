@@ -31,7 +31,7 @@ export {
   PickArgs,
   PickResultType,
 } from './picker';
-export { Call as CallStream } from './call-stream';
+export { Call as CallStream } from './call-interface';
 export { Filter, BaseFilter, FilterFactory } from './filter';
 export { FilterStackFactory } from './filter-stack';
 export { registerAdminService } from './admin';

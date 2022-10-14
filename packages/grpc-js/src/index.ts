@@ -23,7 +23,7 @@ import {
   ServiceError,
 } from './call';
 import { CallCredentials, OAuth2Client } from './call-credentials';
-import { Deadline, StatusObject } from './call-stream';
+import { StatusObject } from './call-interface';
 import { Channel, ChannelImplementation } from './channel';
 import { CompressionAlgorithms } from './compression-algorithms';
 import { ConnectivityState } from './connectivity-state';
@@ -237,7 +237,7 @@ export const getClientChannel = (client: Client) => {
 
 export { StatusBuilder };
 
-export { Listener } from './call-stream';
+export { Listener } from './call-interface';
 
 export {
   Requester,
@@ -275,6 +275,7 @@ import * as load_balancer_pick_first from './load-balancer-pick-first';
 import * as load_balancer_round_robin from './load-balancer-round-robin';
 import * as load_balancer_outlier_detection from './load-balancer-outlier-detection';
 import * as channelz from './channelz';
+import { Deadline } from './deadline';
 
 const clientVersion = require('../../package.json').version;
 

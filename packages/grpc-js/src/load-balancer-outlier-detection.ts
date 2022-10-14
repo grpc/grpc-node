@@ -15,8 +15,7 @@
  *
  */
 
-import { ChannelOptions, connectivityState, StatusObject } from ".";
-import { Call } from "./call-stream";
+import { ChannelOptions } from "./channel-options";
 import { ConnectivityState } from "./connectivity-state";
 import { LogVerbosity, Status } from "./constants";
 import { durationToMs, isDuration, msToDuration } from "./duration";
@@ -216,7 +215,7 @@ class OutlierDetectionSubchannelWrapper extends BaseSubchannelWrapper implements
     });
   }
 
-  getConnectivityState(): connectivityState {
+  getConnectivityState(): ConnectivityState {
     if (this.ejected) {
       return ConnectivityState.TRANSIENT_FAILURE;
     } else {
@@ -326,28 +325,6 @@ interface MapEntry {
   subchannelWrappers: OutlierDetectionSubchannelWrapper[];
 }
 
-class OutlierDetectionCounterFilter extends BaseFilter implements Filter {
-  constructor(private callCounter: CallCounter) {
-    super();
-  }
-  receiveTrailers(status: StatusObject): StatusObject {
-    if (status.code === Status.OK) {
-      this.callCounter.addSuccess();
-    } else {
-      this.callCounter.addFailure();
-    }
-    return status;
-  }
-}
-
-class OutlierDetectionCounterFilterFactory implements FilterFactory<OutlierDetectionCounterFilter> {
-  constructor(private callCounter: CallCounter) {}
-  createFilter(callStream: Call): OutlierDetectionCounterFilter {
-    return new OutlierDetectionCounterFilter(this.callCounter);
-  }
-
-}
-
 class OutlierDetectionPicker implements Picker {
   constructor(private wrappedPicker: Picker, private countCalls: boolean) {}
   pick(pickArgs: PickArgs): PickResult {
@@ -356,14 +333,21 @@ class OutlierDetectionPicker implements Picker {
       const subchannelWrapper = wrappedPick.subchannel as OutlierDetectionSubchannelWrapper;
       const mapEntry = subchannelWrapper.getMapEntry();
       if (mapEntry) {
-        const extraFilterFactories = [...wrappedPick.extraFilterFactories];
+        let onCallEnded = wrappedPick.onCallEnded;
         if (this.countCalls) {
-          extraFilterFactories.push(new OutlierDetectionCounterFilterFactory(mapEntry.counter));
+          onCallEnded = statusCode => {
+            if (statusCode === Status.OK) {
+              mapEntry.counter.addSuccess();
+            } else {
+              mapEntry.counter.addFailure();
+            }
+            wrappedPick.onCallEnded?.(statusCode);
+          };
         }
         return {
           ...wrappedPick,
           subchannel: subchannelWrapper.getWrappedSubchannel(),
-          extraFilterFactories: extraFilterFactories
+          onCallEnded: onCallEnded
         };
       } else {
         return {
