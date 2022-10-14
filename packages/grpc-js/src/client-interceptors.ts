@@ -198,8 +198,6 @@ export interface InterceptingCallInterface {
   sendMessage(message: any): void;
   startRead(): void;
   halfClose(): void;
-
-  setCredentials(credentials: CallCredentials): void;
 }
 
 export class InterceptingCall implements InterceptingCallInterface {
@@ -337,9 +335,6 @@ export class InterceptingCall implements InterceptingCallInterface {
       }
     });
   }
-  setCredentials(credentials: CallCredentials): void {
-    this.nextCall.setCredentials(credentials);
-  }
 }
 
 function getCall(channel: Channel, path: string, options: CallOptions): Call {
@@ -370,9 +365,6 @@ class BaseInterceptingCall implements InterceptingCallInterface {
   }
   getPeer(): string {
     return this.call.getPeer();
-  }
-  setCredentials(credentials: CallCredentials): void {
-    this.call.setCredentials(credentials);
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendMessageWithContext(context: MessageContext, message: any): void {

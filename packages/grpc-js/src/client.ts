@@ -321,9 +321,6 @@ export class Client {
      * before calling the CallInvocationTransformer, and we need to create the
      * call after that. */
     emitter.call = call;
-    if (callProperties.callOptions.credentials) {
-      call.setCredentials(callProperties.callOptions.credentials);
-    }
     let responseMessage: ResponseType | null = null;
     let receivedStatus = false;
     const callerStackError = new Error();
@@ -449,9 +446,6 @@ export class Client {
      * before calling the CallInvocationTransformer, and we need to create the
      * call after that. */
     emitter.call = call;
-    if (callProperties.callOptions.credentials) {
-      call.setCredentials(callProperties.callOptions.credentials);
-    }
     let responseMessage: ResponseType | null = null;
     let receivedStatus = false;
     const callerStackError = new Error();
@@ -582,9 +576,6 @@ export class Client {
      * before calling the CallInvocationTransformer, and we need to create the
      * call after that. */
     stream.call = call;
-    if (callProperties.callOptions.credentials) {
-      call.setCredentials(callProperties.callOptions.credentials);
-    }
     let receivedStatus = false;
     const callerStackError = new Error();
     call.start(callProperties.metadata, {
@@ -681,9 +672,6 @@ export class Client {
      * before calling the CallInvocationTransformer, and we need to create the
      * call after that. */
     stream.call = call;
-    if (callProperties.callOptions.credentials) {
-      call.setCredentials(callProperties.callOptions.credentials);
-    }
     let receivedStatus = false;
     const callerStackError = new Error();
     call.start(callProperties.metadata, {
