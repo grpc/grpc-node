@@ -25,6 +25,8 @@ import { BaseXdsStreamState, HandleResponseResult, RejectedResourceEntry, Resour
 
 const TRACER_NAME = 'xds_client';
 
+const UINT32_MAX = 0xFFFFFFFF;
+
 function trace(text: string): void {
   experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
 }
@@ -88,7 +90,7 @@ export class EdsState extends BaseXdsStreamState<ClusterLoadAssignment__Output> 
       priorityTotalWeights.set(endpoint.priority, (priorityTotalWeights.get(endpoint.priority) ?? 0) + (endpoint.load_balancing_weight?.value ?? 0));
     }
     for (const totalWeight of priorityTotalWeights.values()) {
-      if (totalWeight >= 1<<32) {
+      if (totalWeight > UINT32_MAX) {
         return false;
       }
     }
