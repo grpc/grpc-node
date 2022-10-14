@@ -21,7 +21,7 @@ import { ClientStatusDiscoveryServiceHandlers } from "./generated/envoy/service/
 import { ClientStatusRequest__Output } from "./generated/envoy/service/status/v3/ClientStatusRequest";
 import { ClientStatusResponse } from "./generated/envoy/service/status/v3/ClientStatusResponse";
 import { Timestamp } from "./generated/google/protobuf/Timestamp";
-import { AdsTypeUrl, CDS_TYPE_URL_V2, CDS_TYPE_URL_V3, EDS_TYPE_URL_V2, EDS_TYPE_URL_V3, LDS_TYPE_URL_V2, LDS_TYPE_URL_V3, RDS_TYPE_URL_V2, RDS_TYPE_URL_V3 } from "./resources";
+import { AdsTypeUrl, CDS_TYPE_URL, EDS_TYPE_URL, LDS_TYPE_URL, RDS_TYPE_URL } from "./resources";
 import { HandleResponseResult } from "./xds-stream-state/xds-stream-state";
 import { sendUnaryData, ServerDuplexStream, ServerUnaryCall, status, experimental, loadPackageDefinition, logVerbosity } from '@grpc/grpc-js';
 import { loadSync } from "@grpc/proto-loader";
@@ -50,14 +50,10 @@ function dateToProtoTimestamp(date?: Date | null): Timestamp | null {
 let clientNode: Node | null = null;
 
 const configStatus = {
-  [EDS_TYPE_URL_V2]: new Map<string, GenericXdsConfig>(),
-  [EDS_TYPE_URL_V3]: new Map<string, GenericXdsConfig>(),
-  [CDS_TYPE_URL_V2]: new Map<string, GenericXdsConfig>(),
-  [CDS_TYPE_URL_V3]: new Map<string, GenericXdsConfig>(),
-  [RDS_TYPE_URL_V2]: new Map<string, GenericXdsConfig>(),
-  [RDS_TYPE_URL_V3]: new Map<string, GenericXdsConfig>(),
-  [LDS_TYPE_URL_V2]: new Map<string, GenericXdsConfig>(),
-  [LDS_TYPE_URL_V3]: new Map<string, GenericXdsConfig>()
+  [EDS_TYPE_URL]: new Map<string, GenericXdsConfig>(),
+  [CDS_TYPE_URL]: new Map<string, GenericXdsConfig>(),
+  [RDS_TYPE_URL]: new Map<string, GenericXdsConfig>(),
+  [LDS_TYPE_URL]: new Map<string, GenericXdsConfig>()
 };
 
 /**

@@ -16,7 +16,7 @@
  */
 
 import { connectivityState as ConnectivityState, StatusObject, status as Status, experimental } from '@grpc/grpc-js';
-import { Locality__Output } from './generated/envoy/api/v2/core/Locality';
+import { Locality__Output } from './generated/envoy/config/core/v3/Locality';
 import { XdsClusterLocalityStats, XdsClient, getSingletonXdsClient } from './xds-client';
 import LoadBalancer = experimental.LoadBalancer;
 import ChannelControlHelper = experimental.ChannelControlHelper;

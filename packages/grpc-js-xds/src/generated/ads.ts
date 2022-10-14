@@ -1,7 +1,6 @@
 import type * as grpc from '@grpc/grpc-js';
 import type { EnumTypeDefinition, MessageTypeDefinition } from '@grpc/proto-loader';
 
-import type { AggregatedDiscoveryServiceClient as _envoy_service_discovery_v2_AggregatedDiscoveryServiceClient, AggregatedDiscoveryServiceDefinition as _envoy_service_discovery_v2_AggregatedDiscoveryServiceDefinition } from './envoy/service/discovery/v2/AggregatedDiscoveryService';
 import type { AggregatedDiscoveryServiceClient as _envoy_service_discovery_v3_AggregatedDiscoveryServiceClient, AggregatedDiscoveryServiceDefinition as _envoy_service_discovery_v3_AggregatedDiscoveryServiceDefinition } from './envoy/service/discovery/v3/AggregatedDiscoveryService';
 
 type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {
@@ -11,47 +10,6 @@ type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> 
 export interface ProtoGrpcType {
   envoy: {
     annotations: {
-    }
-    api: {
-      v2: {
-        DeltaDiscoveryRequest: MessageTypeDefinition
-        DeltaDiscoveryResponse: MessageTypeDefinition
-        DiscoveryRequest: MessageTypeDefinition
-        DiscoveryResponse: MessageTypeDefinition
-        Resource: MessageTypeDefinition
-        core: {
-          Address: MessageTypeDefinition
-          AsyncDataSource: MessageTypeDefinition
-          BackoffStrategy: MessageTypeDefinition
-          BindConfig: MessageTypeDefinition
-          BuildVersion: MessageTypeDefinition
-          CidrRange: MessageTypeDefinition
-          ControlPlane: MessageTypeDefinition
-          DataSource: MessageTypeDefinition
-          Extension: MessageTypeDefinition
-          HeaderMap: MessageTypeDefinition
-          HeaderValue: MessageTypeDefinition
-          HeaderValueOption: MessageTypeDefinition
-          HttpUri: MessageTypeDefinition
-          Locality: MessageTypeDefinition
-          Metadata: MessageTypeDefinition
-          Node: MessageTypeDefinition
-          Pipe: MessageTypeDefinition
-          RemoteDataSource: MessageTypeDefinition
-          RequestMethod: EnumTypeDefinition
-          RetryPolicy: MessageTypeDefinition
-          RoutingPriority: EnumTypeDefinition
-          RuntimeDouble: MessageTypeDefinition
-          RuntimeFeatureFlag: MessageTypeDefinition
-          RuntimeFractionalPercent: MessageTypeDefinition
-          RuntimeUInt32: MessageTypeDefinition
-          SocketAddress: MessageTypeDefinition
-          SocketOption: MessageTypeDefinition
-          TcpKeepalive: MessageTypeDefinition
-          TrafficDirection: EnumTypeDefinition
-          TransportSocket: MessageTypeDefinition
-        }
-      }
     }
     config: {
       core: {
@@ -95,18 +53,6 @@ export interface ProtoGrpcType {
     }
     service: {
       discovery: {
-        v2: {
-          AdsDummy: MessageTypeDefinition
-          /**
-           * See https://github.com/lyft/envoy-api#apis for a description of the role of
-           * ADS and how it is intended to be used by a management server. ADS requests
-           * have the same structure as their singleton xDS counterparts, but can
-           * multiplex many resource types on a single stream. The type_url in the
-           * DiscoveryRequest/DiscoveryResponse provides sufficient information to recover
-           * the multiplexed singleton APIs at the Envoy instance and management server.
-           */
-          AggregatedDiscoveryService: SubtypeConstructor<typeof grpc.Client, _envoy_service_discovery_v2_AggregatedDiscoveryServiceClient> & { service: _envoy_service_discovery_v2_AggregatedDiscoveryServiceDefinition }
-        }
         v3: {
           AdsDummy: MessageTypeDefinition
           /**
@@ -127,9 +73,6 @@ export interface ProtoGrpcType {
       }
     }
     type: {
-      FractionalPercent: MessageTypeDefinition
-      Percent: MessageTypeDefinition
-      SemanticVersion: MessageTypeDefinition
       v3: {
         FractionalPercent: MessageTypeDefinition
         Percent: MessageTypeDefinition

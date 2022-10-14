@@ -22,17 +22,12 @@ import { loadPackageDefinition, StatusObject, status, logVerbosity, Metadata, ex
 import * as adsTypes from './generated/ads';
 import * as lrsTypes from './generated/lrs';
 import { loadBootstrapInfo } from './xds-bootstrap';
-import { Node as NodeV2 } from './generated/envoy/api/v2/core/Node';
-import { Node as NodeV3 } from './generated/envoy/config/core/v3/Node';
-import { AggregatedDiscoveryServiceClient as AggregatedDiscoveryServiceClientV2 } from './generated/envoy/service/discovery/v2/AggregatedDiscoveryService';
-import { AggregatedDiscoveryServiceClient as AggregatedDiscoveryServiceClientV3 } from './generated/envoy/service/discovery/v3/AggregatedDiscoveryService';
-import { DiscoveryRequest as DiscoveryRequestV2 } from './generated/envoy/api/v2/DiscoveryRequest';
-import { DiscoveryRequest as DiscoveryRequestV3 } from './generated/envoy/service/discovery/v3/DiscoveryRequest';
+import { Node } from './generated/envoy/config/core/v3/Node';
+import { AggregatedDiscoveryServiceClient } from './generated/envoy/service/discovery/v3/AggregatedDiscoveryService';
+import { DiscoveryRequest } from './generated/envoy/service/discovery/v3/DiscoveryRequest';
 import { DiscoveryResponse__Output } from './generated/envoy/service/discovery/v3/DiscoveryResponse';
-import { LoadReportingServiceClient as LoadReportingServiceClientV2 } from './generated/envoy/service/load_stats/v2/LoadReportingService';
-import { LoadReportingServiceClient as LoadReportingServiceClientV3 } from './generated/envoy/service/load_stats/v3/LoadReportingService';
-import { LoadStatsRequest as LoadStatsRequestV2 } from './generated/envoy/service/load_stats/v2/LoadStatsRequest';
-import { LoadStatsRequest as LoadStatsRequestV3 } from './generated/envoy/service/load_stats/v3/LoadStatsRequest';
+import { LoadReportingServiceClient } from './generated/envoy/service/load_stats/v3/LoadReportingService';
+import { LoadStatsRequest } from './generated/envoy/service/load_stats/v3/LoadStatsRequest';
 import { LoadStatsResponse__Output } from './generated/envoy/service/load_stats/v3/LoadStatsResponse';
 import { Locality, Locality__Output } from './generated/envoy/config/core/v3/Locality';
 import { Listener__Output } from './generated/envoy/config/listener/v3/Listener';
@@ -50,7 +45,7 @@ import { ClusterLoadAssignment__Output } from './generated/envoy/config/endpoint
 import { Cluster__Output } from './generated/envoy/config/cluster/v3/Cluster';
 import { RouteConfiguration__Output } from './generated/envoy/config/route/v3/RouteConfiguration';
 import { Duration } from './generated/google/protobuf/Duration';
-import { AdsOutputType, AdsTypeUrl, CDS_TYPE_URL_V2, CDS_TYPE_URL_V3, decodeSingleResource, EDS_TYPE_URL_V2, EDS_TYPE_URL_V3, LDS_TYPE_URL_V2, LDS_TYPE_URL_V3, RDS_TYPE_URL_V2, RDS_TYPE_URL_V3 } from './resources';
+import { AdsOutputType, AdsTypeUrl, CDS_TYPE_URL, decodeSingleResource, EDS_TYPE_URL, LDS_TYPE_URL, RDS_TYPE_URL } from './resources';
 import { setCsdsClientNode, updateCsdsRequestedNameList, updateCsdsResourceResponse } from './csds';
 
 const TRACER_NAME = 'xds_client';
@@ -74,8 +69,6 @@ function loadAdsProtos(): Promise<
   loadedProtos = protoLoader
     .load(
       [
-        'envoy/service/discovery/v2/ads.proto',
-        'envoy/service/load_stats/v2/lrs.proto',
         'envoy/service/discovery/v3/ads.proto',
         'envoy/service/load_stats/v3/lrs.proto',
       ],
@@ -85,6 +78,7 @@ function loadAdsProtos(): Promise<
         enums: String,
         defaults: true,
         oneofs: true,
+        json: true,
         includeDirs: [
           // Paths are relative to src/build
           __dirname + '/../../deps/envoy-api/',
@@ -234,62 +228,38 @@ interface AdsState {
   lds: LdsState;
 }
 
-enum XdsApiVersion {
-  V2,
-  V3
-}
-
 function getResponseMessages<T extends AdsTypeUrl>(
   targetTypeUrl: T,
-  allowedTypeUrls: string[],
   resources: Any__Output[]
 ): ResourcePair<AdsOutputType<T>>[] {
   const result: ResourcePair<AdsOutputType<T>>[] = [];
   for (const resource of resources) {
-    if (allowedTypeUrls.includes(resource.type_url)) {
-      result.push({
-        resource: decodeSingleResource(targetTypeUrl, resource.value),
-        raw: resource
-      });
-    } else {
+    if (resource.type_url !== targetTypeUrl) {
       throw new Error(
-        `ADS Error: Invalid resource type ${resource.type_url}, expected ${allowedTypeUrls}`
+        `ADS Error: Invalid resource type ${resource.type_url}, expected ${targetTypeUrl}`
       );
     }
+    result.push({
+      resource: decodeSingleResource(targetTypeUrl, resource.value),
+      raw: resource
+    });
   }
   return result;
 }
 
 export class XdsClient {
-  private apiVersion: XdsApiVersion = XdsApiVersion.V2;
 
-  private adsNodeV2: NodeV2 | null = null;
-  private adsNodeV3: NodeV3 | null = null;
-  /* A client initiates connections lazily, so the client we don't use won't
-   * use significant extra resources. */
-  private adsClientV2: AggregatedDiscoveryServiceClientV2 | null = null;
-  private adsClientV3: AggregatedDiscoveryServiceClientV3 | null = null;
-  /* TypeScript typing is structural, so we can take advantage of the fact that
-   * the output structures for the two call types are identical. */
-  private adsCallV2: ClientDuplexStream<
-    DiscoveryRequestV2,
-    DiscoveryResponse__Output
-  > | null = null;
-  private adsCallV3: ClientDuplexStream<
-    DiscoveryRequestV3,
+  private adsNode: Node | null = null;
+  private adsClient: AggregatedDiscoveryServiceClient | null = null;
+  private adsCall: ClientDuplexStream<
+    DiscoveryRequest,
     DiscoveryResponse__Output
   > | null = null;
 
-  private lrsNodeV2: NodeV2 | null = null;
-  private lrsNodeV3: NodeV3 | null = null;
-  private lrsClientV2: LoadReportingServiceClientV2 | null = null;
-  private lrsClientV3: LoadReportingServiceClientV3 | null = null;
-  private lrsCallV2: ClientDuplexStream<
-    LoadStatsRequestV2,
-    LoadStatsResponse__Output
-  > | null = null;
-  private lrsCallV3: ClientDuplexStream<
-    LoadStatsRequestV3,
+  private lrsNode: Node | null = null;
+  private lrsClient: LoadReportingServiceClient | null = null;
+  private lrsCall: ClientDuplexStream<
+    LoadStatsRequest,
     LoadStatsResponse__Output
   > | null = null;
   private latestLrsSettings: LoadStatsResponse__Output | null = null;
@@ -355,48 +325,24 @@ export class XdsClient {
           });
           return;
         }
-        if (bootstrapInfo.xdsServers[0].serverFeatures.indexOf('xds_v3') >= 0) {
-          this.apiVersion = XdsApiVersion.V3;
-        } else {
-          this.apiVersion = XdsApiVersion.V2;
-        }
         if (bootstrapInfo.xdsServers[0].serverFeatures.indexOf('ignore_resource_deletion') >= 0) {
           this.adsState.lds.enableIgnoreResourceDeletion();
           this.adsState.cds.enableIgnoreResourceDeletion();
         }
-        const nodeV2: NodeV2 = {
+        const userAgentName = 'gRPC Node Pure JS';
+        this.adsNode = {
           ...bootstrapInfo.node,
-          build_version: `gRPC Node Pure JS ${clientVersion}`,
-          user_agent_name: 'gRPC Node Pure JS',
-        };
-        const nodeV3: NodeV3 = {
-          ...bootstrapInfo.node,
-          user_agent_name: 'gRPC Node Pure JS',
-        };
-        this.adsNodeV2 = {
-          ...nodeV2,
+          user_agent_name: userAgentName,
           client_features: ['envoy.lb.does_not_support_overprovisioning'],
         };
-        this.adsNodeV3 = {
-          ...nodeV3,
-          client_features: ['envoy.lb.does_not_support_overprovisioning'],
-        };
-        this.lrsNodeV2 = {
-          ...nodeV2,
+        this.lrsNode = {
+          ...bootstrapInfo.node,
+          user_agent_name: userAgentName,
           client_features: ['envoy.lrs.supports_send_all_clusters'],
         };
-        this.lrsNodeV3 = {
-          ...nodeV3,
-          client_features: ['envoy.lrs.supports_send_all_clusters'],
-        };
-        setCsdsClientNode(this.adsNodeV3);
-        if (this.apiVersion === XdsApiVersion.V2) {
-          trace('ADS Node: ' + JSON.stringify(this.adsNodeV2, undefined, 2));
-          trace('LRS Node: ' + JSON.stringify(this.lrsNodeV2, undefined, 2));
-        } else {
-          trace('ADS Node: ' + JSON.stringify(this.adsNodeV3, undefined, 2));
-          trace('LRS Node: ' + JSON.stringify(this.lrsNodeV3, undefined, 2));
-        }
+        setCsdsClientNode(this.adsNode);
+        trace('ADS Node: ' + JSON.stringify(this.adsNode, undefined, 2));
+        trace('LRS Node: ' + JSON.stringify(this.lrsNode, undefined, 2));
         const credentialsConfigs = bootstrapInfo.xdsServers[0].channelCreds;
         let channelCreds: ChannelCredentials | null = null;
         for (const config of credentialsConfigs) {
@@ -421,24 +367,14 @@ export class XdsClient {
         const serverUri = bootstrapInfo.xdsServers[0].serverUri
         trace('Starting xDS client connected to server URI ' + bootstrapInfo.xdsServers[0].serverUri);
         const channel = new Channel(serverUri, channelCreds, channelArgs);
-        this.adsClientV2 = new protoDefinitions.envoy.service.discovery.v2.AggregatedDiscoveryService(
-          serverUri,
-          channelCreds,
-          {channelOverride: channel}
-        );
-        this.adsClientV3 = new protoDefinitions.envoy.service.discovery.v3.AggregatedDiscoveryService(
+        this.adsClient = new protoDefinitions.envoy.service.discovery.v3.AggregatedDiscoveryService(
           serverUri,
           channelCreds,
           {channelOverride: channel}
         );
         this.maybeStartAdsStream();
 
-        this.lrsClientV2 = new protoDefinitions.envoy.service.load_stats.v2.LoadReportingService(
-          serverUri,
-          channelCreds,
-          {channelOverride: channel}
-        );
-        this.lrsClientV3 = new protoDefinitions.envoy.service.load_stats.v3.LoadReportingService(
+        this.lrsClient = new protoDefinitions.envoy.service.load_stats.v3.LoadReportingService(
           serverUri,
           channelCreds,
           {channelOverride: channel}
@@ -463,55 +399,36 @@ export class XdsClient {
       result: HandleResponseResult;
       serviceKind: AdsServiceKind;
     } | null = null;
-    let isV2: boolean;
-    switch (message.type_url) {
-      case EDS_TYPE_URL_V2:
-      case CDS_TYPE_URL_V2:
-      case RDS_TYPE_URL_V2:
-      case LDS_TYPE_URL_V2:
-        isV2 = true;
-        break;
-      default:
-        isV2 = false;
-    }
     try {
       switch (message.type_url) {
-        case EDS_TYPE_URL_V2:
-        case EDS_TYPE_URL_V3:
+        case EDS_TYPE_URL:
           handleResponseResult = {
             result: this.adsState.eds.handleResponses(
-              getResponseMessages(EDS_TYPE_URL_V3, [EDS_TYPE_URL_V2, EDS_TYPE_URL_V3], message.resources),
-              isV2
+              getResponseMessages(EDS_TYPE_URL, message.resources)
             ),
             serviceKind: 'eds'
           };
           break;
-        case CDS_TYPE_URL_V2:
-        case CDS_TYPE_URL_V3: 
+        case CDS_TYPE_URL: 
           handleResponseResult = {
             result: this.adsState.cds.handleResponses(
-              getResponseMessages(CDS_TYPE_URL_V3, [CDS_TYPE_URL_V2, CDS_TYPE_URL_V3], message.resources),
-              isV2
+              getResponseMessages(CDS_TYPE_URL, message.resources)
             ),
             serviceKind: 'cds'
           };
           break;
-        case RDS_TYPE_URL_V2:
-        case RDS_TYPE_URL_V3: 
+        case RDS_TYPE_URL: 
           handleResponseResult = {
             result: this.adsState.rds.handleResponses(
-              getResponseMessages(RDS_TYPE_URL_V3, [RDS_TYPE_URL_V2, RDS_TYPE_URL_V3], message.resources),
-              isV2
+              getResponseMessages(RDS_TYPE_URL, message.resources)
             ),
             serviceKind: 'rds'
           };
           break;
-        case LDS_TYPE_URL_V2:
-        case LDS_TYPE_URL_V3:
+        case LDS_TYPE_URL:
           handleResponseResult = {
             result: this.adsState.lds.handleResponses(
-              getResponseMessages(LDS_TYPE_URL_V3, [LDS_TYPE_URL_V2, LDS_TYPE_URL_V3], message.resources),
-              isV2
+              getResponseMessages(LDS_TYPE_URL, message.resources)
             ),
             serviceKind: 'lds'
           }
@@ -548,8 +465,7 @@ export class XdsClient {
     trace(
       'ADS stream ended. code=' + streamStatus.code + ' details= ' + streamStatus.details
     );
-    this.adsCallV2 = null;
-    this.adsCallV3 = null;
+    this.adsCall = null;
     if (streamStatus.code !== status.OK) {
       this.reportStreamError(streamStatus);
     }
@@ -558,48 +474,6 @@ export class XdsClient {
     if (!this.adsBackoff.isRunning()) {
       this.maybeStartAdsStream();
     }
-  }
-
-  private maybeStartAdsStreamV2(): boolean {
-    if (this.apiVersion !== XdsApiVersion.V2) {
-      return false;
-    }
-    if (this.adsClientV2 === null) {
-      return false;
-    }
-    if (this.adsCallV2 !== null) {
-      return false;
-    }
-    this.adsCallV2 = this.adsClientV2.StreamAggregatedResources();
-    this.adsCallV2.on('data', (message: DiscoveryResponse__Output) => {
-      this.handleAdsResponse(message);
-    });
-    this.adsCallV2.on('status', (status: StatusObject) => {
-      this.handleAdsCallStatus(status);
-    });
-    this.adsCallV2.on('error', () => {});
-    return true;
-  }
-
-  private maybeStartAdsStreamV3(): boolean {
-    if (this.apiVersion !== XdsApiVersion.V3) {
-      return false;
-    }
-    if (this.adsClientV3 === null) {
-      return false;
-    }
-    if (this.adsCallV3 !== null) {
-      return false;
-    }
-    this.adsCallV3 = this.adsClientV3.StreamAggregatedResources();
-    this.adsCallV3.on('data', (message: DiscoveryResponse__Output) => {
-      this.handleAdsResponse(message);
-    });
-    this.adsCallV3.on('status', (status: StatusObject) => {
-      this.handleAdsCallStatus(status);
-    });
-    this.adsCallV3.on('error', () => {});
-    return true;
   }
 
   /**
@@ -616,73 +490,55 @@ export class XdsClient {
     this.adsState.lds.getResourceNames().length === 0) {
       return;
     }
-    let streamStarted: boolean;
-    if (this.apiVersion === XdsApiVersion.V2) {
-      streamStarted = this.maybeStartAdsStreamV2();
-    } else {
-      streamStarted = this.maybeStartAdsStreamV3();
+    if (this.adsClient === null) {
+      return;
     }
-    if (streamStarted) {
-      trace('Started ADS stream');
-      // Backoff relative to when we start the request
-      this.adsBackoff.runOnce();
+    if (this.adsCall !== null) {
+      return;
+    }
+    this.adsCall = this.adsClient.StreamAggregatedResources();
+    this.adsCall.on('data', (message: DiscoveryResponse__Output) => {
+      this.handleAdsResponse(message);
+    });
+    this.adsCall.on('status', (status: StatusObject) => {
+      this.handleAdsCallStatus(status);
+    });
+    this.adsCall.on('error', () => {});
+    trace('Started ADS stream');
+    // Backoff relative to when we start the request
+    this.adsBackoff.runOnce();
 
-      const allServiceKinds: AdsServiceKind[] = ['eds', 'cds', 'rds', 'lds'];
-      for (const service of allServiceKinds) {
-        const state = this.adsState[service];
-        if (state.getResourceNames().length > 0) {
-          this.updateNames(service);
-        }
+    const allServiceKinds: AdsServiceKind[] = ['eds', 'cds', 'rds', 'lds'];
+    for (const service of allServiceKinds) {
+      const state = this.adsState[service];
+      if (state.getResourceNames().length > 0) {
+        this.updateNames(service);
       }
-      this.reportAdsStreamStarted();
     }
+    this.reportAdsStreamStarted();
   }
 
   private maybeSendAdsMessage(typeUrl: string, resourceNames: string[], responseNonce: string, versionInfo: string, errorMessage?: string) {
-    if (this.apiVersion === XdsApiVersion.V2) {
-      this.adsCallV2?.write({
-        node: this.adsNodeV2!,
-        type_url: typeUrl,
-        resource_names: resourceNames,
-        response_nonce: responseNonce,
-        version_info: versionInfo,
-        error_detail: errorMessage ? { message: errorMessage } : undefined
-      });
-    } else {
-      this.adsCallV3?.write({
-        node: this.adsNodeV3!,
-        type_url: typeUrl,
-        resource_names: resourceNames,
-        response_nonce: responseNonce,
-        version_info: versionInfo,
-        error_detail: errorMessage ? { message: errorMessage } : undefined
-      });
-    }
+    this.adsCall?.write({
+      node: this.adsNode!,
+      type_url: typeUrl,
+      resource_names: resourceNames,
+      response_nonce: responseNonce,
+      version_info: versionInfo,
+      error_detail: errorMessage ? { message: errorMessage } : undefined
+    });
   }
 
   private getTypeUrl(serviceKind: AdsServiceKind): AdsTypeUrl {
-    if (this.apiVersion === XdsApiVersion.V2) {
-      switch (serviceKind) {
-        case 'eds':
-          return EDS_TYPE_URL_V2;
-        case 'cds':
-          return CDS_TYPE_URL_V2;
-        case 'rds':
-          return RDS_TYPE_URL_V2;
-        case 'lds':
-          return LDS_TYPE_URL_V2;
-      }
-    } else {
-      switch (serviceKind) {
-        case 'eds':
-          return EDS_TYPE_URL_V3;
-        case 'cds':
-          return CDS_TYPE_URL_V3;
-        case 'rds':
-          return RDS_TYPE_URL_V3;
-        case 'lds':
-          return LDS_TYPE_URL_V3;
-      }
+    switch (serviceKind) {
+      case 'eds':
+        return EDS_TYPE_URL;
+      case 'cds':
+        return CDS_TYPE_URL;
+      case 'rds':
+        return RDS_TYPE_URL;
+      case 'lds':
+        return LDS_TYPE_URL;
     }
   }
 
@@ -708,20 +564,16 @@ export class XdsClient {
     let versionInfo: string;
     let serviceKind: AdsServiceKind | null;
     switch (typeUrl) {
-      case EDS_TYPE_URL_V2:
-      case EDS_TYPE_URL_V3:
+      case EDS_TYPE_URL:
         serviceKind = 'eds';
         break;
-      case CDS_TYPE_URL_V2:
-      case CDS_TYPE_URL_V3:
+      case CDS_TYPE_URL:
         serviceKind = 'cds';
         break;
-      case RDS_TYPE_URL_V2:
-      case RDS_TYPE_URL_V3:
+      case RDS_TYPE_URL:
         serviceKind = 'rds';
         break;
-      case LDS_TYPE_URL_V2:
-      case LDS_TYPE_URL_V3:
+      case LDS_TYPE_URL:
         serviceKind = 'lds';
         break;
       default:
@@ -731,7 +583,7 @@ export class XdsClient {
     if (serviceKind) {
       this.adsState[serviceKind].reportStreamError({
         code: status.UNAVAILABLE,
-        details: message + ' Node ID=' + this.adsNodeV3!.id,
+        details: message + ' Node ID=' + this.adsNode!.id,
         metadata: new Metadata()
       });
       resourceNames = this.adsState[serviceKind].getResourceNames();
@@ -750,19 +602,15 @@ export class XdsClient {
     this.adsState.cds.getResourceNames().length === 0 &&
     this.adsState.rds.getResourceNames().length === 0 &&
     this.adsState.lds.getResourceNames().length === 0) {
-      this.adsCallV2?.end();
-      this.adsCallV2 = null;
-      this.adsCallV3?.end();
-      this.adsCallV3 = null;
-      this.lrsCallV2?.end();
-      this.lrsCallV2 = null;
-      this.lrsCallV3?.end();
-      this.lrsCallV3 = null;
+      this.adsCall?.end();
+      this.adsCall = null;
+      this.lrsCall?.end();
+      this.lrsCall = null;
       return;
     }
     this.maybeStartAdsStream();
     this.maybeStartLrsStream();
-    if (!this.adsCallV2 && !this.adsCallV3) {
+    if (!this.adsCall) {
       /* If the stream is not set up yet at this point, shortcut the rest
        * becuase nothing will actually be sent. This would mainly happen if
        * the bootstrap file has not been read yet. In that case, the output
@@ -776,7 +624,7 @@ export class XdsClient {
   }
 
   private reportStreamError(status: StatusObject) {
-    status = {...status, details: status.details + ' Node ID=' + this.adsNodeV3!.id};
+    status = {...status, details: status.details + ' Node ID=' + this.adsNode!.id};
     this.adsState.eds.reportStreamError(status);
     this.adsState.cds.reportStreamError(status);
     this.adsState.rds.reportStreamError(status);
@@ -823,8 +671,7 @@ export class XdsClient {
     trace(
       'LRS stream ended. code=' + streamStatus.code + ' details= ' + streamStatus.details
     );
-    this.lrsCallV2 = null;
-    this.lrsCallV3 = null;
+    this.lrsCall = null;
     clearInterval(this.statsTimer);
     /* If the backoff timer is no longer running, we do not need to wait any
      * more to start the new call. */
@@ -833,41 +680,22 @@ export class XdsClient {
     }
   }
 
-  private maybeStartLrsStreamV2(): boolean {
-    if (!this.lrsClientV2) {
-      return false;
-    }
-    if (this.lrsCallV2) {
-      return false;
-    }
-    this.lrsCallV2 = this.lrsClientV2.streamLoadStats();
-    this.receivedLrsSettingsForCurrentStream = false;
-    this.lrsCallV2.on('data', (message: LoadStatsResponse__Output) => {
-      this.handleLrsResponse(message);
-    });
-    this.lrsCallV2.on('status', (status: StatusObject) => {
-      this.handleLrsCallStatus(status);
-    });
-    this.lrsCallV2.on('error', () => {});
-    return true;
-  }
-
   private maybeStartLrsStreamV3(): boolean {
-    if (!this.lrsClientV3) {
+    if (!this.lrsClient) {
       return false;
     }
-    if (this.lrsCallV3) {
+    if (this.lrsCall) {
       return false;
     }
-    this.lrsCallV3 = this.lrsClientV3.streamLoadStats();
+    this.lrsCall = this.lrsClient.streamLoadStats();
     this.receivedLrsSettingsForCurrentStream = false;
-    this.lrsCallV3.on('data', (message: LoadStatsResponse__Output) => {
+    this.lrsCall.on('data', (message: LoadStatsResponse__Output) => {
       this.handleLrsResponse(message);
     });
-    this.lrsCallV3.on('status', (status: StatusObject) => {
+    this.lrsCall.on('status', (status: StatusObject) => {
       this.handleLrsCallStatus(status);
     });
-    this.lrsCallV3.on('error', () => {});
+    this.lrsCall.on('error', () => {});
     return true;
   }
 
@@ -881,39 +709,37 @@ export class XdsClient {
         this.adsState.lds.getResourceNames().length === 0) {
       return;
     }
-
-    let streamStarted: boolean;
-    if (this.apiVersion === XdsApiVersion.V2) {
-      streamStarted = this.maybeStartLrsStreamV2();
-    } else {
-      streamStarted = this.maybeStartLrsStreamV3();
+    if (!this.lrsClient) {
+      return;
     }
-
-    if (streamStarted) {
-      trace('Starting LRS stream');
-      this.lrsBackoff.runOnce();
-      /* Send buffered stats information when starting LRS stream. If there is no
-       * buffered stats information, it will still send the node field. */
-      this.sendStats();
+    if (this.lrsCall) {
+      return;
     }
+    this.lrsCall = this.lrsClient.streamLoadStats();
+    this.receivedLrsSettingsForCurrentStream = false;
+    this.lrsCall.on('data', (message: LoadStatsResponse__Output) => {
+      this.handleLrsResponse(message);
+    });
+    this.lrsCall.on('status', (status: StatusObject) => {
+      this.handleLrsCallStatus(status);
+    });
+    this.lrsCall.on('error', () => {});
+    trace('Starting LRS stream');
+    this.lrsBackoff.runOnce();
+    /* Send buffered stats information when starting LRS stream. If there is no
+      * buffered stats information, it will still send the node field. */
+    this.sendStats();
   }
 
   private maybeSendLrsMessage(clusterStats: ClusterStats[]) {
-    if (this.apiVersion === XdsApiVersion.V2) {
-      this.lrsCallV2?.write({
-        node: this.lrsNodeV2!,
-        cluster_stats: clusterStats
-      });
-    } else {
-      this.lrsCallV3?.write({
-        node: this.lrsNodeV3!,
-        cluster_stats: clusterStats
-      });
-    }
+    this.lrsCall?.write({
+      node: this.lrsNode!,
+      cluster_stats: clusterStats
+    });
   }
 
   private sendStats() {
-    if (this.lrsCallV2 === null && this.lrsCallV3 === null) {
+    if (this.lrsCall === null) {
       return;
     }
     if (!this.latestLrsSettings) {
@@ -1121,14 +947,10 @@ export class XdsClient {
   }
 
   private shutdown(): void {
-    this.adsCallV2?.cancel();
-    this.adsCallV3?.cancel();
-    this.adsClientV2?.close();
-    this.adsClientV3?.close();
-    this.lrsCallV2?.cancel();
-    this.lrsCallV3?.cancel();
-    this.lrsClientV2?.close();
-    this.lrsClientV3?.close();
+    this.adsCall?.cancel();
+    this.adsClient?.close();
+    this.lrsCall?.cancel();
+    this.lrsClient?.close();
     this.hasShutdown = true;
   }
 }

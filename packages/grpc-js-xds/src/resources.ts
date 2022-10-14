@@ -23,29 +23,22 @@ import { Listener__Output } from './generated/envoy/config/listener/v3/Listener'
 import { RouteConfiguration__Output } from './generated/envoy/config/route/v3/RouteConfiguration';
 import { HttpConnectionManager__Output } from './generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpConnectionManager';
 
-export const EDS_TYPE_URL_V2 = 'type.googleapis.com/envoy.api.v2.ClusterLoadAssignment';
-export const CDS_TYPE_URL_V2 = 'type.googleapis.com/envoy.api.v2.Cluster';
-export const LDS_TYPE_URL_V2 = 'type.googleapis.com/envoy.api.v2.Listener';
-export const RDS_TYPE_URL_V2 = 'type.googleapis.com/envoy.api.v2.RouteConfiguration';
+export const EDS_TYPE_URL = 'type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment';
+export const CDS_TYPE_URL = 'type.googleapis.com/envoy.config.cluster.v3.Cluster';
+export const LDS_TYPE_URL = 'type.googleapis.com/envoy.config.listener.v3.Listener';
+export const RDS_TYPE_URL = 'type.googleapis.com/envoy.config.route.v3.RouteConfiguration';
 
-export const EDS_TYPE_URL_V3 = 'type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment';
-export const CDS_TYPE_URL_V3 = 'type.googleapis.com/envoy.config.cluster.v3.Cluster';
-export const LDS_TYPE_URL_V3 = 'type.googleapis.com/envoy.config.listener.v3.Listener';
-export const RDS_TYPE_URL_V3 = 'type.googleapis.com/envoy.config.route.v3.RouteConfiguration';
-
-export type EdsTypeUrl = 'type.googleapis.com/envoy.api.v2.ClusterLoadAssignment' | 'type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment';
-export type CdsTypeUrl = 'type.googleapis.com/envoy.api.v2.Cluster' | 'type.googleapis.com/envoy.config.cluster.v3.Cluster';
-export type LdsTypeUrl = 'type.googleapis.com/envoy.api.v2.Listener' | 'type.googleapis.com/envoy.config.listener.v3.Listener';
-export type RdsTypeUrl = 'type.googleapis.com/envoy.api.v2.RouteConfiguration' | 'type.googleapis.com/envoy.config.route.v3.RouteConfiguration';
+export type EdsTypeUrl = 'type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment';
+export type CdsTypeUrl = 'type.googleapis.com/envoy.config.cluster.v3.Cluster';
+export type LdsTypeUrl = 'type.googleapis.com/envoy.config.listener.v3.Listener';
+export type RdsTypeUrl = 'type.googleapis.com/envoy.config.route.v3.RouteConfiguration';
 
 export type AdsTypeUrl = EdsTypeUrl | CdsTypeUrl | RdsTypeUrl | LdsTypeUrl;
 
-export const HTTP_CONNECTION_MANGER_TYPE_URL_V2 =
-  'type.googleapis.com/envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager';
-export const HTTP_CONNECTION_MANGER_TYPE_URL_V3 =
+export const HTTP_CONNECTION_MANGER_TYPE_URL =
   'type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager';
 
-export type HttpConnectionManagerTypeUrl = 'type.googleapis.com/envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager' | 'type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager';
+export type HttpConnectionManagerTypeUrl = 'type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager';
 
 /**
  * Map type URLs to their corresponding message types
