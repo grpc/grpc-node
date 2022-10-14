@@ -44,6 +44,8 @@ export class LoadBalancingCall implements Call {
   private writeFilterPending = false;
   private pendingMessage: {context: MessageContext, message: Buffer} | null = null;
   private pendingHalfClose = false;
+  private readFilterPending = false;
+  private pendingChildStatus: StatusObject | null = null;
   private ended = false;
   private serviceUrl: string;
   private filterStack: FilterStack;
@@ -153,14 +155,23 @@ export class LoadBalancingCall implements Call {
                   this.listener!.onReceiveMetadata(this.filterStack.receiveMetadata(metadata));
                 },
                 onReceiveMessage: message => {
+                  this.readFilterPending = true;
                   this.filterStack.receiveMessage(message).then(filteredMesssage => {
+                    this.readFilterPending = false;
                     this.listener!.onReceiveMessage(filteredMesssage);
+                    if (this.pendingChildStatus) {
+                      this.outputStatus(this.pendingChildStatus, 'PROCESSED');
+                    }
                   }, (status: StatusObject) => {
                     this.cancelWithStatus(status.code, status.details);
                   });
                 },
                 onReceiveStatus: status => {
-                  this.outputStatus(status, 'PROCESSED');
+                  if (this.readFilterPending) {
+                    this.pendingChildStatus = status;
+                  } else {
+                    this.outputStatus(status, 'PROCESSED');
+                  }
                 }
               });
             } catch (error) {
