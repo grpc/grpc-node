@@ -346,6 +346,12 @@ export class Server {
       serverOptions.maxSessionMemory = this.options[
         'grpc-node.max_session_memory'
       ];
+    } else {
+      /* By default, set a very large max session memory limit, to effectively
+       * disable enforcement of the limit. Some testing indicates that Node's
+       * behavior degrades badly when this limit is reached, so we solve that
+       * by disabling the check entirely. */
+      serverOptions.maxSessionMemory = Number.MAX_SAFE_INTEGER;
     }
     if ('grpc.max_concurrent_streams' in this.options) {
       serverOptions.settings = {
