@@ -36,7 +36,7 @@ import {
 } from './subchannel-address';
 import { SubchannelRef, ChannelzTrace, ChannelzChildrenTracker, SubchannelInfo, registerChannelzSubchannel, ChannelzCallTracker, SocketInfo, SocketRef, unregisterChannelzRef, registerChannelzSocket, TlsInfo } from './channelz';
 import { ConnectivityStateListener } from './subchannel-interface';
-import { Http2SubchannelCall } from './subchannel-call';
+import { Http2SubchannelCall, SubchannelCallInterceptingListener } from './subchannel-call';
 import { getNextCallNumber } from './call-number';
 import { SubchannelCall } from './subchannel-call';
 import { InterceptingListener, StatusObject } from './call-interface';
@@ -815,7 +815,7 @@ export class Subchannel {
     return false;
   }
 
-  createCall(metadata: Metadata, host: string, method: string, listener: InterceptingListener): SubchannelCall {
+  createCall(metadata: Metadata, host: string, method: string, listener: SubchannelCallInterceptingListener): SubchannelCall {
     const headers = metadata.toHttp2Headers();
     headers[HTTP2_HEADER_AUTHORITY] = host;
     headers[HTTP2_HEADER_USER_AGENT] = this.userAgent;

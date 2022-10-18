@@ -75,6 +75,14 @@ export interface SubchannelCall {
   getCallNumber(): number;
 }
 
+export interface StatusObjectWithRstCode extends StatusObject {
+  rstCode?: number;
+}
+
+export interface SubchannelCallInterceptingListener extends InterceptingListener {
+  onReceiveStatus(status: StatusObjectWithRstCode): void;
+}
+
 export class Http2SubchannelCall implements SubchannelCall {
   private decoder = new StreamDecoder();
 
@@ -103,7 +111,7 @@ export class Http2SubchannelCall implements SubchannelCall {
   constructor(
     private readonly http2Stream: http2.ClientHttp2Stream,
     private readonly callStatsTracker: SubchannelCallStatsTracker,
-    private readonly listener: InterceptingListener,
+    private readonly listener: SubchannelCallInterceptingListener,
     private readonly subchannel: Subchannel,
     private readonly callId: number
   ) {
@@ -257,7 +265,7 @@ export class Http2SubchannelCall implements SubchannelCall {
         // This is OK, because status codes emitted here correspond to more
         // catastrophic issues that prevent us from receiving trailers in the
         // first place.
-        this.endCall({ code, details, metadata: new Metadata() });
+        this.endCall({ code, details, metadata: new Metadata(), rstCode: http2Stream.rstCode });
       });
     });
     http2Stream.on('error', (err: SystemError) => {
@@ -329,7 +337,7 @@ export class Http2SubchannelCall implements SubchannelCall {
    * Subsequent calls are no-ops.
    * @param status The status of the call.
    */
-  private endCall(status: StatusObject): void {
+  private endCall(status: StatusObjectWithRstCode): void {
     /* If the status is OK and a new status comes in (e.g. from a
      * deserialization failure), that new status takes priority */
     if (this.finalStatus === null || this.finalStatus.code === Status.OK) {

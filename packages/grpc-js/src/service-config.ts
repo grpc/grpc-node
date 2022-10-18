@@ -86,7 +86,7 @@ export interface ServiceConfigCanaryConfig {
  * Recognizes a number with up to 9 digits after the decimal point, followed by
  * an "s", representing a number of seconds.
  */
-const TIMEOUT_REGEX = /^\d+(\.\d{1,9})?s$/;
+const DURATION_REGEX = /^\d+(\.\d{1,9})?s$/;
 
 /**
  * Client language name used for determining whether this client matches a
@@ -107,6 +107,75 @@ function validateName(obj: any): MethodConfigName {
     } else {
       throw new Error('Invalid method config name: invalid method');
     }
+  }
+  return result;
+}
+
+function validateRetryPolicy(obj: any): RetryPolicy {
+  if (!('maxAttempts' in obj) || !Number.isInteger(obj.maxAttempts) || obj.maxAttempts < 2) {
+    throw new Error('Invalid method config retry policy: maxAttempts must be an integer at least 2');
+  }
+  if (!('initialBackoff' in obj) || typeof obj.initialBackoff !== 'string' || !DURATION_REGEX.test(obj.initialBackoff)) {
+    throw new Error('Invalid method config retry policy: initialBackoff must be a string consisting of a positive integer followed by s');
+  }
+  if (!('maxBackoff' in obj) || typeof obj.maxBackoff !== 'string' || !DURATION_REGEX.test(obj.maxBackoff)) {
+    throw new Error('Invalid method config retry policy: maxBackoff must be a string consisting of a positive integer followed by s');
+  }
+  if (!('backoffMultiplier' in obj) || typeof obj.backoffMultiplier !== 'number' || obj.backoffMultiplier <= 0) {
+    throw new Error('Invalid method config retry policy: backoffMultiplier must be a number greater than 0');
+  }
+  if (('retryableStatusCodes' in obj) && Array.isArray(obj.retryableStatusCodes)) {
+    for (const value of obj.retryableStatusCodes) {
+      if (typeof value === 'number') {
+        if (!Object.values(Status).includes(value)) {
+          throw new Error('Invlid method config retry policy: retryableStatusCodes value not in status code range');
+        }
+      } else if (typeof value === 'string') {
+        if (!Object.values(Status).includes(value.toUpperCase())) {
+          throw new Error('Invlid method config retry policy: retryableStatusCodes value not a status code name');
+        }
+      } else {
+        throw new Error('Invlid method config retry policy: retryableStatusCodes value must be a string or number');
+      }
+    }
+  }
+  return {
+    maxAttempts: obj.maxAttempts,
+    initialBackoff: obj.initialBackoff,
+    maxBackoff: obj.maxBackoff,
+    backoffMultiplier: obj.backoffMultiplier,
+    retryableStatusCodes: obj.retryableStatusCodes
+  };
+}
+
+function validateHedgingPolicy(obj: any): HedgingPolicy {
+  if (!('maxAttempts' in obj) || !Number.isInteger(obj.maxAttempts) || obj.maxAttempts < 2) {
+    throw new Error('Invalid method config hedging policy: maxAttempts must be an integer at least 2');
+  }
+  if (('hedgingDelay' in obj) && (typeof obj.hedgingDelay !== 'string' || !DURATION_REGEX.test(obj.hedgingDelay))) {
+    throw new Error('Invalid method config hedging policy: hedgingDelay must be a string consisting of a positive integer followed by s');
+  }
+  if (('nonFatalStatusCodes' in obj) && Array.isArray(obj.nonFatalStatusCodes)) {
+    for (const value of obj.nonFatalStatusCodes) {
+      if (typeof value === 'number') {
+        if (!Object.values(Status).includes(value)) {
+          throw new Error('Invlid method config hedging policy: nonFatalStatusCodes value not in status code range');
+        }
+      } else if (typeof value === 'string') {
+        if (!Object.values(Status).includes(value.toUpperCase())) {
+          throw new Error('Invlid method config hedging policy: nonFatalStatusCodes value not a status code name');
+        }
+      } else {
+        throw new Error('Invlid method config hedging policy: nonFatalStatusCodes value must be a string or number');
+      }
+    }
+  }
+  const result: HedgingPolicy = {
+    maxAttempts: obj.maxAttempts,
+    nonFatalStatusCodes: obj.nonFatalStatusCodes
+  }
+  if (obj.hedgingDelay) {
+    result.hedgingDelay = obj.hedgingDelay;
   }
   return result;
 }
@@ -144,7 +213,7 @@ function validateMethodConfig(obj: any): MethodConfig {
       result.timeout = obj.timeout;
     } else if (
       typeof obj.timeout === 'string' &&
-      TIMEOUT_REGEX.test(obj.timeout)
+      DURATION_REGEX.test(obj.timeout)
     ) {
       const timeoutParts = obj.timeout
         .substring(0, obj.timeout.length - 1)
@@ -169,7 +238,29 @@ function validateMethodConfig(obj: any): MethodConfig {
     }
     result.maxResponseBytes = obj.maxResponseBytes;
   }
+  if ('retryPolicy' in obj) {
+    if ('hedgingPolicy' in obj) {
+      throw new Error('Invalid method config: retryPolicy and hedgingPolicy cannot both be specified');
+    } else {
+      result.retryPolicy = validateRetryPolicy(obj.retryPolicy);
+    }
+  } else if ('hedgingPolicy' in obj) {
+    result.hedgingPolicy = validateHedgingPolicy(obj.hedgingPolicy);
+  }
   return result;
+}
+
+export function validateRetryThrottling(obj: any): RetryThrottling {
+  if (!('maxTokens' in obj) || typeof obj.maxTokens !== 'number' || obj.maxTokens <=0 || obj.maxTokens > 1000) {
+    throw new Error('Invalid retryThrottling: maxTokens must be a number in (0, 1000]');
+  }
+  if (!('tokenRatio' in obj) || typeof obj.tokenRatio !== 'number' || obj.tokenRatio <= 0) {
+    throw new Error('Invalid retryThrottling: tokenRatio must be a number greater than 0');
+  }
+  return {
+    maxTokens: +(obj.maxTokens as number).toFixed(3),
+    tokenRatio: +(obj.tokenRatio as number).toFixed(3)
+  };
 }
 
 export function validateServiceConfig(obj: any): ServiceConfig {
