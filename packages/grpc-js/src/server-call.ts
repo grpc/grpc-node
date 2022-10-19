@@ -443,9 +443,6 @@ export class Http2ServerCallStream<
           metadata: null,
         });
       }
-
-      // to compensate for a fact that cancelled is not always called
-      this.emit('close');
     });
 
     this.stream.on('drain', () => {
@@ -776,9 +773,6 @@ export class Http2ServerCallStream<
       call.cancelled = true;
       call.emit('cancelled', reason);
     });
-
-    // to compensate for the fact that cancelled is no longer always called
-    this.once('close', () => call.emit('close'))
 
     this.once('callEnd', (status) => call.emit('callEnd', status));
   }
