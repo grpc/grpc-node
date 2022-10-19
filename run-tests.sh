@@ -28,7 +28,7 @@ cd $ROOT
 git submodule update --init --recursive
 
 if [ ! -n "$node_versions" ] ; then
-  node_versions="10 12 14 16"
+  node_versions="14 16"
 fi
 
 set +ex
