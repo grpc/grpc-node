@@ -62,6 +62,10 @@ import { parseUri } from './uri-parser';
 import { ChannelzCallTracker, ChannelzChildrenTracker, ChannelzTrace, registerChannelzServer, registerChannelzSocket, ServerInfo, ServerRef, SocketInfo, SocketRef, TlsInfo, unregisterChannelzRef } from './channelz';
 import { CipherNameAndProtocol, TLSSocket } from 'tls';
 
+const {
+  HTTP2_HEADER_PATH
+} = http2.constants
+
 const TRACER_NAME = 'server';
 
 interface BindResult {
@@ -77,7 +81,6 @@ function getUnimplementedStatusResponse(
   return {
     code: Status.UNIMPLEMENTED,
     details: `The server does not implement the method ${methodName}`,
-    metadata: new Metadata(),
   };
 }
 
@@ -147,6 +150,7 @@ export class Server {
   private sessions = new Map<http2.ServerHttp2Session, ChannelzSessionInfo>();
   private started = false;
   private options: ChannelOptions;
+  private serverAddressString: string = 'null'
 
   // Channelz Info
   private readonly channelzEnabled: boolean = true;
@@ -165,6 +169,7 @@ export class Server {
     if (this.channelzEnabled) {
       this.channelzTrace.addTrace('CT_INFO', 'Server created');
     }
+
     this.trace('Server constructed');
   }
 
@@ -730,6 +735,186 @@ export class Server {
     return this.channelzRef;
   }
 
+  private _verifyContentType(stream: http2.ServerHttp2Stream, headers: http2.IncomingHttpHeaders): boolean {
+    const contentType = headers[http2.constants.HTTP2_HEADER_CONTENT_TYPE];
+
+    if (
+      typeof contentType !== 'string' ||
+      !contentType.startsWith('application/grpc')
+    ) {
+      stream.respond(
+        {
+          [http2.constants.HTTP2_HEADER_STATUS]:
+            http2.constants.HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE,
+        },
+        { endStream: true }
+      );
+      return false
+    }
+
+    return true
+  }
+
+  private _retrieveHandler(headers: http2.IncomingHttpHeaders): Handler<any, any> {
+    const path = headers[HTTP2_HEADER_PATH] as string
+
+    this.trace(
+      'Received call to method ' +
+      path +
+      ' at address ' +
+      this.serverAddressString
+    );
+
+    const handler = this.handlers.get(path);
+
+    if (handler === undefined) {
+      this.trace(
+        'No handler registered for method ' +
+        path +
+        '. Sending UNIMPLEMENTED status.'
+      );
+      throw getUnimplementedStatusResponse(path);
+    }
+
+    return handler
+  }
+  
+  private _respondWithError<T extends Partial<ServiceError>>(
+    err: T, 
+    stream: http2.ServerHttp2Stream, 
+    channelzSessionInfo: ChannelzSessionInfo | null = null
+  ) {
+    const call = new Http2ServerCallStream(stream, null!, this.options);
+    
+    if (err.code === undefined) {
+      err.code = Status.INTERNAL;
+    }
+
+    if (this.channelzEnabled) {
+      this.callTracker.addCallFailed();
+      channelzSessionInfo?.streamTracker.addCallFailed()
+    }
+
+    call.sendError(err);
+  }
+
+  private _channelzHandler(stream: http2.ServerHttp2Stream, headers: http2.IncomingHttpHeaders) {
+    const channelzSessionInfo = this.sessions.get(stream.session as http2.ServerHttp2Session);
+    
+    this.callTracker.addCallStarted();
+    channelzSessionInfo?.streamTracker.addCallStarted();
+
+    if (!this._verifyContentType(stream, headers)) {
+      this.callTracker.addCallFailed();
+      channelzSessionInfo?.streamTracker.addCallFailed();
+      return
+    }
+
+    let handler: Handler<any, any>
+    try {
+      handler = this._retrieveHandler(headers)
+    } catch (err) {
+      this._respondWithError(err, stream, channelzSessionInfo)
+      return
+    }
+  
+    const call = new Http2ServerCallStream(stream, handler, this.options);
+      
+    call.once('callEnd', (code: Status) => {
+      if (code === Status.OK) {
+        this.callTracker.addCallSucceeded();
+      } else {
+        this.callTracker.addCallFailed();
+      }
+    });
+    
+    if (channelzSessionInfo) {
+      call.once('streamEnd', (success: boolean) => {
+        if (success) {
+          channelzSessionInfo.streamTracker.addCallSucceeded();
+        } else {
+          channelzSessionInfo.streamTracker.addCallFailed();
+        }
+      });
+      call.on('sendMessage', () => {
+        channelzSessionInfo.messagesSent += 1;
+        channelzSessionInfo.lastMessageSentTimestamp = new Date();
+      });
+      call.on('receiveMessage', () => {
+        channelzSessionInfo.messagesReceived += 1;
+        channelzSessionInfo.lastMessageReceivedTimestamp = new Date();
+      });
+    }
+
+    if (!this._runHandlerForCall(call, handler, headers)) {
+      this.callTracker.addCallFailed();
+      channelzSessionInfo?.streamTracker.addCallFailed()
+
+      call.sendError({
+        code: Status.INTERNAL,
+        details: `Unknown handler type: ${handler.type}`
+      });
+    }
+  }
+
+  private _streamHandler(stream: http2.ServerHttp2Stream, headers: http2.IncomingHttpHeaders) {
+    if (this._verifyContentType(stream, headers) !== true) {
+      return
+    }
+
+    let handler: Handler<any, any>
+    try {
+      handler = this._retrieveHandler(headers)
+    } catch (err) {
+      this._respondWithError(err, stream, null)
+      return
+    }
+
+    const call = new Http2ServerCallStream(stream, handler, this.options)
+    if (!this._runHandlerForCall(call, handler, headers)) {
+      call.sendError({
+        code: Status.INTERNAL,
+        details: `Unknown handler type: ${handler.type}`
+      });
+    }
+  }
+
+  private _runHandlerForCall(call: Http2ServerCallStream<any, any>, handler: Handler<any, any>, headers: http2.IncomingHttpHeaders): boolean {
+    const metadata = call.receiveMetadata(headers);
+    const encoding = (metadata.get('grpc-encoding')[0] as string | undefined) ?? 'identity';
+    metadata.remove('grpc-encoding');
+
+    const { type } = handler
+    if (type === 'unary') {
+      handleUnary(call, handler as UntypedUnaryHandler, metadata, encoding);
+    } else if (type === 'clientStream') {
+      handleClientStreaming(
+        call,
+        handler as UntypedClientStreamingHandler,
+        metadata,
+        encoding
+      );
+    } else if (type === 'serverStream') {
+      handleServerStreaming(
+        call,
+        handler as UntypedServerStreamingHandler,
+        metadata,
+        encoding
+      );
+    } else if (type === 'bidi') {
+      handleBidiStreaming(
+        call,
+        handler as UntypedBidiStreamingHandler,
+        metadata,
+        encoding
+      );
+    } else {
+      return false
+    }
+
+    return true
+  }
+
   private _setupHandlers(
     http2Server: http2.Http2Server | http2.Http2SecureServer
   ): void {
@@ -737,143 +922,23 @@ export class Server {
       return;
     }
 
-    http2Server.on(
-      'stream',
-      (stream: http2.ServerHttp2Stream, headers: http2.IncomingHttpHeaders) => {
-        const channelzSessionInfo = this.sessions.get(stream.session as http2.ServerHttp2Session);
-        if (this.channelzEnabled) {
-          this.callTracker.addCallStarted();
-          channelzSessionInfo?.streamTracker.addCallStarted();
-        }
-        const contentType = headers[http2.constants.HTTP2_HEADER_CONTENT_TYPE];
-
-        if (
-          typeof contentType !== 'string' ||
-          !contentType.startsWith('application/grpc')
-        ) {
-          stream.respond(
-            {
-              [http2.constants.HTTP2_HEADER_STATUS]:
-                http2.constants.HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE,
-            },
-            { endStream: true }
-          );
-          this.callTracker.addCallFailed();
-          if (this.channelzEnabled) {
-            channelzSessionInfo?.streamTracker.addCallFailed();
-          }
-          return;
-        }
-
-        let call: Http2ServerCallStream<any, any> | null = null;
-
-        try {
-          const path = headers[http2.constants.HTTP2_HEADER_PATH] as string;
-          const serverAddress = http2Server.address();
-          let serverAddressString = 'null';
-          if (serverAddress) {
-            if (typeof serverAddress === 'string') {
-              serverAddressString = serverAddress;
-            } else {
-              serverAddressString =
-                serverAddress.address + ':' + serverAddress.port;
-            }
-          }
-          this.trace(
-            'Received call to method ' +
-              path +
-              ' at address ' +
-              serverAddressString
-          );
-          const handler = this.handlers.get(path);
-
-          if (handler === undefined) {
-            this.trace(
-              'No handler registered for method ' +
-                path +
-                '. Sending UNIMPLEMENTED status.'
-            );
-            throw getUnimplementedStatusResponse(path);
-          }
-
-          call = new Http2ServerCallStream(stream, handler, this.options);
-          call.once('callEnd', (code: Status) => {
-            if (code === Status.OK) {
-              this.callTracker.addCallSucceeded();
-            } else {
-              this.callTracker.addCallFailed();
-            }
-          });
-          if (this.channelzEnabled && channelzSessionInfo) {
-            call.once('streamEnd', (success: boolean) => {
-              if (success) {
-                channelzSessionInfo.streamTracker.addCallSucceeded();
-              } else {
-                channelzSessionInfo.streamTracker.addCallFailed();
-              }
-            });
-            call.on('sendMessage', () => {
-              channelzSessionInfo.messagesSent += 1;
-              channelzSessionInfo.lastMessageSentTimestamp = new Date();
-            });
-            call.on('receiveMessage', () => {
-              channelzSessionInfo.messagesReceived += 1;
-              channelzSessionInfo.lastMessageReceivedTimestamp = new Date();
-            });
-          }
-          const metadata = call.receiveMetadata(headers);
-          const encoding = (metadata.get('grpc-encoding')[0] as string | undefined) ?? 'identity';
-          metadata.remove('grpc-encoding');
-
-          switch (handler.type) {
-            case 'unary':
-              handleUnary(call, handler as UntypedUnaryHandler, metadata, encoding);
-              break;
-            case 'clientStream':
-              handleClientStreaming(
-                call,
-                handler as UntypedClientStreamingHandler,
-                metadata,
-                encoding
-              );
-              break;
-            case 'serverStream':
-              handleServerStreaming(
-                call,
-                handler as UntypedServerStreamingHandler,
-                metadata,
-                encoding
-              );
-              break;
-            case 'bidi':
-              handleBidiStreaming(
-                call,
-                handler as UntypedBidiStreamingHandler,
-                metadata,
-                encoding
-              );
-              break;
-            default:
-              throw new Error(`Unknown handler type: ${handler.type}`);
-          }
-        } catch (err) {
-          if (!call) {
-            call = new Http2ServerCallStream(stream, null!, this.options);
-            if (this.channelzEnabled) {
-              this.callTracker.addCallFailed();
-              channelzSessionInfo?.streamTracker.addCallFailed()
-            }
-          }
-
-          if (err.code === undefined) {
-            err.code = Status.INTERNAL;
-          }
-
-          call.sendError(err);
-        }
+    const serverAddress = http2Server.address();
+    let serverAddressString = 'null'
+    if (serverAddress) {
+      if (typeof serverAddress === 'string') {
+        serverAddressString = serverAddress
+      } else {
+        serverAddressString =
+          serverAddress.address + ':' + serverAddress.port
       }
-    );
+    }
+    this.serverAddressString = serverAddressString
 
+    const handler = this.channelzEnabled 
+      ? this._channelzHandler 
+      : this._streamHandler
+
+    http2Server.on('stream', handler.bind(this))
     http2Server.on('session', (session) => {
       if (!this.started) {
         session.destroy();
@@ -910,35 +975,40 @@ export class Server {
   }
 }
 
-async function handleUnary<RequestType, ResponseType>(
+function handleUnary<RequestType, ResponseType>(
   call: Http2ServerCallStream<RequestType, ResponseType>,
   handler: UnaryHandler<RequestType, ResponseType>,
   metadata: Metadata,
   encoding: string
-): Promise<void> {
-  const request = await call.receiveUnaryMessage(encoding);
-
-  if (request === undefined || call.cancelled) {
-    return;
-  }
-
-  const emitter = new ServerUnaryCallImpl<RequestType, ResponseType>(
-    call,
-    metadata,
-    request
-  );
-
-  handler.func(
-    emitter,
-    (
-      err: ServerErrorResponse | ServerStatusResponse | null,
-      value?: ResponseType | null,
-      trailer?: Metadata,
-      flags?: number
-    ) => {
-      call.sendUnaryMessage(err, value, trailer, flags);
+): void {
+  call.receiveUnaryMessage(encoding, (err, request) => {
+    if (err) {
+      call.sendError(err)
+      return
     }
-  );
+
+    if (request === undefined || call.cancelled) {
+      return;
+    }
+
+    const emitter = new ServerUnaryCallImpl<RequestType, ResponseType>(
+      call,
+      metadata,
+      request
+    );
+
+    handler.func(
+      emitter,
+      (
+        err: ServerErrorResponse | ServerStatusResponse | null,
+        value?: ResponseType | null,
+        trailer?: Metadata,
+        flags?: number
+      ) => {
+        call.sendUnaryMessage(err, value, trailer, flags);
+      }
+    );
+  });
 }
 
 function handleClientStreaming<RequestType, ResponseType>(
@@ -972,26 +1042,31 @@ function handleClientStreaming<RequestType, ResponseType>(
   handler.func(stream, respond);
 }
 
-async function handleServerStreaming<RequestType, ResponseType>(
+function handleServerStreaming<RequestType, ResponseType>(
   call: Http2ServerCallStream<RequestType, ResponseType>,
   handler: ServerStreamingHandler<RequestType, ResponseType>,
   metadata: Metadata,
   encoding: string
-): Promise<void> {
-  const request = await call.receiveUnaryMessage(encoding);
+): void {
+  call.receiveUnaryMessage(encoding, (err, request) => {
+    if (err) {
+      call.sendError(err)
+      return
+    }
 
-  if (request === undefined || call.cancelled) {
-    return;
-  }
+    if (request === undefined || call.cancelled) {
+      return;
+    }
 
-  const stream = new ServerWritableStreamImpl<RequestType, ResponseType>(
-    call,
-    metadata,
-    handler.serialize,
-    request
-  );
+    const stream = new ServerWritableStreamImpl<RequestType, ResponseType>(
+      call,
+      metadata,
+      handler.serialize,
+      request
+    );
 
-  handler.func(stream);
+    handler.func(stream);
+  });
 }
 
 function handleBidiStreaming<RequestType, ResponseType>(

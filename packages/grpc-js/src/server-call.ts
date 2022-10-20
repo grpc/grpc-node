@@ -19,8 +19,9 @@ import { EventEmitter } from 'events';
 import * as http2 from 'http2';
 import { Duplex, Readable, Writable } from 'stream';
 import * as zlib from 'zlib';
+import { promisify } from 'util';
 
-import { Deadline, StatusObject } from './call-stream';
+import { Deadline, StatusObject, PartialStatusObject } from './call-stream';
 import {
   Status,
   DEFAULT_MAX_SEND_MESSAGE_LENGTH,
@@ -35,6 +36,8 @@ import { ChannelOptions } from './channel-options';
 import * as logging from './logging';
 
 const TRACER_NAME = 'server_call';
+const unzip = promisify(zlib.unzip);
+const inflate = promisify(zlib.inflate);
 
 function trace(text: string): void {
   logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
@@ -86,25 +89,22 @@ export type ServerSurfaceCall = {
 export type ServerUnaryCall<RequestType, ResponseType> = ServerSurfaceCall & {
   request: RequestType;
 };
-export type ServerReadableStream<
-  RequestType,
-  ResponseType
-> = ServerSurfaceCall & ObjectReadable<RequestType>;
-export type ServerWritableStream<
-  RequestType,
-  ResponseType
-> = ServerSurfaceCall &
-  ObjectWritable<ResponseType> & {
-    request: RequestType;
-    end: (metadata?: Metadata) => void;
-  };
+export type ServerReadableStream<RequestType, ResponseType> =
+  ServerSurfaceCall & ObjectReadable<RequestType>;
+export type ServerWritableStream<RequestType, ResponseType> =
+  ServerSurfaceCall &
+    ObjectWritable<ResponseType> & {
+      request: RequestType;
+      end: (metadata?: Metadata) => void;
+    };
 export type ServerDuplexStream<RequestType, ResponseType> = ServerSurfaceCall &
   ObjectReadable<RequestType> &
   ObjectWritable<ResponseType> & { end: (metadata?: Metadata) => void };
 
 export class ServerUnaryCallImpl<RequestType, ResponseType>
   extends EventEmitter
-  implements ServerUnaryCall<RequestType, ResponseType> {
+  implements ServerUnaryCall<RequestType, ResponseType>
+{
   cancelled: boolean;
 
   constructor(
@@ -136,7 +136,8 @@ export class ServerUnaryCallImpl<RequestType, ResponseType>
 
 export class ServerReadableStreamImpl<RequestType, ResponseType>
   extends Readable
-  implements ServerReadableStream<RequestType, ResponseType> {
+  implements ServerReadableStream<RequestType, ResponseType>
+{
   cancelled: boolean;
 
   constructor(
@@ -178,7 +179,8 @@ export class ServerReadableStreamImpl<RequestType, ResponseType>
 
 export class ServerWritableStreamImpl<RequestType, ResponseType>
   extends Writable
-  implements ServerWritableStream<RequestType, ResponseType> {
+  implements ServerWritableStream<RequestType, ResponseType>
+{
   cancelled: boolean;
   private trailingMetadata: Metadata;
 
@@ -257,7 +259,8 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
 
 export class ServerDuplexStreamImpl<RequestType, ResponseType>
   extends Duplex
-  implements ServerDuplexStream<RequestType, ResponseType> {
+  implements ServerDuplexStream<RequestType, ResponseType>
+{
   cancelled: boolean;
   private trailingMetadata: Metadata;
 
@@ -395,7 +398,8 @@ export class Http2ServerCallStream<
   ResponseType
 > extends EventEmitter {
   cancelled = false;
-  deadlineTimer: NodeJS.Timer = setTimeout(() => {}, 0);
+  deadlineTimer: NodeJS.Timer | null = null;
+  private statusSent = false;
   private deadline: Deadline = Infinity;
   private wantTrailers = false;
   private metadataSent = false;
@@ -428,10 +432,17 @@ export class Http2ServerCallStream<
           ' stream closed with rstCode ' +
           this.stream.rstCode
       );
-      this.cancelled = true;
-      this.emit('cancelled', 'cancelled');
-      this.emit('streamEnd', false);
-      this.sendStatus({code: Status.CANCELLED, details: 'Cancelled by client', metadata: new Metadata()});
+
+      if (!this.statusSent) {
+        this.cancelled = true;
+        this.emit('cancelled', 'cancelled');
+        this.emit('streamEnd', false);
+        this.sendStatus({
+          code: Status.CANCELLED,
+          details: 'Cancelled by client',
+          metadata: null,
+        });
+      }
     });
 
     this.stream.on('drain', () => {
@@ -444,9 +455,6 @@ export class Http2ServerCallStream<
     if ('grpc.max_receive_message_length' in options) {
       this.maxReceiveMessageSize = options['grpc.max_receive_message_length']!;
     }
-
-    // Clear noop timer
-    clearTimeout(this.deadlineTimer);
   }
 
   private checkCancelled(): boolean {
@@ -458,52 +466,22 @@ export class Http2ServerCallStream<
     return this.cancelled;
   }
 
-  private getDecompressedMessage(message: Buffer, encoding: string) {
-    switch (encoding) {
-      case 'deflate': {
-        return new Promise<Buffer | undefined>((resolve, reject) => {
-          zlib.inflate(message.slice(5), (err, output) => {
-            if (err) {
-              this.sendError({
-                code: Status.INTERNAL,
-                details: `Received "grpc-encoding" header "${encoding}" but ${encoding} decompression failed`,
-              });
-              resolve();
-            } else {
-              resolve(output);
-            }
-          });
-        });
-      }
-  
-      case 'gzip': {
-        return new Promise<Buffer | undefined>((resolve, reject) => {
-          zlib.unzip(message.slice(5), (err, output) => {
-            if (err) {
-              this.sendError({
-                code: Status.INTERNAL,
-                details: `Received "grpc-encoding" header "${encoding}" but ${encoding} decompression failed`,
-              });
-              resolve();
-            } else {
-              resolve(output);
-            }
-          });
-        });
-      }
-
-      case 'identity': {
-        return Promise.resolve(message.slice(5));
-      }
-  
-      default: {
-        this.sendError({
-          code: Status.UNIMPLEMENTED,
-          details: `Received message compressed with unsupported encoding "${encoding}"`,
-        });
-        return Promise.resolve();
-      }
+  private getDecompressedMessage(
+    message: Buffer,
+    encoding: string
+  ): Buffer | Promise<Buffer> {
+    if (encoding === 'deflate') {
+      return inflate(message.subarray(5));
+    } else if (encoding === 'gzip') {
+      return unzip(message.subarray(5));
+    } else if (encoding === 'identity') {
+      return message.subarray(5);
     }
+
+    return Promise.reject({
+      code: Status.UNIMPLEMENTED,
+      details: `Received message compressed with unsupported encoding "${encoding}"`,
+    });
   }
 
   sendMetadata(customMetadata?: Metadata) {
@@ -518,12 +496,21 @@ export class Http2ServerCallStream<
     this.metadataSent = true;
     const custom = customMetadata ? customMetadata.toHttp2Headers() : null;
     // TODO(cjihrig): Include compression headers.
-    const headers = Object.assign({}, defaultResponseHeaders, custom);
+    const headers = { ...defaultResponseHeaders, ...custom };
     this.stream.respond(headers, defaultResponseOptions);
   }
 
   receiveMetadata(headers: http2.IncomingHttpHeaders) {
     const metadata = Metadata.fromHttp2Headers(headers);
+
+    if (logging.isTracerEnabled(TRACER_NAME)) {
+      trace(
+        'Request to ' +
+          this.handler.path +
+          ' received headers ' +
+          JSON.stringify(metadata.toJSON())
+      );
+    }
 
     // TODO(cjihrig): Receive compression metadata.
 
@@ -556,52 +543,95 @@ export class Http2ServerCallStream<
     return metadata;
   }
 
-  receiveUnaryMessage(encoding: string): Promise<RequestType> {
-    return new Promise((resolve, reject) => {
-      const stream = this.stream;
-      const chunks: Buffer[] = [];
-      let totalLength = 0;
+  receiveUnaryMessage(
+    encoding: string,
+    next: (
+      err: Partial<ServerStatusResponse> | null,
+      request?: RequestType
+    ) => void
+  ): void {
+    const { stream } = this;
 
-      stream.on('data', (data: Buffer) => {
-        chunks.push(data);
-        totalLength += data.byteLength;
-      });
+    let receivedLength = 0;
+    const call = this;
+    const body: Buffer[] = [];
+    const limit = this.maxReceiveMessageSize;
 
-      stream.once('end', async () => {
-        try {
-          const requestBytes = Buffer.concat(chunks, totalLength);
-          if (
-            this.maxReceiveMessageSize !== -1 &&
-            requestBytes.length > this.maxReceiveMessageSize
-          ) {
-            this.sendError({
-              code: Status.RESOURCE_EXHAUSTED,
-              details: `Received message larger than max (${requestBytes.length} vs. ${this.maxReceiveMessageSize})`,
-            });
-            resolve();
-          }
+    stream.on('data', onData);
+    stream.on('end', onEnd);
+    stream.on('error', onEnd);
 
-          this.emit('receiveMessage');
+    function onData(chunk: Buffer) {
+      receivedLength += chunk.byteLength;
 
-          const compressed = requestBytes.readUInt8(0) === 1;
-          const compressedMessageEncoding = compressed ? encoding : 'identity';
-          const decompressedMessage = await this.getDecompressedMessage(requestBytes, compressedMessageEncoding);
+      if (limit !== -1 && receivedLength > limit) {
+        stream.removeListener('data', onData);
+        stream.removeListener('end', onEnd);
+        stream.removeListener('error', onEnd);
+        next({
+          code: Status.RESOURCE_EXHAUSTED,
+          details: `Received message larger than max (${receivedLength} vs. ${limit})`,
+        });
+        return;
+      }
 
-          // Encountered an error with decompression; it'll already have been propogated back
-          // Just return early
-          if (!decompressedMessage) {
-            resolve();
-          }
-          else {
-            resolve(this.deserializeMessage(decompressedMessage));
-          }
-        } catch (err) {
-          err.code = Status.INTERNAL;
-          this.sendError(err);
-          resolve();
-        }
-      });
-    });
+      body.push(chunk);
+    }
+
+    function onEnd(err?: Error) {
+      stream.removeListener('data', onData);
+      stream.removeListener('end', onEnd);
+      stream.removeListener('error', onEnd);
+
+      if (err !== undefined) {
+        next({ code: Status.INTERNAL, details: err.message });
+        return;
+      }
+
+      if (receivedLength === 0) {
+        next({ code: Status.INTERNAL, details: 'received empty unary message' })
+        return;
+      }
+
+      call.emit('receiveMessage');
+
+      const requestBytes = Buffer.concat(body, receivedLength);
+      const compressed = requestBytes.readUInt8(0) === 1;
+      const compressedMessageEncoding = compressed ? encoding : 'identity';
+      const decompressedMessage = call.getDecompressedMessage(
+        requestBytes,
+        compressedMessageEncoding
+      );
+
+      if (Buffer.isBuffer(decompressedMessage)) {
+        call.safeDeserializeMessage(decompressedMessage, next);
+        return;
+      }
+
+      decompressedMessage.then(
+        (decompressed) => call.safeDeserializeMessage(decompressed, next),
+        (err: any) => next(
+          err.code
+            ? err
+            : {
+                code: Status.INTERNAL,
+                details: `Received "grpc-encoding" header "${encoding}" but ${encoding} decompression failed`,
+              }
+        )
+      )
+    }
+  }
+
+  private safeDeserializeMessage(
+    buffer: Buffer,
+    next: (err: Partial<ServerStatusResponse> | null, request?: RequestType) => void
+  ) {
+    try {
+      next(null, this.deserializeMessage(buffer));
+    } catch (err) {
+      err.code = Status.INTERNAL;
+      next(err);
+    }
   }
 
   serializeMessage(value: ResponseType) {
@@ -623,18 +653,19 @@ export class Http2ServerCallStream<
   async sendUnaryMessage(
     err: ServerErrorResponse | ServerStatusResponse | null,
     value?: ResponseType | null,
-    metadata?: Metadata,
+    metadata?: Metadata | null,
     flags?: number
   ) {
     if (this.checkCancelled()) {
       return;
     }
-    if (!metadata) {
-      metadata = new Metadata();
+
+    if (metadata === undefined) {
+      metadata = null;
     }
 
     if (err) {
-      if (!Object.prototype.hasOwnProperty.call(err, 'metadata')) {
+      if (!Object.prototype.hasOwnProperty.call(err, 'metadata') && metadata) {
         err.metadata = metadata;
       }
       this.sendError(err);
@@ -652,7 +683,7 @@ export class Http2ServerCallStream<
     }
   }
 
-  sendStatus(statusObj: StatusObject) {
+  sendStatus(statusObj: PartialStatusObject) {
     this.emit('callEnd', statusObj.code);
     this.emit('streamEnd', statusObj.code === Status.OK);
     if (this.checkCancelled()) {
@@ -668,20 +699,19 @@ export class Http2ServerCallStream<
         statusObj.details
     );
 
-    clearTimeout(this.deadlineTimer);
+    if (this.deadlineTimer) clearTimeout(this.deadlineTimer);
 
     if (!this.wantTrailers) {
       this.wantTrailers = true;
       this.stream.once('wantTrailers', () => {
-        const trailersToSend = Object.assign(
-          {
-            [GRPC_STATUS_HEADER]: statusObj.code,
-            [GRPC_MESSAGE_HEADER]: encodeURI(statusObj.details as string),
-          },
-          statusObj.metadata.toHttp2Headers()
-        );
+        const trailersToSend = {
+          [GRPC_STATUS_HEADER]: statusObj.code,
+          [GRPC_MESSAGE_HEADER]: encodeURI(statusObj.details),
+          ...statusObj.metadata?.toHttp2Headers(),
+        };
 
         this.stream.sendTrailers(trailersToSend);
+        this.statusSent = true;
       });
       this.sendMetadata();
       this.stream.end();
@@ -689,13 +719,13 @@ export class Http2ServerCallStream<
   }
 
   sendError(error: ServerErrorResponse | ServerStatusResponse) {
-    const status: StatusObject = {
+    const status: PartialStatusObject = {
       code: Status.UNKNOWN,
       details: 'message' in error ? error.message : 'Unknown Error',
       metadata:
         'metadata' in error && error.metadata !== undefined
           ? error.metadata
-          : new Metadata(),
+          : null,
     };
 
     if (
@@ -766,7 +796,7 @@ export class Http2ServerCallStream<
         pushedEnd = true;
         this.pushOrBufferMessage(readable, null);
       }
-    }
+    };
 
     this.stream.on('data', async (data: Buffer) => {
       const messages = decoder.write(data);
@@ -788,12 +818,15 @@ export class Http2ServerCallStream<
 
         const compressed = message.readUInt8(0) === 1;
         const compressedMessageEncoding = compressed ? encoding : 'identity';
-        const decompressedMessage = await this.getDecompressedMessage(message, compressedMessageEncoding);
+        const decompressedMessage = await this.getDecompressedMessage(
+          message,
+          compressedMessageEncoding
+        );
 
         // Encountered an error with decompression; it'll already have been propogated back
         // Just return early
         if (!decompressedMessage) return;
-         
+
         this.pushOrBufferMessage(readable, decompressedMessage);
       }
       pendingMessageProcessing = false;
