@@ -122,18 +122,18 @@ export enum IdempotencyLevel {
 }
 
 export interface NamePart {
-  namePart: string;
-  isExtension: boolean;
+  name_part: string;
+  is_extension: boolean;
 }
 
 export interface UninterpretedOption {
   name?: (NamePart[]|null);
-  identifierValue?: (string|null);
-  positiveIntValue?: (number|Long|string|null);
-  negativeIntValue?: (number|Long|string|null);
-  doubleValue?: (number|null);
-  stringValue?: (Uint8Array|string|null);
-  aggregateValue?: (string|null);
+  identifier_value?: (string|null);
+  positive_int_value?: (number|null);
+  negative_int_value?: (number|null);
+  double_value?: (number|null);
+  string_value?: (string|null);
+  aggregate_value?: (string|null);
 }
 
 export interface CustomHttpPattern {
@@ -150,8 +150,8 @@ export interface HttpRule {
   patch?: (string|null);
   custom?: (CustomHttpPattern|null);
   body?: (string|null);
-  responseBody?: (string|null);
-  additionalBindings?: (HttpRule[]|null);
+  response_body?: (string|null);
+  additional_bindings?: (HttpRule[]|null);
 }
 
 export interface MethodOptions {

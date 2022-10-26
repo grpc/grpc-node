@@ -7,7 +7,7 @@ import "google/api/httpbody.proto";
 message Empty {}
 
 message MethodSignature {
-  repeated string method_signature = 0;
+  repeated string method_signature = 1;
 }
 
 service Hello {
@@ -15,10 +15,22 @@ service Hello {
     option deprecated = true;
     option idempotency_level = IDEMPOTENCY_UNKNOWN;
     option uninterpreted_option = {
-      identifier_value: 'foo'
+      name: {
+        name_part: 'foo'
+        is_extension:  false
+      }
+      identifier_value: 'bar'
+      positive_int_value: 9007199254740991
+      negative_int_value: -9007199254740991
+      double_value: 1.2345
+      string_value: 'foobar'
+      aggregate_value: 'foobar'
     };
     option (google.api.http) = {
       post: "/hello"
+      body: "*"
+      response_body: "*"
+      additional_bindings: {}
     };
     option (google.api.method_signature) = 'bar';
   }
