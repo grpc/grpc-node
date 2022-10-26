@@ -127,39 +127,25 @@ export interface NamePart {
 }
 
 export interface UninterpretedOption {
-  name?: (NamePart[]|null);
-  identifier_value?: (string|null);
-  positive_int_value?: (number|null);
-  negative_int_value?: (number|null);
-  double_value?: (number|null);
-  string_value?: (string|null);
-  aggregate_value?: (string|null);
+  name?: NamePart[];
+  identifier_value?: string;
+  positive_int_value?: number;
+  negative_int_value?: number;
+  double_value?: number;
+  string_value?: string;
+  aggregate_value?: string;
 }
 
 export interface CustomHttpPattern {
-  kind?: (string|null);
-  path?: (string|null);
-}
-
-export interface HttpRule {
-  selector?: (string|null);
-  get?: (string|null);
-  put?: (string|null);
-  post?: (string|null);
-  delete?: (string|null);
-  patch?: (string|null);
-  custom?: (CustomHttpPattern|null);
-  body?: (string|null);
-  response_body?: (string|null);
-  additional_bindings?: (HttpRule[]|null);
+  kind?: string;
+  path?: string;
 }
 
 export interface MethodOptions {
   deprecated?: (boolean|null);
   idempotency_level?: (IdempotencyLevel|keyof typeof IdempotencyLevel|null);
   uninterpreted_option?: (UninterpretedOption[]|null);
-  "(google.api.http)"?: (HttpRule|null);
-  "(google.api.method_signature)"?: (string[]|null);
+  [k: string]: unknown
 }
 
 export interface MethodDefinition<RequestType, ResponseType, OutputRequestType=RequestType, OutputResponseType=ResponseType> {
