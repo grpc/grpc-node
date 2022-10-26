@@ -140,8 +140,24 @@ describe('Descriptor types', () => {
     assert.deepStrictEqual(service.Hello.options, {
       deprecated: true,
       idempotency_level: 'IDEMPOTENCY_UNKNOWN',
-      uninterpreted_option: { identifier_value: 'foo' },
-      '(google.api.http)': { post: '/hello' },
+      uninterpreted_option: {
+        name: {
+          name_part: 'foo',
+          is_extension:  false,
+        },
+        identifier_value: 'bar',
+        positive_int_value: 9007199254740991,
+        negative_int_value: -9007199254740991,
+        double_value: 1.2345,
+        string_value: 'foobar',
+        aggregate_value: 'foobar'
+      },
+      '(google.api.http)': {
+        post: "/hello",
+        body: "*",
+        response_body: "*",
+        additional_bindings: {}
+      },
       '(google.api.method_signature)': 'bar'
     })
   })
