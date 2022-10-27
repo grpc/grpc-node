@@ -160,5 +160,6 @@ describe('Descriptor types', () => {
       },
       '(google.api.method_signature)': 'bar'
     })
+    assert(service.HelloWithoutOptions.options === undefined)
   })
 });
