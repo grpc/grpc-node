@@ -116,9 +116,9 @@ export interface EnumTypeDefinition extends ProtobufTypeDefinition {
 }
 
 export enum IdempotencyLevel {
-  IDEMPOTENCY_UNKNOWN = 0,
-  NO_SIDE_EFFECTS = 1,
-  IDEMPOTENT = 2
+  IDEMPOTENCY_UNKNOWN = 'IDEMPOTENCY_UNKNOWN',
+  NO_SIDE_EFFECTS = 'NO_SIDE_EFFECTS',
+  IDEMPOTENT = 'IDEMPOTENT'
 }
 
 export interface NamePart {
@@ -136,16 +136,11 @@ export interface UninterpretedOption {
   aggregate_value?: string;
 }
 
-export interface CustomHttpPattern {
-  kind?: string;
-  path?: string;
-}
-
 export interface MethodOptions {
-  deprecated?: (boolean|null);
-  idempotency_level?: (IdempotencyLevel|keyof typeof IdempotencyLevel|null);
-  uninterpreted_option?: (UninterpretedOption[]|null);
-  [k: string]: unknown
+  deprecated?: boolean;
+  idempotency_level?: IdempotencyLevel|keyof typeof IdempotencyLevel;
+  uninterpreted_option?: UninterpretedOption;
+  [k: string]: unknown;
 }
 
 export interface MethodDefinition<RequestType, ResponseType, OutputRequestType=RequestType, OutputResponseType=ResponseType> {

@@ -34,4 +34,5 @@ service Hello {
     };
     option (google.api.method_signature) = 'bar';
   }
+  rpc HelloWithoutOptions (Empty) returns (Empty) {}
 }
