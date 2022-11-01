@@ -145,6 +145,7 @@ export class ResolvingCall implements Call {
           config.methodConfig.timeout.nanos / 1_000_000
       );
       this.deadline = minDeadline(this.deadline, configDeadline);
+      this.runDeadlineTimer();
     }
 
     this.filterStackFactory.push(config.dynamicFilterFactories);
