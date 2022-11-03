@@ -36,6 +36,10 @@ export interface StatusObject {
   metadata: Metadata;
 }
 
+export type PartialStatusObject = Pick<StatusObject, 'code' | 'details'> & {
+  metadata: Metadata | null;
+}
+
 export const enum WriteFlags {
   BufferHint = 1,
   NoCompress = 2,
