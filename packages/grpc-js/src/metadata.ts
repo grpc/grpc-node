@@ -48,13 +48,14 @@ function validate(key: string, value?: MetadataValue): void {
   if (!isLegalKey(key)) {
     throw new Error('Metadata key "' + key + '" contains illegal characters');
   }
+
   if (value !== null && value !== undefined) {
     if (isBinaryKey(key)) {
-      if (!(value instanceof Buffer)) {
+      if (!Buffer.isBuffer(value)) {
         throw new Error("keys that end with '-bin' must have Buffer values");
       }
     } else {
-      if (value instanceof Buffer) {
+      if (Buffer.isBuffer(value)) {
         throw new Error(
           "keys that don't end with '-bin' must have String values"
         );
@@ -88,12 +89,8 @@ export class Metadata {
   protected internalRepr: MetadataObject = new Map<string, MetadataValue[]>();
   private options: MetadataOptions;
 
-  constructor(options?: MetadataOptions) {
-    if (options === undefined) {
-      this.options = {};
-    } else {
-      this.options = options;
-    }
+  constructor(options: MetadataOptions = {}) {
+    this.options = options;
   }
 
   /**
@@ -120,9 +117,7 @@ export class Metadata {
     key = normalizeKey(key);
     validate(key, value);
 
-    const existingValue: MetadataValue[] | undefined = this.internalRepr.get(
-      key
-    );
+    const existingValue: MetadataValue[] | undefined = this.internalRepr.get(key);
 
     if (existingValue === undefined) {
       this.internalRepr.set(key, [value]);
@@ -137,7 +132,7 @@ export class Metadata {
    */
   remove(key: string): void {
     key = normalizeKey(key);
-    validate(key);
+    // validate(key);
     this.internalRepr.delete(key);
   }
 
@@ -148,7 +143,7 @@ export class Metadata {
    */
   get(key: string): MetadataValue[] {
     key = normalizeKey(key);
-    validate(key);
+    // validate(key);
     return this.internalRepr.get(key) || [];
   }
 
@@ -160,12 +155,12 @@ export class Metadata {
   getMap(): { [key: string]: MetadataValue } {
     const result: { [key: string]: MetadataValue } = {};
 
-    this.internalRepr.forEach((values, key) => {
+    for (const [key, values] of this.internalRepr) {
       if (values.length > 0) {
         const v = values[0];
-        result[key] = v instanceof Buffer ? v.slice() : v;
+        result[key] = Buffer.isBuffer(v) ? Buffer.from(v) : v;
       }
-    });
+    }
     return result;
   }
 
@@ -177,9 +172,9 @@ export class Metadata {
     const newMetadata = new Metadata(this.options);
     const newInternalRepr = newMetadata.internalRepr;
 
-    this.internalRepr.forEach((value, key) => {
+    for (const [key, value] of this.internalRepr) {
       const clonedValue: MetadataValue[] = value.map((v) => {
-        if (v instanceof Buffer) {
+        if (Buffer.isBuffer(v)) {
           return Buffer.from(v);
         } else {
           return v;
@@ -187,7 +182,7 @@ export class Metadata {
       });
 
       newInternalRepr.set(key, clonedValue);
-    });
+    }
 
     return newMetadata;
   }
@@ -200,13 +195,13 @@ export class Metadata {
    * @param other A Metadata object.
    */
   merge(other: Metadata): void {
-    other.internalRepr.forEach((values, key) => {
+    for (const [key, values] of other.internalRepr) {
       const mergedValue: MetadataValue[] = (
         this.internalRepr.get(key) || []
       ).concat(values);
 
       this.internalRepr.set(key, mergedValue);
-    });
+    }
   }
 
   setOptions(options: MetadataOptions) {
@@ -223,17 +218,13 @@ export class Metadata {
   toHttp2Headers(): http2.OutgoingHttpHeaders {
     // NOTE: Node <8.9 formats http2 headers incorrectly.
     const result: http2.OutgoingHttpHeaders = {};
-    this.internalRepr.forEach((values, key) => {
+
+    for (const [key, values] of this.internalRepr) {
       // We assume that the user's interaction with this object is limited to
       // through its public API (i.e. keys and values are already validated).
-      result[key] = values.map((value) => {
-        if (value instanceof Buffer) {
-          return value.toString('base64');
-        } else {
-          return value;
-        }
-      });
-    });
+      result[key] = values.map(bufToString);
+    }
+
     return result;
   }
 
@@ -248,7 +239,7 @@ export class Metadata {
    */
   toJSON() {
     const result: { [key: string]: MetadataValue[] } = {};
-    for (const [key, values] of this.internalRepr.entries()) {
+    for (const [key, values] of this.internalRepr) {
       result[key] = values;
     }
     return result;
@@ -261,10 +252,10 @@ export class Metadata {
    */
   static fromHttp2Headers(headers: http2.IncomingHttpHeaders): Metadata {
     const result = new Metadata();
-    Object.keys(headers).forEach((key) => {
+    for (const key of Object.keys(headers)) {
       // Reserved headers (beginning with `:`) are not valid keys.
       if (key.charAt(0) === ':') {
-        return;
+        continue;
       }
 
       const values = headers[key];
@@ -297,7 +288,12 @@ export class Metadata {
         const message = `Failed to add metadata entry ${key}: ${values}. ${error.message}. For more information see https://github.com/grpc/grpc-node/issues/1173`;
         log(LogVerbosity.ERROR, message);
       }
-    });
+    }
+
     return result;
   }
 }
+
+const bufToString = (val: string | Buffer): string => {
+  return Buffer.isBuffer(val) ? val.toString('base64') : val
+};
