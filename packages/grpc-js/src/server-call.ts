@@ -34,6 +34,7 @@ import { ChannelOptions } from './channel-options';
 import * as logging from './logging';
 import { StatusObject } from './call-interface';
 import { Deadline } from './deadline';
+import { getErrorCode, getErrorMessage } from './error';
 
 const TRACER_NAME = 'server_call';
 
@@ -230,8 +231,10 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
         return;
       }
     } catch (err) {
-      err.code = Status.INTERNAL;
-      this.emit('error', err);
+      this.emit('error', {
+        details: getErrorMessage(err),
+        code: Status.INTERNAL
+      });
     }
 
     callback();
@@ -462,7 +465,7 @@ export class Http2ServerCallStream<
   private getDecompressedMessage(message: Buffer, encoding: string) {
     switch (encoding) {
       case 'deflate': {
-        return new Promise<Buffer | undefined>((resolve, reject) => {
+        return new Promise<Buffer | void>((resolve, reject) => {
           zlib.inflate(message.slice(5), (err, output) => {
             if (err) {
               this.sendError({
@@ -478,7 +481,7 @@ export class Http2ServerCallStream<
       }
   
       case 'gzip': {
-        return new Promise<Buffer | undefined>((resolve, reject) => {
+        return new Promise<Buffer | void>((resolve, reject) => {
           zlib.unzip(message.slice(5), (err, output) => {
             if (err) {
               this.sendError({
@@ -559,7 +562,7 @@ export class Http2ServerCallStream<
     return metadata;
   }
 
-  receiveUnaryMessage(encoding: string): Promise<RequestType> {
+  receiveUnaryMessage(encoding: string): Promise<RequestType | void> {
     return new Promise((resolve, reject) => {
       const stream = this.stream;
       const chunks: Buffer[] = [];
@@ -599,8 +602,10 @@ export class Http2ServerCallStream<
             resolve(this.deserializeMessage(decompressedMessage));
           }
         } catch (err) {
-          err.code = Status.INTERNAL;
-          this.sendError(err);
+          this.sendError({
+            details: getErrorMessage(err),
+            code: Status.INTERNAL
+          });
           resolve();
         }
       });
@@ -650,8 +655,10 @@ export class Http2ServerCallStream<
       this.write(response);
       this.sendStatus({ code: Status.OK, details: 'OK', metadata });
     } catch (err) {
-      err.code = Status.INTERNAL;
-      this.sendError(err);
+      this.sendError({
+        details: getErrorMessage(err),
+        code: Status.INTERNAL
+      });
     }
   }
 
@@ -878,21 +885,15 @@ export class Http2ServerCallStream<
     } catch (error) {
       // Ignore any remaining messages when errors occur.
       this.bufferedMessages.length = 0;
-
-      if (
-        !(
-          'code' in error &&
-          typeof error.code === 'number' &&
-          Number.isInteger(error.code) &&
-          error.code >= Status.OK &&
-          error.code <= Status.UNAUTHENTICATED
-        )
-      ) {
-        // The error code is not a valid gRPC code so its being overwritten.
-        error.code = Status.INTERNAL;
+      let code = getErrorCode(error);
+      if (code === null || code < Status.OK || code > Status.UNAUTHENTICATED) {
+        code = Status.INTERNAL;
       }
 
-      readable.emit('error', error);
+      readable.emit('error', {
+        details: getErrorMessage(error),
+        code: code
+      });
     }
 
     this.isPushPending = false;
