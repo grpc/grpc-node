@@ -61,6 +61,7 @@ import {
 import { parseUri } from './uri-parser';
 import { ChannelzCallTracker, ChannelzChildrenTracker, ChannelzTrace, registerChannelzServer, registerChannelzSocket, ServerInfo, ServerRef, SocketInfo, SocketRef, TlsInfo, unregisterChannelzRef } from './channelz';
 import { CipherNameAndProtocol, TLSSocket } from 'tls';
+import { getErrorCode, getErrorMessage } from './error';
 
 const {
   HTTP2_HEADER_PATH
@@ -814,7 +815,10 @@ export class Server {
     try {
       handler = this._retrieveHandler(headers)
     } catch (err) {
-      this._respondWithError(err, stream, channelzSessionInfo)
+      this._respondWithError({
+        details: getErrorMessage(err),
+        code: getErrorCode(err) ?? undefined
+      }, stream, channelzSessionInfo)
       return
     }
   
@@ -866,7 +870,10 @@ export class Server {
     try {
       handler = this._retrieveHandler(headers)
     } catch (err) {
-      this._respondWithError(err, stream, null)
+      this._respondWithError({
+        details: getErrorMessage(err),
+        code: getErrorCode(err) ?? undefined
+      }, stream, null)
       return
     }
 
