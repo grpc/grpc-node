@@ -115,6 +115,10 @@ export abstract class CallCredentials {
                 reject(err);
                 return;
               }
+              if (!headers) {
+                reject(new Error('Headers not set by metadata plugin'));
+                return;
+              }
               resolve(headers);
             }
           );
