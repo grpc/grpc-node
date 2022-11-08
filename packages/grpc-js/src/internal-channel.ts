@@ -402,7 +402,7 @@ export class InternalChannel {
         method +
         '"'
     );
-    return new LoadBalancingCall(this, callConfig, method, host, credentials, deadline, this.filterStackFactory, callNumber);
+    return new LoadBalancingCall(this, callConfig, method, host, credentials, deadline, callNumber);
   }
 
   createInnerCall(
