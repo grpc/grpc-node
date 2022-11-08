@@ -48,7 +48,7 @@ git clone -b master --single-branch --depth=1 https://github.com/grpc/grpc.git
 
 grpc/tools/run_tests/helper_scripts/prep_xds.sh
 
-mkdir -p "${KOKORO_ARTIFACTS_DIR}/grpc/reports/prof.log"
+mkdir -p "${KOKORO_ARTIFACTS_DIR}/grpc/reports"
 
 GRPC_NODE_TRACE=xds_client,xds_resolver,cds_balancer,eds_balancer,priority,weighted_target,round_robin,resolving_load_balancer,subchannel,keepalive,dns_resolver,fault_injection,http_filter,csds \
   GRPC_NODE_VERBOSITY=DEBUG \
