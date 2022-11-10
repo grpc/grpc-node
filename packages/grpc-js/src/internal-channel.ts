@@ -439,7 +439,7 @@ export class InternalChannel {
       parentCall: parentCall,
     };
 
-    const call = new ResolvingCall(this, method, finalOptions, this.filterStackFactory, this.credentials._getCallCredentials(), getNextCallNumber());
+    const call = new ResolvingCall(this, method, finalOptions, this.filterStackFactory.clone(), this.credentials._getCallCredentials(), getNextCallNumber());
 
     if (this.channelzEnabled) {
       this.callTracker.addCallStarted();
