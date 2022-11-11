@@ -89,7 +89,7 @@ export class FilterStackFactory implements FilterFactory<FilterStack> {
   }
 
   clone(): FilterStackFactory {
-    return new FilterStackFactory(this.factories);
+    return new FilterStackFactory([...this.factories]);
   }
 
   createFilter(): FilterStack {
