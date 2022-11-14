@@ -345,7 +345,7 @@ function makeSingleRequest(client: TestServiceClient, type: CallType, failOnFail
 
 function sendConstantQps(client: TestServiceClient, qps: number, failOnFailedRpcs: boolean, callStatsTracker: CallStatsTracker) {
   const callStartTimestampsTrackers: {[callType: string]: RecentTimestampList} = {};
-  for (const callType of currentConfig.callTypes) {
+  for (const callType of ['EmptyCall', 'UnaryCall']) {
     callStartTimestampsTrackers[callType] = new RecentTimestampList(qps);
   }
   setInterval(() => {
