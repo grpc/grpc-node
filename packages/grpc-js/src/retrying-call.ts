@@ -385,7 +385,7 @@ export class RetryingCall implements Call {
     if (this.underlyingCalls[callIndex].state === 'COMPLETED') {
       return;
     }
-    this.trace('state=' + this.state + ' handling status from child [' + this.underlyingCalls[callIndex].call.getCallNumber() + '] in state ' + this.underlyingCalls[callIndex].state);
+    this.trace('state=' + this.state + ' handling status with progress ' + status.progress + ' from child [' + this.underlyingCalls[callIndex].call.getCallNumber() + '] in state ' + this.underlyingCalls[callIndex].state);
     this.underlyingCalls[callIndex].state = 'COMPLETED';
     if (status.code === Status.OK) {
       this.retryThrottler?.addCallSucceeded();

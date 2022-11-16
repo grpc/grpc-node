@@ -159,7 +159,7 @@ export class LoadBalancingCall implements Call {
                 },
                 onReceiveStatus: status => {
                   this.trace('Received status');
-                  if (status.code === http2.constants.NGHTTP2_REFUSED_STREAM) {
+                  if (status.rstCode === http2.constants.NGHTTP2_REFUSED_STREAM) {
                     this.outputStatus(status, 'REFUSED');
                   } else {
                     this.outputStatus(status, 'PROCESSED');
