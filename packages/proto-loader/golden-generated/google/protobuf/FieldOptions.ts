@@ -40,22 +40,22 @@ export type I_google_protobuf_FieldOptions_JSType =
 export type O_google_protobuf_FieldOptions_JSType = typeof _google_protobuf_FieldOptions_JSType[keyof typeof _google_protobuf_FieldOptions_JSType]
 
 export interface IFieldOptions {
-  'ctype'?: (I_google_protobuf_FieldOptions_CType | null);
+  'ctype'?: (I_google_protobuf_FieldOptions_CType);
   'packed'?: (boolean);
   'deprecated'?: (boolean);
   'lazy'?: (boolean);
-  'jstype'?: (I_google_protobuf_FieldOptions_JSType | null);
+  'jstype'?: (I_google_protobuf_FieldOptions_JSType);
   'weak'?: (boolean);
   'uninterpretedOption'?: (I_google_protobuf_UninterpretedOption)[];
   '.google.api.field_behavior'?: (I_google_api_FieldBehavior)[];
 }
 
 export interface OFieldOptions {
-  'ctype': (O_google_protobuf_FieldOptions_CType | null);
+  'ctype': (O_google_protobuf_FieldOptions_CType);
   'packed': (boolean);
   'deprecated': (boolean);
   'lazy': (boolean);
-  'jstype': (O_google_protobuf_FieldOptions_JSType | null);
+  'jstype': (O_google_protobuf_FieldOptions_JSType);
   'weak': (boolean);
   'uninterpretedOption': (O_google_protobuf_UninterpretedOption)[];
   '.google.api.field_behavior': (O_google_api_FieldBehavior)[];

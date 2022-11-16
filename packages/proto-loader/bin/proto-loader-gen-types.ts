@@ -209,14 +209,15 @@ function getTypeNamePermissive(fieldType: string, resolvedType: Protobuf.Type | 
         throw new Error('Found field with no usable type');
       }
       const typeInterfaceName = getTypeInterfaceName(resolvedType);
-      if (resolvedType instanceof Protobuf.Type || resolvedType instanceof Protobuf.Enum) {
+      if (resolvedType instanceof Protobuf.Type) {
         if (repeated || map) {
           return inputName(typeInterfaceName);
         } else {
           return `${inputName(typeInterfaceName)} | null`;
         }
       } else {
-        return '';
+        // Enum
+        return inputName(typeInterfaceName);
       }
   }
 }
@@ -311,7 +312,7 @@ function getTypeNameRestricted(fieldType: string, resolvedType: Protobuf.Type | 
         throw new Error('Found field with no usable type');
       }
       const typeInterfaceName = getTypeInterfaceName(resolvedType);
-      if (resolvedType instanceof Protobuf.Type || resolvedType instanceof Protobuf.Enum) {
+      if (resolvedType instanceof Protobuf.Type) {
         /* null is only used to represent absent message values if the defaults
          * option is set, and only for non-repeated, non-map fields. */
         if (options.defaults && !repeated && !map) {
@@ -320,7 +321,8 @@ function getTypeNameRestricted(fieldType: string, resolvedType: Protobuf.Type | 
           return `${outputName(typeInterfaceName)}`;
         }
       } else {
-        return '';
+        // Enum
+        return outputName(typeInterfaceName);
       }
   }
 }

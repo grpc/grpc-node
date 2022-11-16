@@ -21,7 +21,7 @@ export interface IEchoRequest {
   /**
    * The severity to be echoed by the server.
    */
-  'severity'?: (I_google_showcase_v1beta1_Severity | null);
+  'severity'?: (I_google_showcase_v1beta1_Severity);
   'response'?: "content"|"error";
 }
 
@@ -43,6 +43,6 @@ export interface OEchoRequest {
   /**
    * The severity to be echoed by the server.
    */
-  'severity': (O_google_showcase_v1beta1_Severity | null);
+  'severity': (O_google_showcase_v1beta1_Severity);
   'response': "content"|"error";
 }

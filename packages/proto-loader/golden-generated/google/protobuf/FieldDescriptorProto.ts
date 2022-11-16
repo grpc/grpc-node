@@ -87,8 +87,8 @@ export interface IFieldDescriptorProto {
   'name'?: (string);
   'extendee'?: (string);
   'number'?: (number);
-  'label'?: (I_google_protobuf_FieldDescriptorProto_Label | null);
-  'type'?: (I_google_protobuf_FieldDescriptorProto_Type | null);
+  'label'?: (I_google_protobuf_FieldDescriptorProto_Label);
+  'type'?: (I_google_protobuf_FieldDescriptorProto_Type);
   'typeName'?: (string);
   'defaultValue'?: (string);
   'options'?: (I_google_protobuf_FieldOptions | null);
@@ -100,8 +100,8 @@ export interface OFieldDescriptorProto {
   'name': (string);
   'extendee': (string);
   'number': (number);
-  'label': (O_google_protobuf_FieldDescriptorProto_Label | null);
-  'type': (O_google_protobuf_FieldDescriptorProto_Type | null);
+  'label': (O_google_protobuf_FieldDescriptorProto_Label);
+  'type': (O_google_protobuf_FieldDescriptorProto_Type);
   'typeName': (string);
   'defaultValue': (string);
   'options': (O_google_protobuf_FieldOptions | null);
