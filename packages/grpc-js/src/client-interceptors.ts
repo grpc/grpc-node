@@ -34,6 +34,7 @@ import { Channel } from './channel';
 import { CallOptions } from './client';
 import { CallCredentials } from './call-credentials';
 import { ClientMethodDefinition } from './make-client';
+import { getErrorMessage } from './error';
 
 /**
  * Error class associated with passing both interceptors and interceptor
@@ -374,7 +375,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
     } catch (e) {
       this.call.cancelWithStatus(
         Status.INTERNAL,
-        `Request message serialization failure: ${e.message}`
+        `Request message serialization failure: ${getErrorMessage(e)}`
       );
       return;
     }
@@ -401,7 +402,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
         } catch (e) {
           readError = {
             code: Status.INTERNAL,
-            details: `Response message parsing error: ${e.message}`,
+            details: `Response message parsing error: ${getErrorMessage(e)}`,
             metadata: new Metadata(),
           };
           this.call.cancelWithStatus(readError.code, readError.details);

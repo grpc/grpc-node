@@ -52,6 +52,8 @@ export interface ChannelOptions {
    * implement this functionality using the ResourceQuota mechanism, so there
    * will probably not be any collision or other inconsistency. */
   'grpc.retry_buffer_size'?: number;
+  'grpc.max_connection_age_ms'?: number;
+  'grpc.max_connection_age_grace_ms'?: number;
   'grpc-node.max_session_memory'?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
@@ -82,6 +84,8 @@ export const recognizedOptions = {
   'grpc.enable_retries': true,
   'grpc.per_rpc_retry_buffer_size': true,
   'grpc.retry_buffer_size': true,
+  'grpc.max_connection_age_ms': true,
+  'grpc.max_connection_age_grace_ms': true,
   'grpc-node.max_session_memory': true,
 };
 

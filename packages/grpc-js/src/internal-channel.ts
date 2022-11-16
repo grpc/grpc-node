@@ -478,7 +478,7 @@ export class InternalChannel {
       parentCall: parentCall,
     };
 
-    const call = new ResolvingCall(this, method, finalOptions, this.filterStackFactory, this.credentials._getCallCredentials(), callNumber);
+    const call = new ResolvingCall(this, method, finalOptions, this.filterStackFactory.clone(), this.credentials._getCallCredentials(), callNumber);
 
     if (this.channelzEnabled) {
       this.callTracker.addCallStarted();

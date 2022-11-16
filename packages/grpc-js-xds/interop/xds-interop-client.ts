@@ -180,6 +180,27 @@ class CallStatsTracker {
   }
 }
 
+class RecentTimestampList {
+  private timeList: bigint[] = [];
+  private nextIndex = 0;
+
+  constructor(private readonly size: number) {}
+
+  isFull() {
+    return this.timeList.length === this.size;
+  }
+
+  insertTimestamp(timestamp: bigint) {
+    this.timeList[this.nextIndex] = timestamp;
+    this.nextIndex = (this.nextIndex + 1) % this.size;
+  }
+
+  getSpan(): bigint {
+    const lastIndex = (this.nextIndex + this.size - 1) % this.size;
+    return this.timeList[lastIndex] - this.timeList[this.nextIndex];
+  }
+}
+
 type CallType = 'EmptyCall' | 'UnaryCall';
 
 interface ClientConfiguration {
@@ -246,7 +267,13 @@ const callTimeHistogram: {[callType: string]: {[status: number]: number[]}} = {
   EmptyCall: {}
 }
 
-function makeSingleRequest(client: TestServiceClient, type: CallType, failOnFailedRpcs: boolean, callStatsTracker: CallStatsTracker) {
+/**
+ * Timestamps output by process.hrtime.bigint() are a bigint number of
+ * nanoseconds. This is the representation of 1 second in that context.
+ */
+const TIMESTAMP_ONE_SECOND = BigInt(1e9);
+
+function makeSingleRequest(client: TestServiceClient, type: CallType, failOnFailedRpcs: boolean, callStatsTracker: CallStatsTracker, callStartTimestamps: RecentTimestampList) {
   const callEnumName = callTypeEnumMapReverse[type];
   addAccumulatedCallStarted(callEnumName);
   const notifier = callStatsTracker.startCall();
@@ -254,19 +281,20 @@ function makeSingleRequest(client: TestServiceClient, type: CallType, failOnFail
   let hostname: string | null = null;
   let completed: boolean = false;
   let completedWithError: boolean = false;
-  const startTime = process.hrtime();
+  const startTime = process.hrtime.bigint();
   const deadline = new Date();
   deadline.setSeconds(deadline.getSeconds() + currentConfig.timeoutSec);
   const callback = (error: grpc.ServiceError | undefined, value: Empty__Output | undefined) => {
     const statusCode = error?.code ?? grpc.status.OK;
-    const duration = process.hrtime(startTime);
+    const duration = process.hrtime.bigint() - startTime;
+    const durationSeconds = Number(duration / TIMESTAMP_ONE_SECOND) | 0;
     if (!callTimeHistogram[type][statusCode]) {
       callTimeHistogram[type][statusCode] = [];
     }
-    if (callTimeHistogram[type][statusCode][duration[0]]) {
-      callTimeHistogram[type][statusCode][duration[0]] += 1;
+    if (callTimeHistogram[type][statusCode][durationSeconds]) {
+      callTimeHistogram[type][statusCode][durationSeconds] += 1;
     } else {
-      callTimeHistogram[type][statusCode][duration[0]] = 1;
+      callTimeHistogram[type][statusCode][durationSeconds] = 1;
     }
     addAccumulatedCallEnded(callEnumName, statusCode);
     if (error) {
@@ -301,15 +329,33 @@ function makeSingleRequest(client: TestServiceClient, type: CallType, failOnFail
       }
     }
   });
-
+  /* callStartTimestamps tracks the last N timestamps of started calls, where N
+   * is the target QPS. If the measured span of time between the first and last
+   * of those N calls is greater than 1 second, we make another call
+   * ~immediately to correct for that. */
+  callStartTimestamps.insertTimestamp(startTime);
+  if (callStartTimestamps.isFull()) {
+    if (callStartTimestamps.getSpan() > TIMESTAMP_ONE_SECOND) {
+      setImmediate(() => {
+        makeSingleRequest(client, type, failOnFailedRpcs, callStatsTracker, callStartTimestamps);
+      });
+    }
+  }
 }
 
 function sendConstantQps(client: TestServiceClient, qps: number, failOnFailedRpcs: boolean, callStatsTracker: CallStatsTracker) {
+  const callStartTimestampsTrackers: {[callType: string]: RecentTimestampList} = {};
+  for (const callType of ['EmptyCall', 'UnaryCall']) {
+    callStartTimestampsTrackers[callType] = new RecentTimestampList(qps);
+  }
   setInterval(() => {
     for (const callType of currentConfig.callTypes) {
-      makeSingleRequest(client, callType, failOnFailedRpcs, callStatsTracker);
+      makeSingleRequest(client, callType, failOnFailedRpcs, callStatsTracker, callStartTimestampsTrackers[callType]);
     }
   }, 1000/qps);
+  setInterval(() => {
+    console.log(`Accumulated stats: ${JSON.stringify(accumulatedStats, undefined, 2)}`);
+  }, 1000);
 }
 
 const callTypeEnumMap = {

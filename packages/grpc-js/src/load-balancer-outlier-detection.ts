@@ -423,9 +423,10 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     const targetRequestVolume = successRateConfig.request_volume;
     let addresesWithTargetVolume = 0;
     const successRates: number[] = []
-    for (const mapEntry of this.addressMap.values()) {
+    for (const [address, mapEntry] of this.addressMap) {
       const successes = mapEntry.counter.getLastSuccesses();
       const failures = mapEntry.counter.getLastFailures();
+      trace('Stats for ' + address + ': successes=' + successes + ' failures=' + failures + ' targetRequestVolume=' + targetRequestVolume);
       if (successes + failures >= targetRequestVolume) {
         addresesWithTargetVolume += 1;
         successRates.push(successes/(successes + failures));
@@ -545,6 +546,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
 
   private startTimer(delayMs: number) {
     this.ejectionTimer = setTimeout(() => this.runChecks(), delayMs);
+    this.ejectionTimer.unref?.();
   }
 
   private runChecks() {

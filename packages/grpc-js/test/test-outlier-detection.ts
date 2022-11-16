@@ -20,6 +20,7 @@ import * as path from 'path';
 import * as grpc from '../src';
 import { loadProtoFile } from './common';
 import { OutlierDetectionLoadBalancingConfig } from '../src/load-balancer-outlier-detection'
+import { ServiceClient } from '../src/make-client';
 
 function multiDone(done: Mocha.Done, target: number) {
   let count = 0;
@@ -48,6 +49,54 @@ const defaultOutlierDetectionServiceConfig = {
 };
 
 const defaultOutlierDetectionServiceConfigString = JSON.stringify(defaultOutlierDetectionServiceConfig);
+
+const successRateOutlierDetectionServiceConfig = {
+  methodConfig: [],
+  loadBalancingConfig: [
+    {
+      outlier_detection: {
+        interval: {
+          seconds: 1,
+          nanos: 0
+        },
+        base_ejection_time: {
+          seconds: 3,
+          nanos: 0
+        },
+        success_rate_ejection: {
+          request_volume: 5
+        },
+        child_policy: [{round_robin: {}}]
+      }
+    }
+  ]
+};
+
+const successRateOutlierDetectionServiceConfigString = JSON.stringify(successRateOutlierDetectionServiceConfig);
+
+const failurePercentageOutlierDetectionServiceConfig = {
+  methodConfig: [],
+  loadBalancingConfig: [
+    {
+      outlier_detection: {
+        interval: {
+          seconds: 1,
+          nanos: 0
+        },
+        base_ejection_time: {
+          seconds: 3,
+          nanos: 0
+        },
+        failure_percentage_ejection: {
+          request_volume: 5
+        },
+        child_policy: [{round_robin: {}}]
+      }
+    }
+  ]
+};
+
+const falurePercentageOutlierDetectionServiceConfigString = JSON.stringify(failurePercentageOutlierDetectionServiceConfig);
 
 const goodService = {
   echo: (call: grpc.ServerUnaryCall<any, any>, callback: grpc.sendUnaryData<any>) => {
@@ -353,6 +402,20 @@ describe('Outlier detection', () => {
     badServer.forceShutdown();
   });
 
+  function makeManyRequests(makeOneRequest: (callback: (error?: Error) => void) => void, total: number, callback: (error?: Error) => void) {
+    if (total === 0) {
+      callback();
+      return;
+    }
+    makeOneRequest(error => {
+      if (error) {
+        callback(error);
+        return;
+      }
+      makeManyRequests(makeOneRequest, total - 1, callback);
+    });
+  }
+
   it('Should allow normal operation with one server', done => {
     const client = new EchoService(`localhost:${goodPorts[0]}`, grpc.credentials.createInsecure(), {'grpc.service_config': defaultOutlierDetectionServiceConfigString});
     client.echo(
@@ -363,5 +426,111 @@ describe('Outlier detection', () => {
         done();
       }
     );
+  });
+  describe('Success rate', () => {
+    let makeCheckedRequest: (callback: () => void) => void;
+    let makeUncheckedRequest:(callback: (error?: Error) => void) => void;
+    before(() => {
+      const target = 'ipv4:///' + goodPorts.map(port => `127.0.0.1:${port}`).join(',') + `,127.0.0.1:${badPort}`;
+      const client = new EchoService(target, grpc.credentials.createInsecure(), {'grpc.service_config': successRateOutlierDetectionServiceConfigString});
+      makeUncheckedRequest = (callback: () => void) => {
+        client.echo(
+          { value: 'test value', value2: 3 },
+          (error: grpc.ServiceError, response: any) => {
+            callback();
+          }
+        );
+      };
+      makeCheckedRequest = (callback: (error?: Error) => void) => {
+        client.echo(
+          { value: 'test value', value2: 3 },
+          (error: grpc.ServiceError, response: any) => {
+            callback(error);
+          }
+        );
+      };
+    });
+    it('Should eject a server if it is failing requests', done => {
+      // Make a large volume of requests
+      makeManyRequests(makeUncheckedRequest, 50, () => {
+        // Give outlier detection time to run ejection checks
+        setTimeout(() => {
+          // Make enough requests to go around all servers
+          makeManyRequests(makeCheckedRequest, 10, done);
+        }, 1000);
+      });
+    });
+    it('Should uneject a server after the ejection period', function(done) {
+      this.timeout(5000);
+      makeManyRequests(makeUncheckedRequest, 50, () => {
+        setTimeout(() => {
+          makeManyRequests(makeCheckedRequest, 10, error => {
+            if (error) {
+              done(error);
+              return;
+            }
+            setTimeout(() => {
+              makeManyRequests(makeCheckedRequest, 10, error => {
+                assert(error);
+                done();
+              });
+            }, 3000);
+          });
+        }, 1000);
+      })
+    });
+  });
+  describe('Failure percentage', () => {
+    let makeCheckedRequest: (callback: () => void) => void;
+    let makeUncheckedRequest:(callback: (error?: Error) => void) => void;
+    before(() => {
+      const target = 'ipv4:///' + goodPorts.map(port => `127.0.0.1:${port}`).join(',') + `,127.0.0.1:${badPort}`;
+      const client = new EchoService(target, grpc.credentials.createInsecure(), {'grpc.service_config': falurePercentageOutlierDetectionServiceConfigString});
+      makeUncheckedRequest = (callback: () => void) => {
+        client.echo(
+          { value: 'test value', value2: 3 },
+          (error: grpc.ServiceError, response: any) => {
+            callback();
+          }
+        );
+      };
+      makeCheckedRequest = (callback: (error?: Error) => void) => {
+        client.echo(
+          { value: 'test value', value2: 3 },
+          (error: grpc.ServiceError, response: any) => {
+            callback(error);
+          }
+        );
+      };
+    });
+    it('Should eject a server if it is failing requests', done => {
+      // Make a large volume of requests
+      makeManyRequests(makeUncheckedRequest, 50, () => {
+        // Give outlier detection time to run ejection checks
+        setTimeout(() => {
+          // Make enough requests to go around all servers
+          makeManyRequests(makeCheckedRequest, 10, done);
+        }, 1000);
+      });
+    });
+    it('Should uneject a server after the ejection period', function(done) {
+      this.timeout(5000);
+      makeManyRequests(makeUncheckedRequest, 50, () => {
+        setTimeout(() => {
+          makeManyRequests(makeCheckedRequest, 10, error => {
+            if (error) {
+              done(error);
+              return;
+            }
+            setTimeout(() => {
+              makeManyRequests(makeCheckedRequest, 10, error => {
+                assert(error);
+                done();
+              });
+            }, 3000);
+          });
+        }, 1000);
+      })
+    });
   });
 });
