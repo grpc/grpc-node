@@ -207,6 +207,60 @@ describe('Name Resolver', () => {
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
+    // Created DNS TXT record using TXT sample from https://github.com/grpc/proposal/blob/master/A2-service-configs-in-dns.md
+    // "grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"service\":\"MyService\",\"method\":\"Foo\"}],\"waitForReady\":true}]}}]"
+    it('Should resolve a name with TXT service config', done => {
+      const target = resolverManager.mapUriDefaultScheme(parseUri('grpctest.kleinsch.com')!)!;
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: SubchannelAddress[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          if (serviceConfig !== null) {
+            assert(
+              serviceConfig.loadBalancingPolicy === 'round_robin',
+              'Should have found round robin LB policy'
+            );
+            done();
+          }
+        },
+        onError: (error: StatusObject) => {
+          done(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver = resolverManager.createResolver(target, listener, {});
+      resolver.updateResolution();
+    });
+    it('Should not resolve TXT service config if we disabled service config', done => {
+      const target = resolverManager.mapUriDefaultScheme(parseUri('grpctest.kleinsch.com')!)!;
+      let foundServiceConfig: ServiceConfig | null = null;
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: SubchannelAddress[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          if (serviceConfig !== null) {
+            foundServiceConfig = serviceConfig;
+          }
+        },
+        onError: (error: StatusObject) => {
+          done(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver = resolverManager.createResolver(target, listener, {
+        'grpc.service_config_disable_resolution': 1,
+      });
+      resolver.updateResolution();
+      setTimeout(() => {
+        assert(
+          foundServiceConfig === null,
+          'Should not have found service config'
+        );
+        done();
+      }, 5_000);
+    });
     /* The DNS entry for loopback4.unittest.grpc.io only has a single A record
      * with the address 127.0.0.1, but the Mac DNS resolver appears to use
      * NAT64 to create an IPv6 address in that case, so it instead returns
