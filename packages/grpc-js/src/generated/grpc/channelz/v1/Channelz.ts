@@ -25,102 +25,102 @@ export interface ChannelzClient extends grpc.Client {
   /**
    * Returns a single Channel, or else a NOT_FOUND code.
    */
-  GetChannel(argument: _grpc_channelz_v1_GetChannelRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetChannelResponse__Output) => void): grpc.ClientUnaryCall;
-  GetChannel(argument: _grpc_channelz_v1_GetChannelRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetChannelResponse__Output) => void): grpc.ClientUnaryCall;
-  GetChannel(argument: _grpc_channelz_v1_GetChannelRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetChannelResponse__Output) => void): grpc.ClientUnaryCall;
-  GetChannel(argument: _grpc_channelz_v1_GetChannelRequest, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetChannelResponse__Output) => void): grpc.ClientUnaryCall;
+  GetChannel(argument: _grpc_channelz_v1_GetChannelRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetChannelResponse__Output>): grpc.ClientUnaryCall;
+  GetChannel(argument: _grpc_channelz_v1_GetChannelRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_channelz_v1_GetChannelResponse__Output>): grpc.ClientUnaryCall;
+  GetChannel(argument: _grpc_channelz_v1_GetChannelRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetChannelResponse__Output>): grpc.ClientUnaryCall;
+  GetChannel(argument: _grpc_channelz_v1_GetChannelRequest, callback: grpc.requestCallback<_grpc_channelz_v1_GetChannelResponse__Output>): grpc.ClientUnaryCall;
   
   /**
    * Returns a single Server, or else a NOT_FOUND code.
    */
-  GetServer(argument: _grpc_channelz_v1_GetServerRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServerResponse__Output) => void): grpc.ClientUnaryCall;
-  GetServer(argument: _grpc_channelz_v1_GetServerRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServerResponse__Output) => void): grpc.ClientUnaryCall;
-  GetServer(argument: _grpc_channelz_v1_GetServerRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServerResponse__Output) => void): grpc.ClientUnaryCall;
-  GetServer(argument: _grpc_channelz_v1_GetServerRequest, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServerResponse__Output) => void): grpc.ClientUnaryCall;
+  GetServer(argument: _grpc_channelz_v1_GetServerRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetServerResponse__Output>): grpc.ClientUnaryCall;
+  GetServer(argument: _grpc_channelz_v1_GetServerRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_channelz_v1_GetServerResponse__Output>): grpc.ClientUnaryCall;
+  GetServer(argument: _grpc_channelz_v1_GetServerRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetServerResponse__Output>): grpc.ClientUnaryCall;
+  GetServer(argument: _grpc_channelz_v1_GetServerRequest, callback: grpc.requestCallback<_grpc_channelz_v1_GetServerResponse__Output>): grpc.ClientUnaryCall;
   /**
    * Returns a single Server, or else a NOT_FOUND code.
    */
-  getServer(argument: _grpc_channelz_v1_GetServerRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServerResponse__Output) => void): grpc.ClientUnaryCall;
-  getServer(argument: _grpc_channelz_v1_GetServerRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServerResponse__Output) => void): grpc.ClientUnaryCall;
-  getServer(argument: _grpc_channelz_v1_GetServerRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServerResponse__Output) => void): grpc.ClientUnaryCall;
-  getServer(argument: _grpc_channelz_v1_GetServerRequest, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServerResponse__Output) => void): grpc.ClientUnaryCall;
+  getServer(argument: _grpc_channelz_v1_GetServerRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetServerResponse__Output>): grpc.ClientUnaryCall;
+  getServer(argument: _grpc_channelz_v1_GetServerRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_channelz_v1_GetServerResponse__Output>): grpc.ClientUnaryCall;
+  getServer(argument: _grpc_channelz_v1_GetServerRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetServerResponse__Output>): grpc.ClientUnaryCall;
+  getServer(argument: _grpc_channelz_v1_GetServerRequest, callback: grpc.requestCallback<_grpc_channelz_v1_GetServerResponse__Output>): grpc.ClientUnaryCall;
   
   /**
    * Gets all server sockets that exist in the process.
    */
-  GetServerSockets(argument: _grpc_channelz_v1_GetServerSocketsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServerSocketsResponse__Output) => void): grpc.ClientUnaryCall;
-  GetServerSockets(argument: _grpc_channelz_v1_GetServerSocketsRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServerSocketsResponse__Output) => void): grpc.ClientUnaryCall;
-  GetServerSockets(argument: _grpc_channelz_v1_GetServerSocketsRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServerSocketsResponse__Output) => void): grpc.ClientUnaryCall;
-  GetServerSockets(argument: _grpc_channelz_v1_GetServerSocketsRequest, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServerSocketsResponse__Output) => void): grpc.ClientUnaryCall;
+  GetServerSockets(argument: _grpc_channelz_v1_GetServerSocketsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetServerSocketsResponse__Output>): grpc.ClientUnaryCall;
+  GetServerSockets(argument: _grpc_channelz_v1_GetServerSocketsRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_channelz_v1_GetServerSocketsResponse__Output>): grpc.ClientUnaryCall;
+  GetServerSockets(argument: _grpc_channelz_v1_GetServerSocketsRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetServerSocketsResponse__Output>): grpc.ClientUnaryCall;
+  GetServerSockets(argument: _grpc_channelz_v1_GetServerSocketsRequest, callback: grpc.requestCallback<_grpc_channelz_v1_GetServerSocketsResponse__Output>): grpc.ClientUnaryCall;
   /**
    * Gets all server sockets that exist in the process.
    */
-  getServerSockets(argument: _grpc_channelz_v1_GetServerSocketsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServerSocketsResponse__Output) => void): grpc.ClientUnaryCall;
-  getServerSockets(argument: _grpc_channelz_v1_GetServerSocketsRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServerSocketsResponse__Output) => void): grpc.ClientUnaryCall;
-  getServerSockets(argument: _grpc_channelz_v1_GetServerSocketsRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServerSocketsResponse__Output) => void): grpc.ClientUnaryCall;
-  getServerSockets(argument: _grpc_channelz_v1_GetServerSocketsRequest, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServerSocketsResponse__Output) => void): grpc.ClientUnaryCall;
+  getServerSockets(argument: _grpc_channelz_v1_GetServerSocketsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetServerSocketsResponse__Output>): grpc.ClientUnaryCall;
+  getServerSockets(argument: _grpc_channelz_v1_GetServerSocketsRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_channelz_v1_GetServerSocketsResponse__Output>): grpc.ClientUnaryCall;
+  getServerSockets(argument: _grpc_channelz_v1_GetServerSocketsRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetServerSocketsResponse__Output>): grpc.ClientUnaryCall;
+  getServerSockets(argument: _grpc_channelz_v1_GetServerSocketsRequest, callback: grpc.requestCallback<_grpc_channelz_v1_GetServerSocketsResponse__Output>): grpc.ClientUnaryCall;
   
   /**
    * Gets all servers that exist in the process.
    */
-  GetServers(argument: _grpc_channelz_v1_GetServersRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServersResponse__Output) => void): grpc.ClientUnaryCall;
-  GetServers(argument: _grpc_channelz_v1_GetServersRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServersResponse__Output) => void): grpc.ClientUnaryCall;
-  GetServers(argument: _grpc_channelz_v1_GetServersRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServersResponse__Output) => void): grpc.ClientUnaryCall;
-  GetServers(argument: _grpc_channelz_v1_GetServersRequest, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServersResponse__Output) => void): grpc.ClientUnaryCall;
+  GetServers(argument: _grpc_channelz_v1_GetServersRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetServersResponse__Output>): grpc.ClientUnaryCall;
+  GetServers(argument: _grpc_channelz_v1_GetServersRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_channelz_v1_GetServersResponse__Output>): grpc.ClientUnaryCall;
+  GetServers(argument: _grpc_channelz_v1_GetServersRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetServersResponse__Output>): grpc.ClientUnaryCall;
+  GetServers(argument: _grpc_channelz_v1_GetServersRequest, callback: grpc.requestCallback<_grpc_channelz_v1_GetServersResponse__Output>): grpc.ClientUnaryCall;
   /**
    * Gets all servers that exist in the process.
    */
-  getServers(argument: _grpc_channelz_v1_GetServersRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServersResponse__Output) => void): grpc.ClientUnaryCall;
-  getServers(argument: _grpc_channelz_v1_GetServersRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServersResponse__Output) => void): grpc.ClientUnaryCall;
-  getServers(argument: _grpc_channelz_v1_GetServersRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServersResponse__Output) => void): grpc.ClientUnaryCall;
-  getServers(argument: _grpc_channelz_v1_GetServersRequest, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetServersResponse__Output) => void): grpc.ClientUnaryCall;
+  getServers(argument: _grpc_channelz_v1_GetServersRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetServersResponse__Output>): grpc.ClientUnaryCall;
+  getServers(argument: _grpc_channelz_v1_GetServersRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_channelz_v1_GetServersResponse__Output>): grpc.ClientUnaryCall;
+  getServers(argument: _grpc_channelz_v1_GetServersRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetServersResponse__Output>): grpc.ClientUnaryCall;
+  getServers(argument: _grpc_channelz_v1_GetServersRequest, callback: grpc.requestCallback<_grpc_channelz_v1_GetServersResponse__Output>): grpc.ClientUnaryCall;
   
   /**
    * Returns a single Socket or else a NOT_FOUND code.
    */
-  GetSocket(argument: _grpc_channelz_v1_GetSocketRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetSocketResponse__Output) => void): grpc.ClientUnaryCall;
-  GetSocket(argument: _grpc_channelz_v1_GetSocketRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetSocketResponse__Output) => void): grpc.ClientUnaryCall;
-  GetSocket(argument: _grpc_channelz_v1_GetSocketRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetSocketResponse__Output) => void): grpc.ClientUnaryCall;
-  GetSocket(argument: _grpc_channelz_v1_GetSocketRequest, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetSocketResponse__Output) => void): grpc.ClientUnaryCall;
+  GetSocket(argument: _grpc_channelz_v1_GetSocketRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetSocketResponse__Output>): grpc.ClientUnaryCall;
+  GetSocket(argument: _grpc_channelz_v1_GetSocketRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_channelz_v1_GetSocketResponse__Output>): grpc.ClientUnaryCall;
+  GetSocket(argument: _grpc_channelz_v1_GetSocketRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetSocketResponse__Output>): grpc.ClientUnaryCall;
+  GetSocket(argument: _grpc_channelz_v1_GetSocketRequest, callback: grpc.requestCallback<_grpc_channelz_v1_GetSocketResponse__Output>): grpc.ClientUnaryCall;
   /**
    * Returns a single Socket or else a NOT_FOUND code.
    */
-  getSocket(argument: _grpc_channelz_v1_GetSocketRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetSocketResponse__Output) => void): grpc.ClientUnaryCall;
-  getSocket(argument: _grpc_channelz_v1_GetSocketRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetSocketResponse__Output) => void): grpc.ClientUnaryCall;
-  getSocket(argument: _grpc_channelz_v1_GetSocketRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetSocketResponse__Output) => void): grpc.ClientUnaryCall;
-  getSocket(argument: _grpc_channelz_v1_GetSocketRequest, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetSocketResponse__Output) => void): grpc.ClientUnaryCall;
+  getSocket(argument: _grpc_channelz_v1_GetSocketRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetSocketResponse__Output>): grpc.ClientUnaryCall;
+  getSocket(argument: _grpc_channelz_v1_GetSocketRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_channelz_v1_GetSocketResponse__Output>): grpc.ClientUnaryCall;
+  getSocket(argument: _grpc_channelz_v1_GetSocketRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetSocketResponse__Output>): grpc.ClientUnaryCall;
+  getSocket(argument: _grpc_channelz_v1_GetSocketRequest, callback: grpc.requestCallback<_grpc_channelz_v1_GetSocketResponse__Output>): grpc.ClientUnaryCall;
   
   /**
    * Returns a single Subchannel, or else a NOT_FOUND code.
    */
-  GetSubchannel(argument: _grpc_channelz_v1_GetSubchannelRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetSubchannelResponse__Output) => void): grpc.ClientUnaryCall;
-  GetSubchannel(argument: _grpc_channelz_v1_GetSubchannelRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetSubchannelResponse__Output) => void): grpc.ClientUnaryCall;
-  GetSubchannel(argument: _grpc_channelz_v1_GetSubchannelRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetSubchannelResponse__Output) => void): grpc.ClientUnaryCall;
-  GetSubchannel(argument: _grpc_channelz_v1_GetSubchannelRequest, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetSubchannelResponse__Output) => void): grpc.ClientUnaryCall;
+  GetSubchannel(argument: _grpc_channelz_v1_GetSubchannelRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetSubchannelResponse__Output>): grpc.ClientUnaryCall;
+  GetSubchannel(argument: _grpc_channelz_v1_GetSubchannelRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_channelz_v1_GetSubchannelResponse__Output>): grpc.ClientUnaryCall;
+  GetSubchannel(argument: _grpc_channelz_v1_GetSubchannelRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetSubchannelResponse__Output>): grpc.ClientUnaryCall;
+  GetSubchannel(argument: _grpc_channelz_v1_GetSubchannelRequest, callback: grpc.requestCallback<_grpc_channelz_v1_GetSubchannelResponse__Output>): grpc.ClientUnaryCall;
   /**
    * Returns a single Subchannel, or else a NOT_FOUND code.
    */
-  getSubchannel(argument: _grpc_channelz_v1_GetSubchannelRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetSubchannelResponse__Output) => void): grpc.ClientUnaryCall;
-  getSubchannel(argument: _grpc_channelz_v1_GetSubchannelRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetSubchannelResponse__Output) => void): grpc.ClientUnaryCall;
-  getSubchannel(argument: _grpc_channelz_v1_GetSubchannelRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetSubchannelResponse__Output) => void): grpc.ClientUnaryCall;
-  getSubchannel(argument: _grpc_channelz_v1_GetSubchannelRequest, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetSubchannelResponse__Output) => void): grpc.ClientUnaryCall;
+  getSubchannel(argument: _grpc_channelz_v1_GetSubchannelRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetSubchannelResponse__Output>): grpc.ClientUnaryCall;
+  getSubchannel(argument: _grpc_channelz_v1_GetSubchannelRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_channelz_v1_GetSubchannelResponse__Output>): grpc.ClientUnaryCall;
+  getSubchannel(argument: _grpc_channelz_v1_GetSubchannelRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetSubchannelResponse__Output>): grpc.ClientUnaryCall;
+  getSubchannel(argument: _grpc_channelz_v1_GetSubchannelRequest, callback: grpc.requestCallback<_grpc_channelz_v1_GetSubchannelResponse__Output>): grpc.ClientUnaryCall;
   
   /**
    * Gets all root channels (i.e. channels the application has directly
    * created). This does not include subchannels nor non-top level channels.
    */
-  GetTopChannels(argument: _grpc_channelz_v1_GetTopChannelsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetTopChannelsResponse__Output) => void): grpc.ClientUnaryCall;
-  GetTopChannels(argument: _grpc_channelz_v1_GetTopChannelsRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetTopChannelsResponse__Output) => void): grpc.ClientUnaryCall;
-  GetTopChannels(argument: _grpc_channelz_v1_GetTopChannelsRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetTopChannelsResponse__Output) => void): grpc.ClientUnaryCall;
-  GetTopChannels(argument: _grpc_channelz_v1_GetTopChannelsRequest, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetTopChannelsResponse__Output) => void): grpc.ClientUnaryCall;
+  GetTopChannels(argument: _grpc_channelz_v1_GetTopChannelsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetTopChannelsResponse__Output>): grpc.ClientUnaryCall;
+  GetTopChannels(argument: _grpc_channelz_v1_GetTopChannelsRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_channelz_v1_GetTopChannelsResponse__Output>): grpc.ClientUnaryCall;
+  GetTopChannels(argument: _grpc_channelz_v1_GetTopChannelsRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetTopChannelsResponse__Output>): grpc.ClientUnaryCall;
+  GetTopChannels(argument: _grpc_channelz_v1_GetTopChannelsRequest, callback: grpc.requestCallback<_grpc_channelz_v1_GetTopChannelsResponse__Output>): grpc.ClientUnaryCall;
   /**
    * Gets all root channels (i.e. channels the application has directly
    * created). This does not include subchannels nor non-top level channels.
    */
-  getTopChannels(argument: _grpc_channelz_v1_GetTopChannelsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetTopChannelsResponse__Output) => void): grpc.ClientUnaryCall;
-  getTopChannels(argument: _grpc_channelz_v1_GetTopChannelsRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetTopChannelsResponse__Output) => void): grpc.ClientUnaryCall;
-  getTopChannels(argument: _grpc_channelz_v1_GetTopChannelsRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetTopChannelsResponse__Output) => void): grpc.ClientUnaryCall;
-  getTopChannels(argument: _grpc_channelz_v1_GetTopChannelsRequest, callback: (error?: grpc.ServiceError, result?: _grpc_channelz_v1_GetTopChannelsResponse__Output) => void): grpc.ClientUnaryCall;
+  getTopChannels(argument: _grpc_channelz_v1_GetTopChannelsRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetTopChannelsResponse__Output>): grpc.ClientUnaryCall;
+  getTopChannels(argument: _grpc_channelz_v1_GetTopChannelsRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_channelz_v1_GetTopChannelsResponse__Output>): grpc.ClientUnaryCall;
+  getTopChannels(argument: _grpc_channelz_v1_GetTopChannelsRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_channelz_v1_GetTopChannelsResponse__Output>): grpc.ClientUnaryCall;
+  getTopChannels(argument: _grpc_channelz_v1_GetTopChannelsRequest, callback: grpc.requestCallback<_grpc_channelz_v1_GetTopChannelsResponse__Output>): grpc.ClientUnaryCall;
   
 }
 
