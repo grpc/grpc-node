@@ -50,7 +50,7 @@ export interface RetryPolicy {
 export interface HedgingPolicy {
   maxAttempts: number;
   hedgingDelay?: string;
-  nonFatalStatusCodes: (Status | string)[];
+  nonFatalStatusCodes?: (Status | string)[];
 }
 
 export interface MethodConfig {
@@ -124,19 +124,23 @@ function validateRetryPolicy(obj: any): RetryPolicy {
   if (!('backoffMultiplier' in obj) || typeof obj.backoffMultiplier !== 'number' || obj.backoffMultiplier <= 0) {
     throw new Error('Invalid method config retry policy: backoffMultiplier must be a number greater than 0');
   }
-  if (('retryableStatusCodes' in obj) && Array.isArray(obj.retryableStatusCodes)) {
-    for (const value of obj.retryableStatusCodes) {
-      if (typeof value === 'number') {
-        if (!Object.values(Status).includes(value)) {
-          throw new Error('Invlid method config retry policy: retryableStatusCodes value not in status code range');
-        }
-      } else if (typeof value === 'string') {
-        if (!Object.values(Status).includes(value.toUpperCase())) {
-          throw new Error('Invlid method config retry policy: retryableStatusCodes value not a status code name');
-        }
-      } else {
-        throw new Error('Invlid method config retry policy: retryableStatusCodes value must be a string or number');
+  if (!(('retryableStatusCodes' in obj) && Array.isArray(obj.retryableStatusCodes))) {
+    throw new Error('Invalid method config retry policy: retryableStatusCodes is required');
+  }
+  if (obj.retryableStatusCodes.length === 0) {
+    throw new Error('Invalid method config retry policy: retryableStatusCodes must be non-empty');
+  }
+  for (const value of obj.retryableStatusCodes) {
+    if (typeof value === 'number') {
+      if (!Object.values(Status).includes(value)) {
+        throw new Error('Invlid method config retry policy: retryableStatusCodes value not in status code range');
       }
+    } else if (typeof value === 'string') {
+      if (!Object.values(Status).includes(value.toUpperCase())) {
+        throw new Error('Invlid method config retry policy: retryableStatusCodes value not a status code name');
+      }
+    } else {
+      throw new Error('Invlid method config retry policy: retryableStatusCodes value must be a string or number');
     }
   }
   return {
@@ -171,11 +175,13 @@ function validateHedgingPolicy(obj: any): HedgingPolicy {
     }
   }
   const result: HedgingPolicy = {
-    maxAttempts: obj.maxAttempts,
-    nonFatalStatusCodes: obj.nonFatalStatusCodes
+    maxAttempts: obj.maxAttempts
   }
   if (obj.hedgingDelay) {
     result.hedgingDelay = obj.hedgingDelay;
+  }
+  if (obj.nonFatalStatusCodes) {
+    result.nonFatalStatusCodes = obj.nonFatalStatusCodes;
   }
   return result;
 }
@@ -290,6 +296,9 @@ export function validateServiceConfig(obj: any): ServiceConfig {
         result.methodConfig.push(validateMethodConfig(methodConfig));
       }
     }
+  }
+  if ('retryThrottling' in obj) {
+    result.retryThrottling = validateRetryThrottling(obj.retryThrottling);
   }
   // Validate method name uniqueness
   const seenMethodNames: MethodConfigName[] = [];

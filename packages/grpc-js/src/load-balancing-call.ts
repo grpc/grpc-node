@@ -150,12 +150,15 @@ export class LoadBalancingCall implements Call {
             try {
               this.child = pickResult.subchannel!.getRealSubchannel().createCall(finalMetadata, this.host, this.methodName, {
                 onReceiveMetadata: metadata => {
+                  this.trace('Received metadata');
                   this.listener!.onReceiveMetadata(metadata);
                 },
                 onReceiveMessage: message => {
+                  this.trace('Received message');
                   this.listener!.onReceiveMessage(message);
                 },
                 onReceiveStatus: status => {
+                  this.trace('Received status');
                   if (status.code === http2.constants.NGHTTP2_REFUSED_STREAM) {
                     this.outputStatus(status, 'REFUSED');
                   } else {

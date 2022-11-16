@@ -673,21 +673,31 @@ export class Http2ServerCallStream<
 
     clearTimeout(this.deadlineTimer);
 
-    if (!this.wantTrailers) {
-      this.wantTrailers = true;
-      this.stream.once('wantTrailers', () => {
-        const trailersToSend = Object.assign(
-          {
-            [GRPC_STATUS_HEADER]: statusObj.code,
-            [GRPC_MESSAGE_HEADER]: encodeURI(statusObj.details as string),
-          },
-          statusObj.metadata.toHttp2Headers()
-        );
-
-        this.stream.sendTrailers(trailersToSend);
-      });
-      this.sendMetadata();
-      this.stream.end();
+    if (this.stream.headersSent) {
+      if (!this.wantTrailers) {
+        this.wantTrailers = true;
+        this.stream.once('wantTrailers', () => {
+          const trailersToSend = Object.assign(
+            {
+              [GRPC_STATUS_HEADER]: statusObj.code,
+              [GRPC_MESSAGE_HEADER]: encodeURI(statusObj.details as string),
+            },
+            statusObj.metadata.toHttp2Headers()
+          );
+  
+          this.stream.sendTrailers(trailersToSend);
+        });
+        this.stream.end();
+      }
+    } else {
+      const trailersToSend = Object.assign(
+        {
+          [GRPC_STATUS_HEADER]: statusObj.code,
+          [GRPC_MESSAGE_HEADER]: encodeURI(statusObj.details as string),
+        },
+        statusObj.metadata.toHttp2Headers()
+      );
+      this.stream.respond(trailersToSend, {endStream: true});
     }
   }
 

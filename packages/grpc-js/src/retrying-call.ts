@@ -145,6 +145,13 @@ export class RetryingCall implements Call {
   private initialMetadata: Metadata | null = null;
   private underlyingCalls: UnderlyingCall[] = [];
   private writeBuffer: WriteBufferEntry[] = [];
+  /**
+   * Tracks whether a read has been started, so that we know whether to start
+   * reads on new child calls. This only matters for the first read, because
+   * once a message comes in the child call becomes committed and there will
+   * be no new child calls.
+   */
+  private readStarted = false;
   private transparentRetryUsed: boolean = false;
   /**
    * Number of attempts so far
@@ -319,7 +326,7 @@ export class RetryingCall implements Call {
         this.reportStatus(status);
         break;
       case 'HEDGING':
-        if (this.isStatusCodeInList(this.callConfig!.methodConfig.hedgingPolicy!.nonFatalStatusCodes, status.code)) {
+        if (this.isStatusCodeInList(this.callConfig!.methodConfig.hedgingPolicy!.nonFatalStatusCodes ?? [], status.code)) {
           this.retryThrottler?.addCallFailed();
           let delayMs: number;
           if (pushback === null) {
@@ -378,6 +385,7 @@ export class RetryingCall implements Call {
     if (this.underlyingCalls[callIndex].state === 'COMPLETED') {
       return;
     }
+    this.trace('state=' + this.state + ' handling status from child [' + this.underlyingCalls[callIndex].call.getCallNumber() + '] in state ' + this.underlyingCalls[callIndex].state);
     this.underlyingCalls[callIndex].state = 'COMPLETED';
     if (status.code === Status.OK) {
       this.retryThrottler?.addCallSucceeded();
@@ -465,6 +473,7 @@ export class RetryingCall implements Call {
     let receivedMetadata = false;
     child.start(initialMetadata, {
       onReceiveMetadata: metadata => {
+        this.trace('Received metadata from child [' + child.getCallNumber() + ']');
         this.commitCall(index);
         receivedMetadata = true;
         if (previousAttempts > 0) {
@@ -475,19 +484,24 @@ export class RetryingCall implements Call {
         }
       },
       onReceiveMessage: message => {
+        this.trace('Received message from child [' + child.getCallNumber() + ']');
         this.commitCall(index);
         if (this.underlyingCalls[index].state === 'ACTIVE') {
           this.listener!.onReceiveMessage(message);
         }
       },
       onReceiveStatus: status => {
+        this.trace('Received status from child [' + child.getCallNumber() + ']');
         if (!receivedMetadata && previousAttempts > 0) {
           status.metadata.set(PREVIONS_RPC_ATTEMPTS_METADATA_KEY, `${previousAttempts}`);
         }
-        this.commitCall(index);
         this.handleChildStatus(status, index);
       }
-    })
+    });
+    this.sendNextChildMessage(index);
+    if (this.readStarted) {
+      child.startRead();
+    }
   }
 
   start(metadata: Metadata, listener: InterceptingListener): void {
@@ -559,6 +573,7 @@ export class RetryingCall implements Call {
   }
   startRead(): void {
     this.trace('startRead called');
+    this.readStarted = true;
     for (const underlyingCall of this.underlyingCalls) {
       if (underlyingCall?.state === 'ACTIVE') {
         underlyingCall.call.startRead();
