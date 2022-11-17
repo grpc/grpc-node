@@ -29,6 +29,7 @@ import { CallConfig } from "./resolver";
 import { splitHostPort } from "./uri-parser";
 import * as logging from './logging';
 import { restrictControlPlaneStatusCode } from "./control-plane-status";
+import * as http2 from 'http2';
 
 const TRACER_NAME = 'load_balancing_call';
 
@@ -36,6 +37,10 @@ export type RpcProgress = 'NOT_STARTED' | 'DROP' | 'REFUSED' | 'PROCESSED';
 
 export interface StatusObjectWithProgress extends StatusObject {
   progress: RpcProgress;
+}
+
+export interface LoadBalancingCallInterceptingListener extends InterceptingListener {
+  onReceiveStatus(status: StatusObjectWithProgress): void;
 }
 
 export class LoadBalancingCall implements Call {
@@ -145,13 +150,20 @@ export class LoadBalancingCall implements Call {
             try {
               this.child = pickResult.subchannel!.getRealSubchannel().createCall(finalMetadata, this.host, this.methodName, {
                 onReceiveMetadata: metadata => {
+                  this.trace('Received metadata');
                   this.listener!.onReceiveMetadata(metadata);
                 },
                 onReceiveMessage: message => {
+                  this.trace('Received message');
                   this.listener!.onReceiveMessage(message);
                 },
                 onReceiveStatus: status => {
-                  this.outputStatus(status, 'PROCESSED');
+                  this.trace('Received status');
+                  if (status.rstCode === http2.constants.NGHTTP2_REFUSED_STREAM) {
+                    this.outputStatus(status, 'REFUSED');
+                  } else {
+                    this.outputStatus(status, 'PROCESSED');
+                  }
                 }
               });
             } catch (error) {
@@ -226,7 +238,7 @@ export class LoadBalancingCall implements Call {
   getPeer(): string {
     return this.child?.getPeer() ?? this.channel.getTarget();
   }
-  start(metadata: Metadata, listener: InterceptingListener): void {
+  start(metadata: Metadata, listener: LoadBalancingCallInterceptingListener): void {
     this.trace('start called');
     this.listener = listener;
     this.metadata = metadata;

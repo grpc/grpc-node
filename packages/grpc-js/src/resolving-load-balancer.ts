@@ -83,7 +83,7 @@ function getDefaultConfigSelector(
 }
 
 export interface ResolutionCallback {
-  (configSelector: ConfigSelector): void;
+  (serviceConfig: ServiceConfig, configSelector: ConfigSelector): void;
 }
 
 export interface ResolutionFailureCallback {
@@ -239,6 +239,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
           const finalServiceConfig =
             workingServiceConfig ?? this.defaultServiceConfig;
           this.onSuccessfulResolution(
+            finalServiceConfig,
             configSelector ?? getDefaultConfigSelector(finalServiceConfig)
           );
         },

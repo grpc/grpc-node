@@ -50,6 +50,7 @@ import { Deadline, getDeadlineTimeoutString } from './deadline';
 import { ResolvingCall } from './resolving-call';
 import { getNextCallNumber } from './call-number';
 import { restrictControlPlaneStatusCode } from './control-plane-status';
+import { MessageBufferTracker, RetryingCall, RetryThrottler } from './retrying-call';
 
 /**
  * See https://nodejs.org/api/timers.html#timers_setinterval_callback_delay_args
@@ -77,6 +78,11 @@ interface ErrorConfigResult {
 }
 
 type GetConfigResult = NoneConfigResult | SuccessConfigResult | ErrorConfigResult;
+
+const RETRY_THROTTLER_MAP: Map<string, RetryThrottler> = new Map();
+
+const DEFAULT_RETRY_BUFFER_SIZE_BYTES = 1<<24; // 16 MB
+const DEFAULT_PER_RPC_RETRY_BUFFER_SIZE_BYTES = 1<<20; // 1 MB
 
 export class InternalChannel {
   
@@ -111,6 +117,7 @@ export class InternalChannel {
    * than TRANSIENT_FAILURE.
    */
    private currentResolutionError: StatusObject | null = null;
+   private retryBufferTracker: MessageBufferTracker;
 
   // Channelz info
   private readonly channelzEnabled: boolean = true;
@@ -179,6 +186,10 @@ export class InternalChannel {
     this.subchannelPool = getSubchannelPool(
       (options['grpc.use_local_subchannel_pool'] ?? 0) === 0
     );
+    this.retryBufferTracker = new MessageBufferTracker(
+      options['grpc.retry_buffer_size'] ?? DEFAULT_RETRY_BUFFER_SIZE_BYTES,
+      options['grpc.per_rpc_retry_buffer_size'] ?? DEFAULT_PER_RPC_RETRY_BUFFER_SIZE_BYTES
+    );
     const channelControlHelper: ChannelControlHelper = {
       createSubchannel: (
         subchannelAddress: SubchannelAddress,
@@ -226,7 +237,12 @@ export class InternalChannel {
       this.target,
       channelControlHelper,
       options,
-      (configSelector) => {
+      (serviceConfig, configSelector) => {
+        if (serviceConfig.retryThrottling) {
+          RETRY_THROTTLER_MAP.set(this.getTarget(), new RetryThrottler(serviceConfig.retryThrottling.maxTokens, serviceConfig.retryThrottling.tokenRatio, RETRY_THROTTLER_MAP.get(this.getTarget())));
+        } else {
+          RETRY_THROTTLER_MAP.delete(this.getTarget());
+        }
         if (this.channelzEnabled) {
           this.channelzTrace.addTrace('CT_INFO', 'Address resolution succeeded');
         }
@@ -243,6 +259,7 @@ export class InternalChannel {
           }
           this.configSelectionQueue = [];
         });
+
       },
       (status) => {
         if (this.channelzEnabled) {
@@ -405,6 +422,24 @@ export class InternalChannel {
     return new LoadBalancingCall(this, callConfig, method, host, credentials, deadline, callNumber);
   }
 
+  createRetryingCall(
+    callConfig: CallConfig,
+    method: string,
+    host: string,
+    credentials: CallCredentials,
+    deadline: Deadline
+  ): RetryingCall {
+    const callNumber = getNextCallNumber();
+    this.trace(
+      'createRetryingCall [' +
+        callNumber +
+        '] method="' +
+        method +
+        '"'
+    );
+    return new RetryingCall(this, callConfig, method, host, credentials, deadline, callNumber, this.retryBufferTracker, RETRY_THROTTLER_MAP.get(this.getTarget()))
+  }
+
   createInnerCall(
     callConfig: CallConfig,
     method: string,
@@ -413,7 +448,11 @@ export class InternalChannel {
     deadline: Deadline
   ): Call {
     // Create a RetryingCall if retries are enabled
-    return this.createLoadBalancingCall(callConfig, method, host, credentials, deadline);
+    if (this.options['grpc.enable_retries'] === 0) {
+      return this.createLoadBalancingCall(callConfig, method, host, credentials, deadline);
+    } else {
+      return this.createRetryingCall(callConfig, method, host, credentials, deadline);
+    }
   }
 
   createResolvingCall(
@@ -439,7 +478,7 @@ export class InternalChannel {
       parentCall: parentCall,
     };
 
-    const call = new ResolvingCall(this, method, finalOptions, this.filterStackFactory.clone(), this.credentials._getCallCredentials(), getNextCallNumber());
+    const call = new ResolvingCall(this, method, finalOptions, this.filterStackFactory.clone(), this.credentials._getCallCredentials(), callNumber);
 
     if (this.channelzEnabled) {
       this.callTracker.addCallStarted();
