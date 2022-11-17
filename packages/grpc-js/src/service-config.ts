@@ -133,14 +133,14 @@ function validateRetryPolicy(obj: any): RetryPolicy {
   for (const value of obj.retryableStatusCodes) {
     if (typeof value === 'number') {
       if (!Object.values(Status).includes(value)) {
-        throw new Error('Invlid method config retry policy: retryableStatusCodes value not in status code range');
+        throw new Error('Invalid method config retry policy: retryableStatusCodes value not in status code range');
       }
     } else if (typeof value === 'string') {
       if (!Object.values(Status).includes(value.toUpperCase())) {
-        throw new Error('Invlid method config retry policy: retryableStatusCodes value not a status code name');
+        throw new Error('Invalid method config retry policy: retryableStatusCodes value not a status code name');
       }
     } else {
-      throw new Error('Invlid method config retry policy: retryableStatusCodes value must be a string or number');
+      throw new Error('Invalid method config retry policy: retryableStatusCodes value must be a string or number');
     }
   }
   return {
