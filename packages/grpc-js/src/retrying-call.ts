@@ -296,7 +296,7 @@ export class RetryingCall implements Call {
       return;
     }
     const retryPolicy = this.callConfig!.methodConfig.retryPolicy!;
-    if (this.attempts >= retryPolicy.maxAttempts) {
+    if (this.attempts >= Math.min(retryPolicy.maxAttempts, 5)) {
       callback(false);
       return;
     }
@@ -446,7 +446,7 @@ export class RetryingCall implements Call {
       return;
     }
     const hedgingPolicy = this.callConfig.methodConfig.hedgingPolicy;
-    if (this.attempts >= hedgingPolicy.maxAttempts) {
+    if (this.attempts >= Math.min(hedgingPolicy.maxAttempts, 5)) {
       return;
     }
     this.attempts += 1;
@@ -465,7 +465,7 @@ export class RetryingCall implements Call {
       return;
     }
     const hedgingPolicy = this.callConfig.methodConfig.hedgingPolicy;
-    if (this.attempts >= hedgingPolicy.maxAttempts) {
+    if (this.attempts >= Math.min(hedgingPolicy.maxAttempts, 5)) {
       return;
     }
     const hedgingDelayString = hedgingPolicy.hedgingDelay ?? '0s';

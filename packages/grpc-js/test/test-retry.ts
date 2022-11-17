@@ -216,6 +216,39 @@ describe('Retries', () => {
         }
       );
     });
+
+    it('Should not be able to make more than 5 attempts', (done) => {
+      const serviceConfig = {
+        loadBalancingConfig: [],
+        methodConfig: [
+          {
+            name: [{
+              service: 'EchoService'
+            }],
+            retryPolicy: {
+              maxAttempts: 10,
+              initialBackoff: '0.1s',
+              maxBackoff: '10s',
+              backoffMultiplier: 1.2,
+              retryableStatusCodes: [14, 'RESOURCE_EXHAUSTED']
+            }
+          }
+        ]
+      }
+      const client2 = new EchoService(`localhost:${port}`, grpc.credentials.createInsecure(), {'grpc.service_config': JSON.stringify(serviceConfig)});
+      const metadata = new grpc.Metadata();
+      metadata.set('succeed-on-retry-attempt', '6');
+      metadata.set('respond-with-status', `${grpc.status.RESOURCE_EXHAUSTED}`);
+      client2.echo(
+        { value: 'test value', value2: 3 },
+        metadata,
+        (error: grpc.ServiceError, response: any) => {
+          assert(error);
+          assert.strictEqual(error.details, 'Failed on retry 4');
+          done();
+        }
+      );
+    })
   });
 
   describe('Client with hedging configured', () => {
@@ -297,5 +330,35 @@ describe('Retries', () => {
         }
       );
     });
+
+    it('Should not be able to make more than 5 attempts', (done) => {
+      const serviceConfig = {
+        loadBalancingConfig: [],
+        methodConfig: [
+          {
+            name: [{
+              service: 'EchoService'
+            }],
+            hedgingPolicy: {
+              maxAttempts: 10,
+              nonFatalStatusCodes: [14, 'RESOURCE_EXHAUSTED']
+            }
+          }
+        ]
+      }
+      const client2 = new EchoService(`localhost:${port}`, grpc.credentials.createInsecure(), {'grpc.service_config': JSON.stringify(serviceConfig)});
+      const metadata = new grpc.Metadata();
+      metadata.set('succeed-on-retry-attempt', '6');
+      metadata.set('respond-with-status', `${grpc.status.RESOURCE_EXHAUSTED}`);
+      client2.echo(
+        { value: 'test value', value2: 3 },
+        metadata,
+        (error: grpc.ServiceError, response: any) => {
+          assert(error);
+          assert(error.details.startsWith('Failed on retry'));
+          done();
+        }
+      );
+    })
   });
 });
