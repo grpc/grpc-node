@@ -135,6 +135,12 @@ interface WriteBufferEntry {
    * state.
    */
   callback?: WriteCallback;
+  /**
+   * Indicates whether the message is allocated in the buffer tracker. Ignored
+   * if entryType is not MESSAGE. Should be the return value of
+   * bufferTracker.allocate.
+   */
+  allocated: boolean;
 }
 
 const PREVIONS_RPC_ATTEMPTS_METADATA_KEY = 'grpc-previous-rpc-attempts';
@@ -216,6 +222,22 @@ export class RetryingCall implements Call {
     }
   }
 
+  private maybefreeMessageBufferEntry(messageIndex: number) {
+    if (this.state !== 'COMMITTED') {
+      return;
+    }
+    const bufferEntry = this.writeBuffer[messageIndex];
+    if (bufferEntry.entryType === 'MESSAGE') {
+      if (bufferEntry.allocated) {
+        this.bufferTracker.free(bufferEntry.message!.message.length, this.callNumber);
+      }
+      this.writeBuffer[messageIndex] = {
+        entryType: 'FREED',
+        allocated: false
+      };
+    }
+  }
+
   private commitCall(index: number) {
     if (this.state === 'COMMITTED') {
       return;
@@ -237,13 +259,7 @@ export class RetryingCall implements Call {
       this.underlyingCalls[i].call.cancelWithStatus(Status.CANCELLED, 'Discarded in favor of other hedged attempt');
     }
     for (let messageIndex = 0; messageIndex < this.underlyingCalls[index].nextMessageToSend - 1; messageIndex += 1) {
-      const bufferEntry = this.writeBuffer[messageIndex];
-      if (bufferEntry.entryType === 'MESSAGE') {
-        this.bufferTracker.free(bufferEntry.message!.message.length, this.callNumber);
-        this.writeBuffer[messageIndex] = {
-          entryType: 'FREED'
-        };
-      }
+      this.maybefreeMessageBufferEntry(messageIndex);
     }
   }
 
@@ -513,6 +529,15 @@ export class RetryingCall implements Call {
     this.maybeStartHedgingTimer();
   }
 
+  private handleChildWriteCompleted(childIndex: number) {
+    const childCall = this.underlyingCalls[childIndex];
+    const messageIndex = childCall.nextMessageToSend;
+    this.writeBuffer[messageIndex].callback?.();
+    this.maybefreeMessageBufferEntry(messageIndex);
+    childCall.nextMessageToSend += 1;
+    this.sendNextChildMessage(childIndex);
+  }
+
   private sendNextChildMessage(childIndex: number) {
     const childCall = this.underlyingCalls[childIndex];
     if (childCall.state === 'COMPLETED') {
@@ -525,8 +550,7 @@ export class RetryingCall implements Call {
           childCall.call.sendMessageWithContext({
             callback: (error) => {
               // Ignore error
-              childCall.nextMessageToSend += 1;
-              this.sendNextChildMessage(childIndex);
+              this.handleChildWriteCompleted(childIndex);
             }
           }, bufferEntry.message!.message);
           break;
@@ -550,25 +574,34 @@ export class RetryingCall implements Call {
     const messageIndex = this.writeBuffer.length;
     const bufferEntry: WriteBufferEntry = {
       entryType: 'MESSAGE',
-      message: writeObj
+      message: writeObj,
+      allocated: this.bufferTracker.allocate(message.length, this.callNumber)
     };
     this.writeBuffer[messageIndex] = bufferEntry;
-    if (this.bufferTracker.allocate(message.length, this.callNumber)) {
+    if (bufferEntry.allocated) {
       context.callback?.();
       for (const [callIndex, call] of this.underlyingCalls.entries()) {
         if (call.state === 'ACTIVE' && call.nextMessageToSend === messageIndex) {
           call.call.sendMessageWithContext({
             callback: (error) => {
               // Ignore error
-              call.nextMessageToSend += 1;
-              this.sendNextChildMessage(callIndex);
+              this.handleChildWriteCompleted(callIndex);
             }
           }, message);
         }
       }
     } else {
       this.commitCallWithMostMessages();
-      bufferEntry.callback = context.callback;
+      const call = this.underlyingCalls[this.committedCallIndex!];
+      bufferEntry.callback = context.callback; 
+      if (call.state === 'ACTIVE' && call.nextMessageToSend === messageIndex) {
+        call.call.sendMessageWithContext({
+          callback: (error) => {
+            // Ignore error
+            this.handleChildWriteCompleted(this.committedCallIndex!);
+          }
+        }, message);
+      }
     }
   }
   startRead(): void {
@@ -584,7 +617,8 @@ export class RetryingCall implements Call {
     this.trace('halfClose called');
     const halfCloseIndex = this.writeBuffer.length;
     this.writeBuffer[halfCloseIndex] = {
-      entryType: 'HALF_CLOSE'
+      entryType: 'HALF_CLOSE',
+      allocated: false
     };
     for (const call of this.underlyingCalls) {
       if (call?.state === 'ACTIVE' && call.nextMessageToSend === halfCloseIndex) {
