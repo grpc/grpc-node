@@ -19,7 +19,7 @@ import { CallCredentials } from "./call-credentials";
 import { Call, CallStreamOptions, InterceptingListener, MessageContext, StatusObject } from "./call-interface";
 import { LogVerbosity, Propagate, Status } from "./constants";
 import { Deadline, getDeadlineTimeoutString, getRelativeTimeout, minDeadline } from "./deadline";
-import { FilterStackFactory } from "./filter-stack";
+import { FilterStack, FilterStackFactory } from "./filter-stack";
 import { InternalChannel } from "./internal-channel";
 import { Metadata } from "./metadata";
 import * as logging from './logging';
@@ -33,12 +33,16 @@ export class ResolvingCall implements Call {
   private pendingMessage: {context: MessageContext, message: Buffer} | null = null;
   private pendingHalfClose = false;
   private ended = false;
+  private readFilterPending = false;
+  private writeFilterPending = false;
+  private pendingChildStatus: StatusObject | null = null;
   private metadata: Metadata | null = null;
   private listener: InterceptingListener | null = null;
   private deadline: Deadline;
   private host: string;
   private statusWatchers: ((status: StatusObject) => void)[] = [];
   private deadlineTimer: NodeJS.Timer = setTimeout(() => {}, 0);
+  private filterStack: FilterStack | null = null;
 
   constructor(
     private readonly channel: InternalChannel,
@@ -96,12 +100,33 @@ export class ResolvingCall implements Call {
   private outputStatus(status: StatusObject) {
     if (!this.ended) {
       this.ended = true;
-      this.trace('ended with status: code=' + status.code + ' details="' + status.details + '"');
-      this.statusWatchers.forEach(watcher => watcher(status));
+      if (!this.filterStack) {
+        this.filterStack = this.filterStackFactory.createFilter();
+      }
+      const filteredStatus = this.filterStack.receiveTrailers(status);
+      this.trace('ended with status: code=' + filteredStatus.code + ' details="' + filteredStatus.details + '"');
+      this.statusWatchers.forEach(watcher => watcher(filteredStatus));
       process.nextTick(() => {
-        this.listener?.onReceiveStatus(status);
+        this.listener?.onReceiveStatus(filteredStatus);
       });
     }
+  }
+
+  private sendMessageOnChild(context: MessageContext, message: Buffer): void {
+    if (!this.child) {
+      throw new Error('sendMessageonChild called with child not populated');
+    }
+    const child = this.child;
+    this.writeFilterPending = true;
+    this.filterStack!.sendMessage(Promise.resolve({message: message, flags: context.flags})).then((filteredMessage) => {
+      this.writeFilterPending = false;
+      child.sendMessageWithContext(context, filteredMessage.message);
+      if (this.pendingHalfClose) {
+        child.halfClose();
+      }
+    }, (status: StatusObject) => {
+      this.cancelWithStatus(status.code, status.details);
+    });
   }
 
   getConfig(): void {
@@ -145,32 +170,50 @@ export class ResolvingCall implements Call {
           config.methodConfig.timeout.nanos / 1_000_000
       );
       this.deadline = minDeadline(this.deadline, configDeadline);
+      this.runDeadlineTimer();
     }
 
     this.filterStackFactory.push(config.dynamicFilterFactories);
-
-    this.child = this.channel.createInnerCall(config, this.method, this.host, this.credentials, this.deadline);
-    this.child.start(this.metadata, {
-      onReceiveMetadata: metadata => {
-        this.listener!.onReceiveMetadata(metadata);
-      },
-      onReceiveMessage: message => {
-          this.listener!.onReceiveMessage(message);
-      },
-      onReceiveStatus: status => {
-        this.outputStatus(status);
+    this.filterStack = this.filterStackFactory.createFilter();
+    this.filterStack.sendMetadata(Promise.resolve(this.metadata)).then(filteredMetadata => {
+      this.child = this.channel.createInnerCall(config, this.method, this.host, this.credentials, this.deadline);
+      this.child.start(filteredMetadata, {
+        onReceiveMetadata: metadata => {
+          this.listener!.onReceiveMetadata(this.filterStack!.receiveMetadata(metadata));
+        },
+        onReceiveMessage: message => {
+          this.readFilterPending = true;
+          this.filterStack!.receiveMessage(message).then(filteredMesssage => {
+            this.readFilterPending = false;
+            this.listener!.onReceiveMessage(filteredMesssage);
+            if (this.pendingChildStatus) {
+              this.outputStatus(this.pendingChildStatus);
+            }
+          }, (status: StatusObject) => {
+            this.cancelWithStatus(status.code, status.details);
+          });
+        },
+        onReceiveStatus: status => {
+          if (this.readFilterPending) {
+            this.pendingChildStatus = status;
+          } else {
+            this.outputStatus(status);
+          }
+        }
+      });
+      if (this.readPending) {
+        this.child.startRead();
       }
-    });
-    if (this.readPending) {
-      this.child.startRead();
-    }
-    if (this.pendingMessage) {
-      this.child.sendMessageWithContext(this.pendingMessage.context, this.pendingMessage.message);
-    }
-    if (this.pendingHalfClose) {
-      this.child.halfClose();
-    }
+      if (this.pendingMessage) {
+        this.sendMessageOnChild(this.pendingMessage.context, this.pendingMessage.message);
+      } else if (this.pendingHalfClose) {
+        this.child.halfClose();
+      }
+    }, (status: StatusObject) => {
+      this.outputStatus(status);
+    })
   }
+
   reportResolverError(status: StatusObject) {
     if (this.metadata?.getOptions().waitForReady) {
       this.channel.queueCallForConfig(this);
@@ -195,7 +238,7 @@ export class ResolvingCall implements Call {
   sendMessageWithContext(context: MessageContext, message: Buffer): void {
     this.trace('write() called with message of length ' + message.length);
     if (this.child) {
-      this.child.sendMessageWithContext(context, message);
+      this.sendMessageOnChild(context, message);
     } else {
       this.pendingMessage = {context, message};
     }
@@ -210,7 +253,7 @@ export class ResolvingCall implements Call {
   }
   halfClose(): void {
     this.trace('halfClose called');
-    if (this.child) {
+    if (this.child && !this.writeFilterPending) {
       this.child.halfClose();
     } else {
       this.pendingHalfClose = true;

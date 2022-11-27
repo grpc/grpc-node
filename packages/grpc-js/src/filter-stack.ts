@@ -88,6 +88,10 @@ export class FilterStackFactory implements FilterFactory<FilterStack> {
     this.factories.unshift(...filterFactories);
   }
 
+  clone(): FilterStackFactory {
+    return new FilterStackFactory([...this.factories]);
+  }
+
   createFilter(): FilterStack {
     return new FilterStack(
       this.factories.map((factory) => factory.createFilter())

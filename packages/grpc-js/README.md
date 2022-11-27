@@ -59,6 +59,9 @@ Many channel arguments supported in `grpc` are not supported in `@grpc/grpc-js`.
   - `grpc.default_compression_algorithm`
   - `grpc.enable_channelz`
   - `grpc.dns_min_time_between_resolutions_ms`
+  - `grpc.enable_retries`
+  - `grpc.per_rpc_retry_buffer_size`
+  - `grpc.retry_buffer_size`
   - `grpc-node.max_session_memory`
   - `channelOverride`
   - `channelFactoryOverride`

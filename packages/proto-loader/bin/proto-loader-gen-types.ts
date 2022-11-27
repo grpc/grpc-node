@@ -135,20 +135,16 @@ function getImportLine(dependency: Protobuf.Type | Protobuf.Enum | Protobuf.Serv
   /* If the dependency is defined within a message, it will be generated in that
    * message's file and exported using its typeInterfaceName. */
   if (dependency.parent instanceof Protobuf.Type) {
-    if (dependency instanceof Protobuf.Type) {
+    if (dependency instanceof Protobuf.Type || dependency instanceof Protobuf.Enum) {
       importedTypes = `${inputName(typeInterfaceName)}, ${outputName(typeInterfaceName)}`;
-    } else if (dependency instanceof Protobuf.Enum) {
-      importedTypes = `${typeInterfaceName}`;
     } else if (dependency instanceof Protobuf.Service) {
       importedTypes = `${typeInterfaceName}Client, ${typeInterfaceName}Definition`;
     } else {
       throw new Error('Invalid object passed to getImportLine');
     }
   } else {
-    if (dependency instanceof Protobuf.Type) {
+    if (dependency instanceof Protobuf.Type || dependency instanceof Protobuf.Enum) {
       importedTypes = `${inputName(dependency.name)} as ${inputName(typeInterfaceName)}, ${outputName(dependency.name)} as ${outputName(typeInterfaceName)}`;
-    } else if (dependency instanceof Protobuf.Enum) {
-      importedTypes = `${dependency.name} as ${typeInterfaceName}`;
     } else if (dependency instanceof Protobuf.Service) {
       importedTypes = `${dependency.name}Client as ${typeInterfaceName}Client, ${dependency.name}Definition as ${typeInterfaceName}Definition`;
     } else {
@@ -220,7 +216,8 @@ function getTypeNamePermissive(fieldType: string, resolvedType: Protobuf.Type | 
           return `${inputName(typeInterfaceName)} | null`;
         }
       } else {
-        return `${typeInterfaceName} | keyof typeof ${typeInterfaceName}`;
+        // Enum
+        return inputName(typeInterfaceName);
       }
   }
 }
@@ -324,11 +321,8 @@ function getTypeNameRestricted(fieldType: string, resolvedType: Protobuf.Type | 
           return `${outputName(typeInterfaceName)}`;
         }
       } else {
-        if (options.enums == String) {
-          return `keyof typeof ${typeInterfaceName}`;
-        } else {
-          return typeInterfaceName;
-        }
+        // Enum
+        return outputName(typeInterfaceName);
       }
   }
 }
@@ -455,21 +449,46 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
 }
 
 function generateEnumInterface(formatter: TextFormatter, enumType: Protobuf.Enum, options: GeneratorOptions, nameOverride?: string) {
+  const {inputName, outputName} = useNameFmter(options);
+  const name = nameOverride ?? enumType.name;
   formatter.writeLine(`// Original file: ${(enumType.filename ?? 'null')?.replace(/\\/g, '/')}`);
   formatter.writeLine('');
   if (options.includeComments) {
     formatComment(formatter, enumType.comment);
   }
-  formatter.writeLine(`export enum ${nameOverride ?? enumType.name} {`);
+  formatter.writeLine(`export const ${name} = {`);
   formatter.indent();
   for (const key of Object.keys(enumType.values)) {
     if (options.includeComments) {
       formatComment(formatter, enumType.comments[key]);
     }
-    formatter.writeLine(`${key} = ${enumType.values[key]},`);
+    formatter.writeLine(`${key}: ${options.enums == String ? `'${key}'` : enumType.values[key]},`);
   }
   formatter.unindent();
-  formatter.writeLine('}');
+  formatter.writeLine('} as const;');
+
+  // Permissive Type
+  formatter.writeLine('');
+  if (options.includeComments) {
+    formatComment(formatter, enumType.comment);
+  }
+  formatter.writeLine(`export type ${inputName(name)} =`)
+  formatter.indent();
+  for (const key of Object.keys(enumType.values)) {
+    if (options.includeComments) {
+      formatComment(formatter, enumType.comments[key]);
+    }
+    formatter.writeLine(`| '${key}'`);
+    formatter.writeLine(`| ${enumType.values[key]}`);
+  }
+  formatter.unindent();
+
+  // Restrictive Type
+  formatter.writeLine('');
+  if (options.includeComments) {
+    formatComment(formatter, enumType.comment);
+  }
+  formatter.writeLine(`export type ${outputName(name)} = typeof ${name}[keyof typeof ${name}]`)
 }
 
 /**

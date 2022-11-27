@@ -44,6 +44,16 @@ export interface ChannelOptions {
   'grpc.default_compression_algorithm'?: CompressionAlgorithms;
   'grpc.enable_channelz'?: number;
   'grpc.dns_min_time_between_resolutions_ms'?: number;
+  'grpc.enable_retries'?: number;
+  'grpc.per_rpc_retry_buffer_size'?: number;
+  /* This option is pattered like a core option, but the core does not have
+   * this option. It is closely related to the option
+   * grpc.per_rpc_retry_buffer_size, which is in the core. The core will likely
+   * implement this functionality using the ResourceQuota mechanism, so there
+   * will probably not be any collision or other inconsistency. */
+  'grpc.retry_buffer_size'?: number;
+  'grpc.max_connection_age_ms'?: number;
+  'grpc.max_connection_age_grace_ms'?: number;
   'grpc-node.max_session_memory'?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
@@ -71,6 +81,11 @@ export const recognizedOptions = {
   'grpc.enable_http_proxy': true,
   'grpc.enable_channelz': true,
   'grpc.dns_min_time_between_resolutions_ms': true,
+  'grpc.enable_retries': true,
+  'grpc.per_rpc_retry_buffer_size': true,
+  'grpc.retry_buffer_size': true,
+  'grpc.max_connection_age_ms': true,
+  'grpc.max_connection_age_grace_ms': true,
   'grpc-node.max_session_memory': true,
 };
 

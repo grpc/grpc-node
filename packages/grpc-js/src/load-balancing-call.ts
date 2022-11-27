@@ -29,6 +29,7 @@ import { CallConfig } from "./resolver";
 import { splitHostPort } from "./uri-parser";
 import * as logging from './logging';
 import { restrictControlPlaneStatusCode } from "./control-plane-status";
+import * as http2 from 'http2';
 
 const TRACER_NAME = 'load_balancing_call';
 
@@ -38,17 +39,18 @@ export interface StatusObjectWithProgress extends StatusObject {
   progress: RpcProgress;
 }
 
+export interface LoadBalancingCallInterceptingListener extends InterceptingListener {
+  onReceiveStatus(status: StatusObjectWithProgress): void;
+}
+
 export class LoadBalancingCall implements Call {
   private child: SubchannelCall | null = null;
   private readPending = false;
-  private writeFilterPending = false;
   private pendingMessage: {context: MessageContext, message: Buffer} | null = null;
   private pendingHalfClose = false;
-  private readFilterPending = false;
   private pendingChildStatus: StatusObject | null = null;
   private ended = false;
   private serviceUrl: string;
-  private filterStack: FilterStack;
   private metadata: Metadata | null = null;
   private listener: InterceptingListener | null = null;
   private onCallEnded: ((statusCode: Status) => void) | null = null;
@@ -59,11 +61,8 @@ export class LoadBalancingCall implements Call {
     private readonly host : string,
     private readonly credentials: CallCredentials,
     private readonly deadline: Deadline,
-    filterStackFactory: FilterStackFactory,
     private readonly callNumber: number
   ) {
-    this.filterStack = filterStackFactory.createFilter();
-
     const splitPath: string[] = this.methodName.split('/');
     let serviceName = '';
     /* The standard path format is "/{serviceName}/{methodName}", so if we split
@@ -90,8 +89,7 @@ export class LoadBalancingCall implements Call {
     if (!this.ended) {
       this.ended = true;
       this.trace('ended with status: code=' + status.code + ' details="' + status.details + '"');
-      const filteredStatus = this.filterStack.receiveTrailers(status);
-      const finalStatus = {...filteredStatus, progress};
+      const finalStatus = {...status, progress};
       this.listener?.onReceiveStatus(finalStatus);
       this.onCallEnded?.(finalStatus.code);
     }
@@ -152,23 +150,17 @@ export class LoadBalancingCall implements Call {
             try {
               this.child = pickResult.subchannel!.getRealSubchannel().createCall(finalMetadata, this.host, this.methodName, {
                 onReceiveMetadata: metadata => {
-                  this.listener!.onReceiveMetadata(this.filterStack.receiveMetadata(metadata));
+                  this.trace('Received metadata');
+                  this.listener!.onReceiveMetadata(metadata);
                 },
                 onReceiveMessage: message => {
-                  this.readFilterPending = true;
-                  this.filterStack.receiveMessage(message).then(filteredMesssage => {
-                    this.readFilterPending = false;
-                    this.listener!.onReceiveMessage(filteredMesssage);
-                    if (this.pendingChildStatus) {
-                      this.outputStatus(this.pendingChildStatus, 'PROCESSED');
-                    }
-                  }, (status: StatusObject) => {
-                    this.cancelWithStatus(status.code, status.details);
-                  });
+                  this.trace('Received message');
+                  this.listener!.onReceiveMessage(message);
                 },
                 onReceiveStatus: status => {
-                  if (this.readFilterPending) {
-                    this.pendingChildStatus = status;
+                  this.trace('Received status');
+                  if (status.rstCode === http2.constants.NGHTTP2_REFUSED_STREAM) {
+                    this.outputStatus(status, 'REFUSED');
                   } else {
                     this.outputStatus(status, 'PROCESSED');
                   }
@@ -201,7 +193,7 @@ export class LoadBalancingCall implements Call {
             if (this.pendingMessage) {
               this.child.sendMessageWithContext(this.pendingMessage.context, this.pendingMessage.message);
             }
-            if (this.pendingHalfClose && !this.writeFilterPending) {
+            if (this.pendingHalfClose) {
               this.child.halfClose();
             }
           }, (error: Error & { code: number }) => {
@@ -246,32 +238,19 @@ export class LoadBalancingCall implements Call {
   getPeer(): string {
     return this.child?.getPeer() ?? this.channel.getTarget();
   }
-  start(metadata: Metadata, listener: InterceptingListener): void {
+  start(metadata: Metadata, listener: LoadBalancingCallInterceptingListener): void {
     this.trace('start called');
     this.listener = listener;
-    this.filterStack.sendMetadata(Promise.resolve(metadata)).then(filteredMetadata => {
-      this.metadata = filteredMetadata;
-      this.doPick();
-    }, (status: StatusObject) => {
-      this.outputStatus(status, 'PROCESSED');
-    });
+    this.metadata = metadata;
+    this.doPick();
   }
   sendMessageWithContext(context: MessageContext, message: Buffer): void {
     this.trace('write() called with message of length ' + message.length);
-    this.writeFilterPending = true;
-    this.filterStack.sendMessage(Promise.resolve({message: message, flags: context.flags})).then((filteredMessage) => {
-      this.writeFilterPending = false;
-      if (this.child) {
-        this.child.sendMessageWithContext(context, filteredMessage.message);
-        if (this.pendingHalfClose) {
-          this.child.halfClose();
-        }
-      } else {
-        this.pendingMessage = {context, message: filteredMessage.message};
-      }
-    }, (status: StatusObject) => {
-      this.cancelWithStatus(status.code, status.details);
-    })
+    if (this.child) {
+      this.child.sendMessageWithContext(context, message);
+    } else {
+      this.pendingMessage = {context, message};
+    }
   }
   startRead(): void {
     this.trace('startRead called');
@@ -283,7 +262,7 @@ export class LoadBalancingCall implements Call {
   }
   halfClose(): void {
     this.trace('halfClose called');
-    if (this.child && !this.writeFilterPending) {
+    if (this.child) {
       this.child.halfClose();
     } else {
       this.pendingHalfClose = true;

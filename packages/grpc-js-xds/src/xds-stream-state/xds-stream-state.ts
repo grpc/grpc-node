@@ -213,6 +213,9 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
   }
 
   reportAdsStreamStart() {
+    if (this.isAdsStreamRunning) {
+      return;
+    }
     this.isAdsStreamRunning = true;
     for (const subscriptionEntry of this.subscriptions.values()) {
       if (subscriptionEntry.cachedResponse === null) {
