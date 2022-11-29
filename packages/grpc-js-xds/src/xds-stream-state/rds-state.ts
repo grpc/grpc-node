@@ -15,8 +15,10 @@
  *
  */
 
-import { EXPERIMENTAL_FAULT_INJECTION } from "../environment";
+import { EXPERIMENTAL_FAULT_INJECTION, EXPERIMENTAL_RETRY } from "../environment";
+import { RetryPolicy__Output } from "../generated/envoy/config/route/v3/RetryPolicy";
 import { RouteConfiguration__Output } from "../generated/envoy/config/route/v3/RouteConfiguration";
+import { Duration__Output } from "../generated/google/protobuf/Duration";
 import { validateOverrideFilter } from "../http-filter";
 import { BaseXdsStreamState, XdsStreamState } from "./xds-stream-state";
 
@@ -30,6 +32,13 @@ const SUPPPORTED_HEADER_MATCH_SPECIFIERS = [
   'suffix_match'];
 const SUPPORTED_CLUSTER_SPECIFIERS = ['cluster', 'weighted_clusters', 'cluster_header'];
 
+function durationToMs(duration: Duration__Output | null): number | null {
+  if (duration === null) {
+    return null;
+  }
+  return (Number.parseInt(duration.seconds) * 1000 + duration.nanos / 1_000_000) | 0;
+}
+
 export class RdsState extends BaseXdsStreamState<RouteConfiguration__Output> implements XdsStreamState<RouteConfiguration__Output> {
   protected isStateOfTheWorld(): boolean {
     return false;
@@ -40,6 +49,28 @@ export class RdsState extends BaseXdsStreamState<RouteConfiguration__Output> imp
   protected getProtocolName(): string {
     return 'RDS';
   }
+
+  private validateRetryPolicy(policy: RetryPolicy__Output | null): boolean {
+    if (policy === null) {
+      return true;
+    }
+    const numRetries = policy.num_retries?.value ?? 1
+    if (numRetries < 1) {
+      return false;
+    }
+    if (policy.retry_back_off) {
+      if (!policy.retry_back_off.base_interval) {
+        return false;
+      }
+      const baseInterval = durationToMs(policy.retry_back_off.base_interval)!;
+      const maxInterval = durationToMs(policy.retry_back_off.max_interval) ?? (10 * baseInterval);
+      if (!(maxInterval >= baseInterval) && (baseInterval > 0)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   validateResponse(message: RouteConfiguration__Output): boolean {
     // https://github.com/grpc/proposal/blob/master/A28-xds-traffic-splitting-and-routing.md#response-validation
     for (const virtualHost of message.virtual_hosts) {
@@ -60,6 +91,11 @@ export class RdsState extends BaseXdsStreamState<RouteConfiguration__Output> imp
           if (!validateOverrideFilter(filterConfig)) {
             return false;
           }
+        }
+      }
+      if (EXPERIMENTAL_RETRY) {
+        if (!this.validateRetryPolicy(virtualHost.retry_policy)) {
+          return false;
         }
       }
       for (const route of virtualHost.routes) {
@@ -86,6 +122,11 @@ export class RdsState extends BaseXdsStreamState<RouteConfiguration__Output> imp
             if (!validateOverrideFilter(filterConfig)) {
               return false;
             }
+          }
+        }
+        if (EXPERIMENTAL_RETRY) {
+          if (!this.validateRetryPolicy(route.route.retry_policy)) {
+            return false;
           }
         }
         if (route.route!.cluster_specifier === 'weighted_clusters') {
