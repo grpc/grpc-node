@@ -1,6 +1,6 @@
 # Feature comparison of `grpc` and `@grpc/grpc-js` packages
 
-Feature | `grpc` | `@grpc/grpc-js`
+Feature | `grpc` (deprecated) | `@grpc/grpc-js`
 --------|--------|----------
 Client | :heavy_check_mark: | :heavy_check_mark:
 Server | :heavy_check_mark: | :heavy_check_mark:
@@ -9,7 +9,7 @@ Streaming RPCs | :heavy_check_mark: | :heavy_check_mark:
 Deadlines | :heavy_check_mark: | :heavy_check_mark:
 Cancellation | :heavy_check_mark: | :heavy_check_mark:
 Automatic Reconnection | :heavy_check_mark: | :heavy_check_mark:
-Per-message Compression | :heavy_check_mark: | only for response messages
+Per-message Compression | :heavy_check_mark: | :heavy_check_mark: (except messages sent by the server)
 Channel State | :heavy_check_mark: | :heavy_check_mark:
 JWT Access and Service Account Credentials | provided by the [Google Auth Library](https://www.npmjs.com/package/google-auth-library) | provided by the [Google Auth Library](https://www.npmjs.com/package/google-auth-library)
 Interceptors | :heavy_check_mark: | :heavy_check_mark:
@@ -17,14 +17,14 @@ Connection Keepalives | :heavy_check_mark: | :heavy_check_mark:
 HTTP Connect Support | :heavy_check_mark: | :heavy_check_mark:
 Retries | :heavy_check_mark: | :x:
 Stats/tracing/monitoring | :heavy_check_mark: | :x:
-Load Balancing | :heavy_check_mark: | Pick first and round robin
+Load Balancing | :heavy_check_mark: | :heavy_check_mark:
 Initial Metadata Options | :heavy_check_mark: | only `waitForReady`
 
 Other Properties | `grpc` | `@grpc/grpc-js`
 -----------------|--------|----------------
 Pure JavaScript Code | :x: | :heavy_check_mark:
-Supported Node Versions | >= 4 | ^8.13.0 or >=10.10.0
-Supported Electron Versions | All | >= 3
+Supported Node Versions | >= 4 and <=14 | ^8.13.0 or >=10.10.0
+Supported Electron Versions | <=11.2 | >= 3
 Supported Platforms | Linux, Windows, MacOS | All
 Supported Architectures | x86, x86-64, ARM7+ | All
 
