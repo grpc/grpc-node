@@ -92,6 +92,8 @@ Options:
                                                         [string] [default: "%s"]
       --outputTemplate   Template for mapping output or "restricted" type names
                                                 [string] [default: "%s__Output"]
+      --branded          Emit property for branded type whose value is fullName
+                         of the Message               [boolean] [default: false]
 ```
 
 ### Example Usage
