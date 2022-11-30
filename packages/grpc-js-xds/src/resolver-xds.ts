@@ -44,9 +44,10 @@ import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL } from './resourc
 import Duration = experimental.Duration;
 import { Duration__Output } from './generated/google/protobuf/Duration';
 import { createHttpFilter, HttpFilterConfig, parseOverrideFilterConfig, parseTopLevelFilterConfig } from './http-filter';
-import { EXPERIMENTAL_FAULT_INJECTION } from './environment';
+import { EXPERIMENTAL_FAULT_INJECTION, EXPERIMENTAL_RETRY } from './environment';
 import Filter = experimental.Filter;
 import FilterFactory = experimental.FilterFactory;
+import RetryPolicy = experimental.RetryPolicy;
 
 const TRACER_NAME = 'xds_resolver';
 
@@ -198,6 +199,24 @@ function protoDurationToDuration(duration: Duration__Output): Duration {
     nanos: duration.nanos
   }
 }
+
+function protoDurationToSecondsString(duration: Duration__Output): string {
+  return `${duration.seconds + duration.nanos / 1_000_000_000}s`;
+}
+
+const DEFAULT_RETRY_BASE_INTERVAL = '0.025s'
+
+function getDefaultRetryMaxInterval(baseInterval: string): string {
+  return `${Number.parseFloat(baseInterval.substring(0, baseInterval.length - 1)) * 10}s`;
+}
+
+const RETRY_CODES: {[key: string]: status} = {
+  'cancelled': status.CANCELLED,
+  'deadline-exceeded': status.DEADLINE_EXCEEDED,
+  'internal': status.INTERNAL,
+  'resource-exhausted': status.RESOURCE_EXHAUSTED,
+  'unavailable': status.UNAVAILABLE
+};
 
 class XdsResolver implements Resolver {
   private hasReportedSuccess = false;
@@ -363,6 +382,33 @@ class XdsResolver implements Resolver {
           }
         }
       }
+      let retryPolicy: RetryPolicy | undefined = undefined; 
+      if (EXPERIMENTAL_RETRY) {
+        const retryConfig = route.route!.retry_policy ?? virtualHost.retry_policy;
+        if (retryConfig) {
+          const retryableStatusCodes = [];
+          for (const code of retryConfig.retry_on.split(',')) {
+            if (RETRY_CODES[code]) {
+              retryableStatusCodes.push(RETRY_CODES[code]);
+            }
+          }
+          if (retryableStatusCodes.length > 0) {
+            const baseInterval = retryConfig.retry_back_off?.base_interval ? 
+              protoDurationToSecondsString(retryConfig.retry_back_off.base_interval) : 
+              DEFAULT_RETRY_BASE_INTERVAL;
+            const maxInterval = retryConfig.retry_back_off?.max_interval ? 
+              protoDurationToSecondsString(retryConfig.retry_back_off.max_interval) :
+              getDefaultRetryMaxInterval(baseInterval);
+            retryPolicy = {
+              backoffMultiplier: 2,
+              initialBackoff: baseInterval,
+              maxBackoff: maxInterval,
+              maxAttempts: (retryConfig.num_retries?.value ?? 1) + 1,
+              retryableStatusCodes: retryableStatusCodes
+            };
+          }
+        }
+      }
       switch (route.route!.cluster_specifier) {
         case 'cluster_header':
           continue;
@@ -390,7 +436,7 @@ class XdsResolver implements Resolver {
               }
             }
           }
-          routeAction = new SingleClusterRouteAction(cluster, timeout, extraFilterFactories);
+          routeAction = new SingleClusterRouteAction(cluster, {name: [], timeout: timeout, retryPolicy: retryPolicy}, extraFilterFactories);
           break;
         }
         case 'weighted_clusters': {
@@ -432,7 +478,7 @@ class XdsResolver implements Resolver {
             }
             weightedClusters.push({name: clusterWeight.name, weight: clusterWeight.weight?.value ?? 0, dynamicFilterFactories: extraFilterFactories});
           }
-          routeAction = new WeightedClusterRouteAction(weightedClusters, route.route!.weighted_clusters!.total_weight?.value ?? 100, timeout);
+          routeAction = new WeightedClusterRouteAction(weightedClusters, route.route!.weighted_clusters!.total_weight?.value ?? 100, {name: [], timeout: timeout, retryPolicy: retryPolicy});
           break;
         }
         default:
@@ -470,7 +516,7 @@ class XdsResolver implements Resolver {
             this.unrefCluster(clusterResult.name);
           }
           return {
-            methodConfig: {name: [], timeout: action.getTimeout()},
+            methodConfig: clusterResult.methodConfig,
             onCommitted: onCommitted,
             pickInformation: {cluster: clusterResult.name},
             status: status.OK,

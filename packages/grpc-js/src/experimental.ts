@@ -7,7 +7,7 @@ export {
 } from './resolver';
 export { GrpcUri, uriToString } from './uri-parser';
 export { Duration, durationToMs } from './duration';
-export { ServiceConfig } from './service-config';
+export { ServiceConfig, MethodConfig, RetryPolicy } from './service-config';
 export { BackoffTimeout } from './backoff-timeout';
 export {
   LoadBalancer,

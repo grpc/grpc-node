@@ -18,16 +18,17 @@ import { experimental } from '@grpc/grpc-js';
 import Duration = experimental.Duration;
 import Filter = experimental.Filter;
 import FilterFactory = experimental.FilterFactory;
+import MethodConfig = experimental.MethodConfig;
 
 export interface ClusterResult {
   name: string;
+  methodConfig: MethodConfig;
   dynamicFilterFactories: FilterFactory<Filter>[];
 }
 
 export interface RouteAction {
   toString(): string;
   getCluster(): ClusterResult;
-  getTimeout(): Duration | undefined;
 }
 
 function durationToLogString(duration: Duration) {
@@ -40,25 +41,18 @@ function durationToLogString(duration: Duration) {
 }
 
 export class SingleClusterRouteAction implements RouteAction {
-  constructor(private cluster: string, private timeout: Duration | undefined, private extraFilterFactories: FilterFactory<Filter>[]) {}
+  constructor(private cluster: string, private methodConfig: MethodConfig, private extraFilterFactories: FilterFactory<Filter>[]) {}
 
   getCluster() {
     return {
       name: this.cluster,
+      methodConfig: this.methodConfig,
       dynamicFilterFactories: this.extraFilterFactories
     };
   }
 
   toString() {
-    if (this.timeout) {
-      return 'SingleCluster(' + this.cluster + ', ' + 'timeout=' + durationToLogString(this.timeout) + 's)';
-    } else {
-      return 'SingleCluster(' + this.cluster + ')';
-    }
-  }
-
-  getTimeout() {
-    return this.timeout;
+    return 'SingleCluster(' + this.cluster + ', ' + JSON.stringify(this.methodConfig) + ')';
   }
 }
 
@@ -79,7 +73,7 @@ export class WeightedClusterRouteAction implements RouteAction {
    * The weighted cluster choices represented as a CDF
    */
   private clusterChoices: ClusterChoice[];
-  constructor(private clusters: WeightedCluster[], private totalWeight: number, private timeout: Duration | undefined) {
+  constructor(private clusters: WeightedCluster[], private totalWeight: number, private methodConfig: MethodConfig) {
     this.clusterChoices = [];
     let lastNumerator = 0;
     for (const clusterWeight of clusters) {
@@ -94,24 +88,17 @@ export class WeightedClusterRouteAction implements RouteAction {
       if (randomNumber < choice.numerator) {
         return {
           name: choice.name,
+          methodConfig: this.methodConfig,
           dynamicFilterFactories: choice.dynamicFilterFactories
         };
       }
     }
     // This should be prevented by the validation rules
-    return {name: '', dynamicFilterFactories: []};
+    return {name: '', methodConfig: this.methodConfig, dynamicFilterFactories: []};
   }
 
   toString() {
     const clusterListString = this.clusters.map(({name, weight}) => '(' + name + ':' + weight + ')').join(', ')
-    if (this.timeout) {
-      return 'WeightedCluster(' + clusterListString + ', ' + 'timeout=' + durationToLogString(this.timeout) + 's)';
-    } else {
-      return 'WeightedCluster(' + clusterListString + ')';
-    }
-  }
-
-  getTimeout() {
-    return this.timeout;
+    return 'WeightedCluster(' + clusterListString + ', ' + JSON.stringify(this.methodConfig) + ')';
   }
 }
