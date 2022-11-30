@@ -45,6 +45,7 @@ type GeneratorOptions = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
   includeComments?: boolean;
   inputTemplate: string;
   outputTemplate: string;
+  branded: boolean;
 }
 
 class TextFormatter {
@@ -263,6 +264,9 @@ function generatePermissiveMessageInterface(formatter: TextFormatter, messageTyp
     }
     formatter.writeLine(`'${oneof.name}'?: ${typeString};`);
   }
+  if (options.branded) {
+    formatter.writeLine(`__type: '${messageType.fullName}'`)
+  }
   formatter.unindent();
   formatter.writeLine('}');
 }
@@ -382,6 +386,9 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
       }
       formatter.writeLine(`'${oneof.name}': ${typeString};`);
     }
+  }
+  if (options.branded) {
+    formatter.writeLine(`__type: '${messageType.fullName}'`)
   }
   formatter.unindent();
   formatter.writeLine('}');
@@ -815,7 +822,7 @@ async function runScript() {
     .string(['includeDirs', 'grpcLib'])
     .normalize(['includeDirs', 'outDir'])
     .array('includeDirs')
-    .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs', 'json', 'verbose', 'includeComments'])
+    .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs', 'json', 'verbose', 'includeComments', 'branded'])
     .string(['longs', 'enums', 'bytes', 'inputTemplate', 'outputTemplate'])
     .default('keepCase', false)
     .default('defaults', false)
@@ -829,6 +836,7 @@ async function runScript() {
     .default('bytes', 'Buffer')
     .default('inputTemplate', `${templateStr}`)
     .default('outputTemplate', `${templateStr}__Output`)
+    .default('branded', false)
     .coerce('longs', value => {
       switch (value) {
         case 'String': return String;
@@ -868,6 +876,7 @@ async function runScript() {
       grpcLib: 'The gRPC implementation library that these types will be used with',
       inputTemplate: 'Template for mapping input or "permissive" type names',
       outputTemplate: 'Template for mapping output or "restricted" type names',
+      branded: 'Emit property for branded type whose value is fullName of the Message',
     }).demandOption(['outDir', 'grpcLib'])
     .demand(1)
     .usage('$0 [options] filenames...')
