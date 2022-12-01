@@ -37,6 +37,9 @@ const useNameFmter = ({outputTemplate, inputTemplate}: GeneratorOptions) => {
   };
 }
 
+const typeBrandHint = `This field is a type brand and is not populated at runtime. Instances of this type should be created using type assertions.
+https://github.com/grpc/grpc-node/pull/2281`;
+
 type GeneratorOptions = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
   includeDirs?: string[];
   grpcLib: string;
@@ -45,7 +48,7 @@ type GeneratorOptions = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
   includeComments?: boolean;
   inputTemplate: string;
   outputTemplate: string;
-  branded: boolean;
+  outputBranded: boolean;
 }
 
 class TextFormatter {
@@ -179,6 +182,11 @@ function formatComment(formatter: TextFormatter, comment?: string | null) {
   formatter.writeLine(' */');
 }
 
+function formatTypeBrand(formatter: TextFormatter, messageType: Protobuf.Type) {
+  formatComment(formatter, typeBrandHint);
+  formatter.writeLine(`__type: '${messageType.fullName}'`);
+}
+
 // GENERATOR FUNCTIONS
 
 function getTypeNamePermissive(fieldType: string, resolvedType: Protobuf.Type | Protobuf.Enum | null, repeated: boolean, map: boolean, options: GeneratorOptions): string {
@@ -264,9 +272,9 @@ function generatePermissiveMessageInterface(formatter: TextFormatter, messageTyp
     }
     formatter.writeLine(`'${oneof.name}'?: ${typeString};`);
   }
-  if (options.branded) {
-    formatter.writeLine(`__type: '${messageType.fullName}'`)
-  }
+  // if (options.inputBranded) {
+  //   formatTypeBrand(formatter, messageType);
+  // }
   formatter.unindent();
   formatter.writeLine('}');
 }
@@ -387,8 +395,8 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
       formatter.writeLine(`'${oneof.name}': ${typeString};`);
     }
   }
-  if (options.branded) {
-    formatter.writeLine(`__type: '${messageType.fullName}'`)
+  if (options.outputBranded) {
+    formatTypeBrand(formatter, messageType);
   }
   formatter.unindent();
   formatter.writeLine('}');
@@ -822,7 +830,7 @@ async function runScript() {
     .string(['includeDirs', 'grpcLib'])
     .normalize(['includeDirs', 'outDir'])
     .array('includeDirs')
-    .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs', 'json', 'verbose', 'includeComments', 'branded'])
+    .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs', 'json', 'verbose', 'includeComments', 'outputBranded'])
     .string(['longs', 'enums', 'bytes', 'inputTemplate', 'outputTemplate'])
     .default('keepCase', false)
     .default('defaults', false)
@@ -836,7 +844,7 @@ async function runScript() {
     .default('bytes', 'Buffer')
     .default('inputTemplate', `${templateStr}`)
     .default('outputTemplate', `${templateStr}__Output`)
-    .default('branded', false)
+    .default('outputBranded', false)
     .coerce('longs', value => {
       switch (value) {
         case 'String': return String;
@@ -876,7 +884,7 @@ async function runScript() {
       grpcLib: 'The gRPC implementation library that these types will be used with',
       inputTemplate: 'Template for mapping input or "permissive" type names',
       outputTemplate: 'Template for mapping output or "restricted" type names',
-      branded: 'Emit property for branded type whose value is fullName of the Message',
+      outputBranded: 'Output property for branded type for  "restricted" types with fullName of the Message as its value',
     }).demandOption(['outDir', 'grpcLib'])
     .demand(1)
     .usage('$0 [options] filenames...')
