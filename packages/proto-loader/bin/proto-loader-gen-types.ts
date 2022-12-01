@@ -48,8 +48,8 @@ type GeneratorOptions = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
   includeComments?: boolean;
   inputTemplate: string;
   outputTemplate: string;
-  inputBranded?: boolean;
-  outputBranded?: boolean;
+  inputBranded: boolean;
+  outputBranded: boolean;
 }
 
 class TextFormatter {
@@ -831,7 +831,7 @@ async function runScript() {
     .string(['includeDirs', 'grpcLib'])
     .normalize(['includeDirs', 'outDir'])
     .array('includeDirs')
-    .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs', 'json', 'verbose', 'includeComments', 'inputBranded', 'outputBranded'])
+    .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs', 'json', 'verbose', 'includeComments'])
     .string(['longs', 'enums', 'bytes', 'inputTemplate', 'outputTemplate'])
     .default('keepCase', false)
     .default('defaults', false)
@@ -863,6 +863,14 @@ async function runScript() {
         case 'String': return String;
         default: return undefined;
       }
+    })
+    .option('inputBranded', {
+      boolean: true,
+      default: false,
+    })
+    .option('outputBranded', {
+      boolean: true,
+      default: false,
     })
     .alias({
       includeDirs: 'I',
