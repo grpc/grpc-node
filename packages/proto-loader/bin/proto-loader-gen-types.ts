@@ -37,9 +37,6 @@ const useNameFmter = ({outputTemplate, inputTemplate}: GeneratorOptions) => {
   };
 }
 
-const typeBrandHint = `This field is a type brand and is not populated at runtime. Instances of this type should be created using type assertions.
-https://github.com/grpc/grpc-node/pull/2281`;
-
 type GeneratorOptions = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
   includeDirs?: string[];
   grpcLib: string;
@@ -182,6 +179,9 @@ function formatComment(formatter: TextFormatter, comment?: string | null) {
   }
   formatter.writeLine(' */');
 }
+
+const typeBrandHint = `This field is a type brand and is not populated at runtime. Instances of this type should be created using type assertions.
+https://github.com/grpc/grpc-node/pull/2281`;
 
 function formatTypeBrand(formatter: TextFormatter, messageType: Protobuf.Type) {
   formatComment(formatter, typeBrandHint);
