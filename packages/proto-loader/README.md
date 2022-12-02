@@ -63,12 +63,6 @@ proto-loader-gen-types.js [options] filenames...
 Options:
       --help             Show help                                     [boolean]
       --version          Show version number                           [boolean]
-      --inputBranded     Output property for branded type for  "permissive"
-                         types with fullName of the Message as its value
-                                                      [boolean] [default: false]
-      --outputBranded    Output property for branded type for  "restricted"
-                         types with fullName of the Message as its value
-                                                      [boolean] [default: false]
       --keepCase         Preserve the case of field names
                                                       [boolean] [default: false]
       --longs            The type that should be used to output 64 bit integer
@@ -98,6 +92,12 @@ Options:
                                                         [string] [default: "%s"]
       --outputTemplate   Template for mapping output or "restricted" type names
                                                 [string] [default: "%s__Output"]
+      --inputBranded     Output property for branded type for  "permissive"
+                         types with fullName of the Message as its value
+                                                      [boolean] [default: false]
+      --outputBranded    Output property for branded type for  "restricted"
+                         types with fullName of the Message as its value
+                                                      [boolean] [default: false]
 ```
 
 ### Example Usage
