@@ -70,6 +70,7 @@ case $(uname -s) in
       mkdir $base/build/bin/$arch
       for bin in protoc grpc_node_plugin; do
         lipo -extract x86_64 $base/build/bin/$bin -o $base/build/bin/$arch/$bin
+        otool -l $base/build/bin/$arch/$bin | grep minos
       done
       artifacts darwin $arch $base/build/bin/$arch/
     done
