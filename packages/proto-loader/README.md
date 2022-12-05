@@ -92,6 +92,12 @@ Options:
                                                         [string] [default: "%s"]
       --outputTemplate   Template for mapping output or "restricted" type names
                                                 [string] [default: "%s__Output"]
+      --inputBranded     Output property for branded type for  "permissive"
+                         types with fullName of the Message as its value
+                                                      [boolean] [default: false]
+      --outputBranded    Output property for branded type for  "restricted"
+                         types with fullName of the Message as its value
+                                                      [boolean] [default: false]
 ```
 
 ### Example Usage

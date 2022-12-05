@@ -45,6 +45,8 @@ type GeneratorOptions = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
   includeComments?: boolean;
   inputTemplate: string;
   outputTemplate: string;
+  inputBranded: boolean;
+  outputBranded: boolean;
 }
 
 class TextFormatter {
@@ -178,6 +180,14 @@ function formatComment(formatter: TextFormatter, comment?: string | null) {
   formatter.writeLine(' */');
 }
 
+const typeBrandHint = `This field is a type brand and is not populated at runtime. Instances of this type should be created using type assertions.
+https://github.com/grpc/grpc-node/pull/2281`;
+
+function formatTypeBrand(formatter: TextFormatter, messageType: Protobuf.Type) {
+  formatComment(formatter, typeBrandHint);
+  formatter.writeLine(`__type: '${messageType.fullName}'`);
+}
+
 // GENERATOR FUNCTIONS
 
 function getTypeNamePermissive(fieldType: string, resolvedType: Protobuf.Type | Protobuf.Enum | null, repeated: boolean, map: boolean, options: GeneratorOptions): string {
@@ -262,6 +272,9 @@ function generatePermissiveMessageInterface(formatter: TextFormatter, messageTyp
       formatComment(formatter, oneof.comment);
     }
     formatter.writeLine(`'${oneof.name}'?: ${typeString};`);
+  }
+  if (options.inputBranded) {
+    formatTypeBrand(formatter, messageType);
   }
   formatter.unindent();
   formatter.writeLine('}');
@@ -382,6 +395,9 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
       }
       formatter.writeLine(`'${oneof.name}': ${typeString};`);
     }
+  }
+  if (options.outputBranded) {
+    formatTypeBrand(formatter, messageType);
   }
   formatter.unindent();
   formatter.writeLine('}');
@@ -808,27 +824,39 @@ async function writeAllFiles(protoFiles: string[], options: GeneratorOptions) {
 }
 
 async function runScript() {
+  const boolDefaultFalseOption = {
+    boolean: true,
+    default: false,
+  };
   const argv = yargs
     .parserConfiguration({
       'parse-positional-numbers': false
     })
-    .string(['includeDirs', 'grpcLib'])
-    .normalize(['includeDirs', 'outDir'])
-    .array('includeDirs')
-    .boolean(['keepCase', 'defaults', 'arrays', 'objects', 'oneofs', 'json', 'verbose', 'includeComments'])
-    .string(['longs', 'enums', 'bytes', 'inputTemplate', 'outputTemplate'])
-    .default('keepCase', false)
-    .default('defaults', false)
-    .default('arrays', false)
-    .default('objects', false)
-    .default('oneofs', false)
-    .default('json', false)
-    .default('includeComments', false)
-    .default('longs', 'Long')
-    .default('enums', 'number')
-    .default('bytes', 'Buffer')
-    .default('inputTemplate', `${templateStr}`)
-    .default('outputTemplate', `${templateStr}__Output`)
+    .option('keepCase', boolDefaultFalseOption)
+    .option('longs', { string: true, default: 'Long' })
+    .option('enums', { string: true, default: 'number' })
+    .option('bytes', { string: true, default: 'Buffer' })
+    .option('defaults', boolDefaultFalseOption)
+    .option('arrays', boolDefaultFalseOption)
+    .option('objects', boolDefaultFalseOption)
+    .option('oneofs', boolDefaultFalseOption)
+    .option('json', boolDefaultFalseOption)
+    .boolean('verbose')
+    .option('includeComments', boolDefaultFalseOption)
+    .option('includeDirs', {
+      normalize: true,
+      array: true,
+      alias: 'I'
+    })
+    .option('outDir', {
+      alias: 'O',
+      normalize: true,
+    })
+    .option('grpcLib', { string: true })
+    .option('inputTemplate', { string: true, default: `${templateStr}` })
+    .option('outputTemplate', { string: true, default: `${templateStr}__Output` })
+    .option('inputBranded', boolDefaultFalseOption)
+    .option('outputBranded', boolDefaultFalseOption)
     .coerce('longs', value => {
       switch (value) {
         case 'String': return String;
@@ -849,8 +877,6 @@ async function runScript() {
       }
     })
     .alias({
-      includeDirs: 'I',
-      outDir: 'O',
       verbose: 'v'
     }).describe({
       keepCase: 'Preserve the case of field names',
@@ -868,6 +894,8 @@ async function runScript() {
       grpcLib: 'The gRPC implementation library that these types will be used with',
       inputTemplate: 'Template for mapping input or "permissive" type names',
       outputTemplate: 'Template for mapping output or "restricted" type names',
+      inputBranded: 'Output property for branded type for  "permissive" types with fullName of the Message as its value',
+      outputBranded: 'Output property for branded type for  "restricted" types with fullName of the Message as its value',
     }).demandOption(['outDir', 'grpcLib'])
     .demand(1)
     .usage('$0 [options] filenames...')
