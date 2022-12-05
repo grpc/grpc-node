@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.7)
+set(CMAKE_OSX_DEPLOYMENT_TARGET "11.7" CACHE STRING "Minimum OS X deployment version")
 if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
