@@ -46,8 +46,14 @@ artifacts() {
   platform=$1
   arch=$2
   dir=$3
-
-  tar --format=gnu -czf $out_dir/$platform-$arch.tar.gz -C $(dirname $dir) $(basename $dir)
+  case $(uname -s) in
+    Linux)
+      tar -czf $out_dir/$platform-$arch.tar.gz -C $(dirname $dir) $(basename $dir)
+      ;;
+    Darwin)
+      tar --format=gnutar -czf $out_dir/$platform-$arch.tar.gz -C $(dirname $dir) $(basename $dir)
+      ;;
+  esac
 }
 
 case $(uname -s) in
