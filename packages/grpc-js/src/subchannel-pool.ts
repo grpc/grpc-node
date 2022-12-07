@@ -23,6 +23,7 @@ import {
 } from './subchannel-address';
 import { ChannelCredentials } from './channel-credentials';
 import { GrpcUri, uriToString } from './uri-parser';
+import { Http2SubchannelConnector } from './transport';
 
 // 10 seconds in milliseconds. This value is arbitrary.
 /**
@@ -143,7 +144,8 @@ export class SubchannelPool {
       channelTargetUri,
       subchannelTarget,
       channelArguments,
-      channelCredentials
+      channelCredentials,
+      new Http2SubchannelConnector(channelTargetUri)
     );
     if (!(channelTarget in this.pool)) {
       this.pool[channelTarget] = [];
