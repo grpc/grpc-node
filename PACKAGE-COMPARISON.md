@@ -15,7 +15,7 @@ JWT Access and Service Account Credentials | provided by the [Google Auth Librar
 Interceptors | :heavy_check_mark: | :heavy_check_mark:
 Connection Keepalives | :heavy_check_mark: | :heavy_check_mark:
 HTTP Connect Support | :heavy_check_mark: | :heavy_check_mark:
-Retries | :heavy_check_mark: | :x:
+Retries | :heavy_check_mark: (without hedging) | :heavy_check_mark: (including hedging)
 Stats/tracing/monitoring | :heavy_check_mark: | :x:
 Load Balancing | :heavy_check_mark: | :heavy_check_mark:
 Initial Metadata Options | :heavy_check_mark: | only `waitForReady`
