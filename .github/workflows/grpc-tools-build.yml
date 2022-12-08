@@ -8,6 +8,9 @@ on:
     branches:
       - master
 
+permissions:
+  contents: read #  to fetch code (actions/checkout)
+
 jobs:
   linux_build:
     name: Linux grpc-tools Build
