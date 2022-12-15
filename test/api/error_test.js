@@ -341,7 +341,7 @@ describe(`${anyGrpc.clientName} client -> ${anyGrpc.serverName} server`, functio
       after(function() {
         server.forceShutdown();
       });
-      describe('Server recieving bad input', function() {
+      describe('Server receiving bad input', function() {
         var misbehavingClient;
         var badArg = Buffer.from([0xFF]);
         before(function() {

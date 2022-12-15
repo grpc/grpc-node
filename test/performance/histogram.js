@@ -95,7 +95,7 @@ Histogram.prototype.mean = function() {
 };
 
 /**
- * Get the variance of all added values. Used to calulate the standard deviation
+ * Get the variance of all added values. Used to calculate the standard deviation
  * @return {number} The variance
  */
 Histogram.prototype.variance = function() {

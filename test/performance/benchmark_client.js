@@ -328,7 +328,7 @@ BenchmarkClient.prototype.startPoisson = function(
 };
 
 /**
- * Return curent statistics for the client. If reset is set, restart
+ * Return current statistics for the client. If reset is set, restart
  * statistic collection.
  * @param {boolean} reset Indicates that statistics should be reset
  * @return {object} Client statistics

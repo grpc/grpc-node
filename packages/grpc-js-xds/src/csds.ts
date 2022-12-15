@@ -154,7 +154,7 @@ function getCurrentConfig(): ClientConfig {
     node: clientNode,
     generic_xds_configs: genericConfigList
   };
-  trace('Sending curent config ' + JSON.stringify(config, undefined, 2));
+  trace('Sending current config ' + JSON.stringify(config, undefined, 2));
   return config;
 }
 

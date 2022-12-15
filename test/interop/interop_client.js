@@ -550,7 +550,7 @@ exports.test_cases = test_cases;
  * Execute a single test case.
  * @param {string} address The address of the server to connect to, in the
  *     format 'hostname:port'
- * @param {string} host_overrirde The hostname of the server to use as an SSL
+ * @param {string} host_override The hostname of the server to use as an SSL
  *     override
  * @param {string} test_case The name of the test case to run
  * @param {bool} tls Indicates that a secure channel should be used
