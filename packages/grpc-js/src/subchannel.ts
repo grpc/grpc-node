@@ -121,7 +121,7 @@ export class Subchannel {
   /**
    * Timer reference tracking when the most recent ping will be considered lost
    */
-  private keepaliveTimeoutId: NodeJS.Timer;
+  private keepaliveTimeoutId?: NodeJS.Timer;
   /**
    * Indicates whether keepalive pings should be sent without any active calls
    */
@@ -201,8 +201,6 @@ export class Subchannel {
     }
     this.keepaliveIntervalId = setTimeout(() => {}, 0);
     clearTimeout(this.keepaliveIntervalId);
-    this.keepaliveTimeoutId = setTimeout(() => {}, 0);
-    clearTimeout(this.keepaliveTimeoutId);
     const backoffOptions: BackoffOptions = {
       initialDelay: options['grpc.initial_reconnect_backoff_ms'],
       maxDelay: options['grpc.max_reconnect_backoff_ms'],
@@ -340,21 +338,31 @@ export class Subchannel {
     this.backoffTimeout.reset();
   }
 
+  private clearKeepaliveTimeout() {
+    if (!this.keepaliveTimeoutId) {
+      return;
+    }
+    clearTimeout(this.keepaliveTimeoutId);
+    this.keepaliveTimeoutId = undefined;
+  }
+
   private sendPing() {
     if (this.channelzEnabled) {
       this.keepalivesSent += 1;
     }
     this.keepaliveTrace('Sending ping with timeout ' + this.keepaliveTimeoutMs + 'ms');
-    this.keepaliveTimeoutId = setTimeout(() => {
-      this.keepaliveTrace('Ping timeout passed without response');
-      this.handleDisconnect();
-    }, this.keepaliveTimeoutMs);
-    this.keepaliveTimeoutId.unref?.();
+    if (!this.keepaliveTimeoutId) {
+      this.keepaliveTimeoutId = setTimeout(() => {
+        this.keepaliveTrace('Ping timeout passed without response');
+        this.handleDisconnect();
+      }, this.keepaliveTimeoutMs);
+      this.keepaliveTimeoutId.unref?.();
+    }
     try {
       this.session!.ping(
         (err: Error | null, duration: number, payload: Buffer) => {
           this.keepaliveTrace('Received ping response');
-          clearTimeout(this.keepaliveTimeoutId);
+          this.clearKeepaliveTimeout();
         }
       );
     } catch (e) {
@@ -383,7 +391,7 @@ export class Subchannel {
    */
   private stopKeepalivePings() {
     clearInterval(this.keepaliveIntervalId);
-    clearTimeout(this.keepaliveTimeoutId);
+    this.clearKeepaliveTimeout();
   }
 
   private createSession(proxyConnectionResult: ProxyConnectionResult) {
