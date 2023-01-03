@@ -202,6 +202,15 @@ export class RetryingCall implements Call {
 
   private reportStatus(statusObject: StatusObject) {
     this.trace('ended with status: code=' + statusObject.code + ' details="' + statusObject.details + '"');
+    this.bufferTracker.freeAll(this.callNumber);
+    for (let i = 0; i < this.writeBuffer.length; i++) {
+      if (this.writeBuffer[i].entryType === 'MESSAGE') {
+        this.writeBuffer[i] = {
+          entryType: 'FREED',
+          allocated: false
+        };
+      }
+    }
     process.nextTick(() => {
       this.listener?.onReceiveStatus(statusObject);
     });
