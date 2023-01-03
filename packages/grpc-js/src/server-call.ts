@@ -63,11 +63,13 @@ const deadlineUnitsToMs: DeadlineUnitIndexSignature = {
   u: 0.001,
   n: 0.000001,
 };
-const defaultResponseHeaders = {
+const defaultCompressionHeaders = {
   // TODO(cjihrig): Remove these encoding headers from the default response
   // once compression is integrated.
   [GRPC_ACCEPT_ENCODING_HEADER]: 'identity,deflate,gzip',
   [GRPC_ENCODING_HEADER]: 'identity',
+}
+const defaultResponseHeaders = {
   [http2.constants.HTTP2_HEADER_STATUS]: http2.constants.HTTP_STATUS_OK,
   [http2.constants.HTTP2_HEADER_CONTENT_TYPE]: 'application/grpc+proto',
 };
@@ -500,7 +502,7 @@ export class Http2ServerCallStream<
     this.metadataSent = true;
     const custom = customMetadata ? customMetadata.toHttp2Headers() : null;
     // TODO(cjihrig): Include compression headers.
-    const headers = { ...defaultResponseHeaders, ...custom };
+    const headers = { ...defaultResponseHeaders, ...defaultCompressionHeaders, ...custom };
     this.stream.respond(headers, defaultResponseOptions);
   }
 
@@ -725,9 +727,11 @@ export class Http2ServerCallStream<
         this.stream.end();
       }
     } else {
+      // Trailers-only response
       const trailersToSend = {
         [GRPC_STATUS_HEADER]: statusObj.code,
         [GRPC_MESSAGE_HEADER]: encodeURI(statusObj.details),
+        ...defaultResponseHeaders,
         ...statusObj.metadata?.toHttp2Headers(),
       };
       this.stream.respond(trailersToSend, {endStream: true});
