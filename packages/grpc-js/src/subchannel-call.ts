@@ -21,12 +21,12 @@ import * as os from 'os';
 import { Status } from './constants';
 import { Metadata } from './metadata';
 import { StreamDecoder } from './stream-decoder';
-import { SubchannelCallStatsTracker, Subchannel } from './subchannel';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { ServerSurfaceCall } from './server-call';
 import { Deadline } from './deadline';
 import { InterceptingListener, MessageContext, StatusObject, WriteCallback } from './call-interface';
+import { CallEventTracker } from './transport';
 
 const TRACER_NAME = 'subchannel_call';
 
@@ -110,9 +110,9 @@ export class Http2SubchannelCall implements SubchannelCall {
 
   constructor(
     private readonly http2Stream: http2.ClientHttp2Stream,
-    private readonly callStatsTracker: SubchannelCallStatsTracker,
+    private readonly callEventTracker: CallEventTracker,
     private readonly listener: SubchannelCallInterceptingListener,
-    private readonly subchannel: Subchannel,
+    private readonly peerName: string,
     private readonly callId: number
   ) {
     this.disconnectListener = () => {
@@ -122,8 +122,6 @@ export class Http2SubchannelCall implements SubchannelCall {
         metadata: new Metadata(),
       });
     };
-    subchannel.addDisconnectListener(this.disconnectListener);
-    subchannel.callRef();
     http2Stream.on('response', (headers, flags) => {
       let headersString = '';
       for (const header of Object.keys(headers)) {
@@ -185,7 +183,7 @@ export class Http2SubchannelCall implements SubchannelCall {
 
       for (const message of messages) {
         this.trace('parsed message of length ' + message.length);
-        this.callStatsTracker!.addMessageReceived();
+        this.callEventTracker!.addMessageReceived();
         this.tryPush(message);
       }
     });
@@ -289,7 +287,15 @@ export class Http2SubchannelCall implements SubchannelCall {
         );
         this.internalError = err;
       }
-      this.callStatsTracker.onStreamEnd(false);
+      this.callEventTracker.onStreamEnd(false);
+    });
+  }
+
+  public onDisconnect() {
+    this.endCall({
+      code: Status.UNAVAILABLE,
+      details: 'Connection dropped',
+      metadata: new Metadata(),
     });
   }
 
@@ -304,7 +310,7 @@ export class Http2SubchannelCall implements SubchannelCall {
           this.finalStatus!.details +
           '"'
       );
-      this.callStatsTracker.onCallEnd(this.finalStatus!);
+      this.callEventTracker.onCallEnd(this.finalStatus!);
       /* We delay the actual action of bubbling up the status to insulate the
        * cleanup code in this class from any errors that may be thrown in the
        * upper layers as a result of bubbling up the status. In particular,
@@ -319,8 +325,6 @@ export class Http2SubchannelCall implements SubchannelCall {
        * not push more messages after the status is output, so the messages go
        * nowhere either way. */
       this.http2Stream.resume();
-      this.subchannel.callUnref();
-      this.subchannel.removeDisconnectListener(this.disconnectListener);
     }
   }
 
@@ -395,7 +399,7 @@ export class Http2SubchannelCall implements SubchannelCall {
   }
 
   private handleTrailers(headers: http2.IncomingHttpHeaders) {
-    this.callStatsTracker.onStreamEnd(true);
+    this.callEventTracker.onStreamEnd(true);
     let headersString = '';
     for (const header of Object.keys(headers)) {
       headersString += '\t\t' + header + ': ' + headers[header] + '\n';
@@ -467,7 +471,7 @@ export class Http2SubchannelCall implements SubchannelCall {
   }
 
   getPeer(): string {
-    return this.subchannel.getAddress();
+    return this.peerName;
   }
 
   getCallNumber(): number {
@@ -506,7 +510,7 @@ export class Http2SubchannelCall implements SubchannelCall {
       context.callback?.();
     };
     this.trace('sending data chunk of length ' + message.length);
-    this.callStatsTracker.addMessageSent();
+    this.callEventTracker.addMessageSent();
     try {
       this.http2Stream!.write(message, cb);
     } catch (error) {
