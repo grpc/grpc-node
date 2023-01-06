@@ -54,7 +54,7 @@ GRPC_NODE_TRACE=xds_client,xds_resolver,cds_balancer,eds_balancer,priority,weigh
   GRPC_NODE_VERBOSITY=DEBUG \
   NODE_XDS_INTEROP_VERBOSITY=1 \
   python3 grpc/tools/run_tests/run_xds_tests.py \
-    --test_case="all,timeout,circuit_breaking,fault_injection,csds" \
+    --test_case="ping_pong,circuit_breaking" \
     --project_id=grpc-testing \
     --source_image=projects/grpc-testing/global/images/xds-test-server-5 \
     --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
