@@ -191,7 +191,9 @@ export class Http2SubchannelCall implements SubchannelCall {
     });
     http2Stream.on('end', () => {
       this.readsClosed = true;
-      this.maybeOutputStatus();
+      process.nextTick(() => {
+        this.maybeOutputStatus();
+      });
     });
     http2Stream.on('close', () => {
       /* Use process.next tick to ensure that this code happens after any

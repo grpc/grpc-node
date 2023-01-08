@@ -9,12 +9,30 @@ import type { SubchannelRef as _grpc_channelz_v1_SubchannelRef, SubchannelRef__O
 /**
  * The supported severity levels of trace events.
  */
-export enum _grpc_channelz_v1_ChannelTraceEvent_Severity {
-  CT_UNKNOWN = 0,
-  CT_INFO = 1,
-  CT_WARNING = 2,
-  CT_ERROR = 3,
-}
+export const _grpc_channelz_v1_ChannelTraceEvent_Severity = {
+  CT_UNKNOWN: 'CT_UNKNOWN',
+  CT_INFO: 'CT_INFO',
+  CT_WARNING: 'CT_WARNING',
+  CT_ERROR: 'CT_ERROR',
+} as const;
+
+/**
+ * The supported severity levels of trace events.
+ */
+export type _grpc_channelz_v1_ChannelTraceEvent_Severity =
+  | 'CT_UNKNOWN'
+  | 0
+  | 'CT_INFO'
+  | 1
+  | 'CT_WARNING'
+  | 2
+  | 'CT_ERROR'
+  | 3
+
+/**
+ * The supported severity levels of trace events.
+ */
+export type _grpc_channelz_v1_ChannelTraceEvent_Severity__Output = typeof _grpc_channelz_v1_ChannelTraceEvent_Severity[keyof typeof _grpc_channelz_v1_ChannelTraceEvent_Severity]
 
 /**
  * A trace event is an interesting thing that happened to a channel or
@@ -28,7 +46,7 @@ export interface ChannelTraceEvent {
   /**
    * the severity of the trace event
    */
-  'severity'?: (_grpc_channelz_v1_ChannelTraceEvent_Severity | keyof typeof _grpc_channelz_v1_ChannelTraceEvent_Severity);
+  'severity'?: (_grpc_channelz_v1_ChannelTraceEvent_Severity);
   /**
    * When this event occurred.
    */
@@ -56,7 +74,7 @@ export interface ChannelTraceEvent__Output {
   /**
    * the severity of the trace event
    */
-  'severity': (keyof typeof _grpc_channelz_v1_ChannelTraceEvent_Severity);
+  'severity': (_grpc_channelz_v1_ChannelTraceEvent_Severity__Output);
   /**
    * When this event occurred.
    */
