@@ -87,6 +87,7 @@ export class Http2SubchannelCall implements SubchannelCall {
   private decoder = new StreamDecoder();
 
   private isReadFilterPending = false;
+  private isPushPending = false;
   private canPush = false;
   /**
    * Indicates that an 'end' event has come from the http2 stream, so there
@@ -360,7 +361,8 @@ export class Http2SubchannelCall implements SubchannelCall {
         this.finalStatus.code !== Status.OK ||
         (this.readsClosed &&
           this.unpushedReadMessages.length === 0 &&
-          !this.isReadFilterPending)
+          !this.isReadFilterPending &&
+          !this.isPushPending)
       ) {
         this.outputStatus();
       }
@@ -373,7 +375,9 @@ export class Http2SubchannelCall implements SubchannelCall {
         (message instanceof Buffer ? message.length : null)
     );
     this.canPush = false;
+    this.isPushPending = true;
     process.nextTick(() => {
+      this.isPushPending = false;
       /* If we have already output the status any later messages should be
        * ignored, and can cause out-of-order operation errors higher up in the
        * stack. Checking as late as possible here to avoid any race conditions.
