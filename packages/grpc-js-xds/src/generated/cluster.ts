@@ -97,6 +97,15 @@ export interface ProtoGrpcType {
         }
       }
     }
+    extensions: {
+      clusters: {
+        aggregate: {
+          v3: {
+            ClusterConfig: MessageTypeDefinition
+          }
+        }
+      }
+    }
     type: {
       matcher: {
         v3: {

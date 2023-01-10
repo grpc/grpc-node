@@ -33,6 +33,7 @@ const TYPE_NAME = 'child_load_balancer_helper';
 export class ChildLoadBalancerHandler implements LoadBalancer {
   private currentChild: LoadBalancer | null = null;
   private pendingChild: LoadBalancer | null = null;
+  private latestConfig: LoadBalancingConfig | null = null;
 
   private ChildPolicyHelper = class {
     private child: LoadBalancer | null = null;
@@ -85,6 +86,10 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
 
   constructor(private readonly channelControlHelper: ChannelControlHelper) {}
 
+  protected configUpdateRequiresNewPolicyInstance(oldConfig: LoadBalancingConfig, newConfig: LoadBalancingConfig): boolean {
+    return oldConfig.getLoadBalancerName() !== newConfig.getLoadBalancerName();
+  }
+
   /**
    * Prerequisites: lbConfig !== null and lbConfig.name is registered
    * @param addressList
@@ -99,7 +104,8 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
     let childToUpdate: LoadBalancer;
     if (
       this.currentChild === null ||
-      this.currentChild.getTypeName() !== lbConfig.getLoadBalancerName()
+      this.latestConfig === null ||
+      this.configUpdateRequiresNewPolicyInstance(this.latestConfig, lbConfig)
     ) {
       const newHelper = new this.ChildPolicyHelper(this);
       const newChild = createLoadBalancer(lbConfig, newHelper)!;
