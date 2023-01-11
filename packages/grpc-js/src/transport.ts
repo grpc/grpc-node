@@ -161,7 +161,7 @@ class Http2Transport implements Transport {
     session.once('close', () => {
       this.trace('session closed');
       this.stopKeepalivePings();
-      this.handleDisconnect(false);
+      this.handleDisconnect();
     });
     session.once('goaway', (errorCode: number, lastStreamID: number, opaqueData: Buffer) => {
       let tooManyPings = false;
@@ -177,7 +177,7 @@ class Http2Transport implements Transport {
         'connection closed by GOAWAY with code ' +
           errorCode
       );
-      this.handleDisconnect(tooManyPings);
+      this.reportDisconnectToOwner(tooManyPings);
     });
     session.once('error', error => {
       /* Do nothing here. Any error should also trigger a close event, which is
@@ -263,15 +263,35 @@ class Http2Transport implements Transport {
     logging.trace(LogVerbosity.DEBUG, 'transport_internals', '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
   }
 
-  private handleDisconnect(tooManyPings: boolean) {
+  /**
+   * Indicate to the owner of this object that this transport should no longer
+   * be used. That happens if the connection drops, or if the server sends a
+   * GOAWAY.
+   * @param tooManyPings If true, this was triggered by a GOAWAY with data
+   * indicating that the session was closed becaues the client sent too many
+   * pings.
+   * @returns 
+   */
+  private reportDisconnectToOwner(tooManyPings: boolean) {
     if (this.disconnectHandled) {
       return;
     }
     this.disconnectHandled = true;
     this.disconnectListeners.forEach(listener => listener(tooManyPings));
-    for (const call of this.activeCalls) {
-      call.onDisconnect();
-    }
+  }
+
+  /**
+   * Handle connection drops, but not GOAWAYs.
+   */
+  private handleDisconnect() {
+    this.reportDisconnectToOwner(false);
+    /* Give calls an event loop cycle to finish naturally before reporting the
+     * disconnnection to them. */
+    setImmediate(() => {
+      for (const call of this.activeCalls) {
+        call.onDisconnect();
+      }
+    });
   }
 
   addDisconnectListener(listener: TransportDisconnectListener): void {
@@ -294,7 +314,7 @@ class Http2Transport implements Transport {
     if (!this.keepaliveTimeoutId) {
       this.keepaliveTimeoutId = setTimeout(() => {
         this.keepaliveTrace('Ping timeout passed without response');
-        this.handleDisconnect(false);
+        this.handleDisconnect();
       }, this.keepaliveTimeoutMs);
       this.keepaliveTimeoutId.unref?.();
     }
@@ -308,7 +328,7 @@ class Http2Transport implements Transport {
     } catch (e) {
       /* If we fail to send a ping, the connection is no longer functional, so
        * we should discard it. */
-      this.handleDisconnect(false);
+      this.handleDisconnect();
     }
   }
 
@@ -365,7 +385,7 @@ class Http2Transport implements Transport {
     try {
       http2Stream = this.session!.request(headers);
     } catch (e) {
-      this.handleDisconnect(false);
+      this.handleDisconnect();
       throw e;
     }
     this.flowControlTrace(
