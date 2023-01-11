@@ -189,6 +189,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
           configSelector: ConfigSelector | null,
           attributes: { [key: string]: unknown }
         ) => {
+          trace('Received resolution result for target ' + uriToString(this.target) + ': addressList=[' + addressList + '] serviceConfig=' + JSON.stringify(serviceConfig) + ' serviceConfigError=' + serviceConfigError + ' attributes=' + JSON.stringify(attributes));
           let workingServiceConfig: ServiceConfig | null = null;
           /* This first group of conditionals implements the algorithm described
            * in https://github.com/grpc/proposal/blob/master/A21-service-config-error-handling.md
@@ -244,6 +245,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
           );
         },
         onError: (error: StatusObject) => {
+          trace('Received resolution error for target ' + uriToString(this.target) + ': ' + JSON.stringify(error));
           this.handleResolutionFailure(error);
         },
       },
