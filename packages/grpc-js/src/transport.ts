@@ -354,12 +354,14 @@ class Http2Transport implements Transport {
   private removeActiveCall(call: Http2SubchannelCall) {
     this.activeCalls.delete(call);
     if (this.activeCalls.size === 0 && !this.keepaliveWithoutCalls) {
+      this.session.unref();
       this.stopKeepalivePings();
     }
   }
 
   private addActiveCall(call: Http2SubchannelCall) {
     if (this.activeCalls.size === 0 && !this.keepaliveWithoutCalls) {
+      this.session.ref();
       this.startKeepalivePings();
     }
     this.activeCalls.add(call);
@@ -418,6 +420,7 @@ class Http2Transport implements Transport {
         },
         onCallEnd: status => {
           subchannelCallStatsTracker.onCallEnd?.(status);
+          this.removeActiveCall(call);
         },
         onStreamEnd: success => {
           if (success) {
@@ -425,7 +428,6 @@ class Http2Transport implements Transport {
           } else {
             this.streamTracker.addCallFailed();
           }
-          this.removeActiveCall(call);
           subchannelCallStatsTracker.onStreamEnd?.(success);
         }
       }
