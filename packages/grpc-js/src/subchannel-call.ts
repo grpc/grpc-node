@@ -198,6 +198,7 @@ export class Http2SubchannelCall implements SubchannelCall {
        * we can bubble up the error message from that event. */
       process.nextTick(() => {
         this.trace('HTTP/2 stream closed with code ' + http2Stream.rstCode);
+        this.callEventTracker.onStreamEnd(this.finalStatus?.code === Status.OK);
         /* If we have a final status with an OK status code, that means that
          * we have received all of the messages and we have processed the
          * trailers and the call completed successfully, so it doesn't matter
@@ -288,7 +289,6 @@ export class Http2SubchannelCall implements SubchannelCall {
         );
         this.internalError = err;
       }
-      this.callEventTracker.onStreamEnd(false);
     });
   }
 
@@ -403,7 +403,6 @@ export class Http2SubchannelCall implements SubchannelCall {
   }
 
   private handleTrailers(headers: http2.IncomingHttpHeaders) {
-    this.callEventTracker.onStreamEnd(true);
     let headersString = '';
     for (const header of Object.keys(headers)) {
       headersString += '\t\t' + header + ': ' + headers[header] + '\n';

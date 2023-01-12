@@ -420,6 +420,7 @@ class Http2Transport implements Transport {
         },
         onCallEnd: status => {
           subchannelCallStatsTracker.onCallEnd?.(status);
+          this.removeActiveCall(call);
         },
         onStreamEnd: success => {
           if (success) {
@@ -427,7 +428,6 @@ class Http2Transport implements Transport {
           } else {
             this.streamTracker.addCallFailed();
           }
-          this.removeActiveCall(call);
           subchannelCallStatsTracker.onStreamEnd?.(success);
         }
       }
