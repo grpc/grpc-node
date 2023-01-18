@@ -32,6 +32,8 @@ const SUPPPORTED_HEADER_MATCH_SPECIFIERS = [
   'suffix_match'];
 const SUPPORTED_CLUSTER_SPECIFIERS = ['cluster', 'weighted_clusters', 'cluster_header'];
 
+const UINT32_MAX = 0xFFFFFFFF;
+
 function durationToMs(duration: Duration__Output | null): number | null {
   if (duration === null) {
     return null;
@@ -130,14 +132,11 @@ export class RdsState extends BaseXdsStreamState<RouteConfiguration__Output> imp
           }
         }
         if (route.route!.cluster_specifier === 'weighted_clusters') {
-          if (route.route.weighted_clusters!.total_weight?.value === 0) {
-            return false;
-          }
           let weightSum = 0;
           for (const clusterWeight of route.route.weighted_clusters!.clusters) {
             weightSum += clusterWeight.weight?.value ?? 0;
           }
-          if (weightSum !== route.route.weighted_clusters!.total_weight?.value ?? 100) {
+          if (weightSum === 0 || weightSum > UINT32_MAX) {
             return false;
           }
           if (EXPERIMENTAL_FAULT_INJECTION) {
