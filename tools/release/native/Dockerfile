@@ -1,7 +1,14 @@
-FROM debian:stretch
+FROM ubuntu:22.04
 
 RUN apt-get update
-RUN apt-get install -y cmake curl build-essential python libc6-dev-i386 lib32stdc++-6-dev jq
+RUN apt-get install -y cmake curl build-essential \
+    python3 libc6-dev-i386-cross libc6-dev-amd64-cross \
+    libc6-dev-arm64-cross lib32stdc++6-amd64-cross jq \
+    lib32stdc++6-x32-cross libstdc++6-amd64-cross \
+    libstdc++6-arm64-cross libstdc++6-i386-cross \
+    gcc-i686-linux-gnu g++-i686-linux-gnu \
+    gcc-x86-64-linux-gnu g++-x86-64-linux-gnu \
+    gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
 RUN mkdir /usr/local/nvm
 ENV NVM_DIR /usr/local/nvm

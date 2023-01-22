@@ -5,6 +5,7 @@ node_modules/
 npm-debug.log
 yarn-error.log
 yarn.lock
+artifacts
 
 # Emacs temp files
 *~
@@ -15,6 +16,7 @@ yarn.lock
 reports/
 
 package-lock.json
+pnpm-lock.yaml
 
 # Test generated files
 coverage
