@@ -103,6 +103,7 @@ export class ResolvingCall implements Call {
       if (!this.filterStack) {
         this.filterStack = this.filterStackFactory.createFilter();
       }
+      clearTimeout(this.deadlineTimer);
       const filteredStatus = this.filterStack.receiveTrailers(status);
       this.trace('ended with status: code=' + filteredStatus.code + ' details="' + filteredStatus.details + '"');
       this.statusWatchers.forEach(watcher => watcher(filteredStatus));
