@@ -354,16 +354,20 @@ class Http2Transport implements Transport {
 
   private removeActiveCall(call: Http2SubchannelCall) {
     this.activeCalls.delete(call);
-    if (this.activeCalls.size === 0 && !this.keepaliveWithoutCalls) {
+    if (this.activeCalls.size === 0) {
       this.session.unref();
-      this.stopKeepalivePings();
+      if (!this.keepaliveWithoutCalls) {
+        this.stopKeepalivePings();
+      }
     }
   }
 
   private addActiveCall(call: Http2SubchannelCall) {
-    if (this.activeCalls.size === 0 && !this.keepaliveWithoutCalls) {
+    if (this.activeCalls.size === 0) {
       this.session.ref();
-      this.startKeepalivePings();
+      if (!this.keepaliveWithoutCalls) {
+        this.startKeepalivePings();
+      }
     }
     this.activeCalls.add(call);
   }
