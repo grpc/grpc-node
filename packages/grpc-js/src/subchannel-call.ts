@@ -26,7 +26,7 @@ import { LogVerbosity } from './constants';
 import { ServerSurfaceCall } from './server-call';
 import { Deadline } from './deadline';
 import { InterceptingListener, MessageContext, StatusObject, WriteCallback } from './call-interface';
-import { CallEventTracker } from './transport';
+import { CallEventTracker, Transport } from './transport';
 
 const TRACER_NAME = 'subchannel_call';
 
@@ -105,24 +105,15 @@ export class Http2SubchannelCall implements SubchannelCall {
   // This is populated (non-null) if and only if the call has ended
   private finalStatus: StatusObject | null = null;
 
-  private disconnectListener: () => void;
-
   private internalError: SystemError | null = null;
 
   constructor(
     private readonly http2Stream: http2.ClientHttp2Stream,
     private readonly callEventTracker: CallEventTracker,
     private readonly listener: SubchannelCallInterceptingListener,
-    private readonly peerName: string,
+    private readonly transport: Transport,
     private readonly callId: number
   ) {
-    this.disconnectListener = () => {
-      this.endCall({
-        code: Status.UNAVAILABLE,
-        details: 'Connection dropped',
-        metadata: new Metadata(),
-      });
-    };
     http2Stream.on('response', (headers, flags) => {
       let headersString = '';
       for (const header of Object.keys(headers)) {
@@ -475,7 +466,7 @@ export class Http2SubchannelCall implements SubchannelCall {
   }
 
   getPeer(): string {
-    return this.peerName;
+    return this.transport.getPeerName();
   }
 
   getCallNumber(): number {

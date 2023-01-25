@@ -65,6 +65,7 @@ export interface TransportDisconnectListener {
 
 export interface Transport {
   getChannelzRef(): SocketRef;
+  getPeerName(): string;
   createCall(metadata: Metadata, host: string, method: string, listener: SubchannelCallInterceptingListener, subchannelCallStatsTracker: Partial<CallEventTracker>): SubchannelCall;
   addDisconnectListener(listener: TransportDisconnectListener): void;
   shutdown(): void;
@@ -448,13 +449,17 @@ class Http2Transport implements Transport {
         }
       }
     }
-    call = new Http2SubchannelCall(http2Stream, eventTracker, listener, this.subchannelAddressString, getNextCallNumber());
+    call = new Http2SubchannelCall(http2Stream, eventTracker, listener, this, getNextCallNumber());
     this.addActiveCall(call);
     return call;
   }
 
   getChannelzRef(): SocketRef {
     return this.channelzRef;
+  }
+
+  getPeerName() {
+    return this.subchannelAddressString;
   }
 
   shutdown() {
