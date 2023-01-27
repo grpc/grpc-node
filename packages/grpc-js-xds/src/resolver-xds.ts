@@ -48,6 +48,7 @@ import { EXPERIMENTAL_FAULT_INJECTION, EXPERIMENTAL_RETRY } from './environment'
 import Filter = experimental.Filter;
 import FilterFactory = experimental.FilterFactory;
 import RetryPolicy = experimental.RetryPolicy;
+import { validateBootstrapConfig } from './xds-bootstrap';
 
 const TRACER_NAME = 'xds_resolver';
 
@@ -210,6 +211,8 @@ function getDefaultRetryMaxInterval(baseInterval: string): string {
   return `${Number.parseFloat(baseInterval.substring(0, baseInterval.length - 1)) * 10}s`;
 }
 
+const BOOTSTRAP_CONFIG_KEY = 'grpc.TEST_ONLY_DO_NOT_USE_IN_PROD.xds_bootstrap_config';
+
 const RETRY_CODES: {[key: string]: status} = {
   'cancelled': status.CANCELLED,
   'deadline-exceeded': status.DEADLINE_EXCEEDED,
@@ -238,11 +241,20 @@ class XdsResolver implements Resolver {
 
   private ldsHttpFilterConfigs: {name: string, config: HttpFilterConfig}[] = [];
 
+  private xdsClient: XdsClient;
+
   constructor(
     private target: GrpcUri,
     private listener: ResolverListener,
     private channelOptions: ChannelOptions
   ) {
+    if (channelOptions[BOOTSTRAP_CONFIG_KEY]) {
+      const parsedConfig = JSON.parse(channelOptions[BOOTSTRAP_CONFIG_KEY]);
+      const validatedConfig = validateBootstrapConfig(parsedConfig);
+      this.xdsClient = new XdsClient(validatedConfig);
+    } else {
+      this.xdsClient = getSingletonXdsClient();
+    }
     this.ldsWatcher = {
       onValidUpdate: (update: Listener__Output) => {
         const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, update.api_listener!.api_listener!.value);
@@ -267,16 +279,16 @@ class XdsResolver implements Resolver {
             const routeConfigName = httpConnectionManager.rds!.route_config_name;
             if (this.latestRouteConfigName !== routeConfigName) {
               if (this.latestRouteConfigName !== null) {
-                getSingletonXdsClient().removeRouteWatcher(this.latestRouteConfigName, this.rdsWatcher);
+                this.xdsClient.removeRouteWatcher(this.latestRouteConfigName, this.rdsWatcher);
               }
-              getSingletonXdsClient().addRouteWatcher(httpConnectionManager.rds!.route_config_name, this.rdsWatcher);
+              this.xdsClient.addRouteWatcher(httpConnectionManager.rds!.route_config_name, this.rdsWatcher);
               this.latestRouteConfigName = routeConfigName;
             }
             break;
           }
           case 'route_config':
             if (this.latestRouteConfigName) {
-              getSingletonXdsClient().removeRouteWatcher(this.latestRouteConfigName, this.rdsWatcher);
+              this.xdsClient.removeRouteWatcher(this.latestRouteConfigName, this.rdsWatcher);
             }
             this.handleRouteConfig(httpConnectionManager.route_config!);
             break;
@@ -546,7 +558,7 @@ class XdsResolver implements Resolver {
       methodConfig: [],
       loadBalancingConfig: [lbPolicyConfig]
     }
-    this.listener.onSuccessfulResolution([], serviceConfig, null, configSelector, {});
+    this.listener.onSuccessfulResolution([], serviceConfig, null, configSelector, {xdsClient: this.xdsClient});
   }
 
   private reportResolutionError(reason: string) {
@@ -563,15 +575,15 @@ class XdsResolver implements Resolver {
     // Wait until updateResolution is called once to start the xDS requests
     if (!this.isLdsWatcherActive) {
       trace('Starting resolution for target ' + uriToString(this.target));
-      getSingletonXdsClient().addListenerWatcher(this.target.path, this.ldsWatcher);
+      this.xdsClient.addListenerWatcher(this.target.path, this.ldsWatcher);
       this.isLdsWatcherActive = true;
     }
   }
 
   destroy() {
-    getSingletonXdsClient().removeListenerWatcher(this.target.path, this.ldsWatcher);
+    this.xdsClient.removeListenerWatcher(this.target.path, this.ldsWatcher);
     if (this.latestRouteConfigName) {
-      getSingletonXdsClient().removeRouteWatcher(this.latestRouteConfigName, this.rdsWatcher);
+      this.xdsClient.removeRouteWatcher(this.latestRouteConfigName, this.rdsWatcher);
     }
   }
 
