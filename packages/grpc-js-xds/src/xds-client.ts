@@ -21,7 +21,7 @@ import { loadProtosWithOptionsSync } from '@grpc/proto-loader/build/src/util';
 import { loadPackageDefinition, StatusObject, status, logVerbosity, Metadata, experimental, ChannelOptions, ClientDuplexStream, ServiceError, ChannelCredentials, Channel, connectivityState } from '@grpc/grpc-js';
 import * as adsTypes from './generated/ads';
 import * as lrsTypes from './generated/lrs';
-import { loadBootstrapInfo } from './xds-bootstrap';
+import { BootstrapInfo, loadBootstrapInfo } from './xds-bootstrap';
 import { Node } from './generated/envoy/config/core/v3/Node';
 import { AggregatedDiscoveryServiceClient } from './generated/envoy/service/discovery/v3/AggregatedDiscoveryService';
 import { DiscoveryRequest } from './generated/envoy/service/discovery/v3/DiscoveryRequest';
@@ -276,7 +276,7 @@ export class XdsClient {
   private adsBackoff: BackoffTimeout;
   private lrsBackoff: BackoffTimeout;
 
-  constructor() {
+  constructor(bootstrapInfoOverride?: BootstrapInfo) {
     const edsState = new EdsState(() => {
       this.updateNames('eds');
     });
@@ -310,7 +310,15 @@ export class XdsClient {
     });
     this.lrsBackoff.unref();
 
-    Promise.all([loadBootstrapInfo(), loadAdsProtos()]).then(
+    async function getBootstrapInfo(): Promise<BootstrapInfo> {
+      if (bootstrapInfoOverride) {
+        return bootstrapInfoOverride;
+      } else {
+        return loadBootstrapInfo();
+      }
+    }
+
+    Promise.all([getBootstrapInfo(), loadAdsProtos()]).then(
       ([bootstrapInfo, protoDefinitions]) => {
         if (this.hasShutdown) {
           return;

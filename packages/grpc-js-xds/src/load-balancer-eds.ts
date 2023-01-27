@@ -167,6 +167,7 @@ export class EdsLoadBalancer implements LoadBalancer {
 
   private lastestConfig: EdsLoadBalancingConfig | null = null;
   private latestAttributes: { [key: string]: unknown } = {};
+  private xdsClient: XdsClient | null = null;
   private latestEdsUpdate: ClusterLoadAssignment__Output | null = null;
 
   /**
@@ -488,13 +489,14 @@ export class EdsLoadBalancer implements LoadBalancer {
     trace('Received update with config: ' + JSON.stringify(lbConfig, undefined, 2));
     this.lastestConfig = lbConfig;
     this.latestAttributes = attributes;
+    this.xdsClient = attributes.xdsClient as XdsClient;
     const newEdsServiceName = lbConfig.getEdsServiceName() ?? lbConfig.getCluster();
 
     /* If the name is changing, disable the old watcher before adding the new
      * one */
     if (this.isWatcherActive && this.edsServiceName !== newEdsServiceName) {
       trace('Removing old endpoint watcher for edsServiceName ' + this.edsServiceName)
-      getSingletonXdsClient().removeEndpointWatcher(this.edsServiceName!, this.watcher);
+      this.xdsClient.removeEndpointWatcher(this.edsServiceName!, this.watcher);
       /* Setting isWatcherActive to false here lets us have one code path for
        * calling addEndpointWatcher */
       this.isWatcherActive = false;
@@ -507,12 +509,12 @@ export class EdsLoadBalancer implements LoadBalancer {
 
     if (!this.isWatcherActive) {
       trace('Adding new endpoint watcher for edsServiceName ' + this.edsServiceName);
-      getSingletonXdsClient().addEndpointWatcher(this.edsServiceName, this.watcher);
+      this.xdsClient.addEndpointWatcher(this.edsServiceName, this.watcher);
       this.isWatcherActive = true;
     }
 
     if (lbConfig.getLrsLoadReportingServerName()) {
-      this.clusterDropStats = getSingletonXdsClient().addClusterDropStats(
+      this.clusterDropStats = this.xdsClient.addClusterDropStats(
         lbConfig.getLrsLoadReportingServerName()!,
         lbConfig.getCluster(),
         lbConfig.getEdsServiceName() ?? ''
@@ -533,7 +535,7 @@ export class EdsLoadBalancer implements LoadBalancer {
   destroy(): void {
     trace('Destroying load balancer with edsServiceName ' + this.edsServiceName);
     if (this.edsServiceName) {
-      getSingletonXdsClient().removeEndpointWatcher(this.edsServiceName, this.watcher);
+      this.xdsClient?.removeEndpointWatcher(this.edsServiceName, this.watcher);
     }
     this.childBalancer.destroy();
   }
