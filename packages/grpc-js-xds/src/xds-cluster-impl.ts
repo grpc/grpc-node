@@ -16,7 +16,7 @@
  */
 
 import { experimental, logVerbosity, status as Status, Metadata, connectivityState } from "@grpc/grpc-js";
-import { getSingletonXdsClient, XdsClusterDropStats } from "./xds-client";
+import { getSingletonXdsClient, XdsClient, XdsClusterDropStats } from "./xds-client";
 
 import LoadBalancingConfig = experimental.LoadBalancingConfig;
 import validateLoadBalancingConfig = experimental.validateLoadBalancingConfig;
@@ -222,6 +222,7 @@ class XdsClusterImplBalancer implements LoadBalancer {
   private childBalancer: ChildLoadBalancerHandler;
   private latestConfig: XdsClusterImplLoadBalancingConfig | null = null;
   private clusterDropStats: XdsClusterDropStats | null = null;
+  private xdsClient: XdsClient | null = null;
 
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
       this.childBalancer = new ChildLoadBalancerHandler(createChildChannelControlHelper(channelControlHelper, {
@@ -242,9 +243,10 @@ class XdsClusterImplBalancer implements LoadBalancer {
     }
     trace('Received update with config: ' + JSON.stringify(lbConfig, undefined, 2));
     this.latestConfig = lbConfig;
+    this.xdsClient = attributes.xdsClient as XdsClient;
 
     if (lbConfig.getLrsLoadReportingServerName()) {
-      this.clusterDropStats = getSingletonXdsClient().addClusterDropStats(
+      this.clusterDropStats = this.xdsClient.addClusterDropStats(
         lbConfig.getLrsLoadReportingServerName()!,
         lbConfig.getCluster(),
         lbConfig.getEdsServiceName() ?? ''

@@ -209,6 +209,7 @@ export class CdsLoadBalancer implements LoadBalancer {
 
   private latestConfig: CdsLoadBalancingConfig | null = null;
   private latestAttributes: { [key: string]: unknown } = {};
+  private xdsClient: XdsClient | null = null;
 
   private clusterTree: ClusterTree = {};
 
@@ -271,14 +272,14 @@ export class CdsLoadBalancer implements LoadBalancer {
       watcher: watcher,
       children: []
     };
-    getSingletonXdsClient().addClusterWatcher(cluster, watcher);
+    this.xdsClient?.addClusterWatcher(cluster, watcher);
   }
 
   private removeCluster(cluster: string) {
     if (!(cluster in this.clusterTree)) {
       return;
     }
-    getSingletonXdsClient().removeClusterWatcher(cluster, this.clusterTree[cluster].watcher);
+    this.xdsClient?.removeClusterWatcher(cluster, this.clusterTree[cluster].watcher);
     delete this.clusterTree[cluster];
   }
 
@@ -299,6 +300,7 @@ export class CdsLoadBalancer implements LoadBalancer {
     }
     trace('Received update with config ' + JSON.stringify(lbConfig, undefined, 2));
     this.latestAttributes = attributes;
+    this.xdsClient = attributes.xdsClient as XdsClient;
 
     /* If the cluster is changing, disable the old watcher before adding the new
      * one */

@@ -22,7 +22,7 @@ import { ClusterLoadAssignment__Output } from "./generated/envoy/config/endpoint
 import { LrsLoadBalancingConfig } from "./load-balancer-lrs";
 import { LocalitySubchannelAddress, PriorityChild, PriorityLoadBalancingConfig } from "./load-balancer-priority";
 import { WeightedTarget, WeightedTargetLoadBalancingConfig } from "./load-balancer-weighted-target";
-import { getSingletonXdsClient } from "./xds-client";
+import { getSingletonXdsClient, XdsClient } from "./xds-client";
 import { DropCategory, XdsClusterImplLoadBalancingConfig } from "./xds-cluster-impl";
 import { Watcher } from "./xds-stream-state/xds-stream-state";
 
@@ -242,6 +242,7 @@ export class XdsClusterResolver implements LoadBalancer {
   private discoveryMechanismList: DiscoveryMechanismEntry[] = [];
   private latestConfig: XdsClusterResolverLoadBalancingConfig | null = null;
   private latestAttributes: { [key: string]: unknown; } = {};
+  private xdsClient: XdsClient | null = null;
   private childBalancer: ChildLoadBalancerHandler;
 
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
@@ -363,6 +364,7 @@ export class XdsClusterResolver implements LoadBalancer {
     }
     trace('Received update with config ' + JSON.stringify(lbConfig, undefined, 2));
     this.latestAttributes = attributes;
+    this.xdsClient = attributes.xdsClient as XdsClient;
     if (this.discoveryMechanismList.length === 0) {
       for (const mechanism of lbConfig.getDiscoveryMechanisms()) {
         const mechanismEntry: DiscoveryMechanismEntry = {
@@ -390,7 +392,7 @@ export class XdsClusterResolver implements LoadBalancer {
             }
           };
           mechanismEntry.watcher = watcher;
-          getSingletonXdsClient().addEndpointWatcher(edsServiceName, watcher);
+          this.xdsClient?.addEndpointWatcher(edsServiceName, watcher);
         } else {
           const resolver = createResolver({scheme: 'dns', path: mechanism.dns_hostname!}, {
             onSuccessfulResolution: addressList => {
@@ -430,7 +432,7 @@ export class XdsClusterResolver implements LoadBalancer {
     for (const mechanismEntry of this.discoveryMechanismList) {
       if (mechanismEntry.watcher) {
         const edsServiceName = mechanismEntry.discoveryMechanism.eds_service_name ?? mechanismEntry.discoveryMechanism.cluster;
-        getSingletonXdsClient().removeEndpointWatcher(edsServiceName, mechanismEntry.watcher);
+        this.xdsClient?.removeEndpointWatcher(edsServiceName, mechanismEntry.watcher);
       }
       mechanismEntry.resolver?.destroy();
     }
