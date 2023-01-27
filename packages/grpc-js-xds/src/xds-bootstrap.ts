@@ -231,7 +231,7 @@ function validateNode(obj: any): Node {
   return result;
 }
 
-function validateBootstrapFile(obj: any): BootstrapInfo {
+export function validateBootstrapConfig(obj: any): BootstrapInfo {
   return {
     xdsServers: obj.xds_servers.map(validateXdsServerConfig),
     node: validateNode(obj.node),
@@ -265,7 +265,7 @@ export async function loadBootstrapInfo(): Promise<BootstrapInfo> {
         }
         try {
           const parsedFile = JSON.parse(data);
-          resolve(validateBootstrapFile(parsedFile));
+          resolve(validateBootstrapConfig(parsedFile));
         } catch (e) {
           reject(
             new Error(
@@ -290,7 +290,7 @@ export async function loadBootstrapInfo(): Promise<BootstrapInfo> {
   if (bootstrapConfig) {
     try {
       const parsedConfig = JSON.parse(bootstrapConfig);
-      const loadedBootstrapInfoValue = validateBootstrapFile(parsedConfig);
+      const loadedBootstrapInfoValue = validateBootstrapConfig(parsedConfig);
       loadedBootstrapInfo = Promise.resolve(loadedBootstrapInfoValue);
     } catch (e) {
       throw new Error(
