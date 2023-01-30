@@ -3,12 +3,12 @@ PROJECT("grpc-tools")
 
 SET(CMAKE_OSX_DEPLOYMENT_TARGET "11.7" CACHE STRING "Minimum OS X deployment version" FORCE)
 
-if(COMMAND CMAKE_POLICY)
+IF(COMMAND CMAKE_POLICY)
     CMAKE_POLICY(SET CMP0003 NEW)
 ENDIF(COMMAND CMAKE_POLICY)
 
 # MSVC runtime library flags are selected by an abstraction.
-if(COMMAND CMAKE_POLICY AND POLICY CMP0091)
+IF(COMMAND CMAKE_POLICY AND POLICY CMP0091)
     CMAKE_POLICY(SET CMP0091 NEW)
 ENDIF()
 
@@ -22,8 +22,8 @@ SET(PROTOBUF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/deps/protobuf)
 
 ADD_SUBDIRECTORY(${PROTOBUF_ROOT_DIR}/cmake deps/protobuf)
 
-SET(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-stack-protector")
+SET(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++ -static -Wl,-Bstatic")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-stack-protector -static -Wl,-Bstatic")
 
 ADD_EXECUTABLE(grpc_node_plugin
     src/node_generator.cc
