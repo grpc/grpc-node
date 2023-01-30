@@ -125,6 +125,7 @@ export class CdsLoadBalancer implements LoadBalancer {
 
   private latestConfig: CdsLoadBalancingConfig | null = null;
   private latestAttributes: { [key: string]: unknown } = {};
+  private xdsClient: XdsClient | null = null;
 
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
     this.childBalancer = new ChildLoadBalancerHandler(channelControlHelper);
@@ -188,6 +189,7 @@ export class CdsLoadBalancer implements LoadBalancer {
     }
     trace('Received update with config ' + JSON.stringify(lbConfig, undefined, 2));
     this.latestAttributes = attributes;
+    this.xdsClient = attributes.xdsClient as XdsClient;
 
     /* If the cluster is changing, disable the old watcher before adding the new
      * one */
@@ -196,7 +198,7 @@ export class CdsLoadBalancer implements LoadBalancer {
       this.latestConfig?.getCluster() !== lbConfig.getCluster()
     ) {
       trace('Removing old cluster watcher for cluster name ' + this.latestConfig!.getCluster());
-      getSingletonXdsClient().removeClusterWatcher(
+      this.xdsClient.removeClusterWatcher(
         this.latestConfig!.getCluster(),
         this.watcher
       );
@@ -212,7 +214,7 @@ export class CdsLoadBalancer implements LoadBalancer {
 
     if (!this.isWatcherActive) {
       trace('Adding new cluster watcher for cluster name ' + lbConfig.getCluster());
-      getSingletonXdsClient().addClusterWatcher(lbConfig.getCluster(), this.watcher);
+      this.xdsClient.addClusterWatcher(lbConfig.getCluster(), this.watcher);
       this.isWatcherActive = true;
     }
   }
@@ -226,7 +228,7 @@ export class CdsLoadBalancer implements LoadBalancer {
     trace('Destroying load balancer with cluster name ' + this.latestConfig?.getCluster());
     this.childBalancer.destroy();
     if (this.isWatcherActive) {
-      getSingletonXdsClient().removeClusterWatcher(
+      this.xdsClient?.removeClusterWatcher(
         this.latestConfig!.getCluster(),
         this.watcher
       );

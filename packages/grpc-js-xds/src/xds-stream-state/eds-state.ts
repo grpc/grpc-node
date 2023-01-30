@@ -61,10 +61,12 @@ export class EdsState extends BaseXdsStreamState<ClusterLoadAssignment__Output> 
     const priorityTotalWeights: Map<number,  number> = new Map();
     for (const endpoint of message.endpoints) {
       if (!endpoint.locality) {
+        trace('EDS validation: endpoint locality unset');
         return false;
       }
       for (const {locality, priority} of seenLocalities) {
         if (localitiesEqual(endpoint.locality, locality) && endpoint.priority === priority) {
+          trace('EDS validation: endpoint locality duplicated: ' + JSON.stringify(locality) + ', priority=' + priority);
           return false;
         }
       }
@@ -72,16 +74,20 @@ export class EdsState extends BaseXdsStreamState<ClusterLoadAssignment__Output> 
       for (const lb of endpoint.lb_endpoints) {
         const socketAddress = lb.endpoint?.address?.socket_address;
         if (!socketAddress) {
+          trace('EDS validation: endpoint socket_address not set');
           return false;
         }
         if (socketAddress.port_specifier !== 'port_value') {
+          trace('EDS validation: socket_address.port_specifier !== "port_value"');
           return false;
         }
         if (!(isIPv4(socketAddress.address) || isIPv6(socketAddress.address))) {
+          trace('EDS validation: address not a valid IPv4 or IPv6 address: ' + socketAddress.address);
           return false;
         }
         for (const address of seenAddresses) {
           if (addressesEqual(socketAddress, address)) {
+            trace('EDS validation: duplicate address seen: ' + address);
             return false;
           }
         }
@@ -91,11 +97,13 @@ export class EdsState extends BaseXdsStreamState<ClusterLoadAssignment__Output> 
     }
     for (const totalWeight of priorityTotalWeights.values()) {
       if (totalWeight > UINT32_MAX) {
+        trace('EDS validation: total weight > UINT32_MAX')
         return false;
       }
     }
     for (const priority of priorityTotalWeights.keys()) {
       if (priority > 0 && !priorityTotalWeights.has(priority - 1)) {
+        trace('EDS validation: priorities not contiguous');
         return false;
       }
     }
