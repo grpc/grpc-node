@@ -22,8 +22,8 @@ SET(PROTOBUF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/deps/protobuf)
 
 ADD_SUBDIRECTORY(${PROTOBUF_ROOT_DIR}/cmake deps/protobuf)
 
-SET(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++ -static -Wl,-Bstatic")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-stack-protector -static -Wl,-Bstatic")
+SET(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-stack-protector")
 
 ADD_EXECUTABLE(grpc_node_plugin
     src/node_generator.cc
