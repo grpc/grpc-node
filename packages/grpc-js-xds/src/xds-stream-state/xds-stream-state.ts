@@ -187,7 +187,11 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
       if (subscriptionEntry) {
         const watchers = subscriptionEntry.watchers;
         for (const watcher of watchers) {
-          watcher.onValidUpdate(resource);
+          /* Use process.nextTick to prevent errors from the watcher from
+           * bubbling up through here. */
+          process.nextTick(() => {
+            watcher.onValidUpdate(resource);
+          });
         }
         clearTimeout(subscriptionEntry.resourceTimer);
         subscriptionEntry.cachedResponse = resource;
@@ -238,7 +242,11 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
             this.trace('Reporting resource does not exist named ' + resourceName);
             missingNames.push(resourceName);
             for (const watcher of subscriptionEntry.watchers) {
-              watcher.onResourceDoesNotExist();
+              /* Use process.nextTick to prevent errors from the watcher from
+               * bubbling up through here. */
+              process.nextTick(() => {
+                watcher.onResourceDoesNotExist();
+              });
             }
             subscriptionEntry.cachedResponse = null;
           }

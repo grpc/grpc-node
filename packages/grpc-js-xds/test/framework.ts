@@ -24,9 +24,10 @@ import { Route } from "../src/generated/envoy/config/route/v3/Route";
 import { Listener } from "../src/generated/envoy/config/listener/v3/Listener";
 import { HttpConnectionManager } from "../src/generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpConnectionManager";
 import { AnyExtension } from "@grpc/proto-loader";
-import { HTTP_CONNECTION_MANGER_TYPE_URL } from "../src/resources";
+import { CLUSTER_CONFIG_TYPE_URL, HTTP_CONNECTION_MANGER_TYPE_URL } from "../src/resources";
 import { LocalityLbEndpoints } from "../src/generated/envoy/config/endpoint/v3/LocalityLbEndpoints";
 import { LbEndpoint } from "../src/generated/envoy/config/endpoint/v3/LbEndpoint";
+import { ClusterConfig } from "../src/generated/envoy/extensions/clusters/aggregate/v3/ClusterConfig";
 
 interface Endpoint {
   locality: Locality;
@@ -58,7 +59,15 @@ function getLocalityLbEndpoints(endpoint: Endpoint): LocalityLbEndpoints {
   }
 }
 
-export class FakeCluster {
+export interface FakeCluster {
+  getClusterConfig(): Cluster;
+  getAllClusterConfigs(): Cluster[];
+  getName(): string;
+  startAllBackends(): Promise<any>;
+  waitForAllBackendsToReceiveTraffic(): Promise<void>;
+}
+
+export class FakeEdsCluster implements FakeCluster {
   constructor(private name: string, private endpoints: Endpoint[]) {}
 
   getEndpointConfig(): ClusterLoadAssignment {
@@ -75,6 +84,10 @@ export class FakeCluster {
       eds_cluster_config: {eds_config: {ads: {}}},
       lb_policy: 'ROUND_ROBIN'
     }
+  }
+
+  getAllClusterConfigs(): Cluster[] {
+    return [this.getClusterConfig()];
   }
 
   getName() {
@@ -118,6 +131,80 @@ export class FakeCluster {
         }
       }
     });
+  }
+}
+
+export class FakeDnsCluster implements FakeCluster {
+  constructor(private name: string, private backend: Backend) {}
+
+  getClusterConfig(): Cluster {
+    return {
+      name: this.name,
+      type: 'LOGICAL_DNS',
+      lb_policy: 'ROUND_ROBIN',
+      load_assignment: {
+        endpoints: [{
+          lb_endpoints: [{
+            endpoint: {
+              address: {
+                socket_address: {
+                  address: 'localhost',
+                  port_value: this.backend.getPort()
+                }
+              }
+            }
+          }]
+        }]
+      }
+    };
+  }
+  getAllClusterConfigs(): Cluster[] {
+    return [this.getClusterConfig()];
+  }
+  getName(): string {
+    return this.name;
+  }
+  startAllBackends(): Promise<any> {
+    return this.backend.startAsync();
+  }
+  waitForAllBackendsToReceiveTraffic(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.backend.onCall(resolve);
+    });
+  }
+}
+
+export class FakeAggregateCluster implements FakeCluster {
+  constructor(private name: string, private children: FakeCluster[]) {}
+
+  getClusterConfig(): Cluster {
+    const clusterConfig: ClusterConfig & AnyExtension = {
+      '@type': CLUSTER_CONFIG_TYPE_URL,
+      clusters: this.children.map(child => child.getName())
+    };
+    return {
+      name: this.name,
+      lb_policy: 'ROUND_ROBIN',
+      cluster_type: {
+        typed_config: clusterConfig
+      }
+    }
+  }
+  getAllClusterConfigs(): Cluster[] {
+    const allConfigs = [this.getClusterConfig()];
+    for (const child of this.children) {
+      allConfigs.push(...child.getAllClusterConfigs());
+    }
+    return allConfigs;
+  }
+  getName(): string {
+    return this.name;
+  }
+  startAllBackends(): Promise<any> {
+    return Promise.all(this.children.map(child => child.startAllBackends()));
+  }
+  waitForAllBackendsToReceiveTraffic(): Promise<void> {
+    return Promise.all(this.children.map(child => child.waitForAllBackendsToReceiveTraffic())).then(() => {});
   }
 }
 

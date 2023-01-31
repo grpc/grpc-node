@@ -39,13 +39,11 @@ const loadedProtos = loadPackageDefinition(loadSync(
   })) as unknown as ProtoGrpcType;
 
 export class Backend {
-  private server: Server;
+  private server: Server | null = null;
   private receivedCallCount = 0;
   private callListeners: (() => void)[] = [];
   private port: number | null = null;
   constructor() {
-    this.server = new Server();
-    this.server.addService(loadedProtos.grpc.testing.EchoTestService.service, this as unknown as UntypedServiceImplementation);
   }
   Echo(call: ServerUnaryCall<EchoRequest__Output, EchoResponse>, callback: sendUnaryData<EchoResponse>) {
     // call.request.params is currently ignored
@@ -63,10 +61,16 @@ export class Backend {
   }
 
   start(callback: (error: Error | null, port: number) => void) {
-    this.server.bindAsync('localhost:0', ServerCredentials.createInsecure(), (error, port) => {
+    if (this.server) {
+      throw new Error("Backend already running");
+    }
+    this.server = new Server();
+    this.server.addService(loadedProtos.grpc.testing.EchoTestService.service, this as unknown as UntypedServiceImplementation);
+    const boundPort = this.port ?? 0;
+    this.server.bindAsync(`localhost:${boundPort}`, ServerCredentials.createInsecure(), (error, port) => {
       if (!error) {
         this.port = port;
-        this.server.start();
+        this.server!.start();
       }
       callback(error, port);
     })
@@ -100,6 +104,25 @@ export class Backend {
   }
 
   shutdown(callback: (error?: Error) => void) {
-    this.server.tryShutdown(callback);
+    if (this.server) {
+      this.server.tryShutdown(error => {
+        this.server = null;
+        callback(error);
+      });
+    } else {
+      process.nextTick(callback);
+    }
+  }
+
+  shutdownAsync(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.shutdown(error => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve();
+        }
+      });
+    });
   }
 }

@@ -16,6 +16,7 @@
  */
 
 import { experimental, logVerbosity } from "@grpc/grpc-js";
+import { registerLoadBalancerType } from "@grpc/grpc-js/build/src/load-balancer";
 import { EXPERIMENTAL_OUTLIER_DETECTION } from "./environment";
 import { Locality__Output } from "./generated/envoy/config/core/v3/Locality";
 import { ClusterLoadAssignment__Output } from "./generated/envoy/config/endpoint/v3/ClusterLoadAssignment";
@@ -264,11 +265,12 @@ export class XdsClusterResolver implements LoadBalancer {
         return;
       }
     }
-    const newPriorityNames: string[] = [];
+    const fullPriorityList: string[] = [];
     const priorityChildren = new Map<string, PriorityChild>();
-    const newLocalityPriorities = new Map<string, number>();
     const addressList: LocalitySubchannelAddress[] = [];
     for (const entry of this.discoveryMechanismList) {
+      const newPriorityNames: string[] = [];
+      const newLocalityPriorities = new Map<string, number>();
       const defaultEndpointPickingPolicy = entry.discoveryMechanism.type === 'EDS' ? validateLoadBalancingConfig({ round_robin: {} }) : validateLoadBalancingConfig({ pick_first: {} });
       const endpointPickingPolicy: LoadBalancingConfig[] = [
         ...this.latestConfig.getEndpointPickingPolicy(),
@@ -330,7 +332,6 @@ export class XdsClusterResolver implements LoadBalancer {
             });
           }
         }
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! INSERT xds_cluster_impl CONFIG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         const weightedTargetConfig = new WeightedTargetLoadBalancingConfig(childTargets);
         const xdsClusterImplConfig = new XdsClusterImplLoadBalancingConfig(entry.discoveryMechanism.cluster, priorityEntry.dropCategories, [weightedTargetConfig], entry.discoveryMechanism.eds_service_name, entry.discoveryMechanism.lrs_load_reporting_server_name, entry.discoveryMechanism.max_concurrent_requests);
         let outlierDetectionConfig: OutlierDetectionLoadBalancingConfig | undefined;
@@ -346,8 +347,9 @@ export class XdsClusterResolver implements LoadBalancer {
       }
       entry.localityPriorities = newLocalityPriorities;
       entry.priorityNames = newPriorityNames;
+      fullPriorityList.push(...newPriorityNames);
     }
-    const childConfig: PriorityLoadBalancingConfig = new PriorityLoadBalancingConfig(priorityChildren, newPriorityNames);
+    const childConfig: PriorityLoadBalancingConfig = new PriorityLoadBalancingConfig(priorityChildren, fullPriorityList);
     trace('Child update addresses: ' + addressList.map(address => '(' + subchannelAddressToString(address) + ' path=' + address.localityPath + ')'));
     trace('Child update priority config: ' + JSON.stringify(childConfig.toJsonObject(), undefined, 2));
     this.childBalancer.updateAddressList(
@@ -363,6 +365,7 @@ export class XdsClusterResolver implements LoadBalancer {
       return;
     }
     trace('Received update with config ' + JSON.stringify(lbConfig, undefined, 2));
+    this.latestConfig = lbConfig;
     this.latestAttributes = attributes;
     this.xdsClient = attributes.xdsClient as XdsClient;
     if (this.discoveryMechanismList.length === 0) {
@@ -465,4 +468,8 @@ export class XdsClusterResolverChildPolicyHandler extends ChildLoadBalancerHandl
     }
     return false;
   }
+}
+
+export function setup() {
+  registerLoadBalancerType(TYPE_NAME, XdsClusterResolver, XdsClusterResolverLoadBalancingConfig);
 }

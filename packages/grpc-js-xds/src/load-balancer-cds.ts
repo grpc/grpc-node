@@ -28,6 +28,7 @@ import LoadBalancingConfig = experimental.LoadBalancingConfig;
 import OutlierDetectionLoadBalancingConfig = experimental.OutlierDetectionLoadBalancingConfig;
 import SuccessRateEjectionConfig = experimental.SuccessRateEjectionConfig;
 import FailurePercentageEjectionConfig = experimental.FailurePercentageEjectionConfig;
+import QueuePicker = experimental.QueuePicker;
 import { Watcher } from './xds-stream-state/xds-stream-state';
 import { OutlierDetection__Output } from './generated/envoy/config/cluster/v3/OutlierDetection';
 import { Duration__Output } from './generated/google/protobuf/Duration';
@@ -172,7 +173,7 @@ function generateDiscoveryMechanismForCluster(config: Cluster__Output): Discover
   }
 }
 
-const RECURSION_DEPTH_LIMIT = 16;
+const RECURSION_DEPTH_LIMIT = 15;
 
 /**
  * Prerequisite: isClusterTreeFullyUpdated(tree, root)
@@ -182,20 +183,25 @@ const RECURSION_DEPTH_LIMIT = 16;
 function getDiscoveryMechanismList(tree: ClusterTree, root: string): DiscoveryMechanism[] {
   const visited = new Set<string>();
   function getDiscoveryMechanismListHelper(node: string, depth: number): DiscoveryMechanism[] {
-    if (visited.has(node) || depth > RECURSION_DEPTH_LIMIT) {
+    if (depth > RECURSION_DEPTH_LIMIT) {
+      throw new Error('aggregate cluster graph exceeds max depth');
+    }
+    if (visited.has(node)) {
       return [];
     }
     visited.add(node);
-    if (tree[root].children.length > 0) {
+    if (tree[node].children.length > 0) {
+      trace('Visit ' + node + ' children: [' + tree[node].children + ']');
       // Aggregate cluster
       const result = [];
-      for (const child of tree[root].children) {
+      for (const child of tree[node].children) {
         result.push(...getDiscoveryMechanismListHelper(child, depth + 1));
       }
       return result;
     } else {
+      trace('Visit leaf ' + node);
       // individual cluster
-      const config = tree[root].latestUpdate!;
+      const config = tree[node].latestUpdate!;
       return [generateDiscoveryMechanismForCluster(config)];
     }
   }
@@ -228,17 +234,25 @@ export class CdsLoadBalancer implements LoadBalancer {
       onValidUpdate: (update) => {
         this.clusterTree[cluster].latestUpdate = update;
         if (update.cluster_discovery_type === 'cluster_type') {
-          const children = decodeSingleResource(CLUSTER_CONFIG_TYPE_URL, update.cluster_type!.typed_config!.value).clusters
+          const children = decodeSingleResource(CLUSTER_CONFIG_TYPE_URL, update.cluster_type!.typed_config!.value).clusters;
+          trace('Received update for aggregate cluster ' + cluster + ' with children [' + children + ']');
           this.clusterTree[cluster].children = children;
           children.forEach(child => this.addCluster(child));
         }
         if (isClusterTreeFullyUpdated(this.clusterTree, this.latestConfig!.getCluster())) {
+          let discoveryMechanismList: DiscoveryMechanism[];
+          try {
+            discoveryMechanismList = getDiscoveryMechanismList(this.clusterTree, this.latestConfig!.getCluster());
+          } catch (e) {
+            this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: e.message, metadata: new Metadata()}));
+            return;
+          }
           const clusterResolverConfig = new XdsClusterResolverLoadBalancingConfig(
-            getDiscoveryMechanismList(this.clusterTree, this.latestConfig!.getCluster()),
+            discoveryMechanismList,
             [],
             []
           );
-          trace('Child update EDS config: ' + JSON.stringify(clusterResolverConfig));
+          trace('Child update config: ' + JSON.stringify(clusterResolverConfig));
           this.updatedChild = true;
           this.childBalancer.updateAddressList(
             [],
@@ -305,11 +319,15 @@ export class CdsLoadBalancer implements LoadBalancer {
     /* If the cluster is changing, disable the old watcher before adding the new
      * one */
     if (
-      this.latestConfig?.getCluster() !== lbConfig.getCluster()
+      this.latestConfig && this.latestConfig.getCluster() !== lbConfig.getCluster()
     ) {
-      trace('Removing old cluster watchers rooted at ' + this.latestConfig!.getCluster());
+      trace('Removing old cluster watchers rooted at ' + this.latestConfig.getCluster());
       this.clearClusterTree();
       this.updatedChild = false;
+    }
+
+    if (!this.latestConfig) {
+      this.channelControlHelper.updateState(connectivityState.CONNECTING, new QueuePicker(this));
     }
 
     this.latestConfig = lbConfig;

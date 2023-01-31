@@ -17,7 +17,8 @@
 
 import * as resolver_xds from './resolver-xds';
 import * as load_balancer_cds from './load-balancer-cds';
-import * as load_balancer_eds from './load-balancer-eds';
+import * as xds_cluster_resolver from './xds-cluster-resolver';
+import * as xds_cluster_impl from './xds-cluster-impl';
 import * as load_balancer_lrs from './load-balancer-lrs';
 import * as load_balancer_priority from './load-balancer-priority';
 import * as load_balancer_weighted_target from './load-balancer-weighted-target';
@@ -32,7 +33,8 @@ import * as csds from './csds';
 export function register() {
   resolver_xds.setup();
   load_balancer_cds.setup();
-  load_balancer_eds.setup();
+  xds_cluster_resolver.setup();
+  xds_cluster_impl.setup();
   load_balancer_lrs.setup();
   load_balancer_priority.setup();
   load_balancer_weighted_target.setup();

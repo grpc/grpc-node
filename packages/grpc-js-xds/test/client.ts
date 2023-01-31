@@ -15,7 +15,7 @@
  *
  */
 
-import { credentials, loadPackageDefinition } from "@grpc/grpc-js";
+import { credentials, loadPackageDefinition, ServiceError } from "@grpc/grpc-js";
 import { loadSync } from "@grpc/proto-loader";
 import { ProtoGrpcType } from "./generated/echo";
 import { EchoTestServiceClient } from "./generated/grpc/testing/EchoTestService";
@@ -68,5 +68,30 @@ export class XdsTestClient {
   close() {
     this.stopCalls();
     this.client.close();
+  }
+
+  sendOneCall(callback: (error: ServiceError | null) => void) {
+    const deadline = new Date();
+    deadline.setMilliseconds(deadline.getMilliseconds() + 500);
+    this.client.echo({message: 'test'}, {deadline}, (error, value) => {
+      callback(error);
+    });
+  }
+
+  sendNCalls(count: number, callback: (error: ServiceError| null) => void) {
+    const sendInner = (count: number, callback: (error: ServiceError| null) => void) => {
+      if (count === 0) {
+        callback(null);
+        return;
+      }
+      this.sendOneCall(error => {
+        if (error) {
+          callback(error);
+          return;
+        }
+        sendInner(count-1, callback);
+      });
+    }
+    sendInner(count, callback);
   }
 }

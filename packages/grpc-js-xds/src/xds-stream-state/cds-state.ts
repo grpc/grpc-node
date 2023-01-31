@@ -19,6 +19,7 @@ import { EXPERIMENTAL_OUTLIER_DETECTION } from "../environment";
 import { Cluster__Output } from "../generated/envoy/config/cluster/v3/Cluster";
 import { Duration__Output } from "../generated/google/protobuf/Duration";
 import { UInt32Value__Output } from "../generated/google/protobuf/UInt32Value";
+import { CLUSTER_CONFIG_TYPE_URL, decodeSingleResource } from "../resources";
 import { BaseXdsStreamState, XdsStreamState } from "./xds-stream-state";
 
 export class CdsState extends BaseXdsStreamState<Cluster__Output> implements XdsStreamState<Cluster__Output> {
@@ -53,11 +54,37 @@ export class CdsState extends BaseXdsStreamState<Cluster__Output> implements Xds
   }
 
   public validateResponse(message: Cluster__Output): boolean {
-    if (message.type !== 'EDS') {
-      return false;
-    }
-    if (!message.eds_cluster_config?.eds_config?.ads) {
-      return false;
+    if (message.cluster_discovery_type === 'cluster_type') {
+      if (!(message.cluster_type?.typed_config && message.cluster_type.typed_config.type_url === CLUSTER_CONFIG_TYPE_URL)) {
+        return false;
+      }
+      const clusterConfig = decodeSingleResource(CLUSTER_CONFIG_TYPE_URL, message.cluster_type.typed_config.value);
+      if (clusterConfig.clusters.length === 0) {
+        return false;
+      }
+    } else {
+      if (message.type === 'EDS') {
+        if (!message.eds_cluster_config?.eds_config?.ads) {
+          return false;
+        }
+      } else if (message.type === 'LOGICAL_DNS') {
+        if (!message.load_assignment) {
+          return false;
+        }
+        if (message.load_assignment.endpoints.length !== 1) {
+          return false;
+        }
+        if (message.load_assignment.endpoints[0].lb_endpoints.length !== 1) {
+          return false;
+        }
+        const socketAddress = message.load_assignment.endpoints[0].lb_endpoints[0].endpoint?.address?.socket_address;
+        if (!socketAddress) {
+          return false;
+        }
+        if (socketAddress.port_specifier !== 'port_value') {
+          return false;
+        }
+      }
     }
     if (message.lb_policy !== 'ROUND_ROBIN') {
       return false;
