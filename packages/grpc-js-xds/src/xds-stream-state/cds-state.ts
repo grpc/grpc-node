@@ -81,6 +81,9 @@ export class CdsState extends BaseXdsStreamState<Cluster__Output> implements Xds
         if (!socketAddress) {
           return false;
         }
+        if (socketAddress.address === '') {
+          return false;
+        }
         if (socketAddress.port_specifier !== 'port_value') {
           return false;
         }
