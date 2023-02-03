@@ -127,6 +127,7 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
         childToUpdate = this.pendingChild;
       }
     }
+    this.latestConfig = lbConfig;
     childToUpdate.updateAddressList(addressList, lbConfig, attributes);
   }
   exitIdle(): void {
