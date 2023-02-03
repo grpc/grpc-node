@@ -24,7 +24,7 @@ import { LrsLoadBalancingConfig } from "./load-balancer-lrs";
 import { LocalitySubchannelAddress, PriorityChild, PriorityLoadBalancingConfig } from "./load-balancer-priority";
 import { WeightedTarget, WeightedTargetLoadBalancingConfig } from "./load-balancer-weighted-target";
 import { getSingletonXdsClient, XdsClient } from "./xds-client";
-import { DropCategory, XdsClusterImplLoadBalancingConfig } from "./xds-cluster-impl";
+import { DropCategory, XdsClusterImplLoadBalancingConfig } from "./load-balancer-xds-cluster-impl";
 import { Watcher } from "./xds-stream-state/xds-stream-state";
 
 import LoadBalancingConfig = experimental.LoadBalancingConfig;

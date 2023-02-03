@@ -33,7 +33,7 @@ import { Watcher } from './xds-stream-state/xds-stream-state';
 import { OutlierDetection__Output } from './generated/envoy/config/cluster/v3/OutlierDetection';
 import { Duration__Output } from './generated/google/protobuf/Duration';
 import { EXPERIMENTAL_OUTLIER_DETECTION } from './environment';
-import { DiscoveryMechanism, XdsClusterResolverChildPolicyHandler, XdsClusterResolverLoadBalancingConfig } from './xds-cluster-resolver';
+import { DiscoveryMechanism, XdsClusterResolverChildPolicyHandler, XdsClusterResolverLoadBalancingConfig } from './load-balancer-xds-cluster-resolver';
 import { CLUSTER_CONFIG_TYPE_URL, decodeSingleResource } from './resources';
 
 const TRACER_NAME = 'cds_balancer';
