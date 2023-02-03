@@ -236,7 +236,7 @@ function getFieldTypePermissive(field: Protobuf.FieldBase, options: GeneratorOpt
   const valueType = getTypeNamePermissive(field.type, field.resolvedType, field.repeated, field.map, options);
   if (field instanceof Protobuf.MapField) {
     const keyType = field.keyType === 'string' ? 'string' : 'number';
-    return `{[key: ${keyType}]: ${valueType}}`;
+    return `Record<${keyType}, ${valueType}>`;
   } else {
     return valueType;
   }
@@ -344,7 +344,7 @@ function getFieldTypeRestricted(field: Protobuf.FieldBase, options: GeneratorOpt
   const valueType = getTypeNameRestricted(field.type, field.resolvedType, field.repeated, field.map, options);
   if (field instanceof Protobuf.MapField) {
     const keyType = field.keyType === 'string' ? 'string' : 'number';
-    return `{[key: ${keyType}]: ${valueType}}`;
+    return `Record<${keyType}, ${valueType}>`;
   } else {
     return valueType;
   }
