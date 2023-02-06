@@ -1,6 +1,6 @@
 {
   "name": "@grpc/grpc-js",
-  "version": "1.8.7",
+  "version": "1.8.8",
   "description": "gRPC Library for Node - pure JS implementation",
   "homepage": "https://grpc.io/",
   "repository": "https://github.com/grpc/grpc-node/tree/master/packages/grpc-js",
@@ -48,7 +48,7 @@
     "compile": "tsc -p .",
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
     "lint": "npm run check",
-    "prepare": "npm run generate-types && npm run compile",
+    "prepare": "npm run clean && npm run generate-types && npm run compile",
     "test": "gulp test",
     "check": "gts check src/**/*.ts",
     "fix": "gts fix src/*.ts",
