@@ -17,7 +17,7 @@
 
 import { Backend } from "./backend";
 import { XdsTestClient } from "./client";
-import { FakeCluster, FakeRouteGroup } from "./framework";
+import { FakeEdsCluster, FakeRouteGroup } from "./framework";
 import { XdsServer } from "./xds-server";
 
 import { register } from "../src";
@@ -39,7 +39,7 @@ describe('core xDS functionality', () => {
     xdsServer?.shutdownServer();
   })
   it('should route requests to the single backend', done => {
-    const cluster = new FakeCluster('cluster1', [{backends: [new Backend()], locality:{region: 'region1'}}]);
+    const cluster = new FakeEdsCluster('cluster1', [{backends: [new Backend()], locality:{region: 'region1'}}]);
     const routeGroup = new FakeRouteGroup('route1', [{cluster: cluster}]);
     routeGroup.startAllBackends().then(() => {
       xdsServer.setEdsResource(cluster.getEndpointConfig());

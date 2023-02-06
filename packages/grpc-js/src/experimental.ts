@@ -4,6 +4,7 @@ export {
   ResolverListener,
   registerResolver,
   ConfigSelector,
+  createResolver
 } from './resolver';
 export { GrpcUri, uriToString } from './uri-parser';
 export { Duration, durationToMs } from './duration';

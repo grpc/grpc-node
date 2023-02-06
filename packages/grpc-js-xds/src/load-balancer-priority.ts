@@ -52,6 +52,7 @@ export function isLocalitySubchannelAddress(
 
 export interface PriorityChild {
   config: LoadBalancingConfig[];
+  ignore_reresolution_requests: boolean;
 }
 
 export class PriorityLoadBalancingConfig implements LoadBalancingConfig {
@@ -97,8 +98,12 @@ export class PriorityLoadBalancingConfig implements LoadBalancingConfig {
       if (!('config' in childObj && Array.isArray(childObj.config))) {
         throw new Error(`Priority child ${childName} must have a config list`);
       }
+      if (!('ignore_reresolution_requests' in childObj && typeof childObj.ignore_reresolution_requests === 'boolean')) {
+        throw new Error(`Priority child ${childName} must have a boolean field ignore_reresolution_requests`);
+      }
       childrenMap.set(childName, {
-        config: childObj.config.map(validateLoadBalancingConfig)
+        config: childObj.config.map(validateLoadBalancingConfig),
+        ignore_reresolution_requests: childObj.ignore_reresolution_requests
       });
     }
     return new PriorityLoadBalancingConfig(childrenMap, obj.priorities);
@@ -125,6 +130,7 @@ interface PriorityChildBalancer {
 interface UpdateArgs {
   subchannelAddress: SubchannelAddress[];
   lbConfig: LoadBalancingConfig;
+  ignoreReresolutionRequests: boolean;
 }
 
 export class PriorityLoadBalancer implements LoadBalancer {
@@ -138,11 +144,16 @@ export class PriorityLoadBalancer implements LoadBalancer {
     private failoverTimer: NodeJS.Timer | null = null;
     private deactivationTimer: NodeJS.Timer | null = null;
     private seenReadyOrIdleSinceTransientFailure = false;
-    constructor(private parent: PriorityLoadBalancer, private name: string) {
+    constructor(private parent: PriorityLoadBalancer, private name: string, ignoreReresolutionRequests: boolean) {
       this.childBalancer = new ChildLoadBalancerHandler(experimental.createChildChannelControlHelper(this.parent.channelControlHelper, {
         updateState: (connectivityState: ConnectivityState, picker: Picker) => {
           this.updateState(connectivityState, picker);
         },
+        requestReresolution: () => {
+          if (!ignoreReresolutionRequests) {
+            this.parent.channelControlHelper.requestReresolution();
+          }
+        }
       }));
       this.picker = new QueuePicker(this.childBalancer);
       this.startFailoverTimer();
@@ -329,16 +340,17 @@ export class PriorityLoadBalancer implements LoadBalancer {
       let child = this.children.get(childName);
       /* If the child doesn't already exist, create it and update it.  */
       if (child === undefined) {
-        child = new this.PriorityChildImpl(this, childName);
-        this.children.set(childName, child);
         const childUpdate = this.latestUpdates.get(childName);
-        if (childUpdate !== undefined) {
-          child.updateAddressList(
-            childUpdate.subchannelAddress,
-            childUpdate.lbConfig,
-            this.latestAttributes
-          );
+        if (childUpdate === undefined) {
+          continue;
         }
+        child = new this.PriorityChildImpl(this, childName, childUpdate.ignoreReresolutionRequests);
+        this.children.set(childName, child);
+        child.updateAddressList(
+          childUpdate.subchannelAddress,
+          childUpdate.lbConfig,
+          this.latestAttributes
+        );
       } else {
         /* We're going to try to use this child, so reactivate it if it has been
          * deactivated */
@@ -426,6 +438,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
         this.latestUpdates.set(childName, {
           subchannelAddress: childAddresses,
           lbConfig: chosenChildConfig,
+          ignoreReresolutionRequests: childConfig.ignore_reresolution_requests
         });
         const existingChild = this.children.get(childName);
         if (existingChild !== undefined) {

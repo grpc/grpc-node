@@ -40,7 +40,8 @@ const loadedProtos = loadPackageDefinition(loadSync(
     'envoy/config/route/v3/route.proto',
     'envoy/config/cluster/v3/cluster.proto',
     'envoy/config/endpoint/v3/endpoint.proto',
-    'envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto'
+    'envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto',
+    'envoy/extensions/clusters/aggregate/v3/cluster.proto'
   ],
   {
     keepCase: true,
