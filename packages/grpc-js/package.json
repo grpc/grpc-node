@@ -45,10 +45,10 @@
   "scripts": {
     "build": "npm run compile",
     "clean": "rimraf ./build",
-    "compile": "tsc -p .",
+    "compile": "npm run clean; tsc -p .",
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
     "lint": "npm run check",
-    "prepare": "npm run clean; npm run generate-types && npm run compile",
+    "prepare": "npm run generate-types && npm run compile",
     "test": "gulp test",
     "check": "gts check src/**/*.ts",
     "fix": "gts fix src/*.ts",
