@@ -212,7 +212,12 @@ export class RetryingCall implements Call {
       }
     }
     process.nextTick(() => {
-      this.listener?.onReceiveStatus(statusObject);
+      // Explicitly construct status object to remove progress field
+      this.listener?.onReceiveStatus({
+        code: statusObject.code,
+        details: statusObject.details,
+        metadata: statusObject.metadata
+      });
     });
   }
 
