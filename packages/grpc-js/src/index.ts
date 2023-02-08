@@ -237,7 +237,7 @@ export const getClientChannel = (client: Client) => {
 
 export { StatusBuilder };
 
-export { Listener } from './call-interface';
+export { Listener, InterceptingListener } from './call-interface';
 
 export {
   Requester,
@@ -248,6 +248,7 @@ export {
   InterceptorProvider,
   InterceptingCall,
   InterceptorConfigurationError,
+  NextCall
 } from './client-interceptors';
 
 export {
