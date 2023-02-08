@@ -278,15 +278,24 @@ export class RetryingCall implements Call {
   }
 
   private commitCallWithMostMessages() {
+    if (this.state === 'COMMITTED') {
+      return;
+    }
     let mostMessages = -1;
     let callWithMostMessages = -1;
     for (const [index, childCall] of this.underlyingCalls.entries()) {
-      if (childCall.nextMessageToSend > mostMessages) {
+      if (childCall.state === 'ACTIVE' && childCall.nextMessageToSend > mostMessages) {
         mostMessages = childCall.nextMessageToSend;
         callWithMostMessages = index;
       }
     }
-    this.commitCall(callWithMostMessages);
+    if (callWithMostMessages === -1) {
+      /* There are no active calls, disable retries to force the next call that
+       * is started to be committed. */
+      this.state = 'TRANSPARENT_ONLY';
+    } else {
+      this.commitCall(callWithMostMessages);
+    }
   }
 
   private isStatusCodeInList(list: (Status | string)[], code: Status) {
@@ -606,7 +615,11 @@ export class RetryingCall implements Call {
       }
     } else {
       this.commitCallWithMostMessages();
-      const call = this.underlyingCalls[this.committedCallIndex!];
+      // commitCallWithMostMessages can fail if we are between ping attempts
+      if (this.committedCallIndex === null) {
+        return;
+      }
+      const call = this.underlyingCalls[this.committedCallIndex];
       bufferEntry.callback = context.callback; 
       if (call.state === 'ACTIVE' && call.nextMessageToSend === messageIndex) {
         call.call.sendMessageWithContext({
