@@ -22,6 +22,7 @@ import { Metadata } from './metadata';
 import { Status } from './constants';
 import { splitHostPort } from './uri-parser';
 import { ServiceError } from './call';
+import { getErrorMessage } from './error';
 
 export class CallCredentialsFilter extends BaseFilter implements Filter {
   private serviceUrl: string;
@@ -57,7 +58,7 @@ export class CallCredentialsFilter extends BaseFilter implements Filter {
     } catch (error) {
       this.stream.cancelWithStatus(
         Status.UNAUTHENTICATED,
-        `Failed to retrieve auth metadata with error: ${error.message}`
+        `Failed to retrieve auth metadata with error: ${getErrorMessage(error)}`
       );
       return Promise.reject<Metadata>('Failed to retrieve auth metadata');
     }
