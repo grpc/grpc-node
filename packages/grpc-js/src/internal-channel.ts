@@ -46,7 +46,7 @@ import { LoadBalancingCall } from './load-balancing-call';
 import { CallCredentials } from './call-credentials';
 import { Call, CallStreamOptions, InterceptingListener, MessageContext, StatusObject } from './call-interface';
 import { SubchannelCall } from './subchannel-call';
-import { Deadline, getDeadlineTimeoutString } from './deadline';
+import { Deadline, deadlineToString, getDeadlineTimeoutString } from './deadline';
 import { ResolvingCall } from './resolving-call';
 import { getNextCallNumber } from './call-number';
 import { restrictControlPlaneStatusCode } from './control-plane-status';
@@ -469,7 +469,7 @@ export class InternalChannel {
         '] method="' +
         method +
         '", deadline=' +
-        deadline
+        deadlineToString(deadline)
     );
     const finalOptions: CallStreamOptions = {
       deadline: deadline,
