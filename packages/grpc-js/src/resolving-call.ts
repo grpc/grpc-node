@@ -18,7 +18,7 @@
 import { CallCredentials } from "./call-credentials";
 import { Call, CallStreamOptions, InterceptingListener, MessageContext, StatusObject } from "./call-interface";
 import { LogVerbosity, Propagate, Status } from "./constants";
-import { Deadline, getDeadlineTimeoutString, getRelativeTimeout, minDeadline } from "./deadline";
+import { Deadline, deadlineToString, getDeadlineTimeoutString, getRelativeTimeout, minDeadline } from "./deadline";
 import { FilterStack, FilterStackFactory } from "./filter-stack";
 import { InternalChannel } from "./internal-channel";
 import { Metadata } from "./metadata";
@@ -79,9 +79,9 @@ export class ResolvingCall implements Call {
 
   private runDeadlineTimer() {
     clearTimeout(this.deadlineTimer);
-    this.trace('Deadline: ' + this.deadline);
-    if (this.deadline !== Infinity) {
-      const timeout = getRelativeTimeout(this.deadline);
+    this.trace('Deadline: ' + deadlineToString(this.deadline));
+    const timeout = getRelativeTimeout(this.deadline);
+    if (timeout !== Infinity) {
       this.trace('Deadline will be reached in ' + timeout + 'ms');
       const handleDeadline = () => {
         this.cancelWithStatus(
