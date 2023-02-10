@@ -61,6 +61,7 @@ import {
 import { parseUri } from './uri-parser';
 import { ChannelzCallTracker, ChannelzChildrenTracker, ChannelzTrace, registerChannelzServer, registerChannelzSocket, ServerInfo, ServerRef, SocketInfo, SocketRef, TlsInfo, unregisterChannelzRef } from './channelz';
 import { CipherNameAndProtocol, TLSSocket } from 'tls';
+import { getErrorCode, getErrorMessage } from './error';
 
 const TRACER_NAME = 'server';
 
@@ -877,11 +878,10 @@ export class Server {
             }
           }
 
-          if (err.code === undefined) {
-            err.code = Status.INTERNAL;
-          }
-
-          call.sendError(err);
+          call.sendError({
+            code: getErrorCode(err) ?? Status.INTERNAL,
+            details: getErrorMessage(err)
+          });
         }
       }
     );

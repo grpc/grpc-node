@@ -29,6 +29,7 @@ import { SubchannelCallStatsTracker, Subchannel } from './subchannel';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { ServerSurfaceCall } from './server-call';
+import { getErrorMessage } from './error';
 
 const TRACER_NAME = 'call_stream';
 
@@ -556,7 +557,7 @@ export class Http2CallStream implements Call {
           } catch (error) {
             this.endCall({
               code: Status.UNKNOWN,
-              details: error.message,
+              details: getErrorMessage(error),
               metadata: new Metadata(),
             });
             return;
@@ -567,7 +568,7 @@ export class Http2CallStream implements Call {
           } catch (error) {
             this.endCall({
               code: Status.UNKNOWN,
-              details: error.message,
+              details: getErrorMessage(error),
               metadata: new Metadata(),
             });
           }
@@ -703,7 +704,7 @@ export class Http2CallStream implements Call {
         } catch (error) {
           this.endCall({
             code: Status.UNAVAILABLE,
-            details: `Write failed with error ${error.message}`,
+            details: `Write failed with error ${getErrorMessage(error)}`,
             metadata: new Metadata()
           });
         }
@@ -856,7 +857,7 @@ export class Http2CallStream implements Call {
         }  catch (error) {
           this.endCall({
             code: Status.UNAVAILABLE,
-            details: `Write failed with error ${error.message}`,
+            details: `Write failed with error ${getErrorMessage(error)}`,
             metadata: new Metadata()
           });
         }
