@@ -158,7 +158,8 @@ function generateDiscoveryMechanismForCluster(config: Cluster__Output): Discover
       lrs_load_reporting_server_name: config.lrs_server?.self ? '' : undefined,
       max_concurrent_requests: maxConcurrentRequests,
       type: 'EDS',
-      eds_service_name: config.eds_cluster_config!.service_name === '' ? undefined : config.eds_cluster_config!.service_name
+      eds_service_name: config.eds_cluster_config!.service_name === '' ? undefined : config.eds_cluster_config!.service_name,
+      outlier_detection: translateOutlierDetectionConfig(config.outlier_detection)
     };
   } else {
     // Logical DNS cluster
