@@ -331,6 +331,7 @@ export class XdsClusterResolver implements LoadBalancer {
               ...address,
             });
           }
+          newLocalityPriorities.set(localityToName(localityObj.locality), priority);
         }
         const weightedTargetConfig = new WeightedTargetLoadBalancingConfig(childTargets);
         const xdsClusterImplConfig = new XdsClusterImplLoadBalancingConfig(entry.discoveryMechanism.cluster, priorityEntry.dropCategories, [weightedTargetConfig], entry.discoveryMechanism.eds_service_name, entry.discoveryMechanism.lrs_load_reporting_server_name, entry.discoveryMechanism.max_concurrent_requests);
