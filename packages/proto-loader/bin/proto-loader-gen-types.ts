@@ -189,7 +189,7 @@ const typeBrandHint = `This field is a type brand and is not populated at runtim
 https://github.com/grpc/grpc-node/pull/2281`;
 
 function formatTypeBrand(formatter: TextFormatter, messageType: Protobuf.Type) {
-  formatComment(formatter, typeBrandHint, messageType.options);
+  formatComment(formatter, typeBrandHint);
   formatter.writeLine(`__type: '${messageType.fullName}'`);
 }
 
