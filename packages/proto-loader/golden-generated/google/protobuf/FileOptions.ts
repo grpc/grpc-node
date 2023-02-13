@@ -29,6 +29,9 @@ export interface IFileOptions {
   'ccGenericServices'?: (boolean);
   'javaGenericServices'?: (boolean);
   'pyGenericServices'?: (boolean);
+  /**
+   * @deprecated
+   */
   'javaGenerateEqualsAndHash'?: (boolean);
   'deprecated'?: (boolean);
   'javaStringCheckUtf8'?: (boolean);
@@ -47,6 +50,9 @@ export interface OFileOptions {
   'ccGenericServices': (boolean);
   'javaGenericServices': (boolean);
   'pyGenericServices': (boolean);
+  /**
+   * @deprecated
+   */
   'javaGenerateEqualsAndHash': (boolean);
   'deprecated': (boolean);
   'javaStringCheckUtf8': (boolean);

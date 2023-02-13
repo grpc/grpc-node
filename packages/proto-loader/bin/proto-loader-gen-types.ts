@@ -169,13 +169,18 @@ function getChildMessagesAndEnums(namespace: Protobuf.NamespaceBase): (Protobuf.
   return messageList;
 }
 
-function formatComment(formatter: TextFormatter, comment?: string | null) {
-  if (!comment) {
+function formatComment(formatter: TextFormatter, comment?: string | null, options?: Protobuf.ReflectionObject['options']) {
+  if (!comment && !options?.deprecated) {
     return;
   }
   formatter.writeLine('/**');
-  for(const line of comment.split('\n')) {
-    formatter.writeLine(` * ${line.replace(/\*\//g, '* /')}`);
+  if (comment) {
+    for(const line of comment.split('\n')) {
+      formatter.writeLine(` * ${line.replace(/\*\//g, '* /')}`);
+    }
+  }
+  if (options?.deprecated) {
+    formatter.writeLine(' * @deprecated');
   }
   formatter.writeLine(' */');
 }
@@ -245,7 +250,7 @@ function getFieldTypePermissive(field: Protobuf.FieldBase, options: GeneratorOpt
 function generatePermissiveMessageInterface(formatter: TextFormatter, messageType: Protobuf.Type, options: GeneratorOptions, nameOverride?: string) {
   const {inputName} = useNameFmter(options);
   if (options.includeComments) {
-    formatComment(formatter, messageType.comment);
+    formatComment(formatter, messageType.comment, messageType.options);
   }
   if (messageType.fullName === '.google.protobuf.Any') {
     /* This describes the behavior of the Protobuf.js Any wrapper fromObject
@@ -262,14 +267,14 @@ function generatePermissiveMessageInterface(formatter: TextFormatter, messageTyp
     const repeatedString = field.repeated ? '[]' : '';
     const type: string = getFieldTypePermissive(field, options);
     if (options.includeComments) {
-      formatComment(formatter, field.comment);
+      formatComment(formatter, field.comment, field.options);
     }
     formatter.writeLine(`'${field.name}'?: (${type})${repeatedString};`);
   }
   for (const oneof of messageType.oneofsArray) {
     const typeString = oneof.fieldsArray.map(field => `"${field.name}"`).join('|');
     if (options.includeComments) {
-      formatComment(formatter, oneof.comment);
+      formatComment(formatter, oneof.comment, oneof.options);
     }
     formatter.writeLine(`'${oneof.name}'?: ${typeString};`);
   }
@@ -353,7 +358,7 @@ function getFieldTypeRestricted(field: Protobuf.FieldBase, options: GeneratorOpt
 function generateRestrictedMessageInterface(formatter: TextFormatter, messageType: Protobuf.Type, options: GeneratorOptions, nameOverride?: string) {
   const {outputName} = useNameFmter(options);
   if (options.includeComments) {
-    formatComment(formatter, messageType.comment);
+    formatComment(formatter, messageType.comment, messageType.options);
   }
   if (messageType.fullName === '.google.protobuf.Any' && options.json) {
     /* This describes the behavior of the Protobuf.js Any wrapper toObject
@@ -383,7 +388,7 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
     const repeatedString = field.repeated ? '[]' : '';
     const type = getFieldTypeRestricted(field, options);
     if (options.includeComments) {
-      formatComment(formatter, field.comment);
+      formatComment(formatter, field.comment, field.options);
     }
     formatter.writeLine(`'${field.name}'${optionalString}: (${type})${repeatedString};`);
   }
@@ -391,7 +396,7 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
     for (const oneof of messageType.oneofsArray) {
       const typeString = oneof.fieldsArray.map(field => `"${field.name}"`).join('|');
       if (options.includeComments) {
-        formatComment(formatter, oneof.comment);
+        formatComment(formatter, oneof.comment, oneof.options);
       }
       formatter.writeLine(`'${oneof.name}': ${typeString};`);
     }
@@ -470,13 +475,13 @@ function generateEnumInterface(formatter: TextFormatter, enumType: Protobuf.Enum
   formatter.writeLine(`// Original file: ${(enumType.filename ?? 'null')?.replace(/\\/g, '/')}`);
   formatter.writeLine('');
   if (options.includeComments) {
-    formatComment(formatter, enumType.comment);
+    formatComment(formatter, enumType.comment, enumType.options);
   }
   formatter.writeLine(`export const ${name} = {`);
   formatter.indent();
   for (const key of Object.keys(enumType.values)) {
     if (options.includeComments) {
-      formatComment(formatter, enumType.comments[key]);
+      formatComment(formatter, enumType.comments[key], (enumType.valuesOptions ?? {})[key]);
     }
     formatter.writeLine(`${key}: ${options.enums == String ? `'${key}'` : enumType.values[key]},`);
   }
@@ -486,7 +491,7 @@ function generateEnumInterface(formatter: TextFormatter, enumType: Protobuf.Enum
   // Permissive Type
   formatter.writeLine('');
   if (options.includeComments) {
-    formatComment(formatter, enumType.comment);
+    formatComment(formatter, enumType.comment, enumType.options);
   }
   formatter.writeLine(`export type ${inputName(name)} =`)
   formatter.indent();
@@ -502,7 +507,7 @@ function generateEnumInterface(formatter: TextFormatter, enumType: Protobuf.Enum
   // Restrictive Type
   formatter.writeLine('');
   if (options.includeComments) {
-    formatComment(formatter, enumType.comment);
+    formatComment(formatter, enumType.comment, enumType.options);
   }
   formatter.writeLine(`export type ${outputName(name)} = typeof ${name}[keyof typeof ${name}]`)
 }
@@ -542,7 +547,7 @@ const CLIENT_RESERVED_METHOD_NAMES = new Set([
 function generateServiceClientInterface(formatter: TextFormatter, serviceType: Protobuf.Service, options: GeneratorOptions) {
   const {outputName, inputName} = useNameFmter(options);
   if (options.includeComments) {
-    formatComment(formatter, serviceType.comment);
+    formatComment(formatter, serviceType.comment, serviceType.options);
   }
   formatter.writeLine(`export interface ${serviceType.name}Client extends grpc.Client {`);
   formatter.indent();
@@ -553,7 +558,7 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
         continue;
       }
       if (options.includeComments) {
-        formatComment(formatter, method.comment);
+        formatComment(formatter, method.comment, method.options);
       }
       const requestType = inputName(getTypeInterfaceName(method.resolvedRequestType!));
       const responseType = outputName(getTypeInterfaceName(method.resolvedResponseType!));
@@ -597,14 +602,14 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
 function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: Protobuf.Service, options: GeneratorOptions) {
   const {inputName, outputName} = useNameFmter(options);
   if (options.includeComments) {
-    formatComment(formatter, serviceType.comment);
+    formatComment(formatter, serviceType.comment, serviceType.options);
   }
   formatter.writeLine(`export interface ${serviceType.name}Handlers extends grpc.UntypedServiceImplementation {`);
   formatter.indent();
   for (const methodName of Object.keys(serviceType.methods).sort()) {
     const method = serviceType.methods[methodName];
     if (options.includeComments) {
-      formatComment(formatter, method.comment);
+      formatComment(formatter, method.comment, serviceType.options);
     }
     const requestType = outputName(getTypeInterfaceName(method.resolvedRequestType!));
     const responseType = inputName(getTypeInterfaceName(method.resolvedResponseType!));
@@ -711,7 +716,7 @@ function generateServiceImports(formatter: TextFormatter, namespace: Protobuf.Na
 function generateSingleLoadedDefinitionType(formatter: TextFormatter, nested: Protobuf.ReflectionObject, options: GeneratorOptions) {
   if (nested instanceof Protobuf.Service) {
     if (options.includeComments) {
-      formatComment(formatter, nested.comment);
+      formatComment(formatter, nested.comment, nested.options);
     }
     const typeInterfaceName = getTypeInterfaceName(nested);
     formatter.writeLine(`${nested.name}: SubtypeConstructor<typeof grpc.Client, ${typeInterfaceName}Client> & { service: ${typeInterfaceName}Definition }`);
