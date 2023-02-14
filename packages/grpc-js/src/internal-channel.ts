@@ -51,6 +51,7 @@ import { ResolvingCall } from './resolving-call';
 import { getNextCallNumber } from './call-number';
 import { restrictControlPlaneStatusCode } from './control-plane-status';
 import { MessageBufferTracker, RetryingCall, RetryThrottler } from './retrying-call';
+import { BaseSubchannelWrapper, ConnectivityStateListener, SubchannelInterface } from './subchannel-interface';
 
 /**
  * See https://nodejs.org/api/timers.html#timers_setinterval_callback_delay_args
@@ -84,6 +85,33 @@ const RETRY_THROTTLER_MAP: Map<string, RetryThrottler> = new Map();
 const DEFAULT_RETRY_BUFFER_SIZE_BYTES = 1<<24; // 16 MB
 const DEFAULT_PER_RPC_RETRY_BUFFER_SIZE_BYTES = 1<<20; // 1 MB
 
+class ChannelSubchannelWrapper extends BaseSubchannelWrapper implements SubchannelInterface {
+  private stateListeners: ConnectivityStateListener[] = [];
+  private refCount = 0;
+  constructor(childSubchannel: SubchannelInterface, private channel: InternalChannel) {
+    super(childSubchannel);
+    childSubchannel.addConnectivityStateListener((subchannel, previousState, newState, keepaliveTime) => {
+      channel.throttleKeepalive(keepaliveTime);
+      for (const listener of this.stateListeners) {
+        listener(this, previousState, newState, keepaliveTime);
+      }
+    });
+  }
+
+  ref(): void {
+    this.child.ref();
+    this.refCount += 1;
+  }
+
+  unref(): void {
+    this.child.unref();
+    this.refCount -= 1;
+    if (this.refCount <= 0) {
+      this.channel.removeWrappedSubchannel(this);
+    }
+  }
+}
+
 export class InternalChannel {
   
   private resolvingLoadBalancer: ResolvingLoadBalancer;
@@ -116,8 +144,10 @@ export class InternalChannel {
    * configSelector becomes set or the channel state becomes anything other
    * than TRANSIENT_FAILURE.
    */
-   private currentResolutionError: StatusObject | null = null;
-   private retryBufferTracker: MessageBufferTracker;
+  private currentResolutionError: StatusObject | null = null;
+  private retryBufferTracker: MessageBufferTracker;
+  private keepaliveTime: number;
+  private wrappedSubchannels: Set<ChannelSubchannelWrapper> = new Set();
 
   // Channelz info
   private readonly channelzEnabled: boolean = true;
@@ -190,6 +220,7 @@ export class InternalChannel {
       options['grpc.retry_buffer_size'] ?? DEFAULT_RETRY_BUFFER_SIZE_BYTES,
       options['grpc.per_rpc_retry_buffer_size'] ?? DEFAULT_PER_RPC_RETRY_BUFFER_SIZE_BYTES
     );
+    this.keepaliveTime = options['grpc.keepalive_time_ms'] ?? -1;
     const channelControlHelper: ChannelControlHelper = {
       createSubchannel: (
         subchannelAddress: SubchannelAddress,
@@ -201,10 +232,13 @@ export class InternalChannel {
           Object.assign({}, this.options, subchannelArgs),
           this.credentials
         );
+        subchannel.throttleKeepalive(this.keepaliveTime);
         if (this.channelzEnabled) {
           this.channelzTrace.addTrace('CT_INFO', 'Created subchannel or used existing subchannel', subchannel.getChannelzRef());
         }
-        return subchannel;
+        const wrappedSubchannel = new ChannelSubchannelWrapper(subchannel, this);
+        this.wrappedSubchannels.add(wrappedSubchannel);
+        return wrappedSubchannel;
       },
       updateState: (connectivityState: ConnectivityState, picker: Picker) => {
         this.currentPicker = picker;
@@ -367,6 +401,19 @@ export class InternalChannel {
     if (newState !== ConnectivityState.TRANSIENT_FAILURE) {
       this.currentResolutionError = null;
     }
+  }
+
+  throttleKeepalive(newKeepaliveTime: number) {
+    if (newKeepaliveTime > this.keepaliveTime) {
+      this.keepaliveTime = newKeepaliveTime;
+      for (const wrappedSubchannel of this.wrappedSubchannels) {
+        wrappedSubchannel.throttleKeepalive(newKeepaliveTime);
+      }
+    }
+  }
+
+  removeWrappedSubchannel(wrappedSubchannel: ChannelSubchannelWrapper) {
+    this.wrappedSubchannels.delete(wrappedSubchannel);
   }
 
   doPick(metadata: Metadata, extraPickInfo: {[key: string]: string}) {

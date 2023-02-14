@@ -64,7 +64,7 @@ export class Subchannel {
 
   private backoffTimeout: BackoffTimeout;
 
-  private keepaliveTimeMultiplier = 1;
+  private keepaliveTime: number;
   /**
    * Tracks channels and subchannel pools with references to this subchannel
    */
@@ -110,6 +110,8 @@ export class Subchannel {
       this.handleBackoffTimer();
     }, backoffOptions);
     this.subchannelAddressString = subchannelAddressToString(subchannelAddress);
+
+    this.keepaliveTime = options['grpc.keepalive_time_ms'] ?? -1;
 
     if (options['grpc.enable_channelz'] === 0) {
       this.channelzEnabled = false;
@@ -169,7 +171,7 @@ export class Subchannel {
   private startConnectingInternal() {
     let options = this.options;
     if (options['grpc.keepalive_time_ms']) {
-      const adjustedKeepaliveTime = Math.min(options['grpc.keepalive_time_ms'] * this.keepaliveTimeMultiplier, KEEPALIVE_MAX_TIME_MS);
+      const adjustedKeepaliveTime = Math.min(this.keepaliveTime, KEEPALIVE_MAX_TIME_MS);
       options = {...options, 'grpc.keepalive_time_ms': adjustedKeepaliveTime};
     }
     this.connector.connect(this.subchannelAddress, this.credentials, options).then(
@@ -181,14 +183,14 @@ export class Subchannel {
           }
           transport.addDisconnectListener((tooManyPings) => {
             this.transitionToState([ConnectivityState.READY], ConnectivityState.IDLE);
-            if (tooManyPings) {
-              this.keepaliveTimeMultiplier *= 2;
+            if (tooManyPings && this.keepaliveTime > 0) {
+              this.keepaliveTime *= 2;
               logging.log(
                 LogVerbosity.ERROR,
                 `Connection to ${uriToString(this.channelTarget)} at ${
                   this.subchannelAddressString
-                } rejected by server because of excess pings. Increasing ping interval multiplier to ${
-                  this.keepaliveTimeMultiplier
+                } rejected by server because of excess pings. Increasing ping interval to ${
+                  this.keepaliveTime
                 } ms`
               );
             }
@@ -262,7 +264,7 @@ export class Subchannel {
     /* We use a shallow copy of the stateListeners array in case a listener
      * is removed during this iteration */
     for (const listener of [...this.stateListeners]) {
-      listener(this, previousState, newState);
+      listener(this, previousState, newState, this.keepaliveTime);
     }
     return true;
   }
@@ -402,5 +404,11 @@ export class Subchannel {
 
   getRealSubchannel(): this {
     return this;
+  }
+
+  throttleKeepalive(newKeepaliveTime: number) {
+    if (newKeepaliveTime > this.keepaliveTime) {
+      this.keepaliveTime = newKeepaliveTime;
+    }
   }
 }

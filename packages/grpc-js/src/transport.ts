@@ -77,7 +77,7 @@ class Http2Transport implements Transport {
   /**
    * The amount of time in between sending pings
    */
-  private keepaliveTimeMs: number = KEEPALIVE_MAX_TIME_MS;
+  private keepaliveTimeMs: number = -1;
   /**
    * The amount of time to wait for an acknowledgement after sending a ping
    */
@@ -133,7 +133,7 @@ class Http2Transport implements Transport {
     ]
       .filter((e) => e)
       .join(' '); // remove falsey values first
-
+    
     if ('grpc.keepalive_time_ms' in options) {
       this.keepaliveTimeMs = options['grpc.keepalive_time_ms']!;
     }
@@ -334,6 +334,9 @@ class Http2Transport implements Transport {
   }
 
   private startKeepalivePings() {
+    if (this.keepaliveTimeMs < 0) {
+      return;
+    }
     this.keepaliveIntervalId = setInterval(() => {
       this.sendPing();
     }, this.keepaliveTimeMs);
