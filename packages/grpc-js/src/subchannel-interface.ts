@@ -22,7 +22,8 @@ import { Subchannel } from "./subchannel";
 export type ConnectivityStateListener = (
   subchannel: SubchannelInterface,
   previousState: ConnectivityState,
-  newState: ConnectivityState
+  newState: ConnectivityState,
+  keepaliveTime: number
 ) => void;
 
 /**
@@ -40,6 +41,7 @@ export interface SubchannelInterface {
   removeConnectivityStateListener(listener: ConnectivityStateListener): void;
   startConnecting(): void;
   getAddress(): string;
+  throttleKeepalive(newKeepaliveTime: number): void;
   ref(): void;
   unref(): void;
   getChannelzRef(): SubchannelRef;
@@ -66,6 +68,9 @@ export abstract class BaseSubchannelWrapper implements SubchannelInterface {
   }
   getAddress(): string {
     return this.child.getAddress();
+  }
+  throttleKeepalive(newKeepaliveTime: number): void {
+    this.child.throttleKeepalive(newKeepaliveTime);
   }
   ref(): void {
     this.child.ref();
