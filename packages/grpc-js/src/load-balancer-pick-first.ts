@@ -33,6 +33,7 @@ import {
 } from './picker';
 import {
   SubchannelAddress,
+  subchannelAddressEqual,
   subchannelAddressToString,
 } from './subchannel-address';
 import * as logging from './logging';
@@ -168,7 +169,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
        * connecting to the next one instead of waiting for the connection
        * delay timer. */
       if (
-        subchannel === this.subchannels[this.currentSubchannelIndex] &&
+        subchannel.getRealSubchannel() === this.subchannels[this.currentSubchannelIndex].getRealSubchannel() &&
         newState === ConnectivityState.TRANSIENT_FAILURE
       ) {
         this.startNextSubchannelConnecting();
@@ -420,7 +421,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     if (
       this.subchannels.length === 0 ||
       !this.latestAddressList.every(
-        (value, index) => addressList[index] === value
+        (value, index) => subchannelAddressEqual(addressList[index], value)
       )
     ) {
       this.latestAddressList = addressList;

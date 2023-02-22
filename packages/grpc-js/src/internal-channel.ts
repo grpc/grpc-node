@@ -86,16 +86,14 @@ const DEFAULT_RETRY_BUFFER_SIZE_BYTES = 1<<24; // 16 MB
 const DEFAULT_PER_RPC_RETRY_BUFFER_SIZE_BYTES = 1<<20; // 1 MB
 
 class ChannelSubchannelWrapper extends BaseSubchannelWrapper implements SubchannelInterface {
-  private stateListeners: ConnectivityStateListener[] = [];
   private refCount = 0;
+  private subchannelStateListener: ConnectivityStateListener;
   constructor(childSubchannel: SubchannelInterface, private channel: InternalChannel) {
     super(childSubchannel);
-    childSubchannel.addConnectivityStateListener((subchannel, previousState, newState, keepaliveTime) => {
+    this.subchannelStateListener = (subchannel, previousState, newState, keepaliveTime) => {
       channel.throttleKeepalive(keepaliveTime);
-      for (const listener of this.stateListeners) {
-        listener(this, previousState, newState, keepaliveTime);
-      }
-    });
+    };
+    childSubchannel.addConnectivityStateListener(this.subchannelStateListener);
   }
 
   ref(): void {
@@ -107,6 +105,7 @@ class ChannelSubchannelWrapper extends BaseSubchannelWrapper implements Subchann
     this.child.unref();
     this.refCount -= 1;
     if (this.refCount <= 0) {
+      this.child.removeConnectivityStateListener(this.subchannelStateListener);
       this.channel.removeWrappedSubchannel(this);
     }
   }
