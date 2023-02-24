@@ -414,6 +414,8 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
   const childTypes = getChildMessagesAndEnums(messageType);
   formatter.writeLine(`// Original file: ${(messageType.filename ?? 'null')?.replace(/\\/g, '/')}`);
   formatter.writeLine('');
+  const isLongField = (field: Protobuf.Field) =>
+    ['int64', 'uint64', 'sint64', 'fixed64', 'sfixed64'].includes(field.type);
   messageType.fieldsArray.sort((fieldA, fieldB) => fieldA.id - fieldB.id);
   for (const field of messageType.fieldsArray) {
     if (field.resolvedType && childTypes.indexOf(field.resolvedType) < 0) {
@@ -424,7 +426,7 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
       seenDeps.add(dependency.fullName);
       formatter.writeLine(getImportLine(dependency, messageType, options));
     }
-    if (field.type.indexOf('64') >= 0) {
+    if (isLongField(field)) {
       usesLong = true;
     }
   }
@@ -439,7 +441,7 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
           seenDeps.add(dependency.fullName);
           formatter.writeLine(getImportLine(dependency, messageType, options));
         }
-        if (field.type.indexOf('64') >= 0) {
+        if (isLongField(field)) {
           usesLong = true;
         }
       }
