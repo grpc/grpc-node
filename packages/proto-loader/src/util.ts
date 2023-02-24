@@ -27,7 +27,7 @@ function addIncludePathResolver(root: Protobuf.Root, includePaths: string[]) {
       return target;
     }
     for (const directory of includePaths) {
-      const fullPath: string = path.join(directory, target);
+      const fullPath: string = path.join(directory, target).replace(/\\/g, '/');
       try {
         fs.accessSync(fullPath, fs.constants.R_OK);
         return fullPath;
