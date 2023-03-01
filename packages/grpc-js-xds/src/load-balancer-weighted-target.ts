@@ -119,31 +119,16 @@ class WeightedTargetPicker implements Picker {
   pick(pickArgs: PickArgs): PickResult {
     // num | 0 is equivalent to floor(num)
     const selection = (Math.random() * this.rangeTotal) | 0;
-    
-    /* Binary search for the element of the list such that
-     * pickerList[index - 1].rangeEnd <= selection < pickerList[index].rangeEnd
-     */
-    let mid = 0;
-    let startIndex = 0;
-    let endIndex = this.pickerList.length - 1;
-    let index = 0;
-    while (endIndex > startIndex) {
-      mid = ((startIndex + endIndex) / 2) | 0;
-      if (this.pickerList[mid].rangeEnd > selection) {
-        endIndex = mid;
-      } else if (this.pickerList[mid].rangeEnd < selection) {
-        startIndex = mid + 1;
-      } else {
-        // + 1 here because the range is exclusive at the top end
-        index = mid + 1;
-        break;
+
+    for (const entry of this.pickerList) {
+      if (selection < entry.rangeEnd) {
+        return entry.picker.pick(pickArgs);
       }
     }
-    if (index === 0) {
-      index = startIndex;
-    }
 
-    return this.pickerList[index].picker.pick(pickArgs);
+    /* Default to first element if the iteration doesn't find anything for some
+     * reason. */
+    return this.pickerList[0].picker.pick(pickArgs);
   }
 }
 
