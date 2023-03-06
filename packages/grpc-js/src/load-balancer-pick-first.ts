@@ -420,8 +420,9 @@ export class PickFirstLoadBalancer implements LoadBalancer {
      * address list is different from the existing one */
     if (
       this.subchannels.length === 0 ||
+      this.latestAddressList.length !== addressList.length ||
       !this.latestAddressList.every(
-        (value, index) => subchannelAddressEqual(addressList[index], value)
+        (value, index) => addressList[index] && subchannelAddressEqual(addressList[index], value)
       )
     ) {
       this.latestAddressList = addressList;

@@ -41,9 +41,15 @@ export function isTcpSubchannelAddress(
 }
 
 export function subchannelAddressEqual(
-  address1: SubchannelAddress,
-  address2: SubchannelAddress
+  address1?: SubchannelAddress,
+  address2?: SubchannelAddress
 ): boolean {
+  if (!address1 && !address2) {
+    return true;
+  }
+  if (!address1 || !address2) {
+    return false;
+  }
   if (isTcpSubchannelAddress(address1)) {
     return (
       isTcpSubchannelAddress(address2) &&
