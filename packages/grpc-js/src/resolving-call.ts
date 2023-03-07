@@ -178,13 +178,17 @@ export class ResolvingCall implements Call {
     this.filterStack = this.filterStackFactory.createFilter();
     this.filterStack.sendMetadata(Promise.resolve(this.metadata)).then(filteredMetadata => {
       this.child = this.channel.createInnerCall(config, this.method, this.host, this.credentials, this.deadline);
+      this.trace('Created child [' + this.child.getCallNumber() + ']')
       this.child.start(filteredMetadata, {
         onReceiveMetadata: metadata => {
+          this.trace('Received metadata')
           this.listener!.onReceiveMetadata(this.filterStack!.receiveMetadata(metadata));
         },
         onReceiveMessage: message => {
+          this.trace('Received message');
           this.readFilterPending = true;
           this.filterStack!.receiveMessage(message).then(filteredMesssage => {
+            this.trace('Finished filtering received message');
             this.readFilterPending = false;
             this.listener!.onReceiveMessage(filteredMesssage);
             if (this.pendingChildStatus) {
@@ -195,6 +199,7 @@ export class ResolvingCall implements Call {
           });
         },
         onReceiveStatus: status => {
+          this.trace('Received status');
           if (this.readFilterPending) {
             this.pendingChildStatus = status;
           } else {
