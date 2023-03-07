@@ -102,6 +102,7 @@ export class LoadBalancingCall implements Call {
     if (!this.metadata) {
       throw new Error('doPick called before start');
     }
+    this.trace('Pick called')
     const pickResult = this.channel.doPick(this.metadata, this.callConfig.pickInformation);
     const subchannelString = pickResult.subchannel ? 
       '(' + pickResult.subchannel.getChannelzRef().id + ') ' + pickResult.subchannel.getAddress() : 
