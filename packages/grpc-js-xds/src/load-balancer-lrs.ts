@@ -169,7 +169,7 @@ export class LrsLoadBalancer implements LoadBalancer {
     if (!(lbConfig instanceof LrsLoadBalancingConfig)) {
       return;
     }
-    this.localityStatsReporter = getSingletonXdsClient().addClusterLocalityStats(
+    this.localityStatsReporter = (attributes.xdsClient as XdsClient).addClusterLocalityStats(
       lbConfig.getLrsLoadReportingServerName(),
       lbConfig.getClusterName(),
       lbConfig.getEdsServiceName(),
