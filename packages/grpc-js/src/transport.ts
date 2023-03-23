@@ -20,7 +20,7 @@ import { checkServerIdentity, CipherNameAndProtocol, ConnectionOptions, PeerCert
 import { StatusObject } from './call-interface';
 import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
-import { ChannelzCallTracker, registerChannelzSocket, SocketInfo, SocketRef, TlsInfo } from './channelz';
+import { ChannelzCallTracker, registerChannelzSocket, SocketInfo, SocketRef, TlsInfo, unregisterChannelzRef } from './channelz';
 import { LogVerbosity } from './constants';
 import { getProxiedConnection, ProxyConnectionResult } from './http_proxy';
 import * as logging from './logging';
@@ -471,6 +471,7 @@ class Http2Transport implements Transport {
 
   shutdown() {
     this.session.close();
+    unregisterChannelzRef(this.channelzRef);
   }
 }
 
