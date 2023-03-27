@@ -1,0 +1,129 @@
+/*
+ * Copyright 2023 gRPC authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+import * as assert from 'assert';
+import * as path from 'path';
+
+import * as grpc from '../src';
+import {sendUnaryData, Server, ServerCredentials, ServerUnaryCall, ServiceClientConstructor, ServiceError} from '../src';
+
+import {loadProtoFile} from './common';
+
+const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
+const echoService =
+    loadProtoFile(protoFile).EchoService as ServiceClientConstructor;
+
+describe('Global subchannel pool', () => {
+  let server: Server;
+  let serverPort: number;
+
+  let client1: InstanceType<grpc.ServiceClientConstructor>;
+  let client2: InstanceType<grpc.ServiceClientConstructor>;
+
+  let promises: Promise<any>[];
+
+  before(done => {
+    server = new Server();
+    server.addService(echoService.service, {
+      echo(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
+        callback(null, call.request);
+      },
+    });
+
+    server.bindAsync(
+        'localhost:0', ServerCredentials.createInsecure(), (err, port) => {
+          assert.ifError(err);
+          serverPort = port;
+          server.start();
+          done();
+        });
+  });
+
+  beforeEach(() => {
+    promises = [];
+  })
+
+  after(done => {
+    server.tryShutdown(done);
+  });
+
+  function callService(client: InstanceType<grpc.ServiceClientConstructor>) {
+    return new Promise<void>((resolve) => {
+      const request = {value: 'test value', value2: 3};
+
+      client.echo(request, (error: ServiceError, response: any) => {
+        assert.ifError(error);
+        assert.deepStrictEqual(response, request);
+        resolve();
+      });
+    })
+  }
+
+  function connect() {
+    const grpcOptions = {
+      'grpc.use_local_subchannel_pool': 0,
+    }
+
+    client1 = new echoService(
+        `127.0.0.1:${serverPort}`, grpc.credentials.createInsecure(),
+        grpcOptions);
+
+    client2 = new echoService(
+        `127.0.0.1:${serverPort}`, grpc.credentials.createInsecure(),
+        grpcOptions);
+  }
+
+  it('client.close inside waitForReady callback should be called only once',
+     done => {
+       connect();
+
+       promises.push(new Promise<void>((resolve) => {
+         client1.waitForReady(Date.now() + 50, (error) => {
+           assert.ifError(error);
+           client1.close();
+           resolve();
+         });
+       }))
+
+       promises.push(new Promise<void>((resolve) => {
+         client2.waitForReady(Date.now() + 50, (error) => {
+           assert.notEqual(
+               error, undefined,
+               'Expected function to return an error, but no error was returned')
+           resolve();
+         });
+       }))
+
+       Promise.all(promises).then(() => {done()});
+     })
+
+  it('Call the service', done => {
+    promises.push(callService(client2));
+
+    Promise.all(promises).then(() => {
+      done();
+    });
+  })
+
+  it('Should complete the client lifecycle without error', done => {
+    setTimeout(() => {
+      client1.close();
+      client2.close();
+      done()
+    }, 500);
+  });
+});

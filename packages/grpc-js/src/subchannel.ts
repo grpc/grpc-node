@@ -264,6 +264,11 @@ export class Subchannel {
     /* We use a shallow copy of the stateListeners array in case a listener
      * is removed during this iteration */
     for (const listener of [...this.stateListeners]) {
+      if (this.connectivityState !== newState) {
+        logging.log(LogVerbosity.ERROR, 'Subchannel connectivity state was changed before a listener called!');
+        return true;
+      }
+
       listener(this, previousState, newState, this.keepaliveTime);
     }
     return true;
