@@ -205,11 +205,11 @@ class OutlierDetectionSubchannelWrapper extends BaseSubchannelWrapper implements
   constructor(childSubchannel: SubchannelInterface, private mapEntry?: MapEntry) {
     super(childSubchannel);
     this.childSubchannelState = childSubchannel.getConnectivityState();
-    childSubchannel.addConnectivityStateListener((subchannel, previousState, newState) => {
+    childSubchannel.addConnectivityStateListener((subchannel, previousState, newState, keepaliveTime) => {
       this.childSubchannelState = newState;
       if (!this.ejected) {
         for (const listener of this.stateListeners) {
-          listener(this, previousState, newState);
+          listener(this, previousState, newState, keepaliveTime);
         }
       }
     });
@@ -265,14 +265,14 @@ class OutlierDetectionSubchannelWrapper extends BaseSubchannelWrapper implements
   eject() {
     this.ejected = true;
     for (const listener of this.stateListeners) {
-      listener(this, this.childSubchannelState, ConnectivityState.TRANSIENT_FAILURE);
+      listener(this, this.childSubchannelState, ConnectivityState.TRANSIENT_FAILURE, -1);
     }
   }
 
   uneject() {
     this.ejected = false;
     for (const listener of this.stateListeners) {
-      listener(this, ConnectivityState.TRANSIENT_FAILURE, this.childSubchannelState);
+      listener(this, ConnectivityState.TRANSIENT_FAILURE, this.childSubchannelState, -1);
     }
   }
 

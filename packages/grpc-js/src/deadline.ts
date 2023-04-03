@@ -51,8 +51,45 @@ export function getDeadlineTimeoutString(deadline: Deadline) {
   throw new Error('Deadline is too far in the future')
 }
 
+/**
+ * See https://nodejs.org/api/timers.html#settimeoutcallback-delay-args
+ * In particular, "When delay is larger than 2147483647 or less than 1, the
+ * delay will be set to 1. Non-integer delays are truncated to an integer."
+ * This number of milliseconds is almost 25 days.
+ */
+const MAX_TIMEOUT_TIME = 2147483647;
+
+/**
+ * Get the timeout value that should be passed to setTimeout now for the timer
+ * to end at the deadline. For any deadline before now, the timer should end
+ * immediately, represented by a value of 0. For any deadline more than
+ * MAX_TIMEOUT_TIME milliseconds in the future, a timer cannot be set that will
+ * end at that time, so it is treated as infinitely far in the future.
+ * @param deadline 
+ * @returns
+ */
 export function getRelativeTimeout(deadline: Deadline) {
   const deadlineMs = deadline instanceof Date ? deadline.getTime() : deadline;
   const now = new Date().getTime();
-  return deadlineMs - now;
+  const timeout = deadlineMs - now;
+  if (timeout < 0) {
+    return 0;
+  } else if (timeout > MAX_TIMEOUT_TIME) {
+    return Infinity
+  } else {
+    return timeout;
+  }
+}
+
+export function deadlineToString(deadline: Deadline): string {
+  if (deadline instanceof Date) {
+    return deadline.toISOString();
+  } else {
+    const dateDeadline = new Date(deadline);
+    if (Number.isNaN(dateDeadline.getTime())) {
+      return '' + deadline;
+    } else {
+      return dateDeadline.toISOString();
+    }
+  }
 }

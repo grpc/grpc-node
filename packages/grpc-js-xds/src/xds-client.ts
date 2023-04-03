@@ -342,11 +342,13 @@ export class XdsClient {
         this.adsNode = {
           ...bootstrapInfo.node,
           user_agent_name: userAgentName,
+          user_agent_version: clientVersion,
           client_features: ['envoy.lb.does_not_support_overprovisioning'],
         };
         this.lrsNode = {
           ...bootstrapInfo.node,
           user_agent_name: userAgentName,
+          user_agent_version: clientVersion,
           client_features: ['envoy.lrs.supports_send_all_clusters'],
         };
         setCsdsClientNode(this.adsNode);

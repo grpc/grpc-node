@@ -18,7 +18,7 @@
 import { CallCredentials } from "./call-credentials";
 import { Call, CallStreamOptions, InterceptingListener, MessageContext, StatusObject } from "./call-interface";
 import { LogVerbosity, Propagate, Status } from "./constants";
-import { Deadline, getDeadlineTimeoutString, getRelativeTimeout, minDeadline } from "./deadline";
+import { Deadline, deadlineToString, getDeadlineTimeoutString, getRelativeTimeout, minDeadline } from "./deadline";
 import { FilterStack, FilterStackFactory } from "./filter-stack";
 import { InternalChannel } from "./internal-channel";
 import { Metadata } from "./metadata";
@@ -79,9 +79,9 @@ export class ResolvingCall implements Call {
 
   private runDeadlineTimer() {
     clearTimeout(this.deadlineTimer);
-    this.trace('Deadline: ' + this.deadline);
-    if (this.deadline !== Infinity) {
-      const timeout = getRelativeTimeout(this.deadline);
+    this.trace('Deadline: ' + deadlineToString(this.deadline));
+    const timeout = getRelativeTimeout(this.deadline);
+    if (timeout !== Infinity) {
       this.trace('Deadline will be reached in ' + timeout + 'ms');
       const handleDeadline = () => {
         this.cancelWithStatus(
@@ -103,6 +103,7 @@ export class ResolvingCall implements Call {
       if (!this.filterStack) {
         this.filterStack = this.filterStackFactory.createFilter();
       }
+      clearTimeout(this.deadlineTimer);
       const filteredStatus = this.filterStack.receiveTrailers(status);
       this.trace('ended with status: code=' + filteredStatus.code + ' details="' + filteredStatus.details + '"');
       this.statusWatchers.forEach(watcher => watcher(filteredStatus));
@@ -177,13 +178,17 @@ export class ResolvingCall implements Call {
     this.filterStack = this.filterStackFactory.createFilter();
     this.filterStack.sendMetadata(Promise.resolve(this.metadata)).then(filteredMetadata => {
       this.child = this.channel.createInnerCall(config, this.method, this.host, this.credentials, this.deadline);
+      this.trace('Created child [' + this.child.getCallNumber() + ']')
       this.child.start(filteredMetadata, {
         onReceiveMetadata: metadata => {
+          this.trace('Received metadata')
           this.listener!.onReceiveMetadata(this.filterStack!.receiveMetadata(metadata));
         },
         onReceiveMessage: message => {
+          this.trace('Received message');
           this.readFilterPending = true;
           this.filterStack!.receiveMessage(message).then(filteredMesssage => {
+            this.trace('Finished filtering received message');
             this.readFilterPending = false;
             this.listener!.onReceiveMessage(filteredMesssage);
             if (this.pendingChildStatus) {
@@ -194,6 +199,7 @@ export class ResolvingCall implements Call {
           });
         },
         onReceiveStatus: status => {
+          this.trace('Received status');
           if (this.readFilterPending) {
             this.pendingChildStatus = status;
           } else {
