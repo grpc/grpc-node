@@ -50,7 +50,7 @@ grpc/tools/run_tests/helper_scripts/prep_xds.sh
 
 mkdir -p "${KOKORO_ARTIFACTS_DIR}/github/grpc/reports"
 
-GRPC_NODE_TRACE=xds_client,xds_resolver,cds_balancer,eds_balancer,priority,weighted_target,round_robin,resolving_load_balancer,subchannel,keepalive,dns_resolver,fault_injection,http_filter,csds \
+GRPC_NODE_TRACE=xds_client,xds_resolver,xds_cluster_manager,cds_balancer,xds_cluster_resolver,xds_cluster_impl,priority,weighted_target,round_robin,resolving_load_balancer,subchannel,keepalive,dns_resolver,fault_injection,http_filter,csds,outlier_detection,server,server_call \
   GRPC_NODE_VERBOSITY=DEBUG \
   NODE_XDS_INTEROP_VERBOSITY=1 \
   python3 grpc/tools/run_tests/run_xds_tests.py \
