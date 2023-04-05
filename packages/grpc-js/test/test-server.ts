@@ -27,9 +27,9 @@ import * as grpc from '../src';
 import { Server, ServerCredentials } from '../src';
 import { ServiceError } from '../src/call';
 import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
-import { sendUnaryData, ServerUnaryCall } from '../src/server-call';
+import { sendUnaryData, ServerUnaryCall, ServerDuplexStream } from '../src/server-call';
 
-import { loadProtoFile } from './common';
+import { assert2, loadProtoFile } from './common';
 import { TestServiceClient, TestServiceHandlers } from './generated/TestService';
 import { ProtoGrpcType as TestServiceGrpcType } from './generated/test_service';
 import { Request__Output } from './generated/Request';
@@ -458,18 +458,28 @@ describe('Server', () => {
 describe('Echo service', () => {
   let server: Server;
   let client: ServiceClient;
+  const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
+  const echoService = loadProtoFile(protoFile)
+    .EchoService as ServiceClientConstructor;
+
+  const serviceImplementation = {
+    echo(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
+      callback(null, call.request);
+    },
+    echoBidiStream(call: ServerDuplexStream<any, any>) {
+      call.on('data', data => {
+        call.write(data);
+      });
+      call.on('end', () => {
+        call.end();
+      });
+    }
+  };
 
   before(done => {
-    const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
-    const echoService = loadProtoFile(protoFile)
-      .EchoService as ServiceClientConstructor;
 
     server = new Server();
-    server.addService(echoService.service, {
-      echo(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
-        callback(null, call.request);
-      },
-    });
+    server.addService(echoService.service, serviceImplementation);
 
     server.bindAsync(
       'localhost:0',
@@ -500,6 +510,43 @@ describe('Echo service', () => {
         done();
       }
     );
+  });
+
+  /* This test passes on Node 18 but fails on Node 16. The failure appears to
+   * be caused by https://github.com/nodejs/node/issues/42713 */
+  it.skip('should continue a stream after server shutdown', done => {
+    const server2 = new Server();
+    server2.addService(echoService.service, serviceImplementation);
+    server2.bindAsync('localhost:0', ServerCredentials.createInsecure(), (err, port) => {
+      if (err) {
+        done(err);
+        return;
+      }
+      const client2 = new echoService(`localhost:${port}`, grpc.credentials.createInsecure());
+      server2.start();
+      const stream = client2.echoBidiStream();
+      const totalMessages = 5;
+      let messagesSent = 0;
+      stream.write({ value: 'test value', value2: messagesSent});
+      messagesSent += 1;
+      stream.on('data', () => {
+        if (messagesSent === 1) {
+          server2.tryShutdown(assert2.mustCall(() => {}));
+        }
+        if (messagesSent >= totalMessages) {
+          stream.end();
+        } else {
+          stream.write({ value: 'test value', value2: messagesSent});
+          messagesSent += 1;
+        }
+      });
+      stream.on('status', assert2.mustCall((status: grpc.StatusObject) => {
+        assert.strictEqual(status.code, grpc.status.OK);
+        assert.strictEqual(messagesSent, totalMessages);
+      }));
+      stream.on('error', () => {});
+      assert2.afterMustCallsSatisfied(done);
+    });
   });
 });
 

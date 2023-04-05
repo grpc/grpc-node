@@ -98,6 +98,7 @@ class DnsResolver implements Resolver {
   private continueResolving = false;
   private nextResolutionTimer: NodeJS.Timer;
   private isNextResolutionTimerRunning = false;
+  private isServiceConfigEnabled = true;
   constructor(
     private target: GrpcUri,
     private listener: ResolverListener,
@@ -126,6 +127,10 @@ class DnsResolver implements Resolver {
       }
     }
     this.percentage = Math.random() * 100;
+
+    if (channelOptions['grpc.service_config_disable_resolution'] === 1) {
+      this.isServiceConfigEnabled = false;
+    }
 
     this.defaultResolutionError = {
       code: Status.UNAVAILABLE,
@@ -255,7 +260,7 @@ class DnsResolver implements Resolver {
       );
       /* If there already is a still-pending TXT resolution, we can just use
        * that result when it comes in */
-      if (this.pendingTxtPromise === null) {
+      if (this.isServiceConfigEnabled && this.pendingTxtPromise === null) {
         /* We handle the TXT query promise differently than the others because
          * the name resolution attempt as a whole is a success even if the TXT
          * lookup fails */

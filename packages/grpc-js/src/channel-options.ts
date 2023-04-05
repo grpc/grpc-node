@@ -55,6 +55,7 @@ export interface ChannelOptions {
   'grpc.max_connection_age_ms'?: number;
   'grpc.max_connection_age_grace_ms'?: number;
   'grpc-node.max_session_memory'?: number;
+  'grpc.service_config_disable_resolution'?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
@@ -87,6 +88,7 @@ export const recognizedOptions = {
   'grpc.max_connection_age_ms': true,
   'grpc.max_connection_age_grace_ms': true,
   'grpc-node.max_session_memory': true,
+  'grpc.service_config_disable_resolution': true,
 };
 
 export function channelOptionsEqual(
