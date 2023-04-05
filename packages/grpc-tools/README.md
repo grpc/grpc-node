@@ -9,7 +9,7 @@ libraries.
 This library exports the `grpc_tools_node_protoc` executable, which accepts all
 of the same arguments as `protoc` itself. For use with Node, you most likely
 want to use CommonJS-style imports. An example of generating code this way can
-be found in [this guide](https://developers.google.com/protocol-buffers/docs/reference/javascript-generated#commonjs-imports).
+be found in [this guide](https://github.com/protocolbuffers/protobuf-javascript/blob/main/docs/index.md).
 The `grpc_tools_node_protoc` automatically includes the Node gRPC plugin, so
 it also accepts the `--grpc_out=[option:]path` argument. The option can be
 one of the following:
