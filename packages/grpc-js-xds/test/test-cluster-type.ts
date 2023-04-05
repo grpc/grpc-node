@@ -24,7 +24,7 @@ import { Backend } from "./backend";
 
 register();
 
-describe.only('Cluster types', () => {
+describe('Cluster types', () => {
   let xdsServer: XdsServer;
   let client: XdsTestClient;
   beforeEach(done => {
