@@ -93,14 +93,6 @@ class RoundRobinPicker implements Picker {
   }
 }
 
-interface ConnectivityStateCounts {
-  [ConnectivityState.CONNECTING]: number;
-  [ConnectivityState.IDLE]: number;
-  [ConnectivityState.READY]: number;
-  [ConnectivityState.SHUTDOWN]: number;
-  [ConnectivityState.TRANSIENT_FAILURE]: number;
-}
-
 export class RoundRobinLoadBalancer implements LoadBalancer {
   private subchannels: SubchannelInterface[] = [];
 
@@ -108,25 +100,14 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
 
   private subchannelStateListener: ConnectivityStateListener;
 
-  private subchannelStateCounts: ConnectivityStateCounts;
-
   private currentReadyPicker: RoundRobinPicker | null = null;
 
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
-    this.subchannelStateCounts = {
-      [ConnectivityState.CONNECTING]: 0,
-      [ConnectivityState.IDLE]: 0,
-      [ConnectivityState.READY]: 0,
-      [ConnectivityState.SHUTDOWN]: 0,
-      [ConnectivityState.TRANSIENT_FAILURE]: 0,
-    };
     this.subchannelStateListener = (
       subchannel: SubchannelInterface,
       previousState: ConnectivityState,
       newState: ConnectivityState
     ) => {
-      this.subchannelStateCounts[previousState] -= 1;
-      this.subchannelStateCounts[newState] += 1;
       this.calculateAndUpdateState();
 
       if (
@@ -139,8 +120,12 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     };
   }
 
+  private countSubchannelsWithState(state: ConnectivityState) {
+    return this.subchannels.filter(subchannel => subchannel.getConnectivityState() === state).length;
+  }
+
   private calculateAndUpdateState() {
-    if (this.subchannelStateCounts[ConnectivityState.READY] > 0) {
+    if (this.countSubchannelsWithState(ConnectivityState.READY) > 0) {
       const readySubchannels = this.subchannels.filter(
         (subchannel) =>
           subchannel.getConnectivityState() === ConnectivityState.READY
@@ -158,10 +143,10 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
         ConnectivityState.READY,
         new RoundRobinPicker(readySubchannels, index)
       );
-    } else if (this.subchannelStateCounts[ConnectivityState.CONNECTING] > 0) {
+    } else if (this.countSubchannelsWithState(ConnectivityState.CONNECTING) > 0) {
       this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
     } else if (
-      this.subchannelStateCounts[ConnectivityState.TRANSIENT_FAILURE] > 0
+      this.countSubchannelsWithState(ConnectivityState.TRANSIENT_FAILURE) > 0
     ) {
       this.updateState(
         ConnectivityState.TRANSIENT_FAILURE,
@@ -193,13 +178,6 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
       subchannel.unref();
       this.channelControlHelper.removeChannelzChild(subchannel.getChannelzRef());
     }
-    this.subchannelStateCounts = {
-      [ConnectivityState.CONNECTING]: 0,
-      [ConnectivityState.IDLE]: 0,
-      [ConnectivityState.READY]: 0,
-      [ConnectivityState.SHUTDOWN]: 0,
-      [ConnectivityState.TRANSIENT_FAILURE]: 0,
-    };
     this.subchannels = [];
   }
 
@@ -220,7 +198,6 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
       subchannel.addConnectivityStateListener(this.subchannelStateListener);
       this.channelControlHelper.addChannelzChild(subchannel.getChannelzRef());
       const subchannelState = subchannel.getConnectivityState();
-      this.subchannelStateCounts[subchannelState] += 1;
       if (
         subchannelState === ConnectivityState.IDLE ||
         subchannelState === ConnectivityState.TRANSIENT_FAILURE
