@@ -413,10 +413,8 @@ export class Http2SubchannelCall implements SubchannelCall {
       typeof metadataMap['grpc-status'] === 'string'
     ) {
       const receivedStatus = Number(metadataMap['grpc-status']);
-      if (receivedStatus in Status) {
-        code = receivedStatus;
-        this.trace('received status code ' + receivedStatus + ' from server');
-      }
+      code = receivedStatus;
+      this.trace('received status code ' + receivedStatus + ' from server');
       metadata.remove('grpc-status');
     }
     let details = '';
