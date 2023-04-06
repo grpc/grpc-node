@@ -267,6 +267,30 @@ const callTimeHistogram: {[callType: string]: {[status: number]: number[]}} = {
   EmptyCall: {}
 }
 
+function renderHistogram(histogram: number[]): string {
+  const maxValue = Math.max(...histogram);
+  const maxIndexLength = `${histogram.length - 1}`.length;
+  const maxBarWidth = 60;
+  const result: string[] = [];
+  result.push('-'.repeat(maxIndexLength + maxBarWidth + 1));
+  for (let i = 0; i < histogram.length; i++) {
+    result.push(`${' '.repeat(maxIndexLength - `${i}`.length)}${i}|${'█'.repeat(maxBarWidth * histogram[i] / maxValue)}`);
+  }
+  return result.join('\n');
+}
+
+function printAllHistograms() {
+  console.log('Call duration histograms');
+  for (const callType in callTimeHistogram) {
+    console.log(callType);
+    const x = callTimeHistogram[callType];
+    for (const statusCode in callTimeHistogram[callType]) {
+      console.log(`${statusCode} ${grpc.status[statusCode]}`);
+      console.log(renderHistogram(callTimeHistogram[callType][statusCode]));
+    }
+  }
+}
+
 /**
  * Timestamps output by process.hrtime.bigint() are a bigint number of
  * nanoseconds. This is the representation of 1 second in that context.
@@ -420,7 +444,7 @@ function main() {
     },
     GetClientAccumulatedStats: (call, callback) => {
       console.log(`Sending accumulated stats response: ${JSON.stringify(accumulatedStats)}`);
-      console.log(`Call durations: ${JSON.stringify(callTimeHistogram, undefined, 2)}`);
+      printAllHistograms();
       callback(null, accumulatedStats);
     }
   }
