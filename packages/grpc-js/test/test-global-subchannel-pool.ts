@@ -62,13 +62,17 @@ describe('Global subchannel pool', () => {
   });
 
   function callService(client: InstanceType<grpc.ServiceClientConstructor>) {
-    return new Promise<void>((resolve) => {
+    return new Promise<void>((resolve, reject) => {
       const request = {value: 'test value', value2: 3};
 
       client.echo(request, (error: ServiceError, response: any) => {
-        assert.ifError(error);
-        assert.deepStrictEqual(response, request);
-        resolve();
+        try {
+          assert.ifError(error);
+          assert.deepStrictEqual(response, request);
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
       });
     })
   }
@@ -91,32 +95,38 @@ describe('Global subchannel pool', () => {
      done => {
        connect();
 
-       promises.push(new Promise<void>((resolve) => {
+       promises.push(new Promise<void>((resolve, reject) => {
          client1.waitForReady(Date.now() + 50, (error) => {
-           assert.ifError(error);
-           client1.close();
-           resolve();
+           try {
+             assert.ifError(error);
+             client1.close();
+             resolve();
+           } catch (e) {
+             reject(e);
+           }
          });
        }))
 
-       promises.push(new Promise<void>((resolve) => {
+       promises.push(new Promise<void>((resolve, reject) => {
          client2.waitForReady(Date.now() + 50, (error) => {
-           assert.notEqual(
-               error, undefined,
-               'Expected function to return an error, but no error was returned')
-           resolve();
+           try {
+             assert.notEqual(
+                 error, undefined,
+                 'Expected function to return an error, but no error was returned')
+             resolve();
+           } catch (e) {
+             reject(e);
+           }
          });
        }))
 
-       Promise.all(promises).then(() => {done()});
+       Promise.all(promises).then(() => done()).catch(reason => done(reason));
      })
 
   it('Call the service', done => {
     promises.push(callService(client2));
 
-    Promise.all(promises).then(() => {
-      done();
-    });
+    Promise.all(promises).then(() => done()).catch(reason => done(reason));
   })
 
   it('Should complete the client lifecycle without error', done => {
