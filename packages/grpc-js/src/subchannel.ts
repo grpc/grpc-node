@@ -60,7 +60,7 @@ export class Subchannel {
    * state changes. Will be modified by `addConnectivityStateListener` and
    * `removeConnectivityStateListener`
    */
-  private stateListeners: ConnectivityStateListener[] = [];
+  private stateListeners: Set<ConnectivityStateListener> = new Set();
 
   private backoffTimeout: BackoffTimeout;
 
@@ -227,6 +227,8 @@ export class Subchannel {
     }
     const previousState = this.connectivityState;
     this.connectivityState = newState;
+    process.nextTick(() => {
+    });
     switch (newState) {
       case ConnectivityState.READY:
         this.stopBackoff();
@@ -261,9 +263,7 @@ export class Subchannel {
       default:
         throw new Error(`Invalid state: unknown ConnectivityState ${newState}`);
     }
-    /* We use a shallow copy of the stateListeners array in case a listener
-     * is removed during this iteration */
-    for (const listener of [...this.stateListeners]) {
+    for (const listener of this.stateListeners) {
       listener(this, previousState, newState, this.keepaliveTime);
     }
     return true;
@@ -291,13 +291,15 @@ export class Subchannel {
       if (this.channelzEnabled) {
         this.channelzTrace.addTrace('CT_INFO', 'Shutting down');
       }
-      this.transitionToState(
-        [ConnectivityState.CONNECTING, ConnectivityState.READY],
-        ConnectivityState.IDLE
-      );
       if (this.channelzEnabled) {
         unregisterChannelzRef(this.channelzRef);
       }
+      process.nextTick(() => {
+        this.transitionToState(
+          [ConnectivityState.CONNECTING, ConnectivityState.READY],
+          ConnectivityState.IDLE
+        );
+      });
     }
   }
 
@@ -339,20 +341,22 @@ export class Subchannel {
    * Otherwise, do nothing.
    */
   startConnecting() {
-    /* First, try to transition from IDLE to connecting. If that doesn't happen
-     * because the state is not currently IDLE, check if it is
-     * TRANSIENT_FAILURE, and if so indicate that it should go back to
-     * connecting after the backoff timer ends. Otherwise do nothing */
-    if (
-      !this.transitionToState(
-        [ConnectivityState.IDLE],
-        ConnectivityState.CONNECTING
-      )
-    ) {
-      if (this.connectivityState === ConnectivityState.TRANSIENT_FAILURE) {
-        this.continueConnecting = true;
+    process.nextTick(() => {
+      /* First, try to transition from IDLE to connecting. If that doesn't happen
+      * because the state is not currently IDLE, check if it is
+      * TRANSIENT_FAILURE, and if so indicate that it should go back to
+      * connecting after the backoff timer ends. Otherwise do nothing */
+      if (
+        !this.transitionToState(
+          [ConnectivityState.IDLE],
+          ConnectivityState.CONNECTING
+        )
+      ) {
+        if (this.connectivityState === ConnectivityState.TRANSIENT_FAILURE) {
+          this.continueConnecting = true;
+        }
       }
-    }
+    });
   }
 
   /**
@@ -368,7 +372,7 @@ export class Subchannel {
    * @param listener
    */
   addConnectivityStateListener(listener: ConnectivityStateListener) {
-    this.stateListeners.push(listener);
+    this.stateListeners.add(listener);
   }
 
   /**
@@ -377,21 +381,20 @@ export class Subchannel {
    *     `addConnectivityStateListener`
    */
   removeConnectivityStateListener(listener: ConnectivityStateListener) {
-    const listenerIndex = this.stateListeners.indexOf(listener);
-    if (listenerIndex > -1) {
-      this.stateListeners.splice(listenerIndex, 1);
-    }
+    this.stateListeners.delete(listener);
   }
 
   /**
    * Reset the backoff timeout, and immediately start connecting if in backoff.
    */
   resetBackoff() {
-    this.backoffTimeout.reset();
-    this.transitionToState(
-      [ConnectivityState.TRANSIENT_FAILURE],
-      ConnectivityState.CONNECTING
-    );
+    process.nextTick(() => {
+      this.backoffTimeout.reset();
+      this.transitionToState(
+        [ConnectivityState.TRANSIENT_FAILURE],
+        ConnectivityState.CONNECTING
+      );
+    });
   }
 
   getAddress(): string {
