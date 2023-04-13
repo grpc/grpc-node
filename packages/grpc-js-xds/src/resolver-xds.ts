@@ -48,7 +48,7 @@ import { EXPERIMENTAL_FAULT_INJECTION, EXPERIMENTAL_RETRY } from './environment'
 import Filter = experimental.Filter;
 import FilterFactory = experimental.FilterFactory;
 import RetryPolicy = experimental.RetryPolicy;
-import { validateBootstrapConfig } from './xds-bootstrap';
+import { BootstrapInfo, loadBootstrapInfo, validateBootstrapConfig } from './xds-bootstrap';
 
 const TRACER_NAME = 'xds_resolver';
 
@@ -211,6 +211,22 @@ function getDefaultRetryMaxInterval(baseInterval: string): string {
   return `${Number.parseFloat(baseInterval.substring(0, baseInterval.length - 1)) * 10}s`;
 }
 
+function formatTemplateString(templateString: string, value: string): string {
+  return templateString.replace(/%s/g, value);
+}
+
+function getListenerResourceName(bootstrapConfig: BootstrapInfo, target: GrpcUri): string {
+  if (target.authority) {
+    if (target.authority in bootstrapConfig.authorities) {
+      return formatTemplateString(bootstrapConfig.authorities[target.authority].clientListenerResourceNameTemplate, target.path);
+    } else {
+      throw new Error(`Authority ${target.authority} not found in bootstrap file`);
+    }
+  } else {
+    return formatTemplateString(bootstrapConfig.clientDefaultListenerResourceNameTemplate, target.path);
+  }
+}
+
 const BOOTSTRAP_CONFIG_KEY = 'grpc.TEST_ONLY_DO_NOT_USE_IN_PROD.xds_bootstrap_config';
 
 const RETRY_CODES: {[key: string]: status} = {
@@ -227,6 +243,7 @@ class XdsResolver implements Resolver {
   private ldsWatcher: Watcher<Listener__Output>;
   private rdsWatcher: Watcher<RouteConfiguration__Output>
   private isLdsWatcherActive = false;
+  private listenerResourceName: string | null = null;
   /**
    * The latest route config name from an LDS response. The RDS watcher is
    * actively watching that name if and only if this is not null.
@@ -573,15 +590,29 @@ class XdsResolver implements Resolver {
 
   updateResolution(): void {
     // Wait until updateResolution is called once to start the xDS requests
-    if (!this.isLdsWatcherActive) {
-      trace('Starting resolution for target ' + uriToString(this.target));
-      this.xdsClient.addListenerWatcher(this.target.path, this.ldsWatcher);
-      this.isLdsWatcherActive = true;
-    }
+    loadBootstrapInfo().then((bootstrapInfo) => {
+      if (!this.isLdsWatcherActive) {
+        trace('Starting resolution for target ' + uriToString(this.target));
+        try {
+          this.listenerResourceName = getListenerResourceName(bootstrapInfo, this.target);
+          trace('Resolving target ' + uriToString(this.target) + ' with Listener resource name ' + this.listenerResourceName);
+          this.xdsClient.addListenerWatcher(this.listenerResourceName, this.ldsWatcher);
+          this.isLdsWatcherActive = true;
+
+        } catch (e) {
+          this.reportResolutionError(e.message);
+        }
+      }
+
+    }, (error) => {
+      this.reportResolutionError(`${error}`);
+    })
   }
 
   destroy() {
-    this.xdsClient.removeListenerWatcher(this.target.path, this.ldsWatcher);
+    if (this.listenerResourceName) {
+      this.xdsClient.removeListenerWatcher(this.listenerResourceName, this.ldsWatcher);
+    }
     if (this.latestRouteConfigName) {
       this.xdsClient.removeRouteWatcher(this.latestRouteConfigName, this.rdsWatcher);
     }

@@ -45,9 +45,16 @@ export interface XdsServerConfig {
   serverFeatures: string[];
 }
 
+export interface Authority {
+  clientListenerResourceNameTemplate: string;
+  xdsServers: XdsServerConfig[];
+}
+
 export interface BootstrapInfo {
   xdsServers: XdsServerConfig[];
   node: Node;
+  authorities: {[authorityName: string]: Authority};
+  clientDefaultListenerResourceNameTemplate: string;
 }
 
 function validateChannelCredsConfig(obj: any): ChannelCredsConfig {
