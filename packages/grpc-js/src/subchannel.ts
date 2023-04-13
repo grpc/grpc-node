@@ -227,8 +227,6 @@ export class Subchannel {
     }
     const previousState = this.connectivityState;
     this.connectivityState = newState;
-    process.nextTick(() => {
-    });
     switch (newState) {
       case ConnectivityState.READY:
         this.stopBackoff();
