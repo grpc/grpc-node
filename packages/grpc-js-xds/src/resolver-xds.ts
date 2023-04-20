@@ -18,7 +18,7 @@ import * as protoLoader from '@grpc/proto-loader';
 
 import { RE2 } from 're2-wasm';
 
-import { getSingletonXdsClient, XdsClient } from './xds-client';
+import { getSingletonXdsClient, XdsSingleServerClient } from './xds-client';
 import { StatusObject, status, logVerbosity, Metadata, experimental, ChannelOptions } from '@grpc/grpc-js';
 import Resolver = experimental.Resolver;
 import GrpcUri = experimental.GrpcUri;
@@ -44,7 +44,7 @@ import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL } from './resourc
 import Duration = experimental.Duration;
 import { Duration__Output } from './generated/google/protobuf/Duration';
 import { createHttpFilter, HttpFilterConfig, parseOverrideFilterConfig, parseTopLevelFilterConfig } from './http-filter';
-import { EXPERIMENTAL_FAULT_INJECTION, EXPERIMENTAL_RETRY } from './environment';
+import { EXPERIMENTAL_FAULT_INJECTION, EXPERIMENTAL_FEDERATION, EXPERIMENTAL_RETRY } from './environment';
 import Filter = experimental.Filter;
 import FilterFactory = experimental.FilterFactory;
 import RetryPolicy = experimental.RetryPolicy;
@@ -211,11 +211,24 @@ function getDefaultRetryMaxInterval(baseInterval: string): string {
   return `${Number.parseFloat(baseInterval.substring(0, baseInterval.length - 1)) * 10}s`;
 }
 
-function formatTemplateString(templateString: string, value: string): string {
-  return templateString.replace(/%s/g, value);
+/**
+ * Encode a text string as a valid path of a URI, as specified in RFC-3986 section 3.3
+ * @param uriPath A value representing an unencoded URI path
+ * @returns 
+ */
+function encodeURIPath(uriPath: string): string {
+  return uriPath.replace(/[^A-Za-z0-9._~!$&^()*+,;=/-]/g, substring => encodeURIComponent(substring));
 }
 
-function getListenerResourceName(bootstrapConfig: BootstrapInfo, target: GrpcUri): string {
+function formatTemplateString(templateString: string, value: string): string {
+  if (templateString.startsWith('xdstp:')) {
+    return templateString.replace(/%s/g, encodeURIPath(value));
+  } else {
+    return templateString.replace(/%s/g, value);
+  }
+}
+
+export function getListenerResourceName(bootstrapConfig: BootstrapInfo, target: GrpcUri): string {
   if (target.authority) {
     if (target.authority in bootstrapConfig.authorities) {
       return formatTemplateString(bootstrapConfig.authorities[target.authority].clientListenerResourceNameTemplate, target.path);
@@ -258,7 +271,9 @@ class XdsResolver implements Resolver {
 
   private ldsHttpFilterConfigs: {name: string, config: HttpFilterConfig}[] = [];
 
-  private xdsClient: XdsClient;
+  private bootstrapInfo: BootstrapInfo | null = null;
+
+  private xdsClient: XdsSingleServerClient;
 
   constructor(
     private target: GrpcUri,
@@ -267,8 +282,8 @@ class XdsResolver implements Resolver {
   ) {
     if (channelOptions[BOOTSTRAP_CONFIG_KEY]) {
       const parsedConfig = JSON.parse(channelOptions[BOOTSTRAP_CONFIG_KEY]);
-      const validatedConfig = validateBootstrapConfig(parsedConfig);
-      this.xdsClient = new XdsClient(validatedConfig);
+      this.bootstrapInfo = validateBootstrapConfig(parsedConfig);
+      this.xdsClient = new XdsSingleServerClient(this.bootstrapInfo);
     } else {
       this.xdsClient = getSingletonXdsClient();
     }
@@ -588,25 +603,40 @@ class XdsResolver implements Resolver {
     });
   }
 
-  updateResolution(): void {
-    // Wait until updateResolution is called once to start the xDS requests
-    loadBootstrapInfo().then((bootstrapInfo) => {
-      if (!this.isLdsWatcherActive) {
-        trace('Starting resolution for target ' + uriToString(this.target));
-        try {
-          this.listenerResourceName = getListenerResourceName(bootstrapInfo, this.target);
-          trace('Resolving target ' + uriToString(this.target) + ' with Listener resource name ' + this.listenerResourceName);
-          this.xdsClient.addListenerWatcher(this.listenerResourceName, this.ldsWatcher);
-          this.isLdsWatcherActive = true;
+  private startResolution(): void {
+    if (!this.isLdsWatcherActive) {
+      trace('Starting resolution for target ' + uriToString(this.target));
+      try {
+        this.listenerResourceName = getListenerResourceName(this.bootstrapInfo!, this.target);
+        trace('Resolving target ' + uriToString(this.target) + ' with Listener resource name ' + this.listenerResourceName);
+        this.xdsClient.addListenerWatcher(this.listenerResourceName, this.ldsWatcher);
+        this.isLdsWatcherActive = true;
 
+      } catch (e) {
+        this.reportResolutionError(e.message);
+      }
+    }
+  }
+
+  updateResolution(): void {
+    if (EXPERIMENTAL_FEDERATION) {
+      if (this.bootstrapInfo) {
+        this.startResolution();
+      } else {
+        try {
+          this.bootstrapInfo = loadBootstrapInfo();
         } catch (e) {
           this.reportResolutionError(e.message);
         }
+        this.startResolution();
       }
-
-    }, (error) => {
-      this.reportResolutionError(`${error}`);
-    })
+    } else {
+      if (!this.isLdsWatcherActive) {
+        trace('Starting resolution for target ' + uriToString(this.target));
+        this.xdsClient.addListenerWatcher(this.target.path, this.ldsWatcher);
+        this.isLdsWatcherActive = true;
+      }
+    }
   }
 
   destroy() {

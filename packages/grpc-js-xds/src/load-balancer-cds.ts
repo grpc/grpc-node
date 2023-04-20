@@ -16,7 +16,7 @@
  */
 
 import { connectivityState, status, Metadata, logVerbosity, experimental } from '@grpc/grpc-js';
-import { getSingletonXdsClient, XdsClient } from './xds-client';
+import { getSingletonXdsClient, XdsSingleServerClient } from './xds-client';
 import { Cluster__Output } from './generated/envoy/config/cluster/v3/Cluster';
 import SubchannelAddress = experimental.SubchannelAddress;
 import UnavailablePicker = experimental.UnavailablePicker;
@@ -216,7 +216,7 @@ export class CdsLoadBalancer implements LoadBalancer {
 
   private latestConfig: CdsLoadBalancingConfig | null = null;
   private latestAttributes: { [key: string]: unknown } = {};
-  private xdsClient: XdsClient | null = null;
+  private xdsClient: XdsSingleServerClient | null = null;
 
   private clusterTree: ClusterTree = {};
 
@@ -315,7 +315,7 @@ export class CdsLoadBalancer implements LoadBalancer {
     }
     trace('Received update with config ' + JSON.stringify(lbConfig, undefined, 2));
     this.latestAttributes = attributes;
-    this.xdsClient = attributes.xdsClient as XdsClient;
+    this.xdsClient = attributes.xdsClient as XdsSingleServerClient;
 
     /* If the cluster is changing, disable the old watcher before adding the new
      * one */

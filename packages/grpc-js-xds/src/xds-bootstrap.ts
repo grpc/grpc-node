@@ -16,6 +16,7 @@
  */
 
 import * as fs from 'fs';
+import { EXPERIMENTAL_FEDERATION } from './environment';
 import { Struct } from './generated/google/protobuf/Struct';
 import { Value } from './generated/google/protobuf/Value';
 
@@ -47,7 +48,7 @@ export interface XdsServerConfig {
 
 export interface Authority {
   clientListenerResourceNameTemplate: string;
-  xdsServers: XdsServerConfig[];
+  xdsServers?: XdsServerConfig[];
 }
 
 export interface BootstrapInfo {
@@ -238,16 +239,60 @@ function validateNode(obj: any): Node {
   return result;
 }
 
-export function validateBootstrapConfig(obj: any): BootstrapInfo {
+function validateAuthority(obj: any, authorityName: string): Authority {
+  if ('client_listener_resource_name_template' in obj) {
+    if (typeof obj.client_listener_resource_name_template !== 'string') {
+      throw new Error(`authorities[${authorityName}].client_listener_resource_name_template: expected string, got ${typeof obj.client_listener_resource_name_template}`);
+    }
+    if (!obj.client_listener_resource_name_template.startsWith(`xdstp://${authorityName}/`)) {
+      throw new Error(`authorities[${authorityName}].client_listener_resource_name_template must start with "xdstp://${authorityName}/"`);
+    }
+  }
   return {
-    xdsServers: obj.xds_servers.map(validateXdsServerConfig),
-    node: validateNode(obj.node),
+    clientListenerResourceNameTemplate: obj.client_listener_resource_name_template ?? `xdstp://${authorityName}/envoy.config.listener.v3.Listener/%s`,
+    xdsServers: obj.xds_servers?.map(validateXdsServerConfig)
   };
 }
 
-let loadedBootstrapInfo: Promise<BootstrapInfo> | null = null;
+function validateAuthoritiesMap(obj: any): {[authorityName: string]: Authority} {
+  if (!obj) {
+    return {};
+  }
+  const result: {[authorityName: string]: Authority} = {};
+  for (const [name, authority] of Object.entries(obj)) {
+    result[name] = validateAuthority(authority, name);
+  }
+  return result;
+}
 
-export async function loadBootstrapInfo(): Promise<BootstrapInfo> {
+export function validateBootstrapConfig(obj: any): BootstrapInfo {
+  const xdsServers = obj.xds_servers.map(validateXdsServerConfig);
+  const node = validateNode(obj.node);
+  if (EXPERIMENTAL_FEDERATION) {
+    if ('client_default_listener_resource_name_template' in obj) {
+      if (typeof obj.client_default_listener_resource_name_template !== 'string') {
+        throw new Error(`client_default_listener_resource_name_template: expected string, got ${typeof obj.client_default_listener_resource_name_template}`);
+      }
+    }
+    return {
+      xdsServers: xdsServers,
+      node: node,
+      authorities: validateAuthoritiesMap(obj.authorities),
+      clientDefaultListenerResourceNameTemplate: obj.client_default_listener_resource_name_template ?? '%s'
+    };
+  } else {
+    return {
+      xdsServers: xdsServers,
+      node: node,
+      authorities: {},
+      clientDefaultListenerResourceNameTemplate: '%s'
+    };
+  }
+}
+
+let loadedBootstrapInfo: BootstrapInfo | null = null;
+
+export function loadBootstrapInfo(): BootstrapInfo {
   if (loadedBootstrapInfo !== null) {
     return loadedBootstrapInfo;
   }
@@ -261,28 +306,19 @@ export async function loadBootstrapInfo(): Promise<BootstrapInfo> {
    */
   const bootstrapPath = process.env.GRPC_XDS_BOOTSTRAP;
   if (bootstrapPath) {
-    loadedBootstrapInfo = new Promise((resolve, reject) => {
-      fs.readFile(bootstrapPath, { encoding: 'utf8' }, (err, data) => {
-        if (err) {
-          reject(
-            new Error(
-              `Failed to read xDS bootstrap file from path ${bootstrapPath} with error ${err.message}`
-            )
-          );
-        }
-        try {
-          const parsedFile = JSON.parse(data);
-          resolve(validateBootstrapConfig(parsedFile));
-        } catch (e) {
-          reject(
-            new Error(
-              `Failed to parse xDS bootstrap file at path ${bootstrapPath} with error ${e.message}`
-            )
-          );
-        }
-      });
-    });
-    return loadedBootstrapInfo;
+    let rawBootstrap: string;
+    try {
+      rawBootstrap = fs.readFileSync(bootstrapPath, { encoding: 'utf8'});
+    } catch (e) {
+      throw new Error(`Failed to read xDS bootstrap file from path ${bootstrapPath} with error ${e.message}`);
+    }
+    try {
+      const parsedFile = JSON.parse(rawBootstrap);
+      loadedBootstrapInfo = validateBootstrapConfig(parsedFile);
+      return loadedBootstrapInfo;
+    } catch (e) {
+      throw new Error(`Failed to parse xDS bootstrap file at path ${bootstrapPath} with error ${e.message}`)
+    }
   }
 
   /**
@@ -297,8 +333,7 @@ export async function loadBootstrapInfo(): Promise<BootstrapInfo> {
   if (bootstrapConfig) {
     try {
       const parsedConfig = JSON.parse(bootstrapConfig);
-      const loadedBootstrapInfoValue = validateBootstrapConfig(parsedConfig);
-      loadedBootstrapInfo = Promise.resolve(loadedBootstrapInfoValue);
+      loadedBootstrapInfo = validateBootstrapConfig(parsedConfig);
     } catch (e) {
       throw new Error(
         `Failed to parse xDS bootstrap config from environment variable GRPC_XDS_BOOTSTRAP_CONFIG with error ${e.message}`
@@ -308,9 +343,8 @@ export async function loadBootstrapInfo(): Promise<BootstrapInfo> {
     return loadedBootstrapInfo;
   }
 
-  return Promise.reject(
-    new Error(
-      'The GRPC_XDS_BOOTSTRAP or GRPC_XDS_BOOTSTRAP_CONFIG environment variables need to be set to the path to the bootstrap file to use xDS'
-    )
+  
+  throw new Error(
+    'The GRPC_XDS_BOOTSTRAP or GRPC_XDS_BOOTSTRAP_CONFIG environment variables need to be set to the path to the bootstrap file to use xDS'
   );
 }

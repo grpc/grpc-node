@@ -21,7 +21,7 @@ import { loadProtosWithOptionsSync } from '@grpc/proto-loader/build/src/util';
 import { loadPackageDefinition, StatusObject, status, logVerbosity, Metadata, experimental, ChannelOptions, ClientDuplexStream, ServiceError, ChannelCredentials, Channel, connectivityState } from '@grpc/grpc-js';
 import * as adsTypes from './generated/ads';
 import * as lrsTypes from './generated/lrs';
-import { BootstrapInfo, loadBootstrapInfo } from './xds-bootstrap';
+import { BootstrapInfo, loadBootstrapInfo, XdsServerConfig } from './xds-bootstrap';
 import { Node } from './generated/envoy/config/core/v3/Node';
 import { AggregatedDiscoveryServiceClient } from './generated/envoy/service/discovery/v3/AggregatedDiscoveryService';
 import { DiscoveryRequest } from './generated/envoy/service/discovery/v3/DiscoveryRequest';
@@ -56,18 +56,14 @@ function trace(text: string): void {
 
 const clientVersion = require('../../package.json').version;
 
-let loadedProtos: Promise<
-  adsTypes.ProtoGrpcType & lrsTypes.ProtoGrpcType
-> | null = null;
+let loadedProtos: adsTypes.ProtoGrpcType & lrsTypes.ProtoGrpcType | null = null;
 
-function loadAdsProtos(): Promise<
-  adsTypes.ProtoGrpcType & lrsTypes.ProtoGrpcType
-> {
+function loadAdsProtos(): adsTypes.ProtoGrpcType & lrsTypes.ProtoGrpcType {
   if (loadedProtos !== null) {
     return loadedProtos;
   }
-  loadedProtos = protoLoader
-    .load(
+  return (loadPackageDefinition(protoLoader
+    .loadSync(
       [
         'envoy/service/discovery/v3/ads.proto',
         'envoy/service/load_stats/v3/lrs.proto',
@@ -87,14 +83,7 @@ function loadAdsProtos(): Promise<
           __dirname + '/../../deps/protoc-gen-validate/',
         ],
       }
-    )
-    .then(
-      (packageDefinition) =>
-        (loadPackageDefinition(
-          packageDefinition
-        ) as unknown) as adsTypes.ProtoGrpcType & lrsTypes.ProtoGrpcType
-    );
-  return loadedProtos;
+    )) as unknown) as adsTypes.ProtoGrpcType & lrsTypes.ProtoGrpcType;
 }
 
 function localityEqual(
@@ -247,9 +236,12 @@ function getResponseMessages<T extends AdsTypeUrl>(
   return result;
 }
 
-export class XdsClient {
+class XdsSingleServerClient {
 
-  private adsNode: Node | null = null;
+  private adsNode: Node;
+  /* These client objects need to be nullable so that they can be shut down
+   * when not in use. If the channel could enter the IDLE state it would remove
+   * that need. */
   private adsClient: AggregatedDiscoveryServiceClient | null = null;
   private adsCall: ClientDuplexStream<
     DiscoveryRequest,
@@ -257,7 +249,7 @@ export class XdsClient {
   > | null = null;
   private receivedAdsResponseOnCurrentStream = false;
 
-  private lrsNode: Node | null = null;
+  private lrsNode: Node;
   private lrsClient: LoadReportingServiceClient | null = null;
   private lrsCall: ClientDuplexStream<
     LoadStatsRequest,
@@ -269,14 +261,12 @@ export class XdsClient {
   private clusterStatsMap: ClusterLoadReportMap = new ClusterLoadReportMap();
   private statsTimer: NodeJS.Timer;
 
-  private hasShutdown = false;
-
   private adsState: AdsState;
 
   private adsBackoff: BackoffTimeout;
   private lrsBackoff: BackoffTimeout;
 
-  constructor(bootstrapInfoOverride?: BootstrapInfo) {
+  constructor(bootstrapNode: Node, private xdsServerConfig: XdsServerConfig) {
     const edsState = new EdsState(() => {
       this.updateNames('eds');
     });
@@ -296,11 +286,6 @@ export class XdsClient {
       lds: ldsState,
     };
 
-    const channelArgs = {
-      // 5 minutes
-      'grpc.keepalive_time_ms': 5 * 60 * 1000
-    }
-
     this.adsBackoff = new BackoffTimeout(() => {
       this.maybeStartAdsStream();
     });
@@ -309,103 +294,32 @@ export class XdsClient {
       this.maybeStartLrsStream();
     });
     this.lrsBackoff.unref();
-
-    async function getBootstrapInfo(): Promise<BootstrapInfo> {
-      if (bootstrapInfoOverride) {
-        return bootstrapInfoOverride;
-      } else {
-        return loadBootstrapInfo();
-      }
-    }
-
-    Promise.all([getBootstrapInfo(), loadAdsProtos()]).then(
-      ([bootstrapInfo, protoDefinitions]) => {
-        if (this.hasShutdown) {
-          return;
-        }
-        trace('Loaded bootstrap info: ' + JSON.stringify(bootstrapInfo, undefined, 2));
-        if (bootstrapInfo.xdsServers.length < 1) {
-          trace('Failed to initialize xDS Client. No servers provided in bootstrap info.');
-          // Bubble this error up to any listeners
-          this.reportStreamError({
-            code: status.INTERNAL,
-            details: 'Failed to initialize xDS Client. No servers provided in bootstrap info.',
-            metadata: new Metadata(),
-          });
-          return;
-        }
-        if (bootstrapInfo.xdsServers[0].serverFeatures.indexOf('ignore_resource_deletion') >= 0) {
-          this.adsState.lds.enableIgnoreResourceDeletion();
-          this.adsState.cds.enableIgnoreResourceDeletion();
-        }
-        const userAgentName = 'gRPC Node Pure JS';
-        this.adsNode = {
-          ...bootstrapInfo.node,
-          user_agent_name: userAgentName,
-          user_agent_version: clientVersion,
-          client_features: ['envoy.lb.does_not_support_overprovisioning'],
-        };
-        this.lrsNode = {
-          ...bootstrapInfo.node,
-          user_agent_name: userAgentName,
-          user_agent_version: clientVersion,
-          client_features: ['envoy.lrs.supports_send_all_clusters'],
-        };
-        setCsdsClientNode(this.adsNode);
-        trace('ADS Node: ' + JSON.stringify(this.adsNode, undefined, 2));
-        trace('LRS Node: ' + JSON.stringify(this.lrsNode, undefined, 2));
-        const credentialsConfigs = bootstrapInfo.xdsServers[0].channelCreds;
-        let channelCreds: ChannelCredentials | null = null;
-        for (const config of credentialsConfigs) {
-          if (config.type === 'google_default') {
-            channelCreds = createGoogleDefaultCredentials();
-            break;
-          } else if (config.type === 'insecure') {
-            channelCreds = ChannelCredentials.createInsecure();
-            break;
-          }
-        }
-        if (channelCreds === null) {
-          trace('Failed to initialize xDS Client. No valid credentials types found.');
-          // Bubble this error up to any listeners
-          this.reportStreamError({
-            code: status.INTERNAL,
-            details: 'Failed to initialize xDS Client. No valid credentials types found.',
-            metadata: new Metadata(),
-          });
-          return;
-        }
-        const serverUri = bootstrapInfo.xdsServers[0].serverUri
-        trace('Starting xDS client connected to server URI ' + bootstrapInfo.xdsServers[0].serverUri);
-        const channel = new Channel(serverUri, channelCreds, channelArgs);
-        this.adsClient = new protoDefinitions.envoy.service.discovery.v3.AggregatedDiscoveryService(
-          serverUri,
-          channelCreds,
-          {channelOverride: channel}
-        );
-        this.maybeStartAdsStream();
-        channel.watchConnectivityState(channel.getConnectivityState(false), Infinity, () => {
-          this.handleAdsConnectivityStateUpdate();
-        })
-
-        this.lrsClient = new protoDefinitions.envoy.service.load_stats.v3.LoadReportingService(
-          serverUri,
-          channelCreds,
-          {channelOverride: channel}
-        );
-        this.maybeStartLrsStream();
-      }).catch((error) => {
-        trace('Failed to initialize xDS Client. ' + error.message);
-        // Bubble this error up to any listeners
-        this.reportStreamError({
-          code: status.INTERNAL,
-          details: `Failed to initialize xDS Client. ${error.message}`,
-          metadata: new Metadata(),
-        });
-      }
-    );
     this.statsTimer = setInterval(() => {}, 0);
     clearInterval(this.statsTimer);
+    if (xdsServerConfig.serverFeatures.indexOf('ignore_resource_deletion') >= 0) {
+      this.adsState.lds.enableIgnoreResourceDeletion();
+      this.adsState.cds.enableIgnoreResourceDeletion();
+    }
+    const userAgentName = 'gRPC Node Pure JS';
+    this.adsNode = {
+      ...bootstrapNode,
+      user_agent_name: userAgentName,
+      user_agent_version: clientVersion,
+      client_features: ['envoy.lb.does_not_support_overprovisioning'],
+    };
+    this.lrsNode = {
+      ...bootstrapNode,
+      user_agent_name: userAgentName,
+      user_agent_version: clientVersion,
+      client_features: ['envoy.lrs.supports_send_all_clusters'],
+    };
+    setCsdsClientNode(this.adsNode);
+    this.trace('ADS Node: ' + JSON.stringify(this.adsNode, undefined, 2));
+    this.trace('LRS Node: ' + JSON.stringify(this.lrsNode, undefined, 2));
+  }
+
+  private trace(text: string) {
+    trace(this.xdsServerConfig.serverUri + ' ' + text);
   }
 
   private handleAdsConnectivityStateUpdate() {
@@ -471,24 +385,24 @@ export class XdsClient {
           break;
       }
     } catch (e) {
-      trace('Nacking message with protobuf parsing error: ' + e.message);
+      this.trace('Nacking message with protobuf parsing error: ' + e.message);
       this.nack(message.type_url, e.message);
       return;
     }
     if (handleResponseResult === null) {
       // Null handleResponseResult means that the type_url was unrecognized
-      trace('Nacking message with unknown type URL ' + message.type_url);
+      this.trace('Nacking message with unknown type URL ' + message.type_url);
       this.nack(message.type_url, `Unknown type_url ${message.type_url}`);
     } else {
       updateCsdsResourceResponse(message.type_url as AdsTypeUrl, message.version_info, handleResponseResult.result);
       if (handleResponseResult.result.rejected.length > 0) {
         // rejected.length > 0 means that at least one message validation failed
         const errorString = `${handleResponseResult.serviceKind.toUpperCase()} Error: ${handleResponseResult.result.rejected[0].error}`;
-        trace('Nacking message with type URL ' + message.type_url + ': ' + errorString);
+        this.trace('Nacking message with type URL ' + message.type_url + ': ' + errorString);
         this.nack(message.type_url, errorString);
       } else {
         // If we get here, all message validation succeeded
-        trace('Acking message with type URL ' + message.type_url);
+        this.trace('Acking message with type URL ' + message.type_url);
         const serviceKind = handleResponseResult.serviceKind;
         this.adsState[serviceKind].nonce = message.nonce;
         this.adsState[serviceKind].versionInfo = message.version_info;
@@ -497,8 +411,60 @@ export class XdsClient {
     }
   }
 
+  private maybeCreateClients() {
+    if (this.adsClient !== null && this.lrsClient !== null) {
+      return;
+    }
+    const channelArgs = {
+      // 5 minutes
+      'grpc.keepalive_time_ms': 5 * 60 * 1000
+    }
+    const credentialsConfigs = this.xdsServerConfig.channelCreds;
+    let channelCreds: ChannelCredentials | null = null;
+    for (const config of credentialsConfigs) {
+      if (config.type === 'google_default') {
+        channelCreds = createGoogleDefaultCredentials();
+        break;
+      } else if (config.type === 'insecure') {
+        channelCreds = ChannelCredentials.createInsecure();
+        break;
+      }
+    }
+    if (channelCreds === null) {
+      this.trace('Failed to initialize xDS Client. No valid credentials types found.');
+      // Bubble this error up to any listeners
+      this.reportStreamError({
+        code: status.INTERNAL,
+        details: 'Failed to initialize xDS Client. No valid credentials types found.',
+        metadata: new Metadata(),
+      });
+      return;
+    }
+    const serverUri = this.xdsServerConfig.serverUri
+    this.trace('Starting xDS client connected to server URI ' + this.xdsServerConfig.serverUri);
+    const channel = new Channel(serverUri, channelCreds, channelArgs);
+    const protoDefinitions = loadAdsProtos();
+    if (this.adsClient === null) {
+      this.adsClient = new protoDefinitions.envoy.service.discovery.v3.AggregatedDiscoveryService(
+        serverUri,
+        channelCreds,
+        {channelOverride: channel}
+      );
+      channel.watchConnectivityState(channel.getConnectivityState(false), Infinity, () => {
+        this.handleAdsConnectivityStateUpdate();
+      });
+    }
+    if (this.lrsClient === null) {
+      this.lrsClient = new protoDefinitions.envoy.service.load_stats.v3.LoadReportingService(
+        serverUri,
+        channelCreds,
+        {channelOverride: channel}
+      );
+    }
+  }
+
   private handleAdsCallStatus(streamStatus: StatusObject) {
-    trace(
+    this.trace(
       'ADS stream ended. code=' + streamStatus.code + ' details= ' + streamStatus.details
     );
     this.adsCall = null;
@@ -512,29 +478,28 @@ export class XdsClient {
     }
   }
 
+  private hasOutstandingResourceRequests() {
+    return (this.adsState.eds.getResourceNames().length > 0 ||
+      this.adsState.cds.getResourceNames().length > 0 ||
+      this.adsState.rds.getResourceNames().length > 0 ||
+      this.adsState.lds.getResourceNames().length);
+  }
+
   /**
    * Start the ADS stream if the client exists and there is not already an
    * existing stream, and there are resources to request.
    */
   private maybeStartAdsStream() {
-    if (this.hasShutdown) {
-      return;
-    }
-    if (this.adsState.eds.getResourceNames().length === 0 &&
-    this.adsState.cds.getResourceNames().length === 0 &&
-    this.adsState.rds.getResourceNames().length === 0 &&
-    this.adsState.lds.getResourceNames().length === 0) {
-      return;
-    }
-    if (this.adsClient === null) {
+    if (!this.hasOutstandingResourceRequests()) {
       return;
     }
     if (this.adsCall !== null) {
       return;
     }
+    this.maybeCreateClients();
     this.receivedAdsResponseOnCurrentStream = false;
     const metadata = new Metadata({waitForReady: true});
-    this.adsCall = this.adsClient.StreamAggregatedResources(metadata);
+    this.adsCall = this.adsClient!.StreamAggregatedResources(metadata);
     this.adsCall.on('data', (message: DiscoveryResponse__Output) => {
       this.handleAdsResponse(message);
     });
@@ -542,7 +507,7 @@ export class XdsClient {
       this.handleAdsCallStatus(status);
     });
     this.adsCall.on('error', () => {});
-    trace('Started ADS stream');
+    this.trace('Started ADS stream');
     // Backoff relative to when we start the request
     this.adsBackoff.runOnce();
 
@@ -553,7 +518,7 @@ export class XdsClient {
         this.updateNames(service);
       }
     }
-    if (this.adsClient.getChannel().getConnectivityState(false) === connectivityState.READY) {
+    if (this.adsClient!.getChannel().getConnectivityState(false) === connectivityState.READY) {
       this.reportAdsStreamStarted();
     }
   }
@@ -586,7 +551,7 @@ export class XdsClient {
    * Acknowledge an update. This should be called after the local nonce and
    * version info are updated so that it sends the post-update values.
    */
-  ack(serviceKind: AdsServiceKind) {
+  private ack(serviceKind: AdsServiceKind) {
     this.updateNames(serviceKind);
   }
 
@@ -633,15 +598,20 @@ export class XdsClient {
     this.maybeSendAdsMessage(typeUrl, resourceNames, nonce, versionInfo, message);
   }
 
+  private shutdown() {
+    this.adsCall?.end();
+    this.adsCall = null;
+    this.lrsCall?.end();
+    this.lrsCall = null;
+    this.adsClient?.close();
+    this.adsClient = null;
+    this.lrsClient?.close();
+    this.lrsClient = null;
+  }
+
   private updateNames(serviceKind: AdsServiceKind) {
-    if (this.adsState.eds.getResourceNames().length === 0 &&
-    this.adsState.cds.getResourceNames().length === 0 &&
-    this.adsState.rds.getResourceNames().length === 0 &&
-    this.adsState.lds.getResourceNames().length === 0) {
-      this.adsCall?.end();
-      this.adsCall = null;
-      this.lrsCall?.end();
-      this.lrsCall = null;
+    if (!this.hasOutstandingResourceRequests()) {
+      this.shutdown();
       return;
     }
     this.maybeStartAdsStream();
@@ -653,7 +623,7 @@ export class XdsClient {
        * of getTypeUrl is garbage and everything after that is invalid. */
       return;
     }
-    trace('Sending update for ' + serviceKind + ' with names ' + this.adsState[serviceKind].getResourceNames());
+    this.trace('Sending update for ' + serviceKind + ' with names ' + this.adsState[serviceKind].getResourceNames());
     const typeUrl = this.getTypeUrl(serviceKind);
     updateCsdsRequestedNameList(typeUrl, this.adsState[serviceKind].getResourceNames());
     this.maybeSendAdsMessage(typeUrl, this.adsState[serviceKind].getResourceNames(), this.adsState[serviceKind].nonce, this.adsState[serviceKind].versionInfo);
@@ -675,7 +645,7 @@ export class XdsClient {
   }
 
   private handleLrsResponse(message: LoadStatsResponse__Output) {
-    trace('Received LRS response');
+    this.trace('Received LRS response');
     /* Once we get any response from the server, we assume that the stream is
      * in a good state, so we can reset the backoff timer. */
     this.lrsBackoff.reset();
@@ -694,7 +664,7 @@ export class XdsClient {
       const loadReportingIntervalMs =
         Number.parseInt(message.load_reporting_interval!.seconds) * 1000 +
         message.load_reporting_interval!.nanos / 1_000_000;
-      trace('Received LRS response with load reporting interval ' + loadReportingIntervalMs + ' ms');
+      this.trace('Received LRS response with load reporting interval ' + loadReportingIntervalMs + ' ms');
       this.statsTimer = setInterval(() => {
         this.sendStats();
       }, loadReportingIntervalMs);
@@ -704,7 +674,7 @@ export class XdsClient {
   }
 
   private handleLrsCallStatus(streamStatus: StatusObject) {
-    trace(
+    this.trace(
       'LRS stream ended. code=' + streamStatus.code + ' details= ' + streamStatus.details
     );
     this.lrsCall = null;
@@ -716,42 +686,15 @@ export class XdsClient {
     }
   }
 
-  private maybeStartLrsStreamV3(): boolean {
-    if (!this.lrsClient) {
-      return false;
-    }
-    if (this.lrsCall) {
-      return false;
-    }
-    this.lrsCall = this.lrsClient.streamLoadStats();
-    this.receivedLrsSettingsForCurrentStream = false;
-    this.lrsCall.on('data', (message: LoadStatsResponse__Output) => {
-      this.handleLrsResponse(message);
-    });
-    this.lrsCall.on('status', (status: StatusObject) => {
-      this.handleLrsCallStatus(status);
-    });
-    this.lrsCall.on('error', () => {});
-    return true;
-  }
-
   private maybeStartLrsStream() {
-    if (this.hasShutdown) {
-      return;
-    }
-    if (this.adsState.eds.getResourceNames().length === 0 &&
-        this.adsState.cds.getResourceNames().length === 0 &&
-        this.adsState.rds.getResourceNames().length === 0 &&
-        this.adsState.lds.getResourceNames().length === 0) {
-      return;
-    }
-    if (!this.lrsClient) {
+    if (!this.hasOutstandingResourceRequests()) {
       return;
     }
     if (this.lrsCall) {
       return;
     }
-    this.lrsCall = this.lrsClient.streamLoadStats();
+    this.maybeCreateClients();
+    this.lrsCall = this.lrsClient!.streamLoadStats();
     this.receivedLrsSettingsForCurrentStream = false;
     this.lrsCall.on('data', (message: LoadStatsResponse__Output) => {
       this.handleLrsResponse(message);
@@ -760,7 +703,7 @@ export class XdsClient {
       this.handleLrsCallStatus(status);
     });
     this.lrsCall.on('error', () => {});
-    trace('Starting LRS stream');
+    this.trace('Starting LRS stream');
     this.lrsBackoff.runOnce();
     /* Send buffered stats information when starting LRS stream. If there is no
       * buffered stats information, it will still send the node field. */
@@ -844,7 +787,7 @@ export class XdsClient {
         }
       }
     }
-    trace('Sending LRS stats ' + JSON.stringify(clusterStats, undefined, 2));
+    this.trace('Sending LRS stats ' + JSON.stringify(clusterStats, undefined, 2));
     this.maybeSendLrsMessage(clusterStats);
   }
 
@@ -852,7 +795,7 @@ export class XdsClient {
     edsServiceName: string,
     watcher: Watcher<ClusterLoadAssignment__Output>
   ) {
-    trace('Watcher added for endpoint ' + edsServiceName);
+    this.trace('Watcher added for endpoint ' + edsServiceName);
     this.adsState.eds.addWatcher(edsServiceName, watcher);
   }
 
@@ -860,37 +803,37 @@ export class XdsClient {
     edsServiceName: string,
     watcher: Watcher<ClusterLoadAssignment__Output>
   ) {
-    trace('Watcher removed for endpoint ' + edsServiceName);
+    this.trace('Watcher removed for endpoint ' + edsServiceName);
     this.adsState.eds.removeWatcher(edsServiceName, watcher);
   }
 
   addClusterWatcher(clusterName: string, watcher: Watcher<Cluster__Output>) {
-    trace('Watcher added for cluster ' + clusterName);
+    this.trace('Watcher added for cluster ' + clusterName);
     this.adsState.cds.addWatcher(clusterName, watcher);
   }
 
   removeClusterWatcher(clusterName: string, watcher: Watcher<Cluster__Output>) {
-    trace('Watcher removed for cluster ' + clusterName);
+    this.trace('Watcher removed for cluster ' + clusterName);
     this.adsState.cds.removeWatcher(clusterName, watcher);
   }
 
   addRouteWatcher(routeConfigName: string, watcher: Watcher<RouteConfiguration__Output>) {
-    trace('Watcher added for route ' + routeConfigName);
+    this.trace('Watcher added for route ' + routeConfigName);
     this.adsState.rds.addWatcher(routeConfigName, watcher);
   }
 
   removeRouteWatcher(routeConfigName: string, watcher: Watcher<RouteConfiguration__Output>) {
-    trace('Watcher removed for route ' + routeConfigName);
+    this.trace('Watcher removed for route ' + routeConfigName);
     this.adsState.rds.removeWatcher(routeConfigName, watcher);
   }
 
   addListenerWatcher(targetName: string, watcher: Watcher<Listener__Output>) {
-    trace('Watcher added for listener ' + targetName);
+    this.trace('Watcher added for listener ' + targetName);
     this.adsState.lds.addWatcher(targetName, watcher);
   }
 
   removeListenerWatcher(targetName: string, watcher: Watcher<Listener__Output>) {
-    trace('Watcher removed for listener ' + targetName);
+    this.trace('Watcher removed for listener ' + targetName);
     this.adsState.lds.removeWatcher(targetName, watcher);
   }
 
@@ -903,17 +846,10 @@ export class XdsClient {
    * @param edsServiceName
    */
   addClusterDropStats(
-    lrsServer: string,
     clusterName: string,
     edsServiceName: string
   ): XdsClusterDropStats {
-    trace('addClusterDropStats(lrsServer=' + lrsServer + ', clusterName=' + clusterName + ', edsServiceName=' + edsServiceName + ')');
-    if (lrsServer !== '') {
-      return {
-        addUncategorizedCallDropped: () => {},
-        addCallDropped: (category) => {},
-      };
-    }
+    this.trace('addClusterDropStats(clusterName=' + clusterName + ', edsServiceName=' + edsServiceName + ')');
     const clusterStats = this.clusterStatsMap.getOrCreate(
       clusterName,
       edsServiceName
@@ -930,18 +866,11 @@ export class XdsClient {
   }
 
   addClusterLocalityStats(
-    lrsServer: string,
     clusterName: string,
     edsServiceName: string,
     locality: Locality__Output
   ): XdsClusterLocalityStats {
-    trace('addClusterLocalityStats(lrsServer=' + lrsServer + ', clusterName=' + clusterName + ', edsServiceName=' + edsServiceName + ', locality=' + JSON.stringify(locality) + ')');
-    if (lrsServer !== '') {
-      return {
-        addCallStarted: () => {},
-        addCallFinished: (fail) => {},
-      };
-    }
+    this.trace('addClusterLocalityStats(clusterName=' + clusterName + ', edsServiceName=' + edsServiceName + ', locality=' + JSON.stringify(locality) + ')');
     const clusterStats = this.clusterStatsMap.getOrCreate(
       clusterName,
       edsServiceName
@@ -981,13 +910,194 @@ export class XdsClient {
       },
     };
   }
+}
 
-  private shutdown(): void {
-    this.adsCall?.cancel();
-    this.adsClient?.close();
-    this.lrsCall?.cancel();
-    this.lrsClient?.close();
-    this.hasShutdown = true;
+const KNOWN_SERVER_FEATURES = ['ignore_resource_deletion'];
+
+function serverConfigEqual(config1: XdsServerConfig, config2: XdsServerConfig): boolean {
+  if (config1.serverUri !== config2.serverUri) {
+    return false;
+  }
+  for (const feature of KNOWN_SERVER_FEATURES) {
+    if ((feature in config1.serverFeatures) !== (feature in config2.serverFeatures)) {
+      return false;
+    }
+  }
+  if (config1.channelCreds.length !== config2.channelCreds.length) {
+    return false;
+  }
+  for (const [index, creds1] of config1.channelCreds.entries()) {
+    const creds2 = config2.channelCreds[index];
+    if (creds1.type !== creds2.type) {
+      return false;
+    }
+    if (JSON.stringify(creds1) !== JSON.stringify(creds2)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+interface ClientMapEntry {
+  serverConfig: XdsServerConfig;
+  client: XdsSingleServerClient;
+}
+
+export class XdsClient {
+  private clientMap: ClientMapEntry[] = [];
+
+  constructor(private bootstrapInfoOverride?: BootstrapInfo) {}
+
+  private getBootstrapInfo() {
+    if (this.bootstrapInfoOverride) {
+      return this.bootstrapInfoOverride;
+    } else {
+      return loadBootstrapInfo();
+    }
+  }
+
+  private getClient(serverConfig: XdsServerConfig): XdsSingleServerClient | null {
+    for (const entry of this.clientMap) {
+      if (serverConfigEqual(serverConfig, entry.serverConfig)) {
+        return entry.client;
+      }
+    }
+    return null;
+  }
+
+  private getOrCreateClientForResource(resourceName: string): XdsSingleServerClient {
+    const bootstrapInfo = this.getBootstrapInfo();
+    let serverConfig: XdsServerConfig;
+    if (resourceName.startsWith('xdstp:')) {
+      const match = resourceName.match(/xdstp:\/\/([^/]+)\//);
+      if (!match) {
+        throw new Error(`Parse error: Resource ${resourceName} has no authority`);
+      }
+      const authority = match[1];
+      if (authority in bootstrapInfo.authorities) {
+        serverConfig = bootstrapInfo.authorities[authority].xdsServers?.[0] ?? bootstrapInfo.xdsServers[0];
+      } else {
+        throw new Error(`Authority ${authority} in resource ${resourceName} not found in authorities list`);
+      }
+    } else {
+      serverConfig = bootstrapInfo.xdsServers[0];
+    }
+    for (const entry of this.clientMap) {
+      if (serverConfigEqual(serverConfig, entry.serverConfig)) {
+        return entry.client;
+      }
+    }
+    const newClient = new XdsSingleServerClient(bootstrapInfo.node, serverConfig);
+    this.clientMap.push({serverConfig: serverConfig, client: newClient});
+    return newClient;
+  }
+
+  addEndpointWatcher(
+    edsServiceName: string,
+    watcher: Watcher<ClusterLoadAssignment__Output>
+  ) {
+    trace('addEndpointWatcher(' + edsServiceName + ')');
+    try {
+      const client = this.getOrCreateClientForResource(edsServiceName);
+      client.addEndpointWatcher(edsServiceName, watcher);
+    } catch (e) {
+      trace('addEndpointWatcher error: ' + e.message);
+      watcher.onTransientError({code: status.UNAVAILABLE, details: e.message, metadata: new Metadata()});
+    }
+  }
+
+  removeEndpointWatcher(
+    edsServiceName: string,
+    watcher: Watcher<ClusterLoadAssignment__Output>
+  ) {
+    trace('removeEndpointWatcher(' + edsServiceName + ')');
+    try {
+      const client = this.getOrCreateClientForResource(edsServiceName);
+      client.removeEndpointWatcher(edsServiceName, watcher);
+    } catch (e) {
+    }
+  }
+
+  addClusterWatcher(clusterName: string, watcher: Watcher<Cluster__Output>) {
+    trace('addClusterWatcher(' + clusterName + ')');
+    try {
+      const client = this.getOrCreateClientForResource(clusterName);
+      client.addClusterWatcher(clusterName, watcher);
+    } catch (e) {
+      trace('addClusterWatcher error: ' + e.message);
+      watcher.onTransientError({code: status.UNAVAILABLE, details: e.message, metadata: new Metadata()});
+    }
+  }
+
+  removeClusterWatcher(clusterName: string, watcher: Watcher<Cluster__Output>) {
+    trace('removeClusterWatcher(' + clusterName + ')');
+    try {
+      const client = this.getOrCreateClientForResource(clusterName);
+      client.removeClusterWatcher(clusterName, watcher);
+    } catch (e) {
+    }
+  }
+
+  addRouteWatcher(routeConfigName: string, watcher: Watcher<RouteConfiguration__Output>) {
+    trace('addRouteWatcher(' + routeConfigName + ')');
+    try {
+      const client = this.getOrCreateClientForResource(routeConfigName);
+      client.addRouteWatcher(routeConfigName, watcher);
+    } catch (e) {
+      trace('addRouteWatcher error: ' + e.message);
+      watcher.onTransientError({code: status.UNAVAILABLE, details: e.message, metadata: new Metadata()});
+    }
+  }
+
+  removeRouteWatcher(routeConfigName: string, watcher: Watcher<RouteConfiguration__Output>) {
+    trace('removeRouteWatcher(' + routeConfigName + ')');
+    try {
+      const client = this.getOrCreateClientForResource(routeConfigName);
+      client.removeRouteWatcher(routeConfigName, watcher);
+    } catch (e) {
+    }
+  }
+
+  addListenerWatcher(targetName: string, watcher: Watcher<Listener__Output>) {
+    trace('addListenerWatcher(' + targetName + ')');
+    try {
+      const client = this.getOrCreateClientForResource(targetName);
+      client.addListenerWatcher(targetName, watcher);
+    } catch (e) {
+      trace('addListenerWatcher error: ' + e.message);
+      watcher.onTransientError({code: status.UNAVAILABLE, details: e.message, metadata: new Metadata()});
+    }
+  }
+
+  removeListenerWatcher(targetName: string, watcher: Watcher<Listener__Output>) {
+    trace('removeListenerWatcher' + targetName);
+    try {
+      const client = this.getOrCreateClientForResource(targetName);
+      client.removeListenerWatcher(targetName, watcher);
+    } catch (e) {
+    }
+  }
+
+  addClusterDropStats(lrsServer: XdsServerConfig, clusterName: string, edsServiceName: string): XdsClusterDropStats {
+    const client = this.getClient(lrsServer);
+    if (!client) {
+      return {
+        addUncategorizedCallDropped: () => {},
+        addCallDropped: (category) => {},
+      };
+    }
+    return client.addClusterDropStats(clusterName, edsServiceName);
+  }
+
+  addClusterLocalityStats(lrsServer: XdsServerConfig, clusterName: string, edsServiceName: string, locality: Locality__Output): XdsClusterLocalityStats {
+    const client = this.getClient(lrsServer);
+    if (!client) {
+      return {
+        addCallStarted: () => {},
+        addCallFinished: (fail) => {},
+      };
+    }
+    return client.addClusterLocalityStats(clusterName, edsServiceName, locality);
   }
 }
 

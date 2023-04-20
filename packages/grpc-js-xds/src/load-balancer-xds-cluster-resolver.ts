@@ -23,7 +23,7 @@ import { ClusterLoadAssignment__Output } from "./generated/envoy/config/endpoint
 import { LrsLoadBalancingConfig } from "./load-balancer-lrs";
 import { LocalitySubchannelAddress, PriorityChild, PriorityLoadBalancingConfig } from "./load-balancer-priority";
 import { WeightedTarget, WeightedTargetLoadBalancingConfig } from "./load-balancer-weighted-target";
-import { getSingletonXdsClient, XdsClient } from "./xds-client";
+import { getSingletonXdsClient, XdsSingleServerClient } from "./xds-client";
 import { DropCategory, XdsClusterImplLoadBalancingConfig } from "./load-balancer-xds-cluster-impl";
 import { Watcher } from "./xds-stream-state/xds-stream-state";
 
@@ -243,7 +243,7 @@ export class XdsClusterResolver implements LoadBalancer {
   private discoveryMechanismList: DiscoveryMechanismEntry[] = [];
   private latestConfig: XdsClusterResolverLoadBalancingConfig | null = null;
   private latestAttributes: { [key: string]: unknown; } = {};
-  private xdsClient: XdsClient | null = null;
+  private xdsClient: XdsSingleServerClient | null = null;
   private childBalancer: ChildLoadBalancerHandler;
 
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
@@ -368,7 +368,7 @@ export class XdsClusterResolver implements LoadBalancer {
     trace('Received update with config ' + JSON.stringify(lbConfig, undefined, 2));
     this.latestConfig = lbConfig;
     this.latestAttributes = attributes;
-    this.xdsClient = attributes.xdsClient as XdsClient;
+    this.xdsClient = attributes.xdsClient as XdsSingleServerClient;
     if (this.discoveryMechanismList.length === 0) {
       for (const mechanism of lbConfig.getDiscoveryMechanisms()) {
         const mechanismEntry: DiscoveryMechanismEntry = {
