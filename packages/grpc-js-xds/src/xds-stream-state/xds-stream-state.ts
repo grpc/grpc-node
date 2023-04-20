@@ -15,7 +15,7 @@
  *
  */
 
-import { experimental, logVerbosity, StatusObject } from "@grpc/grpc-js";
+import { experimental, logVerbosity, Metadata, status, StatusObject } from "@grpc/grpc-js";
 import { Any__Output } from "../generated/google/protobuf/Any";
 
 const TRACER_NAME = 'xds_client';
@@ -157,19 +157,32 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
     return Array.from(this.subscriptions.keys());
   }
   handleResponses(responses: ResourcePair<ResponseType>[]): HandleResponseResult {
-    const validResponses: ResponseType[] = [];
     let result: HandleResponseResult = {
       accepted: [],
       rejected: [],
       missing: []
     }
+    const allResourceNames = new Set<string>();
     for (const {resource, raw} of responses) {
       const resourceName = this.getResourceName(resource);
+      allResourceNames.add(resourceName);
+      const subscriptionEntry = this.subscriptions.get(resourceName);
       if (this.validateResponse(resource)) {
-        validResponses.push(resource);
         result.accepted.push({
           name: resourceName,
           raw: raw});
+        if (subscriptionEntry) {
+          const watchers = subscriptionEntry.watchers;
+          for (const watcher of watchers) {
+            watcher.onValidUpdate(resource);
+          }
+          clearTimeout(subscriptionEntry.resourceTimer);
+          subscriptionEntry.cachedResponse = resource;
+          if (subscriptionEntry.deletionIgnored) {
+            experimental.log(logVerbosity.INFO, 'Received resource with previously ignored deletion: ' + resourceName);
+            subscriptionEntry.deletionIgnored = false;
+          }
+        }
       } else {
         this.trace('Validation failed for message ' + JSON.stringify(resource));
         result.rejected.push({
@@ -177,23 +190,16 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
           raw: raw,
           error: `Validation failed for resource ${resourceName}`
         });
-      }
-    }
-    const allResourceNames = new Set<string>();
-    for (const resource of validResponses) {
-      const resourceName = this.getResourceName(resource);
-      allResourceNames.add(resourceName);
-      const subscriptionEntry = this.subscriptions.get(resourceName);
-      if (subscriptionEntry) {
-        const watchers = subscriptionEntry.watchers;
-        for (const watcher of watchers) {
-          watcher.onValidUpdate(resource);
-        }
-        clearTimeout(subscriptionEntry.resourceTimer);
-        subscriptionEntry.cachedResponse = resource;
-        if (subscriptionEntry.deletionIgnored) {
-          experimental.log(logVerbosity.INFO, 'Received resource with previously ignored deletion: ' + resourceName);
-          subscriptionEntry.deletionIgnored = false;
+        if (subscriptionEntry) {
+          const watchers = subscriptionEntry.watchers;
+          for (const watcher of watchers) {
+            watcher.onTransientError({
+              code: status.UNAVAILABLE,
+              details: `Validation failed for resource ${resourceName}`,
+              metadata: new Metadata()
+            });
+          }
+          clearTimeout(subscriptionEntry.resourceTimer);
         }
       }
     }
