@@ -27,7 +27,7 @@ const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
 const echoService =
     loadProtoFile(protoFile).EchoService as ServiceClientConstructor;
 
-describe.only('Global subchannel pool', () => {
+describe('Global subchannel pool', () => {
   let server: Server;
   let serverPort: number;
 
