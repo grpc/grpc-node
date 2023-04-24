@@ -322,12 +322,12 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       );
     }
     this.currentPick = subchannel;
-    this.updateState(ConnectivityState.READY, new PickFirstPicker(subchannel));
     subchannel.addConnectivityStateListener(this.pickedSubchannelStateListener);
     subchannel.ref();
     this.channelControlHelper.addChannelzChild(subchannel.getChannelzRef());
     this.resetSubchannelList();
     clearTimeout(this.connectionDelayTimeout);
+    this.updateState(ConnectivityState.READY, new PickFirstPicker(subchannel));
   }
 
   private updateState(newState: ConnectivityState, picker: Picker) {
