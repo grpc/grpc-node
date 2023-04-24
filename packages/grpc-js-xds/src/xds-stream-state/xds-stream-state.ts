@@ -172,14 +172,13 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
           name: resourceName,
           raw: raw});
         if (subscriptionEntry) {
-          const watchers = subscriptionEntry.watchers;
-          for (const watcher of watchers) {
+          for (const watcher of subscriptionEntry.watchers) {
             watcher.onValidUpdate(resource);
           }
           clearTimeout(subscriptionEntry.resourceTimer);
           subscriptionEntry.cachedResponse = resource;
           if (subscriptionEntry.deletionIgnored) {
-            experimental.log(logVerbosity.INFO, 'Received resource with previously ignored deletion: ' + resourceName);
+            experimental.log(logVerbosity.INFO, `Received resource with previously ignored deletion: ${resourceName}`);
             subscriptionEntry.deletionIgnored = false;
           }
         }
@@ -191,8 +190,7 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
           error: `Validation failed for resource ${resourceName}`
         });
         if (subscriptionEntry) {
-          const watchers = subscriptionEntry.watchers;
-          for (const watcher of watchers) {
+          for (const watcher of subscriptionEntry.watchers) {
             watcher.onTransientError({
               code: status.UNAVAILABLE,
               details: `Validation failed for resource ${resourceName}`,
