@@ -19,7 +19,7 @@ import * as assert from 'assert';
 import { register } from "../src";
 import { Backend } from "./backend";
 import { XdsTestClient } from "./client";
-import { FakeCluster, FakeRouteGroup } from "./framework";
+import { FakeEdsCluster, FakeRouteGroup } from "./framework";
 import { XdsServer } from "./xds-server";
 
 register();
@@ -38,7 +38,7 @@ describe('Validation errors', () => {
     xdsServer?.shutdownServer();
   });
   it('Should continue to use a valid resource after receiving an invalid EDS update', done => {
-    const cluster = new FakeCluster('cluster1', [{backends: [new Backend()], locality: {region: 'region1'}}]);
+    const cluster = new FakeEdsCluster('cluster1', [{backends: [new Backend()], locality: {region: 'region1'}}]);
     const routeGroup = new FakeRouteGroup('route1', [{cluster: cluster}]);
     routeGroup.startAllBackends().then(() => {
       xdsServer.setEdsResource(cluster.getEndpointConfig());
@@ -68,7 +68,7 @@ describe('Validation errors', () => {
     }, reason => done(reason));
   });
   it('Should continue to use a valid resource after receiving an invalid CDS update', done => {
-    const cluster = new FakeCluster('cluster1', [{backends: [new Backend()], locality: {region: 'region1'}}]);
+    const cluster = new FakeEdsCluster('cluster1', [{backends: [new Backend()], locality: {region: 'region1'}}]);
     const routeGroup = new FakeRouteGroup('route1', [{cluster: cluster}]);
     routeGroup.startAllBackends().then(() => {
       xdsServer.setEdsResource(cluster.getEndpointConfig());
@@ -98,7 +98,7 @@ describe('Validation errors', () => {
     }, reason => done(reason));
   });
   it('Should continue to use a valid resource after receiving an invalid RDS update', done => {
-    const cluster = new FakeCluster('cluster1', [{backends: [new Backend()], locality: {region: 'region1'}}]);
+    const cluster = new FakeEdsCluster('cluster1', [{backends: [new Backend()], locality: {region: 'region1'}}]);
     const routeGroup = new FakeRouteGroup('route1', [{cluster: cluster}]);
     routeGroup.startAllBackends().then(() => {
       xdsServer.setEdsResource(cluster.getEndpointConfig());
@@ -128,7 +128,7 @@ describe('Validation errors', () => {
     }, reason => done(reason));
   });
   it('Should continue to use a valid resource after receiving an invalid LDS update', done => {
-    const cluster = new FakeCluster('cluster1', [{backends: [new Backend()], locality: {region: 'region1'}}]);
+    const cluster = new FakeEdsCluster('cluster1', [{backends: [new Backend()], locality: {region: 'region1'}}]);
     const routeGroup = new FakeRouteGroup('route1', [{cluster: cluster}]);
     routeGroup.startAllBackends().then(() => {
       xdsServer.setEdsResource(cluster.getEndpointConfig());
