@@ -17,6 +17,7 @@
 
 import * as assert from 'assert';
 import { register } from "../src";
+import { Cluster } from '../src/generated/envoy/config/cluster/v3/Cluster';
 import { Backend } from "./backend";
 import { XdsTestClient } from "./client";
 import { FakeEdsCluster, FakeRouteGroup } from "./framework";
@@ -79,7 +80,7 @@ describe('Validation errors', () => {
       client.startCalls(100);
       routeGroup.waitForAllBackendsToReceiveTraffic().then(() => {
         // After backends receive calls, set invalid CDS resource
-        const invalidCdsResource = {name: cluster.getClusterConfig().name};
+        const invalidCdsResource: Cluster = {name: cluster.getClusterConfig().name, type: 'EDS'};
         xdsServer.setCdsResource(invalidCdsResource);
         let seenNack = false;
         xdsServer.addResponseListener((typeUrl, responseState) => {
