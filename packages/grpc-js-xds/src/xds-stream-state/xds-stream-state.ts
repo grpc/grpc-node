@@ -17,6 +17,9 @@
 
 import { experimental, logVerbosity, Metadata, status, StatusObject } from "@grpc/grpc-js";
 import { Any__Output } from "../generated/google/protobuf/Any";
+import { ResourceCache } from "../resource-cache";
+import { XdsServerConfig } from "../xds-bootstrap";
+import { XdsResourceKey } from "../resources";
 
 const TRACER_NAME = 'xds_client';
 
@@ -53,7 +56,7 @@ export interface HandleResponseResult {
   missing: string[];
 }
 
-export interface XdsStreamState<ResponseType> {
+export interface XdsStreamState<ResponseType, UpdateType> {
   versionInfo: string;
   nonce: string;
   getResourceNames(): string[];
@@ -67,34 +70,45 @@ export interface XdsStreamState<ResponseType> {
   reportStreamError(status: StatusObject): void;
   reportAdsStreamStart(): void;
 
-  addWatcher(name: string, watcher: Watcher<ResponseType>): void;
-  removeWatcher(resourceName: string, watcher: Watcher<ResponseType>): void;
+  addWatcher(name: string, watcher: Watcher<UpdateType>): void;
+  removeWatcher(resourceName: string, watcher: Watcher<UpdateType>): void;
 }
 
-interface SubscriptionEntry<ResponseType> {
-  watchers: Watcher<ResponseType>[];
-  cachedResponse: ResponseType | null;
+export interface XdsSubscriptionTracker<UpdateType> {
+  getResourceNames(): string[];
+  handleResourceUpdates(resourceList: ResourcePair<UpdateType>[]): void;
+
+  reportStreamError(status: StatusObject): void;
+  reportAdsStreamStart(): void;
+
+  addWatcher(key: string, watcher: Watcher<UpdateType>): void;
+  removeWatcher(key: string, watcher: Watcher<UpdateType>): void;
+}
+
+interface SubscriptionEntry<UpdateType> {
+  watchers: Watcher<UpdateType>[];
+  cachedResponse: UpdateType | null;
   resourceTimer: NodeJS.Timer;
   deletionIgnored: boolean;
 }
 
 const RESOURCE_TIMEOUT_MS = 15_000;
 
-export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState<ResponseType> {
+export abstract class BaseXdsStreamState<ResponseType, UpdateType> implements XdsStreamState<ResponseType, UpdateType> {
   versionInfo = '';
   nonce = '';
 
-  private subscriptions: Map<string, SubscriptionEntry<ResponseType>> = new Map<string, SubscriptionEntry<ResponseType>>();
+  private subscriptions: Map<string, SubscriptionEntry<UpdateType>> = new Map<string, SubscriptionEntry<UpdateType>>();
   private isAdsStreamRunning = false;
   private ignoreResourceDeletion = false;
 
-  constructor(private updateResourceNames: () => void) {}
+  constructor(protected xdsServer: XdsServerConfig, private updateResourceNames: () => void) {}
 
   protected trace(text: string) {
     experimental.trace(logVerbosity.DEBUG, TRACER_NAME, this.getProtocolName() + ' | ' + text);
   }
 
-  private startResourceTimer(subscriptionEntry: SubscriptionEntry<ResponseType>) {
+  private startResourceTimer(subscriptionEntry: SubscriptionEntry<UpdateType>) {
     clearTimeout(subscriptionEntry.resourceTimer);
     subscriptionEntry.resourceTimer = setTimeout(() => {
       for (const watcher of subscriptionEntry.watchers) {
@@ -103,7 +117,7 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
     }, RESOURCE_TIMEOUT_MS);
   }
 
-  addWatcher(name: string, watcher: Watcher<ResponseType>): void {
+  addWatcher(name: string, watcher: Watcher<UpdateType>): void {
     this.trace('Adding watcher for name ' + name);
     let subscriptionEntry = this.subscriptions.get(name);
     let addedName = false;
@@ -134,7 +148,7 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
       this.updateResourceNames();
     }
   }
-  removeWatcher(resourceName: string, watcher: Watcher<ResponseType>): void {
+  removeWatcher(resourceName: string, watcher: Watcher<UpdateType>): void {
     this.trace('Removing watcher for name ' + resourceName);
     const subscriptionEntry = this.subscriptions.get(resourceName);
     if (subscriptionEntry !== undefined) {
@@ -167,7 +181,8 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
       const resourceName = this.getResourceName(resource);
       allResourceNames.add(resourceName);
       const subscriptionEntry = this.subscriptions.get(resourceName);
-      if (this.validateResponse(resource)) {
+      const update = this.validateResponse(resource);
+      if (update) {
         result.accepted.push({
           name: resourceName,
           raw: raw});
@@ -176,11 +191,11 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
             /* Use process.nextTick to prevent errors from the watcher from
              * bubbling up through here. */
             process.nextTick(() => {
-              watcher.onValidUpdate(resource);
+              watcher.onValidUpdate(update);
             });
           }
           clearTimeout(subscriptionEntry.resourceTimer);
-          subscriptionEntry.cachedResponse = resource;
+          subscriptionEntry.cachedResponse = update;
           if (subscriptionEntry.deletionIgnored) {
             experimental.log(logVerbosity.INFO, `Received resource with previously ignored deletion: ${resourceName}`);
             subscriptionEntry.deletionIgnored = false;
@@ -277,7 +292,7 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
    * the RDS validateResponse.
    * @param resource The resource object sent by the xDS server
    */
-  public abstract validateResponse(resource: ResponseType): boolean;
+  public abstract validateResponse(resource: ResponseType): UpdateType | null;
   /**
    * Get the name of a resource object. The name is some field of the object, so
    * getting it depends on the specific type.
@@ -285,6 +300,7 @@ export abstract class BaseXdsStreamState<ResponseType> implements XdsStreamState
    */
   protected abstract getResourceName(resource: ResponseType): string;
   protected abstract getProtocolName(): string;
+  protected abstract getTypeUrl(): string;
   /**
    * Indicates whether responses are "state of the world", i.e. that they
    * contain all resources and that omitted previously-seen resources should

@@ -21,7 +21,7 @@ import { loadProtosWithOptionsSync } from '@grpc/proto-loader/build/src/util';
 import { loadPackageDefinition, StatusObject, status, logVerbosity, Metadata, experimental, ChannelOptions, ClientDuplexStream, ServiceError, ChannelCredentials, Channel, connectivityState } from '@grpc/grpc-js';
 import * as adsTypes from './generated/ads';
 import * as lrsTypes from './generated/lrs';
-import { BootstrapInfo, loadBootstrapInfo, XdsServerConfig } from './xds-bootstrap';
+import { BootstrapInfo, loadBootstrapInfo, serverConfigEqual, XdsServerConfig } from './xds-bootstrap';
 import { Node } from './generated/envoy/config/core/v3/Node';
 import { AggregatedDiscoveryServiceClient } from './generated/envoy/service/discovery/v3/AggregatedDiscoveryService';
 import { DiscoveryRequest } from './generated/envoy/service/discovery/v3/DiscoveryRequest';
@@ -37,7 +37,7 @@ import ServiceConfig = experimental.ServiceConfig;
 import { createGoogleDefaultCredentials } from './google-default-credentials';
 import { CdsLoadBalancingConfig } from './load-balancer-cds';
 import { EdsState } from './xds-stream-state/eds-state';
-import { CdsState } from './xds-stream-state/cds-state';
+import { CdsState, CdsUpdate } from './xds-stream-state/cds-state';
 import { RdsState } from './xds-stream-state/rds-state';
 import { LdsState } from './xds-stream-state/lds-state';
 import { HandleResponseResult, ResourcePair, Watcher } from './xds-stream-state/xds-stream-state';
@@ -47,6 +47,7 @@ import { RouteConfiguration__Output } from './generated/envoy/config/route/v3/Ro
 import { Duration } from './generated/google/protobuf/Duration';
 import { AdsOutputType, AdsTypeUrl, CDS_TYPE_URL, decodeSingleResource, EDS_TYPE_URL, LDS_TYPE_URL, RDS_TYPE_URL } from './resources';
 import { setCsdsClientNode, updateCsdsRequestedNameList, updateCsdsResourceResponse } from './csds';
+import { EXPERIMENTAL_FEDERATION } from './environment';
 
 const TRACER_NAME = 'xds_client';
 
@@ -267,16 +268,16 @@ class XdsSingleServerClient {
   private lrsBackoff: BackoffTimeout;
 
   constructor(bootstrapNode: Node, private xdsServerConfig: XdsServerConfig) {
-    const edsState = new EdsState(() => {
+    const edsState = new EdsState(xdsServerConfig, () => {
       this.updateNames('eds');
     });
-    const cdsState = new CdsState(() => {
+    const cdsState = new CdsState(xdsServerConfig, () => {
       this.updateNames('cds');
     });
-    const rdsState = new RdsState(() => {
+    const rdsState = new RdsState(xdsServerConfig, () => {
       this.updateNames('rds');
     });
-    const ldsState = new LdsState(rdsState, () => {
+    const ldsState = new LdsState(xdsServerConfig, rdsState, () => {
       this.updateNames('lds');
     });
     this.adsState = {
@@ -807,12 +808,12 @@ class XdsSingleServerClient {
     this.adsState.eds.removeWatcher(edsServiceName, watcher);
   }
 
-  addClusterWatcher(clusterName: string, watcher: Watcher<Cluster__Output>) {
+  addClusterWatcher(clusterName: string, watcher: Watcher<CdsUpdate>) {
     this.trace('Watcher added for cluster ' + clusterName);
     this.adsState.cds.addWatcher(clusterName, watcher);
   }
 
-  removeClusterWatcher(clusterName: string, watcher: Watcher<Cluster__Output>) {
+  removeClusterWatcher(clusterName: string, watcher: Watcher<CdsUpdate>) {
     this.trace('Watcher removed for cluster ' + clusterName);
     this.adsState.cds.removeWatcher(clusterName, watcher);
   }
@@ -912,31 +913,24 @@ class XdsSingleServerClient {
   }
 }
 
-const KNOWN_SERVER_FEATURES = ['ignore_resource_deletion'];
-
-function serverConfigEqual(config1: XdsServerConfig, config2: XdsServerConfig): boolean {
-  if (config1.serverUri !== config2.serverUri) {
-    return false;
-  }
-  for (const feature of KNOWN_SERVER_FEATURES) {
-    if ((feature in config1.serverFeatures) !== (feature in config2.serverFeatures)) {
-      return false;
-    }
-  }
-  if (config1.channelCreds.length !== config2.channelCreds.length) {
-    return false;
-  }
-  for (const [index, creds1] of config1.channelCreds.entries()) {
-    const creds2 = config2.channelCreds[index];
-    if (creds1.type !== creds2.type) {
-      return false;
-    }
-    if (JSON.stringify(creds1) !== JSON.stringify(creds2)) {
-      return false;
-    }
-  }
-  return true;
-}
+/* Structure:
+ * serverConfig
+ *   single server client
+ *     response validation (for ACK/NACK)
+ *     response parsing (server config in CDS update for LRS)
+ * authority
+ *   EdsStreamState
+ *     watchers
+ *     cache
+ *   CdsStreamState
+ *     ...
+ *   RdsStreamState
+ *     ...
+ *   LdsStreamState
+ *     ...
+ *   server reference
+ *   update CSDS
+ */
 
 interface ClientMapEntry {
   serverConfig: XdsServerConfig;
@@ -968,16 +962,20 @@ export class XdsClient {
   private getOrCreateClientForResource(resourceName: string): XdsSingleServerClient {
     const bootstrapInfo = this.getBootstrapInfo();
     let serverConfig: XdsServerConfig;
-    if (resourceName.startsWith('xdstp:')) {
-      const match = resourceName.match(/xdstp:\/\/([^/]+)\//);
-      if (!match) {
-        throw new Error(`Parse error: Resource ${resourceName} has no authority`);
-      }
-      const authority = match[1];
-      if (authority in bootstrapInfo.authorities) {
-        serverConfig = bootstrapInfo.authorities[authority].xdsServers?.[0] ?? bootstrapInfo.xdsServers[0];
+    if (EXPERIMENTAL_FEDERATION) {
+      if (resourceName.startsWith('xdstp:')) {
+        const match = resourceName.match(/xdstp:\/\/([^/]+)\//);
+        if (!match) {
+          throw new Error(`Parse error: Resource ${resourceName} has no authority`);
+        }
+        const authority = match[1];
+        if (authority in bootstrapInfo.authorities) {
+          serverConfig = bootstrapInfo.authorities[authority].xdsServers?.[0] ?? bootstrapInfo.xdsServers[0];
+        } else {
+          throw new Error(`Authority ${authority} in resource ${resourceName} not found in authorities list`);
+        }
       } else {
-        throw new Error(`Authority ${authority} in resource ${resourceName} not found in authorities list`);
+        serverConfig = bootstrapInfo.xdsServers[0];
       }
     } else {
       serverConfig = bootstrapInfo.xdsServers[0];
@@ -1018,7 +1016,7 @@ export class XdsClient {
     }
   }
 
-  addClusterWatcher(clusterName: string, watcher: Watcher<Cluster__Output>) {
+  addClusterWatcher(clusterName: string, watcher: Watcher<CdsUpdate>) {
     trace('addClusterWatcher(' + clusterName + ')');
     try {
       const client = this.getOrCreateClientForResource(clusterName);
@@ -1029,7 +1027,7 @@ export class XdsClient {
     }
   }
 
-  removeClusterWatcher(clusterName: string, watcher: Watcher<Cluster__Output>) {
+  removeClusterWatcher(clusterName: string, watcher: Watcher<CdsUpdate>) {
     trace('removeClusterWatcher(' + clusterName + ')');
     try {
       const client = this.getOrCreateClientForResource(clusterName);

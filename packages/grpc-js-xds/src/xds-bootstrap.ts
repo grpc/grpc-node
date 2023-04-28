@@ -58,6 +58,32 @@ export interface BootstrapInfo {
   clientDefaultListenerResourceNameTemplate: string;
 }
 
+const KNOWN_SERVER_FEATURES = ['ignore_resource_deletion'];
+
+export function serverConfigEqual(config1: XdsServerConfig, config2: XdsServerConfig): boolean {
+  if (config1.serverUri !== config2.serverUri) {
+    return false;
+  }
+  for (const feature of KNOWN_SERVER_FEATURES) {
+    if ((feature in config1.serverFeatures) !== (feature in config2.serverFeatures)) {
+      return false;
+    }
+  }
+  if (config1.channelCreds.length !== config2.channelCreds.length) {
+    return false;
+  }
+  for (const [index, creds1] of config1.channelCreds.entries()) {
+    const creds2 = config2.channelCreds[index];
+    if (creds1.type !== creds2.type) {
+      return false;
+    }
+    if (JSON.stringify(creds1) !== JSON.stringify(creds2)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function validateChannelCredsConfig(obj: any): ChannelCredsConfig {
   if (!('type' in obj)) {
     throw new Error('type field missing in xds_servers.channel_creds element');
@@ -80,7 +106,7 @@ function validateChannelCredsConfig(obj: any): ChannelCredsConfig {
   };
 }
 
-function validateXdsServerConfig(obj: any): XdsServerConfig {
+export function validateXdsServerConfig(obj: any): XdsServerConfig {
   if (!('server_uri' in obj)) {
     throw new Error('server_uri field missing in xds_servers element');
   }

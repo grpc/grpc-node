@@ -18,7 +18,7 @@ import * as protoLoader from '@grpc/proto-loader';
 
 import { RE2 } from 're2-wasm';
 
-import { getSingletonXdsClient, XdsSingleServerClient } from './xds-client';
+import { getSingletonXdsClient, XdsClient } from './xds-client';
 import { StatusObject, status, logVerbosity, Metadata, experimental, ChannelOptions } from '@grpc/grpc-js';
 import Resolver = experimental.Resolver;
 import GrpcUri = experimental.GrpcUri;
@@ -273,7 +273,7 @@ class XdsResolver implements Resolver {
 
   private bootstrapInfo: BootstrapInfo | null = null;
 
-  private xdsClient: XdsSingleServerClient;
+  private xdsClient: XdsClient;
 
   constructor(
     private target: GrpcUri,
@@ -283,7 +283,7 @@ class XdsResolver implements Resolver {
     if (channelOptions[BOOTSTRAP_CONFIG_KEY]) {
       const parsedConfig = JSON.parse(channelOptions[BOOTSTRAP_CONFIG_KEY]);
       this.bootstrapInfo = validateBootstrapConfig(parsedConfig);
-      this.xdsClient = new XdsSingleServerClient(this.bootstrapInfo);
+      this.xdsClient = new XdsClient(this.bootstrapInfo);
     } else {
       this.xdsClient = getSingletonXdsClient();
     }

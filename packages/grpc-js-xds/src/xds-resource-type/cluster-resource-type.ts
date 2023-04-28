@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 gRPC authors.
+ * Copyright 2023 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,18 @@
  *
  */
 
-import { FailurePercentageEjectionConfig, SuccessRateEjectionConfig } from "@grpc/grpc-js/build/src/load-balancer-outlier-detection";
-import { EXPERIMENTAL_OUTLIER_DETECTION } from "../environment";
-import { Cluster__Output } from "../generated/envoy/config/cluster/v3/Cluster";
-import { OutlierDetection__Output } from "../generated/envoy/config/cluster/v3/OutlierDetection";
-import { Duration__Output } from "../generated/google/protobuf/Duration";
-import { UInt32Value__Output } from "../generated/google/protobuf/UInt32Value";
-import { CLUSTER_CONFIG_TYPE_URL, decodeSingleResource } from "../resources";
+import { CDS_TYPE_URL, CLUSTER_CONFIG_TYPE_URL, decodeSingleResource } from "../resources";
+import { XdsResourceType } from "./xds-resource-type";
+import { experimental } from "@grpc/grpc-js";
 import { XdsServerConfig } from "../xds-bootstrap";
-import { BaseXdsStreamState, XdsStreamState } from "./xds-stream-state";
+import { Duration__Output } from "../generated/google/protobuf/Duration";
+import { OutlierDetection__Output } from "../generated/envoy/config/cluster/v3/OutlierDetection";
+import { EXPERIMENTAL_OUTLIER_DETECTION } from "../environment";
+
+import SuccessRateEjectionConfig = experimental.SuccessRateEjectionConfig;
+import FailurePercentageEjectionConfig = experimental.FailurePercentageEjectionConfig;
+import { Cluster__Output } from "../generated/envoy/config/cluster/v3/Cluster";
+import { UInt32Value__Output } from "../generated/google/protobuf/UInt32Value";
 
 export interface OutlierDetectionUpdate {
   intervalMs: number | null;
@@ -96,15 +99,20 @@ function convertOutlierDetectionUpdate(outlierDetection: OutlierDetection__Outpu
   };
 }
 
-export class CdsState extends BaseXdsStreamState<Cluster__Output, CdsUpdate> implements XdsStreamState<Cluster__Output, CdsUpdate> {
-  protected isStateOfTheWorld(): boolean {
-    return true;
+
+export class ClusterResourceType extends XdsResourceType {
+  private static singleton: ClusterResourceType = new ClusterResourceType();
+  
+  private constructor() {
+    super();
   }
-  protected getResourceName(resource: Cluster__Output): string {
-    return resource.name;
+
+  static get() {
+    return ClusterResourceType.singleton;
   }
-  protected getProtocolName(): string {
-    return 'CDS';
+
+  getTypeUrl(): string {
+    return CDS_TYPE_URL;
   }
 
   private validateNonnegativeDuration(duration: Duration__Output | null): boolean {
@@ -127,7 +135,7 @@ export class CdsState extends BaseXdsStreamState<Cluster__Output, CdsUpdate> imp
     return percentage.value >=0 && percentage.value <= 100;
   }
 
-  public validateResponse(message: Cluster__Output): CdsUpdate | null {
+  private validateResource(message: Cluster__Output): CdsUpdate | null {
     if (message.lb_policy !== 'ROUND_ROBIN') {
       return null;
     }

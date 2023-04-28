@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 gRPC authors.
+ * Copyright 2023 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,15 @@
  *
  */
 
-import { experimental, logVerbosity } from "@grpc/grpc-js";
-import { Listener__Output } from '../generated/envoy/config/listener/v3/Listener';
-import { RdsState } from "./rds-state";
-import { BaseXdsStreamState, XdsStreamState } from "./xds-stream-state";
-import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL } from '../resources';
-import { getTopLevelFilterUrl, validateTopLevelFilter } from '../http-filter';
-import { EXPERIMENTAL_FAULT_INJECTION } from '../environment';
-import { XdsServerConfig } from "../xds-bootstrap";
+import { logVerbosity, experimental } from "@grpc/grpc-js";
+import { EXPERIMENTAL_FAULT_INJECTION } from "../environment";
+import { Listener__Output } from "../generated/envoy/config/listener/v3/Listener";
+import { Any__Output } from "../generated/google/protobuf/Any";
+import { HTTP_CONNECTION_MANGER_TYPE_URL, LDS_TYPE_URL, decodeSingleResource } from "../resources";
+import { XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
+import { getTopLevelFilterUrl, validateTopLevelFilter } from "../http-filter";
+import { RouteConfigurationResourceType } from "./route-config-resource-type";
+import { Watcher, XdsClient } from "../xds-client2";
 
 const TRACER_NAME = 'xds_client';
 
@@ -32,22 +33,20 @@ function trace(text: string): void {
 
 const ROUTER_FILTER_URL = 'type.googleapis.com/envoy.extensions.filters.http.router.v3.Router';
 
-export class LdsState extends BaseXdsStreamState<Listener__Output, Listener__Output> implements XdsStreamState<Listener__Output, Listener__Output> {
-  protected getResourceName(resource: Listener__Output): string {
-    return resource.name;
-  }
-  protected getProtocolName(): string {
-    return 'LDS';
-  }
-  protected isStateOfTheWorld(): boolean {
-    return true;
+export class ListenerResourceType extends XdsResourceType {
+  private static singleton: ListenerResourceType = new ListenerResourceType();
+  private constructor() {
+    super();
   }
 
-  constructor(xdsServer: XdsServerConfig, private rdsState: RdsState, updateResourceNames: () => void) {
-    super(xdsServer, updateResourceNames);
+  static get() {
+    return ListenerResourceType.singleton;
+  }
+  getTypeUrl(): string {
+    return LDS_TYPE_URL;
   }
 
-  public validateResponse(message: Listener__Output): Listener__Output | null {
+  private validateResource(message: Listener__Output): Listener__Output | null {
     if (
       !(
         message.api_listener?.api_listener &&
@@ -92,11 +91,44 @@ export class LdsState extends BaseXdsStreamState<Listener__Output, Listener__Out
         }
         return message;
       case 'route_config':
-        if (!this.rdsState.validateResponse(httpConnectionManager.route_config!)) {
+        if (!RouteConfigurationResourceType.get().validateResource(httpConnectionManager.route_config!)) {
           return null;
         }
         return message;
     }
     return null;
+  }
+
+  decode(resource: Any__Output): XdsDecodeResult {
+    if (resource.type_url !== LDS_TYPE_URL) {
+      throw new Error(
+        `ADS Error: Invalid resource type ${resource.type_url}, expected ${LDS_TYPE_URL}`
+      );
+    }
+    const message = decodeSingleResource(LDS_TYPE_URL, resource.value);
+    const validatedMessage = this.validateResource(message);
+    if (validatedMessage) {
+      return {
+        name: validatedMessage.name,
+        value: validatedMessage
+      };
+    } else {
+      return {
+        name: message.name,
+        error: 'Listener message validation failed'
+      };
+    }
+  }
+
+  allResourcesRequiredInSotW(): boolean {
+    return true;
+  }
+
+  static startWatch(client: XdsClient, name: string, watcher: Watcher<Listener__Output>) {
+    client.watchResource(ListenerResourceType.get(), name, watcher);
+  }
+
+  static cancelWatch(client: XdsClient, name: string, watcher: Watcher<Listener__Output>) {
+    client.cancelResourceWatch(ListenerResourceType.get(), name, watcher);
   }
 }

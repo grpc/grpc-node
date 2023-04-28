@@ -17,7 +17,8 @@
 
 import { connectivityState as ConnectivityState, StatusObject, status as Status, experimental } from '@grpc/grpc-js';
 import { Locality__Output } from './generated/envoy/config/core/v3/Locality';
-import { XdsClusterLocalityStats, XdsSingleServerClient, getSingletonXdsClient } from './xds-client';
+import { validateXdsServerConfig, XdsServerConfig } from './xds-bootstrap';
+import { XdsClusterLocalityStats, XdsClient, getSingletonXdsClient } from './xds-client';
 import LoadBalancer = experimental.LoadBalancer;
 import ChannelControlHelper = experimental.ChannelControlHelper;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
@@ -46,14 +47,14 @@ export class LrsLoadBalancingConfig implements LoadBalancingConfig {
       [TYPE_NAME]: {
         cluster_name: this.clusterName,
         eds_service_name: this.edsServiceName,
-        lrs_load_reporting_server_name: this.lrsLoadReportingServerName,
+        lrs_load_reporting_server_name: this.lrsLoadReportingServer,
         locality: this.locality,
         child_policy: this.childPolicy.map(policy => policy.toJsonObject())
       }
     }
   }
 
-  constructor(private clusterName: string, private edsServiceName: string, private lrsLoadReportingServerName: string, private locality: Locality__Output, private childPolicy: LoadBalancingConfig[]) {}
+  constructor(private clusterName: string, private edsServiceName: string, private lrsLoadReportingServer: XdsServerConfig, private locality: Locality__Output, private childPolicy: LoadBalancingConfig[]) {}
 
   getClusterName() {
     return this.clusterName;
@@ -63,8 +64,8 @@ export class LrsLoadBalancingConfig implements LoadBalancingConfig {
     return this.edsServiceName;
   }
 
-  getLrsLoadReportingServerName() {
-    return this.lrsLoadReportingServerName;
+  getLrsLoadReportingServer() {
+    return this.lrsLoadReportingServer;
   }
 
   getLocality() {
@@ -82,9 +83,6 @@ export class LrsLoadBalancingConfig implements LoadBalancingConfig {
     if (!('eds_service_name' in obj && typeof obj.eds_service_name === 'string')) {
       throw new Error('lrs config must have a string field eds_service_name');
     }
-    if (!('lrs_load_reporting_server_name' in obj && typeof obj.lrs_load_reporting_server_name === 'string')) {
-      throw new Error('lrs config must have a string field lrs_load_reporting_server_name');
-    }
     if (!('locality' in obj && obj.locality !== null && typeof obj.locality === 'object')) {
       throw new Error('lrs config must have an object field locality');
     }
@@ -100,7 +98,7 @@ export class LrsLoadBalancingConfig implements LoadBalancingConfig {
     if (!('child_policy' in obj && Array.isArray(obj.child_policy))) {
       throw new Error('lrs config must have a child_policy array');
     }
-    return new LrsLoadBalancingConfig(obj.cluster_name, obj.eds_service_name, obj.lrs_load_reporting_server_name, {
+    return new LrsLoadBalancingConfig(obj.cluster_name, obj.eds_service_name, validateXdsServerConfig(obj.lrs_load_reporting_server), {
       region: obj.locality.region ?? '',
       zone: obj.locality.zone ?? '',
       sub_zone: obj.locality.sub_zone ?? ''
@@ -169,8 +167,8 @@ export class LrsLoadBalancer implements LoadBalancer {
     if (!(lbConfig instanceof LrsLoadBalancingConfig)) {
       return;
     }
-    this.localityStatsReporter = (attributes.xdsClient as XdsSingleServerClient).addClusterLocalityStats(
-      lbConfig.getLrsLoadReportingServerName(),
+    this.localityStatsReporter = (attributes.xdsClient as XdsClient).addClusterLocalityStats(
+      lbConfig.getLrsLoadReportingServer(),
       lbConfig.getClusterName(),
       lbConfig.getEdsServiceName(),
       lbConfig.getLocality()
