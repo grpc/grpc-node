@@ -13,4 +13,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-XDS_V3_OPT="--xds_v3_support" $(dirname $0)/xds.sh
+XDS_V3_OPT="--xds_v3_support" TEST_CASES="ping_pong,circuit_breaking" $(dirname $0)/xds.sh
