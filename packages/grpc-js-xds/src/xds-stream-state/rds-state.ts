@@ -29,7 +29,8 @@ const SUPPPORTED_HEADER_MATCH_SPECIFIERS = [
   'range_match',
   'present_match',
   'prefix_match',
-  'suffix_match'];
+  'suffix_match',
+  'string_match'];
 const SUPPORTED_CLUSTER_SPECIFIERS = ['cluster', 'weighted_clusters', 'cluster_header'];
 
 const UINT32_MAX = 0xFFFFFFFF;
