@@ -323,7 +323,7 @@ export class Client {
     emitter.call = call;
     let responseMessage: ResponseType | null = null;
     let receivedStatus = false;
-    const callerStackError = new Error();
+    let callerStackError: Error | null = new Error();
     call.start(callProperties.metadata, {
       onReceiveMetadata: (metadata) => {
         emitter.emit('metadata', metadata);
@@ -342,19 +342,22 @@ export class Client {
         receivedStatus = true;
         if (status.code === Status.OK) {
           if (responseMessage === null) {
-            const callerStack = getErrorStackString(callerStackError);
+            const callerStack = getErrorStackString(callerStackError!);
             callProperties.callback!(callErrorFromStatus({
               code: Status.INTERNAL,
               details: 'No message received',
               metadata: status.metadata
-            }, callerStack));
+            }, /*callerStack*/''));
           } else {
             callProperties.callback!(null, responseMessage);
           }
         } else {
-          const callerStack = getErrorStackString(callerStackError);
-          callProperties.callback!(callErrorFromStatus(status, callerStack));
+          const callerStack = getErrorStackString(callerStackError!);
+          callProperties.callback!(callErrorFromStatus(status, /*callerStack*/''));
         }
+        /* Avoid retaining the callerStackError object in the call context of
+         * the status event handler. */
+        callerStackError = null;
         emitter.emit('status', status);
       },
     });
@@ -448,7 +451,7 @@ export class Client {
     emitter.call = call;
     let responseMessage: ResponseType | null = null;
     let receivedStatus = false;
-    const callerStackError = new Error();
+    let callerStackError: Error | null = new Error();
     call.start(callProperties.metadata, {
       onReceiveMetadata: (metadata) => {
         emitter.emit('metadata', metadata);
@@ -467,7 +470,7 @@ export class Client {
         receivedStatus = true;
         if (status.code === Status.OK) {
           if (responseMessage === null) {
-            const callerStack = getErrorStackString(callerStackError);
+            const callerStack = getErrorStackString(callerStackError!);
             callProperties.callback!(callErrorFromStatus({
               code: Status.INTERNAL,
               details: 'No message received',
@@ -477,9 +480,12 @@ export class Client {
             callProperties.callback!(null, responseMessage);
           }
         } else {
-          const callerStack = getErrorStackString(callerStackError);
+          const callerStack = getErrorStackString(callerStackError!);
           callProperties.callback!(callErrorFromStatus(status, callerStack));
         }
+        /* Avoid retaining the callerStackError object in the call context of
+         * the status event handler. */
+        callerStackError = null;
         emitter.emit('status', status);
       },
     });
@@ -577,7 +583,7 @@ export class Client {
      * call after that. */
     stream.call = call;
     let receivedStatus = false;
-    const callerStackError = new Error();
+    let callerStackError: Error | null = new Error();
     call.start(callProperties.metadata, {
       onReceiveMetadata(metadata: Metadata) {
         stream.emit('metadata', metadata);
@@ -593,9 +599,12 @@ export class Client {
         receivedStatus = true;
         stream.push(null);
         if (status.code !== Status.OK) {
-          const callerStack = getErrorStackString(callerStackError);
+          const callerStack = getErrorStackString(callerStackError!);
           stream.emit('error', callErrorFromStatus(status, callerStack));
         }
+        /* Avoid retaining the callerStackError object in the call context of
+         * the status event handler. */
+        callerStackError = null;
         stream.emit('status', status);
       },
     });
@@ -673,7 +682,7 @@ export class Client {
      * call after that. */
     stream.call = call;
     let receivedStatus = false;
-    const callerStackError = new Error();
+    let callerStackError: Error | null = new Error();
     call.start(callProperties.metadata, {
       onReceiveMetadata(metadata: Metadata) {
         stream.emit('metadata', metadata);
@@ -688,9 +697,12 @@ export class Client {
         receivedStatus = true;
         stream.push(null);
         if (status.code !== Status.OK) {
-          const callerStack = getErrorStackString(callerStackError);
+          const callerStack = getErrorStackString(callerStackError!);
           stream.emit('error', callErrorFromStatus(status, callerStack));
         }
+        /* Avoid retaining the callerStackError object in the call context of
+         * the status event handler. */
+        callerStackError = null;
         stream.emit('status', status);
       },
     });
