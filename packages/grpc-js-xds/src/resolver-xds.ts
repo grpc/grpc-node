@@ -37,7 +37,7 @@ import { HeaderMatcher__Output } from './generated/envoy/config/route/v3/HeaderM
 import ConfigSelector = experimental.ConfigSelector;
 import LoadBalancingConfig = experimental.LoadBalancingConfig;
 import { XdsClusterManagerLoadBalancingConfig } from './load-balancer-xds-cluster-manager';
-import { ExactValueMatcher, FullMatcher, HeaderMatcher, Matcher, PathExactValueMatcher, PathPrefixValueMatcher, PathSafeRegexValueMatcher, PrefixValueMatcher, PresentValueMatcher, RangeValueMatcher, RejectValueMatcher, SafeRegexValueMatcher, SuffixValueMatcher, ValueMatcher } from './matcher';
+import { ContainsValueMatcher, ExactValueMatcher, FullMatcher, HeaderMatcher, Matcher, PathExactValueMatcher, PathPrefixValueMatcher, PathSafeRegexValueMatcher, PrefixValueMatcher, PresentValueMatcher, RangeValueMatcher, RejectValueMatcher, SafeRegexValueMatcher, SuffixValueMatcher, ValueMatcher } from './matcher';
 import { envoyFractionToFraction, Fraction } from "./fraction";
 import { RouteAction, SingleClusterRouteAction, WeightedCluster, WeightedClusterRouteAction } from './route-action';
 import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL } from './resources';
@@ -136,7 +136,7 @@ function getPredicateForHeaderMatcher(headerMatch: HeaderMatcher__Output): Match
   let valueChecker: ValueMatcher;
   switch (headerMatch.header_match_specifier) {
     case 'exact_match':
-      valueChecker = new ExactValueMatcher(headerMatch.exact_match!);
+      valueChecker = new ExactValueMatcher(headerMatch.exact_match!, false);
       break;
     case 'safe_regex_match':
       valueChecker = new SafeRegexValueMatcher(headerMatch.safe_regex_match!.regex);
@@ -150,10 +150,30 @@ function getPredicateForHeaderMatcher(headerMatch: HeaderMatcher__Output): Match
       valueChecker = new PresentValueMatcher();
       break;
     case 'prefix_match':
-      valueChecker = new PrefixValueMatcher(headerMatch.prefix_match!);
+      valueChecker = new PrefixValueMatcher(headerMatch.prefix_match!, false);
       break;
     case 'suffix_match':
-      valueChecker = new SuffixValueMatcher(headerMatch.suffix_match!);
+      valueChecker = new SuffixValueMatcher(headerMatch.suffix_match!, false);
+      break;
+    case 'string_match':
+      const stringMatch = headerMatch.string_match!
+      switch (stringMatch.match_pattern) {
+        case 'exact':
+          valueChecker = new ExactValueMatcher(stringMatch.exact!, stringMatch.ignore_case);
+          break;
+        case 'safe_regex':
+          valueChecker = new SafeRegexValueMatcher(stringMatch.safe_regex!.regex);
+          break;
+        case 'prefix':
+          valueChecker = new PrefixValueMatcher(stringMatch.prefix!, stringMatch.ignore_case);
+          break;
+        case 'suffix':
+          valueChecker = new SuffixValueMatcher(stringMatch.suffix!, stringMatch.ignore_case);
+          break;
+        case 'contains':
+          valueChecker = new ContainsValueMatcher(stringMatch.contains!, stringMatch.ignore_case);
+          break;
+      }
       break;
     default:
       valueChecker = new RejectValueMatcher();

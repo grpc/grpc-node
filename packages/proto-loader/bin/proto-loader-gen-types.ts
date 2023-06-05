@@ -835,7 +835,7 @@ async function runScript() {
     boolean: true,
     default: false,
   };
-  const argv = yargs
+  const argv = await yargs
     .parserConfiguration({
       'parse-positional-numbers': false
     })

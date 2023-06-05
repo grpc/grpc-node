@@ -37,14 +37,19 @@ export interface ValueMatcher {
 }
 
 export class ExactValueMatcher implements ValueMatcher {
-  constructor(private targetValue: string) {}
+  constructor(private targetValue: string, private ignoreCase: boolean) {
+  }
 
   apply(value: string) {
-    return value === this.targetValue;
+    if (this.ignoreCase) {
+      return value.toLowerCase() === this.targetValue.toLowerCase();
+    } else {
+      return value === this.targetValue;
+    }
   }
 
   toString() {
-    return 'Exact(' + this.targetValue + ')';
+    return 'Exact(' + this.targetValue + ', ignore_case=' + this.ignoreCase + ')';
   }
 }
 
@@ -94,26 +99,51 @@ export class PresentValueMatcher implements ValueMatcher {
 }
 
 export class PrefixValueMatcher implements ValueMatcher {
-  constructor(private prefix: string) {}
+  constructor(private prefix: string, private ignoreCase: boolean) {
+  }
 
   apply(value: string) {
-    return value.startsWith(this.prefix);
+    if (this.ignoreCase) {
+      return value.toLowerCase().startsWith(this.prefix.toLowerCase());
+    } else {
+      return value.startsWith(this.prefix);
+    }
   }
 
   toString() {
-    return 'Prefix(' + this.prefix + ')';
+    return 'Prefix(' + this.prefix + ', ignore_case=' + this.ignoreCase + ')';
   }
 }
 
 export class SuffixValueMatcher implements ValueMatcher {
-  constructor(private suffix: string) {}
+  constructor(private suffix: string, private ignoreCase: boolean) {}
 
   apply(value: string) {
-    return value.endsWith(this.suffix);
+    if (this.ignoreCase) {
+      return value.toLowerCase().endsWith(this.suffix.toLowerCase());
+    } else {
+      return value.endsWith(this.suffix);
+    }
   }
 
   toString() {
-    return 'Suffix(' + this.suffix + ')';
+    return 'Suffix(' + this.suffix + ', ignore_case=' + this.ignoreCase + ')';
+  }
+}
+
+export class ContainsValueMatcher implements ValueMatcher {
+  constructor(private contains: string, private ignoreCase: boolean) {}
+
+  apply(value: string) {
+    if (this.ignoreCase) {
+      return value.toLowerCase().includes(this.contains.toLowerCase());
+    } else {
+      return value.includes(this.contains);
+    }
+  }
+
+  toString() {
+    return 'Contains(' + this.contains + + ', ignore_case=' + this.ignoreCase + ')';
   }
 }
 
