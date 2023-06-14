@@ -16,17 +16,19 @@
  */
 
 import { CDS_TYPE_URL, CLUSTER_CONFIG_TYPE_URL, decodeSingleResource } from "../resources";
-import { XdsResourceType } from "./xds-resource-type";
+import { XdsDecodeContext, XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
 import { experimental } from "@grpc/grpc-js";
 import { XdsServerConfig } from "../xds-bootstrap";
 import { Duration__Output } from "../generated/google/protobuf/Duration";
 import { OutlierDetection__Output } from "../generated/envoy/config/cluster/v3/OutlierDetection";
 import { EXPERIMENTAL_OUTLIER_DETECTION } from "../environment";
+import { Cluster__Output } from "../generated/envoy/config/cluster/v3/Cluster";
+import { UInt32Value__Output } from "../generated/google/protobuf/UInt32Value";
+import { Any__Output } from "../generated/google/protobuf/Any";
 
 import SuccessRateEjectionConfig = experimental.SuccessRateEjectionConfig;
 import FailurePercentageEjectionConfig = experimental.FailurePercentageEjectionConfig;
-import { Cluster__Output } from "../generated/envoy/config/cluster/v3/Cluster";
-import { UInt32Value__Output } from "../generated/google/protobuf/UInt32Value";
+import { Watcher, XdsClient } from "../xds-client";
 
 export interface OutlierDetectionUpdate {
   intervalMs: number | null;
@@ -112,7 +114,7 @@ export class ClusterResourceType extends XdsResourceType {
   }
 
   getTypeUrl(): string {
-    return CDS_TYPE_URL;
+    return 'envoy.config.cluster.v3.Cluster';
   }
 
   private validateNonnegativeDuration(duration: Duration__Output | null): boolean {
@@ -135,7 +137,7 @@ export class ClusterResourceType extends XdsResourceType {
     return percentage.value >=0 && percentage.value <= 100;
   }
 
-  private validateResource(message: Cluster__Output): CdsUpdate | null {
+  private validateResource(context: XdsDecodeContext, message: Cluster__Output): CdsUpdate | null {
     if (message.lb_policy !== 'ROUND_ROBIN') {
       return null;
     }
@@ -191,7 +193,10 @@ export class ClusterResourceType extends XdsResourceType {
         }
       }
       if (message.type === 'EDS') {
-        if (!message.eds_cluster_config?.eds_config?.ads) {
+        if (!message.eds_cluster_config?.eds_config?.ads && !message.eds_cluster_config?.eds_config?.self) {
+          return null;
+        }
+        if (message.name.startsWith('xdstp:') && message.eds_cluster_config.service_name === '') {
           return null;
         }
         return {
@@ -200,7 +205,7 @@ export class ClusterResourceType extends XdsResourceType {
           aggregateChildren: [],
           maxConcurrentRequests: maxConcurrentRequests,
           edsServiceName: message.eds_cluster_config.service_name === '' ? undefined : message.eds_cluster_config.service_name,
-          lrsLoadReportingServer: message.lrs_server ? this.xdsServer : undefined,
+          lrsLoadReportingServer: message.lrs_server ? context.server : undefined,
           outlierDetectionUpdate: convertOutlierDetectionUpdate(message.outlier_detection)
         }
       } else if (message.type === 'LOGICAL_DNS') {
@@ -229,11 +234,44 @@ export class ClusterResourceType extends XdsResourceType {
           aggregateChildren: [],
           maxConcurrentRequests: maxConcurrentRequests,
           dnsHostname: `${socketAddress.address}:${socketAddress.port_value}`,
-          lrsLoadReportingServer: message.lrs_server ? this.xdsServer : undefined,
+          lrsLoadReportingServer: message.lrs_server ? context.server : undefined,
           outlierDetectionUpdate: convertOutlierDetectionUpdate(message.outlier_detection)
         };
       }
     }
     return null;
+  }
+
+  decode(context:XdsDecodeContext, resource: Any__Output): XdsDecodeResult {
+    if (resource.type_url !== CDS_TYPE_URL) {
+      throw new Error(
+        `ADS Error: Invalid resource type ${resource.type_url}, expected ${CDS_TYPE_URL}`
+      );
+    }
+    const message = decodeSingleResource(CDS_TYPE_URL, resource.value);
+    const validatedMessage = this.validateResource(context, message);
+    if (validatedMessage) {
+      return {
+        name: validatedMessage.name,
+        value: validatedMessage
+      };
+    } else {
+      return {
+        name: message.name,
+        error: 'Cluster message validation failed'
+      };
+    }
+  }
+
+  allResourcesRequiredInSotW(): boolean {
+    return true;
+  }
+
+  static startWatch(client: XdsClient, name: string, watcher: Watcher<CdsUpdate>) {
+    client.watchResource(ClusterResourceType.get(), name, watcher);
+  }
+
+  static cancelWatch(client: XdsClient, name: string, watcher: Watcher<CdsUpdate>) {
+    client.cancelResourceWatch(ClusterResourceType.get(), name, watcher);
   }
 }

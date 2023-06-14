@@ -44,10 +44,14 @@ export class XdsTestClient {
   private client: EchoTestServiceClient;
   private callInterval: NodeJS.Timer;
 
-  constructor(targetName: string, xdsServer: XdsServer) {
-    this.client = new loadedProtos.grpc.testing.EchoTestService(`xds:///${targetName}`, credentials.createInsecure(), {[BOOTSTRAP_CONFIG_KEY]: xdsServer.getBootstrapInfoString()});
+  constructor(target: string, bootstrapInfo: string) {
+    this.client = new loadedProtos.grpc.testing.EchoTestService(target, credentials.createInsecure(), {[BOOTSTRAP_CONFIG_KEY]: bootstrapInfo});
     this.callInterval = setInterval(() => {}, 0);
     clearInterval(this.callInterval);
+  }
+
+  static createFromServer(targetName: string, xdsServer: XdsServer) {
+    return new XdsTestClient(`xds:///${targetName}`, xdsServer.getBootstrapInfoString());
   }
 
   startCalls(interval: number) {

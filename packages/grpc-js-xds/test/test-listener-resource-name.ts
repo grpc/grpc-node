@@ -26,6 +26,8 @@ const testNode: Node = {
   locality: {}
 };
 
+/* Test cases in this file are derived from examples in the xDS federation proposal
+ * https://github.com/grpc/proposal/blob/master/A47-xds-federation.md */
 describe('Listener resource name evaluation', () => {
   describe('No new bootstrap fields', () => {
     const bootstrap = validateBootstrapConfig({

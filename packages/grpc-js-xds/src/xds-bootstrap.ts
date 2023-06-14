@@ -106,6 +106,11 @@ function validateChannelCredsConfig(obj: any): ChannelCredsConfig {
   };
 }
 
+const SUPPORTED_CHANNEL_CREDS_TYPES = [
+  'google_default',
+  'insecure'
+];
+
 export function validateXdsServerConfig(obj: any): XdsServerConfig {
   if (!('server_uri' in obj)) {
     throw new Error('server_uri field missing in xds_servers element');
@@ -123,9 +128,15 @@ export function validateXdsServerConfig(obj: any): XdsServerConfig {
       `xds_servers.channel_creds field: expected array, got ${typeof obj.channel_creds}`
     );
   }
-  if (obj.channel_creds.length === 0) {
+  let foundSupported = false;
+  for (const cred of obj.channel_creds) {
+    if (SUPPORTED_CHANNEL_CREDS_TYPES.includes(cred.type)) {
+      foundSupported = true;
+    }
+  }
+  if (!foundSupported) {
     throw new Error(
-      'xds_servers.channel_creds field: at least one entry is required'
+      `xds_servers.channel_creds field: must contain at least one entry with a type in [${SUPPORTED_CHANNEL_CREDS_TYPES}]`
     );
   }
   if ('server_features' in obj) {
@@ -318,6 +329,13 @@ export function validateBootstrapConfig(obj: any): BootstrapInfo {
 
 let loadedBootstrapInfo: BootstrapInfo | null = null;
 
+/**
+ * Load the bootstrap information from the location determined by the
+ * GRPC_XDS_BOOTSTRAP environment variable, or if that is unset, from the
+ * GRPC_XDS_BOOTSTRAP_CONFIG environment variable. The value is cached, so any
+ * calls after the first will just return the cached value.
+ * @returns
+ */
 export function loadBootstrapInfo(): BootstrapInfo {
   if (loadedBootstrapInfo !== null) {
     return loadedBootstrapInfo;

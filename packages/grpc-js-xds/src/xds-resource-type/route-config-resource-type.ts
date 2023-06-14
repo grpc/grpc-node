@@ -22,8 +22,8 @@ import { Any__Output } from "../generated/google/protobuf/Any";
 import { Duration__Output } from "../generated/google/protobuf/Duration";
 import { validateOverrideFilter } from "../http-filter";
 import { RDS_TYPE_URL, decodeSingleResource } from "../resources";
-import { Watcher, XdsClient } from "../xds-client2";
-import { XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
+import { Watcher, XdsClient } from "../xds-client";
+import { XdsDecodeContext, XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
 
 const SUPPORTED_PATH_SPECIFIERS = ['prefix', 'path', 'safe_regex'];
 const SUPPPORTED_HEADER_MATCH_SPECIFIERS = [
@@ -32,7 +32,8 @@ const SUPPPORTED_HEADER_MATCH_SPECIFIERS = [
   'range_match',
   'present_match',
   'prefix_match',
-  'suffix_match'];
+  'suffix_match',
+  'string_match'];
 const SUPPORTED_CLUSTER_SPECIFIERS = ['cluster', 'weighted_clusters', 'cluster_header'];
 
 const UINT32_MAX = 0xFFFFFFFF;
@@ -56,7 +57,7 @@ export class RouteConfigurationResourceType extends XdsResourceType {
   }
 
   getTypeUrl(): string {
-    return RDS_TYPE_URL;
+    return 'envoy.config.route.v3.RouteConfiguration';
   }
 
   private validateRetryPolicy(policy: RetryPolicy__Output | null): boolean {
@@ -161,7 +162,7 @@ export class RouteConfigurationResourceType extends XdsResourceType {
     return message;
   }
 
-  decode(resource: Any__Output): XdsDecodeResult {
+  decode(context: XdsDecodeContext, resource: Any__Output): XdsDecodeResult {
     if (resource.type_url !== RDS_TYPE_URL) {
       throw new Error(
         `ADS Error: Invalid resource type ${resource.type_url}, expected ${RDS_TYPE_URL}`
@@ -177,7 +178,7 @@ export class RouteConfigurationResourceType extends XdsResourceType {
     } else {
       return {
         name: message.name,
-        error: 'Listener message validation failed'
+        error: 'Route configuration message validation failed'
       };
     }
   }

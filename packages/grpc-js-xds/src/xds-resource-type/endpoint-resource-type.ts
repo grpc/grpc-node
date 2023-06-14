@@ -1,12 +1,12 @@
 import { experimental, logVerbosity } from "@grpc/grpc-js";
 import { ClusterLoadAssignment__Output } from "../generated/envoy/config/endpoint/v3/ClusterLoadAssignment";
-import { XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
+import { XdsDecodeContext, XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
 import { Locality__Output } from "../generated/envoy/config/core/v3/Locality";
 import { SocketAddress__Output } from "../generated/envoy/config/core/v3/SocketAddress";
 import { isIPv4, isIPv6 } from "net";
 import { Any__Output } from "../generated/google/protobuf/Any";
 import { EDS_TYPE_URL, decodeSingleResource } from "../resources";
-import { Watcher, XdsClient } from "../xds-client2";
+import { Watcher, XdsClient } from "../xds-client";
 
 const TRACER_NAME = 'xds_client';
 
@@ -36,7 +36,7 @@ export class EndpointResourceType extends XdsResourceType {
   }
 
   getTypeUrl(): string {
-    return EDS_TYPE_URL;
+    return 'envoy.config.endpoint.v3.ClusterLoadAssignment';
   }
 
   private validateResource(message: ClusterLoadAssignment__Output): ClusterLoadAssignment__Output | null {
@@ -94,7 +94,7 @@ export class EndpointResourceType extends XdsResourceType {
     return message;
   }
 
-  decode(resource: Any__Output): XdsDecodeResult {
+  decode(context: XdsDecodeContext, resource: Any__Output): XdsDecodeResult {
     if (resource.type_url !== EDS_TYPE_URL) {
       throw new Error(
         `ADS Error: Invalid resource type ${resource.type_url}, expected ${EDS_TYPE_URL}`
@@ -110,7 +110,7 @@ export class EndpointResourceType extends XdsResourceType {
     } else {
       return {
         name: message.cluster_name,
-        error: 'Listener message validation failed'
+        error: 'Endpoint message validation failed'
       };
     }
   }

@@ -324,15 +324,22 @@ export class XdsServer {
     this.server?.forceShutdown();
   }
 
+  getBootstrapServerConfig() {
+    if (this.port === null) {
+      throw new Error('Bootstrap info unavailable; server not started');
+    }
+    return {
+      server_uri: `localhost:${this.port}`,
+      channel_creds: [{type: 'insecure'}]
+    };
+  }
+
   getBootstrapInfoString(): string {
     if (this.port === null) {
       throw new Error('Bootstrap info unavailable; server not started');
     }
     const bootstrapInfo = {
-      xds_servers: [{
-        server_uri: `localhost:${this.port}`,
-        channel_creds: [{type: 'insecure'}]
-      }],
+      xds_servers: [this.getBootstrapServerConfig()],
       node: {
         id: 'test',
         locality: {}

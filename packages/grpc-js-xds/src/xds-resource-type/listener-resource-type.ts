@@ -20,10 +20,10 @@ import { EXPERIMENTAL_FAULT_INJECTION } from "../environment";
 import { Listener__Output } from "../generated/envoy/config/listener/v3/Listener";
 import { Any__Output } from "../generated/google/protobuf/Any";
 import { HTTP_CONNECTION_MANGER_TYPE_URL, LDS_TYPE_URL, decodeSingleResource } from "../resources";
-import { XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
+import { XdsDecodeContext, XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
 import { getTopLevelFilterUrl, validateTopLevelFilter } from "../http-filter";
 import { RouteConfigurationResourceType } from "./route-config-resource-type";
-import { Watcher, XdsClient } from "../xds-client2";
+import { Watcher, XdsClient } from "../xds-client";
 
 const TRACER_NAME = 'xds_client';
 
@@ -43,7 +43,7 @@ export class ListenerResourceType extends XdsResourceType {
     return ListenerResourceType.singleton;
   }
   getTypeUrl(): string {
-    return LDS_TYPE_URL;
+    return 'envoy.config.listener.v3.Listener';
   }
 
   private validateResource(message: Listener__Output): Listener__Output | null {
@@ -86,7 +86,7 @@ export class ListenerResourceType extends XdsResourceType {
     }
     switch (httpConnectionManager.route_specifier) {
       case 'rds':
-        if (!httpConnectionManager.rds?.config_source?.ads) {
+        if (!httpConnectionManager.rds?.config_source?.ads && !httpConnectionManager.rds?.config_source?.self) {
           return null;
         }
         return message;
@@ -99,7 +99,7 @@ export class ListenerResourceType extends XdsResourceType {
     return null;
   }
 
-  decode(resource: Any__Output): XdsDecodeResult {
+  decode(context: XdsDecodeContext, resource: Any__Output): XdsDecodeResult {
     if (resource.type_url !== LDS_TYPE_URL) {
       throw new Error(
         `ADS Error: Invalid resource type ${resource.type_url}, expected ${LDS_TYPE_URL}`

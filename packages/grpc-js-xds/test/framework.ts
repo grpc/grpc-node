@@ -64,24 +64,25 @@ export interface FakeCluster {
   getAllClusterConfigs(): Cluster[];
   getName(): string;
   startAllBackends(): Promise<any>;
+  haveAllBackendsReceivedTraffic(): boolean;
   waitForAllBackendsToReceiveTraffic(): Promise<void>;
 }
 
 export class FakeEdsCluster implements FakeCluster {
-  constructor(private name: string, private endpoints: Endpoint[]) {}
+  constructor(private clusterName: string, private endpointName: string, private endpoints: Endpoint[]) {}
 
   getEndpointConfig(): ClusterLoadAssignment {
     return {
-      cluster_name: this.name,
+      cluster_name: this.endpointName,
       endpoints: this.endpoints.map(getLocalityLbEndpoints)
     };
   }
 
   getClusterConfig(): Cluster {
     return {
-      name: this.name,
+      name: this.clusterName,
       type: 'EDS',
-      eds_cluster_config: {eds_config: {ads: {}}},
+      eds_cluster_config: {eds_config: {ads: {}}, service_name: this.endpointName},
       lb_policy: 'ROUND_ROBIN'
     }
   }
@@ -91,14 +92,14 @@ export class FakeEdsCluster implements FakeCluster {
   }
 
   getName() {
-    return this.name;
+    return this.clusterName;
   }
 
   startAllBackends(): Promise<any> {
     return Promise.all(this.endpoints.map(endpoint => Promise.all(endpoint.backends.map(backend => backend.startAsync()))));
   }
 
-  private haveAllBackendsReceivedTraffic(): boolean {
+  haveAllBackendsReceivedTraffic(): boolean {
     for (const endpoint of this.endpoints) {
       for (const backend of endpoint.backends) {
         if (backend.getCallCount() < 1) {
@@ -167,6 +168,9 @@ export class FakeDnsCluster implements FakeCluster {
   startAllBackends(): Promise<any> {
     return this.backend.startAsync();
   }
+  haveAllBackendsReceivedTraffic(): boolean {
+    return this.backend.getCallCount() > 0;
+  }
   waitForAllBackendsToReceiveTraffic(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.backend.onCall(resolve);
@@ -202,6 +206,14 @@ export class FakeAggregateCluster implements FakeCluster {
   }
   startAllBackends(): Promise<any> {
     return Promise.all(this.children.map(child => child.startAllBackends()));
+  }
+  haveAllBackendsReceivedTraffic(): boolean {
+    for (const child of this.children) {
+      if (!child.haveAllBackendsReceivedTraffic()) {
+        return false;
+      }
+    }
+    return true;
   }
   waitForAllBackendsToReceiveTraffic(): Promise<void> {
     return Promise.all(this.children.map(child => child.waitForAllBackendsToReceiveTraffic())).then(() => {});
@@ -241,11 +253,11 @@ function createRouteConfig(route: FakeRoute): Route {
 }
 
 export class FakeRouteGroup {
-  constructor(private name: string, private routes: FakeRoute[]) {}
+  constructor(private listenerName: string, private routeName: string, private routes: FakeRoute[]) {}
 
   getRouteConfiguration(): RouteConfiguration {
     return {
-      name: this.name,
+      name: this.routeName,
       virtual_hosts: [{
         domains: ['*'],
         routes: this.routes.map(createRouteConfig)
@@ -257,12 +269,12 @@ export class FakeRouteGroup {
     const httpConnectionManager: HttpConnectionManager & AnyExtension = {
       '@type': HTTP_CONNECTION_MANGER_TYPE_URL,
       rds: {
-        route_config_name: this.name,
+        route_config_name: this.routeName,
         config_source: {ads: {}}
       }
     }
     return {
-      name: this.name,
+      name: this.listenerName,
       api_listener: {
         api_listener: httpConnectionManager
       }
@@ -279,6 +291,21 @@ export class FakeRouteGroup {
         return Promise.resolve();
       }
     }));
+  }
+
+  haveAllBackendsReceivedTraffic(): boolean {
+    for (const route of this.routes) {
+      if (route.cluster) {
+        return route.cluster.haveAllBackendsReceivedTraffic();
+      } else if (route.weightedClusters) {
+        for (const weightedCluster of route.weightedClusters) {
+          if (!weightedCluster.cluster.haveAllBackendsReceivedTraffic()) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
   }
 
   waitForAllBackendsToReceiveTraffic(): Promise<any> {

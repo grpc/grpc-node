@@ -15,8 +15,11 @@
  *
  */
 
-// This is a non-public, unstable API, but it's very convenient
 import { URI } from 'vscode-uri';
+/* Since we are using an internal function from @grpc/proto-loader, we also
+ * need the top-level import to perform some setup operations. */
+import '@grpc/proto-loader';
+// This is a non-public, unstable API, but it's very convenient
 import { loadProtosWithOptionsSync } from '@grpc/proto-loader/build/src/util';
 import { Cluster__Output } from './generated/envoy/config/cluster/v3/Cluster';
 import { ClusterLoadAssignment__Output } from './generated/envoy/config/endpoint/v3/ClusterLoadAssignment';
@@ -61,6 +64,8 @@ export type AdsOutputType<T extends AdsTypeUrl | HttpConnectionManagerTypeUrl | 
   : T extends HttpConnectionManagerTypeUrl
   ? HttpConnectionManager__Output
   : ClusterConfig__Output;
+
+
 
 const resourceRoot = loadProtosWithOptionsSync([
   'envoy/config/listener/v3/listener.proto', 
@@ -119,15 +124,21 @@ export function parseXdsResourceName(name: string, typeUrl: string): XdsResource
     };
   }
   const uri = URI.parse(name);
-  const pathComponents = stripStringPrefix(uri.path, '/').split('/', 2);
+  const pathComponents = stripStringPrefix(uri.path, '/').split('/');
   if (pathComponents[0] !== typeUrl) {
-    throw new Error('xdstp URI path must indicate valid xDS resource type');
+    throw new Error('xdstp URI path must indicate valid xDS resource type.');
   }
-  const queryParams = uri.query.split('&');
-  queryParams.sort();
+  let queryString: string;
+  if (uri.query.length > 0) {
+    const queryParams = uri.query.split('&');
+    queryParams.sort();
+    queryString = '?' + queryParams.join('&');
+  } else {
+    queryString = '';
+  }
   return {
     authority: uri.authority,
-    key: `${pathComponents[1]}?${queryParams.join('&')}`
+    key: `${pathComponents.slice(1).join('/')}${queryString}`
   };
 }
 
