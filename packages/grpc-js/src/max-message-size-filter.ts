@@ -28,9 +28,7 @@ import { Metadata } from './metadata';
 export class MaxMessageSizeFilter extends BaseFilter implements Filter {
   private maxSendMessageSize: number = DEFAULT_MAX_SEND_MESSAGE_LENGTH;
   private maxReceiveMessageSize: number = DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH;
-  constructor(
-    private readonly options: ChannelOptions
-  ) {
+  constructor(private readonly options: ChannelOptions) {
     super();
     if ('grpc.max_send_message_length' in options) {
       this.maxSendMessageSize = options['grpc.max_send_message_length']!;
@@ -51,7 +49,7 @@ export class MaxMessageSizeFilter extends BaseFilter implements Filter {
         throw {
           code: Status.RESOURCE_EXHAUSTED,
           details: `Sent message larger than max (${concreteMessage.message.length} vs. ${this.maxSendMessageSize})`,
-          metadata: new Metadata()
+          metadata: new Metadata(),
         };
       } else {
         return concreteMessage;
@@ -70,7 +68,7 @@ export class MaxMessageSizeFilter extends BaseFilter implements Filter {
         throw {
           code: Status.RESOURCE_EXHAUSTED,
           details: `Received message larger than max (${concreteMessage.length} vs. ${this.maxReceiveMessageSize})`,
-          metadata: new Metadata()
+          metadata: new Metadata(),
         };
       } else {
         return concreteMessage;
@@ -80,7 +78,8 @@ export class MaxMessageSizeFilter extends BaseFilter implements Filter {
 }
 
 export class MaxMessageSizeFilterFactory
-  implements FilterFactory<MaxMessageSizeFilter> {
+  implements FilterFactory<MaxMessageSizeFilter>
+{
   constructor(private readonly options: ChannelOptions) {}
 
   createFilter(): MaxMessageSizeFilter {

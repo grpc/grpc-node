@@ -53,7 +53,7 @@ function getDefaultConfigSelector(
     methodName: string,
     metadata: Metadata
   ) {
-    const splitName = methodName.split('/').filter((x) => x.length > 0);
+    const splitName = methodName.split('/').filter(x => x.length > 0);
     const service = splitName[0] ?? '';
     const method = splitName[1] ?? '';
     if (serviceConfig && serviceConfig.methodConfig) {
@@ -67,7 +67,7 @@ function getDefaultConfigSelector(
               methodConfig: methodConfig,
               pickInformation: {},
               status: Status.OK,
-              dynamicFilterFactories: []
+              dynamicFilterFactories: [],
             };
           }
         }
@@ -77,7 +77,7 @@ function getDefaultConfigSelector(
       methodConfig: { name: [] },
       pickInformation: {},
       status: Status.OK,
-      dynamicFilterFactories: []
+      dynamicFilterFactories: [],
     };
   };
 }
@@ -153,9 +153,8 @@ export class ResolvingLoadBalancer implements LoadBalancer {
     }
     this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
     this.childLoadBalancer = new ChildLoadBalancerHandler({
-      createSubchannel: channelControlHelper.createSubchannel.bind(
-        channelControlHelper
-      ),
+      createSubchannel:
+        channelControlHelper.createSubchannel.bind(channelControlHelper),
       requestReresolution: () => {
         /* If the backoffTimeout is running, we're still backing off from
          * making resolve requests, so we shouldn't make another one here.
@@ -172,12 +171,10 @@ export class ResolvingLoadBalancer implements LoadBalancer {
         this.latestChildPicker = picker;
         this.updateState(newState, picker);
       },
-      addChannelzChild: channelControlHelper.addChannelzChild.bind(
-        channelControlHelper
-      ),
-      removeChannelzChild: channelControlHelper.removeChannelzChild.bind(
-        channelControlHelper
-      )
+      addChannelzChild:
+        channelControlHelper.addChannelzChild.bind(channelControlHelper),
+      removeChannelzChild:
+        channelControlHelper.removeChannelzChild.bind(channelControlHelper),
     });
     this.innerResolver = createResolver(
       target,
@@ -299,7 +296,10 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   }
 
   exitIdle() {
-    if (this.currentState === ConnectivityState.IDLE || this.currentState === ConnectivityState.TRANSIENT_FAILURE) {
+    if (
+      this.currentState === ConnectivityState.IDLE ||
+      this.currentState === ConnectivityState.TRANSIENT_FAILURE
+    ) {
       if (this.backoffTimeout.isRunning()) {
         this.continueResolving = true;
       } else {

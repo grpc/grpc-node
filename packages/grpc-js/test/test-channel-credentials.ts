@@ -25,14 +25,18 @@ import { CallCredentials } from '../src/call-credentials';
 import { ChannelCredentials } from '../src/channel-credentials';
 import * as grpc from '../src';
 import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
-import { TestServiceClient, TestServiceHandlers } from './generated/TestService';
+import {
+  TestServiceClient,
+  TestServiceHandlers,
+} from './generated/TestService';
 import { ProtoGrpcType as TestServiceGrpcType } from './generated/test_service';
 
 import { assert2, loadProtoFile, mockFunction } from './common';
 import { sendUnaryData, ServerUnaryCall, ServiceError } from '../src';
 
 const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
-const echoService = loadProtoFile(protoFile).EchoService as ServiceClientConstructor;
+const echoService = loadProtoFile(protoFile)
+  .EchoService as ServiceClientConstructor;
 
 class CallCredentialsMock implements CallCredentials {
   child: CallCredentialsMock | null = null;
@@ -153,17 +157,20 @@ describe('ChannelCredentials usage', () => {
   let client: ServiceClient;
   let server: grpc.Server;
   before(async () => {
-    const {ca, key, cert} = await pFixtures;
-    const serverCreds = grpc.ServerCredentials.createSsl(null, [{private_key: key, cert_chain: cert}]);
+    const { ca, key, cert } = await pFixtures;
+    const serverCreds = grpc.ServerCredentials.createSsl(null, [
+      { private_key: key, cert_chain: cert },
+    ]);
     const channelCreds = ChannelCredentials.createSsl(ca);
-    const callCreds = CallCredentials.createFromMetadataGenerator((options, cb) => {
-      const metadata = new grpc.Metadata();
-      metadata.set('test-key', 'test-value');
-      cb(null, metadata);
-    });
+    const callCreds = CallCredentials.createFromMetadataGenerator(
+      (options, cb) => {
+        const metadata = new grpc.Metadata();
+        metadata.set('test-key', 'test-value');
+        cb(null, metadata);
+      }
+    );
     const combinedCreds = channelCreds.compose(callCreds);
     return new Promise<void>((resolve, reject) => {
-
       server = new grpc.Server();
       server.addService(echoService.service, {
         echo(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
@@ -171,31 +178,26 @@ describe('ChannelCredentials usage', () => {
           callback(null, call.request);
         },
       });
-  
-      server.bindAsync(
-        'localhost:0',
-        serverCreds,
-        (err, port) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          client = new echoService(
-            `localhost:${port}`,
-            combinedCreds,
-            {'grpc.ssl_target_name_override': 'foo.test.google.fr', 'grpc.default_authority': 'foo.test.google.fr'}
-          );
-          server.start();
-          resolve();
+
+      server.bindAsync('localhost:0', serverCreds, (err, port) => {
+        if (err) {
+          reject(err);
+          return;
         }
-      );
+        client = new echoService(`localhost:${port}`, combinedCreds, {
+          'grpc.ssl_target_name_override': 'foo.test.google.fr',
+          'grpc.default_authority': 'foo.test.google.fr',
+        });
+        server.start();
+        resolve();
+      });
     });
   });
   after(() => {
     server.forceShutdown();
   });
 
-  it('Should send the metadata from call credentials attached to channel credentials', (done) => {
+  it('Should send the metadata from call credentials attached to channel credentials', done => {
     const call = client.echo(
       { value: 'test value', value2: 3 },
       assert2.mustCall((error: ServiceError, response: any) => {
@@ -203,10 +205,12 @@ describe('ChannelCredentials usage', () => {
         assert.deepStrictEqual(response, { value: 'test value', value2: 3 });
       })
     );
-    call.on('metadata', assert2.mustCall((metadata: grpc.Metadata) => {
-      assert.deepStrictEqual(metadata.get('test-key'), ['test-value']);
-
-    }));
+    call.on(
+      'metadata',
+      assert2.mustCall((metadata: grpc.Metadata) => {
+        assert.deepStrictEqual(metadata.get('test-key'), ['test-value']);
+      })
+    );
     assert2.afterMustCallsSatisfied(done);
   });
 });

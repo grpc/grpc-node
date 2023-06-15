@@ -18,5 +18,5 @@
 export enum CompressionAlgorithms {
   identity = 0,
   deflate = 1,
-  gzip = 2
-};
+  gzip = 2,
+}

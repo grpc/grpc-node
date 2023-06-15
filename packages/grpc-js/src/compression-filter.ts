@@ -26,9 +26,13 @@ import { BaseFilter, Filter, FilterFactory } from './filter';
 import * as logging from './logging';
 import { Metadata, MetadataValue } from './metadata';
 
-const isCompressionAlgorithmKey = (key: number): key is CompressionAlgorithms => {
-  return typeof key === 'number' && typeof CompressionAlgorithms[key] === 'string';
-}
+const isCompressionAlgorithmKey = (
+  key: number
+): key is CompressionAlgorithms => {
+  return (
+    typeof key === 'number' && typeof CompressionAlgorithms[key] === 'string'
+  );
+};
 
 type CompressionAlgorithm = keyof typeof CompressionAlgorithms;
 
@@ -183,14 +187,21 @@ export class CompressionFilter extends BaseFilter implements Filter {
   private receiveCompression: CompressionHandler = new IdentityHandler();
   private currentCompressionAlgorithm: CompressionAlgorithm = 'identity';
 
-  constructor(channelOptions: ChannelOptions, private sharedFilterConfig: SharedCompressionFilterConfig) {
+  constructor(
+    channelOptions: ChannelOptions,
+    private sharedFilterConfig: SharedCompressionFilterConfig
+  ) {
     super();
 
-    const compressionAlgorithmKey = channelOptions['grpc.default_compression_algorithm'];
+    const compressionAlgorithmKey =
+      channelOptions['grpc.default_compression_algorithm'];
     if (compressionAlgorithmKey !== undefined) {
       if (isCompressionAlgorithmKey(compressionAlgorithmKey)) {
-        const clientSelectedEncoding = CompressionAlgorithms[compressionAlgorithmKey] as CompressionAlgorithm;
-        const serverSupportedEncodings = sharedFilterConfig.serverSupportedEncodingHeader?.split(',');
+        const clientSelectedEncoding = CompressionAlgorithms[
+          compressionAlgorithmKey
+        ] as CompressionAlgorithm;
+        const serverSupportedEncodings =
+          sharedFilterConfig.serverSupportedEncodingHeader?.split(',');
         /**
          * There are two possible situations here:
          * 1) We don't have any info yet from the server about what compression it supports
@@ -198,12 +209,20 @@ export class CompressionFilter extends BaseFilter implements Filter {
          * 2) We've previously received a response from the server including a grpc-accept-encoding header
          *    In that case we only want to use the encoding chosen by the client if the server supports it
          */
-        if (!serverSupportedEncodings || serverSupportedEncodings.includes(clientSelectedEncoding)) {
+        if (
+          !serverSupportedEncodings ||
+          serverSupportedEncodings.includes(clientSelectedEncoding)
+        ) {
           this.currentCompressionAlgorithm = clientSelectedEncoding;
-          this.sendCompression = getCompressionHandler(this.currentCompressionAlgorithm);
+          this.sendCompression = getCompressionHandler(
+            this.currentCompressionAlgorithm
+          );
         }
       } else {
-        logging.log(LogVerbosity.ERROR, `Invalid value provided for grpc.default_compression_algorithm option: ${compressionAlgorithmKey}`);
+        logging.log(
+          LogVerbosity.ERROR,
+          `Invalid value provided for grpc.default_compression_algorithm option: ${compressionAlgorithmKey}`
+        );
       }
     }
   }
@@ -235,12 +254,18 @@ export class CompressionFilter extends BaseFilter implements Filter {
 
     /* Check to see if the compression we're using to send messages is supported by the server
      * If not, reset the sendCompression filter and have it use the default IdentityHandler */
-    const serverSupportedEncodingsHeader = metadata.get('grpc-accept-encoding')[0] as string | undefined;
+    const serverSupportedEncodingsHeader = metadata.get(
+      'grpc-accept-encoding'
+    )[0] as string | undefined;
     if (serverSupportedEncodingsHeader) {
-      this.sharedFilterConfig.serverSupportedEncodingHeader = serverSupportedEncodingsHeader;
-      const serverSupportedEncodings = serverSupportedEncodingsHeader.split(',');
+      this.sharedFilterConfig.serverSupportedEncodingHeader =
+        serverSupportedEncodingsHeader;
+      const serverSupportedEncodings =
+        serverSupportedEncodingsHeader.split(',');
 
-      if (!serverSupportedEncodings.includes(this.currentCompressionAlgorithm)) {
+      if (
+        !serverSupportedEncodings.includes(this.currentCompressionAlgorithm)
+      ) {
         this.sendCompression = new IdentityHandler();
         this.currentCompressionAlgorithm = 'identity';
       }
@@ -280,9 +305,13 @@ export class CompressionFilter extends BaseFilter implements Filter {
 }
 
 export class CompressionFilterFactory
-  implements FilterFactory<CompressionFilter> {
-    private sharedFilterConfig: SharedCompressionFilterConfig = {};
-  constructor(private readonly channel: Channel, private readonly options: ChannelOptions) {}
+  implements FilterFactory<CompressionFilter>
+{
+  private sharedFilterConfig: SharedCompressionFilterConfig = {};
+  constructor(
+    private readonly channel: Channel,
+    private readonly options: ChannelOptions
+  ) {}
   createFilter(): CompressionFilter {
     return new CompressionFilter(this.options, this.sharedFilterConfig);
   }

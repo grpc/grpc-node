@@ -86,21 +86,16 @@ describe('CallCredentials', () => {
       const callCredentials = CallCredentials.createFromMetadataGenerator(
         generateFromServiceURL
       );
-      let metadata: Metadata;
-      try {
-        metadata = await callCredentials.generateMetadata({
-          service_url: 'foo',
-        });
-      } catch (err) {
-        throw err;
-      }
+      const metadata: Metadata = await callCredentials.generateMetadata({
+        service_url: 'foo',
+      });
+
       assert.deepStrictEqual(metadata.get('service_url'), ['foo']);
     });
 
     it('should emit an error if the associated metadataGenerator does', async () => {
-      const callCredentials = CallCredentials.createFromMetadataGenerator(
-        generateWithError
-      );
+      const callCredentials =
+        CallCredentials.createFromMetadataGenerator(generateWithError);
       let metadata: Metadata | null = null;
       try {
         metadata = await callCredentials.generateMetadata({ service_url: '' });
@@ -112,14 +107,10 @@ describe('CallCredentials', () => {
 
     it('should combine metadata from multiple generators', async () => {
       const [callCreds1, callCreds2, callCreds3, callCreds4] = [
-        50,
-        100,
-        150,
-        200,
+        50, 100, 150, 200,
       ].map(ms => {
-        const generator: CallMetadataGenerator = makeAfterMsElapsedGenerator(
-          ms
-        );
+        const generator: CallMetadataGenerator =
+          makeAfterMsElapsedGenerator(ms);
         return CallCredentials.createFromMetadataGenerator(generator);
       });
       const testCases = [
@@ -147,12 +138,10 @@ describe('CallCredentials', () => {
       await Promise.all(
         testCases.map(async testCase => {
           const { credentials, expected } = testCase;
-          let metadata: Metadata;
-          try {
-            metadata = await credentials.generateMetadata({ service_url: '' });
-          } catch (err) {
-            throw err;
-          }
+          const metadata: Metadata = await credentials.generateMetadata({
+            service_url: '',
+          });
+
           assert.deepStrictEqual(metadata.get('msElapsed'), expected);
         })
       );

@@ -94,7 +94,7 @@ export class FilterStackFactory implements FilterFactory<FilterStack> {
 
   createFilter(): FilterStack {
     return new FilterStack(
-      this.factories.map((factory) => factory.createFilter())
+      this.factories.map(factory => factory.createFilter())
     );
   }
 }

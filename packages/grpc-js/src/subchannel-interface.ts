@@ -15,9 +15,9 @@
  *
  */
 
-import { SubchannelRef } from "./channelz";
-import { ConnectivityState } from "./connectivity-state";
-import { Subchannel } from "./subchannel";
+import { SubchannelRef } from './channelz';
+import { ConnectivityState } from './connectivity-state';
+import { Subchannel } from './subchannel';
 
 export type ConnectivityStateListener = (
   subchannel: SubchannelInterface,
@@ -30,7 +30,7 @@ export type ConnectivityStateListener = (
  * This is an interface for load balancing policies to use to interact with
  * subchannels. This allows load balancing policies to wrap and unwrap
  * subchannels.
- * 
+ *
  * Any load balancing policy that wraps subchannels must unwrap the subchannel
  * in the picker, so that other load balancing policies consistently have
  * access to their own wrapper objects.

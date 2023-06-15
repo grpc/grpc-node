@@ -128,7 +128,7 @@ export {
   Status as status,
   ConnectivityState as connectivityState,
   Propagate as propagate,
-  CompressionAlgorithms as compressionAlgorithms
+  CompressionAlgorithms as compressionAlgorithms,
   // TODO: Other constants as well
 };
 
@@ -248,21 +248,18 @@ export {
   InterceptorProvider,
   InterceptingCall,
   InterceptorConfigurationError,
-  NextCall
+  NextCall,
 } from './client-interceptors';
 
 export {
   GrpcObject,
   ServiceClientConstructor,
-  ProtobufTypeDefinition
+  ProtobufTypeDefinition,
 } from './make-client';
 
 export { ChannelOptions } from './channel-options';
 
-export {
-  getChannelzServiceDefinition,
-  getChannelzHandlers
-} from './channelz';
+export { getChannelzServiceDefinition, getChannelzHandlers } from './channelz';
 
 export { addAdminServicesToServer } from './admin';
 
@@ -281,7 +278,11 @@ import { Deadline } from './deadline';
 const clientVersion = require('../../package.json').version;
 
 (() => {
-  logging.trace(LogVerbosity.DEBUG, 'index', 'Loading @grpc/grpc-js version ' + clientVersion);
+  logging.trace(
+    LogVerbosity.DEBUG,
+    'index',
+    'Loading @grpc/grpc-js version ' + clientVersion
+  );
   resolver_dns.setup();
   resolver_uds.setup();
   resolver_ip.setup();

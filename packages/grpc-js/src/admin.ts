@@ -15,8 +15,8 @@
  *
  */
 
-import { ServiceDefinition } from "./make-client";
-import { Server, UntypedServiceImplementation } from "./server";
+import { ServiceDefinition } from './make-client';
+import { Server, UntypedServiceImplementation } from './server';
 
 interface GetServiceDefinition {
   (): ServiceDefinition;
@@ -26,14 +26,20 @@ interface GetHandlers {
   (): UntypedServiceImplementation;
 }
 
-const registeredAdminServices: {getServiceDefinition: GetServiceDefinition, getHandlers: GetHandlers}[] = [];
+const registeredAdminServices: {
+  getServiceDefinition: GetServiceDefinition;
+  getHandlers: GetHandlers;
+}[] = [];
 
-export function registerAdminService(getServiceDefinition: GetServiceDefinition, getHandlers: GetHandlers) {
-  registeredAdminServices.push({getServiceDefinition, getHandlers});
+export function registerAdminService(
+  getServiceDefinition: GetServiceDefinition,
+  getHandlers: GetHandlers
+) {
+  registeredAdminServices.push({ getServiceDefinition, getHandlers });
 }
 
 export function addAdminServicesToServer(server: Server): void {
-  for (const {getServiceDefinition, getHandlers} of registeredAdminServices) {
+  for (const { getServiceDefinition, getHandlers } of registeredAdminServices) {
     server.addService(getServiceDefinition(), getHandlers());
   }
 }

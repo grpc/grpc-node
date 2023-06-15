@@ -36,7 +36,10 @@ import {
 } from './subchannel-address';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
-import { ConnectivityStateListener, SubchannelInterface } from './subchannel-interface';
+import {
+  ConnectivityStateListener,
+  SubchannelInterface,
+} from './subchannel-interface';
 
 const TRACER_NAME = 'round_robin';
 
@@ -79,7 +82,7 @@ class RoundRobinPicker implements Picker {
       subchannel: pickedSubchannel,
       status: null,
       onCallStarted: null,
-      onCallEnded: null
+      onCallEnded: null,
     };
   }
 
@@ -121,13 +124,15 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
   }
 
   private countSubchannelsWithState(state: ConnectivityState) {
-    return this.subchannels.filter(subchannel => subchannel.getConnectivityState() === state).length;
+    return this.subchannels.filter(
+      subchannel => subchannel.getConnectivityState() === state
+    ).length;
   }
 
   private calculateAndUpdateState() {
     if (this.countSubchannelsWithState(ConnectivityState.READY) > 0) {
       const readySubchannels = this.subchannels.filter(
-        (subchannel) =>
+        subchannel =>
           subchannel.getConnectivityState() === ConnectivityState.READY
       );
       let index = 0;
@@ -143,7 +148,9 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
         ConnectivityState.READY,
         new RoundRobinPicker(readySubchannels, index)
       );
-    } else if (this.countSubchannelsWithState(ConnectivityState.CONNECTING) > 0) {
+    } else if (
+      this.countSubchannelsWithState(ConnectivityState.CONNECTING) > 0
+    ) {
       this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
     } else if (
       this.countSubchannelsWithState(ConnectivityState.TRANSIENT_FAILURE) > 0
@@ -176,7 +183,9 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     for (const subchannel of this.subchannels) {
       subchannel.removeConnectivityStateListener(this.subchannelStateListener);
       subchannel.unref();
-      this.channelControlHelper.removeChannelzChild(subchannel.getChannelzRef());
+      this.channelControlHelper.removeChannelzChild(
+        subchannel.getChannelzRef()
+      );
     }
     this.subchannels = [];
   }
@@ -188,9 +197,9 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     this.resetSubchannelList();
     trace(
       'Connect to address list ' +
-        addressList.map((address) => subchannelAddressToString(address))
+        addressList.map(address => subchannelAddressToString(address))
     );
-    this.subchannels = addressList.map((address) =>
+    this.subchannels = addressList.map(address =>
       this.channelControlHelper.createSubchannel(address, {})
     );
     for (const subchannel of this.subchannels) {

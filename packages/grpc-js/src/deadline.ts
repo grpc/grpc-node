@@ -48,7 +48,7 @@ export function getDeadlineTimeoutString(deadline: Deadline) {
       return String(Math.ceil(amount)) + unit;
     }
   }
-  throw new Error('Deadline is too far in the future')
+  throw new Error('Deadline is too far in the future');
 }
 
 /**
@@ -65,7 +65,7 @@ const MAX_TIMEOUT_TIME = 2147483647;
  * immediately, represented by a value of 0. For any deadline more than
  * MAX_TIMEOUT_TIME milliseconds in the future, a timer cannot be set that will
  * end at that time, so it is treated as infinitely far in the future.
- * @param deadline 
+ * @param deadline
  * @returns
  */
 export function getRelativeTimeout(deadline: Deadline) {
@@ -75,7 +75,7 @@ export function getRelativeTimeout(deadline: Deadline) {
   if (timeout < 0) {
     return 0;
   } else if (timeout > MAX_TIMEOUT_TIME) {
-    return Infinity
+    return Infinity;
   } else {
     return timeout;
   }

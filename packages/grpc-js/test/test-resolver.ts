@@ -24,7 +24,11 @@ import * as resolver_uds from '../src/resolver-uds';
 import * as resolver_ip from '../src/resolver-ip';
 import { ServiceConfig } from '../src/service-config';
 import { StatusObject } from '../src/call-interface';
-import { SubchannelAddress, isTcpSubchannelAddress, subchannelAddressToString } from "../src/subchannel-address";
+import {
+  SubchannelAddress,
+  isTcpSubchannelAddress,
+  subchannelAddressToString,
+} from '../src/subchannel-address';
 import { parseUri, GrpcUri } from '../src/uri-parser';
 
 describe('Name Resolver', () => {
@@ -33,11 +37,13 @@ describe('Name Resolver', () => {
     resolver_uds.setup();
     resolver_ip.setup();
   });
-  describe('DNS Names', function() {
+  describe('DNS Names', function () {
     // For some reason DNS queries sometimes take a long time on Windows
     this.timeout(4000);
     it('Should resolve localhost properly', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('localhost:50051')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('localhost:50051')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -72,7 +78,9 @@ describe('Name Resolver', () => {
       resolver.updateResolution();
     });
     it('Should default to port 443', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('localhost')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('localhost')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -161,7 +169,9 @@ describe('Name Resolver', () => {
       resolver.updateResolution();
     });
     it('Should correctly represent a bracketed ipv6 address', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('[::1]:50051')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('[::1]:50051')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -188,7 +198,9 @@ describe('Name Resolver', () => {
       resolver.updateResolution();
     });
     it('Should resolve a public address', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('example.com')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('example.com')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -210,7 +222,9 @@ describe('Name Resolver', () => {
     // Created DNS TXT record using TXT sample from https://github.com/grpc/proposal/blob/master/A2-service-configs-in-dns.md
     // "grpc_config=[{\"serviceConfig\":{\"loadBalancingPolicy\":\"round_robin\",\"methodConfig\":[{\"name\":[{\"service\":\"MyService\",\"method\":\"Foo\"}],\"waitForReady\":true}]}}]"
     it.skip('Should resolve a name with TXT service config', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('grpctest.kleinsch.com')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('grpctest.kleinsch.com')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -232,39 +246,36 @@ describe('Name Resolver', () => {
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
-    it.skip(
-      'Should not resolve TXT service config if we disabled service config',
-      (done) => {
-        const target = resolverManager.mapUriDefaultScheme(
-          parseUri('grpctest.kleinsch.com')!
-        )!;
-        let count = 0;
-        const listener: resolverManager.ResolverListener = {
-          onSuccessfulResolution: (
-            addressList: SubchannelAddress[],
-            serviceConfig: ServiceConfig | null,
-            serviceConfigError: StatusObject | null
-          ) => {
-            assert(
-              serviceConfig === null,
-              'Should not have found service config'
-            );
-            count++;
-          },
-          onError: (error: StatusObject) => {
-            done(new Error(`Failed with status ${error.details}`));
-          },
-        };
-        const resolver = resolverManager.createResolver(target, listener, {
-          'grpc.service_config_disable_resolution': 1,
-        });
-        resolver.updateResolution();
-        setTimeout(() => {
-          assert(count === 1, 'Should have only resolved once');
-          done();
-        }, 2_000);
-      }
-    );
+    it.skip('Should not resolve TXT service config if we disabled service config', done => {
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('grpctest.kleinsch.com')!
+      )!;
+      let count = 0;
+      const listener: resolverManager.ResolverListener = {
+        onSuccessfulResolution: (
+          addressList: SubchannelAddress[],
+          serviceConfig: ServiceConfig | null,
+          serviceConfigError: StatusObject | null
+        ) => {
+          assert(
+            serviceConfig === null,
+            'Should not have found service config'
+          );
+          count++;
+        },
+        onError: (error: StatusObject) => {
+          done(new Error(`Failed with status ${error.details}`));
+        },
+      };
+      const resolver = resolverManager.createResolver(target, listener, {
+        'grpc.service_config_disable_resolution': 1,
+      });
+      resolver.updateResolution();
+      setTimeout(() => {
+        assert(count === 1, 'Should have only resolved once');
+        done();
+      }, 2_000);
+    });
     /* The DNS entry for loopback4.unittest.grpc.io only has a single A record
      * with the address 127.0.0.1, but the Mac DNS resolver appears to use
      * NAT64 to create an IPv6 address in that case, so it instead returns
@@ -274,7 +285,9 @@ describe('Name Resolver', () => {
      * and the test 'Should resolve gRPC interop servers' tests the same thing.
      */
     it.skip('Should resolve a name with multiple dots', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('loopback4.unittest.grpc.io')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('loopback4.unittest.grpc.io')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -289,7 +302,10 @@ describe('Name Resolver', () => {
                 isTcpSubchannelAddress(addr) &&
                 addr.host === '127.0.0.1' &&
                 addr.port === 443
-            ), `None of [${addressList.map(addr => subchannelAddressToString(addr))}] matched '127.0.0.1:443'`
+            ),
+            `None of [${addressList.map(addr =>
+              subchannelAddressToString(addr)
+            )}] matched '127.0.0.1:443'`
           );
           done();
         },
@@ -303,7 +319,9 @@ describe('Name Resolver', () => {
     /* TODO(murgatroid99): re-enable this test, once we can get the IPv6 result
      * consistently */
     it.skip('Should resolve a DNS name to an IPv6 address', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('loopback6.unittest.grpc.io')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('loopback6.unittest.grpc.io')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -333,7 +351,9 @@ describe('Name Resolver', () => {
      * IPv6 address on Mac. There is no result that we can consistently test
      * for here. */
     it.skip('Should resolve a DNS name to IPv4 and IPv6 addresses', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('loopback46.unittest.grpc.io')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('loopback46.unittest.grpc.io')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -348,7 +368,10 @@ describe('Name Resolver', () => {
                 isTcpSubchannelAddress(addr) &&
                 addr.host === '127.0.0.1' &&
                 addr.port === 443
-            ), `None of [${addressList.map(addr => subchannelAddressToString(addr))}] matched '127.0.0.1:443'`
+            ),
+            `None of [${addressList.map(addr =>
+              subchannelAddressToString(addr)
+            )}] matched '127.0.0.1:443'`
           );
           /* TODO(murgatroid99): check for IPv6 result, once we can get that
            * consistently */
@@ -364,7 +387,9 @@ describe('Name Resolver', () => {
     it('Should resolve a name with a hyphen', done => {
       /* TODO(murgatroid99): Find or create a better domain name to test this with.
        * This is just the first one I found with a hyphen. */
-      const target = resolverManager.mapUriDefaultScheme(parseUri('network-tools.com')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('network-tools.com')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -389,8 +414,12 @@ describe('Name Resolver', () => {
      * unless there is another test for the same issue. */
     it('Should resolve gRPC interop servers', done => {
       let completeCount = 0;
-      const target1 = resolverManager.mapUriDefaultScheme(parseUri('grpc-test.sandbox.googleapis.com')!)!;
-      const target2 = resolverManager.mapUriDefaultScheme(parseUri('grpc-test4.sandbox.googleapis.com')!)!;
+      const target1 = resolverManager.mapUriDefaultScheme(
+        parseUri('grpc-test.sandbox.googleapis.com')!
+      )!;
+      const target2 = resolverManager.mapUriDefaultScheme(
+        parseUri('grpc-test4.sandbox.googleapis.com')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -415,39 +444,45 @@ describe('Name Resolver', () => {
       resolver2.updateResolution();
     });
     it('should not keep repeating successful resolutions', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('localhost')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('localhost')!
+      )!;
       let resultCount = 0;
-      const resolver = resolverManager.createResolver(target, {
-        onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '127.0.0.1' &&
-                addr.port === 443
-            )
-          );
-          assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '::1' &&
-                addr.port === 443
-            )
-          );
-          resultCount += 1;
-          if (resultCount === 1) {
-            process.nextTick(() => resolver.updateResolution());
-          }
+      const resolver = resolverManager.createResolver(
+        target,
+        {
+          onSuccessfulResolution: (
+            addressList: SubchannelAddress[],
+            serviceConfig: ServiceConfig | null,
+            serviceConfigError: StatusObject | null
+          ) => {
+            assert(
+              addressList.some(
+                addr =>
+                  isTcpSubchannelAddress(addr) &&
+                  addr.host === '127.0.0.1' &&
+                  addr.port === 443
+              )
+            );
+            assert(
+              addressList.some(
+                addr =>
+                  isTcpSubchannelAddress(addr) &&
+                  addr.host === '::1' &&
+                  addr.port === 443
+              )
+            );
+            resultCount += 1;
+            if (resultCount === 1) {
+              process.nextTick(() => resolver.updateResolution());
+            }
+          },
+          onError: (error: StatusObject) => {
+            assert.ifError(error);
+          },
         },
-        onError: (error: StatusObject) => {
-          assert.ifError(error);
-        },
-      }, {'grpc.dns_min_time_between_resolutions_ms': 2000});
+        { 'grpc.dns_min_time_between_resolutions_ms': 2000 }
+      );
       resolver.updateResolution();
       setTimeout(() => {
         assert.strictEqual(resultCount, 2, `resultCount ${resultCount} !== 2`);
@@ -455,23 +490,29 @@ describe('Name Resolver', () => {
       }, 10_000);
     }).timeout(15_000);
     it('should not keep repeating failed resolutions', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('host.invalid')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('host.invalid')!
+      )!;
       let resultCount = 0;
-      const resolver = resolverManager.createResolver(target, {
-        onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          assert.fail('Resolution succeeded unexpectedly');
+      const resolver = resolverManager.createResolver(
+        target,
+        {
+          onSuccessfulResolution: (
+            addressList: SubchannelAddress[],
+            serviceConfig: ServiceConfig | null,
+            serviceConfigError: StatusObject | null
+          ) => {
+            assert.fail('Resolution succeeded unexpectedly');
+          },
+          onError: (error: StatusObject) => {
+            resultCount += 1;
+            if (resultCount === 1) {
+              process.nextTick(() => resolver.updateResolution());
+            }
+          },
         },
-        onError: (error: StatusObject) => {
-          resultCount += 1;
-          if (resultCount === 1) {
-            process.nextTick(() => resolver.updateResolution());
-          }
-        },
-      }, {});
+        {}
+      );
       resolver.updateResolution();
       setTimeout(() => {
         assert.strictEqual(resultCount, 2, `resultCount ${resultCount} !== 2`);
@@ -481,7 +522,9 @@ describe('Name Resolver', () => {
   });
   describe('UDS Names', () => {
     it('Should handle a relative Unix Domain Socket name', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('unix:socket')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('unix:socket')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -505,7 +548,9 @@ describe('Name Resolver', () => {
       resolver.updateResolution();
     });
     it('Should handle an absolute Unix Domain Socket name', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('unix:///tmp/socket')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('unix:///tmp/socket')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -532,7 +577,9 @@ describe('Name Resolver', () => {
   });
   describe('IP Addresses', () => {
     it('should handle one IPv4 address with no port', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('ipv4:127.0.0.1')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('ipv4:127.0.0.1')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -559,7 +606,9 @@ describe('Name Resolver', () => {
       resolver.updateResolution();
     });
     it('should handle one IPv4 address with a port', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('ipv4:127.0.0.1:50051')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('ipv4:127.0.0.1:50051')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -586,7 +635,9 @@ describe('Name Resolver', () => {
       resolver.updateResolution();
     });
     it('should handle multiple IPv4 addresses with different ports', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('ipv4:127.0.0.1:50051,127.0.0.1:50052')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('ipv4:127.0.0.1:50051,127.0.0.1:50052')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -621,7 +672,9 @@ describe('Name Resolver', () => {
       resolver.updateResolution();
     });
     it('should handle one IPv6 address with no port', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('ipv6:::1')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('ipv6:::1')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -648,7 +701,9 @@ describe('Name Resolver', () => {
       resolver.updateResolution();
     });
     it('should handle one IPv6 address with a port', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('ipv6:[::1]:50051')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('ipv6:[::1]:50051')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -675,7 +730,9 @@ describe('Name Resolver', () => {
       resolver.updateResolution();
     });
     it('should handle multiple IPv6 addresses with different ports', done => {
-      const target = resolverManager.mapUriDefaultScheme(parseUri('ipv6:[::1]:50051,[::1]:50052')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('ipv6:[::1]:50051,[::1]:50052')!
+      )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
           addressList: SubchannelAddress[],
@@ -716,8 +773,7 @@ describe('Name Resolver', () => {
         return [];
       }
 
-      destroy() {
-      }
+      destroy() {}
 
       static getDefaultAuthority(target: GrpcUri): string {
         return 'other';
@@ -726,7 +782,9 @@ describe('Name Resolver', () => {
 
     it('Should return the correct authority if a different resolver has been registered', () => {
       resolverManager.registerResolver('other', OtherResolver);
-      const target = resolverManager.mapUriDefaultScheme(parseUri('other:name')!)!;
+      const target = resolverManager.mapUriDefaultScheme(
+        parseUri('other:name')!
+      )!;
       console.log(target);
 
       const authority = resolverManager.getDefaultAuthority(target);

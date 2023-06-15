@@ -38,7 +38,10 @@ import {
 } from './subchannel-address';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
-import { SubchannelInterface, ConnectivityStateListener } from './subchannel-interface';
+import {
+  SubchannelInterface,
+  ConnectivityStateListener,
+} from './subchannel-interface';
 
 const TRACER_NAME = 'pick_first';
 
@@ -86,7 +89,7 @@ class PickFirstPicker implements Picker {
       subchannel: this.subchannel,
       status: null,
       onCallStarted: null,
-      onCallEnded: null
+      onCallEnded: null,
     };
   }
 }
@@ -169,7 +172,8 @@ export class PickFirstLoadBalancer implements LoadBalancer {
        * connecting to the next one instead of waiting for the connection
        * delay timer. */
       if (
-        subchannel.getRealSubchannel() === this.subchannels[this.currentSubchannelIndex].getRealSubchannel() &&
+        subchannel.getRealSubchannel() ===
+          this.subchannels[this.currentSubchannelIndex].getRealSubchannel() &&
         newState === ConnectivityState.TRANSIENT_FAILURE
       ) {
         this.startNextSubchannelConnecting();
@@ -232,7 +236,9 @@ export class PickFirstLoadBalancer implements LoadBalancer {
         subchannel.removeConnectivityStateListener(
           this.pickedSubchannelStateListener
         );
-        this.channelControlHelper.removeChannelzChild(subchannel.getChannelzRef());
+        this.channelControlHelper.removeChannelzChild(
+          subchannel.getChannelzRef()
+        );
         if (this.subchannels.length > 0) {
           if (this.triedAllSubchannels) {
             let newLBState: ConnectivityState;
@@ -344,7 +350,9 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     for (const subchannel of this.subchannels) {
       subchannel.removeConnectivityStateListener(this.subchannelStateListener);
       subchannel.unref();
-      this.channelControlHelper.removeChannelzChild(subchannel.getChannelzRef());
+      this.channelControlHelper.removeChannelzChild(
+        subchannel.getChannelzRef()
+      );
     }
     this.currentSubchannelIndex = 0;
     this.subchannelStateCounts = {
@@ -368,11 +376,11 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     this.resetSubchannelList();
     trace(
       'Connect to address list ' +
-        this.latestAddressList.map((address) =>
+        this.latestAddressList.map(address =>
           subchannelAddressToString(address)
         )
     );
-    this.subchannels = this.latestAddressList.map((address) =>
+    this.subchannels = this.latestAddressList.map(address =>
       this.channelControlHelper.createSubchannel(address, {})
     );
     for (const subchannel of this.subchannels) {
@@ -422,7 +430,9 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       this.subchannels.length === 0 ||
       this.latestAddressList.length !== addressList.length ||
       !this.latestAddressList.every(
-        (value, index) => addressList[index] && subchannelAddressEqual(addressList[index], value)
+        (value, index) =>
+          addressList[index] &&
+          subchannelAddressEqual(addressList[index], value)
       )
     ) {
       this.latestAddressList = addressList;
@@ -463,7 +473,9 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       currentPick.removeConnectivityStateListener(
         this.pickedSubchannelStateListener
       );
-      this.channelControlHelper.removeChannelzChild(currentPick.getChannelzRef());
+      this.channelControlHelper.removeChannelzChild(
+        currentPick.getChannelzRef()
+      );
     }
   }
 

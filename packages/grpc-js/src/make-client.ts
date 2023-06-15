@@ -132,7 +132,7 @@ export function makeClientConstructor(
     [methodName: string]: Function;
   }
 
-  Object.keys(methods).forEach((name) => {
+  Object.keys(methods).forEach(name => {
     if (isPrototypePolluted(name)) {
       return;
     }

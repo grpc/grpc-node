@@ -18,7 +18,14 @@
 import * as assert from 'assert';
 import * as path from 'path';
 import * as grpc from '../src';
-import { sendUnaryData, Server, ServerCredentials, ServerUnaryCall, ServiceClientConstructor, ServiceError } from "../src";
+import {
+  sendUnaryData,
+  Server,
+  ServerCredentials,
+  ServerUnaryCall,
+  ServiceClientConstructor,
+  ServiceError,
+} from '../src';
 import { loadProtoFile } from './common';
 
 const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
@@ -30,7 +37,6 @@ describe('Local subchannel pool', () => {
   let serverPort: number;
 
   before(done => {
-
     server = new Server();
     server.addService(echoService.service, {
       echo(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
@@ -58,7 +64,7 @@ describe('Local subchannel pool', () => {
     const client = new echoService(
       `localhost:${serverPort}`,
       grpc.credentials.createInsecure(),
-      {'grpc.use_local_subchannel_pool': 1}
+      { 'grpc.use_local_subchannel_pool': 1 }
     );
     client.echo(
       { value: 'test value', value2: 3 },

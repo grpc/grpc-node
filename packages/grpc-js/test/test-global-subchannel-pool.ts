@@ -19,13 +19,20 @@ import * as assert from 'assert';
 import * as path from 'path';
 
 import * as grpc from '../src';
-import {sendUnaryData, Server, ServerCredentials, ServerUnaryCall, ServiceClientConstructor, ServiceError} from '../src';
+import {
+  sendUnaryData,
+  Server,
+  ServerCredentials,
+  ServerUnaryCall,
+  ServiceClientConstructor,
+  ServiceError,
+} from '../src';
 
-import {loadProtoFile} from './common';
+import { loadProtoFile } from './common';
 
 const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
-const echoService =
-    loadProtoFile(protoFile).EchoService as ServiceClientConstructor;
+const echoService = loadProtoFile(protoFile)
+  .EchoService as ServiceClientConstructor;
 
 describe('Global subchannel pool', () => {
   let server: Server;
@@ -45,72 +52,84 @@ describe('Global subchannel pool', () => {
     });
 
     server.bindAsync(
-        'localhost:0', ServerCredentials.createInsecure(), (err, port) => {
-          assert.ifError(err);
-          serverPort = port;
-          server.start();
-          done();
-        });
+      'localhost:0',
+      ServerCredentials.createInsecure(),
+      (err, port) => {
+        assert.ifError(err);
+        serverPort = port;
+        server.start();
+        done();
+      }
+    );
   });
 
   beforeEach(() => {
     promises = [];
-  })
+  });
 
   after(done => {
     server.tryShutdown(done);
   });
 
   function callService(client: InstanceType<grpc.ServiceClientConstructor>) {
-    return new Promise<void>((resolve) => {
-      const request = {value: 'test value', value2: 3};
+    return new Promise<void>(resolve => {
+      const request = { value: 'test value', value2: 3 };
 
       client.echo(request, (error: ServiceError, response: any) => {
         assert.ifError(error);
         assert.deepStrictEqual(response, request);
         resolve();
       });
-    })
+    });
   }
 
   function connect() {
     const grpcOptions = {
       'grpc.use_local_subchannel_pool': 0,
-    }
+    };
 
     client1 = new echoService(
-        `127.0.0.1:${serverPort}`, grpc.credentials.createInsecure(),
-        grpcOptions);
+      `127.0.0.1:${serverPort}`,
+      grpc.credentials.createInsecure(),
+      grpcOptions
+    );
 
     client2 = new echoService(
-        `127.0.0.1:${serverPort}`, grpc.credentials.createInsecure(),
-        grpcOptions);
+      `127.0.0.1:${serverPort}`,
+      grpc.credentials.createInsecure(),
+      grpcOptions
+    );
   }
 
   /* This is a regression test for a bug where client1.close in the
    * waitForReady callback would cause the subchannel to transition to IDLE
    * even though client2 is also using it. */
-  it('Should handle client.close calls in waitForReady',
-     done => {
-       connect();
+  it('Should handle client.close calls in waitForReady', done => {
+    connect();
 
-       promises.push(new Promise<void>((resolve) => {
-         client1.waitForReady(Date.now() + 50, (error) => {
-           assert.ifError(error);
-           client1.close();
-           resolve();
-         });
-       }))
+    promises.push(
+      new Promise<void>(resolve => {
+        client1.waitForReady(Date.now() + 50, error => {
+          assert.ifError(error);
+          client1.close();
+          resolve();
+        });
+      })
+    );
 
-       promises.push(new Promise<void>((resolve) => {
-         client2.waitForReady(Date.now() + 50, (error) => {
+    promises.push(
+      new Promise<void>(resolve => {
+        client2.waitForReady(Date.now() + 50, error => {
           assert.ifError(error);
           resolve();
-         });
-       }))
+        });
+      })
+    );
 
-       Promise.all(promises).then(() => {done()});
-     })
+    Promise.all(promises).then(() => {
+      done();
+    });
+  });
 
   it('Call the service', done => {
     promises.push(callService(client2));
@@ -118,13 +137,13 @@ describe('Global subchannel pool', () => {
     Promise.all(promises).then(() => {
       done();
     });
-  })
+  });
 
   it('Should complete the client lifecycle without error', done => {
     setTimeout(() => {
       client1.close();
       client2.close();
-      done()
+      done();
     }, 500);
   });
 });

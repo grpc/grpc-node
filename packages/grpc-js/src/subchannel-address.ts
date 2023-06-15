@@ -15,7 +15,7 @@
  *
  */
 
-import { isIP } from "net";
+import { isIP } from 'net';
 
 export interface TcpSubchannelAddress {
   port: number;
@@ -71,15 +71,18 @@ export function subchannelAddressToString(address: SubchannelAddress): string {
 
 const DEFAULT_PORT = 443;
 
-export function stringToSubchannelAddress(addressString: string, port?: number): SubchannelAddress {
+export function stringToSubchannelAddress(
+  addressString: string,
+  port?: number
+): SubchannelAddress {
   if (isIP(addressString)) {
     return {
       host: addressString,
-      port: port ?? DEFAULT_PORT
+      port: port ?? DEFAULT_PORT,
     };
   } else {
     return {
-      path: addressString
+      path: addressString,
     };
   }
 }

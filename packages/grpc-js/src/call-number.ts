@@ -18,5 +18,5 @@
 let nextCallNumber = 0;
 
 export function getNextCallNumber() {
-    return nextCallNumber++;
+  return nextCallNumber++;
 }

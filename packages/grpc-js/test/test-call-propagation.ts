@@ -29,7 +29,7 @@ function multiDone(done: () => void, target: number) {
     if (count >= target) {
       done();
     }
-  }
+  };
 }
 
 describe('Call propagation', () => {
@@ -39,33 +39,48 @@ describe('Call propagation', () => {
   let proxyServer: grpc.Server;
   let proxyClient: ServiceClient;
 
-  before((done) => {
-    Client = loadProtoFile(__dirname + '/fixtures/test_service.proto').TestService as ServiceClientConstructor;
+  before(done => {
+    Client = loadProtoFile(__dirname + '/fixtures/test_service.proto')
+      .TestService as ServiceClientConstructor;
     server = new grpc.Server();
     server.addService(Client.service, {
       unary: () => {},
       clientStream: () => {},
       serverStream: () => {},
-      bidiStream: () => {}
+      bidiStream: () => {},
     });
     proxyServer = new grpc.Server();
-    server.bindAsync('localhost:0', grpc.ServerCredentials.createInsecure(), (error, port) => {
-      if (error) {
-        done(error);
-        return;
-      }
-      server.start();
-      client = new Client(`localhost:${port}`, grpc.credentials.createInsecure());
-      proxyServer.bindAsync('localhost:0', grpc.ServerCredentials.createInsecure(), (error, proxyPort) => {
+    server.bindAsync(
+      'localhost:0',
+      grpc.ServerCredentials.createInsecure(),
+      (error, port) => {
         if (error) {
           done(error);
           return;
         }
-        proxyServer.start();
-        proxyClient = new Client(`localhost:${proxyPort}`, grpc.credentials.createInsecure());
-        done();
-      });
-    });
+        server.start();
+        client = new Client(
+          `localhost:${port}`,
+          grpc.credentials.createInsecure()
+        );
+        proxyServer.bindAsync(
+          'localhost:0',
+          grpc.ServerCredentials.createInsecure(),
+          (error, proxyPort) => {
+            if (error) {
+              done(error);
+              return;
+            }
+            proxyServer.start();
+            proxyClient = new Client(
+              `localhost:${proxyPort}`,
+              grpc.credentials.createInsecure()
+            );
+            done();
+          }
+        );
+      }
+    );
   });
   afterEach(() => {
     proxyServer.removeService(Client.service);
@@ -75,63 +90,84 @@ describe('Call propagation', () => {
     proxyServer.forceShutdown();
   });
   describe('Cancellation', () => {
-    it('should work with unary requests', (done) => {
+    it('should work with unary requests', done => {
       done = multiDone(done, 2);
+      // eslint-disable-next-line prefer-const
       let call: grpc.ClientUnaryCall;
       proxyServer.addService(Client.service, {
-        unary: (parent: grpc.ServerUnaryCall<any, any>, callback: grpc.sendUnaryData<any>) => {
-          client.unary(parent.request, {parent: parent}, (error: grpc.ServiceError, value: unknown) => {
-            callback(error, value);
-            assert(error);
-            assert.strictEqual(error.code, grpc.status.CANCELLED);
-            done();
-          });
+        unary: (
+          parent: grpc.ServerUnaryCall<any, any>,
+          callback: grpc.sendUnaryData<any>
+        ) => {
+          client.unary(
+            parent.request,
+            { parent: parent },
+            (error: grpc.ServiceError, value: unknown) => {
+              callback(error, value);
+              assert(error);
+              assert.strictEqual(error.code, grpc.status.CANCELLED);
+              done();
+            }
+          );
           /* Cancel the original call after the server starts processing it to
            * ensure that it does reach the server. */
           call.cancel();
+        },
+      });
+      call = proxyClient.unary(
+        {},
+        (error: grpc.ServiceError, value: unknown) => {
+          assert(error);
+          assert.strictEqual(error.code, grpc.status.CANCELLED);
+          done();
         }
-      });
-      call = proxyClient.unary({}, (error: grpc.ServiceError, value: unknown) => {
-        assert(error);
-        assert.strictEqual(error.code, grpc.status.CANCELLED);
-        done();
-      });
+      );
     });
-    it('Should work with client streaming requests', (done) => {
+    it('Should work with client streaming requests', done => {
       done = multiDone(done, 2);
+      // eslint-disable-next-line prefer-const
       let call: grpc.ClientWritableStream<unknown>;
       proxyServer.addService(Client.service, {
-        clientStream: (parent: grpc.ServerReadableStream<any, any>, callback: grpc.sendUnaryData<any>) => {
-          client.clientStream({parent: parent}, (error: grpc.ServiceError, value: unknown) => {
-            callback(error, value);
-            assert(error);
-            assert.strictEqual(error.code, grpc.status.CANCELLED);
-            done();
-          });
+        clientStream: (
+          parent: grpc.ServerReadableStream<any, any>,
+          callback: grpc.sendUnaryData<any>
+        ) => {
+          client.clientStream(
+            { parent: parent },
+            (error: grpc.ServiceError, value: unknown) => {
+              callback(error, value);
+              assert(error);
+              assert.strictEqual(error.code, grpc.status.CANCELLED);
+              done();
+            }
+          );
           /* Cancel the original call after the server starts processing it to
            * ensure that it does reach the server. */
           call.cancel();
+        },
+      });
+      call = proxyClient.clientStream(
+        (error: grpc.ServiceError, value: unknown) => {
+          assert(error);
+          assert.strictEqual(error.code, grpc.status.CANCELLED);
+          done();
         }
-      });
-      call = proxyClient.clientStream((error: grpc.ServiceError, value: unknown) => {
-        assert(error);
-        assert.strictEqual(error.code, grpc.status.CANCELLED);
-        done();
-      });
+      );
     });
-    it('Should work with server streaming requests', (done) => {
+    it('Should work with server streaming requests', done => {
       done = multiDone(done, 2);
+      // eslint-disable-next-line prefer-const
       let call: grpc.ClientReadableStream<unknown>;
       proxyServer.addService(Client.service, {
         serverStream: (parent: grpc.ServerWritableStream<any, any>) => {
-          const child = client.serverStream(parent.request, {parent: parent});
+          const child = client.serverStream(parent.request, { parent: parent });
           child.on('error', () => {});
           child.on('status', (status: grpc.StatusObject) => {
             assert.strictEqual(status.code, grpc.status.CANCELLED);
             done();
           });
           call.cancel();
-        }
+        },
       });
       call = proxyClient.serverStream({});
       call.on('error', () => {});
@@ -140,19 +176,20 @@ describe('Call propagation', () => {
         done();
       });
     });
-    it('Should work with bidi streaming requests', (done) => {
+    it('Should work with bidi streaming requests', done => {
       done = multiDone(done, 2);
+      // eslint-disable-next-line prefer-const
       let call: grpc.ClientDuplexStream<unknown, unknown>;
       proxyServer.addService(Client.service, {
         bidiStream: (parent: grpc.ServerDuplexStream<any, any>) => {
-          const child = client.bidiStream({parent: parent});
+          const child = client.bidiStream({ parent: parent });
           child.on('error', () => {});
           child.on('status', (status: grpc.StatusObject) => {
             assert.strictEqual(status.code, grpc.status.CANCELLED);
             done();
           });
           call.cancel();
-        }
+        },
       });
       call = proxyClient.bidiStream();
       call.on('error', () => {});
@@ -163,86 +200,113 @@ describe('Call propagation', () => {
     });
   });
   describe('Deadlines', () => {
-    it('should work with unary requests', (done) => {
+    it('should work with unary requests', done => {
       done = multiDone(done, 2);
-      let call: grpc.ClientUnaryCall;
       proxyServer.addService(Client.service, {
-        unary: (parent: grpc.ServerUnaryCall<any, any>, callback: grpc.sendUnaryData<any>) => {
-          client.unary(parent.request, {parent: parent, propagate_flags: grpc.propagate.DEADLINE}, (error: grpc.ServiceError, value: unknown) => {
-            callback(error, value);
-            assert(error);
-            assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
-            done();
-          });
-        }
+        unary: (
+          parent: grpc.ServerUnaryCall<any, any>,
+          callback: grpc.sendUnaryData<any>
+        ) => {
+          client.unary(
+            parent.request,
+            { parent: parent, propagate_flags: grpc.propagate.DEADLINE },
+            (error: grpc.ServiceError, value: unknown) => {
+              callback(error, value);
+              assert(error);
+              assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
+              done();
+            }
+          );
+        },
       });
       const deadline = new Date();
       deadline.setMilliseconds(deadline.getMilliseconds() + 100);
-      call = proxyClient.unary({}, {deadline}, (error: grpc.ServiceError, value: unknown) => {
-        assert(error);
-        assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
-        done();
-      });
-    });
-    it('Should work with client streaming requests', (done) => {
-      done = multiDone(done, 2);
-      let call: grpc.ClientWritableStream<unknown>;
-      proxyServer.addService(Client.service, {
-        clientStream: (parent: grpc.ServerReadableStream<any, any>, callback: grpc.sendUnaryData<any>) => {
-          client.clientStream({parent: parent, propagate_flags: grpc.propagate.DEADLINE}, (error: grpc.ServiceError, value: unknown) => {
-            callback(error, value);
-            assert(error);
-            assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
-            done();
-          });
+      proxyClient.unary(
+        {},
+        { deadline },
+        (error: grpc.ServiceError, value: unknown) => {
+          assert(error);
+          assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
+          done();
         }
+      );
+    });
+    it('Should work with client streaming requests', done => {
+      done = multiDone(done, 2);
+
+      proxyServer.addService(Client.service, {
+        clientStream: (
+          parent: grpc.ServerReadableStream<any, any>,
+          callback: grpc.sendUnaryData<any>
+        ) => {
+          client.clientStream(
+            { parent: parent, propagate_flags: grpc.propagate.DEADLINE },
+            (error: grpc.ServiceError, value: unknown) => {
+              callback(error, value);
+              assert(error);
+              assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
+              done();
+            }
+          );
+        },
       });
       const deadline = new Date();
       deadline.setMilliseconds(deadline.getMilliseconds() + 100);
-      call = proxyClient.clientStream({deadline, propagate_flags: grpc.propagate.DEADLINE}, (error: grpc.ServiceError, value: unknown) => {
-        assert(error);
-        assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
-        done();
-      });
+      proxyClient.clientStream(
+        { deadline, propagate_flags: grpc.propagate.DEADLINE },
+        (error: grpc.ServiceError, value: unknown) => {
+          assert(error);
+          assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
+          done();
+        }
+      );
     });
-    it('Should work with server streaming requests', (done) => {
+    it('Should work with server streaming requests', done => {
       done = multiDone(done, 2);
       let call: grpc.ClientReadableStream<unknown>;
       proxyServer.addService(Client.service, {
         serverStream: (parent: grpc.ServerWritableStream<any, any>) => {
-          const child = client.serverStream(parent.request, {parent: parent, propagate_flags: grpc.propagate.DEADLINE});
+          const child = client.serverStream(parent.request, {
+            parent: parent,
+            propagate_flags: grpc.propagate.DEADLINE,
+          });
           child.on('error', () => {});
           child.on('status', (status: grpc.StatusObject) => {
             assert.strictEqual(status.code, grpc.status.DEADLINE_EXCEEDED);
             done();
           });
-        }
+        },
       });
       const deadline = new Date();
       deadline.setMilliseconds(deadline.getMilliseconds() + 100);
-      call = proxyClient.serverStream({}, {deadline});
+      // eslint-disable-next-line prefer-const
+      call = proxyClient.serverStream({}, { deadline });
       call.on('error', () => {});
       call.on('status', (status: grpc.StatusObject) => {
         assert.strictEqual(status.code, grpc.status.DEADLINE_EXCEEDED);
         done();
       });
     });
-    it('Should work with bidi streaming requests', (done) => {
+    it('Should work with bidi streaming requests', done => {
       done = multiDone(done, 2);
       let call: grpc.ClientDuplexStream<unknown, unknown>;
       proxyServer.addService(Client.service, {
         bidiStream: (parent: grpc.ServerDuplexStream<any, any>) => {
-          const child = client.bidiStream({parent: parent, propagate_flags: grpc.propagate.DEADLINE});
+          const child = client.bidiStream({
+            parent: parent,
+            propagate_flags: grpc.propagate.DEADLINE,
+          });
           child.on('error', () => {});
           child.on('status', (status: grpc.StatusObject) => {
             assert.strictEqual(status.code, grpc.status.DEADLINE_EXCEEDED);
             done();
           });
-        }
+        },
       });
       const deadline = new Date();
       deadline.setMilliseconds(deadline.getMilliseconds() + 100);
-      call = proxyClient.bidiStream({deadline});
+      // eslint-disable-next-line prefer-const
+      call = proxyClient.bidiStream({ deadline });
       call.on('error', () => {});
       call.on('status', (status: grpc.StatusObject) => {
         assert.strictEqual(status.code, grpc.status.DEADLINE_EXCEEDED);

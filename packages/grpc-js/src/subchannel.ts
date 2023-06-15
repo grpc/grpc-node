@@ -27,7 +27,15 @@ import {
   SubchannelAddress,
   subchannelAddressToString,
 } from './subchannel-address';
-import { SubchannelRef, ChannelzTrace, ChannelzChildrenTracker, SubchannelInfo, registerChannelzSubchannel, ChannelzCallTracker, unregisterChannelzRef } from './channelz';
+import {
+  SubchannelRef,
+  ChannelzTrace,
+  ChannelzChildrenTracker,
+  SubchannelInfo,
+  registerChannelzSubchannel,
+  ChannelzCallTracker,
+  unregisterChannelzRef,
+} from './channelz';
 import { ConnectivityStateListener } from './subchannel-interface';
 import { SubchannelCallInterceptingListener } from './subchannel-call';
 import { SubchannelCall } from './subchannel-call';
@@ -117,11 +125,18 @@ export class Subchannel {
       this.channelzEnabled = false;
     }
     this.channelzTrace = new ChannelzTrace();
-    this.channelzRef = registerChannelzSubchannel(this.subchannelAddressString, () => this.getChannelzInfo(), this.channelzEnabled);
+    this.channelzRef = registerChannelzSubchannel(
+      this.subchannelAddressString,
+      () => this.getChannelzInfo(),
+      this.channelzEnabled
+    );
     if (this.channelzEnabled) {
       this.channelzTrace.addTrace('CT_INFO', 'Subchannel created');
     }
-    this.trace('Subchannel constructed with options ' + JSON.stringify(options, undefined, 2));
+    this.trace(
+      'Subchannel constructed with options ' +
+        JSON.stringify(options, undefined, 2)
+    );
   }
 
   private getChannelzInfo(): SubchannelInfo {
@@ -130,16 +145,34 @@ export class Subchannel {
       trace: this.channelzTrace,
       callTracker: this.callTracker,
       children: this.childrenTracker.getChildLists(),
-      target: this.subchannelAddressString
+      target: this.subchannelAddressString,
     };
   }
 
   private trace(text: string): void {
-    logging.trace(LogVerbosity.DEBUG, TRACER_NAME, '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
+    logging.trace(
+      LogVerbosity.DEBUG,
+      TRACER_NAME,
+      '(' +
+        this.channelzRef.id +
+        ') ' +
+        this.subchannelAddressString +
+        ' ' +
+        text
+    );
   }
 
   private refTrace(text: string): void {
-    logging.trace(LogVerbosity.DEBUG, 'subchannel_refcount', '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
+    logging.trace(
+      LogVerbosity.DEBUG,
+      'subchannel_refcount',
+      '(' +
+        this.channelzRef.id +
+        ') ' +
+        this.subchannelAddressString +
+        ' ' +
+        text
+    );
   }
 
   private handleBackoffTimer() {
@@ -171,36 +204,52 @@ export class Subchannel {
   private startConnectingInternal() {
     let options = this.options;
     if (options['grpc.keepalive_time_ms']) {
-      const adjustedKeepaliveTime = Math.min(this.keepaliveTime, KEEPALIVE_MAX_TIME_MS);
-      options = {...options, 'grpc.keepalive_time_ms': adjustedKeepaliveTime};
+      const adjustedKeepaliveTime = Math.min(
+        this.keepaliveTime,
+        KEEPALIVE_MAX_TIME_MS
+      );
+      options = { ...options, 'grpc.keepalive_time_ms': adjustedKeepaliveTime };
     }
-    this.connector.connect(this.subchannelAddress, this.credentials, options).then(
-      transport => {
-        if (this.transitionToState([ConnectivityState.CONNECTING], ConnectivityState.READY)) {
-          this.transport = transport;
-          if (this.channelzEnabled) {
-            this.childrenTracker.refChild(transport.getChannelzRef());
-          }
-          transport.addDisconnectListener((tooManyPings) => {
-            this.transitionToState([ConnectivityState.READY], ConnectivityState.IDLE);
-            if (tooManyPings && this.keepaliveTime > 0) {
-              this.keepaliveTime *= 2;
-              logging.log(
-                LogVerbosity.ERROR,
-                `Connection to ${uriToString(this.channelTarget)} at ${
-                  this.subchannelAddressString
-                } rejected by server because of excess pings. Increasing ping interval to ${
-                  this.keepaliveTime
-                } ms`
-              );
+    this.connector
+      .connect(this.subchannelAddress, this.credentials, options)
+      .then(
+        transport => {
+          if (
+            this.transitionToState(
+              [ConnectivityState.CONNECTING],
+              ConnectivityState.READY
+            )
+          ) {
+            this.transport = transport;
+            if (this.channelzEnabled) {
+              this.childrenTracker.refChild(transport.getChannelzRef());
             }
-          });
+            transport.addDisconnectListener(tooManyPings => {
+              this.transitionToState(
+                [ConnectivityState.READY],
+                ConnectivityState.IDLE
+              );
+              if (tooManyPings && this.keepaliveTime > 0) {
+                this.keepaliveTime *= 2;
+                logging.log(
+                  LogVerbosity.ERROR,
+                  `Connection to ${uriToString(this.channelTarget)} at ${
+                    this.subchannelAddressString
+                  } rejected by server because of excess pings. Increasing ping interval to ${
+                    this.keepaliveTime
+                  } ms`
+                );
+              }
+            });
+          }
+        },
+        error => {
+          this.transitionToState(
+            [ConnectivityState.CONNECTING],
+            ConnectivityState.TRANSIENT_FAILURE
+          );
         }
-      },
-      error => {
-        this.transitionToState([ConnectivityState.CONNECTING], ConnectivityState.TRANSIENT_FAILURE);
-      }
-    )
+      );
   }
 
   /**
@@ -223,7 +272,12 @@ export class Subchannel {
         ConnectivityState[newState]
     );
     if (this.channelzEnabled) {
-      this.channelzTrace.addTrace('CT_INFO', ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[newState]);
+      this.channelzTrace.addTrace(
+        'CT_INFO',
+        ConnectivityState[this.connectivityState] +
+          ' -> ' +
+          ConnectivityState[newState]
+      );
     }
     const previousState = this.connectivityState;
     this.connectivityState = newState;
@@ -268,22 +322,12 @@ export class Subchannel {
   }
 
   ref() {
-    this.refTrace(
-      'refcount ' +
-        this.refcount +
-        ' -> ' +
-        (this.refcount + 1)
-    );
+    this.refTrace('refcount ' + this.refcount + ' -> ' + (this.refcount + 1));
     this.refcount += 1;
   }
 
   unref() {
-    this.refTrace(
-      'refcount ' +
-        this.refcount +
-        ' -> ' +
-        (this.refcount - 1)
-    );
+    this.refTrace('refcount ' + this.refcount + ' -> ' + (this.refcount - 1));
     this.refcount -= 1;
     if (this.refcount === 0) {
       if (this.channelzEnabled) {
@@ -309,7 +353,12 @@ export class Subchannel {
     return false;
   }
 
-  createCall(metadata: Metadata, host: string, method: string, listener: SubchannelCallInterceptingListener): SubchannelCall {
+  createCall(
+    metadata: Metadata,
+    host: string,
+    method: string,
+    listener: SubchannelCallInterceptingListener
+  ): SubchannelCall {
     if (!this.transport) {
       throw new Error('Cannot create call, subchannel not READY');
     }
@@ -324,12 +373,18 @@ export class Subchannel {
           } else {
             this.callTracker.addCallFailed();
           }
-        }
-      }
+        },
+      };
     } else {
       statsTracker = {};
     }
-    return this.transport.createCall(metadata, host, method, listener, statsTracker);
+    return this.transport.createCall(
+      metadata,
+      host,
+      method,
+      listener,
+      statsTracker
+    );
   }
 
   /**
@@ -341,9 +396,9 @@ export class Subchannel {
   startConnecting() {
     process.nextTick(() => {
       /* First, try to transition from IDLE to connecting. If that doesn't happen
-      * because the state is not currently IDLE, check if it is
-      * TRANSIENT_FAILURE, and if so indicate that it should go back to
-      * connecting after the backoff timer ends. Otherwise do nothing */
+       * because the state is not currently IDLE, check if it is
+       * TRANSIENT_FAILURE, and if so indicate that it should go back to
+       * connecting after the backoff timer ends. Otherwise do nothing */
       if (
         !this.transitionToState(
           [ConnectivityState.IDLE],

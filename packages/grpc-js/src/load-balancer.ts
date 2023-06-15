@@ -58,16 +58,28 @@ export interface ChannelControlHelper {
  * parent while letting others pass through to the parent unmodified. This
  * allows other code to create these children without needing to know about
  * all of the methods to be passed through.
- * @param parent 
- * @param overrides 
+ * @param parent
+ * @param overrides
  */
-export function createChildChannelControlHelper(parent: ChannelControlHelper, overrides: Partial<ChannelControlHelper>): ChannelControlHelper {
+export function createChildChannelControlHelper(
+  parent: ChannelControlHelper,
+  overrides: Partial<ChannelControlHelper>
+): ChannelControlHelper {
   return {
-    createSubchannel: overrides.createSubchannel?.bind(overrides) ?? parent.createSubchannel.bind(parent),
-    updateState: overrides.updateState?.bind(overrides) ?? parent.updateState.bind(parent),
-    requestReresolution: overrides.requestReresolution?.bind(overrides) ?? parent.requestReresolution.bind(parent),
-    addChannelzChild: overrides.addChannelzChild?.bind(overrides) ?? parent.addChannelzChild.bind(parent),
-    removeChannelzChild: overrides.removeChannelzChild?.bind(overrides) ?? parent.removeChannelzChild.bind(parent)
+    createSubchannel:
+      overrides.createSubchannel?.bind(overrides) ??
+      parent.createSubchannel.bind(parent),
+    updateState:
+      overrides.updateState?.bind(overrides) ?? parent.updateState.bind(parent),
+    requestReresolution:
+      overrides.requestReresolution?.bind(overrides) ??
+      parent.requestReresolution.bind(parent),
+    addChannelzChild:
+      overrides.addChannelzChild?.bind(overrides) ??
+      parent.addChannelzChild.bind(parent),
+    removeChannelzChild:
+      overrides.removeChannelzChild?.bind(overrides) ??
+      parent.removeChannelzChild.bind(parent),
   };
 }
 

@@ -15,11 +15,11 @@
  *
  */
 
-import { CallCredentials } from "./call-credentials";
-import { Status } from "./constants";
-import { Deadline } from "./deadline";
-import { Metadata } from "./metadata";
-import { ServerSurfaceCall } from "./server-call";
+import { CallCredentials } from './call-credentials';
+import { Status } from './constants';
+import { Deadline } from './deadline';
+import { Metadata } from './metadata';
+import { ServerSurfaceCall } from './server-call';
 
 export interface CallStreamOptions {
   deadline: Deadline;
@@ -38,7 +38,7 @@ export interface StatusObject {
 
 export type PartialStatusObject = Pick<StatusObject, 'code' | 'details'> & {
   metadata: Metadata | null;
-}
+};
 
 export const enum WriteFlags {
   BufferHint = 1,
@@ -118,7 +118,7 @@ export class InterceptingListenerImpl implements InterceptingListener {
 
   onReceiveMetadata(metadata: Metadata): void {
     this.processingMetadata = true;
-    this.listener.onReceiveMetadata(metadata, (metadata) => {
+    this.listener.onReceiveMetadata(metadata, metadata => {
       this.processingMetadata = false;
       this.nextListener.onReceiveMetadata(metadata);
       this.processPendingMessage();
@@ -128,9 +128,9 @@ export class InterceptingListenerImpl implements InterceptingListener {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onReceiveMessage(message: any): void {
     /* If this listener processes messages asynchronously, the last message may
-      * be reordered with respect to the status */
+     * be reordered with respect to the status */
     this.processingMessage = true;
-    this.listener.onReceiveMessage(message, (msg) => {
+    this.listener.onReceiveMessage(message, msg => {
       this.processingMessage = false;
       if (this.processingMetadata) {
         this.pendingMessage = msg;
@@ -142,7 +142,7 @@ export class InterceptingListenerImpl implements InterceptingListener {
     });
   }
   onReceiveStatus(status: StatusObject): void {
-    this.listener.onReceiveStatus(status, (processedStatus) => {
+    this.listener.onReceiveStatus(status, processedStatus => {
       if (this.processingMetadata || this.processingMessage) {
         this.pendingStatus = processedStatus;
       } else {

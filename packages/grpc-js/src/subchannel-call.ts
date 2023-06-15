@@ -25,16 +25,18 @@ import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import { ServerSurfaceCall } from './server-call';
 import { Deadline } from './deadline';
-import { InterceptingListener, MessageContext, StatusObject, WriteCallback } from './call-interface';
+import {
+  InterceptingListener,
+  MessageContext,
+  StatusObject,
+  WriteCallback,
+} from './call-interface';
 import { CallEventTracker, Transport } from './transport';
 
 const TRACER_NAME = 'subchannel_call';
 
-const {
-  HTTP2_HEADER_STATUS,
-  HTTP2_HEADER_CONTENT_TYPE,
-  NGHTTP2_CANCEL,
-} = http2.constants;
+const { HTTP2_HEADER_STATUS, HTTP2_HEADER_CONTENT_TYPE, NGHTTP2_CANCEL } =
+  http2.constants;
 
 /**
  * https://nodejs.org/api/errors.html#errors_class_systemerror
@@ -79,7 +81,8 @@ export interface StatusObjectWithRstCode extends StatusObject {
   rstCode?: number;
 }
 
-export interface SubchannelCallInterceptingListener extends InterceptingListener {
+export interface SubchannelCallInterceptingListener
+  extends InterceptingListener {
   onReceiveStatus(status: StatusObjectWithRstCode): void;
 }
 
@@ -235,7 +238,10 @@ export class Http2SubchannelCall implements SubchannelCall {
                * "Internal server error" message. */
               details = `Received RST_STREAM with code ${http2Stream.rstCode} (Internal server error)`;
             } else {
-              if (this.internalError.code === 'ECONNRESET' || this.internalError.code === 'ETIMEDOUT') {
+              if (
+                this.internalError.code === 'ECONNRESET' ||
+                this.internalError.code === 'ETIMEDOUT'
+              ) {
                 code = Status.UNAVAILABLE;
                 details = this.internalError.message;
               } else {
@@ -255,7 +261,12 @@ export class Http2SubchannelCall implements SubchannelCall {
         // This is OK, because status codes emitted here correspond to more
         // catastrophic issues that prevent us from receiving trailers in the
         // first place.
-        this.endCall({ code, details, metadata: new Metadata(), rstCode: http2Stream.rstCode });
+        this.endCall({
+          code,
+          details,
+          metadata: new Metadata(),
+          rstCode: http2Stream.rstCode,
+        });
       });
     });
     http2Stream.on('error', (err: SystemError) => {
@@ -488,7 +499,7 @@ export class Http2SubchannelCall implements SubchannelCall {
       return;
     }
     /* Only resume reading from the http2Stream if we don't have any pending
-      * messages to emit */
+     * messages to emit */
     this.http2Stream.resume();
   }
 
@@ -496,7 +507,9 @@ export class Http2SubchannelCall implements SubchannelCall {
     this.trace('write() called with message of length ' + message.length);
     const cb: WriteCallback = (error?: Error | null) => {
       let code: Status = Status.UNAVAILABLE;
-      if ((error as NodeJS.ErrnoException)?.code === 'ERR_STREAM_WRITE_AFTER_END') {
+      if (
+        (error as NodeJS.ErrnoException)?.code === 'ERR_STREAM_WRITE_AFTER_END'
+      ) {
         code = Status.INTERNAL;
       }
       if (error) {
@@ -512,7 +525,7 @@ export class Http2SubchannelCall implements SubchannelCall {
       this.endCall({
         code: Status.UNAVAILABLE,
         details: `Write failed with error ${(error as Error).message}`,
-        metadata: new Metadata()
+        metadata: new Metadata(),
       });
     }
   }

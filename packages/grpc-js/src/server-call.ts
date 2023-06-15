@@ -68,7 +68,7 @@ const defaultCompressionHeaders = {
   // once compression is integrated.
   [GRPC_ACCEPT_ENCODING_HEADER]: 'identity,deflate,gzip',
   [GRPC_ENCODING_HEADER]: 'identity',
-}
+};
 const defaultResponseHeaders = {
   [http2.constants.HTTP2_HEADER_STATUS]: http2.constants.HTTP_STATUS_OK,
   [http2.constants.HTTP2_HEADER_CONTENT_TYPE]: 'application/grpc+proto',
@@ -199,7 +199,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
     this.trailingMetadata = new Metadata();
     this.call.setupSurfaceCall(this);
 
-    this.on('error', (err) => {
+    this.on('error', err => {
       this.call.sendError(err);
       this.end();
     });
@@ -237,7 +237,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
     } catch (err) {
       this.emit('error', {
         details: getErrorMessage(err),
-        code: Status.INTERNAL
+        code: Status.INTERNAL,
       });
     }
 
@@ -283,7 +283,7 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType>
     this.call.setupSurfaceCall(this);
     this.call.setupReadable(this, encoding);
 
-    this.on('error', (err) => {
+    this.on('error', err => {
       this.call.sendError(err);
       this.end();
     });
@@ -502,7 +502,11 @@ export class Http2ServerCallStream<
     this.metadataSent = true;
     const custom = customMetadata ? customMetadata.toHttp2Headers() : null;
     // TODO(cjihrig): Include compression headers.
-    const headers = { ...defaultResponseHeaders, ...defaultCompressionHeaders, ...custom };
+    const headers = {
+      ...defaultResponseHeaders,
+      ...defaultCompressionHeaders,
+      ...custom,
+    };
     this.stream.respond(headers, defaultResponseOptions);
   }
 
@@ -559,6 +563,8 @@ export class Http2ServerCallStream<
     const { stream } = this;
 
     let receivedLength = 0;
+
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const call = this;
     const body: Buffer[] = [];
     const limit = this.maxReceiveMessageSize;
@@ -595,7 +601,10 @@ export class Http2ServerCallStream<
       }
 
       if (receivedLength === 0) {
-        next({ code: Status.INTERNAL, details: 'received empty unary message' })
+        next({
+          code: Status.INTERNAL,
+          details: 'received empty unary message',
+        });
         return;
       }
 
@@ -615,29 +624,33 @@ export class Http2ServerCallStream<
       }
 
       decompressedMessage.then(
-        (decompressed) => call.safeDeserializeMessage(decompressed, next),
-        (err: any) => next(
-          err.code
-            ? err
-            : {
-                code: Status.INTERNAL,
-                details: `Received "grpc-encoding" header "${encoding}" but ${encoding} decompression failed`,
-              }
-        )
-      )
+        decompressed => call.safeDeserializeMessage(decompressed, next),
+        (err: any) =>
+          next(
+            err.code
+              ? err
+              : {
+                  code: Status.INTERNAL,
+                  details: `Received "grpc-encoding" header "${encoding}" but ${encoding} decompression failed`,
+                }
+          )
+      );
     }
   }
 
   private safeDeserializeMessage(
     buffer: Buffer,
-    next: (err: Partial<ServerStatusResponse> | null, request?: RequestType) => void
+    next: (
+      err: Partial<ServerStatusResponse> | null,
+      request?: RequestType
+    ) => void
   ) {
     try {
       next(null, this.deserializeMessage(buffer));
     } catch (err) {
       next({
         details: getErrorMessage(err),
-        code: Status.INTERNAL
+        code: Status.INTERNAL,
       });
     }
   }
@@ -688,7 +701,7 @@ export class Http2ServerCallStream<
     } catch (err) {
       this.sendError({
         details: getErrorMessage(err),
-        code: Status.INTERNAL
+        code: Status.INTERNAL,
       });
     }
   }
@@ -720,7 +733,7 @@ export class Http2ServerCallStream<
             [GRPC_MESSAGE_HEADER]: encodeURI(statusObj.details),
             ...statusObj.metadata?.toHttp2Headers(),
           };
-  
+
           this.stream.sendTrailers(trailersToSend);
           this.statusSent = true;
         });
@@ -734,7 +747,7 @@ export class Http2ServerCallStream<
         ...defaultResponseHeaders,
         ...statusObj.metadata?.toHttp2Headers(),
       };
-      this.stream.respond(trailersToSend, {endStream: true});
+      this.stream.respond(trailersToSend, { endStream: true });
       this.statusSent = true;
     }
   }
@@ -790,12 +803,12 @@ export class Http2ServerCallStream<
   }
 
   setupSurfaceCall(call: ServerSurfaceCall) {
-    this.once('cancelled', (reason) => {
+    this.once('cancelled', reason => {
       call.cancelled = true;
       call.emit('cancelled', reason);
     });
 
-    this.once('callEnd', (status) => call.emit('callEnd', status));
+    this.once('callEnd', status => call.emit('callEnd', status));
   }
 
   setupReadable(
@@ -931,12 +944,12 @@ export class Http2ServerCallStream<
       this.bufferedMessages.length = 0;
       let code = getErrorCode(error);
       if (code === null || code < Status.OK || code > Status.UNAUTHENTICATED) {
-        code = Status.INTERNAL
+        code = Status.INTERNAL;
       }
 
       readable.emit('error', {
         details: getErrorMessage(error),
-        code: code
+        code: code,
       });
     }
 

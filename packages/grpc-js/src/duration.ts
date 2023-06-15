@@ -23,7 +23,7 @@ export interface Duration {
 export function msToDuration(millis: number): Duration {
   return {
     seconds: (millis / 1000) | 0,
-    nanos: (millis % 1000) * 1_000_000 | 0
+    nanos: ((millis % 1000) * 1_000_000) | 0,
   };
 }
 
@@ -32,5 +32,5 @@ export function durationToMs(duration: Duration): number {
 }
 
 export function isDuration(value: any): value is Duration {
-  return (typeof value.seconds === 'number') && (typeof value.nanos === 'number');
+  return typeof value.seconds === 'number' && typeof value.nanos === 'number';
 }

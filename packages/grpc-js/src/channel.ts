@@ -91,7 +91,6 @@ export interface Channel {
 }
 
 export class ChannelImplementation implements Channel {
-
   private internalChannel: InternalChannel;
 
   constructor(
@@ -133,13 +132,17 @@ export class ChannelImplementation implements Channel {
     deadline: Date | number,
     callback: (error?: Error) => void
   ): void {
-    this.internalChannel.watchConnectivityState(currentState, deadline, callback);
+    this.internalChannel.watchConnectivityState(
+      currentState,
+      deadline,
+      callback
+    );
   }
 
   /**
    * Get the channelz reference object for this channel. The returned value is
    * garbage if channelz is disabled for this channel.
-   * @returns 
+   * @returns
    */
   getChannelzRef() {
     return this.internalChannel.getChannelzRef();
@@ -160,6 +163,12 @@ export class ChannelImplementation implements Channel {
         'Channel#createCall: deadline must be a number or Date'
       );
     }
-    return this.internalChannel.createCall(method, deadline, host, parentCall, propagateFlags);
+    return this.internalChannel.createCall(
+      method,
+      deadline,
+      host,
+      parentCall,
+      propagateFlags
+    );
   }
 }

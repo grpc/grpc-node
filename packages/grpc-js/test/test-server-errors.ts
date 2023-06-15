@@ -36,7 +36,8 @@ import { loadProtoFile } from './common';
 
 const protoFile = join(__dirname, 'fixtures', 'test_service.proto');
 const testServiceDef = loadProtoFile(protoFile);
-const testServiceClient = testServiceDef.TestService as ServiceClientConstructor;
+const testServiceClient =
+  testServiceDef.TestService as ServiceClientConstructor;
 const clientInsecureCreds = grpc.credentials.createInsecure();
 const serverInsecureCreds = grpc.ServerCredentials.createInsecure();
 
@@ -723,7 +724,7 @@ describe('Other conditions', () => {
   });
 
   describe('should handle server stream errors correctly', () => {
-    it('should emit data for all messages before error', (done) => {
+    it('should emit data for all messages before error', done => {
       const expectedDataCount = 2;
       const call = client.serverStream({ errorAfter: expectedDataCount });
 
