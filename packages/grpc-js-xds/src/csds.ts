@@ -62,10 +62,11 @@ function getCurrentConfigList(): ClientConfig[] {
     for (const [authority, authorityState] of client.authorityStateMap) {
       for (const [type, typeMap] of authorityState.resourceMap) {
         for (const [key, resourceState] of typeMap) {
-          const typeUrl = type.getFullTypeUrl();
+          const typeUrl = type.getTypeUrl();
           const meta = resourceState.meta;
           genericConfigList.push({
             name: xdsResourceNameToString({authority, key}, typeUrl),
+            type_url: typeUrl,
             client_status: meta.clientStatus,
             version_info: meta.version,
             xds_config: meta.clientStatus === 'ACKED' ? meta.rawResource : undefined,
