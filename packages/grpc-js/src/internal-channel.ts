@@ -40,18 +40,45 @@ import { ServerSurfaceCall } from './server-call';
 import { Filter } from './filter';
 
 import { ConnectivityState } from './connectivity-state';
-import { ChannelInfo, ChannelRef, ChannelzCallTracker, ChannelzChildrenTracker, ChannelzTrace, registerChannelzChannel, SubchannelRef, unregisterChannelzRef } from './channelz';
+import {
+  ChannelInfo,
+  ChannelRef,
+  ChannelzCallTracker,
+  ChannelzChildrenTracker,
+  ChannelzTrace,
+  registerChannelzChannel,
+  SubchannelRef,
+  unregisterChannelzRef,
+} from './channelz';
 import { Subchannel } from './subchannel';
 import { LoadBalancingCall } from './load-balancing-call';
 import { CallCredentials } from './call-credentials';
-import { Call, CallStreamOptions, InterceptingListener, MessageContext, StatusObject } from './call-interface';
+import {
+  Call,
+  CallStreamOptions,
+  InterceptingListener,
+  MessageContext,
+  StatusObject,
+} from './call-interface';
 import { SubchannelCall } from './subchannel-call';
-import { Deadline, deadlineToString, getDeadlineTimeoutString } from './deadline';
+import {
+  Deadline,
+  deadlineToString,
+  getDeadlineTimeoutString,
+} from './deadline';
 import { ResolvingCall } from './resolving-call';
 import { getNextCallNumber } from './call-number';
 import { restrictControlPlaneStatusCode } from './control-plane-status';
-import { MessageBufferTracker, RetryingCall, RetryThrottler } from './retrying-call';
-import { BaseSubchannelWrapper, ConnectivityStateListener, SubchannelInterface } from './subchannel-interface';
+import {
+  MessageBufferTracker,
+  RetryingCall,
+  RetryThrottler,
+} from './retrying-call';
+import {
+  BaseSubchannelWrapper,
+  ConnectivityStateListener,
+  SubchannelInterface,
+} from './subchannel-interface';
 
 /**
  * See https://nodejs.org/api/timers.html#timers_setinterval_callback_delay_args
@@ -78,19 +105,33 @@ interface ErrorConfigResult {
   error: StatusObject;
 }
 
-type GetConfigResult = NoneConfigResult | SuccessConfigResult | ErrorConfigResult;
+type GetConfigResult =
+  | NoneConfigResult
+  | SuccessConfigResult
+  | ErrorConfigResult;
 
 const RETRY_THROTTLER_MAP: Map<string, RetryThrottler> = new Map();
 
-const DEFAULT_RETRY_BUFFER_SIZE_BYTES = 1<<24; // 16 MB
-const DEFAULT_PER_RPC_RETRY_BUFFER_SIZE_BYTES = 1<<20; // 1 MB
+const DEFAULT_RETRY_BUFFER_SIZE_BYTES = 1 << 24; // 16 MB
+const DEFAULT_PER_RPC_RETRY_BUFFER_SIZE_BYTES = 1 << 20; // 1 MB
 
-class ChannelSubchannelWrapper extends BaseSubchannelWrapper implements SubchannelInterface {
+class ChannelSubchannelWrapper
+  extends BaseSubchannelWrapper
+  implements SubchannelInterface
+{
   private refCount = 0;
   private subchannelStateListener: ConnectivityStateListener;
-  constructor(childSubchannel: SubchannelInterface, private channel: InternalChannel) {
+  constructor(
+    childSubchannel: SubchannelInterface,
+    private channel: InternalChannel
+  ) {
     super(childSubchannel);
-    this.subchannelStateListener = (subchannel, previousState, newState, keepaliveTime) => {
+    this.subchannelStateListener = (
+      subchannel,
+      previousState,
+      newState,
+      keepaliveTime
+    ) => {
       channel.throttleKeepalive(keepaliveTime);
     };
     childSubchannel.addConnectivityStateListener(this.subchannelStateListener);
@@ -112,7 +153,6 @@ class ChannelSubchannelWrapper extends BaseSubchannelWrapper implements Subchann
 }
 
 export class InternalChannel {
-  
   private resolvingLoadBalancer: ResolvingLoadBalancer;
   private subchannelPool: SubchannelPool;
   private connectivityState: ConnectivityState = ConnectivityState.IDLE;
@@ -196,7 +236,11 @@ export class InternalChannel {
     }
 
     this.channelzTrace = new ChannelzTrace();
-    this.channelzRef = registerChannelzChannel(target, () => this.getChannelzInfo(), this.channelzEnabled);
+    this.channelzRef = registerChannelzChannel(
+      target,
+      () => this.getChannelzInfo(),
+      this.channelzEnabled
+    );
     if (this.channelzEnabled) {
       this.channelzTrace.addTrace('CT_INFO', 'Channel created');
     }
@@ -217,7 +261,8 @@ export class InternalChannel {
     );
     this.retryBufferTracker = new MessageBufferTracker(
       options['grpc.retry_buffer_size'] ?? DEFAULT_RETRY_BUFFER_SIZE_BYTES,
-      options['grpc.per_rpc_retry_buffer_size'] ?? DEFAULT_PER_RPC_RETRY_BUFFER_SIZE_BYTES
+      options['grpc.per_rpc_retry_buffer_size'] ??
+        DEFAULT_PER_RPC_RETRY_BUFFER_SIZE_BYTES
     );
     this.keepaliveTime = options['grpc.keepalive_time_ms'] ?? -1;
     const channelControlHelper: ChannelControlHelper = {
@@ -233,9 +278,16 @@ export class InternalChannel {
         );
         subchannel.throttleKeepalive(this.keepaliveTime);
         if (this.channelzEnabled) {
-          this.channelzTrace.addTrace('CT_INFO', 'Created subchannel or used existing subchannel', subchannel.getChannelzRef());
+          this.channelzTrace.addTrace(
+            'CT_INFO',
+            'Created subchannel or used existing subchannel',
+            subchannel.getChannelzRef()
+          );
         }
-        const wrappedSubchannel = new ChannelSubchannelWrapper(subchannel, this);
+        const wrappedSubchannel = new ChannelSubchannelWrapper(
+          subchannel,
+          this
+        );
         this.wrappedSubchannels.add(wrappedSubchannel);
         return wrappedSubchannel;
       },
@@ -264,7 +316,7 @@ export class InternalChannel {
         if (this.channelzEnabled) {
           this.childrenTracker.unrefChild(child);
         }
-      }
+      },
     };
     this.resolvingLoadBalancer = new ResolvingLoadBalancer(
       this.target,
@@ -272,12 +324,22 @@ export class InternalChannel {
       options,
       (serviceConfig, configSelector) => {
         if (serviceConfig.retryThrottling) {
-          RETRY_THROTTLER_MAP.set(this.getTarget(), new RetryThrottler(serviceConfig.retryThrottling.maxTokens, serviceConfig.retryThrottling.tokenRatio, RETRY_THROTTLER_MAP.get(this.getTarget())));
+          RETRY_THROTTLER_MAP.set(
+            this.getTarget(),
+            new RetryThrottler(
+              serviceConfig.retryThrottling.maxTokens,
+              serviceConfig.retryThrottling.tokenRatio,
+              RETRY_THROTTLER_MAP.get(this.getTarget())
+            )
+          );
         } else {
           RETRY_THROTTLER_MAP.delete(this.getTarget());
         }
         if (this.channelzEnabled) {
-          this.channelzTrace.addTrace('CT_INFO', 'Address resolution succeeded');
+          this.channelzTrace.addTrace(
+            'CT_INFO',
+            'Address resolution succeeded'
+          );
         }
         this.configSelector = configSelector;
         this.currentResolutionError = null;
@@ -292,17 +354,28 @@ export class InternalChannel {
           }
           this.configSelectionQueue = [];
         });
-
       },
-      (status) => {
+      status => {
         if (this.channelzEnabled) {
-          this.channelzTrace.addTrace('CT_WARNING', 'Address resolution failed with code ' + status.code + ' and details "' + status.details + '"');
+          this.channelzTrace.addTrace(
+            'CT_WARNING',
+            'Address resolution failed with code ' +
+              status.code +
+              ' and details "' +
+              status.details +
+              '"'
+          );
         }
         if (this.configSelectionQueue.length > 0) {
-          this.trace('Name resolution failed with calls queued for config selection');
+          this.trace(
+            'Name resolution failed with calls queued for config selection'
+          );
         }
         if (this.configSelector === null) {
-          this.currentResolutionError = {...restrictControlPlaneStatusCode(status.code, status.details), metadata: status.metadata};
+          this.currentResolutionError = {
+            ...restrictControlPlaneStatusCode(status.code, status.details),
+            metadata: status.metadata,
+          };
         }
         const localQueue = this.configSelectionQueue;
         this.configSelectionQueue = [];
@@ -316,9 +389,20 @@ export class InternalChannel {
       new MaxMessageSizeFilterFactory(this.options),
       new CompressionFilterFactory(this, this.options),
     ]);
-    this.trace('Channel constructed with options ' + JSON.stringify(options, undefined, 2));
+    this.trace(
+      'Channel constructed with options ' +
+        JSON.stringify(options, undefined, 2)
+    );
     const error = new Error();
-    trace(LogVerbosity.DEBUG, 'channel_stacktrace', '(' + this.channelzRef.id + ') ' + 'Channel constructed \n' + error.stack?.substring(error.stack.indexOf('\n')+1));
+    trace(
+      LogVerbosity.DEBUG,
+      'channel_stacktrace',
+      '(' +
+        this.channelzRef.id +
+        ') ' +
+        'Channel constructed \n' +
+        error.stack?.substring(error.stack.indexOf('\n') + 1)
+    );
   }
 
   private getChannelzInfo(): ChannelInfo {
@@ -327,12 +411,16 @@ export class InternalChannel {
       state: this.connectivityState,
       trace: this.channelzTrace,
       callTracker: this.callTracker,
-      children: this.childrenTracker.getChildLists()
+      children: this.childrenTracker.getChildLists(),
     };
   }
 
   private trace(text: string, verbosityOverride?: LogVerbosity) {
-    trace(verbosityOverride ?? LogVerbosity.DEBUG, 'channel', '(' + this.channelzRef.id + ') ' + uriToString(this.target) + ' ' + text);
+    trace(
+      verbosityOverride ?? LogVerbosity.DEBUG,
+      'channel',
+      '(' + this.channelzRef.id + ') ' + uriToString(this.target) + ' ' + text
+    );
   }
 
   private callRefTimerRef() {
@@ -365,7 +453,7 @@ export class InternalChannel {
     watcherObject: ConnectivityStateWatcher
   ) {
     const watcherIndex = this.connectivityStateWatchers.findIndex(
-      (value) => value === watcherObject
+      value => value === watcherObject
     );
     if (watcherIndex >= 0) {
       this.connectivityStateWatchers.splice(watcherIndex, 1);
@@ -376,7 +464,9 @@ export class InternalChannel {
     trace(
       LogVerbosity.DEBUG,
       'connectivity_state',
-      '(' + this.channelzRef.id + ') ' + 
+      '(' +
+        this.channelzRef.id +
+        ') ' +
         uriToString(this.target) +
         ' ' +
         ConnectivityState[this.connectivityState] +
@@ -384,7 +474,12 @@ export class InternalChannel {
         ConnectivityState[newState]
     );
     if (this.channelzEnabled) {
-      this.channelzTrace.addTrace('CT_INFO', ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[newState]);
+      this.channelzTrace.addTrace(
+        'CT_INFO',
+        ConnectivityState[this.connectivityState] +
+          ' -> ' +
+          ConnectivityState[newState]
+      );
     }
     this.connectivityState = newState;
     const watchersCopy = this.connectivityStateWatchers.slice();
@@ -415,8 +510,11 @@ export class InternalChannel {
     this.wrappedSubchannels.delete(wrappedSubchannel);
   }
 
-  doPick(metadata: Metadata, extraPickInfo: {[key: string]: string}) {
-    return this.currentPicker.pick({metadata: metadata, extraPickInfo: extraPickInfo});
+  doPick(metadata: Metadata, extraPickInfo: { [key: string]: string }) {
+    return this.currentPicker.pick({
+      metadata: metadata,
+      extraPickInfo: extraPickInfo,
+    });
   }
 
   queueCallForPick(call: LoadBalancingCall) {
@@ -429,18 +527,18 @@ export class InternalChannel {
     if (this.configSelector) {
       return {
         type: 'SUCCESS',
-        config: this.configSelector(method, metadata)
+        config: this.configSelector(method, metadata),
       };
     } else {
       if (this.currentResolutionError) {
         return {
           type: 'ERROR',
-          error: this.currentResolutionError
-        }
+          error: this.currentResolutionError,
+        };
       } else {
         return {
-          type: 'NONE'
-        }
+          type: 'NONE',
+        };
       }
     }
   }
@@ -459,13 +557,17 @@ export class InternalChannel {
   ): LoadBalancingCall {
     const callNumber = getNextCallNumber();
     this.trace(
-      'createLoadBalancingCall [' +
-        callNumber +
-        '] method="' +
-        method +
-        '"'
+      'createLoadBalancingCall [' + callNumber + '] method="' + method + '"'
     );
-    return new LoadBalancingCall(this, callConfig, method, host, credentials, deadline, callNumber);
+    return new LoadBalancingCall(
+      this,
+      callConfig,
+      method,
+      host,
+      credentials,
+      deadline,
+      callNumber
+    );
   }
 
   createRetryingCall(
@@ -477,13 +579,19 @@ export class InternalChannel {
   ): RetryingCall {
     const callNumber = getNextCallNumber();
     this.trace(
-      'createRetryingCall [' +
-        callNumber +
-        '] method="' +
-        method +
-        '"'
+      'createRetryingCall [' + callNumber + '] method="' + method + '"'
     );
-    return new RetryingCall(this, callConfig, method, host, credentials, deadline, callNumber, this.retryBufferTracker, RETRY_THROTTLER_MAP.get(this.getTarget()))
+    return new RetryingCall(
+      this,
+      callConfig,
+      method,
+      host,
+      credentials,
+      deadline,
+      callNumber,
+      this.retryBufferTracker,
+      RETRY_THROTTLER_MAP.get(this.getTarget())
+    );
   }
 
   createInnerCall(
@@ -495,9 +603,21 @@ export class InternalChannel {
   ): Call {
     // Create a RetryingCall if retries are enabled
     if (this.options['grpc.enable_retries'] === 0) {
-      return this.createLoadBalancingCall(callConfig, method, host, credentials, deadline);
+      return this.createLoadBalancingCall(
+        callConfig,
+        method,
+        host,
+        credentials,
+        deadline
+      );
     } else {
-      return this.createRetryingCall(callConfig, method, host, credentials, deadline);
+      return this.createRetryingCall(
+        callConfig,
+        method,
+        host,
+        credentials,
+        deadline
+      );
     }
   }
 
@@ -524,7 +644,14 @@ export class InternalChannel {
       parentCall: parentCall,
     };
 
-    const call = new ResolvingCall(this, method, finalOptions, this.filterStackFactory.clone(), this.credentials._getCallCredentials(), callNumber);
+    const call = new ResolvingCall(
+      this,
+      method,
+      finalOptions,
+      this.filterStackFactory.clone(),
+      this.credentials._getCallCredentials(),
+      callNumber
+    );
 
     if (this.channelzEnabled) {
       this.callTracker.addCallStarted();
@@ -537,7 +664,6 @@ export class InternalChannel {
       });
     }
     return call;
-
   }
 
   close() {
@@ -601,7 +727,7 @@ export class InternalChannel {
   /**
    * Get the channelz reference object for this channel. The returned value is
    * garbage if channelz is disabled for this channel.
-   * @returns 
+   * @returns
    */
   getChannelzRef() {
     return this.channelzRef;
@@ -625,6 +751,12 @@ export class InternalChannel {
     if (this.connectivityState === ConnectivityState.SHUTDOWN) {
       throw new Error('Channel has been shut down');
     }
-    return this.createResolvingCall(method, deadline, host, parentCall, propagateFlags);
+    return this.createResolvingCall(
+      method,
+      deadline,
+      host,
+      parentCall,
+      propagateFlags
+    );
   }
 }

@@ -75,7 +75,7 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
     removeChannelzChild(child: ChannelRef | SubchannelRef) {
       this.parent.channelControlHelper.removeChannelzChild(child);
     }
-    
+
     private calledByPendingChild(): boolean {
       return this.child === this.parent.pendingChild;
     }
@@ -86,7 +86,10 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
 
   constructor(private readonly channelControlHelper: ChannelControlHelper) {}
 
-  protected configUpdateRequiresNewPolicyInstance(oldConfig: LoadBalancingConfig, newConfig: LoadBalancingConfig): boolean {
+  protected configUpdateRequiresNewPolicyInstance(
+    oldConfig: LoadBalancingConfig,
+    newConfig: LoadBalancingConfig
+  ): boolean {
     return oldConfig.getLoadBalancerName() !== newConfig.getLoadBalancerName();
   }
 

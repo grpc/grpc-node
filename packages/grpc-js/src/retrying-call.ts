@@ -15,25 +15,41 @@
  *
  */
 
-import { CallCredentials } from "./call-credentials";
-import { LogVerbosity, Status } from "./constants";
-import { Deadline } from "./deadline";
-import { Metadata } from "./metadata";
-import { CallConfig } from "./resolver";
+import { CallCredentials } from './call-credentials';
+import { LogVerbosity, Status } from './constants';
+import { Deadline } from './deadline';
+import { Metadata } from './metadata';
+import { CallConfig } from './resolver';
 import * as logging from './logging';
-import { Call, InterceptingListener, MessageContext, StatusObject, WriteCallback, WriteObject } from "./call-interface";
-import { LoadBalancingCall, StatusObjectWithProgress } from "./load-balancing-call";
-import { InternalChannel } from "./internal-channel";
+import {
+  Call,
+  InterceptingListener,
+  MessageContext,
+  StatusObject,
+  WriteCallback,
+  WriteObject,
+} from './call-interface';
+import {
+  LoadBalancingCall,
+  StatusObjectWithProgress,
+} from './load-balancing-call';
+import { InternalChannel } from './internal-channel';
 
 const TRACER_NAME = 'retrying_call';
 
 export class RetryThrottler {
   private tokens: number;
-  constructor(private readonly maxTokens: number, private readonly tokenRatio: number, previousRetryThrottler?: RetryThrottler) {
+  constructor(
+    private readonly maxTokens: number,
+    private readonly tokenRatio: number,
+    previousRetryThrottler?: RetryThrottler
+  ) {
     if (previousRetryThrottler) {
       /* When carrying over tokens from a previous config, rescale them to the
        * new max value */
-      this.tokens = previousRetryThrottler.tokens * (maxTokens / previousRetryThrottler.maxTokens);
+      this.tokens =
+        previousRetryThrottler.tokens *
+        (maxTokens / previousRetryThrottler.maxTokens);
     } else {
       this.tokens = maxTokens;
     }
@@ -53,14 +69,17 @@ export class RetryThrottler {
 }
 
 export class MessageBufferTracker {
-  private totalAllocated: number = 0;
+  private totalAllocated = 0;
   private allocatedPerCall: Map<number, number> = new Map<number, number>();
 
   constructor(private totalLimit: number, private limitPerCall: number) {}
 
   allocate(size: number, callId: number): boolean {
     const currentPerCall = this.allocatedPerCall.get(callId) ?? 0;
-    if (this.limitPerCall - currentPerCall < size || this.totalLimit - this.totalAllocated < size) {
+    if (
+      this.limitPerCall - currentPerCall < size ||
+      this.totalLimit - this.totalAllocated < size
+    ) {
       return false;
     }
     this.allocatedPerCall.set(callId, currentPerCall + size);
@@ -70,12 +89,16 @@ export class MessageBufferTracker {
 
   free(size: number, callId: number) {
     if (this.totalAllocated < size) {
-      throw new Error(`Invalid buffer allocation state: call ${callId} freed ${size} > total allocated ${this.totalAllocated}`);
+      throw new Error(
+        `Invalid buffer allocation state: call ${callId} freed ${size} > total allocated ${this.totalAllocated}`
+      );
     }
     this.totalAllocated -= size;
     const currentPerCall = this.allocatedPerCall.get(callId) ?? 0;
     if (currentPerCall < size) {
-      throw new Error(`Invalid buffer allocation state: call ${callId} freed ${size} > allocated for call ${currentPerCall}`);
+      throw new Error(
+        `Invalid buffer allocation state: call ${callId} freed ${size} > allocated for call ${currentPerCall}`
+      );
     }
     this.allocatedPerCall.set(callId, currentPerCall - size);
   }
@@ -83,7 +106,9 @@ export class MessageBufferTracker {
   freeAll(callId: number) {
     const currentPerCall = this.allocatedPerCall.get(callId) ?? 0;
     if (this.totalAllocated < currentPerCall) {
-      throw new Error(`Invalid buffer allocation state: call ${callId} allocated ${currentPerCall} > total allocated ${this.totalAllocated}`);
+      throw new Error(
+        `Invalid buffer allocation state: call ${callId} allocated ${currentPerCall} > total allocated ${this.totalAllocated}`
+      );
     }
     this.totalAllocated -= currentPerCall;
     this.allocatedPerCall.delete(callId);
@@ -164,11 +189,11 @@ export class RetryingCall implements Call {
    * be no new child calls.
    */
   private readStarted = false;
-  private transparentRetryUsed: boolean = false;
+  private transparentRetryUsed = false;
   /**
    * Number of attempts so far
    */
-  private attempts: number = 0;
+  private attempts = 0;
   private hedgingTimer: NodeJS.Timer | null = null;
   private committedCallIndex: number | null = null;
   private initialRetryBackoffSec = 0;
@@ -187,7 +212,12 @@ export class RetryingCall implements Call {
     if (callConfig.methodConfig.retryPolicy) {
       this.state = 'RETRY';
       const retryPolicy = callConfig.methodConfig.retryPolicy;
-      this.nextRetryBackoffSec = this.initialRetryBackoffSec = Number(retryPolicy.initialBackoff.substring(0, retryPolicy.initialBackoff.length - 1));
+      this.nextRetryBackoffSec = this.initialRetryBackoffSec = Number(
+        retryPolicy.initialBackoff.substring(
+          0,
+          retryPolicy.initialBackoff.length - 1
+        )
+      );
     } else if (callConfig.methodConfig.hedgingPolicy) {
       this.state = 'HEDGING';
     } else {
@@ -207,7 +237,13 @@ export class RetryingCall implements Call {
   }
 
   private reportStatus(statusObject: StatusObject) {
-    this.trace('ended with status: code=' + statusObject.code + ' details="' + statusObject.details + '"');
+    this.trace(
+      'ended with status: code=' +
+        statusObject.code +
+        ' details="' +
+        statusObject.details +
+        '"'
+    );
     this.bufferTracker.freeAll(this.callNumber);
     this.writeBufferOffset = this.writeBufferOffset + this.writeBuffer.length;
     this.writeBuffer = [];
@@ -216,15 +252,17 @@ export class RetryingCall implements Call {
       this.listener?.onReceiveStatus({
         code: statusObject.code,
         details: statusObject.details,
-        metadata: statusObject.metadata
+        metadata: statusObject.metadata,
       });
     });
   }
 
   cancelWithStatus(status: Status, details: string): void {
-    this.trace('cancelWithStatus code: ' + status + ' details: "' + details + '"');
-    this.reportStatus({code: status, details, metadata: new Metadata()});
-    for (const {call} of this.underlyingCalls) {
+    this.trace(
+      'cancelWithStatus code: ' + status + ' details: "' + details + '"'
+    );
+    this.reportStatus({ code: status, details, metadata: new Metadata() });
+    for (const { call } of this.underlyingCalls) {
       call.cancelWithStatus(status, details);
     }
   }
@@ -237,7 +275,12 @@ export class RetryingCall implements Call {
   }
 
   private getBufferEntry(messageIndex: number): WriteBufferEntry {
-    return this.writeBuffer[messageIndex - this.writeBufferOffset] ?? {entryType: 'FREED', allocated: false};
+    return (
+      this.writeBuffer[messageIndex - this.writeBufferOffset] ?? {
+        entryType: 'FREED',
+        allocated: false,
+      }
+    );
   }
 
   private getNextBufferIndex() {
@@ -248,14 +291,24 @@ export class RetryingCall implements Call {
     if (this.state !== 'COMMITTED') {
       return;
     }
-    const earliestNeededMessageIndex = this.underlyingCalls[this.committedCallIndex!].nextMessageToSend;
-    for (let messageIndex = this.writeBufferOffset; messageIndex < earliestNeededMessageIndex; messageIndex++) {
+    const earliestNeededMessageIndex =
+      this.underlyingCalls[this.committedCallIndex!].nextMessageToSend;
+    for (
+      let messageIndex = this.writeBufferOffset;
+      messageIndex < earliestNeededMessageIndex;
+      messageIndex++
+    ) {
       const bufferEntry = this.getBufferEntry(messageIndex);
       if (bufferEntry.allocated) {
-        this.bufferTracker.free(bufferEntry.message!.message.length, this.callNumber);
+        this.bufferTracker.free(
+          bufferEntry.message!.message.length,
+          this.callNumber
+        );
       }
     }
-    this.writeBuffer = this.writeBuffer.slice(earliestNeededMessageIndex - this.writeBufferOffset);
+    this.writeBuffer = this.writeBuffer.slice(
+      earliestNeededMessageIndex - this.writeBufferOffset
+    );
     this.writeBufferOffset = earliestNeededMessageIndex;
   }
 
@@ -266,7 +319,12 @@ export class RetryingCall implements Call {
     if (this.underlyingCalls[index].state === 'COMPLETED') {
       return;
     }
-    this.trace('Committing call [' + this.underlyingCalls[index].call.getCallNumber() + '] at index ' + index);
+    this.trace(
+      'Committing call [' +
+        this.underlyingCalls[index].call.getCallNumber() +
+        '] at index ' +
+        index
+    );
     this.state = 'COMMITTED';
     this.committedCallIndex = index;
     for (let i = 0; i < this.underlyingCalls.length; i++) {
@@ -277,7 +335,10 @@ export class RetryingCall implements Call {
         continue;
       }
       this.underlyingCalls[i].state = 'COMPLETED';
-      this.underlyingCalls[i].call.cancelWithStatus(Status.CANCELLED, 'Discarded in favor of other hedged attempt');
+      this.underlyingCalls[i].call.cancelWithStatus(
+        Status.CANCELLED,
+        'Discarded in favor of other hedged attempt'
+      );
     }
     this.clearSentMessages();
   }
@@ -289,7 +350,10 @@ export class RetryingCall implements Call {
     let mostMessages = -1;
     let callWithMostMessages = -1;
     for (const [index, childCall] of this.underlyingCalls.entries()) {
-      if (childCall.state === 'ACTIVE' && childCall.nextMessageToSend > mostMessages) {
+      if (
+        childCall.state === 'ACTIVE' &&
+        childCall.nextMessageToSend > mostMessages
+      ) {
         mostMessages = childCall.nextMessageToSend;
         callWithMostMessages = index;
       }
@@ -304,7 +368,11 @@ export class RetryingCall implements Call {
   }
 
   private isStatusCodeInList(list: (Status | string)[], code: Status) {
-    return list.some((value => value === code || value.toString().toLowerCase() === Status[code].toLowerCase()));
+    return list.some(
+      value =>
+        value === code ||
+        value.toString().toLowerCase() === Status[code].toLowerCase()
+    );
   }
 
   private getNextRetryBackoffMs() {
@@ -313,12 +381,20 @@ export class RetryingCall implements Call {
       return 0;
     }
     const nextBackoffMs = Math.random() * this.nextRetryBackoffSec * 1000;
-    const maxBackoffSec = Number(retryPolicy.maxBackoff.substring(0, retryPolicy.maxBackoff.length - 1));
-    this.nextRetryBackoffSec = Math.min(this.nextRetryBackoffSec * retryPolicy.backoffMultiplier, maxBackoffSec);
-    return nextBackoffMs
+    const maxBackoffSec = Number(
+      retryPolicy.maxBackoff.substring(0, retryPolicy.maxBackoff.length - 1)
+    );
+    this.nextRetryBackoffSec = Math.min(
+      this.nextRetryBackoffSec * retryPolicy.backoffMultiplier,
+      maxBackoffSec
+    );
+    return nextBackoffMs;
   }
 
-  private maybeRetryCall(pushback: number | null, callback: (retried: boolean) => void) {
+  private maybeRetryCall(
+    pushback: number | null,
+    callback: (retried: boolean) => void
+  ) {
     if (this.state !== 'RETRY') {
       callback(false);
       return;
@@ -362,7 +438,11 @@ export class RetryingCall implements Call {
     return count;
   }
 
-  private handleProcessedStatus(status: StatusObject, callIndex: number, pushback: number | null) {
+  private handleProcessedStatus(
+    status: StatusObject,
+    callIndex: number,
+    pushback: number | null
+  ) {
     switch (this.state) {
       case 'COMMITTED':
       case 'TRANSPARENT_ONLY':
@@ -370,7 +450,13 @@ export class RetryingCall implements Call {
         this.reportStatus(status);
         break;
       case 'HEDGING':
-        if (this.isStatusCodeInList(this.callConfig!.methodConfig.hedgingPolicy!.nonFatalStatusCodes ?? [], status.code)) {
+        if (
+          this.isStatusCodeInList(
+            this.callConfig!.methodConfig.hedgingPolicy!.nonFatalStatusCodes ??
+              [],
+            status.code
+          )
+        ) {
           this.retryThrottler?.addCallFailed();
           let delayMs: number;
           if (pushback === null) {
@@ -397,9 +483,14 @@ export class RetryingCall implements Call {
         }
         break;
       case 'RETRY':
-        if (this.isStatusCodeInList(this.callConfig!.methodConfig.retryPolicy!.retryableStatusCodes, status.code)) {
+        if (
+          this.isStatusCodeInList(
+            this.callConfig!.methodConfig.retryPolicy!.retryableStatusCodes,
+            status.code
+          )
+        ) {
           this.retryThrottler?.addCallFailed();
-          this.maybeRetryCall(pushback, (retried) => {
+          this.maybeRetryCall(pushback, retried => {
             if (!retried) {
               this.commitCall(callIndex);
               this.reportStatus(status);
@@ -425,11 +516,23 @@ export class RetryingCall implements Call {
     }
   }
 
-  private handleChildStatus(status: StatusObjectWithProgress, callIndex: number) {
+  private handleChildStatus(
+    status: StatusObjectWithProgress,
+    callIndex: number
+  ) {
     if (this.underlyingCalls[callIndex].state === 'COMPLETED') {
       return;
     }
-    this.trace('state=' + this.state + ' handling status with progress ' + status.progress + ' from child [' + this.underlyingCalls[callIndex].call.getCallNumber() + '] in state ' + this.underlyingCalls[callIndex].state);
+    this.trace(
+      'state=' +
+        this.state +
+        ' handling status with progress ' +
+        status.progress +
+        ' from child [' +
+        this.underlyingCalls[callIndex].call.getCallNumber() +
+        '] in state ' +
+        this.underlyingCalls[callIndex].state
+    );
     this.underlyingCalls[callIndex].state = 'COMPLETED';
     if (status.code === Status.OK) {
       this.retryThrottler?.addCallSucceeded();
@@ -454,7 +557,7 @@ export class RetryingCall implements Call {
         } else {
           this.transparentRetryUsed = true;
           this.startNewAttempt();
-        };
+        }
         break;
       case 'DROP':
         this.commitCall(callIndex);
@@ -497,7 +600,9 @@ export class RetryingCall implements Call {
       return;
     }
     const hedgingDelayString = hedgingPolicy.hedgingDelay ?? '0s';
-    const hedgingDelaySec = Number(hedgingDelayString.substring(0, hedgingDelayString.length - 1));
+    const hedgingDelaySec = Number(
+      hedgingDelayString.substring(0, hedgingDelayString.length - 1)
+    );
     this.hedgingTimer = setTimeout(() => {
       this.maybeStartHedgingAttempt();
     }, hedgingDelaySec * 1000);
@@ -505,42 +610,72 @@ export class RetryingCall implements Call {
   }
 
   private startNewAttempt() {
-    const child = this.channel.createLoadBalancingCall(this.callConfig, this.methodName, this.host, this.credentials, this.deadline);
-    this.trace('Created child call [' + child.getCallNumber() + '] for attempt ' + this.attempts);
+    const child = this.channel.createLoadBalancingCall(
+      this.callConfig,
+      this.methodName,
+      this.host,
+      this.credentials,
+      this.deadline
+    );
+    this.trace(
+      'Created child call [' +
+        child.getCallNumber() +
+        '] for attempt ' +
+        this.attempts
+    );
     const index = this.underlyingCalls.length;
-    this.underlyingCalls.push({state: 'ACTIVE', call: child, nextMessageToSend: 0});
+    this.underlyingCalls.push({
+      state: 'ACTIVE',
+      call: child,
+      nextMessageToSend: 0,
+    });
     const previousAttempts = this.attempts - 1;
     const initialMetadata = this.initialMetadata!.clone();
     if (previousAttempts > 0) {
-      initialMetadata.set(PREVIONS_RPC_ATTEMPTS_METADATA_KEY, `${previousAttempts}`);
+      initialMetadata.set(
+        PREVIONS_RPC_ATTEMPTS_METADATA_KEY,
+        `${previousAttempts}`
+      );
     }
     let receivedMetadata = false;
     child.start(initialMetadata, {
       onReceiveMetadata: metadata => {
-        this.trace('Received metadata from child [' + child.getCallNumber() + ']');
+        this.trace(
+          'Received metadata from child [' + child.getCallNumber() + ']'
+        );
         this.commitCall(index);
         receivedMetadata = true;
         if (previousAttempts > 0) {
-          metadata.set(PREVIONS_RPC_ATTEMPTS_METADATA_KEY, `${previousAttempts}`);
+          metadata.set(
+            PREVIONS_RPC_ATTEMPTS_METADATA_KEY,
+            `${previousAttempts}`
+          );
         }
         if (this.underlyingCalls[index].state === 'ACTIVE') {
           this.listener!.onReceiveMetadata(metadata);
         }
       },
       onReceiveMessage: message => {
-        this.trace('Received message from child [' + child.getCallNumber() + ']');
+        this.trace(
+          'Received message from child [' + child.getCallNumber() + ']'
+        );
         this.commitCall(index);
         if (this.underlyingCalls[index].state === 'ACTIVE') {
           this.listener!.onReceiveMessage(message);
         }
       },
       onReceiveStatus: status => {
-        this.trace('Received status from child [' + child.getCallNumber() + ']');
+        this.trace(
+          'Received status from child [' + child.getCallNumber() + ']'
+        );
         if (!receivedMetadata && previousAttempts > 0) {
-          status.metadata.set(PREVIONS_RPC_ATTEMPTS_METADATA_KEY, `${previousAttempts}`);
+          status.metadata.set(
+            PREVIONS_RPC_ATTEMPTS_METADATA_KEY,
+            `${previousAttempts}`
+          );
         }
         this.handleChildStatus(status, index);
-      }
+      },
     });
     this.sendNextChildMessage(index);
     if (this.readStarted) {
@@ -575,12 +710,15 @@ export class RetryingCall implements Call {
       const bufferEntry = this.getBufferEntry(childCall.nextMessageToSend);
       switch (bufferEntry.entryType) {
         case 'MESSAGE':
-          childCall.call.sendMessageWithContext({
-            callback: (error) => {
-              // Ignore error
-              this.handleChildWriteCompleted(childIndex);
-            }
-          }, bufferEntry.message!.message);
+          childCall.call.sendMessageWithContext(
+            {
+              callback: error => {
+                // Ignore error
+                this.handleChildWriteCompleted(childIndex);
+              },
+            },
+            bufferEntry.message!.message
+          );
           break;
         case 'HALF_CLOSE':
           childCall.nextMessageToSend += 1;
@@ -603,19 +741,25 @@ export class RetryingCall implements Call {
     const bufferEntry: WriteBufferEntry = {
       entryType: 'MESSAGE',
       message: writeObj,
-      allocated: this.bufferTracker.allocate(message.length, this.callNumber)
+      allocated: this.bufferTracker.allocate(message.length, this.callNumber),
     };
     this.writeBuffer.push(bufferEntry);
     if (bufferEntry.allocated) {
       context.callback?.();
       for (const [callIndex, call] of this.underlyingCalls.entries()) {
-        if (call.state === 'ACTIVE' && call.nextMessageToSend === messageIndex) {
-          call.call.sendMessageWithContext({
-            callback: (error) => {
-              // Ignore error
-              this.handleChildWriteCompleted(callIndex);
-            }
-          }, message);
+        if (
+          call.state === 'ACTIVE' &&
+          call.nextMessageToSend === messageIndex
+        ) {
+          call.call.sendMessageWithContext(
+            {
+              callback: error => {
+                // Ignore error
+                this.handleChildWriteCompleted(callIndex);
+              },
+            },
+            message
+          );
         }
       }
     } else {
@@ -625,14 +769,17 @@ export class RetryingCall implements Call {
         return;
       }
       const call = this.underlyingCalls[this.committedCallIndex];
-      bufferEntry.callback = context.callback; 
+      bufferEntry.callback = context.callback;
       if (call.state === 'ACTIVE' && call.nextMessageToSend === messageIndex) {
-        call.call.sendMessageWithContext({
-          callback: (error) => {
-            // Ignore error
-            this.handleChildWriteCompleted(this.committedCallIndex!);
-          }
-        }, message);
+        call.call.sendMessageWithContext(
+          {
+            callback: error => {
+              // Ignore error
+              this.handleChildWriteCompleted(this.committedCallIndex!);
+            },
+          },
+          message
+        );
       }
     }
   }
@@ -650,17 +797,20 @@ export class RetryingCall implements Call {
     const halfCloseIndex = this.getNextBufferIndex();
     this.writeBuffer.push({
       entryType: 'HALF_CLOSE',
-      allocated: false
+      allocated: false,
     });
     for (const call of this.underlyingCalls) {
-      if (call?.state === 'ACTIVE' && call.nextMessageToSend === halfCloseIndex) {
+      if (
+        call?.state === 'ACTIVE' &&
+        call.nextMessageToSend === halfCloseIndex
+      ) {
         call.nextMessageToSend += 1;
         call.call.halfClose();
       }
     }
   }
   setCredentials(newCredentials: CallCredentials): void {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
   getMethod(): string {
     return this.methodName;

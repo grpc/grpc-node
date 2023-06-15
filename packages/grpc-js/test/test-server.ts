@@ -27,23 +27,35 @@ import * as grpc from '../src';
 import { Server, ServerCredentials } from '../src';
 import { ServiceError } from '../src/call';
 import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
-import { sendUnaryData, ServerUnaryCall, ServerDuplexStream } from '../src/server-call';
+import {
+  sendUnaryData,
+  ServerUnaryCall,
+  ServerDuplexStream,
+} from '../src/server-call';
 
 import { assert2, loadProtoFile } from './common';
-import { TestServiceClient, TestServiceHandlers } from './generated/TestService';
+import {
+  TestServiceClient,
+  TestServiceHandlers,
+} from './generated/TestService';
 import { ProtoGrpcType as TestServiceGrpcType } from './generated/test_service';
 import { Request__Output } from './generated/Request';
 import { CompressionAlgorithms } from '../src/compression-algorithms';
 
-const loadedTestServiceProto = protoLoader.loadSync(path.join(__dirname, 'fixtures/test_service.proto'), {
-  keepCase: true,
-  longs: String,
-  enums: String,
-  defaults: true,
-  oneofs: true
-});
+const loadedTestServiceProto = protoLoader.loadSync(
+  path.join(__dirname, 'fixtures/test_service.proto'),
+  {
+    keepCase: true,
+    longs: String,
+    enums: String,
+    defaults: true,
+    oneofs: true,
+  }
+);
 
-const testServiceGrpcObject = grpc.loadPackageDefinition(loadedTestServiceProto) as unknown as TestServiceGrpcType;
+const testServiceGrpcObject = grpc.loadPackageDefinition(
+  loadedTestServiceProto
+) as unknown as TestServiceGrpcType;
 
 const ca = fs.readFileSync(path.join(__dirname, 'fixtures', 'ca.pem'));
 const key = fs.readFileSync(path.join(__dirname, 'fixtures', 'server1.key'));
@@ -134,7 +146,11 @@ describe('Server', () => {
       }, /creds must be a ServerCredentials object/);
 
       assert.throws(() => {
-        server.bindAsync('localhost:0', grpc.credentials.createInsecure() as any, noop);
+        server.bindAsync(
+          'localhost:0',
+          grpc.credentials.createInsecure() as any,
+          noop
+        );
       }, /creds must be a ServerCredentials object/);
 
       assert.throws(() => {
@@ -286,7 +302,7 @@ describe('Server', () => {
         }
       };
 
-      methodsToVerify.forEach((method) => {
+      methodsToVerify.forEach(method => {
         const call = client[method]({}, assertFailsWithUnimplementedError); // for unary
         call.on('error', assertFailsWithUnimplementedError); // for streamed
       });
@@ -294,14 +310,12 @@ describe('Server', () => {
 
     it('fails for non-object service definition argument', () => {
       assert.throws(() => {
-          server.removeService('upsie' as any)
-        }, /removeService.*requires object as argument/
-      );
+        server.removeService('upsie' as any);
+      }, /removeService.*requires object as argument/);
     });
   });
 
   describe('unregister', () => {
-
     let server: Server;
     let client: ServiceClient;
 
@@ -313,7 +327,7 @@ describe('Server', () => {
       server = new Server();
       server.addService(mathServiceAttrs, {
         div(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
-          callback(null, {quotient: '42'});
+          callback(null, { quotient: '42' });
         },
       });
       server.bindAsync(
@@ -338,7 +352,11 @@ describe('Server', () => {
 
     it('removes handler by name and returns true', done => {
       const name = mathServiceAttrs['Div'].path;
-      assert.strictEqual(server.unregister(name), true, 'Server#unregister should return true on success');
+      assert.strictEqual(
+        server.unregister(name),
+        true,
+        'Server#unregister should return true on success'
+      );
 
       client.div(
         { divisor: 4, dividend: 3 },
@@ -351,7 +369,11 @@ describe('Server', () => {
     });
 
     it('returns false for unknown handler', () => {
-      assert.strictEqual(server.unregister('noOneHere'), false, 'Server#unregister should return false on failure');
+      assert.strictEqual(
+        server.unregister('noOneHere'),
+        false,
+        'Server#unregister should return false on failure'
+      );
     });
   });
 
@@ -473,11 +495,10 @@ describe('Echo service', () => {
       call.on('end', () => {
         call.end();
       });
-    }
+    },
   };
 
   before(done => {
-
     server = new Server();
     server.addService(echoService.service, serviceImplementation);
 
@@ -517,36 +538,46 @@ describe('Echo service', () => {
   it.skip('should continue a stream after server shutdown', done => {
     const server2 = new Server();
     server2.addService(echoService.service, serviceImplementation);
-    server2.bindAsync('localhost:0', ServerCredentials.createInsecure(), (err, port) => {
-      if (err) {
-        done(err);
-        return;
+    server2.bindAsync(
+      'localhost:0',
+      ServerCredentials.createInsecure(),
+      (err, port) => {
+        if (err) {
+          done(err);
+          return;
+        }
+        const client2 = new echoService(
+          `localhost:${port}`,
+          grpc.credentials.createInsecure()
+        );
+        server2.start();
+        const stream = client2.echoBidiStream();
+        const totalMessages = 5;
+        let messagesSent = 0;
+        stream.write({ value: 'test value', value2: messagesSent });
+        messagesSent += 1;
+        stream.on('data', () => {
+          if (messagesSent === 1) {
+            server2.tryShutdown(assert2.mustCall(() => {}));
+          }
+          if (messagesSent >= totalMessages) {
+            stream.end();
+          } else {
+            stream.write({ value: 'test value', value2: messagesSent });
+            messagesSent += 1;
+          }
+        });
+        stream.on(
+          'status',
+          assert2.mustCall((status: grpc.StatusObject) => {
+            assert.strictEqual(status.code, grpc.status.OK);
+            assert.strictEqual(messagesSent, totalMessages);
+          })
+        );
+        stream.on('error', () => {});
+        assert2.afterMustCallsSatisfied(done);
       }
-      const client2 = new echoService(`localhost:${port}`, grpc.credentials.createInsecure());
-      server2.start();
-      const stream = client2.echoBidiStream();
-      const totalMessages = 5;
-      let messagesSent = 0;
-      stream.write({ value: 'test value', value2: messagesSent});
-      messagesSent += 1;
-      stream.on('data', () => {
-        if (messagesSent === 1) {
-          server2.tryShutdown(assert2.mustCall(() => {}));
-        }
-        if (messagesSent >= totalMessages) {
-          stream.end();
-        } else {
-          stream.write({ value: 'test value', value2: messagesSent});
-          messagesSent += 1;
-        }
-      });
-      stream.on('status', assert2.mustCall((status: grpc.StatusObject) => {
-        assert.strictEqual(status.code, grpc.status.OK);
-        assert.strictEqual(messagesSent, totalMessages);
-      }));
-      stream.on('error', () => {});
-      assert2.afterMustCallsSatisfied(done);
-    });
+    );
   });
 });
 
@@ -703,7 +734,7 @@ describe('Compressed requests', () => {
       call.on('end', () => {
         call.end();
       });
-    }
+    },
   };
 
   describe('Test service client and server with deflate', () => {
@@ -728,7 +759,8 @@ describe('Compressed requests', () => {
             `localhost:${assignedPort}`,
             grpc.credentials.createInsecure(),
             {
-              'grpc.default_compression_algorithm': CompressionAlgorithms.deflate
+              'grpc.default_compression_algorithm':
+                CompressionAlgorithms.deflate,
             }
           );
           done();
@@ -772,7 +804,7 @@ describe('Compressed requests', () => {
         timesResponded += 1;
       });
 
-      serverStream.on('error', (err) => {
+      serverStream.on('error', err => {
         assert.ifError(err);
         done();
       });
@@ -792,7 +824,7 @@ describe('Compressed requests', () => {
         timesResponded += 1;
       });
 
-      bidiStream.on('error', (err) => {
+      bidiStream.on('error', err => {
         assert.ifError(err);
         done();
       });
@@ -809,8 +841,8 @@ describe('Compressed requests', () => {
           bidiStream.write({ message: 'baz' }, () => {
             timesRequested += 1;
             setTimeout(() => bidiStream.end(), 10);
-          })
-        })
+          });
+        });
       });
     });
 
@@ -819,7 +851,7 @@ describe('Compressed requests', () => {
         `localhost:${assignedPort}`,
         grpc.credentials.createInsecure(),
         {
-          'grpc.default_compression_algorithm': CompressionAlgorithms.gzip
+          'grpc.default_compression_algorithm': CompressionAlgorithms.gzip,
         }
       );
 
@@ -853,7 +885,7 @@ describe('Compressed requests', () => {
         timesResponded += 1;
       });
 
-      serverStream.on('error', (err) => {
+      serverStream.on('error', err => {
         assert.ifError(err);
         done();
       });
@@ -873,7 +905,7 @@ describe('Compressed requests', () => {
         timesResponded += 1;
       });
 
-      bidiStream.on('error', (err) => {
+      bidiStream.on('error', err => {
         assert.ifError(err);
         done();
       });
@@ -890,25 +922,27 @@ describe('Compressed requests', () => {
           bidiStream.write({ message: 'baz' }, () => {
             timesRequested += 1;
             setTimeout(() => bidiStream.end(), 10);
-          })
-        })
+          });
+        });
       });
     });
 
     it('Should handle large messages', done => {
       let longMessage = '';
       for (let i = 0; i < 400000; i++) {
-        const letter = 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)];
+        const letter = 'abcdefghijklmnopqrstuvwxyz'[
+          Math.floor(Math.random() * 26)
+        ];
         longMessage = longMessage + letter.repeat(10);
       }
 
-      client.unary({message: longMessage}, (err, response) => {
+      client.unary({ message: longMessage }, (err, response) => {
         assert.ifError(err);
         assert.strictEqual(response?.message, longMessage);
         done();
-      })
-    })
-    
+      });
+    });
+
     /* As of Node 16, Writable and Duplex streams validate the encoding
      * argument to write, and the flags values we are passing there are not
      * valid. We don't currently have an alternative way to pass that flag
@@ -922,7 +956,7 @@ describe('Compressed requests', () => {
         timesResponded += 1;
       });
 
-      bidiStream.on('error', (err) => {
+      bidiStream.on('error', err => {
         assert.ifError(err);
         done();
       });

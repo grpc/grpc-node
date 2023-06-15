@@ -114,7 +114,7 @@ export class UnavailablePicker implements Picker {
       subchannel: null,
       status: this.status,
       onCallStarted: null,
-      onCallEnded: null
+      onCallEnded: null,
     };
   }
 }
@@ -143,7 +143,7 @@ export class QueuePicker {
       subchannel: null,
       status: null,
       onCallStarted: null,
-      onCallEnded: null
+      onCallEnded: null,
     };
   }
 }

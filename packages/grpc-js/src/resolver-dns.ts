@@ -61,7 +61,7 @@ function mergeArrays<T>(...arrays: T[][]): T[] {
     i <
     Math.max.apply(
       null,
-      arrays.map((array) => array.length)
+      arrays.map(array => array.length)
     );
     i++
   ) {
@@ -137,7 +137,7 @@ class DnsResolver implements Resolver {
       details: `Name resolution failed for target ${uriToString(this.target)}`,
       metadata: new Metadata(),
     };
-    
+
     const backoffOptions: BackoffOptions = {
       initialDelay: channelOptions['grpc.initial_reconnect_backoff_ms'],
       maxDelay: channelOptions['grpc.max_reconnect_backoff_ms'],
@@ -150,7 +150,9 @@ class DnsResolver implements Resolver {
     }, backoffOptions);
     this.backoff.unref();
 
-    this.minTimeBetweenResolutionsMs = channelOptions['grpc.dns_min_time_between_resolutions_ms'] ?? DEFAULT_MIN_TIME_BETWEEN_RESOLUTIONS_MS;
+    this.minTimeBetweenResolutionsMs =
+      channelOptions['grpc.dns_min_time_between_resolutions_ms'] ??
+      DEFAULT_MIN_TIME_BETWEEN_RESOLUTIONS_MS;
     this.nextResolutionTimer = setTimeout(() => {}, 0);
     clearTimeout(this.nextResolutionTimer);
   }
@@ -204,24 +206,23 @@ class DnsResolver implements Resolver {
        * error is indistinguishable from other kinds of errors */
       this.pendingLookupPromise = dnsLookupPromise(hostname, { all: true });
       this.pendingLookupPromise.then(
-        (addressList) => {
+        addressList => {
           this.pendingLookupPromise = null;
           this.backoff.reset();
           this.backoff.stop();
           const ip4Addresses: dns.LookupAddress[] = addressList.filter(
-            (addr) => addr.family === 4
+            addr => addr.family === 4
           );
           const ip6Addresses: dns.LookupAddress[] = addressList.filter(
-            (addr) => addr.family === 6
+            addr => addr.family === 6
           );
-          this.latestLookupResult = mergeArrays(
-            ip6Addresses,
-            ip4Addresses
-          ).map((addr) => ({ host: addr.address, port: +this.port! }));
+          this.latestLookupResult = mergeArrays(ip6Addresses, ip4Addresses).map(
+            addr => ({ host: addr.address, port: +this.port! })
+          );
           const allAddressesString: string =
             '[' +
             this.latestLookupResult
-              .map((addr) => addr.host + ':' + addr.port)
+              .map(addr => addr.host + ':' + addr.port)
               .join(',') +
             ']';
           trace(
@@ -246,7 +247,7 @@ class DnsResolver implements Resolver {
             {}
           );
         },
-        (err) => {
+        err => {
           trace(
             'Resolution error for target ' +
               uriToString(this.target) +
@@ -266,7 +267,7 @@ class DnsResolver implements Resolver {
          * lookup fails */
         this.pendingTxtPromise = resolveTxtPromise(hostname);
         this.pendingTxtPromise.then(
-          (txtRecord) => {
+          txtRecord => {
             this.pendingTxtPromise = null;
             try {
               this.latestServiceConfig = extractAndSelectServiceConfig(
@@ -294,7 +295,7 @@ class DnsResolver implements Resolver {
               );
             }
           },
-          (err) => {
+          err => {
             /* If TXT lookup fails we should do nothing, which means that we
              * continue to use the result of the most recent successful lookup,
              * or the default null config object if there has never been a

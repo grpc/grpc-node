@@ -15,7 +15,12 @@
  *
  */
 
-import { ConnectionOptions, createSecureContext, PeerCertificate, SecureContext } from 'tls';
+import {
+  ConnectionOptions,
+  createSecureContext,
+  PeerCertificate,
+  SecureContext,
+} from 'tls';
 
 import { CallCredentials } from './call-credentials';
 import { CIPHER_SUITES, getDefaultRootsData } from './tls-helpers';
@@ -137,10 +142,7 @@ export abstract class ChannelCredentials {
       cert: certChain ?? undefined,
       ciphers: CIPHER_SUITES,
     });
-    return new SecureChannelCredentialsImpl(
-      secureContext,
-      verifyOptions ?? {}
-    );
+    return new SecureChannelCredentialsImpl(secureContext, verifyOptions ?? {});
   }
 
   /**
@@ -153,11 +155,11 @@ export abstract class ChannelCredentials {
    * @param secureContext The return value of tls.createSecureContext()
    * @param verifyOptions Additional options to modify certificate verification
    */
-  static createFromSecureContext(secureContext: SecureContext, verifyOptions?: VerifyOptions): ChannelCredentials {
-    return new SecureChannelCredentialsImpl(
-      secureContext,
-      verifyOptions ?? {}
-    )
+  static createFromSecureContext(
+    secureContext: SecureContext,
+    verifyOptions?: VerifyOptions
+  ): ChannelCredentials {
+    return new SecureChannelCredentialsImpl(secureContext, verifyOptions ?? {});
   }
 
   /**
@@ -196,19 +198,19 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
     private verifyOptions: VerifyOptions
   ) {
     super();
-    this.connectionOptions = { 
-      secureContext
+    this.connectionOptions = {
+      secureContext,
     };
     // Node asserts that this option is a function, so we cannot pass undefined
     if (verifyOptions?.checkServerIdentity) {
-      this.connectionOptions.checkServerIdentity = verifyOptions.checkServerIdentity;
+      this.connectionOptions.checkServerIdentity =
+        verifyOptions.checkServerIdentity;
     }
   }
 
   compose(callCredentials: CallCredentials): ChannelCredentials {
-    const combinedCallCredentials = this.callCredentials.compose(
-      callCredentials
-    );
+    const combinedCallCredentials =
+      this.callCredentials.compose(callCredentials);
     return new ComposedChannelCredentialsImpl(this, combinedCallCredentials);
   }
 
@@ -225,9 +227,10 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
     }
     if (other instanceof SecureChannelCredentialsImpl) {
       return (
-        this.secureContext === other.secureContext && 
-        this.verifyOptions.checkServerIdentity === other.verifyOptions.checkServerIdentity
-        );
+        this.secureContext === other.secureContext &&
+        this.verifyOptions.checkServerIdentity ===
+          other.verifyOptions.checkServerIdentity
+      );
     } else {
       return false;
     }
@@ -242,9 +245,8 @@ class ComposedChannelCredentialsImpl extends ChannelCredentials {
     super(callCreds);
   }
   compose(callCredentials: CallCredentials) {
-    const combinedCallCredentials = this.callCredentials.compose(
-      callCredentials
-    );
+    const combinedCallCredentials =
+      this.callCredentials.compose(callCredentials);
     return new ComposedChannelCredentialsImpl(
       this.channelCredentials,
       combinedCallCredentials

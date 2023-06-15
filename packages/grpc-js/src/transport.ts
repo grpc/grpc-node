@@ -16,19 +16,40 @@
  */
 
 import * as http2 from 'http2';
-import { checkServerIdentity, CipherNameAndProtocol, ConnectionOptions, PeerCertificate, TLSSocket } from 'tls';
+import {
+  checkServerIdentity,
+  CipherNameAndProtocol,
+  ConnectionOptions,
+  PeerCertificate,
+  TLSSocket,
+} from 'tls';
 import { StatusObject } from './call-interface';
 import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
-import { ChannelzCallTracker, registerChannelzSocket, SocketInfo, SocketRef, TlsInfo, unregisterChannelzRef } from './channelz';
+import {
+  ChannelzCallTracker,
+  registerChannelzSocket,
+  SocketInfo,
+  SocketRef,
+  TlsInfo,
+  unregisterChannelzRef,
+} from './channelz';
 import { LogVerbosity } from './constants';
 import { getProxiedConnection, ProxyConnectionResult } from './http_proxy';
 import * as logging from './logging';
 import { getDefaultAuthority } from './resolver';
-import { stringToSubchannelAddress, SubchannelAddress, subchannelAddressToString } from './subchannel-address';
+import {
+  stringToSubchannelAddress,
+  SubchannelAddress,
+  subchannelAddressToString,
+} from './subchannel-address';
 import { GrpcUri, parseUri, splitHostPort, uriToString } from './uri-parser';
 import * as net from 'net';
-import { Http2SubchannelCall, SubchannelCall, SubchannelCallInterceptingListener } from './subchannel-call';
+import {
+  Http2SubchannelCall,
+  SubchannelCall,
+  SubchannelCallInterceptingListener,
+} from './subchannel-call';
 import { Metadata } from './metadata';
 import { getNextCallNumber } from './call-number';
 
@@ -66,7 +87,13 @@ export interface TransportDisconnectListener {
 export interface Transport {
   getChannelzRef(): SocketRef;
   getPeerName(): string;
-  createCall(metadata: Metadata, host: string, method: string, listener: SubchannelCallInterceptingListener, subchannelCallStatsTracker: Partial<CallEventTracker>): SubchannelCall;
+  createCall(
+    metadata: Metadata,
+    host: string,
+    method: string,
+    listener: SubchannelCallInterceptingListener,
+    subchannelCallStatsTracker: Partial<CallEventTracker>
+  ): SubchannelCall;
   addDisconnectListener(listener: TransportDisconnectListener): void;
   shutdown(): void;
 }
@@ -77,7 +104,7 @@ class Http2Transport implements Transport {
   /**
    * The amount of time in between sending pings
    */
-  private keepaliveTimeMs: number = -1;
+  private keepaliveTimeMs = -1;
   /**
    * The amount of time to wait for an acknowledgement after sending a ping
    */
@@ -131,9 +158,9 @@ class Http2Transport implements Transport {
       `grpc-node-js/${clientVersion}`,
       options['grpc.secondary_user_agent'],
     ]
-      .filter((e) => e)
+      .filter(e => e)
       .join(' '); // remove falsey values first
-    
+
     if ('grpc.keepalive_time_ms' in options) {
       this.keepaliveTimeMs = options['grpc.keepalive_time_ms']!;
     }
@@ -157,36 +184,37 @@ class Http2Transport implements Transport {
     if (options['grpc.enable_channelz'] === 0) {
       this.channelzEnabled = false;
     }
-    this.channelzRef = registerChannelzSocket(this.subchannelAddressString, () => this.getChannelzInfo(), this.channelzEnabled);
+    this.channelzRef = registerChannelzSocket(
+      this.subchannelAddressString,
+      () => this.getChannelzInfo(),
+      this.channelzEnabled
+    );
 
     session.once('close', () => {
       this.trace('session closed');
       this.stopKeepalivePings();
       this.handleDisconnect();
     });
-    session.once('goaway', (errorCode: number, lastStreamID: number, opaqueData: Buffer) => {
-      let tooManyPings = false;
-      /* See the last paragraph of
-       * https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md#basic-keepalive */
-      if (
-        errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM &&
-        opaqueData.equals(tooManyPingsData)
-      ) {
-        tooManyPings = true;
+    session.once(
+      'goaway',
+      (errorCode: number, lastStreamID: number, opaqueData: Buffer) => {
+        let tooManyPings = false;
+        /* See the last paragraph of
+         * https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md#basic-keepalive */
+        if (
+          errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM &&
+          opaqueData.equals(tooManyPingsData)
+        ) {
+          tooManyPings = true;
+        }
+        this.trace('connection closed by GOAWAY with code ' + errorCode);
+        this.reportDisconnectToOwner(tooManyPings);
       }
-      this.trace(
-        'connection closed by GOAWAY with code ' +
-          errorCode
-      );
-      this.reportDisconnectToOwner(tooManyPings);
-    });
+    );
     session.once('error', error => {
       /* Do nothing here. Any error should also trigger a close event, which is
        * where we want to handle that.  */
-      this.trace(
-        'connection closed with error ' +
-          (error as Error).message
-      );
+      this.trace('connection closed with error ' + (error as Error).message);
     });
     if (logging.isTracerEnabled(TRACER_NAME)) {
       session.on('remoteSettings', (settings: http2.Settings) => {
@@ -210,19 +238,34 @@ class Http2Transport implements Transport {
 
   private getChannelzInfo(): SocketInfo {
     const sessionSocket = this.session.socket;
-    const remoteAddress = sessionSocket.remoteAddress ? stringToSubchannelAddress(sessionSocket.remoteAddress, sessionSocket.remotePort) : null;
-    const localAddress = sessionSocket.localAddress ? stringToSubchannelAddress(sessionSocket.localAddress, sessionSocket.localPort) : null;
+    const remoteAddress = sessionSocket.remoteAddress
+      ? stringToSubchannelAddress(
+          sessionSocket.remoteAddress,
+          sessionSocket.remotePort
+        )
+      : null;
+    const localAddress = sessionSocket.localAddress
+      ? stringToSubchannelAddress(
+          sessionSocket.localAddress,
+          sessionSocket.localPort
+        )
+      : null;
     let tlsInfo: TlsInfo | null;
     if (this.session.encrypted) {
       const tlsSocket: TLSSocket = sessionSocket as TLSSocket;
-      const cipherInfo: CipherNameAndProtocol & {standardName?: string} = tlsSocket.getCipher();
+      const cipherInfo: CipherNameAndProtocol & { standardName?: string } =
+        tlsSocket.getCipher();
       const certificate = tlsSocket.getCertificate();
       const peerCertificate = tlsSocket.getPeerCertificate();
       tlsInfo = {
         cipherSuiteStandardName: cipherInfo.standardName ?? null,
         cipherSuiteOtherName: cipherInfo.standardName ? null : cipherInfo.name,
-        localCertificate: (certificate && 'raw' in certificate) ? certificate.raw : null,
-        remoteCertificate: (peerCertificate && 'raw' in peerCertificate) ? peerCertificate.raw : null
+        localCertificate:
+          certificate && 'raw' in certificate ? certificate.raw : null,
+        remoteCertificate:
+          peerCertificate && 'raw' in peerCertificate
+            ? peerCertificate.raw
+            : null,
       };
     } else {
       tlsInfo = null;
@@ -238,30 +281,67 @@ class Http2Transport implements Transport {
       messagesSent: this.messagesSent,
       messagesReceived: this.messagesReceived,
       keepAlivesSent: this.keepalivesSent,
-      lastLocalStreamCreatedTimestamp: this.streamTracker.lastCallStartedTimestamp,
+      lastLocalStreamCreatedTimestamp:
+        this.streamTracker.lastCallStartedTimestamp,
       lastRemoteStreamCreatedTimestamp: null,
       lastMessageSentTimestamp: this.lastMessageSentTimestamp,
       lastMessageReceivedTimestamp: this.lastMessageReceivedTimestamp,
       localFlowControlWindow: this.session.state.localWindowSize ?? null,
-      remoteFlowControlWindow: this.session.state.remoteWindowSize ?? null
+      remoteFlowControlWindow: this.session.state.remoteWindowSize ?? null,
     };
     return socketInfo;
   }
 
   private trace(text: string): void {
-    logging.trace(LogVerbosity.DEBUG, TRACER_NAME, '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
+    logging.trace(
+      LogVerbosity.DEBUG,
+      TRACER_NAME,
+      '(' +
+        this.channelzRef.id +
+        ') ' +
+        this.subchannelAddressString +
+        ' ' +
+        text
+    );
   }
 
   private keepaliveTrace(text: string): void {
-    logging.trace(LogVerbosity.DEBUG, 'keepalive', '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
+    logging.trace(
+      LogVerbosity.DEBUG,
+      'keepalive',
+      '(' +
+        this.channelzRef.id +
+        ') ' +
+        this.subchannelAddressString +
+        ' ' +
+        text
+    );
   }
 
   private flowControlTrace(text: string): void {
-    logging.trace(LogVerbosity.DEBUG, FLOW_CONTROL_TRACER_NAME, '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
+    logging.trace(
+      LogVerbosity.DEBUG,
+      FLOW_CONTROL_TRACER_NAME,
+      '(' +
+        this.channelzRef.id +
+        ') ' +
+        this.subchannelAddressString +
+        ' ' +
+        text
+    );
   }
 
   private internalsTrace(text: string): void {
-    logging.trace(LogVerbosity.DEBUG, 'transport_internals', '(' + this.channelzRef.id + ') ' + this.subchannelAddressString + ' ' + text);
+    logging.trace(
+      LogVerbosity.DEBUG,
+      'transport_internals',
+      '(' +
+        this.channelzRef.id +
+        ') ' +
+        this.subchannelAddressString +
+        ' ' +
+        text
+    );
   }
 
   /**
@@ -271,7 +351,7 @@ class Http2Transport implements Transport {
    * @param tooManyPings If true, this was triggered by a GOAWAY with data
    * indicating that the session was closed becaues the client sent too many
    * pings.
-   * @returns 
+   * @returns
    */
   private reportDisconnectToOwner(tooManyPings: boolean) {
     if (this.disconnectHandled) {
@@ -311,7 +391,9 @@ class Http2Transport implements Transport {
     if (this.channelzEnabled) {
       this.keepalivesSent += 1;
     }
-    this.keepaliveTrace('Sending ping with timeout ' + this.keepaliveTimeoutMs + 'ms');
+    this.keepaliveTrace(
+      'Sending ping with timeout ' + this.keepaliveTimeoutMs + 'ms'
+    );
     if (!this.keepaliveTimeoutId) {
       this.keepaliveTimeoutId = setTimeout(() => {
         this.keepaliveTrace('Ping timeout passed without response');
@@ -375,7 +457,13 @@ class Http2Transport implements Transport {
     this.activeCalls.add(call);
   }
 
-  createCall(metadata: Metadata, host: string, method: string, listener: SubchannelCallInterceptingListener, subchannelCallStatsTracker: Partial<CallEventTracker>): Http2SubchannelCall {
+  createCall(
+    metadata: Metadata,
+    host: string,
+    method: string,
+    listener: SubchannelCallInterceptingListener,
+    subchannelCallStatsTracker: Partial<CallEventTracker>
+  ): Http2SubchannelCall {
     const headers = metadata.toHttp2Headers();
     headers[HTTP2_HEADER_AUTHORITY] = host;
     headers[HTTP2_HEADER_USER_AGENT] = this.userAgent;
@@ -405,13 +493,15 @@ class Http2Transport implements Transport {
         this.session.state.remoteWindowSize
     );
     this.internalsTrace(
-      'session.closed=' + 
-      this.session.closed + 
-      ' session.destroyed=' + 
-      this.session.destroyed + 
-      ' session.socket.destroyed=' + 
-      this.session.socket.destroyed);
+      'session.closed=' +
+        this.session.closed +
+        ' session.destroyed=' +
+        this.session.destroyed +
+        ' session.socket.destroyed=' +
+        this.session.socket.destroyed
+    );
     let eventTracker: CallEventTracker;
+    // eslint-disable-next-line prefer-const
     let call: Http2SubchannelCall;
     if (this.channelzEnabled) {
       this.streamTracker.addCallStarted();
@@ -437,8 +527,8 @@ class Http2Transport implements Transport {
             this.streamTracker.addCallFailed();
           }
           subchannelCallStatsTracker.onStreamEnd?.(success);
-        }
-      }
+        },
+      };
     } else {
       eventTracker = {
         addMessageSent: () => {
@@ -447,16 +537,22 @@ class Http2Transport implements Transport {
         addMessageReceived: () => {
           subchannelCallStatsTracker.addMessageReceived?.();
         },
-        onCallEnd: (status) => {
+        onCallEnd: status => {
           subchannelCallStatsTracker.onCallEnd?.(status);
           this.removeActiveCall(call);
         },
-        onStreamEnd: (success) => {
+        onStreamEnd: success => {
           subchannelCallStatsTracker.onStreamEnd?.(success);
-        }
-      }
+        },
+      };
     }
-    call = new Http2SubchannelCall(http2Stream, eventTracker, listener, this, getNextCallNumber());
+    call = new Http2SubchannelCall(
+      http2Stream,
+      eventTracker,
+      listener,
+      this,
+      getNextCallNumber()
+    );
     this.addActiveCall(call);
     return call;
   }
@@ -476,7 +572,11 @@ class Http2Transport implements Transport {
 }
 
 export interface SubchannelConnector {
-  connect(address: SubchannelAddress, credentials: ChannelCredentials, options: ChannelOptions): Promise<Transport>;
+  connect(
+    address: SubchannelAddress,
+    credentials: ChannelCredentials,
+    options: ChannelOptions
+  ): Promise<Transport>;
   shutdown(): void;
 }
 
@@ -484,10 +584,13 @@ export class Http2SubchannelConnector implements SubchannelConnector {
   private session: http2.ClientHttp2Session | null = null;
   private isShutdown = false;
   constructor(private channelTarget: GrpcUri) {}
-  private trace(text: string) {
-
-  }
-  private createSession(address: SubchannelAddress, credentials: ChannelCredentials, options: ChannelOptions, proxyConnectionResult: ProxyConnectionResult): Promise<Http2Transport> {
+  private trace(text: string) {}
+  private createSession(
+    address: SubchannelAddress,
+    credentials: ChannelCredentials,
+    options: ChannelOptions,
+    proxyConnectionResult: ProxyConnectionResult
+  ): Promise<Http2Transport> {
     if (this.isShutdown) {
       return Promise.reject();
     }
@@ -495,10 +598,15 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       let remoteName: string | null;
       if (proxyConnectionResult.realTarget) {
         remoteName = uriToString(proxyConnectionResult.realTarget);
-        this.trace('creating HTTP/2 session through proxy to ' + uriToString(proxyConnectionResult.realTarget));
+        this.trace(
+          'creating HTTP/2 session through proxy to ' +
+            uriToString(proxyConnectionResult.realTarget)
+        );
       } else {
         remoteName = null;
-        this.trace('creating HTTP/2 session to ' + subchannelAddressToString(address));
+        this.trace(
+          'creating HTTP/2 session to ' + subchannelAddressToString(address)
+        );
       }
       const targetAuthority = getDefaultAuthority(
         proxyConnectionResult.realTarget ?? this.channelTarget
@@ -507,9 +615,8 @@ export class Http2SubchannelConnector implements SubchannelConnector {
         credentials._getConnectionOptions() || {};
       connectionOptions.maxSendHeaderBlockLength = Number.MAX_SAFE_INTEGER;
       if ('grpc-node.max_session_memory' in options) {
-        connectionOptions.maxSessionMemory = options[
-          'grpc-node.max_session_memory'
-        ];
+        connectionOptions.maxSessionMemory =
+          options['grpc-node.max_session_memory'];
       } else {
         /* By default, set a very large max session memory limit, to effectively
          * disable enforcement of the limit. Some testing indicates that Node's
@@ -524,9 +631,8 @@ export class Http2SubchannelConnector implements SubchannelConnector {
         // to override the target hostname when checking server identity.
         // This option is used for testing only.
         if (options['grpc.ssl_target_name_override']) {
-          const sslTargetNameOverride = options[
-            'grpc.ssl_target_name_override'
-          ]!;
+          const sslTargetNameOverride =
+            options['grpc.ssl_target_name_override']!;
           connectionOptions.checkServerIdentity = (
             host: string,
             cert: PeerCertificate
@@ -565,12 +671,12 @@ export class Http2SubchannelConnector implements SubchannelConnector {
           }
         };
       }
-  
+
       connectionOptions = {
         ...connectionOptions,
         ...address,
       };
-  
+
       /* http2.connect uses the options here:
        * https://github.com/nodejs/node/blob/70c32a6d190e2b5d7b9ff9d5b6a459d14e8b7d59/lib/internal/http2/core.js#L3028-L3036
        * The spread operator overides earlier values with later ones, so any port
@@ -604,11 +710,15 @@ export class Http2SubchannelConnector implements SubchannelConnector {
         reject();
       });
       session.once('error', error => {
-        this.trace('connection failed with error ' + (error as Error).message)
+        this.trace('connection failed with error ' + (error as Error).message);
       });
     });
   }
-  connect(address: SubchannelAddress, credentials: ChannelCredentials, options: ChannelOptions): Promise<Http2Transport> {
+  connect(
+    address: SubchannelAddress,
+    credentials: ChannelCredentials,
+    options: ChannelOptions
+  ): Promise<Http2Transport> {
     if (this.isShutdown) {
       return Promise.reject();
     }
@@ -625,9 +735,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       // to override the target hostname when checking server identity.
       // This option is used for testing only.
       if (options['grpc.ssl_target_name_override']) {
-        const sslTargetNameOverride = options[
-          'grpc.ssl_target_name_override'
-        ]!;
+        const sslTargetNameOverride = options['grpc.ssl_target_name_override']!;
         connectionOptions.checkServerIdentity = (
           host: string,
           cert: PeerCertificate
@@ -652,11 +760,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       }
     }
 
-    return getProxiedConnection(
-      address,
-      options,
-      connectionOptions
-    ).then(
+    return getProxiedConnection(address, options, connectionOptions).then(
       result => this.createSession(address, credentials, options, result)
     );
   }

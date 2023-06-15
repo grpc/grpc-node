@@ -65,10 +65,8 @@ export type ClientWritableStream<RequestType> = {
 /**
  * A type representing the return value of a bidirectional stream method call.
  */
-export type ClientDuplexStream<
-  RequestType,
-  ResponseType
-> = ClientWritableStream<RequestType> & ClientReadableStream<ResponseType>;
+export type ClientDuplexStream<RequestType, ResponseType> =
+  ClientWritableStream<RequestType> & ClientReadableStream<ResponseType>;
 
 /**
  * Construct a ServiceError from a StatusObject. This function exists primarily
@@ -76,16 +74,20 @@ export type ClientDuplexStream<
  * error is not necessarily a problem in gRPC itself.
  * @param status
  */
-export function callErrorFromStatus(status: StatusObject, callerStack: string): ServiceError {
+export function callErrorFromStatus(
+  status: StatusObject,
+  callerStack: string
+): ServiceError {
   const message = `${status.code} ${Status[status.code]}: ${status.details}`;
   const error = new Error(message);
   const stack = `${error.stack}\nfor call at\n${callerStack}`;
-  return Object.assign(new Error(message), status, {stack});
+  return Object.assign(new Error(message), status, { stack });
 }
 
 export class ClientUnaryCallImpl
   extends EventEmitter
-  implements ClientUnaryCall {
+  implements ClientUnaryCall
+{
   public call?: InterceptingCallInterface;
   constructor() {
     super();
@@ -102,7 +104,8 @@ export class ClientUnaryCallImpl
 
 export class ClientReadableStreamImpl<ResponseType>
   extends Readable
-  implements ClientReadableStream<ResponseType> {
+  implements ClientReadableStream<ResponseType>
+{
   public call?: InterceptingCallInterface;
   constructor(readonly deserialize: (chunk: Buffer) => ResponseType) {
     super({ objectMode: true });
@@ -123,7 +126,8 @@ export class ClientReadableStreamImpl<ResponseType>
 
 export class ClientWritableStreamImpl<RequestType>
   extends Writable
-  implements ClientWritableStream<RequestType> {
+  implements ClientWritableStream<RequestType>
+{
   public call?: InterceptingCallInterface;
   constructor(readonly serialize: (value: RequestType) => Buffer) {
     super({ objectMode: true });
@@ -156,7 +160,8 @@ export class ClientWritableStreamImpl<RequestType>
 
 export class ClientDuplexStreamImpl<RequestType, ResponseType>
   extends Duplex
-  implements ClientDuplexStream<RequestType, ResponseType> {
+  implements ClientDuplexStream<RequestType, ResponseType>
+{
   public call?: InterceptingCallInterface;
   constructor(
     readonly serialize: (value: RequestType) => Buffer,

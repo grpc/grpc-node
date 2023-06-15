@@ -176,10 +176,10 @@ const defaultRequester: FullRequester = {
   sendMessage: (message, next) => {
     next(message);
   },
-  halfClose: (next) => {
+  halfClose: next => {
     next();
   },
-  cancel: (next) => {
+  cancel: next => {
     next();
   },
 };
@@ -254,7 +254,10 @@ export class InterceptingCall implements InterceptingCallInterface {
 
   private processPendingMessage() {
     if (this.pendingMessageContext) {
-      this.nextCall.sendMessageWithContext(this.pendingMessageContext, this.pendingMessage);
+      this.nextCall.sendMessageWithContext(
+        this.pendingMessageContext,
+        this.pendingMessage
+      );
       this.pendingMessageContext = null;
       this.pendingMessage = null;
     }
@@ -273,13 +276,13 @@ export class InterceptingCall implements InterceptingCallInterface {
     const fullInterceptingListener: InterceptingListener = {
       onReceiveMetadata:
         interceptingListener?.onReceiveMetadata?.bind(interceptingListener) ??
-        ((metadata) => {}),
+        (metadata => {}),
       onReceiveMessage:
         interceptingListener?.onReceiveMessage?.bind(interceptingListener) ??
-        ((message) => {}),
+        (message => {}),
       onReceiveStatus:
         interceptingListener?.onReceiveStatus?.bind(interceptingListener) ??
-        ((status) => {}),
+        (status => {}),
     };
     this.processingMetadata = true;
     this.requester.start(metadata, fullInterceptingListener, (md, listener) => {
@@ -309,7 +312,7 @@ export class InterceptingCall implements InterceptingCallInterface {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendMessageWithContext(context: MessageContext, message: any): void {
     this.processingMessage = true;
-    this.requester.sendMessage(message, (finalMessage) => {
+    this.requester.sendMessage(message, finalMessage => {
       this.processingMessage = false;
       if (this.processingMetadata) {
         this.pendingMessageContext = context;
@@ -391,10 +394,10 @@ class BaseInterceptingCall implements InterceptingCallInterface {
   ): void {
     let readError: StatusObject | null = null;
     this.call.start(metadata, {
-      onReceiveMetadata: (metadata) => {
+      onReceiveMetadata: metadata => {
         interceptingListener?.onReceiveMetadata?.(metadata);
       },
-      onReceiveMessage: (message) => {
+      onReceiveMessage: message => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let deserialized: any;
         try {
@@ -410,7 +413,7 @@ class BaseInterceptingCall implements InterceptingCallInterface {
         }
         interceptingListener?.onReceiveMessage?.(deserialized);
       },
-      onReceiveStatus: (status) => {
+      onReceiveStatus: status => {
         if (readError) {
           interceptingListener?.onReceiveStatus?.(readError);
         } else {
@@ -433,7 +436,8 @@ class BaseInterceptingCall implements InterceptingCallInterface {
  */
 class BaseUnaryInterceptingCall
   extends BaseInterceptingCall
-  implements InterceptingCallInterface {
+  implements InterceptingCallInterface
+{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(call: Call, methodDefinition: ClientMethodDefinition<any, any>) {
     super(call, methodDefinition);
@@ -442,7 +446,7 @@ class BaseUnaryInterceptingCall
     let receivedMessage = false;
     const wrapperListener: InterceptingListener = {
       onReceiveMetadata:
-        listener?.onReceiveMetadata?.bind(listener) ?? ((metadata) => {}),
+        listener?.onReceiveMetadata?.bind(listener) ?? (metadata => {}),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onReceiveMessage: (message: any) => {
         receivedMessage = true;
@@ -536,21 +540,21 @@ export function getInterceptingCall(
     interceptors = ([] as Interceptor[])
       .concat(
         interceptorArgs.callInterceptors,
-        interceptorArgs.callInterceptorProviders.map((provider) =>
+        interceptorArgs.callInterceptorProviders.map(provider =>
           provider(methodDefinition)
         )
       )
-      .filter((interceptor) => interceptor);
+      .filter(interceptor => interceptor);
     // Filter out falsy values when providers return nothing
   } else {
     interceptors = ([] as Interceptor[])
       .concat(
         interceptorArgs.clientInterceptors,
-        interceptorArgs.clientInterceptorProviders.map((provider) =>
+        interceptorArgs.clientInterceptorProviders.map(provider =>
           provider(methodDefinition)
         )
       )
-      .filter((interceptor) => interceptor);
+      .filter(interceptor => interceptor);
     // Filter out falsy values when providers return nothing
   }
   const interceptorOptions = Object.assign({}, options, {
@@ -565,7 +569,7 @@ export function getInterceptingCall(
    * channel. */
   const getCall: NextCall = interceptors.reduceRight<NextCall>(
     (nextCall: NextCall, nextInterceptor: Interceptor) => {
-      return (currentOptions) => nextInterceptor(currentOptions, nextCall);
+      return currentOptions => nextInterceptor(currentOptions, nextCall);
     },
     (finalOptions: InterceptorOptions) =>
       getBottomInterceptingCall(channel, finalOptions, methodDefinition)

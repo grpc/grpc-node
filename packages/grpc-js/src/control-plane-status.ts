@@ -25,16 +25,19 @@ const INAPPROPRIATE_CONTROL_PLANE_CODES: Status[] = [
   Status.FAILED_PRECONDITION,
   Status.ABORTED,
   Status.OUT_OF_RANGE,
-  Status.DATA_LOSS
-]
+  Status.DATA_LOSS,
+];
 
-export function restrictControlPlaneStatusCode(code: Status, details: string): {code: Status, details: string} {
+export function restrictControlPlaneStatusCode(
+  code: Status,
+  details: string
+): { code: Status; details: string } {
   if (INAPPROPRIATE_CONTROL_PLANE_CODES.includes(code)) {
     return {
       code: Status.INTERNAL,
-      details: `Invalid status from control plane: ${code} ${Status[code]} ${details}`
-    }
+      details: `Invalid status from control plane: ${code} ${Status[code]} ${details}`,
+    };
   } else {
-    return {code, details};
+    return { code, details };
   }
 }

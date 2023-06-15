@@ -20,7 +20,7 @@ import * as assert from 'assert';
 import * as grpc from '../src';
 import { Server, ServerCredentials } from '../src';
 import { Client } from '../src';
-import { ConnectivityState } from "../src/connectivity-state";
+import { ConnectivityState } from '../src/connectivity-state';
 
 const clientInsecureCreds = grpc.credentials.createInsecure();
 const serverInsecureCreds = ServerCredentials.createInsecure();
@@ -32,19 +32,12 @@ describe('Client', () => {
   before(done => {
     server = new Server();
 
-    server.bindAsync(
-      'localhost:0',
-      serverInsecureCreds,
-      (err, port) => {
-        assert.ifError(err);
-        client = new Client(
-          `localhost:${port}`,
-          clientInsecureCreds
-        );
-        server.start();
-        done();
-      }
-    );
+    server.bindAsync('localhost:0', serverInsecureCreds, (err, port) => {
+      assert.ifError(err);
+      client = new Client(`localhost:${port}`, clientInsecureCreds);
+      server.start();
+      done();
+    });
   });
 
   after(done => {
@@ -79,18 +72,30 @@ describe('Client without a server', () => {
   after(() => {
     client.close();
   });
-  it('should fail multiple calls to the nonexistent server', function(done) {
+  it('should fail multiple calls to the nonexistent server', function (done) {
     this.timeout(5000);
     // Regression test for https://github.com/grpc/grpc-node/issues/1411
-    client.makeUnaryRequest('/service/method', x => x, x => x, Buffer.from([]), (error, value) => {
-      assert(error);
-      assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
-      client.makeUnaryRequest('/service/method', x => x, x => x, Buffer.from([]), (error, value) => {
+    client.makeUnaryRequest(
+      '/service/method',
+      x => x,
+      x => x,
+      Buffer.from([]),
+      (error, value) => {
         assert(error);
         assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
-        done();
-      });
-    });
+        client.makeUnaryRequest(
+          '/service/method',
+          x => x,
+          x => x,
+          Buffer.from([]),
+          (error, value) => {
+            assert(error);
+            assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
+            done();
+          }
+        );
+      }
+    );
   });
 });
 
@@ -103,17 +108,29 @@ describe('Client with a nonexistent target domain', () => {
   after(() => {
     client.close();
   });
-  it('should fail multiple calls', function(done) {
+  it('should fail multiple calls', function (done) {
     this.timeout(5000);
     // Regression test for https://github.com/grpc/grpc-node/issues/1411
-    client.makeUnaryRequest('/service/method', x => x, x => x, Buffer.from([]), (error, value) => {
-      assert(error);
-      assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
-      client.makeUnaryRequest('/service/method', x => x, x => x, Buffer.from([]), (error, value) => {
+    client.makeUnaryRequest(
+      '/service/method',
+      x => x,
+      x => x,
+      Buffer.from([]),
+      (error, value) => {
         assert(error);
         assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
-        done();
-      });
-    });
+        client.makeUnaryRequest(
+          '/service/method',
+          x => x,
+          x => x,
+          Buffer.from([]),
+          (error, value) => {
+            assert(error);
+            assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
+            done();
+          }
+        );
+      }
+    );
   });
 });

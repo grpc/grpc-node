@@ -21,11 +21,11 @@ import { loadPackageDefinition } from '../src';
 
 describe('loadPackageDefinition', () => {
   it('Should not allow prototype pollution', () => {
-      loadPackageDefinition({'__proto__.polluted': true} as any);
-      assert.notStrictEqual(({} as any).polluted, true);
+    loadPackageDefinition({ '__proto__.polluted': true } as any);
+    assert.notStrictEqual(({} as any).polluted, true);
   });
   it('Should not allow prototype pollution #2', () => {
-      loadPackageDefinition({'constructor.prototype.polluted': true} as any);
-      assert.notStrictEqual(({} as any).polluted, true);
+    loadPackageDefinition({ 'constructor.prototype.polluted': true } as any);
+    assert.notStrictEqual(({} as any).polluted, true);
   });
 });

@@ -42,7 +42,8 @@ describe('Server deadlines', () => {
   before(done => {
     const protoFile = path.join(__dirname, 'fixtures', 'test_service.proto');
     const testServiceDef = loadProtoFile(protoFile);
-    const testServiceClient = testServiceDef.TestService as ServiceClientConstructor;
+    const testServiceClient =
+      testServiceDef.TestService as ServiceClientConstructor;
 
     server = new Server();
     server.addService(testServiceClient.service, {
@@ -126,7 +127,8 @@ describe('Cancellation', () => {
   before(done => {
     const protoFile = path.join(__dirname, 'fixtures', 'test_service.proto');
     const testServiceDef = loadProtoFile(protoFile);
-    const testServiceClient = testServiceDef.TestService as ServiceClientConstructor;
+    const testServiceClient =
+      testServiceDef.TestService as ServiceClientConstructor;
 
     server = new Server();
     server.addService(testServiceClient.service, {

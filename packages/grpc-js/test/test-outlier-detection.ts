@@ -19,7 +19,7 @@ import * as assert from 'assert';
 import * as path from 'path';
 import * as grpc from '../src';
 import { loadProtoFile } from './common';
-import { OutlierDetectionLoadBalancingConfig } from '../src/load-balancer-outlier-detection'
+import { OutlierDetectionLoadBalancingConfig } from '../src/load-balancer-outlier-detection';
 import { ServiceClient } from '../src/make-client';
 
 function multiDone(done: Mocha.Done, target: number) {
@@ -32,7 +32,7 @@ function multiDone(done: Mocha.Done, target: number) {
     if (count >= target) {
       done();
     }
-  }
+  };
 }
 
 const defaultOutlierDetectionServiceConfig = {
@@ -42,13 +42,15 @@ const defaultOutlierDetectionServiceConfig = {
       outlier_detection: {
         success_rate_ejection: {},
         failure_percentage_ejection: {},
-        child_policy: [{round_robin: {}}]
-      }
-    }
-  ]
+        child_policy: [{ round_robin: {} }],
+      },
+    },
+  ],
 };
 
-const defaultOutlierDetectionServiceConfigString = JSON.stringify(defaultOutlierDetectionServiceConfig);
+const defaultOutlierDetectionServiceConfigString = JSON.stringify(
+  defaultOutlierDetectionServiceConfig
+);
 
 const successRateOutlierDetectionServiceConfig = {
   methodConfig: [],
@@ -57,22 +59,24 @@ const successRateOutlierDetectionServiceConfig = {
       outlier_detection: {
         interval: {
           seconds: 1,
-          nanos: 0
+          nanos: 0,
         },
         base_ejection_time: {
           seconds: 3,
-          nanos: 0
+          nanos: 0,
         },
         success_rate_ejection: {
-          request_volume: 5
+          request_volume: 5,
         },
-        child_policy: [{round_robin: {}}]
-      }
-    }
-  ]
+        child_policy: [{ round_robin: {} }],
+      },
+    },
+  ],
 };
 
-const successRateOutlierDetectionServiceConfigString = JSON.stringify(successRateOutlierDetectionServiceConfig);
+const successRateOutlierDetectionServiceConfigString = JSON.stringify(
+  successRateOutlierDetectionServiceConfig
+);
 
 const failurePercentageOutlierDetectionServiceConfig = {
   methodConfig: [],
@@ -81,37 +85,45 @@ const failurePercentageOutlierDetectionServiceConfig = {
       outlier_detection: {
         interval: {
           seconds: 1,
-          nanos: 0
+          nanos: 0,
         },
         base_ejection_time: {
           seconds: 3,
-          nanos: 0
+          nanos: 0,
         },
         failure_percentage_ejection: {
-          request_volume: 5
+          request_volume: 5,
         },
-        child_policy: [{round_robin: {}}]
-      }
-    }
-  ]
+        child_policy: [{ round_robin: {} }],
+      },
+    },
+  ],
 };
 
-const falurePercentageOutlierDetectionServiceConfigString = JSON.stringify(failurePercentageOutlierDetectionServiceConfig);
+const falurePercentageOutlierDetectionServiceConfigString = JSON.stringify(
+  failurePercentageOutlierDetectionServiceConfig
+);
 
 const goodService = {
-  echo: (call: grpc.ServerUnaryCall<any, any>, callback: grpc.sendUnaryData<any>) => {
-    callback(null, call.request)
-  }
+  echo: (
+    call: grpc.ServerUnaryCall<any, any>,
+    callback: grpc.sendUnaryData<any>
+  ) => {
+    callback(null, call.request);
+  },
 };
 
 const badService = {
-  echo: (call: grpc.ServerUnaryCall<any, any>, callback: grpc.sendUnaryData<any>) => {
+  echo: (
+    call: grpc.ServerUnaryCall<any, any>,
+    callback: grpc.sendUnaryData<any>
+  ) => {
     callback({
       code: grpc.status.PERMISSION_DENIED,
-      details: 'Permission denied'
-    })
-  }
-}
+      details: 'Permission denied',
+    });
+  },
+};
 
 const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
 const EchoService = loadProtoFile(protoFile)
@@ -123,9 +135,9 @@ describe('Outlier detection config validation', () => {
       const loadBalancingConfig = {
         interval: {
           seconds: -1,
-          nanos: 0
+          nanos: 0,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -135,9 +147,9 @@ describe('Outlier detection config validation', () => {
       const loadBalancingConfig = {
         interval: {
           seconds: 1e12,
-          nanos: 0
+          nanos: 0,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -147,9 +159,9 @@ describe('Outlier detection config validation', () => {
       const loadBalancingConfig = {
         interval: {
           seconds: 0,
-          nanos: -1
+          nanos: -1,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -159,9 +171,9 @@ describe('Outlier detection config validation', () => {
       const loadBalancingConfig = {
         interval: {
           seconds: 0,
-          nanos: 1e12
+          nanos: 1e12,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -173,9 +185,9 @@ describe('Outlier detection config validation', () => {
       const loadBalancingConfig = {
         base_ejection_time: {
           seconds: -1,
-          nanos: 0
+          nanos: 0,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -185,9 +197,9 @@ describe('Outlier detection config validation', () => {
       const loadBalancingConfig = {
         base_ejection_time: {
           seconds: 1e12,
-          nanos: 0
+          nanos: 0,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -197,9 +209,9 @@ describe('Outlier detection config validation', () => {
       const loadBalancingConfig = {
         base_ejection_time: {
           seconds: 0,
-          nanos: -1
+          nanos: -1,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -209,9 +221,9 @@ describe('Outlier detection config validation', () => {
       const loadBalancingConfig = {
         base_ejection_time: {
           seconds: 0,
-          nanos: 1e12
+          nanos: 1e12,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -223,9 +235,9 @@ describe('Outlier detection config validation', () => {
       const loadBalancingConfig = {
         max_ejection_time: {
           seconds: -1,
-          nanos: 0
+          nanos: 0,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -235,9 +247,9 @@ describe('Outlier detection config validation', () => {
       const loadBalancingConfig = {
         max_ejection_time: {
           seconds: 1e12,
-          nanos: 0
+          nanos: 0,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -247,9 +259,9 @@ describe('Outlier detection config validation', () => {
       const loadBalancingConfig = {
         max_ejection_time: {
           seconds: 0,
-          nanos: -1
+          nanos: -1,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -259,9 +271,9 @@ describe('Outlier detection config validation', () => {
       const loadBalancingConfig = {
         max_ejection_time: {
           seconds: 0,
-          nanos: 1e12
+          nanos: 1e12,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -272,7 +284,7 @@ describe('Outlier detection config validation', () => {
     it('Should reject a value above 100', () => {
       const loadBalancingConfig = {
         max_ejection_percent: 101,
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -281,7 +293,7 @@ describe('Outlier detection config validation', () => {
     it('Should reject a negative value', () => {
       const loadBalancingConfig = {
         max_ejection_percent: -1,
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -292,9 +304,9 @@ describe('Outlier detection config validation', () => {
     it('Should reject a value above 100', () => {
       const loadBalancingConfig = {
         success_rate_ejection: {
-          enforcement_percentage: 101
+          enforcement_percentage: 101,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -303,9 +315,9 @@ describe('Outlier detection config validation', () => {
     it('Should reject a negative value', () => {
       const loadBalancingConfig = {
         success_rate_ejection: {
-          enforcement_percentage: -1
+          enforcement_percentage: -1,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -316,9 +328,9 @@ describe('Outlier detection config validation', () => {
     it('Should reject a value above 100', () => {
       const loadBalancingConfig = {
         failure_percentage_ejection: {
-          threshold: 101
+          threshold: 101,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -327,9 +339,9 @@ describe('Outlier detection config validation', () => {
     it('Should reject a negative value', () => {
       const loadBalancingConfig = {
         failure_percentage_ejection: {
-          threshold: -1
+          threshold: -1,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -340,9 +352,9 @@ describe('Outlier detection config validation', () => {
     it('Should reject a value above 100', () => {
       const loadBalancingConfig = {
         failure_percentage_ejection: {
-          enforcement_percentage: 101
+          enforcement_percentage: 101,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -351,9 +363,9 @@ describe('Outlier detection config validation', () => {
     it('Should reject a negative value', () => {
       const loadBalancingConfig = {
         failure_percentage_ejection: {
-          enforcement_percentage: -1
+          enforcement_percentage: -1,
         },
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
@@ -377,32 +389,44 @@ describe('Outlier detection', () => {
     goodServer = new grpc.Server();
     goodServer.addService(EchoService.service, goodService);
     for (let i = 0; i < GOOD_PORTS; i++) {
-      goodServer.bindAsync('localhost:0', grpc.ServerCredentials.createInsecure(), (error, port) => {
+      goodServer.bindAsync(
+        'localhost:0',
+        grpc.ServerCredentials.createInsecure(),
+        (error, port) => {
+          if (error) {
+            eachDone(error);
+            return;
+          }
+          goodPorts.push(port);
+          eachDone();
+        }
+      );
+    }
+    badServer = new grpc.Server();
+    badServer.addService(EchoService.service, badService);
+    badServer.bindAsync(
+      'localhost:0',
+      grpc.ServerCredentials.createInsecure(),
+      (error, port) => {
         if (error) {
           eachDone(error);
           return;
         }
-        goodPorts.push(port);
+        badPort = port;
         eachDone();
-      });
-    }
-    badServer = new grpc.Server();
-    badServer.addService(EchoService.service, badService);
-    badServer.bindAsync('localhost:0', grpc.ServerCredentials.createInsecure(), (error, port) => {
-      if (error) {
-        eachDone(error);
-        return;
       }
-      badPort = port;
-      eachDone();
-    });
+    );
   });
   after(() => {
     goodServer.forceShutdown();
     badServer.forceShutdown();
   });
 
-  function makeManyRequests(makeOneRequest: (callback: (error?: Error) => void) => void, total: number, callback: (error?: Error) => void) {
+  function makeManyRequests(
+    makeOneRequest: (callback: (error?: Error) => void) => void,
+    total: number,
+    callback: (error?: Error) => void
+  ) {
     if (total === 0) {
       callback();
       return;
@@ -417,7 +441,11 @@ describe('Outlier detection', () => {
   }
 
   it('Should allow normal operation with one server', done => {
-    const client = new EchoService(`localhost:${goodPorts[0]}`, grpc.credentials.createInsecure(), {'grpc.service_config': defaultOutlierDetectionServiceConfigString});
+    const client = new EchoService(
+      `localhost:${goodPorts[0]}`,
+      grpc.credentials.createInsecure(),
+      { 'grpc.service_config': defaultOutlierDetectionServiceConfigString }
+    );
     client.echo(
       { value: 'test value', value2: 3 },
       (error: grpc.ServiceError, response: any) => {
@@ -429,10 +457,19 @@ describe('Outlier detection', () => {
   });
   describe('Success rate', () => {
     let makeCheckedRequest: (callback: () => void) => void;
-    let makeUncheckedRequest:(callback: (error?: Error) => void) => void;
+    let makeUncheckedRequest: (callback: (error?: Error) => void) => void;
     before(() => {
-      const target = 'ipv4:///' + goodPorts.map(port => `127.0.0.1:${port}`).join(',') + `,127.0.0.1:${badPort}`;
-      const client = new EchoService(target, grpc.credentials.createInsecure(), {'grpc.service_config': successRateOutlierDetectionServiceConfigString});
+      const target =
+        'ipv4:///' +
+        goodPorts.map(port => `127.0.0.1:${port}`).join(',') +
+        `,127.0.0.1:${badPort}`;
+      const client = new EchoService(
+        target,
+        grpc.credentials.createInsecure(),
+        {
+          'grpc.service_config': successRateOutlierDetectionServiceConfigString,
+        }
+      );
       makeUncheckedRequest = (callback: () => void) => {
         client.echo(
           { value: 'test value', value2: 3 },
@@ -460,7 +497,7 @@ describe('Outlier detection', () => {
         }, 1000);
       });
     });
-    it('Should uneject a server after the ejection period', function(done) {
+    it('Should uneject a server after the ejection period', function (done) {
       this.timeout(5000);
       makeManyRequests(makeUncheckedRequest, 50, () => {
         setTimeout(() => {
@@ -477,15 +514,25 @@ describe('Outlier detection', () => {
             }, 3000);
           });
         }, 1000);
-      })
+      });
     });
   });
   describe('Failure percentage', () => {
     let makeCheckedRequest: (callback: () => void) => void;
-    let makeUncheckedRequest:(callback: (error?: Error) => void) => void;
+    let makeUncheckedRequest: (callback: (error?: Error) => void) => void;
     before(() => {
-      const target = 'ipv4:///' + goodPorts.map(port => `127.0.0.1:${port}`).join(',') + `,127.0.0.1:${badPort}`;
-      const client = new EchoService(target, grpc.credentials.createInsecure(), {'grpc.service_config': falurePercentageOutlierDetectionServiceConfigString});
+      const target =
+        'ipv4:///' +
+        goodPorts.map(port => `127.0.0.1:${port}`).join(',') +
+        `,127.0.0.1:${badPort}`;
+      const client = new EchoService(
+        target,
+        grpc.credentials.createInsecure(),
+        {
+          'grpc.service_config':
+            falurePercentageOutlierDetectionServiceConfigString,
+        }
+      );
       makeUncheckedRequest = (callback: () => void) => {
         client.echo(
           { value: 'test value', value2: 3 },
@@ -513,7 +560,7 @@ describe('Outlier detection', () => {
         }, 1000);
       });
     });
-    it('Should uneject a server after the ejection period', function(done) {
+    it('Should uneject a server after the ejection period', function (done) {
       this.timeout(5000);
       makeManyRequests(makeUncheckedRequest, 50, () => {
         setTimeout(() => {
@@ -530,7 +577,7 @@ describe('Outlier detection', () => {
             }, 3000);
           });
         }, 1000);
-      })
+      });
     });
   });
 });

@@ -206,11 +206,11 @@ export function getProxiedConnection(
   if ('grpc.http_connect_creds' in channelOptions) {
     headers['Proxy-Authorization'] =
       'Basic ' +
-      Buffer.from(
-        channelOptions['grpc.http_connect_creds'] as string
-      ).toString('base64');
+      Buffer.from(channelOptions['grpc.http_connect_creds'] as string).toString(
+        'base64'
+      );
   }
-  options.headers = headers
+  options.headers = headers;
   const proxyAddressString = subchannelAddressToString(address);
   trace('Using proxy ' + proxyAddressString + ' to connect to ' + options.path);
   return new Promise<ProxyConnectionResult>((resolve, reject) => {
@@ -252,12 +252,14 @@ export function getProxiedConnection(
             }
           );
           cts.on('error', (error: Error) => {
-            trace('Failed to establish a TLS connection to ' +
-                    options.path +
-                    ' through proxy ' +
-                    proxyAddressString +
-                    ' with error ' +
-                    error.message);
+            trace(
+              'Failed to establish a TLS connection to ' +
+                options.path +
+                ' through proxy ' +
+                proxyAddressString +
+                ' with error ' +
+                error.message
+            );
             reject();
           });
         } else {
@@ -285,7 +287,7 @@ export function getProxiedConnection(
         reject();
       }
     });
-    request.once('error', (err) => {
+    request.once('error', err => {
       request.removeAllListeners();
       log(
         LogVerbosity.ERROR,

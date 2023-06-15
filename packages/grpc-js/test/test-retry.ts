@@ -25,37 +25,50 @@ const EchoService = loadProtoFile(protoFile)
   .EchoService as grpc.ServiceClientConstructor;
 
 const serviceImpl = {
-  echo: (call: grpc.ServerUnaryCall<any, any>, callback: grpc.sendUnaryData<any>) => {
+  echo: (
+    call: grpc.ServerUnaryCall<any, any>,
+    callback: grpc.sendUnaryData<any>
+  ) => {
     const succeedOnRetryAttempt = call.metadata.get('succeed-on-retry-attempt');
     const previousAttempts = call.metadata.get('grpc-previous-rpc-attempts');
-    if (succeedOnRetryAttempt.length === 0 || (previousAttempts.length > 0 && previousAttempts[0] === succeedOnRetryAttempt[0])) {
+    if (
+      succeedOnRetryAttempt.length === 0 ||
+      (previousAttempts.length > 0 &&
+        previousAttempts[0] === succeedOnRetryAttempt[0])
+    ) {
       callback(null, call.request);
     } else {
       const statusCode = call.metadata.get('respond-with-status');
-      const code = statusCode[0] ? Number.parseInt(statusCode[0] as string) : grpc.status.UNKNOWN;
+      const code = statusCode[0]
+        ? Number.parseInt(statusCode[0] as string)
+        : grpc.status.UNKNOWN;
       callback({
         code: code,
-        details: `Failed on retry ${previousAttempts[0] ?? 0}`
+        details: `Failed on retry ${previousAttempts[0] ?? 0}`,
       });
     }
-  }
-}
+  },
+};
 
 describe('Retries', () => {
   let server: grpc.Server;
   let port: number;
-  before((done) => {
+  before(done => {
     server = new grpc.Server();
     server.addService(EchoService.service, serviceImpl);
-    server.bindAsync('localhost:0', grpc.ServerCredentials.createInsecure(), (error, portNumber) => {
-      if (error) {
-        done(error);
-        return;
+    server.bindAsync(
+      'localhost:0',
+      grpc.ServerCredentials.createInsecure(),
+      (error, portNumber) => {
+        if (error) {
+          done(error);
+          return;
+        }
+        port = portNumber;
+        server.start();
+        done();
       }
-      port = portNumber;
-      server.start();
-      done();
-    });
+    );
   });
 
   after(() => {
@@ -65,14 +78,18 @@ describe('Retries', () => {
   describe('Client with retries disabled', () => {
     let client: InstanceType<grpc.ServiceClientConstructor>;
     before(() => {
-      client = new EchoService(`localhost:${port}`, grpc.credentials.createInsecure(), {'grpc.enable_retries': 0});
+      client = new EchoService(
+        `localhost:${port}`,
+        grpc.credentials.createInsecure(),
+        { 'grpc.enable_retries': 0 }
+      );
     });
 
-    after(() =>{
+    after(() => {
       client.close();
     });
 
-    it('Should be able to make a basic request', (done) => {
+    it('Should be able to make a basic request', done => {
       client.echo(
         { value: 'test value', value2: 3 },
         (error: grpc.ServiceError, response: any) => {
@@ -83,7 +100,7 @@ describe('Retries', () => {
       );
     });
 
-    it('Should fail if the server fails the first request', (done) =>{
+    it('Should fail if the server fails the first request', done => {
       const metadata = new grpc.Metadata();
       metadata.set('succeed-on-retry-attempt', '1');
       client.echo(
@@ -101,14 +118,17 @@ describe('Retries', () => {
   describe('Client with retries enabled but not configured', () => {
     let client: InstanceType<grpc.ServiceClientConstructor>;
     before(() => {
-      client = new EchoService(`localhost:${port}`, grpc.credentials.createInsecure());
+      client = new EchoService(
+        `localhost:${port}`,
+        grpc.credentials.createInsecure()
+      );
     });
 
-    after(() =>{
+    after(() => {
       client.close();
     });
 
-    it('Should be able to make a basic request', (done) => {
+    it('Should be able to make a basic request', done => {
       client.echo(
         { value: 'test value', value2: 3 },
         (error: grpc.ServiceError, response: any) => {
@@ -119,7 +139,7 @@ describe('Retries', () => {
       );
     });
 
-    it('Should fail if the server fails the first request', (done) =>{
+    it('Should fail if the server fails the first request', done => {
       const metadata = new grpc.Metadata();
       metadata.set('succeed-on-retry-attempt', '1');
       client.echo(
@@ -141,27 +161,33 @@ describe('Retries', () => {
         loadBalancingConfig: [],
         methodConfig: [
           {
-            name: [{
-              service: 'EchoService'
-            }],
+            name: [
+              {
+                service: 'EchoService',
+              },
+            ],
             retryPolicy: {
               maxAttempts: 3,
               initialBackoff: '0.1s',
               maxBackoff: '10s',
               backoffMultiplier: 1.2,
-              retryableStatusCodes: [14, 'RESOURCE_EXHAUSTED']
-            }
-          }
-        ]
-      }
-      client = new EchoService(`localhost:${port}`, grpc.credentials.createInsecure(), {'grpc.service_config': JSON.stringify(serviceConfig)});
+              retryableStatusCodes: [14, 'RESOURCE_EXHAUSTED'],
+            },
+          },
+        ],
+      };
+      client = new EchoService(
+        `localhost:${port}`,
+        grpc.credentials.createInsecure(),
+        { 'grpc.service_config': JSON.stringify(serviceConfig) }
+      );
     });
 
-    after(() =>{
+    after(() => {
       client.close();
     });
 
-    it('Should be able to make a basic request', (done) => {
+    it('Should be able to make a basic request', done => {
       client.echo(
         { value: 'test value', value2: 3 },
         (error: grpc.ServiceError, response: any) => {
@@ -172,7 +198,7 @@ describe('Retries', () => {
       );
     });
 
-    it('Should succeed with few required attempts', (done) => {
+    it('Should succeed with few required attempts', done => {
       const metadata = new grpc.Metadata();
       metadata.set('succeed-on-retry-attempt', '2');
       metadata.set('respond-with-status', `${grpc.status.RESOURCE_EXHAUSTED}`);
@@ -187,7 +213,7 @@ describe('Retries', () => {
       );
     });
 
-    it('Should fail with many required attempts', (done) => {
+    it('Should fail with many required attempts', done => {
       const metadata = new grpc.Metadata();
       metadata.set('succeed-on-retry-attempt', '4');
       metadata.set('respond-with-status', `${grpc.status.RESOURCE_EXHAUSTED}`);
@@ -202,7 +228,7 @@ describe('Retries', () => {
       );
     });
 
-    it('Should fail with a fatal status code', (done) => {
+    it('Should fail with a fatal status code', done => {
       const metadata = new grpc.Metadata();
       metadata.set('succeed-on-retry-attempt', '2');
       metadata.set('respond-with-status', `${grpc.status.NOT_FOUND}`);
@@ -217,25 +243,31 @@ describe('Retries', () => {
       );
     });
 
-    it('Should not be able to make more than 5 attempts', (done) => {
+    it('Should not be able to make more than 5 attempts', done => {
       const serviceConfig = {
         loadBalancingConfig: [],
         methodConfig: [
           {
-            name: [{
-              service: 'EchoService'
-            }],
+            name: [
+              {
+                service: 'EchoService',
+              },
+            ],
             retryPolicy: {
               maxAttempts: 10,
               initialBackoff: '0.1s',
               maxBackoff: '10s',
               backoffMultiplier: 1.2,
-              retryableStatusCodes: [14, 'RESOURCE_EXHAUSTED']
-            }
-          }
-        ]
-      }
-      const client2 = new EchoService(`localhost:${port}`, grpc.credentials.createInsecure(), {'grpc.service_config': JSON.stringify(serviceConfig)});
+              retryableStatusCodes: [14, 'RESOURCE_EXHAUSTED'],
+            },
+          },
+        ],
+      };
+      const client2 = new EchoService(
+        `localhost:${port}`,
+        grpc.credentials.createInsecure(),
+        { 'grpc.service_config': JSON.stringify(serviceConfig) }
+      );
       const metadata = new grpc.Metadata();
       metadata.set('succeed-on-retry-attempt', '6');
       metadata.set('respond-with-status', `${grpc.status.RESOURCE_EXHAUSTED}`);
@@ -248,7 +280,7 @@ describe('Retries', () => {
           done();
         }
       );
-    })
+    });
   });
 
   describe('Client with hedging configured', () => {
@@ -258,24 +290,30 @@ describe('Retries', () => {
         loadBalancingConfig: [],
         methodConfig: [
           {
-            name: [{
-              service: 'EchoService'
-            }],
+            name: [
+              {
+                service: 'EchoService',
+              },
+            ],
             hedgingPolicy: {
               maxAttempts: 3,
-              nonFatalStatusCodes: [14, 'RESOURCE_EXHAUSTED']
-            }
-          }
-        ]
-      }
-      client = new EchoService(`localhost:${port}`, grpc.credentials.createInsecure(), {'grpc.service_config': JSON.stringify(serviceConfig)});
+              nonFatalStatusCodes: [14, 'RESOURCE_EXHAUSTED'],
+            },
+          },
+        ],
+      };
+      client = new EchoService(
+        `localhost:${port}`,
+        grpc.credentials.createInsecure(),
+        { 'grpc.service_config': JSON.stringify(serviceConfig) }
+      );
     });
 
-    after(() =>{
+    after(() => {
       client.close();
     });
 
-    it('Should be able to make a basic request', (done) => {
+    it('Should be able to make a basic request', done => {
       client.echo(
         { value: 'test value', value2: 3 },
         (error: grpc.ServiceError, response: any) => {
@@ -286,7 +324,7 @@ describe('Retries', () => {
       );
     });
 
-    it('Should succeed with few required attempts', (done) => {
+    it('Should succeed with few required attempts', done => {
       const metadata = new grpc.Metadata();
       metadata.set('succeed-on-retry-attempt', '2');
       metadata.set('respond-with-status', `${grpc.status.RESOURCE_EXHAUSTED}`);
@@ -301,7 +339,7 @@ describe('Retries', () => {
       );
     });
 
-    it('Should fail with many required attempts', (done) => {
+    it('Should fail with many required attempts', done => {
       const metadata = new grpc.Metadata();
       metadata.set('succeed-on-retry-attempt', '4');
       metadata.set('respond-with-status', `${grpc.status.RESOURCE_EXHAUSTED}`);
@@ -316,7 +354,7 @@ describe('Retries', () => {
       );
     });
 
-    it('Should fail with a fatal status code', (done) => {
+    it('Should fail with a fatal status code', done => {
       const metadata = new grpc.Metadata();
       metadata.set('succeed-on-retry-attempt', '2');
       metadata.set('respond-with-status', `${grpc.status.NOT_FOUND}`);
@@ -331,22 +369,28 @@ describe('Retries', () => {
       );
     });
 
-    it('Should not be able to make more than 5 attempts', (done) => {
+    it('Should not be able to make more than 5 attempts', done => {
       const serviceConfig = {
         loadBalancingConfig: [],
         methodConfig: [
           {
-            name: [{
-              service: 'EchoService'
-            }],
+            name: [
+              {
+                service: 'EchoService',
+              },
+            ],
             hedgingPolicy: {
               maxAttempts: 10,
-              nonFatalStatusCodes: [14, 'RESOURCE_EXHAUSTED']
-            }
-          }
-        ]
-      }
-      const client2 = new EchoService(`localhost:${port}`, grpc.credentials.createInsecure(), {'grpc.service_config': JSON.stringify(serviceConfig)});
+              nonFatalStatusCodes: [14, 'RESOURCE_EXHAUSTED'],
+            },
+          },
+        ],
+      };
+      const client2 = new EchoService(
+        `localhost:${port}`,
+        grpc.credentials.createInsecure(),
+        { 'grpc.service_config': JSON.stringify(serviceConfig) }
+      );
       const metadata = new grpc.Metadata();
       metadata.set('succeed-on-retry-attempt', '6');
       metadata.set('respond-with-status', `${grpc.status.RESOURCE_EXHAUSTED}`);
@@ -359,6 +403,6 @@ describe('Retries', () => {
           done();
         }
       );
-    })
+    });
   });
 });

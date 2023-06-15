@@ -125,14 +125,14 @@ export abstract class CallCredentials {
         });
       }
       getHeaders.then(
-        (headers) => {
+        headers => {
           const metadata = new Metadata();
           for (const key of Object.keys(headers)) {
             metadata.add(key, headers[key]);
           }
           callback(null, metadata);
         },
-        (err) => {
+        err => {
           callback(err);
         }
       );
@@ -152,7 +152,7 @@ class ComposedCallCredentials extends CallCredentials {
   async generateMetadata(options: CallMetadataOptions): Promise<Metadata> {
     const base: Metadata = new Metadata();
     const generated: Metadata[] = await Promise.all(
-      this.creds.map((cred) => cred.generateMetadata(options))
+      this.creds.map(cred => cred.generateMetadata(options))
     );
     for (const gen of generated) {
       base.merge(gen);

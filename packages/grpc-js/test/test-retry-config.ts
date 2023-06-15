@@ -15,22 +15,24 @@
  *
  */
 
-import assert = require("assert");
-import { validateServiceConfig } from "../src/service-config";
+import assert = require('assert');
+import { validateServiceConfig } from '../src/service-config';
 
 function createRetryServiceConfig(retryConfig: object): object {
   return {
     loadBalancingConfig: [],
     methodConfig: [
       {
-        name: [{
-          service: 'A',
-          method: 'B'
-        }],
+        name: [
+          {
+            service: 'A',
+            method: 'B',
+          },
+        ],
 
-        retryPolicy: retryConfig
-      }
-    ]
+        retryPolicy: retryConfig,
+      },
+    ],
   };
 }
 
@@ -39,14 +41,16 @@ function createHedgingServiceConfig(hedgingConfig: object): object {
     loadBalancingConfig: [],
     methodConfig: [
       {
-        name: [{
-          service: 'A',
-          method: 'B'
-        }],
+        name: [
+          {
+            service: 'A',
+            method: 'B',
+          },
+        ],
 
-        hedgingPolicy: hedgingConfig
-      }
-    ]
+        hedgingPolicy: hedgingConfig,
+      },
+    ],
   };
 }
 
@@ -54,7 +58,7 @@ function createThrottlingServiceConfig(retryThrottling: object): object {
   return {
     loadBalancingConfig: [],
     methodConfig: [],
-    retryThrottling: retryThrottling
+    retryThrottling: retryThrottling,
   };
 }
 
@@ -69,7 +73,7 @@ const validRetryConfig = {
   initialBackoff: '1s',
   maxBackoff: '1s',
   backoffMultiplier: 1,
-  retryableStatusCodes: [14, 'RESOURCE_EXHAUSTED']
+  retryableStatusCodes: [14, 'RESOURCE_EXHAUSTED'],
 };
 
 const RETRY_TEST_CASES: TestCase[] = [
@@ -79,14 +83,14 @@ const RETRY_TEST_CASES: TestCase[] = [
       initialBackoff: '1s',
       maxBackoff: '1s',
       backoffMultiplier: 1,
-      retryableStatusCodes: [14]
+      retryableStatusCodes: [14],
     },
-    error: /retry policy: maxAttempts must be an integer at least 2/
+    error: /retry policy: maxAttempts must be an integer at least 2/,
   },
   {
     description: 'a low maxAttempts',
-    config: {...validRetryConfig, maxAttempts: 1},
-    error: /retry policy: maxAttempts must be an integer at least 2/
+    config: { ...validRetryConfig, maxAttempts: 1 },
+    error: /retry policy: maxAttempts must be an integer at least 2/,
   },
   {
     description: 'omitted initialBackoff',
@@ -94,19 +98,22 @@ const RETRY_TEST_CASES: TestCase[] = [
       maxAttempts: 2,
       maxBackoff: '1s',
       backoffMultiplier: 1,
-      retryableStatusCodes: [14]
+      retryableStatusCodes: [14],
     },
-    error: /retry policy: initialBackoff must be a string consisting of a positive integer followed by s/
+    error:
+      /retry policy: initialBackoff must be a string consisting of a positive integer followed by s/,
   },
   {
     description: 'a non-numeric initialBackoff',
-    config: {...validRetryConfig, initialBackoff: 'abcs'},
-    error: /retry policy: initialBackoff must be a string consisting of a positive integer followed by s/
+    config: { ...validRetryConfig, initialBackoff: 'abcs' },
+    error:
+      /retry policy: initialBackoff must be a string consisting of a positive integer followed by s/,
   },
   {
     description: 'an initialBackoff without an s',
-    config: {...validRetryConfig, initialBackoff: '123'},
-    error: /retry policy: initialBackoff must be a string consisting of a positive integer followed by s/
+    config: { ...validRetryConfig, initialBackoff: '123' },
+    error:
+      /retry policy: initialBackoff must be a string consisting of a positive integer followed by s/,
   },
   {
     description: 'omitted maxBackoff',
@@ -114,19 +121,22 @@ const RETRY_TEST_CASES: TestCase[] = [
       maxAttempts: 2,
       initialBackoff: '1s',
       backoffMultiplier: 1,
-      retryableStatusCodes: [14]
+      retryableStatusCodes: [14],
     },
-    error: /retry policy: maxBackoff must be a string consisting of a positive integer followed by s/
+    error:
+      /retry policy: maxBackoff must be a string consisting of a positive integer followed by s/,
   },
   {
     description: 'a non-numeric maxBackoff',
-    config: {...validRetryConfig, maxBackoff: 'abcs'},
-    error: /retry policy: maxBackoff must be a string consisting of a positive integer followed by s/
+    config: { ...validRetryConfig, maxBackoff: 'abcs' },
+    error:
+      /retry policy: maxBackoff must be a string consisting of a positive integer followed by s/,
   },
   {
     description: 'an maxBackoff without an s',
-    config: {...validRetryConfig, maxBackoff: '123'},
-    error: /retry policy: maxBackoff must be a string consisting of a positive integer followed by s/
+    config: { ...validRetryConfig, maxBackoff: '123' },
+    error:
+      /retry policy: maxBackoff must be a string consisting of a positive integer followed by s/,
   },
   {
     description: 'omitted backoffMultiplier',
@@ -134,14 +144,14 @@ const RETRY_TEST_CASES: TestCase[] = [
       maxAttempts: 2,
       initialBackoff: '1s',
       maxBackoff: '1s',
-      retryableStatusCodes: [14]
+      retryableStatusCodes: [14],
     },
-    error: /retry policy: backoffMultiplier must be a number greater than 0/
+    error: /retry policy: backoffMultiplier must be a number greater than 0/,
   },
   {
     description: 'a negative backoffMultiplier',
-    config: {...validRetryConfig, backoffMultiplier: -1},
-    error: /retry policy: backoffMultiplier must be a number greater than 0/
+    config: { ...validRetryConfig, backoffMultiplier: -1 },
+    error: /retry policy: backoffMultiplier must be a number greater than 0/,
   },
   {
     description: 'omitted retryableStatusCodes',
@@ -149,95 +159,97 @@ const RETRY_TEST_CASES: TestCase[] = [
       maxAttempts: 2,
       initialBackoff: '1s',
       maxBackoff: '1s',
-      backoffMultiplier: 1
+      backoffMultiplier: 1,
     },
-    error: /retry policy: retryableStatusCodes is required/
+    error: /retry policy: retryableStatusCodes is required/,
   },
   {
     description: 'empty retryableStatusCodes',
-    config: {...validRetryConfig, retryableStatusCodes: []},
-    error: /retry policy: retryableStatusCodes must be non-empty/
+    config: { ...validRetryConfig, retryableStatusCodes: [] },
+    error: /retry policy: retryableStatusCodes must be non-empty/,
   },
   {
     description: 'unknown status code name',
-    config: {...validRetryConfig, retryableStatusCodes: ['abcd']},
-    error: /retry policy: retryableStatusCodes value not a status code name/
+    config: { ...validRetryConfig, retryableStatusCodes: ['abcd'] },
+    error: /retry policy: retryableStatusCodes value not a status code name/,
   },
   {
     description: 'out of range status code number',
-    config: {...validRetryConfig, retryableStatusCodes: [12345]},
-    error: /retry policy: retryableStatusCodes value not in status code range/
-  }
+    config: { ...validRetryConfig, retryableStatusCodes: [12345] },
+    error: /retry policy: retryableStatusCodes value not in status code range/,
+  },
 ];
 
 const validHedgingConfig = {
-  maxAttempts: 2
+  maxAttempts: 2,
 };
 
 const HEDGING_TEST_CASES: TestCase[] = [
   {
     description: 'omitted maxAttempts',
     config: {},
-    error: /hedging policy: maxAttempts must be an integer at least 2/
+    error: /hedging policy: maxAttempts must be an integer at least 2/,
   },
   {
     description: 'a low maxAttempts',
-    config: {...validHedgingConfig, maxAttempts: 1},
-    error: /hedging policy: maxAttempts must be an integer at least 2/
+    config: { ...validHedgingConfig, maxAttempts: 1 },
+    error: /hedging policy: maxAttempts must be an integer at least 2/,
   },
   {
     description: 'a non-numeric hedgingDelay',
-    config: {...validHedgingConfig, hedgingDelay: 'abcs'},
-    error: /hedging policy: hedgingDelay must be a string consisting of a positive integer followed by s/
+    config: { ...validHedgingConfig, hedgingDelay: 'abcs' },
+    error:
+      /hedging policy: hedgingDelay must be a string consisting of a positive integer followed by s/,
   },
   {
     description: 'a hedgingDelay without an s',
-    config: {...validHedgingConfig, hedgingDelay: '123'},
-    error: /hedging policy: hedgingDelay must be a string consisting of a positive integer followed by s/
+    config: { ...validHedgingConfig, hedgingDelay: '123' },
+    error:
+      /hedging policy: hedgingDelay must be a string consisting of a positive integer followed by s/,
   },
   {
     description: 'unknown status code name',
-    config: {...validHedgingConfig, nonFatalStatusCodes: ['abcd']},
-    error: /hedging policy: nonFatalStatusCodes value not a status code name/
+    config: { ...validHedgingConfig, nonFatalStatusCodes: ['abcd'] },
+    error: /hedging policy: nonFatalStatusCodes value not a status code name/,
   },
   {
     description: 'out of range status code number',
-    config: {...validHedgingConfig, nonFatalStatusCodes: [12345]},
-    error: /hedging policy: nonFatalStatusCodes value not in status code range/
-  }
+    config: { ...validHedgingConfig, nonFatalStatusCodes: [12345] },
+    error: /hedging policy: nonFatalStatusCodes value not in status code range/,
+  },
 ];
 
 const validThrottlingConfig = {
   maxTokens: 100,
-  tokenRatio: 0.1
+  tokenRatio: 0.1,
 };
 
 const THROTTLING_TEST_CASES: TestCase[] = [
   {
     description: 'omitted maxTokens',
-    config: {tokenRatio: 0.1},
-    error: /retryThrottling: maxTokens must be a number in \(0, 1000\]/
+    config: { tokenRatio: 0.1 },
+    error: /retryThrottling: maxTokens must be a number in \(0, 1000\]/,
   },
   {
     description: 'a large maxTokens',
-    config: {...validThrottlingConfig, maxTokens: 1001},
-    error: /retryThrottling: maxTokens must be a number in \(0, 1000\]/
+    config: { ...validThrottlingConfig, maxTokens: 1001 },
+    error: /retryThrottling: maxTokens must be a number in \(0, 1000\]/,
   },
   {
     description: 'zero maxTokens',
-    config: {...validThrottlingConfig, maxTokens: 0},
-    error: /retryThrottling: maxTokens must be a number in \(0, 1000\]/
+    config: { ...validThrottlingConfig, maxTokens: 0 },
+    error: /retryThrottling: maxTokens must be a number in \(0, 1000\]/,
   },
   {
     description: 'omitted tokenRatio',
-    config: {maxTokens: 100},
-    error: /retryThrottling: tokenRatio must be a number greater than 0/
+    config: { maxTokens: 100 },
+    error: /retryThrottling: tokenRatio must be a number greater than 0/,
   },
   {
     description: 'zero tokenRatio',
-    config: {...validThrottlingConfig, tokenRatio: 0},
-    error: /retryThrottling: tokenRatio must be a number greater than 0/
-  }
+    config: { ...validThrottlingConfig, tokenRatio: 0 },
+    error: /retryThrottling: tokenRatio must be a number greater than 0/,
+  },
 ];
 
 describe('Retry configs', () => {
@@ -261,10 +273,20 @@ describe('Retry configs', () => {
         validateServiceConfig(createHedgingServiceConfig(validHedgingConfig));
       });
       assert.doesNotThrow(() => {
-        validateServiceConfig(createHedgingServiceConfig({...validHedgingConfig, hedgingDelay: '1s'}));
+        validateServiceConfig(
+          createHedgingServiceConfig({
+            ...validHedgingConfig,
+            hedgingDelay: '1s',
+          })
+        );
       });
       assert.doesNotThrow(() => {
-        validateServiceConfig(createHedgingServiceConfig({...validHedgingConfig, nonFatalStatusCodes: [14, 'RESOURCE_EXHAUSTED']}));
+        validateServiceConfig(
+          createHedgingServiceConfig({
+            ...validHedgingConfig,
+            nonFatalStatusCodes: [14, 'RESOURCE_EXHAUSTED'],
+          })
+        );
       });
     });
     for (const testCase of HEDGING_TEST_CASES) {
@@ -278,7 +300,9 @@ describe('Retry configs', () => {
   describe('Throttling', () => {
     it('Should accept a valid config', () => {
       assert.doesNotThrow(() => {
-        validateServiceConfig(createThrottlingServiceConfig(validThrottlingConfig));
+        validateServiceConfig(
+          createThrottlingServiceConfig(validThrottlingConfig)
+        );
       });
     });
     for (const testCase of THROTTLING_TEST_CASES) {

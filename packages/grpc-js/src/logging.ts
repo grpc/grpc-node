@@ -27,7 +27,7 @@ const DEFAULT_LOGGER: Partial<Console> = {
   debug: (message?: any, ...optionalParams: any[]) => {
     console.error('D ' + message, ...optionalParams);
   },
-}
+};
 
 let _logger: Partial<Console> = DEFAULT_LOGGER;
 let _logVerbosity: LogVerbosity = LogVerbosity.ERROR;
@@ -114,6 +114,7 @@ export function trace(
 }
 
 export function isTracerEnabled(tracer: string): boolean {
-  return !disabledTracers.has(tracer) &&
-    (allEnabled || enabledTracers.has(tracer));
+  return (
+    !disabledTracers.has(tracer) && (allEnabled || enabledTracers.has(tracer))
+  );
 }

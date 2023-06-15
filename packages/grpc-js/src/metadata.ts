@@ -118,7 +118,8 @@ export class Metadata {
     key = normalizeKey(key);
     validate(key, value);
 
-    const existingValue: MetadataValue[] | undefined = this.internalRepr.get(key);
+    const existingValue: MetadataValue[] | undefined =
+      this.internalRepr.get(key);
 
     if (existingValue === undefined) {
       this.internalRepr.set(key, [value]);
@@ -174,7 +175,7 @@ export class Metadata {
     const newInternalRepr = newMetadata.internalRepr;
 
     for (const [key, value] of this.internalRepr) {
-      const clonedValue: MetadataValue[] = value.map((v) => {
+      const clonedValue: MetadataValue[] = value.map(v => {
         if (Buffer.isBuffer(v)) {
           return Buffer.from(v);
         } else {
@@ -264,12 +265,12 @@ export class Metadata {
       try {
         if (isBinaryKey(key)) {
           if (Array.isArray(values)) {
-            values.forEach((value) => {
+            values.forEach(value => {
               result.add(key, Buffer.from(value, 'base64'));
             });
           } else if (values !== undefined) {
             if (isCustomMetadata(key)) {
-              values.split(',').forEach((v) => {
+              values.split(',').forEach(v => {
                 result.add(key, Buffer.from(v.trim(), 'base64'));
               });
             } else {
@@ -278,7 +279,7 @@ export class Metadata {
           }
         } else {
           if (Array.isArray(values)) {
-            values.forEach((value) => {
+            values.forEach(value => {
               result.add(key, value);
             });
           } else if (values !== undefined) {
@@ -286,7 +287,9 @@ export class Metadata {
           }
         }
       } catch (error) {
-        const message = `Failed to add metadata entry ${key}: ${values}. ${getErrorMessage(error)}. For more information see https://github.com/grpc/grpc-node/issues/1173`;
+        const message = `Failed to add metadata entry ${key}: ${values}. ${getErrorMessage(
+          error
+        )}. For more information see https://github.com/grpc/grpc-node/issues/1173`;
         log(LogVerbosity.ERROR, message);
       }
     }
@@ -296,5 +299,5 @@ export class Metadata {
 }
 
 const bufToString = (val: string | Buffer): string => {
-  return Buffer.isBuffer(val) ? val.toString('base64') : val
+  return Buffer.isBuffer(val) ? val.toString('base64') : val;
 };

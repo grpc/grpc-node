@@ -4,7 +4,7 @@ export {
   ResolverListener,
   registerResolver,
   ConfigSelector,
-  createResolver
+  createResolver,
 } from './resolver';
 export { GrpcUri, uriToString } from './uri-parser';
 export { Duration, durationToMs } from './duration';
@@ -36,5 +36,13 @@ export { Call as CallStream } from './call-interface';
 export { Filter, BaseFilter, FilterFactory } from './filter';
 export { FilterStackFactory } from './filter-stack';
 export { registerAdminService } from './admin';
-export { SubchannelInterface, BaseSubchannelWrapper, ConnectivityStateListener } from './subchannel-interface';
-export { OutlierDetectionLoadBalancingConfig, SuccessRateEjectionConfig, FailurePercentageEjectionConfig } from './load-balancer-outlier-detection';
+export {
+  SubchannelInterface,
+  BaseSubchannelWrapper,
+  ConnectivityStateListener,
+} from './subchannel-interface';
+export {
+  OutlierDetectionLoadBalancingConfig,
+  SuccessRateEjectionConfig,
+  FailurePercentageEjectionConfig,
+} from './load-balancer-outlier-detection';

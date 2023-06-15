@@ -15,20 +15,25 @@
  *
  */
 
-import { CallCredentials } from "./call-credentials";
-import { Call, InterceptingListener, MessageContext, StatusObject } from "./call-interface";
-import { SubchannelCall } from "./subchannel-call";
-import { ConnectivityState } from "./connectivity-state";
-import { LogVerbosity, Status } from "./constants";
-import { Deadline, getDeadlineTimeoutString } from "./deadline";
-import { FilterStack, FilterStackFactory } from "./filter-stack";
-import { InternalChannel } from "./internal-channel";
-import { Metadata } from "./metadata";
-import { PickResultType } from "./picker";
-import { CallConfig } from "./resolver";
-import { splitHostPort } from "./uri-parser";
+import { CallCredentials } from './call-credentials';
+import {
+  Call,
+  InterceptingListener,
+  MessageContext,
+  StatusObject,
+} from './call-interface';
+import { SubchannelCall } from './subchannel-call';
+import { ConnectivityState } from './connectivity-state';
+import { LogVerbosity, Status } from './constants';
+import { Deadline, getDeadlineTimeoutString } from './deadline';
+import { FilterStack, FilterStackFactory } from './filter-stack';
+import { InternalChannel } from './internal-channel';
+import { Metadata } from './metadata';
+import { PickResultType } from './picker';
+import { CallConfig } from './resolver';
+import { splitHostPort } from './uri-parser';
 import * as logging from './logging';
-import { restrictControlPlaneStatusCode } from "./control-plane-status";
+import { restrictControlPlaneStatusCode } from './control-plane-status';
 import * as http2 from 'http2';
 
 const TRACER_NAME = 'load_balancing_call';
@@ -39,14 +44,16 @@ export interface StatusObjectWithProgress extends StatusObject {
   progress: RpcProgress;
 }
 
-export interface LoadBalancingCallInterceptingListener extends InterceptingListener {
+export interface LoadBalancingCallInterceptingListener
+  extends InterceptingListener {
   onReceiveStatus(status: StatusObjectWithProgress): void;
 }
 
 export class LoadBalancingCall implements Call {
   private child: SubchannelCall | null = null;
   private readPending = false;
-  private pendingMessage: {context: MessageContext, message: Buffer} | null = null;
+  private pendingMessage: { context: MessageContext; message: Buffer } | null =
+    null;
   private pendingHalfClose = false;
   private pendingChildStatus: StatusObject | null = null;
   private ended = false;
@@ -58,7 +65,7 @@ export class LoadBalancingCall implements Call {
     private readonly channel: InternalChannel,
     private readonly callConfig: CallConfig,
     private readonly methodName: string,
-    private readonly host : string,
+    private readonly host: string,
     private readonly credentials: CallCredentials,
     private readonly deadline: Deadline,
     private readonly callNumber: number
@@ -88,8 +95,14 @@ export class LoadBalancingCall implements Call {
   private outputStatus(status: StatusObject, progress: RpcProgress) {
     if (!this.ended) {
       this.ended = true;
-      this.trace('ended with status: code=' + status.code + ' details="' + status.details + '"');
-      const finalStatus = {...status, progress};
+      this.trace(
+        'ended with status: code=' +
+          status.code +
+          ' details="' +
+          status.details +
+          '"'
+      );
+      const finalStatus = { ...status, progress };
       this.listener?.onReceiveStatus(finalStatus);
       this.onCallEnded?.(finalStatus.code);
     }
@@ -102,11 +115,17 @@ export class LoadBalancingCall implements Call {
     if (!this.metadata) {
       throw new Error('doPick called before start');
     }
-    this.trace('Pick called')
-    const pickResult = this.channel.doPick(this.metadata, this.callConfig.pickInformation);
-    const subchannelString = pickResult.subchannel ? 
-      '(' + pickResult.subchannel.getChannelzRef().id + ') ' + pickResult.subchannel.getAddress() : 
-      '' + pickResult.subchannel; 
+    this.trace('Pick called');
+    const pickResult = this.channel.doPick(
+      this.metadata,
+      this.callConfig.pickInformation
+    );
+    const subchannelString = pickResult.subchannel
+      ? '(' +
+        pickResult.subchannel.getChannelzRef().id +
+        ') ' +
+        pickResult.subchannel.getAddress()
+      : '' + pickResult.subchannel;
     this.trace(
       'Pick result: ' +
         PickResultType[pickResult.pickResultType] +
@@ -119,111 +138,147 @@ export class LoadBalancingCall implements Call {
     );
     switch (pickResult.pickResultType) {
       case PickResultType.COMPLETE:
-        this.credentials.generateMetadata({service_url: this.serviceUrl}).then(
-          (credsMetadata) => {
-            const finalMetadata = this.metadata!.clone();
-            finalMetadata.merge(credsMetadata);
-            if (finalMetadata.get('authorization').length > 1) {
+        this.credentials
+          .generateMetadata({ service_url: this.serviceUrl })
+          .then(
+            credsMetadata => {
+              const finalMetadata = this.metadata!.clone();
+              finalMetadata.merge(credsMetadata);
+              if (finalMetadata.get('authorization').length > 1) {
+                this.outputStatus(
+                  {
+                    code: Status.INTERNAL,
+                    details:
+                      '"authorization" metadata cannot have multiple values',
+                    metadata: new Metadata(),
+                  },
+                  'PROCESSED'
+                );
+              }
+              if (
+                pickResult.subchannel!.getConnectivityState() !==
+                ConnectivityState.READY
+              ) {
+                this.trace(
+                  'Picked subchannel ' +
+                    subchannelString +
+                    ' has state ' +
+                    ConnectivityState[
+                      pickResult.subchannel!.getConnectivityState()
+                    ] +
+                    ' after getting credentials metadata. Retrying pick'
+                );
+                this.doPick();
+                return;
+              }
+
+              if (this.deadline !== Infinity) {
+                finalMetadata.set(
+                  'grpc-timeout',
+                  getDeadlineTimeoutString(this.deadline)
+                );
+              }
+              try {
+                this.child = pickResult
+                  .subchannel!.getRealSubchannel()
+                  .createCall(finalMetadata, this.host, this.methodName, {
+                    onReceiveMetadata: metadata => {
+                      this.trace('Received metadata');
+                      this.listener!.onReceiveMetadata(metadata);
+                    },
+                    onReceiveMessage: message => {
+                      this.trace('Received message');
+                      this.listener!.onReceiveMessage(message);
+                    },
+                    onReceiveStatus: status => {
+                      this.trace('Received status');
+                      if (
+                        status.rstCode ===
+                        http2.constants.NGHTTP2_REFUSED_STREAM
+                      ) {
+                        this.outputStatus(status, 'REFUSED');
+                      } else {
+                        this.outputStatus(status, 'PROCESSED');
+                      }
+                    },
+                  });
+              } catch (error) {
+                this.trace(
+                  'Failed to start call on picked subchannel ' +
+                    subchannelString +
+                    ' with error ' +
+                    (error as Error).message
+                );
+                this.outputStatus(
+                  {
+                    code: Status.INTERNAL,
+                    details:
+                      'Failed to start HTTP/2 stream with error ' +
+                      (error as Error).message,
+                    metadata: new Metadata(),
+                  },
+                  'NOT_STARTED'
+                );
+                return;
+              }
+              this.callConfig.onCommitted?.();
+              pickResult.onCallStarted?.();
+              this.onCallEnded = pickResult.onCallEnded;
+              this.trace(
+                'Created child call [' + this.child.getCallNumber() + ']'
+              );
+              if (this.readPending) {
+                this.child.startRead();
+              }
+              if (this.pendingMessage) {
+                this.child.sendMessageWithContext(
+                  this.pendingMessage.context,
+                  this.pendingMessage.message
+                );
+              }
+              if (this.pendingHalfClose) {
+                this.child.halfClose();
+              }
+            },
+            (error: Error & { code: number }) => {
+              // We assume the error code isn't 0 (Status.OK)
+              const { code, details } = restrictControlPlaneStatusCode(
+                typeof error.code === 'number' ? error.code : Status.UNKNOWN,
+                `Getting metadata from plugin failed with error: ${error.message}`
+              );
               this.outputStatus(
                 {
-                  code: Status.INTERNAL,
-                  details: '"authorization" metadata cannot have multiple values',
-                  metadata: new Metadata()
+                  code: code,
+                  details: details,
+                  metadata: new Metadata(),
                 },
                 'PROCESSED'
               );
             }
-            if (pickResult.subchannel!.getConnectivityState() !== ConnectivityState.READY) {
-              this.trace(
-                'Picked subchannel ' +
-                  subchannelString +
-                  ' has state ' +
-                  ConnectivityState[pickResult.subchannel!.getConnectivityState()] +
-                  ' after getting credentials metadata. Retrying pick'
-              );
-              this.doPick();
-              return;
-            }
-
-            if (this.deadline !== Infinity) {
-              finalMetadata.set('grpc-timeout', getDeadlineTimeoutString(this.deadline));
-            }
-            try {
-              this.child = pickResult.subchannel!.getRealSubchannel().createCall(finalMetadata, this.host, this.methodName, {
-                onReceiveMetadata: metadata => {
-                  this.trace('Received metadata');
-                  this.listener!.onReceiveMetadata(metadata);
-                },
-                onReceiveMessage: message => {
-                  this.trace('Received message');
-                  this.listener!.onReceiveMessage(message);
-                },
-                onReceiveStatus: status => {
-                  this.trace('Received status');
-                  if (status.rstCode === http2.constants.NGHTTP2_REFUSED_STREAM) {
-                    this.outputStatus(status, 'REFUSED');
-                  } else {
-                    this.outputStatus(status, 'PROCESSED');
-                  }
-                }
-              });
-            } catch (error) {
-              this.trace(
-                'Failed to start call on picked subchannel ' +
-                  subchannelString +
-                  ' with error ' +
-                  (error as Error).message
-              );
-              this.outputStatus(
-                {
-                  code: Status.INTERNAL,
-                  details: 'Failed to start HTTP/2 stream with error ' + (error as Error).message,
-                  metadata: new Metadata()
-                },
-                'NOT_STARTED'
-              );
-              return;
-            }
-            this.callConfig.onCommitted?.();
-            pickResult.onCallStarted?.();
-            this.onCallEnded = pickResult.onCallEnded;
-            this.trace('Created child call [' + this.child.getCallNumber() + ']');
-            if (this.readPending) {
-              this.child.startRead();
-            }
-            if (this.pendingMessage) {
-              this.child.sendMessageWithContext(this.pendingMessage.context, this.pendingMessage.message);
-            }
-            if (this.pendingHalfClose) {
-              this.child.halfClose();
-            }
-          }, (error: Error & { code: number }) => {
-            // We assume the error code isn't 0 (Status.OK)
-            const {code, details} = restrictControlPlaneStatusCode(
-              typeof error.code === 'number' ? error.code : Status.UNKNOWN,
-              `Getting metadata from plugin failed with error: ${error.message}`
-            )
-            this.outputStatus(
-              {
-                code: code,
-                details: details,
-                metadata: new Metadata()
-              },
-              'PROCESSED'
-            );
-          }
-        );
+          );
         break;
       case PickResultType.DROP:
-        const {code, details} = restrictControlPlaneStatusCode(pickResult.status!.code, pickResult.status!.details);
-        this.outputStatus({code, details, metadata: pickResult.status!.metadata}, 'DROP');
+        const { code, details } = restrictControlPlaneStatusCode(
+          pickResult.status!.code,
+          pickResult.status!.details
+        );
+        this.outputStatus(
+          { code, details, metadata: pickResult.status!.metadata },
+          'DROP'
+        );
         break;
       case PickResultType.TRANSIENT_FAILURE:
         if (this.metadata.getOptions().waitForReady) {
           this.channel.queueCallForPick(this);
         } else {
-          const {code, details} = restrictControlPlaneStatusCode(pickResult.status!.code, pickResult.status!.details);
-          this.outputStatus({code, details, metadata: pickResult.status!.metadata}, 'PROCESSED');
+          const { code, details } = restrictControlPlaneStatusCode(
+            pickResult.status!.code,
+            pickResult.status!.details
+          );
+          this.outputStatus(
+            { code, details, metadata: pickResult.status!.metadata },
+            'PROCESSED'
+          );
         }
         break;
       case PickResultType.QUEUE:
@@ -232,14 +287,22 @@ export class LoadBalancingCall implements Call {
   }
 
   cancelWithStatus(status: Status, details: string): void {
-    this.trace('cancelWithStatus code: ' + status + ' details: "' + details + '"');
+    this.trace(
+      'cancelWithStatus code: ' + status + ' details: "' + details + '"'
+    );
     this.child?.cancelWithStatus(status, details);
-    this.outputStatus({code: status, details: details, metadata: new Metadata()}, 'PROCESSED');
+    this.outputStatus(
+      { code: status, details: details, metadata: new Metadata() },
+      'PROCESSED'
+    );
   }
   getPeer(): string {
     return this.child?.getPeer() ?? this.channel.getTarget();
   }
-  start(metadata: Metadata, listener: LoadBalancingCallInterceptingListener): void {
+  start(
+    metadata: Metadata,
+    listener: LoadBalancingCallInterceptingListener
+  ): void {
     this.trace('start called');
     this.listener = listener;
     this.metadata = metadata;
@@ -250,7 +313,7 @@ export class LoadBalancingCall implements Call {
     if (this.child) {
       this.child.sendMessageWithContext(context, message);
     } else {
-      this.pendingMessage = {context, message};
+      this.pendingMessage = { context, message };
     }
   }
   startRead(): void {
@@ -270,7 +333,7 @@ export class LoadBalancingCall implements Call {
     }
   }
   setCredentials(credentials: CallCredentials): void {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
 
   getCallNumber(): number {
