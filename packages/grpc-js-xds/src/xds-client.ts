@@ -401,6 +401,7 @@ class AdsCallState {
         watcher.onError(streamStatus);
       }
     }
+    this.client.handleAdsStreamEnd();
   }
 
   hasSubscribedResources(): boolean {
@@ -681,6 +682,7 @@ class LrsCallState {
     this.client.trace(
       'ADS stream ended. code=' + status.code + ' details= ' + status.details
     );
+    this.client.handleLrsStreamEnd();
   }
 
   private handleResponseMessage(message: LoadStatsResponse__Output) {
@@ -899,6 +901,7 @@ class XdsSingleServerClient {
   }
 
   handleAdsStreamEnd() {
+    this.adsCallState = null;
     /* The backoff timer would start the stream when it finishes. If it is not
      * running, restart the stream immediately. */
     if (!this.adsBackoff.isRunning()) {
@@ -922,6 +925,7 @@ class XdsSingleServerClient {
   }
 
   handleLrsStreamEnd() {
+    this.lrsCallState = null;
     /* The backoff timer would start the stream when it finishes. If it is not
      * running, restart the stream immediately. */
     if (!this.lrsBackoff.isRunning()) {
