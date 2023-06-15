@@ -1,11 +1,61 @@
 {
   "root": true,
-  "extends": "./node_modules/gts",
+
+  "extends": [
+    "eslint:recommended",
+    "plugin:node/recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:prettier/recommended"
+  ],
+  "plugins": ["node", "prettier", "@typescript-eslint"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2018,
+    "sourceType": "module"
+  },
+  "ignorePatterns": ["**/generated/**", "**/node_modules/**", "**/build/**"],
   "rules": {
-    "node/no-unpublished-import": ["error", {
+    "node/no-unpublished-import": [
+      "error",
+      {
         "tryExtensions": [".ts", ".js", ".json", ".node"]
-    }],
+      }
+    ],
     "@typescript-eslint/no-unused-vars": "off",
-    "node/no-unpublished-require": "off"
+    "node/no-unpublished-require": "off",
+    "prettier/prettier": "error",
+    "block-scoped-var": "error",
+    "eqeqeq": "error",
+    "no-var": "error",
+    "prefer-const": "error",
+    "no-case-declarations": "warn",
+    "no-restricted-properties": [
+      "error",
+      {
+        "object": "describe",
+        "property": "only"
+      },
+      {
+        "object": "it",
+        "property": "only"
+      }
+    ],
+
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "@typescript-eslint/no-use-before-define": "off",
+    "@typescript-eslint/no-warning-comments": "off",
+    "@typescript-eslint/no-empty-function": "off",
+    "@typescript-eslint/no-var-requires": "off",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/ban-types": "off",
+    "@typescript-eslint/camelcase": "off",
+    "node/no-missing-import": "off",
+    "node/no-empty-function": "off",
+    "node/no-unsupported-features/es-syntax": "off",
+    "node/no-missing-require": "off",
+    "node/shebang": "off",
+    "no-dupe-class-members": "off",
+    "require-atomic-updates": "off"
   }
 }
