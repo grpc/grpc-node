@@ -116,7 +116,7 @@ export class EndpointResourceType extends XdsResourceType {
   }
 
   allResourcesRequiredInSotW(): boolean {
-    return true;
+    return false;
   }
 
   static startWatch(client: XdsClient, name: string, watcher: Watcher<ClusterLoadAssignment__Output>) {
