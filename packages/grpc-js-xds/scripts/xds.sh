@@ -24,7 +24,7 @@ curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.4/install.sh | b
 # Load NVM
 . $NVM_DIR/nvm.sh
 
-nvm install 12
+nvm install 18
 
 set -exu -o pipefail
 [[ -f /VERSION ]] && cat /VERSION
