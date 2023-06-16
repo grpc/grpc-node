@@ -676,6 +676,7 @@ class LrsCallState {
       this.handleStreamStatus(status);
     });
     call.on('error', () => {});
+    this.sendStats();
   }
 
   private handleStreamStatus(status: StatusObject) {
@@ -714,10 +715,13 @@ class LrsCallState {
   }
 
   private sendLrsMessage(clusterStats: ClusterStats[]) {
-    this.call.write({
-      node: this.sentInitialMessage ? this.node : null,
+    const request: LoadStatsRequest = {
+      node: this.sentInitialMessage ? null : this.node,
       cluster_stats: clusterStats
-    });
+    };
+    this.client.trace('Sending LRS message ' + JSON.stringify(request, undefined, 2));
+    this.call.write(request);
+    this.sentInitialMessage = true;
   }
 
   private get latestLrsSettings() {
@@ -791,7 +795,6 @@ class LrsCallState {
         }
       }
     }
-    this.client.trace('Sending LRS stats ' + JSON.stringify(clusterStats, undefined, 2));
     this.sendLrsMessage(clusterStats);
 
   }
