@@ -680,7 +680,7 @@ class LrsCallState {
 
   private handleStreamStatus(status: StatusObject) {
     this.client.trace(
-      'ADS stream ended. code=' + status.code + ' details= ' + status.details
+      'LRS stream ended. code=' + status.code + ' details= ' + status.details
     );
     this.client.handleLrsStreamEnd();
   }
@@ -913,6 +913,7 @@ class XdsSingleServerClient {
     if (this.adsCallState || this.refcount < 1) {
       return;
     }
+    this.trace('Starting ADS stream');
     const metadata = new Metadata({waitForReady: true});
     const call = this.adsClient.StreamAggregatedResources(metadata);
     this.adsCallState = new AdsCallState(this, call, this.xdsClient.adsNode!);
@@ -937,6 +938,7 @@ class XdsSingleServerClient {
     if (this.lrsCallState || this.refcount < 1 || this.clusterStatsMap.size < 1) {
       return;
     }
+    this.trace('Starting LRS stream');
     const metadata = new Metadata({waitForReady: true});
     const call = this.lrsClient.StreamLoadStats(metadata);
     this.lrsCallState = new LrsCallState(this, call, this.xdsClient.lrsNode!);
@@ -976,11 +978,11 @@ class XdsSingleServerClient {
     edsServiceName: string
   ): XdsClusterDropStats {
     this.trace('addClusterDropStats(clusterName=' + clusterName + ', edsServiceName=' + edsServiceName + ')');
-    this.maybeStartLrsStream();
     const clusterStats = this.clusterStatsMap.getOrCreate(
       clusterName,
       edsServiceName
     );
+    this.maybeStartLrsStream();
     return {
       addUncategorizedCallDropped: () => {
         clusterStats.uncategorizedCallsDropped += 1;
@@ -1003,11 +1005,11 @@ class XdsSingleServerClient {
     locality: Locality__Output
   ): XdsClusterLocalityStats {
     this.trace('addClusterLocalityStats(clusterName=' + clusterName + ', edsServiceName=' + edsServiceName + ', locality=' + JSON.stringify(locality) + ')');
-    this.maybeStartLrsStream();
     const clusterStats = this.clusterStatsMap.getOrCreate(
       clusterName,
       edsServiceName
     );
+    this.maybeStartLrsStream();
     let localityStats: ClusterLocalityStats | null = null;
     for (const statsObj of clusterStats.localityStats) {
       if (localityEqual(locality, statsObj.locality)) {
