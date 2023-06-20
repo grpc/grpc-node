@@ -17,7 +17,7 @@
 
 import * as assert from 'assert';
 import * as grpc from '../src';
-import { TestClient, TestServer } from "./common";
+import { TestClient, TestServer } from './common';
 
 describe('Channel idle timer', () => {
   let server: TestServer;
@@ -31,30 +31,46 @@ describe('Channel idle timer', () => {
       client.close();
       client = null;
     }
-  })
+  });
   after(() => {
     server.shutdown();
   });
-  it('Should go idle after the specified time after a request ends', function(done) {
+  it('Should go idle after the specified time after a request ends', function (done) {
     this.timeout(5000);
-    client = TestClient.createFromServer(server, {'grpc.client_idle_timeout_ms': 1000});
+    client = TestClient.createFromServer(server, {
+      'grpc.client_idle_timeout_ms': 1000,
+    });
     client.sendRequest(error => {
       assert.ifError(error);
-      assert.strictEqual(client!.getChannelState(), grpc.connectivityState.READY);
+      assert.strictEqual(
+        client!.getChannelState(),
+        grpc.connectivityState.READY
+      );
       setTimeout(() => {
-        assert.strictEqual(client!.getChannelState(), grpc.connectivityState.IDLE);
+        assert.strictEqual(
+          client!.getChannelState(),
+          grpc.connectivityState.IDLE
+        );
         done();
       }, 1100);
     });
   });
-  it('Should be able to make a request after going idle', function(done) {
+  it('Should be able to make a request after going idle', function (done) {
     this.timeout(5000);
-    client = TestClient.createFromServer(server, {'grpc.client_idle_timeout_ms': 1000});
+    client = TestClient.createFromServer(server, {
+      'grpc.client_idle_timeout_ms': 1000,
+    });
     client.sendRequest(error => {
       assert.ifError(error);
-      assert.strictEqual(client!.getChannelState(), grpc.connectivityState.READY);
+      assert.strictEqual(
+        client!.getChannelState(),
+        grpc.connectivityState.READY
+      );
       setTimeout(() => {
-        assert.strictEqual(client!.getChannelState(), grpc.connectivityState.IDLE);
+        assert.strictEqual(
+          client!.getChannelState(),
+          grpc.connectivityState.IDLE
+        );
         client!.sendRequest(error => {
           assert.ifError(error);
           done();
@@ -62,34 +78,53 @@ describe('Channel idle timer', () => {
       }, 1100);
     });
   });
-  it('Should go idle after the specified time after waitForReady ends', function(done) {
+  it('Should go idle after the specified time after waitForReady ends', function (done) {
     this.timeout(5000);
-    client = TestClient.createFromServer(server, {'grpc.client_idle_timeout_ms': 1000});
+    client = TestClient.createFromServer(server, {
+      'grpc.client_idle_timeout_ms': 1000,
+    });
     const deadline = new Date();
     deadline.setSeconds(deadline.getSeconds() + 3);
     client.waitForReady(deadline, error => {
       assert.ifError(error);
-      assert.strictEqual(client!.getChannelState(), grpc.connectivityState.READY);
+      assert.strictEqual(
+        client!.getChannelState(),
+        grpc.connectivityState.READY
+      );
       setTimeout(() => {
-        assert.strictEqual(client!.getChannelState(), grpc.connectivityState.IDLE);
+        assert.strictEqual(
+          client!.getChannelState(),
+          grpc.connectivityState.IDLE
+        );
         done();
       }, 1100);
     });
   });
-  it('Should ensure that the timeout is at least 1 second', function(done) {
-    client = TestClient.createFromServer(server, {'grpc.client_idle_timeout_ms': 50});
+  it('Should ensure that the timeout is at least 1 second', function (done) {
+    client = TestClient.createFromServer(server, {
+      'grpc.client_idle_timeout_ms': 50,
+    });
     client.sendRequest(error => {
       assert.ifError(error);
-      assert.strictEqual(client!.getChannelState(), grpc.connectivityState.READY);
+      assert.strictEqual(
+        client!.getChannelState(),
+        grpc.connectivityState.READY
+      );
       setTimeout(() => {
         // Should still be ready after 100ms
-        assert.strictEqual(client!.getChannelState(), grpc.connectivityState.READY);
+        assert.strictEqual(
+          client!.getChannelState(),
+          grpc.connectivityState.READY
+        );
         setTimeout(() => {
           // Should go IDLE after another second
-          assert.strictEqual(client!.getChannelState(), grpc.connectivityState.IDLE);
+          assert.strictEqual(
+            client!.getChannelState(),
+            grpc.connectivityState.IDLE
+          );
           done();
         }, 1000);
       }, 100);
     });
-  })
+  });
 });

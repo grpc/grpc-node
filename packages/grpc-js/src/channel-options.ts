@@ -90,7 +90,7 @@ export const recognizedOptions = {
   'grpc.max_connection_age_grace_ms': true,
   'grpc-node.max_session_memory': true,
   'grpc.service_config_disable_resolution': true,
-  'grpc.client_idle_timeout_ms': true
+  'grpc.client_idle_timeout_ms': true,
 };
 
 export function channelOptionsEqual(

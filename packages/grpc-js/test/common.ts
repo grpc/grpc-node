@@ -20,7 +20,12 @@ import * as assert2 from './assert2';
 import * as path from 'path';
 import * as grpc from '../src';
 
-import { GrpcObject, ServiceClientConstructor, ServiceClient, loadPackageDefinition } from '../src/make-client';
+import {
+  GrpcObject,
+  ServiceClientConstructor,
+  ServiceClient,
+  loadPackageDefinition,
+} from '../src/make-client';
 import { readFileSync } from 'fs';
 
 const protoLoaderOptions = {
@@ -67,7 +72,9 @@ export class TestServer {
   start(): Promise<void> {
     let credentials: grpc.ServerCredentials;
     if (this.useTls) {
-      credentials = grpc.ServerCredentials.createSsl(null, [{private_key: key, cert_chain: cert}]);
+      credentials = grpc.ServerCredentials.createSsl(null, [
+        { private_key: key, cert_chain: cert },
+      ]);
     } else {
       credentials = grpc.ServerCredentials.createInsecure();
     }

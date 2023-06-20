@@ -20,7 +20,12 @@ import { ChannelOptions } from './channel-options';
 import { ResolvingLoadBalancer } from './resolving-load-balancer';
 import { SubchannelPool, getSubchannelPool } from './subchannel-pool';
 import { ChannelControlHelper } from './load-balancer';
-import { UnavailablePicker, Picker, PickResultType, QueuePicker } from './picker';
+import {
+  UnavailablePicker,
+  Picker,
+  PickResultType,
+  QueuePicker,
+} from './picker';
 import { Metadata } from './metadata';
 import { Status, LogVerbosity, Propagate } from './constants';
 import { FilterStackFactory } from './filter-stack';
@@ -191,9 +196,10 @@ export class InternalChannel {
   private currentResolutionError: StatusObject | null = null;
   private readonly retryBufferTracker: MessageBufferTracker;
   private keepaliveTime: number;
-  private readonly wrappedSubchannels: Set<ChannelSubchannelWrapper> = new Set();
+  private readonly wrappedSubchannels: Set<ChannelSubchannelWrapper> =
+    new Set();
 
-  private callCount: number = 0;
+  private callCount = 0;
   private idleTimer: NodeJS.Timer | null = null;
   private readonly idleTimeoutMs: number;
 
@@ -274,7 +280,10 @@ export class InternalChannel {
         DEFAULT_PER_RPC_RETRY_BUFFER_SIZE_BYTES
     );
     this.keepaliveTime = options['grpc.keepalive_time_ms'] ?? -1;
-    this.idleTimeoutMs = Math.max(options['grpc.client_idle_timeout_ms'] ?? DEFAULT_IDLE_TIMEOUT_MS, MIN_IDLE_TIMEOUT_MS);
+    this.idleTimeoutMs = Math.max(
+      options['grpc.client_idle_timeout_ms'] ?? DEFAULT_IDLE_TIMEOUT_MS,
+      MIN_IDLE_TIMEOUT_MS
+    );
     const channelControlHelper: ChannelControlHelper = {
       createSubchannel: (
         subchannelAddress: SubchannelAddress,
@@ -567,7 +576,11 @@ export class InternalChannel {
   private maybeStartIdleTimer() {
     if (this.callCount === 0) {
       this.idleTimer = setTimeout(() => {
-        this.trace('Idle timer triggered after ' + this.idleTimeoutMs + 'ms of inactivity');
+        this.trace(
+          'Idle timer triggered after ' +
+            this.idleTimeoutMs +
+            'ms of inactivity'
+        );
         this.enterIdle();
       }, this.idleTimeoutMs);
       this.idleTimer.unref?.();
