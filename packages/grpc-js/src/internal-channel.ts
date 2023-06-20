@@ -20,7 +20,7 @@ import { ChannelOptions } from './channel-options';
 import { ResolvingLoadBalancer } from './resolving-load-balancer';
 import { SubchannelPool, getSubchannelPool } from './subchannel-pool';
 import { ChannelControlHelper } from './load-balancer';
-import { UnavailablePicker, Picker, PickResultType } from './picker';
+import { UnavailablePicker, Picker, PickResultType, QueuePicker } from './picker';
 import { Metadata } from './metadata';
 import { Status, LogVerbosity, Propagate } from './constants';
 import { FilterStackFactory } from './filter-stack';
@@ -84,6 +84,11 @@ import {
  * See https://nodejs.org/api/timers.html#timers_setinterval_callback_delay_args
  */
 const MAX_TIMEOUT_TIME = 2147483647;
+
+const MIN_IDLE_TIMEOUT_MS = 1000;
+
+// 30 minutes
+const DEFAULT_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 
 interface ConnectivityStateWatcher {
   currentState: ConnectivityState;
@@ -153,8 +158,8 @@ class ChannelSubchannelWrapper
 }
 
 export class InternalChannel {
-  private resolvingLoadBalancer: ResolvingLoadBalancer;
-  private subchannelPool: SubchannelPool;
+  private readonly resolvingLoadBalancer: ResolvingLoadBalancer;
+  private readonly subchannelPool: SubchannelPool;
   private connectivityState: ConnectivityState = ConnectivityState.IDLE;
   private currentPicker: Picker = new UnavailablePicker();
   /**
@@ -164,9 +169,9 @@ export class InternalChannel {
   private configSelectionQueue: ResolvingCall[] = [];
   private pickQueue: LoadBalancingCall[] = [];
   private connectivityStateWatchers: ConnectivityStateWatcher[] = [];
-  private defaultAuthority: string;
-  private filterStackFactory: FilterStackFactory;
-  private target: GrpcUri;
+  private readonly defaultAuthority: string;
+  private readonly filterStackFactory: FilterStackFactory;
+  private readonly target: GrpcUri;
   /**
    * This timer does not do anything on its own. Its purpose is to hold the
    * event loop open while there are any pending calls for the channel that
@@ -174,7 +179,7 @@ export class InternalChannel {
    * the invariant is that callRefTimer is reffed if and only if pickQueue
    * is non-empty.
    */
-  private callRefTimer: NodeJS.Timer;
+  private readonly callRefTimer: NodeJS.Timer;
   private configSelector: ConfigSelector | null = null;
   /**
    * This is the error from the name resolver if it failed most recently. It
@@ -184,17 +189,21 @@ export class InternalChannel {
    * than TRANSIENT_FAILURE.
    */
   private currentResolutionError: StatusObject | null = null;
-  private retryBufferTracker: MessageBufferTracker;
+  private readonly retryBufferTracker: MessageBufferTracker;
   private keepaliveTime: number;
-  private wrappedSubchannels: Set<ChannelSubchannelWrapper> = new Set();
+  private readonly wrappedSubchannels: Set<ChannelSubchannelWrapper> = new Set();
+
+  private callCount: number = 0;
+  private idleTimer: NodeJS.Timer | null = null;
+  private readonly idleTimeoutMs: number;
 
   // Channelz info
   private readonly channelzEnabled: boolean = true;
-  private originalTarget: string;
-  private channelzRef: ChannelRef;
-  private channelzTrace: ChannelzTrace;
-  private callTracker = new ChannelzCallTracker();
-  private childrenTracker = new ChannelzChildrenTracker();
+  private readonly originalTarget: string;
+  private readonly channelzRef: ChannelRef;
+  private readonly channelzTrace: ChannelzTrace;
+  private readonly callTracker = new ChannelzCallTracker();
+  private readonly childrenTracker = new ChannelzChildrenTracker();
 
   constructor(
     target: string,
@@ -265,6 +274,7 @@ export class InternalChannel {
         DEFAULT_PER_RPC_RETRY_BUFFER_SIZE_BYTES
     );
     this.keepaliveTime = options['grpc.keepalive_time_ms'] ?? -1;
+    this.idleTimeoutMs = Math.max(options['grpc.client_idle_timeout_ms'] ?? DEFAULT_IDLE_TIMEOUT_MS, MIN_IDLE_TIMEOUT_MS);
     const channelControlHelper: ChannelControlHelper = {
       createSubchannel: (
         subchannelAddress: SubchannelAddress,
@@ -548,6 +558,45 @@ export class InternalChannel {
     this.callRefTimerRef();
   }
 
+  private enterIdle() {
+    this.resolvingLoadBalancer.destroy();
+    this.updateState(ConnectivityState.IDLE);
+    this.currentPicker = new QueuePicker(this.resolvingLoadBalancer);
+  }
+
+  private maybeStartIdleTimer() {
+    if (this.callCount === 0) {
+      this.idleTimer = setTimeout(() => {
+        this.trace('Idle timer triggered after ' + this.idleTimeoutMs + 'ms of inactivity');
+        this.enterIdle();
+      }, this.idleTimeoutMs);
+      this.idleTimer.unref?.();
+    }
+  }
+
+  private onCallStart() {
+    if (this.channelzEnabled) {
+      this.callTracker.addCallStarted();
+    }
+    this.callCount += 1;
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
+  }
+
+  private onCallEnd(status: StatusObject) {
+    if (this.channelzEnabled) {
+      if (status.code === Status.OK) {
+        this.callTracker.addCallSucceeded();
+      } else {
+        this.callTracker.addCallFailed();
+      }
+    }
+    this.callCount -= 1;
+    this.maybeStartIdleTimer();
+  }
+
   createLoadBalancingCall(
     callConfig: CallConfig,
     method: string,
@@ -653,16 +702,10 @@ export class InternalChannel {
       callNumber
     );
 
-    if (this.channelzEnabled) {
-      this.callTracker.addCallStarted();
-      call.addStatusWatcher(status => {
-        if (status.code === Status.OK) {
-          this.callTracker.addCallSucceeded();
-        } else {
-          this.callTracker.addCallFailed();
-        }
-      });
-    }
+    this.onCallStart();
+    call.addStatusWatcher(status => {
+      this.onCallEnd(status);
+    });
     return call;
   }
 
@@ -685,6 +728,7 @@ export class InternalChannel {
     const connectivityState = this.connectivityState;
     if (tryToConnect) {
       this.resolvingLoadBalancer.exitIdle();
+      this.maybeStartIdleTimer();
     }
     return connectivityState;
   }

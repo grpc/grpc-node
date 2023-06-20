@@ -207,6 +207,9 @@ class DnsResolver implements Resolver {
       this.pendingLookupPromise = dnsLookupPromise(hostname, { all: true });
       this.pendingLookupPromise.then(
         addressList => {
+          if (this.pendingLookupPromise === null) {
+            return;
+          }
           this.pendingLookupPromise = null;
           this.backoff.reset();
           this.backoff.stop();
@@ -248,6 +251,9 @@ class DnsResolver implements Resolver {
           );
         },
         err => {
+          if (this.pendingLookupPromise === null) {
+            return;
+          }
           trace(
             'Resolution error for target ' +
               uriToString(this.target) +
@@ -268,6 +274,9 @@ class DnsResolver implements Resolver {
         this.pendingTxtPromise = resolveTxtPromise(hostname);
         this.pendingTxtPromise.then(
           txtRecord => {
+            if (this.pendingTxtPromise === null) {
+              return;
+            }
             this.pendingTxtPromise = null;
             try {
               this.latestServiceConfig = extractAndSelectServiceConfig(
@@ -348,10 +357,21 @@ class DnsResolver implements Resolver {
     }
   }
 
+  /**
+   * Reset the resolver to the same state it had when it was created. In-flight
+   * DNS requests cannot be cancelled, but they are discarded and their results
+   * will be ignored.
+   */
   destroy() {
     this.continueResolving = false;
+    this.backoff.reset();
     this.backoff.stop();
     this.stopNextResolutionTimer();
+    this.pendingLookupPromise = null;
+    this.pendingTxtPromise = null;
+    this.latestLookupResult = null;
+    this.latestServiceConfig = null;
+    this.latestServiceConfigError = null;
   }
 
   /**
