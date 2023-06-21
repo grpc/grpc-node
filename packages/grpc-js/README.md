@@ -19,7 +19,7 @@ Documentation specifically for the `@grpc/grpc-js` package is currently not avai
 - Servers
 - Streaming
 - Metadata
-- Partial compression support: clients can decompress response messages
+- Partial compression support: clients can compress and decompress messages, and servers can decompress request messages
 - Pick first and round robin load balancing policies
 - Client Interceptors
 - Connection Keepalives
