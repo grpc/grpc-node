@@ -137,7 +137,7 @@ class DnsResolver implements Resolver {
       details: `Name resolution failed for target ${uriToString(this.target)}`,
       metadata: new Metadata(),
     };
-    
+
     const backoffOptions: BackoffOptions = {
       initialDelay: channelOptions['grpc.initial_reconnect_backoff_ms'],
       maxDelay: channelOptions['grpc.max_reconnect_backoff_ms'],
@@ -276,7 +276,7 @@ class DnsResolver implements Resolver {
             } catch (err) {
               this.latestServiceConfigError = {
                 code: Status.UNAVAILABLE,
-                details: 'Parsing service config failed',
+                details: `Parsing service config failed with error ${(err as Error).message}`,
                 metadata: new Metadata(),
               };
             }
