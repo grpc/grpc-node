@@ -61,6 +61,7 @@ const cleanAll = gulp.parallel(clean);
 const compile = checkTask(() => execNpmCommand('compile'));
 
 const runTests = checkTask(() => {
+  process.env.GRPC_EXPERIMENTAL_XDS_FEDERATION = 'true';
   return gulp.src(`${outDir}/test/**/*.js`)
     .pipe(mocha({reporter: 'mocha-jenkins-reporter',
                  require: ['ts-node/register']}));

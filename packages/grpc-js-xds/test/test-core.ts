@@ -39,8 +39,8 @@ describe('core xDS functionality', () => {
     xdsServer?.shutdownServer();
   })
   it('should route requests to the single backend', done => {
-    const cluster = new FakeEdsCluster('cluster1', [{backends: [new Backend()], locality:{region: 'region1'}}]);
-    const routeGroup = new FakeRouteGroup('route1', [{cluster: cluster}]);
+    const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [new Backend()], locality:{region: 'region1'}}]);
+    const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
     routeGroup.startAllBackends().then(() => {
       xdsServer.setEdsResource(cluster.getEndpointConfig());
       xdsServer.setCdsResource(cluster.getClusterConfig());
@@ -52,7 +52,7 @@ describe('core xDS functionality', () => {
           assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
         }
       })
-      client = new XdsTestClient('route1', xdsServer);
+      client = XdsTestClient.createFromServer('listener1', xdsServer);
       client.startCalls(100);
       routeGroup.waitForAllBackendsToReceiveTraffic().then(() => {
         client.stopCalls();

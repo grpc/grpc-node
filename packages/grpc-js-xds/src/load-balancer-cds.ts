@@ -16,7 +16,7 @@
  */
 
 import { connectivityState, status, Metadata, logVerbosity, experimental } from '@grpc/grpc-js';
-import { getSingletonXdsClient, XdsClient } from './xds-client';
+import { getSingletonXdsClient, Watcher, XdsClient } from './xds-client';
 import { Cluster__Output } from './generated/envoy/config/cluster/v3/Cluster';
 import SubchannelAddress = experimental.SubchannelAddress;
 import UnavailablePicker = experimental.UnavailablePicker;
@@ -29,12 +29,12 @@ import OutlierDetectionLoadBalancingConfig = experimental.OutlierDetectionLoadBa
 import SuccessRateEjectionConfig = experimental.SuccessRateEjectionConfig;
 import FailurePercentageEjectionConfig = experimental.FailurePercentageEjectionConfig;
 import QueuePicker = experimental.QueuePicker;
-import { Watcher } from './xds-stream-state/xds-stream-state';
 import { OutlierDetection__Output } from './generated/envoy/config/cluster/v3/OutlierDetection';
 import { Duration__Output } from './generated/google/protobuf/Duration';
 import { EXPERIMENTAL_OUTLIER_DETECTION } from './environment';
 import { DiscoveryMechanism, XdsClusterResolverChildPolicyHandler, XdsClusterResolverLoadBalancingConfig } from './load-balancer-xds-cluster-resolver';
 import { CLUSTER_CONFIG_TYPE_URL, decodeSingleResource } from './resources';
+import { CdsUpdate, ClusterResourceType, OutlierDetectionUpdate } from './xds-resource-type/cluster-resource-type';
 
 const TRACER_NAME = 'cds_balancer';
 
@@ -76,7 +76,7 @@ function durationToMs(duration: Duration__Output): number {
   return (Number(duration.seconds) * 1_000 + duration.nanos / 1_000_000) | 0;
 }
 
-function translateOutlierDetectionConfig(outlierDetection: OutlierDetection__Output | null): OutlierDetectionLoadBalancingConfig | undefined {
+function translateOutlierDetectionConfig(outlierDetection: OutlierDetectionUpdate | undefined): OutlierDetectionLoadBalancingConfig | undefined {
   if (!EXPERIMENTAL_OUTLIER_DETECTION) {
     return undefined;
   }
@@ -84,42 +84,20 @@ function translateOutlierDetectionConfig(outlierDetection: OutlierDetection__Out
     /* No-op outlier detection config, with all fields unset. */
     return new OutlierDetectionLoadBalancingConfig(null, null, null, null, null, null, []);
   }
-  let successRateConfig: Partial<SuccessRateEjectionConfig> | null = null;
-  /* Success rate ejection is enabled by default, so we only disable it if
-   * enforcing_success_rate is set and it has the value 0 */
-  if (!outlierDetection.enforcing_success_rate || outlierDetection.enforcing_success_rate.value > 0) {
-    successRateConfig = {
-      enforcement_percentage: outlierDetection.enforcing_success_rate?.value,
-      minimum_hosts: outlierDetection.success_rate_minimum_hosts?.value,
-      request_volume: outlierDetection.success_rate_request_volume?.value,
-      stdev_factor: outlierDetection.success_rate_stdev_factor?.value
-    };
-  }
-  let failurePercentageConfig: Partial<FailurePercentageEjectionConfig> | null = null;
-  /* Failure percentage ejection is disabled by default, so we only enable it
-   * if enforcing_failure_percentage is set and it has a value greater than 0 */
-  if (outlierDetection.enforcing_failure_percentage && outlierDetection.enforcing_failure_percentage.value > 0) {
-    failurePercentageConfig = {
-      enforcement_percentage: outlierDetection.enforcing_failure_percentage.value,
-      minimum_hosts: outlierDetection.failure_percentage_minimum_hosts?.value,
-      request_volume: outlierDetection.failure_percentage_request_volume?.value,
-      threshold: outlierDetection.failure_percentage_threshold?.value
-    }
-  }
   return new OutlierDetectionLoadBalancingConfig(
-    outlierDetection.interval ? durationToMs(outlierDetection.interval) : null,
-    outlierDetection.base_ejection_time ? durationToMs(outlierDetection.base_ejection_time) : null,
-    outlierDetection.max_ejection_time ? durationToMs(outlierDetection.max_ejection_time) : null,
-    outlierDetection.max_ejection_percent?.value ?? null,
-    successRateConfig,
-    failurePercentageConfig,
+    outlierDetection.intervalMs,
+    outlierDetection.baseEjectionTimeMs,
+    outlierDetection.maxEjectionTimeMs,
+    outlierDetection.maxEjectionPercent,
+    outlierDetection.successRateConfig,
+    outlierDetection.failurePercentageConfig,
     []
   );
 }
 
 interface ClusterEntry {
-  watcher: Watcher<Cluster__Output>;
-  latestUpdate?: Cluster__Output;
+  watcher: Watcher<CdsUpdate>;
+  latestUpdate?: CdsUpdate;
   children: string[];
 }
 
@@ -144,34 +122,19 @@ function isClusterTreeFullyUpdated(tree: ClusterTree, root: string): boolean {
   return true;
 }
 
-function generateDiscoveryMechanismForCluster(config: Cluster__Output): DiscoveryMechanism {
-  let maxConcurrentRequests: number | undefined = undefined;
-  for (const threshold of config.circuit_breakers?.thresholds ?? []) {
-    if (threshold.priority === 'DEFAULT') {
-      maxConcurrentRequests = threshold.max_requests?.value;
-    }
+function generateDiscoverymechanismForCdsUpdate(config: CdsUpdate): DiscoveryMechanism {
+  if (config.type === 'AGGREGATE') {
+    throw new Error('Cannot generate DiscoveryMechanism for AGGREGATE cluster');
   }
-  if (config.type === 'EDS') {
-    // EDS cluster
-    return {
-      cluster: config.name,
-      lrs_load_reporting_server_name: config.lrs_server?.self ? '' : undefined,
-      max_concurrent_requests: maxConcurrentRequests,
-      type: 'EDS',
-      eds_service_name: config.eds_cluster_config!.service_name === '' ? undefined : config.eds_cluster_config!.service_name,
-      outlier_detection: translateOutlierDetectionConfig(config.outlier_detection)
-    };
-  } else {
-    // Logical DNS cluster
-    const socketAddress = config.load_assignment!.endpoints[0].lb_endpoints[0].endpoint!.address!.socket_address!;
-    return {
-      cluster: config.name,
-      lrs_load_reporting_server_name: config.lrs_server?.self ? '' : undefined,
-      max_concurrent_requests: maxConcurrentRequests,
-      type: 'LOGICAL_DNS',
-      dns_hostname: `${socketAddress.address}:${socketAddress.port_value}`
-    };
-  }
+  return {
+    cluster: config.name,
+    lrs_load_reporting_server: config.lrsLoadReportingServer,
+    max_concurrent_requests: config.maxConcurrentRequests,
+    type: config.type,
+    eds_service_name: config.edsServiceName,
+    dns_hostname: config.dnsHostname,
+    outlier_detection: translateOutlierDetectionConfig(config.outlierDetectionUpdate)
+  };
 }
 
 const RECURSION_DEPTH_LIMIT = 15;
@@ -203,7 +166,7 @@ function getDiscoveryMechanismList(tree: ClusterTree, root: string): DiscoveryMe
       trace('Visit leaf ' + node);
       // individual cluster
       const config = tree[node].latestUpdate!;
-      return [generateDiscoveryMechanismForCluster(config)];
+      return [generateDiscoverymechanismForCdsUpdate(config)];
     }
   }
   return getDiscoveryMechanismListHelper(root, 0);
@@ -231,11 +194,11 @@ export class CdsLoadBalancer implements LoadBalancer {
       return;
     }
     trace('Adding watcher for cluster ' + cluster);
-    const watcher: Watcher<Cluster__Output> = {
-      onValidUpdate: (update) => {
+    const watcher: Watcher<CdsUpdate> = new Watcher<CdsUpdate>({
+      onResourceChanged: (update) => {
         this.clusterTree[cluster].latestUpdate = update;
-        if (update.cluster_discovery_type === 'cluster_type') {
-          const children = decodeSingleResource(CLUSTER_CONFIG_TYPE_URL, update.cluster_type!.typed_config!.value).clusters;
+        if (update.type === 'AGGREGATE') {
+          const children = update.aggregateChildren
           trace('Received update for aggregate cluster ' + cluster + ' with children [' + children + ']');
           this.clusterTree[cluster].children = children;
           children.forEach(child => this.addCluster(child));
@@ -263,6 +226,7 @@ export class CdsLoadBalancer implements LoadBalancer {
         }
       },
       onResourceDoesNotExist: () => {
+        trace('Received onResourceDoesNotExist update for cluster ' + cluster);
         if (cluster in this.clusterTree) {
           this.clusterTree[cluster].latestUpdate = undefined;
           this.clusterTree[cluster].children = [];
@@ -270,8 +234,9 @@ export class CdsLoadBalancer implements LoadBalancer {
         this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `CDS resource ${cluster} does not exist`, metadata: new Metadata()}));
         this.childBalancer.destroy();
       },
-      onTransientError: (statusObj) => {
+      onError: (statusObj) => {
         if (!this.updatedChild) {
+          trace('Transitioning to transient failure due to onError update for cluster' + cluster);
           this.channelControlHelper.updateState(
             connectivityState.TRANSIENT_FAILURE,
             new UnavailablePicker({
@@ -282,19 +247,23 @@ export class CdsLoadBalancer implements LoadBalancer {
           );
         }
       }
-    };
+    });
     this.clusterTree[cluster] = {
       watcher: watcher,
       children: []
     };
-    this.xdsClient?.addClusterWatcher(cluster, watcher);
+    if (this.xdsClient) {
+      ClusterResourceType.startWatch(this.xdsClient, cluster, watcher);
+    }
   }
 
   private removeCluster(cluster: string) {
     if (!(cluster in this.clusterTree)) {
       return;
     }
-    this.xdsClient?.removeClusterWatcher(cluster, this.clusterTree[cluster].watcher);
+    if (this.xdsClient) {
+      ClusterResourceType.cancelWatch(this.xdsClient, cluster, this.clusterTree[cluster].watcher);
+    }
     delete this.clusterTree[cluster];
   }
 

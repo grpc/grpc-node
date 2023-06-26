@@ -15,6 +15,10 @@
  *
  */
 
+import { URI } from 'vscode-uri';
+/* Since we are using an internal function from @grpc/proto-loader, we also
+ * need the top-level import to perform some setup operations. */
+import '@grpc/proto-loader';
 // This is a non-public, unstable API, but it's very convenient
 import { loadProtosWithOptionsSync } from '@grpc/proto-loader/build/src/util';
 import { Cluster__Output } from './generated/envoy/config/cluster/v3/Cluster';
@@ -23,6 +27,7 @@ import { Listener__Output } from './generated/envoy/config/listener/v3/Listener'
 import { RouteConfiguration__Output } from './generated/envoy/config/route/v3/RouteConfiguration';
 import { ClusterConfig__Output } from './generated/envoy/extensions/clusters/aggregate/v3/ClusterConfig';
 import { HttpConnectionManager__Output } from './generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpConnectionManager';
+import { EXPERIMENTAL_FEDERATION } from './environment';
 
 export const EDS_TYPE_URL = 'type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment';
 export const CDS_TYPE_URL = 'type.googleapis.com/envoy.config.cluster.v3.Cluster';
@@ -60,6 +65,8 @@ export type AdsOutputType<T extends AdsTypeUrl | HttpConnectionManagerTypeUrl | 
   ? HttpConnectionManager__Output
   : ClusterConfig__Output;
 
+
+
 const resourceRoot = loadProtosWithOptionsSync([
   'envoy/config/listener/v3/listener.proto', 
   'envoy/config/route/v3/route.proto',
@@ -94,4 +101,50 @@ export function decodeSingleResource<T extends AdsTypeUrl | HttpConnectionManage
   } else {
     throw new Error(`ADS Error: unknown resource type ${targetTypeUrl}`);
   }
+}
+
+export interface XdsResourceName {
+  authority: string;
+  key: string;
+}
+
+function stripStringPrefix(value: string, prefix: string): string {
+  if (value.startsWith(prefix)) {
+    return value.substring(prefix.length);
+  } else {
+    return value;
+  }
+}
+
+export function parseXdsResourceName(name: string, typeUrl: string): XdsResourceName {
+  if (!EXPERIMENTAL_FEDERATION || !name.startsWith('xdstp:')) {
+    return {
+      authority: 'old:',
+      key: name
+    };
+  }
+  const uri = URI.parse(name);
+  const pathComponents = stripStringPrefix(uri.path, '/').split('/');
+  if (pathComponents[0] !== typeUrl) {
+    throw new Error('xdstp URI path must indicate valid xDS resource type.');
+  }
+  let queryString: string;
+  if (uri.query.length > 0) {
+    const queryParams = uri.query.split('&');
+    queryParams.sort();
+    queryString = '?' + queryParams.join('&');
+  } else {
+    queryString = '';
+  }
+  return {
+    authority: uri.authority,
+    key: `${pathComponents.slice(1).join('/')}${queryString}`
+  };
+}
+
+export function xdsResourceNameToString(name: XdsResourceName, typeUrl: string): string {
+  if (name.authority === 'old:') {
+    return name.key;
+  }
+  return `xdstp://${name.authority}/${typeUrl}/${name.key}`;
 }

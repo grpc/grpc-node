@@ -39,14 +39,14 @@ describe('Validation errors', () => {
     xdsServer?.shutdownServer();
   });
   it('Should continue to use a valid resource after receiving an invalid EDS update', done => {
-    const cluster = new FakeEdsCluster('cluster1', [{backends: [new Backend()], locality: {region: 'region1'}}]);
-    const routeGroup = new FakeRouteGroup('route1', [{cluster: cluster}]);
+    const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [new Backend()], locality: {region: 'region1'}}]);
+    const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
     routeGroup.startAllBackends().then(() => {
       xdsServer.setEdsResource(cluster.getEndpointConfig());
       xdsServer.setCdsResource(cluster.getClusterConfig());
       xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
       xdsServer.setLdsResource(routeGroup.getListener());
-      client = new XdsTestClient('route1', xdsServer);
+      client = XdsTestClient.createFromServer('listener1', xdsServer);
       client.startCalls(100);
       routeGroup.waitForAllBackendsToReceiveTraffic().then(() => {
         // After backends receive calls, set invalid EDS resource
@@ -69,14 +69,14 @@ describe('Validation errors', () => {
     }, reason => done(reason));
   });
   it('Should continue to use a valid resource after receiving an invalid CDS update', done => {
-    const cluster = new FakeEdsCluster('cluster1', [{backends: [new Backend()], locality: {region: 'region1'}}]);
-    const routeGroup = new FakeRouteGroup('route1', [{cluster: cluster}]);
+    const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [new Backend()], locality: {region: 'region1'}}]);
+    const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
     routeGroup.startAllBackends().then(() => {
       xdsServer.setEdsResource(cluster.getEndpointConfig());
       xdsServer.setCdsResource(cluster.getClusterConfig());
       xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
       xdsServer.setLdsResource(routeGroup.getListener());
-      client = new XdsTestClient('route1', xdsServer);
+      client = XdsTestClient.createFromServer('listener1', xdsServer);
       client.startCalls(100);
       routeGroup.waitForAllBackendsToReceiveTraffic().then(() => {
         // After backends receive calls, set invalid CDS resource
@@ -99,14 +99,14 @@ describe('Validation errors', () => {
     }, reason => done(reason));
   });
   it('Should continue to use a valid resource after receiving an invalid RDS update', done => {
-    const cluster = new FakeEdsCluster('cluster1', [{backends: [new Backend()], locality: {region: 'region1'}}]);
-    const routeGroup = new FakeRouteGroup('route1', [{cluster: cluster}]);
+    const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [new Backend()], locality: {region: 'region1'}}]);
+    const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
     routeGroup.startAllBackends().then(() => {
       xdsServer.setEdsResource(cluster.getEndpointConfig());
       xdsServer.setCdsResource(cluster.getClusterConfig());
       xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
       xdsServer.setLdsResource(routeGroup.getListener());
-      client = new XdsTestClient('route1', xdsServer);
+      client = XdsTestClient.createFromServer('listener1', xdsServer);
       client.startCalls(100);
       routeGroup.waitForAllBackendsToReceiveTraffic().then(() => {
         // After backends receive calls, set invalid RDS resource
@@ -129,14 +129,14 @@ describe('Validation errors', () => {
     }, reason => done(reason));
   });
   it('Should continue to use a valid resource after receiving an invalid LDS update', done => {
-    const cluster = new FakeEdsCluster('cluster1', [{backends: [new Backend()], locality: {region: 'region1'}}]);
-    const routeGroup = new FakeRouteGroup('route1', [{cluster: cluster}]);
+    const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [new Backend()], locality: {region: 'region1'}}]);
+    const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
     routeGroup.startAllBackends().then(() => {
       xdsServer.setEdsResource(cluster.getEndpointConfig());
       xdsServer.setCdsResource(cluster.getClusterConfig());
       xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
       xdsServer.setLdsResource(routeGroup.getListener());
-      client = new XdsTestClient('route1', xdsServer);
+      client = XdsTestClient.createFromServer('listener1', xdsServer);
       client.startCalls(100);
       routeGroup.waitForAllBackendsToReceiveTraffic().then(() => {
         // After backends receive calls, set invalid LDS resource

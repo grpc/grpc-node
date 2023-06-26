@@ -16,6 +16,7 @@
  */
 
 import { experimental, logVerbosity, status as Status, Metadata, connectivityState } from "@grpc/grpc-js";
+import { validateXdsServerConfig, XdsServerConfig } from "./xds-bootstrap";
 import { getSingletonXdsClient, XdsClient, XdsClusterDropStats } from "./xds-client";
 
 import LoadBalancingConfig = experimental.LoadBalancingConfig;
@@ -72,15 +73,15 @@ export class XdsClusterImplLoadBalancingConfig implements LoadBalancingConfig {
     if (this.edsServiceName !== undefined) {
       jsonObj.eds_service_name = this.edsServiceName;
     }
-    if (this.lrsLoadReportingServerName !== undefined) {
-      jsonObj.lrs_load_reporting_server_name = this.lrsLoadReportingServerName;
+    if (this.lrsLoadReportingServer !== undefined) {
+      jsonObj.lrs_load_reporting_server_name = this.lrsLoadReportingServer;
     }
     return {
       [TYPE_NAME]: jsonObj
     };
   }
 
-  constructor(private cluster: string, private dropCategories: DropCategory[], private childPolicy: LoadBalancingConfig[], private edsServiceName?: string, private lrsLoadReportingServerName?: string, maxConcurrentRequests?: number) {
+  constructor(private cluster: string, private dropCategories: DropCategory[], private childPolicy: LoadBalancingConfig[], private edsServiceName?: string, private lrsLoadReportingServer?: XdsServerConfig, maxConcurrentRequests?: number) {
     this.maxConcurrentRequests = maxConcurrentRequests ?? DEFAULT_MAX_CONCURRENT_REQUESTS;
   }
 
@@ -92,8 +93,8 @@ export class XdsClusterImplLoadBalancingConfig implements LoadBalancingConfig {
     return this.edsServiceName;
   }
 
-  getLrsLoadReportingServerName() {
-    return this.lrsLoadReportingServerName;
+  getLrsLoadReportingServer() {
+    return this.lrsLoadReportingServer;
   }
 
   getMaxConcurrentRequests() {
@@ -115,9 +116,6 @@ export class XdsClusterImplLoadBalancingConfig implements LoadBalancingConfig {
     if ('eds_service_name' in obj && !(obj.eds_service_name === undefined || typeof obj.eds_service_name === 'string')) {
       throw new Error('xds_cluster_impl config eds_service_name field must be a string if provided');
     }
-    if ('lrs_load_reporting_server_name' in obj && (!obj.lrs_load_reporting_server_name === undefined || typeof obj.lrs_load_reporting_server_name === 'string')) {
-      throw new Error('xds_cluster_impl config lrs_load_reporting_server_name must be a string if provided');
-    }
     if ('max_concurrent_requests' in obj && (!obj.max_concurrent_requests === undefined || typeof obj.max_concurrent_requests === 'number')) {
       throw new Error('xds_cluster_impl config max_concurrent_requests must be a number if provided');
     }
@@ -127,7 +125,7 @@ export class XdsClusterImplLoadBalancingConfig implements LoadBalancingConfig {
     if (!('child_policy' in obj && Array.isArray(obj.child_policy))) {
       throw new Error('xds_cluster_impl config must have an array field child_policy');
     }
-    return new XdsClusterImplLoadBalancingConfig(obj.cluster, obj.drop_categories.map(validateDropCategory), obj.child_policy.map(validateLoadBalancingConfig), obj.eds_service_name, obj.lrs_load_reporting_server_name, obj.max_concurrent_requests);
+    return new XdsClusterImplLoadBalancingConfig(obj.cluster, obj.drop_categories.map(validateDropCategory), obj.child_policy.map(validateLoadBalancingConfig), obj.eds_service_name, obj.lrs_load_reporting_server ? validateXdsServerConfig(obj.lrs_load_reporting_server) : undefined, obj.max_concurrent_requests);
   }
 }
 
@@ -245,9 +243,9 @@ class XdsClusterImplBalancer implements LoadBalancer {
     this.latestConfig = lbConfig;
     this.xdsClient = attributes.xdsClient as XdsClient;
 
-    if (lbConfig.getLrsLoadReportingServerName()) {
+    if (lbConfig.getLrsLoadReportingServer()) {
       this.clusterDropStats = this.xdsClient.addClusterDropStats(
-        lbConfig.getLrsLoadReportingServerName()!,
+        lbConfig.getLrsLoadReportingServer()!,
         lbConfig.getCluster(),
         lbConfig.getEdsServiceName() ?? ''
       );

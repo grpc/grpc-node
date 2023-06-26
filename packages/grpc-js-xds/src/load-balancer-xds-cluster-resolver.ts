@@ -23,9 +23,8 @@ import { ClusterLoadAssignment__Output } from "./generated/envoy/config/endpoint
 import { LrsLoadBalancingConfig } from "./load-balancer-lrs";
 import { LocalitySubchannelAddress, PriorityChild, PriorityLoadBalancingConfig } from "./load-balancer-priority";
 import { WeightedTarget, WeightedTargetLoadBalancingConfig } from "./load-balancer-weighted-target";
-import { getSingletonXdsClient, XdsClient } from "./xds-client";
+import { getSingletonXdsClient, Watcher, XdsClient } from "./xds-client";
 import { DropCategory, XdsClusterImplLoadBalancingConfig } from "./load-balancer-xds-cluster-impl";
-import { Watcher } from "./xds-stream-state/xds-stream-state";
 
 import LoadBalancingConfig = experimental.LoadBalancingConfig;
 import validateLoadBalancingConfig = experimental.validateLoadBalancingConfig;
@@ -37,6 +36,8 @@ import createResolver = experimental.createResolver;
 import ChannelControlHelper = experimental.ChannelControlHelper;
 import OutlierDetectionLoadBalancingConfig = experimental.OutlierDetectionLoadBalancingConfig;
 import subchannelAddressToString = experimental.subchannelAddressToString;
+import { serverConfigEqual, validateXdsServerConfig, XdsServerConfig } from "./xds-bootstrap";
+import { EndpointResourceType } from "./xds-resource-type/endpoint-resource-type";
 
 const TRACER_NAME = 'xds_cluster_resolver';
 
@@ -46,7 +47,7 @@ function trace(text: string): void {
 
 export interface DiscoveryMechanism {
   cluster: string;
-  lrs_load_reporting_server_name?: string;
+  lrs_load_reporting_server?: XdsServerConfig;
   max_concurrent_requests?: number;
   type: 'EDS' | 'LOGICAL_DNS';
   eds_service_name?: string;
@@ -60,9 +61,6 @@ function validateDiscoveryMechanism(obj: any): DiscoveryMechanism {
   }
   if (!('type' in obj && (obj.type === 'EDS' || obj.type === 'LOGICAL_DNS'))) {
     throw new Error('discovery_mechanisms entry must have a field "type" with the value "EDS" or "LOGICAL_DNS"');
-  }
-  if ('lrs_load_reporting_server_name' in obj && typeof obj.lrs_load_reporting_server_name !== 'string') {
-    throw new Error('discovery_mechanisms entry lrs_load_reporting_server_name field must be a string if provided');
   }
   if ('max_concurrent_requests' in obj && typeof obj.max_concurrent_requests !== "number") {
     throw new Error('discovery_mechanisms entry max_concurrent_requests field must be a number if provided');
@@ -78,7 +76,7 @@ function validateDiscoveryMechanism(obj: any): DiscoveryMechanism {
     if (!(outlierDetectionConfig instanceof OutlierDetectionLoadBalancingConfig)) {
       throw new Error('eds config outlier_detection must be a valid outlier detection config if provided');
     }
-    return {...obj, outlier_detection: outlierDetectionConfig};
+    return {...obj, lrs_load_reporting_server: validateXdsServerConfig(obj.lrs_load_reporting_server), outlier_detection: outlierDetectionConfig};
   }
   return obj;
 }
@@ -313,8 +311,8 @@ export class XdsClusterResolver implements LoadBalancer {
         const childTargets = new Map<string, WeightedTarget>();
         for (const localityObj of priorityEntry.localities) {
           let childPolicy: LoadBalancingConfig[];
-          if (entry.discoveryMechanism.lrs_load_reporting_server_name !== undefined) {
-            childPolicy = [new LrsLoadBalancingConfig(entry.discoveryMechanism.cluster, entry.discoveryMechanism.eds_service_name ?? '', entry.discoveryMechanism.lrs_load_reporting_server_name!, localityObj.locality, endpointPickingPolicy)];
+          if (entry.discoveryMechanism.lrs_load_reporting_server !== undefined) {
+            childPolicy = [new LrsLoadBalancingConfig(entry.discoveryMechanism.cluster, entry.discoveryMechanism.eds_service_name ?? '', entry.discoveryMechanism.lrs_load_reporting_server, localityObj.locality, endpointPickingPolicy)];
           } else {
             childPolicy = endpointPickingPolicy;
           }
@@ -334,7 +332,7 @@ export class XdsClusterResolver implements LoadBalancer {
           newLocalityPriorities.set(localityToName(localityObj.locality), priority);
         }
         const weightedTargetConfig = new WeightedTargetLoadBalancingConfig(childTargets);
-        const xdsClusterImplConfig = new XdsClusterImplLoadBalancingConfig(entry.discoveryMechanism.cluster, priorityEntry.dropCategories, [weightedTargetConfig], entry.discoveryMechanism.eds_service_name, entry.discoveryMechanism.lrs_load_reporting_server_name, entry.discoveryMechanism.max_concurrent_requests);
+        const xdsClusterImplConfig = new XdsClusterImplLoadBalancingConfig(entry.discoveryMechanism.cluster, priorityEntry.dropCategories, [weightedTargetConfig], entry.discoveryMechanism.eds_service_name, entry.discoveryMechanism.lrs_load_reporting_server, entry.discoveryMechanism.max_concurrent_requests);
         let outlierDetectionConfig: OutlierDetectionLoadBalancingConfig | undefined;
         if (EXPERIMENTAL_OUTLIER_DETECTION) {
           outlierDetectionConfig = entry.discoveryMechanism.outlier_detection?.copyWithChildPolicy([xdsClusterImplConfig]);
@@ -379,8 +377,8 @@ export class XdsClusterResolver implements LoadBalancer {
         };
         if (mechanism.type === 'EDS') {
           const edsServiceName = mechanism.eds_service_name ?? mechanism.cluster;
-          const watcher: Watcher<ClusterLoadAssignment__Output> = {
-            onValidUpdate: update => {
+          const watcher: Watcher<ClusterLoadAssignment__Output> = new Watcher<ClusterLoadAssignment__Output>({
+            onResourceChanged: update => {
               mechanismEntry.latestUpdate = getEdsPriorities(update);
               this.maybeUpdateChild();
             },
@@ -388,15 +386,17 @@ export class XdsClusterResolver implements LoadBalancer {
               trace('Resource does not exist: ' + edsServiceName);
               mechanismEntry.latestUpdate = [{localities: [], dropCategories: []}];
             },
-            onTransientError: error => {
+            onError: error => {
               if (!mechanismEntry.latestUpdate) {
                 trace('xDS request failed with error ' + error);
                 mechanismEntry.latestUpdate = [{localities: [], dropCategories: []}];
               }
             }
-          };
+          });
           mechanismEntry.watcher = watcher;
-          this.xdsClient?.addEndpointWatcher(edsServiceName, watcher);
+          if (this.xdsClient) {
+            EndpointResourceType.startWatch(this.xdsClient, edsServiceName, watcher);
+          }
         } else {
           const resolver = createResolver({scheme: 'dns', path: mechanism.dns_hostname!}, {
             onSuccessfulResolution: addressList => {
@@ -436,7 +436,9 @@ export class XdsClusterResolver implements LoadBalancer {
     for (const mechanismEntry of this.discoveryMechanismList) {
       if (mechanismEntry.watcher) {
         const edsServiceName = mechanismEntry.discoveryMechanism.eds_service_name ?? mechanismEntry.discoveryMechanism.cluster;
-        this.xdsClient?.removeEndpointWatcher(edsServiceName, mechanismEntry.watcher);
+        if (this.xdsClient) {
+          EndpointResourceType.cancelWatch(this.xdsClient, edsServiceName, mechanismEntry.watcher);
+        }
       }
       mechanismEntry.resolver?.destroy();
     }
@@ -445,6 +447,14 @@ export class XdsClusterResolver implements LoadBalancer {
   }
   getTypeName(): string {
     return TYPE_NAME;
+  }
+}
+
+function maybeServerConfigEqual(config1: XdsServerConfig | undefined, config2: XdsServerConfig | undefined) {
+  if (config1 !== undefined && config2 !== undefined) {
+    return serverConfigEqual(config1, config2);
+  } else {
+    return config1 === config2;
   }
 }
 
@@ -463,7 +473,7 @@ export class XdsClusterResolverChildPolicyHandler extends ChildLoadBalancerHandl
           oldDiscoveryMechanism.cluster !== newDiscoveryMechanism.cluster ||
           oldDiscoveryMechanism.eds_service_name !== newDiscoveryMechanism.eds_service_name ||
           oldDiscoveryMechanism.dns_hostname !== newDiscoveryMechanism.dns_hostname ||
-          oldDiscoveryMechanism.lrs_load_reporting_server_name !== newDiscoveryMechanism.lrs_load_reporting_server_name) {
+          !maybeServerConfigEqual(oldDiscoveryMechanism.lrs_load_reporting_server, newDiscoveryMechanism.lrs_load_reporting_server)) {
         return true;
       }
     }
