@@ -27,7 +27,7 @@ RUN npm install
 WORKDIR /node/src/grpc-node/packages/grpc-js-xds
 RUN npm install
 
-FROM node:18-slim
+FROM gcr.io/distroless/nodejs18-debian11:latest
 WORKDIR /node/src/grpc-node
 COPY --from=build /node/src/grpc-node/packages/grpc-js ./packages/grpc-js/
 COPY --from=build /node/src/grpc-node/packages/grpc-js-xds ./packages/grpc-js-xds/
@@ -35,4 +35,4 @@ COPY --from=build /node/src/grpc-node/packages/grpc-js-xds ./packages/grpc-js-xd
 ENV GRPC_VERBOSITY="DEBUG"
 ENV GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager,cds_balancer,xds_cluster_resolver,xds_cluster_impl,priority,weighted_target,round_robin,resolving_load_balancer,subchannel,keepalive,dns_resolver,fault_injection,http_filter,csds,outlier_detection,server,server_call
 
-ENTRYPOINT [ "node", "/node/src/grpc-node/packages/grpc-js-xds/build/interop/xds-interop-client" ]
+ENTRYPOINT [ "/nodejs/bin/node", "/node/src/grpc-node/packages/grpc-js-xds/build/interop/xds-interop-client" ]
