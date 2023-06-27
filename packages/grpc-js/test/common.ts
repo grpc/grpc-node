@@ -17,8 +17,16 @@
 
 import * as loader from '@grpc/proto-loader';
 import * as assert2 from './assert2';
+import * as path from 'path';
+import * as grpc from '../src';
 
-import { GrpcObject, loadPackageDefinition } from '../src/make-client';
+import {
+  GrpcObject,
+  ServiceClientConstructor,
+  ServiceClient,
+  loadPackageDefinition,
+} from '../src/make-client';
+import { readFileSync } from 'fs';
 
 const protoLoaderOptions = {
   keepCase: true,
@@ -35,6 +43,93 @@ export function mockFunction(): never {
 export function loadProtoFile(file: string): GrpcObject {
   const packageDefinition = loader.loadSync(file, protoLoaderOptions);
   return loadPackageDefinition(packageDefinition);
+}
+
+const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
+const echoService = loadProtoFile(protoFile)
+  .EchoService as ServiceClientConstructor;
+
+const ca = readFileSync(path.join(__dirname, 'fixtures', 'ca.pem'));
+const key = readFileSync(path.join(__dirname, 'fixtures', 'server1.key'));
+const cert = readFileSync(path.join(__dirname, 'fixtures', 'server1.pem'));
+
+const serviceImpl = {
+  echo: (
+    call: grpc.ServerUnaryCall<any, any>,
+    callback: grpc.sendUnaryData<any>
+  ) => {
+    callback(null, call.request);
+  },
+};
+
+export class TestServer {
+  private server: grpc.Server;
+  public port: number | null = null;
+  constructor(public useTls: boolean, options?: grpc.ChannelOptions) {
+    this.server = new grpc.Server(options);
+    this.server.addService(echoService.service, serviceImpl);
+  }
+  start(): Promise<void> {
+    let credentials: grpc.ServerCredentials;
+    if (this.useTls) {
+      credentials = grpc.ServerCredentials.createSsl(null, [
+        { private_key: key, cert_chain: cert },
+      ]);
+    } else {
+      credentials = grpc.ServerCredentials.createInsecure();
+    }
+    return new Promise<void>((resolve, reject) => {
+      this.server.bindAsync('localhost:0', credentials, (error, port) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        this.port = port;
+        this.server.start();
+        resolve();
+      });
+    });
+  }
+
+  shutdown() {
+    this.server.forceShutdown();
+  }
+}
+
+export class TestClient {
+  private client: ServiceClient;
+  constructor(port: number, useTls: boolean, options?: grpc.ChannelOptions) {
+    let credentials: grpc.ChannelCredentials;
+    if (useTls) {
+      credentials = grpc.credentials.createSsl(ca);
+    } else {
+      credentials = grpc.credentials.createInsecure();
+    }
+    this.client = new echoService(`localhost:${port}`, credentials, options);
+  }
+
+  static createFromServer(server: TestServer, options?: grpc.ChannelOptions) {
+    if (server.port === null) {
+      throw new Error('Cannot create client, server not started');
+    }
+    return new TestClient(server.port, server.useTls, options);
+  }
+
+  waitForReady(deadline: grpc.Deadline, callback: (error?: Error) => void) {
+    this.client.waitForReady(deadline, callback);
+  }
+
+  sendRequest(callback: (error: grpc.ServiceError) => void) {
+    this.client.echo({}, callback);
+  }
+
+  getChannelState() {
+    return this.client.getChannel().getConnectivityState(false);
+  }
+
+  close() {
+    this.client.close();
+  }
 }
 
 export { assert2 };

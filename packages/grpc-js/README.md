@@ -63,6 +63,7 @@ Many channel arguments supported in `grpc` are not supported in `@grpc/grpc-js`.
   - `grpc.per_rpc_retry_buffer_size`
   - `grpc.retry_buffer_size`
   - `grpc.service_config_disable_resolution`
+  - `grpc.client_idle_timeout_ms`
   - `grpc-node.max_session_memory`
   - `channelOverride`
   - `channelFactoryOverride`

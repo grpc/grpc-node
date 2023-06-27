@@ -82,7 +82,10 @@ export interface Resolver {
   updateResolution(): void;
 
   /**
-   * Destroy the resolver. Should be called when the owning channel shuts down.
+   * Discard all resources owned by the resolver. A later call to
+   * `updateResolution` should reinitialize those resources.  No
+   * `ResolverListener` callbacks should be called after `destroy` is called
+   * until `updateResolution` is called again.
    */
   destroy(): void;
 }

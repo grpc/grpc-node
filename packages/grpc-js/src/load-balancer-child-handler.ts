@@ -150,6 +150,10 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
     }
   }
   destroy(): void {
+    /* Note: state updates are only propagated from the child balancer if that
+     * object is equal to this.currentChild or this.pendingChild. Since this
+     * function sets both of those to null, no further state updates will
+     * occur after this function returns. */
     if (this.currentChild) {
       this.currentChild.destroy();
       this.currentChild = null;

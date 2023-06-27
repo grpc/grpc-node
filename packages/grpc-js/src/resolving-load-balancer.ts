@@ -94,9 +94,9 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   /**
    * The resolver class constructed for the target address.
    */
-  private innerResolver: Resolver;
+  private readonly innerResolver: Resolver;
 
-  private childLoadBalancer: ChildLoadBalancerHandler;
+  private readonly childLoadBalancer: ChildLoadBalancerHandler;
   private latestChildState: ConnectivityState = ConnectivityState.IDLE;
   private latestChildPicker: Picker = new QueuePicker(this);
   /**
@@ -324,7 +324,13 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   destroy() {
     this.childLoadBalancer.destroy();
     this.innerResolver.destroy();
-    this.updateState(ConnectivityState.SHUTDOWN, new UnavailablePicker());
+    this.backoffTimeout.reset();
+    this.backoffTimeout.stop();
+    this.latestChildState = ConnectivityState.IDLE;
+    this.latestChildPicker = new QueuePicker(this);
+    this.currentState = ConnectivityState.IDLE;
+    this.previousServiceConfig = null;
+    this.continueResolving = false;
   }
 
   getTypeName() {
