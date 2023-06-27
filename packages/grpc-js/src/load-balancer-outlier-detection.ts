@@ -113,6 +113,9 @@ export class OutlierDetectionLoadBalancingConfig implements LoadBalancingConfig 
     failurePercentageEjection: Partial<FailurePercentageEjectionConfig> | null,
     private readonly childPolicy: LoadBalancingConfig[]
   ) {
+    if (childPolicy.length > 0 && childPolicy[0].getLoadBalancerName() === 'pick_first') {
+      throw new Error('outlier_detection LB policy cannot have a pick_first child policy');
+    }
     this.intervalMs = intervalMs ?? 10_000;
     this.baseEjectionTimeMs = baseEjectionTimeMs ?? 30_000;
     this.maxEjectionTimeMs = maxEjectionTimeMs ?? 300_000;
@@ -395,8 +398,8 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
   }
 
   private isCountingEnabled(): boolean {
-    return this.latestConfig !== null && 
-      (this.latestConfig.getSuccessRateEjectionConfig() !== null || 
+    return this.latestConfig !== null &&
+      (this.latestConfig.getSuccessRateEjectionConfig() !== null ||
        this.latestConfig.getFailurePercentageEjectionConfig() !== null);
   }
 
@@ -496,7 +499,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     if (addressesWithTargetVolume < failurePercentageConfig.minimum_hosts) {
       return;
     }
-    
+
     // Step 2
     for (const [address, mapEntry] of this.addressMap.entries()) {
       // Step 2.i
