@@ -19,7 +19,7 @@ set -eo pipefail
 readonly GITHUB_REPOSITORY_NAME="grpc-node"
 readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc/${TEST_DRIVER_BRANCH:-master}/tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh"
 ## xDS test client Docker images
-readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/java-server:v1.46.x"
+readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/java-server:558b5b0bfac8e21755c223063274a779b3898afe"
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/node-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
 readonly BUILD_APP_PATH="packages/grpc-js-xds/interop/Dockerfile"
