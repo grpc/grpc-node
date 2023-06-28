@@ -242,15 +242,10 @@ const message = 'this is examples/metadata';
 
 async function main() {
   let argv = parseArgs(process.argv.slice(2), {
-    string: 'target'
+    string: 'target',
+    default: {target: 'localhost:50052'}
   });
-  let target;
-  if (argv.target) {
-    target = argv.target;
-  } else {
-    target = 'localhost:50051';
-  }
-  const client = new echoProto.Echo(target, grpc.credentials.createInsecure());
+  const client = new echoProto.Echo(argv.target, grpc.credentials.createInsecure());
   await unaryCallWithMetadata(client, message);
   await asyncWait(1000);
 

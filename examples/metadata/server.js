@@ -142,9 +142,13 @@ const serviceImplementation = {
 };
 
 function main() {
+  const argv = parseArgs(process.argv.slice(2), {
+    string: 'port',
+    default: {port: '50052'}
+  });
   const server = new grpc.Server();
   server.addService(echoProto.Echo.service, serviceImplementation);
-  server.bindAsync('0.0.0.0:50051', grpc.ServerCredentials.createInsecure(), () => {
+  server.bindAsync(`0.0.0.0:${argv.port}`, grpc.ServerCredentials.createInsecure(), () => {
     server.start();
   });
 }
