@@ -568,7 +568,7 @@ export class Http2ServerCallStream<
       this.stream.on('end', onEnd);
       this.stream.on('error', onEnd);
 
-      async function onData(chunk: Buffer) {
+      function onData(chunk: Buffer) {
         receivedLength += chunk.byteLength;
 
         if (limit !== -1 && receivedLength > limit) {
@@ -586,7 +586,7 @@ export class Http2ServerCallStream<
         body.push(chunk);
       }
 
-      async function onEnd(err?: Error) {
+      function onEnd(err?: Error) {
         stream.removeListener('data', onData);
         stream.removeListener('end', onEnd);
         stream.removeListener('error', onEnd);
@@ -615,13 +615,19 @@ export class Http2ServerCallStream<
         );
 
         if (Buffer.isBuffer(decompressedMessage)) {
-          call.safeDeserializeMessage(decompressedMessage, resolve, reject);
+          call
+            .deserializeMessageWithInternalError(decompressedMessage)
+            .then(resolve)
+            .catch(reject);
           return;
         }
 
         decompressedMessage.then(
           decompressed =>
-            call.safeDeserializeMessage(decompressed, resolve, reject),
+            call
+              .deserializeMessageWithInternalError(decompressed)
+              .then(resolve)
+              .catch(reject),
           (err: any) =>
             reject(
               err.code
@@ -636,20 +642,14 @@ export class Http2ServerCallStream<
     });
   }
 
-  private safeDeserializeMessage(
-    buffer: Buffer,
-    resolve: (
-      value: void | RequestType | PromiseLike<void | RequestType>
-    ) => void,
-    reject: (reason: any) => void
-  ) {
+  private async deserializeMessageWithInternalError(buffer: Buffer) {
     try {
-      resolve(this.deserializeMessage(buffer));
+      return this.deserializeMessage(buffer);
     } catch (err) {
-      reject({
+      throw {
         details: getErrorMessage(err),
         code: Status.INTERNAL,
-      });
+      };
     }
   }
 

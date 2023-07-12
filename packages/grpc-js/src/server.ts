@@ -96,7 +96,6 @@ function getUnimplementedStatusResponse(
   return {
     code: Status.UNIMPLEMENTED,
     details: `The server does not implement the method ${methodName}`,
-    metadata: new Metadata(),
   };
 }
 
