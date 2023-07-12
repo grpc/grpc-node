@@ -1183,29 +1183,33 @@ async function handleUnary<RequestType, ResponseType>(
   metadata: Metadata,
   encoding: string
 ): Promise<void> {
-  const request = await call.receiveUnaryMessage(encoding);
+  try {
+    const request = await call.receiveUnaryMessage(encoding);
 
-  if (request === undefined || call.cancelled) {
-    return;
-  }
-
-  const emitter = new ServerUnaryCallImpl<RequestType, ResponseType>(
-    call,
-    metadata,
-    request
-  );
-
-  handler.func(
-    emitter,
-    (
-      err: ServerErrorResponse | ServerStatusResponse | null,
-      value?: ResponseType | null,
-      trailer?: Metadata,
-      flags?: number
-    ) => {
-      call.sendUnaryMessage(err, value, trailer, flags);
+    if (request === undefined || call.cancelled) {
+      return;
     }
-  );
+
+    const emitter = new ServerUnaryCallImpl<RequestType, ResponseType>(
+      call,
+      metadata,
+      request
+    );
+
+    handler.func(
+      emitter,
+      (
+        err: ServerErrorResponse | ServerStatusResponse | null,
+        value?: ResponseType | null,
+        trailer?: Metadata,
+        flags?: number
+      ) => {
+        call.sendUnaryMessage(err, value, trailer, flags);
+      }
+    );
+  } catch (err) {
+    call.sendError(err as ServerErrorResponse)
+  }
 }
 
 function handleClientStreaming<RequestType, ResponseType>(
@@ -1245,20 +1249,24 @@ async function handleServerStreaming<RequestType, ResponseType>(
   metadata: Metadata,
   encoding: string
 ): Promise<void> {
-  const request = await call.receiveUnaryMessage(encoding);
+  try {
+    const request = await call.receiveUnaryMessage(encoding);
 
-  if (request === undefined || call.cancelled) {
-    return;
+    if (request === undefined || call.cancelled) {
+      return;
+    }
+
+    const stream = new ServerWritableStreamImpl<RequestType, ResponseType>(
+      call,
+      metadata,
+      handler.serialize,
+      request
+    );
+
+    handler.func(stream);
+  } catch (err) {
+    call.sendError(err as ServerErrorResponse)
   }
-
-  const stream = new ServerWritableStreamImpl<RequestType, ResponseType>(
-    call,
-    metadata,
-    handler.serialize,
-    request
-  );
-
-  handler.func(stream);
 }
 
 function handleBidiStreaming<RequestType, ResponseType>(
