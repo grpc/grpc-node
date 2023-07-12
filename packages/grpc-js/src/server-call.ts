@@ -553,102 +553,100 @@ export class Http2ServerCallStream<
     return metadata;
   }
 
-  receiveUnaryMessage(
-    encoding: string,
-    next: (
-      err: Partial<ServerStatusResponse> | null,
-      request?: RequestType
-    ) => void
-  ): void {
-    const { stream } = this;
+  receiveUnaryMessage(encoding: string): Promise<RequestType | void> {
+    return new Promise((resolve, reject) => {
+      const { stream } = this;
 
-    let receivedLength = 0;
+      let receivedLength = 0;
 
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const call = this;
-    const body: Buffer[] = [];
-    const limit = this.maxReceiveMessageSize;
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      const call = this;
+      const body: Buffer[] = [];
+      const limit = this.maxReceiveMessageSize;
 
-    stream.on('data', onData);
-    stream.on('end', onEnd);
-    stream.on('error', onEnd);
+      this.stream.on('data', onData);
+      this.stream.on('end', onEnd);
+      this.stream.on('error', onEnd);
 
-    function onData(chunk: Buffer) {
-      receivedLength += chunk.byteLength;
+      async function onData(chunk: Buffer) {
+        receivedLength += chunk.byteLength;
 
-      if (limit !== -1 && receivedLength > limit) {
+        if (limit !== -1 && receivedLength > limit) {
+          stream.removeListener('data', onData);
+          stream.removeListener('end', onEnd);
+          stream.removeListener('error', onEnd);
+
+          reject({
+            code: Status.RESOURCE_EXHAUSTED,
+            details: `Received message larger than max (${receivedLength} vs. ${limit})`,
+          });
+          return;
+        }
+
+        body.push(chunk);
+      }
+
+      async function onEnd(err?: Error) {
         stream.removeListener('data', onData);
         stream.removeListener('end', onEnd);
         stream.removeListener('error', onEnd);
-        next({
-          code: Status.RESOURCE_EXHAUSTED,
-          details: `Received message larger than max (${receivedLength} vs. ${limit})`,
-        });
-        return;
+
+        if (err !== undefined) {
+          reject({ code: Status.INTERNAL, details: err.message });
+          return;
+        }
+
+        if (receivedLength === 0) {
+          reject({
+            code: Status.INTERNAL,
+            details: 'received empty unary message',
+          });
+          return;
+        }
+
+        call.emit('receiveMessage');
+
+        const requestBytes = Buffer.concat(body, receivedLength);
+        const compressed = requestBytes.readUInt8(0) === 1;
+        const compressedMessageEncoding = compressed ? encoding : 'identity';
+        const decompressedMessage = call.getDecompressedMessage(
+          requestBytes,
+          compressedMessageEncoding
+        );
+
+        if (Buffer.isBuffer(decompressedMessage)) {
+          call.safeDeserializeMessage(decompressedMessage, resolve, reject);
+          return;
+        }
+
+        decompressedMessage.then(
+          decompressed =>
+            call.safeDeserializeMessage(decompressed, resolve, reject),
+          (err: any) =>
+            reject(
+              err.code
+                ? err
+                : {
+                    code: Status.INTERNAL,
+                    details: `Received "grpc-encoding" header "${encoding}" but ${encoding} decompression failed`,
+                  }
+            )
+        );
       }
-
-      body.push(chunk);
-    }
-
-    function onEnd(err?: Error) {
-      stream.removeListener('data', onData);
-      stream.removeListener('end', onEnd);
-      stream.removeListener('error', onEnd);
-
-      if (err !== undefined) {
-        next({ code: Status.INTERNAL, details: err.message });
-        return;
-      }
-
-      if (receivedLength === 0) {
-        next({
-          code: Status.INTERNAL,
-          details: 'received empty unary message',
-        });
-        return;
-      }
-
-      call.emit('receiveMessage');
-
-      const requestBytes = Buffer.concat(body, receivedLength);
-      const compressed = requestBytes.readUInt8(0) === 1;
-      const compressedMessageEncoding = compressed ? encoding : 'identity';
-      const decompressedMessage = call.getDecompressedMessage(
-        requestBytes,
-        compressedMessageEncoding
-      );
-
-      if (Buffer.isBuffer(decompressedMessage)) {
-        call.safeDeserializeMessage(decompressedMessage, next);
-        return;
-      }
-
-      decompressedMessage.then(
-        decompressed => call.safeDeserializeMessage(decompressed, next),
-        (err: any) =>
-          next(
-            err.code
-              ? err
-              : {
-                  code: Status.INTERNAL,
-                  details: `Received "grpc-encoding" header "${encoding}" but ${encoding} decompression failed`,
-                }
-          )
-      );
-    }
+    });
   }
 
   private safeDeserializeMessage(
     buffer: Buffer,
-    next: (
-      err: Partial<ServerStatusResponse> | null,
-      request?: RequestType
-    ) => void
+    resolve: (
+      value: void | RequestType | PromiseLike<void | RequestType>
+    ) => void,
+    reject: (reason: any) => void
   ) {
     try {
-      next(null, this.deserializeMessage(buffer));
+      resolve(this.deserializeMessage(buffer));
     } catch (err) {
-      next({
+      reject({
         details: getErrorMessage(err),
         code: Status.INTERNAL,
       });

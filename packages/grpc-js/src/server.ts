@@ -96,6 +96,7 @@ function getUnimplementedStatusResponse(
   return {
     code: Status.UNIMPLEMENTED,
     details: `The server does not implement the method ${methodName}`,
+    metadata: new Metadata(),
   };
 }
 
@@ -1176,40 +1177,35 @@ export class Server {
   }
 }
 
-function handleUnary<RequestType, ResponseType>(
+async function handleUnary<RequestType, ResponseType>(
   call: Http2ServerCallStream<RequestType, ResponseType>,
   handler: UnaryHandler<RequestType, ResponseType>,
   metadata: Metadata,
   encoding: string
-): void {
-  call.receiveUnaryMessage(encoding, (err, request) => {
-    if (err) {
-      call.sendError(err);
-      return;
+): Promise<void> {
+  const request = await call.receiveUnaryMessage(encoding);
+
+  if (request === undefined || call.cancelled) {
+    return;
+  }
+
+  const emitter = new ServerUnaryCallImpl<RequestType, ResponseType>(
+    call,
+    metadata,
+    request
+  );
+
+  handler.func(
+    emitter,
+    (
+      err: ServerErrorResponse | ServerStatusResponse | null,
+      value?: ResponseType | null,
+      trailer?: Metadata,
+      flags?: number
+    ) => {
+      call.sendUnaryMessage(err, value, trailer, flags);
     }
-
-    if (request === undefined || call.cancelled) {
-      return;
-    }
-
-    const emitter = new ServerUnaryCallImpl<RequestType, ResponseType>(
-      call,
-      metadata,
-      request
-    );
-
-    handler.func(
-      emitter,
-      (
-        err: ServerErrorResponse | ServerStatusResponse | null,
-        value?: ResponseType | null,
-        trailer?: Metadata,
-        flags?: number
-      ) => {
-        call.sendUnaryMessage(err, value, trailer, flags);
-      }
-    );
-  });
+  );
 }
 
 function handleClientStreaming<RequestType, ResponseType>(
@@ -1243,31 +1239,26 @@ function handleClientStreaming<RequestType, ResponseType>(
   handler.func(stream, respond);
 }
 
-function handleServerStreaming<RequestType, ResponseType>(
+async function handleServerStreaming<RequestType, ResponseType>(
   call: Http2ServerCallStream<RequestType, ResponseType>,
   handler: ServerStreamingHandler<RequestType, ResponseType>,
   metadata: Metadata,
   encoding: string
-): void {
-  call.receiveUnaryMessage(encoding, (err, request) => {
-    if (err) {
-      call.sendError(err);
-      return;
-    }
+): Promise<void> {
+  const request = await call.receiveUnaryMessage(encoding);
 
-    if (request === undefined || call.cancelled) {
-      return;
-    }
+  if (request === undefined || call.cancelled) {
+    return;
+  }
 
-    const stream = new ServerWritableStreamImpl<RequestType, ResponseType>(
-      call,
-      metadata,
-      handler.serialize,
-      request
-    );
+  const stream = new ServerWritableStreamImpl<RequestType, ResponseType>(
+    call,
+    metadata,
+    handler.serialize,
+    request
+  );
 
-    handler.func(stream);
-  });
+  handler.func(stream);
 }
 
 function handleBidiStreaming<RequestType, ResponseType>(
