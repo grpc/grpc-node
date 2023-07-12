@@ -268,6 +268,9 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType>
   implements ServerDuplexStream<RequestType, ResponseType>
 {
   cancelled: boolean;
+  /* This field appears to be unsued, but it is actually used in _final, which is assiged from
+   * ServerWritableStreamImpl.prototype._final below. */
+  // @ts-ignore noUnusedLocals
   private trailingMetadata: Metadata;
 
   constructor(
@@ -419,7 +422,7 @@ export class Http2ServerCallStream<
   constructor(
     private stream: http2.ServerHttp2Stream,
     private handler: Handler<RequestType, ResponseType>,
-    private options: ChannelOptions
+    options: ChannelOptions
   ) {
     super();
 
@@ -720,7 +723,7 @@ export class Http2ServerCallStream<
             [GRPC_MESSAGE_HEADER]: encodeURI(statusObj.details),
             ...statusObj.metadata?.toHttp2Headers(),
           };
-  
+
           this.stream.sendTrailers(trailersToSend);
           this.statusSent = true;
         });

@@ -32,7 +32,6 @@ import {
 import { Status } from './constants';
 import { Channel } from './channel';
 import { CallOptions } from './client';
-import { CallCredentials } from './call-credentials';
 import { ClientMethodDefinition } from './make-client';
 import { getErrorMessage } from './error';
 

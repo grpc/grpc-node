@@ -21,7 +21,6 @@ import { SubchannelCall } from "./subchannel-call";
 import { ConnectivityState } from "./connectivity-state";
 import { LogVerbosity, Status } from "./constants";
 import { Deadline, getDeadlineTimeoutString } from "./deadline";
-import { FilterStack, FilterStackFactory } from "./filter-stack";
 import { InternalChannel } from "./internal-channel";
 import { Metadata } from "./metadata";
 import { PickResultType } from "./picker";
@@ -48,7 +47,6 @@ export class LoadBalancingCall implements Call {
   private readPending = false;
   private pendingMessage: {context: MessageContext, message: Buffer} | null = null;
   private pendingHalfClose = false;
-  private pendingChildStatus: StatusObject | null = null;
   private ended = false;
   private serviceUrl: string;
   private metadata: Metadata | null = null;
@@ -104,9 +102,9 @@ export class LoadBalancingCall implements Call {
     }
     this.trace('Pick called')
     const pickResult = this.channel.doPick(this.metadata, this.callConfig.pickInformation);
-    const subchannelString = pickResult.subchannel ? 
-      '(' + pickResult.subchannel.getChannelzRef().id + ') ' + pickResult.subchannel.getAddress() : 
-      '' + pickResult.subchannel; 
+    const subchannelString = pickResult.subchannel ?
+      '(' + pickResult.subchannel.getChannelzRef().id + ') ' + pickResult.subchannel.getAddress() :
+      '' + pickResult.subchannel;
     this.trace(
       'Pick result: ' +
         PickResultType[pickResult.pickResultType] +

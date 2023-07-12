@@ -20,7 +20,6 @@ import * as path from 'path';
 import * as grpc from '../src';
 import { loadProtoFile } from './common';
 import { OutlierDetectionLoadBalancingConfig } from '../src/load-balancer-outlier-detection'
-import { ServiceClient } from '../src/make-client';
 
 function multiDone(done: Mocha.Done, target: number) {
   let count = 0;

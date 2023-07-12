@@ -46,10 +46,6 @@ const {
   HTTP2_HEADER_USER_AGENT,
 } = http2.constants;
 
-/* setInterval and setTimeout only accept signed 32 bit integers. JS doesn't
- * have a constant for the max signed 32 bit integer, so this is a simple way
- * to calculate it */
-const KEEPALIVE_MAX_TIME_MS = ~(1 << 31);
 const KEEPALIVE_TIMEOUT_MS = 20000;
 
 export interface CallEventTracker {
@@ -108,11 +104,6 @@ class Http2Transport implements Transport {
   // Channelz info
   private channelzRef: SocketRef;
   private readonly channelzEnabled: boolean = true;
-  /**
-   * Name of the remote server, if it is not the same as the subchannel
-   * address, i.e. if connecting through an HTTP CONNECT proxy.
-   */
-  private remoteName: string | null = null;
   private streamTracker = new ChannelzCallTracker();
   private keepalivesSent = 0;
   private messagesSent = 0;
@@ -123,7 +114,12 @@ class Http2Transport implements Transport {
   constructor(
     private session: http2.ClientHttp2Session,
     subchannelAddress: SubchannelAddress,
-    options: ChannelOptions
+    options: ChannelOptions,
+    /**
+     * Name of the remote server, if it is not the same as the subchannel
+     * address, i.e. if connecting through an HTTP CONNECT proxy.
+     */
+    private remoteName: string | null
   ) {
     // Build user-agent string.
     this.userAgent = [
@@ -133,7 +129,7 @@ class Http2Transport implements Transport {
     ]
       .filter((e) => e)
       .join(' '); // remove falsey values first
-    
+
     if ('grpc.keepalive_time_ms' in options) {
       this.keepaliveTimeMs = options['grpc.keepalive_time_ms']!;
     }
@@ -271,7 +267,7 @@ class Http2Transport implements Transport {
    * @param tooManyPings If true, this was triggered by a GOAWAY with data
    * indicating that the session was closed becaues the client sent too many
    * pings.
-   * @returns 
+   * @returns
    */
   private reportDisconnectToOwner(tooManyPings: boolean) {
     if (this.disconnectHandled) {
@@ -405,11 +401,11 @@ class Http2Transport implements Transport {
         this.session.state.remoteWindowSize
     );
     this.internalsTrace(
-      'session.closed=' + 
-      this.session.closed + 
-      ' session.destroyed=' + 
-      this.session.destroyed + 
-      ' session.socket.destroyed=' + 
+      'session.closed=' +
+      this.session.closed +
+      ' session.destroyed=' +
+      this.session.destroyed +
+      ' session.socket.destroyed=' +
       this.session.socket.destroyed);
     let eventTracker: CallEventTracker;
     let call: Http2SubchannelCall;
@@ -565,12 +561,12 @@ export class Http2SubchannelConnector implements SubchannelConnector {
           }
         };
       }
-  
+
       connectionOptions = {
         ...connectionOptions,
         ...address,
       };
-  
+
       /* http2.connect uses the options here:
        * https://github.com/nodejs/node/blob/70c32a6d190e2b5d7b9ff9d5b6a459d14e8b7d59/lib/internal/http2/core.js#L3028-L3036
        * The spread operator overides earlier values with later ones, so any port
@@ -596,7 +592,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       session.unref();
       session.once('connect', () => {
         session.removeAllListeners();
-        resolve(new Http2Transport(session, address, options));
+        resolve(new Http2Transport(session, address, options, remoteName));
         this.session = null;
       });
       session.once('close', () => {

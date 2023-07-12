@@ -141,10 +141,6 @@ interface ChannelzSessionInfo {
   lastMessageReceivedTimestamp: Date | null;
 }
 
-interface ChannelzListenerInfo {
-  ref: SocketRef;
-}
-
 export class Server {
   private http2ServerList: { server: (http2.Http2Server | http2.Http2SecureServer), channelzRef: SocketRef }[] = [];
 
@@ -242,7 +238,7 @@ export class Server {
   private trace(text: string): void {
     logging.trace(LogVerbosity.DEBUG, TRACER_NAME, '(' + this.channelzRef.id + ') ' + text);
   }
-  
+
 
   addProtoService(): never {
     throw new Error('Not implemented. Use addService() instead');
@@ -743,7 +739,7 @@ export class Server {
   /**
    * Get the channelz reference object for this server. The returned value is
    * garbage if channelz is disabled for this server.
-   * @returns 
+   * @returns
    */
   getChannelzRef() {
     return this.channelzRef;
@@ -792,14 +788,14 @@ export class Server {
 
     return handler
   }
-  
+
   private _respondWithError<T extends Partial<ServiceError>>(
-    err: T, 
-    stream: http2.ServerHttp2Stream, 
+    err: T,
+    stream: http2.ServerHttp2Stream,
     channelzSessionInfo: ChannelzSessionInfo | null = null
   ) {
     const call = new Http2ServerCallStream(stream, null!, this.options);
-    
+
     if (err.code === undefined) {
       err.code = Status.INTERNAL;
     }
@@ -814,7 +810,7 @@ export class Server {
 
   private _channelzHandler(stream: http2.ServerHttp2Stream, headers: http2.IncomingHttpHeaders) {
     const channelzSessionInfo = this.sessions.get(stream.session as http2.ServerHttp2Session);
-    
+
     this.callTracker.addCallStarted();
     channelzSessionInfo?.streamTracker.addCallStarted();
 
@@ -834,9 +830,9 @@ export class Server {
       }, stream, channelzSessionInfo)
       return
     }
-  
+
     const call = new Http2ServerCallStream(stream, handler, this.options);
-      
+
     call.once('callEnd', (code: Status) => {
       if (code === Status.OK) {
         this.callTracker.addCallSucceeded();
@@ -844,7 +840,7 @@ export class Server {
         this.callTracker.addCallFailed();
       }
     });
-    
+
     if (channelzSessionInfo) {
       call.once('streamEnd', (success: boolean) => {
         if (success) {
@@ -954,8 +950,8 @@ export class Server {
     }
     this.serverAddressString = serverAddressString
 
-    const handler = this.channelzEnabled 
-      ? this._channelzHandler 
+    const handler = this.channelzEnabled
+      ? this._channelzHandler
       : this._streamHandler
 
     http2Server.on('stream', handler.bind(this))

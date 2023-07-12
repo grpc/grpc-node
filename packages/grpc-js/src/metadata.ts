@@ -229,11 +229,6 @@ export class Metadata {
     return result;
   }
 
-  // For compatibility with the other Metadata implementation
-  private _getCoreRepresentation() {
-    return this.internalRepr;
-  }
-
   /**
    * This modifies the behavior of JSON.stringify to show an object
    * representation of the metadata map.

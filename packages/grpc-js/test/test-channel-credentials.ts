@@ -19,14 +19,11 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
-import * as protoLoader from '@grpc/proto-loader';
 
 import { CallCredentials } from '../src/call-credentials';
 import { ChannelCredentials } from '../src/channel-credentials';
 import * as grpc from '../src';
 import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
-import { TestServiceClient, TestServiceHandlers } from './generated/TestService';
-import { ProtoGrpcType as TestServiceGrpcType } from './generated/test_service';
 
 import { assert2, loadProtoFile, mockFunction } from './common';
 import { sendUnaryData, ServerUnaryCall, ServiceError } from '../src';
@@ -171,7 +168,7 @@ describe('ChannelCredentials usage', () => {
           callback(null, call.request);
         },
       });
-  
+
       server.bindAsync(
         'localhost:0',
         serverCreds,

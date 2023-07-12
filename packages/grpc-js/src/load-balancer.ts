@@ -16,7 +16,6 @@
  */
 
 import { ChannelOptions } from './channel-options';
-import { Subchannel } from './subchannel';
 import { SubchannelAddress } from './subchannel-address';
 import { ConnectivityState } from './connectivity-state';
 import { Picker } from './picker';
@@ -58,8 +57,8 @@ export interface ChannelControlHelper {
  * parent while letting others pass through to the parent unmodified. This
  * allows other code to create these children without needing to know about
  * all of the methods to be passed through.
- * @param parent 
- * @param overrides 
+ * @param parent
+ * @param overrides
  */
 export function createChildChannelControlHelper(parent: ChannelControlHelper, overrides: Partial<ChannelControlHelper>): ChannelControlHelper {
   return {
