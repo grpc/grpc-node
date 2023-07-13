@@ -28,9 +28,7 @@ import { Metadata } from './metadata';
 export class MaxMessageSizeFilter extends BaseFilter implements Filter {
   private maxSendMessageSize: number = DEFAULT_MAX_SEND_MESSAGE_LENGTH;
   private maxReceiveMessageSize: number = DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH;
-  constructor(
-    options: ChannelOptions
-  ) {
+  constructor(options: ChannelOptions) {
     super();
     if ('grpc.max_send_message_length' in options) {
       this.maxSendMessageSize = options['grpc.max_send_message_length']!;

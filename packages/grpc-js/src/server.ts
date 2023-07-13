@@ -1203,7 +1203,7 @@ async function handleUnary<RequestType, ResponseType>(
       }
     );
   } catch (err) {
-    call.sendError(err as ServerErrorResponse)
+    call.sendError(err as ServerErrorResponse);
   }
 }
 
@@ -1260,7 +1260,7 @@ async function handleServerStreaming<RequestType, ResponseType>(
 
     handler.func(stream);
   } catch (err) {
-    call.sendError(err as ServerErrorResponse)
+    call.sendError(err as ServerErrorResponse);
   }
 }
 

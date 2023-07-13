@@ -256,18 +256,30 @@ export class LoadBalancingCall implements Call {
           );
         break;
       case PickResultType.DROP:
-        const {code, details} = restrictControlPlaneStatusCode(pickResult.status!.code, pickResult.status!.details);
+        const { code, details } = restrictControlPlaneStatusCode(
+          pickResult.status!.code,
+          pickResult.status!.details
+        );
         setImmediate(() => {
-          this.outputStatus({code, details, metadata: pickResult.status!.metadata}, 'DROP');
+          this.outputStatus(
+            { code, details, metadata: pickResult.status!.metadata },
+            'DROP'
+          );
         });
         break;
       case PickResultType.TRANSIENT_FAILURE:
         if (this.metadata.getOptions().waitForReady) {
           this.channel.queueCallForPick(this);
         } else {
-          const {code, details} = restrictControlPlaneStatusCode(pickResult.status!.code, pickResult.status!.details);
+          const { code, details } = restrictControlPlaneStatusCode(
+            pickResult.status!.code,
+            pickResult.status!.details
+          );
           setImmediate(() => {
-            this.outputStatus({code, details, metadata: pickResult.status!.metadata}, 'PROCESSED');
+            this.outputStatus(
+              { code, details, metadata: pickResult.status!.metadata },
+              'PROCESSED'
+            );
           });
         }
         break;

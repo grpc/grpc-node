@@ -342,11 +342,16 @@ export class Client {
         if (status.code === Status.OK) {
           if (responseMessage === null) {
             const callerStack = getErrorStackString(callerStackError!);
-            callProperties.callback!(callErrorFromStatus({
-              code: Status.INTERNAL,
-              details: 'No message received',
-              metadata: status.metadata
-            }, callerStack));
+            callProperties.callback!(
+              callErrorFromStatus(
+                {
+                  code: Status.INTERNAL,
+                  details: 'No message received',
+                  metadata: status.metadata,
+                },
+                callerStack
+              )
+            );
           } else {
             callProperties.callback!(null, responseMessage);
           }
@@ -470,11 +475,16 @@ export class Client {
         if (status.code === Status.OK) {
           if (responseMessage === null) {
             const callerStack = getErrorStackString(callerStackError!);
-            callProperties.callback!(callErrorFromStatus({
-              code: Status.INTERNAL,
-              details: 'No message received',
-              metadata: status.metadata
-            }, callerStack));
+            callProperties.callback!(
+              callErrorFromStatus(
+                {
+                  code: Status.INTERNAL,
+                  details: 'No message received',
+                  metadata: status.metadata,
+                },
+                callerStack
+              )
+            );
           } else {
             callProperties.callback!(null, responseMessage);
           }

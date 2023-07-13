@@ -31,12 +31,7 @@ import {
   validateLoadBalancingConfig,
 } from './load-balancer';
 import { ChildLoadBalancerHandler } from './load-balancer-child-handler';
-import {
-  PickArgs,
-  Picker,
-  PickResult,
-  PickResultType,
-} from './picker';
+import { PickArgs, Picker, PickResult, PickResultType } from './picker';
 import {
   SubchannelAddress,
   subchannelAddressToString,
@@ -170,8 +165,13 @@ export class OutlierDetectionLoadBalancingConfig
     failurePercentageEjection: Partial<FailurePercentageEjectionConfig> | null,
     private readonly childPolicy: LoadBalancingConfig[]
   ) {
-    if (childPolicy.length > 0 && childPolicy[0].getLoadBalancerName() === 'pick_first') {
-      throw new Error('outlier_detection LB policy cannot have a pick_first child policy');
+    if (
+      childPolicy.length > 0 &&
+      childPolicy[0].getLoadBalancerName() === 'pick_first'
+    ) {
+      throw new Error(
+        'outlier_detection LB policy cannot have a pick_first child policy'
+      );
     }
     this.intervalMs = intervalMs ?? 10_000;
     this.baseEjectionTimeMs = baseEjectionTimeMs ?? 30_000;

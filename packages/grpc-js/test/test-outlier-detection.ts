@@ -19,7 +19,7 @@ import * as assert from 'assert';
 import * as path from 'path';
 import * as grpc from '../src';
 import { loadProtoFile } from './common';
-import { OutlierDetectionLoadBalancingConfig } from '../src/load-balancer-outlier-detection'
+import { OutlierDetectionLoadBalancingConfig } from '../src/load-balancer-outlier-detection';
 
 function multiDone(done: Mocha.Done, target: number) {
   let count = 0;
@@ -374,7 +374,7 @@ describe('Outlier detection config validation', () => {
   describe('child_policy', () => {
     it('Should reject a pick_first child_policy', () => {
       const loadBalancingConfig = {
-        child_policy: [{pick_first: {}}]
+        child_policy: [{ pick_first: {} }],
       };
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);

@@ -191,7 +191,7 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
   ) {
     super();
     this.connectionOptions = {
-      secureContext
+      secureContext,
     };
     // Node asserts that this option is a function, so we cannot pass undefined
     if (verifyOptions?.checkServerIdentity) {
@@ -220,8 +220,9 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
     if (other instanceof SecureChannelCredentialsImpl) {
       return (
         this.secureContext === other.secureContext &&
-        this.verifyOptions.checkServerIdentity === other.verifyOptions.checkServerIdentity
-        );
+        this.verifyOptions.checkServerIdentity ===
+          other.verifyOptions.checkServerIdentity
+      );
     } else {
       return false;
     }

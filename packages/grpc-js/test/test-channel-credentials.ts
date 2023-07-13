@@ -173,23 +173,18 @@ describe('ChannelCredentials usage', () => {
         },
       });
 
-      server.bindAsync(
-        'localhost:0',
-        serverCreds,
-        (err, port) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          client = new echoService(
-            `localhost:${port}`,
-            combinedCreds,
-            {'grpc.ssl_target_name_override': 'foo.test.google.fr', 'grpc.default_authority': 'foo.test.google.fr'}
-          );
-          server.start();
-          resolve();
+      server.bindAsync('localhost:0', serverCreds, (err, port) => {
+        if (err) {
+          reject(err);
+          return;
         }
-      );
+        client = new echoService(`localhost:${port}`, combinedCreds, {
+          'grpc.ssl_target_name_override': 'foo.test.google.fr',
+          'grpc.default_authority': 'foo.test.google.fr',
+        });
+        server.start();
+        resolve();
+      });
     });
   });
   after(() => {

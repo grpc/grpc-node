@@ -581,7 +581,11 @@ export class Http2SubchannelConnector implements SubchannelConnector {
   private isShutdown = false;
   constructor(private channelTarget: GrpcUri) {}
   private trace(text: string) {
-    logging.trace(LogVerbosity.DEBUG, TRACER_NAME, this.channelTarget + ' ' + text);
+    logging.trace(
+      LogVerbosity.DEBUG,
+      TRACER_NAME,
+      this.channelTarget + ' ' + text
+    );
   }
   private createSession(
     address: SubchannelAddress,

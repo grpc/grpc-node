@@ -39,7 +39,16 @@ import { GrpcUri, parseUri, uriToString } from './uri-parser';
 import { ServerSurfaceCall } from './server-call';
 
 import { ConnectivityState } from './connectivity-state';
-import { ChannelInfo, ChannelRef, ChannelzCallTracker, ChannelzChildrenTracker, ChannelzTrace, registerChannelzChannel, SubchannelRef, unregisterChannelzRef } from './channelz';
+import {
+  ChannelInfo,
+  ChannelRef,
+  ChannelzCallTracker,
+  ChannelzChildrenTracker,
+  ChannelzTrace,
+  registerChannelzChannel,
+  SubchannelRef,
+  unregisterChannelzRef,
+} from './channelz';
 import { LoadBalancingCall } from './load-balancing-call';
 import { CallCredentials } from './call-credentials';
 import { Call, CallStreamOptions, StatusObject } from './call-interface';

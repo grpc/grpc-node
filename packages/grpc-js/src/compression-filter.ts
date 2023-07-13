@@ -305,8 +305,9 @@ export class CompressionFilter extends BaseFilter implements Filter {
 }
 
 export class CompressionFilterFactory
-  implements FilterFactory<CompressionFilter> {
-    private sharedFilterConfig: SharedCompressionFilterConfig = {};
+  implements FilterFactory<CompressionFilter>
+{
+  private sharedFilterConfig: SharedCompressionFilterConfig = {};
   constructor(channel: Channel, private readonly options: ChannelOptions) {}
   createFilter(): CompressionFilter {
     return new CompressionFilter(this.options, this.sharedFilterConfig);

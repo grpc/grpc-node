@@ -286,7 +286,9 @@ class DnsResolver implements Resolver {
             } catch (err) {
               this.latestServiceConfigError = {
                 code: Status.UNAVAILABLE,
-                details: `Parsing service config failed with error ${(err as Error).message}`,
+                details: `Parsing service config failed with error ${
+                  (err as Error).message
+                }`,
                 metadata: new Metadata(),
               };
             }
