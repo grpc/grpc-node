@@ -20,7 +20,7 @@ import { ChannelOptions } from './channel-options';
 import { ResolvingLoadBalancer } from './resolving-load-balancer';
 import { SubchannelPool, getSubchannelPool } from './subchannel-pool';
 import { ChannelControlHelper } from './load-balancer';
-import { UnavailablePicker, Picker, PickResultType } from './picker';
+import { UnavailablePicker, Picker } from './picker';
 import { Metadata } from './metadata';
 import { Status, LogVerbosity, Propagate } from './constants';
 import { FilterStackFactory } from './filter-stack';
@@ -31,22 +31,19 @@ import {
   getDefaultAuthority,
   mapUriDefaultScheme,
 } from './resolver';
-import { trace, log } from './logging';
+import { trace } from './logging';
 import { SubchannelAddress } from './subchannel-address';
 import { MaxMessageSizeFilterFactory } from './max-message-size-filter';
 import { mapProxyName } from './http_proxy';
-import { GrpcUri, parseUri, splitHostPort, uriToString } from './uri-parser';
+import { GrpcUri, parseUri, uriToString } from './uri-parser';
 import { ServerSurfaceCall } from './server-call';
-import { Filter } from './filter';
 
 import { ConnectivityState } from './connectivity-state';
 import { ChannelInfo, ChannelRef, ChannelzCallTracker, ChannelzChildrenTracker, ChannelzTrace, registerChannelzChannel, SubchannelRef, unregisterChannelzRef } from './channelz';
-import { Subchannel } from './subchannel';
 import { LoadBalancingCall } from './load-balancing-call';
 import { CallCredentials } from './call-credentials';
-import { Call, CallStreamOptions, InterceptingListener, MessageContext, StatusObject } from './call-interface';
-import { SubchannelCall } from './subchannel-call';
-import { Deadline, deadlineToString, getDeadlineTimeoutString } from './deadline';
+import { Call, CallStreamOptions, StatusObject } from './call-interface';
+import { Deadline, deadlineToString } from './deadline';
 import { ResolvingCall } from './resolving-call';
 import { getNextCallNumber } from './call-number';
 import { restrictControlPlaneStatusCode } from './control-plane-status';
@@ -112,7 +109,7 @@ class ChannelSubchannelWrapper extends BaseSubchannelWrapper implements Subchann
 }
 
 export class InternalChannel {
-  
+
   private resolvingLoadBalancer: ResolvingLoadBalancer;
   private subchannelPool: SubchannelPool;
   private connectivityState: ConnectivityState = ConnectivityState.IDLE;
@@ -376,7 +373,7 @@ export class InternalChannel {
     trace(
       LogVerbosity.DEBUG,
       'connectivity_state',
-      '(' + this.channelzRef.id + ') ' + 
+      '(' + this.channelzRef.id + ') ' +
         uriToString(this.target) +
         ' ' +
         ConnectivityState[this.connectivityState] +
@@ -601,7 +598,7 @@ export class InternalChannel {
   /**
    * Get the channelz reference object for this channel. The returned value is
    * garbage if channelz is disabled for this channel.
-   * @returns 
+   * @returns
    */
   getChannelzRef() {
     return this.channelzRef;

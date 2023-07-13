@@ -18,7 +18,7 @@
 import { CallCredentials } from "./call-credentials";
 import { Call, CallStreamOptions, InterceptingListener, MessageContext, StatusObject } from "./call-interface";
 import { LogVerbosity, Propagate, Status } from "./constants";
-import { Deadline, deadlineToString, getDeadlineTimeoutString, getRelativeTimeout, minDeadline } from "./deadline";
+import { Deadline, deadlineToString, getRelativeTimeout, minDeadline } from "./deadline";
 import { FilterStack, FilterStackFactory } from "./filter-stack";
 import { InternalChannel } from "./internal-channel";
 import { Metadata } from "./metadata";

@@ -165,7 +165,6 @@ describe('Call propagation', () => {
   describe('Deadlines', () => {
     it('should work with unary requests', (done) => {
       done = multiDone(done, 2);
-      let call: grpc.ClientUnaryCall;
       proxyServer.addService(Client.service, {
         unary: (parent: grpc.ServerUnaryCall<any, any>, callback: grpc.sendUnaryData<any>) => {
           client.unary(parent.request, {parent: parent, propagate_flags: grpc.propagate.DEADLINE}, (error: grpc.ServiceError, value: unknown) => {
@@ -178,7 +177,7 @@ describe('Call propagation', () => {
       });
       const deadline = new Date();
       deadline.setMilliseconds(deadline.getMilliseconds() + 100);
-      call = proxyClient.unary({}, {deadline}, (error: grpc.ServiceError, value: unknown) => {
+      proxyClient.unary({}, {deadline}, (error: grpc.ServiceError, value: unknown) => {
         assert(error);
         assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
         done();
@@ -186,7 +185,6 @@ describe('Call propagation', () => {
     });
     it('Should work with client streaming requests', (done) => {
       done = multiDone(done, 2);
-      let call: grpc.ClientWritableStream<unknown>;
       proxyServer.addService(Client.service, {
         clientStream: (parent: grpc.ServerReadableStream<any, any>, callback: grpc.sendUnaryData<any>) => {
           client.clientStream({parent: parent, propagate_flags: grpc.propagate.DEADLINE}, (error: grpc.ServiceError, value: unknown) => {
@@ -199,7 +197,7 @@ describe('Call propagation', () => {
       });
       const deadline = new Date();
       deadline.setMilliseconds(deadline.getMilliseconds() + 100);
-      call = proxyClient.clientStream({deadline, propagate_flags: grpc.propagate.DEADLINE}, (error: grpc.ServiceError, value: unknown) => {
+      proxyClient.clientStream({deadline, propagate_flags: grpc.propagate.DEADLINE}, (error: grpc.ServiceError, value: unknown) => {
         assert(error);
         assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
         done();

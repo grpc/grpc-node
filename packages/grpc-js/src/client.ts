@@ -347,13 +347,13 @@ export class Client {
               code: Status.INTERNAL,
               details: 'No message received',
               metadata: status.metadata
-            }, /*callerStack*/''));
+            }, callerStack));
           } else {
             callProperties.callback!(null, responseMessage);
           }
         } else {
           const callerStack = getErrorStackString(callerStackError!);
-          callProperties.callback!(callErrorFromStatus(status, /*callerStack*/''));
+          callProperties.callback!(callErrorFromStatus(status, callerStack));
         }
         /* Avoid retaining the callerStackError object in the call context of
          * the status event handler. */

@@ -38,14 +38,6 @@ export type CheckServerIdentityCallback = (
   cert: PeerCertificate
 ) => Error | undefined;
 
-function bufferOrNullEqual(buf1: Buffer | null, buf2: Buffer | null) {
-  if (buf1 === null && buf2 === null) {
-    return true;
-  } else {
-    return buf1 !== null && buf2 !== null && buf1.equals(buf2);
-  }
-}
-
 /**
  * Additional peer verification options that can be set when creating
  * SSL credentials.
@@ -196,7 +188,7 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
     private verifyOptions: VerifyOptions
   ) {
     super();
-    this.connectionOptions = { 
+    this.connectionOptions = {
       secureContext
     };
     // Node asserts that this option is a function, so we cannot pass undefined
@@ -225,7 +217,7 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
     }
     if (other instanceof SecureChannelCredentialsImpl) {
       return (
-        this.secureContext === other.secureContext && 
+        this.secureContext === other.secureContext &&
         this.verifyOptions.checkServerIdentity === other.verifyOptions.checkServerIdentity
         );
     } else {

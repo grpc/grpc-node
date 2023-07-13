@@ -686,7 +686,7 @@ describe('Compressed requests', () => {
     },
 
     ServerStream(call) {
-      const { metadata, request } = call;
+      const { request } = call;
 
       for (let i = 0; i < 5; i++) {
         call.write({ count: request.message.length });
@@ -908,7 +908,7 @@ describe('Compressed requests', () => {
         done();
       })
     })
-    
+
     /* As of Node 16, Writable and Duplex streams validate the encoding
      * argument to write, and the flags values we are passing there are not
      * valid. We don't currently have an alternative way to pass that flag

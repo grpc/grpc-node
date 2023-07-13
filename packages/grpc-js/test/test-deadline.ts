@@ -19,13 +19,9 @@ import * as assert from 'assert';
 
 import * as grpc from '../src';
 import { experimental } from '../src';
-import { ServerCredentials } from '../src';
 import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
 import { loadProtoFile } from './common';
 import ServiceConfig = experimental.ServiceConfig;
-
-const clientInsecureCreds = grpc.credentials.createInsecure();
-const serverInsecureCreds = ServerCredentials.createInsecure();
 
 const TIMEOUT_SERVICE_CONFIG: ServiceConfig = {
   loadBalancingConfig: [],
@@ -44,7 +40,7 @@ describe('Client with configured timeout', () => {
   let server: grpc.Server;
   let Client: ServiceClientConstructor;
   let client: ServiceClient;
-  
+
   before(done => {
     Client = loadProtoFile(__dirname + '/fixtures/test_service.proto').TestService as ServiceClientConstructor;
     server = new grpc.Server();
