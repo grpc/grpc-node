@@ -615,19 +615,15 @@ export class Http2ServerCallStream<
         );
 
         if (Buffer.isBuffer(decompressedMessage)) {
-          call
-            .deserializeMessageWithInternalError(decompressedMessage)
-            .then(resolve)
-            .catch(reject);
+          resolve(
+            call.deserializeMessageWithInternalError(decompressedMessage)
+          );
           return;
         }
 
         decompressedMessage.then(
           decompressed =>
-            call
-              .deserializeMessageWithInternalError(decompressed)
-              .then(resolve)
-              .catch(reject),
+            resolve(call.deserializeMessageWithInternalError(decompressed)),
           (err: any) =>
             reject(
               err.code
