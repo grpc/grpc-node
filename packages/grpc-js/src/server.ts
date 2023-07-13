@@ -1176,17 +1176,14 @@ export class Server {
   }
 }
 
-function handleUnary<RequestType, ResponseType>(
+async function handleUnary<RequestType, ResponseType>(
   call: Http2ServerCallStream<RequestType, ResponseType>,
   handler: UnaryHandler<RequestType, ResponseType>,
   metadata: Metadata,
   encoding: string
-): void {
-  call.receiveUnaryMessage(encoding, (err, request) => {
-    if (err) {
-      call.sendError(err);
-      return;
-    }
+): Promise<void> {
+  try {
+    const request = await call.receiveUnaryMessage(encoding);
 
     if (request === undefined || call.cancelled) {
       return;
@@ -1209,7 +1206,9 @@ function handleUnary<RequestType, ResponseType>(
         call.sendUnaryMessage(err, value, trailer, flags);
       }
     );
-  });
+  } catch (err) {
+    call.sendError(err as ServerErrorResponse)
+  }
 }
 
 function handleClientStreaming<RequestType, ResponseType>(
@@ -1243,17 +1242,14 @@ function handleClientStreaming<RequestType, ResponseType>(
   handler.func(stream, respond);
 }
 
-function handleServerStreaming<RequestType, ResponseType>(
+async function handleServerStreaming<RequestType, ResponseType>(
   call: Http2ServerCallStream<RequestType, ResponseType>,
   handler: ServerStreamingHandler<RequestType, ResponseType>,
   metadata: Metadata,
   encoding: string
-): void {
-  call.receiveUnaryMessage(encoding, (err, request) => {
-    if (err) {
-      call.sendError(err);
-      return;
-    }
+): Promise<void> {
+  try {
+    const request = await call.receiveUnaryMessage(encoding);
 
     if (request === undefined || call.cancelled) {
       return;
@@ -1267,7 +1263,9 @@ function handleServerStreaming<RequestType, ResponseType>(
     );
 
     handler.func(stream);
-  });
+  } catch (err) {
+    call.sendError(err as ServerErrorResponse)
+  }
 }
 
 function handleBidiStreaming<RequestType, ResponseType>(
