@@ -308,10 +308,7 @@ export class CompressionFilterFactory
   implements FilterFactory<CompressionFilter>
 {
   private sharedFilterConfig: SharedCompressionFilterConfig = {};
-  constructor(
-    private readonly channel: Channel,
-    private readonly options: ChannelOptions
-  ) {}
+  constructor(channel: Channel, private readonly options: ChannelOptions) {}
   createFilter(): CompressionFilter {
     return new CompressionFilter(this.options, this.sharedFilterConfig);
   }

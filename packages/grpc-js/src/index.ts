@@ -43,9 +43,7 @@ import {
   loadPackageDefinition,
   makeClientConstructor,
   MethodDefinition,
-  ProtobufTypeDefinition,
   Serialize,
-  ServiceClientConstructor,
   ServiceDefinition,
 } from './make-client';
 import { Metadata, MetadataOptions, MetadataValue } from './metadata';

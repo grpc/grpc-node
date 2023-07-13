@@ -15,7 +15,7 @@
  *
  */
 
-import { Duplex, Readable, Writable } from 'stream';
+import { Readable, Writable } from 'stream';
 import { EmitterAugmentation1 } from './events';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

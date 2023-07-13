@@ -717,7 +717,7 @@ describe('Compressed requests', () => {
     },
 
     ServerStream(call) {
-      const { metadata, request } = call;
+      const { request } = call;
 
       for (let i = 0; i < 5; i++) {
         call.write({ count: request.message.length });

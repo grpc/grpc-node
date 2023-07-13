@@ -43,14 +43,6 @@ export type CheckServerIdentityCallback = (
   cert: PeerCertificate
 ) => Error | undefined;
 
-function bufferOrNullEqual(buf1: Buffer | null, buf2: Buffer | null) {
-  if (buf1 === null && buf2 === null) {
-    return true;
-  } else {
-    return buf1 !== null && buf2 !== null && buf1.equals(buf2);
-  }
-}
-
 /**
  * Additional peer verification options that can be set when creating
  * SSL credentials.

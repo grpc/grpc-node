@@ -20,7 +20,6 @@ import * as path from 'path';
 import * as grpc from '../src';
 import { loadProtoFile } from './common';
 import { OutlierDetectionLoadBalancingConfig } from '../src/load-balancer-outlier-detection';
-import { ServiceClient } from '../src/make-client';
 
 function multiDone(done: Mocha.Done, target: number) {
   let count = 0;
@@ -370,6 +369,16 @@ describe('Outlier detection config validation', () => {
       assert.throws(() => {
         OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
       }, /failure_percentage_ejection\.enforcement_percentage parse error: value out of range for percentage/);
+    });
+  });
+  describe('child_policy', () => {
+    it('Should reject a pick_first child_policy', () => {
+      const loadBalancingConfig = {
+        child_policy: [{ pick_first: {} }],
+      };
+      assert.throws(() => {
+        OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+      }, /outlier_detection LB policy cannot have a pick_first child policy/);
     });
   });
 });
