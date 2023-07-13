@@ -42,7 +42,7 @@ class IpResolver implements Resolver {
   private addresses: SubchannelAddress[] = [];
   private error: StatusObject | null = null;
   constructor(
-    private target: GrpcUri,
+    target: GrpcUri,
     private listener: ResolverListener,
     channelOptions: ChannelOptions
   ) {

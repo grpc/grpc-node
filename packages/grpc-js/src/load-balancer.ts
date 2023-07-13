@@ -16,7 +16,6 @@
  */
 
 import { ChannelOptions } from './channel-options';
-import { Subchannel } from './subchannel';
 import { SubchannelAddress } from './subchannel-address';
 import { ConnectivityState } from './connectivity-state';
 import { Picker } from './picker';

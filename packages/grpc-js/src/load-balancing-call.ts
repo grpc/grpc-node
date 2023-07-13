@@ -26,7 +26,6 @@ import { SubchannelCall } from './subchannel-call';
 import { ConnectivityState } from './connectivity-state';
 import { LogVerbosity, Status } from './constants';
 import { Deadline, getDeadlineTimeoutString } from './deadline';
-import { FilterStack, FilterStackFactory } from './filter-stack';
 import { InternalChannel } from './internal-channel';
 import { Metadata } from './metadata';
 import { PickResultType } from './picker';
@@ -55,7 +54,6 @@ export class LoadBalancingCall implements Call {
   private pendingMessage: { context: MessageContext; message: Buffer } | null =
     null;
   private pendingHalfClose = false;
-  private pendingChildStatus: StatusObject | null = null;
   private ended = false;
   private serviceUrl: string;
   private metadata: Metadata | null = null;
@@ -258,27 +256,19 @@ export class LoadBalancingCall implements Call {
           );
         break;
       case PickResultType.DROP:
-        const { code, details } = restrictControlPlaneStatusCode(
-          pickResult.status!.code,
-          pickResult.status!.details
-        );
-        this.outputStatus(
-          { code, details, metadata: pickResult.status!.metadata },
-          'DROP'
-        );
+        const {code, details} = restrictControlPlaneStatusCode(pickResult.status!.code, pickResult.status!.details);
+        setImmediate(() => {
+          this.outputStatus({code, details, metadata: pickResult.status!.metadata}, 'DROP');
+        });
         break;
       case PickResultType.TRANSIENT_FAILURE:
         if (this.metadata.getOptions().waitForReady) {
           this.channel.queueCallForPick(this);
         } else {
-          const { code, details } = restrictControlPlaneStatusCode(
-            pickResult.status!.code,
-            pickResult.status!.details
-          );
-          this.outputStatus(
-            { code, details, metadata: pickResult.status!.metadata },
-            'PROCESSED'
-          );
+          const {code, details} = restrictControlPlaneStatusCode(pickResult.status!.code, pickResult.status!.details);
+          setImmediate(() => {
+            this.outputStatus({code, details, metadata: pickResult.status!.metadata}, 'PROCESSED');
+          });
         }
         break;
       case PickResultType.QUEUE:

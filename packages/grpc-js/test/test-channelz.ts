@@ -21,8 +21,6 @@ import * as grpc from '../src';
 
 import { ProtoGrpcType } from '../src/generated/channelz';
 import { ChannelzClient } from '../src/generated/grpc/channelz/v1/Channelz';
-import { Channel__Output } from '../src/generated/grpc/channelz/v1/Channel';
-import { Server__Output } from '../src/generated/grpc/channelz/v1/Server';
 import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
 import { loadProtoFile } from './common';
 

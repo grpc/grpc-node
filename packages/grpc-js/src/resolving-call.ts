@@ -27,7 +27,6 @@ import { LogVerbosity, Propagate, Status } from './constants';
 import {
   Deadline,
   deadlineToString,
-  getDeadlineTimeoutString,
   getRelativeTimeout,
   minDeadline,
 } from './deadline';

@@ -150,10 +150,6 @@ interface ChannelzSessionInfo {
   lastMessageReceivedTimestamp: Date | null;
 }
 
-interface ChannelzListenerInfo {
-  ref: SocketRef;
-}
-
 export class Server {
   private http2ServerList: {
     server: http2.Http2Server | http2.Http2SecureServer;

@@ -67,10 +67,6 @@ const {
   HTTP2_HEADER_USER_AGENT,
 } = http2.constants;
 
-/* setInterval and setTimeout only accept signed 32 bit integers. JS doesn't
- * have a constant for the max signed 32 bit integer, so this is a simple way
- * to calculate it */
-const KEEPALIVE_MAX_TIME_MS = ~(1 << 31);
 const KEEPALIVE_TIMEOUT_MS = 20000;
 
 export interface CallEventTracker {
@@ -135,11 +131,6 @@ class Http2Transport implements Transport {
   // Channelz info
   private channelzRef: SocketRef;
   private readonly channelzEnabled: boolean = true;
-  /**
-   * Name of the remote server, if it is not the same as the subchannel
-   * address, i.e. if connecting through an HTTP CONNECT proxy.
-   */
-  private remoteName: string | null = null;
   private streamTracker = new ChannelzCallTracker();
   private keepalivesSent = 0;
   private messagesSent = 0;
@@ -150,7 +141,12 @@ class Http2Transport implements Transport {
   constructor(
     private session: http2.ClientHttp2Session,
     subchannelAddress: SubchannelAddress,
-    options: ChannelOptions
+    options: ChannelOptions,
+    /**
+     * Name of the remote server, if it is not the same as the subchannel
+     * address, i.e. if connecting through an HTTP CONNECT proxy.
+     */
+    private remoteName: string | null
   ) {
     // Build user-agent string.
     this.userAgent = [
@@ -584,7 +580,9 @@ export class Http2SubchannelConnector implements SubchannelConnector {
   private session: http2.ClientHttp2Session | null = null;
   private isShutdown = false;
   constructor(private channelTarget: GrpcUri) {}
-  private trace(text: string) {}
+  private trace(text: string) {
+    logging.trace(LogVerbosity.DEBUG, TRACER_NAME, this.channelTarget + ' ' + text);
+  }
   private createSession(
     address: SubchannelAddress,
     credentials: ChannelCredentials,
@@ -702,7 +700,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       session.unref();
       session.once('connect', () => {
         session.removeAllListeners();
-        resolve(new Http2Transport(session, address, options));
+        resolve(new Http2Transport(session, address, options, remoteName));
         this.session = null;
       });
       session.once('close', () => {

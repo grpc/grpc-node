@@ -23,8 +23,6 @@ import { Metadata } from './metadata';
 import { StreamDecoder } from './stream-decoder';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
-import { ServerSurfaceCall } from './server-call';
-import { Deadline } from './deadline';
 import {
   InterceptingListener,
   MessageContext,
@@ -34,9 +32,6 @@ import {
 import { CallEventTracker, Transport } from './transport';
 
 const TRACER_NAME = 'subchannel_call';
-
-const { HTTP2_HEADER_STATUS, HTTP2_HEADER_CONTENT_TYPE, NGHTTP2_CANCEL } =
-  http2.constants;
 
 /**
  * https://nodejs.org/api/errors.html#errors_class_systemerror

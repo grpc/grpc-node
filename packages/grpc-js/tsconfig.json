@@ -16,7 +16,8 @@
     "module": "commonjs",
     "resolveJsonModule": true,
     "incremental": true,
-    "types": ["mocha"]
+    "types": ["mocha"],
+    "noUnusedLocals": true
   },
   "include": [
     "src/**/*.ts",

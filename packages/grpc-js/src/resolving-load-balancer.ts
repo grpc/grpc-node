@@ -36,15 +36,12 @@ import { SubchannelAddress } from './subchannel-address';
 import { GrpcUri, uriToString } from './uri-parser';
 import { ChildLoadBalancerHandler } from './load-balancer-child-handler';
 import { ChannelOptions } from './channel-options';
-import { PickFirstLoadBalancingConfig } from './load-balancer-pick-first';
 
 const TRACER_NAME = 'resolving_load_balancer';
 
 function trace(text: string): void {
   logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
 }
-
-const DEFAULT_LOAD_BALANCER_NAME = 'pick_first';
 
 function getDefaultConfigSelector(
   serviceConfig: ServiceConfig | null
@@ -137,7 +134,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   constructor(
     private readonly target: GrpcUri,
     private readonly channelControlHelper: ChannelControlHelper,
-    private readonly channelOptions: ChannelOptions,
+    channelOptions: ChannelOptions,
     private readonly onSuccessfulResolution: ResolutionCallback,
     private readonly onFailedResolution: ResolutionFailureCallback
   ) {
