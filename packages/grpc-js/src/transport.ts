@@ -584,7 +584,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
     logging.trace(
       LogVerbosity.DEBUG,
       TRACER_NAME,
-      this.channelTarget + ' ' + text
+      uriToString(this.channelTarget) + ' ' + text
     );
   }
   private createSession(
