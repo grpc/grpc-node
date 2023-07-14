@@ -57,6 +57,10 @@ export interface ChannelOptions {
   'grpc-node.max_session_memory'?: number;
   'grpc.service_config_disable_resolution'?: number;
   'grpc.client_idle_timeout_ms'?: number;
+  /**
+   * Set the enableTrace option in TLS clients and servers
+   */
+  'grpc-node.tls_enable_trace'?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
@@ -91,6 +95,7 @@ export const recognizedOptions = {
   'grpc-node.max_session_memory': true,
   'grpc.service_config_disable_resolution': true,
   'grpc.client_idle_timeout_ms': true,
+  'grpc-node.tls_enable_trace': true,
 };
 
 export function channelOptionsEqual(
