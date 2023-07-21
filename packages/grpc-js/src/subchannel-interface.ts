@@ -49,6 +49,12 @@ export interface SubchannelInterface {
    * If this is a wrapper, return the wrapped subchannel, otherwise return this
    */
   getRealSubchannel(): Subchannel;
+  /**
+   * Returns true if this and other both proxy the same underlying subchannel.
+   * Can be used instead of directly accessing getRealSubchannel to allow mocks
+   * to avoid implementing getRealSubchannel
+   */
+  realSubchannelEquals(other: SubchannelInterface): boolean;
 }
 
 export abstract class BaseSubchannelWrapper implements SubchannelInterface {
@@ -83,5 +89,8 @@ export abstract class BaseSubchannelWrapper implements SubchannelInterface {
   }
   getRealSubchannel(): Subchannel {
     return this.child.getRealSubchannel();
+  }
+  realSubchannelEquals(other: SubchannelInterface): boolean {
+    return this.getRealSubchannel() === other.getRealSubchannel();
   }
 }

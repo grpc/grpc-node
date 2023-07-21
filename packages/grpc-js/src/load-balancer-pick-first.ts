@@ -31,11 +31,7 @@ import {
   PickResultType,
   UnavailablePicker,
 } from './picker';
-import {
-  SubchannelAddress,
-  subchannelAddressEqual,
-  subchannelAddressToString,
-} from './subchannel-address';
+import { SubchannelAddress } from './subchannel-address';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import {
@@ -58,21 +54,35 @@ const TYPE_NAME = 'pick_first';
 const CONNECTION_DELAY_INTERVAL_MS = 250;
 
 export class PickFirstLoadBalancingConfig implements LoadBalancingConfig {
+  constructor(private readonly shuffleAddressList: boolean) {}
+
   getLoadBalancerName(): string {
     return TYPE_NAME;
   }
 
-  constructor() {}
-
   toJsonObject(): object {
     return {
-      [TYPE_NAME]: {},
+      [TYPE_NAME]: {
+        shuffleAddressList: this.shuffleAddressList,
+      },
     };
+  }
+
+  getShuffleAddressList() {
+    return this.shuffleAddressList;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static createFromJson(obj: any) {
-    return new PickFirstLoadBalancingConfig();
+    if (
+      'shuffleAddressList' in obj &&
+      !(typeof obj.shuffleAddressList === 'boolean')
+    ) {
+      throw new Error(
+        'pick_first config field shuffleAddressList must be a boolean if provided'
+      );
+    }
+    return new PickFirstLoadBalancingConfig(obj.shuffleAddressList === true);
   }
 }
 
@@ -94,24 +104,33 @@ class PickFirstPicker implements Picker {
   }
 }
 
-interface ConnectivityStateCounts {
-  [ConnectivityState.CONNECTING]: number;
-  [ConnectivityState.IDLE]: number;
-  [ConnectivityState.READY]: number;
-  [ConnectivityState.SHUTDOWN]: number;
-  [ConnectivityState.TRANSIENT_FAILURE]: number;
+interface SubchannelChild {
+  subchannel: SubchannelInterface;
+  hasReportedTransientFailure: boolean;
+}
+
+/**
+ * Return a new array with the elements of the input array in a random order
+ * @param list The input array
+ * @returns A shuffled array of the elements of list
+ */
+export function shuffled<T>(list: T[]): T[] {
+  const result = list.slice();
+  for (let i = result.length - 1; i > 1; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = result[i];
+    result[i] = result[j];
+    result[j] = temp;
+  }
+  return result;
 }
 
 export class PickFirstLoadBalancer implements LoadBalancer {
   /**
-   * The list of backend addresses most recently passed to `updateAddressList`.
-   */
-  private latestAddressList: SubchannelAddress[] = [];
-  /**
    * The list of subchannels this load balancer is currently attempting to
    * connect to.
    */
-  private subchannels: SubchannelInterface[] = [];
+  private children: SubchannelChild[] = [];
   /**
    * The current connectivity state of the load balancer.
    */
@@ -121,8 +140,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    * recently started connection attempt.
    */
   private currentSubchannelIndex = 0;
-
-  private subchannelStateCounts: ConnectivityStateCounts;
   /**
    * The currently picked subchannel used for making calls. Populated if
    * and only if the load balancer's current state is READY. In that case,
@@ -133,17 +150,27 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    * Listener callback attached to each subchannel in the `subchannels` list
    * while establishing a connection.
    */
-  private subchannelStateListener: ConnectivityStateListener;
-  /**
-   * Listener callback attached to the current picked subchannel.
-   */
-  private pickedSubchannelStateListener: ConnectivityStateListener;
+  private subchannelStateListener: ConnectivityStateListener = (
+    subchannel,
+    previousState,
+    newState
+  ) => {
+    this.onSubchannelStateUpdate(subchannel, previousState, newState);
+  };
   /**
    * Timer reference for the timer tracking when to start
    */
   private connectionDelayTimeout: NodeJS.Timeout;
 
   private triedAllSubchannels = false;
+
+  /**
+   * The LB policy enters sticky TRANSIENT_FAILURE mode when all
+   * subchannels have failed to connect at least once, and it stays in that
+   * mode until a connection attempt is successful. While in sticky TF mode,
+   * the LB policy continuously attempts to connect to all of its subchannels.
+   */
+  private stickyTransientFailureMode = false;
 
   /**
    * Load balancer that attempts to connect to each backend in the address list
@@ -153,136 +180,88 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    *     this load balancer's owner.
    */
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
-    this.subchannelStateCounts = {
-      [ConnectivityState.CONNECTING]: 0,
-      [ConnectivityState.IDLE]: 0,
-      [ConnectivityState.READY]: 0,
-      [ConnectivityState.SHUTDOWN]: 0,
-      [ConnectivityState.TRANSIENT_FAILURE]: 0,
-    };
-    this.subchannelStateListener = (
-      subchannel: SubchannelInterface,
-      previousState: ConnectivityState,
-      newState: ConnectivityState
-    ) => {
-      this.subchannelStateCounts[previousState] -= 1;
-      this.subchannelStateCounts[newState] += 1;
-      /* If the subchannel we most recently attempted to start connecting
-       * to goes into TRANSIENT_FAILURE, immediately try to start
-       * connecting to the next one instead of waiting for the connection
-       * delay timer. */
-      if (
-        subchannel.getRealSubchannel() ===
-          this.subchannels[this.currentSubchannelIndex].getRealSubchannel() &&
-        newState === ConnectivityState.TRANSIENT_FAILURE
-      ) {
-        this.startNextSubchannelConnecting();
-      }
-      if (newState === ConnectivityState.READY) {
-        this.pickSubchannel(subchannel);
-        return;
-      } else {
-        if (
-          this.triedAllSubchannels &&
-          this.subchannelStateCounts[ConnectivityState.IDLE] ===
-            this.subchannels.length
-        ) {
-          /* If all of the subchannels are IDLE we should go back to a
-           * basic IDLE state where there is no subchannel list to avoid
-           * holding unused resources. We do not reset triedAllSubchannels
-           * because that is a reminder to request reresolution the next time
-           * this LB policy needs to connect. */
-          this.resetSubchannelList(false);
-          this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
-          return;
-        }
-        if (this.currentPick === null) {
-          if (this.triedAllSubchannels) {
-            let newLBState: ConnectivityState;
-            if (this.subchannelStateCounts[ConnectivityState.CONNECTING] > 0) {
-              newLBState = ConnectivityState.CONNECTING;
-            } else if (
-              this.subchannelStateCounts[ConnectivityState.TRANSIENT_FAILURE] >
-              0
-            ) {
-              newLBState = ConnectivityState.TRANSIENT_FAILURE;
-            } else {
-              newLBState = ConnectivityState.IDLE;
-            }
-            if (newLBState !== this.currentState) {
-              if (newLBState === ConnectivityState.TRANSIENT_FAILURE) {
-                this.updateState(newLBState, new UnavailablePicker());
-              } else {
-                this.updateState(newLBState, new QueuePicker(this));
-              }
-            }
-          } else {
-            this.updateState(
-              ConnectivityState.CONNECTING,
-              new QueuePicker(this)
-            );
-          }
-        }
-      }
-    };
-    this.pickedSubchannelStateListener = (
-      subchannel: SubchannelInterface,
-      previousState: ConnectivityState,
-      newState: ConnectivityState
-    ) => {
-      if (newState !== ConnectivityState.READY) {
-        this.currentPick = null;
-        subchannel.unref();
-        subchannel.removeConnectivityStateListener(
-          this.pickedSubchannelStateListener
-        );
-        this.channelControlHelper.removeChannelzChild(
-          subchannel.getChannelzRef()
-        );
-        if (this.subchannels.length > 0) {
-          if (this.triedAllSubchannels) {
-            let newLBState: ConnectivityState;
-            if (this.subchannelStateCounts[ConnectivityState.CONNECTING] > 0) {
-              newLBState = ConnectivityState.CONNECTING;
-            } else if (
-              this.subchannelStateCounts[ConnectivityState.TRANSIENT_FAILURE] >
-              0
-            ) {
-              newLBState = ConnectivityState.TRANSIENT_FAILURE;
-            } else {
-              newLBState = ConnectivityState.IDLE;
-            }
-            if (newLBState === ConnectivityState.TRANSIENT_FAILURE) {
-              this.updateState(newLBState, new UnavailablePicker());
-            } else {
-              this.updateState(newLBState, new QueuePicker(this));
-            }
-          } else {
-            this.updateState(
-              ConnectivityState.CONNECTING,
-              new QueuePicker(this)
-            );
-          }
-        } else {
-          /* We don't need to backoff here because this only happens if a
-           * subchannel successfully connects then disconnects, so it will not
-           * create a loop of attempting to connect to an unreachable backend
-           */
-          this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
-        }
-      }
-    };
     this.connectionDelayTimeout = setTimeout(() => {}, 0);
     clearTimeout(this.connectionDelayTimeout);
   }
 
-  private startNextSubchannelConnecting() {
-    if (this.triedAllSubchannels) {
+  private allChildrenHaveReportedTF(): boolean {
+    return this.children.every(child => child.hasReportedTransientFailure);
+  }
+
+  private calculateAndReportNewState() {
+    if (this.currentPick) {
+      this.updateState(
+        ConnectivityState.READY,
+        new PickFirstPicker(this.currentPick)
+      );
+    } else if (this.children.length === 0) {
+      this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
+    } else {
+      if (this.stickyTransientFailureMode) {
+        this.updateState(
+          ConnectivityState.TRANSIENT_FAILURE,
+          new UnavailablePicker()
+        );
+      } else {
+        this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
+      }
+    }
+  }
+
+  private maybeEnterStickyTransientFailureMode() {
+    if (this.stickyTransientFailureMode) {
       return;
     }
-    for (const [index, subchannel] of this.subchannels.entries()) {
-      if (index > this.currentSubchannelIndex) {
-        const subchannelState = subchannel.getConnectivityState();
+    if (!this.allChildrenHaveReportedTF()) {
+      return;
+    }
+    this.stickyTransientFailureMode = true;
+    this.channelControlHelper.requestReresolution();
+    for (const { subchannel } of this.children) {
+      subchannel.startConnecting();
+    }
+    this.calculateAndReportNewState();
+  }
+
+  private onSubchannelStateUpdate(
+    subchannel: SubchannelInterface,
+    previousState: ConnectivityState,
+    newState: ConnectivityState
+  ) {
+    if (this.currentPick?.realSubchannelEquals(subchannel)) {
+      if (newState !== ConnectivityState.READY) {
+        this.currentPick = null;
+        this.calculateAndReportNewState();
+        this.channelControlHelper.requestReresolution();
+      }
+      return;
+    }
+    for (const [index, child] of this.children.entries()) {
+      if (subchannel.realSubchannelEquals(child.subchannel)) {
+        if (newState === ConnectivityState.READY) {
+          this.pickSubchannel(child.subchannel);
+        }
+        if (newState === ConnectivityState.TRANSIENT_FAILURE) {
+          child.hasReportedTransientFailure = true;
+          this.maybeEnterStickyTransientFailureMode();
+          if (index === this.currentSubchannelIndex) {
+            this.startNextSubchannelConnecting(index + 1);
+          }
+        }
+        child.subchannel.startConnecting();
+        return;
+      }
+    }
+  }
+
+  private startNextSubchannelConnecting(startIndex: number) {
+    clearTimeout(this.connectionDelayTimeout);
+    if (this.triedAllSubchannels || this.stickyTransientFailureMode) {
+      return;
+    }
+    for (const [index, child] of this.children.entries()) {
+      if (index >= startIndex) {
+        const subchannelState = child.subchannel.getConnectivityState();
         if (
           subchannelState === ConnectivityState.IDLE ||
           subchannelState === ConnectivityState.CONNECTING
@@ -293,6 +272,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       }
     }
     this.triedAllSubchannels = true;
+    this.maybeEnterStickyTransientFailureMode();
   }
 
   /**
@@ -303,37 +283,43 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     clearTimeout(this.connectionDelayTimeout);
     this.currentSubchannelIndex = subchannelIndex;
     if (
-      this.subchannels[subchannelIndex].getConnectivityState() ===
+      this.children[subchannelIndex].subchannel.getConnectivityState() ===
       ConnectivityState.IDLE
     ) {
       trace(
         'Start connecting to subchannel with address ' +
-          this.subchannels[subchannelIndex].getAddress()
+          this.children[subchannelIndex].subchannel.getAddress()
       );
       process.nextTick(() => {
-        this.subchannels[subchannelIndex].startConnecting();
+        this.children[subchannelIndex].subchannel.startConnecting();
       });
     }
     this.connectionDelayTimeout = setTimeout(() => {
-      this.startNextSubchannelConnecting();
-    }, CONNECTION_DELAY_INTERVAL_MS);
+      this.startNextSubchannelConnecting(subchannelIndex + 1);
+    }, CONNECTION_DELAY_INTERVAL_MS).unref?.();
   }
 
   private pickSubchannel(subchannel: SubchannelInterface) {
+    if (subchannel === this.currentPick) {
+      return;
+    }
     trace('Pick subchannel with address ' + subchannel.getAddress());
+    this.stickyTransientFailureMode = false;
     if (this.currentPick !== null) {
       this.currentPick.unref();
+      this.channelControlHelper.removeChannelzChild(
+        this.currentPick.getChannelzRef()
+      );
       this.currentPick.removeConnectivityStateListener(
-        this.pickedSubchannelStateListener
+        this.subchannelStateListener
       );
     }
     this.currentPick = subchannel;
-    subchannel.addConnectivityStateListener(this.pickedSubchannelStateListener);
     subchannel.ref();
     this.channelControlHelper.addChannelzChild(subchannel.getChannelzRef());
     this.resetSubchannelList();
     clearTimeout(this.connectionDelayTimeout);
-    this.updateState(ConnectivityState.READY, new PickFirstPicker(subchannel));
+    this.calculateAndReportNewState();
   }
 
   private updateState(newState: ConnectivityState, picker: Picker) {
@@ -346,115 +332,80 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     this.channelControlHelper.updateState(newState, picker);
   }
 
-  private resetSubchannelList(resetTriedAllSubchannels = true) {
-    for (const subchannel of this.subchannels) {
-      subchannel.removeConnectivityStateListener(this.subchannelStateListener);
-      subchannel.unref();
+  private resetSubchannelList() {
+    for (const child of this.children) {
+      if (child.subchannel !== this.currentPick) {
+        /* The connectivity state listener is the same whether the subchannel
+         * is in the list of children or it is the currentPick, so if it is in
+         * both, removing it here would cause problems. In particular, that
+         * always happens immediately after the subchannel is picked. */
+        child.subchannel.removeConnectivityStateListener(
+          this.subchannelStateListener
+        );
+      }
+      /* Refs are counted independently for the children list and the
+       * currentPick, so we call unref whether or not the child is the
+       * currentPick. Channelz child references are also refcounted, so
+       * removeChannelzChild can be handled the same way. */
+      child.subchannel.unref();
       this.channelControlHelper.removeChannelzChild(
-        subchannel.getChannelzRef()
+        child.subchannel.getChannelzRef()
       );
     }
     this.currentSubchannelIndex = 0;
-    this.subchannelStateCounts = {
-      [ConnectivityState.CONNECTING]: 0,
-      [ConnectivityState.IDLE]: 0,
-      [ConnectivityState.READY]: 0,
-      [ConnectivityState.SHUTDOWN]: 0,
-      [ConnectivityState.TRANSIENT_FAILURE]: 0,
-    };
-    this.subchannels = [];
-    if (resetTriedAllSubchannels) {
-      this.triedAllSubchannels = false;
-    }
-  }
-
-  /**
-   * Start connecting to the address list most recently passed to
-   * `updateAddressList`.
-   */
-  private connectToAddressList(): void {
-    this.resetSubchannelList();
-    trace(
-      'Connect to address list ' +
-        this.latestAddressList.map(address =>
-          subchannelAddressToString(address)
-        )
-    );
-    this.subchannels = this.latestAddressList.map(address =>
-      this.channelControlHelper.createSubchannel(address, {})
-    );
-    for (const subchannel of this.subchannels) {
-      subchannel.ref();
-      this.channelControlHelper.addChannelzChild(subchannel.getChannelzRef());
-    }
-    for (const subchannel of this.subchannels) {
-      subchannel.addConnectivityStateListener(this.subchannelStateListener);
-      this.subchannelStateCounts[subchannel.getConnectivityState()] += 1;
-      if (subchannel.getConnectivityState() === ConnectivityState.READY) {
-        this.pickSubchannel(subchannel);
-        this.resetSubchannelList();
-        return;
-      }
-    }
-    for (const [index, subchannel] of this.subchannels.entries()) {
-      const subchannelState = subchannel.getConnectivityState();
-      if (
-        subchannelState === ConnectivityState.IDLE ||
-        subchannelState === ConnectivityState.CONNECTING
-      ) {
-        this.startConnecting(index);
-        if (this.currentPick === null) {
-          this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
-        }
-        return;
-      }
-    }
-    // If the code reaches this point, every subchannel must be in TRANSIENT_FAILURE
-    if (this.currentPick === null) {
-      this.updateState(
-        ConnectivityState.TRANSIENT_FAILURE,
-        new UnavailablePicker()
-      );
-    }
+    this.children = [];
+    this.triedAllSubchannels = false;
   }
 
   updateAddressList(
     addressList: SubchannelAddress[],
     lbConfig: LoadBalancingConfig
   ): void {
-    // lbConfig has no useful information for pick first load balancing
-    /* To avoid unnecessary churn, we only do something with this address list
-     * if we're not currently trying to establish a connection, or if the new
-     * address list is different from the existing one */
-    if (
-      this.subchannels.length === 0 ||
-      this.latestAddressList.length !== addressList.length ||
-      !this.latestAddressList.every(
-        (value, index) =>
-          addressList[index] &&
-          subchannelAddressEqual(addressList[index], value)
-      )
-    ) {
-      this.latestAddressList = addressList;
-      this.connectToAddressList();
+    if (!(lbConfig instanceof PickFirstLoadBalancingConfig)) {
+      return;
     }
+    /* Previously, an update would be discarded if it was identical to the
+     * previous update, to minimize churn. Now the DNS resolver is
+     * rate-limited, so that is less of a concern. */
+    if (lbConfig.getShuffleAddressList()) {
+      addressList = shuffled(addressList);
+    }
+    const newChildrenList = addressList.map(address => ({
+      subchannel: this.channelControlHelper.createSubchannel(address, {}),
+      hasReportedTransientFailure: false,
+    }));
+    /* Ref each subchannel before resetting the list, to ensure that
+     * subchannels shared between the list don't drop to 0 refs during the
+     * transition. */
+    for (const { subchannel } of newChildrenList) {
+      subchannel.ref();
+      this.channelControlHelper.addChannelzChild(subchannel.getChannelzRef());
+    }
+    this.resetSubchannelList();
+    this.children = newChildrenList;
+    for (const { subchannel } of this.children) {
+      subchannel.addConnectivityStateListener(this.subchannelStateListener);
+      if (subchannel.getConnectivityState() === ConnectivityState.READY) {
+        this.pickSubchannel(subchannel);
+        return;
+      }
+    }
+    for (const child of this.children) {
+      if (
+        child.subchannel.getConnectivityState() ===
+        ConnectivityState.TRANSIENT_FAILURE
+      ) {
+        child.hasReportedTransientFailure = true;
+      }
+    }
+    this.startNextSubchannelConnecting(0);
+    this.calculateAndReportNewState();
   }
 
   exitIdle() {
-    if (
-      this.currentState === ConnectivityState.IDLE ||
-      this.triedAllSubchannels
-    ) {
-      this.channelControlHelper.requestReresolution();
-    }
-    for (const subchannel of this.subchannels) {
-      subchannel.startConnecting();
-    }
-    if (this.currentState === ConnectivityState.IDLE) {
-      if (this.latestAddressList.length > 0) {
-        this.connectToAddressList();
-      }
-    }
+    /* The pick_first LB policy is only in the IDLE state if it has no
+     * addresses to try to connect to and it has no picked subchannel.
+     * In that case, there is no meaningful action that can be taken here. */
   }
 
   resetBackoff() {
@@ -470,9 +421,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
        * does not impact this function. */
       const currentPick = this.currentPick;
       currentPick.unref();
-      currentPick.removeConnectivityStateListener(
-        this.pickedSubchannelStateListener
-      );
+      currentPick.removeConnectivityStateListener(this.subchannelStateListener);
       this.channelControlHelper.removeChannelzChild(
         currentPick.getChannelzRef()
       );
