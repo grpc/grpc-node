@@ -962,8 +962,8 @@ export class Http2ServerCallStream<
   }
 
   getPeer(): string {
-    const socket = this.stream.session.socket;
-    if (socket.remoteAddress) {
+    const socket = this.stream.session?.socket;
+    if (socket?.remoteAddress) {
       if (socket.remotePort) {
         return `${socket.remoteAddress}:${socket.remotePort}`;
       } else {
