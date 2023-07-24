@@ -223,6 +223,21 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     this.calculateAndReportNewState();
   }
 
+  private removeCurrentPick() {
+    if (this.currentPick !== null) {
+      /* Unref can cause a state change, which can cause a change in the value
+       * of this.currentPick, so we hold a local reference to make sure that
+       * does not impact this function. */
+      const currentPick = this.currentPick;
+      this.currentPick = null;
+      currentPick.unref();
+      currentPick.removeConnectivityStateListener(this.subchannelStateListener);
+      this.channelControlHelper.removeChannelzChild(
+        currentPick.getChannelzRef()
+      );
+    }
+  }
+
   private onSubchannelStateUpdate(
     subchannel: SubchannelInterface,
     previousState: ConnectivityState,
@@ -230,7 +245,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   ) {
     if (this.currentPick?.realSubchannelEquals(subchannel)) {
       if (newState !== ConnectivityState.READY) {
-        this.currentPick = null;
+        this.removeCurrentPick();
         this.calculateAndReportNewState();
         this.channelControlHelper.requestReresolution();
       }
@@ -415,17 +430,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   destroy() {
     this.resetSubchannelList();
-    if (this.currentPick !== null) {
-      /* Unref can cause a state change, which can cause a change in the value
-       * of this.currentPick, so we hold a local reference to make sure that
-       * does not impact this function. */
-      const currentPick = this.currentPick;
-      currentPick.unref();
-      currentPick.removeConnectivityStateListener(this.subchannelStateListener);
-      this.channelControlHelper.removeChannelzChild(
-        currentPick.getChannelzRef()
-      );
-    }
+    this.removeCurrentPick();
   }
 
   getTypeName(): string {
