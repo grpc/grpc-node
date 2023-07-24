@@ -81,7 +81,12 @@ class Http2Transport implements Transport {
   /**
    * Timer reference for timeout that indicates when to send the next ping
    */
-  private keepaliveIntervalId: NodeJS.Timer;
+  private keepaliveTimerId: NodeJS.Timer | null = null;
+  /**
+   * Indicates that the keepalive timer ran out while there were no active
+   * calls, and a ping should be sent the next time a call starts.
+   */
+  private pendingSendKeepalivePing = false;
   /**
    * Timer reference tracking when the most recent ping will be considered lost
    */
@@ -142,10 +147,8 @@ class Http2Transport implements Transport {
     } else {
       this.keepaliveWithoutCalls = false;
     }
-    this.keepaliveIntervalId = setTimeout(() => {}, 0);
-    clearTimeout(this.keepaliveIntervalId);
     if (this.keepaliveWithoutCalls) {
-      this.startKeepalivePings();
+      this.maybeStartKeepalivePingTimer();
     }
 
     this.subchannelAddressString = subchannelAddressToString(subchannelAddress);
@@ -295,6 +298,14 @@ class Http2Transport implements Transport {
     this.disconnectListeners.push(listener);
   }
 
+  private clearKeepaliveTimer() {
+    if (!this.keepaliveTimerId) {
+      return;
+    }
+    clearTimeout(this.keepaliveTimerId);
+    this.keepaliveTimerId = null;
+  }
+
   private clearKeepaliveTimeout() {
     if (!this.keepaliveTimeoutId) {
       return;
@@ -303,7 +314,16 @@ class Http2Transport implements Transport {
     this.keepaliveTimeoutId = null;
   }
 
-  private sendPing() {
+  private canSendPing() {
+    return this.keepaliveTimeMs > 0 && (this.keepaliveWithoutCalls || this.activeCalls.size > 0);
+  }
+
+  private maybeSendPing() {
+    this.clearKeepaliveTimer();
+    if (!this.canSendPing()) {
+      this.pendingSendKeepalivePing = true;
+      return;
+    }
     if (this.channelzEnabled) {
       this.keepalivesSent += 1;
     }
@@ -320,6 +340,7 @@ class Http2Transport implements Transport {
         (err: Error | null, duration: number, payload: Buffer) => {
           this.keepaliveTrace('Received ping response');
           this.clearKeepaliveTimeout();
+          this.maybeStartKeepalivePingTimer();
         }
       );
     } catch (e) {
@@ -329,25 +350,34 @@ class Http2Transport implements Transport {
     }
   }
 
-  private startKeepalivePings() {
-    if (this.keepaliveTimeMs < 0) {
+  /**
+   * Starts the keepalive ping timer if appropriate. If the timer already ran
+   * out while there were no active requests, instead send a ping immediately.
+   * If the ping timer is already running or a ping is currently in flight,
+   * instead do nothing and wait for them to resolve.
+   */
+  private maybeStartKeepalivePingTimer() {
+    if (!this.canSendPing()) {
       return;
     }
-    this.keepaliveIntervalId = setInterval(() => {
-      this.sendPing();
-    }, this.keepaliveTimeMs);
-    this.keepaliveIntervalId.unref?.();
-    /* Don't send a ping immediately because whatever caused us to start
-     * sending pings should also involve some network activity. */
+    if (this.pendingSendKeepalivePing) {
+      this.pendingSendKeepalivePing = false;
+      this.maybeSendPing();
+    } else if (!this.keepaliveTimerId && !this.keepaliveTimeoutId) {
+      this.keepaliveTrace('Starting keepalive timer for ' + this.keepaliveTimeMs + 'ms');
+      this.keepaliveTimerId = setTimeout(() => {
+        this.maybeSendPing();
+      }, this.keepaliveTimeMs).unref?.();
+    }
+    /* Otherwise, there is already either a keepalive timer or a ping pending,
+     * wait for those to resolve. */
   }
 
-  /**
-   * Stop keepalive pings when terminating a connection. This discards the
-   * outstanding ping timeout, so it should not be called if the same
-   * connection will still be used.
-   */
   private stopKeepalivePings() {
-    clearInterval(this.keepaliveIntervalId);
+    if (this.keepaliveTimerId) {
+      clearTimeout(this.keepaliveTimerId);
+      this.keepaliveTimerId = null;
+    }
     this.clearKeepaliveTimeout();
   }
 
@@ -355,20 +385,17 @@ class Http2Transport implements Transport {
     this.activeCalls.delete(call);
     if (this.activeCalls.size === 0) {
       this.session.unref();
-      if (!this.keepaliveWithoutCalls) {
-        this.stopKeepalivePings();
-      }
     }
   }
 
   private addActiveCall(call: Http2SubchannelCall) {
-    if (this.activeCalls.size === 0) {
+    this.activeCalls.add(call);
+    if (this.activeCalls.size === 1) {
       this.session.ref();
       if (!this.keepaliveWithoutCalls) {
-        this.startKeepalivePings();
+        this.maybeStartKeepalivePingTimer();
       }
     }
-    this.activeCalls.add(call);
   }
 
   createCall(metadata: Metadata, host: string, method: string, listener: SubchannelCallInterceptingListener, subchannelCallStatsTracker: Partial<CallEventTracker>): Http2SubchannelCall {
