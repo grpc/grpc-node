@@ -395,7 +395,10 @@ class Http2Transport implements Transport {
   }
 
   private canSendPing() {
-    return this.keepaliveTimeMs > 0 && (this.keepaliveWithoutCalls || this.activeCalls.size > 0);
+    return (
+      this.keepaliveTimeMs > 0 &&
+      (this.keepaliveWithoutCalls || this.activeCalls.size > 0)
+    );
   }
 
   private maybeSendPing() {
@@ -446,7 +449,9 @@ class Http2Transport implements Transport {
       this.pendingSendKeepalivePing = false;
       this.maybeSendPing();
     } else if (!this.keepaliveTimerId && !this.keepaliveTimeoutId) {
-      this.keepaliveTrace('Starting keepalive timer for ' + this.keepaliveTimeMs + 'ms');
+      this.keepaliveTrace(
+        'Starting keepalive timer for ' + this.keepaliveTimeMs + 'ms'
+      );
       this.keepaliveTimerId = setTimeout(() => {
         this.maybeSendPing();
       }, this.keepaliveTimeMs).unref?.();
