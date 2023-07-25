@@ -396,6 +396,7 @@ class Http2Transport implements Transport {
 
   private canSendPing() {
     return (
+      !!this.channelzRef &&
       this.keepaliveTimeMs > 0 &&
       (this.keepaliveWithoutCalls || this.activeCalls.size > 0)
     );
