@@ -160,7 +160,11 @@ class Http2Transport implements Transport {
     if (options['grpc.enable_channelz'] === 0) {
       this.channelzEnabled = false;
     }
-    this.channelzRef = registerChannelzSocket(this.subchannelAddressString, () => this.getChannelzInfo(), this.channelzEnabled);
+    this.channelzRef = registerChannelzSocket(
+      this.subchannelAddressString,
+      () => this.getChannelzInfo(),
+      this.channelzEnabled
+    );
     // Build user-agent string.
     this.userAgent = [
       options['grpc.primary_user_agent'],
