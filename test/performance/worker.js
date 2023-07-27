@@ -39,13 +39,13 @@ function runServer(port, benchmark_impl, callback) {
   server.addService(serviceProto.WorkerService.service,
                     new WorkerServiceImpl(benchmark_impl, server));
   var address = '0.0.0.0:' + port;
-  server.bindAsync(address, server_creds, (err) => {
+  server.bindAsync(address, server_creds, (err, port) => {
     if (err) {
       return callback(err);
     }
 
     server.start();
-    console.log('running QPS worker on %s', address);
+    console.log('running QPS worker on 0.0.0.0:%s', port);
     callback(null, server);
   });
 }

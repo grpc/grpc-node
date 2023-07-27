@@ -154,8 +154,9 @@ util.inherits(BenchmarkServer, EventEmitter);
  * Start the benchmark server.
  */
 BenchmarkServer.prototype.start = function() {
-  this.server.bindAsync(this.host + ':' + this.port, this.creds, (err) => {
+  this.server.bindAsync(this.host + ':' + this.port, this.creds, (err, port) => {
     assert.ifError(err);
+    this.port = port;
     this.server.start();
     this.last_wall_time = process.hrtime();
     this.last_usage = process.cpuUsage();
