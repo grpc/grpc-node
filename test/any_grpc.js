@@ -22,7 +22,7 @@
 const _ = require('lodash');
 
 function getImplementation(globalField) {
-  const impl = global[globalField];
+  const impl = global[globalField] ?? 'js';
 
   if (impl === 'js') {
     return require('../packages/grpc-js');
