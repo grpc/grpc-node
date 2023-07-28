@@ -61,7 +61,6 @@ import {
 import { parseUri } from './uri-parser';
 import { ChannelzCallTracker, ChannelzChildrenTracker, ChannelzTrace, registerChannelzServer, registerChannelzSocket, ServerInfo, ServerRef, SocketInfo, SocketRef, TlsInfo, unregisterChannelzRef } from './channelz';
 import { CipherNameAndProtocol, TLSSocket } from 'tls';
-import { getErrorCode, getErrorMessage } from './error';
 
 const UNLIMITED_CONNECTION_AGE_MS = ~(1<<31);
 const KEEPALIVE_MAX_TIME_MS = ~(1<<31);
@@ -765,9 +764,7 @@ export class Server {
     return true
   }
 
-  private _retrieveHandler(headers: http2.IncomingHttpHeaders): Handler<any, any> {
-    const path = headers[HTTP2_HEADER_PATH] as string
-
+  private _retrieveHandler(path: string): Handler<any, any> | null {
     this.trace(
       'Received call to method ' +
       path +
@@ -783,7 +780,7 @@ export class Server {
         path +
         '. Sending UNIMPLEMENTED status.'
       );
-      throw getUnimplementedStatusResponse(path);
+      return null;
     }
 
     return handler
@@ -820,15 +817,12 @@ export class Server {
       return
     }
 
-    let handler: Handler<any, any>
-    try {
-      handler = this._retrieveHandler(headers)
-    } catch (err) {
-      this._respondWithError({
-        details: getErrorMessage(err),
-        code: getErrorCode(err) ?? undefined
-      }, stream, channelzSessionInfo)
-      return
+    const path = headers[HTTP2_HEADER_PATH] as string;
+
+    const handler = this._retrieveHandler(path);
+    if (!handler) {
+      this._respondWithError(getUnimplementedStatusResponse(path), stream, channelzSessionInfo);
+      return;
     }
 
     const call = new Http2ServerCallStream(stream, handler, this.options);
@@ -875,15 +869,13 @@ export class Server {
       return
     }
 
-    let handler: Handler<any, any>
-    try {
-      handler = this._retrieveHandler(headers)
-    } catch (err) {
-      this._respondWithError({
-        details: getErrorMessage(err),
-        code: getErrorCode(err) ?? undefined
-      }, stream, null)
-      return
+
+    const path = headers[HTTP2_HEADER_PATH] as string;
+
+    const handler = this._retrieveHandler(path);
+    if (!handler) {
+      this._respondWithError(getUnimplementedStatusResponse(path), stream, null);
+      return;
     }
 
     const call = new Http2ServerCallStream(stream, handler, this.options)
