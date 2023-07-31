@@ -452,6 +452,7 @@ export class Http2ServerCallStream<
           details: 'Cancelled by client',
           metadata: null,
         });
+        if (this.deadlineTimer) clearTimeout(this.deadlineTimer);
       }
     });
 
