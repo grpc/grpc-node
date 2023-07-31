@@ -41,7 +41,12 @@ module.exports = function WorkerServiceImpl(benchmark_impl, server) {
 
   this.quitWorker = function quitWorker(call, callback) {
     callback(null, {});
-    server.tryShutdown(function() {});
+    /* Due to https://github.com/nodejs/node/issues/42713, tryShutdown acts
+     * like forceShutdown on some Node versions. So, delay calling tryShutdown
+     * until after done handling this request. */
+    setTimeout(() => {
+      server.tryShutdown(function() {});
+    }, 10);
   };
 
   this.runClient = function runClient(call) {

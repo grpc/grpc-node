@@ -74,6 +74,20 @@ function main() {
   });
   serverWorkerStream.on('status', (status) => {
     console.log('Received server worker status ' + JSON.stringify(status));
+    clientWorker.quitWorker({}, (error, response) => {
+      if (error) {
+        console.log('Received error on clientWorker.quitWorker:', error);
+      } else {
+        console.log('Received response from clientWorker.quitWorker');
+      }
+    });
+    serverWorker.quitWorker({}, (error, response) => {
+      if (error) {
+        console.log('Received error on serverWorker.quitWorker:', error);
+      } else {
+        console.log('Received response from serverWorker.quitWorker');
+      }
+    });
   });
 }
 
