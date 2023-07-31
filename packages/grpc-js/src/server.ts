@@ -426,6 +426,8 @@ export class Server {
           serverOptions,
           creds._getSettings()!
         );
+        secureServerOptions.enableTrace =
+          this.options['grpc-node.tls_enable_trace'] === 1;
         http2Server = http2.createSecureServer(secureServerOptions);
         http2Server.on('secureConnection', (socket: TLSSocket) => {
           /* These errors need to be handled by the user of Http2SecureServer,

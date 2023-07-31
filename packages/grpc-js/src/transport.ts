@@ -712,6 +712,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       connectionOptions = {
         ...connectionOptions,
         ...address,
+        enableTrace: options['grpc-node.tls_enable_trace'] === 1,
       };
 
       /* http2.connect uses the options here:
@@ -794,6 +795,9 @@ export class Http2SubchannelConnector implements SubchannelConnector {
           const hostPort = splitHostPort(targetPath);
           connectionOptions.servername = hostPort?.host ?? targetPath;
         }
+      }
+      if (options['grpc-node.tls_enable_trace']) {
+        connectionOptions.enableTrace = true;
       }
     }
 
