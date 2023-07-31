@@ -36,7 +36,10 @@ import {
   ChannelzCallTracker,
   unregisterChannelzRef,
 } from './channelz';
-import { ConnectivityStateListener } from './subchannel-interface';
+import {
+  ConnectivityStateListener,
+  SubchannelInterface,
+} from './subchannel-interface';
 import { SubchannelCallInterceptingListener } from './subchannel-call';
 import { SubchannelCall } from './subchannel-call';
 import { CallEventTracker, SubchannelConnector, Transport } from './transport';
@@ -460,6 +463,10 @@ export class Subchannel {
 
   getRealSubchannel(): this {
     return this;
+  }
+
+  realSubchannelEquals(other: SubchannelInterface): boolean {
+    return other.getRealSubchannel() === this;
   }
 
   throttleKeepalive(newKeepaliveTime: number) {

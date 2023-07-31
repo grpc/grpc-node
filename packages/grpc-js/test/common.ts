@@ -27,6 +27,10 @@ import {
   loadPackageDefinition,
 } from '../src/make-client';
 import { readFileSync } from 'fs';
+import { SubchannelInterface } from '../src/subchannel-interface';
+import { SubchannelRef } from '../src/channelz';
+import { Subchannel } from '../src/subchannel';
+import { ConnectivityState } from '../src/connectivity-state';
 
 const protoLoaderOptions = {
   keepCase: true,
@@ -119,7 +123,7 @@ export class TestClient {
     this.client.waitForReady(deadline, callback);
   }
 
-  sendRequest(callback: (error: grpc.ServiceError) => void) {
+  sendRequest(callback: (error?: grpc.ServiceError) => void) {
     this.client.echo({}, callback);
   }
 
@@ -129,6 +133,70 @@ export class TestClient {
 
   close() {
     this.client.close();
+  }
+}
+
+/**
+ * A mock subchannel that transitions between states on command, to test LB
+ * policy behavior
+ */
+export class MockSubchannel implements SubchannelInterface {
+  private state: grpc.connectivityState;
+  private listeners: Set<grpc.experimental.ConnectivityStateListener> =
+    new Set();
+  constructor(
+    private readonly address: string,
+    initialState: grpc.connectivityState = grpc.connectivityState.IDLE
+  ) {
+    this.state = initialState;
+  }
+  getConnectivityState(): grpc.connectivityState {
+    return this.state;
+  }
+  addConnectivityStateListener(
+    listener: grpc.experimental.ConnectivityStateListener
+  ): void {
+    this.listeners.add(listener);
+  }
+  removeConnectivityStateListener(
+    listener: grpc.experimental.ConnectivityStateListener
+  ): void {
+    this.listeners.delete(listener);
+  }
+  transitionToState(nextState: grpc.connectivityState) {
+    grpc.experimental.trace(
+      grpc.logVerbosity.DEBUG,
+      'subchannel',
+      this.address +
+        ' ' +
+        ConnectivityState[this.state] +
+        ' -> ' +
+        ConnectivityState[nextState]
+    );
+    for (const listener of this.listeners) {
+      listener(this, this.state, nextState, 0);
+    }
+    this.state = nextState;
+  }
+  startConnecting(): void {}
+  getAddress(): string {
+    return this.address;
+  }
+  throttleKeepalive(newKeepaliveTime: number): void {}
+  ref(): void {}
+  unref(): void {}
+  getChannelzRef(): SubchannelRef {
+    return {
+      kind: 'subchannel',
+      id: -1,
+      name: this.address,
+    };
+  }
+  getRealSubchannel(): Subchannel {
+    throw new Error('Method not implemented.');
+  }
+  realSubchannelEquals(other: grpc.experimental.SubchannelInterface): boolean {
+    return this === other;
   }
 }
 
