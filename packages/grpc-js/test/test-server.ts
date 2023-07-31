@@ -430,6 +430,7 @@ describe('Server', () => {
         (error: ServiceError, response: any) => {
           assert(error);
           assert.strictEqual(error.code, grpc.status.UNIMPLEMENTED);
+          assert.match(error.details, /does not implement the method.*Div/);
           done();
         }
       );
@@ -439,6 +440,7 @@ describe('Server', () => {
       const call = client.sum((error: ServiceError, response: any) => {
         assert(error);
         assert.strictEqual(error.code, grpc.status.UNIMPLEMENTED);
+        assert.match(error.details, /does not implement the method.*Sum/);
         done();
       });
 
@@ -455,6 +457,7 @@ describe('Server', () => {
       call.on('error', (err: ServiceError) => {
         assert(err);
         assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
+        assert.match(err.details, /does not implement the method.*Fib/);
         done();
       });
     });
@@ -469,6 +472,93 @@ describe('Server', () => {
       call.on('error', (err: ServiceError) => {
         assert(err);
         assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
+        assert.match(err.details, /does not implement the method.*DivMany/);
+        done();
+      });
+
+      call.end();
+    });
+  });
+
+  describe('Unregistered service', () => {
+    let server: Server;
+    let client: ServiceClient;
+
+    const mathProtoFile = path.join(__dirname, 'fixtures', 'math.proto');
+    const mathClient = (loadProtoFile(mathProtoFile).math as any).Math;
+
+    before(done => {
+      server = new Server();
+      // Don't register a service at all
+      server.bindAsync(
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert.ifError(err);
+          client = new mathClient(
+            `localhost:${port}`,
+            grpc.credentials.createInsecure()
+          );
+          server.start();
+          done();
+        }
+      );
+    });
+
+    after(done => {
+      client.close();
+      server.tryShutdown(done);
+    });
+
+    it('should respond to a unary call with UNIMPLEMENTED', done => {
+      client.div(
+        { divisor: 4, dividend: 3 },
+        (error: ServiceError, response: any) => {
+          assert(error);
+          assert.strictEqual(error.code, grpc.status.UNIMPLEMENTED);
+          assert.match(error.details, /does not implement the method.*Div/);
+          done();
+        }
+      );
+    });
+
+    it('should respond to a client stream with UNIMPLEMENTED', done => {
+      const call = client.sum((error: ServiceError, response: any) => {
+        assert(error);
+        assert.strictEqual(error.code, grpc.status.UNIMPLEMENTED);
+        assert.match(error.details, /does not implement the method.*Sum/);
+        done();
+      });
+
+      call.end();
+    });
+
+    it('should respond to a server stream with UNIMPLEMENTED', done => {
+      const call = client.fib({ limit: 5 });
+
+      call.on('data', (value: any) => {
+        assert.fail('No messages expected');
+      });
+
+      call.on('error', (err: ServiceError) => {
+        assert(err);
+        assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
+        assert.match(err.details, /does not implement the method.*Fib/);
+        done();
+      });
+    });
+
+    it('should respond to a bidi call with UNIMPLEMENTED', done => {
+      const call = client.divMany();
+
+      call.on('data', (value: any) => {
+        assert.fail('No messages expected');
+      });
+
+      call.on('error', (err: ServiceError) => {
+        assert(err);
+        assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
+        assert.match(err.details, /does not implement the method.*DivMany/);
         done();
       });
 

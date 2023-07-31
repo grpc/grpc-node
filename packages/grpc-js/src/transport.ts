@@ -153,6 +153,18 @@ class Http2Transport implements Transport {
      */
     private remoteName: string | null
   ) {
+    /* Populate subchannelAddressString and channelzRef before doing anything
+     * else, because they are used in the trace methods. */
+    this.subchannelAddressString = subchannelAddressToString(subchannelAddress);
+
+    if (options['grpc.enable_channelz'] === 0) {
+      this.channelzEnabled = false;
+    }
+    this.channelzRef = registerChannelzSocket(
+      this.subchannelAddressString,
+      () => this.getChannelzInfo(),
+      this.channelzEnabled
+    );
     // Build user-agent string.
     this.userAgent = [
       options['grpc.primary_user_agent'],
@@ -174,20 +186,6 @@ class Http2Transport implements Transport {
     } else {
       this.keepaliveWithoutCalls = false;
     }
-    if (this.keepaliveWithoutCalls) {
-      this.maybeStartKeepalivePingTimer();
-    }
-
-    this.subchannelAddressString = subchannelAddressToString(subchannelAddress);
-
-    if (options['grpc.enable_channelz'] === 0) {
-      this.channelzEnabled = false;
-    }
-    this.channelzRef = registerChannelzSocket(
-      this.subchannelAddressString,
-      () => this.getChannelzInfo(),
-      this.channelzEnabled
-    );
 
     session.once('close', () => {
       this.trace('session closed');
@@ -232,6 +230,11 @@ class Http2Transport implements Transport {
             JSON.stringify(settings)
         );
       });
+    }
+    /* Start the keepalive timer last, because this can trigger trace logs,
+     * which should only happen after everything else is set up. */
+    if (this.keepaliveWithoutCalls) {
+      this.maybeStartKeepalivePingTimer();
     }
   }
 
