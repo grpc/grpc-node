@@ -477,9 +477,7 @@ export class InternalChannel {
     if (this.channelzEnabled) {
       this.channelzTrace.addTrace(
         'CT_INFO',
-        ConnectivityState[this.connectivityState] +
-          ' -> ' +
-          ConnectivityState[newState]
+        'Connectivity state change to ' + ConnectivityState[newState]
       );
     }
     this.connectivityState = newState;

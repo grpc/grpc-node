@@ -277,9 +277,7 @@ export class Subchannel {
     if (this.channelzEnabled) {
       this.channelzTrace.addTrace(
         'CT_INFO',
-        ConnectivityState[this.connectivityState] +
-          ' -> ' +
-          ConnectivityState[newState]
+        'Connectivity state change to ' + ConnectivityState[newState]
       );
     }
     const previousState = this.connectivityState;
