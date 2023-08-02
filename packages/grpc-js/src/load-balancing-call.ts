@@ -140,6 +140,12 @@ export class LoadBalancingCall implements Call {
           .generateMetadata({ service_url: this.serviceUrl })
           .then(
             credsMetadata => {
+              /* If this call was cancelled (e.g. by the deadline) before
+               * metadata generation finished, we shouldn't do anything with
+               * it. */
+              if (this.ended) {
+                return;
+              }
               const finalMetadata = this.metadata!.clone();
               finalMetadata.merge(credsMetadata);
               if (finalMetadata.get('authorization').length > 1) {
