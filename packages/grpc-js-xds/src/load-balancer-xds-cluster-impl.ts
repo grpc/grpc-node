@@ -19,8 +19,6 @@ import { experimental, logVerbosity, status as Status, Metadata, connectivitySta
 import { validateXdsServerConfig, XdsServerConfig } from "./xds-bootstrap";
 import { getSingletonXdsClient, XdsClient, XdsClusterDropStats } from "./xds-client";
 
-import LoadBalancingConfig = experimental.LoadBalancingConfig;
-import validateLoadBalancingConfig = experimental.validateLoadBalancingConfig;
 import LoadBalancer = experimental.LoadBalancer;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
 import SubchannelAddress = experimental.SubchannelAddress;
@@ -31,7 +29,8 @@ import PickResultType = experimental.PickResultType;
 import ChannelControlHelper = experimental.ChannelControlHelper;
 import ChildLoadBalancerHandler = experimental.ChildLoadBalancerHandler;
 import createChildChannelControlHelper = experimental.createChildChannelControlHelper;
-import getFirstUsableConfig = experimental.getFirstUsableConfig;
+import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
+import selectLbConfigFromList = experimental.selectLbConfigFromList;
 
 const TRACER_NAME = 'xds_cluster_impl';
 
@@ -58,7 +57,7 @@ function validateDropCategory(obj: any): DropCategory {
   return obj;
 }
 
-export class XdsClusterImplLoadBalancingConfig implements LoadBalancingConfig {
+class XdsClusterImplLoadBalancingConfig implements TypedLoadBalancingConfig {
   private maxConcurrentRequests: number;
   getLoadBalancerName(): string {
     return TYPE_NAME;
@@ -67,7 +66,7 @@ export class XdsClusterImplLoadBalancingConfig implements LoadBalancingConfig {
     const jsonObj: {[key: string]: any} = {
       cluster: this.cluster,
       drop_categories: this.dropCategories,
-      child_policy: this.childPolicy.map(policy => policy.toJsonObject()),
+      child_policy: [this.childPolicy.toJsonObject()],
       max_concurrent_requests: this.maxConcurrentRequests
     };
     if (this.edsServiceName !== undefined) {
@@ -81,7 +80,7 @@ export class XdsClusterImplLoadBalancingConfig implements LoadBalancingConfig {
     };
   }
 
-  constructor(private cluster: string, private dropCategories: DropCategory[], private childPolicy: LoadBalancingConfig[], private edsServiceName?: string, private lrsLoadReportingServer?: XdsServerConfig, maxConcurrentRequests?: number) {
+  constructor(private cluster: string, private dropCategories: DropCategory[], private childPolicy: TypedLoadBalancingConfig, private edsServiceName?: string, private lrsLoadReportingServer?: XdsServerConfig, maxConcurrentRequests?: number) {
     this.maxConcurrentRequests = maxConcurrentRequests ?? DEFAULT_MAX_CONCURRENT_REQUESTS;
   }
 
@@ -125,7 +124,11 @@ export class XdsClusterImplLoadBalancingConfig implements LoadBalancingConfig {
     if (!('child_policy' in obj && Array.isArray(obj.child_policy))) {
       throw new Error('xds_cluster_impl config must have an array field child_policy');
     }
-    return new XdsClusterImplLoadBalancingConfig(obj.cluster, obj.drop_categories.map(validateDropCategory), obj.child_policy.map(validateLoadBalancingConfig), obj.eds_service_name, obj.lrs_load_reporting_server ? validateXdsServerConfig(obj.lrs_load_reporting_server) : undefined, obj.max_concurrent_requests);
+    const childConfig = selectLbConfigFromList(obj.child_policy);
+    if (!childConfig) {
+      throw new Error('xds_cluster_impl config child_policy parsing failed');
+    }
+    return new XdsClusterImplLoadBalancingConfig(obj.cluster, obj.drop_categories.map(validateDropCategory), childConfig, obj.eds_service_name, obj.lrs_load_reporting_server ? validateXdsServerConfig(obj.lrs_load_reporting_server) : undefined, obj.max_concurrent_requests);
   }
 }
 
@@ -234,7 +237,7 @@ class XdsClusterImplBalancer implements LoadBalancer {
         }
       }));
     }
-  updateAddressList(addressList: SubchannelAddress[], lbConfig: LoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+  updateAddressList(addressList: SubchannelAddress[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
     if (!(lbConfig instanceof XdsClusterImplLoadBalancingConfig)) {
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));
       return;
@@ -251,7 +254,7 @@ class XdsClusterImplBalancer implements LoadBalancer {
       );
     }
 
-    this.childBalancer.updateAddressList(addressList, getFirstUsableConfig(lbConfig.getChildPolicy(), true), attributes);
+    this.childBalancer.updateAddressList(addressList, lbConfig.getChildPolicy(), attributes);
   }
   exitIdle(): void {
     this.childBalancer.exitIdle();

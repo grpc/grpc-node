@@ -15,7 +15,7 @@
  *
  */
 
-import { connectivityState, status, Metadata, logVerbosity, experimental } from '@grpc/grpc-js';
+import { connectivityState, status, Metadata, logVerbosity, experimental, LoadBalancingConfig } from '@grpc/grpc-js';
 import { getSingletonXdsClient, Watcher, XdsClient } from './xds-client';
 import { Cluster__Output } from './generated/envoy/config/cluster/v3/Cluster';
 import SubchannelAddress = experimental.SubchannelAddress;
@@ -24,17 +24,18 @@ import ChildLoadBalancerHandler = experimental.ChildLoadBalancerHandler;
 import LoadBalancer = experimental.LoadBalancer;
 import ChannelControlHelper = experimental.ChannelControlHelper;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
-import LoadBalancingConfig = experimental.LoadBalancingConfig;
-import OutlierDetectionLoadBalancingConfig = experimental.OutlierDetectionLoadBalancingConfig;
+import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import SuccessRateEjectionConfig = experimental.SuccessRateEjectionConfig;
 import FailurePercentageEjectionConfig = experimental.FailurePercentageEjectionConfig;
 import QueuePicker = experimental.QueuePicker;
+import OutlierDetectionRawConfig = experimental.OutlierDetectionRawConfig;
+import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
 import { OutlierDetection__Output } from './generated/envoy/config/cluster/v3/OutlierDetection';
 import { Duration__Output } from './generated/google/protobuf/Duration';
 import { EXPERIMENTAL_OUTLIER_DETECTION } from './environment';
-import { DiscoveryMechanism, XdsClusterResolverChildPolicyHandler, XdsClusterResolverLoadBalancingConfig } from './load-balancer-xds-cluster-resolver';
+import { DiscoveryMechanism, XdsClusterResolverChildPolicyHandler } from './load-balancer-xds-cluster-resolver';
 import { CLUSTER_CONFIG_TYPE_URL, decodeSingleResource } from './resources';
-import { CdsUpdate, ClusterResourceType, OutlierDetectionUpdate } from './xds-resource-type/cluster-resource-type';
+import { CdsUpdate, ClusterResourceType } from './xds-resource-type/cluster-resource-type';
 
 const TRACER_NAME = 'cds_balancer';
 
@@ -44,7 +45,7 @@ function trace(text: string): void {
 
 const TYPE_NAME = 'cds';
 
-export class CdsLoadBalancingConfig implements LoadBalancingConfig {
+class CdsLoadBalancingConfig implements TypedLoadBalancingConfig {
   getLoadBalancerName(): string {
     return TYPE_NAME;
   }
@@ -70,29 +71,6 @@ export class CdsLoadBalancingConfig implements LoadBalancingConfig {
       throw new Error('Missing "cluster" in cds load balancing config');
     }
   }
-}
-
-function durationToMs(duration: Duration__Output): number {
-  return (Number(duration.seconds) * 1_000 + duration.nanos / 1_000_000) | 0;
-}
-
-function translateOutlierDetectionConfig(outlierDetection: OutlierDetectionUpdate | undefined): OutlierDetectionLoadBalancingConfig | undefined {
-  if (!EXPERIMENTAL_OUTLIER_DETECTION) {
-    return undefined;
-  }
-  if (!outlierDetection) {
-    /* No-op outlier detection config, with all fields unset. */
-    return new OutlierDetectionLoadBalancingConfig(null, null, null, null, null, null, []);
-  }
-  return new OutlierDetectionLoadBalancingConfig(
-    outlierDetection.intervalMs,
-    outlierDetection.baseEjectionTimeMs,
-    outlierDetection.maxEjectionTimeMs,
-    outlierDetection.maxEjectionPercent,
-    outlierDetection.successRateConfig,
-    outlierDetection.failurePercentageConfig,
-    []
-  );
 }
 
 interface ClusterEntry {
@@ -133,7 +111,7 @@ function generateDiscoverymechanismForCdsUpdate(config: CdsUpdate): DiscoveryMec
     type: config.type,
     eds_service_name: config.edsServiceName,
     dns_hostname: config.dnsHostname,
-    outlier_detection: translateOutlierDetectionConfig(config.outlierDetectionUpdate)
+    outlier_detection: config.outlierDetectionUpdate
   };
 }
 
@@ -141,8 +119,8 @@ const RECURSION_DEPTH_LIMIT = 15;
 
 /**
  * Prerequisite: isClusterTreeFullyUpdated(tree, root)
- * @param tree 
- * @param root 
+ * @param tree
+ * @param root
  */
 function getDiscoveryMechanismList(tree: ClusterTree, root: string): DiscoveryMechanism[] {
   const visited = new Set<string>();
@@ -189,6 +167,11 @@ export class CdsLoadBalancer implements LoadBalancer {
     this.childBalancer = new XdsClusterResolverChildPolicyHandler(channelControlHelper);
   }
 
+  private reportError(errorMessage: string) {
+    trace('CDS cluster reporting error ' + errorMessage);
+    this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: errorMessage, metadata: new Metadata()}));
+  }
+
   private addCluster(cluster: string) {
     if (cluster in this.clusterTree) {
       return;
@@ -208,19 +191,28 @@ export class CdsLoadBalancer implements LoadBalancer {
           try {
             discoveryMechanismList = getDiscoveryMechanismList(this.clusterTree, this.latestConfig!.getCluster());
           } catch (e) {
-            this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: e.message, metadata: new Metadata()}));
+            this.reportError((e as Error).message);
             return;
           }
-          const clusterResolverConfig = new XdsClusterResolverLoadBalancingConfig(
-            discoveryMechanismList,
-            [],
-            []
-          );
+          const clusterResolverConfig: LoadBalancingConfig = {
+            xds_cluster_resolver: {
+              discovery_mechanisms: discoveryMechanismList,
+              locality_picking_policy: [],
+              endpoint_picking_policy: []
+            }
+          };
+          let parsedClusterResolverConfig: TypedLoadBalancingConfig;
+          try {
+            parsedClusterResolverConfig = parseLoadBalancingConfig(clusterResolverConfig);
+          } catch (e) {
+            this.reportError(`CDS cluster ${this.latestConfig?.getCluster()} child config parsing failed with error ${(e as Error).message}`);
+            return;
+          }
           trace('Child update config: ' + JSON.stringify(clusterResolverConfig));
           this.updatedChild = true;
           this.childBalancer.updateAddressList(
             [],
-            clusterResolverConfig,
+            parsedClusterResolverConfig,
             this.latestAttributes
           );
         }
@@ -231,20 +223,13 @@ export class CdsLoadBalancer implements LoadBalancer {
           this.clusterTree[cluster].latestUpdate = undefined;
           this.clusterTree[cluster].children = [];
         }
-        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `CDS resource ${cluster} does not exist`, metadata: new Metadata()}));
+        this.reportError(`CDS resource ${cluster} does not exist`);
         this.childBalancer.destroy();
       },
       onError: (statusObj) => {
         if (!this.updatedChild) {
           trace('Transitioning to transient failure due to onError update for cluster' + cluster);
-          this.channelControlHelper.updateState(
-            connectivityState.TRANSIENT_FAILURE,
-            new UnavailablePicker({
-              code: status.UNAVAILABLE,
-              details: `xDS request failed with error ${statusObj.details}`,
-              metadata: new Metadata(),
-            })
-          );
+          this.reportError(`xDS request failed with error ${statusObj.details}`);
         }
       }
     });
@@ -275,7 +260,7 @@ export class CdsLoadBalancer implements LoadBalancer {
 
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig,
+    lbConfig: TypedLoadBalancingConfig,
     attributes: { [key: string]: unknown }
   ): void {
     if (!(lbConfig instanceof CdsLoadBalancingConfig)) {

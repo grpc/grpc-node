@@ -17,8 +17,7 @@
 
 import { connectivityState as ConnectivityState, status as Status, experimental, logVerbosity, Metadata, status } from "@grpc/grpc-js/";
 
-import LoadBalancingConfig = experimental.LoadBalancingConfig;
-import validateLoadBalancingConfig = experimental.validateLoadBalancingConfig;
+import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import LoadBalancer = experimental.LoadBalancer;
 import Picker = experimental.Picker;
 import PickResult = experimental.PickResult;
@@ -28,8 +27,8 @@ import UnavailablePicker = experimental.UnavailablePicker;
 import QueuePicker = experimental.QueuePicker;
 import SubchannelAddress = experimental.SubchannelAddress;
 import ChildLoadBalancerHandler = experimental.ChildLoadBalancerHandler;
-import getFirstUsableConfig = experimental.getFirstUsableConfig;
 import ChannelControlHelper = experimental.ChannelControlHelper;
+import selectLbConfigFromList = experimental.selectLbConfigFromList;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
 
 const TRACER_NAME = 'xds_cluster_manager';
@@ -40,16 +39,12 @@ function trace(text: string): void {
 
 const TYPE_NAME = 'xds_cluster_manager';
 
-interface ClusterManagerChild {
-  child_policy: LoadBalancingConfig[];
-}
-
-export class XdsClusterManagerLoadBalancingConfig implements LoadBalancingConfig {
+class XdsClusterManagerLoadBalancingConfig implements TypedLoadBalancingConfig {
   getLoadBalancerName(): string {
     return TYPE_NAME;
   }
 
-  constructor(private children: Map<string, ClusterManagerChild>) {}
+  constructor(private children: Map<string, TypedLoadBalancingConfig>) {}
 
   getChildren() {
     return this.children;
@@ -57,9 +52,9 @@ export class XdsClusterManagerLoadBalancingConfig implements LoadBalancingConfig
 
   toJsonObject(): object {
     const childrenField: {[key: string]: object} = {};
-    for (const [childName, childValue] of this.children.entries()) {
+    for (const [childName, childPolicy] of this.children.entries()) {
       childrenField[childName] = {
-        child_policy: childValue.child_policy.map(policy => policy.toJsonObject())
+        child_policy: [childPolicy.toJsonObject()]
       };
     }
     return {
@@ -70,19 +65,20 @@ export class XdsClusterManagerLoadBalancingConfig implements LoadBalancingConfig
   }
 
   static createFromJson(obj: any): XdsClusterManagerLoadBalancingConfig {
-    const childrenMap: Map<string, ClusterManagerChild> = new Map<string, ClusterManagerChild>();
+    const childrenMap: Map<string, TypedLoadBalancingConfig> = new Map<string, TypedLoadBalancingConfig>();
     if (!('children' in obj && obj.children !== null && typeof obj.children === 'object')) {
       throw new Error('xds_cluster_manager config must have a children map');
     }
-    for (const key of obj.children) {
+    for (const key of Object.keys(obj.children)) {
       const childObj = obj.children[key];
       if (!('child_policy' in childObj && Array.isArray(childObj.child_policy))) {
         throw new Error(`xds_cluster_manager child ${key} must have a child_policy array`);
       }
-      const validatedChild = {
-        child_policy: childObj.child_policy.map(validateLoadBalancingConfig)
-      };
-      childrenMap.set(key, validatedChild);
+      const childPolicy = selectLbConfigFromList(childObj.child_policy);
+      if (childPolicy === null) {
+        throw new Error(`xds_cluster_mananger child ${key} has no recognized sucessfully parsed child_policy`);
+      }
+      childrenMap.set(key, childPolicy);
     }
     return new XdsClusterManagerLoadBalancingConfig(childrenMap);
   }
@@ -115,7 +111,7 @@ class XdsClusterManagerPicker implements Picker {
 }
 
 interface XdsClusterManagerChild {
-  updateAddressList(addressList: SubchannelAddress[], lbConfig: ClusterManagerChild, attributes: { [key: string]: unknown; }): void;
+  updateAddressList(addressList: SubchannelAddress[], childConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void;
   exitIdle(): void;
   resetBackoff(): void;
   destroy(): void;
@@ -146,11 +142,8 @@ class XdsClusterManager implements LoadBalancer {
       this.picker = picker;
       this.parent.maybeUpdateState();
     }
-    updateAddressList(addressList: SubchannelAddress[], lbConfig: ClusterManagerChild, attributes: { [key: string]: unknown; }): void {
-      const childConfig = getFirstUsableConfig(lbConfig.child_policy);
-      if (childConfig !== null) {
-        this.childBalancer.updateAddressList(addressList, childConfig, attributes);
-      }
+    updateAddressList(addressList: SubchannelAddress[], childConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+      this.childBalancer.updateAddressList(addressList, childConfig, attributes);
     }
     exitIdle(): void {
       this.childBalancer.exitIdle();
@@ -241,8 +234,8 @@ class XdsClusterManager implements LoadBalancer {
     );
     this.channelControlHelper.updateState(connectivityState, picker);
   }
-  
-  updateAddressList(addressList: SubchannelAddress[], lbConfig: LoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+
+  updateAddressList(addressList: SubchannelAddress[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
     if (!(lbConfig instanceof XdsClusterManagerLoadBalancingConfig)) {
       // Reject a config of the wrong type
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));

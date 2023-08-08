@@ -29,15 +29,7 @@ import { Any__Output } from "../generated/google/protobuf/Any";
 import SuccessRateEjectionConfig = experimental.SuccessRateEjectionConfig;
 import FailurePercentageEjectionConfig = experimental.FailurePercentageEjectionConfig;
 import { Watcher, XdsClient } from "../xds-client";
-
-export interface OutlierDetectionUpdate {
-  intervalMs: number | null;
-  baseEjectionTimeMs: number | null;
-  maxEjectionTimeMs: number | null;
-  maxEjectionPercent: number | null;
-  successRateConfig: Partial<SuccessRateEjectionConfig> | null;
-  failurePercentageConfig: Partial<FailurePercentageEjectionConfig> | null;
-}
+import { protoDurationToDuration } from "../duration";
 
 export interface CdsUpdate {
   type: 'AGGREGATE' | 'EDS' | 'LOGICAL_DNS';
@@ -47,29 +39,20 @@ export interface CdsUpdate {
   maxConcurrentRequests?: number;
   edsServiceName?: string;
   dnsHostname?: string;
-  outlierDetectionUpdate?: OutlierDetectionUpdate;
+  outlierDetectionUpdate?: experimental.OutlierDetectionRawConfig;
 }
 
-function durationToMs(duration: Duration__Output): number {
-  return (Number(duration.seconds) * 1_000 + duration.nanos / 1_000_000) | 0;
-}
-
-function convertOutlierDetectionUpdate(outlierDetection: OutlierDetection__Output | null): OutlierDetectionUpdate | undefined {
+function convertOutlierDetectionUpdate(outlierDetection: OutlierDetection__Output | null): experimental.OutlierDetectionRawConfig | undefined {
   if (!EXPERIMENTAL_OUTLIER_DETECTION) {
     return undefined;
   }
   if (!outlierDetection) {
     /* No-op outlier detection config, with all fields unset. */
     return {
-      intervalMs: null,
-      baseEjectionTimeMs: null,
-      maxEjectionTimeMs: null,
-      maxEjectionPercent: null,
-      successRateConfig: null,
-      failurePercentageConfig: null
+      child_policy: []
     };
   }
-  let successRateConfig: Partial<SuccessRateEjectionConfig> | null = null;
+  let successRateConfig: Partial<SuccessRateEjectionConfig> | undefined = undefined;
   /* Success rate ejection is enabled by default, so we only disable it if
    * enforcing_success_rate is set and it has the value 0 */
   if (!outlierDetection.enforcing_success_rate || outlierDetection.enforcing_success_rate.value > 0) {
@@ -80,7 +63,7 @@ function convertOutlierDetectionUpdate(outlierDetection: OutlierDetection__Outpu
       stdev_factor: outlierDetection.success_rate_stdev_factor?.value
     };
   }
-  let failurePercentageConfig: Partial<FailurePercentageEjectionConfig> | null = null;
+  let failurePercentageConfig: Partial<FailurePercentageEjectionConfig> | undefined = undefined;
   /* Failure percentage ejection is disabled by default, so we only enable it
    * if enforcing_failure_percentage is set and it has a value greater than 0 */
   if (outlierDetection.enforcing_failure_percentage && outlierDetection.enforcing_failure_percentage.value > 0) {
@@ -92,19 +75,20 @@ function convertOutlierDetectionUpdate(outlierDetection: OutlierDetection__Outpu
     }
   }
   return {
-    intervalMs: outlierDetection.interval ? durationToMs(outlierDetection.interval) : null,
-    baseEjectionTimeMs: outlierDetection.base_ejection_time ? durationToMs(outlierDetection.base_ejection_time) : null,
-    maxEjectionTimeMs: outlierDetection.max_ejection_time ? durationToMs(outlierDetection.max_ejection_time) : null,
-    maxEjectionPercent : outlierDetection.max_ejection_percent?.value ?? null,
-    successRateConfig: successRateConfig,
-    failurePercentageConfig: failurePercentageConfig
+    interval: outlierDetection.interval ? protoDurationToDuration(outlierDetection.interval) : undefined,
+    base_ejection_time: outlierDetection.base_ejection_time ? protoDurationToDuration(outlierDetection.base_ejection_time) : undefined,
+    max_ejection_time: outlierDetection.max_ejection_time ? protoDurationToDuration(outlierDetection.max_ejection_time) : undefined,
+    max_ejection_percent: outlierDetection.max_ejection_percent?.value,
+    success_rate_ejection: successRateConfig,
+    failure_percentage_ejection: failurePercentageConfig,
+    child_policy: []
   };
 }
 
 
 export class ClusterResourceType extends XdsResourceType {
   private static singleton: ClusterResourceType = new ClusterResourceType();
-  
+
   private constructor() {
     super();
   }
@@ -124,7 +108,7 @@ export class ClusterResourceType extends XdsResourceType {
     /* The maximum values here come from the official Protobuf documentation:
      * https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#google.protobuf.Duration
      */
-    return Number(duration.seconds) >= 0 && 
+    return Number(duration.seconds) >= 0 &&
            Number(duration.seconds) <= 315_576_000_000 &&
            duration.nanos >= 0 &&
            duration.nanos <= 999_999_999;
