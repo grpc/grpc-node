@@ -15,19 +15,18 @@
  *
  */
 
-import { connectivityState as ConnectivityState, status as Status, Metadata, logVerbosity as LogVerbosity, experimental, ChannelOptions } from '@grpc/grpc-js';
-import validateLoadBalancingConfig = experimental.validateLoadBalancingConfig;
+import { connectivityState as ConnectivityState, status as Status, Metadata, logVerbosity as LogVerbosity, experimental, LoadBalancingConfig } from '@grpc/grpc-js';
 import LoadBalancer = experimental.LoadBalancer;
 import ChannelControlHelper = experimental.ChannelControlHelper;
-import getFirstUsableConfig = experimental.getFirstUsableConfig;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
 import SubchannelAddress = experimental.SubchannelAddress;
 import subchannelAddressToString = experimental.subchannelAddressToString;
-import LoadBalancingConfig = experimental.LoadBalancingConfig;
+import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import Picker = experimental.Picker;
 import QueuePicker = experimental.QueuePicker;
 import UnavailablePicker = experimental.UnavailablePicker;
 import ChildLoadBalancerHandler = experimental.ChildLoadBalancerHandler;
+import selectLbConfigFromList = experimental.selectLbConfigFromList;
 
 const TRACER_NAME = 'priority';
 
@@ -50,12 +49,31 @@ export function isLocalitySubchannelAddress(
   return Array.isArray((address as LocalitySubchannelAddress).localityPath);
 }
 
-export interface PriorityChild {
+/**
+ * Type of the config for an individual child in the JSON representation of
+ * a priority LB policy config.
+ */
+export interface PriorityChildRaw {
   config: LoadBalancingConfig[];
   ignore_reresolution_requests: boolean;
 }
 
-export class PriorityLoadBalancingConfig implements LoadBalancingConfig {
+/**
+ * The JSON representation of the config for the priority LB policy. The
+ * LoadBalancingConfig for a priority policy should have the form
+ * { priority: PriorityRawConfig }
+ */
+export interface PriorityRawConfig {
+  children: {[name: string]: PriorityChildRaw};
+  priorities: string[];
+}
+
+interface PriorityChild {
+  config: TypedLoadBalancingConfig;
+  ignore_reresolution_requests: boolean;
+}
+
+class PriorityLoadBalancingConfig implements TypedLoadBalancingConfig {
   getLoadBalancerName(): string {
     return TYPE_NAME;
   }
@@ -63,7 +81,7 @@ export class PriorityLoadBalancingConfig implements LoadBalancingConfig {
     const childrenField: {[key: string]: object} = {}
     for (const [childName, childValue] of this.children.entries()) {
       childrenField[childName] = {
-        config: childValue.config.map(value => value.toJsonObject())
+        config: [childValue.config.toJsonObject()]
       };
     }
     return {
@@ -93,7 +111,7 @@ export class PriorityLoadBalancingConfig implements LoadBalancingConfig {
       throw new Error('Priority config must have a priorities list');
     }
     const childrenMap: Map<string, PriorityChild> = new Map<string, PriorityChild>();
-    for (const childName of obj.children) {
+    for (const childName of Object.keys(obj.children)) {
       const childObj = obj.children[childName]
       if (!('config' in childObj && Array.isArray(childObj.config))) {
         throw new Error(`Priority child ${childName} must have a config list`);
@@ -101,8 +119,12 @@ export class PriorityLoadBalancingConfig implements LoadBalancingConfig {
       if (!('ignore_reresolution_requests' in childObj && typeof childObj.ignore_reresolution_requests === 'boolean')) {
         throw new Error(`Priority child ${childName} must have a boolean field ignore_reresolution_requests`);
       }
+      const childConfig = selectLbConfigFromList(childObj.config);
+      if (!childConfig) {
+        throw new Error(`Priority child ${childName} config parsing failed`);
+      }
       childrenMap.set(childName, {
-        config: childObj.config.map(validateLoadBalancingConfig),
+        config: childConfig,
         ignore_reresolution_requests: childObj.ignore_reresolution_requests
       });
     }
@@ -113,7 +135,7 @@ export class PriorityLoadBalancingConfig implements LoadBalancingConfig {
 interface PriorityChildBalancer {
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig,
+    lbConfig: TypedLoadBalancingConfig,
     attributes: { [key: string]: unknown }
   ): void;
   exitIdle(): void;
@@ -129,7 +151,7 @@ interface PriorityChildBalancer {
 
 interface UpdateArgs {
   subchannelAddress: SubchannelAddress[];
-  lbConfig: LoadBalancingConfig;
+  lbConfig: TypedLoadBalancingConfig;
   ignoreReresolutionRequests: boolean;
 }
 
@@ -193,7 +215,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
 
     updateAddressList(
       addressList: SubchannelAddress[],
-      lbConfig: LoadBalancingConfig,
+      lbConfig: TypedLoadBalancingConfig,
       attributes: { [key: string]: unknown }
     ): void {
       this.childBalancer.updateAddressList(addressList, lbConfig, attributes);
@@ -387,7 +409,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
 
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig,
+    lbConfig: TypedLoadBalancingConfig,
     attributes: { [key: string]: unknown }
   ): void {
     if (!(lbConfig instanceof PriorityLoadBalancingConfig)) {
@@ -431,23 +453,20 @@ export class PriorityLoadBalancer implements LoadBalancer {
     /* Pair up the new child configs with the corresponding address lists, and
      * update all existing children with their new configs */
     for (const [childName, childConfig] of lbConfig.getChildren()) {
-      const chosenChildConfig = getFirstUsableConfig(childConfig.config);
-      if (chosenChildConfig !== null) {
-        const childAddresses = childAddressMap.get(childName) ?? [];
-        trace('Assigning child ' + childName + ' address list ' + childAddresses.map(address => '(' + subchannelAddressToString(address) + ' path=' + address.localityPath + ')'))
-        this.latestUpdates.set(childName, {
-          subchannelAddress: childAddresses,
-          lbConfig: chosenChildConfig,
-          ignoreReresolutionRequests: childConfig.ignore_reresolution_requests
-        });
-        const existingChild = this.children.get(childName);
-        if (existingChild !== undefined) {
-          existingChild.updateAddressList(
-            childAddresses,
-            chosenChildConfig,
-            attributes
-          );
-        }
+      const childAddresses = childAddressMap.get(childName) ?? [];
+      trace('Assigning child ' + childName + ' address list ' + childAddresses.map(address => '(' + subchannelAddressToString(address) + ' path=' + address.localityPath + ')'))
+      this.latestUpdates.set(childName, {
+        subchannelAddress: childAddresses,
+        lbConfig: childConfig.config,
+        ignoreReresolutionRequests: childConfig.ignore_reresolution_requests
+      });
+      const existingChild = this.children.get(childName);
+      if (existingChild !== undefined) {
+        existingChild.updateAddressList(
+          childAddresses,
+          childConfig.config,
+          attributes
+        );
       }
     }
     // Deactivate all children that are no longer in the priority list

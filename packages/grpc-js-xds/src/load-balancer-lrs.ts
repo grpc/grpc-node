@@ -22,9 +22,7 @@ import { XdsClusterLocalityStats, XdsClient, getSingletonXdsClient } from './xds
 import LoadBalancer = experimental.LoadBalancer;
 import ChannelControlHelper = experimental.ChannelControlHelper;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
-import getFirstUsableConfig = experimental.getFirstUsableConfig;
 import SubchannelAddress = experimental.SubchannelAddress;
-import LoadBalancingConfig = experimental.LoadBalancingConfig;
 import ChildLoadBalancerHandler = experimental.ChildLoadBalancerHandler;
 import Picker = experimental.Picker;
 import PickArgs = experimental.PickArgs;
@@ -34,11 +32,12 @@ import Filter = experimental.Filter;
 import BaseFilter = experimental.BaseFilter;
 import FilterFactory = experimental.FilterFactory;
 import Call = experimental.CallStream;
-import validateLoadBalancingConfig = experimental.validateLoadBalancingConfig
+import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
+import selectLbConfigFromList = experimental.selectLbConfigFromList;
 
 const TYPE_NAME = 'lrs';
 
-export class LrsLoadBalancingConfig implements LoadBalancingConfig {
+class LrsLoadBalancingConfig implements TypedLoadBalancingConfig {
   getLoadBalancerName(): string {
     return TYPE_NAME;
   }
@@ -49,12 +48,12 @@ export class LrsLoadBalancingConfig implements LoadBalancingConfig {
         eds_service_name: this.edsServiceName,
         lrs_load_reporting_server_name: this.lrsLoadReportingServer,
         locality: this.locality,
-        child_policy: this.childPolicy.map(policy => policy.toJsonObject())
+        child_policy: [this.childPolicy.toJsonObject()]
       }
     }
   }
 
-  constructor(private clusterName: string, private edsServiceName: string, private lrsLoadReportingServer: XdsServerConfig, private locality: Locality__Output, private childPolicy: LoadBalancingConfig[]) {}
+  constructor(private clusterName: string, private edsServiceName: string, private lrsLoadReportingServer: XdsServerConfig, private locality: Locality__Output, private childPolicy: TypedLoadBalancingConfig) {}
 
   getClusterName() {
     return this.clusterName;
@@ -98,11 +97,15 @@ export class LrsLoadBalancingConfig implements LoadBalancingConfig {
     if (!('child_policy' in obj && Array.isArray(obj.child_policy))) {
       throw new Error('lrs config must have a child_policy array');
     }
+    const childConfig = selectLbConfigFromList(obj.config);
+    if (!childConfig) {
+      throw new Error('lrs config child_policy parsing failed');
+    }
     return new LrsLoadBalancingConfig(obj.cluster_name, obj.eds_service_name, validateXdsServerConfig(obj.lrs_load_reporting_server), {
       region: obj.locality.region ?? '',
       zone: obj.locality.zone ?? '',
       sub_zone: obj.locality.sub_zone ?? ''
-    }, obj.child_policy.map(validateLoadBalancingConfig));
+    }, childConfig);
   }
 }
 
@@ -161,7 +164,7 @@ export class LrsLoadBalancer implements LoadBalancer {
 
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig,
+    lbConfig: TypedLoadBalancingConfig,
     attributes: { [key: string]: unknown }
   ): void {
     if (!(lbConfig instanceof LrsLoadBalancingConfig)) {
@@ -173,11 +176,7 @@ export class LrsLoadBalancer implements LoadBalancer {
       lbConfig.getEdsServiceName(),
       lbConfig.getLocality()
     );
-    const childPolicy: LoadBalancingConfig = getFirstUsableConfig(
-      lbConfig.getChildPolicy(),
-      true
-    );
-    this.childBalancer.updateAddressList(addressList, childPolicy, attributes);
+    this.childBalancer.updateAddressList(addressList, lbConfig.getChildPolicy(), attributes);
   }
   exitIdle(): void {
     this.childBalancer.exitIdle();

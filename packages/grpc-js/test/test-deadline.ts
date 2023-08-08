@@ -18,12 +18,10 @@
 import * as assert from 'assert';
 
 import * as grpc from '../src';
-import { experimental } from '../src';
 import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
 import { loadProtoFile } from './common';
-import ServiceConfig = experimental.ServiceConfig;
 
-const TIMEOUT_SERVICE_CONFIG: ServiceConfig = {
+const TIMEOUT_SERVICE_CONFIG: grpc.ServiceConfig = {
   loadBalancingConfig: [],
   methodConfig: [
     {

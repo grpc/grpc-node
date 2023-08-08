@@ -18,17 +18,16 @@
 import { ChannelOptions } from './channel-options';
 import { ConnectivityState } from './connectivity-state';
 import { LogVerbosity, Status } from './constants';
-import { durationToMs, isDuration, msToDuration } from './duration';
+import { Duration, durationToMs, isDuration, msToDuration } from './duration';
 import {
   ChannelControlHelper,
   createChildChannelControlHelper,
   registerLoadBalancerType,
 } from './experimental';
 import {
-  getFirstUsableConfig,
+  selectLbConfigFromList,
   LoadBalancer,
-  LoadBalancingConfig,
-  validateLoadBalancingConfig,
+  TypedLoadBalancingConfig,
 } from './load-balancer';
 import { ChildLoadBalancerHandler } from './load-balancer-child-handler';
 import { PickArgs, Picker, PickResult, PickResultType } from './picker';
@@ -42,6 +41,7 @@ import {
   SubchannelInterface,
 } from './subchannel-interface';
 import * as logging from './logging';
+import { LoadBalancingConfig } from './service-config';
 
 const TRACER_NAME = 'outlier_detection';
 
@@ -66,6 +66,16 @@ export interface FailurePercentageEjectionConfig {
   readonly enforcement_percentage: number;
   readonly minimum_hosts: number;
   readonly request_volume: number;
+}
+
+export interface OutlierDetectionRawConfig {
+  interval?: Duration;
+  base_ejection_time?: Duration;
+  max_ejection_time?: Duration;
+  max_ejection_percent?: number;
+  success_rate_ejection?: Partial<SuccessRateEjectionConfig>;
+  failure_percentage_ejection?: Partial<FailurePercentageEjectionConfig>;
+  child_policy: LoadBalancingConfig[];
 }
 
 const defaultSuccessRateEjectionConfig: SuccessRateEjectionConfig = {
@@ -147,7 +157,7 @@ function validatePercentage(obj: any, fieldName: string, objectName?: string) {
 }
 
 export class OutlierDetectionLoadBalancingConfig
-  implements LoadBalancingConfig
+  implements TypedLoadBalancingConfig
 {
   private readonly intervalMs: number;
   private readonly baseEjectionTimeMs: number;
@@ -163,11 +173,10 @@ export class OutlierDetectionLoadBalancingConfig
     maxEjectionPercent: number | null,
     successRateEjection: Partial<SuccessRateEjectionConfig> | null,
     failurePercentageEjection: Partial<FailurePercentageEjectionConfig> | null,
-    private readonly childPolicy: LoadBalancingConfig[]
+    private readonly childPolicy: TypedLoadBalancingConfig
   ) {
     if (
-      childPolicy.length > 0 &&
-      childPolicy[0].getLoadBalancerName() === 'pick_first'
+      childPolicy.getLoadBalancerName() === 'pick_first'
     ) {
       throw new Error(
         'outlier_detection LB policy cannot have a pick_first child policy'
@@ -198,7 +207,7 @@ export class OutlierDetectionLoadBalancingConfig
       max_ejection_percent: this.maxEjectionPercent,
       success_rate_ejection: this.successRateEjection,
       failure_percentage_ejection: this.failurePercentageEjection,
-      child_policy: this.childPolicy.map(policy => policy.toJsonObject()),
+      child_policy: [this.childPolicy.toJsonObject()]
     };
   }
 
@@ -220,22 +229,8 @@ export class OutlierDetectionLoadBalancingConfig
   getFailurePercentageEjectionConfig(): FailurePercentageEjectionConfig | null {
     return this.failurePercentageEjection;
   }
-  getChildPolicy(): LoadBalancingConfig[] {
+  getChildPolicy(): TypedLoadBalancingConfig {
     return this.childPolicy;
-  }
-
-  copyWithChildPolicy(
-    childPolicy: LoadBalancingConfig[]
-  ): OutlierDetectionLoadBalancingConfig {
-    return new OutlierDetectionLoadBalancingConfig(
-      this.intervalMs,
-      this.baseEjectionTimeMs,
-      this.maxEjectionTimeMs,
-      this.maxEjectionPercent,
-      this.successRateEjection,
-      this.failurePercentageEjection,
-      childPolicy
-    );
   }
 
   static createFromJson(obj: any): OutlierDetectionLoadBalancingConfig {
@@ -303,6 +298,14 @@ export class OutlierDetectionLoadBalancingConfig
       );
     }
 
+    if (!('child_policy' in obj) || !Array.isArray(obj.child_policy)) {
+      throw new Error('outlier detection config child_policy must be an array');
+    }
+    const childPolicy = selectLbConfigFromList(obj.child_policy);
+    if (!childPolicy) {
+      throw new Error('outlier detection config child_policy: no valid recognized policy found');
+    }
+
     return new OutlierDetectionLoadBalancingConfig(
       obj.interval ? durationToMs(obj.interval) : null,
       obj.base_ejection_time ? durationToMs(obj.base_ejection_time) : null,
@@ -310,7 +313,7 @@ export class OutlierDetectionLoadBalancingConfig
       obj.max_ejection_percent ?? null,
       obj.success_rate_ejection,
       obj.failure_percentage_ejection,
-      obj.child_policy.map(validateLoadBalancingConfig)
+      childPolicy
     );
   }
 }
@@ -794,7 +797,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
 
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig,
+    lbConfig: TypedLoadBalancingConfig,
     attributes: { [key: string]: unknown }
   ): void {
     if (!(lbConfig instanceof OutlierDetectionLoadBalancingConfig)) {
@@ -821,10 +824,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
         this.addressMap.delete(key);
       }
     }
-    const childPolicy: LoadBalancingConfig = getFirstUsableConfig(
-      lbConfig.getChildPolicy(),
-      true
-    );
+    const childPolicy = lbConfig.getChildPolicy();
     this.childBalancer.updateAddressList(addressList, childPolicy, attributes);
 
     if (

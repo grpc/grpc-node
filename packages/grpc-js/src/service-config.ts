@@ -29,10 +29,6 @@
 import * as os from 'os';
 import { Status } from './constants';
 import { Duration } from './duration';
-import {
-  LoadBalancingConfig,
-  validateLoadBalancingConfig,
-} from './load-balancer';
 
 export interface MethodConfigName {
   service: string;
@@ -66,6 +62,10 @@ export interface MethodConfig {
 export interface RetryThrottling {
   maxTokens: number;
   tokenRatio: number;
+}
+
+export interface LoadBalancingConfig {
+  [key: string]: object;
 }
 
 export interface ServiceConfig {
@@ -338,6 +338,22 @@ export function validateRetryThrottling(obj: any): RetryThrottling {
   };
 }
 
+function validateLoadBalancingConfig(obj: any): LoadBalancingConfig {
+  if (!(typeof obj === 'object' && obj !== null)) {
+    throw new Error(`Invalid loadBalancingConfig: unexpected type ${typeof obj}`);
+  }
+  const keys = Object.keys(obj);
+  if (keys.length > 1) {
+    throw new Error(`Invalid loadBalancingConfig: unexpected multiple keys ${keys}`);
+  }
+  if (keys.length === 0) {
+    throw new Error('Invalid loadBalancingConfig: load balancing policy name required');
+  }
+  return {
+    [keys[0]]: obj[keys[0]]
+  };
+}
+
 export function validateServiceConfig(obj: any): ServiceConfig {
   const result: ServiceConfig = {
     loadBalancingConfig: [],
@@ -353,6 +369,7 @@ export function validateServiceConfig(obj: any): ServiceConfig {
   if ('loadBalancingConfig' in obj) {
     if (Array.isArray(obj.loadBalancingConfig)) {
       for (const config of obj.loadBalancingConfig) {
+
         result.loadBalancingConfig.push(validateLoadBalancingConfig(config));
       }
     } else {

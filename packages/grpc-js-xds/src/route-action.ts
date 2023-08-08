@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-import { experimental } from '@grpc/grpc-js';
+import { MethodConfig, experimental } from '@grpc/grpc-js';
 import Duration = experimental.Duration;
 import Filter = experimental.Filter;
 import FilterFactory = experimental.FilterFactory;
-import MethodConfig = experimental.MethodConfig;
 
 export interface ClusterResult {
   name: string;

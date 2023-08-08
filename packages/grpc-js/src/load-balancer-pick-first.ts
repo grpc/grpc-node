@@ -18,7 +18,7 @@
 import {
   LoadBalancer,
   ChannelControlHelper,
-  LoadBalancingConfig,
+  TypedLoadBalancingConfig,
   registerDefaultLoadBalancerType,
   registerLoadBalancerType,
 } from './load-balancer';
@@ -53,7 +53,7 @@ const TYPE_NAME = 'pick_first';
  */
 const CONNECTION_DELAY_INTERVAL_MS = 250;
 
-export class PickFirstLoadBalancingConfig implements LoadBalancingConfig {
+export class PickFirstLoadBalancingConfig implements TypedLoadBalancingConfig {
   constructor(private readonly shuffleAddressList: boolean) {}
 
   getLoadBalancerName(): string {
@@ -374,7 +374,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig
+    lbConfig: TypedLoadBalancingConfig
   ): void {
     if (!(lbConfig instanceof PickFirstLoadBalancingConfig)) {
       return;

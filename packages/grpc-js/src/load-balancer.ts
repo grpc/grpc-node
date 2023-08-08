@@ -21,6 +21,9 @@ import { ConnectivityState } from './connectivity-state';
 import { Picker } from './picker';
 import { ChannelRef, SubchannelRef } from './channelz';
 import { SubchannelInterface } from './subchannel-interface';
+import { LoadBalancingConfig } from './service-config';
+import { log } from './logging';
+import { LogVerbosity } from './constants';
 
 /**
  * A collection of functions associated with a channel that a load balancer
@@ -98,7 +101,7 @@ export interface LoadBalancer {
    */
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig,
+    lbConfig: TypedLoadBalancingConfig,
     attributes: { [key: string]: unknown }
   ): void;
   /**
@@ -128,22 +131,22 @@ export interface LoadBalancerConstructor {
   new (channelControlHelper: ChannelControlHelper): LoadBalancer;
 }
 
-export interface LoadBalancingConfig {
+export interface TypedLoadBalancingConfig {
   getLoadBalancerName(): string;
   toJsonObject(): object;
 }
 
-export interface LoadBalancingConfigConstructor {
+export interface TypedLoadBalancingConfigConstructor {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  new (...args: any): LoadBalancingConfig;
+  new (...args: any): TypedLoadBalancingConfig;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  createFromJson(obj: any): LoadBalancingConfig;
+  createFromJson(obj: any): TypedLoadBalancingConfig;
 }
 
 const registeredLoadBalancerTypes: {
   [name: string]: {
     LoadBalancer: LoadBalancerConstructor;
-    LoadBalancingConfig: LoadBalancingConfigConstructor;
+    LoadBalancingConfig: TypedLoadBalancingConfigConstructor;
   };
 } = {};
 
@@ -152,7 +155,7 @@ let defaultLoadBalancerType: string | null = null;
 export function registerLoadBalancerType(
   typeName: string,
   loadBalancerType: LoadBalancerConstructor,
-  loadBalancingConfigType: LoadBalancingConfigConstructor
+  loadBalancingConfigType: TypedLoadBalancingConfigConstructor
 ) {
   registeredLoadBalancerTypes[typeName] = {
     LoadBalancer: loadBalancerType,
@@ -165,7 +168,7 @@ export function registerDefaultLoadBalancerType(typeName: string) {
 }
 
 export function createLoadBalancer(
-  config: LoadBalancingConfig,
+  config: TypedLoadBalancingConfig,
   channelControlHelper: ChannelControlHelper
 ): LoadBalancer | null {
   const typeName = config.getLoadBalancerName();
@@ -182,17 +185,44 @@ export function isLoadBalancerNameRegistered(typeName: string): boolean {
   return typeName in registeredLoadBalancerTypes;
 }
 
-export function getFirstUsableConfig(
-  configs: LoadBalancingConfig[],
-  fallbackTodefault?: true
-): LoadBalancingConfig;
-export function getFirstUsableConfig(
+export function parseLoadBalancingConfig(rawConfig: LoadBalancingConfig): TypedLoadBalancingConfig {
+  const keys = Object.keys(rawConfig);
+  if (keys.length !== 1) {
+    throw new Error(
+      'Provided load balancing config has multiple conflicting entries'
+    );
+  }
+  const typeName = keys[0];
+  if (typeName in registeredLoadBalancerTypes) {
+    try {
+      return registeredLoadBalancerTypes[
+        typeName
+      ].LoadBalancingConfig.createFromJson(rawConfig[typeName]);
+    } catch (e) {
+      throw new Error(`${typeName}: ${(e as Error).message}`);
+    }
+  } else {
+    throw new Error(`Unrecognized load balancing config name ${typeName}`);
+  }
+}
+
+export function getDefaultConfig() {
+  if (!defaultLoadBalancerType) {
+    throw new Error('No default load balancer type registered');
+  }
+  return new registeredLoadBalancerTypes[defaultLoadBalancerType]!.LoadBalancingConfig();
+}
+
+export function selectLbConfigFromList(
   configs: LoadBalancingConfig[],
   fallbackTodefault = false
-): LoadBalancingConfig | null {
+): TypedLoadBalancingConfig | null {
   for (const config of configs) {
-    if (config.getLoadBalancerName() in registeredLoadBalancerTypes) {
-      return config;
+    try {
+      return parseLoadBalancingConfig(config);
+    } catch (e) {
+      log(LogVerbosity.DEBUG, 'Config parsing failed with error', (e as Error).message);
+      continue;
     }
   }
   if (fallbackTodefault) {
@@ -205,26 +235,5 @@ export function getFirstUsableConfig(
     }
   } else {
     return null;
-  }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function validateLoadBalancingConfig(obj: any): LoadBalancingConfig {
-  if (!(obj !== null && typeof obj === 'object')) {
-    throw new Error('Load balancing config must be an object');
-  }
-  const keys = Object.keys(obj);
-  if (keys.length !== 1) {
-    throw new Error(
-      'Provided load balancing config has multiple conflicting entries'
-    );
-  }
-  const typeName = keys[0];
-  if (typeName in registeredLoadBalancerTypes) {
-    return registeredLoadBalancerTypes[
-      typeName
-    ].LoadBalancingConfig.createFromJson(obj[typeName]);
-  } else {
-    throw new Error(`Unrecognized load balancing config name ${typeName}`);
   }
 }

@@ -15,12 +15,11 @@
  *
  */
 
-import { connectivityState as ConnectivityState, status as Status, Metadata, logVerbosity, experimental } from "@grpc/grpc-js";
+import { connectivityState as ConnectivityState, status as Status, Metadata, logVerbosity, experimental, LoadBalancingConfig } from "@grpc/grpc-js";
 import { isLocalitySubchannelAddress, LocalitySubchannelAddress } from "./load-balancer-priority";
-import LoadBalancingConfig = experimental.LoadBalancingConfig;
+import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import LoadBalancer = experimental.LoadBalancer;
 import ChannelControlHelper = experimental.ChannelControlHelper;
-import getFirstUsableConfig = experimental.getFirstUsableConfig;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
 import ChildLoadBalancerHandler = experimental.ChildLoadBalancerHandler;
 import Picker = experimental.Picker;
@@ -30,7 +29,7 @@ import QueuePicker = experimental.QueuePicker;
 import UnavailablePicker = experimental.UnavailablePicker;
 import SubchannelAddress = experimental.SubchannelAddress;
 import subchannelAddressToString = experimental.subchannelAddressToString;
-import validateLoadBalancingConfig = experimental.validateLoadBalancingConfig;
+import selectLbConfigFromList = experimental.selectLbConfigFromList;
 
 const TRACER_NAME = 'weighted_target';
 
@@ -42,12 +41,30 @@ const TYPE_NAME = 'weighted_target';
 
 const DEFAULT_RETENTION_INTERVAL_MS = 15 * 60 * 1000;
 
- export interface WeightedTarget {
+/**
+ * Type of the config for an individual child in the JSON representation of
+ * a weighted target LB policy config.
+ */
+export interface WeightedTargetRaw {
   weight: number;
   child_policy: LoadBalancingConfig[];
 }
 
-export class WeightedTargetLoadBalancingConfig implements LoadBalancingConfig {
+/**
+ * The JSON representation of the config for the weighted target LB policy. The
+ * LoadBalancingConfig for a weighted target policy should have the form
+ * { weighted_target: WeightedTargetRawConfig }
+ */
+export interface WeightedTargetRawConfig {
+  targets: {[name: string]: WeightedTargetRaw };
+}
+
+interface WeightedTarget {
+  weight: number;
+  child_policy: TypedLoadBalancingConfig;
+}
+
+class WeightedTargetLoadBalancingConfig implements TypedLoadBalancingConfig {
   getLoadBalancerName(): string {
     return TYPE_NAME;
   }
@@ -64,7 +81,7 @@ export class WeightedTargetLoadBalancingConfig implements LoadBalancingConfig {
     for (const [targetName, targetValue] of this.targets.entries()) {
       targetsField[targetName] = {
         weight: targetValue.weight,
-        child_policy: targetValue.child_policy.map(policy => policy.toJsonObject())
+        child_policy: [targetValue.child_policy.toJsonObject()]
       };
     }
     return {
@@ -79,7 +96,7 @@ export class WeightedTargetLoadBalancingConfig implements LoadBalancingConfig {
     if (!('targets' in obj && obj.targets !== null && typeof obj.targets === 'object')) {
       throw new Error('Weighted target config must have a targets map');
     }
-    for (const key of obj.targets) {
+    for (const key of Object.keys(obj.targets)) {
       const targetObj = obj.targets[key];
       if (!('weight' in targetObj && typeof targetObj.weight === 'number')) {
         throw new Error(`Weighted target ${key} must have a numeric weight`);
@@ -87,9 +104,13 @@ export class WeightedTargetLoadBalancingConfig implements LoadBalancingConfig {
       if (!('child_policy' in targetObj && Array.isArray(targetObj.child_policy))) {
         throw new Error(`Weighted target ${key} must have a child_policy array`);
       }
+      const childConfig = selectLbConfigFromList(targetObj.child_policy);
+      if (!childConfig) {
+        throw new Error(`Weighted target ${key} config parsing failed`);
+      }
       const validatedTarget: WeightedTarget = {
         weight: targetObj.weight,
-        child_policy: targetObj.child_policy.map(validateLoadBalancingConfig)
+        child_policy: childConfig
       }
       targetsMap.set(key, validatedTarget);
     }
@@ -171,10 +192,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
 
     updateAddressList(addressList: SubchannelAddress[], lbConfig: WeightedTarget, attributes: { [key: string]: unknown; }): void {
       this.weight = lbConfig.weight;
-      const childConfig = getFirstUsableConfig(lbConfig.child_policy);
-      if (childConfig !== null) {
-        this.childBalancer.updateAddressList(addressList, childConfig, attributes);
-      }
+      this.childBalancer.updateAddressList(addressList, lbConfig.child_policy, attributes);
     }
     exitIdle(): void {
       this.childBalancer.exitIdle();
@@ -301,7 +319,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
     this.channelControlHelper.updateState(connectivityState, picker);
   }
 
-  updateAddressList(addressList: SubchannelAddress[], lbConfig: LoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+  updateAddressList(addressList: SubchannelAddress[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
     if (!(lbConfig instanceof WeightedTargetLoadBalancingConfig)) {
       // Reject a config of the wrong type
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));

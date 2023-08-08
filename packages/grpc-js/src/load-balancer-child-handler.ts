@@ -18,7 +18,7 @@
 import {
   LoadBalancer,
   ChannelControlHelper,
-  LoadBalancingConfig,
+  TypedLoadBalancingConfig,
   createLoadBalancer,
 } from './load-balancer';
 import { SubchannelAddress } from './subchannel-address';
@@ -33,7 +33,7 @@ const TYPE_NAME = 'child_load_balancer_helper';
 export class ChildLoadBalancerHandler implements LoadBalancer {
   private currentChild: LoadBalancer | null = null;
   private pendingChild: LoadBalancer | null = null;
-  private latestConfig: LoadBalancingConfig | null = null;
+  private latestConfig: TypedLoadBalancingConfig | null = null;
 
   private ChildPolicyHelper = class {
     private child: LoadBalancer | null = null;
@@ -87,8 +87,8 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
   constructor(private readonly channelControlHelper: ChannelControlHelper) {}
 
   protected configUpdateRequiresNewPolicyInstance(
-    oldConfig: LoadBalancingConfig,
-    newConfig: LoadBalancingConfig
+    oldConfig: TypedLoadBalancingConfig,
+    newConfig: TypedLoadBalancingConfig
   ): boolean {
     return oldConfig.getLoadBalancerName() !== newConfig.getLoadBalancerName();
   }
@@ -101,7 +101,7 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
    */
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig,
+    lbConfig: TypedLoadBalancingConfig,
     attributes: { [key: string]: unknown }
   ): void {
     let childToUpdate: LoadBalancer;

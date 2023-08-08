@@ -18,8 +18,8 @@
 import {
   ChannelControlHelper,
   LoadBalancer,
-  LoadBalancingConfig,
-  getFirstUsableConfig,
+  TypedLoadBalancingConfig,
+  selectLbConfigFromList,
 } from './load-balancer';
 import { ServiceConfig, validateServiceConfig } from './service-config';
 import { ConnectivityState } from './connectivity-state';
@@ -211,7 +211,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
           }
           const workingConfigList =
             workingServiceConfig?.loadBalancingConfig ?? [];
-          const loadBalancingConfig = getFirstUsableConfig(
+          const loadBalancingConfig = selectLbConfigFromList(
             workingConfigList,
             true
           );
@@ -308,7 +308,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
 
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig | null
+    lbConfig: TypedLoadBalancingConfig | null
   ): never {
     throw new Error('updateAddressList not supported on ResolvingLoadBalancer');
   }
