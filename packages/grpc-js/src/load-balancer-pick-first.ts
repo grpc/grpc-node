@@ -306,7 +306,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
           this.children[subchannelIndex].subchannel.getAddress()
       );
       process.nextTick(() => {
-        this.children[subchannelIndex].subchannel.startConnecting();
+        this.children[subchannelIndex]?.subchannel.startConnecting();
       });
     }
     this.connectionDelayTimeout = setTimeout(() => {
