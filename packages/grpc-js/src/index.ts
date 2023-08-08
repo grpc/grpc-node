@@ -261,6 +261,8 @@ export { getChannelzServiceDefinition, getChannelzHandlers } from './channelz';
 
 export { addAdminServicesToServer } from './admin';
 
+export { ServiceConfig, LoadBalancingConfig, MethodConfig, RetryPolicy } from './service-config';
+
 import * as experimental from './experimental';
 export { experimental };
 

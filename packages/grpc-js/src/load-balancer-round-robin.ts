@@ -18,7 +18,7 @@
 import {
   LoadBalancer,
   ChannelControlHelper,
-  LoadBalancingConfig,
+  TypedLoadBalancingConfig,
   registerLoadBalancerType,
 } from './load-balancer';
 import { ConnectivityState } from './connectivity-state';
@@ -49,7 +49,7 @@ function trace(text: string): void {
 
 const TYPE_NAME = 'round_robin';
 
-class RoundRobinLoadBalancingConfig implements LoadBalancingConfig {
+class RoundRobinLoadBalancingConfig implements TypedLoadBalancingConfig {
   getLoadBalancerName(): string {
     return TYPE_NAME;
   }
@@ -192,7 +192,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
 
   updateAddressList(
     addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig
+    lbConfig: TypedLoadBalancingConfig
   ): void {
     this.resetSubchannelList();
     trace(

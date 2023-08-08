@@ -8,16 +8,15 @@ export {
 } from './resolver';
 export { GrpcUri, uriToString } from './uri-parser';
 export { Duration, durationToMs } from './duration';
-export { ServiceConfig, MethodConfig, RetryPolicy } from './service-config';
 export { BackoffTimeout } from './backoff-timeout';
 export {
   LoadBalancer,
-  LoadBalancingConfig,
+  TypedLoadBalancingConfig,
   ChannelControlHelper,
   createChildChannelControlHelper,
   registerLoadBalancerType,
-  getFirstUsableConfig,
-  validateLoadBalancingConfig,
+  selectLbConfigFromList,
+  parseLoadBalancingConfig
 } from './load-balancer';
 export {
   SubchannelAddress,
@@ -42,7 +41,7 @@ export {
   ConnectivityStateListener,
 } from './subchannel-interface';
 export {
-  OutlierDetectionLoadBalancingConfig,
+  OutlierDetectionRawConfig,
   SuccessRateEjectionConfig,
   FailurePercentageEjectionConfig,
 } from './load-balancer-outlier-detection';
