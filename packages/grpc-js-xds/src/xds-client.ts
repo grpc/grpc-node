@@ -602,9 +602,9 @@ class ClusterLoadReportMap {
    * Get the indicated map entry if it exists, or create a new one if it does
    * not. Increments the refcount of that entry, so a call to this method
    * should correspond to a later call to unref
-   * @param clusterName 
-   * @param edsServiceName 
-   * @returns 
+   * @param clusterName
+   * @param edsServiceName
+   * @returns
    */
   getOrCreate(clusterName: string, edsServiceName: string): ClusterLoadReport {
     for (const statsObj of this.statsMap) {
@@ -833,12 +833,12 @@ class XdsSingleServerClient {
       this.maybeStartLrsStream();
     });
     this.lrsBackoff.unref();
-    this.ignoreResourceDeletion = xdsServerConfig.serverFeatures.includes('ignore_resource_deletion');
+    this.ignoreResourceDeletion = xdsServerConfig.server_features.includes('ignore_resource_deletion');
     const channelArgs = {
       // 5 minutes
       'grpc.keepalive_time_ms': 5 * 60 * 1000
     }
-    const credentialsConfigs = xdsServerConfig.channelCreds;
+    const credentialsConfigs = xdsServerConfig.channel_creds;
     let channelCreds: ChannelCredentials | null = null;
     for (const config of credentialsConfigs) {
       if (config.type === 'google_default') {
@@ -849,8 +849,8 @@ class XdsSingleServerClient {
         break;
       }
     }
-    const serverUri = this.xdsServerConfig.serverUri
-    this.trace('Starting xDS client connected to server URI ' + this.xdsServerConfig.serverUri);
+    const serverUri = this.xdsServerConfig.server_uri
+    this.trace('Starting xDS client connected to server URI ' + this.xdsServerConfig.server_uri);
     /* Bootstrap validation rules guarantee that a matching channel credentials
      * config exists in the list. */
     const channel = new Channel(serverUri, channelCreds!, channelArgs);
@@ -949,7 +949,7 @@ class XdsSingleServerClient {
   }
 
   trace(text: string) {
-    trace(this.xdsServerConfig.serverUri + ' ' + text);
+    trace(this.xdsServerConfig.server_uri + ' ' + text);
   }
 
   subscribe(type: XdsResourceType, name: XdsResourceName) {

@@ -97,7 +97,7 @@ class LrsLoadBalancingConfig implements TypedLoadBalancingConfig {
     if (!('child_policy' in obj && Array.isArray(obj.child_policy))) {
       throw new Error('lrs config must have a child_policy array');
     }
-    const childConfig = selectLbConfigFromList(obj.config);
+    const childConfig = selectLbConfigFromList(obj.child_policy);
     if (!childConfig) {
       throw new Error('lrs config child_policy parsing failed');
     }

@@ -41,9 +41,9 @@ export interface ChannelCredsConfig {
 }
 
 export interface XdsServerConfig {
-  serverUri: string;
-  channelCreds: ChannelCredsConfig[];
-  serverFeatures: string[];
+  server_uri: string;
+  channel_creds: ChannelCredsConfig[];
+  server_features: string[];
 }
 
 export interface Authority {
@@ -61,19 +61,19 @@ export interface BootstrapInfo {
 const KNOWN_SERVER_FEATURES = ['ignore_resource_deletion'];
 
 export function serverConfigEqual(config1: XdsServerConfig, config2: XdsServerConfig): boolean {
-  if (config1.serverUri !== config2.serverUri) {
+  if (config1.server_uri !== config2.server_uri) {
     return false;
   }
   for (const feature of KNOWN_SERVER_FEATURES) {
-    if ((feature in config1.serverFeatures) !== (feature in config2.serverFeatures)) {
+    if ((feature in config1.server_features) !== (feature in config2.server_features)) {
       return false;
     }
   }
-  if (config1.channelCreds.length !== config2.channelCreds.length) {
+  if (config1.channel_creds.length !== config2.channel_creds.length) {
     return false;
   }
-  for (const [index, creds1] of config1.channelCreds.entries()) {
-    const creds2 = config2.channelCreds[index];
+  for (const [index, creds1] of config1.channel_creds.entries()) {
+    const creds2 = config2.channel_creds[index];
     if (creds1.type !== creds2.type) {
       return false;
     }
@@ -93,7 +93,7 @@ function validateChannelCredsConfig(obj: any): ChannelCredsConfig {
       `xds_servers.channel_creds.type field: expected string, got ${typeof obj.type}`
     );
   }
-  if ('config' in obj) {
+  if ('config' in obj && obj.config !== undefined) {
     if (typeof obj.config !== 'object' || obj.config === null) {
       throw new Error(
         'xds_servers.channel_creds config field must be an object if provided'
@@ -152,9 +152,9 @@ export function validateXdsServerConfig(obj: any): XdsServerConfig {
     }
   }
   return {
-    serverUri: obj.server_uri,
-    channelCreds: obj.channel_creds.map(validateChannelCredsConfig),
-    serverFeatures: obj.server_features ?? []
+    server_uri: obj.server_uri,
+    channel_creds: obj.channel_creds.map(validateChannelCredsConfig),
+    server_features: obj.server_features ?? []
   };
 }
 
@@ -387,7 +387,7 @@ export function loadBootstrapInfo(): BootstrapInfo {
     return loadedBootstrapInfo;
   }
 
-  
+
   throw new Error(
     'The GRPC_XDS_BOOTSTRAP or GRPC_XDS_BOOTSTRAP_CONFIG environment variables need to be set to the path to the bootstrap file to use xDS'
   );
