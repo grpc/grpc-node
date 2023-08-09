@@ -157,7 +157,8 @@ export class FakeDnsCluster implements FakeCluster {
             }
           }]
         }]
-      }
+      },
+      lrs_server: {self: {}}
     };
   }
   getAllClusterConfigs(): Cluster[] {
