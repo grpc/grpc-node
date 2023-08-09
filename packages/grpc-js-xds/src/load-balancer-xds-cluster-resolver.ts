@@ -310,7 +310,8 @@ export class XdsClusterResolver implements LoadBalancer {
                 cluster_name: entry.discoveryMechanism.cluster,
                 eds_service_name: entry.discoveryMechanism.eds_service_name ?? '',
                 locality: {...localityObj.locality},
-                lrs_load_reporting_server: {...entry.discoveryMechanism.lrs_load_reporting_server}
+                lrs_load_reporting_server: {...entry.discoveryMechanism.lrs_load_reporting_server},
+                child_policy: endpointPickingPolicy
               }
             }];
           } else {

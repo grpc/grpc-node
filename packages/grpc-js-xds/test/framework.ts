@@ -83,7 +83,8 @@ export class FakeEdsCluster implements FakeCluster {
       name: this.clusterName,
       type: 'EDS',
       eds_cluster_config: {eds_config: {ads: {}}, service_name: this.endpointName},
-      lb_policy: 'ROUND_ROBIN'
+      lb_policy: 'ROUND_ROBIN',
+      lrs_server: {self: {}}
     }
   }
 
