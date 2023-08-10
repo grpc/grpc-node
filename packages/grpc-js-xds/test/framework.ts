@@ -84,7 +84,15 @@ export class FakeEdsCluster implements FakeCluster {
       type: 'EDS',
       eds_cluster_config: {eds_config: {ads: {}}, service_name: this.endpointName},
       lb_policy: 'ROUND_ROBIN',
-      lrs_server: {self: {}}
+      lrs_server: {self: {}},
+      circuit_breakers: {
+        thresholds: [
+          {
+            priority: 'DEFAULT',
+            max_requests: {value: 1000}
+          }
+        ]
+      }
     }
   }
 
