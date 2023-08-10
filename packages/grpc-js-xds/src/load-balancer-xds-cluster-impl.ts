@@ -115,7 +115,7 @@ class XdsClusterImplLoadBalancingConfig implements TypedLoadBalancingConfig {
     if ('eds_service_name' in obj && !(obj.eds_service_name === undefined || typeof obj.eds_service_name === 'string')) {
       throw new Error('xds_cluster_impl config eds_service_name field must be a string if provided');
     }
-    if ('max_concurrent_requests' in obj && (!obj.max_concurrent_requests === undefined || typeof obj.max_concurrent_requests === 'number')) {
+    if ('max_concurrent_requests' in obj && !(obj.max_concurrent_requests === undefined || typeof obj.max_concurrent_requests === 'number')) {
       throw new Error('xds_cluster_impl config max_concurrent_requests must be a number if provided');
     }
     if (!('drop_categories' in obj && Array.isArray(obj.drop_categories))) {
