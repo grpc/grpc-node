@@ -46,7 +46,7 @@ class LrsLoadBalancingConfig implements TypedLoadBalancingConfig {
       [TYPE_NAME]: {
         cluster_name: this.clusterName,
         eds_service_name: this.edsServiceName,
-        lrs_load_reporting_server_name: this.lrsLoadReportingServer,
+        lrs_load_reporting_server: this.lrsLoadReportingServer,
         locality: this.locality,
         child_policy: [this.childPolicy.toJsonObject()]
       }
@@ -96,6 +96,9 @@ class LrsLoadBalancingConfig implements TypedLoadBalancingConfig {
     }
     if (!('child_policy' in obj && Array.isArray(obj.child_policy))) {
       throw new Error('lrs config must have a child_policy array');
+    }
+    if (!('lrs_load_reporting_server' in obj && obj.lrs_load_reporting_server !== null && typeof obj.lrs_load_reporting_server === 'object')) {
+      throw new Error('lrs config must have an object field lrs_load_reporting_server');
     }
     const childConfig = selectLbConfigFromList(obj.child_policy);
     if (!childConfig) {

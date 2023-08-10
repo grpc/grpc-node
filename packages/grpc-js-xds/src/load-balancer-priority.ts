@@ -81,7 +81,8 @@ class PriorityLoadBalancingConfig implements TypedLoadBalancingConfig {
     const childrenField: {[key: string]: object} = {}
     for (const [childName, childValue] of this.children.entries()) {
       childrenField[childName] = {
-        config: [childValue.config.toJsonObject()]
+        config: [childValue.config.toJsonObject()],
+        ignore_reresolution_requests: childValue.ignore_reresolution_requests
       };
     }
     return {

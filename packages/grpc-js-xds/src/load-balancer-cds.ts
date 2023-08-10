@@ -65,11 +65,10 @@ class CdsLoadBalancingConfig implements TypedLoadBalancingConfig {
   }
 
   static createFromJson(obj: any): CdsLoadBalancingConfig {
-    if ('cluster' in obj) {
-      return new CdsLoadBalancingConfig(obj.cluster);
-    } else {
-      throw new Error('Missing "cluster" in cds load balancing config');
+    if (!('cluster' in obj && typeof obj.cluster === 'string')) {
+      throw new Error('cds config must have a string field cluster');
     }
+    return new CdsLoadBalancingConfig(obj.cluster);
   }
 }
 
