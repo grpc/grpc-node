@@ -112,6 +112,9 @@ const SUPPORTED_CHANNEL_CREDS_TYPES = [
 ];
 
 export function validateXdsServerConfig(obj: any): XdsServerConfig {
+  if (!(typeof obj === 'object' && obj !== null)) {
+    throw new Error('xDS server config must be an object');
+  }
   if (!('server_uri' in obj)) {
     throw new Error('server_uri field missing in xds_servers element');
   }
