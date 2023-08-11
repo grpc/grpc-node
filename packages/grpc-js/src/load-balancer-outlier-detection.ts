@@ -107,7 +107,7 @@ function validateFieldType(
   expectedType: TypeofValues,
   objectName?: string
 ) {
-  if (fieldName in obj && typeof obj[fieldName] !== expectedType) {
+  if (fieldName in obj && obj[fieldName] !== undefined && typeof obj[fieldName] !== expectedType) {
     const fullFieldName = objectName ? `${objectName}.${fieldName}` : fieldName;
     throw new Error(
       `outlier detection config ${fullFieldName} parse error: expected ${expectedType}, got ${typeof obj[
@@ -123,7 +123,7 @@ function validatePositiveDuration(
   objectName?: string
 ) {
   const fullFieldName = objectName ? `${objectName}.${fieldName}` : fieldName;
-  if (fieldName in obj) {
+  if (fieldName in obj && obj[fieldName] !== undefined) {
     if (!isDuration(obj[fieldName])) {
       throw new Error(
         `outlier detection config ${fullFieldName} parse error: expected Duration, got ${typeof obj[
@@ -149,7 +149,7 @@ function validatePositiveDuration(
 function validatePercentage(obj: any, fieldName: string, objectName?: string) {
   const fullFieldName = objectName ? `${objectName}.${fieldName}` : fieldName;
   validateFieldType(obj, fieldName, 'number', objectName);
-  if (fieldName in obj && !(obj[fieldName] >= 0 && obj[fieldName] <= 100)) {
+  if (fieldName in obj && obj[fieldName] !== undefined && !(obj[fieldName] >= 0 && obj[fieldName] <= 100)) {
     throw new Error(
       `outlier detection config ${fullFieldName} parse error: value out of range for percentage (0-100)`
     );
@@ -201,13 +201,15 @@ export class OutlierDetectionLoadBalancingConfig
   }
   toJsonObject(): object {
     return {
-      interval: msToDuration(this.intervalMs),
-      base_ejection_time: msToDuration(this.baseEjectionTimeMs),
-      max_ejection_time: msToDuration(this.maxEjectionTimeMs),
-      max_ejection_percent: this.maxEjectionPercent,
-      success_rate_ejection: this.successRateEjection,
-      failure_percentage_ejection: this.failurePercentageEjection,
-      child_policy: [this.childPolicy.toJsonObject()]
+      outlier_detection: {
+        interval: msToDuration(this.intervalMs),
+        base_ejection_time: msToDuration(this.baseEjectionTimeMs),
+        max_ejection_time: msToDuration(this.maxEjectionTimeMs),
+        max_ejection_percent: this.maxEjectionPercent,
+        success_rate_ejection: this.successRateEjection ?? undefined,
+        failure_percentage_ejection: this.failurePercentageEjection ?? undefined,
+        child_policy: [this.childPolicy.toJsonObject()]
+      }
     };
   }
 
@@ -238,7 +240,7 @@ export class OutlierDetectionLoadBalancingConfig
     validatePositiveDuration(obj, 'base_ejection_time');
     validatePositiveDuration(obj, 'max_ejection_time');
     validatePercentage(obj, 'max_ejection_percent');
-    if ('success_rate_ejection' in obj) {
+    if ('success_rate_ejection' in obj && obj.success_rate_ejection !== undefined) {
       if (typeof obj.success_rate_ejection !== 'object') {
         throw new Error(
           'outlier detection config success_rate_ejection must be an object'
@@ -268,7 +270,7 @@ export class OutlierDetectionLoadBalancingConfig
         'success_rate_ejection'
       );
     }
-    if ('failure_percentage_ejection' in obj) {
+    if ('failure_percentage_ejection' in obj && obj.failure_percentage_ejection !== undefined) {
       if (typeof obj.failure_percentage_ejection !== 'object') {
         throw new Error(
           'outlier detection config failure_percentage_ejection must be an object'
