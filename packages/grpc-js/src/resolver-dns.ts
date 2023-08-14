@@ -96,7 +96,7 @@ class DnsResolver implements Resolver {
   private defaultResolutionError: StatusObject;
   private backoff: BackoffTimeout;
   private continueResolving = false;
-  private nextResolutionTimer: NodeJS.Timer;
+  private nextResolutionTimer: NodeJS.Timeout;
   private isNextResolutionTimerRunning = false;
   private isServiceConfigEnabled = true;
   constructor(

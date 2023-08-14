@@ -194,7 +194,7 @@ export class RetryingCall implements Call {
    * Number of attempts so far
    */
   private attempts = 0;
-  private hedgingTimer: NodeJS.Timer | null = null;
+  private hedgingTimer: NodeJS.Timeout | null = null;
   private committedCallIndex: number | null = null;
   private initialRetryBackoffSec = 0;
   private nextRetryBackoffSec = 0;
