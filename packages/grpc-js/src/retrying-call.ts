@@ -169,7 +169,7 @@ export class RetryingCall implements Call {
    * Number of attempts so far
    */
   private attempts: number = 0;
-  private hedgingTimer: NodeJS.Timer | null = null;
+  private hedgingTimer: NodeJS.Timeout | null = null;
   private committedCallIndex: number | null = null;
   private initialRetryBackoffSec = 0;
   private nextRetryBackoffSec = 0;
@@ -625,7 +625,7 @@ export class RetryingCall implements Call {
         return;
       }
       const call = this.underlyingCalls[this.committedCallIndex];
-      bufferEntry.callback = context.callback; 
+      bufferEntry.callback = context.callback;
       if (call.state === 'ACTIVE' && call.nextMessageToSend === messageIndex) {
         call.call.sendMessageWithContext({
           callback: (error) => {

@@ -131,7 +131,7 @@ export class InternalChannel {
    * the invariant is that callRefTimer is reffed if and only if pickQueue
    * is non-empty.
    */
-  private callRefTimer: NodeJS.Timer;
+  private callRefTimer: NodeJS.Timeout;
   private configSelector: ConfigSelector | null = null;
   /**
    * This is the error from the name resolver if it failed most recently. It

@@ -367,7 +367,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
   private childBalancer: ChildLoadBalancerHandler;
   private addressMap: Map<string, MapEntry> = new Map<string, MapEntry>();
   private latestConfig: OutlierDetectionLoadBalancingConfig | null = null;
-  private ejectionTimer: NodeJS.Timer;
+  private ejectionTimer: NodeJS.Timeout;
   private timerStartTime: Date | null = null;
 
   constructor(channelControlHelper: ChannelControlHelper) {

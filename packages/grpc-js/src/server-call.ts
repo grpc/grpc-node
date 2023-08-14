@@ -407,7 +407,7 @@ export class Http2ServerCallStream<
   ResponseType
 > extends EventEmitter {
   cancelled = false;
-  deadlineTimer: NodeJS.Timer | null = null;
+  deadlineTimer: NodeJS.Timeout | null = null;
   private statusSent = false;
   private deadline: Deadline = Infinity;
   private wantTrailers = false;

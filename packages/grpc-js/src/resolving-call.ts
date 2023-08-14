@@ -41,7 +41,7 @@ export class ResolvingCall implements Call {
   private deadline: Deadline;
   private host: string;
   private statusWatchers: ((status: StatusObject) => void)[] = [];
-  private deadlineTimer: NodeJS.Timer = setTimeout(() => {}, 0);
+  private deadlineTimer: NodeJS.Timeout = setTimeout(() => {}, 0);
   private filterStack: FilterStack | null = null;
 
   constructor(
