@@ -382,7 +382,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
   private childBalancer: ChildLoadBalancerHandler;
   private addressMap: Map<string, MapEntry> = new Map<string, MapEntry>();
   private latestConfig: OutlierDetectionLoadBalancingConfig | null = null;
-  private ejectionTimer: NodeJS.Timer;
+  private ejectionTimer: NodeJS.Timeout;
   private timerStartTime: Date | null = null;
 
   constructor(channelControlHelper: ChannelControlHelper) {
@@ -411,8 +411,8 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
   }
 
   private isCountingEnabled(): boolean {
-    return this.latestConfig !== null && 
-      (this.latestConfig.getSuccessRateEjectionConfig() !== null || 
+    return this.latestConfig !== null &&
+      (this.latestConfig.getSuccessRateEjectionConfig() !== null ||
        this.latestConfig.getFailurePercentageEjectionConfig() !== null);
   }
 
@@ -511,7 +511,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     if (addressesWithTargetVolume < failurePercentageConfig.minimum_hosts) {
       return;
     }
-    
+
     // Step 2
     for (const [address, mapEntry] of this.addressMap.entries()) {
       // Step 2.i

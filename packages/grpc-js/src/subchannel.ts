@@ -128,11 +128,11 @@ export class Subchannel {
   /**
    * Timer reference for timeout that indicates when to send the next ping
    */
-  private keepaliveIntervalId: NodeJS.Timer;
+  private keepaliveIntervalId: NodeJS.Timeout;
   /**
    * Timer reference tracking when the most recent ping will be considered lost
    */
-  private keepaliveTimeoutId: NodeJS.Timer;
+  private keepaliveTimeoutId: NodeJS.Timeout;
   /**
    * Indicates whether keepalive pings should be sent without any active calls
    */
@@ -884,11 +884,11 @@ export class Subchannel {
     );
     const streamSession = this.session;
     this.internalsTrace(
-      'session.closed=' + 
-      streamSession!.closed + 
-      ' session.destroyed=' + 
-      streamSession!.destroyed + 
-      ' session.socket.destroyed=' + 
+      'session.closed=' +
+      streamSession!.closed +
+      ' session.destroyed=' +
+      streamSession!.destroyed +
+      ' session.socket.destroyed=' +
       streamSession!.socket.destroyed);
     let statsTracker: SubchannelCallStatsTracker;
     if (this.channelzEnabled) {
