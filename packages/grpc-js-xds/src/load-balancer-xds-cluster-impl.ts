@@ -17,7 +17,8 @@
 
 import { experimental, logVerbosity, status as Status, Metadata, connectivityState } from "@grpc/grpc-js";
 import { validateXdsServerConfig, XdsServerConfig } from "./xds-bootstrap";
-import { getSingletonXdsClient, XdsClient, XdsClusterDropStats } from "./xds-client";
+import { getSingletonXdsClient, XdsClient, XdsClusterDropStats, XdsClusterLocalityStats } from "./xds-client";
+import { LocalitySubchannelAddress } from "./load-balancer-priority";
 
 import LoadBalancer = experimental.LoadBalancer;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
@@ -31,6 +32,8 @@ import ChildLoadBalancerHandler = experimental.ChildLoadBalancerHandler;
 import createChildChannelControlHelper = experimental.createChildChannelControlHelper;
 import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import selectLbConfigFromList = experimental.selectLbConfigFromList;
+import SubchannelInterface = experimental.SubchannelInterface;
+import BaseSubchannelWrapper = experimental.BaseSubchannelWrapper;
 
 const TRACER_NAME = 'xds_cluster_impl';
 
@@ -80,7 +83,7 @@ class XdsClusterImplLoadBalancingConfig implements TypedLoadBalancingConfig {
     };
   }
 
-  constructor(private cluster: string, private dropCategories: DropCategory[], private childPolicy: TypedLoadBalancingConfig, private edsServiceName?: string, private lrsLoadReportingServer?: XdsServerConfig, maxConcurrentRequests?: number) {
+  constructor(private cluster: string, private dropCategories: DropCategory[], private childPolicy: TypedLoadBalancingConfig, private edsServiceName: string, private lrsLoadReportingServer: XdsServerConfig, maxConcurrentRequests?: number) {
     this.maxConcurrentRequests = maxConcurrentRequests ?? DEFAULT_MAX_CONCURRENT_REQUESTS;
   }
 
@@ -112,8 +115,8 @@ class XdsClusterImplLoadBalancingConfig implements TypedLoadBalancingConfig {
     if (!('cluster' in obj && typeof obj.cluster === 'string')) {
       throw new Error('xds_cluster_impl config must have a string field cluster');
     }
-    if ('eds_service_name' in obj && !(obj.eds_service_name === undefined || typeof obj.eds_service_name === 'string')) {
-      throw new Error('xds_cluster_impl config eds_service_name field must be a string if provided');
+    if (!('eds_service_name' in obj && typeof obj.eds_service_name === 'string')) {
+      throw new Error('xds_cluster_impl config must have a string field eds_service_name');
     }
     if ('max_concurrent_requests' in obj && !(obj.max_concurrent_requests === undefined || typeof obj.max_concurrent_requests === 'number')) {
       throw new Error('xds_cluster_impl config max_concurrent_requests must be a number if provided');
@@ -128,7 +131,7 @@ class XdsClusterImplLoadBalancingConfig implements TypedLoadBalancingConfig {
     if (!childConfig) {
       throw new Error('xds_cluster_impl config child_policy parsing failed');
     }
-    return new XdsClusterImplLoadBalancingConfig(obj.cluster, obj.drop_categories.map(validateDropCategory), childConfig, obj.eds_service_name, obj.lrs_load_reporting_server ? validateXdsServerConfig(obj.lrs_load_reporting_server) : undefined, obj.max_concurrent_requests);
+    return new XdsClusterImplLoadBalancingConfig(obj.cluster, obj.drop_categories.map(validateDropCategory), childConfig, obj.eds_service_name, validateXdsServerConfig(obj.lrs_load_reporting_server), obj.max_concurrent_requests);
   }
 }
 
@@ -156,7 +159,25 @@ class CallCounterMap {
 
 const callCounterMap = new CallCounterMap();
 
-class DropPicker implements Picker {
+class LocalitySubchannelWrapper extends BaseSubchannelWrapper implements SubchannelInterface {
+  constructor(child: SubchannelInterface, private statsObject: XdsClusterLocalityStats) {
+    super(child);
+  }
+
+  getStatsObject() {
+    return this.statsObject;
+  }
+
+  getWrappedSubchannel(): SubchannelInterface {
+    return this.child;
+  }
+}
+
+/**
+ * This picker is responsible for implementing the drop configuration, and for
+ * recording drop stats and per-locality stats.
+ */
+class XdsClusterImplPicker implements Picker {
   constructor(private originalPicker: Picker, private callCounterMapKey: string, private maxConcurrentRequests: number, private dropCategories: DropCategory[], private clusterDropStats: XdsClusterDropStats | null) {}
 
   private checkForMaxConcurrentRequestsDrop(): boolean {
@@ -186,16 +207,19 @@ class DropPicker implements Picker {
     }
     if (details === null) {
       const originalPick = this.originalPicker.pick(pickArgs);
+      const pickSubchannel = originalPick.subchannel ? (originalPick.subchannel as LocalitySubchannelWrapper) : null;
       return {
         pickResultType: originalPick.pickResultType,
         status: originalPick.status,
-        subchannel: originalPick.subchannel,
+        subchannel: pickSubchannel?.getWrappedSubchannel() ?? null,
         onCallStarted: () => {
           originalPick.onCallStarted?.();
+          pickSubchannel?.getStatsObject().addCallStarted();
           callCounterMap.startCall(this.callCounterMapKey);
         },
         onCallEnded: status => {
           originalPick.onCallEnded?.(status);
+          pickSubchannel?.getStatsObject().addCallFinished(status !== Status.OK)
           callCounterMap.endCall(this.callCounterMapKey);
         }
       };
@@ -227,11 +251,25 @@ class XdsClusterImplBalancer implements LoadBalancer {
 
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
       this.childBalancer = new ChildLoadBalancerHandler(createChildChannelControlHelper(channelControlHelper, {
+        createSubchannel: (subchannelAddress, subchannelArgs) => {
+          if (!this.xdsClient || !this.latestConfig) {
+            throw new Error('xds_cluster_impl: invalid state: createSubchannel called with xdsClient or latestConfig not populated');
+          }
+          const locality = (subchannelAddress as LocalitySubchannelAddress).locality ?? '';
+          const wrapperChild = channelControlHelper.createSubchannel(subchannelAddress, subchannelArgs);
+          const statsObj = this.xdsClient.addClusterLocalityStats(
+            this.latestConfig.getLrsLoadReportingServer(),
+            this.latestConfig.getCluster(),
+            this.latestConfig.getEdsServiceName(),
+            locality
+          );
+          return new LocalitySubchannelWrapper(wrapperChild, statsObj);
+        },
         updateState: (connectivityState, originalPicker) => {
           if (this.latestConfig === null) {
             channelControlHelper.updateState(connectivityState, originalPicker);
           } else {
-            const picker = new DropPicker(originalPicker, getCallCounterMapKey(this.latestConfig.getCluster(), this.latestConfig.getEdsServiceName()), this.latestConfig.getMaxConcurrentRequests(), this.latestConfig.getDropCategories(), this.clusterDropStats);
+            const picker = new XdsClusterImplPicker(originalPicker, getCallCounterMapKey(this.latestConfig.getCluster(), this.latestConfig.getEdsServiceName()), this.latestConfig.getMaxConcurrentRequests(), this.latestConfig.getDropCategories(), this.clusterDropStats);
             channelControlHelper.updateState(connectivityState, picker);
           }
         }

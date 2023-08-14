@@ -193,11 +193,11 @@ export class CdsLoadBalancer implements LoadBalancer {
             this.reportError((e as Error).message);
             return;
           }
+          const rootClusterUpdate = this.clusterTree[this.latestConfig!.getCluster()].latestUpdate!;
           const clusterResolverConfig: LoadBalancingConfig = {
             xds_cluster_resolver: {
               discovery_mechanisms: discoveryMechanismList,
-              locality_picking_policy: [],
-              endpoint_picking_policy: []
+              xds_lb_policy: rootClusterUpdate.lbPolicyConfig
             }
           };
           let parsedClusterResolverConfig: TypedLoadBalancingConfig;
