@@ -108,7 +108,7 @@ class Http2Transport implements Transport {
   /**
    * Timer reference for timeout that indicates when to send the next ping
    */
-  private keepaliveTimerId: NodeJS.Timer | null = null;
+  private keepaliveTimerId: NodeJS.Timeout | null = null;
   /**
    * Indicates that the keepalive timer ran out while there were no active
    * calls, and a ping should be sent the next time a call starts.
@@ -117,7 +117,7 @@ class Http2Transport implements Transport {
   /**
    * Timer reference tracking when the most recent ping will be considered lost
    */
-  private keepaliveTimeoutId: NodeJS.Timer | null = null;
+  private keepaliveTimeoutId: NodeJS.Timeout | null = null;
   /**
    * Indicates whether keepalive pings should be sent without any active calls
    */
