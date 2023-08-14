@@ -191,7 +191,7 @@ export class ChannelImplementation implements Channel {
    * the invariant is that callRefTimer is reffed if and only if pickQueue
    * is non-empty.
    */
-  private callRefTimer: NodeJS.Timer;
+  private callRefTimer: NodeJS.Timeout;
   private configSelector: ConfigSelector | null = null;
   /**
    * This is the error from the name resolver if it failed most recently. It
@@ -435,12 +435,12 @@ export class ChannelImplementation implements Channel {
       metadata: callMetadata,
       extraPickInfo: callConfig.pickInformation,
     });
-    const subchannelString = pickResult.subchannel ? 
-      '(' + pickResult.subchannel.getChannelzRef().id + ') ' + pickResult.subchannel.getAddress() : 
-      '' + pickResult.subchannel; 
+    const subchannelString = pickResult.subchannel ?
+      '(' + pickResult.subchannel.getChannelzRef().id + ') ' + pickResult.subchannel.getAddress() :
+      '' + pickResult.subchannel;
     this.trace(
-      'Pick result for call [' + 
-        callStream.getCallNumber() + 
+      'Pick result for call [' +
+        callStream.getCallNumber() +
         ']: ' +
         PickResultType[pickResult.pickResultType] +
         ' subchannel: ' +
@@ -602,7 +602,7 @@ export class ChannelImplementation implements Channel {
     trace(
       LogVerbosity.DEBUG,
       'connectivity_state',
-      '(' + this.channelzRef.id + ') ' + 
+      '(' + this.channelzRef.id + ') ' +
         uriToString(this.target) +
         ' ' +
         ConnectivityState[this.connectivityState] +
@@ -669,9 +669,9 @@ export class ChannelImplementation implements Channel {
           /* These dynamicFilters are the mechanism for implementing gRFC A39:
            * https://github.com/grpc/proposal/blob/master/A39-xds-http-filters.md
            * We run them here instead of with the rest of the filters because
-           * that spec says "the xDS HTTP filters will run in between name 
+           * that spec says "the xDS HTTP filters will run in between name
            * resolution and load balancing".
-           * 
+           *
            * We use the filter stack here to simplify the multi-filter async
            * waterfall logic, but we pass along the underlying list of filters
            * to avoid having nested filter stacks when combining it with the
@@ -758,7 +758,7 @@ export class ChannelImplementation implements Channel {
   /**
    * Get the channelz reference object for this channel. The returned value is
    * garbage if channelz is disabled for this channel.
-   * @returns 
+   * @returns
    */
   getChannelzRef() {
     return this.channelzRef;

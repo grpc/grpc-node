@@ -41,7 +41,7 @@ function getDeadline(deadline: number) {
 }
 
 export class DeadlineFilter extends BaseFilter implements Filter {
-  private timer: NodeJS.Timer | null = null;
+  private timer: NodeJS.Timeout | null = null;
   private deadline = Infinity;
   constructor(
     private readonly channel: Channel,

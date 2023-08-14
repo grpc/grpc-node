@@ -96,7 +96,7 @@ class DnsResolver implements Resolver {
   private defaultResolutionError: StatusObject;
   private backoff: BackoffTimeout;
   private continueResolving = false;
-  private nextResolutionTimer: NodeJS.Timer;
+  private nextResolutionTimer: NodeJS.Timeout;
   private isNextResolutionTimerRunning = false;
   constructor(
     private target: GrpcUri,
@@ -132,7 +132,7 @@ class DnsResolver implements Resolver {
       details: `Name resolution failed for target ${uriToString(this.target)}`,
       metadata: new Metadata(),
     };
-    
+
     const backoffOptions: BackoffOptions = {
       initialDelay: channelOptions['grpc.initial_reconnect_backoff_ms'],
       maxDelay: channelOptions['grpc.max_reconnect_backoff_ms'],
