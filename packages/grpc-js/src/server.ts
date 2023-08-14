@@ -971,8 +971,8 @@ export class Server {
         this.channelzTrace.addTrace('CT_INFO', 'Connection established by client ' + clientAddress);
         this.sessionChildrenTracker.refChild(channelzRef);
       }
-      let connectionAgeTimer: NodeJS.Timer | null = null;
-      let connectionAgeGraceTimer: NodeJS.Timer | null = null;
+      let connectionAgeTimer: NodeJS.Timeout | null = null;
+      let connectionAgeGraceTimer: NodeJS.Timeout | null = null;
       let sessionClosedByServer = false;
       if (this.maxConnectionAgeMs !== UNLIMITED_CONNECTION_AGE_MS) {
         // Apply a random jitter within a +/-10% range
@@ -1000,7 +1000,7 @@ export class Server {
           }
         }, this.maxConnectionAgeMs + jitter).unref?.();
       }
-      const keeapliveTimeTimer: NodeJS.Timer | null = setInterval(() => {
+      const keeapliveTimeTimer: NodeJS.Timeout | null = setInterval(() => {
         const timeoutTImer = setTimeout(() => {
           sessionClosedByServer = true;
           if (this.channelzEnabled) {

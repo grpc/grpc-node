@@ -45,7 +45,7 @@ export class SubchannelPool {
   /**
    * A timer of a task performing a periodic subchannel cleanup.
    */
-  private cleanupTimer: NodeJS.Timer | null = null;
+  private cleanupTimer: NodeJS.Timeout | null = null;
 
   /**
    * A pool of subchannels use for making connections. Subchannels with the
