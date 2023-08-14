@@ -63,7 +63,7 @@ export class BackoffTimeout {
    * to an object representing a timer that has ended, but it can still be
    * interacted with without error.
    */
-  private timerId: NodeJS.Timer;
+  private timerId: NodeJS.Timeout;
   /**
    * Indicates whether the timer is currently running.
    */
