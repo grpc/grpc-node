@@ -30,7 +30,7 @@ export interface VirtualCluster {
   'name'?: (string);
   /**
    * Specifies a list of header matchers to use for matching requests. Each specified header must
-   * match. The pseudo-headers `:path` and `:method` can be used to match the request path and
+   * match. The pseudo-headers ``:path`` and ``:method`` can be used to match the request path and
    * method, respectively.
    */
   'headers'?: (_envoy_config_route_v3_HeaderMatcher)[];
@@ -64,7 +64,7 @@ export interface VirtualCluster__Output {
   'name': (string);
   /**
    * Specifies a list of header matchers to use for matching requests. Each specified header must
-   * match. The pseudo-headers `:path` and `:method` can be used to match the request path and
+   * match. The pseudo-headers ``:path`` and ``:method`` can be used to match the request path and
    * method, respectively.
    */
   'headers': (_envoy_config_route_v3_HeaderMatcher__Output)[];

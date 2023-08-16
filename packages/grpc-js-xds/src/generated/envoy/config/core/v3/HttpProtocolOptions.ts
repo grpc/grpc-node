@@ -24,7 +24,7 @@ export enum _envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresActi
    */
   REJECT_REQUEST = 1,
   /**
-   * Drop the header with name containing underscores. The header is dropped before the filter chain is
+   * Drop the client header with name containing underscores. The header is dropped before the filter chain is
    * invoked and as such filters will not see dropped headers. The
    * "httpN.dropped_headers_with_underscores" is incremented for each dropped header.
    */
@@ -63,11 +63,10 @@ export interface HttpProtocolOptions {
   /**
    * The maximum duration of a connection. The duration is defined as a period since a connection
    * was established. If not set, there is no max duration. When max_connection_duration is reached
-   * and if there are no active streams, the connection will be closed. If there are any active streams,
-   * the drain sequence will kick-in, and the connection will be force-closed after the drain period.
-   * See :ref:`drain_timeout
+   * and if there are no active streams, the connection will be closed. If the connection is a
+   * downstream connection and there are any active streams, the drain sequence will kick-in,
+   * and the connection will be force-closed after the drain period. See :ref:`drain_timeout
    * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.drain_timeout>`.
-   * Note: This feature is not yet implemented for the upstream connections.
    */
   'max_connection_duration'?: (_google_protobuf_Duration | null);
   /**
@@ -79,6 +78,8 @@ export interface HttpProtocolOptions {
    * Action to take when a client request with a header name containing underscore characters is received.
    * If this setting is not specified, the value defaults to ALLOW.
    * Note: upstream responses are not affected by this setting.
+   * Note: this only affects client headers. It does not affect headers added
+   * by Envoy filters and does not have any impact if added to cluster config.
    */
   'headers_with_underscores_action'?: (_envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction | keyof typeof _envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction);
   /**
@@ -122,11 +123,10 @@ export interface HttpProtocolOptions__Output {
   /**
    * The maximum duration of a connection. The duration is defined as a period since a connection
    * was established. If not set, there is no max duration. When max_connection_duration is reached
-   * and if there are no active streams, the connection will be closed. If there are any active streams,
-   * the drain sequence will kick-in, and the connection will be force-closed after the drain period.
-   * See :ref:`drain_timeout
+   * and if there are no active streams, the connection will be closed. If the connection is a
+   * downstream connection and there are any active streams, the drain sequence will kick-in,
+   * and the connection will be force-closed after the drain period. See :ref:`drain_timeout
    * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.drain_timeout>`.
-   * Note: This feature is not yet implemented for the upstream connections.
    */
   'max_connection_duration': (_google_protobuf_Duration__Output | null);
   /**
@@ -138,6 +138,8 @@ export interface HttpProtocolOptions__Output {
    * Action to take when a client request with a header name containing underscore characters is received.
    * If this setting is not specified, the value defaults to ALLOW.
    * Note: upstream responses are not affected by this setting.
+   * Note: this only affects client headers. It does not affect headers added
+   * by Envoy filters and does not have any impact if added to cluster config.
    */
   'headers_with_underscores_action': (keyof typeof _envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction);
   /**

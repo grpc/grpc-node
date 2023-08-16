@@ -6,6 +6,7 @@ import type { QueryParameterMatcher as _envoy_config_route_v3_QueryParameterMatc
 import type { RuntimeFractionalPercent as _envoy_config_core_v3_RuntimeFractionalPercent, RuntimeFractionalPercent__Output as _envoy_config_core_v3_RuntimeFractionalPercent__Output } from '../../../../envoy/config/core/v3/RuntimeFractionalPercent';
 import type { RegexMatcher as _envoy_type_matcher_v3_RegexMatcher, RegexMatcher__Output as _envoy_type_matcher_v3_RegexMatcher__Output } from '../../../../envoy/type/matcher/v3/RegexMatcher';
 import type { MetadataMatcher as _envoy_type_matcher_v3_MetadataMatcher, MetadataMatcher__Output as _envoy_type_matcher_v3_MetadataMatcher__Output } from '../../../../envoy/type/matcher/v3/MetadataMatcher';
+import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig, TypedExtensionConfig__Output as _envoy_config_core_v3_TypedExtensionConfig__Output } from '../../../../envoy/config/core/v3/TypedExtensionConfig';
 
 /**
  * An extensible message for matching CONNECT requests.
@@ -52,17 +53,17 @@ export interface _envoy_config_route_v3_RouteMatch_TlsContextMatchOptions__Outpu
 }
 
 /**
- * [#next-free-field: 14]
+ * [#next-free-field: 16]
  */
 export interface RouteMatch {
   /**
    * If specified, the route is a prefix rule meaning that the prefix must
-   * match the beginning of the *:path* header.
+   * match the beginning of the ``:path`` header.
    */
   'prefix'?: (string);
   /**
    * If specified, the route is an exact path rule meaning that the path must
-   * exactly match the *:path* header once the query string is removed.
+   * exactly match the ``:path`` header once the query string is removed.
    */
   'path'?: (string);
   /**
@@ -80,9 +81,9 @@ export interface RouteMatch {
   'headers'?: (_envoy_config_route_v3_HeaderMatcher)[];
   /**
    * Specifies a set of URL query parameters on which the route should
-   * match. The router will check the query string from the *path* header
+   * match. The router will check the query string from the ``path`` header
    * against all the specified query parameters. If the number of specified
-   * query parameters is nonzero, they all must match the *path* header's
+   * query parameters is nonzero, they all must match the ``path`` header's
    * query string for a match to occur.
    * 
    * .. note::
@@ -121,9 +122,9 @@ export interface RouteMatch {
   'runtime_fraction'?: (_envoy_config_core_v3_RuntimeFractionalPercent | null);
   /**
    * If specified, the route is a regular expression rule meaning that the
-   * regex must match the *:path* header once the query string is removed. The entire path
+   * regex must match the ``:path`` header once the query string is removed. The entire path
    * (without the query string) must match the regex. The rule will not match if only a
-   * subsequence of the *:path* header matches the regex.
+   * subsequence of the ``:path`` header matches the regex.
    * 
    * [#next-major-version: In the v3 API we should redo how path specification works such
    * that we utilize StringMatcher, and additionally have consistent options around whether we
@@ -160,21 +161,37 @@ export interface RouteMatch {
    * dynamic metadata for a match to occur.
    */
   'dynamic_metadata'?: (_envoy_type_matcher_v3_MetadataMatcher)[];
-  'path_specifier'?: "prefix"|"path"|"safe_regex"|"connect_matcher";
+  /**
+   * If specified, the route is a path-separated prefix rule meaning that the
+   * ``:path`` header (without the query string) must either exactly match the
+   * ``path_separated_prefix`` or have it as a prefix, followed by ``/``
+   * 
+   * For example, ``/api/dev`` would match
+   * ``/api/dev``, ``/api/dev/``, ``/api/dev/v1``, and ``/api/dev?param=true``
+   * but would not match ``/api/developer``
+   * 
+   * Expect the value to not contain ``?`` or ``#`` and not to end in ``/``
+   */
+  'path_separated_prefix'?: (string);
+  /**
+   * [#extension-category: envoy.path.match]
+   */
+  'path_match_policy'?: (_envoy_config_core_v3_TypedExtensionConfig | null);
+  'path_specifier'?: "prefix"|"path"|"safe_regex"|"connect_matcher"|"path_separated_prefix"|"path_match_policy";
 }
 
 /**
- * [#next-free-field: 14]
+ * [#next-free-field: 16]
  */
 export interface RouteMatch__Output {
   /**
    * If specified, the route is a prefix rule meaning that the prefix must
-   * match the beginning of the *:path* header.
+   * match the beginning of the ``:path`` header.
    */
   'prefix'?: (string);
   /**
    * If specified, the route is an exact path rule meaning that the path must
-   * exactly match the *:path* header once the query string is removed.
+   * exactly match the ``:path`` header once the query string is removed.
    */
   'path'?: (string);
   /**
@@ -192,9 +209,9 @@ export interface RouteMatch__Output {
   'headers': (_envoy_config_route_v3_HeaderMatcher__Output)[];
   /**
    * Specifies a set of URL query parameters on which the route should
-   * match. The router will check the query string from the *path* header
+   * match. The router will check the query string from the ``path`` header
    * against all the specified query parameters. If the number of specified
-   * query parameters is nonzero, they all must match the *path* header's
+   * query parameters is nonzero, they all must match the ``path`` header's
    * query string for a match to occur.
    * 
    * .. note::
@@ -233,9 +250,9 @@ export interface RouteMatch__Output {
   'runtime_fraction': (_envoy_config_core_v3_RuntimeFractionalPercent__Output | null);
   /**
    * If specified, the route is a regular expression rule meaning that the
-   * regex must match the *:path* header once the query string is removed. The entire path
+   * regex must match the ``:path`` header once the query string is removed. The entire path
    * (without the query string) must match the regex. The rule will not match if only a
-   * subsequence of the *:path* header matches the regex.
+   * subsequence of the ``:path`` header matches the regex.
    * 
    * [#next-major-version: In the v3 API we should redo how path specification works such
    * that we utilize StringMatcher, and additionally have consistent options around whether we
@@ -272,5 +289,21 @@ export interface RouteMatch__Output {
    * dynamic metadata for a match to occur.
    */
   'dynamic_metadata': (_envoy_type_matcher_v3_MetadataMatcher__Output)[];
-  'path_specifier': "prefix"|"path"|"safe_regex"|"connect_matcher";
+  /**
+   * If specified, the route is a path-separated prefix rule meaning that the
+   * ``:path`` header (without the query string) must either exactly match the
+   * ``path_separated_prefix`` or have it as a prefix, followed by ``/``
+   * 
+   * For example, ``/api/dev`` would match
+   * ``/api/dev``, ``/api/dev/``, ``/api/dev/v1``, and ``/api/dev?param=true``
+   * but would not match ``/api/developer``
+   * 
+   * Expect the value to not contain ``?`` or ``#`` and not to end in ``/``
+   */
+  'path_separated_prefix'?: (string);
+  /**
+   * [#extension-category: envoy.path.match]
+   */
+  'path_match_policy'?: (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
+  'path_specifier': "prefix"|"path"|"safe_regex"|"connect_matcher"|"path_separated_prefix"|"path_match_policy";
 }

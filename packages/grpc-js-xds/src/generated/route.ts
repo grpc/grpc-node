@@ -28,6 +28,7 @@ export interface ProtoGrpcType {
           EnvoyInternalAddress: MessageTypeDefinition
           Extension: MessageTypeDefinition
           ExtensionConfigSource: MessageTypeDefinition
+          ExtraSourceAddress: MessageTypeDefinition
           GrpcService: MessageTypeDefinition
           HeaderMap: MessageTypeDefinition
           HeaderValue: MessageTypeDefinition
@@ -36,8 +37,10 @@ export interface ProtoGrpcType {
           Locality: MessageTypeDefinition
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition
+          PathConfigSource: MessageTypeDefinition
           Pipe: MessageTypeDefinition
           ProxyProtocolConfig: MessageTypeDefinition
+          ProxyProtocolPassThroughTLVs: MessageTypeDefinition
           QueryParameter: MessageTypeDefinition
           RateLimitSettings: MessageTypeDefinition
           RemoteDataSource: MessageTypeDefinition
@@ -52,6 +55,7 @@ export interface ProtoGrpcType {
           SelfConfigSource: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
           SocketOption: MessageTypeDefinition
+          SocketOptionsOverride: MessageTypeDefinition
           TcpKeepalive: MessageTypeDefinition
           TrafficDirection: EnumTypeDefinition
           TransportSocket: MessageTypeDefinition
@@ -78,6 +82,7 @@ export interface ProtoGrpcType {
           Route: MessageTypeDefinition
           RouteAction: MessageTypeDefinition
           RouteConfiguration: MessageTypeDefinition
+          RouteList: MessageTypeDefinition
           RouteMatch: MessageTypeDefinition
           Tracing: MessageTypeDefinition
           Vhds: MessageTypeDefinition
@@ -212,6 +217,17 @@ export interface ProtoGrpcType {
       v3: {
         Authority: MessageTypeDefinition
         ContextParams: MessageTypeDefinition
+        TypedExtensionConfig: MessageTypeDefinition
+      }
+    }
+    type: {
+      matcher: {
+        v3: {
+          ListStringMatcher: MessageTypeDefinition
+          Matcher: MessageTypeDefinition
+          RegexMatcher: MessageTypeDefinition
+          StringMatcher: MessageTypeDefinition
+        }
       }
     }
   }

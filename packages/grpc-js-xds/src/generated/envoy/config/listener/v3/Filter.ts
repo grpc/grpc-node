@@ -8,8 +8,7 @@ import type { ExtensionConfigSource as _envoy_config_core_v3_ExtensionConfigSour
  */
 export interface Filter {
   /**
-   * The name of the filter to instantiate. The name must match a
-   * :ref:`supported filter <config_network_filters>`.
+   * The name of the filter configuration.
    */
   'name'?: (string);
   /**
@@ -33,8 +32,7 @@ export interface Filter {
  */
 export interface Filter__Output {
   /**
-   * The name of the filter to instantiate. The name must match a
-   * :ref:`supported filter <config_network_filters>`.
+   * The name of the filter configuration.
    */
   'name': (string);
   /**

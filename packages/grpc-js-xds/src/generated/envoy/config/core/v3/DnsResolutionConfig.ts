@@ -11,9 +11,6 @@ export interface DnsResolutionConfig {
    * A list of dns resolver addresses. If specified, the DNS client library will perform resolution
    * via the underlying DNS resolvers. Otherwise, the default system resolvers
    * (e.g., /etc/resolv.conf) will be used.
-   * Setting this value causes failure if the
-   * ``envoy.restart_features.use_apple_api_for_dns_lookups`` runtime value is true during
-   * server startup. Apple's API only allows overriding DNS resolvers via system settings.
    */
   'resolvers'?: (_envoy_config_core_v3_Address)[];
   /**
@@ -30,9 +27,6 @@ export interface DnsResolutionConfig__Output {
    * A list of dns resolver addresses. If specified, the DNS client library will perform resolution
    * via the underlying DNS resolvers. Otherwise, the default system resolvers
    * (e.g., /etc/resolv.conf) will be used.
-   * Setting this value causes failure if the
-   * ``envoy.restart_features.use_apple_api_for_dns_lookups`` runtime value is true during
-   * server startup. Apple's API only allows overriding DNS resolvers via system settings.
    */
   'resolvers': (_envoy_config_core_v3_Address__Output)[];
   /**

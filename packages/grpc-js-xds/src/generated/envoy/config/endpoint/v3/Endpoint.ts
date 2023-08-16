@@ -23,6 +23,19 @@ export interface _envoy_config_endpoint_v3_Endpoint_HealthCheckConfig {
    * endpoint.
    */
   'hostname'?: (string);
+  /**
+   * Optional alternative health check host address.
+   * 
+   * .. attention::
+   * 
+   * The form of the health check host address is expected to be a direct IP address.
+   */
+  'address'?: (_envoy_config_core_v3_Address | null);
+  /**
+   * Optional flag to control if perform active health check for this endpoint.
+   * Active health check is enabled by default if there is a health checker.
+   */
+  'disable_active_health_check'?: (boolean);
 }
 
 /**
@@ -46,6 +59,19 @@ export interface _envoy_config_endpoint_v3_Endpoint_HealthCheckConfig__Output {
    * endpoint.
    */
   'hostname': (string);
+  /**
+   * Optional alternative health check host address.
+   * 
+   * .. attention::
+   * 
+   * The form of the health check host address is expected to be a direct IP address.
+   */
+  'address': (_envoy_config_core_v3_Address__Output | null);
+  /**
+   * Optional flag to control if perform active health check for this endpoint.
+   * Active health check is enabled by default if there is a health checker.
+   */
+  'disable_active_health_check': (boolean);
 }
 
 /**

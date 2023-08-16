@@ -5,9 +5,7 @@ import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__
 
 export interface AccessLog {
   /**
-   * The name of the access log extension to instantiate.
-   * The name must match one of the compiled in loggers.
-   * See the :ref:`extensions listed in typed_config below <extension_category_envoy.access_loggers>` for the default list of available loggers.
+   * The name of the access log extension configuration.
    */
   'name'?: (string);
   /**
@@ -24,9 +22,7 @@ export interface AccessLog {
 
 export interface AccessLog__Output {
   /**
-   * The name of the access log extension to instantiate.
-   * The name must match one of the compiled in loggers.
-   * See the :ref:`extensions listed in typed_config below <extension_category_envoy.access_loggers>` for the default list of available loggers.
+   * The name of the access log extension configuration.
    */
   'name': (string);
   /**

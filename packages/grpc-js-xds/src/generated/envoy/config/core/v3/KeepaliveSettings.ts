@@ -11,7 +11,9 @@ export interface KeepaliveSettings {
   'interval'?: (_google_protobuf_Duration | null);
   /**
    * How long to wait for a response to a keepalive PING. If a response is not received within this
-   * time period, the connection will be aborted.
+   * time period, the connection will be aborted. Note that in order to prevent the influence of
+   * Head-of-line (HOL) blocking the timeout period is extended when *any* frame is received on
+   * the connection, under the assumption that if a frame is received the connection is healthy.
    */
   'timeout'?: (_google_protobuf_Duration | null);
   /**
@@ -26,6 +28,8 @@ export interface KeepaliveSettings {
    * If this is zero, this type of PING will not be sent.
    * If an interval ping is outstanding, a second ping will not be sent as the
    * interval ping will determine if the connection is dead.
+   * 
+   * The same feature for HTTP/3 is given by inheritance from QUICHE which uses :ref:`connection idle_timeout <envoy_v3_api_field_config.listener.v3.QuicProtocolOptions.idle_timeout>` and the current PTO of the connection to decide whether to probe before sending a new request.
    */
   'connection_idle_interval'?: (_google_protobuf_Duration | null);
 }
@@ -38,7 +42,9 @@ export interface KeepaliveSettings__Output {
   'interval': (_google_protobuf_Duration__Output | null);
   /**
    * How long to wait for a response to a keepalive PING. If a response is not received within this
-   * time period, the connection will be aborted.
+   * time period, the connection will be aborted. Note that in order to prevent the influence of
+   * Head-of-line (HOL) blocking the timeout period is extended when *any* frame is received on
+   * the connection, under the assumption that if a frame is received the connection is healthy.
    */
   'timeout': (_google_protobuf_Duration__Output | null);
   /**
@@ -53,6 +59,8 @@ export interface KeepaliveSettings__Output {
    * If this is zero, this type of PING will not be sent.
    * If an interval ping is outstanding, a second ping will not be sent as the
    * interval ping will determine if the connection is dead.
+   * 
+   * The same feature for HTTP/3 is given by inheritance from QUICHE which uses :ref:`connection idle_timeout <envoy_v3_api_field_config.listener.v3.QuicProtocolOptions.idle_timeout>` and the current PTO of the connection to decide whether to probe before sending a new request.
    */
   'connection_idle_interval': (_google_protobuf_Duration__Output | null);
 }

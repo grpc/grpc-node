@@ -3,7 +3,10 @@
 import type { ComparisonFilter as _envoy_config_accesslog_v3_ComparisonFilter, ComparisonFilter__Output as _envoy_config_accesslog_v3_ComparisonFilter__Output } from '../../../../envoy/config/accesslog/v3/ComparisonFilter';
 
 /**
- * Filters on total request duration in milliseconds.
+ * Filters based on the duration of the request or stream, in milliseconds.
+ * For end of stream access logs, the total duration of the stream will be used.
+ * For :ref:`periodic access logs<arch_overview_access_log_periodic>`,
+ * the duration of the stream at the time of log recording will be used.
  */
 export interface DurationFilter {
   /**
@@ -13,7 +16,10 @@ export interface DurationFilter {
 }
 
 /**
- * Filters on total request duration in milliseconds.
+ * Filters based on the duration of the request or stream, in milliseconds.
+ * For end of stream access logs, the total duration of the stream will be used.
+ * For :ref:`periodic access logs<arch_overview_access_log_periodic>`,
+ * the duration of the stream at the time of log recording will be used.
  */
 export interface DurationFilter__Output {
   /**

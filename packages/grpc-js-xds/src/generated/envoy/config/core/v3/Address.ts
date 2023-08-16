@@ -13,7 +13,8 @@ export interface Address {
   'socket_address'?: (_envoy_config_core_v3_SocketAddress | null);
   'pipe'?: (_envoy_config_core_v3_Pipe | null);
   /**
-   * [#not-implemented-hide:]
+   * Specifies a user-space address handled by :ref:`internal listeners
+   * <envoy_v3_api_field_config.listener.v3.Listener.internal_listener>`.
    */
   'envoy_internal_address'?: (_envoy_config_core_v3_EnvoyInternalAddress | null);
   'address'?: "socket_address"|"pipe"|"envoy_internal_address";
@@ -28,7 +29,8 @@ export interface Address__Output {
   'socket_address'?: (_envoy_config_core_v3_SocketAddress__Output | null);
   'pipe'?: (_envoy_config_core_v3_Pipe__Output | null);
   /**
-   * [#not-implemented-hide:]
+   * Specifies a user-space address handled by :ref:`internal listeners
+   * <envoy_v3_api_field_config.listener.v3.Listener.internal_listener>`.
    */
   'envoy_internal_address'?: (_envoy_config_core_v3_EnvoyInternalAddress__Output | null);
   'address': "socket_address"|"pipe"|"envoy_internal_address";

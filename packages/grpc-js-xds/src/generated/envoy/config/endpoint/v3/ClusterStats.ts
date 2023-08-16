@@ -52,9 +52,9 @@ export interface ClusterStats {
   'total_dropped_requests'?: (number | string | Long);
   /**
    * Period over which the actual load report occurred. This will be guaranteed to include every
-   * request reported. Due to system load and delays between the *LoadStatsRequest* sent from Envoy
-   * and the *LoadStatsResponse* message sent from the management server, this may be longer than
-   * the requested load reporting interval in the *LoadStatsResponse*.
+   * request reported. Due to system load and delays between the ``LoadStatsRequest`` sent from Envoy
+   * and the ``LoadStatsResponse`` message sent from the management server, this may be longer than
+   * the requested load reporting interval in the ``LoadStatsResponse``.
    */
   'load_report_interval'?: (_google_protobuf_Duration | null);
   /**
@@ -96,9 +96,9 @@ export interface ClusterStats__Output {
   'total_dropped_requests': (string);
   /**
    * Period over which the actual load report occurred. This will be guaranteed to include every
-   * request reported. Due to system load and delays between the *LoadStatsRequest* sent from Envoy
-   * and the *LoadStatsResponse* message sent from the management server, this may be longer than
-   * the requested load reporting interval in the *LoadStatsResponse*.
+   * request reported. Due to system load and delays between the ``LoadStatsRequest`` sent from Envoy
+   * and the ``LoadStatsResponse`` message sent from the management server, this may be longer than
+   * the requested load reporting interval in the ``LoadStatsResponse``.
    */
   'load_report_interval': (_google_protobuf_Duration__Output | null);
   /**

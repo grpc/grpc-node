@@ -4,6 +4,7 @@ import type { Duration as _google_protobuf_Duration, Duration__Output as _google
 import type { GrpcService as _envoy_config_core_v3_GrpcService, GrpcService__Output as _envoy_config_core_v3_GrpcService__Output } from '../../../../envoy/config/core/v3/GrpcService';
 import type { RateLimitSettings as _envoy_config_core_v3_RateLimitSettings, RateLimitSettings__Output as _envoy_config_core_v3_RateLimitSettings__Output } from '../../../../envoy/config/core/v3/RateLimitSettings';
 import type { ApiVersion as _envoy_config_core_v3_ApiVersion } from '../../../../envoy/config/core/v3/ApiVersion';
+import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig, TypedExtensionConfig__Output as _envoy_config_core_v3_TypedExtensionConfig__Output } from '../../../../envoy/config/core/v3/TypedExtensionConfig';
 
 // Original file: deps/envoy-api/envoy/config/core/v3/config_source.proto
 
@@ -49,7 +50,7 @@ export enum _envoy_config_core_v3_ApiConfigSource_ApiType {
 /**
  * API configuration source. This identifies the API type and cluster that Envoy
  * will use to fetch an xDS API.
- * [#next-free-field: 9]
+ * [#next-free-field: 10]
  */
 export interface ApiConfigSource {
   /**
@@ -94,12 +95,23 @@ export interface ApiConfigSource {
    * endpoint and version of [Delta]DiscoveryRequest/Response used on the wire.
    */
   'transport_api_version'?: (_envoy_config_core_v3_ApiVersion | keyof typeof _envoy_config_core_v3_ApiVersion);
+  /**
+   * A list of config validators that will be executed when a new update is
+   * received from the ApiConfigSource. Note that each validator handles a
+   * specific xDS service type, and only the validators corresponding to the
+   * type url (in ``:ref: DiscoveryResponse`` or ``:ref: DeltaDiscoveryResponse``)
+   * will be invoked.
+   * If the validator returns false or throws an exception, the config will be rejected by
+   * the client, and a NACK will be sent.
+   * [#extension-category: envoy.config.validators]
+   */
+  'config_validators'?: (_envoy_config_core_v3_TypedExtensionConfig)[];
 }
 
 /**
  * API configuration source. This identifies the API type and cluster that Envoy
  * will use to fetch an xDS API.
- * [#next-free-field: 9]
+ * [#next-free-field: 10]
  */
 export interface ApiConfigSource__Output {
   /**
@@ -144,4 +156,15 @@ export interface ApiConfigSource__Output {
    * endpoint and version of [Delta]DiscoveryRequest/Response used on the wire.
    */
   'transport_api_version': (keyof typeof _envoy_config_core_v3_ApiVersion);
+  /**
+   * A list of config validators that will be executed when a new update is
+   * received from the ApiConfigSource. Note that each validator handles a
+   * specific xDS service type, and only the validators corresponding to the
+   * type url (in ``:ref: DiscoveryResponse`` or ``:ref: DeltaDiscoveryResponse``)
+   * will be invoked.
+   * If the validator returns false or throws an exception, the config will be rejected by
+   * the client, and a NACK will be sent.
+   * [#extension-category: envoy.config.validators]
+   */
+  'config_validators': (_envoy_config_core_v3_TypedExtensionConfig__Output)[];
 }

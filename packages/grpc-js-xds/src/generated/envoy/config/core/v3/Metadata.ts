@@ -29,21 +29,21 @@ import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__
  */
 export interface Metadata {
   /**
-   * Key is the reverse DNS filter name, e.g. com.acme.widget. The envoy.*
+   * Key is the reverse DNS filter name, e.g. com.acme.widget. The ``envoy.*``
    * namespace is reserved for Envoy's built-in filters.
-   * If both *filter_metadata* and
+   * If both ``filter_metadata`` and
    * :ref:`typed_filter_metadata <envoy_v3_api_field_config.core.v3.Metadata.typed_filter_metadata>`
    * fields are present in the metadata with same keys,
-   * only *typed_filter_metadata* field will be parsed.
+   * only ``typed_filter_metadata`` field will be parsed.
    */
   'filter_metadata'?: ({[key: string]: _google_protobuf_Struct});
   /**
-   * Key is the reverse DNS filter name, e.g. com.acme.widget. The envoy.*
+   * Key is the reverse DNS filter name, e.g. com.acme.widget. The ``envoy.*``
    * namespace is reserved for Envoy's built-in filters.
    * The value is encoded as google.protobuf.Any.
    * If both :ref:`filter_metadata <envoy_v3_api_field_config.core.v3.Metadata.filter_metadata>`
-   * and *typed_filter_metadata* fields are present in the metadata with same keys,
-   * only *typed_filter_metadata* field will be parsed.
+   * and ``typed_filter_metadata`` fields are present in the metadata with same keys,
+   * only ``typed_filter_metadata`` field will be parsed.
    */
   'typed_filter_metadata'?: ({[key: string]: _google_protobuf_Any});
 }
@@ -74,21 +74,21 @@ export interface Metadata {
  */
 export interface Metadata__Output {
   /**
-   * Key is the reverse DNS filter name, e.g. com.acme.widget. The envoy.*
+   * Key is the reverse DNS filter name, e.g. com.acme.widget. The ``envoy.*``
    * namespace is reserved for Envoy's built-in filters.
-   * If both *filter_metadata* and
+   * If both ``filter_metadata`` and
    * :ref:`typed_filter_metadata <envoy_v3_api_field_config.core.v3.Metadata.typed_filter_metadata>`
    * fields are present in the metadata with same keys,
-   * only *typed_filter_metadata* field will be parsed.
+   * only ``typed_filter_metadata`` field will be parsed.
    */
   'filter_metadata': ({[key: string]: _google_protobuf_Struct__Output});
   /**
-   * Key is the reverse DNS filter name, e.g. com.acme.widget. The envoy.*
+   * Key is the reverse DNS filter name, e.g. com.acme.widget. The ``envoy.*``
    * namespace is reserved for Envoy's built-in filters.
    * The value is encoded as google.protobuf.Any.
    * If both :ref:`filter_metadata <envoy_v3_api_field_config.core.v3.Metadata.filter_metadata>`
-   * and *typed_filter_metadata* fields are present in the metadata with same keys,
-   * only *typed_filter_metadata* field will be parsed.
+   * and ``typed_filter_metadata`` fields are present in the metadata with same keys,
+   * only ``typed_filter_metadata`` field will be parsed.
    */
   'typed_filter_metadata': ({[key: string]: _google_protobuf_Any__Output});
 }

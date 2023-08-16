@@ -7,6 +7,12 @@ export interface UpstreamConnectionOptions {
    * If set then set SO_KEEPALIVE on the socket to enable TCP Keepalives.
    */
   'tcp_keepalive'?: (_envoy_config_core_v3_TcpKeepalive | null);
+  /**
+   * If enabled, associates the interface name of the local address with the upstream connection.
+   * This can be used by extensions during processing of requests. The association mechanism is
+   * implementation specific. Defaults to false due to performance concerns.
+   */
+  'set_local_interface_name_on_upstream_connections'?: (boolean);
 }
 
 export interface UpstreamConnectionOptions__Output {
@@ -14,4 +20,10 @@ export interface UpstreamConnectionOptions__Output {
    * If set then set SO_KEEPALIVE on the socket to enable TCP Keepalives.
    */
   'tcp_keepalive': (_envoy_config_core_v3_TcpKeepalive__Output | null);
+  /**
+   * If enabled, associates the interface name of the local address with the upstream connection.
+   * This can be used by extensions during processing of requests. The association mechanism is
+   * implementation specific. Defaults to false due to performance concerns.
+   */
+  'set_local_interface_name_on_upstream_connections': (boolean);
 }

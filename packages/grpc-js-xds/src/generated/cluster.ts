@@ -20,7 +20,6 @@ export interface ProtoGrpcType {
           LoadBalancingPolicy: MessageTypeDefinition
           OutlierDetection: MessageTypeDefinition
           TrackClusterStats: MessageTypeDefinition
-          UpstreamBindConfig: MessageTypeDefinition
           UpstreamConnectionOptions: MessageTypeDefinition
         }
       }
@@ -45,6 +44,7 @@ export interface ProtoGrpcType {
           EventServiceConfig: MessageTypeDefinition
           Extension: MessageTypeDefinition
           ExtensionConfigSource: MessageTypeDefinition
+          ExtraSourceAddress: MessageTypeDefinition
           GrpcProtocolOptions: MessageTypeDefinition
           GrpcService: MessageTypeDefinition
           HeaderMap: MessageTypeDefinition
@@ -52,6 +52,7 @@ export interface ProtoGrpcType {
           HeaderValueOption: MessageTypeDefinition
           HealthCheck: MessageTypeDefinition
           HealthStatus: EnumTypeDefinition
+          HealthStatusSet: MessageTypeDefinition
           Http1ProtocolOptions: MessageTypeDefinition
           Http2ProtocolOptions: MessageTypeDefinition
           Http3ProtocolOptions: MessageTypeDefinition
@@ -61,8 +62,10 @@ export interface ProtoGrpcType {
           Locality: MessageTypeDefinition
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition
+          PathConfigSource: MessageTypeDefinition
           Pipe: MessageTypeDefinition
           QueryParameter: MessageTypeDefinition
+          QuicKeepAliveSettings: MessageTypeDefinition
           QuicProtocolOptions: MessageTypeDefinition
           RateLimitSettings: MessageTypeDefinition
           RemoteDataSource: MessageTypeDefinition
@@ -78,6 +81,7 @@ export interface ProtoGrpcType {
           SelfConfigSource: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
           SocketOption: MessageTypeDefinition
+          SocketOptionsOverride: MessageTypeDefinition
           TcpKeepalive: MessageTypeDefinition
           TcpProtocolOptions: MessageTypeDefinition
           TrafficDirection: EnumTypeDefinition
@@ -94,15 +98,6 @@ export interface ProtoGrpcType {
           LbEndpoint: MessageTypeDefinition
           LedsClusterLocalityConfig: MessageTypeDefinition
           LocalityLbEndpoints: MessageTypeDefinition
-        }
-      }
-    }
-    extensions: {
-      clusters: {
-        aggregate: {
-          v3: {
-            ClusterConfig: MessageTypeDefinition
-          }
         }
       }
     }

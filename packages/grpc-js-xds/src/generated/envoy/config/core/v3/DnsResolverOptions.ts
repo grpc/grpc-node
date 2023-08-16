@@ -7,9 +7,6 @@
 export interface DnsResolverOptions {
   /**
    * Use TCP for all DNS queries instead of the default protocol UDP.
-   * Setting this value causes failure if the
-   * ``envoy.restart_features.use_apple_api_for_dns_lookups`` runtime value is true during
-   * server startup. Apple's API only uses UDP for DNS resolution.
    */
   'use_tcp_for_dns_lookups'?: (boolean);
   /**
@@ -24,9 +21,6 @@ export interface DnsResolverOptions {
 export interface DnsResolverOptions__Output {
   /**
    * Use TCP for all DNS queries instead of the default protocol UDP.
-   * Setting this value causes failure if the
-   * ``envoy.restart_features.use_apple_api_for_dns_lookups`` runtime value is true during
-   * server startup. Apple's API only uses UDP for DNS resolution.
    */
   'use_tcp_for_dns_lookups': (boolean);
   /**

@@ -2,6 +2,7 @@
 
 import type { Node as _envoy_config_core_v3_Node, Node__Output as _envoy_config_core_v3_Node__Output } from '../../../../envoy/config/core/v3/Node';
 import type { Status as _google_rpc_Status, Status__Output as _google_rpc_Status__Output } from '../../../../google/rpc/Status';
+import type { ResourceLocator as _envoy_service_discovery_v3_ResourceLocator, ResourceLocator__Output as _envoy_service_discovery_v3_ResourceLocator__Output } from '../../../../envoy/service/discovery/v3/ResourceLocator';
 
 /**
  * DeltaDiscoveryRequest and DeltaDiscoveryResponse are used in a new gRPC
@@ -36,7 +37,7 @@ import type { Status as _google_rpc_Status, Status__Output as _google_rpc_Status
  * In particular, initial_resource_versions being sent at the "start" of every
  * gRPC stream actually entails a message for each type_url, each with its own
  * initial_resource_versions.
- * [#next-free-field: 8]
+ * [#next-free-field: 10]
  */
 export interface DeltaDiscoveryRequest {
   /**
@@ -45,9 +46,9 @@ export interface DeltaDiscoveryRequest {
   'node'?: (_envoy_config_core_v3_Node | null);
   /**
    * Type of the resource that is being requested, e.g.
-   * "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment". This does not need to be set if
-   * resources are only referenced via *xds_resource_subscribe* and
-   * *xds_resources_unsubscribe*.
+   * ``type.googleapis.com/envoy.api.v2.ClusterLoadAssignment``. This does not need to be set if
+   * resources are only referenced via ``xds_resource_subscribe`` and
+   * ``xds_resources_unsubscribe``.
    */
   'type_url'?: (string);
   /**
@@ -98,10 +99,26 @@ export interface DeltaDiscoveryRequest {
   'response_nonce'?: (string);
   /**
    * This is populated when the previous :ref:`DiscoveryResponse <envoy_v3_api_msg_service.discovery.v3.DiscoveryResponse>`
-   * failed to update configuration. The *message* field in *error_details*
+   * failed to update configuration. The ``message`` field in ``error_details``
    * provides the Envoy internal exception related to the failure.
    */
   'error_detail'?: (_google_rpc_Status | null);
+  /**
+   * [#not-implemented-hide:]
+   * Alternative to ``resource_names_subscribe`` field that allows specifying dynamic parameters
+   * along with each resource name.
+   * Note that it is legal for a request to have some resources listed
+   * in ``resource_names_subscribe`` and others in ``resource_locators_subscribe``.
+   */
+  'resource_locators_subscribe'?: (_envoy_service_discovery_v3_ResourceLocator)[];
+  /**
+   * [#not-implemented-hide:]
+   * Alternative to ``resource_names_unsubscribe`` field that allows specifying dynamic parameters
+   * along with each resource name.
+   * Note that it is legal for a request to have some resources listed
+   * in ``resource_names_unsubscribe`` and others in ``resource_locators_unsubscribe``.
+   */
+  'resource_locators_unsubscribe'?: (_envoy_service_discovery_v3_ResourceLocator)[];
 }
 
 /**
@@ -137,7 +154,7 @@ export interface DeltaDiscoveryRequest {
  * In particular, initial_resource_versions being sent at the "start" of every
  * gRPC stream actually entails a message for each type_url, each with its own
  * initial_resource_versions.
- * [#next-free-field: 8]
+ * [#next-free-field: 10]
  */
 export interface DeltaDiscoveryRequest__Output {
   /**
@@ -146,9 +163,9 @@ export interface DeltaDiscoveryRequest__Output {
   'node': (_envoy_config_core_v3_Node__Output | null);
   /**
    * Type of the resource that is being requested, e.g.
-   * "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment". This does not need to be set if
-   * resources are only referenced via *xds_resource_subscribe* and
-   * *xds_resources_unsubscribe*.
+   * ``type.googleapis.com/envoy.api.v2.ClusterLoadAssignment``. This does not need to be set if
+   * resources are only referenced via ``xds_resource_subscribe`` and
+   * ``xds_resources_unsubscribe``.
    */
   'type_url': (string);
   /**
@@ -199,8 +216,24 @@ export interface DeltaDiscoveryRequest__Output {
   'response_nonce': (string);
   /**
    * This is populated when the previous :ref:`DiscoveryResponse <envoy_v3_api_msg_service.discovery.v3.DiscoveryResponse>`
-   * failed to update configuration. The *message* field in *error_details*
+   * failed to update configuration. The ``message`` field in ``error_details``
    * provides the Envoy internal exception related to the failure.
    */
   'error_detail': (_google_rpc_Status__Output | null);
+  /**
+   * [#not-implemented-hide:]
+   * Alternative to ``resource_names_subscribe`` field that allows specifying dynamic parameters
+   * along with each resource name.
+   * Note that it is legal for a request to have some resources listed
+   * in ``resource_names_subscribe`` and others in ``resource_locators_subscribe``.
+   */
+  'resource_locators_subscribe': (_envoy_service_discovery_v3_ResourceLocator__Output)[];
+  /**
+   * [#not-implemented-hide:]
+   * Alternative to ``resource_names_unsubscribe`` field that allows specifying dynamic parameters
+   * along with each resource name.
+   * Note that it is legal for a request to have some resources listed
+   * in ``resource_names_unsubscribe`` and others in ``resource_locators_unsubscribe``.
+   */
+  'resource_locators_unsubscribe': (_envoy_service_discovery_v3_ResourceLocator__Output)[];
 }

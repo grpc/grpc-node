@@ -12,6 +12,9 @@ import type { TrafficDirection as _envoy_config_core_v3_TrafficDirection } from 
 import type { UdpListenerConfig as _envoy_config_listener_v3_UdpListenerConfig, UdpListenerConfig__Output as _envoy_config_listener_v3_UdpListenerConfig__Output } from '../../../../envoy/config/listener/v3/UdpListenerConfig';
 import type { ApiListener as _envoy_config_listener_v3_ApiListener, ApiListener__Output as _envoy_config_listener_v3_ApiListener__Output } from '../../../../envoy/config/listener/v3/ApiListener';
 import type { AccessLog as _envoy_config_accesslog_v3_AccessLog, AccessLog__Output as _envoy_config_accesslog_v3_AccessLog__Output } from '../../../../envoy/config/accesslog/v3/AccessLog';
+import type { Matcher as _xds_type_matcher_v3_Matcher, Matcher__Output as _xds_type_matcher_v3_Matcher__Output } from '../../../../xds/type/matcher/v3/Matcher';
+import type { AdditionalAddress as _envoy_config_listener_v3_AdditionalAddress, AdditionalAddress__Output as _envoy_config_listener_v3_AdditionalAddress__Output } from '../../../../envoy/config/listener/v3/AdditionalAddress';
+import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig, TypedExtensionConfig__Output as _envoy_config_core_v3_TypedExtensionConfig__Output } from '../../../../envoy/config/core/v3/TypedExtensionConfig';
 
 /**
  * Configuration for listener connection balancing.
@@ -21,7 +24,13 @@ export interface _envoy_config_listener_v3_Listener_ConnectionBalanceConfig {
    * If specified, the listener will use the exact connection balancer.
    */
   'exact_balance'?: (_envoy_config_listener_v3_Listener_ConnectionBalanceConfig_ExactBalance | null);
-  'balance_type'?: "exact_balance";
+  /**
+   * The listener will use the connection balancer according to ``type_url``. If ``type_url`` is invalid,
+   * Envoy will not attempt to balance active connections between worker threads.
+   * [#extension-category: envoy.network.connection_balance]
+   */
+  'extend_balance'?: (_envoy_config_core_v3_TypedExtensionConfig | null);
+  'balance_type'?: "exact_balance"|"extend_balance";
 }
 
 /**
@@ -32,7 +41,13 @@ export interface _envoy_config_listener_v3_Listener_ConnectionBalanceConfig__Out
    * If specified, the listener will use the exact connection balancer.
    */
   'exact_balance'?: (_envoy_config_listener_v3_Listener_ConnectionBalanceConfig_ExactBalance__Output | null);
-  'balance_type': "exact_balance";
+  /**
+   * The listener will use the connection balancer according to ``type_url``. If ``type_url`` is invalid,
+   * Envoy will not attempt to balance active connections between worker threads.
+   * [#extension-category: envoy.network.connection_balance]
+   */
+  'extend_balance'?: (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
+  'balance_type': "exact_balance"|"extend_balance";
 }
 
 /**
@@ -105,20 +120,18 @@ export interface _envoy_config_listener_v3_Listener_ConnectionBalanceConfig_Exac
 
 /**
  * Configuration for envoy internal listener. All the future internal listener features should be added here.
- * [#not-implemented-hide:]
  */
 export interface _envoy_config_listener_v3_Listener_InternalListenerConfig {
 }
 
 /**
  * Configuration for envoy internal listener. All the future internal listener features should be added here.
- * [#not-implemented-hide:]
  */
 export interface _envoy_config_listener_v3_Listener_InternalListenerConfig__Output {
 }
 
 /**
- * [#next-free-field: 30]
+ * [#next-free-field: 34]
  */
 export interface Listener {
   /**
@@ -131,6 +144,7 @@ export interface Listener {
    * The address that the listener should listen on. In general, the address must be unique, though
    * that is governed by the bind rules of the OS. E.g., multiple listeners can listen on port 0 on
    * Linux as the actual port will be allocated by the OS.
+   * Required unless ``api_listener`` or ``listener_specifier`` is populated.
    */
   'address'?: (_envoy_config_core_v3_Address | null);
   /**
@@ -144,7 +158,7 @@ export interface Listener {
    */
   'filter_chains'?: (_envoy_config_listener_v3_FilterChain)[];
   /**
-   * If a connection is redirected using *iptables*, the port on which the proxy
+   * If a connection is redirected using ``iptables``, the port on which the proxy
    * receives it might be different from the original destination address. When this flag is set to
    * true, the listener hands off redirected connections to the listener associated with the
    * original destination address. If there is no listener associated with the original destination
@@ -177,31 +191,30 @@ export interface Listener {
    * UDP Listener filters can be specified when the protocol in the listener socket address in
    * :ref:`protocol <envoy_v3_api_field_config.core.v3.SocketAddress.protocol>` is :ref:`UDP
    * <envoy_v3_api_enum_value_config.core.v3.SocketAddress.Protocol.UDP>`.
-   * UDP listeners currently support a single filter.
    */
   'listener_filters'?: (_envoy_config_listener_v3_ListenerFilter)[];
   /**
    * Whether the listener should be set as a transparent socket.
    * When this flag is set to true, connections can be redirected to the listener using an
-   * *iptables* *TPROXY* target, in which case the original source and destination addresses and
+   * ``iptables`` ``TPROXY`` target, in which case the original source and destination addresses and
    * ports are preserved on accepted connections. This flag should be used in combination with
    * :ref:`an original_dst <config_listener_filters_original_dst>` :ref:`listener filter
    * <envoy_v3_api_field_config.listener.v3.Listener.listener_filters>` to mark the connections' local addresses as
    * "restored." This can be used to hand off each redirected connection to another listener
    * associated with the connection's destination address. Direct connections to the socket without
-   * using *TPROXY* cannot be distinguished from connections redirected using *TPROXY* and are
+   * using ``TPROXY`` cannot be distinguished from connections redirected using ``TPROXY`` and are
    * therefore treated as if they were redirected.
    * When this flag is set to false, the listener's socket is explicitly reset as non-transparent.
-   * Setting this flag requires Envoy to run with the *CAP_NET_ADMIN* capability.
+   * Setting this flag requires Envoy to run with the ``CAP_NET_ADMIN`` capability.
    * When this flag is not set (default), the socket is not modified, i.e. the transparent option
    * is neither set nor reset.
    */
   'transparent'?: (_google_protobuf_BoolValue | null);
   /**
-   * Whether the listener should set the *IP_FREEBIND* socket option. When this
+   * Whether the listener should set the ``IP_FREEBIND`` socket option. When this
    * flag is set to true, listeners can be bound to an IP address that is not
    * configured on the system running Envoy. When this flag is set to false, the
-   * option *IP_FREEBIND* is disabled on the socket. When this flag is not set
+   * option ``IP_FREEBIND`` is disabled on the socket. When this flag is not set
    * (default), the socket is not modified, i.e. the option is neither enabled
    * nor disabled.
    */
@@ -225,13 +238,16 @@ export interface Listener {
   'tcp_fast_open_queue_length'?: (_google_protobuf_UInt32Value | null);
   /**
    * Additional socket options that may not be present in Envoy source code or
-   * precompiled binaries.
+   * precompiled binaries. The socket options can be updated for a listener when
+   * :ref:`enable_reuse_port <envoy_v3_api_field_config.listener.v3.Listener.enable_reuse_port>`
+   * is `true`. Otherwise, if socket options change during a listener update the update will be rejected
+   * to make it clear that the options were not updated.
    */
   'socket_options'?: (_envoy_config_core_v3_SocketOption)[];
   /**
    * The timeout to wait for all listener filters to complete operation. If the timeout is reached,
    * the accepted socket is closed without a connection being created unless
-   * `continue_on_listener_filters_timeout` is set to true. Specify 0 to disable the
+   * ``continue_on_listener_filters_timeout`` is set to true. Specify 0 to disable the
    * timeout. If not specified, a default timeout of 15s is used.
    */
   'listener_filters_timeout'?: (_google_protobuf_Duration | null);
@@ -290,7 +306,7 @@ export interface Listener {
    */
   'connection_balance_config'?: (_envoy_config_listener_v3_Listener_ConnectionBalanceConfig | null);
   /**
-   * Deprecated. Use `enable_reuse_port` instead.
+   * Deprecated. Use ``enable_reuse_port`` instead.
    */
   'reuse_port'?: (boolean);
   /**
@@ -318,32 +334,34 @@ export interface Listener {
   /**
    * Used to represent an internal listener which does not listen on OSI L4 address but can be used by the
    * :ref:`envoy cluster <envoy_v3_api_msg_config.cluster.v3.Cluster>` to create a user space connection to.
-   * The internal listener acts as a tcp listener. It supports listener filters and network filter chains.
-   * The internal listener require :ref:`address <envoy_v3_api_field_config.listener.v3.Listener.address>` has
-   * field `envoy_internal_address`.
+   * The internal listener acts as a TCP listener. It supports listener filters and network filter chains.
+   * Upstream clusters refer to the internal listeners by their :ref:`name
+   * <envoy_v3_api_field_config.listener.v3.Listener.name>`. :ref:`Address
+   * <envoy_v3_api_field_config.listener.v3.Listener.address>` must not be set on the internal listeners.
    * 
-   * There are some limitations are derived from the implementation. The known limitations include
+   * There are some limitations that are derived from the implementation. The known limitations include:
    * 
    * * :ref:`ConnectionBalanceConfig <envoy_v3_api_msg_config.listener.v3.Listener.ConnectionBalanceConfig>` is not
-   * allowed because both cluster connection and listener connection must be owned by the same dispatcher.
+   * allowed because both the cluster connection and the listener connection must be owned by the same dispatcher.
    * * :ref:`tcp_backlog_size <envoy_v3_api_field_config.listener.v3.Listener.tcp_backlog_size>`
    * * :ref:`freebind <envoy_v3_api_field_config.listener.v3.Listener.freebind>`
    * * :ref:`transparent <envoy_v3_api_field_config.listener.v3.Listener.transparent>`
-   * [#not-implemented-hide:]
    */
   'internal_listener'?: (_envoy_config_listener_v3_Listener_InternalListenerConfig | null);
   /**
    * Optional prefix to use on listener stats. If empty, the stats will be rooted at
-   * `listener.<address as string>.`. If non-empty, stats will be rooted at
-   * `listener.<stat_prefix>.`.
+   * ``listener.<address as string>.``. If non-empty, stats will be rooted at
+   * ``listener.<stat_prefix>.``.
    */
   'stat_prefix'?: (string);
   /**
-   * When this flag is set to true, listeners set the *SO_REUSEPORT* socket option and
+   * When this flag is set to true, listeners set the ``SO_REUSEPORT`` socket option and
    * create one socket for each worker thread. This makes inbound connections
    * distribute among worker threads roughly evenly in cases where there are a high number
    * of connections. When this flag is set to false, all worker threads share one socket. This field
-   * defaults to true.
+   * defaults to true. The change of field will be rejected during an listener update when the
+   * runtime flag ``envoy.reloadable_features.enable_update_listener_socket_options`` is enabled.
+   * Otherwise, the update of this field will be ignored quietly.
    * 
    * .. attention::
    * 
@@ -362,16 +380,48 @@ export interface Listener {
    */
   'enable_reuse_port'?: (_google_protobuf_BoolValue | null);
   /**
+   * Enable MPTCP (multi-path TCP) on this listener. Clients will be allowed to establish
+   * MPTCP connections. Non-MPTCP clients will fall back to regular TCP.
+   */
+  'enable_mptcp'?: (boolean);
+  /**
+   * Whether the listener should limit connections based upon the value of
+   * :ref:`global_downstream_max_connections <config_overload_manager_limiting_connections>`.
+   */
+  'ignore_global_conn_limit'?: (boolean);
+  /**
+   * :ref:`Matcher API <arch_overview_matching_listener>` resolving the filter chain name from the
+   * network properties. This matcher is used as a replacement for the filter chain match condition
+   * :ref:`filter_chain_match
+   * <envoy_v3_api_field_config.listener.v3.FilterChain.filter_chain_match>`. If specified, all
+   * :ref:`filter_chains <envoy_v3_api_field_config.listener.v3.Listener.filter_chains>` must have a
+   * non-empty and unique :ref:`name <envoy_v3_api_field_config.listener.v3.FilterChain.name>` field
+   * and not specify :ref:`filter_chain_match
+   * <envoy_v3_api_field_config.listener.v3.FilterChain.filter_chain_match>` field.
+   * 
+   * .. note::
+   * 
+   * Once matched, each connection is permanently bound to its filter chain.
+   * If the matcher changes but the filter chain remains the same, the
+   * connections bound to the filter chain are not drained. If, however, the
+   * filter chain is removed or structurally modified, then the drain for its
+   * connections is initiated.
+   */
+  'filter_chain_matcher'?: (_xds_type_matcher_v3_Matcher | null);
+  /**
+   * The additional addresses the listener should listen on. The addresses must be unique across all
+   * listeners. Multiple addresses with port 0 can be supplied. When using multiple addresses in a single listener,
+   * all addresses use the same protocol, and multiple internal addresses are not supported.
+   */
+  'additional_addresses'?: (_envoy_config_listener_v3_AdditionalAddress)[];
+  /**
    * The exclusive listener type and the corresponding config.
-   * TODO(lambdai): https://github.com/envoyproxy/envoy/issues/15372
-   * Will create and add TcpListenerConfig. Will add UdpListenerConfig and ApiListener.
-   * [#not-implemented-hide:]
    */
   'listener_specifier'?: "internal_listener";
 }
 
 /**
- * [#next-free-field: 30]
+ * [#next-free-field: 34]
  */
 export interface Listener__Output {
   /**
@@ -384,6 +434,7 @@ export interface Listener__Output {
    * The address that the listener should listen on. In general, the address must be unique, though
    * that is governed by the bind rules of the OS. E.g., multiple listeners can listen on port 0 on
    * Linux as the actual port will be allocated by the OS.
+   * Required unless ``api_listener`` or ``listener_specifier`` is populated.
    */
   'address': (_envoy_config_core_v3_Address__Output | null);
   /**
@@ -397,7 +448,7 @@ export interface Listener__Output {
    */
   'filter_chains': (_envoy_config_listener_v3_FilterChain__Output)[];
   /**
-   * If a connection is redirected using *iptables*, the port on which the proxy
+   * If a connection is redirected using ``iptables``, the port on which the proxy
    * receives it might be different from the original destination address. When this flag is set to
    * true, the listener hands off redirected connections to the listener associated with the
    * original destination address. If there is no listener associated with the original destination
@@ -430,31 +481,30 @@ export interface Listener__Output {
    * UDP Listener filters can be specified when the protocol in the listener socket address in
    * :ref:`protocol <envoy_v3_api_field_config.core.v3.SocketAddress.protocol>` is :ref:`UDP
    * <envoy_v3_api_enum_value_config.core.v3.SocketAddress.Protocol.UDP>`.
-   * UDP listeners currently support a single filter.
    */
   'listener_filters': (_envoy_config_listener_v3_ListenerFilter__Output)[];
   /**
    * Whether the listener should be set as a transparent socket.
    * When this flag is set to true, connections can be redirected to the listener using an
-   * *iptables* *TPROXY* target, in which case the original source and destination addresses and
+   * ``iptables`` ``TPROXY`` target, in which case the original source and destination addresses and
    * ports are preserved on accepted connections. This flag should be used in combination with
    * :ref:`an original_dst <config_listener_filters_original_dst>` :ref:`listener filter
    * <envoy_v3_api_field_config.listener.v3.Listener.listener_filters>` to mark the connections' local addresses as
    * "restored." This can be used to hand off each redirected connection to another listener
    * associated with the connection's destination address. Direct connections to the socket without
-   * using *TPROXY* cannot be distinguished from connections redirected using *TPROXY* and are
+   * using ``TPROXY`` cannot be distinguished from connections redirected using ``TPROXY`` and are
    * therefore treated as if they were redirected.
    * When this flag is set to false, the listener's socket is explicitly reset as non-transparent.
-   * Setting this flag requires Envoy to run with the *CAP_NET_ADMIN* capability.
+   * Setting this flag requires Envoy to run with the ``CAP_NET_ADMIN`` capability.
    * When this flag is not set (default), the socket is not modified, i.e. the transparent option
    * is neither set nor reset.
    */
   'transparent': (_google_protobuf_BoolValue__Output | null);
   /**
-   * Whether the listener should set the *IP_FREEBIND* socket option. When this
+   * Whether the listener should set the ``IP_FREEBIND`` socket option. When this
    * flag is set to true, listeners can be bound to an IP address that is not
    * configured on the system running Envoy. When this flag is set to false, the
-   * option *IP_FREEBIND* is disabled on the socket. When this flag is not set
+   * option ``IP_FREEBIND`` is disabled on the socket. When this flag is not set
    * (default), the socket is not modified, i.e. the option is neither enabled
    * nor disabled.
    */
@@ -478,13 +528,16 @@ export interface Listener__Output {
   'tcp_fast_open_queue_length': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Additional socket options that may not be present in Envoy source code or
-   * precompiled binaries.
+   * precompiled binaries. The socket options can be updated for a listener when
+   * :ref:`enable_reuse_port <envoy_v3_api_field_config.listener.v3.Listener.enable_reuse_port>`
+   * is `true`. Otherwise, if socket options change during a listener update the update will be rejected
+   * to make it clear that the options were not updated.
    */
   'socket_options': (_envoy_config_core_v3_SocketOption__Output)[];
   /**
    * The timeout to wait for all listener filters to complete operation. If the timeout is reached,
    * the accepted socket is closed without a connection being created unless
-   * `continue_on_listener_filters_timeout` is set to true. Specify 0 to disable the
+   * ``continue_on_listener_filters_timeout`` is set to true. Specify 0 to disable the
    * timeout. If not specified, a default timeout of 15s is used.
    */
   'listener_filters_timeout': (_google_protobuf_Duration__Output | null);
@@ -543,7 +596,7 @@ export interface Listener__Output {
    */
   'connection_balance_config': (_envoy_config_listener_v3_Listener_ConnectionBalanceConfig__Output | null);
   /**
-   * Deprecated. Use `enable_reuse_port` instead.
+   * Deprecated. Use ``enable_reuse_port`` instead.
    */
   'reuse_port': (boolean);
   /**
@@ -571,32 +624,34 @@ export interface Listener__Output {
   /**
    * Used to represent an internal listener which does not listen on OSI L4 address but can be used by the
    * :ref:`envoy cluster <envoy_v3_api_msg_config.cluster.v3.Cluster>` to create a user space connection to.
-   * The internal listener acts as a tcp listener. It supports listener filters and network filter chains.
-   * The internal listener require :ref:`address <envoy_v3_api_field_config.listener.v3.Listener.address>` has
-   * field `envoy_internal_address`.
+   * The internal listener acts as a TCP listener. It supports listener filters and network filter chains.
+   * Upstream clusters refer to the internal listeners by their :ref:`name
+   * <envoy_v3_api_field_config.listener.v3.Listener.name>`. :ref:`Address
+   * <envoy_v3_api_field_config.listener.v3.Listener.address>` must not be set on the internal listeners.
    * 
-   * There are some limitations are derived from the implementation. The known limitations include
+   * There are some limitations that are derived from the implementation. The known limitations include:
    * 
    * * :ref:`ConnectionBalanceConfig <envoy_v3_api_msg_config.listener.v3.Listener.ConnectionBalanceConfig>` is not
-   * allowed because both cluster connection and listener connection must be owned by the same dispatcher.
+   * allowed because both the cluster connection and the listener connection must be owned by the same dispatcher.
    * * :ref:`tcp_backlog_size <envoy_v3_api_field_config.listener.v3.Listener.tcp_backlog_size>`
    * * :ref:`freebind <envoy_v3_api_field_config.listener.v3.Listener.freebind>`
    * * :ref:`transparent <envoy_v3_api_field_config.listener.v3.Listener.transparent>`
-   * [#not-implemented-hide:]
    */
   'internal_listener'?: (_envoy_config_listener_v3_Listener_InternalListenerConfig__Output | null);
   /**
    * Optional prefix to use on listener stats. If empty, the stats will be rooted at
-   * `listener.<address as string>.`. If non-empty, stats will be rooted at
-   * `listener.<stat_prefix>.`.
+   * ``listener.<address as string>.``. If non-empty, stats will be rooted at
+   * ``listener.<stat_prefix>.``.
    */
   'stat_prefix': (string);
   /**
-   * When this flag is set to true, listeners set the *SO_REUSEPORT* socket option and
+   * When this flag is set to true, listeners set the ``SO_REUSEPORT`` socket option and
    * create one socket for each worker thread. This makes inbound connections
    * distribute among worker threads roughly evenly in cases where there are a high number
    * of connections. When this flag is set to false, all worker threads share one socket. This field
-   * defaults to true.
+   * defaults to true. The change of field will be rejected during an listener update when the
+   * runtime flag ``envoy.reloadable_features.enable_update_listener_socket_options`` is enabled.
+   * Otherwise, the update of this field will be ignored quietly.
    * 
    * .. attention::
    * 
@@ -615,10 +670,42 @@ export interface Listener__Output {
    */
   'enable_reuse_port': (_google_protobuf_BoolValue__Output | null);
   /**
+   * Enable MPTCP (multi-path TCP) on this listener. Clients will be allowed to establish
+   * MPTCP connections. Non-MPTCP clients will fall back to regular TCP.
+   */
+  'enable_mptcp': (boolean);
+  /**
+   * Whether the listener should limit connections based upon the value of
+   * :ref:`global_downstream_max_connections <config_overload_manager_limiting_connections>`.
+   */
+  'ignore_global_conn_limit': (boolean);
+  /**
+   * :ref:`Matcher API <arch_overview_matching_listener>` resolving the filter chain name from the
+   * network properties. This matcher is used as a replacement for the filter chain match condition
+   * :ref:`filter_chain_match
+   * <envoy_v3_api_field_config.listener.v3.FilterChain.filter_chain_match>`. If specified, all
+   * :ref:`filter_chains <envoy_v3_api_field_config.listener.v3.Listener.filter_chains>` must have a
+   * non-empty and unique :ref:`name <envoy_v3_api_field_config.listener.v3.FilterChain.name>` field
+   * and not specify :ref:`filter_chain_match
+   * <envoy_v3_api_field_config.listener.v3.FilterChain.filter_chain_match>` field.
+   * 
+   * .. note::
+   * 
+   * Once matched, each connection is permanently bound to its filter chain.
+   * If the matcher changes but the filter chain remains the same, the
+   * connections bound to the filter chain are not drained. If, however, the
+   * filter chain is removed or structurally modified, then the drain for its
+   * connections is initiated.
+   */
+  'filter_chain_matcher': (_xds_type_matcher_v3_Matcher__Output | null);
+  /**
+   * The additional addresses the listener should listen on. The addresses must be unique across all
+   * listeners. Multiple addresses with port 0 can be supplied. When using multiple addresses in a single listener,
+   * all addresses use the same protocol, and multiple internal addresses are not supported.
+   */
+  'additional_addresses': (_envoy_config_listener_v3_AdditionalAddress__Output)[];
+  /**
    * The exclusive listener type and the corresponding config.
-   * TODO(lambdai): https://github.com/envoyproxy/envoy/issues/15372
-   * Will create and add TcpListenerConfig. Will add UdpListenerConfig and ApiListener.
-   * [#not-implemented-hide:]
    */
   'listener_specifier': "internal_listener";
 }

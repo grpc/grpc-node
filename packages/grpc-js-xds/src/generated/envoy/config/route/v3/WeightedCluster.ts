@@ -10,14 +10,14 @@ import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__
  */
 export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight {
   /**
-   * Only one of *name* and *cluster_header* may be specified.
+   * Only one of ``name`` and ``cluster_header`` may be specified.
    * [#next-major-version: Need to add back the validation rule: (validate.rules).string = {min_len: 1}]
    * Name of the upstream cluster. The cluster must exist in the
    * :ref:`cluster manager configuration <config_cluster_manager>`.
    */
   'name'?: (string);
   /**
-   * Only one of *name* and *cluster_header* may be specified.
+   * Only one of ``name`` and ``cluster_header`` may be specified.
    * [#next-major-version: Need to add back the validation rule: (validate.rules).string = {min_len: 1 }]
    * Envoy will determine the cluster to route to by reading the value of the
    * HTTP header named by cluster_header from the request headers. If the
@@ -26,8 +26,8 @@ export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight {
    * 
    * .. attention::
    * 
-   * Internally, Envoy always uses the HTTP/2 *:authority* header to represent the HTTP/1
-   * *Host* header. Thus, if attempting to match on *Host*, match on *:authority* instead.
+   * Internally, Envoy always uses the HTTP/2 ``:authority`` header to represent the HTTP/1
+   * ``Host`` header. Thus, if attempting to match on ``Host``, match on ``:authority`` instead.
    * 
    * .. note::
    * 
@@ -35,10 +35,11 @@ export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight {
    */
   'cluster_header'?: (string);
   /**
-   * An integer between 0 and :ref:`total_weight
-   * <envoy_v3_api_field_config.route.v3.WeightedCluster.total_weight>`. When a request matches the route,
-   * the choice of an upstream cluster is determined by its weight. The sum of weights across all
-   * entries in the clusters array must add up to the total_weight, which defaults to 100.
+   * The weight of the cluster. This value is relative to the other clusters'
+   * weights. When a request matches the route, the choice of an upstream cluster
+   * is determined by its weight. The sum of weights across all
+   * entries in the clusters array must be greater than 0, and must not exceed
+   * uint32_t maximal value (4294967295).
    */
   'weight'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -46,7 +47,7 @@ export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight {
    * the upstream cluster with metadata matching what is set in this field will be considered for
    * load balancing. Note that this will be merged with what's provided in
    * :ref:`RouteAction.metadata_match <envoy_v3_api_field_config.route.v3.RouteAction.metadata_match>`, with
-   * values here taking precedence. The filter name should be specified as *envoy.lb*.
+   * values here taking precedence. The filter name should be specified as ``envoy.lb``.
    */
   'metadata_match'?: (_envoy_config_core_v3_Metadata | null);
   /**
@@ -80,11 +81,16 @@ export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight {
    */
   'response_headers_to_remove'?: (string)[];
   /**
-   * The per_filter_config field can be used to provide weighted cluster-specific
-   * configurations for filters. The key should match the filter name, such as
-   * *envoy.filters.http.buffer* for the HTTP buffer filter. Use of this field is filter
-   * specific; see the :ref:`HTTP filter documentation <config_http_filters>`
-   * for if and how it is utilized.
+   * The per_filter_config field can be used to provide weighted cluster-specific configurations
+   * for filters.
+   * The key should match the :ref:`filter config name
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpFilter.name>`.
+   * The canonical filter name (e.g., ``envoy.filters.http.buffer`` for the HTTP buffer filter) can also
+   * be used for the backwards compatibility. If there is no entry referred by the filter config name, the
+   * entry referred by the canonical filter name will be provided to the filters as fallback.
+   * 
+   * Use of this field is filter specific;
+   * see the :ref:`HTTP filter documentation <config_http_filters>` for if and how it is utilized.
    * [#comment: An entry's value may be wrapped in a
    * :ref:`FilterConfig<envoy_v3_api_msg_config.route.v3.FilterConfig>`
    * message to specify additional options.]
@@ -103,14 +109,14 @@ export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight {
  */
 export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight__Output {
   /**
-   * Only one of *name* and *cluster_header* may be specified.
+   * Only one of ``name`` and ``cluster_header`` may be specified.
    * [#next-major-version: Need to add back the validation rule: (validate.rules).string = {min_len: 1}]
    * Name of the upstream cluster. The cluster must exist in the
    * :ref:`cluster manager configuration <config_cluster_manager>`.
    */
   'name': (string);
   /**
-   * Only one of *name* and *cluster_header* may be specified.
+   * Only one of ``name`` and ``cluster_header`` may be specified.
    * [#next-major-version: Need to add back the validation rule: (validate.rules).string = {min_len: 1 }]
    * Envoy will determine the cluster to route to by reading the value of the
    * HTTP header named by cluster_header from the request headers. If the
@@ -119,8 +125,8 @@ export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight__Output {
    * 
    * .. attention::
    * 
-   * Internally, Envoy always uses the HTTP/2 *:authority* header to represent the HTTP/1
-   * *Host* header. Thus, if attempting to match on *Host*, match on *:authority* instead.
+   * Internally, Envoy always uses the HTTP/2 ``:authority`` header to represent the HTTP/1
+   * ``Host`` header. Thus, if attempting to match on ``Host``, match on ``:authority`` instead.
    * 
    * .. note::
    * 
@@ -128,10 +134,11 @@ export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight__Output {
    */
   'cluster_header': (string);
   /**
-   * An integer between 0 and :ref:`total_weight
-   * <envoy_v3_api_field_config.route.v3.WeightedCluster.total_weight>`. When a request matches the route,
-   * the choice of an upstream cluster is determined by its weight. The sum of weights across all
-   * entries in the clusters array must add up to the total_weight, which defaults to 100.
+   * The weight of the cluster. This value is relative to the other clusters'
+   * weights. When a request matches the route, the choice of an upstream cluster
+   * is determined by its weight. The sum of weights across all
+   * entries in the clusters array must be greater than 0, and must not exceed
+   * uint32_t maximal value (4294967295).
    */
   'weight': (_google_protobuf_UInt32Value__Output | null);
   /**
@@ -139,7 +146,7 @@ export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight__Output {
    * the upstream cluster with metadata matching what is set in this field will be considered for
    * load balancing. Note that this will be merged with what's provided in
    * :ref:`RouteAction.metadata_match <envoy_v3_api_field_config.route.v3.RouteAction.metadata_match>`, with
-   * values here taking precedence. The filter name should be specified as *envoy.lb*.
+   * values here taking precedence. The filter name should be specified as ``envoy.lb``.
    */
   'metadata_match': (_envoy_config_core_v3_Metadata__Output | null);
   /**
@@ -173,11 +180,16 @@ export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight__Output {
    */
   'response_headers_to_remove': (string)[];
   /**
-   * The per_filter_config field can be used to provide weighted cluster-specific
-   * configurations for filters. The key should match the filter name, such as
-   * *envoy.filters.http.buffer* for the HTTP buffer filter. Use of this field is filter
-   * specific; see the :ref:`HTTP filter documentation <config_http_filters>`
-   * for if and how it is utilized.
+   * The per_filter_config field can be used to provide weighted cluster-specific configurations
+   * for filters.
+   * The key should match the :ref:`filter config name
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpFilter.name>`.
+   * The canonical filter name (e.g., ``envoy.filters.http.buffer`` for the HTTP buffer filter) can also
+   * be used for the backwards compatibility. If there is no entry referred by the filter config name, the
+   * entry referred by the canonical filter name will be provided to the filters as fallback.
+   * 
+   * Use of this field is filter specific;
+   * see the :ref:`HTTP filter documentation <config_http_filters>` for if and how it is utilized.
    * [#comment: An entry's value may be wrapped in a
    * :ref:`FilterConfig<envoy_v3_api_msg_config.route.v3.FilterConfig>`
    * message to specify additional options.]
@@ -206,10 +218,10 @@ export interface WeightedCluster {
   'clusters'?: (_envoy_config_route_v3_WeightedCluster_ClusterWeight)[];
   /**
    * Specifies the runtime key prefix that should be used to construct the
-   * runtime keys associated with each cluster. When the *runtime_key_prefix* is
+   * runtime keys associated with each cluster. When the ``runtime_key_prefix`` is
    * specified, the router will look for weights associated with each upstream
-   * cluster under the key *runtime_key_prefix* + "." + *cluster[i].name* where
-   * *cluster[i]* denotes an entry in the clusters array field. If the runtime
+   * cluster under the key ``runtime_key_prefix`` + ``.`` + ``cluster[i].name`` where
+   * ``cluster[i]`` denotes an entry in the clusters array field. If the runtime
    * key for the cluster does not exist, the value specified in the
    * configuration file will be used as the default weight. See the :ref:`runtime documentation
    * <operations_runtime>` for how key names map to the underlying implementation.
@@ -217,9 +229,20 @@ export interface WeightedCluster {
   'runtime_key_prefix'?: (string);
   /**
    * Specifies the total weight across all clusters. The sum of all cluster weights must equal this
-   * value, which must be greater than 0. Defaults to 100.
+   * value, if this is greater than 0.
+   * This field is now deprecated, and the client will use the sum of all
+   * cluster weights. It is up to the management server to supply the correct weights.
    */
   'total_weight'?: (_google_protobuf_UInt32Value | null);
+  /**
+   * Specifies the header name that is used to look up the random value passed in the request header.
+   * This is used to ensure consistent cluster picking across multiple proxy levels for weighted traffic.
+   * If header is not present or invalid, Envoy will fall back to use the internally generated random value.
+   * This header is expected to be single-valued header as we only want to have one selected value throughout
+   * the process for the consistency. And the value is a unsigned number between 0 and UINT64_MAX.
+   */
+  'header_name'?: (string);
+  'random_value_specifier'?: "header_name";
 }
 
 /**
@@ -237,10 +260,10 @@ export interface WeightedCluster__Output {
   'clusters': (_envoy_config_route_v3_WeightedCluster_ClusterWeight__Output)[];
   /**
    * Specifies the runtime key prefix that should be used to construct the
-   * runtime keys associated with each cluster. When the *runtime_key_prefix* is
+   * runtime keys associated with each cluster. When the ``runtime_key_prefix`` is
    * specified, the router will look for weights associated with each upstream
-   * cluster under the key *runtime_key_prefix* + "." + *cluster[i].name* where
-   * *cluster[i]* denotes an entry in the clusters array field. If the runtime
+   * cluster under the key ``runtime_key_prefix`` + ``.`` + ``cluster[i].name`` where
+   * ``cluster[i]`` denotes an entry in the clusters array field. If the runtime
    * key for the cluster does not exist, the value specified in the
    * configuration file will be used as the default weight. See the :ref:`runtime documentation
    * <operations_runtime>` for how key names map to the underlying implementation.
@@ -248,7 +271,18 @@ export interface WeightedCluster__Output {
   'runtime_key_prefix': (string);
   /**
    * Specifies the total weight across all clusters. The sum of all cluster weights must equal this
-   * value, which must be greater than 0. Defaults to 100.
+   * value, if this is greater than 0.
+   * This field is now deprecated, and the client will use the sum of all
+   * cluster weights. It is up to the management server to supply the correct weights.
    */
   'total_weight': (_google_protobuf_UInt32Value__Output | null);
+  /**
+   * Specifies the header name that is used to look up the random value passed in the request header.
+   * This is used to ensure consistent cluster picking across multiple proxy levels for weighted traffic.
+   * If header is not present or invalid, Envoy will fall back to use the internally generated random value.
+   * This header is expected to be single-valued header as we only want to have one selected value throughout
+   * the process for the consistency. And the value is a unsigned number between 0 and UINT64_MAX.
+   */
+  'header_name'?: (string);
+  'random_value_specifier': "header_name";
 }

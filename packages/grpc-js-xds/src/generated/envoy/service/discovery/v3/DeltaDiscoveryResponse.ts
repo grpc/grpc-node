@@ -2,9 +2,10 @@
 
 import type { Resource as _envoy_service_discovery_v3_Resource, Resource__Output as _envoy_service_discovery_v3_Resource__Output } from '../../../../envoy/service/discovery/v3/Resource';
 import type { ControlPlane as _envoy_config_core_v3_ControlPlane, ControlPlane__Output as _envoy_config_core_v3_ControlPlane__Output } from '../../../../envoy/config/core/v3/ControlPlane';
+import type { ResourceName as _envoy_service_discovery_v3_ResourceName, ResourceName__Output as _envoy_service_discovery_v3_ResourceName__Output } from '../../../../envoy/service/discovery/v3/ResourceName';
 
 /**
- * [#next-free-field: 8]
+ * [#next-free-field: 9]
  */
 export interface DeltaDiscoveryResponse {
   /**
@@ -36,10 +37,16 @@ export interface DeltaDiscoveryResponse {
    * The control plane instance that sent the response.
    */
   'control_plane'?: (_envoy_config_core_v3_ControlPlane | null);
+  /**
+   * Alternative to removed_resources that allows specifying which variant of
+   * a resource is being removed. This variant must be used for any resource
+   * for which dynamic parameter constraints were sent to the client.
+   */
+  'removed_resource_names'?: (_envoy_service_discovery_v3_ResourceName)[];
 }
 
 /**
- * [#next-free-field: 8]
+ * [#next-free-field: 9]
  */
 export interface DeltaDiscoveryResponse__Output {
   /**
@@ -71,4 +78,10 @@ export interface DeltaDiscoveryResponse__Output {
    * The control plane instance that sent the response.
    */
   'control_plane': (_envoy_config_core_v3_ControlPlane__Output | null);
+  /**
+   * Alternative to removed_resources that allows specifying which variant of
+   * a resource is being removed. This variant must be used for any resource
+   * for which dynamic parameter constraints were sent to the client.
+   */
+  'removed_resource_names': (_envoy_service_discovery_v3_ResourceName__Output)[];
 }

@@ -1,4 +1,4 @@
-// Original file: deps/envoy-api/envoy/admin/v3/config_dump.proto
+// Original file: deps/envoy-api/envoy/admin/v3/config_dump_shared.proto
 
 import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../google/protobuf/Any';
 import type { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../../google/protobuf/Timestamp';

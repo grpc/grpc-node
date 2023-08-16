@@ -28,16 +28,20 @@ export interface ProtoGrpcType {
           EnvoyInternalAddress: MessageTypeDefinition
           EventServiceConfig: MessageTypeDefinition
           Extension: MessageTypeDefinition
+          ExtensionConfigSource: MessageTypeDefinition
+          ExtraSourceAddress: MessageTypeDefinition
           GrpcService: MessageTypeDefinition
           HeaderMap: MessageTypeDefinition
           HeaderValue: MessageTypeDefinition
           HeaderValueOption: MessageTypeDefinition
           HealthCheck: MessageTypeDefinition
           HealthStatus: EnumTypeDefinition
+          HealthStatusSet: MessageTypeDefinition
           HttpUri: MessageTypeDefinition
           Locality: MessageTypeDefinition
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition
+          PathConfigSource: MessageTypeDefinition
           Pipe: MessageTypeDefinition
           QueryParameter: MessageTypeDefinition
           RateLimitSettings: MessageTypeDefinition
@@ -53,9 +57,11 @@ export interface ProtoGrpcType {
           SelfConfigSource: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
           SocketOption: MessageTypeDefinition
+          SocketOptionsOverride: MessageTypeDefinition
           TcpKeepalive: MessageTypeDefinition
           TrafficDirection: EnumTypeDefinition
           TransportSocket: MessageTypeDefinition
+          TypedExtensionConfig: MessageTypeDefinition
           WatchedDirectory: MessageTypeDefinition
         }
       }

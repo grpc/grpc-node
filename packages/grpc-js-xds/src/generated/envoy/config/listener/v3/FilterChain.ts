@@ -60,6 +60,12 @@ export interface FilterChain {
    * connections established with the listener. Order matters as the filters are
    * processed sequentially as connection events happen. Note: If the filter
    * list is empty, the connection will close by default.
+   * 
+   * For QUIC listeners, network filters other than HTTP Connection Manager (HCM)
+   * can be created, but due to differences in the connection implementation compared
+   * to TCP, the onData() method will never be called. Therefore, network filters
+   * for QUIC listeners should only expect to do work at the start of a new connection
+   * (i.e. in onNewConnection()). HCM must be the last (or only) filter in the chain.
    */
   'filters'?: (_envoy_config_listener_v3_Filter)[];
   /**
@@ -81,17 +87,18 @@ export interface FilterChain {
   'metadata'?: (_envoy_config_core_v3_Metadata | null);
   /**
    * Optional custom transport socket implementation to use for downstream connections.
-   * To setup TLS, set a transport socket with name `envoy.transport_sockets.tls` and
-   * :ref:`DownstreamTlsContext <envoy_v3_api_msg_extensions.transport_sockets.tls.v3.DownstreamTlsContext>` in the `typed_config`.
+   * To setup TLS, set a transport socket with name ``envoy.transport_sockets.tls`` and
+   * :ref:`DownstreamTlsContext <envoy_v3_api_msg_extensions.transport_sockets.tls.v3.DownstreamTlsContext>` in the ``typed_config``.
    * If no transport socket configuration is specified, new connections
    * will be set up with plaintext.
    * [#extension-category: envoy.transport_sockets.downstream]
    */
   'transport_socket'?: (_envoy_config_core_v3_TransportSocket | null);
   /**
-   * [#not-implemented-hide:] The unique name (or empty) by which this filter chain is known. If no
-   * name is provided, Envoy will allocate an internal UUID for the filter chain. If the filter
-   * chain is to be dynamically updated or removed via FCDS a unique name must be provided.
+   * The unique name (or empty) by which this filter chain is known.
+   * Note: :ref:`filter_chain_matcher
+   * <envoy_v3_api_field_config.listener.v3.Listener.filter_chain_matcher>`
+   * requires that filter chains are uniquely named within a listener.
    */
   'name'?: (string);
   /**
@@ -123,6 +130,12 @@ export interface FilterChain__Output {
    * connections established with the listener. Order matters as the filters are
    * processed sequentially as connection events happen. Note: If the filter
    * list is empty, the connection will close by default.
+   * 
+   * For QUIC listeners, network filters other than HTTP Connection Manager (HCM)
+   * can be created, but due to differences in the connection implementation compared
+   * to TCP, the onData() method will never be called. Therefore, network filters
+   * for QUIC listeners should only expect to do work at the start of a new connection
+   * (i.e. in onNewConnection()). HCM must be the last (or only) filter in the chain.
    */
   'filters': (_envoy_config_listener_v3_Filter__Output)[];
   /**
@@ -144,17 +157,18 @@ export interface FilterChain__Output {
   'metadata': (_envoy_config_core_v3_Metadata__Output | null);
   /**
    * Optional custom transport socket implementation to use for downstream connections.
-   * To setup TLS, set a transport socket with name `envoy.transport_sockets.tls` and
-   * :ref:`DownstreamTlsContext <envoy_v3_api_msg_extensions.transport_sockets.tls.v3.DownstreamTlsContext>` in the `typed_config`.
+   * To setup TLS, set a transport socket with name ``envoy.transport_sockets.tls`` and
+   * :ref:`DownstreamTlsContext <envoy_v3_api_msg_extensions.transport_sockets.tls.v3.DownstreamTlsContext>` in the ``typed_config``.
    * If no transport socket configuration is specified, new connections
    * will be set up with plaintext.
    * [#extension-category: envoy.transport_sockets.downstream]
    */
   'transport_socket': (_envoy_config_core_v3_TransportSocket__Output | null);
   /**
-   * [#not-implemented-hide:] The unique name (or empty) by which this filter chain is known. If no
-   * name is provided, Envoy will allocate an internal UUID for the filter chain. If the filter
-   * chain is to be dynamically updated or removed via FCDS a unique name must be provided.
+   * The unique name (or empty) by which this filter chain is known.
+   * Note: :ref:`filter_chain_matcher
+   * <envoy_v3_api_field_config.listener.v3.Listener.filter_chain_matcher>`
+   * requires that filter chains are uniquely named within a listener.
    */
   'name': (string);
   /**

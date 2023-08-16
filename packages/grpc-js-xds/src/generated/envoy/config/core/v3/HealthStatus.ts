@@ -5,7 +5,7 @@
  */
 export enum HealthStatus {
   /**
-   * The health status is not known. This is interpreted by Envoy as *HEALTHY*.
+   * The health status is not known. This is interpreted by Envoy as ``HEALTHY``.
    */
   UNKNOWN = 0,
   /**
@@ -21,12 +21,12 @@ export enum HealthStatus {
    * `<https://aws.amazon.com/blogs/aws/elb-connection-draining-remove-instances-from-service-with-care/>`_
    * or
    * `<https://cloud.google.com/compute/docs/load-balancing/enabling-connection-draining>`_.
-   * This is interpreted by Envoy as *UNHEALTHY*.
+   * This is interpreted by Envoy as ``UNHEALTHY``.
    */
   DRAINING = 3,
   /**
    * Health check timed out. This is part of HDS and is interpreted by Envoy as
-   * *UNHEALTHY*.
+   * ``UNHEALTHY``.
    */
   TIMEOUT = 4,
   /**

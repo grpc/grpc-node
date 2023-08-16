@@ -6,9 +6,11 @@ import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _goo
 import type { Vhds as _envoy_config_route_v3_Vhds, Vhds__Output as _envoy_config_route_v3_Vhds__Output } from '../../../../envoy/config/route/v3/Vhds';
 import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 import type { ClusterSpecifierPlugin as _envoy_config_route_v3_ClusterSpecifierPlugin, ClusterSpecifierPlugin__Output as _envoy_config_route_v3_ClusterSpecifierPlugin__Output } from '../../../../envoy/config/route/v3/ClusterSpecifierPlugin';
+import type { _envoy_config_route_v3_RouteAction_RequestMirrorPolicy, _envoy_config_route_v3_RouteAction_RequestMirrorPolicy__Output } from '../../../../envoy/config/route/v3/RouteAction';
+import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
 
 /**
- * [#next-free-field: 13]
+ * [#next-free-field: 17]
  */
 export interface RouteConfiguration {
   /**
@@ -75,10 +77,10 @@ export interface RouteConfiguration {
   'request_headers_to_remove'?: (string)[];
   /**
    * An array of virtual hosts will be dynamically loaded via the VHDS API.
-   * Both *virtual_hosts* and *vhds* fields will be used when present. *virtual_hosts* can be used
-   * for a base routing table or for infrequently changing virtual hosts. *vhds* is used for
+   * Both ``virtual_hosts`` and ``vhds`` fields will be used when present. ``virtual_hosts`` can be used
+   * for a base routing table or for infrequently changing virtual hosts. ``vhds`` is used for
    * on-demand discovery of virtual hosts. The contents of these two fields will be merged to
-   * generate a routing table for a given RouteConfiguration, with *vhds* derived configuration
+   * generate a routing table for a given RouteConfiguration, with ``vhds`` derived configuration
    * taking precedence.
    */
   'vhds'?: (_envoy_config_route_v3_Vhds | null);
@@ -91,8 +93,6 @@ export interface RouteConfiguration {
    * 
    * To allow setting overrides at the route or virtual host level, this order can be reversed
    * by setting this option to true. Defaults to false.
-   * 
-   * [#next-major-version: In the v3 API, this will default to true.]
    */
   'most_specific_header_mutations_wins'?: (boolean);
   /**
@@ -109,16 +109,49 @@ export interface RouteConfiguration {
    */
   'max_direct_response_body_size_bytes'?: (_google_protobuf_UInt32Value | null);
   /**
-   * [#not-implemented-hide:]
    * A list of plugins and their configurations which may be used by a
-   * :ref:`envoy_v3_api_field_config.route.v3.RouteAction.cluster_specifier_plugin`
-   * within the route. All *extension.name* fields in this list must be unique.
+   * :ref:`cluster specifier plugin name <envoy_v3_api_field_config.route.v3.RouteAction.cluster_specifier_plugin>`
+   * within the route. All ``extension.name`` fields in this list must be unique.
    */
   'cluster_specifier_plugins'?: (_envoy_config_route_v3_ClusterSpecifierPlugin)[];
+  /**
+   * Specify a set of default request mirroring policies which apply to all routes under its virtual hosts.
+   * Note that policies are not merged, the most specific non-empty one becomes the mirror policies.
+   */
+  'request_mirror_policies'?: (_envoy_config_route_v3_RouteAction_RequestMirrorPolicy)[];
+  /**
+   * By default, port in :authority header (if any) is used in host matching.
+   * With this option enabled, Envoy will ignore the port number in the :authority header (if any) when picking VirtualHost.
+   * NOTE: this option will not strip the port number (if any) contained in route config
+   * :ref:`envoy_v3_api_msg_config.route.v3.VirtualHost`.domains field.
+   */
+  'ignore_port_in_host_matching'?: (boolean);
+  /**
+   * Ignore path-parameters in path-matching.
+   * Before RFC3986, URI were like(RFC1808): <scheme>://<net_loc>/<path>;<params>?<query>#<fragment>
+   * Envoy by default takes ":path" as "<path>;<params>".
+   * For users who want to only match path on the "<path>" portion, this option should be true.
+   */
+  'ignore_path_parameters_in_path_matching'?: (boolean);
+  /**
+   * The typed_per_filter_config field can be used to provide RouteConfiguration level per filter config.
+   * The key should match the :ref:`filter config name
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpFilter.name>`.
+   * The canonical filter name (e.g., ``envoy.filters.http.buffer`` for the HTTP buffer filter) can also
+   * be used for the backwards compatibility. If there is no entry referred by the filter config name, the
+   * entry referred by the canonical filter name will be provided to the filters as fallback.
+   * 
+   * Use of this field is filter specific;
+   * see the :ref:`HTTP filter documentation <config_http_filters>` for if and how it is utilized.
+   * [#comment: An entry's value may be wrapped in a
+   * :ref:`FilterConfig<envoy_v3_api_msg_config.route.v3.FilterConfig>`
+   * message to specify additional options.]
+   */
+  'typed_per_filter_config'?: ({[key: string]: _google_protobuf_Any});
 }
 
 /**
- * [#next-free-field: 13]
+ * [#next-free-field: 17]
  */
 export interface RouteConfiguration__Output {
   /**
@@ -185,10 +218,10 @@ export interface RouteConfiguration__Output {
   'request_headers_to_remove': (string)[];
   /**
    * An array of virtual hosts will be dynamically loaded via the VHDS API.
-   * Both *virtual_hosts* and *vhds* fields will be used when present. *virtual_hosts* can be used
-   * for a base routing table or for infrequently changing virtual hosts. *vhds* is used for
+   * Both ``virtual_hosts`` and ``vhds`` fields will be used when present. ``virtual_hosts`` can be used
+   * for a base routing table or for infrequently changing virtual hosts. ``vhds`` is used for
    * on-demand discovery of virtual hosts. The contents of these two fields will be merged to
-   * generate a routing table for a given RouteConfiguration, with *vhds* derived configuration
+   * generate a routing table for a given RouteConfiguration, with ``vhds`` derived configuration
    * taking precedence.
    */
   'vhds': (_envoy_config_route_v3_Vhds__Output | null);
@@ -201,8 +234,6 @@ export interface RouteConfiguration__Output {
    * 
    * To allow setting overrides at the route or virtual host level, this order can be reversed
    * by setting this option to true. Defaults to false.
-   * 
-   * [#next-major-version: In the v3 API, this will default to true.]
    */
   'most_specific_header_mutations_wins': (boolean);
   /**
@@ -219,10 +250,43 @@ export interface RouteConfiguration__Output {
    */
   'max_direct_response_body_size_bytes': (_google_protobuf_UInt32Value__Output | null);
   /**
-   * [#not-implemented-hide:]
    * A list of plugins and their configurations which may be used by a
-   * :ref:`envoy_v3_api_field_config.route.v3.RouteAction.cluster_specifier_plugin`
-   * within the route. All *extension.name* fields in this list must be unique.
+   * :ref:`cluster specifier plugin name <envoy_v3_api_field_config.route.v3.RouteAction.cluster_specifier_plugin>`
+   * within the route. All ``extension.name`` fields in this list must be unique.
    */
   'cluster_specifier_plugins': (_envoy_config_route_v3_ClusterSpecifierPlugin__Output)[];
+  /**
+   * Specify a set of default request mirroring policies which apply to all routes under its virtual hosts.
+   * Note that policies are not merged, the most specific non-empty one becomes the mirror policies.
+   */
+  'request_mirror_policies': (_envoy_config_route_v3_RouteAction_RequestMirrorPolicy__Output)[];
+  /**
+   * By default, port in :authority header (if any) is used in host matching.
+   * With this option enabled, Envoy will ignore the port number in the :authority header (if any) when picking VirtualHost.
+   * NOTE: this option will not strip the port number (if any) contained in route config
+   * :ref:`envoy_v3_api_msg_config.route.v3.VirtualHost`.domains field.
+   */
+  'ignore_port_in_host_matching': (boolean);
+  /**
+   * Ignore path-parameters in path-matching.
+   * Before RFC3986, URI were like(RFC1808): <scheme>://<net_loc>/<path>;<params>?<query>#<fragment>
+   * Envoy by default takes ":path" as "<path>;<params>".
+   * For users who want to only match path on the "<path>" portion, this option should be true.
+   */
+  'ignore_path_parameters_in_path_matching': (boolean);
+  /**
+   * The typed_per_filter_config field can be used to provide RouteConfiguration level per filter config.
+   * The key should match the :ref:`filter config name
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpFilter.name>`.
+   * The canonical filter name (e.g., ``envoy.filters.http.buffer`` for the HTTP buffer filter) can also
+   * be used for the backwards compatibility. If there is no entry referred by the filter config name, the
+   * entry referred by the canonical filter name will be provided to the filters as fallback.
+   * 
+   * Use of this field is filter specific;
+   * see the :ref:`HTTP filter documentation <config_http_filters>` for if and how it is utilized.
+   * [#comment: An entry's value may be wrapped in a
+   * :ref:`FilterConfig<envoy_v3_api_msg_config.route.v3.FilterConfig>`
+   * message to specify additional options.]
+   */
+  'typed_per_filter_config': ({[key: string]: _google_protobuf_Any__Output});
 }

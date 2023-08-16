@@ -25,8 +25,9 @@ import type { DnsResolutionConfig as _envoy_config_core_v3_DnsResolutionConfig, 
 import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../../google/protobuf/BoolValue';
 import type { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_Struct__Output } from '../../../../google/protobuf/Struct';
 import type { RuntimeDouble as _envoy_config_core_v3_RuntimeDouble, RuntimeDouble__Output as _envoy_config_core_v3_RuntimeDouble__Output } from '../../../../envoy/config/core/v3/RuntimeDouble';
-import type { UInt64Value as _google_protobuf_UInt64Value, UInt64Value__Output as _google_protobuf_UInt64Value__Output } from '../../../../google/protobuf/UInt64Value';
 import type { Percent as _envoy_type_v3_Percent, Percent__Output as _envoy_type_v3_Percent__Output } from '../../../../envoy/type/v3/Percent';
+import type { UInt64Value as _google_protobuf_UInt64Value, UInt64Value__Output as _google_protobuf_UInt64Value__Output } from '../../../../google/protobuf/UInt64Value';
+import type { HealthStatusSet as _envoy_config_core_v3_HealthStatusSet, HealthStatusSet__Output as _envoy_config_core_v3_HealthStatusSet__Output } from '../../../../envoy/config/core/v3/HealthStatusSet';
 import type { DoubleValue as _google_protobuf_DoubleValue, DoubleValue__Output as _google_protobuf_DoubleValue__Output } from '../../../../google/protobuf/DoubleValue';
 import type { Long } from '@grpc/proto-loader';
 
@@ -47,7 +48,7 @@ export enum _envoy_config_cluster_v3_Cluster_ClusterProtocolSelection {
 
 /**
  * Common configuration for all load balancer implementations.
- * [#next-free-field: 8]
+ * [#next-free-field: 9]
  */
 export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig {
   /**
@@ -85,7 +86,7 @@ export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig {
    */
   'ignore_new_hosts_until_first_hc'?: (boolean);
   /**
-   * If set to `true`, the cluster manager will drain all existing
+   * If set to ``true``, the cluster manager will drain all existing
    * connections to upstream hosts whenever hosts are added or removed from the cluster.
    */
   'close_connections_on_host_set_change'?: (boolean);
@@ -93,12 +94,21 @@ export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig {
    * Common Configuration for all consistent hashing load balancers (MaglevLb, RingHashLb, etc.)
    */
   'consistent_hashing_lb_config'?: (_envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig | null);
+  /**
+   * This controls what hosts are considered valid when using
+   * :ref:`host overrides <arch_overview_load_balancing_override_host>`, which is used by some
+   * filters to modify the load balancing decision.
+   * 
+   * If this is unset then [UNKNOWN, HEALTHY, DEGRADED] will be applied by default. If this is
+   * set with an empty set of statuses then host overrides will be ignored by the load balancing.
+   */
+  'override_host_status'?: (_envoy_config_core_v3_HealthStatusSet | null);
   'locality_config_specifier'?: "zone_aware_lb_config"|"locality_weighted_lb_config";
 }
 
 /**
  * Common configuration for all load balancer implementations.
- * [#next-free-field: 8]
+ * [#next-free-field: 9]
  */
 export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig__Output {
   /**
@@ -136,7 +146,7 @@ export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig__Output {
    */
   'ignore_new_hosts_until_first_hc': (boolean);
   /**
-   * If set to `true`, the cluster manager will drain all existing
+   * If set to ``true``, the cluster manager will drain all existing
    * connections to upstream hosts whenever hosts are added or removed from the cluster.
    */
   'close_connections_on_host_set_change': (boolean);
@@ -144,6 +154,15 @@ export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig__Output {
    * Common Configuration for all consistent hashing load balancers (MaglevLb, RingHashLb, etc.)
    */
   'consistent_hashing_lb_config': (_envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig__Output | null);
+  /**
+   * This controls what hosts are considered valid when using
+   * :ref:`host overrides <arch_overview_load_balancing_override_host>`, which is used by some
+   * filters to modify the load balancing decision.
+   * 
+   * If this is unset then [UNKNOWN, HEALTHY, DEGRADED] will be applied by default. If this is
+   * set with an empty set of statuses then host overrides will be ignored by the load balancing.
+   */
+  'override_host_status': (_envoy_config_core_v3_HealthStatusSet__Output | null);
   'locality_config_specifier': "zone_aware_lb_config"|"locality_weighted_lb_config";
 }
 
@@ -152,7 +171,7 @@ export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig__Output {
  */
 export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig {
   /**
-   * If set to `true`, the cluster will use hostname instead of the resolved
+   * If set to ``true``, the cluster will use hostname instead of the resolved
    * address as the key to consistently hash to an upstream host. Only valid for StrictDNS clusters with hostnames which resolve to a single IP address.
    */
   'use_hostname_for_hashing'?: (boolean);
@@ -165,7 +184,7 @@ export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashi
    * Applies to both Ring Hash and Maglev load balancers.
    * 
    * This is implemented based on the method described in the paper https://arxiv.org/abs/1608.01350. For the specified
-   * `hash_balance_factor`, requests to any upstream host are capped at `hash_balance_factor/100` times the average number of requests
+   * ``hash_balance_factor``, requests to any upstream host are capped at ``hash_balance_factor/100`` times the average number of requests
    * across the cluster. When a request arrives for an upstream host that is currently serving at its max capacity, linear probing
    * is used to identify an eligible host. Further, the linear probe is implemented using a random jump in hosts ring/table to identify
    * the eligible host (this technique is as described in the paper https://arxiv.org/abs/1908.08762 - the random jump avoids the
@@ -173,7 +192,7 @@ export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashi
    * 
    * If weights are specified on the hosts, they are respected.
    * 
-   * This is an O(N) algorithm, unlike other load balancers. Using a lower `hash_balance_factor` results in more hosts
+   * This is an O(N) algorithm, unlike other load balancers. Using a lower ``hash_balance_factor`` results in more hosts
    * being probed, so use a higher value if you require better performance.
    */
   'hash_balance_factor'?: (_google_protobuf_UInt32Value | null);
@@ -184,7 +203,7 @@ export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashi
  */
 export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig__Output {
   /**
-   * If set to `true`, the cluster will use hostname instead of the resolved
+   * If set to ``true``, the cluster will use hostname instead of the resolved
    * address as the key to consistently hash to an upstream host. Only valid for StrictDNS clusters with hostnames which resolve to a single IP address.
    */
   'use_hostname_for_hashing': (boolean);
@@ -197,7 +216,7 @@ export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashi
    * Applies to both Ring Hash and Maglev load balancers.
    * 
    * This is implemented based on the method described in the paper https://arxiv.org/abs/1608.01350. For the specified
-   * `hash_balance_factor`, requests to any upstream host are capped at `hash_balance_factor/100` times the average number of requests
+   * ``hash_balance_factor``, requests to any upstream host are capped at ``hash_balance_factor/100`` times the average number of requests
    * across the cluster. When a request arrives for an upstream host that is currently serving at its max capacity, linear probing
    * is used to identify an eligible host. Further, the linear probe is implemented using a random jump in hosts ring/table to identify
    * the eligible host (this technique is as described in the paper https://arxiv.org/abs/1908.08762 - the random jump avoids the
@@ -205,7 +224,7 @@ export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashi
    * 
    * If weights are specified on the hosts, they are respected.
    * 
-   * This is an O(N) algorithm, unlike other load balancers. Using a lower `hash_balance_factor` results in more hosts
+   * This is an O(N) algorithm, unlike other load balancers. Using a lower ``hash_balance_factor`` results in more hosts
    * being probed, so use a higher value if you require better performance.
    */
   'hash_balance_factor': (_google_protobuf_UInt32Value__Output | null);
@@ -294,6 +313,10 @@ export enum _envoy_config_cluster_v3_Cluster_DiscoveryType {
  * If V4_PREFERRED is specified, the DNS resolver will first perform a lookup for addresses in the
  * IPv4 family and fallback to a lookup for addresses in the IPv6 family. i.e., the callback
  * target will only get v6 addresses if there were NO v4 addresses to return.
+ * If ALL is specified, the DNS resolver will perform a lookup for both IPv4 and IPv6 families,
+ * and return all resolved addresses. When this is used, Happy Eyeballs will be enabled for
+ * upstream connections. Refer to :ref:`Happy Eyeballs Support <arch_overview_happy_eyeballs>`
+ * for more information.
  * For cluster types other than
  * :ref:`STRICT_DNS<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.STRICT_DNS>` and
  * :ref:`LOGICAL_DNS<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.LOGICAL_DNS>`,
@@ -306,6 +329,7 @@ export enum _envoy_config_cluster_v3_Cluster_DnsLookupFamily {
   V4_ONLY = 1,
   V6_ONLY = 2,
   V4_PREFERRED = 3,
+  ALL = 4,
 }
 
 /**
@@ -403,9 +427,9 @@ export enum _envoy_config_cluster_v3_Cluster_LbPolicy {
   /**
    * Use the new :ref:`load_balancing_policy
    * <envoy_v3_api_field_config.cluster.v3.Cluster.load_balancing_policy>` field to determine the LB policy.
-   * [#next-major-version: In the v3 API, we should consider deprecating the lb_policy field
-   * and instead using the new load_balancing_policy field as the one and only mechanism for
-   * configuring this.]
+   * This has been deprecated in favor of using the :ref:`load_balancing_policy
+   * <envoy_v3_api_field_config.cluster.v3.Cluster.load_balancing_policy>` field without
+   * setting any value in :ref:`lb_policy<envoy_v3_api_field_config.cluster.v3.Cluster.lb_policy>`.
    */
   LOAD_BALANCING_POLICY_CONFIG = 7,
 }
@@ -413,7 +437,7 @@ export enum _envoy_config_cluster_v3_Cluster_LbPolicy {
 /**
  * Optionally divide the endpoints in this cluster into subsets defined by
  * endpoint metadata and selected by route and weighted cluster metadata.
- * [#next-free-field: 8]
+ * [#next-free-field: 9]
  */
 export interface _envoy_config_cluster_v3_Cluster_LbSubsetConfig {
   /**
@@ -427,7 +451,7 @@ export interface _envoy_config_cluster_v3_Cluster_LbSubsetConfig {
    * fallback_policy is
    * :ref:`DEFAULT_SUBSET<envoy_v3_api_enum_value_config.cluster.v3.Cluster.LbSubsetConfig.LbSubsetFallbackPolicy.DEFAULT_SUBSET>`.
    * Each field in default_subset is
-   * compared to the matching LbEndpoint.Metadata under the *envoy.lb*
+   * compared to the matching LbEndpoint.Metadata under the ``envoy.lb``
    * namespace. It is valid for no hosts to match, in which case the behavior
    * is the same as a fallback_policy of
    * :ref:`NO_FALLBACK<envoy_v3_api_enum_value_config.cluster.v3.Cluster.LbSubsetConfig.LbSubsetFallbackPolicy.NO_FALLBACK>`.
@@ -435,7 +459,7 @@ export interface _envoy_config_cluster_v3_Cluster_LbSubsetConfig {
   'default_subset'?: (_google_protobuf_Struct | null);
   /**
    * For each entry, LbEndpoint.Metadata's
-   * *envoy.lb* namespace is traversed and a subset is created for each unique
+   * ``envoy.lb`` namespace is traversed and a subset is created for each unique
    * combination of key and value. For example:
    * 
    * .. code-block:: json
@@ -485,12 +509,22 @@ export interface _envoy_config_cluster_v3_Cluster_LbSubsetConfig {
    * and any of the elements in the list matches the criteria.
    */
   'list_as_any'?: (boolean);
+  /**
+   * Fallback mechanism that allows to try different route metadata until a host is found.
+   * If load balancing process, including all its mechanisms (like
+   * :ref:`fallback_policy<envoy_v3_api_field_config.cluster.v3.Cluster.LbSubsetConfig.fallback_policy>`)
+   * fails to select a host, this policy decides if and how the process is repeated using another metadata.
+   * 
+   * The value defaults to
+   * :ref:`METADATA_NO_FALLBACK<envoy_v3_api_enum_value_config.cluster.v3.Cluster.LbSubsetConfig.LbSubsetMetadataFallbackPolicy.METADATA_NO_FALLBACK>`.
+   */
+  'metadata_fallback_policy'?: (_envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetMetadataFallbackPolicy | keyof typeof _envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetMetadataFallbackPolicy);
 }
 
 /**
  * Optionally divide the endpoints in this cluster into subsets defined by
  * endpoint metadata and selected by route and weighted cluster metadata.
- * [#next-free-field: 8]
+ * [#next-free-field: 9]
  */
 export interface _envoy_config_cluster_v3_Cluster_LbSubsetConfig__Output {
   /**
@@ -504,7 +538,7 @@ export interface _envoy_config_cluster_v3_Cluster_LbSubsetConfig__Output {
    * fallback_policy is
    * :ref:`DEFAULT_SUBSET<envoy_v3_api_enum_value_config.cluster.v3.Cluster.LbSubsetConfig.LbSubsetFallbackPolicy.DEFAULT_SUBSET>`.
    * Each field in default_subset is
-   * compared to the matching LbEndpoint.Metadata under the *envoy.lb*
+   * compared to the matching LbEndpoint.Metadata under the ``envoy.lb``
    * namespace. It is valid for no hosts to match, in which case the behavior
    * is the same as a fallback_policy of
    * :ref:`NO_FALLBACK<envoy_v3_api_enum_value_config.cluster.v3.Cluster.LbSubsetConfig.LbSubsetFallbackPolicy.NO_FALLBACK>`.
@@ -512,7 +546,7 @@ export interface _envoy_config_cluster_v3_Cluster_LbSubsetConfig__Output {
   'default_subset': (_google_protobuf_Struct__Output | null);
   /**
    * For each entry, LbEndpoint.Metadata's
-   * *envoy.lb* namespace is traversed and a subset is created for each unique
+   * ``envoy.lb`` namespace is traversed and a subset is created for each unique
    * combination of key and value. For example:
    * 
    * .. code-block:: json
@@ -562,6 +596,16 @@ export interface _envoy_config_cluster_v3_Cluster_LbSubsetConfig__Output {
    * and any of the elements in the list matches the criteria.
    */
   'list_as_any': (boolean);
+  /**
+   * Fallback mechanism that allows to try different route metadata until a host is found.
+   * If load balancing process, including all its mechanisms (like
+   * :ref:`fallback_policy<envoy_v3_api_field_config.cluster.v3.Cluster.LbSubsetConfig.fallback_policy>`)
+   * fails to select a host, this policy decides if and how the process is repeated using another metadata.
+   * 
+   * The value defaults to
+   * :ref:`METADATA_NO_FALLBACK<envoy_v3_api_enum_value_config.cluster.v3.Cluster.LbSubsetConfig.LbSubsetMetadataFallbackPolicy.METADATA_NO_FALLBACK>`.
+   */
+  'metadata_fallback_policy': (keyof typeof _envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetMetadataFallbackPolicy);
 }
 
 // Original file: deps/envoy-api/envoy/config/cluster/v3/cluster.proto
@@ -579,6 +623,57 @@ export enum _envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetFallbackPoli
   DEFAULT_SUBSET = 2,
 }
 
+// Original file: deps/envoy-api/envoy/config/cluster/v3/cluster.proto
+
+export enum _envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetMetadataFallbackPolicy {
+  /**
+   * No fallback. Route metadata will be used as-is.
+   */
+  METADATA_NO_FALLBACK = 0,
+  /**
+   * A special metadata key ``fallback_list`` will be used to provide variants of metadata to try.
+   * Value of ``fallback_list`` key has to be a list. Every list element has to be a struct - it will
+   * be merged with route metadata, overriding keys that appear in both places.
+   * ``fallback_list`` entries will be used in order until a host is found.
+   * 
+   * ``fallback_list`` key itself is removed from metadata before subset load balancing is performed.
+   * 
+   * Example:
+   * 
+   * for metadata:
+   * 
+   * .. code-block:: yaml
+   * 
+   * version: 1.0
+   * fallback_list:
+   * - version: 2.0
+   * hardware: c64
+   * - hardware: c32
+   * - version: 3.0
+   * 
+   * at first, metadata:
+   * 
+   * .. code-block:: json
+   * 
+   * {"version": "2.0", "hardware": "c64"}
+   * 
+   * will be used for load balancing. If no host is found, metadata:
+   * 
+   * .. code-block:: json
+   * 
+   * {"version": "1.0", "hardware": "c32"}
+   * 
+   * is next to try. If it still results in no host, finally metadata:
+   * 
+   * .. code-block:: json
+   * 
+   * {"version": "3.0"}
+   * 
+   * is used.
+   */
+  FALLBACK_LIST = 1,
+}
+
 /**
  * Specifications for subsets.
  */
@@ -591,12 +686,9 @@ export interface _envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelecto
    * Selects a mode of operation in which each subset has only one host. This mode uses the same rules for
    * choosing a host, but updating hosts is faster, especially for large numbers of hosts.
    * 
-   * If a match is found to a host, that host will be used regardless of priority levels, unless the host is unhealthy.
+   * If a match is found to a host, that host will be used regardless of priority levels.
    * 
-   * Currently, this mode is only supported if `subset_selectors` has only one entry, and `keys` contains
-   * only one entry.
-   * 
-   * When this mode is enabled, configurations that contain more than one host with the same metadata value for the single key in `keys`
+   * When this mode is enabled, configurations that contain more than one host with the same metadata value for the single key in ``keys``
    * will use only one of the hosts with the given key; no requests will be routed to the others. The cluster gauge
    * :ref:`lb_subsets_single_host_per_subset_duplicate<config_cluster_manager_cluster_stats_subset_lb>` indicates how many duplicates are
    * present in the current configuration.
@@ -616,7 +708,7 @@ export interface _envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelecto
    * For any other fallback policy the parameter is not used and should not be set.
    * Only values also present in
    * :ref:`keys<envoy_v3_api_field_config.cluster.v3.Cluster.LbSubsetConfig.LbSubsetSelector.keys>` are allowed, but
-   * `fallback_keys_subset` cannot be equal to `keys`.
+   * ``fallback_keys_subset`` cannot be equal to ``keys``.
    */
   'fallback_keys_subset'?: (string)[];
 }
@@ -633,12 +725,9 @@ export interface _envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelecto
    * Selects a mode of operation in which each subset has only one host. This mode uses the same rules for
    * choosing a host, but updating hosts is faster, especially for large numbers of hosts.
    * 
-   * If a match is found to a host, that host will be used regardless of priority levels, unless the host is unhealthy.
+   * If a match is found to a host, that host will be used regardless of priority levels.
    * 
-   * Currently, this mode is only supported if `subset_selectors` has only one entry, and `keys` contains
-   * only one entry.
-   * 
-   * When this mode is enabled, configurations that contain more than one host with the same metadata value for the single key in `keys`
+   * When this mode is enabled, configurations that contain more than one host with the same metadata value for the single key in ``keys``
    * will use only one of the hosts with the given key; no requests will be routed to the others. The cluster gauge
    * :ref:`lb_subsets_single_host_per_subset_duplicate<config_cluster_manager_cluster_stats_subset_lb>` indicates how many duplicates are
    * present in the current configuration.
@@ -658,7 +747,7 @@ export interface _envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelecto
    * For any other fallback policy the parameter is not used and should not be set.
    * Only values also present in
    * :ref:`keys<envoy_v3_api_field_config.cluster.v3.Cluster.LbSubsetConfig.LbSubsetSelector.keys>` are allowed, but
-   * `fallback_keys_subset` cannot be equal to `keys`.
+   * ``fallback_keys_subset`` cannot be equal to ``keys``.
    */
   'fallback_keys_subset': (string)[];
 }
@@ -710,18 +799,18 @@ export interface _envoy_config_cluster_v3_Cluster_LeastRequestLbConfig {
    * The following formula is used to calculate the dynamic weights when hosts have different load
    * balancing weights:
    * 
-   * `weight = load_balancing_weight / (active_requests + 1)^active_request_bias`
+   * ``weight = load_balancing_weight / (active_requests + 1)^active_request_bias``
    * 
    * The larger the active request bias is, the more aggressively active requests will lower the
    * effective weight when all host weights are not equal.
    * 
-   * `active_request_bias` must be greater than or equal to 0.0.
+   * ``active_request_bias`` must be greater than or equal to 0.0.
    * 
-   * When `active_request_bias == 0.0` the Least Request Load Balancer doesn't consider the number
+   * When ``active_request_bias == 0.0`` the Least Request Load Balancer doesn't consider the number
    * of active requests at the time it picks a host and behaves like the Round Robin Load
    * Balancer.
    * 
-   * When `active_request_bias > 0.0` the Least Request Load Balancer scales the load balancing
+   * When ``active_request_bias > 0.0`` the Least Request Load Balancer scales the load balancing
    * weight by the number of active requests at the time it does a pick.
    * 
    * The value is cached for performance reasons and refreshed whenever one of the Load Balancer's
@@ -752,18 +841,18 @@ export interface _envoy_config_cluster_v3_Cluster_LeastRequestLbConfig__Output {
    * The following formula is used to calculate the dynamic weights when hosts have different load
    * balancing weights:
    * 
-   * `weight = load_balancing_weight / (active_requests + 1)^active_request_bias`
+   * ``weight = load_balancing_weight / (active_requests + 1)^active_request_bias``
    * 
    * The larger the active request bias is, the more aggressively active requests will lower the
    * effective weight when all host weights are not equal.
    * 
-   * `active_request_bias` must be greater than or equal to 0.0.
+   * ``active_request_bias`` must be greater than or equal to 0.0.
    * 
-   * When `active_request_bias == 0.0` the Least Request Load Balancer doesn't consider the number
+   * When ``active_request_bias == 0.0`` the Least Request Load Balancer doesn't consider the number
    * of active requests at the time it picks a host and behaves like the Round Robin Load
    * Balancer.
    * 
-   * When `active_request_bias > 0.0` the Least Request Load Balancer scales the load balancing
+   * When ``active_request_bias > 0.0`` the Least Request Load Balancer scales the load balancing
    * weight by the number of active requests at the time it does a pick.
    * 
    * The value is cached for performance reasons and refreshed whenever one of the Load Balancer's
@@ -801,8 +890,8 @@ export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig_LocalityWeighte
  */
 export interface _envoy_config_cluster_v3_Cluster_MaglevLbConfig {
   /**
-   * The table size for Maglev hashing. The Maglev aims for ‘minimal disruption’ rather than an absolute guarantee.
-   * Minimal disruption means that when the set of upstreams changes, a connection will likely be sent to the same
+   * The table size for Maglev hashing. Maglev aims for "minimal disruption" rather than an absolute guarantee.
+   * Minimal disruption means that when the set of upstream hosts change, a connection will likely be sent to the same
    * upstream as it was before. Increasing the table size reduces the amount of disruption.
    * The table size must be prime number limited to 5000011. If it is not specified, the default is 65537.
    */
@@ -815,8 +904,8 @@ export interface _envoy_config_cluster_v3_Cluster_MaglevLbConfig {
  */
 export interface _envoy_config_cluster_v3_Cluster_MaglevLbConfig__Output {
   /**
-   * The table size for Maglev hashing. The Maglev aims for ‘minimal disruption’ rather than an absolute guarantee.
-   * Minimal disruption means that when the set of upstreams changes, a connection will likely be sent to the same
+   * The table size for Maglev hashing. Maglev aims for "minimal disruption" rather than an absolute guarantee.
+   * Minimal disruption means that when the set of upstream hosts change, a connection will likely be sent to the same
    * upstream as it was before. Increasing the table size reduces the amount of disruption.
    * The table size must be prime number limited to 5000011. If it is not specified, the default is 65537.
    */
@@ -827,12 +916,12 @@ export interface _envoy_config_cluster_v3_Cluster_MaglevLbConfig__Output {
  * Specific configuration for the
  * :ref:`Original Destination <arch_overview_load_balancing_types_original_destination>`
  * load balancing policy.
+ * [#extension: envoy.clusters.original_dst]
  */
 export interface _envoy_config_cluster_v3_Cluster_OriginalDstLbConfig {
   /**
-   * When true, :ref:`x-envoy-original-dst-host
-   * <config_http_conn_man_headers_x-envoy-original-dst-host>` can be used to override destination
-   * address.
+   * When true, a HTTP header can be used to override the original dst address. The default header is
+   * :ref:`x-envoy-original-dst-host <config_http_conn_man_headers_x-envoy-original-dst-host>`.
    * 
    * .. attention::
    * 
@@ -845,18 +934,28 @@ export interface _envoy_config_cluster_v3_Cluster_OriginalDstLbConfig {
    * If the header appears multiple times only the first value is used.
    */
   'use_http_header'?: (boolean);
+  /**
+   * The http header to override destination address if :ref:`use_http_header <envoy_v3_api_field_config.cluster.v3.Cluster.OriginalDstLbConfig.use_http_header>`.
+   * is set to true. If the value is empty, :ref:`x-envoy-original-dst-host <config_http_conn_man_headers_x-envoy-original-dst-host>` will be used.
+   */
+  'http_header_name'?: (string);
+  /**
+   * The port to override for the original dst address. This port
+   * will take precedence over filter state and header override ports
+   */
+  'upstream_port_override'?: (_google_protobuf_UInt32Value | null);
 }
 
 /**
  * Specific configuration for the
  * :ref:`Original Destination <arch_overview_load_balancing_types_original_destination>`
  * load balancing policy.
+ * [#extension: envoy.clusters.original_dst]
  */
 export interface _envoy_config_cluster_v3_Cluster_OriginalDstLbConfig__Output {
   /**
-   * When true, :ref:`x-envoy-original-dst-host
-   * <config_http_conn_man_headers_x-envoy-original-dst-host>` can be used to override destination
-   * address.
+   * When true, a HTTP header can be used to override the original dst address. The default header is
+   * :ref:`x-envoy-original-dst-host <config_http_conn_man_headers_x-envoy-original-dst-host>`.
    * 
    * .. attention::
    * 
@@ -869,6 +968,16 @@ export interface _envoy_config_cluster_v3_Cluster_OriginalDstLbConfig__Output {
    * If the header appears multiple times only the first value is used.
    */
   'use_http_header': (boolean);
+  /**
+   * The http header to override destination address if :ref:`use_http_header <envoy_v3_api_field_config.cluster.v3.Cluster.OriginalDstLbConfig.use_http_header>`.
+   * is set to true. If the value is empty, :ref:`x-envoy-original-dst-host <config_http_conn_man_headers_x-envoy-original-dst-host>` will be used.
+   */
+  'http_header_name': (string);
+  /**
+   * The port to override for the original dst address. This port
+   * will take precedence over filter state and header override ports
+   */
+  'upstream_port_override': (_google_protobuf_UInt32Value__Output | null);
 }
 
 export interface _envoy_config_cluster_v3_Cluster_PreconnectPolicy {
@@ -900,10 +1009,10 @@ export interface _envoy_config_cluster_v3_Cluster_PreconnectPolicy {
    */
   'per_upstream_preconnect_ratio'?: (_google_protobuf_DoubleValue | null);
   /**
-   * Indicates how many many streams (rounded up) can be anticipated across a cluster for each
+   * Indicates how many streams (rounded up) can be anticipated across a cluster for each
    * stream, useful for low QPS services. This is currently supported for a subset of
    * deterministic non-hash-based load-balancing algorithms (weighted round robin, random).
-   * Unlike *per_upstream_preconnect_ratio* this preconnects across the upstream instances in a
+   * Unlike ``per_upstream_preconnect_ratio`` this preconnects across the upstream instances in a
    * cluster, doing best effort predictions of what upstream would be picked next and
    * pre-establishing a connection.
    * 
@@ -955,10 +1064,10 @@ export interface _envoy_config_cluster_v3_Cluster_PreconnectPolicy__Output {
    */
   'per_upstream_preconnect_ratio': (_google_protobuf_DoubleValue__Output | null);
   /**
-   * Indicates how many many streams (rounded up) can be anticipated across a cluster for each
+   * Indicates how many streams (rounded up) can be anticipated across a cluster for each
    * stream, useful for low QPS services. This is currently supported for a subset of
    * deterministic non-hash-based load-balancing algorithms (weighted round robin, random).
-   * Unlike *per_upstream_preconnect_ratio* this preconnects across the upstream instances in a
+   * Unlike ``per_upstream_preconnect_ratio`` this preconnects across the upstream instances in a
    * cluster, doing best effort predictions of what upstream would be picked next and
    * pre-establishing a connection.
    * 
@@ -1103,13 +1212,19 @@ export interface _envoy_config_cluster_v3_Cluster_SlowStartConfig {
    * By tuning the parameter, is possible to achieve polynomial or exponential shape of ramp-up curve.
    * 
    * During slow start window, effective weight of an endpoint would be scaled with time factor and aggression:
-   * `new_weight = weight * time_factor ^ (1 / aggression)`,
-   * where `time_factor=(time_since_start_seconds / slow_start_time_seconds)`.
+   * ``new_weight = weight * max(min_weight_percent, time_factor ^ (1 / aggression))``,
+   * where ``time_factor=(time_since_start_seconds / slow_start_time_seconds)``.
    * 
    * As time progresses, more and more traffic would be sent to endpoint, which is in slow start window.
    * Once host exits slow start, time_factor and aggression no longer affect its weight.
    */
   'aggression'?: (_envoy_config_core_v3_RuntimeDouble | null);
+  /**
+   * Configures the minimum percentage of origin weight that avoids too small new weight,
+   * which may cause endpoints in slow start mode receive no traffic in slow start window.
+   * If not specified, the default is 10%.
+   */
+  'min_weight_percent'?: (_envoy_type_v3_Percent | null);
 }
 
 /**
@@ -1130,13 +1245,19 @@ export interface _envoy_config_cluster_v3_Cluster_SlowStartConfig__Output {
    * By tuning the parameter, is possible to achieve polynomial or exponential shape of ramp-up curve.
    * 
    * During slow start window, effective weight of an endpoint would be scaled with time factor and aggression:
-   * `new_weight = weight * time_factor ^ (1 / aggression)`,
-   * where `time_factor=(time_since_start_seconds / slow_start_time_seconds)`.
+   * ``new_weight = weight * max(min_weight_percent, time_factor ^ (1 / aggression))``,
+   * where ``time_factor=(time_since_start_seconds / slow_start_time_seconds)``.
    * 
    * As time progresses, more and more traffic would be sent to endpoint, which is in slow start window.
    * Once host exits slow start, time_factor and aggression no longer affect its weight.
    */
   'aggression': (_envoy_config_core_v3_RuntimeDouble__Output | null);
+  /**
+   * Configures the minimum percentage of origin weight that avoids too small new weight,
+   * which may cause endpoints in slow start mode receive no traffic in slow start window.
+   * If not specified, the default is 10%.
+   */
+  'min_weight_percent': (_envoy_type_v3_Percent__Output | null);
 }
 
 /**
@@ -1152,7 +1273,7 @@ export interface _envoy_config_cluster_v3_Cluster_TransportSocketMatch {
    * Optional endpoint metadata match criteria.
    * The connection to the endpoint with metadata matching what is set in this field
    * will use the transport socket configuration specified here.
-   * The endpoint's metadata entry in *envoy.transport_socket_match* is used to match
+   * The endpoint's metadata entry in ``envoy.transport_socket_match`` is used to match
    * against the values specified in this field.
    */
   'match'?: (_google_protobuf_Struct | null);
@@ -1176,7 +1297,7 @@ export interface _envoy_config_cluster_v3_Cluster_TransportSocketMatch__Output {
    * Optional endpoint metadata match criteria.
    * The connection to the endpoint with metadata matching what is set in this field
    * will use the transport socket configuration specified here.
-   * The endpoint's metadata entry in *envoy.transport_socket_match* is used to match
+   * The endpoint's metadata entry in ``envoy.transport_socket_match`` is used to match
    * against the values specified in this field.
    */
   'match': (_google_protobuf_Struct__Output | null);
@@ -1319,7 +1440,7 @@ export interface Cluster {
    * set so that Envoy will assume that the upstream supports HTTP/2 when
    * making new HTTP connection pool connections. Currently, Envoy only
    * supports prior knowledge for upstream connections. Even if TLS is used
-   * with ALPN, `http2_protocol_options` must be specified. As an aside this allows HTTP/2
+   * with ALPN, ``http2_protocol_options`` must be specified. As an aside this allows HTTP/2
    * connections to happen over plain text.
    * This has been deprecated in favor of http2_protocol_options fields in the
    * :ref:`http_protocol_options <envoy_v3_api_msg_extensions.upstreams.http.v3.HttpProtocolOptions>`
@@ -1359,10 +1480,7 @@ export interface Cluster {
    * :ref:`STRICT_DNS<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.STRICT_DNS>`
    * and :ref:`LOGICAL_DNS<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.LOGICAL_DNS>`
    * this setting is ignored.
-   * Setting this value causes failure if the
-   * ``envoy.restart_features.use_apple_api_for_dns_lookups`` runtime value is true during
-   * server startup. Apple's API only allows overriding DNS resolvers via system settings.
-   * This field is deprecated in favor of *dns_resolution_config*
+   * This field is deprecated in favor of ``dns_resolution_config``
    * which aggregates all of the DNS resolver configuration in a single message.
    */
   'dns_resolvers'?: (_envoy_config_core_v3_Address)[];
@@ -1404,8 +1522,8 @@ export interface Cluster {
   'ring_hash_lb_config'?: (_envoy_config_cluster_v3_Cluster_RingHashLbConfig | null);
   /**
    * Optional custom transport socket implementation to use for upstream connections.
-   * To setup TLS, set a transport socket with name `envoy.transport_sockets.tls` and
-   * :ref:`UpstreamTlsContexts <envoy_v3_api_msg_extensions.transport_sockets.tls.v3.UpstreamTlsContext>` in the `typed_config`.
+   * To setup TLS, set a transport socket with name ``envoy.transport_sockets.tls`` and
+   * :ref:`UpstreamTlsContexts <envoy_v3_api_msg_extensions.transport_sockets.tls.v3.UpstreamTlsContext>` in the ``typed_config``.
    * If no transport socket configuration is specified, new connections
    * will be set up with plaintext.
    */
@@ -1415,7 +1533,7 @@ export interface Cluster {
    * cluster. It can be used for stats, logging, and varying filter behavior.
    * Fields should use reverse DNS notation to denote which entity within Envoy
    * will need the information. For instance, if the metadata is intended for
-   * the Router filter, the filter name should be specified as *envoy.filters.http.router*.
+   * the Router filter, the filter name should be specified as ``envoy.filters.http.router``.
    */
   'metadata'?: (_envoy_config_core_v3_Metadata | null);
   /**
@@ -1436,11 +1554,9 @@ export interface Cluster {
    * emitting stats for the cluster and access logging the cluster name. This will appear as
    * additional information in configuration dumps of a cluster's current status as
    * :ref:`observability_name <envoy_v3_api_field_admin.v3.ClusterStatus.observability_name>`
-   * and as an additional tag "upstream_cluster.name" while tracing. Note: access logging using
-   * this field is presently enabled with runtime feature
-   * `envoy.reloadable_features.use_observable_cluster_name`. Any ``:`` in the name will be
-   * converted to ``_`` when emitting statistics. This should not be confused with :ref:`Router
-   * Filter Header <config_http_filters_router_x-envoy-upstream-alt-stat-name>`.
+   * and as an additional tag "upstream_cluster.name" while tracing. Note: Any ``:`` in the name
+   * will be converted to ``_`` when emitting statistics. This should not be confused with
+   * :ref:`Router Filter Header <config_http_filters_router_x-envoy-upstream-alt-stat-name>`.
    */
   'alt_stat_name'?: (string);
   /**
@@ -1487,7 +1603,7 @@ export interface Cluster {
    * :ref:`STATIC<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.STATIC>`,
    * :ref:`STRICT_DNS<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.STRICT_DNS>`
    * or :ref:`LOGICAL_DNS<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.LOGICAL_DNS>` clusters.
-   * This field supersedes the *hosts* field in the v2 API.
+   * This field supersedes the ``hosts`` field in the v2 API.
    * 
    * .. attention::
    * 
@@ -1528,9 +1644,8 @@ export interface Cluster {
    */
   'filters'?: (_envoy_config_cluster_v3_Filter)[];
   /**
-   * New mechanism for LB policy configuration. Used only if the
-   * :ref:`lb_policy<envoy_v3_api_field_config.cluster.v3.Cluster.lb_policy>` field has the value
-   * :ref:`LOAD_BALANCING_POLICY_CONFIG<envoy_v3_api_enum_value_config.cluster.v3.Cluster.LbPolicy.LOAD_BALANCING_POLICY_CONFIG>`.
+   * If this field is set and is supported by the client, it will supersede the value of
+   * :ref:`lb_policy<envoy_v3_api_field_config.cluster.v3.Cluster.lb_policy>`.
    */
   'load_balancing_policy'?: (_envoy_config_cluster_v3_LoadBalancingPolicy | null);
   /**
@@ -1552,7 +1667,7 @@ export interface Cluster {
   'lrs_server'?: (_envoy_config_core_v3_ConfigSource | null);
   /**
    * Configuration to use different transport sockets for different endpoints.
-   * The entry of *envoy.transport_socket_match* in the
+   * The entry of ``envoy.transport_socket_match`` in the
    * :ref:`LbEndpoint.Metadata <envoy_v3_api_field_config.endpoint.v3.LbEndpoint.metadata>`
    * is used to match against the transport sockets as they appear in the list. The first
    * :ref:`match <envoy_v3_api_msg_config.cluster.v3.Cluster.TransportSocketMatch>` is used.
@@ -1572,16 +1687,16 @@ export interface Cluster {
    * transport_socket:
    * name: envoy.transport_sockets.raw_buffer
    * 
-   * Connections to the endpoints whose metadata value under *envoy.transport_socket_match*
+   * Connections to the endpoints whose metadata value under ``envoy.transport_socket_match``
    * having "acceptMTLS"/"true" key/value pair use the "enableMTLS" socket configuration.
    * 
    * If a :ref:`socket match <envoy_v3_api_msg_config.cluster.v3.Cluster.TransportSocketMatch>` with empty match
    * criteria is provided, that always match any endpoint. For example, the "defaultToPlaintext"
    * socket match in case above.
    * 
-   * If an endpoint metadata's value under *envoy.transport_socket_match* does not match any
-   * *TransportSocketMatch*, socket configuration fallbacks to use the *tls_context* or
-   * *transport_socket* specified in this cluster.
+   * If an endpoint metadata's value under ``envoy.transport_socket_match`` does not match any
+   * ``TransportSocketMatch``, socket configuration fallbacks to use the ``tls_context`` or
+   * ``transport_socket`` specified in this cluster.
    * 
    * This field allows gradual and flexible transport socket configuration changes.
    * 
@@ -1592,8 +1707,8 @@ export interface Cluster {
    * 
    * Then the xDS server can configure the CDS to a client, Envoy A, to send mutual TLS
    * traffic for endpoints with "acceptMTLS": "true", by adding a corresponding
-   * *TransportSocketMatch* in this field. Other client Envoys receive CDS without
-   * *transport_socket_match* set, and still send plain text traffic to the same cluster.
+   * ``TransportSocketMatch`` in this field. Other client Envoys receive CDS without
+   * ``transport_socket_match`` set, and still send plain text traffic to the same cluster.
    * 
    * This field can be used to specify custom transport socket configurations for health
    * checks by adding matching key/value pairs in a health check's
@@ -1615,10 +1730,7 @@ export interface Cluster {
   'dns_failure_refresh_rate'?: (_envoy_config_cluster_v3_Cluster_RefreshRate | null);
   /**
    * Always use TCP queries instead of UDP queries for DNS lookups.
-   * Setting this value causes failure if the
-   * ``envoy.restart_features.use_apple_api_for_dns_lookups`` runtime value is true during
-   * server startup. Apple' API only uses UDP for DNS resolution.
-   * This field is deprecated in favor of *dns_resolution_config*
+   * This field is deprecated in favor of ``dns_resolution_config``
    * which aggregates all of the DNS resolver configuration in a single message.
    */
   'use_tcp_for_dns_lookups'?: (boolean);
@@ -1644,7 +1756,7 @@ export interface Cluster {
    * 
    * .. attention::
    * 
-   * This field has been deprecated in favor of `timeout_budgets`, part of
+   * This field has been deprecated in favor of ``timeout_budgets``, part of
    * :ref:`track_cluster_stats <envoy_v3_api_field_config.cluster.v3.Cluster.track_cluster_stats>`.
    */
   'track_timeout_budgets'?: (boolean);
@@ -1655,7 +1767,7 @@ export interface Cluster {
    * TCP upstreams.
    * 
    * For HTTP traffic, Envoy will generally take downstream HTTP and send it upstream as upstream
-   * HTTP, using the http connection pool and the codec from `http2_protocol_options`
+   * HTTP, using the http connection pool and the codec from ``http2_protocol_options``
    * 
    * For routes where CONNECT termination is configured, Envoy will take downstream CONNECT
    * requests and forward the CONNECT payload upstream over raw TCP using the tcp connection pool.
@@ -1678,7 +1790,7 @@ export interface Cluster {
    */
   'preconnect_policy'?: (_envoy_config_cluster_v3_Cluster_PreconnectPolicy | null);
   /**
-   * If `connection_pool_per_downstream_connection` is true, the cluster will use a separate
+   * If ``connection_pool_per_downstream_connection`` is true, the cluster will use a separate
    * connection pool for every downstream connection
    */
   'connection_pool_per_downstream_connection'?: (boolean);
@@ -1688,15 +1800,15 @@ export interface Cluster {
   'maglev_lb_config'?: (_envoy_config_cluster_v3_Cluster_MaglevLbConfig | null);
   /**
    * DNS resolution configuration which includes the underlying dns resolver addresses and options.
-   * *dns_resolution_config* will be deprecated once
-   * :ref:'typed_dns_resolver_config <envoy_v3_api_field_config.cluster.v3.Cluster.typed_dns_resolver_config>'
-   * is fully supported.
+   * This field is deprecated in favor of
+   * :ref:`typed_dns_resolver_config <envoy_v3_api_field_config.cluster.v3.Cluster.typed_dns_resolver_config>`.
    */
   'dns_resolution_config'?: (_envoy_config_core_v3_DnsResolutionConfig | null);
   /**
    * Optional configuration for having cluster readiness block on warm-up. Currently, only applicable for
    * :ref:`STRICT_DNS<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.STRICT_DNS>`,
-   * or :ref:`LOGICAL_DNS<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.LOGICAL_DNS>`.
+   * or :ref:`LOGICAL_DNS<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.LOGICAL_DNS>`,
+   * or :ref:`Redis Cluster<arch_overview_redis>`.
    * If true, cluster readiness blocks on warm-up. If false, the cluster will complete
    * initialization whether or not warm-up has completed. Defaults to true.
    */
@@ -1704,16 +1816,15 @@ export interface Cluster {
   /**
    * DNS resolver type configuration extension. This extension can be used to configure c-ares, apple,
    * or any other DNS resolver types and the related parameters.
-   * For example, an object of :ref:`DnsResolutionConfig <envoy_v3_api_msg_config.core.v3.DnsResolutionConfig>`
-   * can be packed into this *typed_dns_resolver_config*. This configuration will replace the
-   * :ref:'dns_resolution_config <envoy_v3_api_field_config.cluster.v3.Cluster.dns_resolution_config>'
-   * configuration eventually.
-   * TODO(yanjunxiang): Investigate the deprecation plan for *dns_resolution_config*.
-   * During the transition period when both *dns_resolution_config* and *typed_dns_resolver_config* exists,
-   * this configuration is optional.
-   * When *typed_dns_resolver_config* is in place, Envoy will use it and ignore *dns_resolution_config*.
-   * When *typed_dns_resolver_config* is missing, the default behavior is in place.
-   * [#not-implemented-hide:]
+   * For example, an object of
+   * :ref:`CaresDnsResolverConfig <envoy_v3_api_msg_extensions.network.dns_resolver.cares.v3.CaresDnsResolverConfig>`
+   * can be packed into this ``typed_dns_resolver_config``. This configuration replaces the
+   * :ref:`dns_resolution_config <envoy_v3_api_field_config.cluster.v3.Cluster.dns_resolution_config>`
+   * configuration.
+   * During the transition period when both ``dns_resolution_config`` and ``typed_dns_resolver_config`` exists,
+   * when ``typed_dns_resolver_config`` is in place, Envoy will use it and ignore ``dns_resolution_config``.
+   * When ``typed_dns_resolver_config`` is missing, the default behavior is in place.
+   * [#extension-category: envoy.network.dns_resolver]
    */
   'typed_dns_resolver_config'?: (_envoy_config_core_v3_TypedExtensionConfig | null);
   /**
@@ -1808,7 +1919,7 @@ export interface Cluster__Output {
    * set so that Envoy will assume that the upstream supports HTTP/2 when
    * making new HTTP connection pool connections. Currently, Envoy only
    * supports prior knowledge for upstream connections. Even if TLS is used
-   * with ALPN, `http2_protocol_options` must be specified. As an aside this allows HTTP/2
+   * with ALPN, ``http2_protocol_options`` must be specified. As an aside this allows HTTP/2
    * connections to happen over plain text.
    * This has been deprecated in favor of http2_protocol_options fields in the
    * :ref:`http_protocol_options <envoy_v3_api_msg_extensions.upstreams.http.v3.HttpProtocolOptions>`
@@ -1848,10 +1959,7 @@ export interface Cluster__Output {
    * :ref:`STRICT_DNS<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.STRICT_DNS>`
    * and :ref:`LOGICAL_DNS<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.LOGICAL_DNS>`
    * this setting is ignored.
-   * Setting this value causes failure if the
-   * ``envoy.restart_features.use_apple_api_for_dns_lookups`` runtime value is true during
-   * server startup. Apple's API only allows overriding DNS resolvers via system settings.
-   * This field is deprecated in favor of *dns_resolution_config*
+   * This field is deprecated in favor of ``dns_resolution_config``
    * which aggregates all of the DNS resolver configuration in a single message.
    */
   'dns_resolvers': (_envoy_config_core_v3_Address__Output)[];
@@ -1893,8 +2001,8 @@ export interface Cluster__Output {
   'ring_hash_lb_config'?: (_envoy_config_cluster_v3_Cluster_RingHashLbConfig__Output | null);
   /**
    * Optional custom transport socket implementation to use for upstream connections.
-   * To setup TLS, set a transport socket with name `envoy.transport_sockets.tls` and
-   * :ref:`UpstreamTlsContexts <envoy_v3_api_msg_extensions.transport_sockets.tls.v3.UpstreamTlsContext>` in the `typed_config`.
+   * To setup TLS, set a transport socket with name ``envoy.transport_sockets.tls`` and
+   * :ref:`UpstreamTlsContexts <envoy_v3_api_msg_extensions.transport_sockets.tls.v3.UpstreamTlsContext>` in the ``typed_config``.
    * If no transport socket configuration is specified, new connections
    * will be set up with plaintext.
    */
@@ -1904,7 +2012,7 @@ export interface Cluster__Output {
    * cluster. It can be used for stats, logging, and varying filter behavior.
    * Fields should use reverse DNS notation to denote which entity within Envoy
    * will need the information. For instance, if the metadata is intended for
-   * the Router filter, the filter name should be specified as *envoy.filters.http.router*.
+   * the Router filter, the filter name should be specified as ``envoy.filters.http.router``.
    */
   'metadata': (_envoy_config_core_v3_Metadata__Output | null);
   /**
@@ -1925,11 +2033,9 @@ export interface Cluster__Output {
    * emitting stats for the cluster and access logging the cluster name. This will appear as
    * additional information in configuration dumps of a cluster's current status as
    * :ref:`observability_name <envoy_v3_api_field_admin.v3.ClusterStatus.observability_name>`
-   * and as an additional tag "upstream_cluster.name" while tracing. Note: access logging using
-   * this field is presently enabled with runtime feature
-   * `envoy.reloadable_features.use_observable_cluster_name`. Any ``:`` in the name will be
-   * converted to ``_`` when emitting statistics. This should not be confused with :ref:`Router
-   * Filter Header <config_http_filters_router_x-envoy-upstream-alt-stat-name>`.
+   * and as an additional tag "upstream_cluster.name" while tracing. Note: Any ``:`` in the name
+   * will be converted to ``_`` when emitting statistics. This should not be confused with
+   * :ref:`Router Filter Header <config_http_filters_router_x-envoy-upstream-alt-stat-name>`.
    */
   'alt_stat_name': (string);
   /**
@@ -1976,7 +2082,7 @@ export interface Cluster__Output {
    * :ref:`STATIC<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.STATIC>`,
    * :ref:`STRICT_DNS<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.STRICT_DNS>`
    * or :ref:`LOGICAL_DNS<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.LOGICAL_DNS>` clusters.
-   * This field supersedes the *hosts* field in the v2 API.
+   * This field supersedes the ``hosts`` field in the v2 API.
    * 
    * .. attention::
    * 
@@ -2017,9 +2123,8 @@ export interface Cluster__Output {
    */
   'filters': (_envoy_config_cluster_v3_Filter__Output)[];
   /**
-   * New mechanism for LB policy configuration. Used only if the
-   * :ref:`lb_policy<envoy_v3_api_field_config.cluster.v3.Cluster.lb_policy>` field has the value
-   * :ref:`LOAD_BALANCING_POLICY_CONFIG<envoy_v3_api_enum_value_config.cluster.v3.Cluster.LbPolicy.LOAD_BALANCING_POLICY_CONFIG>`.
+   * If this field is set and is supported by the client, it will supersede the value of
+   * :ref:`lb_policy<envoy_v3_api_field_config.cluster.v3.Cluster.lb_policy>`.
    */
   'load_balancing_policy': (_envoy_config_cluster_v3_LoadBalancingPolicy__Output | null);
   /**
@@ -2041,7 +2146,7 @@ export interface Cluster__Output {
   'lrs_server': (_envoy_config_core_v3_ConfigSource__Output | null);
   /**
    * Configuration to use different transport sockets for different endpoints.
-   * The entry of *envoy.transport_socket_match* in the
+   * The entry of ``envoy.transport_socket_match`` in the
    * :ref:`LbEndpoint.Metadata <envoy_v3_api_field_config.endpoint.v3.LbEndpoint.metadata>`
    * is used to match against the transport sockets as they appear in the list. The first
    * :ref:`match <envoy_v3_api_msg_config.cluster.v3.Cluster.TransportSocketMatch>` is used.
@@ -2061,16 +2166,16 @@ export interface Cluster__Output {
    * transport_socket:
    * name: envoy.transport_sockets.raw_buffer
    * 
-   * Connections to the endpoints whose metadata value under *envoy.transport_socket_match*
+   * Connections to the endpoints whose metadata value under ``envoy.transport_socket_match``
    * having "acceptMTLS"/"true" key/value pair use the "enableMTLS" socket configuration.
    * 
    * If a :ref:`socket match <envoy_v3_api_msg_config.cluster.v3.Cluster.TransportSocketMatch>` with empty match
    * criteria is provided, that always match any endpoint. For example, the "defaultToPlaintext"
    * socket match in case above.
    * 
-   * If an endpoint metadata's value under *envoy.transport_socket_match* does not match any
-   * *TransportSocketMatch*, socket configuration fallbacks to use the *tls_context* or
-   * *transport_socket* specified in this cluster.
+   * If an endpoint metadata's value under ``envoy.transport_socket_match`` does not match any
+   * ``TransportSocketMatch``, socket configuration fallbacks to use the ``tls_context`` or
+   * ``transport_socket`` specified in this cluster.
    * 
    * This field allows gradual and flexible transport socket configuration changes.
    * 
@@ -2081,8 +2186,8 @@ export interface Cluster__Output {
    * 
    * Then the xDS server can configure the CDS to a client, Envoy A, to send mutual TLS
    * traffic for endpoints with "acceptMTLS": "true", by adding a corresponding
-   * *TransportSocketMatch* in this field. Other client Envoys receive CDS without
-   * *transport_socket_match* set, and still send plain text traffic to the same cluster.
+   * ``TransportSocketMatch`` in this field. Other client Envoys receive CDS without
+   * ``transport_socket_match`` set, and still send plain text traffic to the same cluster.
    * 
    * This field can be used to specify custom transport socket configurations for health
    * checks by adding matching key/value pairs in a health check's
@@ -2104,10 +2209,7 @@ export interface Cluster__Output {
   'dns_failure_refresh_rate': (_envoy_config_cluster_v3_Cluster_RefreshRate__Output | null);
   /**
    * Always use TCP queries instead of UDP queries for DNS lookups.
-   * Setting this value causes failure if the
-   * ``envoy.restart_features.use_apple_api_for_dns_lookups`` runtime value is true during
-   * server startup. Apple' API only uses UDP for DNS resolution.
-   * This field is deprecated in favor of *dns_resolution_config*
+   * This field is deprecated in favor of ``dns_resolution_config``
    * which aggregates all of the DNS resolver configuration in a single message.
    */
   'use_tcp_for_dns_lookups': (boolean);
@@ -2133,7 +2235,7 @@ export interface Cluster__Output {
    * 
    * .. attention::
    * 
-   * This field has been deprecated in favor of `timeout_budgets`, part of
+   * This field has been deprecated in favor of ``timeout_budgets``, part of
    * :ref:`track_cluster_stats <envoy_v3_api_field_config.cluster.v3.Cluster.track_cluster_stats>`.
    */
   'track_timeout_budgets': (boolean);
@@ -2144,7 +2246,7 @@ export interface Cluster__Output {
    * TCP upstreams.
    * 
    * For HTTP traffic, Envoy will generally take downstream HTTP and send it upstream as upstream
-   * HTTP, using the http connection pool and the codec from `http2_protocol_options`
+   * HTTP, using the http connection pool and the codec from ``http2_protocol_options``
    * 
    * For routes where CONNECT termination is configured, Envoy will take downstream CONNECT
    * requests and forward the CONNECT payload upstream over raw TCP using the tcp connection pool.
@@ -2167,7 +2269,7 @@ export interface Cluster__Output {
    */
   'preconnect_policy': (_envoy_config_cluster_v3_Cluster_PreconnectPolicy__Output | null);
   /**
-   * If `connection_pool_per_downstream_connection` is true, the cluster will use a separate
+   * If ``connection_pool_per_downstream_connection`` is true, the cluster will use a separate
    * connection pool for every downstream connection
    */
   'connection_pool_per_downstream_connection': (boolean);
@@ -2177,15 +2279,15 @@ export interface Cluster__Output {
   'maglev_lb_config'?: (_envoy_config_cluster_v3_Cluster_MaglevLbConfig__Output | null);
   /**
    * DNS resolution configuration which includes the underlying dns resolver addresses and options.
-   * *dns_resolution_config* will be deprecated once
-   * :ref:'typed_dns_resolver_config <envoy_v3_api_field_config.cluster.v3.Cluster.typed_dns_resolver_config>'
-   * is fully supported.
+   * This field is deprecated in favor of
+   * :ref:`typed_dns_resolver_config <envoy_v3_api_field_config.cluster.v3.Cluster.typed_dns_resolver_config>`.
    */
   'dns_resolution_config': (_envoy_config_core_v3_DnsResolutionConfig__Output | null);
   /**
    * Optional configuration for having cluster readiness block on warm-up. Currently, only applicable for
    * :ref:`STRICT_DNS<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.STRICT_DNS>`,
-   * or :ref:`LOGICAL_DNS<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.LOGICAL_DNS>`.
+   * or :ref:`LOGICAL_DNS<envoy_v3_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.LOGICAL_DNS>`,
+   * or :ref:`Redis Cluster<arch_overview_redis>`.
    * If true, cluster readiness blocks on warm-up. If false, the cluster will complete
    * initialization whether or not warm-up has completed. Defaults to true.
    */
@@ -2193,16 +2295,15 @@ export interface Cluster__Output {
   /**
    * DNS resolver type configuration extension. This extension can be used to configure c-ares, apple,
    * or any other DNS resolver types and the related parameters.
-   * For example, an object of :ref:`DnsResolutionConfig <envoy_v3_api_msg_config.core.v3.DnsResolutionConfig>`
-   * can be packed into this *typed_dns_resolver_config*. This configuration will replace the
-   * :ref:'dns_resolution_config <envoy_v3_api_field_config.cluster.v3.Cluster.dns_resolution_config>'
-   * configuration eventually.
-   * TODO(yanjunxiang): Investigate the deprecation plan for *dns_resolution_config*.
-   * During the transition period when both *dns_resolution_config* and *typed_dns_resolver_config* exists,
-   * this configuration is optional.
-   * When *typed_dns_resolver_config* is in place, Envoy will use it and ignore *dns_resolution_config*.
-   * When *typed_dns_resolver_config* is missing, the default behavior is in place.
-   * [#not-implemented-hide:]
+   * For example, an object of
+   * :ref:`CaresDnsResolverConfig <envoy_v3_api_msg_extensions.network.dns_resolver.cares.v3.CaresDnsResolverConfig>`
+   * can be packed into this ``typed_dns_resolver_config``. This configuration replaces the
+   * :ref:`dns_resolution_config <envoy_v3_api_field_config.cluster.v3.Cluster.dns_resolution_config>`
+   * configuration.
+   * During the transition period when both ``dns_resolution_config`` and ``typed_dns_resolver_config`` exists,
+   * when ``typed_dns_resolver_config`` is in place, Envoy will use it and ignore ``dns_resolution_config``.
+   * When ``typed_dns_resolver_config`` is missing, the default behavior is in place.
+   * [#extension-category: envoy.network.dns_resolver]
    */
   'typed_dns_resolver_config': (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
   /**

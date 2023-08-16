@@ -12,9 +12,10 @@ import type { ResponseFlagFilter as _envoy_config_accesslog_v3_ResponseFlagFilte
 import type { GrpcStatusFilter as _envoy_config_accesslog_v3_GrpcStatusFilter, GrpcStatusFilter__Output as _envoy_config_accesslog_v3_GrpcStatusFilter__Output } from '../../../../envoy/config/accesslog/v3/GrpcStatusFilter';
 import type { ExtensionFilter as _envoy_config_accesslog_v3_ExtensionFilter, ExtensionFilter__Output as _envoy_config_accesslog_v3_ExtensionFilter__Output } from '../../../../envoy/config/accesslog/v3/ExtensionFilter';
 import type { MetadataFilter as _envoy_config_accesslog_v3_MetadataFilter, MetadataFilter__Output as _envoy_config_accesslog_v3_MetadataFilter__Output } from '../../../../envoy/config/accesslog/v3/MetadataFilter';
+import type { LogTypeFilter as _envoy_config_accesslog_v3_LogTypeFilter, LogTypeFilter__Output as _envoy_config_accesslog_v3_LogTypeFilter__Output } from '../../../../envoy/config/accesslog/v3/LogTypeFilter';
 
 /**
- * [#next-free-field: 13]
+ * [#next-free-field: 14]
  */
 export interface AccessLogFilter {
   /**
@@ -59,17 +60,22 @@ export interface AccessLogFilter {
   'grpc_status_filter'?: (_envoy_config_accesslog_v3_GrpcStatusFilter | null);
   /**
    * Extension filter.
+   * [#extension-category: envoy.access_loggers.extension_filters]
    */
   'extension_filter'?: (_envoy_config_accesslog_v3_ExtensionFilter | null);
   /**
    * Metadata Filter
    */
   'metadata_filter'?: (_envoy_config_accesslog_v3_MetadataFilter | null);
-  'filter_specifier'?: "status_code_filter"|"duration_filter"|"not_health_check_filter"|"traceable_filter"|"runtime_filter"|"and_filter"|"or_filter"|"header_filter"|"response_flag_filter"|"grpc_status_filter"|"extension_filter"|"metadata_filter";
+  /**
+   * Log Type Filter
+   */
+  'log_type_filter'?: (_envoy_config_accesslog_v3_LogTypeFilter | null);
+  'filter_specifier'?: "status_code_filter"|"duration_filter"|"not_health_check_filter"|"traceable_filter"|"runtime_filter"|"and_filter"|"or_filter"|"header_filter"|"response_flag_filter"|"grpc_status_filter"|"extension_filter"|"metadata_filter"|"log_type_filter";
 }
 
 /**
- * [#next-free-field: 13]
+ * [#next-free-field: 14]
  */
 export interface AccessLogFilter__Output {
   /**
@@ -114,11 +120,16 @@ export interface AccessLogFilter__Output {
   'grpc_status_filter'?: (_envoy_config_accesslog_v3_GrpcStatusFilter__Output | null);
   /**
    * Extension filter.
+   * [#extension-category: envoy.access_loggers.extension_filters]
    */
   'extension_filter'?: (_envoy_config_accesslog_v3_ExtensionFilter__Output | null);
   /**
    * Metadata Filter
    */
   'metadata_filter'?: (_envoy_config_accesslog_v3_MetadataFilter__Output | null);
-  'filter_specifier': "status_code_filter"|"duration_filter"|"not_health_check_filter"|"traceable_filter"|"runtime_filter"|"and_filter"|"or_filter"|"header_filter"|"response_flag_filter"|"grpc_status_filter"|"extension_filter"|"metadata_filter";
+  /**
+   * Log Type Filter
+   */
+  'log_type_filter'?: (_envoy_config_accesslog_v3_LogTypeFilter__Output | null);
+  'filter_specifier': "status_code_filter"|"duration_filter"|"not_health_check_filter"|"traceable_filter"|"runtime_filter"|"and_filter"|"or_filter"|"header_filter"|"response_flag_filter"|"grpc_status_filter"|"extension_filter"|"metadata_filter"|"log_type_filter";
 }

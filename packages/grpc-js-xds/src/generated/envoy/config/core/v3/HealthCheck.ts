@@ -5,10 +5,13 @@ import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output a
 import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../../google/protobuf/BoolValue';
 import type { EventServiceConfig as _envoy_config_core_v3_EventServiceConfig, EventServiceConfig__Output as _envoy_config_core_v3_EventServiceConfig__Output } from '../../../../envoy/config/core/v3/EventServiceConfig';
 import type { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_Struct__Output } from '../../../../google/protobuf/Struct';
+import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig, TypedExtensionConfig__Output as _envoy_config_core_v3_TypedExtensionConfig__Output } from '../../../../envoy/config/core/v3/TypedExtensionConfig';
+import type { UInt64Value as _google_protobuf_UInt64Value, UInt64Value__Output as _google_protobuf_UInt64Value__Output } from '../../../../google/protobuf/UInt64Value';
 import type { HeaderValueOption as _envoy_config_core_v3_HeaderValueOption, HeaderValueOption__Output as _envoy_config_core_v3_HeaderValueOption__Output } from '../../../../envoy/config/core/v3/HeaderValueOption';
 import type { Int64Range as _envoy_type_v3_Int64Range, Int64Range__Output as _envoy_type_v3_Int64Range__Output } from '../../../../envoy/type/v3/Int64Range';
 import type { CodecClientType as _envoy_type_v3_CodecClientType } from '../../../../envoy/type/v3/CodecClientType';
 import type { StringMatcher as _envoy_type_matcher_v3_StringMatcher, StringMatcher__Output as _envoy_type_matcher_v3_StringMatcher__Output } from '../../../../envoy/type/matcher/v3/StringMatcher';
+import type { RequestMethod as _envoy_config_core_v3_RequestMethod } from '../../../../envoy/config/core/v3/RequestMethod';
 import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
 import type { Long } from '@grpc/proto-loader';
 
@@ -68,6 +71,13 @@ export interface _envoy_config_core_v3_HealthCheck_GrpcHealthCheck {
    * the :ref:`hostname <envoy_v3_api_field_config.endpoint.v3.Endpoint.HealthCheckConfig.hostname>` field.
    */
   'authority'?: (string);
+  /**
+   * Specifies a list of key-value pairs that should be added to the metadata of each GRPC call
+   * that is sent to the health checked cluster. For more information, including details on header value syntax,
+   * see the documentation on :ref:`custom request headers
+   * <config_http_conn_man_headers_custom_request_headers>`.
+   */
+  'initial_metadata'?: (_envoy_config_core_v3_HeaderValueOption)[];
 }
 
 /**
@@ -92,10 +102,17 @@ export interface _envoy_config_core_v3_HealthCheck_GrpcHealthCheck__Output {
    * the :ref:`hostname <envoy_v3_api_field_config.endpoint.v3.Endpoint.HealthCheckConfig.hostname>` field.
    */
   'authority': (string);
+  /**
+   * Specifies a list of key-value pairs that should be added to the metadata of each GRPC call
+   * that is sent to the health checked cluster. For more information, including details on header value syntax,
+   * see the documentation on :ref:`custom request headers
+   * <config_http_conn_man_headers_custom_request_headers>`.
+   */
+  'initial_metadata': (_envoy_config_core_v3_HeaderValueOption__Output)[];
 }
 
 /**
- * [#next-free-field: 13]
+ * [#next-free-field: 15]
  */
 export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck {
   /**
@@ -107,7 +124,7 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck {
   'host'?: (string);
   /**
    * Specifies the HTTP path that will be requested during health checking. For example
-   * * /healthcheck*.
+   * ``/healthcheck``.
    */
   'path'?: (string);
   /**
@@ -115,9 +132,22 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck {
    */
   'send'?: (_envoy_config_core_v3_HealthCheck_Payload | null);
   /**
-   * [#not-implemented-hide:] HTTP specific response.
+   * Specifies a list of HTTP expected responses to match in the first ``response_buffer_size`` bytes of the response body.
+   * If it is set, both the expected response check and status code determine the health check.
+   * When checking the response, “fuzzy” matching is performed such that each payload block must be found,
+   * and in the order specified, but not necessarily contiguous.
+   * 
+   * .. note::
+   * 
+   * It is recommended to set ``response_buffer_size`` based on the total Payload size for efficiency.
+   * The default buffer size is 1024 bytes when it is not set.
    */
-  'receive'?: (_envoy_config_core_v3_HealthCheck_Payload | null);
+  'receive'?: (_envoy_config_core_v3_HealthCheck_Payload)[];
+  /**
+   * Specifies the size of response buffer in bytes that is used to Payload match.
+   * The default value is 1024. Setting to 0 implies that the Payload will be matched against the entire response.
+   */
+  'response_buffer_size'?: (_google_protobuf_UInt64Value | null);
   /**
    * Specifies a list of HTTP headers that should be added to each request that is sent to the
    * health checked cluster. For more information, including details on header value syntax, see
@@ -161,10 +191,17 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck {
    * <arch_overview_health_checking_identity>` for more information.
    */
   'service_name_matcher'?: (_envoy_type_matcher_v3_StringMatcher | null);
+  /**
+   * HTTP Method that will be used for health checking, default is "GET".
+   * GET, HEAD, POST, PUT, DELETE, OPTIONS, TRACE, PATCH methods are supported, but making request body is not supported.
+   * CONNECT method is disallowed because it is not appropriate for health check request.
+   * If a non-200 response is expected by the method, it needs to be set in :ref:`expected_statuses <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.expected_statuses>`.
+   */
+  'method'?: (_envoy_config_core_v3_RequestMethod | keyof typeof _envoy_config_core_v3_RequestMethod);
 }
 
 /**
- * [#next-free-field: 13]
+ * [#next-free-field: 15]
  */
 export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck__Output {
   /**
@@ -176,7 +213,7 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck__Output {
   'host': (string);
   /**
    * Specifies the HTTP path that will be requested during health checking. For example
-   * * /healthcheck*.
+   * ``/healthcheck``.
    */
   'path': (string);
   /**
@@ -184,9 +221,22 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck__Output {
    */
   'send': (_envoy_config_core_v3_HealthCheck_Payload__Output | null);
   /**
-   * [#not-implemented-hide:] HTTP specific response.
+   * Specifies a list of HTTP expected responses to match in the first ``response_buffer_size`` bytes of the response body.
+   * If it is set, both the expected response check and status code determine the health check.
+   * When checking the response, “fuzzy” matching is performed such that each payload block must be found,
+   * and in the order specified, but not necessarily contiguous.
+   * 
+   * .. note::
+   * 
+   * It is recommended to set ``response_buffer_size`` based on the total Payload size for efficiency.
+   * The default buffer size is 1024 bytes when it is not set.
    */
-  'receive': (_envoy_config_core_v3_HealthCheck_Payload__Output | null);
+  'receive': (_envoy_config_core_v3_HealthCheck_Payload__Output)[];
+  /**
+   * Specifies the size of response buffer in bytes that is used to Payload match.
+   * The default value is 1024. Setting to 0 implies that the Payload will be matched against the entire response.
+   */
+  'response_buffer_size': (_google_protobuf_UInt64Value__Output | null);
   /**
    * Specifies a list of HTTP headers that should be added to each request that is sent to the
    * health checked cluster. For more information, including details on header value syntax, see
@@ -230,6 +280,13 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck__Output {
    * <arch_overview_health_checking_identity>` for more information.
    */
   'service_name_matcher': (_envoy_type_matcher_v3_StringMatcher__Output | null);
+  /**
+   * HTTP Method that will be used for health checking, default is "GET".
+   * GET, HEAD, POST, PUT, DELETE, OPTIONS, TRACE, PATCH methods are supported, but making request body is not supported.
+   * CONNECT method is disallowed because it is not appropriate for health check request.
+   * If a non-200 response is expected by the method, it needs to be set in :ref:`expected_statuses <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.expected_statuses>`.
+   */
+  'method': (keyof typeof _envoy_config_core_v3_RequestMethod);
 }
 
 /**
@@ -241,7 +298,7 @@ export interface _envoy_config_core_v3_HealthCheck_Payload {
    */
   'text'?: (string);
   /**
-   * [#not-implemented-hide:] Binary payload.
+   * Binary payload.
    */
   'binary'?: (Buffer | Uint8Array | string);
   'payload'?: "text"|"binary";
@@ -256,7 +313,7 @@ export interface _envoy_config_core_v3_HealthCheck_Payload__Output {
    */
   'text'?: (string);
   /**
-   * [#not-implemented-hide:] Binary payload.
+   * Binary payload.
    */
   'binary'?: (Buffer);
   'payload': "text"|"binary";
@@ -289,7 +346,7 @@ export interface _envoy_config_core_v3_HealthCheck_TcpHealthCheck {
   'send'?: (_envoy_config_core_v3_HealthCheck_Payload | null);
   /**
    * When checking the response, “fuzzy” matching is performed such that each
-   * binary block must be found, and in the order specified, but not
+   * payload block must be found, and in the order specified, but not
    * necessarily contiguous.
    */
   'receive'?: (_envoy_config_core_v3_HealthCheck_Payload)[];
@@ -302,7 +359,7 @@ export interface _envoy_config_core_v3_HealthCheck_TcpHealthCheck__Output {
   'send': (_envoy_config_core_v3_HealthCheck_Payload__Output | null);
   /**
    * When checking the response, “fuzzy” matching is performed such that each
-   * binary block must be found, and in the order specified, but not
+   * payload block must be found, and in the order specified, but not
    * necessarily contiguous.
    */
   'receive': (_envoy_config_core_v3_HealthCheck_Payload__Output)[];
@@ -341,7 +398,7 @@ export interface _envoy_config_core_v3_HealthCheck_TlsOptions__Output {
 }
 
 /**
- * [#next-free-field: 25]
+ * [#next-free-field: 26]
  */
 export interface HealthCheck {
   /**
@@ -360,7 +417,7 @@ export interface HealthCheck {
   'interval_jitter'?: (_google_protobuf_Duration | null);
   /**
    * The number of unhealthy health checks required before a host is marked
-   * unhealthy. Note that for *http* health checking if a host responds with a code not in
+   * unhealthy. Note that for ``http`` health checking if a host responds with a code not in
    * :ref:`expected_statuses <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.expected_statuses>`
    * or :ref:`retriable_statuses <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.retriable_statuses>`,
    * this threshold is ignored and the host is considered immediately unhealthy.
@@ -433,14 +490,19 @@ export interface HealthCheck {
    */
   'healthy_edge_interval'?: (_google_protobuf_Duration | null);
   /**
+   * .. attention::
+   * This field is deprecated in favor of the extension
+   * :ref:`event_logger <envoy_v3_api_field_config.core.v3.HealthCheck.event_logger>` and
+   * :ref:`event_log_path <envoy_v3_api_field_extensions.health_check.event_sinks.file.v3.HealthCheckEventFileSink.event_log_path>`
+   * in the file sink extension.
+   * 
    * Specifies the path to the :ref:`health check event log <arch_overview_health_check_logging>`.
-   * If empty, no event log will be written.
    */
   'event_log_path'?: (string);
   /**
    * An optional jitter amount as a percentage of interval_ms. If specified,
-   * during every interval Envoy will add interval_ms *
-   * interval_jitter_percent / 100 to the wait time.
+   * during every interval Envoy will add ``interval_ms`` *
+   * ``interval_jitter_percent`` / 100 to the wait time.
    * 
    * If interval_jitter_ms and interval_jitter_percent are both set, both of
    * them will be used to increase the wait time.
@@ -490,7 +552,7 @@ export interface HealthCheck {
    * name: envoy.transport_sockets.tls
    * config: { ... } # tls socket configuration
    * 
-   * If this field is set, then for health checks it will supersede an entry of *envoy.transport_socket* in the
+   * If this field is set, then for health checks it will supersede an entry of ``envoy.transport_socket`` in the
    * :ref:`LbEndpoint.Metadata <envoy_v3_api_field_config.endpoint.v3.LbEndpoint.metadata>`.
    * This allows using different transport socket capabilities for health checking versus proxying to the
    * endpoint.
@@ -507,7 +569,7 @@ export interface HealthCheck {
    * (including new hosts) when the cluster has received no traffic.
    * 
    * This is useful for when we want to send frequent health checks with
-   * `no_traffic_interval` but then revert to lower frequency `no_traffic_healthy_interval` once
+   * ``no_traffic_interval`` but then revert to lower frequency ``no_traffic_healthy_interval`` once
    * a host in the cluster is marked as healthy.
    * 
    * Once a cluster has been used for traffic routing, Envoy will shift back to using the
@@ -517,11 +579,16 @@ export interface HealthCheck {
    * no traffic interval and send that interval regardless of health state.
    */
   'no_traffic_healthy_interval'?: (_google_protobuf_Duration | null);
+  /**
+   * A list of event log sinks to process the health check event.
+   * [#extension-category: envoy.health_check.event_sinks]
+   */
+  'event_logger'?: (_envoy_config_core_v3_TypedExtensionConfig)[];
   'health_checker'?: "http_health_check"|"tcp_health_check"|"grpc_health_check"|"custom_health_check";
 }
 
 /**
- * [#next-free-field: 25]
+ * [#next-free-field: 26]
  */
 export interface HealthCheck__Output {
   /**
@@ -540,7 +607,7 @@ export interface HealthCheck__Output {
   'interval_jitter': (_google_protobuf_Duration__Output | null);
   /**
    * The number of unhealthy health checks required before a host is marked
-   * unhealthy. Note that for *http* health checking if a host responds with a code not in
+   * unhealthy. Note that for ``http`` health checking if a host responds with a code not in
    * :ref:`expected_statuses <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.expected_statuses>`
    * or :ref:`retriable_statuses <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.retriable_statuses>`,
    * this threshold is ignored and the host is considered immediately unhealthy.
@@ -613,14 +680,19 @@ export interface HealthCheck__Output {
    */
   'healthy_edge_interval': (_google_protobuf_Duration__Output | null);
   /**
+   * .. attention::
+   * This field is deprecated in favor of the extension
+   * :ref:`event_logger <envoy_v3_api_field_config.core.v3.HealthCheck.event_logger>` and
+   * :ref:`event_log_path <envoy_v3_api_field_extensions.health_check.event_sinks.file.v3.HealthCheckEventFileSink.event_log_path>`
+   * in the file sink extension.
+   * 
    * Specifies the path to the :ref:`health check event log <arch_overview_health_check_logging>`.
-   * If empty, no event log will be written.
    */
   'event_log_path': (string);
   /**
    * An optional jitter amount as a percentage of interval_ms. If specified,
-   * during every interval Envoy will add interval_ms *
-   * interval_jitter_percent / 100 to the wait time.
+   * during every interval Envoy will add ``interval_ms`` *
+   * ``interval_jitter_percent`` / 100 to the wait time.
    * 
    * If interval_jitter_ms and interval_jitter_percent are both set, both of
    * them will be used to increase the wait time.
@@ -670,7 +742,7 @@ export interface HealthCheck__Output {
    * name: envoy.transport_sockets.tls
    * config: { ... } # tls socket configuration
    * 
-   * If this field is set, then for health checks it will supersede an entry of *envoy.transport_socket* in the
+   * If this field is set, then for health checks it will supersede an entry of ``envoy.transport_socket`` in the
    * :ref:`LbEndpoint.Metadata <envoy_v3_api_field_config.endpoint.v3.LbEndpoint.metadata>`.
    * This allows using different transport socket capabilities for health checking versus proxying to the
    * endpoint.
@@ -687,7 +759,7 @@ export interface HealthCheck__Output {
    * (including new hosts) when the cluster has received no traffic.
    * 
    * This is useful for when we want to send frequent health checks with
-   * `no_traffic_interval` but then revert to lower frequency `no_traffic_healthy_interval` once
+   * ``no_traffic_interval`` but then revert to lower frequency ``no_traffic_healthy_interval`` once
    * a host in the cluster is marked as healthy.
    * 
    * Once a cluster has been used for traffic routing, Envoy will shift back to using the
@@ -697,5 +769,10 @@ export interface HealthCheck__Output {
    * no traffic interval and send that interval regardless of health state.
    */
   'no_traffic_healthy_interval': (_google_protobuf_Duration__Output | null);
+  /**
+   * A list of event log sinks to process the health check event.
+   * [#extension-category: envoy.health_check.event_sinks]
+   */
+  'event_logger': (_envoy_config_core_v3_TypedExtensionConfig__Output)[];
   'health_checker': "http_health_check"|"tcp_health_check"|"grpc_health_check"|"custom_health_check";
 }

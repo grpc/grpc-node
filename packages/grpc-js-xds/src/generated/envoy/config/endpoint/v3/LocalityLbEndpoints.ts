@@ -23,9 +23,8 @@ export interface _envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList__O
 
 /**
  * A group of endpoints belonging to a Locality.
- * One can have multiple LocalityLbEndpoints for a locality, but this is
- * generally only done if the different groups need to have different load
- * balancing weights or different priorities.
+ * One can have multiple LocalityLbEndpoints for a locality, but only if
+ * they have different priorities.
  * [#next-free-field: 9]
  */
 export interface LocalityLbEndpoints {
@@ -36,7 +35,7 @@ export interface LocalityLbEndpoints {
   /**
    * The group of endpoints belonging to the locality specified.
    * [#comment:TODO(adisuissa): Once LEDS is implemented this field needs to be
-   * deprecated and replaced by *load_balancer_endpoints*.]
+   * deprecated and replaced by ``load_balancer_endpoints``.]
    */
   'lb_endpoints'?: (_envoy_config_endpoint_v3_LbEndpoint)[];
   /**
@@ -76,7 +75,7 @@ export interface LocalityLbEndpoints {
   'proximity'?: (_google_protobuf_UInt32Value | null);
   /**
    * The group of endpoints belonging to the locality.
-   * [#comment:TODO(adisuissa): Once LEDS is implemented the *lb_endpoints* field
+   * [#comment:TODO(adisuissa): Once LEDS is implemented the ``lb_endpoints`` field
    * needs to be deprecated.]
    */
   'load_balancer_endpoints'?: (_envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList | null);
@@ -92,9 +91,8 @@ export interface LocalityLbEndpoints {
 
 /**
  * A group of endpoints belonging to a Locality.
- * One can have multiple LocalityLbEndpoints for a locality, but this is
- * generally only done if the different groups need to have different load
- * balancing weights or different priorities.
+ * One can have multiple LocalityLbEndpoints for a locality, but only if
+ * they have different priorities.
  * [#next-free-field: 9]
  */
 export interface LocalityLbEndpoints__Output {
@@ -105,7 +103,7 @@ export interface LocalityLbEndpoints__Output {
   /**
    * The group of endpoints belonging to the locality specified.
    * [#comment:TODO(adisuissa): Once LEDS is implemented this field needs to be
-   * deprecated and replaced by *load_balancer_endpoints*.]
+   * deprecated and replaced by ``load_balancer_endpoints``.]
    */
   'lb_endpoints': (_envoy_config_endpoint_v3_LbEndpoint__Output)[];
   /**
@@ -145,7 +143,7 @@ export interface LocalityLbEndpoints__Output {
   'proximity': (_google_protobuf_UInt32Value__Output | null);
   /**
    * The group of endpoints belonging to the locality.
-   * [#comment:TODO(adisuissa): Once LEDS is implemented the *lb_endpoints* field
+   * [#comment:TODO(adisuissa): Once LEDS is implemented the ``lb_endpoints`` field
    * needs to be deprecated.]
    */
   'load_balancer_endpoints'?: (_envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList__Output | null);

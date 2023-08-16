@@ -13,6 +13,8 @@ import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output a
 import type { RegexMatchAndSubstitute as _envoy_type_matcher_v3_RegexMatchAndSubstitute, RegexMatchAndSubstitute__Output as _envoy_type_matcher_v3_RegexMatchAndSubstitute__Output } from '../../../../envoy/type/matcher/v3/RegexMatchAndSubstitute';
 import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
 import type { InternalRedirectPolicy as _envoy_config_route_v3_InternalRedirectPolicy, InternalRedirectPolicy__Output as _envoy_config_route_v3_InternalRedirectPolicy__Output } from '../../../../envoy/config/route/v3/InternalRedirectPolicy';
+import type { ClusterSpecifierPlugin as _envoy_config_route_v3_ClusterSpecifierPlugin, ClusterSpecifierPlugin__Output as _envoy_config_route_v3_ClusterSpecifierPlugin__Output } from '../../../../envoy/config/route/v3/ClusterSpecifierPlugin';
+import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig, TypedExtensionConfig__Output as _envoy_config_core_v3_TypedExtensionConfig__Output } from '../../../../envoy/config/core/v3/TypedExtensionConfig';
 import type { RuntimeFractionalPercent as _envoy_config_core_v3_RuntimeFractionalPercent, RuntimeFractionalPercent__Output as _envoy_config_core_v3_RuntimeFractionalPercent__Output } from '../../../../envoy/config/core/v3/RuntimeFractionalPercent';
 import type { ProxyProtocolConfig as _envoy_config_core_v3_ProxyProtocolConfig, ProxyProtocolConfig__Output as _envoy_config_core_v3_ProxyProtocolConfig__Output } from '../../../../envoy/config/core/v3/ProxyProtocolConfig';
 
@@ -27,6 +29,10 @@ export enum _envoy_config_route_v3_RouteAction_ClusterNotFoundResponseCode {
    * HTTP status code - 404 Not Found.
    */
   NOT_FOUND = 1,
+  /**
+   * HTTP status code - 500 Internal Server Error.
+   */
+  INTERNAL_SERVER_ERROR = 2,
 }
 
 /**
@@ -148,8 +154,8 @@ export interface _envoy_config_route_v3_RouteAction_HashPolicy_Cookie__Output {
 export interface _envoy_config_route_v3_RouteAction_HashPolicy_FilterState {
   /**
    * The name of the Object in the per-request filterState, which is an
-   * Envoy::Http::Hashable object. If there is no data associated with the key,
-   * or the stored object is not Envoy::Http::Hashable, no hash will be produced.
+   * Envoy::Hashable object. If there is no data associated with the key,
+   * or the stored object is not Envoy::Hashable, no hash will be produced.
    */
   'key'?: (string);
 }
@@ -157,8 +163,8 @@ export interface _envoy_config_route_v3_RouteAction_HashPolicy_FilterState {
 export interface _envoy_config_route_v3_RouteAction_HashPolicy_FilterState__Output {
   /**
    * The name of the Object in the per-request filterState, which is an
-   * Envoy::Http::Hashable object. If there is no data associated with the key,
-   * or the stored object is not Envoy::Http::Hashable, no hash will be produced.
+   * Envoy::Hashable object. If there is no data associated with the key,
+   * or the stored object is not Envoy::Hashable, no hash will be produced.
    */
   'key': (string);
 }
@@ -317,12 +323,12 @@ export interface _envoy_config_route_v3_RouteAction_MaxStreamDuration {
   /**
    * If present, and the request contains a `grpc-timeout header
    * <https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md>`_, use that value as the
-   * *max_stream_duration*, but limit the applied timeout to the maximum value specified here.
-   * If set to 0, the `grpc-timeout` header is used without modification.
+   * ``max_stream_duration``, but limit the applied timeout to the maximum value specified here.
+   * If set to 0, the ``grpc-timeout`` header is used without modification.
    */
   'grpc_timeout_header_max'?: (_google_protobuf_Duration | null);
   /**
-   * If present, Envoy will adjust the timeout provided by the `grpc-timeout` header by
+   * If present, Envoy will adjust the timeout provided by the ``grpc-timeout`` header by
    * subtracting the provided duration from the header. This is useful for allowing Envoy to set
    * its global timeout to be less than that of the deadline imposed by the calling client, which
    * makes it more likely that Envoy will handle the timeout instead of having the call canceled
@@ -347,12 +353,12 @@ export interface _envoy_config_route_v3_RouteAction_MaxStreamDuration__Output {
   /**
    * If present, and the request contains a `grpc-timeout header
    * <https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md>`_, use that value as the
-   * *max_stream_duration*, but limit the applied timeout to the maximum value specified here.
-   * If set to 0, the `grpc-timeout` header is used without modification.
+   * ``max_stream_duration``, but limit the applied timeout to the maximum value specified here.
+   * If set to 0, the ``grpc-timeout`` header is used without modification.
    */
   'grpc_timeout_header_max': (_google_protobuf_Duration__Output | null);
   /**
-   * If present, Envoy will adjust the timeout provided by the `grpc-timeout` header by
+   * If present, Envoy will adjust the timeout provided by the ``grpc-timeout`` header by
    * subtracting the provided duration from the header. This is useful for allowing Envoy to set
    * its global timeout to be less than that of the deadline imposed by the calling client, which
    * makes it more likely that Envoy will handle the timeout instead of having the call canceled
@@ -386,23 +392,47 @@ export interface _envoy_config_route_v3_RouteAction_HashPolicy_QueryParameter__O
  * respond before returning the response from the primary cluster. All normal statistics are
  * collected for the shadow cluster making this feature useful for testing.
  * 
- * During shadowing, the host/authority header is altered such that *-shadow* is appended. This is
- * useful for logging. For example, *cluster1* becomes *cluster1-shadow*.
+ * During shadowing, the host/authority header is altered such that ``-shadow`` is appended. This is
+ * useful for logging. For example, ``cluster1`` becomes ``cluster1-shadow``.
  * 
  * .. note::
  * 
  * Shadowing will not be triggered if the primary cluster does not exist.
+ * 
+ * .. note::
+ * 
+ * Shadowing doesn't support Http CONNECT and upgrades.
+ * [#next-free-field: 6]
  */
 export interface _envoy_config_route_v3_RouteAction_RequestMirrorPolicy {
   /**
+   * Only one of ``cluster`` and ``cluster_header`` can be specified.
+   * [#next-major-version: Need to add back the validation rule: (validate.rules).string = {min_len: 1}]
    * Specifies the cluster that requests will be mirrored to. The cluster must
    * exist in the cluster manager configuration.
    */
   'cluster'?: (string);
   /**
+   * Only one of ``cluster`` and ``cluster_header`` can be specified.
+   * Envoy will determine the cluster to route to by reading the value of the
+   * HTTP header named by cluster_header from the request headers. Only the first value in header is used,
+   * and no shadow request will happen if the value is not found in headers. Envoy will not wait for
+   * the shadow cluster to respond before returning the response from the primary cluster.
+   * 
+   * .. attention::
+   * 
+   * Internally, Envoy always uses the HTTP/2 ``:authority`` header to represent the HTTP/1
+   * ``Host`` header. Thus, if attempting to match on ``Host``, match on ``:authority`` instead.
+   * 
+   * .. note::
+   * 
+   * If the header appears multiple times only the first value is used.
+   */
+  'cluster_header'?: (string);
+  /**
    * If not specified, all requests to the target cluster will be mirrored.
    * 
-   * If specified, this field takes precedence over the `runtime_key` field and requests must also
+   * If specified, this field takes precedence over the ``runtime_key`` field and requests must also
    * fall under the percentage of matches indicated by this field.
    * 
    * For some fraction N/D, a random number in the range [0,D) is selected. If the
@@ -422,23 +452,47 @@ export interface _envoy_config_route_v3_RouteAction_RequestMirrorPolicy {
  * respond before returning the response from the primary cluster. All normal statistics are
  * collected for the shadow cluster making this feature useful for testing.
  * 
- * During shadowing, the host/authority header is altered such that *-shadow* is appended. This is
- * useful for logging. For example, *cluster1* becomes *cluster1-shadow*.
+ * During shadowing, the host/authority header is altered such that ``-shadow`` is appended. This is
+ * useful for logging. For example, ``cluster1`` becomes ``cluster1-shadow``.
  * 
  * .. note::
  * 
  * Shadowing will not be triggered if the primary cluster does not exist.
+ * 
+ * .. note::
+ * 
+ * Shadowing doesn't support Http CONNECT and upgrades.
+ * [#next-free-field: 6]
  */
 export interface _envoy_config_route_v3_RouteAction_RequestMirrorPolicy__Output {
   /**
+   * Only one of ``cluster`` and ``cluster_header`` can be specified.
+   * [#next-major-version: Need to add back the validation rule: (validate.rules).string = {min_len: 1}]
    * Specifies the cluster that requests will be mirrored to. The cluster must
    * exist in the cluster manager configuration.
    */
   'cluster': (string);
   /**
+   * Only one of ``cluster`` and ``cluster_header`` can be specified.
+   * Envoy will determine the cluster to route to by reading the value of the
+   * HTTP header named by cluster_header from the request headers. Only the first value in header is used,
+   * and no shadow request will happen if the value is not found in headers. Envoy will not wait for
+   * the shadow cluster to respond before returning the response from the primary cluster.
+   * 
+   * .. attention::
+   * 
+   * Internally, Envoy always uses the HTTP/2 ``:authority`` header to represent the HTTP/1
+   * ``Host`` header. Thus, if attempting to match on ``Host``, match on ``:authority`` instead.
+   * 
+   * .. note::
+   * 
+   * If the header appears multiple times only the first value is used.
+   */
+  'cluster_header': (string);
+  /**
    * If not specified, all requests to the target cluster will be mirrored.
    * 
-   * If specified, this field takes precedence over the `runtime_key` field and requests must also
+   * If specified, this field takes precedence over the ``runtime_key`` field and requests must also
    * fall under the percentage of matches indicated by this field.
    * 
    * For some fraction N/D, a random number in the range [0,D) is selected. If the
@@ -509,7 +563,7 @@ export interface _envoy_config_route_v3_RouteAction_UpgradeConfig__Output {
 }
 
 /**
- * [#next-free-field: 38]
+ * [#next-free-field: 42]
  */
 export interface RouteAction {
   /**
@@ -525,8 +579,8 @@ export interface RouteAction {
    * 
    * .. attention::
    * 
-   * Internally, Envoy always uses the HTTP/2 *:authority* header to represent the HTTP/1
-   * *Host* header. Thus, if attempting to match on *Host*, match on *:authority* instead.
+   * Internally, Envoy always uses the HTTP/2 ``:authority`` header to represent the HTTP/1
+   * ``Host`` header. Thus, if attempting to match on ``Host``, match on ``:authority`` instead.
    * 
    * .. note::
    * 
@@ -546,7 +600,7 @@ export interface RouteAction {
    * in the upstream cluster with metadata matching what's set in this field will be considered
    * for load balancing. If using :ref:`weighted_clusters
    * <envoy_v3_api_field_config.route.v3.RouteAction.weighted_clusters>`, metadata will be merged, with values
-   * provided there taking precedence. The filter name should be specified as *envoy.lb*.
+   * provided there taking precedence. The filter name should be specified as ``envoy.lb``.
    */
   'metadata_match'?: (_envoy_config_core_v3_Metadata | null);
   /**
@@ -556,16 +610,16 @@ export interface RouteAction {
    * place the original path before rewrite into the :ref:`x-envoy-original-path
    * <config_http_filters_router_x-envoy-original-path>` header.
    * 
-   * Only one of *prefix_rewrite* or
-   * :ref:`regex_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.regex_rewrite>`
-   * may be specified.
+   * Only one of :ref:`regex_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.regex_rewrite>`
+   * :ref:`path_rewrite_policy <envoy_v3_api_field_config.route.v3.RouteAction.path_rewrite_policy>`,
+   * or :ref:`prefix_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.prefix_rewrite>` may be specified.
    * 
    * .. attention::
    * 
    * Pay careful attention to the use of trailing slashes in the
    * :ref:`route's match <envoy_v3_api_field_config.route.v3.Route.match>` prefix value.
    * Stripping a prefix from a path requires multiple Routes to handle all cases. For example,
-   * rewriting * /prefix* to * /* and * /prefix/etc* to * /etc* cannot be done in a single
+   * rewriting ``/prefix`` to ``/`` and ``/prefix/etc`` to ``/etc`` cannot be done in a single
    * :ref:`Route <envoy_v3_api_msg_config.route.v3.Route>`, as shown by the below config entries:
    * 
    * .. code-block:: yaml
@@ -579,21 +633,27 @@ export interface RouteAction {
    * route:
    * prefix_rewrite: "/"
    * 
-   * Having above entries in the config, requests to * /prefix* will be stripped to * /*, while
-   * requests to * /prefix/etc* will be stripped to * /etc*.
+   * Having above entries in the config, requests to ``/prefix`` will be stripped to ``/``, while
+   * requests to ``/prefix/etc`` will be stripped to ``/etc``.
    */
   'prefix_rewrite'?: (string);
   /**
    * Indicates that during forwarding, the host header will be swapped with
-   * this value.
+   * this value. Using this option will append the
+   * :ref:`config_http_conn_man_headers_x-forwarded-host` header if
+   * :ref:`append_x_forwarded_host <envoy_v3_api_field_config.route.v3.RouteAction.append_x_forwarded_host>`
+   * is set.
    */
   'host_rewrite_literal'?: (string);
   /**
    * Indicates that during forwarding, the host header will be swapped with
    * the hostname of the upstream host chosen by the cluster manager. This
    * option is applicable only when the destination cluster for a route is of
-   * type *strict_dns* or *logical_dns*. Setting this to true with other cluster
-   * types has no effect.
+   * type ``strict_dns`` or ``logical_dns``. Setting this to true with other cluster types
+   * has no effect. Using this option will append the
+   * :ref:`config_http_conn_man_headers_x-forwarded-host` header if
+   * :ref:`append_x_forwarded_host <envoy_v3_api_field_config.route.v3.RouteAction.append_x_forwarded_host>`
+   * is set.
    */
   'auto_host_rewrite'?: (_google_protobuf_BoolValue | null);
   /**
@@ -650,7 +710,16 @@ export interface RouteAction {
    */
   'hash_policy'?: (_envoy_config_route_v3_RouteAction_HashPolicy)[];
   /**
-   * Indicates that the route has a CORS policy.
+   * Indicates that the route has a CORS policy. This field is ignored if related cors policy is
+   * found in the :ref:`Route.typed_per_filter_config<envoy_v3_api_field_config.route.v3.Route.typed_per_filter_config>` or
+   * :ref:`WeightedCluster.ClusterWeight.typed_per_filter_config<envoy_v3_api_field_config.route.v3.WeightedCluster.ClusterWeight.typed_per_filter_config>`.
+   * 
+   * .. attention::
+   * 
+   * This option has been deprecated. Please use
+   * :ref:`Route.typed_per_filter_config<envoy_v3_api_field_config.route.v3.Route.typed_per_filter_config>` or
+   * :ref:`WeightedCluster.ClusterWeight.typed_per_filter_config<envoy_v3_api_field_config.route.v3.WeightedCluster.ClusterWeight.typed_per_filter_config>`
+   * to configure the CORS HTTP filter.
    */
   'cors'?: (_envoy_config_route_v3_CorsPolicy | null);
   /**
@@ -665,7 +734,7 @@ export interface RouteAction {
    * or its default value (infinity) instead of
    * :ref:`timeout <envoy_v3_api_field_config.route.v3.RouteAction.timeout>`, but limit the applied timeout
    * to the maximum value specified here. If configured as 0, the maximum allowed timeout for
-   * gRPC requests is infinity. If not configured at all, the `grpc-timeout` header is not used
+   * gRPC requests is infinity. If not configured at all, the ``grpc-timeout`` header is not used
    * and gRPC requests time out like any other requests using
    * :ref:`timeout <envoy_v3_api_field_config.route.v3.RouteAction.timeout>` or its default.
    * This can be used to prevent unexpected upstream request timeouts due to potentially long
@@ -716,7 +785,7 @@ export interface RouteAction {
   'hedge_policy'?: (_envoy_config_route_v3_HedgePolicy | null);
   /**
    * Deprecated by :ref:`grpc_timeout_header_offset <envoy_v3_api_field_config.route.v3.RouteAction.MaxStreamDuration.grpc_timeout_header_offset>`.
-   * If present, Envoy will adjust the timeout provided by the `grpc-timeout` header by subtracting
+   * If present, Envoy will adjust the timeout provided by the ``grpc-timeout`` header by subtracting
    * the provided duration from the header. This is useful in allowing Envoy to set its global
    * timeout to be less than that of the deadline imposed by the calling client, which makes it more
    * likely that Envoy will handle the timeout instead of having the call canceled by the client.
@@ -728,7 +797,10 @@ export interface RouteAction {
   /**
    * Indicates that during forwarding, the host header will be swapped with the content of given
    * downstream or :ref:`custom <config_http_conn_man_headers_custom_request_headers>` header.
-   * If header value is empty, host header is left intact.
+   * If header value is empty, host header is left intact. Using this option will append the
+   * :ref:`config_http_conn_man_headers_x-forwarded-host` header if
+   * :ref:`append_x_forwarded_host <envoy_v3_api_field_config.route.v3.RouteAction.append_x_forwarded_host>`
+   * is set.
    * 
    * .. attention::
    * 
@@ -741,7 +813,9 @@ export interface RouteAction {
    */
   'host_rewrite_header'?: (string);
   /**
-   * Indicates that the route has request mirroring policies.
+   * Specify a set of route request mirroring policies.
+   * It takes precedence over the virtual host and route config mirror policy entirely.
+   * That is, policies are not merged, the most specific non-empty one becomes the mirror policies.
    */
   'request_mirror_policies'?: (_envoy_config_route_v3_RouteAction_RequestMirrorPolicy)[];
   /**
@@ -771,8 +845,10 @@ export interface RouteAction {
    * before the rewrite into the :ref:`x-envoy-original-path
    * <config_http_filters_router_x-envoy-original-path>` header.
    * 
-   * Only one of :ref:`prefix_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.prefix_rewrite>`
-   * or *regex_rewrite* may be specified.
+   * Only one of :ref:`regex_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.regex_rewrite>`,
+   * :ref:`prefix_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.prefix_rewrite>`, or
+   * :ref:`path_rewrite_policy <envoy_v3_api_field_config.route.v3.RouteAction.path_rewrite_policy>`]
+   * may be specified.
    * 
    * Examples using Google's `RE2 <https://github.com/google/re2>`_ engine:
    * 
@@ -811,6 +887,10 @@ export interface RouteAction {
    * Indicates that during forwarding, the host header will be swapped with
    * the result of the regex substitution executed on path value with query and fragment removed.
    * This is useful for transitioning variable content between path segment and subdomain.
+   * Using this option will append the
+   * :ref:`config_http_conn_man_headers_x-forwarded-host` header if
+   * :ref:`append_x_forwarded_host <envoy_v3_api_field_config.route.v3.RouteAction.append_x_forwarded_host>`
+   * is set.
    * 
    * For example with the following config:
    * 
@@ -822,7 +902,7 @@ export interface RouteAction {
    * regex: "^/(.+)/.+$"
    * substitution: \1
    * 
-   * Would rewrite the host header to `envoyproxy.io` given the path `/envoyproxy.io/some/path`.
+   * Would rewrite the host header to ``envoyproxy.io`` given the path ``/envoyproxy.io/some/path``.
    */
   'host_rewrite_path_regex'?: (_envoy_type_matcher_v3_RegexMatchAndSubstitute | null);
   /**
@@ -830,20 +910,44 @@ export interface RouteAction {
    */
   'max_stream_duration'?: (_envoy_config_route_v3_RouteAction_MaxStreamDuration | null);
   /**
-   * [#not-implemented-hide:]
-   * Name of the cluster specifier plugin to use to determine the cluster for
-   * requests on this route. The plugin name must be defined in the associated
-   * :ref:`envoy_v3_api_field_config.route.v3.RouteConfiguration.cluster_specifier_plugins`
-   * in the
-   * :ref:`envoy_v3_api_field_config.core.v3.TypedExtensionConfig.name` field.
+   * Name of the cluster specifier plugin to use to determine the cluster for requests on this route.
+   * The cluster specifier plugin name must be defined in the associated
+   * :ref:`cluster specifier plugins <envoy_v3_api_field_config.route.v3.RouteConfiguration.cluster_specifier_plugins>`
+   * in the :ref:`name <envoy_v3_api_field_config.core.v3.TypedExtensionConfig.name>` field.
    */
   'cluster_specifier_plugin'?: (string);
-  'cluster_specifier'?: "cluster"|"cluster_header"|"weighted_clusters"|"cluster_specifier_plugin";
+  /**
+   * If set, then a host rewrite action (one of
+   * :ref:`host_rewrite_literal <envoy_v3_api_field_config.route.v3.RouteAction.host_rewrite_literal>`,
+   * :ref:`auto_host_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.auto_host_rewrite>`,
+   * :ref:`host_rewrite_header <envoy_v3_api_field_config.route.v3.RouteAction.host_rewrite_header>`, or
+   * :ref:`host_rewrite_path_regex <envoy_v3_api_field_config.route.v3.RouteAction.host_rewrite_path_regex>`)
+   * causes the original value of the host header, if any, to be appended to the
+   * :ref:`config_http_conn_man_headers_x-forwarded-host` HTTP header if it is different to the last value appended.
+   * This can be disabled by setting the runtime guard `envoy_reloadable_features_append_xfh_idempotent` to false.
+   */
+  'append_x_forwarded_host'?: (boolean);
+  /**
+   * Custom cluster specifier plugin configuration to use to determine the cluster for requests
+   * on this route.
+   */
+  'inline_cluster_specifier_plugin'?: (_envoy_config_route_v3_ClusterSpecifierPlugin | null);
+  /**
+   * Specifies how to send request over TLS early data.
+   * If absent, allows `safe HTTP requests <https://www.rfc-editor.org/rfc/rfc7231#section-4.2.1>`_ to be sent on early data.
+   * [#extension-category: envoy.route.early_data_policy]
+   */
+  'early_data_policy'?: (_envoy_config_core_v3_TypedExtensionConfig | null);
+  /**
+   * [#extension-category: envoy.path.rewrite]
+   */
+  'path_rewrite_policy'?: (_envoy_config_core_v3_TypedExtensionConfig | null);
+  'cluster_specifier'?: "cluster"|"cluster_header"|"weighted_clusters"|"cluster_specifier_plugin"|"inline_cluster_specifier_plugin";
   'host_rewrite_specifier'?: "host_rewrite_literal"|"auto_host_rewrite"|"host_rewrite_header"|"host_rewrite_path_regex";
 }
 
 /**
- * [#next-free-field: 38]
+ * [#next-free-field: 42]
  */
 export interface RouteAction__Output {
   /**
@@ -859,8 +963,8 @@ export interface RouteAction__Output {
    * 
    * .. attention::
    * 
-   * Internally, Envoy always uses the HTTP/2 *:authority* header to represent the HTTP/1
-   * *Host* header. Thus, if attempting to match on *Host*, match on *:authority* instead.
+   * Internally, Envoy always uses the HTTP/2 ``:authority`` header to represent the HTTP/1
+   * ``Host`` header. Thus, if attempting to match on ``Host``, match on ``:authority`` instead.
    * 
    * .. note::
    * 
@@ -880,7 +984,7 @@ export interface RouteAction__Output {
    * in the upstream cluster with metadata matching what's set in this field will be considered
    * for load balancing. If using :ref:`weighted_clusters
    * <envoy_v3_api_field_config.route.v3.RouteAction.weighted_clusters>`, metadata will be merged, with values
-   * provided there taking precedence. The filter name should be specified as *envoy.lb*.
+   * provided there taking precedence. The filter name should be specified as ``envoy.lb``.
    */
   'metadata_match': (_envoy_config_core_v3_Metadata__Output | null);
   /**
@@ -890,16 +994,16 @@ export interface RouteAction__Output {
    * place the original path before rewrite into the :ref:`x-envoy-original-path
    * <config_http_filters_router_x-envoy-original-path>` header.
    * 
-   * Only one of *prefix_rewrite* or
-   * :ref:`regex_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.regex_rewrite>`
-   * may be specified.
+   * Only one of :ref:`regex_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.regex_rewrite>`
+   * :ref:`path_rewrite_policy <envoy_v3_api_field_config.route.v3.RouteAction.path_rewrite_policy>`,
+   * or :ref:`prefix_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.prefix_rewrite>` may be specified.
    * 
    * .. attention::
    * 
    * Pay careful attention to the use of trailing slashes in the
    * :ref:`route's match <envoy_v3_api_field_config.route.v3.Route.match>` prefix value.
    * Stripping a prefix from a path requires multiple Routes to handle all cases. For example,
-   * rewriting * /prefix* to * /* and * /prefix/etc* to * /etc* cannot be done in a single
+   * rewriting ``/prefix`` to ``/`` and ``/prefix/etc`` to ``/etc`` cannot be done in a single
    * :ref:`Route <envoy_v3_api_msg_config.route.v3.Route>`, as shown by the below config entries:
    * 
    * .. code-block:: yaml
@@ -913,21 +1017,27 @@ export interface RouteAction__Output {
    * route:
    * prefix_rewrite: "/"
    * 
-   * Having above entries in the config, requests to * /prefix* will be stripped to * /*, while
-   * requests to * /prefix/etc* will be stripped to * /etc*.
+   * Having above entries in the config, requests to ``/prefix`` will be stripped to ``/``, while
+   * requests to ``/prefix/etc`` will be stripped to ``/etc``.
    */
   'prefix_rewrite': (string);
   /**
    * Indicates that during forwarding, the host header will be swapped with
-   * this value.
+   * this value. Using this option will append the
+   * :ref:`config_http_conn_man_headers_x-forwarded-host` header if
+   * :ref:`append_x_forwarded_host <envoy_v3_api_field_config.route.v3.RouteAction.append_x_forwarded_host>`
+   * is set.
    */
   'host_rewrite_literal'?: (string);
   /**
    * Indicates that during forwarding, the host header will be swapped with
    * the hostname of the upstream host chosen by the cluster manager. This
    * option is applicable only when the destination cluster for a route is of
-   * type *strict_dns* or *logical_dns*. Setting this to true with other cluster
-   * types has no effect.
+   * type ``strict_dns`` or ``logical_dns``. Setting this to true with other cluster types
+   * has no effect. Using this option will append the
+   * :ref:`config_http_conn_man_headers_x-forwarded-host` header if
+   * :ref:`append_x_forwarded_host <envoy_v3_api_field_config.route.v3.RouteAction.append_x_forwarded_host>`
+   * is set.
    */
   'auto_host_rewrite'?: (_google_protobuf_BoolValue__Output | null);
   /**
@@ -984,7 +1094,16 @@ export interface RouteAction__Output {
    */
   'hash_policy': (_envoy_config_route_v3_RouteAction_HashPolicy__Output)[];
   /**
-   * Indicates that the route has a CORS policy.
+   * Indicates that the route has a CORS policy. This field is ignored if related cors policy is
+   * found in the :ref:`Route.typed_per_filter_config<envoy_v3_api_field_config.route.v3.Route.typed_per_filter_config>` or
+   * :ref:`WeightedCluster.ClusterWeight.typed_per_filter_config<envoy_v3_api_field_config.route.v3.WeightedCluster.ClusterWeight.typed_per_filter_config>`.
+   * 
+   * .. attention::
+   * 
+   * This option has been deprecated. Please use
+   * :ref:`Route.typed_per_filter_config<envoy_v3_api_field_config.route.v3.Route.typed_per_filter_config>` or
+   * :ref:`WeightedCluster.ClusterWeight.typed_per_filter_config<envoy_v3_api_field_config.route.v3.WeightedCluster.ClusterWeight.typed_per_filter_config>`
+   * to configure the CORS HTTP filter.
    */
   'cors': (_envoy_config_route_v3_CorsPolicy__Output | null);
   /**
@@ -999,7 +1118,7 @@ export interface RouteAction__Output {
    * or its default value (infinity) instead of
    * :ref:`timeout <envoy_v3_api_field_config.route.v3.RouteAction.timeout>`, but limit the applied timeout
    * to the maximum value specified here. If configured as 0, the maximum allowed timeout for
-   * gRPC requests is infinity. If not configured at all, the `grpc-timeout` header is not used
+   * gRPC requests is infinity. If not configured at all, the ``grpc-timeout`` header is not used
    * and gRPC requests time out like any other requests using
    * :ref:`timeout <envoy_v3_api_field_config.route.v3.RouteAction.timeout>` or its default.
    * This can be used to prevent unexpected upstream request timeouts due to potentially long
@@ -1050,7 +1169,7 @@ export interface RouteAction__Output {
   'hedge_policy': (_envoy_config_route_v3_HedgePolicy__Output | null);
   /**
    * Deprecated by :ref:`grpc_timeout_header_offset <envoy_v3_api_field_config.route.v3.RouteAction.MaxStreamDuration.grpc_timeout_header_offset>`.
-   * If present, Envoy will adjust the timeout provided by the `grpc-timeout` header by subtracting
+   * If present, Envoy will adjust the timeout provided by the ``grpc-timeout`` header by subtracting
    * the provided duration from the header. This is useful in allowing Envoy to set its global
    * timeout to be less than that of the deadline imposed by the calling client, which makes it more
    * likely that Envoy will handle the timeout instead of having the call canceled by the client.
@@ -1062,7 +1181,10 @@ export interface RouteAction__Output {
   /**
    * Indicates that during forwarding, the host header will be swapped with the content of given
    * downstream or :ref:`custom <config_http_conn_man_headers_custom_request_headers>` header.
-   * If header value is empty, host header is left intact.
+   * If header value is empty, host header is left intact. Using this option will append the
+   * :ref:`config_http_conn_man_headers_x-forwarded-host` header if
+   * :ref:`append_x_forwarded_host <envoy_v3_api_field_config.route.v3.RouteAction.append_x_forwarded_host>`
+   * is set.
    * 
    * .. attention::
    * 
@@ -1075,7 +1197,9 @@ export interface RouteAction__Output {
    */
   'host_rewrite_header'?: (string);
   /**
-   * Indicates that the route has request mirroring policies.
+   * Specify a set of route request mirroring policies.
+   * It takes precedence over the virtual host and route config mirror policy entirely.
+   * That is, policies are not merged, the most specific non-empty one becomes the mirror policies.
    */
   'request_mirror_policies': (_envoy_config_route_v3_RouteAction_RequestMirrorPolicy__Output)[];
   /**
@@ -1105,8 +1229,10 @@ export interface RouteAction__Output {
    * before the rewrite into the :ref:`x-envoy-original-path
    * <config_http_filters_router_x-envoy-original-path>` header.
    * 
-   * Only one of :ref:`prefix_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.prefix_rewrite>`
-   * or *regex_rewrite* may be specified.
+   * Only one of :ref:`regex_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.regex_rewrite>`,
+   * :ref:`prefix_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.prefix_rewrite>`, or
+   * :ref:`path_rewrite_policy <envoy_v3_api_field_config.route.v3.RouteAction.path_rewrite_policy>`]
+   * may be specified.
    * 
    * Examples using Google's `RE2 <https://github.com/google/re2>`_ engine:
    * 
@@ -1145,6 +1271,10 @@ export interface RouteAction__Output {
    * Indicates that during forwarding, the host header will be swapped with
    * the result of the regex substitution executed on path value with query and fragment removed.
    * This is useful for transitioning variable content between path segment and subdomain.
+   * Using this option will append the
+   * :ref:`config_http_conn_man_headers_x-forwarded-host` header if
+   * :ref:`append_x_forwarded_host <envoy_v3_api_field_config.route.v3.RouteAction.append_x_forwarded_host>`
+   * is set.
    * 
    * For example with the following config:
    * 
@@ -1156,7 +1286,7 @@ export interface RouteAction__Output {
    * regex: "^/(.+)/.+$"
    * substitution: \1
    * 
-   * Would rewrite the host header to `envoyproxy.io` given the path `/envoyproxy.io/some/path`.
+   * Would rewrite the host header to ``envoyproxy.io`` given the path ``/envoyproxy.io/some/path``.
    */
   'host_rewrite_path_regex'?: (_envoy_type_matcher_v3_RegexMatchAndSubstitute__Output | null);
   /**
@@ -1164,14 +1294,38 @@ export interface RouteAction__Output {
    */
   'max_stream_duration': (_envoy_config_route_v3_RouteAction_MaxStreamDuration__Output | null);
   /**
-   * [#not-implemented-hide:]
-   * Name of the cluster specifier plugin to use to determine the cluster for
-   * requests on this route. The plugin name must be defined in the associated
-   * :ref:`envoy_v3_api_field_config.route.v3.RouteConfiguration.cluster_specifier_plugins`
-   * in the
-   * :ref:`envoy_v3_api_field_config.core.v3.TypedExtensionConfig.name` field.
+   * Name of the cluster specifier plugin to use to determine the cluster for requests on this route.
+   * The cluster specifier plugin name must be defined in the associated
+   * :ref:`cluster specifier plugins <envoy_v3_api_field_config.route.v3.RouteConfiguration.cluster_specifier_plugins>`
+   * in the :ref:`name <envoy_v3_api_field_config.core.v3.TypedExtensionConfig.name>` field.
    */
   'cluster_specifier_plugin'?: (string);
-  'cluster_specifier': "cluster"|"cluster_header"|"weighted_clusters"|"cluster_specifier_plugin";
+  /**
+   * If set, then a host rewrite action (one of
+   * :ref:`host_rewrite_literal <envoy_v3_api_field_config.route.v3.RouteAction.host_rewrite_literal>`,
+   * :ref:`auto_host_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.auto_host_rewrite>`,
+   * :ref:`host_rewrite_header <envoy_v3_api_field_config.route.v3.RouteAction.host_rewrite_header>`, or
+   * :ref:`host_rewrite_path_regex <envoy_v3_api_field_config.route.v3.RouteAction.host_rewrite_path_regex>`)
+   * causes the original value of the host header, if any, to be appended to the
+   * :ref:`config_http_conn_man_headers_x-forwarded-host` HTTP header if it is different to the last value appended.
+   * This can be disabled by setting the runtime guard `envoy_reloadable_features_append_xfh_idempotent` to false.
+   */
+  'append_x_forwarded_host': (boolean);
+  /**
+   * Custom cluster specifier plugin configuration to use to determine the cluster for requests
+   * on this route.
+   */
+  'inline_cluster_specifier_plugin'?: (_envoy_config_route_v3_ClusterSpecifierPlugin__Output | null);
+  /**
+   * Specifies how to send request over TLS early data.
+   * If absent, allows `safe HTTP requests <https://www.rfc-editor.org/rfc/rfc7231#section-4.2.1>`_ to be sent on early data.
+   * [#extension-category: envoy.route.early_data_policy]
+   */
+  'early_data_policy': (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
+  /**
+   * [#extension-category: envoy.path.rewrite]
+   */
+  'path_rewrite_policy': (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
+  'cluster_specifier': "cluster"|"cluster_header"|"weighted_clusters"|"cluster_specifier_plugin"|"inline_cluster_specifier_plugin";
   'host_rewrite_specifier': "host_rewrite_literal"|"auto_host_rewrite"|"host_rewrite_header"|"host_rewrite_path_regex";
 }

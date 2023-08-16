@@ -68,7 +68,7 @@ export interface Node {
   /**
    * Client feature support list. These are well known features described
    * in the Envoy API repository for a given major version of an API. Client features
-   * use reverse DNS naming scheme, for example `com.acme.feature`.
+   * use reverse DNS naming scheme, for example ``com.acme.feature``.
    * See :ref:`the list of features <client_features>` that xDS client may
    * support.
    */
@@ -77,7 +77,7 @@ export interface Node {
    * Known listening ports on the node as a generic hint to the management server
    * for filtering :ref:`listeners <config_listeners>` to be returned. For example,
    * if there is a listener bound to port 80, the list can optionally contain the
-   * SocketAddress `(0.0.0.0,80)`. The field is optional and just a hint.
+   * SocketAddress ``(0.0.0.0,80)``. The field is optional and just a hint.
    */
   'listening_addresses'?: (_envoy_config_core_v3_Address)[];
   /**
@@ -152,7 +152,7 @@ export interface Node__Output {
   /**
    * Client feature support list. These are well known features described
    * in the Envoy API repository for a given major version of an API. Client features
-   * use reverse DNS naming scheme, for example `com.acme.feature`.
+   * use reverse DNS naming scheme, for example ``com.acme.feature``.
    * See :ref:`the list of features <client_features>` that xDS client may
    * support.
    */
@@ -161,7 +161,7 @@ export interface Node__Output {
    * Known listening ports on the node as a generic hint to the management server
    * for filtering :ref:`listeners <config_listeners>` to be returned. For example,
    * if there is a listener bound to port 80, the list can optionally contain the
-   * SocketAddress `(0.0.0.0,80)`. The field is optional and just a hint.
+   * SocketAddress ``(0.0.0.0,80)``. The field is optional and just a hint.
    */
   'listening_addresses': (_envoy_config_core_v3_Address__Output)[];
   /**

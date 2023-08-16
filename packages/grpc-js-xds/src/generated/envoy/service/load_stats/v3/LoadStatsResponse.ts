@@ -9,22 +9,22 @@ import type { Duration as _google_protobuf_Duration, Duration__Output as _google
 export interface LoadStatsResponse {
   /**
    * Clusters to report stats for.
-   * Not populated if *send_all_clusters* is true.
+   * Not populated if ``send_all_clusters`` is true.
    */
   'clusters'?: (string)[];
   /**
    * The minimum interval of time to collect stats over. This is only a minimum for two reasons:
    * 
    * 1. There may be some delay from when the timer fires until stats sampling occurs.
-   * 2. For clusters that were already feature in the previous *LoadStatsResponse*, any traffic
-   * that is observed in between the corresponding previous *LoadStatsRequest* and this
-   * *LoadStatsResponse* will also be accumulated and billed to the cluster. This avoids a period
+   * 2. For clusters that were already feature in the previous ``LoadStatsResponse``, any traffic
+   * that is observed in between the corresponding previous ``LoadStatsRequest`` and this
+   * ``LoadStatsResponse`` will also be accumulated and billed to the cluster. This avoids a period
    * of inobservability that might otherwise exists between the messages. New clusters are not
    * subject to this consideration.
    */
   'load_reporting_interval'?: (_google_protobuf_Duration | null);
   /**
-   * Set to *true* if the management server supports endpoint granularity
+   * Set to ``true`` if the management server supports endpoint granularity
    * report.
    */
   'report_endpoint_granularity'?: (boolean);
@@ -43,22 +43,22 @@ export interface LoadStatsResponse {
 export interface LoadStatsResponse__Output {
   /**
    * Clusters to report stats for.
-   * Not populated if *send_all_clusters* is true.
+   * Not populated if ``send_all_clusters`` is true.
    */
   'clusters': (string)[];
   /**
    * The minimum interval of time to collect stats over. This is only a minimum for two reasons:
    * 
    * 1. There may be some delay from when the timer fires until stats sampling occurs.
-   * 2. For clusters that were already feature in the previous *LoadStatsResponse*, any traffic
-   * that is observed in between the corresponding previous *LoadStatsRequest* and this
-   * *LoadStatsResponse* will also be accumulated and billed to the cluster. This avoids a period
+   * 2. For clusters that were already feature in the previous ``LoadStatsResponse``, any traffic
+   * that is observed in between the corresponding previous ``LoadStatsRequest`` and this
+   * ``LoadStatsResponse`` will also be accumulated and billed to the cluster. This avoids a period
    * of inobservability that might otherwise exists between the messages. New clusters are not
    * subject to this consideration.
    */
   'load_reporting_interval': (_google_protobuf_Duration__Output | null);
   /**
-   * Set to *true* if the management server supports endpoint granularity
+   * Set to ``true`` if the management server supports endpoint granularity
    * report.
    */
   'report_endpoint_granularity': (boolean);

@@ -24,6 +24,7 @@ export interface ProtoGrpcType {
           DataSource: MessageTypeDefinition
           EnvoyInternalAddress: MessageTypeDefinition
           Extension: MessageTypeDefinition
+          ExtraSourceAddress: MessageTypeDefinition
           HeaderMap: MessageTypeDefinition
           HeaderValue: MessageTypeDefinition
           HeaderValueOption: MessageTypeDefinition
@@ -44,6 +45,7 @@ export interface ProtoGrpcType {
           RuntimeUInt32: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
           SocketOption: MessageTypeDefinition
+          SocketOptionsOverride: MessageTypeDefinition
           TcpKeepalive: MessageTypeDefinition
           TrafficDirection: EnumTypeDefinition
           TransportSocket: MessageTypeDefinition

@@ -26,7 +26,7 @@ export interface _envoy_type_matcher_v3_StructMatcher_PathSegment__Output {
 
 /**
  * StructMatcher provides a general interface to check if a given value is matched in
- * google.protobuf.Struct. It uses `path` to retrieve the value
+ * google.protobuf.Struct. It uses ``path`` to retrieve the value
  * from the struct and then check if it's matched to the specified value.
  * 
  * For example, for the following Struct:
@@ -90,7 +90,7 @@ export interface StructMatcher {
 
 /**
  * StructMatcher provides a general interface to check if a given value is matched in
- * google.protobuf.Struct. It uses `path` to retrieve the value
+ * google.protobuf.Struct. It uses ``path`` to retrieve the value
  * from the struct and then check if it's matched to the specified value.
  * 
  * For example, for the following Struct:

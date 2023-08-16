@@ -24,6 +24,7 @@ export interface ProtoGrpcType {
           DataSource: MessageTypeDefinition
           EnvoyInternalAddress: MessageTypeDefinition
           Extension: MessageTypeDefinition
+          ExtraSourceAddress: MessageTypeDefinition
           HeaderMap: MessageTypeDefinition
           HeaderValue: MessageTypeDefinition
           HeaderValueOption: MessageTypeDefinition
@@ -44,6 +45,7 @@ export interface ProtoGrpcType {
           RuntimeUInt32: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
           SocketOption: MessageTypeDefinition
+          SocketOptionsOverride: MessageTypeDefinition
           TcpKeepalive: MessageTypeDefinition
           TrafficDirection: EnumTypeDefinition
           TransportSocket: MessageTypeDefinition
@@ -56,7 +58,7 @@ export interface ProtoGrpcType {
         v3: {
           AdsDummy: MessageTypeDefinition
           /**
-           * See https://github.com/lyft/envoy-api#apis for a description of the role of
+           * See https://github.com/envoyproxy/envoy-api#apis for a description of the role of
            * ADS and how it is intended to be used by a management server. ADS requests
            * have the same structure as their singleton xDS counterparts, but can
            * multiplex many resource types on a single stream. The type_url in the
@@ -68,7 +70,10 @@ export interface ProtoGrpcType {
           DeltaDiscoveryResponse: MessageTypeDefinition
           DiscoveryRequest: MessageTypeDefinition
           DiscoveryResponse: MessageTypeDefinition
+          DynamicParameterConstraints: MessageTypeDefinition
           Resource: MessageTypeDefinition
+          ResourceLocator: MessageTypeDefinition
+          ResourceName: MessageTypeDefinition
         }
       }
     }

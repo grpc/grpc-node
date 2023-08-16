@@ -32,7 +32,7 @@ export interface HttpUri {
    */
   'timeout'?: (_google_protobuf_Duration | null);
   /**
-   * Specify how `uri` is to be fetched. Today, this requires an explicit
+   * Specify how ``uri`` is to be fetched. Today, this requires an explicit
    * cluster, but in the future we may support dynamic cluster creation or
    * inline DNS resolution. See `issue
    * <https://github.com/envoyproxy/envoy/issues/1606>`_.
@@ -70,7 +70,7 @@ export interface HttpUri__Output {
    */
   'timeout': (_google_protobuf_Duration__Output | null);
   /**
-   * Specify how `uri` is to be fetched. Today, this requires an explicit
+   * Specify how ``uri`` is to be fetched. Today, this requires an explicit
    * cluster, but in the future we may support dynamic cluster creation or
    * inline DNS resolution. See `issue
    * <https://github.com/envoyproxy/envoy/issues/1606>`_.

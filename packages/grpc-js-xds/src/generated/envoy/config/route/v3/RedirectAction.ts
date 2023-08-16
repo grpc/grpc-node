@@ -115,10 +115,10 @@ export interface RedirectAction {
   'regex_rewrite'?: (_envoy_type_matcher_v3_RegexMatchAndSubstitute | null);
   /**
    * When the scheme redirection take place, the following rules apply:
-   * 1. If the source URI scheme is `http` and the port is explicitly
-   * set to `:80`, the port will be removed after the redirection
-   * 2. If the source URI scheme is `https` and the port is explicitly
-   * set to `:443`, the port will be removed after the redirection
+   * 1. If the source URI scheme is ``http`` and the port is explicitly
+   * set to ``:80``, the port will be removed after the redirection
+   * 2. If the source URI scheme is ``https`` and the port is explicitly
+   * set to ``:443``, the port will be removed after the redirection
    */
   'scheme_rewrite_specifier'?: "https_redirect"|"scheme_redirect";
   'path_rewrite_specifier'?: "path_redirect"|"prefix_rewrite"|"regex_rewrite";
@@ -212,10 +212,10 @@ export interface RedirectAction__Output {
   'regex_rewrite'?: (_envoy_type_matcher_v3_RegexMatchAndSubstitute__Output | null);
   /**
    * When the scheme redirection take place, the following rules apply:
-   * 1. If the source URI scheme is `http` and the port is explicitly
-   * set to `:80`, the port will be removed after the redirection
-   * 2. If the source URI scheme is `https` and the port is explicitly
-   * set to `:443`, the port will be removed after the redirection
+   * 1. If the source URI scheme is ``http`` and the port is explicitly
+   * set to ``:80``, the port will be removed after the redirection
+   * 2. If the source URI scheme is ``https`` and the port is explicitly
+   * set to ``:443``, the port will be removed after the redirection
    */
   'scheme_rewrite_specifier': "https_redirect"|"scheme_redirect";
   'path_rewrite_specifier': "path_redirect"|"prefix_rewrite"|"regex_rewrite";

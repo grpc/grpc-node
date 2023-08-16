@@ -6,13 +6,13 @@ import type { Duration as _google_protobuf_Duration, Duration__Output as _google
 /**
  * See the :ref:`architecture overview <arch_overview_outlier_detection>` for
  * more information on outlier detection.
- * [#next-free-field: 22]
+ * [#next-free-field: 23]
  */
 export interface OutlierDetection {
   /**
-   * The number of consecutive 5xx responses or local origin errors that are mapped
-   * to 5xx error codes before a consecutive 5xx ejection
-   * occurs. Defaults to 5.
+   * The number of consecutive server-side error responses (for HTTP traffic,
+   * 5xx responses; for TCP traffic, connection failures; for Redis, failure to
+   * respond PONG; etc.) before a consecutive 5xx ejection occurs. Defaults to 5.
    */
   'consecutive_5xx'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -156,18 +156,25 @@ export interface OutlierDetection {
    * :ref:`base_ejection_time<envoy_v3_api_field_config.cluster.v3.OutlierDetection.base_ejection_time>` value is applied, whatever is larger.
    */
   'max_ejection_time'?: (_google_protobuf_Duration | null);
+  /**
+   * The maximum amount of jitter to add to the ejection time, in order to prevent
+   * a 'thundering herd' effect where all proxies try to reconnect to host at the same time.
+   * See :ref:`max_ejection_time_jitter<envoy_v3_api_field_config.cluster.v3.OutlierDetection.base_ejection_time>`
+   * Defaults to 0s.
+   */
+  'max_ejection_time_jitter'?: (_google_protobuf_Duration | null);
 }
 
 /**
  * See the :ref:`architecture overview <arch_overview_outlier_detection>` for
  * more information on outlier detection.
- * [#next-free-field: 22]
+ * [#next-free-field: 23]
  */
 export interface OutlierDetection__Output {
   /**
-   * The number of consecutive 5xx responses or local origin errors that are mapped
-   * to 5xx error codes before a consecutive 5xx ejection
-   * occurs. Defaults to 5.
+   * The number of consecutive server-side error responses (for HTTP traffic,
+   * 5xx responses; for TCP traffic, connection failures; for Redis, failure to
+   * respond PONG; etc.) before a consecutive 5xx ejection occurs. Defaults to 5.
    */
   'consecutive_5xx': (_google_protobuf_UInt32Value__Output | null);
   /**
@@ -311,4 +318,11 @@ export interface OutlierDetection__Output {
    * :ref:`base_ejection_time<envoy_v3_api_field_config.cluster.v3.OutlierDetection.base_ejection_time>` value is applied, whatever is larger.
    */
   'max_ejection_time': (_google_protobuf_Duration__Output | null);
+  /**
+   * The maximum amount of jitter to add to the ejection time, in order to prevent
+   * a 'thundering herd' effect where all proxies try to reconnect to host at the same time.
+   * See :ref:`max_ejection_time_jitter<envoy_v3_api_field_config.cluster.v3.OutlierDetection.base_ejection_time>`
+   * Defaults to 0s.
+   */
+  'max_ejection_time_jitter': (_google_protobuf_Duration__Output | null);
 }

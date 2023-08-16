@@ -3,10 +3,10 @@
 
 /**
  * Determines if adjacent slashes are merged into one. A common use case is for a request path
- * header. Using this option in `:ref: PathNormalizationOptions
- * <envoy_v3_api_msg_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.PathNormalizationOptions>`
- * will allow incoming requests with path `//dir///file` to match against route with `prefix`
- * match set to `/dir`. When using for header transformations, note that slash merging is not
+ * header. Using this option in ``:ref: PathNormalizationOptions
+ * <envoy_v3_api_msg_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.PathNormalizationOptions>``
+ * will allow incoming requests with path ``//dir///file`` to match against route with ``prefix``
+ * match set to ``/dir``. When using for header transformations, note that slash merging is not
  * part of `HTTP spec <https://tools.ietf.org/html/rfc3986>`_ and is provided for convenience.
  */
 export interface _envoy_type_http_v3_PathTransformation_Operation_MergeSlashes {
@@ -14,10 +14,10 @@ export interface _envoy_type_http_v3_PathTransformation_Operation_MergeSlashes {
 
 /**
  * Determines if adjacent slashes are merged into one. A common use case is for a request path
- * header. Using this option in `:ref: PathNormalizationOptions
- * <envoy_v3_api_msg_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.PathNormalizationOptions>`
- * will allow incoming requests with path `//dir///file` to match against route with `prefix`
- * match set to `/dir`. When using for header transformations, note that slash merging is not
+ * header. Using this option in ``:ref: PathNormalizationOptions
+ * <envoy_v3_api_msg_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.PathNormalizationOptions>``
+ * will allow incoming requests with path ``//dir///file`` to match against route with ``prefix``
+ * match set to ``/dir``. When using for header transformations, note that slash merging is not
  * part of `HTTP spec <https://tools.ietf.org/html/rfc3986>`_ and is provided for convenience.
  */
 export interface _envoy_type_http_v3_PathTransformation_Operation_MergeSlashes__Output {

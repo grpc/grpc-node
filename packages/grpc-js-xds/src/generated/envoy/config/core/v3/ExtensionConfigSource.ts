@@ -1,4 +1,4 @@
-// Original file: deps/envoy-api/envoy/config/core/v3/extension.proto
+// Original file: deps/envoy-api/envoy/config/core/v3/config_source.proto
 
 import type { ConfigSource as _envoy_config_core_v3_ConfigSource, ConfigSource__Output as _envoy_config_core_v3_ConfigSource__Output } from '../../../../envoy/config/core/v3/ConfigSource';
 import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
@@ -21,7 +21,7 @@ export interface ExtensionConfigSource {
   /**
    * Optional default configuration to use as the initial configuration if
    * there is a failure to receive the initial extension configuration or if
-   * `apply_default_config_without_warming` flag is set.
+   * ``apply_default_config_without_warming`` flag is set.
    */
   'default_config'?: (_google_protobuf_Any | null);
   /**
@@ -55,7 +55,7 @@ export interface ExtensionConfigSource__Output {
   /**
    * Optional default configuration to use as the initial configuration if
    * there is a failure to receive the initial extension configuration or if
-   * `apply_default_config_without_warming` flag is set.
+   * ``apply_default_config_without_warming`` flag is set.
    */
   'default_config': (_google_protobuf_Any__Output | null);
   /**

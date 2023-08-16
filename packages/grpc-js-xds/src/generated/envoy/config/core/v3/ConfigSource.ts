@@ -6,6 +6,7 @@ import type { Duration as _google_protobuf_Duration, Duration__Output as _google
 import type { SelfConfigSource as _envoy_config_core_v3_SelfConfigSource, SelfConfigSource__Output as _envoy_config_core_v3_SelfConfigSource__Output } from '../../../../envoy/config/core/v3/SelfConfigSource';
 import type { ApiVersion as _envoy_config_core_v3_ApiVersion } from '../../../../envoy/config/core/v3/ApiVersion';
 import type { Authority as _xds_core_v3_Authority, Authority__Output as _xds_core_v3_Authority__Output } from '../../../../xds/core/v3/Authority';
+import type { PathConfigSource as _envoy_config_core_v3_PathConfigSource, PathConfigSource__Output as _envoy_config_core_v3_PathConfigSource__Output } from '../../../../envoy/config/core/v3/PathConfigSource';
 
 /**
  * Configuration for :ref:`listeners <config_listeners>`, :ref:`clusters
@@ -14,23 +15,11 @@ import type { Authority as _xds_core_v3_Authority, Authority__Output as _xds_cor
  * <arch_overview_service_discovery>` etc. may either be sourced from the
  * filesystem or from an xDS API source. Filesystem configs are watched with
  * inotify for updates.
- * [#next-free-field: 8]
+ * [#next-free-field: 9]
  */
 export interface ConfigSource {
   /**
-   * Path on the filesystem to source and watch for configuration updates.
-   * When sourcing configuration for :ref:`secret <envoy_v3_api_msg_extensions.transport_sockets.tls.v3.Secret>`,
-   * the certificate and key files are also watched for updates.
-   * 
-   * .. note::
-   * 
-   * The path to the source must exist at config load time.
-   * 
-   * .. note::
-   * 
-   * Envoy will only watch the file path for *moves.* This is because in general only moves
-   * are atomic. The same method of swapping files as is demonstrated in the
-   * :ref:`runtime documentation <config_runtime_symbolic_link_swap>` can be used here also.
+   * Deprecated in favor of ``path_config_source``. Use that field instead.
    */
   'path'?: (string);
   /**
@@ -74,12 +63,16 @@ export interface ConfigSource {
   'resource_api_version'?: (_envoy_config_core_v3_ApiVersion | keyof typeof _envoy_config_core_v3_ApiVersion);
   /**
    * Authorities that this config source may be used for. An authority specified in a xdstp:// URL
-   * is resolved to a *ConfigSource* prior to configuration fetch. This field provides the
+   * is resolved to a ``ConfigSource`` prior to configuration fetch. This field provides the
    * association between authority name and configuration source.
    * [#not-implemented-hide:]
    */
   'authorities'?: (_xds_core_v3_Authority)[];
-  'config_source_specifier'?: "path"|"api_config_source"|"ads"|"self";
+  /**
+   * Local filesystem path configuration source.
+   */
+  'path_config_source'?: (_envoy_config_core_v3_PathConfigSource | null);
+  'config_source_specifier'?: "path"|"path_config_source"|"api_config_source"|"ads"|"self";
 }
 
 /**
@@ -89,23 +82,11 @@ export interface ConfigSource {
  * <arch_overview_service_discovery>` etc. may either be sourced from the
  * filesystem or from an xDS API source. Filesystem configs are watched with
  * inotify for updates.
- * [#next-free-field: 8]
+ * [#next-free-field: 9]
  */
 export interface ConfigSource__Output {
   /**
-   * Path on the filesystem to source and watch for configuration updates.
-   * When sourcing configuration for :ref:`secret <envoy_v3_api_msg_extensions.transport_sockets.tls.v3.Secret>`,
-   * the certificate and key files are also watched for updates.
-   * 
-   * .. note::
-   * 
-   * The path to the source must exist at config load time.
-   * 
-   * .. note::
-   * 
-   * Envoy will only watch the file path for *moves.* This is because in general only moves
-   * are atomic. The same method of swapping files as is demonstrated in the
-   * :ref:`runtime documentation <config_runtime_symbolic_link_swap>` can be used here also.
+   * Deprecated in favor of ``path_config_source``. Use that field instead.
    */
   'path'?: (string);
   /**
@@ -149,10 +130,14 @@ export interface ConfigSource__Output {
   'resource_api_version': (keyof typeof _envoy_config_core_v3_ApiVersion);
   /**
    * Authorities that this config source may be used for. An authority specified in a xdstp:// URL
-   * is resolved to a *ConfigSource* prior to configuration fetch. This field provides the
+   * is resolved to a ``ConfigSource`` prior to configuration fetch. This field provides the
    * association between authority name and configuration source.
    * [#not-implemented-hide:]
    */
   'authorities': (_xds_core_v3_Authority__Output)[];
-  'config_source_specifier': "path"|"api_config_source"|"ads"|"self";
+  /**
+   * Local filesystem path configuration source.
+   */
+  'path_config_source'?: (_envoy_config_core_v3_PathConfigSource__Output | null);
+  'config_source_specifier': "path"|"path_config_source"|"api_config_source"|"ads"|"self";
 }

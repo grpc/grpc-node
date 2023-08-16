@@ -20,12 +20,12 @@ export interface ResponseMapper {
    */
   'status_code'?: (_google_protobuf_UInt32Value | null);
   /**
-   * The new local reply body text if specified. It will be used in the `%LOCAL_REPLY_BODY%`
-   * command operator in the `body_format`.
+   * The new local reply body text if specified. It will be used in the ``%LOCAL_REPLY_BODY%``
+   * command operator in the ``body_format``.
    */
   'body'?: (_envoy_config_core_v3_DataSource | null);
   /**
-   * A per mapper `body_format` to override the :ref:`body_format <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.LocalReplyConfig.body_format>`.
+   * A per mapper ``body_format`` to override the :ref:`body_format <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.LocalReplyConfig.body_format>`.
    * It will be used when this mapper is matched.
    */
   'body_format_override'?: (_envoy_config_core_v3_SubstitutionFormatString | null);
@@ -50,12 +50,12 @@ export interface ResponseMapper__Output {
    */
   'status_code': (_google_protobuf_UInt32Value__Output | null);
   /**
-   * The new local reply body text if specified. It will be used in the `%LOCAL_REPLY_BODY%`
-   * command operator in the `body_format`.
+   * The new local reply body text if specified. It will be used in the ``%LOCAL_REPLY_BODY%``
+   * command operator in the ``body_format``.
    */
   'body': (_envoy_config_core_v3_DataSource__Output | null);
   /**
-   * A per mapper `body_format` to override the :ref:`body_format <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.LocalReplyConfig.body_format>`.
+   * A per mapper ``body_format`` to override the :ref:`body_format <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.LocalReplyConfig.body_format>`.
    * It will be used when this mapper is matched.
    */
   'body_format_override': (_envoy_config_core_v3_SubstitutionFormatString__Output | null);

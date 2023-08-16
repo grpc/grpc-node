@@ -10,7 +10,7 @@ import type { StringMatcher as _envoy_type_matcher_v3_StringMatcher, StringMatch
 export interface QueryParameterMatcher {
   /**
    * Specifies the name of a key that must be present in the requested
-   * *path*'s query string.
+   * ``path``'s query string.
    */
   'name'?: (string);
   /**
@@ -32,7 +32,7 @@ export interface QueryParameterMatcher {
 export interface QueryParameterMatcher__Output {
   /**
    * Specifies the name of a key that must be present in the requested
-   * *path*'s query string.
+   * ``path``'s query string.
    */
   'name': (string);
   /**

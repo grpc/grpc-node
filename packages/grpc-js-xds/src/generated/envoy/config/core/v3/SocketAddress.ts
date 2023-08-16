@@ -22,8 +22,8 @@ export interface SocketAddress {
    * within an upstream :ref:`BindConfig <envoy_v3_api_msg_config.core.v3.BindConfig>`, the address
    * controls the source address of outbound connections. For :ref:`clusters
    * <envoy_v3_api_msg_config.cluster.v3.Cluster>`, the cluster type determines whether the
-   * address must be an IP (*STATIC* or *EDS* clusters) or a hostname resolved by DNS
-   * (*STRICT_DNS* or *LOGICAL_DNS* clusters). Address resolution can be customized
+   * address must be an IP (``STATIC`` or ``EDS`` clusters) or a hostname resolved by DNS
+   * (``STRICT_DNS`` or ``LOGICAL_DNS`` clusters). Address resolution can be customized
    * via :ref:`resolver_name <envoy_v3_api_field_config.core.v3.SocketAddress.resolver_name>`.
    */
   'address'?: (string);
@@ -39,7 +39,7 @@ export interface SocketAddress {
    * this is empty, a context dependent default applies. If the address is a concrete
    * IP address, no resolution will occur. If address is a hostname this
    * should be set for resolution other than DNS. Specifying a custom resolver with
-   * *STRICT_DNS* or *LOGICAL_DNS* will generate an error at runtime.
+   * ``STRICT_DNS`` or ``LOGICAL_DNS`` will generate an error at runtime.
    */
   'resolver_name'?: (string);
   /**
@@ -66,8 +66,8 @@ export interface SocketAddress__Output {
    * within an upstream :ref:`BindConfig <envoy_v3_api_msg_config.core.v3.BindConfig>`, the address
    * controls the source address of outbound connections. For :ref:`clusters
    * <envoy_v3_api_msg_config.cluster.v3.Cluster>`, the cluster type determines whether the
-   * address must be an IP (*STATIC* or *EDS* clusters) or a hostname resolved by DNS
-   * (*STRICT_DNS* or *LOGICAL_DNS* clusters). Address resolution can be customized
+   * address must be an IP (``STATIC`` or ``EDS`` clusters) or a hostname resolved by DNS
+   * (``STRICT_DNS`` or ``LOGICAL_DNS`` clusters). Address resolution can be customized
    * via :ref:`resolver_name <envoy_v3_api_field_config.core.v3.SocketAddress.resolver_name>`.
    */
   'address': (string);
@@ -83,7 +83,7 @@ export interface SocketAddress__Output {
    * this is empty, a context dependent default applies. If the address is a concrete
    * IP address, no resolution will occur. If address is a hostname this
    * should be set for resolution other than DNS. Specifying a custom resolver with
-   * *STRICT_DNS* or *LOGICAL_DNS* will generate an error at runtime.
+   * ``STRICT_DNS`` or ``LOGICAL_DNS`` will generate an error at runtime.
    */
   'resolver_name': (string);
   /**
