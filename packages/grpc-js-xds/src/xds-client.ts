@@ -602,9 +602,9 @@ class ClusterLoadReportMap {
    * Get the indicated map entry if it exists, or create a new one if it does
    * not. Increments the refcount of that entry, so a call to this method
    * should correspond to a later call to unref
-   * @param clusterName 
-   * @param edsServiceName 
-   * @returns 
+   * @param clusterName
+   * @param edsServiceName
+   * @returns
    */
   getOrCreate(clusterName: string, edsServiceName: string): ClusterLoadReport {
     for (const statsObj of this.statsMap) {
@@ -924,8 +924,8 @@ class XdsSingleServerClient {
   }
 
   onLrsStreamReceivedMessage() {
-    this.adsBackoff.stop();
-    this.adsBackoff.reset();
+    this.lrsBackoff.stop();
+    this.lrsBackoff.reset();
   }
 
   handleLrsStreamEnd() {
