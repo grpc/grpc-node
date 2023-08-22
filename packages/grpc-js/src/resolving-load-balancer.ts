@@ -21,7 +21,11 @@ import {
   LoadBalancingConfig,
   getFirstUsableConfig,
 } from './load-balancer';
-import { ServiceConfig, validateServiceConfig } from './service-config';
+import {
+  MethodConfig,
+  ServiceConfig,
+  validateServiceConfig,
+} from './service-config';
 import { ConnectivityState } from './connectivity-state';
 import { ConfigSelector, createResolver, Resolver } from './resolver';
 import { ServiceError } from './call';
@@ -43,6 +47,59 @@ function trace(text: string): void {
   logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
 }
 
+type NameMatchLevel = 'EMPTY' | 'SERVICE' | 'SERVICE_AND_METHOD';
+
+/**
+ * Name match levels in order from most to least specific. This is the order in
+ * which searches will be performed.
+ */
+const NAME_MATCH_LEVEL_ORDER: NameMatchLevel[] = [
+  'SERVICE_AND_METHOD',
+  'SERVICE',
+  'EMPTY',
+];
+
+function hasMatchingName(
+  service: string,
+  method: string,
+  methodConfig: MethodConfig,
+  matchLevel: NameMatchLevel
+): boolean {
+  for (const name of methodConfig.name) {
+    switch (matchLevel) {
+      case 'EMPTY':
+        if (!name.service && !name.method) {
+          return true;
+        }
+        break;
+      case 'SERVICE':
+        if (name.service === service && !name.method) {
+          return true;
+        }
+        break;
+      case 'SERVICE_AND_METHOD':
+        if (name.service === service && name.method === method) {
+          return true;
+        }
+    }
+  }
+  return false;
+}
+
+function findMatchingConfig(
+  service: string,
+  method: string,
+  methodConfigs: MethodConfig[],
+  matchLevel: NameMatchLevel
+): MethodConfig | null {
+  for (const config of methodConfigs) {
+    if (hasMatchingName(service, method, config, matchLevel)) {
+      return config;
+    }
+  }
+  return null;
+}
+
 function getDefaultConfigSelector(
   serviceConfig: ServiceConfig | null
 ): ConfigSelector {
@@ -54,19 +111,26 @@ function getDefaultConfigSelector(
     const service = splitName[0] ?? '';
     const method = splitName[1] ?? '';
     if (serviceConfig && serviceConfig.methodConfig) {
-      for (const methodConfig of serviceConfig.methodConfig) {
-        for (const name of methodConfig.name) {
-          if (
-            name.service === service &&
-            (name.method === undefined || name.method === method)
-          ) {
-            return {
-              methodConfig: methodConfig,
-              pickInformation: {},
-              status: Status.OK,
-              dynamicFilterFactories: [],
-            };
-          }
+      /* Check for the following in order, and return the first method
+       * config that matches:
+       * 1. A name that exactly matches the service and method
+       * 2. A name with no method set that matches the service
+       * 3. An empty name
+       */
+      for (const matchLevel of NAME_MATCH_LEVEL_ORDER) {
+        const matchingConfig = findMatchingConfig(
+          service,
+          method,
+          serviceConfig.methodConfig,
+          matchLevel
+        );
+        if (matchingConfig) {
+          return {
+            methodConfig: matchingConfig,
+            pickInformation: {},
+            status: Status.OK,
+            dynamicFilterFactories: [],
+          };
         }
       }
     }

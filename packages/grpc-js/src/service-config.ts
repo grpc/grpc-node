@@ -35,7 +35,7 @@ import {
 } from './load-balancer';
 
 export interface MethodConfigName {
-  service: string;
+  service?: string;
   method?: string;
 }
 
@@ -95,20 +95,36 @@ const DURATION_REGEX = /^\d+(\.\d{1,9})?s$/;
 const CLIENT_LANGUAGE_STRING = 'node';
 
 function validateName(obj: any): MethodConfigName {
-  if (!('service' in obj) || typeof obj.service !== 'string') {
-    throw new Error('Invalid method config name: invalid service');
-  }
-  const result: MethodConfigName = {
-    service: obj.service,
-  };
-  if ('method' in obj) {
-    if (typeof obj.method === 'string') {
-      result.method = obj.method;
-    } else {
-      throw new Error('Invalid method config name: invalid method');
+  // In this context, and unset field and '' are considered the same
+  if ('service' in obj && obj.service !== '') {
+    if (typeof obj.service !== 'string') {
+      throw new Error(
+        `Invalid method config name: invalid service: expected type string, got ${typeof obj.service}`
+      );
     }
+    if ('method' in obj && obj.method !== '') {
+      if (typeof obj.method !== 'string') {
+        throw new Error(
+          `Invalid method config name: invalid method: expected type string, got ${typeof obj.service}`
+        );
+      }
+      return {
+        service: obj.service,
+        method: obj.method,
+      };
+    } else {
+      return {
+        service: obj.service,
+      };
+    }
+  } else {
+    if ('method' in obj && obj.method !== undefined) {
+      throw new Error(
+        `Invalid method config name: method set with empty or unset service`
+      );
+    }
+    return {};
   }
-  return result;
 }
 
 function validateRetryPolicy(obj: any): RetryPolicy {
