@@ -16,6 +16,7 @@
  */
 
 import { LoadBalancingConfig, experimental, logVerbosity } from "@grpc/grpc-js";
+import { loadProtosWithOptionsSync } from "@grpc/proto-loader/build/src/util";
 import { WeightedTargetRaw } from "./load-balancer-weighted-target";
 import { isLocalitySubchannelAddress } from "./load-balancer-priority";
 import { localityToName } from "./load-balancer-xds-cluster-resolver";
@@ -26,6 +27,11 @@ import ChildLoadBalancerHandler = experimental.ChildLoadBalancerHandler;
 import SubchannelAddress = experimental.SubchannelAddress;
 import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
+import { Any__Output } from "./generated/google/protobuf/Any";
+import { WrrLocality__Output } from "./generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/WrrLocality";
+import { TypedExtensionConfig__Output } from "./generated/envoy/config/core/v3/TypedExtensionConfig";
+import { LoadBalancingPolicy__Output } from "./generated/envoy/config/cluster/v3/LoadBalancingPolicy";
+import { registerLbPolicy } from "./lb-policy-registry";
 
 const TRACER_NAME = 'xds_wrr_locality';
 
@@ -107,6 +113,54 @@ class XdsWrrLocalityLoadBalancer implements LoadBalancer {
   }
 }
 
+const WRR_LOCALITY_TYPE_URL = 'envoy.extensions.load_balancing_policies.wrr_locality.v3.WrrLocality';
+
+const resourceRoot = loadProtosWithOptionsSync([
+  'xds/type/v3/typed_struct.proto',
+  'udpa/type/v1/typed_struct.proto'], {
+    keepCase: true,
+    includeDirs: [
+      // Paths are relative to src/build
+      __dirname + '/../../deps/xds/',
+      __dirname + '/../../deps/protoc-gen-validate'
+    ],
+  }
+);
+
+const toObjectOptions = {
+  longs: String,
+  enums: String,
+  defaults: true,
+  oneofs: true
+}
+
+function decodeWrrLocality(message: Any__Output): WrrLocality__Output {
+  const name = message.type_url.substring(message.type_url.lastIndexOf('/') + 1);
+  const type = resourceRoot.lookup(name);
+  if (type) {
+    const decodedMessage = (type as any).decode(message.value);
+    return decodedMessage.$type.toObject(decodedMessage, toObjectOptions) as WrrLocality__Output;
+  } else {
+    throw new Error(`TypedStruct parsing error: unexpected type URL ${message.type_url}`);
+  }
+}
+
+function convertToLoadBalancingPolicy(protoPolicy: TypedExtensionConfig__Output, selectChildPolicy: (childPolicy: LoadBalancingPolicy__Output) => LoadBalancingConfig): LoadBalancingConfig {
+  if (protoPolicy.typed_config?.type_url !== WRR_LOCALITY_TYPE_URL) {
+    throw new Error(`WRR Locality LB policy parsing error: unexpected type URL ${protoPolicy.typed_config?.type_url}`);
+  }
+  const wrrLocalityMessage = decodeWrrLocality(protoPolicy.typed_config);
+  if (!wrrLocalityMessage.endpoint_picking_policy) {
+    throw new Error('WRR Locality LB parsing error: no endpoint_picking_policy specified');
+  }
+  return {
+    [TYPE_NAME]: {
+      child_policy: selectChildPolicy(wrrLocalityMessage.endpoint_picking_policy)
+    }
+  };
+}
+
 export function setup() {
   registerLoadBalancerType(TYPE_NAME, XdsWrrLocalityLoadBalancer, XdsWrrLocalityLoadBalancingConfig);
+  registerLbPolicy(WRR_LOCALITY_TYPE_URL, convertToLoadBalancingPolicy);
 }

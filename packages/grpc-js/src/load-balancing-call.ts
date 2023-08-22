@@ -114,8 +114,9 @@ export class LoadBalancingCall implements Call {
       throw new Error('doPick called before start');
     }
     this.trace('Pick called');
+    const finalMetadata = this.metadata.clone();
     const pickResult = this.channel.doPick(
-      this.metadata,
+      finalMetadata,
       this.callConfig.pickInformation
     );
     const subchannelString = pickResult.subchannel
@@ -140,7 +141,6 @@ export class LoadBalancingCall implements Call {
           .generateMetadata({ service_url: this.serviceUrl })
           .then(
             credsMetadata => {
-              const finalMetadata = this.metadata!.clone();
               finalMetadata.merge(credsMetadata);
               if (finalMetadata.get('authorization').length > 1) {
                 this.outputStatus(
