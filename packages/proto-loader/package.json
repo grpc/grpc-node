@@ -1,6 +1,6 @@
 {
   "name": "@grpc/proto-loader",
-  "version": "0.7.9-pre.1",
+  "version": "0.7.9",
   "author": "Google Inc.",
   "contributors": [
     {
