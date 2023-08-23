@@ -69,33 +69,22 @@ const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
       name: 'empty fields',
       input: {
         discovery_mechanisms: [],
-        locality_picking_policy: [],
-        endpoint_picking_policy: []
+        xds_lb_policy: []
       }
     },
     {
       name: 'missing discovery_mechanisms',
       input: {
-        locality_picking_policy: [],
-        endpoint_picking_policy: []
+        xds_lb_policy: []
       },
       error: /discovery_mechanisms/
     },
     {
-      name: 'missing locality_picking_policy',
+      name: 'missing xds_lb_policy',
       input: {
-        discovery_mechanisms: [],
-        endpoint_picking_policy: []
+        discovery_mechanisms: []
       },
-      error: /locality_picking_policy/
-    },
-    {
-      name: 'missing endpoint_picking_policy',
-      input: {
-        discovery_mechanisms: [],
-        locality_picking_policy: []
-      },
-      error: /endpoint_picking_policy/
+      error: /xds_lb_policy/
     },
     {
       name: 'discovery_mechanism: EDS',
@@ -104,8 +93,7 @@ const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
           cluster: 'abc',
           type: 'EDS'
         }],
-        locality_picking_policy: [],
-        endpoint_picking_policy: []
+        xds_lb_policy: []
       },
       output: {
         discovery_mechanisms: [{
@@ -113,8 +101,7 @@ const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
           type: 'EDS',
           lrs_load_reporting_server: undefined
         }],
-        locality_picking_policy: [],
-        endpoint_picking_policy: []
+        xds_lb_policy: []
       }
     },
     {
@@ -124,8 +111,7 @@ const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
           cluster: 'abc',
           type: 'LOGICAL_DNS'
         }],
-        locality_picking_policy: [],
-        endpoint_picking_policy: []
+        xds_lb_policy: []
       },
       output: {
         discovery_mechanisms: [{
@@ -133,8 +119,7 @@ const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
           type: 'LOGICAL_DNS',
           lrs_load_reporting_server: undefined
         }],
-        locality_picking_policy: [],
-        endpoint_picking_policy: []
+        xds_lb_policy: []
       }
     },
     {
@@ -148,8 +133,7 @@ const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
           dns_hostname: undefined,
           lrs_load_reporting_server: undefined
         }],
-        locality_picking_policy: [],
-        endpoint_picking_policy: []
+        xds_lb_policy: []
       }
     },
     {
@@ -170,8 +154,7 @@ const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
             server_features: ['test']
           }
         }],
-        locality_picking_policy: [],
-        endpoint_picking_policy: []
+        xds_lb_policy: []
       }
     }
   ],
@@ -180,12 +163,30 @@ const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
       name: 'only required fields',
       input: {
         cluster: 'abc',
+        eds_service_name: 'def',
         drop_categories: [],
+        lrs_load_reporting_server: {
+          server_uri: 'localhost:12345',
+          channel_creds: [{
+            type: 'google_default',
+            config: {}
+          }],
+          server_features: ['test']
+        },
         child_policy: [{round_robin: {}}]
       },
       output: {
         cluster: 'abc',
+        eds_service_name: 'def',
         drop_categories: [],
+        lrs_load_reporting_server: {
+          server_uri: 'localhost:12345',
+          channel_creds: [{
+            type: 'google_default',
+            config: {}
+          }],
+          server_features: ['test']
+        },
         child_policy: [{round_robin: {}}],
         max_concurrent_requests: 1024
       }
@@ -194,14 +195,31 @@ const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
       name: 'undefined optional fields',
       input: {
         cluster: 'abc',
+        eds_service_name: 'def',
         drop_categories: [],
+        lrs_load_reporting_server: {
+          server_uri: 'localhost:12345',
+          channel_creds: [{
+            type: 'google_default',
+            config: {}
+          }],
+          server_features: ['test']
+        },
         child_policy: [{round_robin: {}}],
-        eds_service_name: undefined,
         max_concurrent_requests: undefined
       },
       output: {
         cluster: 'abc',
+        eds_service_name: 'def',
         drop_categories: [],
+        lrs_load_reporting_server: {
+          server_uri: 'localhost:12345',
+          channel_creds: [{
+            type: 'google_default',
+            config: {}
+          }],
+          server_features: ['test']
+        },
         child_policy: [{round_robin: {}}],
         max_concurrent_requests: 1024
       }
@@ -210,72 +228,22 @@ const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
       name: 'populated optional fields',
       input: {
         cluster: 'abc',
+        eds_service_name: 'def',
         drop_categories: [{
           category: 'test',
           requests_per_million: 100
         }],
+        lrs_load_reporting_server: {
+          server_uri: 'localhost:12345',
+          channel_creds: [{
+            type: 'google_default',
+            config: {}
+          }],
+          server_features: ['test']
+        },
         child_policy: [{round_robin: {}}],
-        eds_service_name: 'def',
         max_concurrent_requests: 123
       },
-    }
-  ],
-  lrs: [
-    {
-      name: 'only required fields',
-      input: {
-        cluster_name: 'abc',
-        eds_service_name: 'def',
-        locality: {},
-        child_policy: [{round_robin: {}}],
-        lrs_load_reporting_server: {
-          server_uri: 'localhost:12345',
-          channel_creds: [{
-            type: 'google_default',
-            config: {}
-          }],
-          server_features: ['test']
-        }
-      },
-      output: {
-        cluster_name: 'abc',
-        eds_service_name: 'def',
-        locality: {
-          region: '',
-          zone: '',
-          sub_zone: ''
-        },
-        child_policy: [{round_robin: {}}],
-        lrs_load_reporting_server: {
-          server_uri: 'localhost:12345',
-          channel_creds: [{
-            type: 'google_default',
-            config: {}
-          }],
-          server_features: ['test']
-        }
-      }
-    },
-    {
-      name: 'populated optional fields',
-      input: {
-        cluster_name: 'abc',
-        eds_service_name: 'def',
-        locality: {
-          region: 'a',
-          zone: 'b',
-          sub_zone: 'c'
-        },
-        child_policy: [{round_robin: {}}],
-        lrs_load_reporting_server: {
-          server_uri: 'localhost:12345',
-          channel_creds: [{
-            type: 'google_default',
-            config: {}
-          }],
-          server_features: ['test']
-        }
-      }
     }
   ],
   priority: [

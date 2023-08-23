@@ -70,14 +70,10 @@ class XdsClusterImplLoadBalancingConfig implements TypedLoadBalancingConfig {
       cluster: this.cluster,
       drop_categories: this.dropCategories,
       child_policy: [this.childPolicy.toJsonObject()],
-      max_concurrent_requests: this.maxConcurrentRequests
+      max_concurrent_requests: this.maxConcurrentRequests,
+      eds_service_name: this.edsServiceName,
+      lrs_load_reporting_server: this.lrsLoadReportingServer,
     };
-    if (this.edsServiceName !== undefined) {
-      jsonObj.eds_service_name = this.edsServiceName;
-    }
-    if (this.lrsLoadReportingServer !== undefined) {
-      jsonObj.lrs_load_reporting_server_name = this.lrsLoadReportingServer;
-    }
     return {
       [TYPE_NAME]: jsonObj
     };
