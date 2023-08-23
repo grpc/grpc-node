@@ -15,6 +15,8 @@
  *
  */
 
+// https://github.com/grpc/proposal/blob/master/A52-xds-custom-lb-policies.md
+
 import { LoadBalancingConfig, experimental } from "@grpc/grpc-js";
 import { LoadBalancingPolicy__Output } from "../generated/envoy/config/cluster/v3/LoadBalancingPolicy";
 import { TypedExtensionConfig__Output } from "../generated/envoy/config/core/v3/TypedExtensionConfig";

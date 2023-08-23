@@ -15,6 +15,8 @@
  *
  */
 
+// https://github.com/grpc/proposal/blob/master/A52-xds-custom-lb-policies.md
+
 import { LoadBalancingConfig, experimental, logVerbosity } from "@grpc/grpc-js";
 import { loadProtosWithOptionsSync } from "@grpc/proto-loader/build/src/util";
 import { WeightedTargetRaw } from "./load-balancer-weighted-target";
