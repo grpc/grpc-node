@@ -37,6 +37,7 @@ const resourceRoot = loadProtosWithOptionsSync([
     includeDirs: [
       // Paths are relative to src/build/lb-policy-registry
       __dirname + '/../../../deps/xds/',
+      __dirname + '/../../../deps/protoc-gen-validate'
     ],
   }
 );
