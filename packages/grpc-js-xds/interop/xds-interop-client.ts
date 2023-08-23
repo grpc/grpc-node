@@ -44,7 +44,7 @@ import parseLoadBalancingConfig = grpc.experimental.parseLoadBalancingConfig;
 
 grpc_xds.register();
 
-const LB_POLICY_NAME = 'RpcBehaviorLoadBalancer';
+const LB_POLICY_NAME = 'test.RpcBehaviorLoadBalancer';
 
 class RpcBehaviorLoadBalancingConfig implements TypedLoadBalancingConfig {
   constructor(private rpcBehavior: string) {}

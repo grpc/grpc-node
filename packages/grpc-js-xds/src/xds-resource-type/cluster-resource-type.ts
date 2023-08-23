@@ -17,7 +17,7 @@
 
 import { CDS_TYPE_URL, CLUSTER_CONFIG_TYPE_URL, decodeSingleResource } from "../resources";
 import { XdsDecodeContext, XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
-import { LoadBalancingConfig, experimental } from "@grpc/grpc-js";
+import { LoadBalancingConfig, experimental, logVerbosity } from "@grpc/grpc-js";
 import { XdsServerConfig } from "../xds-bootstrap";
 import { Duration__Output } from "../generated/google/protobuf/Duration";
 import { OutlierDetection__Output } from "../generated/envoy/config/cluster/v3/OutlierDetection";
@@ -31,6 +31,13 @@ import { convertToLoadBalancingConfig } from "../lb-policy-registry";
 import SuccessRateEjectionConfig = experimental.SuccessRateEjectionConfig;
 import FailurePercentageEjectionConfig = experimental.FailurePercentageEjectionConfig;
 import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
+
+const TRACER_NAME = 'xds_client';
+
+function trace(text: string): void {
+  experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
+}
+
 
 export interface CdsUpdate {
   type: 'AGGREGATE' | 'EDS' | 'LOGICAL_DNS';
@@ -128,11 +135,13 @@ export class ClusterResourceType extends XdsResourceType {
       try {
         lbPolicyConfig = convertToLoadBalancingConfig(message.load_balancing_policy);
       } catch (e) {
+        trace('LB policy config parsing failed with error ' + e);
         return null;
       }
       try {
         parseLoadBalancingConfig(lbPolicyConfig);
       } catch (e) {
+        trace('LB policy config parsing failed with error ' + e);
         return null;
       }
     } else if (message.lb_policy === 'ROUND_ROBIN') {

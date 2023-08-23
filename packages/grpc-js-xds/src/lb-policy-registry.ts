@@ -26,8 +26,13 @@ function trace(text: string) {
 
 const MAX_RECURSION_DEPTH = 16;
 
+/**
+ * Parse a protoPolicy to a LoadBalancingConfig. A null return value indicates
+ * that parsing failed, but that it should not be treated as an error, and
+ * instead the next policy should be used.
+ */
 interface ProtoLbPolicyConverter {
-  (protoPolicy: TypedExtensionConfig__Output, selectChildPolicy: (childPolicy: LoadBalancingPolicy__Output) => LoadBalancingConfig): LoadBalancingConfig
+  (protoPolicy: TypedExtensionConfig__Output, selectChildPolicy: (childPolicy: LoadBalancingPolicy__Output) => LoadBalancingConfig): LoadBalancingConfig | null;
 }
 
 interface RegisteredLbPolicy {
@@ -41,20 +46,29 @@ export function registerLbPolicy(typeUrl: string, converter: ProtoLbPolicyConver
 }
 
 export function convertToLoadBalancingConfig(protoPolicy: LoadBalancingPolicy__Output, recursionDepth = 0): LoadBalancingConfig {
+  trace('Registry entries: [' + Object.keys(registry) + ']');
   if (recursionDepth > MAX_RECURSION_DEPTH) {
     throw new Error(`convertToLoadBalancingConfig: Max recursion depth ${MAX_RECURSION_DEPTH} reached`);
   }
   for (const policyCandidate of protoPolicy.policies) {
+    trace('Attempting to parse config ' + JSON.stringify(policyCandidate));
     const extensionConfig = policyCandidate.typed_extension_config;
     if (!extensionConfig?.typed_config) {
       continue;
     }
     const typeUrl = extensionConfig.typed_config.type_url;
+    trace('Attempting to parse config with type_url=' + typeUrl);
+    let parseResult: LoadBalancingConfig | null;
     if (typeUrl in registry) {
       try {
-        return registry[typeUrl].convertToLoadBalancingPolicy(extensionConfig, childPolicy => convertToLoadBalancingConfig(childPolicy, recursionDepth + 1));
+        parseResult = registry[typeUrl].convertToLoadBalancingPolicy(extensionConfig, childPolicy => convertToLoadBalancingConfig(childPolicy, recursionDepth + 1));
       } catch (e) {
-        throw new Error(`Error parsing ${typeUrl} LoadBalancingPolicy: ${(e as Error).message}`);
+        throw new Error(`Error parsing ${typeUrl} LoadBalancingPolicy named ${extensionConfig.name}: ${(e as Error).message}`);
+      }
+      if (parseResult) {
+        return parseResult;
+      } else {
+        continue;
       }
     }
   }

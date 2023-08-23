@@ -113,14 +113,14 @@ class XdsWrrLocalityLoadBalancer implements LoadBalancer {
   }
 }
 
-const WRR_LOCALITY_TYPE_URL = 'envoy.extensions.load_balancing_policies.wrr_locality.v3.WrrLocality';
+const WRR_LOCALITY_TYPE_URL = 'type.googleapis.com/envoy.extensions.load_balancing_policies.wrr_locality.v3.WrrLocality';
 
 const resourceRoot = loadProtosWithOptionsSync([
-  'xds/type/v3/typed_struct.proto',
-  'udpa/type/v1/typed_struct.proto'], {
+  'envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto'], {
     keepCase: true,
     includeDirs: [
       // Paths are relative to src/build
+      __dirname + '/../../deps/envoy-api/',
       __dirname + '/../../deps/xds/',
       __dirname + '/../../deps/protoc-gen-validate'
     ],
@@ -155,7 +155,7 @@ function convertToLoadBalancingPolicy(protoPolicy: TypedExtensionConfig__Output,
   }
   return {
     [TYPE_NAME]: {
-      child_policy: selectChildPolicy(wrrLocalityMessage.endpoint_picking_policy)
+      child_policy: [selectChildPolicy(wrrLocalityMessage.endpoint_picking_policy)]
     }
   };
 }

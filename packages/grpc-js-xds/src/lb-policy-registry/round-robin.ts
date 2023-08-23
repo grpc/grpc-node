@@ -20,7 +20,7 @@ import { LoadBalancingPolicy__Output } from "../generated/envoy/config/cluster/v
 import { TypedExtensionConfig__Output } from "../generated/envoy/config/core/v3/TypedExtensionConfig";
 import { registerLbPolicy } from "../lb-policy-registry";
 
-const ROUND_ROBIN_TYPE_URL = 'envoy.extensions.load_balancing_policies.round_robin.v3.RoundRobin';
+const ROUND_ROBIN_TYPE_URL = 'type.googleapis.com/envoy.extensions.load_balancing_policies.round_robin.v3.RoundRobin';
 
 function convertToLoadBalancingPolicy(protoPolicy: TypedExtensionConfig__Output, selectChildPolicy: (childPolicy: LoadBalancingPolicy__Output) => LoadBalancingConfig): LoadBalancingConfig {
   if (protoPolicy.typed_config?.type_url !== ROUND_ROBIN_TYPE_URL) {

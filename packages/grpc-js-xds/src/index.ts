@@ -26,6 +26,8 @@ import * as xds_wrr_locality from './load-balancer-xds-wrr-locality';
 import * as router_filter from './http-filter/router-filter';
 import * as fault_injection_filter from './http-filter/fault-injection-filter';
 import * as csds from './csds';
+import * as round_robin_lb from './lb-policy-registry/round-robin';
+import * as typed_struct_lb from './lb-policy-registry/typed-struct';
 
 /**
  * Register the "xds:" name scheme with the @grpc/grpc-js library.
@@ -42,4 +44,6 @@ export function register() {
   router_filter.setup();
   fault_injection_filter.setup();
   csds.setup();
+  round_robin_lb.setup();
+  typed_struct_lb.setup();
 }

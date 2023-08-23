@@ -15,7 +15,7 @@
  *
  */
 
-import { LoadBalancingConfig } from "@grpc/grpc-js";
+import { LoadBalancingConfig, experimental } from "@grpc/grpc-js";
 import { LoadBalancingPolicy__Output } from "../generated/envoy/config/cluster/v3/LoadBalancingPolicy";
 import { TypedExtensionConfig__Output } from "../generated/envoy/config/core/v3/TypedExtensionConfig";
 import { registerLbPolicy } from "../lb-policy-registry";
@@ -25,16 +25,16 @@ import { Struct__Output } from "../generated/google/protobuf/Struct";
 import { Value__Output } from "../generated/google/protobuf/Value";
 import { TypedStruct__Output } from "../generated/xds/type/v3/TypedStruct";
 
-const XDS_TYPED_STRUCT_TYPE_URL = 'xds.type.v3.TypedStruct';
-const UDPA_TYPED_STRUCT_TYPE_URL = 'udpa.type.v1.TypedStruct';
+const XDS_TYPED_STRUCT_TYPE_URL = 'type.googleapis.com/xds.type.v3.TypedStruct';
+const UDPA_TYPED_STRUCT_TYPE_URL = 'type.googleapis.com/udpa.type.v1.TypedStruct';
 
 const resourceRoot = loadProtosWithOptionsSync([
   'xds/type/v3/typed_struct.proto',
   'udpa/type/v1/typed_struct.proto'], {
     keepCase: true,
     includeDirs: [
-      // Paths are relative to src/build
-      __dirname + '/../../deps/xds/',
+      // Paths are relative to src/build/lb-policy-registry
+      __dirname + '/../../../deps/xds/',
     ],
   }
 );
@@ -90,7 +90,7 @@ function flattenStruct(struct: Struct__Output): FlatStruct {
   return result;
 }
 
-function convertToLoadBalancingPolicy(protoPolicy: TypedExtensionConfig__Output, selectChildPolicy: (childPolicy: LoadBalancingPolicy__Output) => LoadBalancingConfig): LoadBalancingConfig {
+function convertToLoadBalancingPolicy(protoPolicy: TypedExtensionConfig__Output, selectChildPolicy: (childPolicy: LoadBalancingPolicy__Output) => LoadBalancingConfig): LoadBalancingConfig | null {
   if (protoPolicy.typed_config?.type_url !== XDS_TYPED_STRUCT_TYPE_URL && protoPolicy.typed_config?.type_url !== UDPA_TYPED_STRUCT_TYPE_URL) {
     throw new Error(`Typed struct LB policy parsing error: unexpected type URL ${protoPolicy.typed_config?.type_url}`);
   }
@@ -99,6 +99,9 @@ function convertToLoadBalancingPolicy(protoPolicy: TypedExtensionConfig__Output,
     throw new Error(`Typed struct LB parsing error: unexpected value ${typedStruct.value}`);
   }
   const policyName = typedStruct.type_url.substring(typedStruct.type_url.lastIndexOf('/') + 1);
+  if (!experimental.isLoadBalancerNameRegistered(policyName)) {
+    return null;
+  }
   return {
     [policyName]: flattenStruct(typedStruct.value)
   };

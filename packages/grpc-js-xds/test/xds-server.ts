@@ -36,12 +36,15 @@ const loadedProtos = loadPackageDefinition(loadSync(
   [
     'envoy/service/discovery/v3/ads.proto',
     'envoy/service/load_stats/v3/lrs.proto',
-    'envoy/config/listener/v3/listener.proto', 
+    'envoy/config/listener/v3/listener.proto',
     'envoy/config/route/v3/route.proto',
     'envoy/config/cluster/v3/cluster.proto',
     'envoy/config/endpoint/v3/endpoint.proto',
     'envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto',
-    'envoy/extensions/clusters/aggregate/v3/cluster.proto'
+    'envoy/extensions/clusters/aggregate/v3/cluster.proto',
+    'envoy/extensions/load_balancing_policies/round_robin/v3/round_robin.proto',
+    'envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto',
+    'xds/type/v3/typed_struct.proto'
   ],
   {
     keepCase: true,
@@ -319,7 +322,7 @@ export class XdsServer {
       callback(error, port);
     });
   }
-  
+
   shutdownServer() {
     this.server?.forceShutdown();
   }

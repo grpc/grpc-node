@@ -62,6 +62,7 @@ const compile = checkTask(() => execNpmCommand('compile'));
 
 const runTests = checkTask(() => {
   process.env.GRPC_EXPERIMENTAL_XDS_FEDERATION = 'true';
+  process.env.GRPC_EXPERIMENTAL_XDS_CUSTOM_LB_CONFIG = 'true';
   return gulp.src(`${outDir}/test/**/*.js`)
     .pipe(mocha({reporter: 'mocha-jenkins-reporter',
                  require: ['ts-node/register']}));
