@@ -2,6 +2,8 @@
 
 import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
 import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
+import type { ResourceName as _envoy_service_discovery_v3_ResourceName, ResourceName__Output as _envoy_service_discovery_v3_ResourceName__Output } from '../../../../envoy/service/discovery/v3/ResourceName';
+import type { Metadata as _envoy_config_core_v3_Metadata, Metadata__Output as _envoy_config_core_v3_Metadata__Output } from '../../../../envoy/config/core/v3/Metadata';
 
 /**
  * Cache control properties for the resource.
@@ -30,7 +32,7 @@ export interface _envoy_service_discovery_v3_Resource_CacheControl__Output {
 }
 
 /**
- * [#next-free-field: 8]
+ * [#next-free-field: 10]
  */
 export interface Resource {
   /**
@@ -44,6 +46,7 @@ export interface Resource {
   'resource'?: (_google_protobuf_Any | null);
   /**
    * The resource's name, to distinguish it from others of the same type of resource.
+   * Only one of ``name`` or ``resource_name`` may be set.
    */
   'name'?: (string);
   /**
@@ -71,10 +74,22 @@ export interface Resource {
    * [#not-implemented-hide:]
    */
   'cache_control'?: (_envoy_service_discovery_v3_Resource_CacheControl | null);
+  /**
+   * Alternative to the ``name`` field, to be used when the server supports
+   * multiple variants of the named resource that are differentiated by
+   * dynamic parameter constraints.
+   * Only one of ``name`` or ``resource_name`` may be set.
+   */
+  'resource_name'?: (_envoy_service_discovery_v3_ResourceName | null);
+  /**
+   * The Metadata field can be used to provide additional information for the resource.
+   * E.g. the trace data for debugging.
+   */
+  'metadata'?: (_envoy_config_core_v3_Metadata | null);
 }
 
 /**
- * [#next-free-field: 8]
+ * [#next-free-field: 10]
  */
 export interface Resource__Output {
   /**
@@ -88,6 +103,7 @@ export interface Resource__Output {
   'resource': (_google_protobuf_Any__Output | null);
   /**
    * The resource's name, to distinguish it from others of the same type of resource.
+   * Only one of ``name`` or ``resource_name`` may be set.
    */
   'name': (string);
   /**
@@ -115,4 +131,16 @@ export interface Resource__Output {
    * [#not-implemented-hide:]
    */
   'cache_control': (_envoy_service_discovery_v3_Resource_CacheControl__Output | null);
+  /**
+   * Alternative to the ``name`` field, to be used when the server supports
+   * multiple variants of the named resource that are differentiated by
+   * dynamic parameter constraints.
+   * Only one of ``name`` or ``resource_name`` may be set.
+   */
+  'resource_name': (_envoy_service_discovery_v3_ResourceName__Output | null);
+  /**
+   * The Metadata field can be used to provide additional information for the resource.
+   * E.g. the trace data for debugging.
+   */
+  'metadata': (_envoy_config_core_v3_Metadata__Output | null);
 }

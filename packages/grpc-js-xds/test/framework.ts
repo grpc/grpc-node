@@ -28,6 +28,7 @@ import { CLUSTER_CONFIG_TYPE_URL, HTTP_CONNECTION_MANGER_TYPE_URL } from "../src
 import { LocalityLbEndpoints } from "../src/generated/envoy/config/endpoint/v3/LocalityLbEndpoints";
 import { LbEndpoint } from "../src/generated/envoy/config/endpoint/v3/LbEndpoint";
 import { ClusterConfig } from "../src/generated/envoy/extensions/clusters/aggregate/v3/ClusterConfig";
+import { Any } from "../src/generated/google/protobuf/Any";
 
 interface Endpoint {
   locality: Locality;
@@ -69,7 +70,7 @@ export interface FakeCluster {
 }
 
 export class FakeEdsCluster implements FakeCluster {
-  constructor(private clusterName: string, private endpointName: string, private endpoints: Endpoint[]) {}
+  constructor(private clusterName: string, private endpointName: string, private endpoints: Endpoint[], private loadBalancingPolicyOverride?: Any) {}
 
   getEndpointConfig(): ClusterLoadAssignment {
     return {
@@ -79,11 +80,10 @@ export class FakeEdsCluster implements FakeCluster {
   }
 
   getClusterConfig(): Cluster {
-    return {
+    const result: Cluster = {
       name: this.clusterName,
       type: 'EDS',
       eds_cluster_config: {eds_config: {ads: {}}, service_name: this.endpointName},
-      lb_policy: 'ROUND_ROBIN',
       lrs_server: {self: {}},
       circuit_breakers: {
         thresholds: [
@@ -93,7 +93,22 @@ export class FakeEdsCluster implements FakeCluster {
           }
         ]
       }
+    };
+    if (this.loadBalancingPolicyOverride) {
+      result.load_balancing_policy = {
+        policies: [
+          {
+            typed_extension_config: {
+              'name': 'test',
+              typed_config: this.loadBalancingPolicyOverride
+            }
+          }
+        ]
+      }
+    } else {
+      result.lb_policy = 'ROUND_ROBIN';
     }
+    return result;
   }
 
   getAllClusterConfigs(): Cluster[] {

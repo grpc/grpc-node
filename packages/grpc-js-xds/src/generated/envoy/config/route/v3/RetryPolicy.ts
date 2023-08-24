@@ -176,8 +176,8 @@ export interface _envoy_config_route_v3_RetryPolicy_RetryBackOff {
   'base_interval'?: (_google_protobuf_Duration | null);
   /**
    * Specifies the maximum interval between retries. This parameter is optional, but must be
-   * greater than or equal to the `base_interval` if set. The default is 10 times the
-   * `base_interval`. See :ref:`config_http_filters_router_x-envoy-max-retries` for a discussion
+   * greater than or equal to the ``base_interval`` if set. The default is 10 times the
+   * ``base_interval``. See :ref:`config_http_filters_router_x-envoy-max-retries` for a discussion
    * of Envoy's back-off algorithm.
    */
   'max_interval'?: (_google_protobuf_Duration | null);
@@ -193,8 +193,8 @@ export interface _envoy_config_route_v3_RetryPolicy_RetryBackOff__Output {
   'base_interval': (_google_protobuf_Duration__Output | null);
   /**
    * Specifies the maximum interval between retries. This parameter is optional, but must be
-   * greater than or equal to the `base_interval` if set. The default is 10 times the
-   * `base_interval`. See :ref:`config_http_filters_router_x-envoy-max-retries` for a discussion
+   * greater than or equal to the ``base_interval`` if set. The default is 10 times the
+   * ``base_interval``. See :ref:`config_http_filters_router_x-envoy-max-retries` for a discussion
    * of Envoy's back-off algorithm.
    */
   'max_interval': (_google_protobuf_Duration__Output | null);
@@ -293,7 +293,7 @@ export interface RetryPolicy {
   /**
    * Specifies parameters that control exponential retry back off. This parameter is optional, in which case the
    * default base interval is 25 milliseconds or, if set, the current value of the
-   * `upstream.base_retry_backoff_ms` runtime parameter. The default maximum interval is 10 times
+   * ``upstream.base_retry_backoff_ms`` runtime parameter. The default maximum interval is 10 times
    * the base interval. The documentation for :ref:`config_http_filters_router_x-envoy-max-retries`
    * describes Envoy's back-off algorithm.
    */
@@ -314,7 +314,7 @@ export interface RetryPolicy {
    * return a response header like ``Retry-After`` or ``X-RateLimit-Reset`` to
    * provide feedback to the client on how long to wait before retrying. If
    * configured, this back-off strategy will be used instead of the
-   * default exponential back off strategy (configured using `retry_back_off`)
+   * default exponential back off strategy (configured using ``retry_back_off``)
    * whenever a response includes the matching headers.
    */
   'rate_limited_retry_back_off'?: (_envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff | null);
@@ -405,7 +405,7 @@ export interface RetryPolicy__Output {
   /**
    * Specifies parameters that control exponential retry back off. This parameter is optional, in which case the
    * default base interval is 25 milliseconds or, if set, the current value of the
-   * `upstream.base_retry_backoff_ms` runtime parameter. The default maximum interval is 10 times
+   * ``upstream.base_retry_backoff_ms`` runtime parameter. The default maximum interval is 10 times
    * the base interval. The documentation for :ref:`config_http_filters_router_x-envoy-max-retries`
    * describes Envoy's back-off algorithm.
    */
@@ -426,7 +426,7 @@ export interface RetryPolicy__Output {
    * return a response header like ``Retry-After`` or ``X-RateLimit-Reset`` to
    * provide feedback to the client on how long to wait before retrying. If
    * configured, this back-off strategy will be used instead of the
-   * default exponential back off strategy (configured using `retry_back_off`)
+   * default exponential back off strategy (configured using ``retry_back_off``)
    * whenever a response includes the matching headers.
    */
   'rate_limited_retry_back_off': (_envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff__Output | null);

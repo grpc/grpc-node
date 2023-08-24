@@ -35,7 +35,7 @@ export interface _envoy_config_core_v3_Http2ProtocolOptions_SettingsParameter__O
 }
 
 /**
- * [#next-free-field: 16]
+ * [#next-free-field: 17]
  */
 export interface Http2ProtocolOptions {
   /**
@@ -74,8 +74,8 @@ export interface Http2ProtocolOptions {
    */
   'initial_stream_window_size'?: (_google_protobuf_UInt32Value | null);
   /**
-   * Similar to *initial_stream_window_size*, but for connection-level flow-control
-   * window. Currently, this has the same minimum/maximum/default as *initial_stream_window_size*.
+   * Similar to ``initial_stream_window_size``, but for connection-level flow-control
+   * window. Currently, this has the same minimum/maximum/default as ``initial_stream_window_size``.
    */
   'initial_connection_window_size'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -96,8 +96,6 @@ export interface Http2ProtocolOptions {
    * be written into the socket). Exceeding this limit triggers flood mitigation and connection is
    * terminated. The ``http2.outbound_flood`` stat tracks the number of terminated connections due
    * to flood mitigation. The default limit is 10000.
-   * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
-   * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
   'max_outbound_frames'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -106,8 +104,6 @@ export interface Http2ProtocolOptions {
    * this limit triggers flood mitigation and connection is terminated. The
    * ``http2.outbound_control_flood`` stat tracks the number of terminated connections due to flood
    * mitigation. The default limit is 1000.
-   * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
-   * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
   'max_outbound_control_frames'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -117,8 +113,6 @@ export interface Http2ProtocolOptions {
    * stat tracks the number of connections terminated due to flood mitigation.
    * Setting this to 0 will terminate connection upon receiving first frame with an empty payload
    * and no end stream flag. The default limit is 1.
-   * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
-   * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
   'max_consecutive_inbound_frames_with_empty_payload'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -126,15 +120,13 @@ export interface Http2ProtocolOptions {
    * of PRIORITY frames received over the lifetime of connection exceeds the value calculated
    * using this formula::
    * 
-   * max_inbound_priority_frames_per_stream * (1 + opened_streams)
+   * ``max_inbound_priority_frames_per_stream`` * (1 + ``opened_streams``)
    * 
-   * the connection is terminated. For downstream connections the `opened_streams` is incremented when
+   * the connection is terminated. For downstream connections the ``opened_streams`` is incremented when
    * Envoy receives complete response headers from the upstream server. For upstream connection the
-   * `opened_streams` is incremented when Envoy send the HEADERS frame for a new stream. The
+   * ``opened_streams`` is incremented when Envoy send the HEADERS frame for a new stream. The
    * ``http2.inbound_priority_frames_flood`` stat tracks
    * the number of connections terminated due to flood mitigation. The default limit is 100.
-   * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
-   * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
   'max_inbound_priority_frames_per_stream'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -142,18 +134,16 @@ export interface Http2ProtocolOptions {
    * of WINDOW_UPDATE frames received over the lifetime of connection exceeds the value calculated
    * using this formula::
    * 
-   * 5 + 2 * (opened_streams +
-   * max_inbound_window_update_frames_per_data_frame_sent * outbound_data_frames)
+   * 5 + 2 * (``opened_streams`` +
+   * ``max_inbound_window_update_frames_per_data_frame_sent`` * ``outbound_data_frames``)
    * 
-   * the connection is terminated. For downstream connections the `opened_streams` is incremented when
+   * the connection is terminated. For downstream connections the ``opened_streams`` is incremented when
    * Envoy receives complete response headers from the upstream server. For upstream connections the
-   * `opened_streams` is incremented when Envoy sends the HEADERS frame for a new stream. The
+   * ``opened_streams`` is incremented when Envoy sends the HEADERS frame for a new stream. The
    * ``http2.inbound_priority_frames_flood`` stat tracks the number of connections terminated due to
    * flood mitigation. The default max_inbound_window_update_frames_per_data_frame_sent value is 10.
    * Setting this to 1 should be enough to support HTTP/2 implementations with basic flow control,
    * but more complex implementations that try to estimate available bandwidth require at least 2.
-   * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
-   * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
   'max_inbound_window_update_frames_per_data_frame_sent'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -216,10 +206,16 @@ export interface Http2ProtocolOptions {
    * does not respond within the configured timeout, the connection will be aborted.
    */
   'connection_keepalive'?: (_envoy_config_core_v3_KeepaliveSettings | null);
+  /**
+   * [#not-implemented-hide:] Hiding so that the field can be removed after oghttp2 is rolled out.
+   * If set, force use of a particular HTTP/2 codec: oghttp2 if true, nghttp2 if false.
+   * If unset, HTTP/2 codec is selected based on envoy.reloadable_features.http2_use_oghttp2.
+   */
+  'use_oghttp2_codec'?: (_google_protobuf_BoolValue | null);
 }
 
 /**
- * [#next-free-field: 16]
+ * [#next-free-field: 17]
  */
 export interface Http2ProtocolOptions__Output {
   /**
@@ -258,8 +254,8 @@ export interface Http2ProtocolOptions__Output {
    */
   'initial_stream_window_size': (_google_protobuf_UInt32Value__Output | null);
   /**
-   * Similar to *initial_stream_window_size*, but for connection-level flow-control
-   * window. Currently, this has the same minimum/maximum/default as *initial_stream_window_size*.
+   * Similar to ``initial_stream_window_size``, but for connection-level flow-control
+   * window. Currently, this has the same minimum/maximum/default as ``initial_stream_window_size``.
    */
   'initial_connection_window_size': (_google_protobuf_UInt32Value__Output | null);
   /**
@@ -280,8 +276,6 @@ export interface Http2ProtocolOptions__Output {
    * be written into the socket). Exceeding this limit triggers flood mitigation and connection is
    * terminated. The ``http2.outbound_flood`` stat tracks the number of terminated connections due
    * to flood mitigation. The default limit is 10000.
-   * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
-   * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
   'max_outbound_frames': (_google_protobuf_UInt32Value__Output | null);
   /**
@@ -290,8 +284,6 @@ export interface Http2ProtocolOptions__Output {
    * this limit triggers flood mitigation and connection is terminated. The
    * ``http2.outbound_control_flood`` stat tracks the number of terminated connections due to flood
    * mitigation. The default limit is 1000.
-   * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
-   * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
   'max_outbound_control_frames': (_google_protobuf_UInt32Value__Output | null);
   /**
@@ -301,8 +293,6 @@ export interface Http2ProtocolOptions__Output {
    * stat tracks the number of connections terminated due to flood mitigation.
    * Setting this to 0 will terminate connection upon receiving first frame with an empty payload
    * and no end stream flag. The default limit is 1.
-   * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
-   * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
   'max_consecutive_inbound_frames_with_empty_payload': (_google_protobuf_UInt32Value__Output | null);
   /**
@@ -310,15 +300,13 @@ export interface Http2ProtocolOptions__Output {
    * of PRIORITY frames received over the lifetime of connection exceeds the value calculated
    * using this formula::
    * 
-   * max_inbound_priority_frames_per_stream * (1 + opened_streams)
+   * ``max_inbound_priority_frames_per_stream`` * (1 + ``opened_streams``)
    * 
-   * the connection is terminated. For downstream connections the `opened_streams` is incremented when
+   * the connection is terminated. For downstream connections the ``opened_streams`` is incremented when
    * Envoy receives complete response headers from the upstream server. For upstream connection the
-   * `opened_streams` is incremented when Envoy send the HEADERS frame for a new stream. The
+   * ``opened_streams`` is incremented when Envoy send the HEADERS frame for a new stream. The
    * ``http2.inbound_priority_frames_flood`` stat tracks
    * the number of connections terminated due to flood mitigation. The default limit is 100.
-   * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
-   * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
   'max_inbound_priority_frames_per_stream': (_google_protobuf_UInt32Value__Output | null);
   /**
@@ -326,18 +314,16 @@ export interface Http2ProtocolOptions__Output {
    * of WINDOW_UPDATE frames received over the lifetime of connection exceeds the value calculated
    * using this formula::
    * 
-   * 5 + 2 * (opened_streams +
-   * max_inbound_window_update_frames_per_data_frame_sent * outbound_data_frames)
+   * 5 + 2 * (``opened_streams`` +
+   * ``max_inbound_window_update_frames_per_data_frame_sent`` * ``outbound_data_frames``)
    * 
-   * the connection is terminated. For downstream connections the `opened_streams` is incremented when
+   * the connection is terminated. For downstream connections the ``opened_streams`` is incremented when
    * Envoy receives complete response headers from the upstream server. For upstream connections the
-   * `opened_streams` is incremented when Envoy sends the HEADERS frame for a new stream. The
+   * ``opened_streams`` is incremented when Envoy sends the HEADERS frame for a new stream. The
    * ``http2.inbound_priority_frames_flood`` stat tracks the number of connections terminated due to
    * flood mitigation. The default max_inbound_window_update_frames_per_data_frame_sent value is 10.
    * Setting this to 1 should be enough to support HTTP/2 implementations with basic flow control,
    * but more complex implementations that try to estimate available bandwidth require at least 2.
-   * NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
-   * `envoy.reloadable_features.upstream_http2_flood_checks` flag.
    */
   'max_inbound_window_update_frames_per_data_frame_sent': (_google_protobuf_UInt32Value__Output | null);
   /**
@@ -400,4 +386,10 @@ export interface Http2ProtocolOptions__Output {
    * does not respond within the configured timeout, the connection will be aborted.
    */
   'connection_keepalive': (_envoy_config_core_v3_KeepaliveSettings__Output | null);
+  /**
+   * [#not-implemented-hide:] Hiding so that the field can be removed after oghttp2 is rolled out.
+   * If set, force use of a particular HTTP/2 codec: oghttp2 if true, nghttp2 if false.
+   * If unset, HTTP/2 codec is selected based on envoy.reloadable_features.http2_use_oghttp2.
+   */
+  'use_oghttp2_codec': (_google_protobuf_BoolValue__Output | null);
 }

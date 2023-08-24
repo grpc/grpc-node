@@ -12,7 +12,7 @@ export interface StringMatcher {
    * 
    * Examples:
    * 
-   * * *abc* only matches the value *abc*.
+   * * ``abc`` only matches the value ``abc``.
    */
   'exact'?: (string);
   /**
@@ -21,7 +21,7 @@ export interface StringMatcher {
    * 
    * Examples:
    * 
-   * * *abc* matches the value *abc.xyz*
+   * * ``abc`` matches the value ``abc.xyz``
    */
   'prefix'?: (string);
   /**
@@ -30,7 +30,7 @@ export interface StringMatcher {
    * 
    * Examples:
    * 
-   * * *abc* matches the value *xyz.abc*
+   * * ``abc`` matches the value ``xyz.abc``
    */
   'suffix'?: (string);
   /**
@@ -40,7 +40,7 @@ export interface StringMatcher {
   /**
    * If true, indicates the exact/prefix/suffix/contains matching should be case insensitive. This
    * has no effect for the safe_regex match.
-   * For example, the matcher *data* will match both input string *Data* and *data* if set to true.
+   * For example, the matcher ``data`` will match both input string ``Data`` and ``data`` if set to true.
    */
   'ignore_case'?: (boolean);
   /**
@@ -49,7 +49,7 @@ export interface StringMatcher {
    * 
    * Examples:
    * 
-   * * *abc* matches the value *xyz.abc.def*
+   * * ``abc`` matches the value ``xyz.abc.def``
    */
   'contains'?: (string);
   'match_pattern'?: "exact"|"prefix"|"suffix"|"safe_regex"|"contains";
@@ -65,7 +65,7 @@ export interface StringMatcher__Output {
    * 
    * Examples:
    * 
-   * * *abc* only matches the value *abc*.
+   * * ``abc`` only matches the value ``abc``.
    */
   'exact'?: (string);
   /**
@@ -74,7 +74,7 @@ export interface StringMatcher__Output {
    * 
    * Examples:
    * 
-   * * *abc* matches the value *abc.xyz*
+   * * ``abc`` matches the value ``abc.xyz``
    */
   'prefix'?: (string);
   /**
@@ -83,7 +83,7 @@ export interface StringMatcher__Output {
    * 
    * Examples:
    * 
-   * * *abc* matches the value *xyz.abc*
+   * * ``abc`` matches the value ``xyz.abc``
    */
   'suffix'?: (string);
   /**
@@ -93,7 +93,7 @@ export interface StringMatcher__Output {
   /**
    * If true, indicates the exact/prefix/suffix/contains matching should be case insensitive. This
    * has no effect for the safe_regex match.
-   * For example, the matcher *data* will match both input string *Data* and *data* if set to true.
+   * For example, the matcher ``data`` will match both input string ``Data`` and ``data`` if set to true.
    */
   'ignore_case': (boolean);
   /**
@@ -102,7 +102,7 @@ export interface StringMatcher__Output {
    * 
    * Examples:
    * 
-   * * *abc* matches the value *xyz.abc.def*
+   * * ``abc`` matches the value ``xyz.abc.def``
    */
   'contains'?: (string);
   'match_pattern': "exact"|"prefix"|"suffix"|"safe_regex"|"contains";

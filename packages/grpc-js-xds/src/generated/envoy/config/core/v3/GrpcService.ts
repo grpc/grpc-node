@@ -2,6 +2,7 @@
 
 import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
 import type { HeaderValue as _envoy_config_core_v3_HeaderValue, HeaderValue__Output as _envoy_config_core_v3_HeaderValue__Output } from '../../../../envoy/config/core/v3/HeaderValue';
+import type { RetryPolicy as _envoy_config_core_v3_RetryPolicy, RetryPolicy__Output as _envoy_config_core_v3_RetryPolicy__Output } from '../../../../envoy/config/core/v3/RetryPolicy';
 import type { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_Struct__Output } from '../../../../google/protobuf/Struct';
 import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 import type { DataSource as _envoy_config_core_v3_DataSource, DataSource__Output as _envoy_config_core_v3_DataSource__Output } from '../../../../envoy/config/core/v3/DataSource';
@@ -153,10 +154,17 @@ export interface _envoy_config_core_v3_GrpcService_EnvoyGrpc {
    */
   'cluster_name'?: (string);
   /**
-   * The `:authority` header in the grpc request. If this field is not set, the authority header value will be `cluster_name`.
+   * The ``:authority`` header in the grpc request. If this field is not set, the authority header value will be ``cluster_name``.
    * Note that this authority does not override the SNI. The SNI is provided by the transport socket of the cluster.
    */
   'authority'?: (string);
+  /**
+   * Indicates the retry policy for re-establishing the gRPC stream
+   * This field is optional. If max interval is not provided, it will be set to ten times the provided base interval.
+   * Currently only supported for xDS gRPC streams.
+   * If not set, xDS gRPC streams default base interval:500ms, maximum interval:30s will be applied.
+   */
+  'retry_policy'?: (_envoy_config_core_v3_RetryPolicy | null);
 }
 
 export interface _envoy_config_core_v3_GrpcService_EnvoyGrpc__Output {
@@ -167,10 +175,17 @@ export interface _envoy_config_core_v3_GrpcService_EnvoyGrpc__Output {
    */
   'cluster_name': (string);
   /**
-   * The `:authority` header in the grpc request. If this field is not set, the authority header value will be `cluster_name`.
+   * The ``:authority`` header in the grpc request. If this field is not set, the authority header value will be ``cluster_name``.
    * Note that this authority does not override the SNI. The SNI is provided by the transport socket of the cluster.
    */
   'authority': (string);
+  /**
+   * Indicates the retry policy for re-establishing the gRPC stream
+   * This field is optional. If max interval is not provided, it will be set to ten times the provided base interval.
+   * Currently only supported for xDS gRPC streams.
+   * If not set, xDS gRPC streams default base interval:500ms, maximum interval:30s will be applied.
+   */
+  'retry_policy': (_envoy_config_core_v3_RetryPolicy__Output | null);
 }
 
 /**
@@ -372,7 +387,7 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_St
   /**
    * URI of the token exchange service that handles token exchange requests.
    * [#comment:TODO(asraa): Add URI validation when implemented. Tracked by
-   * https://github.com/envoyproxy/protoc-gen-validate/issues/303]
+   * https://github.com/bufbuild/protoc-gen-validate/issues/303]
    */
   'token_exchange_service_uri'?: (string);
   /**
@@ -426,7 +441,7 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_St
   /**
    * URI of the token exchange service that handles token exchange requests.
    * [#comment:TODO(asraa): Add URI validation when implemented. Tracked by
-   * https://github.com/envoyproxy/protoc-gen-validate/issues/303]
+   * https://github.com/bufbuild/protoc-gen-validate/issues/303]
    */
   'token_exchange_service_uri': (string);
   /**

@@ -5,9 +5,10 @@ import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig
 import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../../google/protobuf/BoolValue';
 import type { HeaderMatcher as _envoy_config_route_v3_HeaderMatcher, HeaderMatcher__Output as _envoy_config_route_v3_HeaderMatcher__Output } from '../../../../envoy/config/route/v3/HeaderMatcher';
 import type { MetadataKey as _envoy_type_metadata_v3_MetadataKey, MetadataKey__Output as _envoy_type_metadata_v3_MetadataKey__Output } from '../../../../envoy/type/metadata/v3/MetadataKey';
+import type { QueryParameterMatcher as _envoy_config_route_v3_QueryParameterMatcher, QueryParameterMatcher__Output as _envoy_config_route_v3_QueryParameterMatcher__Output } from '../../../../envoy/config/route/v3/QueryParameterMatcher';
 
 /**
- * [#next-free-field: 10]
+ * [#next-free-field: 12]
  */
 export interface _envoy_config_route_v3_RateLimit_Action {
   /**
@@ -47,14 +48,28 @@ export interface _envoy_config_route_v3_RateLimit_Action {
   'metadata'?: (_envoy_config_route_v3_RateLimit_Action_MetaData | null);
   /**
    * Rate limit descriptor extension. See the rate limit descriptor extensions documentation.
+   * 
+   * :ref:`HTTP matching input functions <arch_overview_matching_api>` are
+   * permitted as descriptor extensions. The input functions are only
+   * looked up if there is no rate limit descriptor extension matching
+   * the type URL.
+   * 
    * [#extension-category: envoy.rate_limit_descriptors]
    */
   'extension'?: (_envoy_config_core_v3_TypedExtensionConfig | null);
-  'action_specifier'?: "source_cluster"|"destination_cluster"|"request_headers"|"remote_address"|"generic_key"|"header_value_match"|"dynamic_metadata"|"metadata"|"extension";
+  /**
+   * Rate limit on masked remote address.
+   */
+  'masked_remote_address'?: (_envoy_config_route_v3_RateLimit_Action_MaskedRemoteAddress | null);
+  /**
+   * Rate limit on the existence of query parameters.
+   */
+  'query_parameter_value_match'?: (_envoy_config_route_v3_RateLimit_Action_QueryParameterValueMatch | null);
+  'action_specifier'?: "source_cluster"|"destination_cluster"|"request_headers"|"remote_address"|"generic_key"|"header_value_match"|"dynamic_metadata"|"metadata"|"extension"|"masked_remote_address"|"query_parameter_value_match";
 }
 
 /**
- * [#next-free-field: 10]
+ * [#next-free-field: 12]
  */
 export interface _envoy_config_route_v3_RateLimit_Action__Output {
   /**
@@ -94,10 +109,24 @@ export interface _envoy_config_route_v3_RateLimit_Action__Output {
   'metadata'?: (_envoy_config_route_v3_RateLimit_Action_MetaData__Output | null);
   /**
    * Rate limit descriptor extension. See the rate limit descriptor extensions documentation.
+   * 
+   * :ref:`HTTP matching input functions <arch_overview_matching_api>` are
+   * permitted as descriptor extensions. The input functions are only
+   * looked up if there is no rate limit descriptor extension matching
+   * the type URL.
+   * 
    * [#extension-category: envoy.rate_limit_descriptors]
    */
   'extension'?: (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
-  'action_specifier': "source_cluster"|"destination_cluster"|"request_headers"|"remote_address"|"generic_key"|"header_value_match"|"dynamic_metadata"|"metadata"|"extension";
+  /**
+   * Rate limit on masked remote address.
+   */
+  'masked_remote_address'?: (_envoy_config_route_v3_RateLimit_Action_MaskedRemoteAddress__Output | null);
+  /**
+   * Rate limit on the existence of query parameters.
+   */
+  'query_parameter_value_match'?: (_envoy_config_route_v3_RateLimit_Action_QueryParameterValueMatch__Output | null);
+  'action_specifier': "source_cluster"|"destination_cluster"|"request_headers"|"remote_address"|"generic_key"|"header_value_match"|"dynamic_metadata"|"metadata"|"extension"|"masked_remote_address"|"query_parameter_value_match";
 }
 
 /**
@@ -164,7 +193,7 @@ export interface _envoy_config_route_v3_RateLimit_Action_DynamicMetaData {
    */
   'metadata_key'?: (_envoy_type_metadata_v3_MetadataKey | null);
   /**
-   * An optional value to use if *metadata_key* is empty. If not set and
+   * An optional value to use if ``metadata_key`` is empty. If not set and
    * no value is present under the metadata_key then no descriptor is generated.
    */
   'default_value'?: (string);
@@ -192,7 +221,7 @@ export interface _envoy_config_route_v3_RateLimit_Action_DynamicMetaData__Output
    */
   'metadata_key': (_envoy_type_metadata_v3_MetadataKey__Output | null);
   /**
-   * An optional value to use if *metadata_key* is empty. If not set and
+   * An optional value to use if ``metadata_key`` is empty. If not set and
    * no value is present under the metadata_key then no descriptor is generated.
    */
   'default_value': (string);
@@ -271,6 +300,10 @@ export interface _envoy_config_route_v3_RateLimit_Action_GenericKey__Output {
  */
 export interface _envoy_config_route_v3_RateLimit_Action_HeaderValueMatch {
   /**
+   * The key to use in the descriptor entry. Defaults to ``header_match``.
+   */
+  'descriptor_key'?: (string);
+  /**
    * The value to use in the descriptor entry.
    */
   'descriptor_value'?: (string);
@@ -300,6 +333,10 @@ export interface _envoy_config_route_v3_RateLimit_Action_HeaderValueMatch {
  */
 export interface _envoy_config_route_v3_RateLimit_Action_HeaderValueMatch__Output {
   /**
+   * The key to use in the descriptor entry. Defaults to ``header_match``.
+   */
+  'descriptor_key': (string);
+  /**
    * The value to use in the descriptor entry.
    */
   'descriptor_value': (string);
@@ -321,11 +358,66 @@ export interface _envoy_config_route_v3_RateLimit_Action_HeaderValueMatch__Outpu
 }
 
 /**
+ * The following descriptor entry is appended to the descriptor and is populated using the
+ * masked address from :ref:`x-forwarded-for <config_http_conn_man_headers_x-forwarded-for>`:
+ * 
+ * .. code-block:: cpp
+ * 
+ * ("masked_remote_address", "<masked address from x-forwarded-for>")
+ */
+export interface _envoy_config_route_v3_RateLimit_Action_MaskedRemoteAddress {
+  /**
+   * Length of prefix mask len for IPv4 (e.g. 0, 32).
+   * Defaults to 32 when unset.
+   * For example, trusted address from x-forwarded-for is ``192.168.1.1``,
+   * the descriptor entry is ("masked_remote_address", "192.168.1.1/32");
+   * if mask len is 24, the descriptor entry is ("masked_remote_address", "192.168.1.0/24").
+   */
+  'v4_prefix_mask_len'?: (_google_protobuf_UInt32Value | null);
+  /**
+   * Length of prefix mask len for IPv6 (e.g. 0, 128).
+   * Defaults to 128 when unset.
+   * For example, trusted address from x-forwarded-for is ``2001:abcd:ef01:2345:6789:abcd:ef01:234``,
+   * the descriptor entry is ("masked_remote_address", "2001:abcd:ef01:2345:6789:abcd:ef01:234/128");
+   * if mask len is 64, the descriptor entry is ("masked_remote_address", "2001:abcd:ef01:2345::/64").
+   */
+  'v6_prefix_mask_len'?: (_google_protobuf_UInt32Value | null);
+}
+
+/**
+ * The following descriptor entry is appended to the descriptor and is populated using the
+ * masked address from :ref:`x-forwarded-for <config_http_conn_man_headers_x-forwarded-for>`:
+ * 
+ * .. code-block:: cpp
+ * 
+ * ("masked_remote_address", "<masked address from x-forwarded-for>")
+ */
+export interface _envoy_config_route_v3_RateLimit_Action_MaskedRemoteAddress__Output {
+  /**
+   * Length of prefix mask len for IPv4 (e.g. 0, 32).
+   * Defaults to 32 when unset.
+   * For example, trusted address from x-forwarded-for is ``192.168.1.1``,
+   * the descriptor entry is ("masked_remote_address", "192.168.1.1/32");
+   * if mask len is 24, the descriptor entry is ("masked_remote_address", "192.168.1.0/24").
+   */
+  'v4_prefix_mask_len': (_google_protobuf_UInt32Value__Output | null);
+  /**
+   * Length of prefix mask len for IPv6 (e.g. 0, 128).
+   * Defaults to 128 when unset.
+   * For example, trusted address from x-forwarded-for is ``2001:abcd:ef01:2345:6789:abcd:ef01:234``,
+   * the descriptor entry is ("masked_remote_address", "2001:abcd:ef01:2345:6789:abcd:ef01:234/128");
+   * if mask len is 64, the descriptor entry is ("masked_remote_address", "2001:abcd:ef01:2345::/64").
+   */
+  'v6_prefix_mask_len': (_google_protobuf_UInt32Value__Output | null);
+}
+
+/**
  * The following descriptor entry is appended when the metadata contains a key value:
  * 
  * .. code-block:: cpp
  * 
  * ("<descriptor_key>", "<value_queried_from_metadata>")
+ * [#next-free-field: 6]
  */
 export interface _envoy_config_route_v3_RateLimit_Action_MetaData {
   /**
@@ -338,14 +430,21 @@ export interface _envoy_config_route_v3_RateLimit_Action_MetaData {
    */
   'metadata_key'?: (_envoy_type_metadata_v3_MetadataKey | null);
   /**
-   * An optional value to use if *metadata_key* is empty. If not set and
-   * no value is present under the metadata_key then no descriptor is generated.
+   * An optional value to use if ``metadata_key`` is empty. If not set and
+   * no value is present under the metadata_key then ``skip_if_absent`` is followed to
+   * skip calling the rate limiting service or skip the descriptor.
    */
   'default_value'?: (string);
   /**
    * Source of metadata
    */
   'source'?: (_envoy_config_route_v3_RateLimit_Action_MetaData_Source | keyof typeof _envoy_config_route_v3_RateLimit_Action_MetaData_Source);
+  /**
+   * If set to true, Envoy skips the descriptor while calling rate limiting service
+   * when ``metadata_key`` is empty and ``default_value`` is not set. By default it skips calling the
+   * rate limiting service in that case.
+   */
+  'skip_if_absent'?: (boolean);
 }
 
 /**
@@ -354,6 +453,7 @@ export interface _envoy_config_route_v3_RateLimit_Action_MetaData {
  * .. code-block:: cpp
  * 
  * ("<descriptor_key>", "<value_queried_from_metadata>")
+ * [#next-free-field: 6]
  */
 export interface _envoy_config_route_v3_RateLimit_Action_MetaData__Output {
   /**
@@ -366,14 +466,21 @@ export interface _envoy_config_route_v3_RateLimit_Action_MetaData__Output {
    */
   'metadata_key': (_envoy_type_metadata_v3_MetadataKey__Output | null);
   /**
-   * An optional value to use if *metadata_key* is empty. If not set and
-   * no value is present under the metadata_key then no descriptor is generated.
+   * An optional value to use if ``metadata_key`` is empty. If not set and
+   * no value is present under the metadata_key then ``skip_if_absent`` is followed to
+   * skip calling the rate limiting service or skip the descriptor.
    */
   'default_value': (string);
   /**
    * Source of metadata
    */
   'source': (keyof typeof _envoy_config_route_v3_RateLimit_Action_MetaData_Source);
+  /**
+   * If set to true, Envoy skips the descriptor while calling rate limiting service
+   * when ``metadata_key`` is empty and ``default_value`` is not set. By default it skips calling the
+   * rate limiting service in that case.
+   */
+  'skip_if_absent': (boolean);
 }
 
 export interface _envoy_config_route_v3_RateLimit_Override {
@@ -390,6 +497,72 @@ export interface _envoy_config_route_v3_RateLimit_Override__Output {
    */
   'dynamic_metadata'?: (_envoy_config_route_v3_RateLimit_Override_DynamicMetadata__Output | null);
   'override_specifier': "dynamic_metadata";
+}
+
+/**
+ * The following descriptor entry is appended to the descriptor:
+ * 
+ * .. code-block:: cpp
+ * 
+ * ("query_match", "<descriptor_value>")
+ */
+export interface _envoy_config_route_v3_RateLimit_Action_QueryParameterValueMatch {
+  /**
+   * The key to use in the descriptor entry. Defaults to ``query_match``.
+   */
+  'descriptor_key'?: (string);
+  /**
+   * The value to use in the descriptor entry.
+   */
+  'descriptor_value'?: (string);
+  /**
+   * If set to true, the action will append a descriptor entry when the
+   * request matches the headers. If set to false, the action will append a
+   * descriptor entry when the request does not match the headers. The
+   * default value is true.
+   */
+  'expect_match'?: (_google_protobuf_BoolValue | null);
+  /**
+   * Specifies a set of query parameters that the rate limit action should match
+   * on. The action will check the request’s query parameters against all the
+   * specified query parameters in the config. A match will happen if all the
+   * query parameters in the config are present in the request with the same values
+   * (or based on presence if the value field is not in the config).
+   */
+  'query_parameters'?: (_envoy_config_route_v3_QueryParameterMatcher)[];
+}
+
+/**
+ * The following descriptor entry is appended to the descriptor:
+ * 
+ * .. code-block:: cpp
+ * 
+ * ("query_match", "<descriptor_value>")
+ */
+export interface _envoy_config_route_v3_RateLimit_Action_QueryParameterValueMatch__Output {
+  /**
+   * The key to use in the descriptor entry. Defaults to ``query_match``.
+   */
+  'descriptor_key': (string);
+  /**
+   * The value to use in the descriptor entry.
+   */
+  'descriptor_value': (string);
+  /**
+   * If set to true, the action will append a descriptor entry when the
+   * request matches the headers. If set to false, the action will append a
+   * descriptor entry when the request does not match the headers. The
+   * default value is true.
+   */
+  'expect_match': (_google_protobuf_BoolValue__Output | null);
+  /**
+   * Specifies a set of query parameters that the rate limit action should match
+   * on. The action will check the request’s query parameters against all the
+   * specified query parameters in the config. A match will happen if all the
+   * query parameters in the config are present in the request with the same values
+   * (or based on presence if the value field is not in the config).
+   */
+  'query_parameters': (_envoy_config_route_v3_QueryParameterMatcher__Output)[];
 }
 
 /**
@@ -416,7 +589,7 @@ export interface _envoy_config_route_v3_RateLimit_Action_RemoteAddress__Output {
 
 /**
  * The following descriptor entry is appended when a header contains a key that matches the
- * *header_name*:
+ * ``header_name``:
  * 
  * .. code-block:: cpp
  * 
@@ -443,7 +616,7 @@ export interface _envoy_config_route_v3_RateLimit_Action_RequestHeaders {
 
 /**
  * The following descriptor entry is appended when a header contains a key that matches the
- * *header_name*:
+ * ``header_name``:
  * 
  * .. code-block:: cpp
  * 

@@ -1,5 +1,6 @@
 // Original file: deps/envoy-api/envoy/config/route/v3/scoped_route.proto
 
+import type { RouteConfiguration as _envoy_config_route_v3_RouteConfiguration, RouteConfiguration__Output as _envoy_config_route_v3_RouteConfiguration__Output } from '../../../../envoy/config/route/v3/RouteConfiguration';
 
 export interface _envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment {
   /**
@@ -52,7 +53,10 @@ export interface _envoy_config_route_v3_ScopedRouteConfiguration_Key__Output {
 /**
  * Specifies a routing scope, which associates a
  * :ref:`Key<envoy_v3_api_msg_config.route.v3.ScopedRouteConfiguration.Key>` to a
- * :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration` (identified by its resource name).
+ * :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration`.
+ * The :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration` can be obtained dynamically
+ * via RDS (:ref:`route_configuration_name<envoy_v3_api_field_config.route.v3.ScopedRouteConfiguration.route_configuration_name>`)
+ * or specified inline (:ref:`route_configuration<envoy_v3_api_field_config.route.v3.ScopedRouteConfiguration.route_configuration>`).
  * 
  * The HTTP connection manager builds up a table consisting of these Key to
  * RouteConfiguration mappings, and looks up the RouteConfiguration to use per
@@ -106,8 +110,10 @@ export interface _envoy_config_route_v3_ScopedRouteConfiguration_Key__Output {
  * Host: foo.com
  * X-Route-Selector: vip=172.10.10.20
  * 
- * would result in the routing table defined by the `route-config1`
+ * would result in the routing table defined by the ``route-config1``
  * RouteConfiguration being assigned to the HTTP request/stream.
+ * 
+ * [#next-free-field: 6]
  */
 export interface ScopedRouteConfiguration {
   /**
@@ -128,12 +134,19 @@ export interface ScopedRouteConfiguration {
    * Whether the RouteConfiguration should be loaded on demand.
    */
   'on_demand'?: (boolean);
+  /**
+   * The :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration` associated with the scope.
+   */
+  'route_configuration'?: (_envoy_config_route_v3_RouteConfiguration | null);
 }
 
 /**
  * Specifies a routing scope, which associates a
  * :ref:`Key<envoy_v3_api_msg_config.route.v3.ScopedRouteConfiguration.Key>` to a
- * :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration` (identified by its resource name).
+ * :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration`.
+ * The :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration` can be obtained dynamically
+ * via RDS (:ref:`route_configuration_name<envoy_v3_api_field_config.route.v3.ScopedRouteConfiguration.route_configuration_name>`)
+ * or specified inline (:ref:`route_configuration<envoy_v3_api_field_config.route.v3.ScopedRouteConfiguration.route_configuration>`).
  * 
  * The HTTP connection manager builds up a table consisting of these Key to
  * RouteConfiguration mappings, and looks up the RouteConfiguration to use per
@@ -187,8 +200,10 @@ export interface ScopedRouteConfiguration {
  * Host: foo.com
  * X-Route-Selector: vip=172.10.10.20
  * 
- * would result in the routing table defined by the `route-config1`
+ * would result in the routing table defined by the ``route-config1``
  * RouteConfiguration being assigned to the HTTP request/stream.
+ * 
+ * [#next-free-field: 6]
  */
 export interface ScopedRouteConfiguration__Output {
   /**
@@ -209,4 +224,8 @@ export interface ScopedRouteConfiguration__Output {
    * Whether the RouteConfiguration should be loaded on demand.
    */
   'on_demand': (boolean);
+  /**
+   * The :ref:`envoy_v3_api_msg_config.route.v3.RouteConfiguration` associated with the scope.
+   */
+  'route_configuration': (_envoy_config_route_v3_RouteConfiguration__Output | null);
 }

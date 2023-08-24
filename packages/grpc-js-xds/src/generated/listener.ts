@@ -21,6 +21,7 @@ export interface ProtoGrpcType {
           ExtensionFilter: MessageTypeDefinition
           GrpcStatusFilter: MessageTypeDefinition
           HeaderFilter: MessageTypeDefinition
+          LogTypeFilter: MessageTypeDefinition
           MetadataFilter: MessageTypeDefinition
           NotHealthCheckFilter: MessageTypeDefinition
           OrFilter: MessageTypeDefinition
@@ -48,6 +49,7 @@ export interface ProtoGrpcType {
           EnvoyInternalAddress: MessageTypeDefinition
           Extension: MessageTypeDefinition
           ExtensionConfigSource: MessageTypeDefinition
+          ExtraSourceAddress: MessageTypeDefinition
           GrpcProtocolOptions: MessageTypeDefinition
           GrpcService: MessageTypeDefinition
           HeaderMap: MessageTypeDefinition
@@ -62,9 +64,12 @@ export interface ProtoGrpcType {
           Locality: MessageTypeDefinition
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition
+          PathConfigSource: MessageTypeDefinition
           Pipe: MessageTypeDefinition
           ProxyProtocolConfig: MessageTypeDefinition
+          ProxyProtocolPassThroughTLVs: MessageTypeDefinition
           QueryParameter: MessageTypeDefinition
+          QuicKeepAliveSettings: MessageTypeDefinition
           QuicProtocolOptions: MessageTypeDefinition
           RateLimitSettings: MessageTypeDefinition
           RemoteDataSource: MessageTypeDefinition
@@ -80,6 +85,7 @@ export interface ProtoGrpcType {
           SelfConfigSource: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
           SocketOption: MessageTypeDefinition
+          SocketOptionsOverride: MessageTypeDefinition
           TcpKeepalive: MessageTypeDefinition
           TcpProtocolOptions: MessageTypeDefinition
           TrafficDirection: EnumTypeDefinition
@@ -93,7 +99,9 @@ export interface ProtoGrpcType {
       listener: {
         v3: {
           ActiveRawUdpListenerConfig: MessageTypeDefinition
+          AdditionalAddress: MessageTypeDefinition
           ApiListener: MessageTypeDefinition
+          ApiListenerManager: MessageTypeDefinition
           Filter: MessageTypeDefinition
           FilterChain: MessageTypeDefinition
           FilterChainMatch: MessageTypeDefinition
@@ -101,12 +109,15 @@ export interface ProtoGrpcType {
           ListenerCollection: MessageTypeDefinition
           ListenerFilter: MessageTypeDefinition
           ListenerFilterChainMatchPredicate: MessageTypeDefinition
+          ListenerManager: MessageTypeDefinition
           QuicProtocolOptions: MessageTypeDefinition
           UdpListenerConfig: MessageTypeDefinition
+          ValidationListenerManager: MessageTypeDefinition
         }
       }
       route: {
         v3: {
+          ClusterSpecifierPlugin: MessageTypeDefinition
           CorsPolicy: MessageTypeDefinition
           Decorator: MessageTypeDefinition
           DirectResponseAction: MessageTypeDefinition
@@ -122,11 +133,27 @@ export interface ProtoGrpcType {
           RetryPolicy: MessageTypeDefinition
           Route: MessageTypeDefinition
           RouteAction: MessageTypeDefinition
+          RouteList: MessageTypeDefinition
           RouteMatch: MessageTypeDefinition
           Tracing: MessageTypeDefinition
           VirtualCluster: MessageTypeDefinition
           VirtualHost: MessageTypeDefinition
           WeightedCluster: MessageTypeDefinition
+        }
+      }
+    }
+    data: {
+      accesslog: {
+        v3: {
+          AccessLogCommon: MessageTypeDefinition
+          AccessLogType: EnumTypeDefinition
+          ConnectionProperties: MessageTypeDefinition
+          HTTPAccessLogEntry: MessageTypeDefinition
+          HTTPRequestProperties: MessageTypeDefinition
+          HTTPResponseProperties: MessageTypeDefinition
+          ResponseFlags: MessageTypeDefinition
+          TCPAccessLogEntry: MessageTypeDefinition
+          TLSProperties: MessageTypeDefinition
         }
       }
     }
@@ -258,6 +285,17 @@ export interface ProtoGrpcType {
         CollectionEntry: MessageTypeDefinition
         ContextParams: MessageTypeDefinition
         ResourceLocator: MessageTypeDefinition
+        TypedExtensionConfig: MessageTypeDefinition
+      }
+    }
+    type: {
+      matcher: {
+        v3: {
+          ListStringMatcher: MessageTypeDefinition
+          Matcher: MessageTypeDefinition
+          RegexMatcher: MessageTypeDefinition
+          StringMatcher: MessageTypeDefinition
+        }
       }
     }
   }

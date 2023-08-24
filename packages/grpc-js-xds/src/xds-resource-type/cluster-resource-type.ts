@@ -17,19 +17,27 @@
 
 import { CDS_TYPE_URL, CLUSTER_CONFIG_TYPE_URL, decodeSingleResource } from "../resources";
 import { XdsDecodeContext, XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
-import { experimental } from "@grpc/grpc-js";
+import { LoadBalancingConfig, experimental, logVerbosity } from "@grpc/grpc-js";
 import { XdsServerConfig } from "../xds-bootstrap";
 import { Duration__Output } from "../generated/google/protobuf/Duration";
 import { OutlierDetection__Output } from "../generated/envoy/config/cluster/v3/OutlierDetection";
-import { EXPERIMENTAL_OUTLIER_DETECTION } from "../environment";
+import { EXPERIMENTAL_CUSTOM_LB_CONFIG, EXPERIMENTAL_OUTLIER_DETECTION } from "../environment";
 import { Cluster__Output } from "../generated/envoy/config/cluster/v3/Cluster";
 import { UInt32Value__Output } from "../generated/google/protobuf/UInt32Value";
 import { Any__Output } from "../generated/google/protobuf/Any";
-
-import SuccessRateEjectionConfig = experimental.SuccessRateEjectionConfig;
-import FailurePercentageEjectionConfig = experimental.FailurePercentageEjectionConfig;
 import { Watcher, XdsClient } from "../xds-client";
 import { protoDurationToDuration } from "../duration";
+import { convertToLoadBalancingConfig } from "../lb-policy-registry";
+import SuccessRateEjectionConfig = experimental.SuccessRateEjectionConfig;
+import FailurePercentageEjectionConfig = experimental.FailurePercentageEjectionConfig;
+import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
+
+const TRACER_NAME = 'xds_client';
+
+function trace(text: string): void {
+  experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
+}
+
 
 export interface CdsUpdate {
   type: 'AGGREGATE' | 'EDS' | 'LOGICAL_DNS';
@@ -39,6 +47,7 @@ export interface CdsUpdate {
   maxConcurrentRequests?: number;
   edsServiceName?: string;
   dnsHostname?: string;
+  lbPolicyConfig: LoadBalancingConfig[];
   outlierDetectionUpdate?: experimental.OutlierDetectionRawConfig;
 }
 
@@ -85,7 +94,6 @@ function convertOutlierDetectionUpdate(outlierDetection: OutlierDetection__Outpu
   };
 }
 
-
 export class ClusterResourceType extends XdsResourceType {
   private static singleton: ClusterResourceType = new ClusterResourceType();
 
@@ -122,7 +130,27 @@ export class ClusterResourceType extends XdsResourceType {
   }
 
   private validateResource(context: XdsDecodeContext, message: Cluster__Output): CdsUpdate | null {
-    if (message.lb_policy !== 'ROUND_ROBIN') {
+    let lbPolicyConfig: LoadBalancingConfig;
+    if (EXPERIMENTAL_CUSTOM_LB_CONFIG && message.load_balancing_policy) {
+      try {
+        lbPolicyConfig = convertToLoadBalancingConfig(message.load_balancing_policy);
+      } catch (e) {
+        trace('LB policy config parsing failed with error ' + e);
+        return null;
+      }
+      try {
+        parseLoadBalancingConfig(lbPolicyConfig);
+      } catch (e) {
+        trace('LB policy config parsing failed with error ' + e);
+        return null;
+      }
+    } else if (message.lb_policy === 'ROUND_ROBIN') {
+      lbPolicyConfig = {
+        xds_wrr_locality: {
+          child_policy: [{round_robin: {}}]
+        }
+      };
+    } else {
       return null;
     }
     if (message.lrs_server) {
@@ -167,7 +195,8 @@ export class ClusterResourceType extends XdsResourceType {
         type: 'AGGREGATE',
         name: message.name,
         aggregateChildren: clusterConfig.clusters,
-        outlierDetectionUpdate: convertOutlierDetectionUpdate(null)
+        outlierDetectionUpdate: convertOutlierDetectionUpdate(null),
+        lbPolicyConfig: [lbPolicyConfig]
       };
     } else {
       let maxConcurrentRequests: number | undefined = undefined;
@@ -190,7 +219,8 @@ export class ClusterResourceType extends XdsResourceType {
           maxConcurrentRequests: maxConcurrentRequests,
           edsServiceName: message.eds_cluster_config.service_name === '' ? undefined : message.eds_cluster_config.service_name,
           lrsLoadReportingServer: message.lrs_server ? context.server : undefined,
-          outlierDetectionUpdate: convertOutlierDetectionUpdate(message.outlier_detection)
+          outlierDetectionUpdate: convertOutlierDetectionUpdate(message.outlier_detection),
+          lbPolicyConfig: [lbPolicyConfig]
         }
       } else if (message.type === 'LOGICAL_DNS') {
         if (!message.load_assignment) {
@@ -219,7 +249,8 @@ export class ClusterResourceType extends XdsResourceType {
           maxConcurrentRequests: maxConcurrentRequests,
           dnsHostname: `${socketAddress.address}:${socketAddress.port_value}`,
           lrsLoadReportingServer: message.lrs_server ? context.server : undefined,
-          outlierDetectionUpdate: convertOutlierDetectionUpdate(message.outlier_detection)
+          outlierDetectionUpdate: convertOutlierDetectionUpdate(message.outlier_detection),
+          lbPolicyConfig: [lbPolicyConfig]
         };
       }
     }

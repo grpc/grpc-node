@@ -18,8 +18,8 @@ export interface LbEndpoint {
   /**
    * The endpoint metadata specifies values that may be used by the load
    * balancer to select endpoints in a cluster for a given request. The filter
-   * name should be specified as *envoy.lb*. An example boolean key-value pair
-   * is *canary*, providing the optional canary status of the upstream host.
+   * name should be specified as ``envoy.lb``. An example boolean key-value pair
+   * is ``canary``, providing the optional canary status of the upstream host.
    * This may be matched against in a route's
    * :ref:`RouteAction <envoy_v3_api_msg_config.route.v3.RouteAction>` metadata_match field
    * to subset the endpoints considered in cluster load balancing.
@@ -32,9 +32,9 @@ export interface LbEndpoint {
    * of the weights of all endpoints in the endpoint's locality to produce a
    * percentage of traffic for the endpoint. This percentage is then further
    * weighted by the endpoint's locality's load balancing weight from
-   * LocalityLbEndpoints. If unspecified, each host is presumed to have equal
-   * weight in a locality. The sum of the weights of all endpoints in the
-   * endpoint's locality must not exceed uint32_t maximal value (4294967295).
+   * LocalityLbEndpoints. If unspecified, will be treated as 1. The sum
+   * of the weights of all endpoints in the endpoint's locality must not
+   * exceed uint32_t maximal value (4294967295).
    */
   'load_balancing_weight'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -60,8 +60,8 @@ export interface LbEndpoint__Output {
   /**
    * The endpoint metadata specifies values that may be used by the load
    * balancer to select endpoints in a cluster for a given request. The filter
-   * name should be specified as *envoy.lb*. An example boolean key-value pair
-   * is *canary*, providing the optional canary status of the upstream host.
+   * name should be specified as ``envoy.lb``. An example boolean key-value pair
+   * is ``canary``, providing the optional canary status of the upstream host.
    * This may be matched against in a route's
    * :ref:`RouteAction <envoy_v3_api_msg_config.route.v3.RouteAction>` metadata_match field
    * to subset the endpoints considered in cluster load balancing.
@@ -74,9 +74,9 @@ export interface LbEndpoint__Output {
    * of the weights of all endpoints in the endpoint's locality to produce a
    * percentage of traffic for the endpoint. This percentage is then further
    * weighted by the endpoint's locality's load balancing weight from
-   * LocalityLbEndpoints. If unspecified, each host is presumed to have equal
-   * weight in a locality. The sum of the weights of all endpoints in the
-   * endpoint's locality must not exceed uint32_t maximal value (4294967295).
+   * LocalityLbEndpoints. If unspecified, will be treated as 1. The sum
+   * of the weights of all endpoints in the endpoint's locality must not
+   * exceed uint32_t maximal value (4294967295).
    */
   'load_balancing_weight': (_google_protobuf_UInt32Value__Output | null);
   /**

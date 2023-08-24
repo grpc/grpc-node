@@ -19,13 +19,15 @@ import * as resolver_xds from './resolver-xds';
 import * as load_balancer_cds from './load-balancer-cds';
 import * as xds_cluster_resolver from './load-balancer-xds-cluster-resolver';
 import * as xds_cluster_impl from './load-balancer-xds-cluster-impl';
-import * as load_balancer_lrs from './load-balancer-lrs';
 import * as load_balancer_priority from './load-balancer-priority';
 import * as load_balancer_weighted_target from './load-balancer-weighted-target';
 import * as load_balancer_xds_cluster_manager from './load-balancer-xds-cluster-manager';
+import * as xds_wrr_locality from './load-balancer-xds-wrr-locality';
 import * as router_filter from './http-filter/router-filter';
 import * as fault_injection_filter from './http-filter/fault-injection-filter';
 import * as csds from './csds';
+import * as round_robin_lb from './lb-policy-registry/round-robin';
+import * as typed_struct_lb from './lb-policy-registry/typed-struct';
 
 /**
  * Register the "xds:" name scheme with the @grpc/grpc-js library.
@@ -35,11 +37,13 @@ export function register() {
   load_balancer_cds.setup();
   xds_cluster_resolver.setup();
   xds_cluster_impl.setup();
-  load_balancer_lrs.setup();
   load_balancer_priority.setup();
   load_balancer_weighted_target.setup();
   load_balancer_xds_cluster_manager.setup();
+  xds_wrr_locality.setup();
   router_filter.setup();
   fault_injection_filter.setup();
   csds.setup();
+  round_robin_lb.setup();
+  typed_struct_lb.setup();
 }

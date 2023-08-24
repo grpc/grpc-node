@@ -5,9 +5,10 @@ import type { FaultAbort as _envoy_extensions_filters_http_fault_v3_FaultAbort, 
 import type { HeaderMatcher as _envoy_config_route_v3_HeaderMatcher, HeaderMatcher__Output as _envoy_config_route_v3_HeaderMatcher__Output } from '../../../../../../envoy/config/route/v3/HeaderMatcher';
 import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../../../google/protobuf/UInt32Value';
 import type { FaultRateLimit as _envoy_extensions_filters_common_fault_v3_FaultRateLimit, FaultRateLimit__Output as _envoy_extensions_filters_common_fault_v3_FaultRateLimit__Output } from '../../../../../../envoy/extensions/filters/common/fault/v3/FaultRateLimit';
+import type { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_Struct__Output } from '../../../../../../google/protobuf/Struct';
 
 /**
- * [#next-free-field: 16]
+ * [#next-free-field: 17]
  */
 export interface HTTPFault {
   /**
@@ -17,7 +18,7 @@ export interface HTTPFault {
   'delay'?: (_envoy_extensions_filters_common_fault_v3_FaultDelay | null);
   /**
    * If specified, the filter will abort requests based on the values in
-   * the object. At least *abort* or *delay* must be specified.
+   * the object. At least ``abort`` or ``delay`` must be specified.
    */
   'abort'?: (_envoy_extensions_filters_http_fault_v3_FaultAbort | null);
   /**
@@ -35,7 +36,7 @@ export interface HTTPFault {
    * The filter will check the request's headers against all the specified
    * headers in the filter config. A match will happen if all the headers in the
    * config are present in the request with the same values (or based on
-   * presence if the *value* field is not in the config).
+   * presence if the ``value`` field is not in the config).
    */
   'headers'?: (_envoy_config_route_v3_HeaderMatcher)[];
   /**
@@ -52,9 +53,9 @@ export interface HTTPFault {
    * filter. Note that because this setting can be overridden at the route level, it's possible
    * for the number of active faults to be greater than this value (if injected via a different
    * route). If not specified, defaults to unlimited. This setting can be overridden via
-   * `runtime <config_http_filters_fault_injection_runtime>` and any faults that are not injected
-   * due to overflow will be indicated via the `faults_overflow
-   * <config_http_filters_fault_injection_stats>` stat.
+   * ``runtime <config_http_filters_fault_injection_runtime>`` and any faults that are not injected
+   * due to overflow will be indicated via the ``faults_overflow
+   * <config_http_filters_fault_injection_stats>`` stat.
    * 
    * .. attention::
    * Like other :ref:`circuit breakers <arch_overview_circuit_break>` in Envoy, this is a fuzzy
@@ -114,10 +115,18 @@ export interface HTTPFault {
    * Default value is false.
    */
   'disable_downstream_cluster_stats'?: (boolean);
+  /**
+   * When an abort or delay fault is executed, the metadata struct provided here will be added to the
+   * request's dynamic metadata under the namespace corresponding to the name of the fault filter.
+   * This data can be logged as part of Access Logs using the :ref:`command operator
+   * <config_access_log_command_operators>` %DYNAMIC_METADATA(NAMESPACE)%, where NAMESPACE is the name of
+   * the fault filter.
+   */
+  'filter_metadata'?: (_google_protobuf_Struct | null);
 }
 
 /**
- * [#next-free-field: 16]
+ * [#next-free-field: 17]
  */
 export interface HTTPFault__Output {
   /**
@@ -127,7 +136,7 @@ export interface HTTPFault__Output {
   'delay': (_envoy_extensions_filters_common_fault_v3_FaultDelay__Output | null);
   /**
    * If specified, the filter will abort requests based on the values in
-   * the object. At least *abort* or *delay* must be specified.
+   * the object. At least ``abort`` or ``delay`` must be specified.
    */
   'abort': (_envoy_extensions_filters_http_fault_v3_FaultAbort__Output | null);
   /**
@@ -145,7 +154,7 @@ export interface HTTPFault__Output {
    * The filter will check the request's headers against all the specified
    * headers in the filter config. A match will happen if all the headers in the
    * config are present in the request with the same values (or based on
-   * presence if the *value* field is not in the config).
+   * presence if the ``value`` field is not in the config).
    */
   'headers': (_envoy_config_route_v3_HeaderMatcher__Output)[];
   /**
@@ -162,9 +171,9 @@ export interface HTTPFault__Output {
    * filter. Note that because this setting can be overridden at the route level, it's possible
    * for the number of active faults to be greater than this value (if injected via a different
    * route). If not specified, defaults to unlimited. This setting can be overridden via
-   * `runtime <config_http_filters_fault_injection_runtime>` and any faults that are not injected
-   * due to overflow will be indicated via the `faults_overflow
-   * <config_http_filters_fault_injection_stats>` stat.
+   * ``runtime <config_http_filters_fault_injection_runtime>`` and any faults that are not injected
+   * due to overflow will be indicated via the ``faults_overflow
+   * <config_http_filters_fault_injection_stats>`` stat.
    * 
    * .. attention::
    * Like other :ref:`circuit breakers <arch_overview_circuit_break>` in Envoy, this is a fuzzy
@@ -224,4 +233,12 @@ export interface HTTPFault__Output {
    * Default value is false.
    */
   'disable_downstream_cluster_stats': (boolean);
+  /**
+   * When an abort or delay fault is executed, the metadata struct provided here will be added to the
+   * request's dynamic metadata under the namespace corresponding to the name of the fault filter.
+   * This data can be logged as part of Access Logs using the :ref:`command operator
+   * <config_access_log_command_operators>` %DYNAMIC_METADATA(NAMESPACE)%, where NAMESPACE is the name of
+   * the fault filter.
+   */
+  'filter_metadata': (_google_protobuf_Struct__Output | null);
 }

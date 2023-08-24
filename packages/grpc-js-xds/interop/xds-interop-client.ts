@@ -30,7 +30,97 @@ import { XdsUpdateClientConfigureServiceHandlers } from './generated/grpc/testin
 import { Empty__Output } from './generated/grpc/testing/Empty';
 import { LoadBalancerAccumulatedStatsResponse } from './generated/grpc/testing/LoadBalancerAccumulatedStatsResponse';
 
+import TypedLoadBalancingConfig = grpc.experimental.TypedLoadBalancingConfig;
+import LoadBalancer = grpc.experimental.LoadBalancer;
+import ChannelControlHelper = grpc.experimental.ChannelControlHelper;
+import ChildLoadBalancerHandler = grpc.experimental.ChildLoadBalancerHandler;
+import SubchannelAddress = grpc.experimental.SubchannelAddress;
+import Picker = grpc.experimental.Picker;
+import PickArgs = grpc.experimental.PickArgs;
+import PickResult = grpc.experimental.PickResult;
+import PickResultType = grpc.experimental.PickResultType;
+import createChildChannelControlHelper = grpc.experimental.createChildChannelControlHelper;
+import parseLoadBalancingConfig = grpc.experimental.parseLoadBalancingConfig;
+
 grpc_xds.register();
+
+const LB_POLICY_NAME = 'test.RpcBehaviorLoadBalancer';
+
+class RpcBehaviorLoadBalancingConfig implements TypedLoadBalancingConfig {
+  constructor(private rpcBehavior: string) {}
+  getLoadBalancerName(): string {
+    return LB_POLICY_NAME;
+  }
+  toJsonObject(): object {
+    return {
+      [LB_POLICY_NAME]: {
+        'rpcBehavior': this.rpcBehavior
+      }
+    };
+  }
+  getRpcBehavior() {
+    return this.rpcBehavior;
+  }
+  static createFromJson(obj: any): RpcBehaviorLoadBalancingConfig {
+    if (!('rpcBehavior' in obj && typeof obj.rpcBehavior === 'string')) {
+      throw new Error(`${LB_POLICY_NAME} parsing error: expected string field rpcBehavior`);
+    }
+    return new RpcBehaviorLoadBalancingConfig(obj.rpcBehavior);
+  }
+}
+
+class RpcBehaviorPicker implements Picker {
+  constructor(private wrappedPicker: Picker, private rpcBehavior: string) {}
+  pick(pickArgs: PickArgs): PickResult {
+    const wrappedPick = this.wrappedPicker.pick(pickArgs);
+    if (wrappedPick.pickResultType === PickResultType.COMPLETE) {
+      pickArgs.metadata.add('rpc-behavior', this.rpcBehavior);
+    }
+    return wrappedPick;
+  }
+}
+
+const RPC_BEHAVIOR_CHILD_CONFIG = parseLoadBalancingConfig({round_robin: {}});
+
+/**
+ * Load balancer implementation for Custom LB policy test
+ */
+class RpcBehaviorLoadBalancer implements LoadBalancer {
+  private child: ChildLoadBalancerHandler;
+  private latestConfig: RpcBehaviorLoadBalancingConfig | null = null;
+  constructor(channelControlHelper: ChannelControlHelper) {
+    const childChannelControlHelper = createChildChannelControlHelper(channelControlHelper, {
+      updateState: (connectivityState, picker) => {
+        if (connectivityState === grpc.connectivityState.READY && this.latestConfig) {
+          picker = new RpcBehaviorPicker(picker, this.latestConfig.getLoadBalancerName());
+        }
+        channelControlHelper.updateState(connectivityState, picker);
+      }
+    });
+    this.child = new ChildLoadBalancerHandler(childChannelControlHelper);
+  }
+  updateAddressList(addressList: SubchannelAddress[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+    if (!(lbConfig instanceof RpcBehaviorLoadBalancingConfig)) {
+      return;
+    }
+    this.latestConfig = lbConfig;
+    this.child.updateAddressList(addressList, RPC_BEHAVIOR_CHILD_CONFIG, attributes);
+  }
+  exitIdle(): void {
+    this.child.exitIdle();
+  }
+  resetBackoff(): void {
+    this.child.resetBackoff();
+  }
+  destroy(): void {
+    this.child.destroy();
+  }
+  getTypeName(): string {
+    return LB_POLICY_NAME;
+  }
+}
+
+grpc.experimental.registerLoadBalancerType(LB_POLICY_NAME, RpcBehaviorLoadBalancer, RpcBehaviorLoadBalancingConfig);
 
 const packageDefinition = protoLoader.loadSync('grpc/testing/test.proto', {
   keepCase: true,
@@ -91,7 +181,7 @@ class CallSubscriber {
     }
     if (peerName in this.callsSucceededByPeer) {
       this.callsSucceededByPeer[peerName] += 1;
-    } else {    
+    } else {
       this.callsSucceededByPeer[peerName] = 1;
     }
     this.callsSucceeded += 1;
@@ -426,9 +516,9 @@ function main() {
      * channels do not share any subchannels. It does not have any
      * inherent function. */
     console.log(`Interop client channel ${i} starting sending ${argv.qps} QPS to ${argv.server}`);
-    sendConstantQps(new loadedProto.grpc.testing.TestService(argv.server, grpc.credentials.createInsecure(), {'unique': i}), 
-      argv.qps, 
-      argv.fail_on_failed_rpcs === 'true', 
+    sendConstantQps(new loadedProto.grpc.testing.TestService(argv.server, grpc.credentials.createInsecure(), {'unique': i}),
+      argv.qps,
+      argv.fail_on_failed_rpcs === 'true',
       callStatsTracker);
   }
 

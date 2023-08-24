@@ -21,6 +21,7 @@ export interface ProtoGrpcType {
           ExtensionFilter: MessageTypeDefinition
           GrpcStatusFilter: MessageTypeDefinition
           HeaderFilter: MessageTypeDefinition
+          LogTypeFilter: MessageTypeDefinition
           MetadataFilter: MessageTypeDefinition
           NotHealthCheckFilter: MessageTypeDefinition
           OrFilter: MessageTypeDefinition
@@ -48,6 +49,7 @@ export interface ProtoGrpcType {
           EnvoyInternalAddress: MessageTypeDefinition
           Extension: MessageTypeDefinition
           ExtensionConfigSource: MessageTypeDefinition
+          ExtraSourceAddress: MessageTypeDefinition
           GrpcProtocolOptions: MessageTypeDefinition
           GrpcService: MessageTypeDefinition
           HeaderMap: MessageTypeDefinition
@@ -62,9 +64,12 @@ export interface ProtoGrpcType {
           Locality: MessageTypeDefinition
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition
+          PathConfigSource: MessageTypeDefinition
           Pipe: MessageTypeDefinition
           ProxyProtocolConfig: MessageTypeDefinition
+          ProxyProtocolPassThroughTLVs: MessageTypeDefinition
           QueryParameter: MessageTypeDefinition
+          QuicKeepAliveSettings: MessageTypeDefinition
           QuicProtocolOptions: MessageTypeDefinition
           RateLimitSettings: MessageTypeDefinition
           RemoteDataSource: MessageTypeDefinition
@@ -80,6 +85,7 @@ export interface ProtoGrpcType {
           SelfConfigSource: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
           SocketOption: MessageTypeDefinition
+          SocketOptionsOverride: MessageTypeDefinition
           SubstitutionFormatString: MessageTypeDefinition
           TcpKeepalive: MessageTypeDefinition
           TcpProtocolOptions: MessageTypeDefinition
@@ -109,6 +115,7 @@ export interface ProtoGrpcType {
           Route: MessageTypeDefinition
           RouteAction: MessageTypeDefinition
           RouteConfiguration: MessageTypeDefinition
+          RouteList: MessageTypeDefinition
           RouteMatch: MessageTypeDefinition
           ScopedRouteConfiguration: MessageTypeDefinition
           Tracing: MessageTypeDefinition
@@ -121,6 +128,21 @@ export interface ProtoGrpcType {
       trace: {
         v3: {
           Tracing: MessageTypeDefinition
+        }
+      }
+    }
+    data: {
+      accesslog: {
+        v3: {
+          AccessLogCommon: MessageTypeDefinition
+          AccessLogType: EnumTypeDefinition
+          ConnectionProperties: MessageTypeDefinition
+          HTTPAccessLogEntry: MessageTypeDefinition
+          HTTPRequestProperties: MessageTypeDefinition
+          HTTPResponseProperties: MessageTypeDefinition
+          ResponseFlags: MessageTypeDefinition
+          TCPAccessLogEntry: MessageTypeDefinition
+          TLSProperties: MessageTypeDefinition
         }
       }
     }
@@ -275,6 +297,17 @@ export interface ProtoGrpcType {
       v3: {
         Authority: MessageTypeDefinition
         ContextParams: MessageTypeDefinition
+        TypedExtensionConfig: MessageTypeDefinition
+      }
+    }
+    type: {
+      matcher: {
+        v3: {
+          ListStringMatcher: MessageTypeDefinition
+          Matcher: MessageTypeDefinition
+          RegexMatcher: MessageTypeDefinition
+          StringMatcher: MessageTypeDefinition
+        }
       }
     }
   }

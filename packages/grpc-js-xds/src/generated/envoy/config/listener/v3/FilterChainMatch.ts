@@ -143,6 +143,7 @@ export interface FilterChainMatch {
    * will be first matched against ``www.example.com``, then ``*.example.com``, then ``*.com``.
    * 
    * Note that partial wildcards are not supported, and values like ``*w.example.com`` are invalid.
+   * The value ``*`` is also not supported, and ``server_names`` should be omitted instead.
    * 
    * .. attention::
    * 
@@ -285,6 +286,7 @@ export interface FilterChainMatch__Output {
    * will be first matched against ``www.example.com``, then ``*.example.com``, then ``*.com``.
    * 
    * Note that partial wildcards are not supported, and values like ``*w.example.com`` are invalid.
+   * The value ``*`` is also not supported, and ``server_names`` should be omitted instead.
    * 
    * .. attention::
    * 

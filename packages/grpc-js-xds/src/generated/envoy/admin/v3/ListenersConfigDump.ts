@@ -1,4 +1,4 @@
-// Original file: deps/envoy-api/envoy/admin/v3/config_dump.proto
+// Original file: deps/envoy-api/envoy/admin/v3/config_dump_shared.proto
 
 import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../google/protobuf/Any';
 import type { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../../google/protobuf/Timestamp';
@@ -35,7 +35,7 @@ export interface _envoy_admin_v3_ListenersConfigDump_DynamicListener {
   'draining_state'?: (_envoy_admin_v3_ListenersConfigDump_DynamicListenerState | null);
   /**
    * Set if the last update failed, cleared after the next successful update.
-   * The *error_state* field contains the rejected version of this particular
+   * The ``error_state`` field contains the rejected version of this particular
    * resource along with the reason and timestamp. For successfully updated or
    * acknowledged resource, this field should be empty.
    */
@@ -77,7 +77,7 @@ export interface _envoy_admin_v3_ListenersConfigDump_DynamicListener__Output {
   'draining_state': (_envoy_admin_v3_ListenersConfigDump_DynamicListenerState__Output | null);
   /**
    * Set if the last update failed, cleared after the next successful update.
-   * The *error_state* field contains the rejected version of this particular
+   * The ``error_state`` field contains the rejected version of this particular
    * resource along with the reason and timestamp. For successfully updated or
    * acknowledged resource, this field should be empty.
    */

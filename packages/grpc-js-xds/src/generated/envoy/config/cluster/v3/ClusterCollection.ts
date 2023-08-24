@@ -3,7 +3,7 @@
 import type { CollectionEntry as _xds_core_v3_CollectionEntry, CollectionEntry__Output as _xds_core_v3_CollectionEntry__Output } from '../../../../xds/core/v3/CollectionEntry';
 
 /**
- * Cluster list collections. Entries are *Cluster* resources or references.
+ * Cluster list collections. Entries are ``Cluster`` resources or references.
  * [#not-implemented-hide:]
  */
 export interface ClusterCollection {
@@ -11,7 +11,7 @@ export interface ClusterCollection {
 }
 
 /**
- * Cluster list collections. Entries are *Cluster* resources or references.
+ * Cluster list collections. Entries are ``Cluster`` resources or references.
  * [#not-implemented-hide:]
  */
 export interface ClusterCollection__Output {

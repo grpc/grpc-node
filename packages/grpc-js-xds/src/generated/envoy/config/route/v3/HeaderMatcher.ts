@@ -8,19 +8,21 @@ import type { Long } from '@grpc/proto-loader';
 /**
  * .. attention::
  * 
- * Internally, Envoy always uses the HTTP/2 *:authority* header to represent the HTTP/1 *Host*
- * header. Thus, if attempting to match on *Host*, match on *:authority* instead.
+ * Internally, Envoy always uses the HTTP/2 ``:authority`` header to represent the HTTP/1 ``Host``
+ * header. Thus, if attempting to match on ``Host``, match on ``:authority`` instead.
  * 
  * .. attention::
  * 
- * To route on HTTP method, use the special HTTP/2 *:method* header. This works for both
+ * To route on HTTP method, use the special HTTP/2 ``:method`` header. This works for both
  * HTTP/1 and HTTP/2 as Envoy normalizes headers. E.g.,
  * 
  * .. code-block:: json
  * 
  * {
  * "name": ":method",
- * "exact_match": "POST"
+ * "string_match": {
+ * "exact": "POST"
+ * }
  * }
  * 
  * .. attention::
@@ -30,7 +32,7 @@ import type { Long } from '@grpc/proto-loader';
  * value.
  * 
  * [#next-major-version: HeaderMatcher should be refactored to use StringMatcher.]
- * [#next-free-field: 14]
+ * [#next-free-field: 15]
  */
 export interface HeaderMatcher {
   /**
@@ -52,8 +54,8 @@ export interface HeaderMatcher {
    * 
    * Examples:
    * 
-   * * For range [-10,0), route will match for header value -1, but not for 0, "somestring", 10.9,
-   * "-1somestring"
+   * * For range [-10,0), route will match for header value -1, but not for 0, ``somestring``, 10.9,
+   * ``-1somestring``
    */
   'range_match'?: (_envoy_type_v3_Int64Range | null);
   /**
@@ -66,7 +68,7 @@ export interface HeaderMatcher {
    * 
    * Examples:
    * 
-   * * The regex ``\d{3}`` does not match the value *1234*, so it will match when inverted.
+   * * The regex ``\d{3}`` does not match the value ``1234``, so it will match when inverted.
    * * The range [-10,0) will match the value -1, so it will not match when inverted.
    */
   'invert_match'?: (boolean);
@@ -77,7 +79,7 @@ export interface HeaderMatcher {
    * 
    * Examples:
    * 
-   * * The prefix *abcd* matches the value *abcdxyz*, but not for *abcxyz*.
+   * * The prefix ``abcd`` matches the value ``abcdxyz``, but not for ``abcxyz``.
    */
   'prefix_match'?: (string);
   /**
@@ -87,7 +89,7 @@ export interface HeaderMatcher {
    * 
    * Examples:
    * 
-   * * The suffix *abcd* matches the value *xyzabcd*, but not for *xyzbcd*.
+   * * The suffix ``abcd`` matches the value ``xyzabcd``, but not for ``xyzbcd``.
    */
   'suffix_match'?: (string);
   /**
@@ -105,13 +107,42 @@ export interface HeaderMatcher {
    * 
    * Examples:
    * 
-   * * The value *abcd* matches the value *xyzabcdpqr*, but not for *xyzbcdpqr*.
+   * * The value ``abcd`` matches the value ``xyzabcdpqr``, but not for ``xyzbcdpqr``.
    */
   'contains_match'?: (string);
   /**
    * If specified, header match will be performed based on the string match of the header value.
    */
   'string_match'?: (_envoy_type_matcher_v3_StringMatcher | null);
+  /**
+   * If specified, for any header match rule, if the header match rule specified header
+   * does not exist, this header value will be treated as empty. Defaults to false.
+   * 
+   * Examples:
+   * 
+   * * The header match rule specified header "header1" to range match of [0, 10],
+   * :ref:`invert_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.invert_match>`
+   * is set to true and :ref:`treat_missing_header_as_empty <envoy_v3_api_field_config.route.v3.HeaderMatcher.treat_missing_header_as_empty>`
+   * is set to true; The "header1" header is not present. The match rule will
+   * treat the "header1" as an empty header. The empty header does not match the range,
+   * so it will match when inverted.
+   * * The header match rule specified header "header2" to range match of [0, 10],
+   * :ref:`invert_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.invert_match>`
+   * is set to true and :ref:`treat_missing_header_as_empty <envoy_v3_api_field_config.route.v3.HeaderMatcher.treat_missing_header_as_empty>`
+   * is set to false; The "header2" header is not present and the header
+   * matcher rule for "header2" will be ignored so it will not match.
+   * * The header match rule specified header "header3" to a string regex match
+   * ``^$`` which means an empty string, and
+   * :ref:`treat_missing_header_as_empty <envoy_v3_api_field_config.route.v3.HeaderMatcher.treat_missing_header_as_empty>`
+   * is set to true; The "header3" header is not present.
+   * The match rule will treat the "header3" header as an empty header so it will match.
+   * * The header match rule specified header "header4" to a string regex match
+   * ``^$`` which means an empty string, and
+   * :ref:`treat_missing_header_as_empty <envoy_v3_api_field_config.route.v3.HeaderMatcher.treat_missing_header_as_empty>`
+   * is set to false; The "header4" header is not present.
+   * The match rule for "header4" will be ignored so it will not match.
+   */
+  'treat_missing_header_as_empty'?: (boolean);
   /**
    * Specifies how the header match will be performed to route the request.
    */
@@ -121,19 +152,21 @@ export interface HeaderMatcher {
 /**
  * .. attention::
  * 
- * Internally, Envoy always uses the HTTP/2 *:authority* header to represent the HTTP/1 *Host*
- * header. Thus, if attempting to match on *Host*, match on *:authority* instead.
+ * Internally, Envoy always uses the HTTP/2 ``:authority`` header to represent the HTTP/1 ``Host``
+ * header. Thus, if attempting to match on ``Host``, match on ``:authority`` instead.
  * 
  * .. attention::
  * 
- * To route on HTTP method, use the special HTTP/2 *:method* header. This works for both
+ * To route on HTTP method, use the special HTTP/2 ``:method`` header. This works for both
  * HTTP/1 and HTTP/2 as Envoy normalizes headers. E.g.,
  * 
  * .. code-block:: json
  * 
  * {
  * "name": ":method",
- * "exact_match": "POST"
+ * "string_match": {
+ * "exact": "POST"
+ * }
  * }
  * 
  * .. attention::
@@ -143,7 +176,7 @@ export interface HeaderMatcher {
  * value.
  * 
  * [#next-major-version: HeaderMatcher should be refactored to use StringMatcher.]
- * [#next-free-field: 14]
+ * [#next-free-field: 15]
  */
 export interface HeaderMatcher__Output {
   /**
@@ -165,8 +198,8 @@ export interface HeaderMatcher__Output {
    * 
    * Examples:
    * 
-   * * For range [-10,0), route will match for header value -1, but not for 0, "somestring", 10.9,
-   * "-1somestring"
+   * * For range [-10,0), route will match for header value -1, but not for 0, ``somestring``, 10.9,
+   * ``-1somestring``
    */
   'range_match'?: (_envoy_type_v3_Int64Range__Output | null);
   /**
@@ -179,7 +212,7 @@ export interface HeaderMatcher__Output {
    * 
    * Examples:
    * 
-   * * The regex ``\d{3}`` does not match the value *1234*, so it will match when inverted.
+   * * The regex ``\d{3}`` does not match the value ``1234``, so it will match when inverted.
    * * The range [-10,0) will match the value -1, so it will not match when inverted.
    */
   'invert_match': (boolean);
@@ -190,7 +223,7 @@ export interface HeaderMatcher__Output {
    * 
    * Examples:
    * 
-   * * The prefix *abcd* matches the value *abcdxyz*, but not for *abcxyz*.
+   * * The prefix ``abcd`` matches the value ``abcdxyz``, but not for ``abcxyz``.
    */
   'prefix_match'?: (string);
   /**
@@ -200,7 +233,7 @@ export interface HeaderMatcher__Output {
    * 
    * Examples:
    * 
-   * * The suffix *abcd* matches the value *xyzabcd*, but not for *xyzbcd*.
+   * * The suffix ``abcd`` matches the value ``xyzabcd``, but not for ``xyzbcd``.
    */
   'suffix_match'?: (string);
   /**
@@ -218,13 +251,42 @@ export interface HeaderMatcher__Output {
    * 
    * Examples:
    * 
-   * * The value *abcd* matches the value *xyzabcdpqr*, but not for *xyzbcdpqr*.
+   * * The value ``abcd`` matches the value ``xyzabcdpqr``, but not for ``xyzbcdpqr``.
    */
   'contains_match'?: (string);
   /**
    * If specified, header match will be performed based on the string match of the header value.
    */
   'string_match'?: (_envoy_type_matcher_v3_StringMatcher__Output | null);
+  /**
+   * If specified, for any header match rule, if the header match rule specified header
+   * does not exist, this header value will be treated as empty. Defaults to false.
+   * 
+   * Examples:
+   * 
+   * * The header match rule specified header "header1" to range match of [0, 10],
+   * :ref:`invert_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.invert_match>`
+   * is set to true and :ref:`treat_missing_header_as_empty <envoy_v3_api_field_config.route.v3.HeaderMatcher.treat_missing_header_as_empty>`
+   * is set to true; The "header1" header is not present. The match rule will
+   * treat the "header1" as an empty header. The empty header does not match the range,
+   * so it will match when inverted.
+   * * The header match rule specified header "header2" to range match of [0, 10],
+   * :ref:`invert_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.invert_match>`
+   * is set to true and :ref:`treat_missing_header_as_empty <envoy_v3_api_field_config.route.v3.HeaderMatcher.treat_missing_header_as_empty>`
+   * is set to false; The "header2" header is not present and the header
+   * matcher rule for "header2" will be ignored so it will not match.
+   * * The header match rule specified header "header3" to a string regex match
+   * ``^$`` which means an empty string, and
+   * :ref:`treat_missing_header_as_empty <envoy_v3_api_field_config.route.v3.HeaderMatcher.treat_missing_header_as_empty>`
+   * is set to true; The "header3" header is not present.
+   * The match rule will treat the "header3" header as an empty header so it will match.
+   * * The header match rule specified header "header4" to a string regex match
+   * ``^$`` which means an empty string, and
+   * :ref:`treat_missing_header_as_empty <envoy_v3_api_field_config.route.v3.HeaderMatcher.treat_missing_header_as_empty>`
+   * is set to false; The "header4" header is not present.
+   * The match rule for "header4" will be ignored so it will not match.
+   */
+  'treat_missing_header_as_empty': (boolean);
   /**
    * Specifies how the header match will be performed to route the request.
    */

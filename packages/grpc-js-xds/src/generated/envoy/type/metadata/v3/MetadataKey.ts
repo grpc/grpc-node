@@ -26,7 +26,7 @@ export interface _envoy_type_metadata_v3_MetadataKey_PathSegment__Output {
 }
 
 /**
- * MetadataKey provides a general interface using `key` and `path` to retrieve value from
+ * MetadataKey provides a general interface using ``key`` and ``path`` to retrieve value from
  * :ref:`Metadata <envoy_v3_api_msg_config.core.v3.Metadata>`.
  * 
  * For example, for the following Metadata:
@@ -67,7 +67,7 @@ export interface MetadataKey {
 }
 
 /**
- * MetadataKey provides a general interface using `key` and `path` to retrieve value from
+ * MetadataKey provides a general interface using ``key`` and ``path`` to retrieve value from
  * :ref:`Metadata <envoy_v3_api_msg_config.core.v3.Metadata>`.
  * 
  * For example, for the following Metadata:

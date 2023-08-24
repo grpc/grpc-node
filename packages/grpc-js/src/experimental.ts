@@ -16,7 +16,8 @@ export {
   createChildChannelControlHelper,
   registerLoadBalancerType,
   selectLbConfigFromList,
-  parseLoadBalancingConfig
+  parseLoadBalancingConfig,
+  isLoadBalancerNameRegistered
 } from './load-balancer';
 export {
   SubchannelAddress,

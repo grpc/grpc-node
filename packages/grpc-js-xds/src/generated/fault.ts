@@ -14,21 +14,16 @@ export interface ProtoGrpcType {
       core: {
         v3: {
           Address: MessageTypeDefinition
-          AggregatedConfigSource: MessageTypeDefinition
-          ApiConfigSource: MessageTypeDefinition
-          ApiVersion: EnumTypeDefinition
           AsyncDataSource: MessageTypeDefinition
           BackoffStrategy: MessageTypeDefinition
           BindConfig: MessageTypeDefinition
           BuildVersion: MessageTypeDefinition
           CidrRange: MessageTypeDefinition
-          ConfigSource: MessageTypeDefinition
           ControlPlane: MessageTypeDefinition
           DataSource: MessageTypeDefinition
           EnvoyInternalAddress: MessageTypeDefinition
           Extension: MessageTypeDefinition
-          ExtensionConfigSource: MessageTypeDefinition
-          GrpcService: MessageTypeDefinition
+          ExtraSourceAddress: MessageTypeDefinition
           HeaderMap: MessageTypeDefinition
           HeaderValue: MessageTypeDefinition
           HeaderValueOption: MessageTypeDefinition
@@ -38,8 +33,8 @@ export interface ProtoGrpcType {
           Node: MessageTypeDefinition
           Pipe: MessageTypeDefinition
           ProxyProtocolConfig: MessageTypeDefinition
+          ProxyProtocolPassThroughTLVs: MessageTypeDefinition
           QueryParameter: MessageTypeDefinition
-          RateLimitSettings: MessageTypeDefinition
           RemoteDataSource: MessageTypeDefinition
           RequestMethod: EnumTypeDefinition
           RetryPolicy: MessageTypeDefinition
@@ -49,9 +44,9 @@ export interface ProtoGrpcType {
           RuntimeFractionalPercent: MessageTypeDefinition
           RuntimePercent: MessageTypeDefinition
           RuntimeUInt32: MessageTypeDefinition
-          SelfConfigSource: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
           SocketOption: MessageTypeDefinition
+          SocketOptionsOverride: MessageTypeDefinition
           TcpKeepalive: MessageTypeDefinition
           TrafficDirection: EnumTypeDefinition
           TransportSocket: MessageTypeDefinition
@@ -61,6 +56,7 @@ export interface ProtoGrpcType {
       }
       route: {
         v3: {
+          ClusterSpecifierPlugin: MessageTypeDefinition
           CorsPolicy: MessageTypeDefinition
           Decorator: MessageTypeDefinition
           DirectResponseAction: MessageTypeDefinition
@@ -76,6 +72,7 @@ export interface ProtoGrpcType {
           RetryPolicy: MessageTypeDefinition
           Route: MessageTypeDefinition
           RouteAction: MessageTypeDefinition
+          RouteList: MessageTypeDefinition
           RouteMatch: MessageTypeDefinition
           Tracing: MessageTypeDefinition
           VirtualCluster: MessageTypeDefinition
@@ -146,7 +143,6 @@ export interface ProtoGrpcType {
       DescriptorProto: MessageTypeDefinition
       DoubleValue: MessageTypeDefinition
       Duration: MessageTypeDefinition
-      Empty: MessageTypeDefinition
       EnumDescriptorProto: MessageTypeDefinition
       EnumOptions: MessageTypeDefinition
       EnumValueDescriptorProto: MessageTypeDefinition
@@ -227,8 +223,18 @@ export interface ProtoGrpcType {
     }
     core: {
       v3: {
-        Authority: MessageTypeDefinition
         ContextParams: MessageTypeDefinition
+        TypedExtensionConfig: MessageTypeDefinition
+      }
+    }
+    type: {
+      matcher: {
+        v3: {
+          ListStringMatcher: MessageTypeDefinition
+          Matcher: MessageTypeDefinition
+          RegexMatcher: MessageTypeDefinition
+          StringMatcher: MessageTypeDefinition
+        }
       }
     }
   }

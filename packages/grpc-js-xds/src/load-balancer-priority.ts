@@ -27,6 +27,7 @@ import QueuePicker = experimental.QueuePicker;
 import UnavailablePicker = experimental.UnavailablePicker;
 import ChildLoadBalancerHandler = experimental.ChildLoadBalancerHandler;
 import selectLbConfigFromList = experimental.selectLbConfigFromList;
+import { Locality__Output } from './generated/envoy/config/core/v3/Locality';
 
 const TRACER_NAME = 'priority';
 
@@ -41,6 +42,8 @@ const DEFAULT_RETENTION_INTERVAL_MS = 15 * 60 * 1000;
 
 export type LocalitySubchannelAddress = SubchannelAddress & {
   localityPath: string[];
+  locality: Locality__Output;
+  weight: number;
 };
 
 export function isLocalitySubchannelAddress(

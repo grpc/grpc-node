@@ -59,11 +59,13 @@ export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds {
   /**
    * The maximum number of pending requests that Envoy will allow to the
    * upstream cluster. If not specified, the default is 1024.
+   * This limit is applied as a connection limit for non-HTTP traffic.
    */
   'max_pending_requests'?: (_google_protobuf_UInt32Value | null);
   /**
    * The maximum number of parallel requests that Envoy will make to the
    * upstream cluster. If not specified, the default is 1024.
+   * This limit does not apply to non-HTTP traffic.
    */
   'max_requests'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -121,11 +123,13 @@ export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds__Output {
   /**
    * The maximum number of pending requests that Envoy will allow to the
    * upstream cluster. If not specified, the default is 1024.
+   * This limit is applied as a connection limit for non-HTTP traffic.
    */
   'max_pending_requests': (_google_protobuf_UInt32Value__Output | null);
   /**
    * The maximum number of parallel requests that Envoy will make to the
    * upstream cluster. If not specified, the default is 1024.
+   * This limit does not apply to non-HTTP traffic.
    */
   'max_requests': (_google_protobuf_UInt32Value__Output | null);
   /**
@@ -177,6 +181,20 @@ export interface CircuitBreakers {
    * are used.
    */
   'thresholds'?: (_envoy_config_cluster_v3_CircuitBreakers_Thresholds)[];
+  /**
+   * Optional per-host limits which apply to each individual host in a cluster.
+   * 
+   * .. note::
+   * currently only the :ref:`max_connections
+   * <envoy_v3_api_field_config.cluster.v3.CircuitBreakers.Thresholds.max_connections>` field is supported for per-host limits.
+   * 
+   * If multiple per-host :ref:`Thresholds<envoy_v3_api_msg_config.cluster.v3.CircuitBreakers.Thresholds>`
+   * are defined with the same :ref:`RoutingPriority<envoy_v3_api_enum_config.core.v3.RoutingPriority>`,
+   * the first one in the list is used. If no per-host Thresholds are defined for a given
+   * :ref:`RoutingPriority<envoy_v3_api_enum_config.core.v3.RoutingPriority>`,
+   * the cluster will not have per-host limits.
+   */
+  'per_host_thresholds'?: (_envoy_config_cluster_v3_CircuitBreakers_Thresholds)[];
 }
 
 /**
@@ -192,4 +210,18 @@ export interface CircuitBreakers__Output {
    * are used.
    */
   'thresholds': (_envoy_config_cluster_v3_CircuitBreakers_Thresholds__Output)[];
+  /**
+   * Optional per-host limits which apply to each individual host in a cluster.
+   * 
+   * .. note::
+   * currently only the :ref:`max_connections
+   * <envoy_v3_api_field_config.cluster.v3.CircuitBreakers.Thresholds.max_connections>` field is supported for per-host limits.
+   * 
+   * If multiple per-host :ref:`Thresholds<envoy_v3_api_msg_config.cluster.v3.CircuitBreakers.Thresholds>`
+   * are defined with the same :ref:`RoutingPriority<envoy_v3_api_enum_config.core.v3.RoutingPriority>`,
+   * the first one in the list is used. If no per-host Thresholds are defined for a given
+   * :ref:`RoutingPriority<envoy_v3_api_enum_config.core.v3.RoutingPriority>`,
+   * the cluster will not have per-host limits.
+   */
+  'per_host_thresholds': (_envoy_config_cluster_v3_CircuitBreakers_Thresholds__Output)[];
 }

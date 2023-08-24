@@ -4,7 +4,7 @@ import type { BuildVersion as _envoy_config_core_v3_BuildVersion, BuildVersion__
 
 /**
  * Version and identification for an Envoy extension.
- * [#next-free-field: 6]
+ * [#next-free-field: 7]
  */
 export interface Extension {
   /**
@@ -36,11 +36,15 @@ export interface Extension {
    * Indicates that the extension is present but was disabled via dynamic configuration.
    */
   'disabled'?: (boolean);
+  /**
+   * Type URLs of extension configuration protos.
+   */
+  'type_urls'?: (string)[];
 }
 
 /**
  * Version and identification for an Envoy extension.
- * [#next-free-field: 6]
+ * [#next-free-field: 7]
  */
 export interface Extension__Output {
   /**
@@ -72,4 +76,8 @@ export interface Extension__Output {
    * Indicates that the extension is present but was disabled via dynamic configuration.
    */
   'disabled': (boolean);
+  /**
+   * Type URLs of extension configuration protos.
+   */
+  'type_urls': (string)[];
 }

@@ -21,7 +21,7 @@ import type { NonForwardingAction as _envoy_config_route_v3_NonForwardingAction,
  * 
  * Envoy supports routing on HTTP method via :ref:`header matching
  * <envoy_v3_api_msg_config.route.v3.HeaderMatcher>`.
- * [#next-free-field: 19]
+ * [#next-free-field: 20]
  */
 export interface Route {
   /**
@@ -41,7 +41,7 @@ export interface Route {
    * about the route. It can be used for configuration, stats, and logging.
    * The metadata should go under the filter namespace that will need it.
    * For instance, if the metadata is intended for the Router filter,
-   * the filter name should be specified as *envoy.filters.http.router*.
+   * the filter name should be specified as ``envoy.filters.http.router``.
    */
   'metadata'?: (_envoy_config_core_v3_Metadata | null);
   /**
@@ -81,11 +81,15 @@ export interface Route {
    */
   'request_headers_to_remove'?: (string)[];
   /**
-   * The typed_per_filter_config field can be used to provide route-specific
-   * configurations for filters. The key should match the filter name, such as
-   * *envoy.filters.http.buffer* for the HTTP buffer filter. Use of this field is filter
-   * specific; see the :ref:`HTTP filter documentation <config_http_filters>` for
-   * if and how it is utilized.
+   * The per_filter_config field can be used to provide route-specific configurations for filters.
+   * The key should match the :ref:`filter config name
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpFilter.name>`.
+   * The canonical filter name (e.g., ``envoy.filters.http.buffer`` for the HTTP buffer filter) can also
+   * be used for the backwards compatibility. If there is no entry referred by the filter config name, the
+   * entry referred by the canonical filter name will be provided to the filters as fallback.
+   * 
+   * Use of this field is filter specific;
+   * see the :ref:`HTTP filter documentation <config_http_filters>` for if and how it is utilized.
    * [#comment: An entry's value may be wrapped in a
    * :ref:`FilterConfig<envoy_v3_api_msg_config.route.v3.FilterConfig>`
    * message to specify additional options.]
@@ -121,6 +125,22 @@ export interface Route {
    * in Envoy for a filter that directly generates responses for requests.
    */
   'non_forwarding_action'?: (_envoy_config_route_v3_NonForwardingAction | null);
+  /**
+   * The human readable prefix to use when emitting statistics for this endpoint.
+   * The statistics are rooted at vhost.<virtual host name>.route.<stat_prefix>.
+   * This should be set for highly critical
+   * endpoints that one wishes to get “per-route” statistics on.
+   * If not set, endpoint statistics are not generated.
+   * 
+   * The emitted statistics are the same as those documented for :ref:`virtual clusters <config_http_filters_router_vcluster_stats>`.
+   * 
+   * .. warning::
+   * 
+   * We do not recommend setting up a stat prefix for
+   * every application endpoint. This is both not easily maintainable and
+   * statistics use a non-trivial amount of memory(approximately 1KiB per route).
+   */
+  'stat_prefix'?: (string);
   'action'?: "route"|"redirect"|"direct_response"|"filter_action"|"non_forwarding_action";
 }
 
@@ -132,7 +152,7 @@ export interface Route {
  * 
  * Envoy supports routing on HTTP method via :ref:`header matching
  * <envoy_v3_api_msg_config.route.v3.HeaderMatcher>`.
- * [#next-free-field: 19]
+ * [#next-free-field: 20]
  */
 export interface Route__Output {
   /**
@@ -152,7 +172,7 @@ export interface Route__Output {
    * about the route. It can be used for configuration, stats, and logging.
    * The metadata should go under the filter namespace that will need it.
    * For instance, if the metadata is intended for the Router filter,
-   * the filter name should be specified as *envoy.filters.http.router*.
+   * the filter name should be specified as ``envoy.filters.http.router``.
    */
   'metadata': (_envoy_config_core_v3_Metadata__Output | null);
   /**
@@ -192,11 +212,15 @@ export interface Route__Output {
    */
   'request_headers_to_remove': (string)[];
   /**
-   * The typed_per_filter_config field can be used to provide route-specific
-   * configurations for filters. The key should match the filter name, such as
-   * *envoy.filters.http.buffer* for the HTTP buffer filter. Use of this field is filter
-   * specific; see the :ref:`HTTP filter documentation <config_http_filters>` for
-   * if and how it is utilized.
+   * The per_filter_config field can be used to provide route-specific configurations for filters.
+   * The key should match the :ref:`filter config name
+   * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpFilter.name>`.
+   * The canonical filter name (e.g., ``envoy.filters.http.buffer`` for the HTTP buffer filter) can also
+   * be used for the backwards compatibility. If there is no entry referred by the filter config name, the
+   * entry referred by the canonical filter name will be provided to the filters as fallback.
+   * 
+   * Use of this field is filter specific;
+   * see the :ref:`HTTP filter documentation <config_http_filters>` for if and how it is utilized.
    * [#comment: An entry's value may be wrapped in a
    * :ref:`FilterConfig<envoy_v3_api_msg_config.route.v3.FilterConfig>`
    * message to specify additional options.]
@@ -232,5 +256,21 @@ export interface Route__Output {
    * in Envoy for a filter that directly generates responses for requests.
    */
   'non_forwarding_action'?: (_envoy_config_route_v3_NonForwardingAction__Output | null);
+  /**
+   * The human readable prefix to use when emitting statistics for this endpoint.
+   * The statistics are rooted at vhost.<virtual host name>.route.<stat_prefix>.
+   * This should be set for highly critical
+   * endpoints that one wishes to get “per-route” statistics on.
+   * If not set, endpoint statistics are not generated.
+   * 
+   * The emitted statistics are the same as those documented for :ref:`virtual clusters <config_http_filters_router_vcluster_stats>`.
+   * 
+   * .. warning::
+   * 
+   * We do not recommend setting up a stat prefix for
+   * every application endpoint. This is both not easily maintainable and
+   * statistics use a non-trivial amount of memory(approximately 1KiB per route).
+   */
+  'stat_prefix': (string);
   'action': "route"|"redirect"|"direct_response"|"filter_action"|"non_forwarding_action";
 }

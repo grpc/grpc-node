@@ -8,9 +8,7 @@ import type { ExtensionConfigSource as _envoy_config_core_v3_ExtensionConfigSour
  */
 export interface HttpFilter {
   /**
-   * The name of the filter configuration. The name is used as a fallback to
-   * select an extension if the type of the configuration proto is not
-   * sufficient. It also serves as a resource name in ExtensionConfigDS.
+   * The name of the filter configuration. It also serves as a resource name in ExtensionConfigDS.
    */
   'name'?: (string);
   /**
@@ -38,7 +36,6 @@ export interface HttpFilter {
    * If true, clients that do not support this filter may ignore the
    * filter but otherwise accept the config.
    * Otherwise, clients that do not support this filter must reject the config.
-   * This is also same with typed per filter config.
    */
   'is_optional'?: (boolean);
   'config_type'?: "typed_config"|"config_discovery";
@@ -49,9 +46,7 @@ export interface HttpFilter {
  */
 export interface HttpFilter__Output {
   /**
-   * The name of the filter configuration. The name is used as a fallback to
-   * select an extension if the type of the configuration proto is not
-   * sufficient. It also serves as a resource name in ExtensionConfigDS.
+   * The name of the filter configuration. It also serves as a resource name in ExtensionConfigDS.
    */
   'name': (string);
   /**
@@ -79,7 +74,6 @@ export interface HttpFilter__Output {
    * If true, clients that do not support this filter may ignore the
    * filter but otherwise accept the config.
    * Otherwise, clients that do not support this filter must reject the config.
-   * This is also same with typed per filter config.
    */
   'is_optional': (boolean);
   'config_type': "typed_config"|"config_discovery";

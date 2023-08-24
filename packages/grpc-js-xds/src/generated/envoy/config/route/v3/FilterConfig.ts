@@ -9,7 +9,6 @@ import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__
  * :ref:`Route.typed_per_filter_config<envoy_v3_api_field_config.route.v3.Route.typed_per_filter_config>`,
  * or :ref:`WeightedCluster.ClusterWeight.typed_per_filter_config<envoy_v3_api_field_config.route.v3.WeightedCluster.ClusterWeight.typed_per_filter_config>`
  * to add additional flags to the filter.
- * [#not-implemented-hide:]
  */
 export interface FilterConfig {
   /**
@@ -22,6 +21,23 @@ export interface FilterConfig {
    * than rejecting the config.
    */
   'is_optional'?: (boolean);
+  /**
+   * If true, the filter is disabled in the route or virtual host and the ``config`` field is ignored.
+   * 
+   * .. note::
+   * 
+   * This field will take effect when the request arrive and filter chain is created for the request.
+   * If initial route is selected for the request and a filter is disabled in the initial route, then
+   * the filter will not be added to the filter chain.
+   * And if the request is mutated later and re-match to another route, the disabled filter by the
+   * initial route will not be added back to the filter chain because the filter chain is already
+   * created and it is too late to change the chain.
+   * 
+   * This field only make sense for the downstream HTTP filters for now.
+   * 
+   * [#not-implemented-hide:]
+   */
+  'disabled'?: (boolean);
 }
 
 /**
@@ -31,7 +47,6 @@ export interface FilterConfig {
  * :ref:`Route.typed_per_filter_config<envoy_v3_api_field_config.route.v3.Route.typed_per_filter_config>`,
  * or :ref:`WeightedCluster.ClusterWeight.typed_per_filter_config<envoy_v3_api_field_config.route.v3.WeightedCluster.ClusterWeight.typed_per_filter_config>`
  * to add additional flags to the filter.
- * [#not-implemented-hide:]
  */
 export interface FilterConfig__Output {
   /**
@@ -44,4 +59,21 @@ export interface FilterConfig__Output {
    * than rejecting the config.
    */
   'is_optional': (boolean);
+  /**
+   * If true, the filter is disabled in the route or virtual host and the ``config`` field is ignored.
+   * 
+   * .. note::
+   * 
+   * This field will take effect when the request arrive and filter chain is created for the request.
+   * If initial route is selected for the request and a filter is disabled in the initial route, then
+   * the filter will not be added to the filter chain.
+   * And if the request is mutated later and re-match to another route, the disabled filter by the
+   * initial route will not be added back to the filter chain because the filter chain is already
+   * created and it is too late to change the chain.
+   * 
+   * This field only make sense for the downstream HTTP filters for now.
+   * 
+   * [#not-implemented-hide:]
+   */
+  'disabled': (boolean);
 }

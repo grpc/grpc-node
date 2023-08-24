@@ -2,7 +2,7 @@
 
 
 /**
- * Data source consisting of either a file or an inline value.
+ * Data source consisting of a file, an inline value, or an environment variable.
  */
 export interface DataSource {
   /**
@@ -17,11 +17,15 @@ export interface DataSource {
    * String inlined in the configuration.
    */
   'inline_string'?: (string);
-  'specifier'?: "filename"|"inline_bytes"|"inline_string";
+  /**
+   * Environment variable data source.
+   */
+  'environment_variable'?: (string);
+  'specifier'?: "filename"|"inline_bytes"|"inline_string"|"environment_variable";
 }
 
 /**
- * Data source consisting of either a file or an inline value.
+ * Data source consisting of a file, an inline value, or an environment variable.
  */
 export interface DataSource__Output {
   /**
@@ -36,5 +40,9 @@ export interface DataSource__Output {
    * String inlined in the configuration.
    */
   'inline_string'?: (string);
-  'specifier': "filename"|"inline_bytes"|"inline_string";
+  /**
+   * Environment variable data source.
+   */
+  'environment_variable'?: (string);
+  'specifier': "filename"|"inline_bytes"|"inline_string"|"environment_variable";
 }

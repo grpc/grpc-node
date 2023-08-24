@@ -38,7 +38,6 @@ import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
 import UnavailablePicker = experimental.UnavailablePicker;
 import { serverConfigEqual, validateXdsServerConfig, XdsServerConfig } from "./xds-bootstrap";
 import { EndpointResourceType } from "./xds-resource-type/endpoint-resource-type";
-import { WeightedTargetRaw } from "./load-balancer-weighted-target";
 
 const TRACER_NAME = 'xds_cluster_resolver';
 
@@ -85,40 +84,31 @@ class XdsClusterResolverLoadBalancingConfig implements TypedLoadBalancingConfig 
     return {
       [TYPE_NAME]: {
         discovery_mechanisms: this.discoveryMechanisms,
-        locality_picking_policy: this.localityPickingPolicy,
-        endpoint_picking_policy: this.endpointPickingPolicy
+        xds_lb_policy: this.xdsLbPolicy
       }
     }
   }
 
-  constructor(private discoveryMechanisms: DiscoveryMechanism[], private localityPickingPolicy: LoadBalancingConfig[], private endpointPickingPolicy: LoadBalancingConfig[]) {}
+  constructor(private discoveryMechanisms: DiscoveryMechanism[], private xdsLbPolicy: LoadBalancingConfig[]) {}
 
   getDiscoveryMechanisms() {
     return this.discoveryMechanisms;
   }
 
-  getLocalityPickingPolicy() {
-    return this.localityPickingPolicy;
-  }
-
-  getEndpointPickingPolicy() {
-    return this.endpointPickingPolicy;
+  getXdsLbPolicy() {
+    return this.xdsLbPolicy;
   }
 
   static createFromJson(obj: any): XdsClusterResolverLoadBalancingConfig {
     if (!('discovery_mechanisms' in obj && Array.isArray(obj.discovery_mechanisms))) {
       throw new Error('xds_cluster_resolver config must have a discovery_mechanisms array');
     }
-    if (!('locality_picking_policy' in obj && Array.isArray(obj.locality_picking_policy))) {
-      throw new Error('xds_cluster_resolver config must have a locality_picking_policy array');
-    }
-    if (!('endpoint_picking_policy' in obj && Array.isArray(obj.endpoint_picking_policy))) {
-      throw new Error('xds_cluster_resolver config must have a endpoint_picking_policy array');
+    if (!('xds_lb_policy' in obj && Array.isArray(obj.xds_lb_policy))) {
+      throw new Error('xds_cluster_resolver config must have a xds_lb_policy array');
     }
     return new XdsClusterResolverLoadBalancingConfig(
       obj.discovery_mechanisms.map(validateDiscoveryMechanism),
-      obj.locality_picking_policy,
-      obj.endpoint_picking_policy
+      obj.xds_lb_policy
     );
   }
 }
@@ -223,7 +213,7 @@ function getDnsPriorities(addresses: SubchannelAddress[]): PriorityEntry[] {
   }];
 }
 
-function localityToName(locality: Locality__Output) {
+export function localityToName(locality: Locality__Output) {
   return `{region=${locality.region},zone=${locality.zone},sub_zone=${locality.sub_zone}}`;
 }
 
@@ -260,12 +250,11 @@ export class XdsClusterResolver implements LoadBalancer {
     const fullPriorityList: string[] = [];
     const priorityChildren: {[name: string]: PriorityChildRaw} = {};
     const addressList: LocalitySubchannelAddress[] = [];
+    const edsChildPolicy = this.latestConfig.getXdsLbPolicy();
     for (const entry of this.discoveryMechanismList) {
       const newPriorityNames: string[] = [];
       const newLocalityPriorities = new Map<string, number>();
-      const configEndpointPickingPolicy = this.latestConfig.getEndpointPickingPolicy();
-      const defaultEndpointPickingPolicy: LoadBalancingConfig = entry.discoveryMechanism.type === 'EDS' ? { round_robin: {} } : { pick_first: {} };
-      const endpointPickingPolicy: LoadBalancingConfig[] = configEndpointPickingPolicy.length > 0 ? configEndpointPickingPolicy : [defaultEndpointPickingPolicy];
+      const xdsClusterImplChildPolicy: LoadBalancingConfig[] = entry.discoveryMechanism.type === 'EDS' ? edsChildPolicy : [{ pick_first: {} }];
 
       for (const [priority, priorityEntry] of entry.latestUpdate!.entries()) {
         /**
@@ -301,32 +290,15 @@ export class XdsClusterResolver implements LoadBalancer {
         }
         newPriorityNames[priority] = newPriorityName;
 
-        const childTargets: {[locality: string]: WeightedTargetRaw} = {};
         for (const localityObj of priorityEntry.localities) {
-          let childPolicy: LoadBalancingConfig[];
-          if (entry.discoveryMechanism.lrs_load_reporting_server !== undefined) {
-            childPolicy = [{
-              lrs: {
-                cluster_name: entry.discoveryMechanism.cluster,
-                eds_service_name: entry.discoveryMechanism.eds_service_name ?? '',
-                locality: {...localityObj.locality},
-                lrs_load_reporting_server: {...entry.discoveryMechanism.lrs_load_reporting_server},
-                child_policy: endpointPickingPolicy
-              }
-            }];
-          } else {
-            childPolicy = endpointPickingPolicy;
-          }
-          childTargets[localityToName(localityObj.locality)] = {
-            weight: localityObj.weight,
-            child_policy: childPolicy,
-          };
           for (const address of localityObj.addresses) {
             addressList.push({
               localityPath: [
                 newPriorityName,
                 localityToName(localityObj.locality),
               ],
+              locality: localityObj.locality,
+              weight: localityObj.weight,
               ...address,
             });
           }
@@ -337,13 +309,9 @@ export class XdsClusterResolver implements LoadBalancer {
             cluster: entry.discoveryMechanism.cluster,
             drop_categories: priorityEntry.dropCategories,
             max_concurrent_requests: entry.discoveryMechanism.max_concurrent_requests,
-            eds_service_name: entry.discoveryMechanism.eds_service_name,
+            eds_service_name: entry.discoveryMechanism.eds_service_name ?? '',
             lrs_load_reporting_server: entry.discoveryMechanism.lrs_load_reporting_server,
-            child_policy: [{
-              weighted_target: {
-                targets: childTargets
-              }
-            }]
+            child_policy: xdsClusterImplChildPolicy
           }
         }
         let priorityChildConfig: LoadBalancingConfig;

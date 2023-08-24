@@ -2,11 +2,12 @@
 
 import type { Node as _envoy_config_core_v3_Node, Node__Output as _envoy_config_core_v3_Node__Output } from '../../../../envoy/config/core/v3/Node';
 import type { Status as _google_rpc_Status, Status__Output as _google_rpc_Status__Output } from '../../../../google/rpc/Status';
+import type { ResourceLocator as _envoy_service_discovery_v3_ResourceLocator, ResourceLocator__Output as _envoy_service_discovery_v3_ResourceLocator__Output } from '../../../../envoy/service/discovery/v3/ResourceLocator';
 
 /**
  * A DiscoveryRequest requests a set of versioned resources of the same type for
  * a given Envoy node on some API.
- * [#next-free-field: 7]
+ * [#next-free-field: 8]
  */
 export interface DiscoveryRequest {
   /**
@@ -49,17 +50,27 @@ export interface DiscoveryRequest {
   'response_nonce'?: (string);
   /**
    * This is populated when the previous :ref:`DiscoveryResponse <envoy_v3_api_msg_service.discovery.v3.DiscoveryResponse>`
-   * failed to update configuration. The *message* field in *error_details* provides the Envoy
+   * failed to update configuration. The ``message`` field in ``error_details`` provides the Envoy
    * internal exception related to the failure. It is only intended for consumption during manual
    * debugging, the string provided is not guaranteed to be stable across Envoy versions.
    */
   'error_detail'?: (_google_rpc_Status | null);
+  /**
+   * [#not-implemented-hide:]
+   * Alternative to ``resource_names`` field that allows specifying dynamic
+   * parameters along with each resource name. Clients that populate this
+   * field must be able to handle responses from the server where resources
+   * are wrapped in a Resource message.
+   * Note that it is legal for a request to have some resources listed
+   * in ``resource_names`` and others in ``resource_locators``.
+   */
+  'resource_locators'?: (_envoy_service_discovery_v3_ResourceLocator)[];
 }
 
 /**
  * A DiscoveryRequest requests a set of versioned resources of the same type for
  * a given Envoy node on some API.
- * [#next-free-field: 7]
+ * [#next-free-field: 8]
  */
 export interface DiscoveryRequest__Output {
   /**
@@ -102,9 +113,19 @@ export interface DiscoveryRequest__Output {
   'response_nonce': (string);
   /**
    * This is populated when the previous :ref:`DiscoveryResponse <envoy_v3_api_msg_service.discovery.v3.DiscoveryResponse>`
-   * failed to update configuration. The *message* field in *error_details* provides the Envoy
+   * failed to update configuration. The ``message`` field in ``error_details`` provides the Envoy
    * internal exception related to the failure. It is only intended for consumption during manual
    * debugging, the string provided is not guaranteed to be stable across Envoy versions.
    */
   'error_detail': (_google_rpc_Status__Output | null);
+  /**
+   * [#not-implemented-hide:]
+   * Alternative to ``resource_names`` field that allows specifying dynamic
+   * parameters along with each resource name. Clients that populate this
+   * field must be able to handle responses from the server where resources
+   * are wrapped in a Resource message.
+   * Note that it is legal for a request to have some resources listed
+   * in ``resource_names`` and others in ``resource_locators``.
+   */
+  'resource_locators': (_envoy_service_discovery_v3_ResourceLocator__Output)[];
 }

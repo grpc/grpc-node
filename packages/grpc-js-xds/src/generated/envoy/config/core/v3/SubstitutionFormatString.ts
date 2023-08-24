@@ -63,9 +63,9 @@ export interface SubstitutionFormatString {
    */
   'omit_empty_values'?: (boolean);
   /**
-   * Specify a *content_type* field.
-   * If this field is not set then ``text/plain`` is used for *text_format* and
-   * ``application/json`` is used for *json_format*.
+   * Specify a ``content_type`` field.
+   * If this field is not set then ``text/plain`` is used for ``text_format`` and
+   * ``application/json`` is used for ``json_format``.
    * 
    * .. validated-code-block:: yaml
    * :type-name: envoy.config.core.v3.SubstitutionFormatString
@@ -160,9 +160,9 @@ export interface SubstitutionFormatString__Output {
    */
   'omit_empty_values': (boolean);
   /**
-   * Specify a *content_type* field.
-   * If this field is not set then ``text/plain`` is used for *text_format* and
-   * ``application/json`` is used for *json_format*.
+   * Specify a ``content_type`` field.
+   * If this field is not set then ``text/plain`` is used for ``text_format`` and
+   * ``application/json`` is used for ``json_format``.
    * 
    * .. validated-code-block:: yaml
    * :type-name: envoy.config.core.v3.SubstitutionFormatString

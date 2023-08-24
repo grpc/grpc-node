@@ -11,109 +11,41 @@ export interface ProtoGrpcType {
   envoy: {
     admin: {
       v3: {
-        BootstrapConfigDump: MessageTypeDefinition
         ClientResourceStatus: EnumTypeDefinition
         ClustersConfigDump: MessageTypeDefinition
-        ConfigDump: MessageTypeDefinition
+        EcdsConfigDump: MessageTypeDefinition
         EndpointsConfigDump: MessageTypeDefinition
         ListenersConfigDump: MessageTypeDefinition
         RoutesConfigDump: MessageTypeDefinition
         ScopedRoutesConfigDump: MessageTypeDefinition
-        SecretsConfigDump: MessageTypeDefinition
         UpdateFailureState: MessageTypeDefinition
       }
     }
     annotations: {
     }
     config: {
-      accesslog: {
-        v3: {
-          AccessLog: MessageTypeDefinition
-          AccessLogFilter: MessageTypeDefinition
-          AndFilter: MessageTypeDefinition
-          ComparisonFilter: MessageTypeDefinition
-          DurationFilter: MessageTypeDefinition
-          ExtensionFilter: MessageTypeDefinition
-          GrpcStatusFilter: MessageTypeDefinition
-          HeaderFilter: MessageTypeDefinition
-          MetadataFilter: MessageTypeDefinition
-          NotHealthCheckFilter: MessageTypeDefinition
-          OrFilter: MessageTypeDefinition
-          ResponseFlagFilter: MessageTypeDefinition
-          RuntimeFilter: MessageTypeDefinition
-          StatusCodeFilter: MessageTypeDefinition
-          TraceableFilter: MessageTypeDefinition
-        }
-      }
-      bootstrap: {
-        v3: {
-          Admin: MessageTypeDefinition
-          Bootstrap: MessageTypeDefinition
-          ClusterManager: MessageTypeDefinition
-          CustomInlineHeader: MessageTypeDefinition
-          FatalAction: MessageTypeDefinition
-          LayeredRuntime: MessageTypeDefinition
-          Runtime: MessageTypeDefinition
-          RuntimeLayer: MessageTypeDefinition
-          Watchdog: MessageTypeDefinition
-          Watchdogs: MessageTypeDefinition
-        }
-      }
-      cluster: {
-        v3: {
-          CircuitBreakers: MessageTypeDefinition
-          Cluster: MessageTypeDefinition
-          ClusterCollection: MessageTypeDefinition
-          Filter: MessageTypeDefinition
-          LoadBalancingPolicy: MessageTypeDefinition
-          OutlierDetection: MessageTypeDefinition
-          TrackClusterStats: MessageTypeDefinition
-          UpstreamBindConfig: MessageTypeDefinition
-          UpstreamConnectionOptions: MessageTypeDefinition
-        }
-      }
       core: {
         v3: {
           Address: MessageTypeDefinition
-          AggregatedConfigSource: MessageTypeDefinition
-          AlternateProtocolsCacheOptions: MessageTypeDefinition
-          ApiConfigSource: MessageTypeDefinition
-          ApiVersion: EnumTypeDefinition
           AsyncDataSource: MessageTypeDefinition
           BackoffStrategy: MessageTypeDefinition
           BindConfig: MessageTypeDefinition
           BuildVersion: MessageTypeDefinition
           CidrRange: MessageTypeDefinition
-          ConfigSource: MessageTypeDefinition
           ControlPlane: MessageTypeDefinition
           DataSource: MessageTypeDefinition
-          DnsResolutionConfig: MessageTypeDefinition
-          DnsResolverOptions: MessageTypeDefinition
           EnvoyInternalAddress: MessageTypeDefinition
-          EventServiceConfig: MessageTypeDefinition
           Extension: MessageTypeDefinition
-          ExtensionConfigSource: MessageTypeDefinition
-          GrpcProtocolOptions: MessageTypeDefinition
-          GrpcService: MessageTypeDefinition
+          ExtraSourceAddress: MessageTypeDefinition
           HeaderMap: MessageTypeDefinition
           HeaderValue: MessageTypeDefinition
           HeaderValueOption: MessageTypeDefinition
-          HealthCheck: MessageTypeDefinition
-          HealthStatus: EnumTypeDefinition
-          Http1ProtocolOptions: MessageTypeDefinition
-          Http2ProtocolOptions: MessageTypeDefinition
-          Http3ProtocolOptions: MessageTypeDefinition
-          HttpProtocolOptions: MessageTypeDefinition
           HttpUri: MessageTypeDefinition
-          KeepaliveSettings: MessageTypeDefinition
           Locality: MessageTypeDefinition
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition
           Pipe: MessageTypeDefinition
-          ProxyProtocolConfig: MessageTypeDefinition
           QueryParameter: MessageTypeDefinition
-          QuicProtocolOptions: MessageTypeDefinition
-          RateLimitSettings: MessageTypeDefinition
           RemoteDataSource: MessageTypeDefinition
           RequestMethod: EnumTypeDefinition
           RetryPolicy: MessageTypeDefinition
@@ -123,112 +55,13 @@ export interface ProtoGrpcType {
           RuntimeFractionalPercent: MessageTypeDefinition
           RuntimePercent: MessageTypeDefinition
           RuntimeUInt32: MessageTypeDefinition
-          SchemeHeaderTransformation: MessageTypeDefinition
-          SelfConfigSource: MessageTypeDefinition
           SocketAddress: MessageTypeDefinition
           SocketOption: MessageTypeDefinition
+          SocketOptionsOverride: MessageTypeDefinition
           TcpKeepalive: MessageTypeDefinition
-          TcpProtocolOptions: MessageTypeDefinition
           TrafficDirection: EnumTypeDefinition
           TransportSocket: MessageTypeDefinition
-          TypedExtensionConfig: MessageTypeDefinition
-          UdpSocketConfig: MessageTypeDefinition
-          UpstreamHttpProtocolOptions: MessageTypeDefinition
           WatchedDirectory: MessageTypeDefinition
-        }
-      }
-      endpoint: {
-        v3: {
-          ClusterLoadAssignment: MessageTypeDefinition
-          Endpoint: MessageTypeDefinition
-          LbEndpoint: MessageTypeDefinition
-          LedsClusterLocalityConfig: MessageTypeDefinition
-          LocalityLbEndpoints: MessageTypeDefinition
-        }
-      }
-      listener: {
-        v3: {
-          ActiveRawUdpListenerConfig: MessageTypeDefinition
-          ApiListener: MessageTypeDefinition
-          Filter: MessageTypeDefinition
-          FilterChain: MessageTypeDefinition
-          FilterChainMatch: MessageTypeDefinition
-          Listener: MessageTypeDefinition
-          ListenerCollection: MessageTypeDefinition
-          ListenerFilter: MessageTypeDefinition
-          ListenerFilterChainMatchPredicate: MessageTypeDefinition
-          QuicProtocolOptions: MessageTypeDefinition
-          UdpListenerConfig: MessageTypeDefinition
-        }
-      }
-      metrics: {
-        v3: {
-          DogStatsdSink: MessageTypeDefinition
-          HistogramBucketSettings: MessageTypeDefinition
-          HystrixSink: MessageTypeDefinition
-          StatsConfig: MessageTypeDefinition
-          StatsMatcher: MessageTypeDefinition
-          StatsSink: MessageTypeDefinition
-          StatsdSink: MessageTypeDefinition
-          TagSpecifier: MessageTypeDefinition
-        }
-      }
-      overload: {
-        v3: {
-          BufferFactoryConfig: MessageTypeDefinition
-          OverloadAction: MessageTypeDefinition
-          OverloadManager: MessageTypeDefinition
-          ResourceMonitor: MessageTypeDefinition
-          ScaleTimersOverloadActionConfig: MessageTypeDefinition
-          ScaledTrigger: MessageTypeDefinition
-          ThresholdTrigger: MessageTypeDefinition
-          Trigger: MessageTypeDefinition
-        }
-      }
-      route: {
-        v3: {
-          CorsPolicy: MessageTypeDefinition
-          Decorator: MessageTypeDefinition
-          DirectResponseAction: MessageTypeDefinition
-          FilterAction: MessageTypeDefinition
-          FilterConfig: MessageTypeDefinition
-          HeaderMatcher: MessageTypeDefinition
-          HedgePolicy: MessageTypeDefinition
-          InternalRedirectPolicy: MessageTypeDefinition
-          NonForwardingAction: MessageTypeDefinition
-          QueryParameterMatcher: MessageTypeDefinition
-          RateLimit: MessageTypeDefinition
-          RedirectAction: MessageTypeDefinition
-          RetryPolicy: MessageTypeDefinition
-          Route: MessageTypeDefinition
-          RouteAction: MessageTypeDefinition
-          RouteMatch: MessageTypeDefinition
-          Tracing: MessageTypeDefinition
-          VirtualCluster: MessageTypeDefinition
-          VirtualHost: MessageTypeDefinition
-          WeightedCluster: MessageTypeDefinition
-        }
-      }
-      trace: {
-        v3: {
-          Tracing: MessageTypeDefinition
-        }
-      }
-    }
-    extensions: {
-      transport_sockets: {
-        tls: {
-          v3: {
-            CertificateProviderPluginInstance: MessageTypeDefinition
-            CertificateValidationContext: MessageTypeDefinition
-            GenericSecret: MessageTypeDefinition
-            PrivateKeyProvider: MessageTypeDefinition
-            SdsSecretConfig: MessageTypeDefinition
-            Secret: MessageTypeDefinition
-            TlsCertificate: MessageTypeDefinition
-            TlsParameters: MessageTypeDefinition
-            TlsSessionTicketKeys: MessageTypeDefinition
-          }
         }
       }
     }
@@ -256,7 +89,6 @@ export interface ProtoGrpcType {
           DoubleMatcher: MessageTypeDefinition
           ListMatcher: MessageTypeDefinition
           ListStringMatcher: MessageTypeDefinition
-          MetadataMatcher: MessageTypeDefinition
           NodeMatcher: MessageTypeDefinition
           RegexMatchAndSubstitute: MessageTypeDefinition
           RegexMatcher: MessageTypeDefinition
@@ -265,19 +97,7 @@ export interface ProtoGrpcType {
           ValueMatcher: MessageTypeDefinition
         }
       }
-      metadata: {
-        v3: {
-          MetadataKey: MessageTypeDefinition
-          MetadataKind: MessageTypeDefinition
-        }
-      }
-      tracing: {
-        v3: {
-          CustomTag: MessageTypeDefinition
-        }
-      }
       v3: {
-        CodecClientType: EnumTypeDefinition
         DoubleRange: MessageTypeDefinition
         FractionalPercent: MessageTypeDefinition
         Int32Range: MessageTypeDefinition
@@ -300,7 +120,6 @@ export interface ProtoGrpcType {
       DescriptorProto: MessageTypeDefinition
       DoubleValue: MessageTypeDefinition
       Duration: MessageTypeDefinition
-      Empty: MessageTypeDefinition
       EnumDescriptorProto: MessageTypeDefinition
       EnumOptions: MessageTypeDefinition
       EnumValueDescriptorProto: MessageTypeDefinition
@@ -336,7 +155,6 @@ export interface ProtoGrpcType {
   udpa: {
     annotations: {
       FieldMigrateAnnotation: MessageTypeDefinition
-      FieldSecurityAnnotation: MessageTypeDefinition
       FileMigrateAnnotation: MessageTypeDefinition
       MigrateAnnotation: MessageTypeDefinition
       PackageVersionStatus: EnumTypeDefinition
@@ -382,10 +200,7 @@ export interface ProtoGrpcType {
     }
     core: {
       v3: {
-        Authority: MessageTypeDefinition
-        CollectionEntry: MessageTypeDefinition
         ContextParams: MessageTypeDefinition
-        ResourceLocator: MessageTypeDefinition
       }
     }
   }

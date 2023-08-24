@@ -1,4 +1,4 @@
-// Original file: deps/envoy-api/envoy/admin/v3/config_dump.proto
+// Original file: deps/envoy-api/envoy/admin/v3/config_dump_shared.proto
 
 /**
  * Resource status from the view of a xDS client, which tells the synchronization

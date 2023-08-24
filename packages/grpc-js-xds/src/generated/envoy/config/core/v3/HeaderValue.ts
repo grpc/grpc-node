@@ -14,7 +14,7 @@ export interface HeaderValue {
    * 
    * The same :ref:`format specifier <config_access_log_format>` as used for
    * :ref:`HTTP access logging <config_access_log>` applies here, however
-   * unknown header values are replaced with the empty string instead of `-`.
+   * unknown header values are replaced with the empty string instead of ``-``.
    */
   'value'?: (string);
 }
@@ -32,7 +32,7 @@ export interface HeaderValue__Output {
    * 
    * The same :ref:`format specifier <config_access_log_format>` as used for
    * :ref:`HTTP access logging <config_access_log>` applies here, however
-   * unknown header values are replaced with the empty string instead of `-`.
+   * unknown header values are replaced with the empty string instead of ``-``.
    */
   'value': (string);
 }
