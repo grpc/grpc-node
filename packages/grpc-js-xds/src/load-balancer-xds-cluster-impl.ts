@@ -79,7 +79,7 @@ class XdsClusterImplLoadBalancingConfig implements TypedLoadBalancingConfig {
     };
   }
 
-  constructor(private cluster: string, private dropCategories: DropCategory[], private childPolicy: TypedLoadBalancingConfig, private edsServiceName: string, private lrsLoadReportingServer: XdsServerConfig, maxConcurrentRequests?: number) {
+  constructor(private cluster: string, private dropCategories: DropCategory[], private childPolicy: TypedLoadBalancingConfig, private edsServiceName: string, private lrsLoadReportingServer?: XdsServerConfig, maxConcurrentRequests?: number) {
     this.maxConcurrentRequests = maxConcurrentRequests ?? DEFAULT_MAX_CONCURRENT_REQUESTS;
   }
 
@@ -127,7 +127,11 @@ class XdsClusterImplLoadBalancingConfig implements TypedLoadBalancingConfig {
     if (!childConfig) {
       throw new Error('xds_cluster_impl config child_policy parsing failed');
     }
-    return new XdsClusterImplLoadBalancingConfig(obj.cluster, obj.drop_categories.map(validateDropCategory), childConfig, obj.eds_service_name, validateXdsServerConfig(obj.lrs_load_reporting_server), obj.max_concurrent_requests);
+    let lrsServer: XdsServerConfig | undefined = undefined;
+    if (obj.lrs_load_reporting_server) {
+      lrsServer = validateXdsServerConfig(obj.lrs_load_reporting_server)
+    }
+    return new XdsClusterImplLoadBalancingConfig(obj.cluster, obj.drop_categories.map(validateDropCategory), childConfig, obj.eds_service_name, lrsServer, obj.max_concurrent_requests);
   }
 }
 
@@ -156,7 +160,7 @@ class CallCounterMap {
 const callCounterMap = new CallCounterMap();
 
 class LocalitySubchannelWrapper extends BaseSubchannelWrapper implements SubchannelInterface {
-  constructor(child: SubchannelInterface, private statsObject: XdsClusterLocalityStats) {
+  constructor(child: SubchannelInterface, private statsObject: XdsClusterLocalityStats | null) {
     super(child);
   }
 
@@ -210,12 +214,12 @@ class XdsClusterImplPicker implements Picker {
         subchannel: pickSubchannel?.getWrappedSubchannel() ?? null,
         onCallStarted: () => {
           originalPick.onCallStarted?.();
-          pickSubchannel?.getStatsObject().addCallStarted();
+          pickSubchannel?.getStatsObject()?.addCallStarted();
           callCounterMap.startCall(this.callCounterMapKey);
         },
         onCallEnded: status => {
           originalPick.onCallEnded?.(status);
-          pickSubchannel?.getStatsObject().addCallFinished(status !== Status.OK)
+          pickSubchannel?.getStatsObject()?.addCallFinished(status !== Status.OK)
           callCounterMap.endCall(this.callCounterMapKey);
         }
       };
@@ -253,12 +257,16 @@ class XdsClusterImplBalancer implements LoadBalancer {
           }
           const locality = (subchannelAddress as LocalitySubchannelAddress).locality ?? '';
           const wrapperChild = channelControlHelper.createSubchannel(subchannelAddress, subchannelArgs);
-          const statsObj = this.xdsClient.addClusterLocalityStats(
-            this.latestConfig.getLrsLoadReportingServer(),
-            this.latestConfig.getCluster(),
-            this.latestConfig.getEdsServiceName(),
-            locality
-          );
+          const lrsServer = this.latestConfig.getLrsLoadReportingServer();
+          let statsObj: XdsClusterLocalityStats | null = null;
+          if (lrsServer) {
+            statsObj = this.xdsClient.addClusterLocalityStats(
+              lrsServer,
+              this.latestConfig.getCluster(),
+              this.latestConfig.getEdsServiceName(),
+              locality
+            );
+          }
           return new LocalitySubchannelWrapper(wrapperChild, statsObj);
         },
         updateState: (connectivityState, originalPicker) => {
