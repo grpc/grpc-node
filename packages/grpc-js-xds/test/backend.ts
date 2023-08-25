@@ -48,6 +48,18 @@ export class Backend {
   Echo(call: ServerUnaryCall<EchoRequest__Output, EchoResponse>, callback: sendUnaryData<EchoResponse>) {
     // call.request.params is currently ignored
     this.addCall();
+    for (const behaviorEntry of call.metadata.get('rpc-behavior')) {
+      if (typeof behaviorEntry !== 'string') {
+        continue;
+      }
+      for (const behavior of behaviorEntry.split(',')) {
+        if (behavior.startsWith('error-code-')) {
+          const errorCode = Number(behavior.substring('error-code-'.length));
+          callback({code: errorCode, details: 'rpc-behavior error code'});
+          return;
+        }
+      }
+    }
     callback(null, {message: call.request.message});
   }
 
@@ -87,7 +99,7 @@ export class Backend {
       });
     });
   }
-  
+
   getPort(): number {
     if (this.port === null) {
       throw new Error('Port not set. Backend not yet started.');
