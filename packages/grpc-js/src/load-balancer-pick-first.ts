@@ -315,7 +315,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   }
 
   private pickSubchannel(subchannel: SubchannelInterface) {
-    if (subchannel === this.currentPick) {
+    if (this.currentPick && subchannel.realSubchannelEquals(this.currentPick)) {
       return;
     }
     trace('Pick subchannel with address ' + subchannel.getAddress());
