@@ -44,6 +44,7 @@ export {
   SubchannelInterface,
   BaseSubchannelWrapper,
   ConnectivityStateListener,
+  HealthListener,
 } from './subchannel-interface';
 export {
   OutlierDetectionRawConfig,
