@@ -125,6 +125,54 @@ describe('pick_first load balancing policy', () => {
       subchannels[0].transitionToState(ConnectivityState.READY);
     });
   });
+  it('Should report READY when a subchannel other than the first connects', done => {
+    const channelControlHelper = createChildChannelControlHelper(
+      baseChannelControlHelper,
+      {
+        updateState: updateStateCallBackForExpectedStateSequence(
+          [ConnectivityState.CONNECTING, ConnectivityState.READY],
+          done
+        ),
+      }
+    );
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper);
+    pickFirst.updateAddressList(
+      [
+        { addresses: [{ host: 'localhost', port: 1 }] },
+        { addresses: [{ host: 'localhost', port: 2 }] },
+      ],
+      config
+    );
+    process.nextTick(() => {
+      subchannels[1].transitionToState(ConnectivityState.READY);
+    });
+  });
+  it('Should report READY when a subchannel other than the first in the same endpoint connects', done => {
+    const channelControlHelper = createChildChannelControlHelper(
+      baseChannelControlHelper,
+      {
+        updateState: updateStateCallBackForExpectedStateSequence(
+          [ConnectivityState.CONNECTING, ConnectivityState.READY],
+          done
+        ),
+      }
+    );
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper);
+    pickFirst.updateAddressList(
+      [
+        {
+          addresses: [
+            { host: 'localhost', port: 1 },
+            { host: 'localhost', port: 2 },
+          ],
+        },
+      ],
+      config
+    );
+    process.nextTick(() => {
+      subchannels[1].transitionToState(ConnectivityState.READY);
+    });
+  });
   it('Should report READY when updated with a subchannel that is already READY', done => {
     const channelControlHelper = createChildChannelControlHelper(
       baseChannelControlHelper,
