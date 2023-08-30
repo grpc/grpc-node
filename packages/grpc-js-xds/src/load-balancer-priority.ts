@@ -19,8 +19,8 @@ import { connectivityState as ConnectivityState, status as Status, Metadata, log
 import LoadBalancer = experimental.LoadBalancer;
 import ChannelControlHelper = experimental.ChannelControlHelper;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
-import SubchannelAddress = experimental.SubchannelAddress;
-import subchannelAddressToString = experimental.subchannelAddressToString;
+import Endpoint = experimental.Endpoint;
+import endpointToString = experimental.endpointToString;
 import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import Picker = experimental.Picker;
 import QueuePicker = experimental.QueuePicker;
@@ -40,16 +40,16 @@ const TYPE_NAME = 'priority';
 const DEFAULT_FAILOVER_TIME_MS = 10_000;
 const DEFAULT_RETENTION_INTERVAL_MS = 15 * 60 * 1000;
 
-export type LocalitySubchannelAddress = SubchannelAddress & {
+export interface LocalityEndpoint extends Endpoint {
   localityPath: string[];
   locality: Locality__Output;
   weight: number;
 };
 
-export function isLocalitySubchannelAddress(
-  address: SubchannelAddress
-): address is LocalitySubchannelAddress {
-  return Array.isArray((address as LocalitySubchannelAddress).localityPath);
+export function isLocalityEndpoint(
+  address: Endpoint
+): address is LocalityEndpoint {
+  return Array.isArray((address as LocalityEndpoint).localityPath);
 }
 
 /**
@@ -138,7 +138,7 @@ class PriorityLoadBalancingConfig implements TypedLoadBalancingConfig {
 
 interface PriorityChildBalancer {
   updateAddressList(
-    addressList: SubchannelAddress[],
+    endpointList: Endpoint[],
     lbConfig: TypedLoadBalancingConfig,
     attributes: { [key: string]: unknown }
   ): void;
@@ -154,7 +154,7 @@ interface PriorityChildBalancer {
 }
 
 interface UpdateArgs {
-  subchannelAddress: SubchannelAddress[];
+  subchannelAddress: Endpoint[];
   lbConfig: TypedLoadBalancingConfig;
   ignoreReresolutionRequests: boolean;
 }
@@ -218,11 +218,11 @@ export class PriorityLoadBalancer implements LoadBalancer {
     }
 
     updateAddressList(
-      addressList: SubchannelAddress[],
+      endpointList: Endpoint[],
       lbConfig: TypedLoadBalancingConfig,
       attributes: { [key: string]: unknown }
     ): void {
-      this.childBalancer.updateAddressList(addressList, lbConfig, attributes);
+      this.childBalancer.updateAddressList(endpointList, lbConfig, attributes);
     }
 
     exitIdle() {
@@ -412,7 +412,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
   }
 
   updateAddressList(
-    addressList: SubchannelAddress[],
+    endpointList: Endpoint[],
     lbConfig: TypedLoadBalancingConfig,
     attributes: { [key: string]: unknown }
   ): void {
@@ -425,23 +425,23 @@ export class PriorityLoadBalancer implements LoadBalancer {
      * which child it belongs to. So we bucket those addresses by that first
      * element, and pass along the rest of the localityPath for that child
      * to use. */
-    const childAddressMap: Map<string, LocalitySubchannelAddress[]> = new Map<
+    const childAddressMap: Map<string, LocalityEndpoint[]> = new Map<
       string,
-      LocalitySubchannelAddress[]
+      LocalityEndpoint[]
     >();
-    for (const address of addressList) {
-      if (!isLocalitySubchannelAddress(address)) {
+    for (const endpoint of endpointList) {
+      if (!isLocalityEndpoint(endpoint)) {
         // Reject address that cannot be prioritized
         return;
       }
-      if (address.localityPath.length < 1) {
+      if (endpoint.localityPath.length < 1) {
         // Reject address that cannot be prioritized
         return;
       }
-      const childName = address.localityPath[0];
-      const childAddress: LocalitySubchannelAddress = {
-        ...address,
-        localityPath: address.localityPath.slice(1),
+      const childName = endpoint.localityPath[0];
+      const childAddress: LocalityEndpoint = {
+        ...endpoint,
+        localityPath: endpoint.localityPath.slice(1),
       };
       let childAddressList = childAddressMap.get(childName);
       if (childAddressList === undefined) {
@@ -458,7 +458,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
      * update all existing children with their new configs */
     for (const [childName, childConfig] of lbConfig.getChildren()) {
       const childAddresses = childAddressMap.get(childName) ?? [];
-      trace('Assigning child ' + childName + ' address list ' + childAddresses.map(address => '(' + subchannelAddressToString(address) + ' path=' + address.localityPath + ')'))
+      trace('Assigning child ' + childName + ' endpoint list ' + childAddresses.map(endpoint => '(' + endpointToString(endpoint) + ' path=' + endpoint.localityPath + ')'))
       this.latestUpdates.set(childName, {
         subchannelAddress: childAddresses,
         lbConfig: childConfig.config,

@@ -18,11 +18,13 @@
 import { experimental, logVerbosity, status as Status, Metadata, connectivityState } from "@grpc/grpc-js";
 import { validateXdsServerConfig, XdsServerConfig } from "./xds-bootstrap";
 import { getSingletonXdsClient, XdsClient, XdsClusterDropStats, XdsClusterLocalityStats } from "./xds-client";
-import { LocalitySubchannelAddress } from "./load-balancer-priority";
+import { LocalityEndpoint } from "./load-balancer-priority";
 
 import LoadBalancer = experimental.LoadBalancer;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
-import SubchannelAddress = experimental.SubchannelAddress;
+import Endpoint = experimental.Endpoint;
+import endpointHasAddress = experimental.endpointHasAddress;
+import subchannelAddressToString = experimental.subchannelAddressToString;
 import Picker = experimental.Picker;
 import PickArgs = experimental.PickArgs;
 import PickResult = experimental.PickResult;
@@ -34,6 +36,7 @@ import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import selectLbConfigFromList = experimental.selectLbConfigFromList;
 import SubchannelInterface = experimental.SubchannelInterface;
 import BaseSubchannelWrapper = experimental.BaseSubchannelWrapper;
+import { Locality__Output } from "./generated/envoy/config/core/v3/Locality";
 
 const TRACER_NAME = 'xds_cluster_impl';
 
@@ -245,6 +248,7 @@ function getCallCounterMapKey(cluster: string, edsServiceName?: string): string 
 
 class XdsClusterImplBalancer implements LoadBalancer {
   private childBalancer: ChildLoadBalancerHandler;
+  private lastestEndpointList: Endpoint[] | null = null;
   private latestConfig: XdsClusterImplLoadBalancingConfig | null = null;
   private clusterDropStats: XdsClusterDropStats | null = null;
   private xdsClient: XdsClient | null = null;
@@ -252,11 +256,20 @@ class XdsClusterImplBalancer implements LoadBalancer {
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
       this.childBalancer = new ChildLoadBalancerHandler(createChildChannelControlHelper(channelControlHelper, {
         createSubchannel: (subchannelAddress, subchannelArgs) => {
-          if (!this.xdsClient || !this.latestConfig) {
+          if (!this.xdsClient || !this.latestConfig || !this.lastestEndpointList) {
             throw new Error('xds_cluster_impl: invalid state: createSubchannel called with xdsClient or latestConfig not populated');
           }
-          const locality = (subchannelAddress as LocalitySubchannelAddress).locality ?? '';
           const wrapperChild = channelControlHelper.createSubchannel(subchannelAddress, subchannelArgs);
+          let locality: Locality__Output | null = null;
+          for (const endpoint of this.lastestEndpointList) {
+            if (endpointHasAddress(endpoint, subchannelAddress)) {
+              locality = (endpoint as LocalityEndpoint).locality;
+            }
+          }
+          if (locality === null) {
+            trace('Not reporting load for address ' + subchannelAddressToString(subchannelAddress) + ' because it has unknown locality.');
+            return wrapperChild;
+          }
           const lrsServer = this.latestConfig.getLrsLoadReportingServer();
           let statsObj: XdsClusterLocalityStats | null = null;
           if (lrsServer) {
@@ -279,15 +292,15 @@ class XdsClusterImplBalancer implements LoadBalancer {
         }
       }));
     }
-  updateAddressList(addressList: SubchannelAddress[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+  updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
     if (!(lbConfig instanceof XdsClusterImplLoadBalancingConfig)) {
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));
       return;
     }
     trace('Received update with config: ' + JSON.stringify(lbConfig, undefined, 2));
+    this.lastestEndpointList = endpointList;
     this.latestConfig = lbConfig;
     this.xdsClient = attributes.xdsClient as XdsClient;
-
     if (lbConfig.getLrsLoadReportingServer()) {
       this.clusterDropStats = this.xdsClient.addClusterDropStats(
         lbConfig.getLrsLoadReportingServer()!,
@@ -296,7 +309,7 @@ class XdsClusterImplBalancer implements LoadBalancer {
       );
     }
 
-    this.childBalancer.updateAddressList(addressList, lbConfig.getChildPolicy(), attributes);
+    this.childBalancer.updateAddressList(endpointList, lbConfig.getChildPolicy(), attributes);
   }
   exitIdle(): void {
     this.childBalancer.exitIdle();

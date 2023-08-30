@@ -25,7 +25,7 @@ import PickArgs = experimental.PickArgs;
 import PickResultType = experimental.PickResultType;
 import UnavailablePicker = experimental.UnavailablePicker;
 import QueuePicker = experimental.QueuePicker;
-import SubchannelAddress = experimental.SubchannelAddress;
+import Endpoint = experimental.Endpoint;
 import ChildLoadBalancerHandler = experimental.ChildLoadBalancerHandler;
 import ChannelControlHelper = experimental.ChannelControlHelper;
 import selectLbConfigFromList = experimental.selectLbConfigFromList;
@@ -111,7 +111,7 @@ class XdsClusterManagerPicker implements Picker {
 }
 
 interface XdsClusterManagerChild {
-  updateAddressList(addressList: SubchannelAddress[], childConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void;
+  updateAddressList(endpointList: Endpoint[], childConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void;
   exitIdle(): void;
   resetBackoff(): void;
   destroy(): void;
@@ -142,8 +142,8 @@ class XdsClusterManager implements LoadBalancer {
       this.picker = picker;
       this.parent.maybeUpdateState();
     }
-    updateAddressList(addressList: SubchannelAddress[], childConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
-      this.childBalancer.updateAddressList(addressList, childConfig, attributes);
+    updateAddressList(endpointList: Endpoint[], childConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+      this.childBalancer.updateAddressList(endpointList, childConfig, attributes);
     }
     exitIdle(): void {
       this.childBalancer.exitIdle();
@@ -235,7 +235,7 @@ class XdsClusterManager implements LoadBalancer {
     this.channelControlHelper.updateState(connectivityState, picker);
   }
 
-  updateAddressList(addressList: SubchannelAddress[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+  updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
     if (!(lbConfig instanceof XdsClusterManagerLoadBalancingConfig)) {
       // Reject a config of the wrong type
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));
@@ -259,7 +259,7 @@ class XdsClusterManager implements LoadBalancer {
     for (const [name, childConfig] of configChildren.entries()) {
       if (!this.children.has(name)) {
         const newChild = new this.XdsClusterManagerChildImpl(this, name);
-        newChild.updateAddressList(addressList, childConfig, attributes);
+        newChild.updateAddressList(endpointList, childConfig, attributes);
         this.children.set(name, newChild);
       }
     }

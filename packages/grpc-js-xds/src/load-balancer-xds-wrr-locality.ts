@@ -20,13 +20,13 @@
 import { LoadBalancingConfig, experimental, logVerbosity } from "@grpc/grpc-js";
 import { loadProtosWithOptionsSync } from "@grpc/proto-loader/build/src/util";
 import { WeightedTargetRaw } from "./load-balancer-weighted-target";
-import { isLocalitySubchannelAddress } from "./load-balancer-priority";
+import { isLocalityEndpoint } from "./load-balancer-priority";
 import { localityToName } from "./load-balancer-xds-cluster-resolver";
 import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import LoadBalancer = experimental.LoadBalancer;
 import ChannelControlHelper = experimental.ChannelControlHelper;
 import ChildLoadBalancerHandler = experimental.ChildLoadBalancerHandler;
-import SubchannelAddress = experimental.SubchannelAddress;
+import Endpoint = experimental.Endpoint;
 import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
 import { Any__Output } from "./generated/google/protobuf/Any";
@@ -76,14 +76,14 @@ class XdsWrrLocalityLoadBalancer implements LoadBalancer {
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
     this.childBalancer = new ChildLoadBalancerHandler(channelControlHelper);
   }
-  updateAddressList(addressList: SubchannelAddress[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+  updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
     if (!(lbConfig instanceof XdsWrrLocalityLoadBalancingConfig)) {
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig, undefined, 2));
       return;
     }
     const targets: {[localityName: string]: WeightedTargetRaw} = {};
-    for (const address of addressList) {
-      if (!isLocalitySubchannelAddress(address)) {
+    for (const address of endpointList) {
+      if (!isLocalityEndpoint(address)) {
         return;
       }
       const localityName = localityToName(address.locality);
@@ -99,7 +99,7 @@ class XdsWrrLocalityLoadBalancer implements LoadBalancer {
         targets: targets
       }
     };
-    this.childBalancer.updateAddressList(addressList, parseLoadBalancingConfig(childConfig), attributes);
+    this.childBalancer.updateAddressList(endpointList, parseLoadBalancingConfig(childConfig), attributes);
   }
   exitIdle(): void {
     this.childBalancer.exitIdle();

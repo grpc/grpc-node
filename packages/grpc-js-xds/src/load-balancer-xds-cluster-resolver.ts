@@ -20,7 +20,7 @@ import { registerLoadBalancerType } from "@grpc/grpc-js/build/src/load-balancer"
 import { EXPERIMENTAL_OUTLIER_DETECTION } from "./environment";
 import { Locality__Output } from "./generated/envoy/config/core/v3/Locality";
 import { ClusterLoadAssignment__Output } from "./generated/envoy/config/endpoint/v3/ClusterLoadAssignment";
-import { LocalitySubchannelAddress, PriorityChildRaw } from "./load-balancer-priority";
+import { LocalityEndpoint, PriorityChildRaw } from "./load-balancer-priority";
 import { getSingletonXdsClient, Watcher, XdsClient } from "./xds-client";
 import { DropCategory } from "./load-balancer-xds-cluster-impl";
 
@@ -28,11 +28,13 @@ import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import LoadBalancer = experimental.LoadBalancer;
 import Resolver = experimental.Resolver;
 import SubchannelAddress = experimental.SubchannelAddress;
+import Endpoint = experimental.Endpoint;
 import ChildLoadBalancerHandler = experimental.ChildLoadBalancerHandler;
 import createResolver = experimental.createResolver;
 import ChannelControlHelper = experimental.ChannelControlHelper;
 import OutlierDetectionRawConfig = experimental.OutlierDetectionRawConfig;
 import subchannelAddressToString = experimental.subchannelAddressToString;
+import endpointToString = experimental.endpointToString;
 import selectLbConfigFromList = experimental.selectLbConfigFromList;
 import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
 import UnavailablePicker = experimental.UnavailablePicker;
@@ -116,7 +118,7 @@ class XdsClusterResolverLoadBalancingConfig implements TypedLoadBalancingConfig 
 interface LocalityEntry {
   locality: Locality__Output;
   weight: number;
-  addresses: SubchannelAddress[];
+  endpoints: Endpoint[];
 }
 
 interface PriorityEntry {
@@ -164,18 +166,20 @@ function getEdsPriorities(edsUpdate: ClusterLoadAssignment__Output): PriorityEnt
     if (!endpoint.load_balancing_weight) {
       continue;
     }
-    const addresses: SubchannelAddress[] = endpoint.lb_endpoints.filter(lbEndpoint => lbEndpoint.health_status === 'UNKNOWN' || lbEndpoint.health_status === 'HEALTHY').map(
+    const endpoints: Endpoint[] = endpoint.lb_endpoints.filter(lbEndpoint => lbEndpoint.health_status === 'UNKNOWN' || lbEndpoint.health_status === 'HEALTHY').map(
       (lbEndpoint) => {
         /* The validator in the XdsClient class ensures that each endpoint has
          * a socket_address with an IP address and a port_value. */
         const socketAddress = lbEndpoint.endpoint!.address!.socket_address!;
         return {
-          host: socketAddress.address!,
-          port: socketAddress.port_value!,
+          addresses: [{
+            host: socketAddress.address!,
+            port: socketAddress.port_value!,
+          }]
         };
       }
     );
-    if (addresses.length === 0) {
+    if (endpoints.length === 0) {
       continue;
     }
     let priorityEntry: PriorityEntry;
@@ -190,7 +194,7 @@ function getEdsPriorities(edsUpdate: ClusterLoadAssignment__Output): PriorityEnt
     }
     priorityEntry.localities.push({
       locality: endpoint.locality!,
-      addresses: addresses,
+      endpoints: endpoints,
       weight: endpoint.load_balancing_weight.value
     });
   }
@@ -198,7 +202,7 @@ function getEdsPriorities(edsUpdate: ClusterLoadAssignment__Output): PriorityEnt
   return result.filter(priority => priority);
 }
 
-function getDnsPriorities(addresses: SubchannelAddress[]): PriorityEntry[] {
+function getDnsPriorities(endpoints: Endpoint[]): PriorityEntry[] {
   return [{
     localities: [{
       locality: {
@@ -207,7 +211,7 @@ function getDnsPriorities(addresses: SubchannelAddress[]): PriorityEntry[] {
         sub_zone: ''
       },
       weight: 1,
-      addresses: addresses
+      endpoints: endpoints
     }],
     dropCategories: []
   }];
@@ -249,7 +253,7 @@ export class XdsClusterResolver implements LoadBalancer {
     }
     const fullPriorityList: string[] = [];
     const priorityChildren: {[name: string]: PriorityChildRaw} = {};
-    const addressList: LocalitySubchannelAddress[] = [];
+    const endpointList: LocalityEndpoint[] = [];
     const edsChildPolicy = this.latestConfig.getXdsLbPolicy();
     for (const entry of this.discoveryMechanismList) {
       const newPriorityNames: string[] = [];
@@ -291,15 +295,15 @@ export class XdsClusterResolver implements LoadBalancer {
         newPriorityNames[priority] = newPriorityName;
 
         for (const localityObj of priorityEntry.localities) {
-          for (const address of localityObj.addresses) {
-            addressList.push({
+          for (const endpoint of localityObj.endpoints) {
+            endpointList.push({
               localityPath: [
                 newPriorityName,
                 localityToName(localityObj.locality),
               ],
               locality: localityObj.locality,
               weight: localityObj.weight,
-              ...address,
+              ...endpoint
             });
           }
           newLocalityPriorities.set(localityToName(localityObj.locality), priority);
@@ -349,16 +353,16 @@ export class XdsClusterResolver implements LoadBalancer {
       this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `LB policy config parsing failed with error ${(e as Error).message}`, metadata: new Metadata()}));
       return;
     }
-    trace('Child update addresses: ' + addressList.map(address => '(' + subchannelAddressToString(address) + ' path=' + address.localityPath + ')'));
+    trace('Child update addresses: ' + endpointList.map(endpoint => '(' + endpointToString(endpoint) + ' path=' + endpoint.localityPath + ')'));
     trace('Child update priority config: ' + JSON.stringify(childConfig, undefined, 2));
     this.childBalancer.updateAddressList(
-      addressList,
+      endpointList,
       typedChildConfig,
       this.latestAttributes
     );
   }
 
-  updateAddressList(addressList: SubchannelAddress[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+  updateAddressList(addressList: Endpoint[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
     if (!(lbConfig instanceof XdsClusterResolverLoadBalancingConfig)) {
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig, undefined, 2));
       return;
@@ -399,8 +403,8 @@ export class XdsClusterResolver implements LoadBalancer {
           }
         } else {
           const resolver = createResolver({scheme: 'dns', path: mechanism.dns_hostname!}, {
-            onSuccessfulResolution: addressList => {
-              mechanismEntry.latestUpdate = getDnsPriorities(addressList);
+            onSuccessfulResolution: endpointList => {
+              mechanismEntry.latestUpdate = getDnsPriorities(endpointList);
               this.maybeUpdateChild();
             },
             onError: error => {
