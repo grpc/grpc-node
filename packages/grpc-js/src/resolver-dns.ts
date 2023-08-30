@@ -28,7 +28,7 @@ import { StatusObject } from './call-interface';
 import { Metadata } from './metadata';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
-import { SubchannelAddress, TcpSubchannelAddress } from './subchannel-address';
+import { Endpoint, TcpSubchannelAddress } from './subchannel-address';
 import { GrpcUri, uriToString, splitHostPort } from './uri-parser';
 import { isIPv6, isIPv4 } from 'net';
 import { ChannelOptions } from './channel-options';
@@ -51,34 +51,10 @@ const resolveTxtPromise = util.promisify(dns.resolveTxt);
 const dnsLookupPromise = util.promisify(dns.lookup);
 
 /**
- * Merge any number of arrays into a single alternating array
- * @param arrays
- */
-function mergeArrays<T>(...arrays: T[][]): T[] {
-  const result: T[] = [];
-  for (
-    let i = 0;
-    i <
-    Math.max.apply(
-      null,
-      arrays.map(array => array.length)
-    );
-    i++
-  ) {
-    for (const array of arrays) {
-      if (i < array.length) {
-        result.push(array[i]);
-      }
-    }
-  }
-  return result;
-}
-
-/**
  * Resolver implementation that handles DNS names and IP addresses.
  */
 class DnsResolver implements Resolver {
-  private readonly ipResult: SubchannelAddress[] | null;
+  private readonly ipResult: Endpoint[] | null;
   private readonly dnsHostname: string | null;
   private readonly port: number | null;
   /**
@@ -89,7 +65,7 @@ class DnsResolver implements Resolver {
   private readonly minTimeBetweenResolutionsMs: number;
   private pendingLookupPromise: Promise<dns.LookupAddress[]> | null = null;
   private pendingTxtPromise: Promise<string[][]> | null = null;
-  private latestLookupResult: TcpSubchannelAddress[] | null = null;
+  private latestLookupResult: Endpoint[] | null = null;
   private latestServiceConfig: ServiceConfig | null = null;
   private latestServiceConfigError: StatusObject | null = null;
   private percentage: number;
@@ -114,8 +90,12 @@ class DnsResolver implements Resolver {
       if (isIPv4(hostPort.host) || isIPv6(hostPort.host)) {
         this.ipResult = [
           {
-            host: hostPort.host,
-            port: hostPort.port ?? DEFAULT_PORT,
+            addresses: [
+              {
+                host: hostPort.host,
+                port: hostPort.port ?? DEFAULT_PORT,
+              },
+            ],
           },
         ];
         this.dnsHostname = null;
@@ -213,18 +193,15 @@ class DnsResolver implements Resolver {
           this.pendingLookupPromise = null;
           this.backoff.reset();
           this.backoff.stop();
-          const ip4Addresses: dns.LookupAddress[] = addressList.filter(
-            addr => addr.family === 4
-          );
-          const ip6Addresses: dns.LookupAddress[] = addressList.filter(
-            addr => addr.family === 6
-          );
-          this.latestLookupResult = mergeArrays(ip6Addresses, ip4Addresses).map(
+          const subchannelAddresses: TcpSubchannelAddress[] = addressList.map(
             addr => ({ host: addr.address, port: +this.port! })
           );
+          this.latestLookupResult = subchannelAddresses.map(address => ({
+            addresses: [address],
+          }));
           const allAddressesString: string =
             '[' +
-            this.latestLookupResult
+            subchannelAddresses
               .map(addr => addr.host + ':' + addr.port)
               .join(',') +
             ']';

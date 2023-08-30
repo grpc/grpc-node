@@ -17,7 +17,7 @@
 
 import { MethodConfig, ServiceConfig } from './service-config';
 import { StatusObject } from './call-interface';
-import { SubchannelAddress } from './subchannel-address';
+import { Endpoint } from './subchannel-address';
 import { GrpcUri, uriToString } from './uri-parser';
 import { ChannelOptions } from './channel-options';
 import { Metadata } from './metadata';
@@ -55,7 +55,7 @@ export interface ResolverListener {
    *     service configuration was invalid
    */
   onSuccessfulResolution(
-    addressList: SubchannelAddress[],
+    addressList: Endpoint[],
     serviceConfig: ServiceConfig | null,
     serviceConfigError: StatusObject | null,
     configSelector: ConfigSelector | null,

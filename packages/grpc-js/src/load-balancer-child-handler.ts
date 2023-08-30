@@ -21,7 +21,7 @@ import {
   TypedLoadBalancingConfig,
   createLoadBalancer,
 } from './load-balancer';
-import { SubchannelAddress } from './subchannel-address';
+import { Endpoint, SubchannelAddress } from './subchannel-address';
 import { ChannelOptions } from './channel-options';
 import { ConnectivityState } from './connectivity-state';
 import { Picker } from './picker';
@@ -95,12 +95,12 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
 
   /**
    * Prerequisites: lbConfig !== null and lbConfig.name is registered
-   * @param addressList
+   * @param endpointList
    * @param lbConfig
    * @param attributes
    */
   updateAddressList(
-    addressList: SubchannelAddress[],
+    endpointList: Endpoint[],
     lbConfig: TypedLoadBalancingConfig,
     attributes: { [key: string]: unknown }
   ): void {
@@ -131,7 +131,7 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
       }
     }
     this.latestConfig = lbConfig;
-    childToUpdate.updateAddressList(addressList, lbConfig, attributes);
+    childToUpdate.updateAddressList(endpointList, lbConfig, attributes);
   }
   exitIdle(): void {
     if (this.currentChild) {

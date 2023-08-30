@@ -16,7 +16,7 @@
  */
 
 import { ChannelOptions } from './channel-options';
-import { SubchannelAddress } from './subchannel-address';
+import { Endpoint, SubchannelAddress } from './subchannel-address';
 import { ConnectivityState } from './connectivity-state';
 import { Picker } from './picker';
 import { ChannelRef, SubchannelRef } from './channelz';
@@ -95,12 +95,12 @@ export interface LoadBalancer {
    * The load balancer will start establishing connections with the new list,
    * but will continue using any existing connections until the new connections
    * are established
-   * @param addressList The new list of addresses to connect to
+   * @param endpointList The new list of addresses to connect to
    * @param lbConfig The load balancing config object from the service config,
    *     if one was provided
    */
   updateAddressList(
-    addressList: SubchannelAddress[],
+    endpointList: Endpoint[],
     lbConfig: TypedLoadBalancingConfig,
     attributes: { [key: string]: unknown }
   ): void;
@@ -185,7 +185,9 @@ export function isLoadBalancerNameRegistered(typeName: string): boolean {
   return typeName in registeredLoadBalancerTypes;
 }
 
-export function parseLoadBalancingConfig(rawConfig: LoadBalancingConfig): TypedLoadBalancingConfig {
+export function parseLoadBalancingConfig(
+  rawConfig: LoadBalancingConfig
+): TypedLoadBalancingConfig {
   const keys = Object.keys(rawConfig);
   if (keys.length !== 1) {
     throw new Error(
@@ -210,7 +212,9 @@ export function getDefaultConfig() {
   if (!defaultLoadBalancerType) {
     throw new Error('No default load balancer type registered');
   }
-  return new registeredLoadBalancerTypes[defaultLoadBalancerType]!.LoadBalancingConfig();
+  return new registeredLoadBalancerTypes[
+    defaultLoadBalancerType
+  ]!.LoadBalancingConfig();
 }
 
 export function selectLbConfigFromList(
@@ -221,7 +225,11 @@ export function selectLbConfigFromList(
     try {
       return parseLoadBalancingConfig(config);
     } catch (e) {
-      log(LogVerbosity.DEBUG, 'Config parsing failed with error', (e as Error).message);
+      log(
+        LogVerbosity.DEBUG,
+        'Config parsing failed with error',
+        (e as Error).message
+      );
       continue;
     }
   }

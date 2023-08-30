@@ -17,11 +17,15 @@ export {
   registerLoadBalancerType,
   selectLbConfigFromList,
   parseLoadBalancingConfig,
-  isLoadBalancerNameRegistered
+  isLoadBalancerNameRegistered,
 } from './load-balancer';
+export { LeafLoadBalancer } from './load-balancer-pick-first';
 export {
   SubchannelAddress,
   subchannelAddressToString,
+  Endpoint,
+  endpointToString,
+  endpointHasAddress,
 } from './subchannel-address';
 export { ChildLoadBalancerHandler } from './load-balancer-child-handler';
 export {

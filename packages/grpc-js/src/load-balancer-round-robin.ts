@@ -20,26 +20,24 @@ import {
   ChannelControlHelper,
   TypedLoadBalancingConfig,
   registerLoadBalancerType,
+  createChildChannelControlHelper,
 } from './load-balancer';
 import { ConnectivityState } from './connectivity-state';
 import {
   QueuePicker,
   Picker,
   PickArgs,
-  CompletePickResult,
-  PickResultType,
   UnavailablePicker,
+  PickResult,
 } from './picker';
-import {
-  SubchannelAddress,
-  subchannelAddressToString,
-} from './subchannel-address';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import {
-  ConnectivityStateListener,
-  SubchannelInterface,
-} from './subchannel-interface';
+  Endpoint,
+  endpointEqual,
+  endpointToString,
+} from './subchannel-address';
+import { LeafLoadBalancer } from './load-balancer-pick-first';
 
 const TRACER_NAME = 'round_robin';
 
@@ -70,20 +68,14 @@ class RoundRobinLoadBalancingConfig implements TypedLoadBalancingConfig {
 
 class RoundRobinPicker implements Picker {
   constructor(
-    private readonly subchannelList: SubchannelInterface[],
+    private readonly children: { endpoint: Endpoint; picker: Picker }[],
     private nextIndex = 0
   ) {}
 
-  pick(pickArgs: PickArgs): CompletePickResult {
-    const pickedSubchannel = this.subchannelList[this.nextIndex];
-    this.nextIndex = (this.nextIndex + 1) % this.subchannelList.length;
-    return {
-      pickResultType: PickResultType.COMPLETE,
-      subchannel: pickedSubchannel,
-      status: null,
-      onCallStarted: null,
-      onCallEnded: null,
-    };
+  pick(pickArgs: PickArgs): PickResult {
+    const childPicker = this.children[this.nextIndex].picker;
+    this.nextIndex = (this.nextIndex + 1) % this.children.length;
+    return childPicker.pick(pickArgs);
   }
 
   /**
@@ -91,54 +83,51 @@ class RoundRobinPicker implements Picker {
    * balancer implementation to preserve this part of the picker state if
    * possible when a subchannel connects or disconnects.
    */
-  peekNextSubchannel(): SubchannelInterface {
-    return this.subchannelList[this.nextIndex];
+  peekNextEndpoint(): Endpoint {
+    return this.children[this.nextIndex].endpoint;
   }
 }
 
 export class RoundRobinLoadBalancer implements LoadBalancer {
-  private subchannels: SubchannelInterface[] = [];
+  private children: LeafLoadBalancer[] = [];
 
   private currentState: ConnectivityState = ConnectivityState.IDLE;
 
-  private subchannelStateListener: ConnectivityStateListener;
-
   private currentReadyPicker: RoundRobinPicker | null = null;
 
-  constructor(private readonly channelControlHelper: ChannelControlHelper) {
-    this.subchannelStateListener = (
-      subchannel: SubchannelInterface,
-      previousState: ConnectivityState,
-      newState: ConnectivityState
-    ) => {
-      this.calculateAndUpdateState();
+  private updatesPaused = false;
 
-      if (
-        newState === ConnectivityState.TRANSIENT_FAILURE ||
-        newState === ConnectivityState.IDLE
-      ) {
-        this.channelControlHelper.requestReresolution();
-        subchannel.startConnecting();
+  private childChannelControlHelper: ChannelControlHelper;
+
+  constructor(private readonly channelControlHelper: ChannelControlHelper) {
+    this.childChannelControlHelper = createChildChannelControlHelper(
+      channelControlHelper,
+      {
+        updateState: (connectivityState, picker) => {
+          this.calculateAndUpdateState();
+        },
       }
-    };
+    );
   }
 
-  private countSubchannelsWithState(state: ConnectivityState) {
-    return this.subchannels.filter(
-      subchannel => subchannel.getConnectivityState() === state
-    ).length;
+  private countChildrenWithState(state: ConnectivityState) {
+    return this.children.filter(child => child.getConnectivityState() === state)
+      .length;
   }
 
   private calculateAndUpdateState() {
-    if (this.countSubchannelsWithState(ConnectivityState.READY) > 0) {
-      const readySubchannels = this.subchannels.filter(
-        subchannel =>
-          subchannel.getConnectivityState() === ConnectivityState.READY
+    if (this.updatesPaused) {
+      return;
+    }
+    if (this.countChildrenWithState(ConnectivityState.READY) > 0) {
+      const readyChildren = this.children.filter(
+        child => child.getConnectivityState() === ConnectivityState.READY
       );
       let index = 0;
       if (this.currentReadyPicker !== null) {
-        index = readySubchannels.indexOf(
-          this.currentReadyPicker.peekNextSubchannel()
+        const nextPickedEndpoint = this.currentReadyPicker.peekNextEndpoint();
+        index = readyChildren.findIndex(child =>
+          endpointEqual(child.getEndpoint(), nextPickedEndpoint)
         );
         if (index < 0) {
           index = 0;
@@ -146,14 +135,18 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
       }
       this.updateState(
         ConnectivityState.READY,
-        new RoundRobinPicker(readySubchannels, index)
+        new RoundRobinPicker(
+          readyChildren.map(child => ({
+            endpoint: child.getEndpoint(),
+            picker: child.getPicker(),
+          })),
+          index
+        )
       );
-    } else if (
-      this.countSubchannelsWithState(ConnectivityState.CONNECTING) > 0
-    ) {
+    } else if (this.countChildrenWithState(ConnectivityState.CONNECTING) > 0) {
       this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
     } else if (
-      this.countSubchannelsWithState(ConnectivityState.TRANSIENT_FAILURE) > 0
+      this.countChildrenWithState(ConnectivityState.TRANSIENT_FAILURE) > 0
     ) {
       this.updateState(
         ConnectivityState.TRANSIENT_FAILURE,
@@ -180,51 +173,35 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
   }
 
   private resetSubchannelList() {
-    for (const subchannel of this.subchannels) {
-      subchannel.removeConnectivityStateListener(this.subchannelStateListener);
-      subchannel.unref();
-      this.channelControlHelper.removeChannelzChild(
-        subchannel.getChannelzRef()
-      );
+    for (const child of this.children) {
+      child.destroy();
     }
-    this.subchannels = [];
   }
 
   updateAddressList(
-    addressList: SubchannelAddress[],
+    endpointList: Endpoint[],
     lbConfig: TypedLoadBalancingConfig
   ): void {
     this.resetSubchannelList();
-    trace(
-      'Connect to address list ' +
-        addressList.map(address => subchannelAddressToString(address))
+    trace('Connect to endpoint list ' + endpointList.map(endpointToString));
+    this.updatesPaused = true;
+    this.children = endpointList.map(
+      endpoint => new LeafLoadBalancer(endpoint, this.childChannelControlHelper)
     );
-    this.subchannels = addressList.map(address =>
-      this.channelControlHelper.createSubchannel(address, {})
-    );
-    for (const subchannel of this.subchannels) {
-      subchannel.ref();
-      subchannel.addConnectivityStateListener(this.subchannelStateListener);
-      this.channelControlHelper.addChannelzChild(subchannel.getChannelzRef());
-      const subchannelState = subchannel.getConnectivityState();
-      if (
-        subchannelState === ConnectivityState.IDLE ||
-        subchannelState === ConnectivityState.TRANSIENT_FAILURE
-      ) {
-        subchannel.startConnecting();
-      }
+    for (const child of this.children) {
+      child.startConnecting();
     }
+    this.updatesPaused = false;
     this.calculateAndUpdateState();
   }
 
   exitIdle(): void {
-    for (const subchannel of this.subchannels) {
-      subchannel.startConnecting();
-    }
+    /* The round_robin LB policy is only in the IDLE state if it has no
+     * addresses to try to connect to and it has no picked subchannel.
+     * In that case, there is no meaningful action that can be taken here. */
   }
   resetBackoff(): void {
-    /* The pick first load balancer does not have a connection backoff, so this
-     * does nothing */
+    // This LB policy has no backoff to reset
   }
   destroy(): void {
     this.resetSubchannelList();

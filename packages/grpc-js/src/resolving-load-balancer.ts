@@ -32,7 +32,7 @@ import { StatusObject } from './call-interface';
 import { Metadata } from './metadata';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
-import { SubchannelAddress } from './subchannel-address';
+import { Endpoint } from './subchannel-address';
 import { GrpcUri, uriToString } from './uri-parser';
 import { ChildLoadBalancerHandler } from './load-balancer-child-handler';
 import { ChannelOptions } from './channel-options';
@@ -177,7 +177,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
       target,
       {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: ServiceError | null,
           configSelector: ConfigSelector | null,
@@ -226,7 +226,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
             return;
           }
           this.childLoadBalancer.updateAddressList(
-            addressList,
+            endpointList,
             loadBalancingConfig,
             attributes
           );
@@ -307,7 +307,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   }
 
   updateAddressList(
-    addressList: SubchannelAddress[],
+    endpointList: Endpoint[],
     lbConfig: TypedLoadBalancingConfig | null
   ): never {
     throw new Error('updateAddressList not supported on ResolvingLoadBalancer');

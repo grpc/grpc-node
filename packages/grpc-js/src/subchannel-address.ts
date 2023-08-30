@@ -86,3 +86,39 @@ export function stringToSubchannelAddress(
     };
   }
 }
+
+export interface Endpoint {
+  addresses: SubchannelAddress[];
+}
+
+export function endpointEqual(endpoint1: Endpoint, endpoint2: Endpoint) {
+  if (endpoint1.addresses.length !== endpoint2.addresses.length) {
+    return false;
+  }
+  for (let i = 0; i < endpoint1.addresses.length; i++) {
+    if (
+      !subchannelAddressEqual(endpoint1.addresses[i], endpoint2.addresses[i])
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export function endpointToString(endpoint: Endpoint): string {
+  return (
+    '[' + endpoint.addresses.map(subchannelAddressToString).join(', ') + ']'
+  );
+}
+
+export function endpointHasAddress(
+  endpoint: Endpoint,
+  expectedAddress: SubchannelAddress
+): boolean {
+  for (const address of endpoint.addresses) {
+    if (subchannelAddressEqual(address, expectedAddress)) {
+      return true;
+    }
+  }
+  return false;
+}

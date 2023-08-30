@@ -32,12 +32,14 @@ import {
 import { ChildLoadBalancerHandler } from './load-balancer-child-handler';
 import { PickArgs, Picker, PickResult, PickResultType } from './picker';
 import {
+  Endpoint,
   SubchannelAddress,
-  subchannelAddressToString,
+  endpointHasAddress,
+  endpointToString,
+  subchannelAddressEqual,
 } from './subchannel-address';
 import {
   BaseSubchannelWrapper,
-  ConnectivityStateListener,
   SubchannelInterface,
 } from './subchannel-interface';
 import * as logging from './logging';
@@ -107,7 +109,11 @@ function validateFieldType(
   expectedType: TypeofValues,
   objectName?: string
 ) {
-  if (fieldName in obj && obj[fieldName] !== undefined && typeof obj[fieldName] !== expectedType) {
+  if (
+    fieldName in obj &&
+    obj[fieldName] !== undefined &&
+    typeof obj[fieldName] !== expectedType
+  ) {
     const fullFieldName = objectName ? `${objectName}.${fieldName}` : fieldName;
     throw new Error(
       `outlier detection config ${fullFieldName} parse error: expected ${expectedType}, got ${typeof obj[
@@ -149,7 +155,11 @@ function validatePositiveDuration(
 function validatePercentage(obj: any, fieldName: string, objectName?: string) {
   const fullFieldName = objectName ? `${objectName}.${fieldName}` : fieldName;
   validateFieldType(obj, fieldName, 'number', objectName);
-  if (fieldName in obj && obj[fieldName] !== undefined && !(obj[fieldName] >= 0 && obj[fieldName] <= 100)) {
+  if (
+    fieldName in obj &&
+    obj[fieldName] !== undefined &&
+    !(obj[fieldName] >= 0 && obj[fieldName] <= 100)
+  ) {
     throw new Error(
       `outlier detection config ${fullFieldName} parse error: value out of range for percentage (0-100)`
     );
@@ -175,9 +185,7 @@ export class OutlierDetectionLoadBalancingConfig
     failurePercentageEjection: Partial<FailurePercentageEjectionConfig> | null,
     private readonly childPolicy: TypedLoadBalancingConfig
   ) {
-    if (
-      childPolicy.getLoadBalancerName() === 'pick_first'
-    ) {
+    if (childPolicy.getLoadBalancerName() === 'pick_first') {
       throw new Error(
         'outlier_detection LB policy cannot have a pick_first child policy'
       );
@@ -207,9 +215,10 @@ export class OutlierDetectionLoadBalancingConfig
         max_ejection_time: msToDuration(this.maxEjectionTimeMs),
         max_ejection_percent: this.maxEjectionPercent,
         success_rate_ejection: this.successRateEjection ?? undefined,
-        failure_percentage_ejection: this.failurePercentageEjection ?? undefined,
-        child_policy: [this.childPolicy.toJsonObject()]
-      }
+        failure_percentage_ejection:
+          this.failurePercentageEjection ?? undefined,
+        child_policy: [this.childPolicy.toJsonObject()],
+      },
     };
   }
 
@@ -240,7 +249,10 @@ export class OutlierDetectionLoadBalancingConfig
     validatePositiveDuration(obj, 'base_ejection_time');
     validatePositiveDuration(obj, 'max_ejection_time');
     validatePercentage(obj, 'max_ejection_percent');
-    if ('success_rate_ejection' in obj && obj.success_rate_ejection !== undefined) {
+    if (
+      'success_rate_ejection' in obj &&
+      obj.success_rate_ejection !== undefined
+    ) {
       if (typeof obj.success_rate_ejection !== 'object') {
         throw new Error(
           'outlier detection config success_rate_ejection must be an object'
@@ -270,7 +282,10 @@ export class OutlierDetectionLoadBalancingConfig
         'success_rate_ejection'
       );
     }
-    if ('failure_percentage_ejection' in obj && obj.failure_percentage_ejection !== undefined) {
+    if (
+      'failure_percentage_ejection' in obj &&
+      obj.failure_percentage_ejection !== undefined
+    ) {
       if (typeof obj.failure_percentage_ejection !== 'object') {
         throw new Error(
           'outlier detection config failure_percentage_ejection must be an object'
@@ -305,7 +320,9 @@ export class OutlierDetectionLoadBalancingConfig
     }
     const childPolicy = selectLbConfigFromList(obj.child_policy);
     if (!childPolicy) {
-      throw new Error('outlier detection config child_policy: no valid recognized policy found');
+      throw new Error(
+        'outlier detection config child_policy: no valid recognized policy found'
+      );
     }
 
     return new OutlierDetectionLoadBalancingConfig(
@@ -324,55 +341,12 @@ class OutlierDetectionSubchannelWrapper
   extends BaseSubchannelWrapper
   implements SubchannelInterface
 {
-  private childSubchannelState: ConnectivityState;
-  private stateListeners: ConnectivityStateListener[] = [];
-  private ejected = false;
   private refCount = 0;
   constructor(
     childSubchannel: SubchannelInterface,
     private mapEntry?: MapEntry
   ) {
     super(childSubchannel);
-    this.childSubchannelState = childSubchannel.getConnectivityState();
-    childSubchannel.addConnectivityStateListener(
-      (subchannel, previousState, newState, keepaliveTime) => {
-        this.childSubchannelState = newState;
-        if (!this.ejected) {
-          for (const listener of this.stateListeners) {
-            listener(this, previousState, newState, keepaliveTime);
-          }
-        }
-      }
-    );
-  }
-
-  getConnectivityState(): ConnectivityState {
-    if (this.ejected) {
-      return ConnectivityState.TRANSIENT_FAILURE;
-    } else {
-      return this.childSubchannelState;
-    }
-  }
-
-  /**
-   * Add a listener function to be called whenever the wrapper's
-   * connectivity state changes.
-   * @param listener
-   */
-  addConnectivityStateListener(listener: ConnectivityStateListener) {
-    this.stateListeners.push(listener);
-  }
-
-  /**
-   * Remove a listener previously added with `addConnectivityStateListener`
-   * @param listener A reference to a function previously passed to
-   *     `addConnectivityStateListener`
-   */
-  removeConnectivityStateListener(listener: ConnectivityStateListener) {
-    const listenerIndex = this.stateListeners.indexOf(listener);
-    if (listenerIndex > -1) {
-      this.stateListeners.splice(listenerIndex, 1);
-    }
   }
 
   ref() {
@@ -394,27 +368,11 @@ class OutlierDetectionSubchannelWrapper
   }
 
   eject() {
-    this.ejected = true;
-    for (const listener of this.stateListeners) {
-      listener(
-        this,
-        this.childSubchannelState,
-        ConnectivityState.TRANSIENT_FAILURE,
-        -1
-      );
-    }
+    this.setHealthy(false);
   }
 
   uneject() {
-    this.ejected = false;
-    for (const listener of this.stateListeners) {
-      listener(
-        this,
-        ConnectivityState.TRANSIENT_FAILURE,
-        this.childSubchannelState,
-        -1
-      );
-    }
+    this.setHealthy(true);
   }
 
   getMapEntry(): MapEntry | undefined {
@@ -459,13 +417,6 @@ class CallCounter {
   }
 }
 
-interface MapEntry {
-  counter: CallCounter;
-  currentEjectionTimestamp: Date | null;
-  ejectionTimeMultiplier: number;
-  subchannelWrappers: OutlierDetectionSubchannelWrapper[];
-}
-
 class OutlierDetectionPicker implements Picker {
   constructor(private wrappedPicker: Picker, private countCalls: boolean) {}
   pick(pickArgs: PickArgs): PickResult {
@@ -503,9 +454,133 @@ class OutlierDetectionPicker implements Picker {
   }
 }
 
+interface MapEntry {
+  counter: CallCounter;
+  currentEjectionTimestamp: Date | null;
+  ejectionTimeMultiplier: number;
+  subchannelWrappers: OutlierDetectionSubchannelWrapper[];
+}
+
+interface EndpointMapEntry {
+  key: Endpoint;
+  value: MapEntry;
+}
+
+function endpointEqualUnordered(
+  endpoint1: Endpoint,
+  endpoint2: Endpoint
+): boolean {
+  if (endpoint1.addresses.length !== endpoint2.addresses.length) {
+    return false;
+  }
+  for (const address1 of endpoint1.addresses) {
+    let matchFound = false;
+    for (const address2 of endpoint2.addresses) {
+      if (subchannelAddressEqual(address1, address2)) {
+        matchFound = true;
+        break;
+      }
+    }
+    if (!matchFound) {
+      return false;
+    }
+  }
+  return true;
+}
+
+class EndpointMap {
+  private map: Set<EndpointMapEntry> = new Set();
+
+  get size() {
+    return this.map.size;
+  }
+
+  getForSubchannelAddress(address: SubchannelAddress): MapEntry | undefined {
+    for (const entry of this.map) {
+      if (endpointHasAddress(entry.key, address)) {
+        return entry.value;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Delete any entries in this map with keys that are not in endpoints
+   * @param endpoints
+   */
+  deleteMissing(endpoints: Endpoint[]) {
+    for (const entry of this.map) {
+      let foundEntry = false;
+      for (const endpoint of endpoints) {
+        if (endpointEqualUnordered(endpoint, entry.key)) {
+          foundEntry = true;
+        }
+      }
+      if (!foundEntry) {
+        this.map.delete(entry);
+      }
+    }
+  }
+
+  get(endpoint: Endpoint): MapEntry | undefined {
+    for (const entry of this.map) {
+      if (endpointEqualUnordered(endpoint, entry.key)) {
+        return entry.value;
+      }
+    }
+    return undefined;
+  }
+
+  set(endpoint: Endpoint, mapEntry: MapEntry) {
+    for (const entry of this.map) {
+      if (endpointEqualUnordered(endpoint, entry.key)) {
+        entry.value = mapEntry;
+        return;
+      }
+    }
+    this.map.add({ key: endpoint, value: mapEntry });
+  }
+
+  delete(endpoint: Endpoint) {
+    for (const entry of this.map) {
+      if (endpointEqualUnordered(endpoint, entry.key)) {
+        this.map.delete(entry);
+        return;
+      }
+    }
+  }
+
+  has(endpoint: Endpoint): boolean {
+    for (const entry of this.map) {
+      if (endpointEqualUnordered(endpoint, entry.key)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  *keys(): IterableIterator<Endpoint> {
+    for (const entry of this.map) {
+      yield entry.key;
+    }
+  }
+
+  *values(): IterableIterator<MapEntry> {
+    for (const entry of this.map) {
+      yield entry.value;
+    }
+  }
+
+  *entries(): IterableIterator<[Endpoint, MapEntry]> {
+    for (const entry of this.map) {
+      yield [entry.key, entry.value];
+    }
+  }
+}
+
 export class OutlierDetectionLoadBalancer implements LoadBalancer {
   private childBalancer: ChildLoadBalancerHandler;
-  private addressMap: Map<string, MapEntry> = new Map<string, MapEntry>();
+  private entryMap = new EndpointMap();
   private latestConfig: OutlierDetectionLoadBalancingConfig | null = null;
   private ejectionTimer: NodeJS.Timeout;
   private timerStartTime: Date | null = null;
@@ -521,9 +596,8 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
             subchannelAddress,
             subchannelArgs
           );
-          const mapEntry = this.addressMap.get(
-            subchannelAddressToString(subchannelAddress)
-          );
+          const mapEntry =
+            this.entryMap.getForSubchannelAddress(subchannelAddress);
           const subchannelWrapper = new OutlierDetectionSubchannelWrapper(
             originalSubchannel,
             mapEntry
@@ -561,12 +635,12 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
 
   private getCurrentEjectionPercent() {
     let ejectionCount = 0;
-    for (const mapEntry of this.addressMap.values()) {
+    for (const mapEntry of this.entryMap.values()) {
       if (mapEntry.currentEjectionTimestamp !== null) {
         ejectionCount += 1;
       }
     }
-    return (ejectionCount * 100) / this.addressMap.size;
+    return (ejectionCount * 100) / this.entryMap.size;
   }
 
   private runSuccessRateCheck(ejectionTimestamp: Date) {
@@ -582,12 +656,12 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     const targetRequestVolume = successRateConfig.request_volume;
     let addresesWithTargetVolume = 0;
     const successRates: number[] = [];
-    for (const [address, mapEntry] of this.addressMap) {
+    for (const [endpoint, mapEntry] of this.entryMap.entries()) {
       const successes = mapEntry.counter.getLastSuccesses();
       const failures = mapEntry.counter.getLastFailures();
       trace(
         'Stats for ' +
-          address +
+          endpointToString(endpoint) +
           ': successes=' +
           successes +
           ' failures=' +
@@ -631,7 +705,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     );
 
     // Step 3
-    for (const [address, mapEntry] of this.addressMap.entries()) {
+    for (const [address, mapEntry] of this.entryMap.entries()) {
       // Step 3.i
       if (
         this.getCurrentEjectionPercent() >=
@@ -683,7 +757,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     );
     // Step 1
     let addressesWithTargetVolume = 0;
-    for (const mapEntry of this.addressMap.values()) {
+    for (const mapEntry of this.entryMap.values()) {
       const successes = mapEntry.counter.getLastSuccesses();
       const failures = mapEntry.counter.getLastFailures();
       if (successes + failures >= failurePercentageConfig.request_volume) {
@@ -695,7 +769,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     }
 
     // Step 2
-    for (const [address, mapEntry] of this.addressMap.entries()) {
+    for (const [address, mapEntry] of this.entryMap.entries()) {
       // Step 2.i
       if (
         this.getCurrentEjectionPercent() >=
@@ -746,7 +820,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
   }
 
   private switchAllBuckets() {
-    for (const mapEntry of this.addressMap.values()) {
+    for (const mapEntry of this.entryMap.values()) {
       mapEntry.counter.switchBuckets();
     }
   }
@@ -771,7 +845,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     this.runSuccessRateCheck(ejectionTimestamp);
     this.runFailurePercentageCheck(ejectionTimestamp);
 
-    for (const [address, mapEntry] of this.addressMap.entries()) {
+    for (const [address, mapEntry] of this.entryMap.entries()) {
       if (mapEntry.currentEjectionTimestamp === null) {
         if (mapEntry.ejectionTimeMultiplier > 0) {
           mapEntry.ejectionTimeMultiplier -= 1;
@@ -798,21 +872,17 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
   }
 
   updateAddressList(
-    addressList: SubchannelAddress[],
+    endpointList: Endpoint[],
     lbConfig: TypedLoadBalancingConfig,
     attributes: { [key: string]: unknown }
   ): void {
     if (!(lbConfig instanceof OutlierDetectionLoadBalancingConfig)) {
       return;
     }
-    const subchannelAddresses = new Set<string>();
-    for (const address of addressList) {
-      subchannelAddresses.add(subchannelAddressToString(address));
-    }
-    for (const address of subchannelAddresses) {
-      if (!this.addressMap.has(address)) {
-        trace('Adding map entry for ' + address);
-        this.addressMap.set(address, {
+    for (const endpoint of endpointList) {
+      if (!this.entryMap.has(endpoint)) {
+        trace('Adding map entry for ' + endpointToString(endpoint));
+        this.entryMap.set(endpoint, {
           counter: new CallCounter(),
           currentEjectionTimestamp: null,
           ejectionTimeMultiplier: 0,
@@ -820,14 +890,9 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
         });
       }
     }
-    for (const key of this.addressMap.keys()) {
-      if (!subchannelAddresses.has(key)) {
-        trace('Removing map entry for ' + key);
-        this.addressMap.delete(key);
-      }
-    }
+    this.entryMap.deleteMissing(endpointList);
     const childPolicy = lbConfig.getChildPolicy();
-    this.childBalancer.updateAddressList(addressList, childPolicy, attributes);
+    this.childBalancer.updateAddressList(endpointList, childPolicy, attributes);
 
     if (
       lbConfig.getSuccessRateEjectionConfig() ||
@@ -850,7 +915,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
       trace('Counting disabled. Cancelling timer.');
       this.timerStartTime = null;
       clearTimeout(this.ejectionTimer);
-      for (const mapEntry of this.addressMap.values()) {
+      for (const mapEntry of this.entryMap.values()) {
         this.uneject(mapEntry);
         mapEntry.ejectionTimeMultiplier = 0;
       }
