@@ -34,7 +34,7 @@ import TypedLoadBalancingConfig = grpc.experimental.TypedLoadBalancingConfig;
 import LoadBalancer = grpc.experimental.LoadBalancer;
 import ChannelControlHelper = grpc.experimental.ChannelControlHelper;
 import ChildLoadBalancerHandler = grpc.experimental.ChildLoadBalancerHandler;
-import SubchannelAddress = grpc.experimental.SubchannelAddress;
+import Endpoint = grpc.experimental.Endpoint;
 import Picker = grpc.experimental.Picker;
 import PickArgs = grpc.experimental.PickArgs;
 import PickResult = grpc.experimental.PickResult;
@@ -99,12 +99,12 @@ class RpcBehaviorLoadBalancer implements LoadBalancer {
     });
     this.child = new ChildLoadBalancerHandler(childChannelControlHelper);
   }
-  updateAddressList(addressList: SubchannelAddress[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+  updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
     if (!(lbConfig instanceof RpcBehaviorLoadBalancingConfig)) {
       return;
     }
     this.latestConfig = lbConfig;
-    this.child.updateAddressList(addressList, RPC_BEHAVIOR_CHILD_CONFIG, attributes);
+    this.child.updateAddressList(endpointList, RPC_BEHAVIOR_CHILD_CONFIG, attributes);
   }
   exitIdle(): void {
     this.child.exitIdle();

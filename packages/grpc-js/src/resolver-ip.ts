@@ -20,7 +20,7 @@ import { ChannelOptions } from './channel-options';
 import { LogVerbosity, Status } from './constants';
 import { Metadata } from './metadata';
 import { registerResolver, Resolver, ResolverListener } from './resolver';
-import { SubchannelAddress } from './subchannel-address';
+import { Endpoint, SubchannelAddress } from './subchannel-address';
 import { GrpcUri, splitHostPort, uriToString } from './uri-parser';
 import * as logging from './logging';
 
@@ -39,7 +39,7 @@ const IPV6_SCHEME = 'ipv6';
 const DEFAULT_PORT = 443;
 
 class IpResolver implements Resolver {
-  private addresses: SubchannelAddress[] = [];
+  private endpoints: Endpoint[] = [];
   private error: StatusObject | null = null;
   constructor(
     target: GrpcUri,
@@ -83,8 +83,8 @@ class IpResolver implements Resolver {
         port: hostPort.port ?? DEFAULT_PORT,
       });
     }
-    this.addresses = addresses;
-    trace('Parsed ' + target.scheme + ' address list ' + this.addresses);
+    this.endpoints = addresses.map(address => ({ addresses: [address] }));
+    trace('Parsed ' + target.scheme + ' address list ' + addresses);
   }
   updateResolution(): void {
     process.nextTick(() => {
@@ -92,7 +92,7 @@ class IpResolver implements Resolver {
         this.listener.onError(this.error);
       } else {
         this.listener.onSuccessfulResolution(
-          this.addresses,
+          this.endpoints,
           null,
           null,
           null,

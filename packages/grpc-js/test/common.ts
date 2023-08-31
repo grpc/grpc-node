@@ -27,7 +27,10 @@ import {
   loadPackageDefinition,
 } from '../src/make-client';
 import { readFileSync } from 'fs';
-import { SubchannelInterface } from '../src/subchannel-interface';
+import {
+  HealthListener,
+  SubchannelInterface,
+} from '../src/subchannel-interface';
 import { SubchannelRef } from '../src/channelz';
 import { Subchannel } from '../src/subchannel';
 import { ConnectivityState } from '../src/connectivity-state';
@@ -198,6 +201,11 @@ export class MockSubchannel implements SubchannelInterface {
   realSubchannelEquals(other: grpc.experimental.SubchannelInterface): boolean {
     return this === other;
   }
+  isHealthy(): boolean {
+    return true;
+  }
+  addHealthStateWatcher(listener: HealthListener): void {}
+  removeHealthStateWatcher(listener: HealthListener): void {}
 }
 
 export { assert2 };

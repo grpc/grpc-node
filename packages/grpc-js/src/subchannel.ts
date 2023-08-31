@@ -461,6 +461,18 @@ export class Subchannel {
     return this.channelzRef;
   }
 
+  isHealthy(): boolean {
+    return true;
+  }
+
+  addHealthStateWatcher(listener: (healthy: boolean) => void): void {
+    // Do nothing with the listener
+  }
+
+  removeHealthStateWatcher(listener: (healthy: boolean) => void): void {
+    // Do nothing with the listener
+  }
+
   getRealSubchannel(): this {
     return this;
   }

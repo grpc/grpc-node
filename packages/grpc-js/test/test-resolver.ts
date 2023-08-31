@@ -25,11 +25,26 @@ import * as resolver_ip from '../src/resolver-ip';
 import { ServiceConfig } from '../src/service-config';
 import { StatusObject } from '../src/call-interface';
 import {
+  Endpoint,
   SubchannelAddress,
-  isTcpSubchannelAddress,
-  subchannelAddressToString,
+  endpointToString,
+  subchannelAddressEqual,
 } from '../src/subchannel-address';
 import { parseUri, GrpcUri } from '../src/uri-parser';
+
+function hasMatchingAddress(
+  endpointList: Endpoint[],
+  expectedAddress: SubchannelAddress
+): boolean {
+  for (const endpoint of endpointList) {
+    for (const address of endpoint.addresses) {
+      if (subchannelAddressEqual(address, expectedAddress)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
 describe('Name Resolver', () => {
   before(() => {
@@ -46,27 +61,17 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
           assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '127.0.0.1' &&
-                addr.port === 50051
-            )
+            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 50051 })
           );
           assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '::1' &&
-                addr.port === 50051
-            )
+            hasMatchingAddress(endpointList, { host: '::1', port: 50051 })
           );
           done();
         },
@@ -83,28 +88,16 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
           assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '127.0.0.1' &&
-                addr.port === 443
-            )
+            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 })
           );
-          assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '::1' &&
-                addr.port === 443
-            )
-          );
+          assert(hasMatchingAddress(endpointList, { host: '::1', port: 443 }));
           done();
         },
         onError: (error: StatusObject) => {
@@ -118,19 +111,14 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(parseUri('1.2.3.4')!)!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
           assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '1.2.3.4' &&
-                addr.port === 443
-            )
+            hasMatchingAddress(endpointList, { host: '1.2.3.4', port: 443 })
           );
           done();
         },
@@ -145,20 +133,13 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(parseUri('::1')!)!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
-          assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '::1' &&
-                addr.port === 443
-            )
-          );
+          assert(hasMatchingAddress(endpointList, { host: '::1', port: 443 }));
           done();
         },
         onError: (error: StatusObject) => {
@@ -174,19 +155,14 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
           assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '::1' &&
-                addr.port === 50051
-            )
+            hasMatchingAddress(endpointList, { host: '::1', port: 50051 })
           );
           done();
         },
@@ -203,13 +179,13 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
-          assert(addressList.length > 0);
+          assert(endpointList.length > 0);
           done();
         },
         onError: (error: StatusObject) => {
@@ -227,7 +203,7 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
@@ -253,7 +229,7 @@ describe('Name Resolver', () => {
       let count = 0;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
@@ -290,21 +266,16 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
           assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '127.0.0.1' &&
-                addr.port === 443
-            ),
-            `None of [${addressList.map(addr =>
-              subchannelAddressToString(addr)
+            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 }),
+            `None of [${endpointList.map(addr =>
+              endpointToString(addr)
             )}] matched '127.0.0.1:443'`
           );
           done();
@@ -324,20 +295,13 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
-          assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '::1' &&
-                addr.port === 443
-            )
-          );
+          assert(hasMatchingAddress(endpointList, { host: '::1', port: 443 }));
           done();
         },
         onError: (error: StatusObject) => {
@@ -356,21 +320,16 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
           assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '127.0.0.1' &&
-                addr.port === 443
-            ),
-            `None of [${addressList.map(addr =>
-              subchannelAddressToString(addr)
+            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 }),
+            `None of [${endpointList.map(addr =>
+              endpointToString(addr)
             )}] matched '127.0.0.1:443'`
           );
           /* TODO(murgatroid99): check for IPv6 result, once we can get that
@@ -392,13 +351,13 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
-          assert(addressList.length > 0);
+          assert(endpointList.length > 0);
           done();
         },
         onError: (error: StatusObject) => {
@@ -422,11 +381,11 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
-          assert(addressList.length > 0);
+          assert(endpointList.length > 0);
           completeCount += 1;
           if (completeCount === 2) {
             // Only handle the first resolution result
@@ -452,25 +411,15 @@ describe('Name Resolver', () => {
         target,
         {
           onSuccessfulResolution: (
-            addressList: SubchannelAddress[],
+            endpointList: Endpoint[],
             serviceConfig: ServiceConfig | null,
             serviceConfigError: StatusObject | null
           ) => {
             assert(
-              addressList.some(
-                addr =>
-                  isTcpSubchannelAddress(addr) &&
-                  addr.host === '127.0.0.1' &&
-                  addr.port === 443
-              )
+              hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 })
             );
             assert(
-              addressList.some(
-                addr =>
-                  isTcpSubchannelAddress(addr) &&
-                  addr.host === '::1' &&
-                  addr.port === 443
-              )
+              hasMatchingAddress(endpointList, { host: '::1', port: 443 })
             );
             resultCount += 1;
             if (resultCount === 1) {
@@ -498,7 +447,7 @@ describe('Name Resolver', () => {
         target,
         {
           onSuccessfulResolution: (
-            addressList: SubchannelAddress[],
+            endpointList: Endpoint[],
             serviceConfig: ServiceConfig | null,
             serviceConfigError: StatusObject | null
           ) => {
@@ -527,17 +476,13 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
-          assert(
-            addressList.some(
-              addr => !isTcpSubchannelAddress(addr) && addr.path === 'socket'
-            )
-          );
+          assert(hasMatchingAddress(endpointList, { path: 'socket' }));
           done();
         },
         onError: (error: StatusObject) => {
@@ -553,18 +498,13 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
-          assert(
-            addressList.some(
-              addr =>
-                !isTcpSubchannelAddress(addr) && addr.path === '/tmp/socket'
-            )
-          );
+          assert(hasMatchingAddress(endpointList, { path: '/tmp/socket' }));
           done();
         },
         onError: (error: StatusObject) => {
@@ -582,19 +522,14 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
           assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '127.0.0.1' &&
-                addr.port === 443
-            )
+            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 })
           );
           done();
         },
@@ -611,19 +546,14 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
           assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '127.0.0.1' &&
-                addr.port === 50051
-            )
+            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 50051 })
           );
           done();
         },
@@ -640,27 +570,17 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
           assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '127.0.0.1' &&
-                addr.port === 50051
-            )
+            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 50051 })
           );
           assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '127.0.0.1' &&
-                addr.port === 50052
-            )
+            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 50052 })
           );
           done();
         },
@@ -677,20 +597,13 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
-          assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '::1' &&
-                addr.port === 443
-            )
-          );
+          assert(hasMatchingAddress(endpointList, { host: '::1', port: 443 }));
           done();
         },
         onError: (error: StatusObject) => {
@@ -706,19 +619,14 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
           assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '::1' &&
-                addr.port === 50051
-            )
+            hasMatchingAddress(endpointList, { host: '::1', port: 50051 })
           );
           done();
         },
@@ -735,27 +643,17 @@ describe('Name Resolver', () => {
       )!;
       const listener: resolverManager.ResolverListener = {
         onSuccessfulResolution: (
-          addressList: SubchannelAddress[],
+          endpointList: Endpoint[],
           serviceConfig: ServiceConfig | null,
           serviceConfigError: StatusObject | null
         ) => {
           // Only handle the first resolution result
           listener.onSuccessfulResolution = () => {};
           assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '::1' &&
-                addr.port === 50051
-            )
+            hasMatchingAddress(endpointList, { host: '::1', port: 50051 })
           );
           assert(
-            addressList.some(
-              addr =>
-                isTcpSubchannelAddress(addr) &&
-                addr.host === '::1' &&
-                addr.port === 50052
-            )
+            hasMatchingAddress(endpointList, { host: '::1', port: 50052 })
           );
           done();
         },

@@ -631,12 +631,15 @@ export class Server {
 
     const resolverListener: ResolverListener = {
       onSuccessfulResolution: (
-        addressList,
+        endpointList,
         serviceConfig,
         serviceConfigError
       ) => {
         // We only want one resolution result. Discard all future results
         resolverListener.onSuccessfulResolution = () => {};
+        const addressList = ([] as SubchannelAddress[]).concat(
+          ...endpointList.map(endpoint => endpoint.addresses)
+        );
         if (addressList.length === 0) {
           deferredCallback(
             new Error(`No addresses resolved for port ${port}`),

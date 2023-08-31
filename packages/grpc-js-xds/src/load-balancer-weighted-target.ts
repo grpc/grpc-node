@@ -16,7 +16,7 @@
  */
 
 import { connectivityState as ConnectivityState, status as Status, Metadata, logVerbosity, experimental, LoadBalancingConfig } from "@grpc/grpc-js";
-import { isLocalitySubchannelAddress, LocalitySubchannelAddress } from "./load-balancer-priority";
+import { isLocalityEndpoint, LocalityEndpoint } from "./load-balancer-priority";
 import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import LoadBalancer = experimental.LoadBalancer;
 import ChannelControlHelper = experimental.ChannelControlHelper;
@@ -27,8 +27,8 @@ import PickResult = experimental.PickResult;
 import PickArgs = experimental.PickArgs;
 import QueuePicker = experimental.QueuePicker;
 import UnavailablePicker = experimental.UnavailablePicker;
-import SubchannelAddress = experimental.SubchannelAddress;
-import subchannelAddressToString = experimental.subchannelAddressToString;
+import Endpoint = experimental.Endpoint;
+import endpointToString = experimental.endpointToString;
 import selectLbConfigFromList = experimental.selectLbConfigFromList;
 
 const TRACER_NAME = 'weighted_target';
@@ -154,7 +154,7 @@ class WeightedTargetPicker implements Picker {
 }
 
 interface WeightedChild {
-  updateAddressList(addressList: SubchannelAddress[], lbConfig: WeightedTarget, attributes: { [key: string]: unknown; }): void;
+  updateAddressList(endpointList: Endpoint[], lbConfig: WeightedTarget, attributes: { [key: string]: unknown; }): void;
   exitIdle(): void;
   resetBackoff(): void;
   destroy(): void;
@@ -190,9 +190,9 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
       this.parent.maybeUpdateState();
     }
 
-    updateAddressList(addressList: SubchannelAddress[], lbConfig: WeightedTarget, attributes: { [key: string]: unknown; }): void {
+    updateAddressList(endpointList: Endpoint[], lbConfig: WeightedTarget, attributes: { [key: string]: unknown; }): void {
       this.weight = lbConfig.weight;
-      this.childBalancer.updateAddressList(addressList, lbConfig.child_policy, attributes);
+      this.childBalancer.updateAddressList(endpointList, lbConfig.child_policy, attributes);
     }
     exitIdle(): void {
       this.childBalancer.exitIdle();
@@ -319,7 +319,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
     this.channelControlHelper.updateState(connectivityState, picker);
   }
 
-  updateAddressList(addressList: SubchannelAddress[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+  updateAddressList(addressList: Endpoint[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
     if (!(lbConfig instanceof WeightedTargetLoadBalancingConfig)) {
       // Reject a config of the wrong type
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));
@@ -330,9 +330,9 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
      * which child it belongs to. So we bucket those addresses by that first
      * element, and pass along the rest of the localityPath for that child
      * to use. */
-    const childAddressMap = new Map<string, LocalitySubchannelAddress[]>();
+    const childEndpointMap = new Map<string, LocalityEndpoint[]>();
     for (const address of addressList) {
-      if (!isLocalitySubchannelAddress(address)) {
+      if (!isLocalityEndpoint(address)) {
         // Reject address that cannot be associated with targets
         return;
       }
@@ -341,14 +341,14 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
         return;
       }
       const childName = address.localityPath[0];
-      const childAddress: LocalitySubchannelAddress = {
+      const childAddress: LocalityEndpoint = {
         ...address,
         localityPath: address.localityPath.slice(1),
       };
-      let childAddressList = childAddressMap.get(childName);
+      let childAddressList = childEndpointMap.get(childName);
       if (childAddressList === undefined) {
         childAddressList = [];
-        childAddressMap.set(childName, childAddressList);
+        childEndpointMap.set(childName, childAddressList);
       }
       childAddressList.push(childAddress);
     }
@@ -363,9 +363,9 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
       } else {
         target.maybeReactivate();
       }
-      const targetAddresses = childAddressMap.get(targetName) ?? [];
-      trace('Assigning target ' + targetName + ' address list ' + targetAddresses.map(address => '(' + subchannelAddressToString(address) + ' path=' + address.localityPath + ')'));
-      target.updateAddressList(targetAddresses, targetConfig, attributes);
+      const targetEndpoints = childEndpointMap.get(targetName) ?? [];
+      trace('Assigning target ' + targetName + ' address list ' + targetEndpoints.map(endpoint => '(' + endpointToString(endpoint) + ' path=' + endpoint.localityPath + ')'));
+      target.updateAddressList(targetEndpoints, targetConfig, attributes);
     }
 
     // Deactivate targets that are not in the new config

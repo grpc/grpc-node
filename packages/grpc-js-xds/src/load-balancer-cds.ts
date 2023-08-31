@@ -18,23 +18,16 @@
 import { connectivityState, status, Metadata, logVerbosity, experimental, LoadBalancingConfig } from '@grpc/grpc-js';
 import { getSingletonXdsClient, Watcher, XdsClient } from './xds-client';
 import { Cluster__Output } from './generated/envoy/config/cluster/v3/Cluster';
-import SubchannelAddress = experimental.SubchannelAddress;
+import Endpoint = experimental.Endpoint;
 import UnavailablePicker = experimental.UnavailablePicker;
 import ChildLoadBalancerHandler = experimental.ChildLoadBalancerHandler;
 import LoadBalancer = experimental.LoadBalancer;
 import ChannelControlHelper = experimental.ChannelControlHelper;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
 import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
-import SuccessRateEjectionConfig = experimental.SuccessRateEjectionConfig;
-import FailurePercentageEjectionConfig = experimental.FailurePercentageEjectionConfig;
 import QueuePicker = experimental.QueuePicker;
-import OutlierDetectionRawConfig = experimental.OutlierDetectionRawConfig;
 import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
-import { OutlierDetection__Output } from './generated/envoy/config/cluster/v3/OutlierDetection';
-import { Duration__Output } from './generated/google/protobuf/Duration';
-import { EXPERIMENTAL_OUTLIER_DETECTION } from './environment';
 import { DiscoveryMechanism, XdsClusterResolverChildPolicyHandler } from './load-balancer-xds-cluster-resolver';
-import { CLUSTER_CONFIG_TYPE_URL, decodeSingleResource } from './resources';
 import { CdsUpdate, ClusterResourceType } from './xds-resource-type/cluster-resource-type';
 
 const TRACER_NAME = 'cds_balancer';
@@ -258,7 +251,7 @@ export class CdsLoadBalancer implements LoadBalancer {
   }
 
   updateAddressList(
-    addressList: SubchannelAddress[],
+    endpointList: Endpoint[],
     lbConfig: TypedLoadBalancingConfig,
     attributes: { [key: string]: unknown }
   ): void {

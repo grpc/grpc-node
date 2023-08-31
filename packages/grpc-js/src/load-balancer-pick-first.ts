@@ -21,6 +21,7 @@ import {
   TypedLoadBalancingConfig,
   registerDefaultLoadBalancerType,
   registerLoadBalancerType,
+  createChildChannelControlHelper,
 } from './load-balancer';
 import { ConnectivityState } from './connectivity-state';
 import {
@@ -31,13 +32,16 @@ import {
   PickResultType,
   UnavailablePicker,
 } from './picker';
-import { SubchannelAddress } from './subchannel-address';
+import { Endpoint, SubchannelAddress } from './subchannel-address';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import {
   SubchannelInterface,
   ConnectivityStateListener,
+  HealthListener,
 } from './subchannel-interface';
+import { isTcpSubchannelAddress } from './subchannel-address';
+import { isIPv6 } from 'net';
 
 const TRACER_NAME = 'pick_first';
 
@@ -125,6 +129,39 @@ export function shuffled<T>(list: T[]): T[] {
   return result;
 }
 
+/**
+ * Interleave addresses in addressList by family in accordance with RFC-8304 section 4
+ * @param addressList
+ * @returns
+ */
+function interleaveAddressFamilies(
+  addressList: SubchannelAddress[]
+): SubchannelAddress[] {
+  const result: SubchannelAddress[] = [];
+  const ipv6Addresses: SubchannelAddress[] = [];
+  const ipv4Addresses: SubchannelAddress[] = [];
+  const ipv6First =
+    isTcpSubchannelAddress(addressList[0]) && isIPv6(addressList[0].host);
+  for (const address of addressList) {
+    if (isTcpSubchannelAddress(address) && isIPv6(address.host)) {
+      ipv6Addresses.push(address);
+    } else {
+      ipv4Addresses.push(address);
+    }
+  }
+  const firstList = ipv6First ? ipv6Addresses : ipv4Addresses;
+  const secondList = ipv6First ? ipv4Addresses : ipv6Addresses;
+  for (let i = 0; i < Math.max(firstList.length, secondList.length); i++) {
+    if (i < firstList.length) {
+      result.push(firstList[i]);
+    }
+    if (i < secondList.length) {
+      result.push(secondList[i]);
+    }
+  }
+  return result;
+}
+
 export class PickFirstLoadBalancer implements LoadBalancer {
   /**
    * The list of subchannels this load balancer is currently attempting to
@@ -157,6 +194,9 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   ) => {
     this.onSubchannelStateUpdate(subchannel, previousState, newState);
   };
+
+  private pickedSubchannelHealthListener: HealthListener = () =>
+    this.calculateAndReportNewState();
   /**
    * Timer reference for the timer tracking when to start
    */
@@ -179,7 +219,10 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    * @param channelControlHelper `ChannelControlHelper` instance provided by
    *     this load balancer's owner.
    */
-  constructor(private readonly channelControlHelper: ChannelControlHelper) {
+  constructor(
+    private readonly channelControlHelper: ChannelControlHelper,
+    private reportHealthStatus = false
+  ) {
     this.connectionDelayTimeout = setTimeout(() => {}, 0);
     clearTimeout(this.connectionDelayTimeout);
   }
@@ -190,10 +233,19 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   private calculateAndReportNewState() {
     if (this.currentPick) {
-      this.updateState(
-        ConnectivityState.READY,
-        new PickFirstPicker(this.currentPick)
-      );
+      if (this.reportHealthStatus && !this.currentPick.isHealthy()) {
+        this.updateState(
+          ConnectivityState.TRANSIENT_FAILURE,
+          new UnavailablePicker({
+            details: `Picked subchannel ${this.currentPick.getAddress()} is unhealthy`,
+          })
+        );
+      } else {
+        this.updateState(
+          ConnectivityState.READY,
+          new PickFirstPicker(this.currentPick)
+        );
+      }
     } else if (this.children.length === 0) {
       this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
     } else {
@@ -235,6 +287,11 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       this.channelControlHelper.removeChannelzChild(
         currentPick.getChannelzRef()
       );
+      if (this.reportHealthStatus) {
+        currentPick.removeHealthStateWatcher(
+          this.pickedSubchannelHealthListener
+        );
+      }
     }
   }
 
@@ -306,7 +363,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
           this.children[subchannelIndex].subchannel.getAddress()
       );
       process.nextTick(() => {
-        this.children[subchannelIndex].subchannel.startConnecting();
+        this.children[subchannelIndex]?.subchannel.startConnecting();
       });
     }
     this.connectionDelayTimeout = setTimeout(() => {
@@ -320,17 +377,12 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     }
     trace('Pick subchannel with address ' + subchannel.getAddress());
     this.stickyTransientFailureMode = false;
-    if (this.currentPick !== null) {
-      this.currentPick.unref();
-      this.channelControlHelper.removeChannelzChild(
-        this.currentPick.getChannelzRef()
-      );
-      this.currentPick.removeConnectivityStateListener(
-        this.subchannelStateListener
-      );
-    }
+    this.removeCurrentPick();
     this.currentPick = subchannel;
     subchannel.ref();
+    if (this.reportHealthStatus) {
+      subchannel.addHealthStateWatcher(this.pickedSubchannelHealthListener);
+    }
     this.channelControlHelper.addChannelzChild(subchannel.getChannelzRef());
     this.resetSubchannelList();
     clearTimeout(this.connectionDelayTimeout);
@@ -373,7 +425,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   }
 
   updateAddressList(
-    addressList: SubchannelAddress[],
+    endpointList: Endpoint[],
     lbConfig: TypedLoadBalancingConfig
   ): void {
     if (!(lbConfig instanceof PickFirstLoadBalancingConfig)) {
@@ -383,8 +435,15 @@ export class PickFirstLoadBalancer implements LoadBalancer {
      * previous update, to minimize churn. Now the DNS resolver is
      * rate-limited, so that is less of a concern. */
     if (lbConfig.getShuffleAddressList()) {
-      addressList = shuffled(addressList);
+      endpointList = shuffled(endpointList);
     }
+    const rawAddressList = ([] as SubchannelAddress[]).concat(
+      ...endpointList.map(endpoint => endpoint.addresses)
+    );
+    if (rawAddressList.length === 0) {
+      throw new Error('No addresses in endpoint list passed to pick_first');
+    }
+    const addressList = interleaveAddressFamilies(rawAddressList);
     const newChildrenList = addressList.map(address => ({
       subchannel: this.channelControlHelper.createSubchannel(address, {}),
       hasReportedTransientFailure: false,
@@ -435,6 +494,59 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   getTypeName(): string {
     return TYPE_NAME;
+  }
+}
+
+const LEAF_CONFIG = new PickFirstLoadBalancingConfig(false);
+
+/**
+ * This class handles the leaf load balancing operations for a single endpoint.
+ * It is a thin wrapper around a PickFirstLoadBalancer with a different API
+ * that more closely reflects how it will be used as a leaf balancer.
+ */
+export class LeafLoadBalancer {
+  private pickFirstBalancer: PickFirstLoadBalancer;
+  private latestState: ConnectivityState = ConnectivityState.IDLE;
+  private latestPicker: Picker;
+  constructor(
+    private endpoint: Endpoint,
+    channelControlHelper: ChannelControlHelper
+  ) {
+    const childChannelControlHelper = createChildChannelControlHelper(
+      channelControlHelper,
+      {
+        updateState: (connectivityState, picker) => {
+          this.latestState = connectivityState;
+          this.latestPicker = picker;
+          channelControlHelper.updateState(connectivityState, picker);
+        },
+      }
+    );
+    this.pickFirstBalancer = new PickFirstLoadBalancer(
+      childChannelControlHelper,
+      /* reportHealthStatus= */ true
+    );
+    this.latestPicker = new QueuePicker(this.pickFirstBalancer);
+  }
+
+  startConnecting() {
+    this.pickFirstBalancer.updateAddressList([this.endpoint], LEAF_CONFIG);
+  }
+
+  getConnectivityState() {
+    return this.latestState;
+  }
+
+  getPicker() {
+    return this.latestPicker;
+  }
+
+  getEndpoint() {
+    return this.endpoint;
+  }
+
+  destroy() {
+    this.pickFirstBalancer.destroy();
   }
 }
 

@@ -15,12 +15,12 @@
  */
 
 import { Resolver, ResolverListener, registerResolver } from './resolver';
-import { SubchannelAddress } from './subchannel-address';
+import { Endpoint } from './subchannel-address';
 import { GrpcUri } from './uri-parser';
 import { ChannelOptions } from './channel-options';
 
 class UdsResolver implements Resolver {
-  private addresses: SubchannelAddress[] = [];
+  private endpoints: Endpoint[] = [];
   constructor(
     target: GrpcUri,
     private listener: ResolverListener,
@@ -32,12 +32,12 @@ class UdsResolver implements Resolver {
     } else {
       path = target.path;
     }
-    this.addresses = [{ path }];
+    this.endpoints = [{ addresses: [{ path }] }];
   }
   updateResolution(): void {
     process.nextTick(
       this.listener.onSuccessfulResolution,
-      this.addresses,
+      this.endpoints,
       null,
       null,
       null,

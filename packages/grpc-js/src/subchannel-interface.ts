@@ -26,6 +26,8 @@ export type ConnectivityStateListener = (
   keepaliveTime: number
 ) => void;
 
+export type HealthListener = (healthy: boolean) => void;
+
 /**
  * This is an interface for load balancing policies to use to interact with
  * subchannels. This allows load balancing policies to wrap and unwrap
@@ -45,6 +47,9 @@ export interface SubchannelInterface {
   ref(): void;
   unref(): void;
   getChannelzRef(): SubchannelRef;
+  isHealthy(): boolean;
+  addHealthStateWatcher(listener: HealthListener): void;
+  removeHealthStateWatcher(listener: HealthListener): void;
   /**
    * If this is a wrapper, return the wrapped subchannel, otherwise return this
    */
@@ -58,7 +63,23 @@ export interface SubchannelInterface {
 }
 
 export abstract class BaseSubchannelWrapper implements SubchannelInterface {
-  constructor(protected child: SubchannelInterface) {}
+  private healthy = true;
+  private healthListeners: Set<HealthListener> = new Set();
+  constructor(protected child: SubchannelInterface) {
+    child.addHealthStateWatcher(childHealthy => {
+      /* A change to the child health state only affects this wrapper's overall
+       * health state if this wrapper is reporting healthy. */
+      if (this.healthy) {
+        this.updateHealthListeners();
+      }
+    });
+  }
+
+  private updateHealthListeners(): void {
+    for (const listener of this.healthListeners) {
+      listener(this.isHealthy());
+    }
+  }
 
   getConnectivityState(): ConnectivityState {
     return this.child.getConnectivityState();
@@ -86,6 +107,25 @@ export abstract class BaseSubchannelWrapper implements SubchannelInterface {
   }
   getChannelzRef(): SubchannelRef {
     return this.child.getChannelzRef();
+  }
+  isHealthy(): boolean {
+    return this.healthy && this.child.isHealthy();
+  }
+  addHealthStateWatcher(listener: HealthListener): void {
+    this.healthListeners.add(listener);
+  }
+  removeHealthStateWatcher(listener: HealthListener): void {
+    this.healthListeners.delete(listener);
+  }
+  protected setHealthy(healthy: boolean): void {
+    if (healthy !== this.healthy) {
+      this.healthy = healthy;
+      /* A change to this wrapper's health state only affects the overall
+       * reported health state if the child is healthy. */
+      if (this.child.isHealthy()) {
+        this.updateHealthListeners();
+      }
+    }
   }
   getRealSubchannel(): Subchannel {
     return this.child.getRealSubchannel();
