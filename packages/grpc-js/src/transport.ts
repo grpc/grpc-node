@@ -426,6 +426,10 @@ class Http2Transport implements Transport {
     try {
       this.session!.ping(
         (err: Error | null, duration: number, payload: Buffer) => {
+          if (err) {
+            this.keepaliveTrace('Ping failed with error ' + err.message);
+            this.handleDisconnect();
+          }
           this.keepaliveTrace('Received ping response');
           this.clearKeepaliveTimeout();
           this.maybeStartKeepalivePingTimer();
