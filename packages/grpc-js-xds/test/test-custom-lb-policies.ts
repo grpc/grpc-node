@@ -24,7 +24,7 @@ import { XdsServer } from "./xds-server";
 import * as assert from 'assert';
 import { WrrLocality } from "../src/generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/WrrLocality";
 import { TypedStruct } from "../src/generated/xds/type/v3/TypedStruct";
-import { connectivityState, experimental, logVerbosity } from "@grpc/grpc-js";
+import { ChannelOptions, connectivityState, experimental, logVerbosity } from "@grpc/grpc-js";
 
 import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import LoadBalancer = experimental.LoadBalancer;
@@ -83,7 +83,7 @@ const RPC_BEHAVIOR_CHILD_CONFIG = parseLoadBalancingConfig({round_robin: {}});
 class RpcBehaviorLoadBalancer implements LoadBalancer {
   private child: ChildLoadBalancerHandler;
   private latestConfig: RpcBehaviorLoadBalancingConfig | null = null;
-  constructor(channelControlHelper: ChannelControlHelper) {
+  constructor(channelControlHelper: ChannelControlHelper, options: ChannelOptions) {
     const childChannelControlHelper = createChildChannelControlHelper(channelControlHelper, {
       updateState: (state, picker) => {
         if (state === connectivityState.READY && this.latestConfig) {
@@ -92,7 +92,7 @@ class RpcBehaviorLoadBalancer implements LoadBalancer {
         channelControlHelper.updateState(state, picker);
       }
     });
-    this.child = new ChildLoadBalancerHandler(childChannelControlHelper);
+    this.child = new ChildLoadBalancerHandler(childChannelControlHelper, options);
   }
   updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
     if (!(lbConfig instanceof RpcBehaviorLoadBalancingConfig)) {

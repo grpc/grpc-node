@@ -585,7 +585,10 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
   private ejectionTimer: NodeJS.Timeout;
   private timerStartTime: Date | null = null;
 
-  constructor(channelControlHelper: ChannelControlHelper) {
+  constructor(
+    channelControlHelper: ChannelControlHelper,
+    options: ChannelOptions
+  ) {
     this.childBalancer = new ChildLoadBalancerHandler(
       createChildChannelControlHelper(channelControlHelper, {
         createSubchannel: (
@@ -619,7 +622,8 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
             channelControlHelper.updateState(connectivityState, picker);
           }
         },
-      })
+      }),
+      options
     );
     this.ejectionTimer = setInterval(() => {}, 0);
     clearInterval(this.ejectionTimer);

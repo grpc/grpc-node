@@ -42,6 +42,7 @@ import {
 } from './subchannel-interface';
 import { isTcpSubchannelAddress } from './subchannel-address';
 import { isIPv6 } from 'net';
+import { ChannelOptions } from './channel-options';
 
 const TRACER_NAME = 'pick_first';
 
@@ -162,6 +163,9 @@ function interleaveAddressFamilies(
   return result;
 }
 
+const REPORT_HEALTH_STATUS_OPTION_NAME =
+  'grpc-node.internal.pick-first.report_health_status';
+
 export class PickFirstLoadBalancer implements LoadBalancer {
   /**
    * The list of subchannels this load balancer is currently attempting to
@@ -212,6 +216,8 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    */
   private stickyTransientFailureMode = false;
 
+  private reportHealthStatus: boolean;
+
   /**
    * Load balancer that attempts to connect to each backend in the address list
    * in order, and picks the first one that connects, using it for every
@@ -221,10 +227,11 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    */
   constructor(
     private readonly channelControlHelper: ChannelControlHelper,
-    private reportHealthStatus = false
+    options: ChannelOptions
   ) {
     this.connectionDelayTimeout = setTimeout(() => {}, 0);
     clearTimeout(this.connectionDelayTimeout);
+    this.reportHealthStatus = options[REPORT_HEALTH_STATUS_OPTION_NAME];
   }
 
   private allChildrenHaveReportedTF(): boolean {
@@ -510,7 +517,8 @@ export class LeafLoadBalancer {
   private latestPicker: Picker;
   constructor(
     private endpoint: Endpoint,
-    channelControlHelper: ChannelControlHelper
+    channelControlHelper: ChannelControlHelper,
+    options: ChannelOptions
   ) {
     const childChannelControlHelper = createChildChannelControlHelper(
       channelControlHelper,
@@ -524,7 +532,7 @@ export class LeafLoadBalancer {
     );
     this.pickFirstBalancer = new PickFirstLoadBalancer(
       childChannelControlHelper,
-      /* reportHealthStatus= */ true
+      { ...options, [REPORT_HEALTH_STATUS_OPTION_NAME]: true }
     );
     this.latestPicker = new QueuePicker(this.pickFirstBalancer);
   }

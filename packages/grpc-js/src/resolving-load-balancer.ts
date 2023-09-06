@@ -149,30 +149,33 @@ export class ResolvingLoadBalancer implements LoadBalancer {
       };
     }
     this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
-    this.childLoadBalancer = new ChildLoadBalancerHandler({
-      createSubchannel:
-        channelControlHelper.createSubchannel.bind(channelControlHelper),
-      requestReresolution: () => {
-        /* If the backoffTimeout is running, we're still backing off from
-         * making resolve requests, so we shouldn't make another one here.
-         * In that case, the backoff timer callback will call
-         * updateResolution */
-        if (this.backoffTimeout.isRunning()) {
-          this.continueResolving = true;
-        } else {
-          this.updateResolution();
-        }
+    this.childLoadBalancer = new ChildLoadBalancerHandler(
+      {
+        createSubchannel:
+          channelControlHelper.createSubchannel.bind(channelControlHelper),
+        requestReresolution: () => {
+          /* If the backoffTimeout is running, we're still backing off from
+           * making resolve requests, so we shouldn't make another one here.
+           * In that case, the backoff timer callback will call
+           * updateResolution */
+          if (this.backoffTimeout.isRunning()) {
+            this.continueResolving = true;
+          } else {
+            this.updateResolution();
+          }
+        },
+        updateState: (newState: ConnectivityState, picker: Picker) => {
+          this.latestChildState = newState;
+          this.latestChildPicker = picker;
+          this.updateState(newState, picker);
+        },
+        addChannelzChild:
+          channelControlHelper.addChannelzChild.bind(channelControlHelper),
+        removeChannelzChild:
+          channelControlHelper.removeChannelzChild.bind(channelControlHelper),
       },
-      updateState: (newState: ConnectivityState, picker: Picker) => {
-        this.latestChildState = newState;
-        this.latestChildPicker = picker;
-        this.updateState(newState, picker);
-      },
-      addChannelzChild:
-        channelControlHelper.addChannelzChild.bind(channelControlHelper),
-      removeChannelzChild:
-        channelControlHelper.removeChannelzChild.bind(channelControlHelper),
-    });
+      channelOptions
+    );
     this.innerResolver = createResolver(
       target,
       {

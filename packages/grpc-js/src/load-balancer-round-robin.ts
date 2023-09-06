@@ -38,6 +38,7 @@ import {
   endpointToString,
 } from './subchannel-address';
 import { LeafLoadBalancer } from './load-balancer-pick-first';
+import { ChannelOptions } from './channel-options';
 
 const TRACER_NAME = 'round_robin';
 
@@ -99,7 +100,10 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
 
   private childChannelControlHelper: ChannelControlHelper;
 
-  constructor(private readonly channelControlHelper: ChannelControlHelper) {
+  constructor(
+    private readonly channelControlHelper: ChannelControlHelper,
+    private readonly options: ChannelOptions
+  ) {
     this.childChannelControlHelper = createChildChannelControlHelper(
       channelControlHelper,
       {
@@ -186,7 +190,12 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     trace('Connect to endpoint list ' + endpointList.map(endpointToString));
     this.updatesPaused = true;
     this.children = endpointList.map(
-      endpoint => new LeafLoadBalancer(endpoint, this.childChannelControlHelper)
+      endpoint =>
+        new LeafLoadBalancer(
+          endpoint,
+          this.childChannelControlHelper,
+          this.options
+        )
     );
     for (const child of this.children) {
       child.startConnecting();

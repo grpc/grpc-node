@@ -17,7 +17,7 @@
 
 // https://github.com/grpc/proposal/blob/master/A52-xds-custom-lb-policies.md
 
-import { LoadBalancingConfig, experimental, logVerbosity } from "@grpc/grpc-js";
+import { ChannelOptions, LoadBalancingConfig, experimental, logVerbosity } from "@grpc/grpc-js";
 import { loadProtosWithOptionsSync } from "@grpc/proto-loader/build/src/util";
 import { WeightedTargetRaw } from "./load-balancer-weighted-target";
 import { isLocalityEndpoint } from "./load-balancer-priority";
@@ -73,8 +73,8 @@ class XdsWrrLocalityLoadBalancingConfig implements TypedLoadBalancingConfig {
 
 class XdsWrrLocalityLoadBalancer implements LoadBalancer {
   private childBalancer: ChildLoadBalancerHandler;
-  constructor(private readonly channelControlHelper: ChannelControlHelper) {
-    this.childBalancer = new ChildLoadBalancerHandler(channelControlHelper);
+  constructor(private readonly channelControlHelper: ChannelControlHelper, options: ChannelOptions) {
+    this.childBalancer = new ChildLoadBalancerHandler(channelControlHelper, options);
   }
   updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
     if (!(lbConfig instanceof XdsWrrLocalityLoadBalancingConfig)) {
