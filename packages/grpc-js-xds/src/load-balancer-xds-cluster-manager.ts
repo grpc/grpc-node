@@ -15,7 +15,7 @@
  *
  */
 
-import { connectivityState as ConnectivityState, status as Status, experimental, logVerbosity, Metadata, status } from "@grpc/grpc-js/";
+import { connectivityState as ConnectivityState, status as Status, experimental, logVerbosity, Metadata, status, ChannelOptions } from "@grpc/grpc-js/";
 
 import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import LoadBalancer = experimental.LoadBalancer;
@@ -131,7 +131,7 @@ class XdsClusterManager implements LoadBalancer {
         updateState: (connectivityState: ConnectivityState, picker: Picker) => {
           this.updateState(connectivityState, picker);
         },
-      }));
+      }), parent.options);
 
       this.picker = new QueuePicker(this.childBalancer);
     }
@@ -167,7 +167,7 @@ class XdsClusterManager implements LoadBalancer {
   // Shutdown is a placeholder value that will never appear in normal operation.
   private currentState: ConnectivityState = ConnectivityState.SHUTDOWN;
   private updatesPaused = false;
-  constructor(private channelControlHelper: ChannelControlHelper) {}
+  constructor(private channelControlHelper: ChannelControlHelper, private options: ChannelOptions) {}
 
   private maybeUpdateState() {
     if (!this.updatesPaused) {

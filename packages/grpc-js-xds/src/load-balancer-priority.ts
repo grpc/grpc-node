@@ -15,7 +15,7 @@
  *
  */
 
-import { connectivityState as ConnectivityState, status as Status, Metadata, logVerbosity as LogVerbosity, experimental, LoadBalancingConfig } from '@grpc/grpc-js';
+import { connectivityState as ConnectivityState, status as Status, Metadata, logVerbosity as LogVerbosity, experimental, LoadBalancingConfig, ChannelOptions } from '@grpc/grpc-js';
 import LoadBalancer = experimental.LoadBalancer;
 import ChannelControlHelper = experimental.ChannelControlHelper;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
@@ -180,7 +180,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
             this.parent.channelControlHelper.requestReresolution();
           }
         }
-      }));
+      }), parent.options);
       this.picker = new QueuePicker(this.childBalancer);
       this.startFailoverTimer();
     }
@@ -306,7 +306,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
 
   private updatesPaused = false;
 
-  constructor(private channelControlHelper: ChannelControlHelper) {}
+  constructor(private channelControlHelper: ChannelControlHelper, private options: ChannelOptions) {}
 
   private updateState(state: ConnectivityState, picker: Picker) {
     trace(

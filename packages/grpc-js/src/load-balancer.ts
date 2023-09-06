@@ -128,7 +128,10 @@ export interface LoadBalancer {
 }
 
 export interface LoadBalancerConstructor {
-  new (channelControlHelper: ChannelControlHelper): LoadBalancer;
+  new (
+    channelControlHelper: ChannelControlHelper,
+    options: ChannelOptions
+  ): LoadBalancer;
 }
 
 export interface TypedLoadBalancingConfig {
@@ -169,12 +172,14 @@ export function registerDefaultLoadBalancerType(typeName: string) {
 
 export function createLoadBalancer(
   config: TypedLoadBalancingConfig,
-  channelControlHelper: ChannelControlHelper
+  channelControlHelper: ChannelControlHelper,
+  options: ChannelOptions
 ): LoadBalancer | null {
   const typeName = config.getLoadBalancerName();
   if (typeName in registeredLoadBalancerTypes) {
     return new registeredLoadBalancerTypes[typeName].LoadBalancer(
-      channelControlHelper
+      channelControlHelper,
+      options
     );
   } else {
     return null;

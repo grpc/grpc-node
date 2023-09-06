@@ -15,7 +15,7 @@
  *
  */
 
-import { experimental, logVerbosity, status as Status, Metadata, connectivityState } from "@grpc/grpc-js";
+import { experimental, logVerbosity, status as Status, Metadata, connectivityState, ChannelOptions } from "@grpc/grpc-js";
 import { validateXdsServerConfig, XdsServerConfig } from "./xds-bootstrap";
 import { getSingletonXdsClient, XdsClient, XdsClusterDropStats, XdsClusterLocalityStats } from "./xds-client";
 import { LocalityEndpoint } from "./load-balancer-priority";
@@ -253,7 +253,7 @@ class XdsClusterImplBalancer implements LoadBalancer {
   private clusterDropStats: XdsClusterDropStats | null = null;
   private xdsClient: XdsClient | null = null;
 
-  constructor(private readonly channelControlHelper: ChannelControlHelper) {
+  constructor(private readonly channelControlHelper: ChannelControlHelper, options: ChannelOptions) {
       this.childBalancer = new ChildLoadBalancerHandler(createChildChannelControlHelper(channelControlHelper, {
         createSubchannel: (subchannelAddress, subchannelArgs) => {
           if (!this.xdsClient || !this.latestConfig || !this.lastestEndpointList) {
@@ -290,7 +290,7 @@ class XdsClusterImplBalancer implements LoadBalancer {
             channelControlHelper.updateState(connectivityState, picker);
           }
         }
-      }));
+      }), options);
     }
   updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
     if (!(lbConfig instanceof XdsClusterImplLoadBalancingConfig)) {

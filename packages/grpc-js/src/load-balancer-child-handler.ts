@@ -84,7 +84,10 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
     }
   };
 
-  constructor(private readonly channelControlHelper: ChannelControlHelper) {}
+  constructor(
+    private readonly channelControlHelper: ChannelControlHelper,
+    private readonly options: ChannelOptions
+  ) {}
 
   protected configUpdateRequiresNewPolicyInstance(
     oldConfig: TypedLoadBalancingConfig,
@@ -111,7 +114,7 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
       this.configUpdateRequiresNewPolicyInstance(this.latestConfig, lbConfig)
     ) {
       const newHelper = new this.ChildPolicyHelper(this);
-      const newChild = createLoadBalancer(lbConfig, newHelper)!;
+      const newChild = createLoadBalancer(lbConfig, newHelper, this.options)!;
       newHelper.setChild(newChild);
       if (this.currentChild === null) {
         this.currentChild = newChild;

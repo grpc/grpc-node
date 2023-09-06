@@ -15,7 +15,7 @@
  *
  */
 
-import { connectivityState, status, Metadata, logVerbosity, experimental, LoadBalancingConfig } from '@grpc/grpc-js';
+import { connectivityState, status, Metadata, logVerbosity, experimental, LoadBalancingConfig, ChannelOptions } from '@grpc/grpc-js';
 import { getSingletonXdsClient, Watcher, XdsClient } from './xds-client';
 import { Cluster__Output } from './generated/envoy/config/cluster/v3/Cluster';
 import Endpoint = experimental.Endpoint;
@@ -155,8 +155,8 @@ export class CdsLoadBalancer implements LoadBalancer {
 
   private updatedChild = false;
 
-  constructor(private readonly channelControlHelper: ChannelControlHelper) {
-    this.childBalancer = new XdsClusterResolverChildPolicyHandler(channelControlHelper);
+  constructor(private readonly channelControlHelper: ChannelControlHelper, options: ChannelOptions) {
+    this.childBalancer = new XdsClusterResolverChildPolicyHandler(channelControlHelper, options);
   }
 
   private reportError(errorMessage: string) {

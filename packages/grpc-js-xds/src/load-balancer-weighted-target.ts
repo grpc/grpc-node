@@ -15,7 +15,7 @@
  *
  */
 
-import { connectivityState as ConnectivityState, status as Status, Metadata, logVerbosity, experimental, LoadBalancingConfig } from "@grpc/grpc-js";
+import { connectivityState as ConnectivityState, status as Status, Metadata, logVerbosity, experimental, LoadBalancingConfig, ChannelOptions } from "@grpc/grpc-js";
 import { isLocalityEndpoint, LocalityEndpoint } from "./load-balancer-priority";
 import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import LoadBalancer = experimental.LoadBalancer;
@@ -178,7 +178,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
         updateState: (connectivityState: ConnectivityState, picker: Picker) => {
           this.updateState(connectivityState, picker);
         },
-      }));
+      }), parent.options);
 
       this.picker = new QueuePicker(this.childBalancer);
     }
@@ -243,7 +243,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
   private targetList: string[] = [];
   private updatesPaused = false;
 
-  constructor(private channelControlHelper: ChannelControlHelper) {}
+  constructor(private channelControlHelper: ChannelControlHelper, private options: ChannelOptions) {}
 
   private maybeUpdateState() {
     if (!this.updatesPaused) {
