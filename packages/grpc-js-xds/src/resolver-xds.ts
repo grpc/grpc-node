@@ -587,11 +587,16 @@ class XdsResolver implements Resolver {
           const onCommitted = () => {
             this.unrefCluster(clusterResult.name);
           }
-          const hash = action.getHash(metadata, channelId);
+          let hash: string;
+          if (EXPERIMENTAL_RING_HASH) {
+            hash = `${action.getHash(metadata, channelId)}`;
+          } else {
+            hash = '';
+          }
           return {
             methodConfig: clusterResult.methodConfig,
             onCommitted: onCommitted,
-            pickInformation: {cluster: clusterResult.name, hash: `${hash}`},
+            pickInformation: {cluster: clusterResult.name, hash: hash},
             status: status.OK,
             dynamicFilterFactories: clusterResult.dynamicFilterFactories
           };

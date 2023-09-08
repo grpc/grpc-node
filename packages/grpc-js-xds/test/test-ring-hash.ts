@@ -25,6 +25,7 @@ import assert = require("assert");
 import { Any } from "../src/generated/google/protobuf/Any";
 import { AnyExtension } from "@grpc/proto-loader";
 import { RingHash } from "../src/generated/envoy/extensions/load_balancing_policies/ring_hash/v3/RingHash";
+import { EXPERIMENTAL_RING_HASH } from "../src/environment";
 
 register();
 
@@ -41,7 +42,10 @@ describe('Ring hash LB policy', () => {
     client?.close();
     xdsServer?.shutdownServer();
   });
-  it('Should route requests to the single backend with the old lbPolicy field', done => {
+  it('Should route requests to the single backend with the old lbPolicy field', function(done) {
+    if (!EXPERIMENTAL_RING_HASH) {
+      this.skip();
+    }
     const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [new Backend()], locality:{region: 'region1'}}], 'RING_HASH');
     const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
     routeGroup.startAllBackends().then(() => {
@@ -59,7 +63,10 @@ describe('Ring hash LB policy', () => {
       client.sendOneCall(done);
     }, reason => done(reason));
   });
-  it('Should route requests to the single backend with the new load_balancing_policy field', done => {
+  it('Should route requests to the single backend with the new load_balancing_policy field', function(done) {
+    if (!EXPERIMENTAL_RING_HASH) {
+      this.skip();
+    }
     const lbPolicy: AnyExtension & RingHash = {
       '@type': 'type.googleapis.com/envoy.extensions.load_balancing_policies.ring_hash.v3.RingHash',
       hash_function: 'XX_HASH'
@@ -81,7 +88,10 @@ describe('Ring hash LB policy', () => {
       client.sendOneCall(done);
     }, reason => done(reason));
   });
-  it('Should route all identical requests to the same backend', done => {
+  it('Should route all identical requests to the same backend', function(done) {
+    if (!EXPERIMENTAL_RING_HASH) {
+      this.skip();
+    }
     const backend1 = new Backend();
     const backend2 = new Backend()
     const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [backend1, backend2], locality:{region: 'region1'}}], 'RING_HASH');
@@ -105,4 +115,4 @@ describe('Ring hash LB policy', () => {
       })
     }, reason => done(reason));
   });
-})
+});

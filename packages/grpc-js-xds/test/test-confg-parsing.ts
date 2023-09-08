@@ -19,6 +19,7 @@ import { experimental, LoadBalancingConfig } from "@grpc/grpc-js";
 import { register } from "../src";
 import assert = require("assert");
 import parseLoadbalancingConfig = experimental.parseLoadBalancingConfig;
+import { EXPERIMENTAL_RING_HASH } from "../src/environment";
 
 register();
 
@@ -34,6 +35,7 @@ interface TestCase {
   input: object,
   output?: object;
   error?: RegExp;
+  skipIf?: boolean;
 }
 
 /* The main purpose of these tests is to verify that configs that are expected
@@ -319,28 +321,32 @@ const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
       output: {
         min_ring_size: 1024,
         max_ring_size: 4096
-      }
+      },
+      skipIf: !EXPERIMENTAL_RING_HASH
     },
     {
       name: 'populated config',
       input: {
         min_ring_size: 2048,
         max_ring_size: 8192
-      }
+      },
+      skipIf: !EXPERIMENTAL_RING_HASH
     },
     {
       name: 'min_ring_size too large',
       input: {
         min_ring_size: 8_388_609
       },
-      error: /min_ring_size/
+      error: /min_ring_size/,
+      skipIf: !EXPERIMENTAL_RING_HASH
     },
     {
       name: 'max_ring_size too large',
       input: {
         max_ring_size: 8_388_609
       },
-      error: /max_ring_size/
+      error: /max_ring_size/,
+      skipIf: !EXPERIMENTAL_RING_HASH
     }
   ]
 }
@@ -349,7 +355,10 @@ describe('Load balancing policy config parsing', () => {
   for (const [lbPolicyName, testCases] of Object.entries(allTestCases)) {
     describe(lbPolicyName, () => {
       for (const testCase of testCases) {
-        it(testCase.name, () => {
+        it(testCase.name, function() {
+          if (testCase.skipIf) {
+            this.skip();
+          }
           const lbConfigInput = {[lbPolicyName]: testCase.input};
           if (testCase.error) {
             assert.throws(() => {
