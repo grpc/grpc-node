@@ -311,6 +311,37 @@ const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
         }
       }
     }
+  ],
+  ring_hash: [
+    {
+      name: 'empty config',
+      input: {},
+      output: {
+        min_ring_size: 1024,
+        max_ring_size: 4096
+      }
+    },
+    {
+      name: 'populated config',
+      input: {
+        min_ring_size: 2048,
+        max_ring_size: 8192
+      }
+    },
+    {
+      name: 'min_ring_size too large',
+      input: {
+        min_ring_size: 8_388_609
+      },
+      error: /min_ring_size/
+    },
+    {
+      name: 'max_ring_size too large',
+      input: {
+        max_ring_size: 8_388_609
+      },
+      error: /max_ring_size/
+    }
   ]
 }
 

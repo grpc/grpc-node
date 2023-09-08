@@ -204,35 +204,7 @@ class XdsClusterManager implements LoadBalancer {
     } else {
       connectivityState = ConnectivityState.TRANSIENT_FAILURE;
     }
-    /* For each of the states CONNECTING, IDLE, and TRANSIENT_FAILURE, there is
-     * exactly one corresponding picker, so if the state is one of those and
-     * that does not change, no new information is provided by passing the
-     * new state upward. */
-    if (connectivityState === this.currentState && connectivityState !== ConnectivityState.READY) {
-      return;
-    }
-    let picker: Picker;
-
-    switch (connectivityState) {
-      case ConnectivityState.READY:
-        picker = new XdsClusterManagerPicker(pickerMap);
-        break;
-      case ConnectivityState.CONNECTING:
-      case ConnectivityState.IDLE:
-        picker = new QueuePicker(this);
-        break;
-      default:
-        picker = new UnavailablePicker({
-          code: Status.UNAVAILABLE,
-          details: 'xds_cluster_manager: all children report state TRANSIENT_FAILURE',
-          metadata: new Metadata()
-        });
-    }
-    trace(
-        'Transitioning to ' +
-        ConnectivityState[connectivityState]
-    );
-    this.channelControlHelper.updateState(connectivityState, picker);
+    this.channelControlHelper.updateState(connectivityState, new XdsClusterManagerPicker(pickerMap));
   }
 
   updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {

@@ -279,7 +279,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
     );
     // Ensure that this.exitIdle() is called by the picker
     if (connectivityState === ConnectivityState.IDLE) {
-      picker = new QueuePicker(this);
+      picker = new QueuePicker(this, picker);
     }
     this.currentState = connectivityState;
     this.channelControlHelper.updateState(connectivityState, picker);

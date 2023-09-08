@@ -70,7 +70,7 @@ export interface FakeCluster {
 }
 
 export class FakeEdsCluster implements FakeCluster {
-  constructor(private clusterName: string, private endpointName: string, private endpoints: Endpoint[], private loadBalancingPolicyOverride?: Any) {}
+  constructor(private clusterName: string, private endpointName: string, private endpoints: Endpoint[], private loadBalancingPolicyOverride?: Any | 'RING_HASH') {}
 
   getEndpointConfig(): ClusterLoadAssignment {
     return {
@@ -94,7 +94,12 @@ export class FakeEdsCluster implements FakeCluster {
         ]
       }
     };
-    if (this.loadBalancingPolicyOverride) {
+    if (this.loadBalancingPolicyOverride === 'RING_HASH') {
+      result.lb_policy = 'RING_HASH';
+      result.ring_hash_lb_config = {
+        hash_function: 'XX_HASH'
+      };
+    } else if (this.loadBalancingPolicyOverride) {
       result.load_balancing_policy = {
         policies: [
           {
@@ -257,8 +262,14 @@ function createRouteConfig(route: FakeRoute): Route {
         prefix: ''
       },
       route: {
-        cluster: route.cluster.getName()
-      }
+        cluster: route.cluster.getName(),
+        // Default to consistent hash
+        hash_policy: [{
+          filter_state: {
+            key: 'io.grpc.channel_id'
+          }
+        }]
+      },
     };
   } else {
     return {
@@ -271,7 +282,13 @@ function createRouteConfig(route: FakeRoute): Route {
             name: clusterWeight.cluster.getName(),
             weight: {value: clusterWeight.weight}
           }))
-        }
+        },
+        // Default to consistent hash
+        hash_policy: [{
+          filter_state: {
+            key: 'io.grpc.channel_id'
+          }
+        }]
       }
     }
   }

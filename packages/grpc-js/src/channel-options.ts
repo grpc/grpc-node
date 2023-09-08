@@ -61,6 +61,7 @@ export interface ChannelOptions {
    * Set the enableTrace option in TLS clients and servers
    */
   'grpc-node.tls_enable_trace'?: number;
+  'grpc.lb.ring_hash.ring_size_cap'?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
@@ -96,6 +97,7 @@ export const recognizedOptions = {
   'grpc.service_config_disable_resolution': true,
   'grpc.client_idle_timeout_ms': true,
   'grpc-node.tls_enable_trace': true,
+  'grpc.lb.ring_hash.ring_size_cap': true,
 };
 
 export function channelOptionsEqual(

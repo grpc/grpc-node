@@ -26,6 +26,7 @@ export {
   Endpoint,
   endpointToString,
   endpointHasAddress,
+  EndpointMap,
 } from './subchannel-address';
 export { ChildLoadBalancerHandler } from './load-balancer-child-handler';
 export {

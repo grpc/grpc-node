@@ -357,14 +357,14 @@ export function loadBootstrapInfo(): BootstrapInfo {
     try {
       rawBootstrap = fs.readFileSync(bootstrapPath, { encoding: 'utf8'});
     } catch (e) {
-      throw new Error(`Failed to read xDS bootstrap file from path ${bootstrapPath} with error ${e.message}`);
+      throw new Error(`Failed to read xDS bootstrap file from path ${bootstrapPath} with error ${(e as Error).message}`);
     }
     try {
       const parsedFile = JSON.parse(rawBootstrap);
       loadedBootstrapInfo = validateBootstrapConfig(parsedFile);
       return loadedBootstrapInfo;
     } catch (e) {
-      throw new Error(`Failed to parse xDS bootstrap file at path ${bootstrapPath} with error ${e.message}`)
+      throw new Error(`Failed to parse xDS bootstrap file at path ${bootstrapPath} with error ${(e as Error).message}`)
     }
   }
 
@@ -383,7 +383,7 @@ export function loadBootstrapInfo(): BootstrapInfo {
       loadedBootstrapInfo = validateBootstrapConfig(parsedConfig);
     } catch (e) {
       throw new Error(
-        `Failed to parse xDS bootstrap config from environment variable GRPC_XDS_BOOTSTRAP_CONFIG with error ${e.message}`
+        `Failed to parse xDS bootstrap config from environment variable GRPC_XDS_BOOTSTRAP_CONFIG with error ${(e as Error).message}`
       );
     }
 

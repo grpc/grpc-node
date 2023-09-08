@@ -21,7 +21,7 @@ import { LoadBalancingConfig, experimental, logVerbosity } from "@grpc/grpc-js";
 import { XdsServerConfig } from "../xds-bootstrap";
 import { Duration__Output } from "../generated/google/protobuf/Duration";
 import { OutlierDetection__Output } from "../generated/envoy/config/cluster/v3/OutlierDetection";
-import { EXPERIMENTAL_CUSTOM_LB_CONFIG, EXPERIMENTAL_OUTLIER_DETECTION } from "../environment";
+import { EXPERIMENTAL_CUSTOM_LB_CONFIG, EXPERIMENTAL_OUTLIER_DETECTION, EXPERIMENTAL_RING_HASH } from "../environment";
 import { Cluster__Output } from "../generated/envoy/config/cluster/v3/Cluster";
 import { UInt32Value__Output } from "../generated/google/protobuf/UInt32Value";
 import { Any__Output } from "../generated/google/protobuf/Any";
@@ -148,6 +148,27 @@ export class ClusterResourceType extends XdsResourceType {
       lbPolicyConfig = {
         xds_wrr_locality: {
           child_policy: [{round_robin: {}}]
+        }
+      };
+    } else if(EXPERIMENTAL_RING_HASH && message.lb_policy === 'RING_HASH') {
+      if (!message.ring_hash_lb_config) {
+        return null;
+      }
+      if (message.ring_hash_lb_config.hash_function !== 'XX_HASH') {
+        return null;
+      }
+      const minRingSize = message.ring_hash_lb_config.minimum_ring_size ? Number(message.ring_hash_lb_config.minimum_ring_size.value) : 1024;
+      if (minRingSize > 8_388_608) {
+        return null;
+      }
+      const maxRingSize = message.ring_hash_lb_config.maximum_ring_size ? Number(message.ring_hash_lb_config.maximum_ring_size.value) : 8_388_608;
+      if (maxRingSize > 8_388_608) {
+        return null;
+      }
+      lbPolicyConfig = {
+        ring_hash: {
+          min_ring_size: minRingSize,
+          max_ring_size: maxRingSize
         }
       };
     } else {

@@ -34,18 +34,19 @@ import { HeaderMatcher__Output } from './generated/envoy/config/route/v3/HeaderM
 import ConfigSelector = experimental.ConfigSelector;
 import { ContainsValueMatcher, ExactValueMatcher, FullMatcher, HeaderMatcher, Matcher, PathExactValueMatcher, PathPrefixValueMatcher, PathSafeRegexValueMatcher, PrefixValueMatcher, PresentValueMatcher, RangeValueMatcher, RejectValueMatcher, SafeRegexValueMatcher, SuffixValueMatcher, ValueMatcher } from './matcher';
 import { envoyFractionToFraction, Fraction } from "./fraction";
-import { RouteAction, SingleClusterRouteAction, WeightedCluster, WeightedClusterRouteAction } from './route-action';
+import { HashPolicy, RouteAction, SingleClusterRouteAction, WeightedCluster, WeightedClusterRouteAction } from './route-action';
 import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL } from './resources';
 import Duration = experimental.Duration;
 import { Duration__Output } from './generated/google/protobuf/Duration';
 import { createHttpFilter, HttpFilterConfig, parseOverrideFilterConfig, parseTopLevelFilterConfig } from './http-filter';
-import { EXPERIMENTAL_FAULT_INJECTION, EXPERIMENTAL_FEDERATION, EXPERIMENTAL_RETRY } from './environment';
+import { EXPERIMENTAL_FAULT_INJECTION, EXPERIMENTAL_FEDERATION, EXPERIMENTAL_RETRY, EXPERIMENTAL_RING_HASH } from './environment';
 import Filter = experimental.Filter;
 import FilterFactory = experimental.FilterFactory;
 import { BootstrapInfo, loadBootstrapInfo, validateBootstrapConfig } from './xds-bootstrap';
 import { ListenerResourceType } from './xds-resource-type/listener-resource-type';
 import { RouteConfigurationResourceType } from './xds-resource-type/route-config-resource-type';
 import { protoDurationToDuration } from './duration';
+import { loadXxhashApi } from './xxhash';
 
 const TRACER_NAME = 'xds_resolver';
 
@@ -381,7 +382,11 @@ class XdsResolver implements Resolver {
     }
   }
 
-  private handleRouteConfig(routeConfig: RouteConfiguration__Output) {
+  private async handleRouteConfig(routeConfig: RouteConfiguration__Output) {
+    /* We need to load the xxhash API before this function finishes, because
+     * it is invoked in the config selector, which can be called immediately
+     * after this function returns. */
+    await loadXxhashApi();
     this.latestRouteConfig = routeConfig;
     /* Select the virtual host using the default authority override if it
      * exists, and the channel target otherwise. */
@@ -456,6 +461,26 @@ class XdsResolver implements Resolver {
           }
         }
       }
+      const hashPolicies: HashPolicy[] = [];
+      if (EXPERIMENTAL_RING_HASH) {
+        for (const routeHashPolicy of route.route!.hash_policy) {
+          if (routeHashPolicy.policy_specifier === 'header') {
+            const headerPolicy = routeHashPolicy.header!;
+            hashPolicies.push({
+              type: 'HEADER',
+              terminal: routeHashPolicy.terminal,
+              headerName: headerPolicy.header_name,
+              regex: headerPolicy.regex_rewrite?.pattern ? new RE2(headerPolicy.regex_rewrite.pattern.regex, 'ug') : undefined,
+              regexSubstitution: headerPolicy.regex_rewrite?.substitution
+            });
+          } else if (routeHashPolicy.policy_specifier === 'filter_state' && routeHashPolicy.filter_state!.key === 'io.grpc.channel_id') {
+            hashPolicies.push({
+              type: 'CHANNEL_ID',
+              terminal: routeHashPolicy.terminal
+            });
+          }
+        }
+      }
       switch (route.route!.cluster_specifier) {
         case 'cluster_header':
           continue;
@@ -483,7 +508,7 @@ class XdsResolver implements Resolver {
               }
             }
           }
-          routeAction = new SingleClusterRouteAction(cluster, {name: [], timeout: timeout, retryPolicy: retryPolicy}, extraFilterFactories);
+          routeAction = new SingleClusterRouteAction(cluster, {name: [], timeout: timeout, retryPolicy: retryPolicy}, extraFilterFactories, hashPolicies);
           break;
         }
         case 'weighted_clusters': {
@@ -525,7 +550,7 @@ class XdsResolver implements Resolver {
             }
             weightedClusters.push({name: clusterWeight.name, weight: clusterWeight.weight?.value ?? 0, dynamicFilterFactories: extraFilterFactories});
           }
-          routeAction = new WeightedClusterRouteAction(weightedClusters, route.route!.weighted_clusters!.total_weight?.value ?? 100, {name: [], timeout: timeout, retryPolicy: retryPolicy});
+          routeAction = new WeightedClusterRouteAction(weightedClusters, route.route!.weighted_clusters!.total_weight?.value ?? 100, {name: [], timeout: timeout, retryPolicy: retryPolicy}, hashPolicies);
           break;
         }
         default:
@@ -554,7 +579,7 @@ class XdsResolver implements Resolver {
         this.clusterRefcounts.set(name, {inLastConfig: true, refCount: 0});
       }
     }
-    const configSelector: ConfigSelector = (methodName, metadata) => {
+    const configSelector: ConfigSelector = (methodName, metadata, channelId) => {
       for (const {matcher, action} of matchList) {
         if (matcher.apply(methodName, metadata)) {
           const clusterResult = action.getCluster();
@@ -562,10 +587,11 @@ class XdsResolver implements Resolver {
           const onCommitted = () => {
             this.unrefCluster(clusterResult.name);
           }
+          const hash = action.getHash(metadata, channelId);
           return {
             methodConfig: clusterResult.methodConfig,
             onCommitted: onCommitted,
-            pickInformation: {cluster: clusterResult.name},
+            pickInformation: {cluster: clusterResult.name, hash: `${hash}`},
             status: status.OK,
             dynamicFilterFactories: clusterResult.dynamicFilterFactories
           };
@@ -573,8 +599,8 @@ class XdsResolver implements Resolver {
       }
       return {
         methodConfig: {name: []},
-        // cluster won't be used here, but it's set because of some TypeScript weirdness
-        pickInformation: {cluster: ''},
+        // These fields won't be used here, but they're set because of some TypeScript weirdness
+        pickInformation: {cluster: '', hash: ''},
         status: status.UNAVAILABLE,
         dynamicFilterFactories: []
       };
