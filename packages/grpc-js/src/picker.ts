@@ -17,10 +17,9 @@
 
 import { StatusObject } from './call-interface';
 import { Metadata } from './metadata';
-import { LogVerbosity, Status } from './constants';
+import { Status } from './constants';
 import { LoadBalancer } from './load-balancer';
 import { SubchannelInterface } from './subchannel-interface';
-import { trace } from './logging';
 
 export enum PickResultType {
   COMPLETE,
@@ -135,12 +134,6 @@ export class QueuePicker {
   ) {}
 
   pick(pickArgs: PickArgs): PickResult {
-    trace(
-      LogVerbosity.DEBUG,
-      'picker',
-      'Queue picker called for load balancer of type ' +
-        this.loadBalancer.constructor.name
-    );
     if (!this.calledExitIdle) {
       process.nextTick(() => {
         this.loadBalancer.exitIdle();
