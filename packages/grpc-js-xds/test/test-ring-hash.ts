@@ -115,4 +115,59 @@ describe('Ring hash LB policy', () => {
       })
     }, reason => done(reason));
   });
+  it('Should fallback to a second backend if the first one goes down', function(done) {
+    if (!EXPERIMENTAL_RING_HASH) {
+      this.skip();
+    }
+    const backends = [new Backend(), new Backend(), new Backend()];
+    const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: backends, locality:{region: 'region1'}}], 'RING_HASH');
+    const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
+    routeGroup.startAllBackends().then(() => {
+      xdsServer.setEdsResource(cluster.getEndpointConfig());
+      xdsServer.setCdsResource(cluster.getClusterConfig());
+      xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
+      xdsServer.setLdsResource(routeGroup.getListener());
+      xdsServer.addResponseListener((typeUrl, responseState) => {
+        if (responseState.state === 'NACKED') {
+          client.stopCalls();
+          assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
+        }
+      })
+      client = XdsTestClient.createFromServer('listener1', xdsServer);
+      client.sendNCalls(100, error => {
+        assert.ifError(error);
+        let backendWithTraffic: number | null = null;
+        for (let i = 0; i < backends.length; i++) {
+          if (backendWithTraffic === null) {
+            if (backends[i].getCallCount() > 0) {
+              backendWithTraffic = i;
+            }
+          } else {
+            assert.strictEqual(backends[i].getCallCount(), 0, `Backends ${backendWithTraffic} and ${i} both got traffic`);
+          }
+        }
+        assert.notStrictEqual(backendWithTraffic, null, 'No backend got traffic');
+        backends[backendWithTraffic!].shutdown(error => {
+          assert.ifError(error);
+          backends[backendWithTraffic!].resetCallCount();
+          client.sendNCalls(100, error => {
+            assert.ifError(error);
+            let backendWithTraffic2: number | null = null;
+            for (let i = 0; i < backends.length; i++) {
+              if (backendWithTraffic2 === null) {
+                if (backends[i].getCallCount() > 0) {
+                  backendWithTraffic2 = i;
+                }
+              } else {
+                assert.strictEqual(backends[i].getCallCount(), 0, `Backends ${backendWithTraffic2} and ${i} both got traffic`);
+              }
+            }
+            assert.notStrictEqual(backendWithTraffic2, null, 'No backend got traffic');
+            assert.notStrictEqual(backendWithTraffic2, backendWithTraffic, `Traffic went to the same backend ${backendWithTraffic} after shutdown`);
+            done();
+          });
+        });
+      });
+    }, reason => done(reason));
+  })
 });
