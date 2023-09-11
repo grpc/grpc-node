@@ -247,6 +247,8 @@ export class ResolvingLoadBalancer implements LoadBalancer {
           configSelector: ConfigSelector | null,
           attributes: { [key: string]: unknown }
         ) => {
+          this.backoffTimeout.stop();
+          this.backoffTimeout.reset();
           let workingServiceConfig: ServiceConfig | null = null;
           /* This first group of conditionals implements the algorithm described
            * in https://github.com/grpc/proposal/blob/master/A21-service-config-error-handling.md

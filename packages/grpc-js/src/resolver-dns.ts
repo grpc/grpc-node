@@ -175,6 +175,7 @@ class DnsResolver implements Resolver {
       });
       this.backoff.stop();
       this.backoff.reset();
+      this.stopNextResolutionTimer();
       return;
     }
     if (this.dnsHostname === null) {
@@ -339,9 +340,9 @@ class DnsResolver implements Resolver {
   private startResolutionWithBackoff() {
     if (this.pendingLookupPromise === null) {
       this.continueResolving = false;
-      this.startResolution();
       this.backoff.runOnce();
       this.startNextResolutionTimer();
+      this.startResolution();
     }
   }
 
