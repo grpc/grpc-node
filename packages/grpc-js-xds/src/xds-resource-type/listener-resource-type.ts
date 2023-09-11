@@ -106,6 +106,7 @@ export class ListenerResourceType extends XdsResourceType {
       );
     }
     const message = decodeSingleResource(LDS_TYPE_URL, resource.value);
+    trace('Decoded raw resource of type ' + LDS_TYPE_URL + ': ' + JSON.stringify(message));
     const validatedMessage = this.validateResource(message);
     if (validatedMessage) {
       return {

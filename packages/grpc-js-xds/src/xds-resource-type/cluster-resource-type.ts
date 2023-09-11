@@ -285,6 +285,7 @@ export class ClusterResourceType extends XdsResourceType {
       );
     }
     const message = decodeSingleResource(CDS_TYPE_URL, resource.value);
+    trace('Decoded raw resource of type ' + CDS_TYPE_URL + ': ' + JSON.stringify(message));
     const validatedMessage = this.validateResource(context, message);
     if (validatedMessage) {
       return {

@@ -15,6 +15,7 @@
  *
  */
 
+import { experimental, logVerbosity } from "@grpc/grpc-js";
 import { EXPERIMENTAL_FAULT_INJECTION, EXPERIMENTAL_RETRY } from "../environment";
 import { RetryPolicy__Output } from "../generated/envoy/config/route/v3/RetryPolicy";
 import { RouteConfiguration__Output } from "../generated/envoy/config/route/v3/RouteConfiguration";
@@ -24,6 +25,11 @@ import { validateOverrideFilter } from "../http-filter";
 import { RDS_TYPE_URL, decodeSingleResource } from "../resources";
 import { Watcher, XdsClient } from "../xds-client";
 import { XdsDecodeContext, XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
+const TRACER_NAME = 'xds_client';
+
+function trace(text: string): void {
+  experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 const SUPPORTED_PATH_SPECIFIERS = ['prefix', 'path', 'safe_regex'];
 const SUPPPORTED_HEADER_MATCH_SPECIFIERS = [
@@ -169,6 +175,7 @@ export class RouteConfigurationResourceType extends XdsResourceType {
       );
     }
     const message = decodeSingleResource(RDS_TYPE_URL, resource.value);
+    trace('Decoded raw resource of type ' + RDS_TYPE_URL + ': ' + JSON.stringify(message));
     const validatedMessage = this.validateResource(message);
     if (validatedMessage) {
       return {
