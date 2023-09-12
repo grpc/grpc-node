@@ -96,9 +96,6 @@ export class FakeEdsCluster implements FakeCluster {
     };
     if (this.loadBalancingPolicyOverride === 'RING_HASH') {
       result.lb_policy = 'RING_HASH';
-      result.ring_hash_lb_config = {
-        hash_function: 'XX_HASH'
-      };
     } else if (this.loadBalancingPolicyOverride) {
       result.load_balancing_policy = {
         policies: [

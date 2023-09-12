@@ -151,17 +151,14 @@ export class ClusterResourceType extends XdsResourceType {
         }
       };
     } else if(EXPERIMENTAL_RING_HASH && message.lb_policy === 'RING_HASH') {
-      if (!message.ring_hash_lb_config) {
+      if (message.ring_hash_lb_config && message.ring_hash_lb_config.hash_function !== 'XX_HASH') {
         return null;
       }
-      if (message.ring_hash_lb_config.hash_function !== 'XX_HASH') {
-        return null;
-      }
-      const minRingSize = message.ring_hash_lb_config.minimum_ring_size ? Number(message.ring_hash_lb_config.minimum_ring_size.value) : 1024;
+      const minRingSize = message.ring_hash_lb_config?.minimum_ring_size ? Number(message.ring_hash_lb_config.minimum_ring_size.value) : 1024;
       if (minRingSize > 8_388_608) {
         return null;
       }
-      const maxRingSize = message.ring_hash_lb_config.maximum_ring_size ? Number(message.ring_hash_lb_config.maximum_ring_size.value) : 8_388_608;
+      const maxRingSize = message.ring_hash_lb_config?.maximum_ring_size ? Number(message.ring_hash_lb_config.maximum_ring_size.value) : 8_388_608;
       if (maxRingSize > 8_388_608) {
         return null;
       }
