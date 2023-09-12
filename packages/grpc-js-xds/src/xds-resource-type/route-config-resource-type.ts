@@ -175,7 +175,7 @@ export class RouteConfigurationResourceType extends XdsResourceType {
       );
     }
     const message = decodeSingleResource(RDS_TYPE_URL, resource.value);
-    trace('Decoded raw resource of type ' + RDS_TYPE_URL + ': ' + JSON.stringify(message));
+    trace('Decoded raw resource of type ' + RDS_TYPE_URL + ': ' + JSON.stringify(message, undefined, 2));
     const validatedMessage = this.validateResource(message);
     if (validatedMessage) {
       return {
