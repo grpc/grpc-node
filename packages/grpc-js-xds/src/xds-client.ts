@@ -250,7 +250,7 @@ class AdsResponseParser {
     if (!decodeResult.value) {
       return;
     }
-    this.adsCallState.client.trace('Parsed resource of type ' + this.result.type.getTypeUrl() + ': ' + JSON.stringify(decodeResult.value, undefined, 2));
+    this.adsCallState.client.trace('Parsed resource of type ' + this.result.type.getTypeUrl() + ': ' + JSON.stringify(decodeResult.value, (key, value) => (value && value.type === 'Buffer' && Array.isArray(value.data)) ? (value.data as Number[]).map(n => n.toString(16)).join('') : value, 2));
     this.result.haveValidResources = true;
     if (this.result.type.resourcesEqual(resourceState.cachedResource, decodeResult.value)) {
       return;
