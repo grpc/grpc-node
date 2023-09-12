@@ -467,9 +467,11 @@ function sendConstantQps(client: TestServiceClient, qps: number, failOnFailedRpc
       makeSingleRequest(client, callType, failOnFailedRpcs, callStatsTracker, callStartTimestampsTrackers[callType]);
     }
   }, 1000/qps);
-  setInterval(() => {
-    console.log(`Accumulated stats: ${JSON.stringify(accumulatedStats, undefined, 2)}`);
-  }, 1000);
+  if (VERBOSITY >= 2) {
+    setInterval(() => {
+      console.log(`Accumulated stats: ${JSON.stringify(accumulatedStats, undefined, 2)}`);
+    }, 1000);
+  }
 }
 
 const callTypeEnumMap = {
