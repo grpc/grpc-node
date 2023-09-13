@@ -29,6 +29,7 @@ import * as fault_injection_filter from './http-filter/fault-injection-filter';
 import * as csds from './csds';
 import * as round_robin_lb from './lb-policy-registry/round-robin';
 import * as typed_struct_lb from './lb-policy-registry/typed-struct';
+import * as pick_first_lb from './lb-policy-registry/pick-first';
 
 /**
  * Register the "xds:" name scheme with the @grpc/grpc-js library.
@@ -48,4 +49,5 @@ export function register() {
   csds.setup();
   round_robin_lb.setup();
   typed_struct_lb.setup();
+  pick_first_lb.setup();
 }
