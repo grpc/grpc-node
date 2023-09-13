@@ -4,10 +4,8 @@ import type { UninterpretedOption as _google_protobuf_UninterpretedOption, Unint
 
 export interface OneofOptions {
   'uninterpretedOption'?: (_google_protobuf_UninterpretedOption)[];
-  '.validate.required'?: (boolean);
 }
 
 export interface OneofOptions__Output {
   'uninterpretedOption': (_google_protobuf_UninterpretedOption__Output)[];
-  '.validate.required': (boolean);
 }
