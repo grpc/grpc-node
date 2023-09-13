@@ -193,6 +193,15 @@ export class InternalChannel {
   private readonly callTracker = new ChannelzCallTracker();
   private readonly childrenTracker = new ChannelzChildrenTracker();
 
+  /**
+   * Randomly generated ID to be passed to the config selector, for use by
+   * ring_hash in xDS. An integer distributed approximately uniformly between
+   * 0 and MAX_SAFE_INTEGER.
+   */
+  private readonly randomChannelId = Math.floor(
+    Math.random() * Number.MAX_SAFE_INTEGER
+  );
+
   constructor(
     target: string,
     private readonly credentials: ChannelCredentials,
@@ -528,7 +537,7 @@ export class InternalChannel {
     if (this.configSelector) {
       return {
         type: 'SUCCESS',
-        config: this.configSelector(method, metadata),
+        config: this.configSelector(method, metadata, this.randomChannelId),
       };
     } else {
       if (this.currentResolutionError) {

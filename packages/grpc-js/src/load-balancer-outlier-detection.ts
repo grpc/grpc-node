@@ -33,10 +33,9 @@ import { ChildLoadBalancerHandler } from './load-balancer-child-handler';
 import { PickArgs, Picker, PickResult, PickResultType } from './picker';
 import {
   Endpoint,
+  EndpointMap,
   SubchannelAddress,
-  endpointHasAddress,
   endpointToString,
-  subchannelAddressEqual,
 } from './subchannel-address';
 import {
   BaseSubchannelWrapper,
@@ -461,126 +460,9 @@ interface MapEntry {
   subchannelWrappers: OutlierDetectionSubchannelWrapper[];
 }
 
-interface EndpointMapEntry {
-  key: Endpoint;
-  value: MapEntry;
-}
-
-function endpointEqualUnordered(
-  endpoint1: Endpoint,
-  endpoint2: Endpoint
-): boolean {
-  if (endpoint1.addresses.length !== endpoint2.addresses.length) {
-    return false;
-  }
-  for (const address1 of endpoint1.addresses) {
-    let matchFound = false;
-    for (const address2 of endpoint2.addresses) {
-      if (subchannelAddressEqual(address1, address2)) {
-        matchFound = true;
-        break;
-      }
-    }
-    if (!matchFound) {
-      return false;
-    }
-  }
-  return true;
-}
-
-class EndpointMap {
-  private map: Set<EndpointMapEntry> = new Set();
-
-  get size() {
-    return this.map.size;
-  }
-
-  getForSubchannelAddress(address: SubchannelAddress): MapEntry | undefined {
-    for (const entry of this.map) {
-      if (endpointHasAddress(entry.key, address)) {
-        return entry.value;
-      }
-    }
-    return undefined;
-  }
-
-  /**
-   * Delete any entries in this map with keys that are not in endpoints
-   * @param endpoints
-   */
-  deleteMissing(endpoints: Endpoint[]) {
-    for (const entry of this.map) {
-      let foundEntry = false;
-      for (const endpoint of endpoints) {
-        if (endpointEqualUnordered(endpoint, entry.key)) {
-          foundEntry = true;
-        }
-      }
-      if (!foundEntry) {
-        this.map.delete(entry);
-      }
-    }
-  }
-
-  get(endpoint: Endpoint): MapEntry | undefined {
-    for (const entry of this.map) {
-      if (endpointEqualUnordered(endpoint, entry.key)) {
-        return entry.value;
-      }
-    }
-    return undefined;
-  }
-
-  set(endpoint: Endpoint, mapEntry: MapEntry) {
-    for (const entry of this.map) {
-      if (endpointEqualUnordered(endpoint, entry.key)) {
-        entry.value = mapEntry;
-        return;
-      }
-    }
-    this.map.add({ key: endpoint, value: mapEntry });
-  }
-
-  delete(endpoint: Endpoint) {
-    for (const entry of this.map) {
-      if (endpointEqualUnordered(endpoint, entry.key)) {
-        this.map.delete(entry);
-        return;
-      }
-    }
-  }
-
-  has(endpoint: Endpoint): boolean {
-    for (const entry of this.map) {
-      if (endpointEqualUnordered(endpoint, entry.key)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  *keys(): IterableIterator<Endpoint> {
-    for (const entry of this.map) {
-      yield entry.key;
-    }
-  }
-
-  *values(): IterableIterator<MapEntry> {
-    for (const entry of this.map) {
-      yield entry.value;
-    }
-  }
-
-  *entries(): IterableIterator<[Endpoint, MapEntry]> {
-    for (const entry of this.map) {
-      yield [entry.key, entry.value];
-    }
-  }
-}
-
 export class OutlierDetectionLoadBalancer implements LoadBalancer {
   private childBalancer: ChildLoadBalancerHandler;
-  private entryMap = new EndpointMap();
+  private entryMap = new EndpointMap<MapEntry>();
   private latestConfig: OutlierDetectionLoadBalancingConfig | null = null;
   private ejectionTimer: NodeJS.Timeout;
   private timerStartTime: Date | null = null;

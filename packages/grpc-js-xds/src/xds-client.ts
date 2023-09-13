@@ -208,14 +208,14 @@ class AdsResponseParser {
     try {
       decodeResult = this.result.type.decode(decodeContext, resource);
     } catch (e) {
-      this.result.errors.push(`${errorPrefix} ${e.message}`);
+      this.result.errors.push(`${errorPrefix} ${(e as Error).message}`);
       return;
     }
     let parsedName: XdsResourceName;
     try {
       parsedName = parseXdsResourceName(decodeResult.name, this.result.type!.getTypeUrl());
     } catch (e) {
-      this.result.errors.push(`${errorPrefix} ${e.message}`);
+      this.result.errors.push(`${errorPrefix} ${(e as Error).message}`);
       return;
     }
     this.adsCallState.typeStates.get(this.result.type!)?.subscribedResources.get(parsedName.authority)?.get(parsedName.key)?.markSeen();
@@ -250,7 +250,7 @@ class AdsResponseParser {
     if (!decodeResult.value) {
       return;
     }
-    this.adsCallState.client.trace('Parsed resource of type ' + this.result.type.getTypeUrl() + ': ' + JSON.stringify(decodeResult.value, undefined, 2));
+    this.adsCallState.client.trace('Parsed resource of type ' + this.result.type.getTypeUrl() + ': ' + JSON.stringify(decodeResult.value, (key, value) => (value && value.type === 'Buffer' && Array.isArray(value.data)) ? (value.data as Number[]).map(n => n.toString(16)).join('') : value, 2));
     this.result.haveValidResources = true;
     if (this.result.type.resourcesEqual(resourceState.cachedResource, decodeResult.value)) {
       return;

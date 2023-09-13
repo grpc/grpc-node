@@ -101,6 +101,7 @@ export class EndpointResourceType extends XdsResourceType {
       );
     }
     const message = decodeSingleResource(EDS_TYPE_URL, resource.value);
+    trace('Decoded raw resource of type ' + EDS_TYPE_URL + ': ' + JSON.stringify(message, undefined, 2));
     const validatedMessage = this.validateResource(message);
     if (validatedMessage) {
       return {

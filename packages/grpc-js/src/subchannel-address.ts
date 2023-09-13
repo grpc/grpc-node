@@ -122,3 +122,127 @@ export function endpointHasAddress(
   }
   return false;
 }
+
+interface EndpointMapEntry<ValueType> {
+  key: Endpoint;
+  value: ValueType;
+}
+
+function endpointEqualUnordered(
+  endpoint1: Endpoint,
+  endpoint2: Endpoint
+): boolean {
+  if (endpoint1.addresses.length !== endpoint2.addresses.length) {
+    return false;
+  }
+  for (const address1 of endpoint1.addresses) {
+    let matchFound = false;
+    for (const address2 of endpoint2.addresses) {
+      if (subchannelAddressEqual(address1, address2)) {
+        matchFound = true;
+        break;
+      }
+    }
+    if (!matchFound) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export class EndpointMap<ValueType> {
+  private map: Set<EndpointMapEntry<ValueType>> = new Set();
+
+  get size() {
+    return this.map.size;
+  }
+
+  getForSubchannelAddress(address: SubchannelAddress): ValueType | undefined {
+    for (const entry of this.map) {
+      if (endpointHasAddress(entry.key, address)) {
+        return entry.value;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Delete any entries in this map with keys that are not in endpoints
+   * @param endpoints
+   */
+  deleteMissing(endpoints: Endpoint[]): ValueType[] {
+    const removedValues: ValueType[] = [];
+    for (const entry of this.map) {
+      let foundEntry = false;
+      for (const endpoint of endpoints) {
+        if (endpointEqualUnordered(endpoint, entry.key)) {
+          foundEntry = true;
+        }
+      }
+      if (!foundEntry) {
+        removedValues.push(entry.value);
+        this.map.delete(entry);
+      }
+    }
+    return removedValues;
+  }
+
+  get(endpoint: Endpoint): ValueType | undefined {
+    for (const entry of this.map) {
+      if (endpointEqualUnordered(endpoint, entry.key)) {
+        return entry.value;
+      }
+    }
+    return undefined;
+  }
+
+  set(endpoint: Endpoint, mapEntry: ValueType) {
+    for (const entry of this.map) {
+      if (endpointEqualUnordered(endpoint, entry.key)) {
+        entry.value = mapEntry;
+        return;
+      }
+    }
+    this.map.add({ key: endpoint, value: mapEntry });
+  }
+
+  delete(endpoint: Endpoint) {
+    for (const entry of this.map) {
+      if (endpointEqualUnordered(endpoint, entry.key)) {
+        this.map.delete(entry);
+        return;
+      }
+    }
+  }
+
+  has(endpoint: Endpoint): boolean {
+    for (const entry of this.map) {
+      if (endpointEqualUnordered(endpoint, entry.key)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  clear() {
+    this.map.clear();
+  }
+
+  *keys(): IterableIterator<Endpoint> {
+    for (const entry of this.map) {
+      yield entry.key;
+    }
+  }
+
+  *values(): IterableIterator<ValueType> {
+    for (const entry of this.map) {
+      yield entry.value;
+    }
+  }
+
+  *entries(): IterableIterator<[Endpoint, ValueType]> {
+    for (const entry of this.map) {
+      yield [entry.key, entry.value];
+    }
+  }
+}

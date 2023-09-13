@@ -541,6 +541,19 @@ export class LeafLoadBalancer {
     this.pickFirstBalancer.updateAddressList([this.endpoint], LEAF_CONFIG);
   }
 
+  /**
+   * Update the endpoint associated with this LeafLoadBalancer to a new
+   * endpoint. Does not trigger connection establishment if a connection
+   * attempt is not already in progress.
+   * @param newEndpoint
+   */
+  updateEndpoint(newEndpoint: Endpoint) {
+    this.endpoint = newEndpoint;
+    if (this.latestState !== ConnectivityState.IDLE) {
+      this.startConnecting();
+    }
+  }
+
   getConnectivityState() {
     return this.latestState;
   }

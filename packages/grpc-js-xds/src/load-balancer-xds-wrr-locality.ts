@@ -90,7 +90,7 @@ class XdsWrrLocalityLoadBalancer implements LoadBalancer {
       if (!(localityName in targets)) {
         targets[localityName] = {
           child_policy: lbConfig.getChildPolicy(),
-          weight: address.weight
+          weight: address.localityWeight
         };
       }
     }

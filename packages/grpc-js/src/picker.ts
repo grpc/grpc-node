@@ -122,25 +122,34 @@ export class UnavailablePicker implements Picker {
  * indicating that the pick should be tried again with the next `Picker`. Also
  * reports back to the load balancer that a connection should be established
  * once any pick is attempted.
+ * If the childPicker is provided, delegate to it instead of returning the
+ * hardcoded QUEUE pick result, but still calls exitIdle.
  */
 export class QueuePicker {
   private calledExitIdle = false;
   // Constructed with a load balancer. Calls exitIdle on it the first time pick is called
-  constructor(private loadBalancer: LoadBalancer) {}
+  constructor(
+    private loadBalancer: LoadBalancer,
+    private childPicker?: Picker
+  ) {}
 
-  pick(pickArgs: PickArgs): QueuePickResult {
+  pick(pickArgs: PickArgs): PickResult {
     if (!this.calledExitIdle) {
       process.nextTick(() => {
         this.loadBalancer.exitIdle();
       });
       this.calledExitIdle = true;
     }
-    return {
-      pickResultType: PickResultType.QUEUE,
-      subchannel: null,
-      status: null,
-      onCallStarted: null,
-      onCallEnded: null,
-    };
+    if (this.childPicker) {
+      return this.childPicker.pick(pickArgs);
+    } else {
+      return {
+        pickResultType: PickResultType.QUEUE,
+        subchannel: null,
+        status: null,
+        onCallStarted: null,
+        onCallEnded: null,
+      };
+    }
   }
 }

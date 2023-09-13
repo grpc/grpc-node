@@ -115,10 +115,15 @@ class XdsClusterResolverLoadBalancingConfig implements TypedLoadBalancingConfig 
   }
 }
 
+interface WeightedEndpoint {
+  endpoint: Endpoint;
+  weight: number;
+}
+
 interface LocalityEntry {
   locality: Locality__Output;
   weight: number;
-  endpoints: Endpoint[];
+  endpoints: WeightedEndpoint[];
 }
 
 interface PriorityEntry {
@@ -166,16 +171,19 @@ function getEdsPriorities(edsUpdate: ClusterLoadAssignment__Output): PriorityEnt
     if (!endpoint.load_balancing_weight) {
       continue;
     }
-    const endpoints: Endpoint[] = endpoint.lb_endpoints.filter(lbEndpoint => lbEndpoint.health_status === 'UNKNOWN' || lbEndpoint.health_status === 'HEALTHY').map(
+    const endpoints: WeightedEndpoint[] = endpoint.lb_endpoints.filter(lbEndpoint => lbEndpoint.health_status === 'UNKNOWN' || lbEndpoint.health_status === 'HEALTHY').map(
       (lbEndpoint) => {
         /* The validator in the XdsClient class ensures that each endpoint has
          * a socket_address with an IP address and a port_value. */
         const socketAddress = lbEndpoint.endpoint!.address!.socket_address!;
         return {
-          addresses: [{
-            host: socketAddress.address!,
-            port: socketAddress.port_value!,
-          }]
+          endpoint: {
+            addresses: [{
+              host: socketAddress.address!,
+              port: socketAddress.port_value!,
+            }]
+          },
+          weight: lbEndpoint.load_balancing_weight?.value ?? 1
         };
       }
     );
@@ -211,7 +219,7 @@ function getDnsPriorities(endpoints: Endpoint[]): PriorityEntry[] {
         sub_zone: ''
       },
       weight: 1,
-      endpoints: endpoints
+      endpoints: endpoints.map(endpoint => ({endpoint: endpoint, weight: 1}))
     }],
     dropCategories: []
   }];
@@ -295,15 +303,16 @@ export class XdsClusterResolver implements LoadBalancer {
         newPriorityNames[priority] = newPriorityName;
 
         for (const localityObj of priorityEntry.localities) {
-          for (const endpoint of localityObj.endpoints) {
+          for (const weightedEndpoint of localityObj.endpoints) {
             endpointList.push({
               localityPath: [
                 newPriorityName,
                 localityToName(localityObj.locality),
               ],
               locality: localityObj.locality,
-              weight: localityObj.weight,
-              ...endpoint
+              localityWeight: localityObj.weight,
+              endpointWeight: localityObj.weight * weightedEndpoint.weight,
+              ...weightedEndpoint.endpoint
             });
           }
           newLocalityPriorities.set(localityToName(localityObj.locality), priority);

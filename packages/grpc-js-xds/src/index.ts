@@ -23,6 +23,7 @@ import * as load_balancer_priority from './load-balancer-priority';
 import * as load_balancer_weighted_target from './load-balancer-weighted-target';
 import * as load_balancer_xds_cluster_manager from './load-balancer-xds-cluster-manager';
 import * as xds_wrr_locality from './load-balancer-xds-wrr-locality';
+import * as ring_hash from './load-balancer-ring-hash';
 import * as router_filter from './http-filter/router-filter';
 import * as fault_injection_filter from './http-filter/fault-injection-filter';
 import * as csds from './csds';
@@ -41,6 +42,7 @@ export function register() {
   load_balancer_weighted_target.setup();
   load_balancer_xds_cluster_manager.setup();
   xds_wrr_locality.setup();
+  ring_hash.setup();
   router_filter.setup();
   fault_injection_filter.setup();
   csds.setup();

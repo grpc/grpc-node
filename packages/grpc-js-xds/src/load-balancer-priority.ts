@@ -41,9 +41,26 @@ const DEFAULT_FAILOVER_TIME_MS = 10_000;
 const DEFAULT_RETENTION_INTERVAL_MS = 15 * 60 * 1000;
 
 export interface LocalityEndpoint extends Endpoint {
+  /**
+   * A sequence of strings that determines how to divide endpoints up in priority and
+   * weighted_target.
+   */
   localityPath: string[];
+  /**
+   * The locality this endpoint is in. Used in wrr_locality and xds_cluster_impl.
+   */
   locality: Locality__Output;
-  weight: number;
+  /**
+   * The load balancing weight for the entire locality that contains this
+   * endpoint. Used in xds_wrr_locality.
+   */
+  localityWeight: number;
+  /**
+   * The overall load balancing weight for this endpoint, calculated as the
+   * product of the load balancing weight for this endpoint within its locality
+   * and the load balancing weight of the locality. Used in ring_hash.
+   */
+  endpointWeight: number;
 };
 
 export function isLocalityEndpoint(
@@ -317,7 +334,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
      * so that when the picker calls exitIdle, that in turn calls exitIdle on
      * the PriorityChildImpl, which will start the failover timer. */
     if (state === ConnectivityState.IDLE) {
-      picker = new QueuePicker(this);
+      picker = new QueuePicker(this, picker);
     }
     this.channelControlHelper.updateState(state, picker);
   }
