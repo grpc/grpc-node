@@ -222,6 +222,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
          * In that case, the backoff timer callback will call
          * updateResolution */
         if (this.backoffTimeout.isRunning()) {
+          trace('requestReresolution delayed by backoff timer until ' + this.backoffTimeout.getEndTime().toISOString());
           this.continueResolving = true;
         } else {
           this.updateResolution();

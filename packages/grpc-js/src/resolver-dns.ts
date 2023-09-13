@@ -353,6 +353,11 @@ class DnsResolver implements Resolver {
      * fires. Otherwise, start resolving immediately. */
     if (this.pendingLookupPromise === null) {
       if (this.isNextResolutionTimerRunning || this.backoff.isRunning()) {
+        if (this.isNextResolutionTimerRunning) {
+          trace('resolution update delayed by "min time between resolutions" rate limit');
+        } else {
+          trace('resolution update delayed by backoff timer until ' + this.backoff.getEndTime().toISOString());
+        }
         this.continueResolving = true;
       } else {
         this.startResolutionWithBackoff();
