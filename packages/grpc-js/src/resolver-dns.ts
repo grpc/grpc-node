@@ -175,6 +175,7 @@ class DnsResolver implements Resolver {
       });
       this.backoff.stop();
       this.backoff.reset();
+      this.stopNextResolutionTimer();
       return;
     }
     if (this.dnsHostname === null) {
@@ -339,9 +340,9 @@ class DnsResolver implements Resolver {
   private startResolutionWithBackoff() {
     if (this.pendingLookupPromise === null) {
       this.continueResolving = false;
-      this.startResolution();
       this.backoff.runOnce();
       this.startNextResolutionTimer();
+      this.startResolution();
     }
   }
 
@@ -352,6 +353,11 @@ class DnsResolver implements Resolver {
      * fires. Otherwise, start resolving immediately. */
     if (this.pendingLookupPromise === null) {
       if (this.isNextResolutionTimerRunning || this.backoff.isRunning()) {
+        if (this.isNextResolutionTimerRunning) {
+          trace('resolution update delayed by "min time between resolutions" rate limit');
+        } else {
+          trace('resolution update delayed by backoff timer until ' + this.backoff.getEndTime().toISOString());
+        }
         this.continueResolving = true;
       } else {
         this.startResolutionWithBackoff();

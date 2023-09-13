@@ -222,6 +222,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
          * In that case, the backoff timer callback will call
          * updateResolution */
         if (this.backoffTimeout.isRunning()) {
+          trace('requestReresolution delayed by backoff timer until ' + this.backoffTimeout.getEndTime().toISOString());
           this.continueResolving = true;
         } else {
           this.updateResolution();
@@ -247,6 +248,8 @@ export class ResolvingLoadBalancer implements LoadBalancer {
           configSelector: ConfigSelector | null,
           attributes: { [key: string]: unknown }
         ) => {
+          this.backoffTimeout.stop();
+          this.backoffTimeout.reset();
           let workingServiceConfig: ServiceConfig | null = null;
           /* This first group of conditionals implements the algorithm described
            * in https://github.com/grpc/proposal/blob/master/A21-service-config-error-handling.md
