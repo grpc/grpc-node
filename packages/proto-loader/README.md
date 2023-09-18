@@ -87,7 +87,8 @@ Options:
   -I, --includeDirs      Directories to search for included files        [array]
   -O, --outDir           Directory in which to output files  [string] [required]
       --grpcLib          The gRPC implementation library that these types will
-                         be used with                        [string] [required]
+                         be used with. If not provided, some types will not be
+                         generated                                      [string]
       --inputTemplate    Template for mapping input or "permissive" type names
                                                         [string] [default: "%s"]
       --outputTemplate   Template for mapping output or "restricted" type names

@@ -39,7 +39,7 @@ const useNameFmter = ({outputTemplate, inputTemplate}: GeneratorOptions) => {
 
 type GeneratorOptions = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
   includeDirs?: string[];
-  grpcLib: string;
+  grpcLib?: string;
   outDir: string;
   verbose?: boolean;
   includeComments?: boolean;
@@ -522,12 +522,12 @@ function generateEnumInterface(formatter: TextFormatter, enumType: Protobuf.Enum
  * We always generate two service client methods per service method: one camel
  * cased, and one with the original casing. So we will still generate one
  * service client method for any conflicting name.
- * 
+ *
  * Technically, at runtime conflicting name in the service client method
  * actually shadows the original method, but TypeScript does not have a good
  * way to represent that. So this change is not 100% accurate, but it gets the
  * generated code to compile.
- * 
+ *
  * This is just a list of the methods in the Client class definitions in
  * grpc@1.24.11 and @grpc/grpc-js@1.4.0.
  */
@@ -640,7 +640,11 @@ function generateServiceHandlerInterface(formatter: TextFormatter, serviceType: 
 
 function generateServiceDefinitionInterface(formatter: TextFormatter, serviceType: Protobuf.Service, options: GeneratorOptions) {
   const {inputName, outputName} = useNameFmter(options);
-  formatter.writeLine(`export interface ${serviceType.name}Definition extends grpc.ServiceDefinition {`);
+  if (options.grpcLib) {
+    formatter.writeLine(`export interface ${serviceType.name}Definition extends grpc.ServiceDefinition {`);
+  } else {
+    formatter.writeLine(`export interface ${serviceType.name}Definition {`);
+  }
   formatter.indent();
   for (const methodName of Object.keys(serviceType.methods).sort()) {
     const method = serviceType.methods[methodName];
@@ -655,8 +659,10 @@ function generateServiceDefinitionInterface(formatter: TextFormatter, serviceTyp
 function generateServiceInterfaces(formatter: TextFormatter, serviceType: Protobuf.Service, options: GeneratorOptions) {
   formatter.writeLine(`// Original file: ${(serviceType.filename ?? 'null')?.replace(/\\/g, '/')}`);
   formatter.writeLine('');
-  const grpcImportPath = options.grpcLib.startsWith('.') ? getPathToRoot(serviceType) + options.grpcLib : options.grpcLib;
-  formatter.writeLine(`import type * as grpc from '${grpcImportPath}'`);
+  if (options.grpcLib) {
+    const grpcImportPath = options.grpcLib.startsWith('.') ? getPathToRoot(serviceType) + options.grpcLib : options.grpcLib;
+    formatter.writeLine(`import type * as grpc from '${grpcImportPath}'`);
+  }
   formatter.writeLine(`import type { MethodDefinition } from '@grpc/proto-loader'`)
   const dependencies: Set<Protobuf.Type> = new Set<Protobuf.Type>();
   for (const method of serviceType.methodsArray) {
@@ -668,11 +674,13 @@ function generateServiceInterfaces(formatter: TextFormatter, serviceType: Protob
   }
   formatter.writeLine('');
 
-  generateServiceClientInterface(formatter, serviceType, options);
-  formatter.writeLine('');
+  if (options.grpcLib) {
+    generateServiceClientInterface(formatter, serviceType, options);
+    formatter.writeLine('');
 
-  generateServiceHandlerInterface(formatter, serviceType, options);
-  formatter.writeLine('');
+    generateServiceHandlerInterface(formatter, serviceType, options);
+    formatter.writeLine('');
+  }
 
   generateServiceDefinitionInterface(formatter, serviceType, options);
 }
@@ -742,6 +750,9 @@ function generateLoadedDefinitionTypes(formatter: TextFormatter, namespace: Prot
 }
 
 function generateRootFile(formatter: TextFormatter, root: Protobuf.Root, options: GeneratorOptions) {
+  if (!options.grpcLib) {
+    return;
+  }
   formatter.writeLine(`import type * as grpc from '${options.grpcLib}';`);
   generateDefinitionImports(formatter, root, options);
   formatter.writeLine('');
@@ -802,11 +813,13 @@ function writeFilesForRoot(root: Protobuf.Root, masterFileName: string, options:
   const filePromises: Promise<void>[] = [];
 
   const masterFileFormatter = new TextFormatter();
-  generateRootFile(masterFileFormatter, root, options);
-  if (options.verbose) {
-    console.log(`Writing ${options.outDir}/${masterFileName}`);
+  if (options.grpcLib) {
+    generateRootFile(masterFileFormatter, root, options);
+    if (options.verbose) {
+      console.log(`Writing ${options.outDir}/${masterFileName}`);
+    }
+    filePromises.push(writeFile(`${options.outDir}/${masterFileName}`, masterFileFormatter.getFullText()));
   }
-  filePromises.push(writeFile(`${options.outDir}/${masterFileName}`, masterFileFormatter.getFullText()));
 
   filePromises.push(...generateFilesForNamespace(root, options));
 
@@ -898,12 +911,12 @@ async function runScript() {
       includeComments: 'Generate doc comments from comments in the original files',
       includeDirs: 'Directories to search for included files',
       outDir: 'Directory in which to output files',
-      grpcLib: 'The gRPC implementation library that these types will be used with',
+      grpcLib: 'The gRPC implementation library that these types will be used with. If not provided, some types will not be generated',
       inputTemplate: 'Template for mapping input or "permissive" type names',
       outputTemplate: 'Template for mapping output or "restricted" type names',
       inputBranded: 'Output property for branded type for  "permissive" types with fullName of the Message as its value',
       outputBranded: 'Output property for branded type for  "restricted" types with fullName of the Message as its value',
-    }).demandOption(['outDir', 'grpcLib'])
+    }).demandOption(['outDir'])
     .demand(1)
     .usage('$0 [options] filenames...')
     .epilogue('WARNING: This tool is in alpha. The CLI and generated code are subject to change')
