@@ -1,6 +1,6 @@
 {
   "name": "grpc-health-check",
-  "version": "1.8.0",
+  "version": "2.0.0",
   "author": "Google Inc.",
   "description": "Health check client and service for use with gRPC-node",
   "repository": {
@@ -14,18 +14,27 @@
       "email": "mlumish@google.com"
     }
   ],
+  "scripts": {
+    "compile": "tsc -p .",
+    "prepare": "npm run generate-types && npm run compile",
+    "generate-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --includeComments --includeDirs proto/ -O src/generated health/v1/health.proto",
+    "generate-test-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --includeComments --includeDirs proto/ -O test/generated --grpcLib=@grpc/grpc-js health/v1/health.proto"
+  },
   "dependencies": {
-    "google-protobuf": "^3.4.0",
-    "grpc": "^1.6.0",
-    "lodash.clone": "^4.5.0",
-    "lodash.get": "^4.4.2"
+    "@grpc/proto-loader": "^0.7.10",
+    "typescript": "^5.2.2"
   },
   "files": [
     "LICENSE",
     "README.md",
-    "health.js",
-    "v1"
+    "src",
+    "build",
+    "proto"
   ],
-  "main": "health.js",
-  "license": "Apache-2.0"
+  "main": "build/src/health.js",
+  "types": "build/src/health.d.ts",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@grpc/grpc-js": "file:../grpc-js"
+  }
 }
