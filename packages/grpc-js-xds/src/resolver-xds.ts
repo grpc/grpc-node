@@ -213,7 +213,7 @@ function getPredicateForMatcher(routeMatch: RouteMatch__Output): Matcher {
  * the ServiceConfig definition. The difference is that the protobuf message
  * defines seconds as a long, which is represented as a string in JavaScript,
  * and the one used in the service config defines it as a number.
- * @param duration 
+ * @param duration
  */
 function protoDurationToDuration(duration: Duration__Output): Duration {
   return {
@@ -235,7 +235,7 @@ function getDefaultRetryMaxInterval(baseInterval: string): string {
 /**
  * Encode a text string as a valid path of a URI, as specified in RFC-3986 section 3.3
  * @param uriPath A value representing an unencoded URI path
- * @returns 
+ * @returns
  */
 function encodeURIPath(uriPath: string): string {
   return uriPath.replace(/[^A-Za-z0-9._~!$&^()*+,;=/-]/g, substring => encodeURIComponent(substring));
@@ -447,7 +447,7 @@ class XdsResolver implements Resolver {
           }
         }
       }
-      let retryPolicy: RetryPolicy | undefined = undefined; 
+      let retryPolicy: RetryPolicy | undefined = undefined;
       if (EXPERIMENTAL_RETRY) {
         const retryConfig = route.route!.retry_policy ?? virtualHost.retry_policy;
         if (retryConfig) {
@@ -458,10 +458,10 @@ class XdsResolver implements Resolver {
             }
           }
           if (retryableStatusCodes.length > 0) {
-            const baseInterval = retryConfig.retry_back_off?.base_interval ? 
-              protoDurationToSecondsString(retryConfig.retry_back_off.base_interval) : 
+            const baseInterval = retryConfig.retry_back_off?.base_interval ?
+              protoDurationToSecondsString(retryConfig.retry_back_off.base_interval) :
               DEFAULT_RETRY_BASE_INTERVAL;
-            const maxInterval = retryConfig.retry_back_off?.max_interval ? 
+            const maxInterval = retryConfig.retry_back_off?.max_interval ?
               protoDurationToSecondsString(retryConfig.retry_back_off.max_interval) :
               getDefaultRetryMaxInterval(baseInterval);
             retryPolicy = {
@@ -664,9 +664,11 @@ class XdsResolver implements Resolver {
   destroy() {
     if (this.listenerResourceName) {
       ListenerResourceType.cancelWatch(this.xdsClient, this.listenerResourceName, this.ldsWatcher);
+      this.isLdsWatcherActive = false;
     }
     if (this.latestRouteConfigName) {
       RouteConfigurationResourceType.cancelWatch(this.xdsClient, this.latestRouteConfigName, this.rdsWatcher);
+      this.latestRouteConfigName = null;
     }
   }
 
