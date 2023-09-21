@@ -38,6 +38,7 @@ import PickResultType = experimental.PickResultType;
 import createChildChannelControlHelper = experimental.createChildChannelControlHelper;
 import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
+import { PickFirst } from "../src/generated/envoy/extensions/load_balancing_policies/pick_first/v3/PickFirst";
 
 const LB_POLICY_NAME = 'test.RpcBehaviorLoadBalancer';
 
@@ -297,5 +298,28 @@ describe('Custom LB policies', () => {
         done();
       });
     }, reason => done(reason));
-  })
+  });
+  it('Should handle pick_first', done => {
+    const lbPolicy: PickFirst & AnyExtension = {
+      '@type': 'type.googleapis.com/envoy.extensions.load_balancing_policies.pick_first.v3.PickFirst',
+      shuffle_address_list: true
+    };
+    const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [new Backend()], locality:{region: 'region1'}}], lbPolicy);
+    const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
+    routeGroup.startAllBackends().then(() => {
+      xdsServer.setEdsResource(cluster.getEndpointConfig());
+      xdsServer.setCdsResource(cluster.getClusterConfig());
+      xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
+      xdsServer.setLdsResource(routeGroup.getListener());
+      xdsServer.addResponseListener((typeUrl, responseState) => {
+        if (responseState.state === 'NACKED') {
+          client.stopCalls();
+          assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
+        }
+      })
+      client = XdsTestClient.createFromServer('listener1', xdsServer);
+      client.sendOneCall(done);
+    }, reason => done(reason));
+  });
+
 });

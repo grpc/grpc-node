@@ -45,6 +45,7 @@ const loadedProtos = loadPackageDefinition(loadSync(
     'envoy/extensions/load_balancing_policies/round_robin/v3/round_robin.proto',
     'envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto',
     'envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.proto',
+    'envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.proto',
     'xds/type/v3/typed_struct.proto'
   ],
   {
