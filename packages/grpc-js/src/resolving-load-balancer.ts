@@ -264,7 +264,11 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   private updateResolution() {
     this.innerResolver.updateResolution();
     if (this.currentState === ConnectivityState.IDLE) {
-      this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
+      /* this.latestChildPicker is initialized as new QueuePicker(this), which
+       * is an appropriate value here if the child LB policy is unset.
+       * Otherwise, we want to delegate to the child here, in case that
+       * triggers something. */
+      this.updateState(ConnectivityState.CONNECTING, this.latestChildPicker);
     }
     this.backoffTimeout.runOnce();
   }
