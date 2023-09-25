@@ -19,22 +19,32 @@ import * as gulp from 'gulp';
 import * as mocha from 'gulp-mocha';
 import * as execa from 'execa';
 import * as path from 'path';
-import * as del from 'del';
-import {linkSync} from '../../util';
 
 const healthCheckDir = __dirname;
-const baseDir = path.resolve(healthCheckDir, '..', '..');
-const testDir = path.resolve(healthCheckDir, 'test');
+const outDir = path.resolve(healthCheckDir, 'build');
 
-const runInstall = () => execa('npm', ['install', '--unsafe-perm'], {cwd: healthCheckDir, stdio: 'inherit'});
+const execNpmVerb = (verb: string, ...args: string[]) =>
+  execa('npm', [verb, ...args], {cwd: healthCheckDir, stdio: 'inherit'});
+const execNpmCommand = execNpmVerb.bind(null, 'run');
 
-const runRebuild = () => execa('npm', ['rebuild', '--unsafe-perm'], {cwd: healthCheckDir, stdio: 'inherit'});
+const install = () => execNpmVerb('install', '--unsafe-perm');
 
-const install = gulp.series(runInstall, runRebuild);
+/**
+ * Transpiles TypeScript files in src/ to JavaScript according to the settings
+ * found in tsconfig.json.
+ */
+const compile = () => execNpmCommand('compile');
 
-const test = () => gulp.src(`${testDir}/*.js`).pipe(mocha({reporter: 'mocha-jenkins-reporter'}));
+const runTests = () => {
+  return gulp.src(`${outDir}/test/**/*.js`)
+    .pipe(mocha({reporter: 'mocha-jenkins-reporter',
+                 require: ['ts-node/register']}));
+};
+
+const test = gulp.series(install, runTests);
 
 export {
   install,
+  compile,
   test
 }
