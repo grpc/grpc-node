@@ -161,6 +161,7 @@ export class Server {
   >();
   private sessions = new Map<http2.ServerHttp2Session, ChannelzSessionInfo>();
   private started = false;
+  private shutdown = false;
   private options: ChannelOptions;
   private serverAddressString = 'null';
 
@@ -375,6 +376,10 @@ export class Server {
       throw new Error('server is already started');
     }
 
+    if (this.shutdown) {
+      throw new Error('bindAsync called after shutdown');
+    }
+
     if (typeof port !== 'string') {
       throw new TypeError('port must be a string');
     }
@@ -485,6 +490,11 @@ export class Server {
             http2Server.once('error', onError);
 
             http2Server.listen(addr, () => {
+              if (this.shutdown) {
+                http2Server.close();
+                resolve(new Error('bindAsync failed because server is shutdown'));
+                return;
+              }
               const boundAddress = http2Server.address()!;
               let boundSubchannelAddress: SubchannelAddress;
               if (typeof boundAddress === 'string') {
@@ -583,6 +593,11 @@ export class Server {
         http2Server.once('error', onError);
 
         http2Server.listen(address, () => {
+          if (this.shutdown) {
+            http2Server.close();
+            resolve({port: 0, count: 0});
+            return;
+          }
           const boundAddress = http2Server.address() as AddressInfo;
           const boundSubchannelAddress: SubchannelAddress = {
             host: boundAddress.address,
@@ -637,6 +652,12 @@ export class Server {
       ) => {
         // We only want one resolution result. Discard all future results
         resolverListener.onSuccessfulResolution = () => {};
+        if (this.shutdown) {
+          deferredCallback(
+            new Error(`bindAsync failed because server is shutdown`),
+            0
+          );
+        }
         if (addressList.length === 0) {
           deferredCallback(
             new Error(`No addresses resolved for port ${port}`),
@@ -707,6 +728,7 @@ export class Server {
     }
 
     this.started = false;
+    this.shutdown = true;
 
     // Always destroy any available sessions. It's possible that one or more
     // tryShutdown() calls are in progress. Don't wait on them to finish.
@@ -785,6 +807,7 @@ export class Server {
 
     // Close the server if necessary.
     this.started = false;
+    this.shutdown = true;
 
     for (const { server: http2Server, channelzRef: ref } of this
       .http2ServerList) {
