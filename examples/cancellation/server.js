@@ -38,11 +38,13 @@ function bidirectionalStreamingEcho(call) {
     console.log(`echoing message "${message}"`);
     call.write({message: message});
   });
+  // Either 'end' or 'cancelled' will be emitted when the call is cancelled
   call.on('end', () => {
+    console.log('server received end event')
     call.end();
   });
   call.on('cancelled', () => {
-    console.log('received cancelled event');
+    console.log('server received cancelled event');
   });
 }
 
