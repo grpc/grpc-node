@@ -163,8 +163,8 @@ export abstract class ChannelCredentials {
 }
 
 class InsecureChannelCredentialsImpl extends ChannelCredentials {
-  constructor(callCredentials?: CallCredentials) {
-    super(callCredentials);
+  constructor() {
+    super();
   }
 
   compose(callCredentials: CallCredentials): never {
