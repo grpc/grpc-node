@@ -97,16 +97,13 @@ export interface Picker {
  */
 export class UnavailablePicker implements Picker {
   private status: StatusObject;
-  constructor(status?: StatusObject) {
-    if (status !== undefined) {
-      this.status = status;
-    } else {
-      this.status = {
-        code: Status.UNAVAILABLE,
-        details: 'No connection established',
-        metadata: new Metadata(),
-      };
-    }
+  constructor(status?: Partial<StatusObject>) {
+    this.status = {
+      code: Status.UNAVAILABLE,
+      details: 'No connection established',
+      metadata: new Metadata(),
+      ...status,
+    };
   }
   pick(pickArgs: PickArgs): TransientFailurePickResult {
     return {

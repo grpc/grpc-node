@@ -741,6 +741,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
         connectionOptions
       );
       this.session = session;
+      let errorMessage = 'Failed to connect';
       session.unref();
       session.once('connect', () => {
         session.removeAllListeners();
@@ -749,10 +750,14 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       });
       session.once('close', () => {
         this.session = null;
-        reject();
+        // Leave time for error event to happen before rejecting
+        setImmediate(() => {
+          reject(`${errorMessage} (${new Date().toISOString()})`);
+        });
       });
       session.once('error', error => {
-        this.trace('connection failed with error ' + (error as Error).message);
+        errorMessage = (error as Error).message;
+        this.trace('connection failed with error ' + errorMessage);
       });
     });
   }

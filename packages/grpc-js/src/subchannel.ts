@@ -250,7 +250,8 @@ export class Subchannel {
         error => {
           this.transitionToState(
             [ConnectivityState.CONNECTING],
-            ConnectivityState.TRANSIENT_FAILURE
+            ConnectivityState.TRANSIENT_FAILURE,
+            `${error}`
           );
         }
       );
@@ -265,7 +266,8 @@ export class Subchannel {
    */
   private transitionToState(
     oldStates: ConnectivityState[],
-    newState: ConnectivityState
+    newState: ConnectivityState,
+    errorMessage?: string
   ): boolean {
     if (oldStates.indexOf(this.connectivityState) === -1) {
       return false;
@@ -318,7 +320,7 @@ export class Subchannel {
         throw new Error(`Invalid state: unknown ConnectivityState ${newState}`);
     }
     for (const listener of this.stateListeners) {
-      listener(this, previousState, newState, this.keepaliveTime);
+      listener(this, previousState, newState, this.keepaliveTime, errorMessage);
     }
     return true;
   }
