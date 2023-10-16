@@ -16,6 +16,7 @@
  */
 
 import * as http2 from 'http2';
+import * as util from 'util';
 import { AddressInfo } from 'net';
 
 import { ServiceError } from './call';
@@ -89,6 +90,17 @@ interface BindResult {
 
 function noop(): void {}
 
+/**
+ * Decorator to wrap a class method with util.deprecate
+ * @param message The message to output if the deprecated method is called
+ * @returns
+ */
+function deprecate(message: string) {
+  return function <This, Args extends any[], Return>(target: (this: This, ...args: Args) => Return, context: ClassMethodDecoratorContext<This, (this: This, ...args: Args) => Return>) {
+    return util.deprecate(target, message);
+  }
+}
+
 function getUnimplementedStatusResponse(
   methodName: string
 ): Partial<ServiceError> {
@@ -160,6 +172,10 @@ export class Server {
     UntypedHandler
   >();
   private sessions = new Map<http2.ServerHttp2Session, ChannelzSessionInfo>();
+  /**
+   * This field only exists to ensure that the start method throws an error if
+   * it is called twice, as it did previously.
+   */
   private started = false;
   private options: ChannelOptions;
   private serverAddressString = 'null';
@@ -371,10 +387,6 @@ export class Server {
     creds: ServerCredentials,
     callback: (error: Error | null, port: number) => void
   ): void {
-    if (this.started === true) {
-      throw new Error('server is already started');
-    }
-
     if (typeof port !== 'string') {
       throw new TypeError('port must be a string');
     }
@@ -709,8 +721,6 @@ export class Server {
       }
     }
 
-    this.started = false;
-
     // Always destroy any available sessions. It's possible that one or more
     // tryShutdown() calls are in progress. Don't wait on them to finish.
     this.sessions.forEach((channelzInfo, session) => {
@@ -750,6 +760,10 @@ export class Server {
     return this.handlers.delete(name);
   }
 
+  /**
+   * @deprecated No longer needed as of version 1.10.x
+   */
+  @deprecate('Calling start() is no longer necessary. It can be safely omitted.')
   start(): void {
     if (
       this.http2ServerList.length === 0 ||
@@ -762,9 +776,6 @@ export class Server {
 
     if (this.started === true) {
       throw new Error('server is already started');
-    }
-    if (this.channelzEnabled) {
-      this.channelzTrace.addTrace('CT_INFO', 'Starting');
     }
     this.started = true;
   }
@@ -785,9 +796,6 @@ export class Server {
         wrappedCallback();
       }
     }
-
-    // Close the server if necessary.
-    this.started = false;
 
     for (const { server: http2Server, channelzRef: ref } of this
       .http2ServerList) {
@@ -1053,10 +1061,6 @@ export class Server {
 
     http2Server.on('stream', handler.bind(this));
     http2Server.on('session', session => {
-      if (!this.started) {
-        session.destroy();
-        return;
-      }
 
       const channelzRef = registerChannelzSocket(
         session.socket.remoteAddress ?? 'unknown',
