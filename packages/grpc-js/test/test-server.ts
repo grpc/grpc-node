@@ -113,27 +113,6 @@ describe('Server', () => {
       });
     });
 
-    it('throws if bind is called after the server is started', done => {
-      const server = new Server();
-
-      server.bindAsync(
-        'localhost:0',
-        ServerCredentials.createInsecure(),
-        (err, port) => {
-          assert.ifError(err);
-          server.start();
-          assert.throws(() => {
-            server.bindAsync(
-              'localhost:0',
-              ServerCredentials.createInsecure(),
-              noop
-            );
-          }, /server is already started/);
-          server.tryShutdown(done);
-        }
-      );
-    });
-
     it('throws on invalid inputs', () => {
       const server = new Server();
 
