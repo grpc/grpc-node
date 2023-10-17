@@ -153,9 +153,11 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   private subchannelStateListener: ConnectivityStateListener = (
     subchannel,
     previousState,
-    newState
+    newState,
+    keepaliveTime,
+    errorMessage
   ) => {
-    this.onSubchannelStateUpdate(subchannel, previousState, newState);
+    this.onSubchannelStateUpdate(subchannel, previousState, newState, errorMessage);
   };
   /**
    * Timer reference for the timer tracking when to start
@@ -171,6 +173,12 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    * the LB policy continuously attempts to connect to all of its subchannels.
    */
   private stickyTransientFailureMode = false;
+
+  /**
+   * The most recent error reported by any subchannel as it transitioned to
+   * TRANSIENT_FAILURE.
+   */
+  private lastError: string | null = null;
 
   /**
    * Load balancer that attempts to connect to each backend in the address list
@@ -200,7 +208,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       if (this.stickyTransientFailureMode) {
         this.updateState(
           ConnectivityState.TRANSIENT_FAILURE,
-          new UnavailablePicker()
+          new UnavailablePicker({details: `No connection established. Last error: ${this.lastError}`})
         );
       } else {
         this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
@@ -241,7 +249,8 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   private onSubchannelStateUpdate(
     subchannel: SubchannelInterface,
     previousState: ConnectivityState,
-    newState: ConnectivityState
+    newState: ConnectivityState,
+    errorMessage?: string
   ) {
     if (this.currentPick?.realSubchannelEquals(subchannel)) {
       if (newState !== ConnectivityState.READY) {
@@ -258,6 +267,9 @@ export class PickFirstLoadBalancer implements LoadBalancer {
         }
         if (newState === ConnectivityState.TRANSIENT_FAILURE) {
           child.hasReportedTransientFailure = true;
+          if (errorMessage) {
+            this.lastError = errorMessage;
+          }
           this.maybeEnterStickyTransientFailureMode();
           if (index === this.currentSubchannelIndex) {
             this.startNextSubchannelConnecting(index + 1);

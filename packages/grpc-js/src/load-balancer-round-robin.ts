@@ -105,18 +105,24 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
 
   private currentReadyPicker: RoundRobinPicker | null = null;
 
+  private lastError: string | null = null;
+
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
     this.subchannelStateListener = (
       subchannel: SubchannelInterface,
       previousState: ConnectivityState,
-      newState: ConnectivityState
+      newState: ConnectivityState,
+      keepaliveTime: number,
+      errorMessage?: string
     ) => {
       this.calculateAndUpdateState();
-
       if (
         newState === ConnectivityState.TRANSIENT_FAILURE ||
         newState === ConnectivityState.IDLE
       ) {
+        if (errorMessage) {
+          this.lastError = errorMessage;
+        }
         this.channelControlHelper.requestReresolution();
         subchannel.startConnecting();
       }
@@ -157,7 +163,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     ) {
       this.updateState(
         ConnectivityState.TRANSIENT_FAILURE,
-        new UnavailablePicker()
+        new UnavailablePicker({details: `No connection established. Last error: ${this.lastError}`})
       );
     } else {
       this.updateState(ConnectivityState.IDLE, new QueuePicker(this));

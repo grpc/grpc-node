@@ -23,7 +23,8 @@ export type ConnectivityStateListener = (
   subchannel: SubchannelInterface,
   previousState: ConnectivityState,
   newState: ConnectivityState,
-  keepaliveTime: number
+  keepaliveTime: number,
+  errorMessage?: string
 ) => void;
 
 /**
