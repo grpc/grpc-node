@@ -273,14 +273,7 @@ import * as load_balancer_outlier_detection from './load-balancer-outlier-detect
 import * as channelz from './channelz';
 import { Deadline } from './deadline';
 
-const clientVersion = require('../../package.json').version;
-
 (() => {
-  logging.trace(
-    LogVerbosity.DEBUG,
-    'index',
-    'Loading @grpc/grpc-js version ' + clientVersion
-  );
   resolver_dns.setup();
   resolver_uds.setup();
   resolver_ip.setup();
