@@ -175,6 +175,12 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   private stickyTransientFailureMode = false;
 
   /**
+   * Indicates whether we called channelControlHelper.requestReresolution since
+   * the last call to updateAddressList
+   */
+  private requestedResolutionSinceLastUpdate = false;
+
+  /**
    * The most recent error reported by any subchannel as it transitioned to
    * TRANSIENT_FAILURE.
    */
@@ -216,15 +222,28 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     }
   }
 
+  private requestReresolution() {
+    this.requestedResolutionSinceLastUpdate = true;
+    this.channelControlHelper.requestReresolution();
+  }
+
   private maybeEnterStickyTransientFailureMode() {
-    if (this.stickyTransientFailureMode) {
-      return;
-    }
     if (!this.allChildrenHaveReportedTF()) {
       return;
     }
+    if (!this.requestedResolutionSinceLastUpdate) {
+      /* Each time we get an update we reset each subchannel's
+       * hasReportedTransientFailure flag, so the next time we get to this
+       * point after that, each subchannel has reported TRANSIENT_FAILURE
+       * at least once since then. That is the trigger for requesting
+       * reresolution, whether or not the LB policy is already in sticky TF
+       * mode. */
+      this.requestReresolution();
+    }
+    if (this.stickyTransientFailureMode) {
+      return;
+    }
     this.stickyTransientFailureMode = true;
-    this.channelControlHelper.requestReresolution();
     for (const { subchannel } of this.children) {
       subchannel.startConnecting();
     }
@@ -256,7 +275,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       if (newState !== ConnectivityState.READY) {
         this.removeCurrentPick();
         this.calculateAndReportNewState();
-        this.channelControlHelper.requestReresolution();
+        this.requestReresolution();
       }
       return;
     }
@@ -283,7 +302,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   private startNextSubchannelConnecting(startIndex: number) {
     clearTimeout(this.connectionDelayTimeout);
-    if (this.triedAllSubchannels || this.stickyTransientFailureMode) {
+    if (this.triedAllSubchannels) {
       return;
     }
     for (const [index, child] of this.children.entries()) {
@@ -382,6 +401,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     this.currentSubchannelIndex = 0;
     this.children = [];
     this.triedAllSubchannels = false;
+    this.requestedResolutionSinceLastUpdate = false;
   }
 
   updateAddressList(
