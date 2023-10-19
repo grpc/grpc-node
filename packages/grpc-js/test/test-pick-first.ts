@@ -41,7 +41,11 @@ function updateStateCallBackForExpectedStateSequence(
 ) {
   const actualStateSequence: ConnectivityState[] = [];
   let lastPicker: Picker | null = null;
+  let finished = false;
   return (connectivityState: ConnectivityState, picker: Picker) => {
+    if (finished) {
+      return;
+    }
     // Ignore duplicate state transitions
     if (
       connectivityState === actualStateSequence[actualStateSequence.length - 1]
@@ -60,6 +64,7 @@ function updateStateCallBackForExpectedStateSequence(
     if (
       expectedStateSequence[actualStateSequence.length] !== connectivityState
     ) {
+      finished = true;
       done(
         new Error(
           `Unexpected state ${
@@ -69,10 +74,12 @@ function updateStateCallBackForExpectedStateSequence(
           )}]`
         )
       );
+      return;
     }
     actualStateSequence.push(connectivityState);
     lastPicker = picker;
     if (actualStateSequence.length === expectedStateSequence.length) {
+      finished = true;
       done();
     }
   };
@@ -90,7 +97,7 @@ describe('Shuffler', () => {
   });
 });
 
-describe('pick_first load balancing policy', () => {
+describe.only('pick_first load balancing policy', () => {
   const config = new PickFirstLoadBalancingConfig(false);
   let subchannels: MockSubchannel[] = [];
   const baseChannelControlHelper: ChannelControlHelper = {
@@ -459,6 +466,87 @@ describe('pick_first load balancing policy', () => {
       pickFirst.updateAddressList([{ host: 'localhost', port: 2 }], config);
       process.nextTick(() => {
         subchannels[0].transitionToState(ConnectivityState.IDLE);
+      });
+    });
+  });
+  it('Should request reresolution every time each child reports TF', done => {
+    let reresolutionRequestCount = 0;
+    const targetReresolutionRequestCount = 3;
+    const currentStartState = ConnectivityState.IDLE;
+    const channelControlHelper = createChildChannelControlHelper(
+      baseChannelControlHelper,
+      {
+        createSubchannel: (subchannelAddress, subchannelArgs) => {
+          const subchannel = new MockSubchannel(
+            subchannelAddressToString(subchannelAddress),
+            currentStartState
+          );
+          subchannels.push(subchannel);
+          return subchannel;
+        },
+        updateState: updateStateCallBackForExpectedStateSequence(
+          [ConnectivityState.CONNECTING, ConnectivityState.TRANSIENT_FAILURE],
+          err => setImmediate(() => {
+            assert.strictEqual(reresolutionRequestCount, targetReresolutionRequestCount);
+            done(err);
+          })
+        ),
+        requestReresolution: () => {
+          reresolutionRequestCount += 1;
+        }
+      }
+    );
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper);
+    pickFirst.updateAddressList([{ host: 'localhost', port: 1 }], config);
+    process.nextTick(() => {
+      subchannels[0].transitionToState(ConnectivityState.TRANSIENT_FAILURE);
+      process.nextTick(() => {
+        pickFirst.updateAddressList([{ host: 'localhost', port: 2 }], config);
+        process.nextTick(() => {
+          subchannels[1].transitionToState(ConnectivityState.TRANSIENT_FAILURE);
+          process.nextTick(() => {
+            pickFirst.updateAddressList([{ host: 'localhost', port: 3 }], config);
+            process.nextTick(() => {
+              subchannels[2].transitionToState(ConnectivityState.TRANSIENT_FAILURE);
+            });
+          });
+        });
+      });
+    });
+  });
+  it('Should request reresolution if the new subchannels are already in TF', done => {
+    let reresolutionRequestCount = 0;
+    const targetReresolutionRequestCount = 3;
+    const currentStartState = ConnectivityState.TRANSIENT_FAILURE;
+    const channelControlHelper = createChildChannelControlHelper(
+      baseChannelControlHelper,
+      {
+        createSubchannel: (subchannelAddress, subchannelArgs) => {
+          const subchannel = new MockSubchannel(
+            subchannelAddressToString(subchannelAddress),
+            currentStartState
+          );
+          subchannels.push(subchannel);
+          return subchannel;
+        },
+        updateState: updateStateCallBackForExpectedStateSequence(
+          [ConnectivityState.TRANSIENT_FAILURE],
+          err => setImmediate(() => {
+            assert.strictEqual(reresolutionRequestCount, targetReresolutionRequestCount);
+            done(err);
+          })
+        ),
+        requestReresolution: () => {
+          reresolutionRequestCount += 1;
+        }
+      }
+    );
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper);
+    pickFirst.updateAddressList([{ host: 'localhost', port: 1 }], config);
+    process.nextTick(() => {
+      pickFirst.updateAddressList([{ host: 'localhost', port: 2 }], config);
+      process.nextTick(() => {
+        pickFirst.updateAddressList([{ host: 'localhost', port: 2 }], config);
       });
     });
   });
