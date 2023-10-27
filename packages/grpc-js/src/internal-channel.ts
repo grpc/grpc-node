@@ -554,7 +554,7 @@ export class InternalChannel {
   }
 
   private maybeStartIdleTimer() {
-    if (this.callCount === 0) {
+    if (this.connectivityState !== ConnectivityState.SHUTDOWN && this.callCount === 0) {
       this.idleTimer = setTimeout(() => {
         this.trace(
           'Idle timer triggered after ' +
@@ -706,6 +706,9 @@ export class InternalChannel {
     this.resolvingLoadBalancer.destroy();
     this.updateState(ConnectivityState.SHUTDOWN);
     clearInterval(this.callRefTimer);
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+    }
     if (this.channelzEnabled) {
       unregisterChannelzRef(this.channelzRef);
     }
