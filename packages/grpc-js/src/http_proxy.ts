@@ -189,12 +189,16 @@ export function getProxiedConnection(
   if (parsedTarget === null) {
     return Promise.resolve<ProxyConnectionResult>({});
   }
+  const targetHostPost = splitHostPort(parsedTarget.path);
+  if (targetHostPost === null) {
+    return Promise.resolve<ProxyConnectionResult>({});
+  }
   const options: http.RequestOptions = {
     method: 'CONNECT',
-    path: parsedTarget.path,
+    path: targetHostPost.host + ':' + (targetHostPost.port != null ? targetHostPost.port : '443'),
   };
   const headers: http.OutgoingHttpHeaders = {
-    Host: parsedTarget.path,
+    Host: targetHostPost.host + ':' + (targetHostPost.port != null ? targetHostPost.port : '443'),
   };
   // Connect to the subchannel address as a proxy
   if (isTcpSubchannelAddress(address)) {
