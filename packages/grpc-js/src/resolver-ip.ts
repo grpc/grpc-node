@@ -41,6 +41,7 @@ const DEFAULT_PORT = 443;
 class IpResolver implements Resolver {
   private addresses: SubchannelAddress[] = [];
   private error: StatusObject | null = null;
+  private hasReturnedResult = false;
   constructor(
     target: GrpcUri,
     private listener: ResolverListener,
@@ -87,22 +88,25 @@ class IpResolver implements Resolver {
     trace('Parsed ' + target.scheme + ' address list ' + this.addresses);
   }
   updateResolution(): void {
-    process.nextTick(() => {
-      if (this.error) {
-        this.listener.onError(this.error);
-      } else {
-        this.listener.onSuccessfulResolution(
-          this.addresses,
-          null,
-          null,
-          null,
-          {}
-        );
-      }
-    });
+    if (!this.hasReturnedResult) {
+      this.hasReturnedResult = true;
+      process.nextTick(() => {
+        if (this.error) {
+          this.listener.onError(this.error);
+        } else {
+          this.listener.onSuccessfulResolution(
+            this.addresses,
+            null,
+            null,
+            null,
+            {}
+          );
+        }
+      });
+    }
   }
   destroy(): void {
-    // This resolver owns no resources, so we do nothing here.
+    this.hasReturnedResult = false;
   }
 
   static getDefaultAuthority(target: GrpcUri): string {

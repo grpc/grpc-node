@@ -99,6 +99,7 @@ class DnsResolver implements Resolver {
   private nextResolutionTimer: NodeJS.Timeout;
   private isNextResolutionTimerRunning = false;
   private isServiceConfigEnabled = true;
+  private returnedIpResult = false;
   constructor(
     private target: GrpcUri,
     private listener: ResolverListener,
@@ -163,16 +164,19 @@ class DnsResolver implements Resolver {
    */
   private startResolution() {
     if (this.ipResult !== null) {
-      trace('Returning IP address for target ' + uriToString(this.target));
-      setImmediate(() => {
-        this.listener.onSuccessfulResolution(
-          this.ipResult!,
-          null,
-          null,
-          null,
-          {}
-        );
-      });
+      if (!this.returnedIpResult) {
+        trace('Returning IP address for target ' + uriToString(this.target));
+        setImmediate(() => {
+          this.listener.onSuccessfulResolution(
+            this.ipResult!,
+            null,
+            null,
+            null,
+            {}
+          );
+        });
+        this.returnedIpResult = true;
+      }
       this.backoff.stop();
       this.backoff.reset();
       this.stopNextResolutionTimer();
@@ -380,6 +384,7 @@ class DnsResolver implements Resolver {
     this.latestLookupResult = null;
     this.latestServiceConfig = null;
     this.latestServiceConfigError = null;
+    this.returnedIpResult = false;
   }
 
   /**

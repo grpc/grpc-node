@@ -97,7 +97,7 @@ describe('Shuffler', () => {
   });
 });
 
-describe.only('pick_first load balancing policy', () => {
+describe('pick_first load balancing policy', () => {
   const config = new PickFirstLoadBalancingConfig(false);
   let subchannels: MockSubchannel[] = [];
   const baseChannelControlHelper: ChannelControlHelper = {
