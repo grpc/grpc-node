@@ -43,7 +43,7 @@ function trace(text: string): void {
 /**
  * The default TCP port to connect to if not explicitly specified in the target.
  */
-const DEFAULT_PORT = 443;
+export const DEFAULT_PORT = 443;
 
 const DEFAULT_MIN_TIME_BETWEEN_RESOLUTIONS_MS = 30_000;
 
