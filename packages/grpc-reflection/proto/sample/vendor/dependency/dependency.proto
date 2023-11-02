@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+package vendor.dependency;
+
+message DependentMessage {
+  optional string something = 1;
+}

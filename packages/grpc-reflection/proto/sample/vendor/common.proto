@@ -1,0 +1,15 @@
+syntax = "proto2";
+
+// NOTE: intentionally using the same 'vendor' package here to document the
+// file/package merging behavior of the reflection service.
+//
+// this file should be combined with vendor.proto to a single definition because
+// it's under the same 'vendor' package
+package vendor;
+
+message CommonMessage {
+  optional string common = 1;
+  optional DependentMessage dependency = 2;
+
+  extensions 100 to 199;
+}
