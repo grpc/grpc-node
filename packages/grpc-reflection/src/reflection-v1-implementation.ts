@@ -1,3 +1,4 @@
+import * as path from 'path';
 import {
   FileDescriptorProto,
   FileDescriptorSet,
@@ -9,8 +10,11 @@ import * as protoLoader from '@grpc/proto-loader';
 import { ExtensionNumberResponse__Output } from './generated/grpc/reflection/v1/ExtensionNumberResponse';
 import { FileDescriptorResponse__Output } from './generated/grpc/reflection/v1/FileDescriptorResponse';
 import { ListServiceResponse__Output } from './generated/grpc/reflection/v1/ListServiceResponse';
+import { ServerReflectionRequest } from './generated/grpc/reflection/v1/ServerReflectionRequest';
+import { ServerReflectionResponse } from './generated/grpc/reflection/v1/ServerReflectionResponse';
 import { visit } from './protobuf-visitor';
 import { scope } from './utils';
+import { PROTO_LOADER_OPTS } from './constants';
 
 export class ReflectionError extends Error {
   constructor(
@@ -137,6 +141,70 @@ export class ReflectionV1Implementation {
         },
       }),
     );
+  }
+
+  addToServer(server: Pick<grpc.Server, 'addService'>) {
+    const protoPath = path.join(__dirname, '../proto/grpc/reflection/v1/reflection.proto');
+    const pkgDefinition = protoLoader.loadSync(protoPath, PROTO_LOADER_OPTS);
+    const pkg = grpc.loadPackageDefinition(pkgDefinition) as any;
+
+    server.addService(pkg.grpc.reflection.v1.ServerReflection.service, {
+      ServerReflectionInfo: (
+        stream: grpc.ServerDuplexStream<ServerReflectionRequest, ServerReflectionResponse>
+      ) => {
+        stream.on('end', () => stream.end());
+
+        stream.on('data', (message: ServerReflectionRequest) => {
+          stream.write(this.handleServerReflectionRequest(message));
+        });
+      }
+    });
+  }
+
+  /** Assemble a response for a single server reflection request in the stream */
+  handleServerReflectionRequest(message: ServerReflectionRequest): ServerReflectionResponse {
+    const response: ServerReflectionResponse = {
+      validHost: message.host,
+      originalRequest: message,
+      fileDescriptorResponse: undefined,
+      allExtensionNumbersResponse: undefined,
+      listServicesResponse: undefined,
+      errorResponse: undefined,
+    };
+
+    try {
+      if (message.listServices !== undefined) {
+        response.listServicesResponse = this.listServices(message.listServices);
+      } else if (message.fileContainingSymbol !== undefined) {
+        response.fileDescriptorResponse = this.fileContainingSymbol(message.fileContainingSymbol);
+      } else if (message.fileByFilename !== undefined) {
+        response.fileDescriptorResponse = this.fileByFilename(message.fileByFilename);
+      } else if (message.fileContainingExtension !== undefined) {
+        const { containingType, extensionNumber } = message.fileContainingExtension;
+        response.fileDescriptorResponse = this.fileContainingExtension(containingType, extensionNumber);
+      } else if (message.allExtensionNumbersOfType) {
+        response.allExtensionNumbersResponse = this.allExtensionNumbersOfType(message.allExtensionNumbersOfType);
+      } else {
+        throw new ReflectionError(
+          grpc.status.UNIMPLEMENTED,
+          `Unimplemented method for request: ${message}`,
+        );
+      }
+    } catch (e) {
+      if (e instanceof ReflectionError) {
+        response.errorResponse = {
+          errorCode: e.statusCode,
+          errorMessage: e.message,
+        };
+      } else {
+        response.errorResponse = {
+          errorCode: grpc.status.UNKNOWN,
+          errorMessage: 'Failed to process gRPC reflection request: unknown error',
+        };
+      }
+    }
+
+    return response;
   }
 
   /** List the full names of registered gRPC services

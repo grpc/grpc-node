@@ -15,12 +15,10 @@
       "email": "justinmtimmons@gmail.com"
     }
   ],
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
   "files": [
-    "LICENSE",
-    "README.md",
-    "src",
-    "build",
-    "proto"
+    "build"
   ],
   "license": "Apache-2.0",
   "scripts": {
