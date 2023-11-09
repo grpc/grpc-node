@@ -9,14 +9,9 @@ const INCLUDE_PATH = path.join(__dirname, '../proto/sample/vendor');
 
 const server = new grpc.Server();
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, { includeDirs: [INCLUDE_PATH] });
-const reflection = new ReflectionService(packageDefinition);
+const reflection = new ReflectionService(packageDefinition, { services: ['sample.SampleService'] });
 reflection.addToServer(server);
 
 server.bindAsync('localhost:5000', grpc.ServerCredentials.createInsecure(), () => {
   server.start();
 });
-
-// const protoDescriptor = grpc.loadPackageDefinition(packageDefinition);
-
-
-

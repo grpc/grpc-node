@@ -9,7 +9,7 @@
     "noImplicitReturns": true,
     "pretty": true,
     "sourceMap": true,
-    "strictNullChecks": false,
+    "strict": true,
     "lib": ["es2017"],
     "outDir": "build",
     "target": "es2017",

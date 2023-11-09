@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 
-import { scope } from '../src/utils';
+import { scope } from '../src/implementations/common/utils';
 
 describe('scope', () => {
   it('traverses upwards in the package scope', () => {

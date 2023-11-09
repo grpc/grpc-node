@@ -1,13 +1,9 @@
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 
-import { ReflectionV1Implementation } from './reflection-v1-implementation';
-import { ReflectionV1AlphaImplementation } from './reflection-v1alpha';
-
-interface ReflectionServerOptions {
-  /** whitelist of fully-qualified service names to expose. (Default: expose all) */
-  services?: string[];
-}
+import { ReflectionV1Implementation } from './implementations/reflection-v1';
+import { ReflectionV1AlphaImplementation } from './implementations/reflection-v1alpha';
+import { ReflectionServerOptions } from './implementations/common/interfaces';
 
 /** Analyzes a gRPC package and exposes endpoints providing information about
  *  it according to the gRPC Server Reflection API Specification
@@ -31,21 +27,8 @@ export class ReflectionService {
   private readonly v1Alpha: ReflectionV1AlphaImplementation;
   
   constructor(pkg: protoLoader.PackageDefinition, options?: ReflectionServerOptions) {
-
-    if (options.services) {
-      const whitelist = new Set(options.services);
-
-      for (const key in Object.keys(pkg)) {
-        const value = pkg[key];
-        const isService = value.format !== 'Protocol Buffer 3 DescriptorProto' && value.format !== 'Protocol Buffer 3 EnumDescriptorProto';
-        if (isService && !whitelist.has(key)) {
-          delete pkg[key];
-        }
-      }
-    }
-
-    this.v1 = new ReflectionV1Implementation(pkg);
-    this.v1Alpha = new ReflectionV1AlphaImplementation(pkg);
+    this.v1 = new ReflectionV1Implementation(pkg, options);
+    this.v1Alpha = new ReflectionV1AlphaImplementation(pkg, options);
   }
 
   addToServer(server: Pick<grpc.Server, 'addService'>) {

@@ -9,6 +9,10 @@ service SampleService {
   rpc Hello2 (HelloRequest) returns (CommonMessage) {}
 }
 
+service IgnoreService {
+  rpc Hello (HelloRequest) returns (HelloResponse) {}
+}
+
 message HelloRequest {
   string hello = 1;
   HelloNested nested = 2;

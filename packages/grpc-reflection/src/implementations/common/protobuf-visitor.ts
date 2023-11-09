@@ -101,7 +101,7 @@ export const visit = (file: FileDescriptorProto, visitor: Visitor): void => {
     });
   };
 
-  const packageName = file.getPackage();
+  const packageName = file.getPackage() || '';
   file.getEnumTypeList().forEach((type) => processEnum(packageName, file, type));
   file.getMessageTypeList().forEach((type) => processMessage(packageName, file, type));
   file.getServiceList().forEach((service) => processService(packageName, file, service));

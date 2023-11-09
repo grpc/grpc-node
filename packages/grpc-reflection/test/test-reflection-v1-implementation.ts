@@ -3,14 +3,12 @@ import * as path from 'path';
 import { FileDescriptorProto } from 'google-protobuf/google/protobuf/descriptor_pb';
 import * as protoLoader from '@grpc/proto-loader';
 
-import { ReflectionV1Implementation } from '../src/reflection-v1-implementation';
+import { ReflectionV1Implementation } from '../src/implementations/reflection-v1';
 
 describe('GrpcReflectionService', () => {
   let reflectionService: ReflectionV1Implementation;
 
   beforeEach(async () => {
-    console.log(path.join(__dirname, '../proto/sample/sample.proto'));
-    console.log([path.join(__dirname, '../proto/sample/vendor')]);
     const root = protoLoader.loadSync(path.join(__dirname, '../proto/sample/sample.proto'), {
       includeDirs: [path.join(__dirname, '../proto/sample/vendor')]
     });
@@ -20,6 +18,18 @@ describe('GrpcReflectionService', () => {
 
   describe('listServices()', () => {
     it('lists all services', () => {
+      const { service: services } = reflectionService.listServices('*');
+      assert.equal(services.length, 2);
+      assert(services.find((s) => s.name === 'sample.SampleService'));
+    });
+
+    it('whitelists services properly', () => {
+      const root = protoLoader.loadSync(path.join(__dirname, '../proto/sample/sample.proto'), {
+        includeDirs: [path.join(__dirname, '../proto/sample/vendor')]
+      });
+
+      reflectionService = new ReflectionV1Implementation(root, { services: ['sample.SampleService'] });
+
       const { service: services } = reflectionService.listServices('*');
       assert.equal(services.length, 1);
       assert(services.find((s) => s.name === 'sample.SampleService'));

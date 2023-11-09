@@ -7,14 +7,15 @@ import {
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 
-import { ExtensionNumberResponse__Output } from './generated/grpc/reflection/v1/ExtensionNumberResponse';
-import { FileDescriptorResponse__Output } from './generated/grpc/reflection/v1/FileDescriptorResponse';
-import { ListServiceResponse__Output } from './generated/grpc/reflection/v1/ListServiceResponse';
-import { ServerReflectionRequest } from './generated/grpc/reflection/v1/ServerReflectionRequest';
-import { ServerReflectionResponse } from './generated/grpc/reflection/v1/ServerReflectionResponse';
-import { visit } from './protobuf-visitor';
-import { scope } from './utils';
-import { PROTO_LOADER_OPTS } from './constants';
+import { ExtensionNumberResponse__Output } from '../generated/grpc/reflection/v1/ExtensionNumberResponse';
+import { FileDescriptorResponse__Output } from '../generated/grpc/reflection/v1/FileDescriptorResponse';
+import { ListServiceResponse__Output } from '../generated/grpc/reflection/v1/ListServiceResponse';
+import { ServerReflectionRequest } from '../generated/grpc/reflection/v1/ServerReflectionRequest';
+import { ServerReflectionResponse } from '../generated/grpc/reflection/v1/ServerReflectionResponse';
+import { visit } from './common/protobuf-visitor';
+import { scope } from './common/utils';
+import { PROTO_LOADER_OPTS } from './common/constants';
+import { ReflectionServerOptions } from './common/interfaces';
 
 export class ReflectionError extends Error {
   constructor(
@@ -37,22 +38,27 @@ export class ReflectionError extends Error {
 export class ReflectionV1Implementation {
 
   /** The full list of proto files (including imported deps) that the gRPC server includes */
-  private fileDescriptorSet = new FileDescriptorSet();
+  private readonly fileDescriptorSet = new FileDescriptorSet();
 
   /** An index of proto files by file name (eg. 'sample.proto') */
-  private fileNameIndex: Record<string, FileDescriptorProto> = {};
+  private readonly fileNameIndex: Record<string, FileDescriptorProto> = {};
 
   /** An index of proto files by type extension relationship
    *
    * extensionIndex[<pkg>.<msg>][<field#>] contains a reference to the file containing an
    * extension for the type "<pkg>.<msg>" and field number "<field#>"
    */
-  private extensionIndex: Record<string, Record<number, FileDescriptorProto>> = {};
+  private readonly extensionIndex: Record<string, Record<number, FileDescriptorProto>> = {};
 
   /** An index of fully qualified symbol names (eg. 'sample.Message') to the files that contain them */
-  private symbolMap: Record<string, FileDescriptorProto> = {};
+  private readonly symbolMap: Record<string, FileDescriptorProto> = {};
 
-  constructor(root: protoLoader.PackageDefinition) {
+  /** Options that the user provided for this service */
+  private readonly options?: ReflectionServerOptions;
+
+  constructor(root: protoLoader.PackageDefinition, options?: ReflectionServerOptions) {
+    this.options = options;
+
     Object.values(root).forEach(({ fileDescriptorProtos }) => {
       // Add file descriptors to the FileDescriptorSet.
       // We use the Array check here because a ServiceDefinition could have a method named the same thing
@@ -88,10 +94,10 @@ export class ReflectionV1Implementation {
         extension: (fqn, file, ext) => {
           index(fqn, file);
 
-          const extendeeName = ext.getExtendee();
+          const extendeeName = ext.getExtendee() || '';
           this.extensionIndex[extendeeName] = {
             ...(this.extensionIndex[extendeeName] || {}),
-            [ext.getNumber()]: file,
+            [ext.getNumber() || -1]: file,
           };
         },
       }),
@@ -126,25 +132,26 @@ export class ReflectionV1Implementation {
         return;
       }
 
-      if (referencedFile !== sourceFile) {
-        sourceFile.addDependency(referencedFile.getName());
+      const fname = referencedFile.getName();
+      if (referencedFile !== sourceFile && fname) {
+        sourceFile.addDependency(fname);
       }
     };
 
     this.fileDescriptorSet.getFileList().forEach((file) =>
       visit(file, {
-        field: (fqn, file, field) => addReference(field.getTypeName(), file, scope(fqn)),
-        extension: (fqn, file, ext) => addReference(ext.getTypeName(), file, scope(fqn)),
+        field: (fqn, file, field) => addReference(field.getTypeName() || '', file, scope(fqn)),
+        extension: (fqn, file, ext) => addReference(ext.getTypeName() || '', file, scope(fqn)),
         method: (fqn, file, method) => {
-          addReference(method.getInputType(), file, scope(fqn));
-          addReference(method.getOutputType(), file, scope(fqn));
+          addReference(method.getInputType() || '', file, scope(fqn));
+          addReference(method.getOutputType() || '', file, scope(fqn));
         },
       }),
     );
   }
 
   addToServer(server: Pick<grpc.Server, 'addService'>) {
-    const protoPath = path.join(__dirname, '../proto/grpc/reflection/v1/reflection.proto');
+    const protoPath = path.join(__dirname, '../../proto/grpc/reflection/v1/reflection.proto');
     const pkgDefinition = protoLoader.loadSync(protoPath, PROTO_LOADER_OPTS);
     const pkg = grpc.loadPackageDefinition(pkgDefinition) as any;
 
@@ -180,8 +187,10 @@ export class ReflectionV1Implementation {
       } else if (message.fileByFilename !== undefined) {
         response.fileDescriptorResponse = this.fileByFilename(message.fileByFilename);
       } else if (message.fileContainingExtension !== undefined) {
-        const { containingType, extensionNumber } = message.fileContainingExtension;
-        response.fileDescriptorResponse = this.fileContainingExtension(containingType, extensionNumber);
+        response.fileDescriptorResponse = this.fileContainingExtension(
+          message.fileContainingExtension?.containingType || '',
+          message.fileContainingExtension?.extensionNumber || -1
+        );
       } else if (message.allExtensionNumbersOfType) {
         response.allExtensionNumbersResponse = this.allExtensionNumbersOfType(message.allExtensionNumbersOfType);
       } else {
@@ -224,7 +233,12 @@ export class ReflectionV1Implementation {
       )
       .flat();
 
-    return { service: services.map((service) => ({ name: service })) };
+    const whitelist = new Set(this.options?.services ?? undefined);
+    const exposedServices = this.options?.services ?
+      services.filter(service => whitelist.has(service))
+      : services;
+
+    return { service: exposedServices.map((service) => ({ name: service })) };
   }
 
   /** Find the proto file(s) that declares the given fully-qualified symbol name
