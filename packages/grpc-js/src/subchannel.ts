@@ -120,6 +120,7 @@ export class Subchannel {
     this.backoffTimeout = new BackoffTimeout(() => {
       this.handleBackoffTimer();
     }, backoffOptions);
+    this.backoffTimeout.unref();
     this.subchannelAddressString = subchannelAddressToString(subchannelAddress);
 
     this.keepaliveTime = options['grpc.keepalive_time_ms'] ?? -1;

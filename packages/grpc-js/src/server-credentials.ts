@@ -26,6 +26,7 @@ export interface KeyCertPair {
 export abstract class ServerCredentials {
   abstract _isSecure(): boolean;
   abstract _getSettings(): SecureServerOptions | null;
+  abstract _equals(other: ServerCredentials): boolean;
 
   static createInsecure(): ServerCredentials {
     return new InsecureServerCredentials();
@@ -48,8 +49,8 @@ export abstract class ServerCredentials {
       throw new TypeError('checkClientCertificate must be a boolean');
     }
 
-    const cert = [];
-    const key = [];
+    const cert: Buffer[] = [];
+    const key: Buffer[] = [];
 
     for (let i = 0; i < keyCertPairs.length; i++) {
       const pair = keyCertPairs[i];
@@ -71,7 +72,7 @@ export abstract class ServerCredentials {
     }
 
     return new SecureServerCredentials({
-      ca: rootCerts || getDefaultRootsData() || undefined,
+      ca: rootCerts ?? getDefaultRootsData() ?? undefined,
       cert,
       key,
       requestCert: checkClientCertificate,
@@ -87,6 +88,10 @@ class InsecureServerCredentials extends ServerCredentials {
 
   _getSettings(): null {
     return null;
+  }
+
+  _equals(other: ServerCredentials): boolean {
+    return other instanceof InsecureServerCredentials;
   }
 }
 
@@ -104,5 +109,83 @@ class SecureServerCredentials extends ServerCredentials {
 
   _getSettings(): SecureServerOptions {
     return this.options;
+  }
+
+  /**
+   * Checks equality by checking the options that are actually set by
+   * createSsl.
+   * @param other
+   * @returns
+   */
+  _equals(other: ServerCredentials): boolean {
+    if (this === other) {
+      return true;
+    }
+    if (!(other instanceof SecureServerCredentials)) {
+      return false;
+    }
+    // options.ca equality check
+    if (Buffer.isBuffer(this.options.ca) && Buffer.isBuffer(other.options.ca)) {
+      if (!this.options.ca.equals(other.options.ca)) {
+        return false;
+      }
+    } else {
+      if (this.options.ca !== other.options.ca) {
+        return false;
+      }
+    }
+    // options.cert equality check
+    if (Array.isArray(this.options.cert) && Array.isArray(other.options.cert)) {
+      if (this.options.cert.length !== other.options.cert.length) {
+        return false;
+      }
+      for (let i = 0; i < this.options.cert.length; i++) {
+        const thisCert = this.options.cert[i];
+        const otherCert = other.options.cert[i];
+        if (Buffer.isBuffer(thisCert) && Buffer.isBuffer(otherCert)) {
+          if (!thisCert.equals(otherCert)) {
+            return false;
+          }
+        } else {
+          if (thisCert !== otherCert) {
+            return false;
+          }
+        }
+      }
+    } else {
+      if (this.options.cert !== other.options.cert) {
+        return false;
+      }
+    }
+    // options.key equality check
+    if (Array.isArray(this.options.key) && Array.isArray(other.options.key)) {
+      if (this.options.key.length !== other.options.key.length) {
+        return false;
+      }
+      for (let i = 0; i < this.options.key.length; i++) {
+        const thisKey = this.options.key[i];
+        const otherKey = other.options.key[i];
+        if (Buffer.isBuffer(thisKey) && Buffer.isBuffer(otherKey)) {
+          if (!thisKey.equals(otherKey)) {
+            return false;
+          }
+        } else {
+          if (thisKey !== otherKey) {
+            return false;
+          }
+        }
+      }
+    } else {
+      if (this.options.key !== other.options.key) {
+        return false;
+      }
+    }
+    // options.requestCert equality check
+    if (this.options.requestCert !== other.options.requestCert) {
+      return false;
+    }
+    /* ciphers is derived from a value that is constant for the process, so no
+     * equality check is needed. */
+    return true;
   }
 }

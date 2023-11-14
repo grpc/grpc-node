@@ -101,6 +101,19 @@ export function splitHostPort(path: string): HostPort | null {
   }
 }
 
+export function combineHostPort(hostPort: HostPort): string {
+  if (hostPort.port === undefined) {
+    return hostPort.host;
+  } else {
+    // Only an IPv6 host should include a colon
+    if (hostPort.host.includes(':')) {
+      return `[${hostPort.host}]:${hostPort.port}`;
+    } else {
+      return `${hostPort.host}:${hostPort.port}`;
+    }
+  }
+}
+
 export function uriToString(uri: GrpcUri): string {
   let result = '';
   if (uri.scheme !== undefined) {
