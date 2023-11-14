@@ -194,17 +194,18 @@ class Http2Transport implements Transport {
     });
     session.once(
       'goaway',
-      (errorCode: number, lastStreamID: number, opaqueData: Buffer) => {
+      (errorCode: number, lastStreamID: number, opaqueData?: Buffer) => {
         let tooManyPings = false;
         /* See the last paragraph of
          * https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md#basic-keepalive */
         if (
           errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM &&
+          opaqueData &&
           opaqueData.equals(tooManyPingsData)
         ) {
           tooManyPings = true;
         }
-        this.trace('connection closed by GOAWAY with code ' + errorCode);
+        this.trace('connection closed by GOAWAY with code ' + errorCode + ' and data ' + opaqueData?.toString());
         this.reportDisconnectToOwner(tooManyPings);
       }
     );
