@@ -228,6 +228,64 @@ describe('Server', () => {
     });
   });
 
+  describe.only('drain', () => {
+    let client: ServiceClient;
+    let portNumber: number;
+    const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
+    const echoService = loadProtoFile(protoFile)
+      .EchoService as ServiceClientConstructor;
+
+    const serviceImplementation = {
+      echo(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
+        callback(null, call.request);
+      },
+      echoBidiStream(call: ServerDuplexStream<any, any>) {
+        call.on('data', data => {
+          call.write(data);
+        });
+        call.on('end', () => {
+          call.end();
+        });
+      },
+    };
+
+    beforeEach(done => {
+      server.addService(echoService.service, serviceImplementation);
+
+      server.bindAsync(
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert.ifError(err);
+          portNumber = port;
+          client = new echoService(
+            `localhost:${port}`,
+            grpc.credentials.createInsecure()
+          );
+          server.start();
+          done();
+        }
+      );
+    });
+
+    afterEach(done => {
+      client.close();
+      server.tryShutdown(done);
+    });
+
+    it('Should cancel open calls after the grace period ends', done => {
+      const call = client.echoBidiStream();
+      call.on('error', (error: ServiceError) => {
+        assert.strictEqual(error.code, grpc.status.CANCELLED);
+        done();
+      });
+      call.on('data', () => {
+        server.drain(`localhost:${portNumber!}`, 100);
+      });
+      call.write({value: 'abc'});
+    });
+  });
+
   describe('start', () => {
     let server: Server;
 
