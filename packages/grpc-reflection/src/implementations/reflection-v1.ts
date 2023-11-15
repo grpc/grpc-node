@@ -26,7 +26,7 @@ export class ReflectionError extends Error {
   }
 }
 
-/** Analyzes a gRPC server and exposes methods to reflect on it
+/** Analyzes a gRPC package definition and exposes methods to reflect on it
  *
  * NOTE: the files returned by this service may not match the handwritten ones 1:1.
  * This is because proto-loader reorients files based on their package definition,
@@ -37,7 +37,7 @@ export class ReflectionError extends Error {
  */
 export class ReflectionV1Implementation {
 
-  /** The full list of proto files (including imported deps) that the gRPC server includes */
+  /** The full list of proto files (including imported deps) that the gRPC package includes */
   private readonly fileDescriptorSet = new FileDescriptorSet();
 
   /** An index of proto files by file name (eg. 'sample.proto') */
@@ -172,32 +172,34 @@ export class ReflectionV1Implementation {
   handleServerReflectionRequest(message: ServerReflectionRequest): ServerReflectionResponse {
     const response: ServerReflectionResponse = {
       validHost: message.host,
-      originalRequest: message,
-      fileDescriptorResponse: undefined,
-      allExtensionNumbersResponse: undefined,
-      listServicesResponse: undefined,
-      errorResponse: undefined,
+      originalRequest: message
     };
 
     try {
-      if (message.listServices !== undefined) {
-        response.listServicesResponse = this.listServices(message.listServices);
-      } else if (message.fileContainingSymbol !== undefined) {
-        response.fileDescriptorResponse = this.fileContainingSymbol(message.fileContainingSymbol);
-      } else if (message.fileByFilename !== undefined) {
-        response.fileDescriptorResponse = this.fileByFilename(message.fileByFilename);
-      } else if (message.fileContainingExtension !== undefined) {
-        response.fileDescriptorResponse = this.fileContainingExtension(
-          message.fileContainingExtension?.containingType || '',
-          message.fileContainingExtension?.extensionNumber || -1
-        );
-      } else if (message.allExtensionNumbersOfType) {
-        response.allExtensionNumbersResponse = this.allExtensionNumbersOfType(message.allExtensionNumbersOfType);
-      } else {
-        throw new ReflectionError(
-          grpc.status.UNIMPLEMENTED,
-          `Unimplemented method for request: ${message}`,
-        );
+      switch(message.messageRequest) {
+        case 'listServices':
+          response.listServicesResponse = this.listServices(message.listServices || '');
+          break;
+        case 'fileContainingSymbol':
+          response.fileDescriptorResponse = this.fileContainingSymbol(message.fileContainingSymbol || '');
+          break;
+        case 'fileByFilename':
+          response.fileDescriptorResponse = this.fileByFilename(message.fileByFilename || '');
+          break;
+        case 'fileContainingExtension':
+          response.fileDescriptorResponse = this.fileContainingExtension(
+            message.fileContainingExtension?.containingType || '',
+            message.fileContainingExtension?.extensionNumber || -1
+          );
+          break;
+        case 'allExtensionNumbersOfType':
+          response.allExtensionNumbersResponse = this.allExtensionNumbersOfType(message.allExtensionNumbersOfType || '');
+          break;
+        default:
+          throw new ReflectionError(
+            grpc.status.UNIMPLEMENTED,
+            `Unimplemented method for request: ${message.messageRequest}`,
+          );
       }
     } catch (e) {
       if (e instanceof ReflectionError) {
@@ -315,20 +317,26 @@ export class ReflectionV1Implementation {
     };
   }
 
-  private getFileDependencies(
-    file: FileDescriptorProto,
-    visited: Set<FileDescriptorProto> = new Set(),
-  ): FileDescriptorProto[] {
-    const newVisited = visited.add(file);
+  private getFileDependencies(file: FileDescriptorProto): FileDescriptorProto[] {
+    const visited: Set<FileDescriptorProto> = new Set();
+    const toVisit: FileDescriptorProto[] = file.getDependencyList().map((dep) => this.fileNameIndex[dep]);
 
-    const directDeps = file.getDependencyList().map((dep) => this.fileNameIndex[dep]);
-    const transitiveDeps = directDeps
-      .filter((dep) => !newVisited.has(dep))
-      .map((dep) => this.getFileDependencies(dep, newVisited))
-      .flat();
+    while (toVisit.length > 0) {
+      const current = toVisit.pop();
 
-    const allDeps = [...directDeps, ...transitiveDeps];
+      if (!current || visited.has(current)) {
+        continue;
+      }
 
-    return [...new Set(allDeps)];
+      visited.add(current);
+      toVisit.push(
+        ...current.getDependencyList()
+          .map((dep) => this.fileNameIndex[dep])
+          .filter((dep) => !visited.has(dep))
+      );
+    }
+
+    return Array.from(visited);
   }
+
 }
