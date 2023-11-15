@@ -1,7 +1,9 @@
 {
   "name": "@grpc/reflection",
   "version": "1.0.0",
-  "author": "Justin Timmons",
+  "author": {
+    "name": "Google Inc."
+  },
   "description": "Reflection API service for use with gRPC-node",
   "repository": {
     "type": "git",
@@ -29,15 +31,14 @@
     "generate-types": "proto-loader-gen-types --longs String --enums String --bytes Array --defaults --oneofs --includeComments --includeDirs proto/ -O src/generated grpc/reflection/v1/reflection.proto grpc/reflection/v1alpha/reflection.proto"
   },
   "dependencies": {
-    "google-protobuf": "^3.21.2"
+    "google-protobuf": "^3.21.2",
+    "@grpc/proto-loader": "^0.7.10"
   },
   "peerDependencies": {
-    "@grpc/grpc-js": ">=1.5.4",
-    "@grpc/proto-loader": ">=0.6.9"
+    "@grpc/grpc-js": "^1.8.21"
   },
   "devDependencies": {
-    "@grpc/grpc-js": "^1.8.21",
-    "@grpc/proto-loader": "^0.7.10",
+    "@grpc/grpc-js": "file:../grpc-js",
     "@types/google-protobuf": "^3.15.7",
     "copyfiles": "^2.4.1",
     "typescript": "^5.2.2"
