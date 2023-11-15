@@ -853,6 +853,50 @@ export class Server {
     }
   }
 
+  /**
+   * Gracefully close all connections associated with a previously bound port.
+   * After the grace time, forcefully close all remaining open connections.
+   *
+   * If port 0 was bound, only the actual bound port can be
+   * drained. For example, if bindAsync was called with "localhost:0" and the
+   * bound port result was 54321, it can be drained as "localhost:54321".
+   * @param port
+   * @param graceTimeMs
+   * @returns
+   */
+  drain(port: string, graceTimeMs: number): void {
+    this.trace('drain port=' + port + ' graceTimeMs=' + graceTimeMs);
+    const portUri = this.normalizePort(port);
+    const splitPort = splitHostPort(portUri.path);
+    if (splitPort?.port === 0) {
+      throw new Error('Cannot drain port 0');
+    }
+    const boundPortObject = this.boundPorts.get(uriToString(portUri));
+    if (!boundPortObject) {
+      return;
+    }
+    const allSessions: Set<http2.Http2Session> = new Set();
+    for (const http2Server of boundPortObject.listeningServers) {
+      const serverEntry = this.http2Servers.get(http2Server);
+      if (!serverEntry) {
+        continue;
+      }
+      for (const session of serverEntry.sessions) {
+        allSessions.add(session);
+        this.closeSession(session, () => {
+          allSessions.delete(session);
+        });
+      }
+    }
+    /* After the grace time ends, send another goaway to all remaining sessions
+     * with the CANCEL code. */
+    setTimeout(() => {
+      for (const session of allSessions) {
+        session.destroy(http2.constants.NGHTTP2_CANCEL as any);
+      }
+    }, graceTimeMs).unref?.();
+  }
+
   forceShutdown(): void {
     for (const boundPortObject of this.boundPorts.values()) {
       boundPortObject.cancelled = true;
