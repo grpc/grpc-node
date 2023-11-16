@@ -6,7 +6,7 @@ gRPC reflection API service for use with gRPC-node.
 
 This package provides an implementation of the [gRPC Server Reflection Protocol](https://github.com/grpc/grpc/blob/master/doc/server-reflection.md) service which can be added to an existing gRPC server. Adding this service to your server will allow clients [such as postman](https://blog.postman.com/postman-now-supports-grpc/) to dynamically load the API specification from your running application rather than needing to pass around and load proto files manually.
 
-![example of reflection working with postman](https://gitlab.com/jtimmons/nestjs-grpc-reflection-module/-/raw/master/images/example.gif)
+![example of reflection working with postman](./images/example.gif)
 
 ## Installation
 
