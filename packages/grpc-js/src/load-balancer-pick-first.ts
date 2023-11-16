@@ -186,6 +186,8 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    */
   private lastError: string | null = null;
 
+  private latestAddressList: SubchannelAddress[] | null = null;
+
   /**
    * Load balancer that attempts to connect to each backend in the address list
    * in order, and picks the first one that connects, using it for every
@@ -404,19 +406,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     this.requestedResolutionSinceLastUpdate = false;
   }
 
-  updateAddressList(
-    addressList: SubchannelAddress[],
-    lbConfig: LoadBalancingConfig
-  ): void {
-    if (!(lbConfig instanceof PickFirstLoadBalancingConfig)) {
-      return;
-    }
-    /* Previously, an update would be discarded if it was identical to the
-     * previous update, to minimize churn. Now the DNS resolver is
-     * rate-limited, so that is less of a concern. */
-    if (lbConfig.getShuffleAddressList()) {
-      addressList = shuffled(addressList);
-    }
+  private connectToAddressList(addressList: SubchannelAddress[]) {
     const newChildrenList = addressList.map(address => ({
       subchannel: this.channelControlHelper.createSubchannel(address, {}),
       hasReportedTransientFailure: false,
@@ -449,10 +439,27 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     this.calculateAndReportNewState();
   }
 
+  updateAddressList(
+    addressList: SubchannelAddress[],
+    lbConfig: LoadBalancingConfig
+  ): void {
+    if (!(lbConfig instanceof PickFirstLoadBalancingConfig)) {
+      return;
+    }
+    /* Previously, an update would be discarded if it was identical to the
+     * previous update, to minimize churn. Now the DNS resolver is
+     * rate-limited, so that is less of a concern. */
+    if (lbConfig.getShuffleAddressList()) {
+      addressList = shuffled(addressList);
+    }
+    this.latestAddressList = addressList;
+    this.connectToAddressList(addressList);
+  }
+
   exitIdle() {
-    /* The pick_first LB policy is only in the IDLE state if it has no
-     * addresses to try to connect to and it has no picked subchannel.
-     * In that case, there is no meaningful action that can be taken here. */
+    if (this.currentState === ConnectivityState.IDLE && this.latestAddressList) {
+      this.connectToAddressList(this.latestAddressList);
+    }
   }
 
   resetBackoff() {

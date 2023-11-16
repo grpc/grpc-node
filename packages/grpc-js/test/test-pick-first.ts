@@ -550,6 +550,34 @@ describe('pick_first load balancing policy', () => {
       });
     });
   });
+  it('Should reconnect to the same address list if exitIdle is called', done => {
+    const currentStartState = ConnectivityState.READY;
+    const channelControlHelper = createChildChannelControlHelper(
+      baseChannelControlHelper,
+      {
+        createSubchannel: (subchannelAddress, subchannelArgs) => {
+          const subchannel = new MockSubchannel(
+            subchannelAddressToString(subchannelAddress),
+            currentStartState
+          );
+          subchannels.push(subchannel);
+          return subchannel;
+        },
+        updateState: updateStateCallBackForExpectedStateSequence(
+          [ConnectivityState.READY, ConnectivityState.IDLE, ConnectivityState.READY],
+          done
+        ),
+      }
+    );
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper);
+    pickFirst.updateAddressList([{ host: 'localhost', port: 1 }], config);
+    process.nextTick(() => {
+      subchannels[0].transitionToState(ConnectivityState.IDLE);
+      process.nextTick(() => {
+        pickFirst.exitIdle();
+      });
+    });
+  });
   describe('Address list randomization', () => {
     const shuffleConfig = new PickFirstLoadBalancingConfig(true);
     it('Should pick different subchannels after multiple updates', done => {
