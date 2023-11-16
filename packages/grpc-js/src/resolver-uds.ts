@@ -21,6 +21,7 @@ import { ChannelOptions } from './channel-options';
 
 class UdsResolver implements Resolver {
   private addresses: SubchannelAddress[] = [];
+  private hasReturnedResult = false;
   constructor(
     target: GrpcUri,
     private listener: ResolverListener,
@@ -35,14 +36,17 @@ class UdsResolver implements Resolver {
     this.addresses = [{ path }];
   }
   updateResolution(): void {
-    process.nextTick(
-      this.listener.onSuccessfulResolution,
-      this.addresses,
-      null,
-      null,
-      null,
-      {}
-    );
+    if (!this.hasReturnedResult) {
+      this.hasReturnedResult = true;
+      process.nextTick(
+        this.listener.onSuccessfulResolution,
+        this.addresses,
+        null,
+        null,
+        null,
+        {}
+      );
+    }
   }
 
   destroy() {
