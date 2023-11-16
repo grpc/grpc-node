@@ -37,11 +37,11 @@ const clean = gulp.series(jsCore.clean, protobuf.clean, jsXds.clean);
 
 const cleanAll = gulp.series(jsXds.cleanAll, jsCore.cleanAll, internalTest.cleanAll, protobuf.cleanAll);
 
-const nativeTestOnly = gulp.parallel(healthCheck.test, reflection.test);
+const nativeTestOnly = gulp.parallel(healthCheck.test);
 
 const nativeTest = gulp.series(build, nativeTestOnly);
 
-const testOnly = gulp.parallel(jsCore.test, nativeTestOnly, protobuf.test, jsXds.test);
+const testOnly = gulp.parallel(jsCore.test, nativeTestOnly, protobuf.test, jsXds.test, reflection.test);
 
 const test = gulp.series(build, testOnly, internalTest.test);
 
