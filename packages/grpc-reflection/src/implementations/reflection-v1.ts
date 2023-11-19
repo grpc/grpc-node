@@ -1,5 +1,9 @@
 import * as path from 'path';
-import { FileDescriptorProto, IFileDescriptorProto } from 'protobufjs/ext/descriptor';
+import {
+  FileDescriptorProto,
+  IFileDescriptorProto,
+  IServiceDescriptorProto
+} from 'protobufjs/ext/descriptor';
 
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
@@ -40,6 +44,9 @@ export class ReflectionV1Implementation {
   /** A graph of file dependencies */
   private readonly fileDependencies = new Map<IFileDescriptorProto, IFileDescriptorProto[]>();
 
+  /** Pre-computed encoded-versions of each file */
+  private readonly fileEncodings = new Map<IFileDescriptorProto, Uint8Array>();
+
   /** An index of proto files by type extension relationship
    *
    * extensionIndex[<pkg>.<msg>][<field#>] contains a reference to the file containing an
@@ -50,12 +57,11 @@ export class ReflectionV1Implementation {
   /** An index of fully qualified symbol names (eg. 'sample.Message') to the files that contain them */
   private readonly symbols: Record<string, IFileDescriptorProto> = {};
 
-  /** Options that the user provided for this service */
-  private readonly options?: ReflectionServerOptions;
+  /** An index of the services in the analyzed package(s) */
+  private readonly services: Record<string, IServiceDescriptorProto> = {};
+
 
   constructor(root: protoLoader.PackageDefinition, options?: ReflectionServerOptions) {
-    this.options = options;
-
     Object.values(root).forEach(({ fileDescriptorProtos }) => {
       if (Array.isArray(fileDescriptorProtos)) { // we use an array check to narrow the type
         fileDescriptorProtos.forEach((bin) => {
@@ -69,16 +75,23 @@ export class ReflectionV1Implementation {
     });
 
     // Pass 1: Index Values
+    const serviceWhitelist = new Set(options?.services);
     const index = (fqn: string, file: IFileDescriptorProto) => (this.symbols[fqn] = file);
     Object.values(this.files).forEach((file) =>
       visit(file, {
         field: index,
         oneOf: index,
         message: index,
-        service: index,
         method: index,
         enum: index,
         enumValue: index,
+        service: (fqn, file, service) => {
+          index(fqn, file);
+
+          if (options?.services === undefined || serviceWhitelist.has(fqn)) {
+            this.services[fqn] = service;
+          }
+        },
         extension: (fqn, file, ext) => {
           index(fqn, file);
 
@@ -137,6 +150,11 @@ export class ReflectionV1Implementation {
         },
       }),
     );
+
+    // Pass 3: pre-compute file encoding since that can be slow and is done frequently
+    Object.values(this.files).forEach(file => {
+      this.fileEncodings.set(file, FileDescriptorProto.encode(file).finish())
+    });
   }
 
   addToServer(server: Pick<grpc.Server, 'addService'>) {
@@ -217,19 +235,7 @@ export class ReflectionV1Implementation {
    * @returns full-qualified service names (eg. 'sample.SampleService')
    */
   listServices(listServices: string): ListServiceResponse__Output {
-    const services = Object.values(this.files)
-      .map((file) =>
-        file.service?.map((service) => `${file.package}.${service.name}`),
-      )
-      .flat()
-      .filter((service): service is string => !!service);
-
-    const whitelist = new Set(this.options?.services ?? undefined);
-    const exposedServices = whitelist.size ?
-      services.filter(service => whitelist.has(service))
-      : services;
-
-    return { service: exposedServices.map((service) => ({ name: service })) };
+    return { service: Object.keys(this.services).map((service) => ({ name: service })) };
   }
 
   /** Find the proto file(s) that declares the given fully-qualified symbol name
@@ -249,7 +255,7 @@ export class ReflectionV1Implementation {
     const deps = this.getFileDependencies(file);
 
     return {
-      fileDescriptorProto: [file, ...deps].map((proto) => FileDescriptorProto.encode(proto).finish()),
+      fileDescriptorProto: [file, ...deps].map((file) => this.fileEncodings.get(file) || new Uint8Array())
     };
   }
 
@@ -267,7 +273,7 @@ export class ReflectionV1Implementation {
     const deps = this.getFileDependencies(file);
 
     return {
-      fileDescriptorProto: [file, ...deps].map((f) => FileDescriptorProto.encode(f).finish()),
+      fileDescriptorProto: [file, ...deps].map((file) => this.fileEncodings.get(file) || new Uint8Array),
     };
   }
 
@@ -289,7 +295,7 @@ export class ReflectionV1Implementation {
     const deps = this.getFileDependencies(file);
 
     return {
-      fileDescriptorProto: [file, ...deps].map((f) => FileDescriptorProto.encode(f).finish()),
+      fileDescriptorProto: [file, ...deps].map((file) => this.fileEncodings.get(file) || new Uint8Array()),
     };
   }
 
