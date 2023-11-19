@@ -1,8 +1,5 @@
 import * as path from 'path';
-import {
-  FileDescriptorProto,
-  FileDescriptorSet,
-} from 'google-protobuf/google/protobuf/descriptor_pb';
+import { FileDescriptorProto, IFileDescriptorProto } from 'protobufjs/ext/descriptor';
 
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
@@ -37,21 +34,21 @@ export class ReflectionError extends Error {
  */
 export class ReflectionV1Implementation {
 
-  /** The full list of proto files (including imported deps) that the gRPC package includes */
-  private readonly fileDescriptorSet = new FileDescriptorSet();
-
   /** An index of proto files by file name (eg. 'sample.proto') */
-  private readonly fileNameIndex: Record<string, FileDescriptorProto> = {};
+  private readonly files: Record<string, IFileDescriptorProto> = {};
+
+  /** A graph of file dependencies */
+  private readonly fileDependencies = new Map<IFileDescriptorProto, IFileDescriptorProto[]>();
 
   /** An index of proto files by type extension relationship
    *
    * extensionIndex[<pkg>.<msg>][<field#>] contains a reference to the file containing an
    * extension for the type "<pkg>.<msg>" and field number "<field#>"
    */
-  private readonly extensionIndex: Record<string, Record<number, FileDescriptorProto>> = {};
+  private readonly extensions: Record<string, Record<number, IFileDescriptorProto>> = {};
 
   /** An index of fully qualified symbol names (eg. 'sample.Message') to the files that contain them */
-  private readonly symbolMap: Record<string, FileDescriptorProto> = {};
+  private readonly symbols: Record<string, IFileDescriptorProto> = {};
 
   /** Options that the user provided for this service */
   private readonly options?: ReflectionServerOptions;
@@ -60,29 +57,20 @@ export class ReflectionV1Implementation {
     this.options = options;
 
     Object.values(root).forEach(({ fileDescriptorProtos }) => {
-      // Add file descriptors to the FileDescriptorSet.
-      // We use the Array check here because a ServiceDefinition could have a method named the same thing
-      if (Array.isArray(fileDescriptorProtos)) {
+      if (Array.isArray(fileDescriptorProtos)) { // we use an array check to narrow the type
         fileDescriptorProtos.forEach((bin) => {
-          const proto = FileDescriptorProto.deserializeBinary(bin);
-          const isFileInSet = this.fileDescriptorSet
-            .getFileList()
-            .map((f) => f.getName())
-            .includes(proto.getName());
-          if (!isFileInSet) {
-            this.fileDescriptorSet.addFile(proto);
+          const proto = FileDescriptorProto.decode(bin) as IFileDescriptorProto;
+
+          if (proto.name && !this.files[proto.name]) {
+            this.files[proto.name] = proto;
           }
         });
       }
     });
 
-    this.fileNameIndex = Object.fromEntries(
-      this.fileDescriptorSet.getFileList().map((f) => [f.getName(), f]),
-    );
-
     // Pass 1: Index Values
-    const index = (fqn: string, file: FileDescriptorProto) => (this.symbolMap[fqn] = file);
-    this.fileDescriptorSet.getFileList().forEach((file) =>
+    const index = (fqn: string, file: IFileDescriptorProto) => (this.symbols[fqn] = file);
+    Object.values(this.files).forEach((file) =>
       visit(file, {
         field: index,
         oneOf: index,
@@ -94,36 +82,37 @@ export class ReflectionV1Implementation {
         extension: (fqn, file, ext) => {
           index(fqn, file);
 
-          const extendeeName = ext.getExtendee() || '';
-          this.extensionIndex[extendeeName] = {
-            ...(this.extensionIndex[extendeeName] || {}),
-            [ext.getNumber() || -1]: file,
+          const extendeeName = ext.extendee || '';
+          this.extensions[extendeeName] = {
+            ...(this.extensions[extendeeName] || {}),
+            [ext.number || -1]: file,
           };
         },
       }),
     );
 
     // Pass 2: Link References To Values
-    const addReference = (ref: string, sourceFile: FileDescriptorProto, pkgScope: string) => {
+    // NOTE: this should be unnecessary after https://github.com/grpc/grpc-node/issues/2595 is resolved
+    const addReference = (ref: string, sourceFile: IFileDescriptorProto, pkgScope: string) => {
       if (!ref) {
         return; // nothing to do
       }
 
-      let referencedFile: FileDescriptorProto | null = null;
+      let referencedFile: IFileDescriptorProto | null = null;
       if (ref.startsWith('.')) {
         // absolute reference -- just remove the leading '.' and use the ref directly
-        referencedFile = this.symbolMap[ref.replace(/^\./, '')];
+        referencedFile = this.symbols[ref.replace(/^\./, '')];
       } else {
         // relative reference -- need to seek upwards up the current package scope until we find it
         let pkg = pkgScope;
         while (pkg && !referencedFile) {
-          referencedFile = this.symbolMap[`${pkg}.${ref}`];
+          referencedFile = this.symbols[`${pkg}.${ref}`];
           pkg = scope(pkg);
         }
 
         // if we didn't find anything then try just a FQN lookup
         if (!referencedFile) {
-          referencedFile = this.symbolMap[ref];
+          referencedFile = this.symbols[ref];
         }
       }
 
@@ -132,19 +121,19 @@ export class ReflectionV1Implementation {
         return;
       }
 
-      const fname = referencedFile.getName();
-      if (referencedFile !== sourceFile && fname) {
-        sourceFile.addDependency(fname);
+      if (referencedFile !== sourceFile) {
+        const existingDeps = this.fileDependencies.get(sourceFile) || [];
+        this.fileDependencies.set(sourceFile, [referencedFile, ...existingDeps]);
       }
     };
 
-    this.fileDescriptorSet.getFileList().forEach((file) =>
+    Object.values(this.files).forEach((file) =>
       visit(file, {
-        field: (fqn, file, field) => addReference(field.getTypeName() || '', file, scope(fqn)),
-        extension: (fqn, file, ext) => addReference(ext.getTypeName() || '', file, scope(fqn)),
+        field: (fqn, file, field) => addReference(field.typeName || '', file, scope(fqn)),
+        extension: (fqn, file, ext) => addReference(ext.typeName || '', file, scope(fqn)),
         method: (fqn, file, method) => {
-          addReference(method.getInputType() || '', file, scope(fqn));
-          addReference(method.getOutputType() || '', file, scope(fqn));
+          addReference(method.inputType || '', file, scope(fqn));
+          addReference(method.outputType || '', file, scope(fqn));
         },
       }),
     );
@@ -228,15 +217,15 @@ export class ReflectionV1Implementation {
    * @returns full-qualified service names (eg. 'sample.SampleService')
    */
   listServices(listServices: string): ListServiceResponse__Output {
-    const services = this.fileDescriptorSet
-      .getFileList()
+    const services = Object.values(this.files)
       .map((file) =>
-        file.getServiceList().map((service) => `${file.getPackage()}.${service.getName()}`),
+        file.service?.map((service) => `${file.package}.${service.name}`),
       )
-      .flat();
+      .flat()
+      .filter((service): service is string => !!service);
 
     const whitelist = new Set(this.options?.services ?? undefined);
-    const exposedServices = this.options?.services ?
+    const exposedServices = whitelist.size ?
       services.filter(service => whitelist.has(service))
       : services;
 
@@ -251,7 +240,7 @@ export class ReflectionV1Implementation {
    * @returns descriptors of the file which contains this symbol and its imports
    */
   fileContainingSymbol(symbol: string): FileDescriptorResponse__Output {
-    const file = this.symbolMap[symbol];
+    const file = this.symbols[symbol];
 
     if (!file) {
       throw new ReflectionError(grpc.status.NOT_FOUND, `Symbol not found: ${symbol}`);
@@ -260,7 +249,7 @@ export class ReflectionV1Implementation {
     const deps = this.getFileDependencies(file);
 
     return {
-      fileDescriptorProto: [file, ...deps].map((proto) => proto.serializeBinary()),
+      fileDescriptorProto: [file, ...deps].map((proto) => FileDescriptorProto.encode(proto).finish()),
     };
   }
 
@@ -269,7 +258,7 @@ export class ReflectionV1Implementation {
    * @returns descriptors of the file which contains this symbol and its imports
    */
   fileByFilename(filename: string): FileDescriptorResponse__Output {
-    const file = this.fileNameIndex[filename];
+    const file = this.files[filename];
 
     if (!file) {
       throw new ReflectionError(grpc.status.NOT_FOUND, `Proto file not found: ${filename}`);
@@ -278,7 +267,7 @@ export class ReflectionV1Implementation {
     const deps = this.getFileDependencies(file);
 
     return {
-      fileDescriptorProto: [file, ...deps].map((f) => f.serializeBinary()),
+      fileDescriptorProto: [file, ...deps].map((f) => FileDescriptorProto.encode(f).finish()),
     };
   }
 
@@ -287,7 +276,7 @@ export class ReflectionV1Implementation {
    * @returns descriptors of the file which contains this symbol and its imports
    */
   fileContainingExtension(symbol: string, field: number): FileDescriptorResponse__Output {
-    const extensionsByFieldNumber = this.extensionIndex[symbol] || {};
+    const extensionsByFieldNumber = this.extensions[symbol] || {};
     const file = extensionsByFieldNumber[field];
 
     if (!file) {
@@ -300,16 +289,16 @@ export class ReflectionV1Implementation {
     const deps = this.getFileDependencies(file);
 
     return {
-      fileDescriptorProto: [file, ...deps].map((f) => f.serializeBinary()),
+      fileDescriptorProto: [file, ...deps].map((f) => FileDescriptorProto.encode(f).finish()),
     };
   }
 
   allExtensionNumbersOfType(symbol: string): ExtensionNumberResponse__Output {
-    if (!(symbol in this.extensionIndex)) {
+    if (!(symbol in this.extensions)) {
       throw new ReflectionError(grpc.status.NOT_FOUND, `Extensions not found for symbol ${symbol}`);
     }
 
-    const fieldNumbers = Object.keys(this.extensionIndex[symbol]).map((key) => Number(key));
+    const fieldNumbers = Object.keys(this.extensions[symbol]).map((key) => Number(key));
 
     return {
       baseTypeName: symbol,
@@ -317,9 +306,9 @@ export class ReflectionV1Implementation {
     };
   }
 
-  private getFileDependencies(file: FileDescriptorProto): FileDescriptorProto[] {
-    const visited: Set<FileDescriptorProto> = new Set();
-    const toVisit: FileDescriptorProto[] = file.getDependencyList().map((dep) => this.fileNameIndex[dep]);
+  private getFileDependencies(file: IFileDescriptorProto): IFileDescriptorProto[] {
+    const visited: Set<IFileDescriptorProto> = new Set();
+    const toVisit: IFileDescriptorProto[] = this.fileDependencies.get(file) || [];
 
     while (toVisit.length > 0) {
       const current = toVisit.pop();
@@ -329,11 +318,7 @@ export class ReflectionV1Implementation {
       }
 
       visited.add(current);
-      toVisit.push(
-        ...current.getDependencyList()
-          .map((dep) => this.fileNameIndex[dep])
-          .filter((dep) => !visited.has(dep))
-      );
+      toVisit.push(...this.fileDependencies.get(current)?.filter((dep) => !visited.has(dep)) || []);
     }
 
     return Array.from(visited);

@@ -31,15 +31,14 @@
     "generate-types": "proto-loader-gen-types --longs String --enums String --bytes Array --defaults --oneofs --includeComments --includeDirs proto/ -O src/generated grpc/reflection/v1/reflection.proto grpc/reflection/v1alpha/reflection.proto"
   },
   "dependencies": {
-    "google-protobuf": "^3.21.2",
-    "@grpc/proto-loader": "^0.7.10"
+    "@grpc/proto-loader": "^0.7.10",
+    "protobufjs": "^7.2.5"
   },
   "peerDependencies": {
     "@grpc/grpc-js": "^1.8.21"
   },
   "devDependencies": {
     "@grpc/grpc-js": "file:../grpc-js",
-    "@types/google-protobuf": "^3.15.7",
     "copyfiles": "^2.4.1",
     "typescript": "^5.2.2"
   }

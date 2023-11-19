@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as path from 'path';
-import { FileDescriptorProto } from 'google-protobuf/google/protobuf/descriptor_pb';
+import { FileDescriptorProto, IFileDescriptorProto } from 'protobufjs/ext/descriptor';
 import * as protoLoader from '@grpc/proto-loader';
 
 import { ReflectionV1Implementation } from '../src/implementations/reflection-v1';
@@ -40,9 +40,9 @@ describe('GrpcReflectionService', () => {
     it('finds files with transitive dependencies', () => {
       const descriptors = reflectionService
         .fileByFilename('sample.proto')
-        .fileDescriptorProto.map(FileDescriptorProto.deserializeBinary);
+        .fileDescriptorProto.map(f => FileDescriptorProto.decode(f) as IFileDescriptorProto);
 
-      const names = descriptors.map((desc) => desc.getName());
+      const names = descriptors.map((desc) => desc.name);
       assert.deepEqual(
         new Set(names),
         new Set(['sample.proto', 'vendor.proto', 'vendor_dependency.proto'])
@@ -52,27 +52,27 @@ describe('GrpcReflectionService', () => {
     it('finds files with fewer transitive dependencies', () => {
       const descriptors = reflectionService
         .fileByFilename('vendor.proto')
-        .fileDescriptorProto.map(FileDescriptorProto.deserializeBinary);
+        .fileDescriptorProto.map(f => FileDescriptorProto.decode(f) as IFileDescriptorProto);
 
-      const names = descriptors.map((desc) => desc.getName());
+      const names = descriptors.map((desc) => desc.name);
       assert.deepEqual(new Set(names), new Set(['vendor.proto', 'vendor_dependency.proto']));
     });
 
     it('finds files with no transitive dependencies', () => {
       const descriptors = reflectionService
         .fileByFilename('vendor_dependency.proto')
-        .fileDescriptorProto.map(FileDescriptorProto.deserializeBinary);
+        .fileDescriptorProto.map(f => FileDescriptorProto.decode(f) as IFileDescriptorProto);
 
       assert.equal(descriptors.length, 1);
-      assert.equal(descriptors[0].getName(), 'vendor_dependency.proto');
+      assert.equal(descriptors[0].name, 'vendor_dependency.proto');
     });
 
     it('merges files based on package name', () => {
       const descriptors = reflectionService
         .fileByFilename('vendor.proto')
-        .fileDescriptorProto.map(FileDescriptorProto.deserializeBinary);
+        .fileDescriptorProto.map(f => FileDescriptorProto.decode(f) as IFileDescriptorProto);
 
-      const names = descriptors.map((desc) => desc.getName());
+      const names = descriptors.map((desc) => desc.name);
       assert(!names.includes('common.proto')); // file merged into vendor.proto
     });
 
@@ -88,9 +88,9 @@ describe('GrpcReflectionService', () => {
     it('finds symbols and returns transitive file dependencies', () => {
       const descriptors = reflectionService
         .fileContainingSymbol('sample.HelloRequest')
-        .fileDescriptorProto.map(FileDescriptorProto.deserializeBinary);
+        .fileDescriptorProto.map(f => FileDescriptorProto.decode(f) as IFileDescriptorProto);
 
-      const names = descriptors.map((desc) => desc.getName());
+      const names = descriptors.map((desc) => desc.name);
       assert.deepEqual(
         new Set(names),
         new Set(['sample.proto', 'vendor.proto', 'vendor_dependency.proto']),
@@ -100,27 +100,27 @@ describe('GrpcReflectionService', () => {
     it('finds imported message types', () => {
       const descriptors = reflectionService
         .fileContainingSymbol('vendor.CommonMessage')
-        .fileDescriptorProto.map(FileDescriptorProto.deserializeBinary);
+        .fileDescriptorProto.map(f => FileDescriptorProto.decode(f) as IFileDescriptorProto);
 
-      const names = descriptors.map((desc) => desc.getName());
+      const names = descriptors.map((desc) => desc.name);
       assert.deepEqual(new Set(names), new Set(['vendor.proto', 'vendor_dependency.proto']));
     });
 
     it('finds transitively imported message types', () => {
       const descriptors = reflectionService
         .fileContainingSymbol('vendor.dependency.DependentMessage')
-        .fileDescriptorProto.map(FileDescriptorProto.deserializeBinary);
+        .fileDescriptorProto.map(f => FileDescriptorProto.decode(f) as IFileDescriptorProto);
 
       assert.equal(descriptors.length, 1);
-      assert.equal(descriptors[0].getName(), 'vendor_dependency.proto');
+      assert.equal(descriptors[0].name, 'vendor_dependency.proto');
     });
 
     it('finds nested message types', () => {
       const descriptors = reflectionService
         .fileContainingSymbol('sample.HelloRequest.HelloNested')
-        .fileDescriptorProto.map(FileDescriptorProto.deserializeBinary);
+        .fileDescriptorProto.map(f => FileDescriptorProto.decode(f) as IFileDescriptorProto);
 
-      const names = descriptors.map((desc) => desc.getName());
+      const names = descriptors.map((desc) => desc.name);
       assert.deepEqual(
         new Set(names),
         new Set(['sample.proto', 'vendor.proto', 'vendor_dependency.proto']),
@@ -130,9 +130,9 @@ describe('GrpcReflectionService', () => {
     it('merges files based on package name', () => {
       const descriptors = reflectionService
         .fileContainingSymbol('vendor.CommonMessage')
-        .fileDescriptorProto.map(FileDescriptorProto.deserializeBinary);
+        .fileDescriptorProto.map(f => FileDescriptorProto.decode(f) as IFileDescriptorProto);
 
-      const names = descriptors.map((desc) => desc.getName());
+      const names = descriptors.map((desc) => desc.name);
       assert(!names.includes('common.proto')); // file merged into vendor.proto
     });
 
@@ -146,9 +146,9 @@ describe('GrpcReflectionService', () => {
     it('resolves references to method types', () => {
       const descriptors = reflectionService
         .fileContainingSymbol('sample.SampleService.Hello2')
-        .fileDescriptorProto.map(FileDescriptorProto.deserializeBinary);
+        .fileDescriptorProto.map(f => FileDescriptorProto.decode(f) as IFileDescriptorProto);
 
-      const names = descriptors.map((desc) => desc.getName());
+      const names = descriptors.map((desc) => desc.name);
       assert.deepEqual(
         new Set(names),
         new Set(['sample.proto', 'vendor.proto', 'vendor_dependency.proto']),
@@ -160,9 +160,9 @@ describe('GrpcReflectionService', () => {
     it('finds extensions and returns transitive file dependencies', () => {
       const descriptors = reflectionService
         .fileContainingExtension('.vendor.CommonMessage', 101)
-        .fileDescriptorProto.map(FileDescriptorProto.deserializeBinary);
+        .fileDescriptorProto.map(f => FileDescriptorProto.decode(f) as IFileDescriptorProto);
 
-      const names = descriptors.map((desc) => desc.getName());
+      const names = descriptors.map((desc) => desc.name);
       assert.deepEqual(new Set(names), new Set(['vendor.proto', 'vendor_dependency.proto']));
     });
 

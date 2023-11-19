@@ -1,24 +1,24 @@
 import {
-  DescriptorProto,
-  EnumDescriptorProto,
-  EnumValueDescriptorProto,
-  FieldDescriptorProto,
-  FileDescriptorProto,
-  MethodDescriptorProto,
-  OneofDescriptorProto,
-  ServiceDescriptorProto,
-} from 'google-protobuf/google/protobuf/descriptor_pb';
+  IDescriptorProto,
+  IEnumDescriptorProto,
+  IEnumValueDescriptorProto,
+  IFieldDescriptorProto,
+  IFileDescriptorProto,
+  IMethodDescriptorProto,
+  IOneofDescriptorProto,
+  IServiceDescriptorProto,
+} from 'protobufjs/ext/descriptor';
 
 /** A set of functions for operating on protobuf objects as we visit them in a traversal */
 interface Visitor {
-  field?: (fqn: string, file: FileDescriptorProto, field: FieldDescriptorProto) => void;
-  extension?: (fqn: string, file: FileDescriptorProto, extension: FieldDescriptorProto) => void;
-  oneOf?: (fqn: string, file: FileDescriptorProto, decl: OneofDescriptorProto) => void;
-  message?: (fqn: string, file: FileDescriptorProto, msg: DescriptorProto) => void;
-  enum?: (fqn: string, file: FileDescriptorProto, msg: EnumDescriptorProto) => void;
-  enumValue?: (fqn: string, file: FileDescriptorProto, msg: EnumValueDescriptorProto) => void;
-  service?: (fqn: string, file: FileDescriptorProto, msg: ServiceDescriptorProto) => void;
-  method?: (fqn: string, file: FileDescriptorProto, method: MethodDescriptorProto) => void;
+  field?: (fqn: string, file: IFileDescriptorProto, field: IFieldDescriptorProto) => void;
+  extension?: (fqn: string, file: IFileDescriptorProto, extension: IFieldDescriptorProto) => void;
+  oneOf?: (fqn: string, file: IFileDescriptorProto, decl: IOneofDescriptorProto) => void;
+  message?: (fqn: string, file: IFileDescriptorProto, msg: IDescriptorProto) => void;
+  enum?: (fqn: string, file: IFileDescriptorProto, msg: IEnumDescriptorProto) => void;
+  enumValue?: (fqn: string, file: IFileDescriptorProto, msg: IEnumValueDescriptorProto) => void;
+  service?: (fqn: string, file: IFileDescriptorProto, msg: IServiceDescriptorProto) => void;
+  method?: (fqn: string, file: IFileDescriptorProto, method: IMethodDescriptorProto) => void;
 }
 
 /** Visit each node in a protobuf file and perform an operation on it
@@ -29,9 +29,9 @@ interface Visitor {
  *
  * @see Visitor for the interface to interact with the nodes
  */
-export const visit = (file: FileDescriptorProto, visitor: Visitor): void => {
-  const processField = (prefix: string, file: FileDescriptorProto, field: FieldDescriptorProto) => {
-    const fqn = `${prefix}.${field.getName()}`;
+export const visit = (file: IFileDescriptorProto, visitor: Visitor): void => {
+  const processField = (prefix: string, file: IFileDescriptorProto, field: IFieldDescriptorProto) => {
+    const fqn = `${prefix}.${field.name}`;
     if (visitor.field) {
       visitor.field(fqn, file, field);
     }
@@ -39,72 +39,71 @@ export const visit = (file: FileDescriptorProto, visitor: Visitor): void => {
 
   const processExtension = (
     prefix: string,
-    file: FileDescriptorProto,
-    ext: FieldDescriptorProto,
+    file: IFileDescriptorProto,
+    ext: IFieldDescriptorProto,
   ) => {
-    const fqn = `${prefix}.${ext.getName()}`;
+    const fqn = `${prefix}.${ext.name}`;
     if (visitor.extension) {
       visitor.extension(fqn, file, ext);
     }
   };
 
-  const processOneOf = (prefix: string, file: FileDescriptorProto, decl: OneofDescriptorProto) => {
-    const fqn = `${prefix}.${decl.getName()}`;
+  const processOneOf = (prefix: string, file: IFileDescriptorProto, decl: IOneofDescriptorProto) => {
+    const fqn = `${prefix}.${decl.name}`;
     if (visitor.oneOf) {
       visitor.oneOf(fqn, file, decl);
     }
   };
 
-  const processEnum = (prefix: string, file: FileDescriptorProto, decl: EnumDescriptorProto) => {
-    const fqn = `${prefix}.${decl.getName()}`;
+  const processEnum = (prefix: string, file: IFileDescriptorProto, decl: IEnumDescriptorProto) => {
+    const fqn = `${prefix}.${decl.name}`;
 
     if (visitor.enum) {
       visitor.enum(fqn, file, decl);
     }
 
-    decl.getValueList().forEach((value) => {
-      const valueFqn = `${fqn}.${value.getName()}`;
+    decl.value?.forEach((value) => {
+      const valueFqn = `${fqn}.${value.name}`;
       if (visitor.enumValue) {
         visitor.enumValue(valueFqn, file, value);
       }
     });
   };
 
-  const processMessage = (prefix: string, file: FileDescriptorProto, msg: DescriptorProto) => {
-    const fqn = `${prefix}.${msg.getName()}`;
+  const processMessage = (prefix: string, file: IFileDescriptorProto, msg: IDescriptorProto) => {
+    const fqn = `${prefix}.${msg.name}`;
     if (visitor.message) {
       visitor.message(fqn, file, msg);
     }
 
-    msg.getNestedTypeList().forEach((type) => processMessage(fqn, file, type));
-    msg.getEnumTypeList().forEach((type) => processEnum(fqn, file, type));
-    msg.getFieldList().forEach((field) => processField(fqn, file, field));
-    msg.getOneofDeclList().forEach((decl) => processOneOf(fqn, file, decl));
-    msg.getExtensionList().forEach((ext) => processExtension(fqn, file, ext));
+    msg.nestedType?.forEach((type) => processMessage(fqn, file, type));
+    msg.enumType?.forEach((type) => processEnum(fqn, file, type));
+    msg.field?.forEach((field) => processField(fqn, file, field));
+    msg.oneofDecl?.forEach((decl) => processOneOf(fqn, file, decl));
+    msg.extension?.forEach((ext) => processExtension(fqn, file, ext));
   };
 
   const processService = (
     prefix: string,
-    file: FileDescriptorProto,
-    service: ServiceDescriptorProto,
+    file: IFileDescriptorProto,
+    service: IServiceDescriptorProto,
   ) => {
-    const fqn = `${prefix}.${service.getName()}`;
+    const fqn = `${prefix}.${service.name}`;
     if (visitor.service) {
       visitor.service(fqn, file, service);
     }
 
-    service.getMethodList().forEach((method) => {
-      const methodFqn = `${fqn}.${method.getName()}`;
+    service.method?.forEach((method) => {
+      const methodFqn = `${fqn}.${method.name}`;
       if (visitor.method) {
         visitor.method(methodFqn, file, method);
       }
     });
   };
 
-  const packageName = file.getPackage() || '';
-  file.getEnumTypeList().forEach((type) => processEnum(packageName, file, type));
-  file.getMessageTypeList().forEach((type) => processMessage(packageName, file, type));
-  file.getServiceList().forEach((service) => processService(packageName, file, service));
-
-  file.getExtensionList().forEach((ext) => processExtension(packageName, file, ext));
+  const packageName = file.package || '';
+  file.enumType?.forEach((type) => processEnum(packageName, file, type));
+  file.messageType?.forEach((type) => processMessage(packageName, file, type));
+  file.service?.forEach((service) => processService(packageName, file, service));
+  file.extension?.forEach((ext) => processExtension(packageName, file, ext));
 };
