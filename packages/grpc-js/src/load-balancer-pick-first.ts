@@ -382,7 +382,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   private resetSubchannelList() {
     for (const child of this.children) {
-      if (child.subchannel !== this.currentPick) {
+      if (!(this.currentPick && child.subchannel.realSubchannelEquals(this.currentPick))) {
         /* The connectivity state listener is the same whether the subchannel
          * is in the list of children or it is the currentPick, so if it is in
          * both, removing it here would cause problems. In particular, that
