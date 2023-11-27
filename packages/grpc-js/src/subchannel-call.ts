@@ -289,10 +289,11 @@ export class Http2SubchannelCall implements SubchannelCall {
     });
   }
 
-  public onDisconnect() {
+  public onDisconnect(status: Status = Status.UNAVAILABLE) {
     this.endCall({
-      code: Status.UNAVAILABLE,
-      details: 'Connection dropped',
+      code: status,
+      details:
+        status === Status.UNAVAILABLE ? 'Connection dropped' : 'Call cancelled',
       metadata: new Metadata(),
     });
   }

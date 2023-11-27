@@ -34,7 +34,7 @@ import {
   TlsInfo,
   unregisterChannelzRef,
 } from './channelz';
-import { LogVerbosity } from './constants';
+import { LogVerbosity, Status } from './constants';
 import { getProxiedConnection, ProxyConnectionResult } from './http_proxy';
 import * as logging from './logging';
 import { getDefaultAuthority } from './resolver';
@@ -365,17 +365,21 @@ class Http2Transport implements Transport {
   }
 
   /**
-   * Handle connection drops, but not GOAWAYs.
+   * Handles disconnections by distinguishing between graceful and abrupt termination.
    */
   private handleDisconnect() {
-    this.reportDisconnectToOwner(false);
+    const wasGraceful = this.session.closed && !this.session.destroyed;
+
     /* Give calls an event loop cycle to finish naturally before reporting the
      * disconnnection to them. */
     setImmediate(() => {
       for (const call of this.activeCalls) {
-        call.onDisconnect();
+        const status = wasGraceful ? Status.CANCELLED : Status.UNAVAILABLE;
+        call.onDisconnect(status);
       }
     });
+
+    this.reportDisconnectToOwner(!wasGraceful);
   }
 
   addDisconnectListener(listener: TransportDisconnectListener): void {
