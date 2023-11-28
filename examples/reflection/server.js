@@ -3,7 +3,11 @@ var grpc = require('@grpc/grpc-js');
 var protoLoader = require('@grpc/proto-loader');
 var reflection = require('@grpc/reflection');
 
-var PROTO_PATH = path.join(__dirname, '../protos/helloworld.proto');
+var PROTO_PATH = [
+  path.join(__dirname, '../protos/helloworld.proto'),
+  require.resolve('@grpc/reflection/build/proto/grpc/reflection/v1/reflection.proto'),
+  require.resolve('@grpc/reflection/build/proto/grpc/reflection/v1alpha/reflection.proto')
+];
 
 var server = new grpc.Server();
 var packageDefinition = protoLoader.loadSync(PROTO_PATH);
