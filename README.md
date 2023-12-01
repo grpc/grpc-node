@@ -46,3 +46,11 @@ Directory: [`packages/grpc-health-check`](https://github.com/grpc/grpc-node/tree
 npm package: [grpc-health-check](https://www.npmjs.com/package/grpc-health-check)
 
 Health check service for gRPC servers.
+
+### gRPC Reflection API Service
+
+Directory: [`packages/grpc-reflection`](https://github.com/grpc/grpc-node/tree/master/packages/grpc-reflection)
+
+npm package: [@grpc/reflection](https://www.npmjs.com/package/@grpc/reflection)
+
+Reflection API service for gRPC servers.

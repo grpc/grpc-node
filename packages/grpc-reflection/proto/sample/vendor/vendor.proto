@@ -1,0 +1,10 @@
+syntax = "proto2";
+
+package vendor;
+
+import "./common.proto";
+import "./dependency/dependency.proto";
+
+extend CommonMessage {
+  optional bool ext = 101;
+}

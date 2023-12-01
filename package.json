@@ -54,7 +54,8 @@
     "include": [
       "packages/grpc-health-check/health.js",
       "packages/grpc-js/build/src/*",
-      "packages/proto-loader/build/src/*"
+      "packages/proto-loader/build/src/*",
+      "packages/grpc-reflection/build/src/*"
     ],
     "cache": true,
     "all": true

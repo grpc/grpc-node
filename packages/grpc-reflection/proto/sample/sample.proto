@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package sample;
+
+import 'vendor.proto';
+
+service SampleService {
+  rpc Hello (HelloRequest) returns (HelloResponse) {}
+  rpc Hello2 (HelloRequest) returns (CommonMessage) {}
+}
+
+service IgnoreService {
+  rpc Hello (HelloRequest) returns (HelloResponse) {}
+}
+
+message HelloRequest {
+  string hello = 1;
+  HelloNested nested = 2;
+  ShadowedMessage nestedShadowedMessage = 3;
+
+  message HelloNested {
+    string hello = 1;
+    CommonMessage field = 2;
+  }
+
+  message ShadowedMessage {
+    int32 item = 1;
+  }
+}
+
+enum HelloStatus {
+  HELLO = 1;
+  WORLD = 2;
+}
+
+message HelloResponse {
+  string world = 1;
+  HelloStatus status = 2;
+}
+
+message ShadowedMessage {
+  string hello = 1;
+}

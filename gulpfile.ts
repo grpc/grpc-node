@@ -19,10 +19,11 @@ import * as gulp from 'gulp';
 import * as healthCheck from './packages/grpc-health-check/gulpfile';
 import * as jsCore from './packages/grpc-js/gulpfile';
 import * as jsXds from './packages/grpc-js-xds/gulpfile';
+import * as reflection from './packages/grpc-reflection/gulpfile';
 import * as protobuf from './packages/proto-loader/gulpfile';
 import * as internalTest from './test/gulpfile';
 
-const installAll = gulp.series(jsCore.install, healthCheck.install, protobuf.install, internalTest.install, jsXds.install);
+const installAll = gulp.series(jsCore.install, healthCheck.install, protobuf.install, internalTest.install, jsXds.install, reflection.install);
 
 const lint = gulp.parallel(jsCore.lint);
 
@@ -40,7 +41,7 @@ const nativeTestOnly = gulp.parallel(healthCheck.test);
 
 const nativeTest = gulp.series(build, nativeTestOnly);
 
-const testOnly = gulp.parallel(jsCore.test, nativeTestOnly, protobuf.test, jsXds.test);
+const testOnly = gulp.parallel(jsCore.test, nativeTestOnly, protobuf.test, jsXds.test, reflection.test);
 
 const test = gulp.series(build, testOnly, internalTest.test);
 

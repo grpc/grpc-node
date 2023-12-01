@@ -1,0 +1,45 @@
+{
+  "name": "@grpc/reflection",
+  "version": "1.0.0",
+  "author": {
+    "name": "Google Inc."
+  },
+  "description": "Reflection API service for use with gRPC-node",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/grpc/grpc-node.git",
+    "directory": "packages/grpc-reflection"
+  },
+  "bugs": "https://github.com/grpc/grpc-node/issues",
+  "contributors": [
+    {
+      "name": "Justin Timmons",
+      "email": "justinmtimmons@gmail.com"
+    }
+  ],
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "files": [
+    "build"
+  ],
+  "license": "Apache-2.0",
+  "scripts": {
+    "compile": "tsc -p .",
+    "postcompile": "copyfiles './proto/**/*.proto' build/",
+    "prepare": "npm run generate-types && npm run compile",
+    "test": "mocha --require ts-node/register test/**.ts",
+    "generate-types": "proto-loader-gen-types --longs String --enums String --bytes Array --defaults --oneofs --includeComments --includeDirs proto/ -O src/generated grpc/reflection/v1/reflection.proto grpc/reflection/v1alpha/reflection.proto"
+  },
+  "dependencies": {
+    "@grpc/proto-loader": "^0.7.10",
+    "protobufjs": "^7.2.5"
+  },
+  "peerDependencies": {
+    "@grpc/grpc-js": "^1.8.21"
+  },
+  "devDependencies": {
+    "@grpc/grpc-js": "file:../grpc-js",
+    "copyfiles": "^2.4.1",
+    "typescript": "^5.2.2"
+  }
+}
