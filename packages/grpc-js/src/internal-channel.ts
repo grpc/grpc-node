@@ -296,7 +296,9 @@ export class InternalChannel {
         this.currentPicker = picker;
         const queueCopy = this.pickQueue.slice();
         this.pickQueue = [];
-        this.callRefTimerUnref();
+        if (queueCopy.length > 0) {
+          this.callRefTimerUnref();
+        }
         for (const call of queueCopy) {
           call.doPick();
         }
@@ -349,11 +351,12 @@ export class InternalChannel {
         process.nextTick(() => {
           const localQueue = this.configSelectionQueue;
           this.configSelectionQueue = [];
-          this.callRefTimerUnref();
+          if (localQueue.length > 0) {
+            this.callRefTimerUnref();
+          }
           for (const call of localQueue) {
             call.getConfig();
           }
-          this.configSelectionQueue = [];
         });
       },
       status => {
@@ -380,7 +383,9 @@ export class InternalChannel {
         }
         const localQueue = this.configSelectionQueue;
         this.configSelectionQueue = [];
-        this.callRefTimerUnref();
+        if (localQueue.length > 0) {
+          this.callRefTimerUnref();
+        }
         for (const call of localQueue) {
           call.reportResolverError(status);
         }
