@@ -21,12 +21,12 @@ npm install @grpc/reflection
 Any gRPC-node server can use `@grpc/reflection` to expose reflection information about their gRPC API. 
 
 ```typescript
-import { ReflectionServer } from '@grpc/reflection';
+import { ReflectionService } from '@grpc/reflection';
 
 const pkg = protoLoader.load(...); // Load your gRPC package definition as normal
 
 // Create the reflection implementation based on your gRPC package and add it to your existing server
-const reflection = new ReflectionServer(pkg);
+const reflection = new ReflectionService(pkg);
 reflection.addToServer(server);
 ```
 
