@@ -314,8 +314,8 @@ export class ReflectionV1Implementation {
 
   private getFileDependencies(file: IFileDescriptorProto): IFileDescriptorProto[] {
     const visited: Set<IFileDescriptorProto> = new Set();
-    const toVisit: IFileDescriptorProto[] = this.fileDependencies.get(file) || [];
-
+    const toVisit: IFileDescriptorProto[] = [...(this.fileDependencies.get(file) || [])];
+    
     while (toVisit.length > 0) {
       const current = toVisit.pop();
 
