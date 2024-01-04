@@ -27,7 +27,7 @@ import { StatusObject } from './call-interface';
 import { Channel, ChannelImplementation } from './channel';
 import { CompressionAlgorithms } from './compression-algorithms';
 import { ConnectivityState } from './connectivity-state';
-import { ChannelCredentials } from './channel-credentials';
+import { ChannelCredentials, VerifyOptions } from './channel-credentials';
 import {
   CallOptions,
   Client,
@@ -182,6 +182,7 @@ export {
   ServiceDefinition,
   UntypedHandleCall,
   UntypedServiceImplementation,
+  VerifyOptions
 };
 
 /**** Server ****/
