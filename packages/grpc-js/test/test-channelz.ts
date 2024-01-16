@@ -495,12 +495,12 @@ describe('Channelz', () => {
                                 assert.strictEqual(
                                   +serverSocketResult.socket.data
                                     .streams_succeeded,
-                                  0
+                                  1
                                 );
                                 assert.strictEqual(
                                   +serverSocketResult.socket.data
                                     .streams_failed,
-                                  1
+                                  0
                                 );
                                 assert.strictEqual(
                                   +serverSocketResult.socket.data

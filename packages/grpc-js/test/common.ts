@@ -72,7 +72,7 @@ const serviceImpl = {
 export class TestServer {
   private server: grpc.Server;
   public port: number | null = null;
-  constructor(public useTls: boolean, options?: grpc.ChannelOptions) {
+  constructor(public useTls: boolean, options?: grpc.ServerOptions) {
     this.server = new grpc.Server(options);
     this.server.addService(echoService.service, serviceImpl);
   }
@@ -92,7 +92,6 @@ export class TestServer {
           return;
         }
         this.port = port;
-        this.server.start();
         resolve();
       });
     });
@@ -128,6 +127,10 @@ export class TestClient {
 
   sendRequest(callback: (error?: grpc.ServiceError) => void) {
     this.client.echo({}, callback);
+  }
+
+  sendRequestWithMetadata(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError) => void) {
+    this.client.echo({}, metadata, callback);
   }
 
   getChannelState() {

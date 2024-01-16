@@ -23,7 +23,7 @@ import {
   PeerCertificate,
   TLSSocket,
 } from 'tls';
-import { StatusObject } from './call-interface';
+import { PartialStatusObject } from './call-interface';
 import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
 import {
@@ -72,7 +72,7 @@ const KEEPALIVE_TIMEOUT_MS = 20000;
 export interface CallEventTracker {
   addMessageSent(): void;
   addMessageReceived(): void;
-  onCallEnd(status: StatusObject): void;
+  onCallEnd(status: PartialStatusObject): void;
   onStreamEnd(success: boolean): void;
 }
 

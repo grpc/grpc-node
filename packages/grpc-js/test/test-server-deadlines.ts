@@ -110,8 +110,8 @@ describe('Server deadlines', () => {
       {},
       (error: any, response: any) => {
         assert(error);
-        assert.strictEqual(error.code, grpc.status.OUT_OF_RANGE);
-        assert.strictEqual(error.details, 'Invalid deadline');
+        assert.strictEqual(error.code, grpc.status.INTERNAL);
+        assert.match(error.details, /^Invalid grpc-timeout value/);
         done();
       }
     );

@@ -28,20 +28,18 @@ import {
   HandleCall,
   Handler,
   HandlerType,
-  Http2ServerCallStream,
   sendUnaryData,
   ServerDuplexStream,
   ServerDuplexStreamImpl,
   ServerReadableStream,
-  ServerReadableStreamImpl,
   ServerStreamingHandler,
   ServerUnaryCall,
-  ServerUnaryCallImpl,
   ServerWritableStream,
   ServerWritableStreamImpl,
   UnaryHandler,
   ServerErrorResponse,
   ServerStatusResponse,
+  serverErrorToStatus,
 } from './server-call';
 import { ServerCredentials } from './server-credentials';
 import { ChannelOptions } from './channel-options';
@@ -72,6 +70,9 @@ import {
   unregisterChannelzRef,
 } from './channelz';
 import { CipherNameAndProtocol, TLSSocket } from 'tls';
+import { ServerInterceptingCallInterface, ServerInterceptor, getServerInterceptingCall } from './server-interceptors';
+import { PartialStatusObject } from './call-interface';
+import { CallEventTracker } from './transport';
 
 const UNLIMITED_CONNECTION_AGE_MS = ~(1 << 31);
 const KEEPALIVE_MAX_TIME_MS = ~(1 << 31);
@@ -109,7 +110,7 @@ function deprecate(message: string) {
 
 function getUnimplementedStatusResponse(
   methodName: string
-): Partial<ServiceError> {
+): PartialStatusObject {
   return {
     code: Status.UNIMPLEMENTED,
     details: `The server does not implement the method ${methodName}`,
@@ -219,6 +220,10 @@ interface Http2ServerInfo {
   sessions: Set<http2.ServerHttp2Session>;
 }
 
+export interface ServerOptions extends ChannelOptions {
+  interceptors?: ServerInterceptor[]
+}
+
 export class Server {
   private boundPorts: Map<string, BoundPort>= new Map();
   private http2Servers: Map<AnyHttp2Server, Http2ServerInfo> = new Map();
@@ -234,7 +239,7 @@ export class Server {
    */
   private started = false;
   private shutdown = false;
-  private options: ChannelOptions;
+  private options: ServerOptions;
   private serverAddressString = 'null';
 
   // Channelz Info
@@ -251,13 +256,15 @@ export class Server {
   private readonly keepaliveTimeMs: number;
   private readonly keepaliveTimeoutMs: number;
 
+  private readonly interceptors: ServerInterceptor[];
+
   /**
    * Options that will be used to construct all Http2Server instances for this
    * Server.
    */
   private commonServerOptions: http2.ServerOptions;
 
-  constructor(options?: ChannelOptions) {
+  constructor(options?: ServerOptions) {
     this.options = options ?? {};
     if (this.options['grpc.enable_channelz'] === 0) {
       this.channelzEnabled = false;
@@ -296,6 +303,7 @@ export class Server {
         maxConcurrentStreams: this.options['grpc.max_concurrent_streams'],
       };
     }
+    this.interceptors = this.options.interceptors ?? [];
     this.trace('Server constructed');
   }
 
@@ -1072,23 +1080,24 @@ export class Server {
     return handler;
   }
 
-  private _respondWithError<T extends Partial<ServiceError>>(
-    err: T,
+  private _respondWithError(
+    err: PartialStatusObject,
     stream: http2.ServerHttp2Stream,
     channelzSessionInfo: ChannelzSessionInfo | null = null
   ) {
-    const call = new Http2ServerCallStream(stream, null!, this.options);
-
-    if (err.code === undefined) {
-      err.code = Status.INTERNAL;
-    }
+    const trailersToSend = {
+      'grpc-status': err.code ?? Status.INTERNAL,
+      'grpc-message': err.details,
+      [http2.constants.HTTP2_HEADER_STATUS]: http2.constants.HTTP_STATUS_OK,
+      [http2.constants.HTTP2_HEADER_CONTENT_TYPE]: 'application/grpc+proto',
+      ...err.metadata?.toHttp2Headers()
+    };
+    stream.respond(trailersToSend, {endStream: true});
 
     if (this.channelzEnabled) {
       this.callTracker.addCallFailed();
       channelzSessionInfo?.streamTracker.addCallFailed();
     }
-
-    call.sendError(err);
   }
 
   private _channelzHandler(
@@ -1120,39 +1129,44 @@ export class Server {
       return;
     }
 
-    const call = new Http2ServerCallStream(stream, handler, this.options);
-
-    call.once('callEnd', (code: Status) => {
-      if (code === Status.OK) {
-        this.callTracker.addCallSucceeded();
-      } else {
-        this.callTracker.addCallFailed();
-      }
-    });
-
-    if (channelzSessionInfo) {
-      call.once('streamEnd', (success: boolean) => {
-        if (success) {
-          channelzSessionInfo.streamTracker.addCallSucceeded();
-        } else {
-          channelzSessionInfo.streamTracker.addCallFailed();
+    let callEventTracker: CallEventTracker = {
+      addMessageSent: () => {
+        if (channelzSessionInfo) {
+          channelzSessionInfo.messagesSent += 1;
+          channelzSessionInfo.lastMessageSentTimestamp = new Date();
         }
-      });
-      call.on('sendMessage', () => {
-        channelzSessionInfo.messagesSent += 1;
-        channelzSessionInfo.lastMessageSentTimestamp = new Date();
-      });
-      call.on('receiveMessage', () => {
-        channelzSessionInfo.messagesReceived += 1;
-        channelzSessionInfo.lastMessageReceivedTimestamp = new Date();
-      });
+      },
+      addMessageReceived: () => {
+        if (channelzSessionInfo) {
+          channelzSessionInfo.messagesReceived += 1;
+          channelzSessionInfo.lastMessageReceivedTimestamp = new Date();
+        }
+      },
+      onCallEnd: status => {
+        if (status.code === Status.OK) {
+          this.callTracker.addCallSucceeded();
+        } else {
+          this.callTracker.addCallFailed();
+        }
+      },
+      onStreamEnd: success => {
+        if (channelzSessionInfo) {
+          if (success) {
+            channelzSessionInfo.streamTracker.addCallSucceeded();
+          } else {
+            channelzSessionInfo.streamTracker.addCallFailed();
+          }
+        }
+      }
     }
 
-    if (!this._runHandlerForCall(call, handler, headers)) {
+    const call = getServerInterceptingCall(this.interceptors, stream, headers, callEventTracker, handler, this.options);
+
+    if (!this._runHandlerForCall(call, handler)) {
       this.callTracker.addCallFailed();
       channelzSessionInfo?.streamTracker.addCallFailed();
 
-      call.sendError({
+      call.sendStatus({
         code: Status.INTERNAL,
         details: `Unknown handler type: ${handler.type}`,
       });
@@ -1179,9 +1193,10 @@ export class Server {
       return;
     }
 
-    const call = new Http2ServerCallStream(stream, handler, this.options);
-    if (!this._runHandlerForCall(call, handler, headers)) {
-      call.sendError({
+    const call = getServerInterceptingCall(this.interceptors, stream, headers, null, handler, this.options);
+
+    if (!this._runHandlerForCall(call, handler)) {
+      call.sendStatus({
         code: Status.INTERNAL,
         details: `Unknown handler type: ${handler.type}`,
       });
@@ -1189,38 +1204,27 @@ export class Server {
   }
 
   private _runHandlerForCall(
-    call: Http2ServerCallStream<any, any>,
-    handler: Handler<any, any>,
-    headers: http2.IncomingHttpHeaders
+    call: ServerInterceptingCallInterface,
+    handler: Handler<any, any>
   ): boolean {
-    const metadata = call.receiveMetadata(headers);
-    const encoding =
-      (metadata.get('grpc-encoding')[0] as string | undefined) ?? 'identity';
-    metadata.remove('grpc-encoding');
 
     const { type } = handler;
     if (type === 'unary') {
-      handleUnary(call, handler as UntypedUnaryHandler, metadata, encoding);
+      handleUnary(call, handler as UntypedUnaryHandler);
     } else if (type === 'clientStream') {
       handleClientStreaming(
         call,
-        handler as UntypedClientStreamingHandler,
-        metadata,
-        encoding
+        handler as UntypedClientStreamingHandler
       );
     } else if (type === 'serverStream') {
       handleServerStreaming(
         call,
-        handler as UntypedServerStreamingHandler,
-        metadata,
-        encoding
+        handler as UntypedServerStreamingHandler
       );
     } else if (type === 'bidi') {
       handleBidiStreaming(
         call,
-        handler as UntypedBidiStreamingHandler,
-        metadata,
-        encoding
+        handler as UntypedBidiStreamingHandler
       );
     } else {
       return false;
@@ -1365,52 +1369,10 @@ export class Server {
 }
 
 async function handleUnary<RequestType, ResponseType>(
-  call: Http2ServerCallStream<RequestType, ResponseType>,
-  handler: UnaryHandler<RequestType, ResponseType>,
-  metadata: Metadata,
-  encoding: string
+  call: ServerInterceptingCallInterface,
+  handler: UnaryHandler<RequestType, ResponseType>
 ): Promise<void> {
-  try {
-    const request = await call.receiveUnaryMessage(encoding);
-
-    if (request === undefined || call.cancelled) {
-      return;
-    }
-
-    const emitter = new ServerUnaryCallImpl<RequestType, ResponseType>(
-      call,
-      metadata,
-      request
-    );
-
-    handler.func(
-      emitter,
-      (
-        err: ServerErrorResponse | ServerStatusResponse | null,
-        value?: ResponseType | null,
-        trailer?: Metadata,
-        flags?: number
-      ) => {
-        call.sendUnaryMessage(err, value, trailer, flags);
-      }
-    );
-  } catch (err) {
-    call.sendError(err as ServerErrorResponse);
-  }
-}
-
-function handleClientStreaming<RequestType, ResponseType>(
-  call: Http2ServerCallStream<RequestType, ResponseType>,
-  handler: ClientStreamingHandler<RequestType, ResponseType>,
-  metadata: Metadata,
-  encoding: string
-): void {
-  const stream = new ServerReadableStreamImpl<RequestType, ResponseType>(
-    call,
-    metadata,
-    handler.deserialize,
-    encoding
-  );
+  let stream: ServerUnaryCall<RequestType, ResponseType>;
 
   function respond(
     err: ServerErrorResponse | ServerStatusResponse | null,
@@ -1418,61 +1380,207 @@ function handleClientStreaming<RequestType, ResponseType>(
     trailer?: Metadata,
     flags?: number
   ) {
-    stream.destroy();
-    call.sendUnaryMessage(err, value, trailer, flags);
-  }
-
-  if (call.cancelled) {
-    return;
-  }
-
-  stream.on('error', respond);
-  handler.func(stream, respond);
-}
-
-async function handleServerStreaming<RequestType, ResponseType>(
-  call: Http2ServerCallStream<RequestType, ResponseType>,
-  handler: ServerStreamingHandler<RequestType, ResponseType>,
-  metadata: Metadata,
-  encoding: string
-): Promise<void> {
-  try {
-    const request = await call.receiveUnaryMessage(encoding);
-
-    if (request === undefined || call.cancelled) {
+    if (err) {
+      call.sendStatus(serverErrorToStatus(err, trailer));
       return;
     }
-
-    const stream = new ServerWritableStreamImpl<RequestType, ResponseType>(
-      call,
-      metadata,
-      handler.serialize,
-      request
-    );
-
-    handler.func(stream);
-  } catch (err) {
-    call.sendError(err as ServerErrorResponse);
+    call.sendMessage(value, () => {
+      call.sendStatus({
+        code: Status.OK,
+        details: 'OK',
+        metadata: trailer ?? null
+      });
+    });
   }
+
+  let requestMetadata: Metadata;
+  let requestMessage: RequestType | null = null;
+  call.start({
+    onReceiveMetadata(metadata) {
+      requestMetadata = metadata;
+      call.startRead();
+    },
+    onReceiveMessage(message) {
+      if (requestMessage) {
+        call.sendStatus({
+          code: Status.UNIMPLEMENTED,
+          details: `Received a second request message for server streaming method ${handler.path}`,
+          metadata: null
+        });
+        return;
+      }
+      requestMessage = message;
+      call.startRead();
+    },
+    onReceiveHalfClose() {
+      if (!requestMessage) {
+        call.sendStatus({
+          code: Status.UNIMPLEMENTED,
+          details: `Received no request message for server streaming method ${handler.path}`,
+          metadata: null
+        });
+        return;
+      }
+      stream = new ServerWritableStreamImpl(handler.path, call, requestMetadata, requestMessage);
+      try {
+        handler.func(stream, respond);
+      } catch (err) {
+        call.sendStatus({
+          code: Status.UNKNOWN,
+          details: `Server method handler threw error ${(err as Error).message}`,
+          metadata: null
+        });
+      }
+    },
+    onCancel() {
+      if (stream) {
+        stream.cancelled = true;
+        stream.emit('cancelled', 'cancelled');
+      }
+    },
+  });
+}
+
+function handleClientStreaming<RequestType, ResponseType>(
+  call: ServerInterceptingCallInterface,
+  handler: ClientStreamingHandler<RequestType, ResponseType>
+): void {
+  let stream: ServerReadableStream<RequestType, ResponseType>;
+
+  function respond(
+    err: ServerErrorResponse | ServerStatusResponse | null,
+    value?: ResponseType | null,
+    trailer?: Metadata,
+    flags?: number
+  ) {
+    if (err) {
+      call.sendStatus(serverErrorToStatus(err, trailer));
+      return;
+    }
+    call.sendMessage(value, () => {
+      call.sendStatus({
+        code: Status.OK,
+        details: 'OK',
+        metadata: trailer ?? null
+      });
+    });
+  }
+
+  call.start({
+    onReceiveMetadata(metadata) {
+      stream = new ServerDuplexStreamImpl(handler.path, call, metadata);
+      try {
+        handler.func(stream, respond);
+      } catch (err) {
+        call.sendStatus({
+          code: Status.UNKNOWN,
+          details: `Server method handler threw error ${(err as Error).message}`,
+          metadata: null
+        });
+      }
+    },
+    onReceiveMessage(message) {
+      stream.push(message);
+    },
+    onReceiveHalfClose() {
+      stream.push(null);
+    },
+    onCancel() {
+      if (stream) {
+        stream.cancelled = true;
+        stream.emit('cancelled', 'cancelled');
+        stream.destroy();
+      }
+    },
+  });
+}
+
+function handleServerStreaming<RequestType, ResponseType>(
+  call: ServerInterceptingCallInterface,
+  handler: ServerStreamingHandler<RequestType, ResponseType>
+): void {
+  let stream: ServerWritableStream<RequestType, ResponseType>;
+
+  let requestMetadata: Metadata;
+  let requestMessage: RequestType | null = null;
+  call.start({
+    onReceiveMetadata(metadata) {
+      requestMetadata = metadata;
+      call.startRead();
+    },
+    onReceiveMessage(message) {
+      if (requestMessage) {
+        call.sendStatus({
+          code: Status.UNIMPLEMENTED,
+          details: `Received a second request message for server streaming method ${handler.path}`,
+          metadata: null
+        });
+        return;
+      }
+      requestMessage = message;
+      call.startRead();
+    },
+    onReceiveHalfClose() {
+      if (!requestMessage) {
+        call.sendStatus({
+          code: Status.UNIMPLEMENTED,
+          details: `Received no request message for server streaming method ${handler.path}`,
+          metadata: null
+        });
+        return;
+      }
+      stream = new ServerWritableStreamImpl(handler.path, call, requestMetadata, requestMessage);
+      try {
+        handler.func(stream);
+      } catch (err) {
+        call.sendStatus({
+          code: Status.UNKNOWN,
+          details: `Server method handler threw error ${(err as Error).message}`,
+          metadata: null
+        });
+      }
+    },
+    onCancel() {
+      if (stream) {
+        stream.cancelled = true;
+        stream.emit('cancelled', 'cancelled');
+        stream.destroy();
+      }
+    },
+  });
 }
 
 function handleBidiStreaming<RequestType, ResponseType>(
-  call: Http2ServerCallStream<RequestType, ResponseType>,
-  handler: BidiStreamingHandler<RequestType, ResponseType>,
-  metadata: Metadata,
-  encoding: string
+  call: ServerInterceptingCallInterface,
+  handler: BidiStreamingHandler<RequestType, ResponseType>
 ): void {
-  const stream = new ServerDuplexStreamImpl<RequestType, ResponseType>(
-    call,
-    metadata,
-    handler.serialize,
-    handler.deserialize,
-    encoding
-  );
+  let stream: ServerDuplexStream<RequestType, ResponseType>;
 
-  if (call.cancelled) {
-    return;
-  }
-
-  handler.func(stream);
+  call.start({
+    onReceiveMetadata(metadata) {
+      stream = new ServerDuplexStreamImpl(handler.path, call, metadata);
+      try {
+        handler.func(stream);
+      } catch (err) {
+        call.sendStatus({
+          code: Status.UNKNOWN,
+          details: `Server method handler threw error ${(err as Error).message}`,
+          metadata: null
+        });
+      }
+    },
+    onReceiveMessage(message) {
+      stream.push(message);
+    },
+    onReceiveHalfClose() {
+      stream.push(null);
+    },
+    onCancel() {
+      if (stream) {
+        stream.cancelled = true;
+        stream.emit('cancelled', 'cancelled');
+        stream.destroy();
+      }
+    },
+  });
 }
