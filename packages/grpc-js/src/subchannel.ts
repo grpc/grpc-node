@@ -245,6 +245,10 @@ export class Subchannel {
                 );
               }
             });
+          } else {
+            /* If we can't transition from CONNECTING to READY here, we will
+             * not be using this transport, so release its resources. */
+            transport.shutdown();
           }
         },
         error => {
