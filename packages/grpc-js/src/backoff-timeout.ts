@@ -78,6 +78,11 @@ export class BackoffTimeout {
    * running is true.
    */
   private startTime: Date = new Date();
+  /**
+   * The approximate time that the currently running timer will end. Only valid
+   * if running is true.
+   */
+  private endTime: Date = new Date();
 
   constructor(private callback: () => void, options?: BackoffOptions) {
     if (options) {
@@ -100,6 +105,8 @@ export class BackoffTimeout {
   }
 
   private runTimer(delay: number) {
+    this.endTime = this.startTime;
+    this.endTime.setMilliseconds(this.endTime.getMilliseconds() + this.nextDelay);
     clearTimeout(this.timerId);
     this.timerId = setTimeout(() => {
       this.callback();
@@ -177,5 +184,13 @@ export class BackoffTimeout {
   unref() {
     this.hasRef = false;
     this.timerId.unref?.();
+  }
+
+  /**
+   * Get the approximate timestamp of when the timer will fire. Only valid if
+   * this.isRunning() is true.
+   */
+  getEndTime() {
+    return this.endTime;
   }
 }

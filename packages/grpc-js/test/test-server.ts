@@ -211,7 +211,7 @@ describe('Server', () => {
           client!.makeUnaryRequest('/math.Math/Div', x => x, x => x, Buffer.from('abc'), {deadline: deadline}, (callError2, result) => {
             assert(callError2);
             // DEADLINE_EXCEEDED means that the server is unreachable
-            assert.strictEqual(callError2.code, grpc.status.DEADLINE_EXCEEDED);
+            assert(callError2.code === grpc.status.DEADLINE_EXCEEDED || callError2.code === grpc.status.UNAVAILABLE);
             done();
           });
         });
@@ -228,7 +228,7 @@ describe('Server', () => {
     });
   });
 
-  describe.only('drain', () => {
+  describe('drain', () => {
     let client: ServiceClient;
     let portNumber: number;
     const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');

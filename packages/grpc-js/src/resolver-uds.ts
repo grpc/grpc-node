@@ -20,6 +20,7 @@ import { GrpcUri } from './uri-parser';
 import { ChannelOptions } from './channel-options';
 
 class UdsResolver implements Resolver {
+  private hasReturnedResult = false;
   private endpoints: Endpoint[] = [];
   constructor(
     target: GrpcUri,
@@ -35,14 +36,17 @@ class UdsResolver implements Resolver {
     this.endpoints = [{ addresses: [{ path }] }];
   }
   updateResolution(): void {
-    process.nextTick(
-      this.listener.onSuccessfulResolution,
-      this.endpoints,
-      null,
-      null,
-      null,
-      {}
-    );
+    if (!this.hasReturnedResult) {
+      this.hasReturnedResult = true;
+      process.nextTick(
+        this.listener.onSuccessfulResolution,
+        this.endpoints,
+        null,
+        null,
+        null,
+        {}
+      );
+    }
   }
 
   destroy() {

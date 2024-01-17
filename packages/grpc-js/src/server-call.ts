@@ -558,7 +558,7 @@ export class Http2ServerCallStream<
     return metadata;
   }
 
-  receiveUnaryMessage(encoding: string): Promise<RequestType | void> {
+  receiveUnaryMessage(encoding: string): Promise<RequestType> {
     return new Promise((resolve, reject) => {
       const { stream } = this;
 

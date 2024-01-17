@@ -22,6 +22,7 @@ import { XdsServer } from "./xds-server";
 
 import { register } from "../src";
 import assert = require("assert");
+import { connectivityState } from "@grpc/grpc-js";
 
 register();
 
@@ -58,6 +59,36 @@ describe('core xDS functionality', () => {
         client.stopCalls();
         done();
       }, reason => done(reason));
+    }, reason => done(reason));
+  });
+  it('should be able to enter and exit idle', function(done) {
+    this.timeout(5000);
+    const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [new Backend()], locality:{region: 'region1'}}]);
+    const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
+    routeGroup.startAllBackends().then(() => {
+      xdsServer.setEdsResource(cluster.getEndpointConfig());
+      xdsServer.setCdsResource(cluster.getClusterConfig());
+      xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
+      xdsServer.setLdsResource(routeGroup.getListener());
+      xdsServer.addResponseListener((typeUrl, responseState) => {
+        if (responseState.state === 'NACKED') {
+          client.stopCalls();
+          assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
+        }
+      })
+      client = XdsTestClient.createFromServer('listener1', xdsServer, {
+        'grpc.client_idle_timeout_ms': 1000,
+      });
+      client.sendOneCall(error => {
+        assert.ifError(error);
+        assert.strictEqual(client.getConnectivityState(), connectivityState.READY);
+        setTimeout(() => {
+          assert.strictEqual(client.getConnectivityState(), connectivityState.IDLE);
+          client.sendOneCall(error => {
+            done(error);
+          })
+        }, 1100);
+      });
     }, reason => done(reason));
   });
 });

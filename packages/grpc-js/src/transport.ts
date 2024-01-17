@@ -194,17 +194,18 @@ class Http2Transport implements Transport {
     });
     session.once(
       'goaway',
-      (errorCode: number, lastStreamID: number, opaqueData: Buffer) => {
+      (errorCode: number, lastStreamID: number, opaqueData?: Buffer) => {
         let tooManyPings = false;
         /* See the last paragraph of
          * https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md#basic-keepalive */
         if (
           errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM &&
+          opaqueData &&
           opaqueData.equals(tooManyPingsData)
         ) {
           tooManyPings = true;
         }
-        this.trace('connection closed by GOAWAY with code ' + errorCode);
+        this.trace('connection closed by GOAWAY with code ' + errorCode + ' and data ' + opaqueData?.toString());
         this.reportDisconnectToOwner(tooManyPings);
       }
     );
@@ -426,6 +427,10 @@ class Http2Transport implements Transport {
     try {
       this.session!.ping(
         (err: Error | null, duration: number, payload: Buffer) => {
+          if (err) {
+            this.keepaliveTrace('Ping failed with error ' + err.message);
+            this.handleDisconnect();
+          }
           this.keepaliveTrace('Received ping response');
           this.clearKeepaliveTimeout();
           this.maybeStartKeepalivePingTimer();
@@ -737,6 +742,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
         connectionOptions
       );
       this.session = session;
+      let errorMessage = 'Failed to connect';
       session.unref();
       session.once('connect', () => {
         session.removeAllListeners();
@@ -745,10 +751,14 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       });
       session.once('close', () => {
         this.session = null;
-        reject();
+        // Leave time for error event to happen before rejecting
+        setImmediate(() => {
+          reject(`${errorMessage} (${new Date().toISOString()})`);
+        });
       });
       session.once('error', error => {
-        this.trace('connection failed with error ' + (error as Error).message);
+        errorMessage = (error as Error).message;
+        this.trace('connection failed with error ' + errorMessage);
       });
     });
   }

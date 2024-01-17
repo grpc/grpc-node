@@ -233,6 +233,7 @@ export class Server {
    * it is called twice, as it did previously.
    */
   private started = false;
+  private shutdown = false;
   private options: ChannelOptions;
   private serverAddressString = 'null';
 
@@ -699,6 +700,9 @@ export class Server {
     creds: ServerCredentials,
     callback: (error: Error | null, port: number) => void
   ): void {
+    if (this.shutdown) {
+      throw new Error('bindAsync called after shutdown');
+    }
     if (typeof port !== 'string') {
       throw new TypeError('port must be a string');
     }
@@ -920,6 +924,8 @@ export class Server {
     if (this.channelzEnabled) {
       unregisterChannelzRef(this.channelzRef);
     }
+
+    this.shutdown = true;
   }
 
   register<RequestType, ResponseType>(
@@ -983,6 +989,7 @@ export class Server {
         wrappedCallback();
       }
     }
+    this.shutdown = true;
 
     for (const server of this.http2Servers.keys()) {
       pendingChecks++;

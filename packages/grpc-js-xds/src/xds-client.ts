@@ -924,8 +924,8 @@ class XdsSingleServerClient {
   }
 
   onLrsStreamReceivedMessage() {
-    this.adsBackoff.stop();
-    this.adsBackoff.reset();
+    this.lrsBackoff.stop();
+    this.lrsBackoff.reset();
   }
 
   handleLrsStreamEnd() {

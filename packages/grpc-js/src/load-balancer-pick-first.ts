@@ -194,9 +194,11 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   private subchannelStateListener: ConnectivityStateListener = (
     subchannel,
     previousState,
-    newState
+    newState,
+    keepaliveTime,
+    errorMessage
   ) => {
-    this.onSubchannelStateUpdate(subchannel, previousState, newState);
+    this.onSubchannelStateUpdate(subchannel, previousState, newState, errorMessage);
   };
 
   private pickedSubchannelHealthListener: HealthListener = () =>
@@ -217,6 +219,20 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   private stickyTransientFailureMode = false;
 
   private reportHealthStatus: boolean;
+
+  /**
+   * Indicates whether we called channelControlHelper.requestReresolution since
+   * the last call to updateAddressList
+   */
+  private requestedResolutionSinceLastUpdate = false;
+
+  /**
+   * The most recent error reported by any subchannel as it transitioned to
+   * TRANSIENT_FAILURE.
+   */
+  private lastError: string | null = null;
+
+  private latestAddressList: SubchannelAddress[] | null = null;
 
   /**
    * Load balancer that attempts to connect to each backend in the address list
@@ -259,7 +275,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       if (this.stickyTransientFailureMode) {
         this.updateState(
           ConnectivityState.TRANSIENT_FAILURE,
-          new UnavailablePicker()
+          new UnavailablePicker({details: `No connection established. Last error: ${this.lastError}`})
         );
       } else {
         this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
@@ -267,15 +283,28 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     }
   }
 
+  private requestReresolution() {
+    this.requestedResolutionSinceLastUpdate = true;
+    this.channelControlHelper.requestReresolution();
+  }
+
   private maybeEnterStickyTransientFailureMode() {
-    if (this.stickyTransientFailureMode) {
-      return;
-    }
     if (!this.allChildrenHaveReportedTF()) {
       return;
     }
+    if (!this.requestedResolutionSinceLastUpdate) {
+      /* Each time we get an update we reset each subchannel's
+       * hasReportedTransientFailure flag, so the next time we get to this
+       * point after that, each subchannel has reported TRANSIENT_FAILURE
+       * at least once since then. That is the trigger for requesting
+       * reresolution, whether or not the LB policy is already in sticky TF
+       * mode. */
+      this.requestReresolution();
+    }
+    if (this.stickyTransientFailureMode) {
+      return;
+    }
     this.stickyTransientFailureMode = true;
-    this.channelControlHelper.requestReresolution();
     for (const { subchannel } of this.children) {
       subchannel.startConnecting();
     }
@@ -305,13 +334,14 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   private onSubchannelStateUpdate(
     subchannel: SubchannelInterface,
     previousState: ConnectivityState,
-    newState: ConnectivityState
+    newState: ConnectivityState,
+    errorMessage?: string
   ) {
     if (this.currentPick?.realSubchannelEquals(subchannel)) {
       if (newState !== ConnectivityState.READY) {
         this.removeCurrentPick();
         this.calculateAndReportNewState();
-        this.channelControlHelper.requestReresolution();
+        this.requestReresolution();
       }
       return;
     }
@@ -322,6 +352,9 @@ export class PickFirstLoadBalancer implements LoadBalancer {
         }
         if (newState === ConnectivityState.TRANSIENT_FAILURE) {
           child.hasReportedTransientFailure = true;
+          if (errorMessage) {
+            this.lastError = errorMessage;
+          }
           this.maybeEnterStickyTransientFailureMode();
           if (index === this.currentSubchannelIndex) {
             this.startNextSubchannelConnecting(index + 1);
@@ -335,7 +368,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   private startNextSubchannelConnecting(startIndex: number) {
     clearTimeout(this.connectionDelayTimeout);
-    if (this.triedAllSubchannels || this.stickyTransientFailureMode) {
+    if (this.triedAllSubchannels) {
       return;
     }
     for (const [index, child] of this.children.entries()) {
@@ -408,7 +441,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   private resetSubchannelList() {
     for (const child of this.children) {
-      if (child.subchannel !== this.currentPick) {
+      if (!(this.currentPick && child.subchannel.realSubchannelEquals(this.currentPick))) {
         /* The connectivity state listener is the same whether the subchannel
          * is in the list of children or it is the currentPick, so if it is in
          * both, removing it here would cause problems. In particular, that
@@ -429,28 +462,10 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     this.currentSubchannelIndex = 0;
     this.children = [];
     this.triedAllSubchannels = false;
+    this.requestedResolutionSinceLastUpdate = false;
   }
 
-  updateAddressList(
-    endpointList: Endpoint[],
-    lbConfig: TypedLoadBalancingConfig
-  ): void {
-    if (!(lbConfig instanceof PickFirstLoadBalancingConfig)) {
-      return;
-    }
-    /* Previously, an update would be discarded if it was identical to the
-     * previous update, to minimize churn. Now the DNS resolver is
-     * rate-limited, so that is less of a concern. */
-    if (lbConfig.getShuffleAddressList()) {
-      endpointList = shuffled(endpointList);
-    }
-    const rawAddressList = ([] as SubchannelAddress[]).concat(
-      ...endpointList.map(endpoint => endpoint.addresses)
-    );
-    if (rawAddressList.length === 0) {
-      throw new Error('No addresses in endpoint list passed to pick_first');
-    }
-    const addressList = interleaveAddressFamilies(rawAddressList);
+  private connectToAddressList(addressList: SubchannelAddress[]) {
     const newChildrenList = addressList.map(address => ({
       subchannel: this.channelControlHelper.createSubchannel(address, {}),
       hasReportedTransientFailure: false,
@@ -483,10 +498,34 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     this.calculateAndReportNewState();
   }
 
+  updateAddressList(
+    endpointList: Endpoint[],
+    lbConfig: TypedLoadBalancingConfig
+  ): void {
+    if (!(lbConfig instanceof PickFirstLoadBalancingConfig)) {
+      return;
+    }
+    /* Previously, an update would be discarded if it was identical to the
+     * previous update, to minimize churn. Now the DNS resolver is
+     * rate-limited, so that is less of a concern. */
+    if (lbConfig.getShuffleAddressList()) {
+      endpointList = shuffled(endpointList);
+    }
+    const rawAddressList = ([] as SubchannelAddress[]).concat(
+      ...endpointList.map(endpoint => endpoint.addresses)
+    );
+    if (rawAddressList.length === 0) {
+      throw new Error('No addresses in endpoint list passed to pick_first');
+    }
+    const addressList = interleaveAddressFamilies(rawAddressList);
+    this.latestAddressList = addressList;
+    this.connectToAddressList(addressList);
+  }
+
   exitIdle() {
-    /* The pick_first LB policy is only in the IDLE state if it has no
-     * addresses to try to connect to and it has no picked subchannel.
-     * In that case, there is no meaningful action that can be taken here. */
+    if (this.currentState === ConnectivityState.IDLE && this.latestAddressList) {
+      this.connectToAddressList(this.latestAddressList);
+    }
   }
 
   resetBackoff() {
