@@ -30,6 +30,7 @@ import {
 import { ChannelOptions } from './channel-options';
 import { GrpcUri, parseUri, splitHostPort, uriToString } from './uri-parser';
 import { URL } from 'url';
+import { DEFAULT_PORT } from './resolver-dns';
 
 const TRACER_NAME = 'proxy';
 
@@ -189,12 +190,19 @@ export function getProxiedConnection(
   if (parsedTarget === null) {
     return Promise.resolve<ProxyConnectionResult>({});
   }
+  const splitHostPost = splitHostPort(parsedTarget.path);
+  if (splitHostPost === null) {
+    return Promise.resolve<ProxyConnectionResult>({});
+  }
+  const hostPort = `${splitHostPost.host}:${
+    splitHostPost.port ?? DEFAULT_PORT
+  }`;
   const options: http.RequestOptions = {
     method: 'CONNECT',
-    path: parsedTarget.path,
+    path: hostPort,
   };
   const headers: http.OutgoingHttpHeaders = {
-    Host: parsedTarget.path,
+    Host: hostPort,
   };
   // Connect to the subchannel address as a proxy
   if (isTcpSubchannelAddress(address)) {

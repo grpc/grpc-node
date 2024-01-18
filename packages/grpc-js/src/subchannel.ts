@@ -245,12 +245,17 @@ export class Subchannel {
                 );
               }
             });
+          } else {
+            /* If we can't transition from CONNECTING to READY here, we will
+             * not be using this transport, so release its resources. */
+            transport.shutdown();
           }
         },
         error => {
           this.transitionToState(
             [ConnectivityState.CONNECTING],
-            ConnectivityState.TRANSIENT_FAILURE
+            ConnectivityState.TRANSIENT_FAILURE,
+            `${error}`
           );
         }
       );
@@ -265,7 +270,8 @@ export class Subchannel {
    */
   private transitionToState(
     oldStates: ConnectivityState[],
-    newState: ConnectivityState
+    newState: ConnectivityState,
+    errorMessage?: string
   ): boolean {
     if (oldStates.indexOf(this.connectivityState) === -1) {
       return false;
@@ -278,9 +284,7 @@ export class Subchannel {
     if (this.channelzEnabled) {
       this.channelzTrace.addTrace(
         'CT_INFO',
-        ConnectivityState[this.connectivityState] +
-          ' -> ' +
-          ConnectivityState[newState]
+        'Connectivity state change to ' + ConnectivityState[newState]
       );
     }
     const previousState = this.connectivityState;
@@ -320,7 +324,7 @@ export class Subchannel {
         throw new Error(`Invalid state: unknown ConnectivityState ${newState}`);
     }
     for (const listener of this.stateListeners) {
-      listener(this, previousState, newState, this.keepaliveTime);
+      listener(this, previousState, newState, this.keepaliveTime, errorMessage);
     }
     return true;
   }

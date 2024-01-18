@@ -501,16 +501,22 @@ export class Http2SubchannelCall implements SubchannelCall {
   sendMessageWithContext(context: MessageContext, message: Buffer) {
     this.trace('write() called with message of length ' + message.length);
     const cb: WriteCallback = (error?: Error | null) => {
-      let code: Status = Status.UNAVAILABLE;
-      if (
-        (error as NodeJS.ErrnoException)?.code === 'ERR_STREAM_WRITE_AFTER_END'
-      ) {
-        code = Status.INTERNAL;
-      }
-      if (error) {
-        this.cancelWithStatus(code, `Write error: ${error.message}`);
-      }
-      context.callback?.();
+      /* nextTick here ensures that no stream action can be taken in the call
+       * stack of the write callback, in order to hopefully work around
+       * https://github.com/nodejs/node/issues/49147 */
+      process.nextTick(() => {
+        let code: Status = Status.UNAVAILABLE;
+        if (
+          (error as NodeJS.ErrnoException)?.code ===
+          'ERR_STREAM_WRITE_AFTER_END'
+        ) {
+          code = Status.INTERNAL;
+        }
+        if (error) {
+          this.cancelWithStatus(code, `Write error: ${error.message}`);
+        }
+        context.callback?.();
+      });
     };
     this.trace('sending data chunk of length ' + message.length);
     this.callEventTracker.addMessageSent();

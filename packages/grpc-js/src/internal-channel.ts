@@ -184,6 +184,7 @@ export class InternalChannel {
   private callCount = 0;
   private idleTimer: NodeJS.Timeout | null = null;
   private readonly idleTimeoutMs: number;
+  private lastActivityTimestamp: Date;
 
   // Channelz info
   private readonly channelzEnabled: boolean = true;
@@ -305,7 +306,9 @@ export class InternalChannel {
         this.currentPicker = picker;
         const queueCopy = this.pickQueue.slice();
         this.pickQueue = [];
-        this.callRefTimerUnref();
+        if (queueCopy.length > 0) {
+          this.callRefTimerUnref();
+        }
         for (const call of queueCopy) {
           call.doPick();
         }
@@ -358,11 +361,12 @@ export class InternalChannel {
         process.nextTick(() => {
           const localQueue = this.configSelectionQueue;
           this.configSelectionQueue = [];
-          this.callRefTimerUnref();
+          if (localQueue.length > 0) {
+            this.callRefTimerUnref();
+          }
           for (const call of localQueue) {
             call.getConfig();
           }
-          this.configSelectionQueue = [];
         });
       },
       status => {
@@ -389,7 +393,9 @@ export class InternalChannel {
         }
         const localQueue = this.configSelectionQueue;
         this.configSelectionQueue = [];
-        this.callRefTimerUnref();
+        if (localQueue.length > 0) {
+          this.callRefTimerUnref();
+        }
         for (const call of localQueue) {
           call.reportResolverError(status);
         }
@@ -413,6 +419,7 @@ export class InternalChannel {
         'Channel constructed \n' +
         error.stack?.substring(error.stack.indexOf('\n') + 1)
     );
+    this.lastActivityTimestamp = new Date();
   }
 
   private getChannelzInfo(): ChannelInfo {
@@ -486,9 +493,7 @@ export class InternalChannel {
     if (this.channelzEnabled) {
       this.channelzTrace.addTrace(
         'CT_INFO',
-        ConnectivityState[this.connectivityState] +
-          ' -> ' +
-          ConnectivityState[newState]
+        'Connectivity state change to ' + ConnectivityState[newState]
       );
     }
     this.connectivityState = newState;
@@ -562,19 +567,44 @@ export class InternalChannel {
     this.resolvingLoadBalancer.destroy();
     this.updateState(ConnectivityState.IDLE);
     this.currentPicker = new QueuePicker(this.resolvingLoadBalancer);
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
   }
 
-  private maybeStartIdleTimer() {
-    if (this.callCount === 0) {
-      this.idleTimer = setTimeout(() => {
+  private startIdleTimeout(timeoutMs: number) {
+    this.idleTimer = setTimeout(() => {
+      if (this.callCount > 0) {
+        /* If there is currently a call, the channel will not go idle for a
+         * period of at least idleTimeoutMs, so check again after that time.
+         */
+        this.startIdleTimeout(this.idleTimeoutMs);
+        return;
+      }
+      const now = new Date();
+      const timeSinceLastActivity = now.valueOf() - this.lastActivityTimestamp.valueOf();
+      if (timeSinceLastActivity >= this.idleTimeoutMs) {
         this.trace(
           'Idle timer triggered after ' +
             this.idleTimeoutMs +
             'ms of inactivity'
         );
         this.enterIdle();
-      }, this.idleTimeoutMs);
-      this.idleTimer.unref?.();
+      } else {
+        /* Whenever the timer fires with the latest activity being too recent,
+         * set the timer again for the time when the time since the last
+         * activity is equal to the timeout. This should result in the timer
+         * firing no more than once every idleTimeoutMs/2 on average. */
+        this.startIdleTimeout(this.idleTimeoutMs - timeSinceLastActivity);
+      }
+    }, timeoutMs);
+    this.idleTimer.unref?.();
+  }
+
+  private maybeStartIdleTimer() {
+    if (this.connectivityState !== ConnectivityState.SHUTDOWN && !this.idleTimer) {
+      this.startIdleTimeout(this.idleTimeoutMs);
     }
   }
 
@@ -583,10 +613,6 @@ export class InternalChannel {
       this.callTracker.addCallStarted();
     }
     this.callCount += 1;
-    if (this.idleTimer) {
-      clearTimeout(this.idleTimer);
-      this.idleTimer = null;
-    }
   }
 
   private onCallEnd(status: StatusObject) {
@@ -598,6 +624,7 @@ export class InternalChannel {
       }
     }
     this.callCount -= 1;
+    this.lastActivityTimestamp = new Date();
     this.maybeStartIdleTimer();
   }
 
@@ -717,6 +744,9 @@ export class InternalChannel {
     this.resolvingLoadBalancer.destroy();
     this.updateState(ConnectivityState.SHUTDOWN);
     clearInterval(this.callRefTimer);
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+    }
     if (this.channelzEnabled) {
       unregisterChannelzRef(this.channelzRef);
     }
@@ -732,6 +762,7 @@ export class InternalChannel {
     const connectivityState = this.connectivityState;
     if (tryToConnect) {
       this.resolvingLoadBalancer.exitIdle();
+      this.lastActivityTimestamp = new Date();
       this.maybeStartIdleTimer();
     }
     return connectivityState;

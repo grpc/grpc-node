@@ -43,7 +43,7 @@ function trace(text: string): void {
 /**
  * The default TCP port to connect to if not explicitly specified in the target.
  */
-const DEFAULT_PORT = 443;
+export const DEFAULT_PORT = 443;
 
 const DEFAULT_MIN_TIME_BETWEEN_RESOLUTIONS_MS = 30_000;
 
@@ -75,6 +75,7 @@ class DnsResolver implements Resolver {
   private nextResolutionTimer: NodeJS.Timeout;
   private isNextResolutionTimerRunning = false;
   private isServiceConfigEnabled = true;
+  private returnedIpResult = false;
   constructor(
     private target: GrpcUri,
     private listener: ResolverListener,
@@ -143,18 +144,22 @@ class DnsResolver implements Resolver {
    */
   private startResolution() {
     if (this.ipResult !== null) {
-      trace('Returning IP address for target ' + uriToString(this.target));
-      setImmediate(() => {
-        this.listener.onSuccessfulResolution(
-          this.ipResult!,
-          null,
-          null,
-          null,
-          {}
-        );
-      });
+      if (!this.returnedIpResult) {
+        trace('Returning IP address for target ' + uriToString(this.target));
+        setImmediate(() => {
+          this.listener.onSuccessfulResolution(
+            this.ipResult!,
+            null,
+            null,
+            null,
+            {}
+          );
+        });
+        this.returnedIpResult = true;
+      }
       this.backoff.stop();
       this.backoff.reset();
+      this.stopNextResolutionTimer();
       return;
     }
     if (this.dnsHostname === null) {
@@ -316,9 +321,9 @@ class DnsResolver implements Resolver {
   private startResolutionWithBackoff() {
     if (this.pendingLookupPromise === null) {
       this.continueResolving = false;
-      this.startResolution();
       this.backoff.runOnce();
       this.startNextResolutionTimer();
+      this.startResolution();
     }
   }
 
@@ -329,6 +334,11 @@ class DnsResolver implements Resolver {
      * fires. Otherwise, start resolving immediately. */
     if (this.pendingLookupPromise === null) {
       if (this.isNextResolutionTimerRunning || this.backoff.isRunning()) {
+        if (this.isNextResolutionTimerRunning) {
+          trace('resolution update delayed by "min time between resolutions" rate limit');
+        } else {
+          trace('resolution update delayed by backoff timer until ' + this.backoff.getEndTime().toISOString());
+        }
         this.continueResolving = true;
       } else {
         this.startResolutionWithBackoff();
@@ -351,6 +361,7 @@ class DnsResolver implements Resolver {
     this.latestLookupResult = null;
     this.latestServiceConfig = null;
     this.latestServiceConfigError = null;
+    this.returnedIpResult = false;
   }
 
   /**

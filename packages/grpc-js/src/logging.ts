@@ -16,6 +16,9 @@
  */
 
 import { LogVerbosity } from './constants';
+import { pid } from 'process';
+
+const clientVersion = require('../../package.json').version;
 
 const DEFAULT_LOGGER: Partial<Console> = {
   error: (message?: any, ...optionalParams: any[]) => {
@@ -109,7 +112,7 @@ export function trace(
   text: string
 ): void {
   if (isTracerEnabled(tracer)) {
-    log(severity, new Date().toISOString() + ' | ' + tracer + ' | ' + text);
+    log(severity, new Date().toISOString() + ' | v' + clientVersion + ' ' + pid + ' | ' + tracer + ' | ' + text);
   }
 }
 

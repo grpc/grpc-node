@@ -677,9 +677,11 @@ class XdsResolver implements Resolver {
   destroy() {
     if (this.listenerResourceName) {
       ListenerResourceType.cancelWatch(this.xdsClient, this.listenerResourceName, this.ldsWatcher);
+      this.isLdsWatcherActive = false;
     }
     if (this.latestRouteConfigName) {
       RouteConfigurationResourceType.cancelWatch(this.xdsClient, this.latestRouteConfigName, this.rdsWatcher);
+      this.latestRouteConfigName = null;
     }
   }
 

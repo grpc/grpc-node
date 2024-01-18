@@ -100,6 +100,8 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
 
   private childChannelControlHelper: ChannelControlHelper;
 
+  private lastError: string | null = null;
+
   constructor(
     private readonly channelControlHelper: ChannelControlHelper,
     private readonly options: ChannelOptions
@@ -154,7 +156,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     ) {
       this.updateState(
         ConnectivityState.TRANSIENT_FAILURE,
-        new UnavailablePicker()
+        new UnavailablePicker({details: `No connection established. Last error: ${this.lastError}`})
       );
     } else {
       this.updateState(ConnectivityState.IDLE, new QueuePicker(this));

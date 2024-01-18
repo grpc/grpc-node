@@ -42,7 +42,6 @@ can be set.
   - `subchannel_internals` - Traces HTTP/2 session state. Includes per-call logs.
   - `channel_stacktrace` - Traces channel construction events with stack traces.
   - `keepalive` - Traces gRPC keepalive pings
-  - `index` - Traces module loading
   - `outlier_detection` - Traces outlier detection events
 
   The following tracers are added by the `@grpc/grpc-js-xds` library:
