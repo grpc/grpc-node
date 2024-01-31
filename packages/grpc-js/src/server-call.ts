@@ -56,14 +56,11 @@ export type ServerDuplexStream<RequestType, ResponseType> = ServerSurfaceCall &
   ObjectReadable<RequestType> &
   ObjectWritable<ResponseType> & { end: (metadata?: Metadata) => void };
 
-export function serverErrorToStatus(error: ServerErrorResponse | ServerStatusResponse, extraTrailers?: Metadata | undefined): PartialStatusObject {
+export function serverErrorToStatus(error: ServerErrorResponse | ServerStatusResponse, overrideTrailers?: Metadata | undefined): PartialStatusObject {
   const status: PartialStatusObject = {
     code: Status.UNKNOWN,
     details: 'message' in error ? error.message : 'Unknown Error',
-    metadata:
-      'metadata' in error && error.metadata !== undefined
-        ? error.metadata
-        : null,
+    metadata: overrideTrailers ?? error.metadata ?? null
   };
 
   if (
@@ -75,14 +72,6 @@ export function serverErrorToStatus(error: ServerErrorResponse | ServerStatusRes
 
     if ('details' in error && typeof error.details === 'string') {
       status.details = error.details!;
-    }
-  }
-
-  if (extraTrailers) {
-    if (status.metadata) {
-      status.metadata.merge(extraTrailers);
-    } else {
-      status.metadata = extraTrailers;
     }
   }
   return status;
