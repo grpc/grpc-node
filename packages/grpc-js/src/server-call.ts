@@ -863,7 +863,9 @@ export class Http2ServerCallStream<
         await this.pushOrBufferMessage(readable, decompressedMessage);
       }
       pendingMessageProcessing = false;
-      this.stream.resume();
+      if (this.canPush) {
+        this.stream.resume();
+      }
       await maybePushEnd();
     });
 

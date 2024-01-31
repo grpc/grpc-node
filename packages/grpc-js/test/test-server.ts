@@ -228,6 +228,63 @@ describe('Server', () => {
     });
   });
 
+  describe('reading backpressure', () => {
+    let client: ServiceClient;
+    const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
+    const echoService = loadProtoFile(protoFile)
+      .EchoService as ServiceClientConstructor;
+
+    const serviceImplementation = {
+      echo(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
+        callback(null, call.request);
+      },
+      echoBidiStream(call: ServerDuplexStream<any, any>) {
+        setTimeout(() => {
+          call.resume()
+          call.end();
+
+          const http2Stream = (call as any).call as http2.ServerHttp2Stream;
+          const messagesToPush = (http2Stream as any).messagesToPush as Array<any>;
+          assert.strictEqual(messagesToPush.length < 100, true);
+        }, 500);
+      },
+    };
+
+    beforeEach(done => {
+      server.addService(echoService.service, serviceImplementation);
+
+      server.bindAsync(
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert.ifError(err);
+          client = new echoService(
+            `localhost:${port}`,
+            grpc.credentials.createInsecure()
+          );
+          server.start();
+          done();
+        }
+      );
+    });
+
+    afterEach(done => {
+      client.close();
+      server.tryShutdown(done);
+    });
+
+    it('Should cancel open calls after the grace period ends', done => {
+      const call = client.echoBidiStream();
+      call.on('end', () => {
+        done();
+      });
+      call.resume()
+      for (let i = 0; i < 10000; i++) {
+        call.write({value: 'abc'});
+      }
+    });
+  });
+
   describe('drain', () => {
     let client: ServiceClient;
     let portNumber: number;
