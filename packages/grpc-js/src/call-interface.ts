@@ -37,7 +37,7 @@ export interface StatusObject {
 }
 
 export type PartialStatusObject = Pick<StatusObject, 'code' | 'details'> & {
-  metadata: Metadata | null;
+  metadata?: Metadata | null | undefined;
 };
 
 export const enum WriteFlags {

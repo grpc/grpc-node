@@ -49,6 +49,7 @@ import {
 import { Metadata, MetadataOptions, MetadataValue } from './metadata';
 import {
   Server,
+  ServerOptions,
   UntypedHandleCall,
   UntypedServiceImplementation,
 } from './server';
@@ -226,7 +227,7 @@ export const setLogVerbosity = (verbosity: LogVerbosity): void => {
   logging.setLoggerVerbosity(verbosity);
 };
 
-export { Server };
+export { Server, ServerOptions };
 export { ServerCredentials };
 export { KeyCertPair };
 
@@ -263,6 +264,18 @@ export { getChannelzServiceDefinition, getChannelzHandlers } from './channelz';
 export { addAdminServicesToServer } from './admin';
 
 export { ServiceConfig, LoadBalancingConfig, MethodConfig, RetryPolicy } from './service-config';
+
+export {
+  ServerListener,
+  FullServerListener,
+  ServerListenerBuilder,
+  Responder,
+  FullResponder,
+  ResponderBuilder,
+  ServerInterceptingCallInterface,
+  ServerInterceptingCall,
+  ServerInterceptor
+} from './server-interceptors';
 
 import * as experimental from './experimental';
 export { experimental };
