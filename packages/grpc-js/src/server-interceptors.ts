@@ -856,14 +856,9 @@ export class BaseServerInterceptingCall
         frame.payload.length
     );
 
-    this.stream.write(
-      frame.infoBytes,
-      this.createFrameWriteErrorCallback(callback)
-    );
-    this.stream.write(
-      frame.payload,
-      this.createFrameWriteErrorCallback(callback)
-    );
+    const cb = this.createFrameWriteErrorCallback(callback);
+    this.stream.write(frame.infoBytes, cb);
+    this.stream.write(frame.payload, cb);
   }
   sendStatus(status: PartialStatusObject): void {
     if (this.checkCancelled()) {
