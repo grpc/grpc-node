@@ -39,7 +39,7 @@ function trace(text: string) {
   logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
 }
 
-export interface GrpcFrame {
+interface GrpcFrame {
   infoBytes: Buffer;
   payload: Buffer;
 }
