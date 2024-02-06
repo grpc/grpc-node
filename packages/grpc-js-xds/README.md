@@ -1,6 +1,6 @@
 # @grpc/grpc-js xDS plugin
 
-This package provides support for the `xds://` URL scheme to the `@grpc/grpc-js` library. The latest version of this package is compatible with `@grpc/grpc-js` version 1.9.x.
+This package provides support for the `xds://` URL scheme to the `@grpc/grpc-js` library. The latest version of this package is compatible with `@grpc/grpc-js` version 1.10.x.
 
 ## Installation
 
