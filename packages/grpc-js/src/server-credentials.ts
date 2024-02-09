@@ -17,15 +17,40 @@
 
 import { SecureServerOptions } from 'http2';
 import { CIPHER_SUITES, getDefaultRootsData } from './tls-helpers';
+import { SecureContextOptions } from 'tls';
 
 export interface KeyCertPair {
   private_key: Buffer;
   cert_chain: Buffer;
 }
 
+export interface SecureContextWatcher {
+  (context: SecureContextOptions | null): void;
+}
+
 export abstract class ServerCredentials {
+  private watchers: Set<SecureContextWatcher> = new Set();
+  private latestContextOptions: SecureServerOptions | null = null;
+  _addWatcher(watcher: SecureContextWatcher) {
+    this.watchers.add(watcher);
+  }
+  _removeWatcher(watcher: SecureContextWatcher) {
+    this.watchers.delete(watcher);
+  }
+  protected updateSecureContextOptions(options: SecureServerOptions | null) {
+    if (options) {
+      this.latestContextOptions = options;
+    } else {
+      this.latestContextOptions = null;
+    }
+    for (const watcher of this.watchers) {
+      watcher(this.latestContextOptions);
+    }
+  }
   abstract _isSecure(): boolean;
-  abstract _getSettings(): SecureServerOptions | null;
+  _getSettings(): SecureServerOptions | null {
+    return this.latestContextOptions;
+  }
   abstract _equals(other: ServerCredentials): boolean;
 
   static createInsecure(): ServerCredentials {

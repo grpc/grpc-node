@@ -41,6 +41,7 @@ import {
 import { ProtoGrpcType as TestServiceGrpcType } from './generated/test_service';
 import { Request__Output } from './generated/Request';
 import { CompressionAlgorithms } from '../src/compression-algorithms';
+import { SecureContextOptions } from 'tls';
 
 const loadedTestServiceProto = protoLoader.loadSync(
   path.join(__dirname, 'fixtures/test_service.proto'),
@@ -744,6 +745,116 @@ describe('Echo service', () => {
         done();
       }
     );
+  });
+
+  describe('ServerCredentials watcher', () => {
+    let server: Server;
+    let serverPort: number;
+    const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
+    const echoService = loadProtoFile(protoFile)
+      .EchoService as ServiceClientConstructor;
+
+    class ToggleableSecureServerCredentials extends ServerCredentials {
+      private contextOptions: SecureContextOptions;
+      constructor(key: Buffer, cert: Buffer) {
+        super();
+        this.contextOptions = {key, cert};
+        this.enable();
+      }
+      enable() {
+        this.updateSecureContextOptions(this.contextOptions);
+      }
+      disable() {
+        this.updateSecureContextOptions(null);
+      }
+      _isSecure(): boolean {
+        return true;
+      }
+      _equals(other: grpc.ServerCredentials): boolean {
+        return this === other;
+      }
+    }
+
+    const serverCredentials = new ToggleableSecureServerCredentials(key, cert);
+
+    const serviceImplementation = {
+      echo(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
+        callback(null, call.request);
+      },
+      echoBidiStream(call: ServerDuplexStream<any, any>) {
+        call.on('data', data => {
+          call.write(data);
+        });
+        call.on('end', () => {
+          call.end();
+        });
+      },
+    };
+
+    before(done => {
+      server = new Server();
+      server.addService(echoService.service, serviceImplementation);
+
+      server.bindAsync(
+        'localhost:0',
+        serverCredentials,
+        (err, port) => {
+          assert.ifError(err);
+          serverPort = port;
+          done();
+        }
+      );
+    });
+
+    after(done => {
+      client.close();
+      server.tryShutdown(done);
+    });
+
+    it('should make successful requests only when the credentials are enabled', done => {
+      const client1 = new echoService(
+        `localhost:${serverPort}`,
+        grpc.credentials.createSsl(ca),
+        {
+          'grpc.ssl_target_name_override': 'foo.test.google.fr',
+          'grpc.default_authority': 'foo.test.google.fr',
+          'grpc.use_local_subchannel_pool': 1
+        }
+      );
+      const testMessage = { value: 'test value', value2: 3 };
+      client1.echo(testMessage, (error: ServiceError, response: any) => {
+        assert.ifError(error);
+        assert.deepStrictEqual(response, testMessage);
+        serverCredentials.disable();
+        const client2 = new echoService(
+          `localhost:${serverPort}`,
+          grpc.credentials.createSsl(ca),
+          {
+            'grpc.ssl_target_name_override': 'foo.test.google.fr',
+            'grpc.default_authority': 'foo.test.google.fr',
+            'grpc.use_local_subchannel_pool': 1
+          }
+        );
+        client2.echo(testMessage, (error: ServiceError, response: any) => {
+          assert(error);
+          assert.strictEqual(error.code, grpc.status.UNAVAILABLE);
+          serverCredentials.enable();
+          const client3 = new echoService(
+            `localhost:${serverPort}`,
+            grpc.credentials.createSsl(ca),
+            {
+              'grpc.ssl_target_name_override': 'foo.test.google.fr',
+              'grpc.default_authority': 'foo.test.google.fr',
+              'grpc.use_local_subchannel_pool': 1
+            }
+          );
+          client3.echo(testMessage, (error: ServiceError, response: any) => {
+            assert.ifError(error);
+            done();
+          });
+        });
+      });
+    });
   });
 
   /* This test passes on Node 18 but fails on Node 16. The failure appears to
