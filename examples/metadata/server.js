@@ -148,8 +148,11 @@ function main() {
   });
   const server = new grpc.Server();
   server.addService(echoProto.Echo.service, serviceImplementation);
-  server.bindAsync(`0.0.0.0:${argv.port}`, grpc.ServerCredentials.createInsecure(), () => {
-    server.start();
+  server.bindAsync(`0.0.0.0:${argv.port}`, grpc.ServerCredentials.createInsecure(), (err, port) => {
+    if (err != null) {
+      return console.error(err);
+    }
+    console.log(`gRPC listening on ${port}`)
   });
 }
 
