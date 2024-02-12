@@ -18,6 +18,7 @@
 
 const grpc = require('@grpc/grpc-js');
 const protoLoader = require('@grpc/proto-loader');
+const parseArgs = require('minimist');
 
 const PROTO_PATH = __dirname + '/../protos/echo.proto';
 
