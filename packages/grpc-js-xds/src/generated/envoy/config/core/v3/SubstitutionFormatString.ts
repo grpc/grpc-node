@@ -3,11 +3,12 @@
 import type { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_Struct__Output } from '../../../../google/protobuf/Struct';
 import type { DataSource as _envoy_config_core_v3_DataSource, DataSource__Output as _envoy_config_core_v3_DataSource__Output } from '../../../../envoy/config/core/v3/DataSource';
 import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig, TypedExtensionConfig__Output as _envoy_config_core_v3_TypedExtensionConfig__Output } from '../../../../envoy/config/core/v3/TypedExtensionConfig';
+import type { JsonFormatOptions as _envoy_config_core_v3_JsonFormatOptions, JsonFormatOptions__Output as _envoy_config_core_v3_JsonFormatOptions__Output } from '../../../../envoy/config/core/v3/JsonFormatOptions';
 
 /**
  * Configuration to use multiple :ref:`command operators <config_access_log_command_operators>`
  * to generate a new string in either plain text or JSON format.
- * [#next-free-field: 7]
+ * [#next-free-field: 8]
  */
 export interface SubstitutionFormatString {
   /**
@@ -98,13 +99,17 @@ export interface SubstitutionFormatString {
    * [#extension-category: envoy.formatter]
    */
   'formatters'?: (_envoy_config_core_v3_TypedExtensionConfig)[];
+  /**
+   * If json_format is used, the options will be applied to the output JSON string.
+   */
+  'json_format_options'?: (_envoy_config_core_v3_JsonFormatOptions | null);
   'format'?: "text_format"|"json_format"|"text_format_source";
 }
 
 /**
  * Configuration to use multiple :ref:`command operators <config_access_log_command_operators>`
  * to generate a new string in either plain text or JSON format.
- * [#next-free-field: 7]
+ * [#next-free-field: 8]
  */
 export interface SubstitutionFormatString__Output {
   /**
@@ -195,5 +200,9 @@ export interface SubstitutionFormatString__Output {
    * [#extension-category: envoy.formatter]
    */
   'formatters': (_envoy_config_core_v3_TypedExtensionConfig__Output)[];
+  /**
+   * If json_format is used, the options will be applied to the output JSON string.
+   */
+  'json_format_options': (_envoy_config_core_v3_JsonFormatOptions__Output | null);
   'format': "text_format"|"json_format"|"text_format_source";
 }

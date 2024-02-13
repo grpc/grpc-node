@@ -77,7 +77,7 @@ export interface _envoy_config_route_v3_ScopedRouteConfiguration_Key__Output {
  * fragments:
  * - header_value_extractor:
  * name: X-Route-Selector
- * element_separator: ,
+ * element_separator: ","
  * element:
  * separator: =
  * key: vip
@@ -167,7 +167,7 @@ export interface ScopedRouteConfiguration {
  * fragments:
  * - header_value_extractor:
  * name: X-Route-Selector
- * element_separator: ,
+ * element_separator: ","
  * element:
  * separator: =
  * key: vip

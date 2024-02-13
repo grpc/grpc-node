@@ -131,7 +131,7 @@ export interface _envoy_config_listener_v3_Listener_InternalListenerConfig__Outp
 }
 
 /**
- * [#next-free-field: 34]
+ * [#next-free-field: 35]
  */
 export interface Listener {
   /**
@@ -190,7 +190,12 @@ export interface Listener {
    * before a connection is created.
    * UDP Listener filters can be specified when the protocol in the listener socket address in
    * :ref:`protocol <envoy_v3_api_field_config.core.v3.SocketAddress.protocol>` is :ref:`UDP
-   * <envoy_v3_api_enum_value_config.core.v3.SocketAddress.Protocol.UDP>`.
+   * <envoy_v3_api_enum_value_config.core.v3.SocketAddress.Protocol.UDP>` and no
+   * :ref:`quic_options <envoy_v3_api_field_config.listener.v3.UdpListenerConfig.quic_options>` is specified in :ref:`udp_listener_config <envoy_v3_api_field_config.listener.v3.Listener.udp_listener_config>`.
+   * QUIC listener filters can be specified when :ref:`quic_options
+   * <envoy_v3_api_field_config.listener.v3.UdpListenerConfig.quic_options>` is
+   * specified in :ref:`udp_listener_config <envoy_v3_api_field_config.listener.v3.Listener.udp_listener_config>`.
+   * They are processed sequentially right before connection creation. And like TCP Listener filters, they can be used to manipulate the connection metadata and socket. But the difference is that they can't be used to pause connection creation.
    */
   'listener_filters'?: (_envoy_config_listener_v3_ListenerFilter)[];
   /**
@@ -240,7 +245,7 @@ export interface Listener {
    * Additional socket options that may not be present in Envoy source code or
    * precompiled binaries. The socket options can be updated for a listener when
    * :ref:`enable_reuse_port <envoy_v3_api_field_config.listener.v3.Listener.enable_reuse_port>`
-   * is `true`. Otherwise, if socket options change during a listener update the update will be rejected
+   * is ``true``. Otherwise, if socket options change during a listener update the update will be rejected
    * to make it clear that the options were not updated.
    */
   'socket_options'?: (_envoy_config_core_v3_SocketOption)[];
@@ -415,13 +420,24 @@ export interface Listener {
    */
   'additional_addresses'?: (_envoy_config_listener_v3_AdditionalAddress)[];
   /**
+   * The maximum number of connections to accept from the kernel per socket
+   * event. Envoy may decide to close these connections after accepting them
+   * from the kernel e.g. due to load shedding, or other policies.
+   * If there are more than max_connections_to_accept_per_socket_event
+   * connections pending accept, connections over this threshold will be
+   * accepted in later event loop iterations.
+   * If no value is provided Envoy will accept all connections pending accept
+   * from the kernel.
+   */
+  'max_connections_to_accept_per_socket_event'?: (_google_protobuf_UInt32Value | null);
+  /**
    * The exclusive listener type and the corresponding config.
    */
   'listener_specifier'?: "internal_listener";
 }
 
 /**
- * [#next-free-field: 34]
+ * [#next-free-field: 35]
  */
 export interface Listener__Output {
   /**
@@ -480,7 +496,12 @@ export interface Listener__Output {
    * before a connection is created.
    * UDP Listener filters can be specified when the protocol in the listener socket address in
    * :ref:`protocol <envoy_v3_api_field_config.core.v3.SocketAddress.protocol>` is :ref:`UDP
-   * <envoy_v3_api_enum_value_config.core.v3.SocketAddress.Protocol.UDP>`.
+   * <envoy_v3_api_enum_value_config.core.v3.SocketAddress.Protocol.UDP>` and no
+   * :ref:`quic_options <envoy_v3_api_field_config.listener.v3.UdpListenerConfig.quic_options>` is specified in :ref:`udp_listener_config <envoy_v3_api_field_config.listener.v3.Listener.udp_listener_config>`.
+   * QUIC listener filters can be specified when :ref:`quic_options
+   * <envoy_v3_api_field_config.listener.v3.UdpListenerConfig.quic_options>` is
+   * specified in :ref:`udp_listener_config <envoy_v3_api_field_config.listener.v3.Listener.udp_listener_config>`.
+   * They are processed sequentially right before connection creation. And like TCP Listener filters, they can be used to manipulate the connection metadata and socket. But the difference is that they can't be used to pause connection creation.
    */
   'listener_filters': (_envoy_config_listener_v3_ListenerFilter__Output)[];
   /**
@@ -530,7 +551,7 @@ export interface Listener__Output {
    * Additional socket options that may not be present in Envoy source code or
    * precompiled binaries. The socket options can be updated for a listener when
    * :ref:`enable_reuse_port <envoy_v3_api_field_config.listener.v3.Listener.enable_reuse_port>`
-   * is `true`. Otherwise, if socket options change during a listener update the update will be rejected
+   * is ``true``. Otherwise, if socket options change during a listener update the update will be rejected
    * to make it clear that the options were not updated.
    */
   'socket_options': (_envoy_config_core_v3_SocketOption__Output)[];
@@ -704,6 +725,17 @@ export interface Listener__Output {
    * all addresses use the same protocol, and multiple internal addresses are not supported.
    */
   'additional_addresses': (_envoy_config_listener_v3_AdditionalAddress__Output)[];
+  /**
+   * The maximum number of connections to accept from the kernel per socket
+   * event. Envoy may decide to close these connections after accepting them
+   * from the kernel e.g. due to load shedding, or other policies.
+   * If there are more than max_connections_to_accept_per_socket_event
+   * connections pending accept, connections over this threshold will be
+   * accepted in later event loop iterations.
+   * If no value is provided Envoy will accept all connections pending accept
+   * from the kernel.
+   */
+  'max_connections_to_accept_per_socket_event': (_google_protobuf_UInt32Value__Output | null);
   /**
    * The exclusive listener type and the corresponding config.
    */

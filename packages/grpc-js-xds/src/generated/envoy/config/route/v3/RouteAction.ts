@@ -113,6 +113,10 @@ export interface _envoy_config_route_v3_RouteAction_HashPolicy_Cookie {
    * will be set for the cookie.
    */
   'path'?: (string);
+  /**
+   * Additional attributes for the cookie. They will be used when generating a new cookie.
+   */
+  'attributes'?: (_envoy_config_route_v3_RouteAction_HashPolicy_CookieAttribute)[];
 }
 
 /**
@@ -149,6 +153,38 @@ export interface _envoy_config_route_v3_RouteAction_HashPolicy_Cookie__Output {
    * will be set for the cookie.
    */
   'path': (string);
+  /**
+   * Additional attributes for the cookie. They will be used when generating a new cookie.
+   */
+  'attributes': (_envoy_config_route_v3_RouteAction_HashPolicy_CookieAttribute__Output)[];
+}
+
+/**
+ * CookieAttribute defines an API for adding additional attributes for a HTTP cookie.
+ */
+export interface _envoy_config_route_v3_RouteAction_HashPolicy_CookieAttribute {
+  /**
+   * The name of the cookie attribute.
+   */
+  'name'?: (string);
+  /**
+   * The optional value of the cookie attribute.
+   */
+  'value'?: (string);
+}
+
+/**
+ * CookieAttribute defines an API for adding additional attributes for a HTTP cookie.
+ */
+export interface _envoy_config_route_v3_RouteAction_HashPolicy_CookieAttribute__Output {
+  /**
+   * The name of the cookie attribute.
+   */
+  'name': (string);
+  /**
+   * The optional value of the cookie attribute.
+   */
+  'value': (string);
 }
 
 export interface _envoy_config_route_v3_RouteAction_HashPolicy_FilterState {
@@ -372,7 +408,8 @@ export interface _envoy_config_route_v3_RouteAction_HashPolicy_QueryParameter {
   /**
    * The name of the URL query parameter that will be used to obtain the hash
    * key. If the parameter is not present, no hash will be produced. Query
-   * parameter names are case-sensitive.
+   * parameter names are case-sensitive. If query parameters are repeated, only
+   * the first value will be considered.
    */
   'name'?: (string);
 }
@@ -381,7 +418,8 @@ export interface _envoy_config_route_v3_RouteAction_HashPolicy_QueryParameter__O
   /**
    * The name of the URL query parameter that will be used to obtain the hash
    * key. If the parameter is not present, no hash will be produced. Query
-   * parameter names are case-sensitive.
+   * parameter names are case-sensitive. If query parameters are repeated, only
+   * the first value will be considered.
    */
   'name': (string);
 }
@@ -649,7 +687,9 @@ export interface RouteAction {
    * Indicates that during forwarding, the host header will be swapped with
    * the hostname of the upstream host chosen by the cluster manager. This
    * option is applicable only when the destination cluster for a route is of
-   * type ``strict_dns`` or ``logical_dns``. Setting this to true with other cluster types
+   * type ``strict_dns`` or ``logical_dns``,
+   * or when :ref:`hostname <envoy_v3_api_field_config.endpoint.v3.Endpoint.hostname>`
+   * field is not empty. Setting this to true with other cluster types
    * has no effect. Using this option will append the
    * :ref:`config_http_conn_man_headers_x-forwarded-host` header if
    * :ref:`append_x_forwarded_host <envoy_v3_api_field_config.route.v3.RouteAction.append_x_forwarded_host>`
@@ -924,7 +964,7 @@ export interface RouteAction {
    * :ref:`host_rewrite_path_regex <envoy_v3_api_field_config.route.v3.RouteAction.host_rewrite_path_regex>`)
    * causes the original value of the host header, if any, to be appended to the
    * :ref:`config_http_conn_man_headers_x-forwarded-host` HTTP header if it is different to the last value appended.
-   * This can be disabled by setting the runtime guard `envoy_reloadable_features_append_xfh_idempotent` to false.
+   * This can be disabled by setting the runtime guard ``envoy_reloadable_features_append_xfh_idempotent`` to false.
    */
   'append_x_forwarded_host'?: (boolean);
   /**
@@ -1033,7 +1073,9 @@ export interface RouteAction__Output {
    * Indicates that during forwarding, the host header will be swapped with
    * the hostname of the upstream host chosen by the cluster manager. This
    * option is applicable only when the destination cluster for a route is of
-   * type ``strict_dns`` or ``logical_dns``. Setting this to true with other cluster types
+   * type ``strict_dns`` or ``logical_dns``,
+   * or when :ref:`hostname <envoy_v3_api_field_config.endpoint.v3.Endpoint.hostname>`
+   * field is not empty. Setting this to true with other cluster types
    * has no effect. Using this option will append the
    * :ref:`config_http_conn_man_headers_x-forwarded-host` header if
    * :ref:`append_x_forwarded_host <envoy_v3_api_field_config.route.v3.RouteAction.append_x_forwarded_host>`
@@ -1308,7 +1350,7 @@ export interface RouteAction__Output {
    * :ref:`host_rewrite_path_regex <envoy_v3_api_field_config.route.v3.RouteAction.host_rewrite_path_regex>`)
    * causes the original value of the host header, if any, to be appended to the
    * :ref:`config_http_conn_man_headers_x-forwarded-host` HTTP header if it is different to the last value appended.
-   * This can be disabled by setting the runtime guard `envoy_reloadable_features_append_xfh_idempotent` to false.
+   * This can be disabled by setting the runtime guard ``envoy_reloadable_features_append_xfh_idempotent`` to false.
    */
   'append_x_forwarded_host': (boolean);
   /**

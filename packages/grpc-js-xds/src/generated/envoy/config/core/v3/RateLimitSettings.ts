@@ -14,7 +14,8 @@ export interface RateLimitSettings {
   'max_tokens'?: (_google_protobuf_UInt32Value | null);
   /**
    * Rate at which tokens will be filled per second. If not set, a default fill rate of 10 tokens
-   * per second will be used.
+   * per second will be used. The minimal fill rate is once per year. Lower
+   * fill rates will be set to once per year.
    */
   'fill_rate'?: (_google_protobuf_DoubleValue | null);
 }
@@ -30,7 +31,8 @@ export interface RateLimitSettings__Output {
   'max_tokens': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Rate at which tokens will be filled per second. If not set, a default fill rate of 10 tokens
-   * per second will be used.
+   * per second will be used. The minimal fill rate is once per year. Lower
+   * fill rates will be set to once per year.
    */
   'fill_rate': (_google_protobuf_DoubleValue__Output | null);
 }

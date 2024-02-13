@@ -16,6 +16,12 @@ export interface ClientStatusRequest {
    * The node making the csds request.
    */
   'node'?: (_envoy_config_core_v3_Node | null);
+  /**
+   * If true, the server will not include the resource contents in the response
+   * (i.e., the generic_xds_configs.xds_config field will not be populated).
+   * [#not-implemented-hide:]
+   */
+  'exclude_resource_contents'?: (boolean);
 }
 
 /**
@@ -31,4 +37,10 @@ export interface ClientStatusRequest__Output {
    * The node making the csds request.
    */
   'node': (_envoy_config_core_v3_Node__Output | null);
+  /**
+   * If true, the server will not include the resource contents in the response
+   * (i.e., the generic_xds_configs.xds_config field will not be populated).
+   * [#not-implemented-hide:]
+   */
+  'exclude_resource_contents': (boolean);
 }

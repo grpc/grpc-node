@@ -16,6 +16,22 @@ export interface TrackClusterStats {
    * of requests and responses will be published.
    */
   'request_response_sizes'?: (boolean);
+  /**
+   * If true, some stats will be emitted per-endpoint, similar to the stats in admin ``/clusters``
+   * output.
+   * 
+   * This does not currently output correct stats during a hot-restart.
+   * 
+   * This is not currently implemented by all stat sinks.
+   * 
+   * These stats do not honor filtering or tag extraction rules in :ref:`StatsConfig
+   * <envoy_v3_api_msg_config.metrics.v3.StatsConfig>` (but fixed-value tags are supported). Admin
+   * endpoint filtering is supported.
+   * 
+   * This may not be used at the same time as
+   * :ref:`load_stats_config <envoy_v3_api_field_config.bootstrap.v3.ClusterManager.load_stats_config>`.
+   */
+  'per_endpoint_stats'?: (boolean);
 }
 
 export interface TrackClusterStats__Output {
@@ -33,4 +49,20 @@ export interface TrackClusterStats__Output {
    * of requests and responses will be published.
    */
   'request_response_sizes': (boolean);
+  /**
+   * If true, some stats will be emitted per-endpoint, similar to the stats in admin ``/clusters``
+   * output.
+   * 
+   * This does not currently output correct stats during a hot-restart.
+   * 
+   * This is not currently implemented by all stat sinks.
+   * 
+   * These stats do not honor filtering or tag extraction rules in :ref:`StatsConfig
+   * <envoy_v3_api_msg_config.metrics.v3.StatsConfig>` (but fixed-value tags are supported). Admin
+   * endpoint filtering is supported.
+   * 
+   * This may not be used at the same time as
+   * :ref:`load_stats_config <envoy_v3_api_field_config.bootstrap.v3.ClusterManager.load_stats_config>`.
+   */
+  'per_endpoint_stats': (boolean);
 }

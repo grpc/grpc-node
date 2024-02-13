@@ -61,6 +61,7 @@ export interface ProtoGrpcType {
           TcpKeepalive: MessageTypeDefinition
           TrafficDirection: EnumTypeDefinition
           TransportSocket: MessageTypeDefinition
+          TypedExtensionConfig: MessageTypeDefinition
           WatchedDirectory: MessageTypeDefinition
         }
       }
@@ -90,6 +91,7 @@ export interface ProtoGrpcType {
           ListMatcher: MessageTypeDefinition
           ListStringMatcher: MessageTypeDefinition
           NodeMatcher: MessageTypeDefinition
+          OrMatcher: MessageTypeDefinition
           RegexMatchAndSubstitute: MessageTypeDefinition
           RegexMatcher: MessageTypeDefinition
           StringMatcher: MessageTypeDefinition

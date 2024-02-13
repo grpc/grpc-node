@@ -10,9 +10,12 @@ import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _goo
  */
 export enum _envoy_config_core_v3_HeaderValueOption_HeaderAppendAction {
   /**
-   * This action will append the specified value to the existing values if the header
-   * already exists. If the header doesn't exist then this will add the header with
-   * specified key and value.
+   * If the header already exists, this action will result in:
+   * 
+   * - Comma-concatenated for predefined inline headers.
+   * - Duplicate header added in the ``HeaderMap`` for other headers.
+   * 
+   * If the header doesn't exist then this will add new header with specified key and value.
    */
   APPEND_IF_EXISTS_OR_ADD = 0,
   /**
@@ -26,6 +29,11 @@ export enum _envoy_config_core_v3_HeaderValueOption_HeaderAppendAction {
    * with specified key and value.
    */
   OVERWRITE_IF_EXISTS_OR_ADD = 2,
+  /**
+   * This action will overwrite the specified value by discarding any existing values if
+   * the header already exists. If the header doesn't exist then this will be no-op.
+   */
+  OVERWRITE_IF_EXISTS = 3,
 }
 
 /**

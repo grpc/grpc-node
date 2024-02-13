@@ -60,6 +60,7 @@ export interface ProtoGrpcType {
           Http3ProtocolOptions: MessageTypeDefinition
           HttpProtocolOptions: MessageTypeDefinition
           HttpUri: MessageTypeDefinition
+          JsonFormatOptions: MessageTypeDefinition
           KeepaliveSettings: MessageTypeDefinition
           Locality: MessageTypeDefinition
           Metadata: MessageTypeDefinition
@@ -178,6 +179,7 @@ export interface ProtoGrpcType {
           ListMatcher: MessageTypeDefinition
           ListStringMatcher: MessageTypeDefinition
           MetadataMatcher: MessageTypeDefinition
+          OrMatcher: MessageTypeDefinition
           RegexMatchAndSubstitute: MessageTypeDefinition
           RegexMatcher: MessageTypeDefinition
           StringMatcher: MessageTypeDefinition
