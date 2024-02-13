@@ -17,7 +17,7 @@
 
 import { ChannelOptions, LoadBalancingConfig, Metadata, connectivityState, experimental, logVerbosity, status } from "@grpc/grpc-js";
 import { registerLoadBalancerType } from "@grpc/grpc-js/build/src/load-balancer";
-import { EXPERIMENTAL_OUTLIER_DETECTION } from "./environment";
+import { EXPERIMENTAL_DUALSTACK_ENDPOINTS, EXPERIMENTAL_OUTLIER_DETECTION } from "./environment";
 import { Locality__Output } from "./generated/envoy/config/core/v3/Locality";
 import { ClusterLoadAssignment__Output } from "./generated/envoy/config/endpoint/v3/ClusterLoadAssignment";
 import { LocalityEndpoint, PriorityChildRaw } from "./load-balancer-priority";
@@ -40,6 +40,7 @@ import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
 import UnavailablePicker = experimental.UnavailablePicker;
 import { serverConfigEqual, validateXdsServerConfig, XdsServerConfig } from "./xds-bootstrap";
 import { EndpointResourceType } from "./xds-resource-type/endpoint-resource-type";
+import { SocketAddress__Output } from "./generated/envoy/config/core/v3/SocketAddress";
 
 const TRACER_NAME = 'xds_cluster_resolver';
 
@@ -175,13 +176,21 @@ function getEdsPriorities(edsUpdate: ClusterLoadAssignment__Output): PriorityEnt
       (lbEndpoint) => {
         /* The validator in the XdsClient class ensures that each endpoint has
          * a socket_address with an IP address and a port_value. */
-        const socketAddress = lbEndpoint.endpoint!.address!.socket_address!;
+        let socketAddresses: SocketAddress__Output[];
+        if (EXPERIMENTAL_DUALSTACK_ENDPOINTS) {
+          socketAddresses = [
+            lbEndpoint.endpoint!.address!.socket_address!,
+            ...lbEndpoint.endpoint!.additional_addresses.map(additionalAddress => additionalAddress.address!.socket_address!)
+          ];
+        } else {
+          socketAddresses = [lbEndpoint.endpoint!.address!.socket_address!];
+        }
         return {
           endpoint: {
-            addresses: [{
+            addresses: socketAddresses.map(socketAddress => ({
               host: socketAddress.address!,
-              port: socketAddress.port_value!,
-            }]
+              port: socketAddress.port_value!
+            }))
           },
           weight: lbEndpoint.load_balancing_weight?.value ?? 1
         };

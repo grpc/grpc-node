@@ -7,6 +7,7 @@ import { isIPv4, isIPv6 } from "net";
 import { Any__Output } from "../generated/google/protobuf/Any";
 import { EDS_TYPE_URL, decodeSingleResource } from "../resources";
 import { Watcher, XdsClient } from "../xds-client";
+import { EXPERIMENTAL_DUALSTACK_ENDPOINTS } from "../environment";
 
 const TRACER_NAME = 'xds_client';
 
@@ -39,6 +40,24 @@ export class EndpointResourceType extends XdsResourceType {
     return 'envoy.config.endpoint.v3.ClusterLoadAssignment';
   }
 
+  private validateAddress(socketAddress: SocketAddress__Output, seenAddresses: SocketAddress__Output[]): boolean {
+    if (socketAddress.port_specifier !== 'port_value') {
+      trace('EDS validation: socket_address.port_specifier !== "port_value"');
+      return false;
+    }
+    if (!(isIPv4(socketAddress.address) || isIPv6(socketAddress.address))) {
+      trace('EDS validation: address not a valid IPv4 or IPv6 address: ' + socketAddress.address);
+      return false;
+    }
+    for (const address of seenAddresses) {
+      if (addressesEqual(socketAddress, address)) {
+        trace('EDS validation: duplicate address seen: ' + address);
+        return false;
+      }
+    }
+    return true;
+  }
+
   private validateResource(message: ClusterLoadAssignment__Output): ClusterLoadAssignment__Output | null {
     const seenLocalities: {locality: Locality__Output, priority: number}[] = [];
     const seenAddresses: SocketAddress__Output[] = [];
@@ -61,21 +80,22 @@ export class EndpointResourceType extends XdsResourceType {
           trace('EDS validation: endpoint socket_address not set');
           return null;
         }
-        if (socketAddress.port_specifier !== 'port_value') {
-          trace('EDS validation: socket_address.port_specifier !== "port_value"');
+        if (!this.validateAddress(socketAddress, seenAddresses)) {
           return null;
-        }
-        if (!(isIPv4(socketAddress.address) || isIPv6(socketAddress.address))) {
-          trace('EDS validation: address not a valid IPv4 or IPv6 address: ' + socketAddress.address);
-          return null;
-        }
-        for (const address of seenAddresses) {
-          if (addressesEqual(socketAddress, address)) {
-            trace('EDS validation: duplicate address seen: ' + address);
-            return null;
-          }
         }
         seenAddresses.push(socketAddress);
+        if (EXPERIMENTAL_DUALSTACK_ENDPOINTS && lb.endpoint?.additional_addresses) {
+          for (const additionalAddress of lb.endpoint.additional_addresses) {
+            if (!additionalAddress.address?.socket_address) {
+              trace('EDS validation: endpoint additional_addresses socket_address not set');
+              return null;
+            }
+            if (!this.validateAddress(additionalAddress.address.socket_address, seenAddresses)) {
+              return null;
+            }
+            seenAddresses.push(additionalAddress.address.socket_address);
+          }
+        }
       }
       priorityTotalWeights.set(endpoint.priority, (priorityTotalWeights.get(endpoint.priority) ?? 0) + (endpoint.load_balancing_weight?.value ?? 0));
     }
