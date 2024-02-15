@@ -41,7 +41,7 @@ import {
   ServerStatusResponse,
   serverErrorToStatus,
 } from './server-call';
-import { ServerCredentials } from './server-credentials';
+import { SecureContextWatcher, ServerCredentials } from './server-credentials';
 import { ChannelOptions } from './channel-options';
 import {
   createResolver,
@@ -73,6 +73,7 @@ import { CipherNameAndProtocol, TLSSocket } from 'tls';
 import { ServerInterceptingCallInterface, ServerInterceptor, getServerInterceptingCall } from './server-interceptors';
 import { PartialStatusObject } from './call-interface';
 import { CallEventTracker } from './transport';
+import { Socket } from 'net';
 
 const UNLIMITED_CONNECTION_AGE_MS = ~(1 << 31);
 const KEEPALIVE_MAX_TIME_MS = ~(1 << 31);
@@ -501,13 +502,19 @@ export class Server {
   private createHttp2Server(credentials: ServerCredentials) {
     let http2Server: http2.Http2Server | http2.Http2SecureServer;
     if (credentials._isSecure()) {
-      const secureServerOptions = Object.assign(
-        this.commonServerOptions,
-        credentials._getSettings()!
-      );
-      secureServerOptions.enableTrace =
-        this.options['grpc-node.tls_enable_trace'] === 1;
+      const credentialsSettings = credentials._getSettings();
+      const secureServerOptions: http2.SecureServerOptions = {
+        ...this.commonServerOptions,
+        ...credentialsSettings,
+        enableTrace: this.options['grpc-node.tls_enable_trace'] === 1
+      };
+      let areCredentialsValid = credentialsSettings !== null;
       http2Server = http2.createSecureServer(secureServerOptions);
+      http2Server.on('connection', (socket: Socket) => {
+        if (!areCredentialsValid) {
+          socket.destroy();
+        }
+      });
       http2Server.on('secureConnection', (socket: TLSSocket) => {
         /* These errors need to be handled by the user of Http2SecureServer,
          * according to https://github.com/nodejs/node/issues/35824 */
@@ -516,6 +523,16 @@ export class Server {
             'An incoming TLS connection closed with error: ' + e.message
           );
         });
+      });
+      const credsWatcher: SecureContextWatcher = options => {
+        if (options) {
+          (http2Server as http2.Http2SecureServer).setSecureContext(options);
+        }
+        areCredentialsValid = options !== null;
+      }
+      credentials._addWatcher(credsWatcher);
+      http2Server.on('close', () => {
+        credentials._removeWatcher(credsWatcher);
       });
     } else {
       http2Server = http2.createServer(this.commonServerOptions);
