@@ -605,6 +605,10 @@ export class LeafLoadBalancer {
     return this.endpoint;
   }
 
+  exitIdle() {
+    this.pickFirstBalancer.exitIdle();
+  }
+
   destroy() {
     this.pickFirstBalancer.destroy();
   }
