@@ -3,6 +3,7 @@
 import type { DoubleMatcher as _envoy_type_matcher_v3_DoubleMatcher, DoubleMatcher__Output as _envoy_type_matcher_v3_DoubleMatcher__Output } from '../../../../envoy/type/matcher/v3/DoubleMatcher';
 import type { StringMatcher as _envoy_type_matcher_v3_StringMatcher, StringMatcher__Output as _envoy_type_matcher_v3_StringMatcher__Output } from '../../../../envoy/type/matcher/v3/StringMatcher';
 import type { ListMatcher as _envoy_type_matcher_v3_ListMatcher, ListMatcher__Output as _envoy_type_matcher_v3_ListMatcher__Output } from '../../../../envoy/type/matcher/v3/ListMatcher';
+import type { OrMatcher as _envoy_type_matcher_v3_OrMatcher, OrMatcher__Output as _envoy_type_matcher_v3_OrMatcher__Output } from '../../../../envoy/type/matcher/v3/OrMatcher';
 
 /**
  * NullMatch is an empty message to specify a null value.
@@ -19,7 +20,7 @@ export interface _envoy_type_matcher_v3_ValueMatcher_NullMatch__Output {
 /**
  * Specifies the way to match a ProtobufWkt::Value. Primitive values and ListValue are supported.
  * StructValue is not supported and is always not matched.
- * [#next-free-field: 7]
+ * [#next-free-field: 8]
  */
 export interface ValueMatcher {
   /**
@@ -53,15 +54,19 @@ export interface ValueMatcher {
    */
   'list_match'?: (_envoy_type_matcher_v3_ListMatcher | null);
   /**
+   * If specified, a match occurs if and only if any of the alternatives in the match accept the value.
+   */
+  'or_match'?: (_envoy_type_matcher_v3_OrMatcher | null);
+  /**
    * Specifies how to match a value.
    */
-  'match_pattern'?: "null_match"|"double_match"|"string_match"|"bool_match"|"present_match"|"list_match";
+  'match_pattern'?: "null_match"|"double_match"|"string_match"|"bool_match"|"present_match"|"list_match"|"or_match";
 }
 
 /**
  * Specifies the way to match a ProtobufWkt::Value. Primitive values and ListValue are supported.
  * StructValue is not supported and is always not matched.
- * [#next-free-field: 7]
+ * [#next-free-field: 8]
  */
 export interface ValueMatcher__Output {
   /**
@@ -95,7 +100,11 @@ export interface ValueMatcher__Output {
    */
   'list_match'?: (_envoy_type_matcher_v3_ListMatcher__Output | null);
   /**
+   * If specified, a match occurs if and only if any of the alternatives in the match accept the value.
+   */
+  'or_match'?: (_envoy_type_matcher_v3_OrMatcher__Output | null);
+  /**
    * Specifies how to match a value.
    */
-  'match_pattern': "null_match"|"double_match"|"string_match"|"bool_match"|"present_match"|"list_match";
+  'match_pattern': "null_match"|"double_match"|"string_match"|"bool_match"|"present_match"|"list_match"|"or_match";
 }

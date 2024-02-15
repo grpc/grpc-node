@@ -8,9 +8,10 @@ import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output a
 import type { ClusterSpecifierPlugin as _envoy_config_route_v3_ClusterSpecifierPlugin, ClusterSpecifierPlugin__Output as _envoy_config_route_v3_ClusterSpecifierPlugin__Output } from '../../../../envoy/config/route/v3/ClusterSpecifierPlugin';
 import type { _envoy_config_route_v3_RouteAction_RequestMirrorPolicy, _envoy_config_route_v3_RouteAction_RequestMirrorPolicy__Output } from '../../../../envoy/config/route/v3/RouteAction';
 import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
+import type { Metadata as _envoy_config_core_v3_Metadata, Metadata__Output as _envoy_config_core_v3_Metadata__Output } from '../../../../envoy/config/core/v3/Metadata';
 
 /**
- * [#next-free-field: 17]
+ * [#next-free-field: 18]
  */
 export interface RouteConfiguration {
   /**
@@ -85,14 +86,11 @@ export interface RouteConfiguration {
    */
   'vhds'?: (_envoy_config_route_v3_Vhds | null);
   /**
-   * By default, headers that should be added/removed are evaluated from most to least specific:
-   * 
-   * * route level
-   * * virtual host level
-   * * connection manager level
-   * 
-   * To allow setting overrides at the route or virtual host level, this order can be reversed
-   * by setting this option to true. Defaults to false.
+   * Headers mutations at all levels are evaluated, if specified. By default, the order is from most
+   * specific (i.e. route entry level) to least specific (i.e. route configuration level). Later header
+   * mutations may override earlier mutations.
+   * This order can be reversed by setting this field to true. In other words, most specific level mutation
+   * is evaluated last.
    */
   'most_specific_header_mutations_wins'?: (boolean);
   /**
@@ -134,24 +132,28 @@ export interface RouteConfiguration {
    */
   'ignore_path_parameters_in_path_matching'?: (boolean);
   /**
-   * The typed_per_filter_config field can be used to provide RouteConfiguration level per filter config.
-   * The key should match the :ref:`filter config name
+   * This field can be used to provide RouteConfiguration level per filter config. The key should match the
+   * :ref:`filter config name
    * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpFilter.name>`.
-   * The canonical filter name (e.g., ``envoy.filters.http.buffer`` for the HTTP buffer filter) can also
-   * be used for the backwards compatibility. If there is no entry referred by the filter config name, the
-   * entry referred by the canonical filter name will be provided to the filters as fallback.
-   * 
-   * Use of this field is filter specific;
-   * see the :ref:`HTTP filter documentation <config_http_filters>` for if and how it is utilized.
+   * See :ref:`Http filter route specific config <arch_overview_http_filters_per_filter_config>`
+   * for details.
    * [#comment: An entry's value may be wrapped in a
    * :ref:`FilterConfig<envoy_v3_api_msg_config.route.v3.FilterConfig>`
    * message to specify additional options.]
    */
   'typed_per_filter_config'?: ({[key: string]: _google_protobuf_Any});
+  /**
+   * The metadata field can be used to provide additional information
+   * about the route configuration. It can be used for configuration, stats, and logging.
+   * The metadata should go under the filter namespace that will need it.
+   * For instance, if the metadata is intended for the Router filter,
+   * the filter name should be specified as ``envoy.filters.http.router``.
+   */
+  'metadata'?: (_envoy_config_core_v3_Metadata | null);
 }
 
 /**
- * [#next-free-field: 17]
+ * [#next-free-field: 18]
  */
 export interface RouteConfiguration__Output {
   /**
@@ -226,14 +228,11 @@ export interface RouteConfiguration__Output {
    */
   'vhds': (_envoy_config_route_v3_Vhds__Output | null);
   /**
-   * By default, headers that should be added/removed are evaluated from most to least specific:
-   * 
-   * * route level
-   * * virtual host level
-   * * connection manager level
-   * 
-   * To allow setting overrides at the route or virtual host level, this order can be reversed
-   * by setting this option to true. Defaults to false.
+   * Headers mutations at all levels are evaluated, if specified. By default, the order is from most
+   * specific (i.e. route entry level) to least specific (i.e. route configuration level). Later header
+   * mutations may override earlier mutations.
+   * This order can be reversed by setting this field to true. In other words, most specific level mutation
+   * is evaluated last.
    */
   'most_specific_header_mutations_wins': (boolean);
   /**
@@ -275,18 +274,22 @@ export interface RouteConfiguration__Output {
    */
   'ignore_path_parameters_in_path_matching': (boolean);
   /**
-   * The typed_per_filter_config field can be used to provide RouteConfiguration level per filter config.
-   * The key should match the :ref:`filter config name
+   * This field can be used to provide RouteConfiguration level per filter config. The key should match the
+   * :ref:`filter config name
    * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpFilter.name>`.
-   * The canonical filter name (e.g., ``envoy.filters.http.buffer`` for the HTTP buffer filter) can also
-   * be used for the backwards compatibility. If there is no entry referred by the filter config name, the
-   * entry referred by the canonical filter name will be provided to the filters as fallback.
-   * 
-   * Use of this field is filter specific;
-   * see the :ref:`HTTP filter documentation <config_http_filters>` for if and how it is utilized.
+   * See :ref:`Http filter route specific config <arch_overview_http_filters_per_filter_config>`
+   * for details.
    * [#comment: An entry's value may be wrapped in a
    * :ref:`FilterConfig<envoy_v3_api_msg_config.route.v3.FilterConfig>`
    * message to specify additional options.]
    */
   'typed_per_filter_config': ({[key: string]: _google_protobuf_Any__Output});
+  /**
+   * The metadata field can be used to provide additional information
+   * about the route configuration. It can be used for configuration, stats, and logging.
+   * The metadata should go under the filter namespace that will need it.
+   * For instance, if the metadata is intended for the Router filter,
+   * the filter name should be specified as ``envoy.filters.http.router``.
+   */
+  'metadata': (_envoy_config_core_v3_Metadata__Output | null);
 }

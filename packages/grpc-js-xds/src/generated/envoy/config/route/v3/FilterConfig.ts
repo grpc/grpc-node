@@ -23,6 +23,8 @@ export interface FilterConfig {
   'is_optional'?: (boolean);
   /**
    * If true, the filter is disabled in the route or virtual host and the ``config`` field is ignored.
+   * See :ref:`route based filter chain <arch_overview_http_filters_route_based_filter_chain>`
+   * for more details.
    * 
    * .. note::
    * 
@@ -34,8 +36,6 @@ export interface FilterConfig {
    * created and it is too late to change the chain.
    * 
    * This field only make sense for the downstream HTTP filters for now.
-   * 
-   * [#not-implemented-hide:]
    */
   'disabled'?: (boolean);
 }
@@ -61,6 +61,8 @@ export interface FilterConfig__Output {
   'is_optional': (boolean);
   /**
    * If true, the filter is disabled in the route or virtual host and the ``config`` field is ignored.
+   * See :ref:`route based filter chain <arch_overview_http_filters_route_based_filter_chain>`
+   * for more details.
    * 
    * .. note::
    * 
@@ -72,8 +74,6 @@ export interface FilterConfig__Output {
    * created and it is too late to change the chain.
    * 
    * This field only make sense for the downstream HTTP filters for now.
-   * 
-   * [#not-implemented-hide:]
    */
   'disabled': (boolean);
 }

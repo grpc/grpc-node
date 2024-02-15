@@ -6,9 +6,6 @@ import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output a
 import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
 import type { FractionalPercent as _envoy_type_v3_FractionalPercent, FractionalPercent__Output as _envoy_type_v3_FractionalPercent__Output } from '../../../../envoy/type/v3/FractionalPercent';
 
-/**
- * [#not-implemented-hide:]
- */
 export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload {
   /**
    * Identifier for the policy specifying the drop.
@@ -20,9 +17,6 @@ export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOver
   'drop_percentage'?: (_envoy_type_v3_FractionalPercent | null);
 }
 
-/**
- * [#not-implemented-hide:]
- */
 export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload__Output {
   /**
    * Identifier for the policy specifying the drop.
@@ -36,7 +30,7 @@ export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOver
 
 /**
  * Load balancing policy settings.
- * [#next-free-field: 6]
+ * [#next-free-field: 7]
  */
 export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy {
   /**
@@ -59,7 +53,9 @@ export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy {
    * "throttle"_drop = 60%
    * "lb"_drop = 20%  // 50% of the remaining 'actual' load, which is 40%.
    * actual_outgoing_load = 20% // remaining after applying all categories.
-   * [#not-implemented-hide:]
+   * 
+   * Envoy supports only one element and will NACK if more than one element is present.
+   * Other xDS-capable data planes will not necessarily have this limitation.
    */
   'drop_overloads'?: (_envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload)[];
   /**
@@ -86,11 +82,22 @@ export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy {
    * Defaults to 0 which means endpoints never go stale.
    */
   'endpoint_stale_after'?: (_google_protobuf_Duration | null);
+  /**
+   * If true, use the :ref:`load balancing weight
+   * <envoy_v3_api_field_config.endpoint.v3.LbEndpoint.load_balancing_weight>` of healthy and unhealthy
+   * hosts to determine the health of the priority level. If false, use the number of healthy and unhealthy hosts
+   * to determine the health of the priority level, or in other words assume each host has a weight of 1 for
+   * this calculation.
+   * 
+   * Note: this is not currently implemented for
+   * :ref:`locality weighted load balancing <arch_overview_load_balancing_locality_weighted_lb>`.
+   */
+  'weighted_priority_health'?: (boolean);
 }
 
 /**
  * Load balancing policy settings.
- * [#next-free-field: 6]
+ * [#next-free-field: 7]
  */
 export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__Output {
   /**
@@ -113,7 +120,9 @@ export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__Output 
    * "throttle"_drop = 60%
    * "lb"_drop = 20%  // 50% of the remaining 'actual' load, which is 40%.
    * actual_outgoing_load = 20% // remaining after applying all categories.
-   * [#not-implemented-hide:]
+   * 
+   * Envoy supports only one element and will NACK if more than one element is present.
+   * Other xDS-capable data planes will not necessarily have this limitation.
    */
   'drop_overloads': (_envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload__Output)[];
   /**
@@ -140,6 +149,17 @@ export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__Output 
    * Defaults to 0 which means endpoints never go stale.
    */
   'endpoint_stale_after': (_google_protobuf_Duration__Output | null);
+  /**
+   * If true, use the :ref:`load balancing weight
+   * <envoy_v3_api_field_config.endpoint.v3.LbEndpoint.load_balancing_weight>` of healthy and unhealthy
+   * hosts to determine the health of the priority level. If false, use the number of healthy and unhealthy hosts
+   * to determine the health of the priority level, or in other words assume each host has a weight of 1 for
+   * this calculation.
+   * 
+   * Note: this is not currently implemented for
+   * :ref:`locality weighted load balancing <arch_overview_load_balancing_locality_weighted_lb>`.
+   */
+  'weighted_priority_health': (boolean);
 }
 
 /**

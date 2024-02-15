@@ -5,7 +5,7 @@ import type { QuicKeepAliveSettings as _envoy_config_core_v3_QuicKeepAliveSettin
 
 /**
  * QUIC protocol options which apply to both downstream and upstream connections.
- * [#next-free-field: 6]
+ * [#next-free-field: 8]
  */
 export interface QuicProtocolOptions {
   /**
@@ -37,7 +37,7 @@ export interface QuicProtocolOptions {
   'initial_connection_window_size'?: (_google_protobuf_UInt32Value | null);
   /**
    * The number of timeouts that can occur before port migration is triggered for QUIC clients.
-   * This defaults to 1. If set to 0, port migration will not occur on path degrading.
+   * This defaults to 4. If set to 0, port migration will not occur on path degrading.
    * Timeout here refers to QUIC internal path degrading timeout mechanism, such as PTO.
    * This has no effect on server sessions.
    */
@@ -47,11 +47,21 @@ export interface QuicProtocolOptions {
    * If absent, use the default keepalive behavior of which a client connection sends PINGs every 15s, and a server connection doesn't do anything.
    */
   'connection_keepalive'?: (_envoy_config_core_v3_QuicKeepAliveSettings | null);
+  /**
+   * A comma-separated list of strings representing QUIC connection options defined in
+   * `QUICHE <https://github.com/google/quiche/blob/main/quiche/quic/core/crypto/crypto_protocol.h>`_ and to be sent by upstream connections.
+   */
+  'connection_options'?: (string);
+  /**
+   * A comma-separated list of strings representing QUIC client connection options defined in
+   * `QUICHE <https://github.com/google/quiche/blob/main/quiche/quic/core/crypto/crypto_protocol.h>`_ and to be sent by upstream connections.
+   */
+  'client_connection_options'?: (string);
 }
 
 /**
  * QUIC protocol options which apply to both downstream and upstream connections.
- * [#next-free-field: 6]
+ * [#next-free-field: 8]
  */
 export interface QuicProtocolOptions__Output {
   /**
@@ -83,7 +93,7 @@ export interface QuicProtocolOptions__Output {
   'initial_connection_window_size': (_google_protobuf_UInt32Value__Output | null);
   /**
    * The number of timeouts that can occur before port migration is triggered for QUIC clients.
-   * This defaults to 1. If set to 0, port migration will not occur on path degrading.
+   * This defaults to 4. If set to 0, port migration will not occur on path degrading.
    * Timeout here refers to QUIC internal path degrading timeout mechanism, such as PTO.
    * This has no effect on server sessions.
    */
@@ -93,4 +103,14 @@ export interface QuicProtocolOptions__Output {
    * If absent, use the default keepalive behavior of which a client connection sends PINGs every 15s, and a server connection doesn't do anything.
    */
   'connection_keepalive': (_envoy_config_core_v3_QuicKeepAliveSettings__Output | null);
+  /**
+   * A comma-separated list of strings representing QUIC connection options defined in
+   * `QUICHE <https://github.com/google/quiche/blob/main/quiche/quic/core/crypto/crypto_protocol.h>`_ and to be sent by upstream connections.
+   */
+  'connection_options': (string);
+  /**
+   * A comma-separated list of strings representing QUIC client connection options defined in
+   * `QUICHE <https://github.com/google/quiche/blob/main/quiche/quic/core/crypto/crypto_protocol.h>`_ and to be sent by upstream connections.
+   */
+  'client_connection_options': (string);
 }

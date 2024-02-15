@@ -11,6 +11,10 @@ export interface _envoy_data_accesslog_v3_TLSProperties_CertificateProperties {
    * The subject field of the certificate.
    */
   'subject'?: (string);
+  /**
+   * The issuer field of the certificate.
+   */
+  'issuer'?: (string);
 }
 
 export interface _envoy_data_accesslog_v3_TLSProperties_CertificateProperties__Output {
@@ -22,6 +26,10 @@ export interface _envoy_data_accesslog_v3_TLSProperties_CertificateProperties__O
    * The subject field of the certificate.
    */
   'subject': (string);
+  /**
+   * The issuer field of the certificate.
+   */
+  'issuer': (string);
 }
 
 export interface _envoy_data_accesslog_v3_TLSProperties_CertificateProperties_SubjectAltName {

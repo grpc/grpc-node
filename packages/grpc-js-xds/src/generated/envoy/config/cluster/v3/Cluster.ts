@@ -27,6 +27,7 @@ import type { Struct as _google_protobuf_Struct, Struct__Output as _google_proto
 import type { RuntimeDouble as _envoy_config_core_v3_RuntimeDouble, RuntimeDouble__Output as _envoy_config_core_v3_RuntimeDouble__Output } from '../../../../envoy/config/core/v3/RuntimeDouble';
 import type { Percent as _envoy_type_v3_Percent, Percent__Output as _envoy_type_v3_Percent__Output } from '../../../../envoy/type/v3/Percent';
 import type { UInt64Value as _google_protobuf_UInt64Value, UInt64Value__Output as _google_protobuf_UInt64Value__Output } from '../../../../google/protobuf/UInt64Value';
+import type { MetadataKey as _envoy_type_metadata_v3_MetadataKey, MetadataKey__Output as _envoy_type_metadata_v3_MetadataKey__Output } from '../../../../envoy/type/metadata/v3/MetadataKey';
 import type { HealthStatusSet as _envoy_config_core_v3_HealthStatusSet, HealthStatusSet__Output as _envoy_config_core_v3_HealthStatusSet__Output } from '../../../../envoy/config/core/v3/HealthStatusSet';
 import type { DoubleValue as _google_protobuf_DoubleValue, DoubleValue__Output as _google_protobuf_DoubleValue__Output } from '../../../../google/protobuf/DoubleValue';
 import type { Long } from '@grpc/proto-loader';
@@ -944,6 +945,11 @@ export interface _envoy_config_cluster_v3_Cluster_OriginalDstLbConfig {
    * will take precedence over filter state and header override ports
    */
   'upstream_port_override'?: (_google_protobuf_UInt32Value | null);
+  /**
+   * The dynamic metadata key to override destination address.
+   * First the request metadata is considered, then the connection one.
+   */
+  'metadata_key'?: (_envoy_type_metadata_v3_MetadataKey | null);
 }
 
 /**
@@ -978,6 +984,11 @@ export interface _envoy_config_cluster_v3_Cluster_OriginalDstLbConfig__Output {
    * will take precedence over filter state and header override ports
    */
   'upstream_port_override': (_google_protobuf_UInt32Value__Output | null);
+  /**
+   * The dynamic metadata key to override destination address.
+   * First the request metadata is considered, then the connection one.
+   */
+  'metadata_key': (_envoy_type_metadata_v3_MetadataKey__Output | null);
 }
 
 export interface _envoy_config_cluster_v3_Cluster_PreconnectPolicy {

@@ -11,6 +11,7 @@ import type { HedgePolicy as _envoy_config_route_v3_HedgePolicy, HedgePolicy__Ou
 import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 import type { Matcher as _xds_type_matcher_v3_Matcher, Matcher__Output as _xds_type_matcher_v3_Matcher__Output } from '../../../../xds/type/matcher/v3/Matcher';
 import type { _envoy_config_route_v3_RouteAction_RequestMirrorPolicy, _envoy_config_route_v3_RouteAction_RequestMirrorPolicy__Output } from '../../../../envoy/config/route/v3/RouteAction';
+import type { Metadata as _envoy_config_core_v3_Metadata, Metadata__Output as _envoy_config_core_v3_Metadata__Output } from '../../../../envoy/config/core/v3/Metadata';
 
 // Original file: deps/envoy-api/envoy/config/route/v3/route_components.proto
 
@@ -37,7 +38,7 @@ export enum _envoy_config_route_v3_VirtualHost_TlsRequirementType {
  * host header. This allows a single listener to service multiple top level domain path trees. Once
  * a virtual host is selected based on the domain, the routes are processed in order to see which
  * upstream cluster to route to or whether to perform a redirect.
- * [#next-free-field: 24]
+ * [#next-free-field: 25]
  */
 export interface VirtualHost {
   /**
@@ -141,15 +142,11 @@ export interface VirtualHost {
    */
   'include_request_attempt_count'?: (boolean);
   /**
-   * The per_filter_config field can be used to provide virtual host-specific configurations for filters.
-   * The key should match the :ref:`filter config name
+   * This field can be used to provide virtual host level per filter config. The key should match the
+   * :ref:`filter config name
    * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpFilter.name>`.
-   * The canonical filter name (e.g., ``envoy.filters.http.buffer`` for the HTTP buffer filter) can also
-   * be used for the backwards compatibility. If there is no entry referred by the filter config name, the
-   * entry referred by the canonical filter name will be provided to the filters as fallback.
-   * 
-   * Use of this field is filter specific;
-   * see the :ref:`HTTP filter documentation <config_http_filters>` for if and how it is utilized.
+   * See :ref:`Http filter route specific config <arch_overview_http_filters_per_filter_config>`
+   * for details.
    * [#comment: An entry's value may be wrapped in a
    * :ref:`FilterConfig<envoy_v3_api_msg_config.route.v3.FilterConfig>`
    * message to specify additional options.]
@@ -209,6 +206,14 @@ export interface VirtualHost {
    * request header in retries initiated by per try timeouts.
    */
   'include_is_timeout_retry_header'?: (boolean);
+  /**
+   * The metadata field can be used to provide additional information
+   * about the virtual host. It can be used for configuration, stats, and logging.
+   * The metadata should go under the filter namespace that will need it.
+   * For instance, if the metadata is intended for the Router filter,
+   * the filter name should be specified as ``envoy.filters.http.router``.
+   */
+  'metadata'?: (_envoy_config_core_v3_Metadata | null);
 }
 
 /**
@@ -217,7 +222,7 @@ export interface VirtualHost {
  * host header. This allows a single listener to service multiple top level domain path trees. Once
  * a virtual host is selected based on the domain, the routes are processed in order to see which
  * upstream cluster to route to or whether to perform a redirect.
- * [#next-free-field: 24]
+ * [#next-free-field: 25]
  */
 export interface VirtualHost__Output {
   /**
@@ -321,15 +326,11 @@ export interface VirtualHost__Output {
    */
   'include_request_attempt_count': (boolean);
   /**
-   * The per_filter_config field can be used to provide virtual host-specific configurations for filters.
-   * The key should match the :ref:`filter config name
+   * This field can be used to provide virtual host level per filter config. The key should match the
+   * :ref:`filter config name
    * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpFilter.name>`.
-   * The canonical filter name (e.g., ``envoy.filters.http.buffer`` for the HTTP buffer filter) can also
-   * be used for the backwards compatibility. If there is no entry referred by the filter config name, the
-   * entry referred by the canonical filter name will be provided to the filters as fallback.
-   * 
-   * Use of this field is filter specific;
-   * see the :ref:`HTTP filter documentation <config_http_filters>` for if and how it is utilized.
+   * See :ref:`Http filter route specific config <arch_overview_http_filters_per_filter_config>`
+   * for details.
    * [#comment: An entry's value may be wrapped in a
    * :ref:`FilterConfig<envoy_v3_api_msg_config.route.v3.FilterConfig>`
    * message to specify additional options.]
@@ -389,4 +390,12 @@ export interface VirtualHost__Output {
    * request header in retries initiated by per try timeouts.
    */
   'include_is_timeout_retry_header': (boolean);
+  /**
+   * The metadata field can be used to provide additional information
+   * about the virtual host. It can be used for configuration, stats, and logging.
+   * The metadata should go under the filter namespace that will need it.
+   * For instance, if the metadata is intended for the Router filter,
+   * the filter name should be specified as ``envoy.filters.http.router``.
+   */
+  'metadata': (_envoy_config_core_v3_Metadata__Output | null);
 }

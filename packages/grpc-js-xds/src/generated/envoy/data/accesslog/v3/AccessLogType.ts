@@ -12,4 +12,7 @@ export enum AccessLogType {
   UpstreamPeriodic = 8,
   UpstreamEnd = 9,
   DownstreamTunnelSuccessfullyEstablished = 10,
+  UdpTunnelUpstreamConnected = 11,
+  UdpPeriodic = 12,
+  UdpSessionEnd = 13,
 }

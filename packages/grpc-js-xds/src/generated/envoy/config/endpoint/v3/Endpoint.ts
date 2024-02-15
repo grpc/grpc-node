@@ -2,6 +2,20 @@
 
 import type { Address as _envoy_config_core_v3_Address, Address__Output as _envoy_config_core_v3_Address__Output } from '../../../../envoy/config/core/v3/Address';
 
+export interface _envoy_config_endpoint_v3_Endpoint_AdditionalAddress {
+  /**
+   * Additional address that is associated with the endpoint.
+   */
+  'address'?: (_envoy_config_core_v3_Address | null);
+}
+
+export interface _envoy_config_endpoint_v3_Endpoint_AdditionalAddress__Output {
+  /**
+   * Additional address that is associated with the endpoint.
+   */
+  'address': (_envoy_config_core_v3_Address__Output | null);
+}
+
 /**
  * The optional health check configuration.
  */
@@ -107,6 +121,14 @@ export interface Endpoint {
    * :ref:`auto_host_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.auto_host_rewrite>`.
    */
   'hostname'?: (string);
+  /**
+   * An ordered list of addresses that together with ``address`` comprise the
+   * list of addresses for an endpoint. The address given in the ``address`` is
+   * prepended to this list. It is assumed that the list must already be
+   * sorted by preference order of the addresses. This will only be supported
+   * for STATIC and EDS clusters.
+   */
+  'additional_addresses'?: (_envoy_config_endpoint_v3_Endpoint_AdditionalAddress)[];
 }
 
 /**
@@ -142,4 +164,12 @@ export interface Endpoint__Output {
    * :ref:`auto_host_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.auto_host_rewrite>`.
    */
   'hostname': (string);
+  /**
+   * An ordered list of addresses that together with ``address`` comprise the
+   * list of addresses for an endpoint. The address given in the ``address`` is
+   * prepended to this list. It is assumed that the list must already be
+   * sorted by preference order of the addresses. This will only be supported
+   * for STATIC and EDS clusters.
+   */
+  'additional_addresses': (_envoy_config_endpoint_v3_Endpoint_AdditionalAddress__Output)[];
 }

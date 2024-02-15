@@ -90,7 +90,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * on stream close, when the HTTP request is complete. If this field is set, the HCM will flush access
    * logs periodically at the specified interval. This is especially useful in the case of long-lived
    * requests, such as CONNECT and Websockets. Final access logs can be detected via the
-   * `requestComplete()` method of `StreamInfo` in access log filters, or thru the `%DURATION%` substitution
+   * ``requestComplete()`` method of ``StreamInfo`` in access log filters, or through the ``%DURATION%`` substitution
    * string.
    * The interval must be at least 1 millisecond.
    */
@@ -116,7 +116,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * on stream close, when the HTTP request is complete. If this field is set, the HCM will flush access
    * logs periodically at the specified interval. This is especially useful in the case of long-lived
    * requests, such as CONNECT and Websockets. Final access logs can be detected via the
-   * `requestComplete()` method of `StreamInfo` in access log filters, or thru the `%DURATION%` substitution
+   * ``requestComplete()`` method of ``StreamInfo`` in access log filters, or through the ``%DURATION%`` substitution
    * string.
    * The interval must be at least 1 millisecond.
    */
@@ -489,7 +489,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
 }
 
 /**
- * [#next-free-field: 10]
+ * [#next-free-field: 11]
  */
 export interface _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing {
   /**
@@ -548,10 +548,32 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * on OpenCensus side.
    */
   'provider'?: (_envoy_config_trace_v3_Tracing_Http | null);
+  /**
+   * Create separate tracing span for each upstream request if true. And if this flag is set to true,
+   * the tracing provider will assume that Envoy will be independent hop in the trace chain and may
+   * set span type to client or server based on this flag.
+   * This will deprecate the
+   * :ref:`start_child_span <envoy_v3_api_field_extensions.filters.http.router.v3.Router.start_child_span>`
+   * in the router.
+   * 
+   * Users should set appropriate value based on their tracing provider and actual scenario:
+   * 
+   * * If Envoy is used as sidecar and users want to make the sidecar and its application as only one
+   * hop in the trace chain, this flag should be set to false. And please also make sure the
+   * :ref:`start_child_span <envoy_v3_api_field_extensions.filters.http.router.v3.Router.start_child_span>`
+   * in the router is not set to true.
+   * * If Envoy is used as gateway or independent proxy, or users want to make the sidecar and its
+   * application as different hops in the trace chain, this flag should be set to true.
+   * * If tracing provider that has explicit requirements on span creation (like SkyWalking),
+   * this flag should be set to true.
+   * 
+   * The default value is false for now for backward compatibility.
+   */
+  'spawn_upstream_span'?: (_google_protobuf_BoolValue | null);
 }
 
 /**
- * [#next-free-field: 10]
+ * [#next-free-field: 11]
  */
 export interface _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing__Output {
   /**
@@ -610,6 +632,28 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * on OpenCensus side.
    */
   'provider': (_envoy_config_trace_v3_Tracing_Http__Output | null);
+  /**
+   * Create separate tracing span for each upstream request if true. And if this flag is set to true,
+   * the tracing provider will assume that Envoy will be independent hop in the trace chain and may
+   * set span type to client or server based on this flag.
+   * This will deprecate the
+   * :ref:`start_child_span <envoy_v3_api_field_extensions.filters.http.router.v3.Router.start_child_span>`
+   * in the router.
+   * 
+   * Users should set appropriate value based on their tracing provider and actual scenario:
+   * 
+   * * If Envoy is used as sidecar and users want to make the sidecar and its application as only one
+   * hop in the trace chain, this flag should be set to false. And please also make sure the
+   * :ref:`start_child_span <envoy_v3_api_field_extensions.filters.http.router.v3.Router.start_child_span>`
+   * in the router is not set to true.
+   * * If Envoy is used as gateway or independent proxy, or users want to make the sidecar and its
+   * application as different hops in the trace chain, this flag should be set to true.
+   * * If tracing provider that has explicit requirements on span creation (like SkyWalking),
+   * this flag should be set to true.
+   * 
+   * The default value is false for now for backward compatibility.
+   */
+  'spawn_upstream_span': (_google_protobuf_BoolValue__Output | null);
 }
 
 /**
@@ -1162,8 +1206,8 @@ export interface HttpConnectionManager {
    */
   'typed_header_validation_config'?: (_envoy_config_core_v3_TypedExtensionConfig | null);
   /**
-   * Append the `x-forwarded-port` header with the port value client used to connect to Envoy. It
-   * will be ignored if the `x-forwarded-port` header has been set by any trusted proxy in front of Envoy.
+   * Append the ``x-forwarded-port`` header with the port value client used to connect to Envoy. It
+   * will be ignored if the ``x-forwarded-port`` header has been set by any trusted proxy in front of Envoy.
    */
   'append_x_forwarded_port'?: (boolean);
   /**
@@ -1177,8 +1221,8 @@ export interface HttpConnectionManager {
    */
   'early_header_mutation_extensions'?: (_envoy_config_core_v3_TypedExtensionConfig)[];
   /**
-   * Whether the HCM will add ProxyProtocolFilterState to the Connection lifetime filter state. Defaults to `true`.
-   * This should be set to `false` in cases where Envoy's view of the downstream address may not correspond to the
+   * Whether the HCM will add ProxyProtocolFilterState to the Connection lifetime filter state. Defaults to ``true``.
+   * This should be set to ``false`` in cases where Envoy's view of the downstream address may not correspond to the
    * actual client address, for example, if there's another proxy in front of the Envoy.
    */
   'add_proxy_protocol_connection_state'?: (_google_protobuf_BoolValue | null);
@@ -1686,8 +1730,8 @@ export interface HttpConnectionManager__Output {
    */
   'typed_header_validation_config': (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
   /**
-   * Append the `x-forwarded-port` header with the port value client used to connect to Envoy. It
-   * will be ignored if the `x-forwarded-port` header has been set by any trusted proxy in front of Envoy.
+   * Append the ``x-forwarded-port`` header with the port value client used to connect to Envoy. It
+   * will be ignored if the ``x-forwarded-port`` header has been set by any trusted proxy in front of Envoy.
    */
   'append_x_forwarded_port': (boolean);
   /**
@@ -1701,8 +1745,8 @@ export interface HttpConnectionManager__Output {
    */
   'early_header_mutation_extensions': (_envoy_config_core_v3_TypedExtensionConfig__Output)[];
   /**
-   * Whether the HCM will add ProxyProtocolFilterState to the Connection lifetime filter state. Defaults to `true`.
-   * This should be set to `false` in cases where Envoy's view of the downstream address may not correspond to the
+   * Whether the HCM will add ProxyProtocolFilterState to the Connection lifetime filter state. Defaults to ``true``.
+   * This should be set to ``false`` in cases where Envoy's view of the downstream address may not correspond to the
    * actual client address, for example, if there's another proxy in front of the Envoy.
    */
   'add_proxy_protocol_connection_state': (_google_protobuf_BoolValue__Output | null);

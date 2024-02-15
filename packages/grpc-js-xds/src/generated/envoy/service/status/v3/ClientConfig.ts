@@ -136,6 +136,12 @@ export interface ClientConfig {
    * the type URL (like Cluster if it is CDS)
    */
   'generic_xds_configs'?: (_envoy_service_status_v3_ClientConfig_GenericXdsConfig)[];
+  /**
+   * For xDS clients, the scope in which the data is used.
+   * For example, gRPC indicates the data plane target or that the data is
+   * associated with gRPC server(s).
+   */
+  'client_scope'?: (string);
 }
 
 /**
@@ -156,4 +162,10 @@ export interface ClientConfig__Output {
    * the type URL (like Cluster if it is CDS)
    */
   'generic_xds_configs': (_envoy_service_status_v3_ClientConfig_GenericXdsConfig__Output)[];
+  /**
+   * For xDS clients, the scope in which the data is used.
+   * For example, gRPC indicates the data plane target or that the data is
+   * associated with gRPC server(s).
+   */
+  'client_scope': (string);
 }

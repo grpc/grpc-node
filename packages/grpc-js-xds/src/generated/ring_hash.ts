@@ -48,6 +48,7 @@ export interface ProtoGrpcType {
           TcpKeepalive: MessageTypeDefinition
           TrafficDirection: EnumTypeDefinition
           TransportSocket: MessageTypeDefinition
+          TypedExtensionConfig: MessageTypeDefinition
           WatchedDirectory: MessageTypeDefinition
         }
       }

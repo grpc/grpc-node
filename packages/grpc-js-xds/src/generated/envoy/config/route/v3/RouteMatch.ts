@@ -9,13 +9,13 @@ import type { MetadataMatcher as _envoy_type_matcher_v3_MetadataMatcher, Metadat
 import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig, TypedExtensionConfig__Output as _envoy_config_core_v3_TypedExtensionConfig__Output } from '../../../../envoy/config/core/v3/TypedExtensionConfig';
 
 /**
- * An extensible message for matching CONNECT requests.
+ * An extensible message for matching CONNECT or CONNECT-UDP requests.
  */
 export interface _envoy_config_route_v3_RouteMatch_ConnectMatcher {
 }
 
 /**
- * An extensible message for matching CONNECT requests.
+ * An extensible message for matching CONNECT or CONNECT-UDP requests.
  */
 export interface _envoy_config_route_v3_RouteMatch_ConnectMatcher__Output {
 }
@@ -35,6 +35,16 @@ export interface _envoy_config_route_v3_RouteMatch_TlsContextMatchOptions {
   /**
    * If specified, the route will match against whether or not a certificate is validated.
    * If not specified, certificate validation status (true or false) will not be considered when route matching.
+   * 
+   * .. warning::
+   * 
+   * Client certificate validation is not currently performed upon TLS session resumption. For
+   * a resumed TLS session the route will match only when ``validated`` is false, regardless of
+   * whether the client TLS certificate is valid.
+   * 
+   * The only known workaround for this issue is to disable TLS session resumption entirely, by
+   * setting both :ref:`disable_stateless_session_resumption <envoy_v3_api_field_extensions.transport_sockets.tls.v3.DownstreamTlsContext.disable_stateless_session_resumption>`
+   * and :ref:`disable_stateful_session_resumption <envoy_v3_api_field_extensions.transport_sockets.tls.v3.DownstreamTlsContext.disable_stateful_session_resumption>` on the DownstreamTlsContext.
    */
   'validated'?: (_google_protobuf_BoolValue | null);
 }
@@ -48,6 +58,16 @@ export interface _envoy_config_route_v3_RouteMatch_TlsContextMatchOptions__Outpu
   /**
    * If specified, the route will match against whether or not a certificate is validated.
    * If not specified, certificate validation status (true or false) will not be considered when route matching.
+   * 
+   * .. warning::
+   * 
+   * Client certificate validation is not currently performed upon TLS session resumption. For
+   * a resumed TLS session the route will match only when ``validated`` is false, regardless of
+   * whether the client TLS certificate is valid.
+   * 
+   * The only known workaround for this issue is to disable TLS session resumption entirely, by
+   * setting both :ref:`disable_stateless_session_resumption <envoy_v3_api_field_extensions.transport_sockets.tls.v3.DownstreamTlsContext.disable_stateless_session_resumption>`
+   * and :ref:`disable_stateful_session_resumption <envoy_v3_api_field_extensions.transport_sockets.tls.v3.DownstreamTlsContext.disable_stateful_session_resumption>` on the DownstreamTlsContext.
    */
   'validated': (_google_protobuf_BoolValue__Output | null);
 }
@@ -84,7 +104,8 @@ export interface RouteMatch {
    * match. The router will check the query string from the ``path`` header
    * against all the specified query parameters. If the number of specified
    * query parameters is nonzero, they all must match the ``path`` header's
-   * query string for a match to occur.
+   * query string for a match to occur. In the event query parameters are
+   * repeated, only the first value for each key will be considered.
    * 
    * .. note::
    * 
@@ -143,11 +164,10 @@ export interface RouteMatch {
    */
   'tls_context'?: (_envoy_config_route_v3_RouteMatch_TlsContextMatchOptions | null);
   /**
-   * If this is used as the matcher, the matcher will only match CONNECT requests.
-   * Note that this will not match HTTP/2 upgrade-style CONNECT requests
-   * (WebSocket and the like) as they are normalized in Envoy as HTTP/1.1 style
-   * upgrades.
-   * This is the only way to match CONNECT requests for HTTP/1.1. For HTTP/2,
+   * If this is used as the matcher, the matcher will only match CONNECT or CONNECT-UDP requests.
+   * Note that this will not match other Extended CONNECT requests (WebSocket and the like) as
+   * they are normalized in Envoy as HTTP/1.1 style upgrades.
+   * This is the only way to match CONNECT requests for HTTP/1.1. For HTTP/2 and HTTP/3,
    * where Extended CONNECT requests may have a path, the path matchers will work if
    * there is a path present.
    * Note that CONNECT support is currently considered alpha in Envoy.
@@ -212,7 +232,8 @@ export interface RouteMatch__Output {
    * match. The router will check the query string from the ``path`` header
    * against all the specified query parameters. If the number of specified
    * query parameters is nonzero, they all must match the ``path`` header's
-   * query string for a match to occur.
+   * query string for a match to occur. In the event query parameters are
+   * repeated, only the first value for each key will be considered.
    * 
    * .. note::
    * 
@@ -271,11 +292,10 @@ export interface RouteMatch__Output {
    */
   'tls_context': (_envoy_config_route_v3_RouteMatch_TlsContextMatchOptions__Output | null);
   /**
-   * If this is used as the matcher, the matcher will only match CONNECT requests.
-   * Note that this will not match HTTP/2 upgrade-style CONNECT requests
-   * (WebSocket and the like) as they are normalized in Envoy as HTTP/1.1 style
-   * upgrades.
-   * This is the only way to match CONNECT requests for HTTP/1.1. For HTTP/2,
+   * If this is used as the matcher, the matcher will only match CONNECT or CONNECT-UDP requests.
+   * Note that this will not match other Extended CONNECT requests (WebSocket and the like) as
+   * they are normalized in Envoy as HTTP/1.1 style upgrades.
+   * This is the only way to match CONNECT requests for HTTP/1.1. For HTTP/2 and HTTP/3,
    * where Extended CONNECT requests may have a path, the path matchers will work if
    * there is a path present.
    * Note that CONNECT support is currently considered alpha in Envoy.

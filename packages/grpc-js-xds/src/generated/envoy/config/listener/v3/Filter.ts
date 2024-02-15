@@ -21,7 +21,6 @@ export interface Filter {
    * Configuration source specifier for an extension configuration discovery
    * service. In case of a failure and without the default configuration, the
    * listener closes the connections.
-   * [#not-implemented-hide:]
    */
   'config_discovery'?: (_envoy_config_core_v3_ExtensionConfigSource | null);
   'config_type'?: "typed_config"|"config_discovery";
@@ -45,7 +44,6 @@ export interface Filter__Output {
    * Configuration source specifier for an extension configuration discovery
    * service. In case of a failure and without the default configuration, the
    * listener closes the connections.
-   * [#not-implemented-hide:]
    */
   'config_discovery'?: (_envoy_config_core_v3_ExtensionConfigSource__Output | null);
   'config_type': "typed_config"|"config_discovery";

@@ -57,9 +57,9 @@ export interface LocalityLbEndpoints {
    * default to the highest priority (0).
    * 
    * Under usual circumstances, Envoy will only select endpoints for the highest
-   * priority (0). In the event all endpoints for a particular priority are
+   * priority (0). In the event that enough endpoints for a particular priority are
    * unavailable/unhealthy, Envoy will fail over to selecting endpoints for the
-   * next highest priority group.
+   * next highest priority group. Read more at :ref:`priority levels <arch_overview_load_balancing_priority_levels>`.
    * 
    * Priorities should range from 0 (highest) to N (lowest) without skipping.
    */
@@ -125,9 +125,9 @@ export interface LocalityLbEndpoints__Output {
    * default to the highest priority (0).
    * 
    * Under usual circumstances, Envoy will only select endpoints for the highest
-   * priority (0). In the event all endpoints for a particular priority are
+   * priority (0). In the event that enough endpoints for a particular priority are
    * unavailable/unhealthy, Envoy will fail over to selecting endpoints for the
-   * next highest priority group.
+   * next highest priority group. Read more at :ref:`priority levels <arch_overview_load_balancing_priority_levels>`.
    * 
    * Priorities should range from 0 (highest) to N (lowest) without skipping.
    */

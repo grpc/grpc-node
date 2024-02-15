@@ -4,7 +4,7 @@ import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__
 import type { ExtensionConfigSource as _envoy_config_core_v3_ExtensionConfigSource, ExtensionConfigSource__Output as _envoy_config_core_v3_ExtensionConfigSource__Output } from '../../../../../../envoy/config/core/v3/ExtensionConfigSource';
 
 /**
- * [#next-free-field: 7]
+ * [#next-free-field: 8]
  */
 export interface HttpFilter {
   /**
@@ -38,11 +38,20 @@ export interface HttpFilter {
    * Otherwise, clients that do not support this filter must reject the config.
    */
   'is_optional'?: (boolean);
+  /**
+   * If true, the filter is disabled by default and must be explicitly enabled by setting
+   * per filter configuration in the route configuration.
+   * See :ref:`route based filter chain <arch_overview_http_filters_route_based_filter_chain>`
+   * for more details.
+   * 
+   * Terminal filters (e.g. ``envoy.filters.http.router``) cannot be marked as disabled.
+   */
+  'disabled'?: (boolean);
   'config_type'?: "typed_config"|"config_discovery";
 }
 
 /**
- * [#next-free-field: 7]
+ * [#next-free-field: 8]
  */
 export interface HttpFilter__Output {
   /**
@@ -76,5 +85,14 @@ export interface HttpFilter__Output {
    * Otherwise, clients that do not support this filter must reject the config.
    */
   'is_optional': (boolean);
+  /**
+   * If true, the filter is disabled by default and must be explicitly enabled by setting
+   * per filter configuration in the route configuration.
+   * See :ref:`route based filter chain <arch_overview_http_filters_route_based_filter_chain>`
+   * for more details.
+   * 
+   * Terminal filters (e.g. ``envoy.filters.http.router``) cannot be marked as disabled.
+   */
+  'disabled': (boolean);
   'config_type': "typed_config"|"config_discovery";
 }

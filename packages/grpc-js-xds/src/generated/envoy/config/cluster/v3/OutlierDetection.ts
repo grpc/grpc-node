@@ -2,11 +2,12 @@
 
 import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
+import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../../google/protobuf/BoolValue';
 
 /**
  * See the :ref:`architecture overview <arch_overview_outlier_detection>` for
  * more information on outlier detection.
- * [#next-free-field: 23]
+ * [#next-free-field: 24]
  */
 export interface OutlierDetection {
   /**
@@ -163,12 +164,19 @@ export interface OutlierDetection {
    * Defaults to 0s.
    */
   'max_ejection_time_jitter'?: (_google_protobuf_Duration | null);
+  /**
+   * If active health checking is enabled and a host is ejected by outlier detection, a successful active health check
+   * unejects the host by default and considers it as healthy. Unejection also clears all the outlier detection counters.
+   * To change this default behavior set this config to ``false`` where active health checking will not uneject the host.
+   * Defaults to true.
+   */
+  'successful_active_health_check_uneject_host'?: (_google_protobuf_BoolValue | null);
 }
 
 /**
  * See the :ref:`architecture overview <arch_overview_outlier_detection>` for
  * more information on outlier detection.
- * [#next-free-field: 23]
+ * [#next-free-field: 24]
  */
 export interface OutlierDetection__Output {
   /**
@@ -325,4 +333,11 @@ export interface OutlierDetection__Output {
    * Defaults to 0s.
    */
   'max_ejection_time_jitter': (_google_protobuf_Duration__Output | null);
+  /**
+   * If active health checking is enabled and a host is ejected by outlier detection, a successful active health check
+   * unejects the host by default and considers it as healthy. Unejection also clears all the outlier detection counters.
+   * To change this default behavior set this config to ``false`` where active health checking will not uneject the host.
+   * Defaults to true.
+   */
+  'successful_active_health_check_uneject_host': (_google_protobuf_BoolValue__Output | null);
 }

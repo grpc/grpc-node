@@ -4,9 +4,10 @@ import type { SocketAddress as _envoy_config_core_v3_SocketAddress, SocketAddres
 import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../../google/protobuf/BoolValue';
 import type { SocketOption as _envoy_config_core_v3_SocketOption, SocketOption__Output as _envoy_config_core_v3_SocketOption__Output } from '../../../../envoy/config/core/v3/SocketOption';
 import type { ExtraSourceAddress as _envoy_config_core_v3_ExtraSourceAddress, ExtraSourceAddress__Output as _envoy_config_core_v3_ExtraSourceAddress__Output } from '../../../../envoy/config/core/v3/ExtraSourceAddress';
+import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig, TypedExtensionConfig__Output as _envoy_config_core_v3_TypedExtensionConfig__Output } from '../../../../envoy/config/core/v3/TypedExtensionConfig';
 
 /**
- * [#next-free-field: 6]
+ * [#next-free-field: 7]
  */
 export interface BindConfig {
   /**
@@ -34,20 +35,23 @@ export interface BindConfig {
    */
   'additional_source_addresses'?: (_envoy_config_core_v3_SocketAddress)[];
   /**
-   * Extra source addresses appended to the address specified in the `source_address`
-   * field. This enables to specify multiple source addresses. Currently, only one extra
-   * address can be supported, and the extra address should have a different IP version
-   * with the address in the `source_address` field. The address which has the same IP
-   * version with the target host's address IP version will be used as bind address. If more
-   * than one extra address specified, only the first address matched IP version will be
-   * returned. If there is no same IP version address found, the address in the `source_address`
-   * will be returned.
+   * Extra source addresses appended to the address specified in the ``source_address``
+   * field. This enables to specify multiple source addresses.
+   * The source address selection is determined by :ref:`local_address_selector
+   * <envoy_v3_api_field_config.core.v3.BindConfig.local_address_selector>`.
    */
   'extra_source_addresses'?: (_envoy_config_core_v3_ExtraSourceAddress)[];
+  /**
+   * Custom local address selector to override the default (i.e.
+   * :ref:`DefaultLocalAddressSelector
+   * <envoy_v3_api_msg_config.upstream.local_address_selector.v3.DefaultLocalAddressSelector>`).
+   * [#extension-category: envoy.upstream.local_address_selector]
+   */
+  'local_address_selector'?: (_envoy_config_core_v3_TypedExtensionConfig | null);
 }
 
 /**
- * [#next-free-field: 6]
+ * [#next-free-field: 7]
  */
 export interface BindConfig__Output {
   /**
@@ -75,14 +79,17 @@ export interface BindConfig__Output {
    */
   'additional_source_addresses': (_envoy_config_core_v3_SocketAddress__Output)[];
   /**
-   * Extra source addresses appended to the address specified in the `source_address`
-   * field. This enables to specify multiple source addresses. Currently, only one extra
-   * address can be supported, and the extra address should have a different IP version
-   * with the address in the `source_address` field. The address which has the same IP
-   * version with the target host's address IP version will be used as bind address. If more
-   * than one extra address specified, only the first address matched IP version will be
-   * returned. If there is no same IP version address found, the address in the `source_address`
-   * will be returned.
+   * Extra source addresses appended to the address specified in the ``source_address``
+   * field. This enables to specify multiple source addresses.
+   * The source address selection is determined by :ref:`local_address_selector
+   * <envoy_v3_api_field_config.core.v3.BindConfig.local_address_selector>`.
    */
   'extra_source_addresses': (_envoy_config_core_v3_ExtraSourceAddress__Output)[];
+  /**
+   * Custom local address selector to override the default (i.e.
+   * :ref:`DefaultLocalAddressSelector
+   * <envoy_v3_api_msg_config.upstream.local_address_selector.v3.DefaultLocalAddressSelector>`).
+   * [#extension-category: envoy.upstream.local_address_selector]
+   */
+  'local_address_selector': (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
 }

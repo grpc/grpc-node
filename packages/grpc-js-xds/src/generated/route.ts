@@ -99,6 +99,7 @@ export interface ProtoGrpcType {
           ListMatcher: MessageTypeDefinition
           ListStringMatcher: MessageTypeDefinition
           MetadataMatcher: MessageTypeDefinition
+          OrMatcher: MessageTypeDefinition
           RegexMatchAndSubstitute: MessageTypeDefinition
           RegexMatcher: MessageTypeDefinition
           StringMatcher: MessageTypeDefinition

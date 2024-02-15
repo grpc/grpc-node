@@ -119,6 +119,12 @@ export interface ProtoGrpcType {
           StringMatcher: MessageTypeDefinition
         }
       }
+      metadata: {
+        v3: {
+          MetadataKey: MessageTypeDefinition
+          MetadataKind: MessageTypeDefinition
+        }
+      }
       v3: {
         CodecClientType: EnumTypeDefinition
         DoubleRange: MessageTypeDefinition

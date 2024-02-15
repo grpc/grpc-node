@@ -5,6 +5,7 @@ import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig
 
 /**
  * HTTP Internal Redirect :ref:`architecture overview <arch_overview_internal_redirects>`.
+ * [#next-free-field: 6]
  */
 export interface InternalRedirectPolicy {
   /**
@@ -36,10 +37,17 @@ export interface InternalRedirectPolicy {
    * x-forwarded-proto. The default is false.
    */
   'allow_cross_scheme_redirect'?: (boolean);
+  /**
+   * Specifies a list of headers, by name, to copy from the internal redirect into the subsequent
+   * request. If a header is specified here but not present in the redirect, it will be cleared in
+   * the subsequent request.
+   */
+  'response_headers_to_copy'?: (string)[];
 }
 
 /**
  * HTTP Internal Redirect :ref:`architecture overview <arch_overview_internal_redirects>`.
+ * [#next-free-field: 6]
  */
 export interface InternalRedirectPolicy__Output {
   /**
@@ -71,4 +79,10 @@ export interface InternalRedirectPolicy__Output {
    * x-forwarded-proto. The default is false.
    */
   'allow_cross_scheme_redirect': (boolean);
+  /**
+   * Specifies a list of headers, by name, to copy from the internal redirect into the subsequent
+   * request. If a header is specified here but not present in the redirect, it will be cleared in
+   * the subsequent request.
+   */
+  'response_headers_to_copy': (string)[];
 }

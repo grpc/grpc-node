@@ -54,10 +54,10 @@ export interface RingHash {
    */
   'maximum_ring_size'?: (_google_protobuf_UInt64Value | null);
   /**
-   * If set to `true`, the cluster will use hostname instead of the resolved
+   * If set to ``true``, the cluster will use hostname instead of the resolved
    * address as the key to consistently hash to an upstream host. Only valid for StrictDNS clusters with hostnames which resolve to a single IP address.
    * 
-   * ..note::
+   * .. note::
    * This is deprecated and please use :ref:`consistent_hashing_lb_config
    * <envoy_v3_api_field_extensions.load_balancing_policies.ring_hash.v3.RingHash.consistent_hashing_lb_config>` instead.
    */
@@ -69,7 +69,7 @@ export interface RingHash {
    * Minimum is 100.
    * 
    * This is implemented based on the method described in the paper https://arxiv.org/abs/1608.01350. For the specified
-   * `hash_balance_factor`, requests to any upstream host are capped at `hash_balance_factor/100` times the average number of requests
+   * ``hash_balance_factor``, requests to any upstream host are capped at ``hash_balance_factor/100`` times the average number of requests
    * across the cluster. When a request arrives for an upstream host that is currently serving at its max capacity, linear probing
    * is used to identify an eligible host. Further, the linear probe is implemented using a random jump in hosts ring/table to identify
    * the eligible host (this technique is as described in the paper https://arxiv.org/abs/1908.08762 - the random jump avoids the
@@ -77,10 +77,10 @@ export interface RingHash {
    * 
    * If weights are specified on the hosts, they are respected.
    * 
-   * This is an O(N) algorithm, unlike other load balancers. Using a lower `hash_balance_factor` results in more hosts
+   * This is an O(N) algorithm, unlike other load balancers. Using a lower ``hash_balance_factor`` results in more hosts
    * being probed, so use a higher value if you require better performance.
    * 
-   * ..note::
+   * .. note::
    * This is deprecated and please use :ref:`consistent_hashing_lb_config
    * <envoy_v3_api_field_extensions.load_balancing_policies.ring_hash.v3.RingHash.consistent_hashing_lb_config>` instead.
    */
@@ -121,10 +121,10 @@ export interface RingHash__Output {
    */
   'maximum_ring_size': (_google_protobuf_UInt64Value__Output | null);
   /**
-   * If set to `true`, the cluster will use hostname instead of the resolved
+   * If set to ``true``, the cluster will use hostname instead of the resolved
    * address as the key to consistently hash to an upstream host. Only valid for StrictDNS clusters with hostnames which resolve to a single IP address.
    * 
-   * ..note::
+   * .. note::
    * This is deprecated and please use :ref:`consistent_hashing_lb_config
    * <envoy_v3_api_field_extensions.load_balancing_policies.ring_hash.v3.RingHash.consistent_hashing_lb_config>` instead.
    */
@@ -136,7 +136,7 @@ export interface RingHash__Output {
    * Minimum is 100.
    * 
    * This is implemented based on the method described in the paper https://arxiv.org/abs/1608.01350. For the specified
-   * `hash_balance_factor`, requests to any upstream host are capped at `hash_balance_factor/100` times the average number of requests
+   * ``hash_balance_factor``, requests to any upstream host are capped at ``hash_balance_factor/100`` times the average number of requests
    * across the cluster. When a request arrives for an upstream host that is currently serving at its max capacity, linear probing
    * is used to identify an eligible host. Further, the linear probe is implemented using a random jump in hosts ring/table to identify
    * the eligible host (this technique is as described in the paper https://arxiv.org/abs/1908.08762 - the random jump avoids the
@@ -144,10 +144,10 @@ export interface RingHash__Output {
    * 
    * If weights are specified on the hosts, they are respected.
    * 
-   * This is an O(N) algorithm, unlike other load balancers. Using a lower `hash_balance_factor` results in more hosts
+   * This is an O(N) algorithm, unlike other load balancers. Using a lower ``hash_balance_factor`` results in more hosts
    * being probed, so use a higher value if you require better performance.
    * 
-   * ..note::
+   * .. note::
    * This is deprecated and please use :ref:`consistent_hashing_lb_config
    * <envoy_v3_api_field_extensions.load_balancing_policies.ring_hash.v3.RingHash.consistent_hashing_lb_config>` instead.
    */
