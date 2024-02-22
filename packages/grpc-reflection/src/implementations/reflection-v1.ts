@@ -114,12 +114,12 @@ export class ReflectionV1Implementation {
       let referencedFile: IFileDescriptorProto | null = null;
       if (ref.startsWith('.')) {
         // absolute reference -- just remove the leading '.' and use the ref directly
-        referencedFile = this.symbols[ref.replace(/^\./, '')];
+        referencedFile = this.symbols[ref.slice(1)];
       } else {
         // relative reference -- need to seek upwards up the current package scope until we find it
         let pkg = pkgScope;
         while (pkg && !referencedFile) {
-          referencedFile = this.symbols[`${pkg}.${ref}`];
+          referencedFile = this.symbols[`${pkg.replace(/\.$/, '')}.${ref}`];
           pkg = scope(pkg);
         }
 

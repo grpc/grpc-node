@@ -3,6 +3,7 @@ syntax = "proto3";
 package sample;
 
 import 'vendor.proto';
+import 'unscoped.proto';
 
 service SampleService {
   rpc Hello (HelloRequest) returns (HelloResponse) {}
