@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+message TopLevelMessage {
+  bool value = 1;
+}
+
+message ProcessRequest {
+  string key = 1;
+  TopLevelMessage message = 2;
+}

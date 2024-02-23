@@ -7,8 +7,14 @@ describe('scope', () => {
     assert.strictEqual(scope('grpc.health.v1.HealthCheckResponse.ServiceStatus'), 'grpc.health.v1.HealthCheckResponse');
     assert.strictEqual(scope(scope(scope(scope('grpc.health.v1.HealthCheckResponse.ServiceStatus')))), 'grpc');
   });
+
   it('returns an empty package when at the top', () => {
     assert.strictEqual(scope('Message'), '');
     assert.strictEqual(scope(''), '');
+  });
+
+  it('handles globally scoped references', () => {
+    assert.strictEqual(scope('.Message'), '.');
+    assert.strictEqual(scope(scope('.Message')), '');
   });
 });

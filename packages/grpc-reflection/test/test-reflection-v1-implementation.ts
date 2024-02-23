@@ -10,7 +10,10 @@ describe('GrpcReflectionService', () => {
 
   beforeEach(async () => {
     const root = protoLoader.loadSync(path.join(__dirname, '../proto/sample/sample.proto'), {
-      includeDirs: [path.join(__dirname, '../proto/sample/vendor')]
+      includeDirs: [
+        path.join(__dirname, '../proto/sample/'),
+        path.join(__dirname, '../proto/sample/vendor')
+      ]
     });
 
     reflectionService = new ReflectionV1Implementation(root);
@@ -25,7 +28,10 @@ describe('GrpcReflectionService', () => {
 
     it('whitelists services properly', () => {
       const root = protoLoader.loadSync(path.join(__dirname, '../proto/sample/sample.proto'), {
-        includeDirs: [path.join(__dirname, '../proto/sample/vendor')]
+        includeDirs: [
+          path.join(__dirname, '../proto/sample/'),
+          path.join(__dirname, '../proto/sample/vendor')
+        ]
       });
 
       reflectionService = new ReflectionV1Implementation(root, { services: ['sample.SampleService'] });
@@ -124,6 +130,18 @@ describe('GrpcReflectionService', () => {
       assert.deepEqual(
         new Set(names),
         new Set(['sample.proto', 'vendor.proto', 'vendor_dependency.proto']),
+      );
+    });
+
+    it('finds unscoped package types', () => {
+      const descriptors = reflectionService
+        .fileContainingSymbol('.TopLevelMessage')
+        .fileDescriptorProto.map(f => FileDescriptorProto.decode(f) as IFileDescriptorProto);
+
+      const names = descriptors.map((desc) => desc.name);
+      assert.deepEqual(
+        new Set(names),
+        new Set(['root.proto']),
       );
     });
 
