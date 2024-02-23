@@ -74,6 +74,7 @@ import { ServerInterceptingCallInterface, ServerInterceptor, getServerIntercepti
 import { PartialStatusObject } from './call-interface';
 import { CallEventTracker } from './transport';
 import { Socket } from 'net';
+import { Duplex } from 'stream';
 
 const UNLIMITED_CONNECTION_AGE_MS = ~(1 << 31);
 const KEEPALIVE_MAX_TIME_MS = ~(1 << 31);
@@ -223,6 +224,12 @@ interface Http2ServerInfo {
 
 export interface ServerOptions extends ChannelOptions {
   interceptors?: ServerInterceptor[]
+}
+
+export interface ConnectionInjector {
+  injectConnection(connection: Duplex): void;
+  drain(graceTimeMs: number): void;
+  destroy(): void;
 }
 
 export class Server {
@@ -806,6 +813,70 @@ export class Server {
         callback(error, 0);
       });
     }
+  }
+
+  private registerInjectorToChannelz() {
+    return registerChannelzSocket(
+      'injector',
+      () => {
+        return {
+          localAddress: null,
+          remoteAddress: null,
+          security: null,
+          remoteName: null,
+          streamsStarted: 0,
+          streamsSucceeded: 0,
+          streamsFailed: 0,
+          messagesSent: 0,
+          messagesReceived: 0,
+          keepAlivesSent: 0,
+          lastLocalStreamCreatedTimestamp: null,
+          lastRemoteStreamCreatedTimestamp: null,
+          lastMessageSentTimestamp: null,
+          lastMessageReceivedTimestamp: null,
+          localFlowControlWindow: null,
+          remoteFlowControlWindow: null,
+        };
+      },
+      this.channelzEnabled
+    );
+  }
+
+  createConnectionInjector(credentials: ServerCredentials): ConnectionInjector {
+    if (credentials === null || !(credentials instanceof ServerCredentials)) {
+      throw new TypeError('creds must be a ServerCredentials object');
+    }
+    const server = this.createHttp2Server(credentials);
+    const channelzRef = this.registerInjectorToChannelz();
+    if (this.channelzEnabled) {
+      this.listenerChildrenTracker.refChild(channelzRef);
+    }
+    const sessionsSet: Set<http2.ServerHttp2Session> = new Set();
+    this.http2Servers.set(server, {
+      channelzRef: channelzRef,
+      sessions: sessionsSet
+    });
+    return {
+      injectConnection: (connection: Duplex) => {
+        server.emit('connection', connection);
+      },
+      drain: (graceTimeMs: number) => {
+        for (const session of sessionsSet) {
+          this.closeSession(session);
+        }
+        setTimeout(() => {
+          for (const session of sessionsSet) {
+            session.destroy(http2.constants.NGHTTP2_CANCEL as any);
+          }
+        }, graceTimeMs).unref?.();
+      },
+      destroy: () => {
+        this.closeServer(server)
+        for (const session of sessionsSet) {
+          this.closeSession(session);
+        }
+      }
+    };
   }
 
   private closeServer(server: AnyHttp2Server, callback?: () => void) {

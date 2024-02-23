@@ -21,6 +21,7 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as http2 from 'http2';
 import * as path from 'path';
+import * as net from 'net';
 import * as protoLoader from '@grpc/proto-loader';
 
 import * as grpc from '../src';
@@ -904,6 +905,72 @@ describe('Echo service', () => {
     );
   });
 });
+
+describe('Connection injector', () => {
+  let tcpServer: net.Server;
+  let server: Server;
+  let client: ServiceClient;
+  const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
+  const echoService = loadProtoFile(protoFile)
+    .EchoService as ServiceClientConstructor;
+
+  const serviceImplementation = {
+    echo(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
+      callback(null, call.request);
+    },
+    echoBidiStream(call: ServerDuplexStream<any, any>) {
+      call.on('data', data => {
+        call.write(data);
+      });
+      call.on('end', () => {
+        call.end();
+      });
+    },
+  };
+
+  before(done => {
+    server = new Server();
+    const creds = ServerCredentials.createSsl(
+      null,
+      [{ private_key: key, cert_chain: cert }]
+    );
+    const connectionInjector = server.createConnectionInjector(creds);
+    tcpServer = net.createServer(socket => {
+      connectionInjector.injectConnection(socket);
+    });
+    server.addService(echoService.service, serviceImplementation);
+    tcpServer.listen(0, 'localhost', () => {
+      const port = (tcpServer.address() as net.AddressInfo).port;
+      client = new echoService(
+        `localhost:${port}`,
+        grpc.credentials.createSsl(ca),
+        {
+          'grpc.ssl_target_name_override': 'foo.test.google.fr',
+          'grpc.default_authority': 'foo.test.google.fr'
+        }
+      );
+      done();
+    });
+  });
+
+  after(done => {
+    client.close();
+    tcpServer.close();
+    server.tryShutdown(done);
+  });
+
+  it('should respond to a request', done => {
+    client.echo(
+      { value: 'test value', value2: 3 },
+      (error: ServiceError, response: any) => {
+        assert.ifError(error);
+        assert.deepStrictEqual(response, { value: 'test value', value2: 3 });
+        done();
+      }
+    );
+  });
+
+})
 
 describe('Generic client and server', () => {
   function toString(val: any) {
