@@ -1,6 +1,6 @@
 {
   "name": "@grpc/reflection",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": {
     "name": "Google Inc."
   },
