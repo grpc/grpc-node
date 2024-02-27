@@ -50,6 +50,7 @@
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "@typescript-eslint/ban-types": "off",
     "@typescript-eslint/camelcase": "off",
+    "@typescript-eslint/no-explicit-any": "off",
     "node/no-missing-import": "off",
     "node/no-empty-function": "off",
     "node/no-unsupported-features/es-syntax": "off",

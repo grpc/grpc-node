@@ -16,6 +16,7 @@
  */
 
 import { isIPv4, isIPv6 } from 'net';
+import { OrderedMap, type OrderedMapIterator } from '@js-sdsl/ordered-map';
 import { ConnectivityState } from './connectivity-state';
 import { Status } from './constants';
 import { Timestamp } from './generated/google/protobuf/Timestamp';
@@ -66,24 +67,25 @@ export type TraceSeverity =
   | 'CT_ERROR';
 
 export interface ChannelRef {
-  kind: 'channel';
+  kind: EntityTypes.channel;
   id: number;
   name: string;
 }
 
 export interface SubchannelRef {
-  kind: 'subchannel';
+  kind: EntityTypes.subchannel;
   id: number;
   name: string;
 }
 
 export interface ServerRef {
-  kind: 'server';
+  kind: EntityTypes.server;
   id: number;
+  name: string;
 }
 
 export interface SocketRef {
-  kind: 'socket';
+  kind: EntityTypes.socket;
   id: number;
   name: string;
 }
@@ -130,6 +132,21 @@ interface TraceEvent {
  * information, but small enough to not use excessive memory.
  */
 const TARGET_RETAINED_TRACES = 32;
+
+export class ChannelzTraceStub {
+  readonly events: TraceEvent[] = [];
+  readonly creationTimestamp: Date = new Date();
+  readonly eventsLogged = 0;
+
+  addTrace(): void {}
+  getTraceMessage(): ChannelTrace {
+    return {
+      creation_timestamp: dateToProtoTimestamp(this.creationTimestamp),
+      num_events_logged: this.eventsLogged,
+      events: [],
+    };
+  }
+}
 
 export class ChannelzTrace {
   events: TraceEvent[] = [];
@@ -182,103 +199,62 @@ export class ChannelzTrace {
 }
 
 export class ChannelzChildrenTracker {
-  private channelChildren: Map<number, { ref: ChannelRef; count: number }> =
-    new Map<number, { ref: ChannelRef; count: number }>();
-  private subchannelChildren: Map<
+  private channelChildren = new OrderedMap<
+    number,
+    { ref: ChannelRef; count: number }
+  >();
+  private subchannelChildren = new OrderedMap<
     number,
     { ref: SubchannelRef; count: number }
-  > = new Map<number, { ref: SubchannelRef; count: number }>();
-  private socketChildren: Map<number, { ref: SocketRef; count: number }> =
-    new Map<number, { ref: SocketRef; count: number }>();
+  >();
+  private socketChildren = new OrderedMap<
+    number,
+    { ref: SocketRef; count: number }
+  >();
+  private trackerMap = {
+    [EntityTypes.channel]: this.channelChildren,
+    [EntityTypes.subchannel]: this.subchannelChildren,
+    [EntityTypes.socket]: this.socketChildren,
+  } as const;
 
   refChild(child: ChannelRef | SubchannelRef | SocketRef) {
-    switch (child.kind) {
-      case 'channel': {
-        const trackedChild = this.channelChildren.get(child.id) ?? {
-          ref: child,
-          count: 0,
-        };
-        trackedChild.count += 1;
-        this.channelChildren.set(child.id, trackedChild);
-        break;
-      }
-      case 'subchannel': {
-        const trackedChild = this.subchannelChildren.get(child.id) ?? {
-          ref: child,
-          count: 0,
-        };
-        trackedChild.count += 1;
-        this.subchannelChildren.set(child.id, trackedChild);
-        break;
-      }
-      case 'socket': {
-        const trackedChild = this.socketChildren.get(child.id) ?? {
-          ref: child,
-          count: 0,
-        };
-        trackedChild.count += 1;
-        this.socketChildren.set(child.id, trackedChild);
-        break;
-      }
+    const tracker = this.trackerMap[child.kind];
+    const trackedChild = tracker.getElementByKey(child.id);
+
+    if (trackedChild === undefined) {
+      tracker.setElement(child.id, {
+        // @ts-expect-error union issues
+        ref: child,
+        count: 1,
+      });
+    } else {
+      trackedChild.count += 1;
     }
   }
 
   unrefChild(child: ChannelRef | SubchannelRef | SocketRef) {
-    switch (child.kind) {
-      case 'channel': {
-        const trackedChild = this.channelChildren.get(child.id);
-        if (trackedChild !== undefined) {
-          trackedChild.count -= 1;
-          if (trackedChild.count === 0) {
-            this.channelChildren.delete(child.id);
-          } else {
-            this.channelChildren.set(child.id, trackedChild);
-          }
-        }
-        break;
-      }
-      case 'subchannel': {
-        const trackedChild = this.subchannelChildren.get(child.id);
-        if (trackedChild !== undefined) {
-          trackedChild.count -= 1;
-          if (trackedChild.count === 0) {
-            this.subchannelChildren.delete(child.id);
-          } else {
-            this.subchannelChildren.set(child.id, trackedChild);
-          }
-        }
-        break;
-      }
-      case 'socket': {
-        const trackedChild = this.socketChildren.get(child.id);
-        if (trackedChild !== undefined) {
-          trackedChild.count -= 1;
-          if (trackedChild.count === 0) {
-            this.socketChildren.delete(child.id);
-          } else {
-            this.socketChildren.set(child.id, trackedChild);
-          }
-        }
-        break;
+    const tracker = this.trackerMap[child.kind];
+    const trackedChild = tracker.getElementByKey(child.id);
+    if (trackedChild !== undefined) {
+      trackedChild.count -= 1;
+      if (trackedChild.count === 0) {
+        tracker.eraseElementByKey(child.id);
       }
     }
   }
 
   getChildLists(): ChannelzChildren {
-    const channels: ChannelRef[] = [];
-    for (const { ref } of this.channelChildren.values()) {
-      channels.push(ref);
-    }
-    const subchannels: SubchannelRef[] = [];
-    for (const { ref } of this.subchannelChildren.values()) {
-      subchannels.push(ref);
-    }
-    const sockets: SocketRef[] = [];
-    for (const { ref } of this.socketChildren.values()) {
-      sockets.push(ref);
-    }
-    return { channels, subchannels, sockets };
+    return {
+      channels: this.channelChildren,
+      subchannels: this.subchannelChildren,
+      sockets: this.socketChildren,
+    };
   }
+}
+
+export class ChannelzChildrenTrackerStub extends ChannelzChildrenTracker {
+  override refChild(): void {}
+  override unrefChild(): void {}
 }
 
 export class ChannelzCallTracker {
@@ -299,17 +275,23 @@ export class ChannelzCallTracker {
   }
 }
 
+export class ChannelzCallTrackerStub extends ChannelzCallTracker {
+  override addCallStarted() {}
+  override addCallSucceeded() {}
+  override addCallFailed() {}
+}
+
 export interface ChannelzChildren {
-  channels: ChannelRef[];
-  subchannels: SubchannelRef[];
-  sockets: SocketRef[];
+  channels: OrderedMap<number, { ref: ChannelRef; count: number }>;
+  subchannels: OrderedMap<number, { ref: SubchannelRef; count: number }>;
+  sockets: OrderedMap<number, { ref: SocketRef; count: number }>;
 }
 
 export interface ChannelInfo {
   target: string;
   state: ConnectivityState;
-  trace: ChannelzTrace;
-  callTracker: ChannelzCallTracker;
+  trace: ChannelzTrace | ChannelzTraceStub;
+  callTracker: ChannelzCallTracker | ChannelzCallTrackerStub;
   children: ChannelzChildren;
 }
 
@@ -348,105 +330,102 @@ export interface SocketInfo {
   remoteFlowControlWindow: number | null;
 }
 
-interface ChannelEntry {
+type ChannelEntry = {
   ref: ChannelRef;
   getInfo(): ChannelInfo;
-}
+};
 
-interface SubchannelEntry {
+type SubchannelEntry = {
   ref: SubchannelRef;
   getInfo(): SubchannelInfo;
-}
+};
 
-interface ServerEntry {
+type ServerEntry = {
   ref: ServerRef;
   getInfo(): ServerInfo;
-}
+};
 
-interface SocketEntry {
+type SocketEntry = {
   ref: SocketRef;
   getInfo(): SocketInfo;
+};
+
+export const enum EntityTypes {
+  channel = 'channel',
+  subchannel = 'subchannel',
+  server = 'server',
+  socket = 'socket',
 }
 
-let nextId = 1;
+const entityMaps = {
+  [EntityTypes.channel]: new OrderedMap<number, ChannelEntry>(),
+  [EntityTypes.subchannel]: new OrderedMap<number, SubchannelEntry>(),
+  [EntityTypes.server]: new OrderedMap<number, ServerEntry>(),
+  [EntityTypes.socket]: new OrderedMap<number, SocketEntry>(),
+} as const;
 
-function getNextId(): number {
-  return nextId++;
-}
+export type RefByType<T extends EntityTypes> = T extends EntityTypes.channel
+  ? ChannelRef
+  : T extends EntityTypes.server
+  ? ServerRef
+  : T extends EntityTypes.socket
+  ? SocketRef
+  : T extends EntityTypes.subchannel
+  ? SubchannelRef
+  : never;
 
-const channels: (ChannelEntry | undefined)[] = [];
-const subchannels: (SubchannelEntry | undefined)[] = [];
-const servers: (ServerEntry | undefined)[] = [];
-const sockets: (SocketEntry | undefined)[] = [];
+export type EntryByType<T extends EntityTypes> = T extends EntityTypes.channel
+  ? ChannelEntry
+  : T extends EntityTypes.server
+  ? ServerEntry
+  : T extends EntityTypes.socket
+  ? SocketEntry
+  : T extends EntityTypes.subchannel
+  ? SubchannelEntry
+  : never;
 
-export function registerChannelzChannel(
-  name: string,
-  getInfo: () => ChannelInfo,
-  channelzEnabled: boolean
-): ChannelRef {
-  const id = getNextId();
-  const ref: ChannelRef = { id, name, kind: 'channel' };
-  if (channelzEnabled) {
-    channels[id] = { ref, getInfo };
+export type InfoByType<T extends EntityTypes> = T extends EntityTypes.channel
+  ? ChannelInfo
+  : T extends EntityTypes.subchannel
+  ? SubchannelInfo
+  : T extends EntityTypes.server
+  ? ServerInfo
+  : T extends EntityTypes.socket
+  ? SocketInfo
+  : never;
+
+const generateRegisterFn = <R extends EntityTypes>(kind: R) => {
+  let nextId = 1;
+  function getNextId(): number {
+    return nextId++;
   }
-  return ref;
-}
 
-export function registerChannelzSubchannel(
-  name: string,
-  getInfo: () => SubchannelInfo,
-  channelzEnabled: boolean
-): SubchannelRef {
-  const id = getNextId();
-  const ref: SubchannelRef = { id, name, kind: 'subchannel' };
-  if (channelzEnabled) {
-    subchannels[id] = { ref, getInfo };
-  }
-  return ref;
-}
+  return (
+    name: string,
+    getInfo: () => InfoByType<R>,
+    channelzEnabled: boolean
+  ): RefByType<R> => {
+    const id = getNextId();
+    const ref = { id, name, kind } as RefByType<R>;
+    if (channelzEnabled) {
+      // @ts-expect-error typing issues
+      entityMaps[kind].setElement(id, { ref, getInfo });
+    }
+    return ref;
+  };
+};
 
-export function registerChannelzServer(
-  getInfo: () => ServerInfo,
-  channelzEnabled: boolean
-): ServerRef {
-  const id = getNextId();
-  const ref: ServerRef = { id, kind: 'server' };
-  if (channelzEnabled) {
-    servers[id] = { ref, getInfo };
-  }
-  return ref;
-}
-
-export function registerChannelzSocket(
-  name: string,
-  getInfo: () => SocketInfo,
-  channelzEnabled: boolean
-): SocketRef {
-  const id = getNextId();
-  const ref: SocketRef = { id, name, kind: 'socket' };
-  if (channelzEnabled) {
-    sockets[id] = { ref, getInfo };
-  }
-  return ref;
-}
+export const registerChannelzChannel = generateRegisterFn(EntityTypes.channel);
+export const registerChannelzSubchannel = generateRegisterFn(
+  EntityTypes.subchannel
+);
+export const registerChannelzServer = generateRegisterFn(EntityTypes.server);
+export const registerChannelzSocket = generateRegisterFn(EntityTypes.socket);
 
 export function unregisterChannelzRef(
   ref: ChannelRef | SubchannelRef | ServerRef | SocketRef
 ) {
-  switch (ref.kind) {
-    case 'channel':
-      delete channels[ref.id];
-      return;
-    case 'subchannel':
-      delete subchannels[ref.id];
-      return;
-    case 'server':
-      delete servers[ref.id];
-      return;
-    case 'socket':
-      delete sockets[ref.id];
-      return;
-  }
+  entityMaps[ref.kind].eraseElementByKey(ref.id);
 }
 
 /**
@@ -556,6 +535,17 @@ function dateToProtoTimestamp(date?: Date | null): Timestamp | null {
 
 function getChannelMessage(channelEntry: ChannelEntry): ChannelMessage {
   const resolvedInfo = channelEntry.getInfo();
+  const channelRef: ChannelRefMessage[] = [];
+  const subchannelRef: SubchannelRefMessage[] = [];
+
+  resolvedInfo.children.channels.forEach(el => {
+    channelRef.push(channelRefToMessage(el[1].ref));
+  });
+
+  resolvedInfo.children.subchannels.forEach(el => {
+    subchannelRef.push(subchannelRefToMessage(el[1].ref));
+  });
+
   return {
     ref: channelRefToMessage(channelEntry.ref),
     data: {
@@ -569,12 +559,8 @@ function getChannelMessage(channelEntry: ChannelEntry): ChannelMessage {
       ),
       trace: resolvedInfo.trace.getTraceMessage(),
     },
-    channel_ref: resolvedInfo.children.channels.map(ref =>
-      channelRefToMessage(ref)
-    ),
-    subchannel_ref: resolvedInfo.children.subchannels.map(ref =>
-      subchannelRefToMessage(ref)
-    ),
+    channel_ref: channelRef,
+    subchannel_ref: subchannelRef,
   };
 }
 
@@ -582,8 +568,9 @@ function GetChannel(
   call: ServerUnaryCall<GetChannelRequest__Output, GetChannelResponse>,
   callback: sendUnaryData<GetChannelResponse>
 ): void {
-  const channelId = Number.parseInt(call.request.channel_id);
-  const channelEntry = channels[channelId];
+  const channelId = parseInt(call.request.channel_id, 10);
+  const channelEntry =
+    entityMaps[EntityTypes.channel].getElementByKey(channelId);
   if (channelEntry === undefined) {
     callback({
       code: Status.NOT_FOUND,
@@ -598,27 +585,34 @@ function GetTopChannels(
   call: ServerUnaryCall<GetTopChannelsRequest__Output, GetTopChannelsResponse>,
   callback: sendUnaryData<GetTopChannelsResponse>
 ): void {
-  const maxResults = Number.parseInt(call.request.max_results);
+  const maxResults = parseInt(call.request.max_results, 10) || 100;
   const resultList: ChannelMessage[] = [];
-  let i = Number.parseInt(call.request.start_channel_id);
-  for (; i < channels.length; i++) {
-    const channelEntry = channels[i];
-    if (channelEntry === undefined) {
-      continue;
-    }
-    resultList.push(getChannelMessage(channelEntry));
-    if (resultList.length >= maxResults) {
-      break;
-    }
+  const startId = parseInt(call.request.start_channel_id, 10);
+  const channelEntries = entityMaps[EntityTypes.channel];
+
+  let i: OrderedMapIterator<number, ChannelEntry>;
+  for (
+    i = channelEntries.lowerBound(startId);
+    !i.equals(channelEntries.end()) && resultList.length < maxResults;
+    i = i.next()
+  ) {
+    resultList.push(getChannelMessage(i.pointer[1]));
   }
+
   callback(null, {
     channel: resultList,
-    end: i >= servers.length,
+    end: i.equals(channelEntries.end()),
   });
 }
 
 function getServerMessage(serverEntry: ServerEntry): ServerMessage {
   const resolvedInfo = serverEntry.getInfo();
+  const listenSocket: SocketRefMessage[] = [];
+
+  resolvedInfo.listenerChildren.sockets.forEach(el => {
+    listenSocket.push(socketRefToMessage(el[1].ref));
+  });
+
   return {
     ref: serverRefToMessage(serverEntry.ref),
     data: {
@@ -630,9 +624,7 @@ function getServerMessage(serverEntry: ServerEntry): ServerMessage {
       ),
       trace: resolvedInfo.trace.getTraceMessage(),
     },
-    listen_socket: resolvedInfo.listenerChildren.sockets.map(ref =>
-      socketRefToMessage(ref)
-    ),
+    listen_socket: listenSocket,
   };
 }
 
@@ -640,8 +632,9 @@ function GetServer(
   call: ServerUnaryCall<GetServerRequest__Output, GetServerResponse>,
   callback: sendUnaryData<GetServerResponse>
 ): void {
-  const serverId = Number.parseInt(call.request.server_id);
-  const serverEntry = servers[serverId];
+  const serverId = parseInt(call.request.server_id, 10);
+  const serverEntries = entityMaps[EntityTypes.server];
+  const serverEntry = serverEntries.getElementByKey(serverId);
   if (serverEntry === undefined) {
     callback({
       code: Status.NOT_FOUND,
@@ -656,22 +649,23 @@ function GetServers(
   call: ServerUnaryCall<GetServersRequest__Output, GetServersResponse>,
   callback: sendUnaryData<GetServersResponse>
 ): void {
-  const maxResults = Number.parseInt(call.request.max_results);
+  const maxResults = parseInt(call.request.max_results, 10) || 100;
+  const startId = parseInt(call.request.start_server_id, 10);
+  const serverEntries = entityMaps[EntityTypes.server];
   const resultList: ServerMessage[] = [];
-  let i = Number.parseInt(call.request.start_server_id);
-  for (; i < servers.length; i++) {
-    const serverEntry = servers[i];
-    if (serverEntry === undefined) {
-      continue;
-    }
-    resultList.push(getServerMessage(serverEntry));
-    if (resultList.length >= maxResults) {
-      break;
-    }
+
+  let i: OrderedMapIterator<number, ServerEntry>;
+  for (
+    i = serverEntries.lowerBound(startId);
+    !i.equals(serverEntries.end()) && resultList.length < maxResults;
+    i = i.next()
+  ) {
+    resultList.push(getServerMessage(i.pointer[1]));
   }
+
   callback(null, {
     server: resultList,
-    end: i >= servers.length,
+    end: i.equals(serverEntries.end()),
   });
 }
 
@@ -679,8 +673,9 @@ function GetSubchannel(
   call: ServerUnaryCall<GetSubchannelRequest__Output, GetSubchannelResponse>,
   callback: sendUnaryData<GetSubchannelResponse>
 ): void {
-  const subchannelId = Number.parseInt(call.request.subchannel_id);
-  const subchannelEntry = subchannels[subchannelId];
+  const subchannelId = parseInt(call.request.subchannel_id, 10);
+  const subchannelEntry =
+    entityMaps[EntityTypes.subchannel].getElementByKey(subchannelId);
   if (subchannelEntry === undefined) {
     callback({
       code: Status.NOT_FOUND,
@@ -689,6 +684,12 @@ function GetSubchannel(
     return;
   }
   const resolvedInfo = subchannelEntry.getInfo();
+  const listenSocket: SocketRefMessage[] = [];
+
+  resolvedInfo.children.sockets.forEach(el => {
+    listenSocket.push(socketRefToMessage(el[1].ref));
+  });
+
   const subchannelMessage: SubchannelMessage = {
     ref: subchannelRefToMessage(subchannelEntry.ref),
     data: {
@@ -702,9 +703,7 @@ function GetSubchannel(
       ),
       trace: resolvedInfo.trace.getTraceMessage(),
     },
-    socket_ref: resolvedInfo.children.sockets.map(ref =>
-      socketRefToMessage(ref)
-    ),
+    socket_ref: listenSocket,
   };
   callback(null, { subchannel: subchannelMessage });
 }
@@ -735,8 +734,8 @@ function GetSocket(
   call: ServerUnaryCall<GetSocketRequest__Output, GetSocketResponse>,
   callback: sendUnaryData<GetSocketResponse>
 ): void {
-  const socketId = Number.parseInt(call.request.socket_id);
-  const socketEntry = sockets[socketId];
+  const socketId = parseInt(call.request.socket_id, 10);
+  const socketEntry = entityMaps[EntityTypes.socket].getElementByKey(socketId);
   if (socketEntry === undefined) {
     callback({
       code: Status.NOT_FOUND,
@@ -809,8 +808,9 @@ function GetServerSockets(
   >,
   callback: sendUnaryData<GetServerSocketsResponse>
 ): void {
-  const serverId = Number.parseInt(call.request.server_id);
-  const serverEntry = servers[serverId];
+  const serverId = parseInt(call.request.server_id, 10);
+  const serverEntry = entityMaps[EntityTypes.server].getElementByKey(serverId);
+
   if (serverEntry === undefined) {
     callback({
       code: Status.NOT_FOUND,
@@ -818,28 +818,28 @@ function GetServerSockets(
     });
     return;
   }
-  const startId = Number.parseInt(call.request.start_socket_id);
-  const maxResults = Number.parseInt(call.request.max_results);
+
+  const startId = parseInt(call.request.start_socket_id, 10);
+  const maxResults = parseInt(call.request.max_results, 10) || 100;
   const resolvedInfo = serverEntry.getInfo();
   // If we wanted to include listener sockets in the result, this line would
   // instead say
   // const allSockets = resolvedInfo.listenerChildren.sockets.concat(resolvedInfo.sessionChildren.sockets).sort((ref1, ref2) => ref1.id - ref2.id);
-  const allSockets = resolvedInfo.sessionChildren.sockets.sort(
-    (ref1, ref2) => ref1.id - ref2.id
-  );
+  const allSockets = resolvedInfo.sessionChildren.sockets;
   const resultList: SocketRefMessage[] = [];
-  let i = 0;
-  for (; i < allSockets.length; i++) {
-    if (allSockets[i].id >= startId) {
-      resultList.push(socketRefToMessage(allSockets[i]));
-      if (resultList.length >= maxResults) {
-        break;
-      }
-    }
+
+  let i: OrderedMapIterator<number, { ref: SocketRef }>;
+  for (
+    i = allSockets.lowerBound(startId);
+    !i.equals(allSockets.end()) && resultList.length < maxResults;
+    i = i.next()
+  ) {
+    resultList.push(socketRefToMessage(i.pointer[1].ref));
   }
+
   callback(null, {
     socket_ref: resultList,
-    end: i >= allSockets.length,
+    end: i.equals(allSockets.end()),
   });
 }
 

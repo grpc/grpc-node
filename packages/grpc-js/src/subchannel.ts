@@ -31,10 +31,13 @@ import {
   SubchannelRef,
   ChannelzTrace,
   ChannelzChildrenTracker,
+  ChannelzChildrenTrackerStub,
   SubchannelInfo,
   registerChannelzSubchannel,
   ChannelzCallTracker,
+  ChannelzCallTrackerStub,
   unregisterChannelzRef,
+  ChannelzTraceStub,
 } from './channelz';
 import {
   ConnectivityStateListener,
@@ -89,12 +92,15 @@ export class Subchannel {
   // Channelz info
   private readonly channelzEnabled: boolean = true;
   private channelzRef: SubchannelRef;
-  private channelzTrace: ChannelzTrace;
-  private callTracker = new ChannelzCallTracker();
-  private childrenTracker = new ChannelzChildrenTracker();
+
+  private channelzTrace: ChannelzTrace | ChannelzTraceStub;
+  private callTracker: ChannelzCallTracker | ChannelzCallTrackerStub;
+  private childrenTracker:
+    | ChannelzChildrenTracker
+    | ChannelzChildrenTrackerStub;
 
   // Channelz socket info
-  private streamTracker = new ChannelzCallTracker();
+  private streamTracker: ChannelzCallTracker | ChannelzCallTrackerStub;
 
   /**
    * A class representing a connection to a single backend.
@@ -127,16 +133,24 @@ export class Subchannel {
 
     if (options['grpc.enable_channelz'] === 0) {
       this.channelzEnabled = false;
+      this.channelzTrace = new ChannelzTraceStub();
+      this.callTracker = new ChannelzCallTrackerStub();
+      this.childrenTracker = new ChannelzChildrenTrackerStub();
+      this.streamTracker = new ChannelzCallTrackerStub();
+    } else {
+      this.channelzTrace = new ChannelzTrace();
+      this.callTracker = new ChannelzCallTracker();
+      this.childrenTracker = new ChannelzChildrenTracker();
+      this.streamTracker = new ChannelzCallTracker();
     }
-    this.channelzTrace = new ChannelzTrace();
+
     this.channelzRef = registerChannelzSubchannel(
       this.subchannelAddressString,
       () => this.getChannelzInfo(),
       this.channelzEnabled
     );
-    if (this.channelzEnabled) {
-      this.channelzTrace.addTrace('CT_INFO', 'Subchannel created');
-    }
+
+    this.channelzTrace.addTrace('CT_INFO', 'Subchannel created');
     this.trace(
       'Subchannel constructed with options ' +
         JSON.stringify(options, undefined, 2)
@@ -338,12 +352,8 @@ export class Subchannel {
     this.refTrace('refcount ' + this.refcount + ' -> ' + (this.refcount - 1));
     this.refcount -= 1;
     if (this.refcount === 0) {
-      if (this.channelzEnabled) {
-        this.channelzTrace.addTrace('CT_INFO', 'Shutting down');
-      }
-      if (this.channelzEnabled) {
-        unregisterChannelzRef(this.channelzRef);
-      }
+      this.channelzTrace.addTrace('CT_INFO', 'Shutting down');
+      unregisterChannelzRef(this.channelzRef);
       process.nextTick(() => {
         this.transitionToState(
           [ConnectivityState.CONNECTING, ConnectivityState.READY],

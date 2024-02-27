@@ -31,7 +31,7 @@ import {
   HealthListener,
   SubchannelInterface,
 } from '../src/subchannel-interface';
-import { SubchannelRef } from '../src/channelz';
+import { EntityTypes, SubchannelRef } from '../src/channelz';
 import { Subchannel } from '../src/subchannel';
 import { ConnectivityState } from '../src/connectivity-state';
 
@@ -196,7 +196,7 @@ export class MockSubchannel implements SubchannelInterface {
   unref(): void {}
   getChannelzRef(): SubchannelRef {
     return {
-      kind: 'subchannel',
+      kind: EntityTypes.subchannel,
       id: -1,
       name: this.address,
     };
