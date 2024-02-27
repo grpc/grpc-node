@@ -330,25 +330,25 @@ export interface SocketInfo {
   remoteFlowControlWindow: number | null;
 }
 
-type ChannelEntry = {
+interface ChannelEntry {
   ref: ChannelRef;
   getInfo(): ChannelInfo;
-};
+}
 
-type SubchannelEntry = {
+interface SubchannelEntry {
   ref: SubchannelRef;
   getInfo(): SubchannelInfo;
-};
+}
 
-type ServerEntry = {
+interface ServerEntry {
   ref: ServerRef;
   getInfo(): ServerInfo;
-};
+}
 
-type SocketEntry = {
+interface SocketEntry {
   ref: SocketRef;
   getInfo(): SocketInfo;
-};
+}
 
 export const enum EntityTypes {
   channel = 'channel',
