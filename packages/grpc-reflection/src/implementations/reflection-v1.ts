@@ -113,8 +113,12 @@ export class ReflectionV1Implementation {
 
       let referencedFile: IFileDescriptorProto | null = null;
       if (ref.startsWith('.')) {
-        // absolute reference -- just remove the leading '.' and use the ref directly
-        referencedFile = this.symbols[ref.slice(1)];
+        /* absolute reference -- In files with no package, symbols are
+         * populated in the symbols table with a leading period in the key.
+         * If there is a package, the symbol does not have a leading period in
+         * the key. For simplicity, we check without the period, then with it.
+         */
+        referencedFile = this.symbols[ref.slice(1)] ?? this.symbols[ref];
       } else {
         // relative reference -- need to seek upwards up the current package scope until we find it
         let pkg = pkgScope;
@@ -315,7 +319,7 @@ export class ReflectionV1Implementation {
   private getFileDependencies(file: IFileDescriptorProto): IFileDescriptorProto[] {
     const visited: Set<IFileDescriptorProto> = new Set();
     const toVisit: IFileDescriptorProto[] = [...(this.fileDependencies.get(file) || [])];
-    
+
     while (toVisit.length > 0) {
       const current = toVisit.pop();
 

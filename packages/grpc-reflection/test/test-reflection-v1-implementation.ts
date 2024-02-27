@@ -51,7 +51,7 @@ describe('GrpcReflectionService', () => {
       const names = descriptors.map((desc) => desc.name);
       assert.deepEqual(
         new Set(names),
-        new Set(['sample.proto', 'vendor.proto', 'vendor_dependency.proto'])
+        new Set(['root.proto', 'sample.proto', 'vendor.proto', 'vendor_dependency.proto'])
       );
     });
 
@@ -99,7 +99,7 @@ describe('GrpcReflectionService', () => {
       const names = descriptors.map((desc) => desc.name);
       assert.deepEqual(
         new Set(names),
-        new Set(['sample.proto', 'vendor.proto', 'vendor_dependency.proto']),
+        new Set(['root.proto', 'sample.proto', 'vendor.proto', 'vendor_dependency.proto']),
       );
     });
 
@@ -129,7 +129,7 @@ describe('GrpcReflectionService', () => {
       const names = descriptors.map((desc) => desc.name);
       assert.deepEqual(
         new Set(names),
-        new Set(['sample.proto', 'vendor.proto', 'vendor_dependency.proto']),
+        new Set(['root.proto', 'sample.proto', 'vendor.proto', 'vendor_dependency.proto']),
       );
     });
 
@@ -169,7 +169,7 @@ describe('GrpcReflectionService', () => {
       const names = descriptors.map((desc) => desc.name);
       assert.deepEqual(
         new Set(names),
-        new Set(['sample.proto', 'vendor.proto', 'vendor_dependency.proto']),
+        new Set(['root.proto', 'sample.proto', 'vendor.proto', 'vendor_dependency.proto']),
       );
     });
   });
