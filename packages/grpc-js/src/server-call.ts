@@ -18,9 +18,7 @@
 import { EventEmitter } from 'events';
 import { Duplex, Readable, Writable } from 'stream';
 
-import {
-  Status,
-} from './constants';
+import { Status } from './constants';
 import { Deserialize, Serialize } from './make-client';
 import { Metadata } from './metadata';
 import { ObjectReadable, ObjectWritable } from './object-stream';
@@ -56,11 +54,14 @@ export type ServerDuplexStream<RequestType, ResponseType> = ServerSurfaceCall &
   ObjectReadable<RequestType> &
   ObjectWritable<ResponseType> & { end: (metadata?: Metadata) => void };
 
-export function serverErrorToStatus(error: ServerErrorResponse | ServerStatusResponse, overrideTrailers?: Metadata | undefined): PartialStatusObject {
+export function serverErrorToStatus(
+  error: ServerErrorResponse | ServerStatusResponse,
+  overrideTrailers?: Metadata | undefined
+): PartialStatusObject {
   const status: PartialStatusObject = {
     code: Status.UNKNOWN,
     details: 'message' in error ? error.message : 'Unknown Error',
-    metadata: overrideTrailers ?? error.metadata ?? null
+    metadata: overrideTrailers ?? error.metadata ?? null,
   };
 
   if (
@@ -154,7 +155,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
   private trailingMetadata: Metadata;
   private pendingStatus: PartialStatusObject = {
     code: Status.OK,
-    details: 'OK'
+    details: 'OK',
   };
 
   constructor(
@@ -224,7 +225,7 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType>
   private trailingMetadata: Metadata;
   private pendingStatus: PartialStatusObject = {
     code: Status.OK,
-    details: 'OK'
+    details: 'OK',
   };
 
   constructor(

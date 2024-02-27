@@ -198,7 +198,12 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     keepaliveTime,
     errorMessage
   ) => {
-    this.onSubchannelStateUpdate(subchannel, previousState, newState, errorMessage);
+    this.onSubchannelStateUpdate(
+      subchannel,
+      previousState,
+      newState,
+      errorMessage
+    );
   };
 
   private pickedSubchannelHealthListener: HealthListener = () =>
@@ -275,7 +280,9 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       if (this.stickyTransientFailureMode) {
         this.updateState(
           ConnectivityState.TRANSIENT_FAILURE,
-          new UnavailablePicker({details: `No connection established. Last error: ${this.lastError}`})
+          new UnavailablePicker({
+            details: `No connection established. Last error: ${this.lastError}`,
+          })
         );
       } else {
         this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
@@ -441,7 +448,12 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   private resetSubchannelList() {
     for (const child of this.children) {
-      if (!(this.currentPick && child.subchannel.realSubchannelEquals(this.currentPick))) {
+      if (
+        !(
+          this.currentPick &&
+          child.subchannel.realSubchannelEquals(this.currentPick)
+        )
+      ) {
         /* The connectivity state listener is the same whether the subchannel
          * is in the list of children or it is the currentPick, so if it is in
          * both, removing it here would cause problems. In particular, that
@@ -523,7 +535,10 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   }
 
   exitIdle() {
-    if (this.currentState === ConnectivityState.IDLE && this.latestAddressList) {
+    if (
+      this.currentState === ConnectivityState.IDLE &&
+      this.latestAddressList
+    ) {
       this.connectToAddressList(this.latestAddressList);
     }
   }

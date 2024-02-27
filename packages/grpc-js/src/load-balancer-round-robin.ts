@@ -156,7 +156,9 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     ) {
       this.updateState(
         ConnectivityState.TRANSIENT_FAILURE,
-        new UnavailablePicker({details: `No connection established. Last error: ${this.lastError}`})
+        new UnavailablePicker({
+          details: `No connection established. Last error: ${this.lastError}`,
+        })
       );
     } else {
       this.updateState(ConnectivityState.IDLE, new QueuePicker(this));

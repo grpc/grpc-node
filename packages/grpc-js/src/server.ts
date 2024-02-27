@@ -55,7 +55,13 @@ import {
   subchannelAddressToString,
   stringToSubchannelAddress,
 } from './subchannel-address';
-import { GrpcUri, combineHostPort, parseUri, splitHostPort, uriToString } from './uri-parser';
+import {
+  GrpcUri,
+  combineHostPort,
+  parseUri,
+  splitHostPort,
+  uriToString,
+} from './uri-parser';
 import {
   ChannelzCallTracker,
   ChannelzChildrenTracker,
@@ -70,7 +76,11 @@ import {
   unregisterChannelzRef,
 } from './channelz';
 import { CipherNameAndProtocol, TLSSocket } from 'tls';
-import { ServerInterceptingCallInterface, ServerInterceptor, getServerInterceptingCall } from './server-interceptors';
+import {
+  ServerInterceptingCallInterface,
+  ServerInterceptor,
+  getServerInterceptingCall,
+} from './server-interceptors';
 import { PartialStatusObject } from './call-interface';
 import { CallEventTracker } from './transport';
 
@@ -103,9 +113,15 @@ function noop(): void {}
  * @returns
  */
 function deprecate(message: string) {
-  return function <This, Args extends any[], Return>(target: (this: This, ...args: Args) => Return, context: ClassMethodDecoratorContext<This, (this: This, ...args: Args) => Return>) {
+  return function <This, Args extends any[], Return>(
+    target: (this: This, ...args: Args) => Return,
+    context: ClassMethodDecoratorContext<
+      This,
+      (this: This, ...args: Args) => Return
+    >
+  ) {
     return util.deprecate(target, message);
-  }
+  };
 }
 
 function getUnimplementedStatusResponse(
@@ -209,7 +225,7 @@ interface BoundPort {
    * that expands to multiple addresses will result in multiple listening
    * servers.
    */
-  listeningServers: Set<AnyHttp2Server>
+  listeningServers: Set<AnyHttp2Server>;
 }
 
 /**
@@ -221,11 +237,11 @@ interface Http2ServerInfo {
 }
 
 export interface ServerOptions extends ChannelOptions {
-  interceptors?: ServerInterceptor[]
+  interceptors?: ServerInterceptor[];
 }
 
 export class Server {
-  private boundPorts: Map<string, BoundPort>= new Map();
+  private boundPorts: Map<string, BoundPort> = new Map();
   private http2Servers: Map<AnyHttp2Server, Http2ServerInfo> = new Map();
 
   private handlers: Map<string, UntypedHandler> = new Map<
@@ -526,10 +542,11 @@ export class Server {
     return http2Server;
   }
 
-  private bindOneAddress(address: SubchannelAddress, boundPortObject: BoundPort): Promise<SingleAddressBindResult> {
-    this.trace(
-      'Attempting to bind ' + subchannelAddressToString(address)
-    );
+  private bindOneAddress(
+    address: SubchannelAddress,
+    boundPortObject: BoundPort
+  ): Promise<SingleAddressBindResult> {
+    this.trace('Attempting to bind ' + subchannelAddressToString(address));
     const http2Server = this.createHttp2Server(boundPortObject.credentials);
     return new Promise<SingleAddressBindResult>((resolve, reject) => {
       const onError = (err: Error) => {
@@ -541,7 +558,7 @@ export class Server {
         );
         resolve({
           port: 'port' in address ? address.port : 1,
-          error: err.message
+          error: err.message,
         });
       };
 
@@ -561,13 +578,15 @@ export class Server {
           };
         }
 
-        const channelzRef = this.registerListenerToChannelz(boundSubchannelAddress);
+        const channelzRef = this.registerListenerToChannelz(
+          boundSubchannelAddress
+        );
         if (this.channelzEnabled) {
           this.listenerChildrenTracker.refChild(channelzRef);
         }
         this.http2Servers.set(http2Server, {
           channelzRef: channelzRef,
-          sessions: new Set()
+          sessions: new Set(),
         });
         boundPortObject.listeningServers.add(http2Server);
         this.trace(
@@ -575,62 +594,86 @@ export class Server {
             subchannelAddressToString(boundSubchannelAddress)
         );
         resolve({
-          port: 'port' in boundSubchannelAddress
-          ? boundSubchannelAddress.port
-          : 1
+          port:
+            'port' in boundSubchannelAddress ? boundSubchannelAddress.port : 1,
         });
         http2Server.removeListener('error', onError);
       });
     });
   }
 
-  private async bindManyPorts(addressList: SubchannelAddress[], boundPortObject: BoundPort): Promise<BindResult> {
+  private async bindManyPorts(
+    addressList: SubchannelAddress[],
+    boundPortObject: BoundPort
+  ): Promise<BindResult> {
     if (addressList.length === 0) {
       return {
         count: 0,
         port: 0,
-        errors: []
+        errors: [],
       };
     }
     if (isTcpSubchannelAddress(addressList[0]) && addressList[0].port === 0) {
       /* If binding to port 0, first try to bind the first address, then bind
        * the rest of the address list to the specific port that it binds. */
-      const firstAddressResult = await this.bindOneAddress(addressList[0], boundPortObject);
+      const firstAddressResult = await this.bindOneAddress(
+        addressList[0],
+        boundPortObject
+      );
       if (firstAddressResult.error) {
         /* If the first address fails to bind, try the same operation starting
          * from the second item in the list. */
-        const restAddressResult = await this.bindManyPorts(addressList.slice(1), boundPortObject);
+        const restAddressResult = await this.bindManyPorts(
+          addressList.slice(1),
+          boundPortObject
+        );
         return {
           ...restAddressResult,
-          errors: [firstAddressResult.error, ...restAddressResult.errors]
+          errors: [firstAddressResult.error, ...restAddressResult.errors],
         };
       } else {
-        const restAddresses = addressList.slice(1).map(address => isTcpSubchannelAddress(address) ? {host: address.host, port: firstAddressResult.port} : address)
-        const restAddressResult = await Promise.all(restAddresses.map(address => this.bindOneAddress(address, boundPortObject)));
+        const restAddresses = addressList
+          .slice(1)
+          .map(address =>
+            isTcpSubchannelAddress(address)
+              ? { host: address.host, port: firstAddressResult.port }
+              : address
+          );
+        const restAddressResult = await Promise.all(
+          restAddresses.map(address =>
+            this.bindOneAddress(address, boundPortObject)
+          )
+        );
         const allResults = [firstAddressResult, ...restAddressResult];
         return {
           count: allResults.filter(result => result.error === undefined).length,
           port: firstAddressResult.port,
-          errors: allResults.filter(result => result.error).map(result => result.error!)
+          errors: allResults
+            .filter(result => result.error)
+            .map(result => result.error!),
         };
       }
     } else {
-      const allResults = await Promise.all(addressList.map(address => this.bindOneAddress(address, boundPortObject)));
+      const allResults = await Promise.all(
+        addressList.map(address =>
+          this.bindOneAddress(address, boundPortObject)
+        )
+      );
       return {
         count: allResults.filter(result => result.error === undefined).length,
         port: allResults[0].port,
-        errors: allResults.filter(result => result.error).map(result => result.error!)
+        errors: allResults
+          .filter(result => result.error)
+          .map(result => result.error!),
       };
     }
   }
 
-  private async bindAddressList(addressList: SubchannelAddress[], boundPortObject: BoundPort): Promise<number> {
-    let bindResult: BindResult;
-    try {
-      bindResult = await this.bindManyPorts(addressList, boundPortObject);
-    } catch (error) {
-      throw error;
-    }
+  private async bindAddressList(
+    addressList: SubchannelAddress[],
+    boundPortObject: BoundPort
+  ): Promise<number> {
+    const bindResult = await this.bindManyPorts(addressList, boundPortObject);
     if (bindResult.count > 0) {
       if (bindResult.count < addressList.length) {
         logging.log(
@@ -642,7 +685,9 @@ export class Server {
     } else {
       const errorString = `No address added out of total ${addressList.length} resolved`;
       logging.log(LogVerbosity.ERROR, errorString);
-      throw new Error(`${errorString} errors: [${bindResult.errors.join(',')}]`);
+      throw new Error(
+        `${errorString} errors: [${bindResult.errors.join(',')}]`
+      );
     }
   }
 
@@ -660,9 +705,7 @@ export class Server {
             ...endpointList.map(endpoint => endpoint.addresses)
           );
           if (addressList.length === 0) {
-            reject(
-              new Error(`No addresses resolved for port ${port}`)
-            );
+            reject(new Error(`No addresses resolved for port ${port}`));
             return;
           }
           resolve(addressList);
@@ -676,7 +719,10 @@ export class Server {
     });
   }
 
-  private async bindPort(port: GrpcUri, boundPortObject: BoundPort): Promise<number> {
+  private async bindPort(
+    port: GrpcUri,
+    boundPortObject: BoundPort
+  ): Promise<number> {
     const addressList = await this.resolvePort(port);
     if (boundPortObject.cancelled) {
       this.completeUnbind(boundPortObject);
@@ -691,7 +737,6 @@ export class Server {
   }
 
   private normalizePort(port: string): GrpcUri {
-
     const initialPortUri = parseUri(port);
     if (initialPortUri === null) {
       throw new Error(`Could not parse port "${port}"`);
@@ -736,14 +781,20 @@ export class Server {
     let boundPortObject = this.boundPorts.get(uriToString(portUri));
     if (boundPortObject) {
       if (!creds._equals(boundPortObject.credentials)) {
-        deferredCallback(new Error(`${port} already bound with incompatible credentials`), 0);
+        deferredCallback(
+          new Error(`${port} already bound with incompatible credentials`),
+          0
+        );
         return;
       }
       /* If that operation has previously been cancelled by an unbind call,
        * uncancel it. */
       boundPortObject.cancelled = false;
       if (boundPortObject.completionPromise) {
-        boundPortObject.completionPromise.then(portNum => callback(null, portNum), error => callback(error as Error, 0));
+        boundPortObject.completionPromise.then(
+          portNum => callback(null, portNum),
+          error => callback(error as Error, 0)
+        );
       } else {
         deferredCallback(null, boundPortObject.portNumber);
       }
@@ -756,7 +807,7 @@ export class Server {
       cancelled: false,
       portNumber: 0,
       credentials: creds,
-      listeningServers: new Set()
+      listeningServers: new Set(),
     };
     const splitPort = splitHostPort(portUri.path);
     const completionPromise = this.bindPort(portUri, boundPortObject);
@@ -765,34 +816,42 @@ export class Server {
      * bind operation completes and we have a specific port number. Otherwise,
      * populate it immediately. */
     if (splitPort?.port === 0) {
-      completionPromise.then(portNum => {
-        const finalUri: GrpcUri = {
-          scheme: portUri.scheme,
-          authority: portUri.authority,
-          path: combineHostPort({host: splitPort.host, port: portNum})
-        };
-        boundPortObject!.mapKey = uriToString(finalUri);
-        boundPortObject!.completionPromise = null;
-        boundPortObject!.portNumber = portNum;
-        this.boundPorts.set(boundPortObject!.mapKey, boundPortObject!);
-        callback(null, portNum);
-      }, error => {
-        callback(error, 0);
-      })
+      completionPromise.then(
+        portNum => {
+          const finalUri: GrpcUri = {
+            scheme: portUri.scheme,
+            authority: portUri.authority,
+            path: combineHostPort({ host: splitPort.host, port: portNum }),
+          };
+          boundPortObject!.mapKey = uriToString(finalUri);
+          boundPortObject!.completionPromise = null;
+          boundPortObject!.portNumber = portNum;
+          this.boundPorts.set(boundPortObject!.mapKey, boundPortObject!);
+          callback(null, portNum);
+        },
+        error => {
+          callback(error, 0);
+        }
+      );
     } else {
       this.boundPorts.set(boundPortObject.mapKey, boundPortObject);
-      completionPromise.then(portNum => {
-        boundPortObject!.completionPromise = null;
-        boundPortObject!.portNumber = portNum;
-        callback(null, portNum);
-      }, error => {
-        callback(error, 0);
-      });
+      completionPromise.then(
+        portNum => {
+          boundPortObject!.completionPromise = null;
+          boundPortObject!.portNumber = portNum;
+          callback(null, portNum);
+        },
+        error => {
+          callback(error, 0);
+        }
+      );
     }
   }
 
   private closeServer(server: AnyHttp2Server, callback?: () => void) {
-    this.trace('Closing server with address ' + JSON.stringify(server.address()));
+    this.trace(
+      'Closing server with address ' + JSON.stringify(server.address())
+    );
     const serverInfo = this.http2Servers.get(server);
     server.close(() => {
       if (this.channelzEnabled && serverInfo) {
@@ -802,10 +861,12 @@ export class Server {
       this.http2Servers.delete(server);
       callback?.();
     });
-
   }
 
-  private closeSession(session: http2.ServerHttp2Session, callback?: () => void) {
+  private closeSession(
+    session: http2.ServerHttp2Session,
+    callback?: () => void
+  ) {
     this.trace('Closing session initiated by ' + session.socket?.remoteAddress);
     const sessionInfo = this.sessions.get(session);
     const closeCallback = () => {
@@ -854,7 +915,12 @@ export class Server {
     }
     const boundPortObject = this.boundPorts.get(uriToString(portUri));
     if (boundPortObject) {
-      this.trace('unbinding ' + boundPortObject.mapKey + ' originally bound as ' + uriToString(boundPortObject.originalUri));
+      this.trace(
+        'unbinding ' +
+          boundPortObject.mapKey +
+          ' originally bound as ' +
+          uriToString(boundPortObject.originalUri)
+      );
       /* If the bind operation is pending, the cancelled flag will trigger
        * the unbind operation later. */
       if (boundPortObject.completionPromise) {
@@ -964,13 +1030,13 @@ export class Server {
   /**
    * @deprecated No longer needed as of version 1.10.x
    */
-  @deprecate('Calling start() is no longer necessary. It can be safely omitted.')
+  @deprecate(
+    'Calling start() is no longer necessary. It can be safely omitted.'
+  )
   start(): void {
     if (
       this.http2Servers.size === 0 ||
-      [...this.http2Servers.keys()].every(
-        server => !server.listening
-      )
+      [...this.http2Servers.keys()].every(server => !server.listening)
     ) {
       throw new Error('server must be bound in order to start');
     }
@@ -1090,9 +1156,9 @@ export class Server {
       'grpc-message': err.details,
       [http2.constants.HTTP2_HEADER_STATUS]: http2.constants.HTTP_STATUS_OK,
       [http2.constants.HTTP2_HEADER_CONTENT_TYPE]: 'application/grpc+proto',
-      ...err.metadata?.toHttp2Headers()
+      ...err.metadata?.toHttp2Headers(),
     };
-    stream.respond(trailersToSend, {endStream: true});
+    stream.respond(trailersToSend, { endStream: true });
 
     if (this.channelzEnabled) {
       this.callTracker.addCallFailed();
@@ -1129,7 +1195,7 @@ export class Server {
       return;
     }
 
-    let callEventTracker: CallEventTracker = {
+    const callEventTracker: CallEventTracker = {
       addMessageSent: () => {
         if (channelzSessionInfo) {
           channelzSessionInfo.messagesSent += 1;
@@ -1157,10 +1223,17 @@ export class Server {
             channelzSessionInfo.streamTracker.addCallFailed();
           }
         }
-      }
-    }
+      },
+    };
 
-    const call = getServerInterceptingCall(this.interceptors, stream, headers, callEventTracker, handler, this.options);
+    const call = getServerInterceptingCall(
+      this.interceptors,
+      stream,
+      headers,
+      callEventTracker,
+      handler,
+      this.options
+    );
 
     if (!this._runHandlerForCall(call, handler)) {
       this.callTracker.addCallFailed();
@@ -1193,7 +1266,14 @@ export class Server {
       return;
     }
 
-    const call = getServerInterceptingCall(this.interceptors, stream, headers, null, handler, this.options);
+    const call = getServerInterceptingCall(
+      this.interceptors,
+      stream,
+      headers,
+      null,
+      handler,
+      this.options
+    );
 
     if (!this._runHandlerForCall(call, handler)) {
       call.sendStatus({
@@ -1207,25 +1287,15 @@ export class Server {
     call: ServerInterceptingCallInterface,
     handler: Handler<any, any>
   ): boolean {
-
     const { type } = handler;
     if (type === 'unary') {
       handleUnary(call, handler as UntypedUnaryHandler);
     } else if (type === 'clientStream') {
-      handleClientStreaming(
-        call,
-        handler as UntypedClientStreamingHandler
-      );
+      handleClientStreaming(call, handler as UntypedClientStreamingHandler);
     } else if (type === 'serverStream') {
-      handleServerStreaming(
-        call,
-        handler as UntypedServerStreamingHandler
-      );
+      handleServerStreaming(call, handler as UntypedServerStreamingHandler);
     } else if (type === 'bidi') {
-      handleBidiStreaming(
-        call,
-        handler as UntypedBidiStreamingHandler
-      );
+      handleBidiStreaming(call, handler as UntypedBidiStreamingHandler);
     } else {
       return false;
     }
@@ -1257,7 +1327,6 @@ export class Server {
 
     http2Server.on('stream', handler.bind(this));
     http2Server.on('session', session => {
-
       const channelzRef = registerChannelzSocket(
         session.socket.remoteAddress ?? 'unknown',
         this.getChannelzSessionInfoGetter(session),
@@ -1388,7 +1457,7 @@ async function handleUnary<RequestType, ResponseType>(
       call.sendStatus({
         code: Status.OK,
         details: 'OK',
-        metadata: trailer ?? null
+        metadata: trailer ?? null,
       });
     });
   }
@@ -1405,7 +1474,7 @@ async function handleUnary<RequestType, ResponseType>(
         call.sendStatus({
           code: Status.UNIMPLEMENTED,
           details: `Received a second request message for server streaming method ${handler.path}`,
-          metadata: null
+          metadata: null,
         });
         return;
       }
@@ -1417,18 +1486,25 @@ async function handleUnary<RequestType, ResponseType>(
         call.sendStatus({
           code: Status.UNIMPLEMENTED,
           details: `Received no request message for server streaming method ${handler.path}`,
-          metadata: null
+          metadata: null,
         });
         return;
       }
-      stream = new ServerWritableStreamImpl(handler.path, call, requestMetadata, requestMessage);
+      stream = new ServerWritableStreamImpl(
+        handler.path,
+        call,
+        requestMetadata,
+        requestMessage
+      );
       try {
         handler.func(stream, respond);
       } catch (err) {
         call.sendStatus({
           code: Status.UNKNOWN,
-          details: `Server method handler threw error ${(err as Error).message}`,
-          metadata: null
+          details: `Server method handler threw error ${
+            (err as Error).message
+          }`,
+          metadata: null,
         });
       }
     },
@@ -1461,7 +1537,7 @@ function handleClientStreaming<RequestType, ResponseType>(
       call.sendStatus({
         code: Status.OK,
         details: 'OK',
-        metadata: trailer ?? null
+        metadata: trailer ?? null,
       });
     });
   }
@@ -1474,8 +1550,10 @@ function handleClientStreaming<RequestType, ResponseType>(
       } catch (err) {
         call.sendStatus({
           code: Status.UNKNOWN,
-          details: `Server method handler threw error ${(err as Error).message}`,
-          metadata: null
+          details: `Server method handler threw error ${
+            (err as Error).message
+          }`,
+          metadata: null,
         });
       }
     },
@@ -1513,7 +1591,7 @@ function handleServerStreaming<RequestType, ResponseType>(
         call.sendStatus({
           code: Status.UNIMPLEMENTED,
           details: `Received a second request message for server streaming method ${handler.path}`,
-          metadata: null
+          metadata: null,
         });
         return;
       }
@@ -1525,18 +1603,25 @@ function handleServerStreaming<RequestType, ResponseType>(
         call.sendStatus({
           code: Status.UNIMPLEMENTED,
           details: `Received no request message for server streaming method ${handler.path}`,
-          metadata: null
+          metadata: null,
         });
         return;
       }
-      stream = new ServerWritableStreamImpl(handler.path, call, requestMetadata, requestMessage);
+      stream = new ServerWritableStreamImpl(
+        handler.path,
+        call,
+        requestMetadata,
+        requestMessage
+      );
       try {
         handler.func(stream);
       } catch (err) {
         call.sendStatus({
           code: Status.UNKNOWN,
-          details: `Server method handler threw error ${(err as Error).message}`,
-          metadata: null
+          details: `Server method handler threw error ${
+            (err as Error).message
+          }`,
+          metadata: null,
         });
       }
     },
@@ -1564,8 +1649,10 @@ function handleBidiStreaming<RequestType, ResponseType>(
       } catch (err) {
         call.sendStatus({
           code: Status.UNKNOWN,
-          details: `Server method handler threw error ${(err as Error).message}`,
-          metadata: null
+          details: `Server method handler threw error ${
+            (err as Error).message
+          }`,
+          metadata: null,
         });
       }
     },
