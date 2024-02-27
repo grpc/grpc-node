@@ -112,7 +112,18 @@ export function trace(
   text: string
 ): void {
   if (isTracerEnabled(tracer)) {
-    log(severity, new Date().toISOString() + ' | v' + clientVersion + ' ' + pid + ' | ' + tracer + ' | ' + text);
+    log(
+      severity,
+      new Date().toISOString() +
+        ' | v' +
+        clientVersion +
+        ' ' +
+        pid +
+        ' | ' +
+        tracer +
+        ' | ' +
+        text
+    );
   }
 }
 

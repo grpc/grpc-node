@@ -28,7 +28,7 @@ import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
  */
 interface TestCase {
   name: string;
-  input: object,
+  input: object;
   output?: object;
   error?: RegExp;
 }
@@ -40,52 +40,52 @@ interface TestCase {
  * Note: some tests have an expected output that is different from the output,
  * but all non-error tests additionally verify that parsing the output again
  * produces the same output. */
-const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
+const allTestCases: { [lbPolicyName: string]: TestCase[] } = {
   pick_first: [
     {
       name: 'no fields set',
       input: {},
       output: {
-        shuffleAddressList: false
-      }
+        shuffleAddressList: false,
+      },
     },
     {
       name: 'shuffleAddressList set',
       input: {
-        shuffleAddressList: true
-      }
-    }
+        shuffleAddressList: true,
+      },
+    },
   ],
   round_robin: [
     {
       name: 'no fields set',
-      input: {}
-    }
+      input: {},
+    },
   ],
   outlier_detection: [
     {
       name: 'only required fields set',
       input: {
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       },
       output: {
         interval: {
           seconds: 10,
-          nanos: 0
+          nanos: 0,
         },
         base_ejection_time: {
           seconds: 30,
-          nanos: 0
+          nanos: 0,
         },
         max_ejection_time: {
           seconds: 300,
-          nanos: 0
+          nanos: 0,
         },
         max_ejection_percent: 10,
         success_rate_ejection: undefined,
         failure_percentage_ejection: undefined,
-        child_policy: [{round_robin: {}}]
-      }
+        child_policy: [{ round_robin: {} }],
+      },
     },
     {
       name: 'all optional fields undefined',
@@ -96,53 +96,53 @@ const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
         max_ejection_percent: undefined,
         success_rate_ejection: undefined,
         failure_percentage_ejection: undefined,
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       },
       output: {
         interval: {
           seconds: 10,
-          nanos: 0
+          nanos: 0,
         },
         base_ejection_time: {
           seconds: 30,
-          nanos: 0
+          nanos: 0,
         },
         max_ejection_time: {
           seconds: 300,
-          nanos: 0
+          nanos: 0,
         },
         max_ejection_percent: 10,
         success_rate_ejection: undefined,
         failure_percentage_ejection: undefined,
-        child_policy: [{round_robin: {}}]
-      }
+        child_policy: [{ round_robin: {} }],
+      },
     },
     {
       name: 'empty ejection configs',
       input: {
         success_rate_ejection: {},
         failure_percentage_ejection: {},
-        child_policy: [{round_robin: {}}]
+        child_policy: [{ round_robin: {} }],
       },
       output: {
         interval: {
           seconds: 10,
-          nanos: 0
+          nanos: 0,
         },
         base_ejection_time: {
           seconds: 30,
-          nanos: 0
+          nanos: 0,
         },
         max_ejection_time: {
           seconds: 300,
-          nanos: 0
+          nanos: 0,
         },
         max_ejection_percent: 10,
         success_rate_ejection: {
           stdev_factor: 1900,
           enforcement_percentage: 100,
           minimum_hosts: 5,
-          request_volume: 100
+          request_volume: 100,
         },
         failure_percentage_ejection: {
           threshold: 85,
@@ -150,30 +150,30 @@ const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
           minimum_hosts: 5,
           request_volume: 50,
         },
-        child_policy: [{round_robin: {}}]
-      }
+        child_policy: [{ round_robin: {} }],
+      },
     },
     {
       name: 'all fields populated',
       input: {
         interval: {
           seconds: 20,
-          nanos: 0
+          nanos: 0,
         },
         base_ejection_time: {
           seconds: 40,
-          nanos: 0
+          nanos: 0,
         },
         max_ejection_time: {
           seconds: 400,
-          nanos: 0
+          nanos: 0,
         },
         max_ejection_percent: 20,
         success_rate_ejection: {
           stdev_factor: 1800,
           enforcement_percentage: 90,
           minimum_hosts: 4,
-          request_volume: 200
+          request_volume: 200,
         },
         failure_percentage_ejection: {
           threshold: 95,
@@ -181,29 +181,34 @@ const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
           minimum_hosts: 4,
           request_volume: 60,
         },
-        child_policy: [{round_robin: {}}]
-
-      }
-    }
-  ]
-}
+        child_policy: [{ round_robin: {} }],
+      },
+    },
+  ],
+};
 
 describe('Load balancing policy config parsing', () => {
   for (const [lbPolicyName, testCases] of Object.entries(allTestCases)) {
     describe(lbPolicyName, () => {
       for (const testCase of testCases) {
         it(testCase.name, () => {
-          const lbConfigInput = {[lbPolicyName]: testCase.input};
+          const lbConfigInput = { [lbPolicyName]: testCase.input };
           if (testCase.error) {
             assert.throws(() => {
               parseLoadBalancingConfig(lbConfigInput);
             }, testCase.error);
           } else {
             const expectedOutput = testCase.output ?? testCase.input;
-            const parsedJson = parseLoadBalancingConfig(lbConfigInput).toJsonObject();
-            assert.deepStrictEqual(parsedJson, {[lbPolicyName]: expectedOutput});
+            const parsedJson =
+              parseLoadBalancingConfig(lbConfigInput).toJsonObject();
+            assert.deepStrictEqual(parsedJson, {
+              [lbPolicyName]: expectedOutput,
+            });
             // Test idempotency
-            assert.deepStrictEqual(parseLoadBalancingConfig(parsedJson).toJsonObject(), parsedJson);
+            assert.deepStrictEqual(
+              parseLoadBalancingConfig(parsedJson).toJsonObject(),
+              parsedJson
+            );
           }
         });
       }

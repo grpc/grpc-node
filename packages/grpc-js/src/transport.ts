@@ -205,7 +205,12 @@ class Http2Transport implements Transport {
         ) {
           tooManyPings = true;
         }
-        this.trace('connection closed by GOAWAY with code ' + errorCode + ' and data ' + opaqueData?.toString());
+        this.trace(
+          'connection closed by GOAWAY with code ' +
+            errorCode +
+            ' and data ' +
+            opaqueData?.toString()
+        );
         this.reportDisconnectToOwner(tooManyPings);
       }
     );

@@ -356,17 +356,23 @@ export function validateRetryThrottling(obj: any): RetryThrottling {
 
 function validateLoadBalancingConfig(obj: any): LoadBalancingConfig {
   if (!(typeof obj === 'object' && obj !== null)) {
-    throw new Error(`Invalid loadBalancingConfig: unexpected type ${typeof obj}`);
+    throw new Error(
+      `Invalid loadBalancingConfig: unexpected type ${typeof obj}`
+    );
   }
   const keys = Object.keys(obj);
   if (keys.length > 1) {
-    throw new Error(`Invalid loadBalancingConfig: unexpected multiple keys ${keys}`);
+    throw new Error(
+      `Invalid loadBalancingConfig: unexpected multiple keys ${keys}`
+    );
   }
   if (keys.length === 0) {
-    throw new Error('Invalid loadBalancingConfig: load balancing policy name required');
+    throw new Error(
+      'Invalid loadBalancingConfig: load balancing policy name required'
+    );
   }
   return {
-    [keys[0]]: obj[keys[0]]
+    [keys[0]]: obj[keys[0]],
   };
 }
 
@@ -385,7 +391,6 @@ export function validateServiceConfig(obj: any): ServiceConfig {
   if ('loadBalancingConfig' in obj) {
     if (Array.isArray(obj.loadBalancingConfig)) {
       for (const config of obj.loadBalancingConfig) {
-
         result.loadBalancingConfig.push(validateLoadBalancingConfig(config));
       }
     } else {

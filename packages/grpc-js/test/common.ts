@@ -129,7 +129,10 @@ export class TestClient {
     this.client.echo({}, callback);
   }
 
-  sendRequestWithMetadata(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError) => void) {
+  sendRequestWithMetadata(
+    metadata: grpc.Metadata,
+    callback: (error?: grpc.ServiceError) => void
+  ) {
     this.client.echo({}, metadata, callback);
   }
 

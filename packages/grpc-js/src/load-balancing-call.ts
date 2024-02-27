@@ -145,7 +145,9 @@ export class LoadBalancingCall implements Call {
                * metadata generation finished, we shouldn't do anything with
                * it. */
               if (this.ended) {
-                this.trace('Credentials metadata generation finished after call ended');
+                this.trace(
+                  'Credentials metadata generation finished after call ended'
+                );
                 return;
               }
               finalMetadata.merge(credsMetadata);
