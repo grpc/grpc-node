@@ -1191,131 +1191,127 @@ export class Server {
     channelzSessionInfo?.streamTracker.addCallFailed();
   }
 
-  private _channelzHandler(http2Server: http2.Http2Server) {
-    return (
-      stream: http2.ServerHttp2Stream,
-      headers: http2.IncomingHttpHeaders
-    ) => {
-      // for handling idle timeout
-      this.onStreamOpened(stream);
+  private _channelzHandler(
+    stream: http2.ServerHttp2Stream,
+    headers: http2.IncomingHttpHeaders
+  ) {
+    // for handling idle timeout
+    this.onStreamOpened(stream);
 
-      const channelzSessionInfo = this.sessions.get(
-        stream.session as http2.ServerHttp2Session
-      );
+    const channelzSessionInfo = this.sessions.get(
+      stream.session as http2.ServerHttp2Session
+    );
 
-      this.callTracker.addCallStarted();
-      channelzSessionInfo?.streamTracker.addCallStarted();
+    this.callTracker.addCallStarted();
+    channelzSessionInfo?.streamTracker.addCallStarted();
 
-      if (!this._verifyContentType(stream, headers)) {
-        this.callTracker.addCallFailed();
-        channelzSessionInfo?.streamTracker.addCallFailed();
-        return;
-      }
+    if (!this._verifyContentType(stream, headers)) {
+      this.callTracker.addCallFailed();
+      channelzSessionInfo?.streamTracker.addCallFailed();
+      return;
+    }
 
-      const path = headers[HTTP2_HEADER_PATH] as string;
+    const path = headers[HTTP2_HEADER_PATH] as string;
 
-      const handler = this._retrieveHandler(path);
-      if (!handler) {
-        this._respondWithError(
-          getUnimplementedStatusResponse(path),
-          stream,
-          channelzSessionInfo
-        );
-        return;
-      }
-
-      const callEventTracker: CallEventTracker = {
-        addMessageSent: () => {
-          if (channelzSessionInfo) {
-            channelzSessionInfo.messagesSent += 1;
-            channelzSessionInfo.lastMessageSentTimestamp = new Date();
-          }
-        },
-        addMessageReceived: () => {
-          if (channelzSessionInfo) {
-            channelzSessionInfo.messagesReceived += 1;
-            channelzSessionInfo.lastMessageReceivedTimestamp = new Date();
-          }
-        },
-        onCallEnd: status => {
-          if (status.code === Status.OK) {
-            this.callTracker.addCallSucceeded();
-          } else {
-            this.callTracker.addCallFailed();
-          }
-        },
-        onStreamEnd: success => {
-          if (channelzSessionInfo) {
-            if (success) {
-              channelzSessionInfo.streamTracker.addCallSucceeded();
-            } else {
-              channelzSessionInfo.streamTracker.addCallFailed();
-            }
-          }
-        },
-      };
-
-      const call = getServerInterceptingCall(
-        this.interceptors,
+    const handler = this._retrieveHandler(path);
+    if (!handler) {
+      this._respondWithError(
+        getUnimplementedStatusResponse(path),
         stream,
-        headers,
-        callEventTracker,
-        handler,
-        this.options
+        channelzSessionInfo
       );
+      return;
+    }
 
-      if (!this._runHandlerForCall(call, handler)) {
-        this.callTracker.addCallFailed();
-        channelzSessionInfo?.streamTracker.addCallFailed();
-
-        call.sendStatus({
-          code: Status.INTERNAL,
-          details: `Unknown handler type: ${handler.type}`,
-        });
-      }
+    const callEventTracker: CallEventTracker = {
+      addMessageSent: () => {
+        if (channelzSessionInfo) {
+          channelzSessionInfo.messagesSent += 1;
+          channelzSessionInfo.lastMessageSentTimestamp = new Date();
+        }
+      },
+      addMessageReceived: () => {
+        if (channelzSessionInfo) {
+          channelzSessionInfo.messagesReceived += 1;
+          channelzSessionInfo.lastMessageReceivedTimestamp = new Date();
+        }
+      },
+      onCallEnd: status => {
+        if (status.code === Status.OK) {
+          this.callTracker.addCallSucceeded();
+        } else {
+          this.callTracker.addCallFailed();
+        }
+      },
+      onStreamEnd: success => {
+        if (channelzSessionInfo) {
+          if (success) {
+            channelzSessionInfo.streamTracker.addCallSucceeded();
+          } else {
+            channelzSessionInfo.streamTracker.addCallFailed();
+          }
+        }
+      },
     };
+
+    const call = getServerInterceptingCall(
+      this.interceptors,
+      stream,
+      headers,
+      callEventTracker,
+      handler,
+      this.options
+    );
+
+    if (!this._runHandlerForCall(call, handler)) {
+      this.callTracker.addCallFailed();
+      channelzSessionInfo?.streamTracker.addCallFailed();
+
+      call.sendStatus({
+        code: Status.INTERNAL,
+        details: `Unknown handler type: ${handler.type}`,
+      });
+    }
   }
 
-  private _streamHandler(http2Server: http2.Http2Server) {
-    return (
-      stream: http2.ServerHttp2Stream,
-      headers: http2.IncomingHttpHeaders
-    ) => {
-      // for handling idle timeout
-      this.onStreamOpened(stream);
+  private _streamHandler(
+    stream: http2.ServerHttp2Stream,
+    headers: http2.IncomingHttpHeaders
+  ) {
+    // for handling idle timeout
+    this.onStreamOpened(stream);
 
-      if (this._verifyContentType(stream, headers) !== true) {
-        return;
-      }
+    if (this._verifyContentType(stream, headers) !== true) {
+      return;
+    }
 
-      const path = headers[HTTP2_HEADER_PATH] as string;
+    const path = headers[HTTP2_HEADER_PATH] as string;
 
-      const handler = this._retrieveHandler(path);
-      if (!handler) {
-        this._respondWithError(
-          getUnimplementedStatusResponse(path),
-          stream,
-          null
-        );
-        return;
-      }
-
-      const call = getServerInterceptingCall(
-        this.interceptors,
+    const handler = this._retrieveHandler(path);
+    if (!handler) {
+      this._respondWithError(
+        getUnimplementedStatusResponse(path),
         stream,
-        headers,
-        null,
-        handler,
-        this.options
+        null
       );
+      return;
+    }
 
-      if (!this._runHandlerForCall(call, handler)) {
-        call.sendStatus({
-          code: Status.INTERNAL,
-          details: `Unknown handler type: ${handler.type}`,
-        });
-      }
-    };
+    const call = getServerInterceptingCall(
+      this.interceptors,
+      stream,
+      headers,
+      null,
+      handler,
+      this.options
+    );
+
+    if (!this._runHandlerForCall(call, handler)) {
+      call.sendStatus({
+        code: Status.INTERNAL,
+        details: `Unknown handler type: ${handler.type}`,
+      });
+    }
   }
 
   private _runHandlerForCall(
@@ -1361,14 +1357,14 @@ export class Server {
     this.serverAddressString = serverAddressString;
 
     const handler = this.channelzEnabled
-      ? this._channelzHandler(http2Server)
-      : this._streamHandler(http2Server);
+      ? this._channelzHandler
+      : this._streamHandler;
 
     const sessionHandler = this.channelzEnabled
       ? this._channelzSessionHandler(http2Server)
       : this._sessionHandler(http2Server);
 
-    http2Server.on('stream', handler);
+    http2Server.on('stream', handler.bind(this));
     http2Server.on('session', sessionHandler);
   }
 
