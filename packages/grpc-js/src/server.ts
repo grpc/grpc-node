@@ -1586,9 +1586,7 @@ export class Server {
             'Connection dropped by client ' + clientAddress
           );
         }
-        this.trace(
-          `DROPPING ${channelzRef.name} - ${channelzRef.kind} - ${channelzRef.id}`
-        );
+
         this.sessionChildrenTracker.unrefChild(channelzRef);
         unregisterChannelzRef(channelzRef);
 
@@ -1637,7 +1635,7 @@ export class Server {
 
   private onStreamOpened(stream: http2.ServerHttp2Stream) {
     const session = stream.session as http2.ServerHttp2Session;
-    this.trace(`Stream opened for ${session.socket?.remoteAddress}`);
+
     const idleTimeoutObj = this.sessionIdleTimeouts.get(session);
     if (idleTimeoutObj) {
       idleTimeoutObj.activeStreams += 1;
@@ -1646,26 +1644,16 @@ export class Server {
         idleTimeoutObj.timeout = null;
       }
 
-      this.trace(
-        `onStreamOpened: adding on stream close event for ${session.socket?.remoteAddress}`
-      );
       stream.once('close', () => this.onStreamClose(session));
-    } else {
-      this.trace(
-        `onStreamOpened: missing stream for ${session.socket?.remoteAddress}`
-      );
     }
   }
 
   private onStreamClose(session: http2.ServerHttp2Session) {
-    this.trace(`Stream closed for ${session.socket?.remoteAddress}`);
     const idleTimeoutObj = this.sessionIdleTimeouts.get(session);
+
     if (idleTimeoutObj) {
       idleTimeoutObj.activeStreams -= 1;
       if (idleTimeoutObj.activeStreams === 0) {
-        this.trace(
-          `onStreamClose: set idle timeout for ${this.sessionIdleTimeout}ms ${session.socket?.remoteAddress}`
-        );
         idleTimeoutObj.timeout = setTimeout(
           this.onIdleTimeout,
           this.sessionIdleTimeout,
