@@ -243,7 +243,8 @@ interface Http2ServerInfo {
 
 interface SessionIdleTimeoutTracker {
   activeStreams: number;
-  timeout: NodeJS.Timeout | null;
+  lastIdle: number;
+  timeout: NodeJS.Timeout;
   onClose: (session: http2.ServerHttp2Session) => void | null;
 }
 
@@ -292,6 +293,7 @@ export class Server {
   private readonly keepaliveTimeoutMs: number;
 
   private readonly sessionIdleTimeout: number;
+  private readonly sessionHalfIdleTimeout: number;
 
   private readonly interceptors: ServerInterceptor[];
 
@@ -334,6 +336,7 @@ export class Server {
       this.options['grpc.keepalive_timeout_ms'] ?? KEEPALIVE_TIMEOUT_MS;
     this.sessionIdleTimeout =
       this.options['grpc.max_connection_idle_ms'] ?? MAX_CONNECTION_IDLE_MS;
+    this.sessionHalfIdleTimeout = Math.ceil(this.sessionIdleTimeout / 2);
 
     this.commonServerOptions = {
       maxSendHeaderBlockLength: Number.MAX_SAFE_INTEGER,
@@ -1467,9 +1470,7 @@ export class Server {
         }
 
         if (idleTimeoutObj !== null) {
-          if (idleTimeoutObj.timeout !== null) {
-            clearTimeout(idleTimeoutObj.timeout);
-          }
+          clearTimeout(idleTimeoutObj.timeout);
           this.sessionIdleTimeouts.delete(session);
         }
 
@@ -1615,9 +1616,7 @@ export class Server {
         }
 
         if (idleTimeoutObj !== null) {
-          if (idleTimeoutObj.timeout !== null) {
-            clearTimeout(idleTimeoutObj.timeout);
-          }
+          clearTimeout(idleTimeoutObj.timeout);
           this.sessionIdleTimeouts.delete(session);
         }
 
@@ -1634,12 +1633,14 @@ export class Server {
       return null;
     }
 
-    const idleTimeoutObj = {
+    const idleTimeoutObj: SessionIdleTimeoutTracker = {
       activeStreams: 0,
+      lastIdle: Date.now(),
       onClose: this.onStreamClose.bind(this, session), // so that we don't recreate it each time
+      // this is 50% of the actual timeout, we will check half-way through and .refresh() for a subsequent check
       timeout: setTimeout(
         this.onIdleTimeout,
-        this.sessionIdleTimeout,
+        this.sessionHalfIdleTimeout,
         this,
         session
       ).unref(),
@@ -1660,9 +1661,25 @@ export class Server {
   private onIdleTimeout(ctx: Server, session: http2.ServerHttp2Session) {
     const { socket } = session;
     ctx.trace(
-      'Idle timeout for ' + socket?.remoteAddress + ':' + socket?.remotePort
+      'Session idle timeout checkpoint for ' +
+        socket?.remoteAddress +
+        ':' +
+        socket?.remotePort
     );
-    ctx.closeSession(session);
+
+    const sessionInfo = ctx.sessionIdleTimeouts.get(session);
+    // if it is called while we have activeStreams - timer will not be rescheduled
+    // until last active stream is closed, then it will call .refresh() on the timer
+    // important part is to not clearTimeout(timer) or it becomes unusable
+    // for future refreshes
+    if (sessionInfo && sessionInfo.activeStreams === 0) {
+      const idleFor = Date.now() - sessionInfo.lastIdle;
+      if (idleFor >= this.sessionIdleTimeout) {
+        ctx.closeSession(session);
+      } else {
+        sessionInfo.timeout.refresh();
+      }
+    }
   }
 
   private onStreamOpened(stream: http2.ServerHttp2Stream) {
@@ -1671,11 +1688,6 @@ export class Server {
     const idleTimeoutObj = this.sessionIdleTimeouts.get(session);
     if (idleTimeoutObj) {
       idleTimeoutObj.activeStreams += 1;
-      if (idleTimeoutObj.timeout) {
-        clearTimeout(idleTimeoutObj.timeout);
-        idleTimeoutObj.timeout = null;
-      }
-
       stream.once('close', idleTimeoutObj.onClose);
     }
   }
@@ -1686,12 +1698,7 @@ export class Server {
     if (idleTimeoutObj) {
       idleTimeoutObj.activeStreams -= 1;
       if (idleTimeoutObj.activeStreams === 0) {
-        idleTimeoutObj.timeout = setTimeout(
-          this.onIdleTimeout,
-          this.sessionIdleTimeout,
-          this,
-          session
-        ).unref();
+        idleTimeoutObj.timeout.refresh();
       }
     }
   }
