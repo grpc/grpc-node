@@ -60,6 +60,9 @@ Many channel arguments supported in `grpc` are not supported in `@grpc/grpc-js`.
   - `grpc.enable_channelz`
   - `grpc.dns_min_time_between_resolutions_ms`
   - `grpc.enable_retries`
+  - `grpc.max_connection_age_ms`
+  - `grpc.max_connection_age_grace_ms`
+  - `grpc.max_connection_idle_ms`
   - `grpc.per_rpc_retry_buffer_size`
   - `grpc.retry_buffer_size`
   - `grpc.service_config_disable_resolution`
