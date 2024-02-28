@@ -293,7 +293,6 @@ export class Server {
   private readonly keepaliveTimeoutMs: number;
 
   private readonly sessionIdleTimeout: number;
-  private readonly sessionHalfIdleTimeout: number;
 
   private readonly interceptors: ServerInterceptor[];
 
@@ -336,7 +335,6 @@ export class Server {
       this.options['grpc.keepalive_timeout_ms'] ?? KEEPALIVE_TIMEOUT_MS;
     this.sessionIdleTimeout =
       this.options['grpc.max_connection_idle_ms'] ?? MAX_CONNECTION_IDLE_MS;
-    this.sessionHalfIdleTimeout = Math.ceil(this.sessionIdleTimeout / 2);
 
     this.commonServerOptions = {
       maxSendHeaderBlockLength: Number.MAX_SAFE_INTEGER,
@@ -1636,11 +1634,10 @@ export class Server {
     const idleTimeoutObj: SessionIdleTimeoutTracker = {
       activeStreams: 0,
       lastIdle: Date.now(),
-      onClose: this.onStreamClose.bind(this, session), // so that we don't recreate it each time
-      // this is 50% of the actual timeout, we will check half-way through and .refresh() for a subsequent check
+      onClose: this.onStreamClose.bind(this, session),
       timeout: setTimeout(
         this.onIdleTimeout,
-        this.sessionHalfIdleTimeout,
+        this.sessionIdleTimeout,
         this,
         session
       ).unref(),
@@ -1658,7 +1655,11 @@ export class Server {
     return idleTimeoutObj;
   }
 
-  private onIdleTimeout(ctx: Server, session: http2.ServerHttp2Session) {
+  private onIdleTimeout(
+    this: undefined,
+    ctx: Server,
+    session: http2.ServerHttp2Session
+  ) {
     const { socket } = session;
     ctx.trace(
       'Session idle timeout checkpoint for ' +
@@ -1668,17 +1669,17 @@ export class Server {
     );
 
     const sessionInfo = ctx.sessionIdleTimeouts.get(session);
+
     // if it is called while we have activeStreams - timer will not be rescheduled
     // until last active stream is closed, then it will call .refresh() on the timer
     // important part is to not clearTimeout(timer) or it becomes unusable
     // for future refreshes
-    if (sessionInfo && sessionInfo.activeStreams === 0) {
-      const idleFor = Date.now() - sessionInfo.lastIdle;
-      if (idleFor >= this.sessionIdleTimeout) {
-        ctx.closeSession(session);
-      } else {
-        sessionInfo.timeout.refresh();
-      }
+    if (
+      sessionInfo !== undefined &&
+      sessionInfo.activeStreams === 0 &&
+      Date.now() - sessionInfo.lastIdle >= ctx.sessionIdleTimeout
+    ) {
+      ctx.closeSession(session);
     }
   }
 
@@ -1698,6 +1699,7 @@ export class Server {
     if (idleTimeoutObj) {
       idleTimeoutObj.activeStreams -= 1;
       if (idleTimeoutObj.activeStreams === 0) {
+        idleTimeoutObj.lastIdle = Date.now();
         idleTimeoutObj.timeout.refresh();
       }
     }
