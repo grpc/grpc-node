@@ -309,7 +309,8 @@ class DnsResolver implements Resolver {
       if (this.continueResolving) {
         this.startResolutionWithBackoff();
       }
-    }, this.minTimeBetweenResolutionsMs).unref?.();
+    }, this.minTimeBetweenResolutionsMs);
+    this.nextResolutionTimer.unref?.();
     this.isNextResolutionTimerRunning = true;
   }
 

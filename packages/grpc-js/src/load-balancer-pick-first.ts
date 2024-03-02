@@ -415,7 +415,8 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     }
     this.connectionDelayTimeout = setTimeout(() => {
       this.startNextSubchannelConnecting(subchannelIndex + 1);
-    }, CONNECTION_DELAY_INTERVAL_MS).unref?.();
+    }, CONNECTION_DELAY_INTERVAL_MS);
+    this.connectionDelayTimeout.unref?.();
   }
 
   private pickSubchannel(subchannel: SubchannelInterface) {

@@ -140,6 +140,27 @@ export class TestClient {
     return this.client.getChannel().getConnectivityState(false);
   }
 
+  waitForClientState(
+    deadline: grpc.Deadline,
+    state: ConnectivityState,
+    callback: (error?: Error) => void
+  ) {
+    this.client
+      .getChannel()
+      .watchConnectivityState(this.getChannelState(), deadline, err => {
+        if (err) {
+          return callback(err);
+        }
+
+        const currentState = this.getChannelState();
+        if (currentState === state) {
+          callback();
+        } else {
+          return this.waitForClientState(deadline, currentState, callback);
+        }
+      });
+  }
+
   close() {
     this.client.close();
   }

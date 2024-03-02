@@ -477,7 +477,8 @@ class Http2Transport implements Transport {
       );
       this.keepaliveTimerId = setTimeout(() => {
         this.maybeSendPing();
-      }, this.keepaliveTimeMs).unref?.();
+      }, this.keepaliveTimeMs);
+      this.keepaliveTimerId.unref?.();
     }
     /* Otherwise, there is already either a keepalive timer or a ping pending,
      * wait for those to resolve. */
