@@ -348,7 +348,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       if (newState !== ConnectivityState.READY) {
         this.removeCurrentPick();
         this.calculateAndReportNewState();
-        this.requestReresolution();
       }
       return;
     }
