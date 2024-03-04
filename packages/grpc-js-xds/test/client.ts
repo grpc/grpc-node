@@ -19,7 +19,7 @@ import { ChannelOptions, credentials, loadPackageDefinition, ServiceError } from
 import { loadSync } from "@grpc/proto-loader";
 import { ProtoGrpcType } from "./generated/echo";
 import { EchoTestServiceClient } from "./generated/grpc/testing/EchoTestService";
-import { XdsServer } from "./xds-server";
+import { ControlPlaneServer } from "./xds-server";
 
 const loadedProtos = loadPackageDefinition(loadSync(
   [
@@ -50,7 +50,7 @@ export class XdsTestClient {
     clearInterval(this.callInterval);
   }
 
-  static createFromServer(targetName: string, xdsServer: XdsServer, options?: ChannelOptions) {
+  static createFromServer(targetName: string, xdsServer: ControlPlaneServer, options?: ChannelOptions) {
     return new XdsTestClient(`xds:///${targetName}`, xdsServer.getBootstrapInfoString(), options);
   }
 
@@ -82,6 +82,14 @@ export class XdsTestClient {
     });
   }
 
+  sendOneCallAsync(): Promise<ServiceError | null> {
+    return new Promise((resolve, reject) => {
+      this.sendOneCall(error => {
+        resolve(error)
+      });
+    });
+  }
+
   sendNCalls(count: number, callback: (error: ServiceError| null) => void) {
     const sendInner = (count: number, callback: (error: ServiceError| null) => void) => {
       if (count === 0) {
@@ -97,6 +105,18 @@ export class XdsTestClient {
       });
     }
     sendInner(count, callback);
+  }
+
+  sendNCallsAsync(count: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.sendNCalls(count, error => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve();
+        }
+      });
+    });
   }
 
   getConnectivityState() {

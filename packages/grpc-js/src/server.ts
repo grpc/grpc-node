@@ -546,7 +546,7 @@ export class Server {
     }
 
     http2Server.setTimeout(0, noop);
-    this._setupHandlers(http2Server);
+    this._setupHandlers(http2Server, credentials._getInterceptors());
     return http2Server;
   }
 
@@ -1189,6 +1189,7 @@ export class Server {
   }
 
   private _channelzHandler(
+    extraInterceptors: ServerInterceptor[],
     stream: http2.ServerHttp2Stream,
     headers: http2.IncomingHttpHeaders
   ) {
@@ -1248,7 +1249,7 @@ export class Server {
       }
     }
 
-    const call = getServerInterceptingCall(this.interceptors, stream, headers, callEventTracker, handler, this.options);
+    const call = getServerInterceptingCall([...extraInterceptors, ...this.interceptors], stream, headers, callEventTracker, handler, this.options);
 
     if (!this._runHandlerForCall(call, handler)) {
       this.callTracker.addCallFailed();
@@ -1262,6 +1263,7 @@ export class Server {
   }
 
   private _streamHandler(
+    extraInterceptors: ServerInterceptor[],
     stream: http2.ServerHttp2Stream,
     headers: http2.IncomingHttpHeaders
   ) {
@@ -1281,7 +1283,7 @@ export class Server {
       return;
     }
 
-    const call = getServerInterceptingCall(this.interceptors, stream, headers, null, handler, this.options);
+    const call = getServerInterceptingCall([...extraInterceptors, ...this.interceptors], stream, headers, null, handler, this.options);
 
     if (!this._runHandlerForCall(call, handler)) {
       call.sendStatus({
@@ -1322,7 +1324,8 @@ export class Server {
   }
 
   private _setupHandlers(
-    http2Server: http2.Http2Server | http2.Http2SecureServer
+    http2Server: http2.Http2Server | http2.Http2SecureServer,
+    extraInterceptors: ServerInterceptor[]
   ): void {
     if (http2Server === null) {
       return;
@@ -1343,7 +1346,7 @@ export class Server {
       ? this._channelzHandler
       : this._streamHandler;
 
-    http2Server.on('stream', handler.bind(this));
+    http2Server.on('stream', handler.bind(this, extraInterceptors));
     http2Server.on('session', session => {
 
       const channelzRef = registerChannelzSocket(

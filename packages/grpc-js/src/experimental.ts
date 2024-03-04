@@ -6,7 +6,7 @@ export {
   ConfigSelector,
   createResolver,
 } from './resolver';
-export { GrpcUri, uriToString } from './uri-parser';
+export { GrpcUri, uriToString, splitHostPort, HostPort } from './uri-parser';
 export { Duration, durationToMs } from './duration';
 export { BackoffTimeout } from './backoff-timeout';
 export {
@@ -52,3 +52,5 @@ export {
   SuccessRateEjectionConfig,
   FailurePercentageEjectionConfig,
 } from './load-balancer-outlier-detection';
+
+export { createServerCredentialsWithInterceptors } from './server-credentials';

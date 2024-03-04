@@ -127,41 +127,50 @@ export class RouteConfigurationResourceType extends XdsResourceType {
             return null;
           }
         }
-        if (route.action !== 'route') {
-          return null;
-        }
-        if ((route.route === undefined) || (route.route === null) || SUPPORTED_CLUSTER_SPECIFIERS.indexOf(route.route.cluster_specifier) < 0) {
-          return null;
-        }
-        if (EXPERIMENTAL_FAULT_INJECTION) {
-          for (const [name, filterConfig] of Object.entries(route.typed_per_filter_config ?? {})) {
-            if (!validateOverrideFilter(filterConfig)) {
+        switch (route.action) {
+          case 'route': {
+            if (route.action !== 'route') {
               return null;
             }
-          }
-        }
-        if (EXPERIMENTAL_RETRY) {
-          if (!this.validateRetryPolicy(route.route.retry_policy)) {
-            return null;
-          }
-        }
-        if (route.route!.cluster_specifier === 'weighted_clusters') {
-          let weightSum = 0;
-          for (const clusterWeight of route.route.weighted_clusters!.clusters) {
-            weightSum += clusterWeight.weight?.value ?? 0;
-          }
-          if (weightSum === 0 || weightSum > UINT32_MAX) {
-            return null;
-          }
-          if (EXPERIMENTAL_FAULT_INJECTION) {
-            for (const weightedCluster of route.route!.weighted_clusters!.clusters) {
-              for (const filterConfig of Object.values(weightedCluster.typed_per_filter_config ?? {})) {
+            if ((route.route === undefined) || (route.route === null) || SUPPORTED_CLUSTER_SPECIFIERS.indexOf(route.route.cluster_specifier) < 0) {
+              return null;
+            }
+            if (EXPERIMENTAL_FAULT_INJECTION) {
+              for (const [name, filterConfig] of Object.entries(route.typed_per_filter_config ?? {})) {
                 if (!validateOverrideFilter(filterConfig)) {
                   return null;
                 }
               }
             }
+            if (EXPERIMENTAL_RETRY) {
+              if (!this.validateRetryPolicy(route.route.retry_policy)) {
+                return null;
+              }
+            }
+            if (route.route!.cluster_specifier === 'weighted_clusters') {
+              let weightSum = 0;
+              for (const clusterWeight of route.route.weighted_clusters!.clusters) {
+                weightSum += clusterWeight.weight?.value ?? 0;
+              }
+              if (weightSum === 0 || weightSum > UINT32_MAX) {
+                return null;
+              }
+              if (EXPERIMENTAL_FAULT_INJECTION) {
+                for (const weightedCluster of route.route!.weighted_clusters!.clusters) {
+                  for (const filterConfig of Object.values(weightedCluster.typed_per_filter_config ?? {})) {
+                    if (!validateOverrideFilter(filterConfig)) {
+                      return null;
+                    }
+                  }
+                }
+              }
+            }
+            break;
           }
+          case 'non_forwarding_action':
+            continue;
+          default:
+            return null;
         }
       }
     }

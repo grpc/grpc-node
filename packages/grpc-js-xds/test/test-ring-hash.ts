@@ -15,10 +15,10 @@
  *
  */
 
-import { Backend } from "./backend";
+import { Backend, createBackends } from "./backend";
 import { XdsTestClient } from "./client";
-import { FakeEdsCluster, FakeRouteGroup } from "./framework";
-import { XdsServer } from "./xds-server";
+import { FakeEdsCluster, FakeRouteGroup, FakeServerRoute } from "./framework";
+import { ControlPlaneServer } from "./xds-server";
 
 import { register } from "../src";
 import assert = require("assert");
@@ -30,10 +30,10 @@ import { EXPERIMENTAL_RING_HASH } from "../src/environment";
 register();
 
 describe('Ring hash LB policy', () => {
-  let xdsServer: XdsServer;
+  let xdsServer: ControlPlaneServer;
   let client: XdsTestClient;
   beforeEach(done => {
-    xdsServer = new XdsServer();
+    xdsServer = new ControlPlaneServer();
     xdsServer.startServer(error => {
       done(error);
     });
@@ -42,132 +42,136 @@ describe('Ring hash LB policy', () => {
     client?.close();
     xdsServer?.shutdownServer();
   });
-  it('Should route requests to the single backend with the old lbPolicy field', function(done) {
+  it('Should route requests to the single backend with the old lbPolicy field', async function() {
     if (!EXPERIMENTAL_RING_HASH) {
       this.skip();
     }
-    const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [new Backend()], locality:{region: 'region1'}}], 'RING_HASH');
+    xdsServer.addResponseListener((typeUrl, responseState) => {
+      if (responseState.state === 'NACKED') {
+        client?.stopCalls();
+        assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
+      }
+    });
+    const [backend] = await createBackends(1);
+    const serverRoute = new FakeServerRoute(backend.getPort(), 'serverRoute');
+    xdsServer.setRdsResource(serverRoute.getRouteConfiguration());
+    xdsServer.setLdsResource(serverRoute.getListener());
+    const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [backend], locality:{region: 'region1'}}], 'RING_HASH');
     const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
-    routeGroup.startAllBackends().then(() => {
-      xdsServer.setEdsResource(cluster.getEndpointConfig());
-      xdsServer.setCdsResource(cluster.getClusterConfig());
-      xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
-      xdsServer.setLdsResource(routeGroup.getListener());
-      xdsServer.addResponseListener((typeUrl, responseState) => {
-        if (responseState.state === 'NACKED') {
-          client.stopCalls();
-          assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
-        }
-      })
-      client = XdsTestClient.createFromServer('listener1', xdsServer);
-      client.sendOneCall(done);
-    }, reason => done(reason));
+    xdsServer.setEdsResource(cluster.getEndpointConfig());
+    xdsServer.setCdsResource(cluster.getClusterConfig());
+    xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
+    xdsServer.setLdsResource(routeGroup.getListener());
+    await routeGroup.startAllBackends(xdsServer);
+    client = XdsTestClient.createFromServer('listener1', xdsServer);
+    return client.sendOneCallAsync();
   });
-  it('Should route requests to the single backend with the new load_balancing_policy field', function(done) {
+  it('Should route requests to the single backend with the new load_balancing_policy field', async function() {
     if (!EXPERIMENTAL_RING_HASH) {
       this.skip();
     }
+    xdsServer.addResponseListener((typeUrl, responseState) => {
+      if (responseState.state === 'NACKED') {
+        client?.stopCalls();
+        assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
+      }
+    });
     const lbPolicy: AnyExtension & RingHash = {
       '@type': 'type.googleapis.com/envoy.extensions.load_balancing_policies.ring_hash.v3.RingHash',
       hash_function: 'XX_HASH'
     };
-    const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [new Backend()], locality:{region: 'region1'}}], lbPolicy);
+    const [backend] = await createBackends(1);
+    const serverRoute = new FakeServerRoute(backend.getPort(), 'serverRoute');
+    xdsServer.setRdsResource(serverRoute.getRouteConfiguration());
+    xdsServer.setLdsResource(serverRoute.getListener());
+    const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [backend], locality:{region: 'region1'}}], lbPolicy);
     const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
-    routeGroup.startAllBackends().then(() => {
-      xdsServer.setEdsResource(cluster.getEndpointConfig());
-      xdsServer.setCdsResource(cluster.getClusterConfig());
-      xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
-      xdsServer.setLdsResource(routeGroup.getListener());
-      xdsServer.addResponseListener((typeUrl, responseState) => {
-        if (responseState.state === 'NACKED') {
-          client.stopCalls();
-          assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
-        }
-      })
-      client = XdsTestClient.createFromServer('listener1', xdsServer);
-      client.sendOneCall(done);
-    }, reason => done(reason));
+    xdsServer.setEdsResource(cluster.getEndpointConfig());
+    xdsServer.setCdsResource(cluster.getClusterConfig());
+    xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
+    xdsServer.setLdsResource(routeGroup.getListener());
+    await routeGroup.startAllBackends(xdsServer);
+    client = XdsTestClient.createFromServer('listener1', xdsServer);
+    return client.sendOneCallAsync();
   });
-  it('Should route all identical requests to the same backend', function(done) {
+  it('Should route all identical requests to the same backend', async function() {
     if (!EXPERIMENTAL_RING_HASH) {
       this.skip();
     }
-    const backend1 = new Backend();
-    const backend2 = new Backend()
+    xdsServer.addResponseListener((typeUrl, responseState) => {
+      if (responseState.state === 'NACKED') {
+        client?.stopCalls();
+        assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
+      }
+    });
+    const [backend1, backend2] = await createBackends(2);
+    const serverRoute1 = new FakeServerRoute(backend1.getPort(), 'serverRoute1');
+    xdsServer.setRdsResource(serverRoute1.getRouteConfiguration());
+    xdsServer.setLdsResource(serverRoute1.getListener());
+    const serverRoute2 = new FakeServerRoute(backend1.getPort(), 'serverRoute2');
+    xdsServer.setRdsResource(serverRoute2.getRouteConfiguration());
+    xdsServer.setLdsResource(serverRoute2.getListener());
     const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [backend1, backend2], locality:{region: 'region1'}}], 'RING_HASH');
     const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
-    routeGroup.startAllBackends().then(() => {
-      xdsServer.setEdsResource(cluster.getEndpointConfig());
-      xdsServer.setCdsResource(cluster.getClusterConfig());
-      xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
-      xdsServer.setLdsResource(routeGroup.getListener());
-      xdsServer.addResponseListener((typeUrl, responseState) => {
-        if (responseState.state === 'NACKED') {
-          client.stopCalls();
-          assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
-        }
-      })
-      client = XdsTestClient.createFromServer('listener1', xdsServer);
-      client.sendNCalls(10, error => {
-        assert.ifError(error);
-        assert((backend1.getCallCount() === 0) !== (backend2.getCallCount() === 0));
-        done();
-      })
-    }, reason => done(reason));
+    xdsServer.setEdsResource(cluster.getEndpointConfig());
+    xdsServer.setCdsResource(cluster.getClusterConfig());
+    xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
+    xdsServer.setLdsResource(routeGroup.getListener());
+    routeGroup.startAllBackends(xdsServer);
+    client = XdsTestClient.createFromServer('listener1', xdsServer);
+    await client.sendNCallsAsync(10);
+    assert((backend1.getCallCount() === 0) !== (backend2.getCallCount() === 0));
   });
-  it('Should fallback to a second backend if the first one goes down', function(done) {
+  it('Should fallback to a second backend if the first one goes down', async function() {
     if (!EXPERIMENTAL_RING_HASH) {
       this.skip();
     }
-    const backends = [new Backend(), new Backend(), new Backend()];
+    const backends = await createBackends(3);
+    for (const backend of backends) {
+      const serverRoute = new FakeServerRoute(backend.getPort(), 'serverRoute');
+      xdsServer.setRdsResource(serverRoute.getRouteConfiguration());
+      xdsServer.setLdsResource(serverRoute.getListener());
+    }
     const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: backends, locality:{region: 'region1'}}], 'RING_HASH');
     const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
-    routeGroup.startAllBackends().then(() => {
-      xdsServer.setEdsResource(cluster.getEndpointConfig());
-      xdsServer.setCdsResource(cluster.getClusterConfig());
-      xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
-      xdsServer.setLdsResource(routeGroup.getListener());
-      xdsServer.addResponseListener((typeUrl, responseState) => {
-        if (responseState.state === 'NACKED') {
-          client.stopCalls();
-          assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
+    xdsServer.setEdsResource(cluster.getEndpointConfig());
+    xdsServer.setCdsResource(cluster.getClusterConfig());
+    xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
+    xdsServer.setLdsResource(routeGroup.getListener());
+    routeGroup.startAllBackends(xdsServer);
+    xdsServer.addResponseListener((typeUrl, responseState) => {
+      if (responseState.state === 'NACKED') {
+        client.stopCalls();
+        assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
+      }
+    })
+    client = XdsTestClient.createFromServer('listener1', xdsServer);
+    await client.sendNCallsAsync(100);
+    let backendWithTraffic: number | null = null;
+    for (let i = 0; i < backends.length; i++) {
+      if (backendWithTraffic === null) {
+        if (backends[i].getCallCount() > 0) {
+          backendWithTraffic = i;
         }
-      })
-      client = XdsTestClient.createFromServer('listener1', xdsServer);
-      client.sendNCalls(100, error => {
-        assert.ifError(error);
-        let backendWithTraffic: number | null = null;
-        for (let i = 0; i < backends.length; i++) {
-          if (backendWithTraffic === null) {
-            if (backends[i].getCallCount() > 0) {
-              backendWithTraffic = i;
-            }
-          } else {
-            assert.strictEqual(backends[i].getCallCount(), 0, `Backends ${backendWithTraffic} and ${i} both got traffic`);
-          }
+      } else {
+        assert.strictEqual(backends[i].getCallCount(), 0, `Backends ${backendWithTraffic} and ${i} both got traffic`);
+      }
+    }
+    assert.notStrictEqual(backendWithTraffic, null, 'No backend got traffic');
+    await backends[backendWithTraffic!].shutdownAsync();
+    backends[backendWithTraffic!].resetCallCount();
+    await client.sendNCallsAsync(100);
+    let backendWithTraffic2: number | null = null;
+    for (let i = 0; i < backends.length; i++) {
+      if (backendWithTraffic2 === null) {
+        if (backends[i].getCallCount() > 0) {
+          backendWithTraffic2 = i;
         }
-        assert.notStrictEqual(backendWithTraffic, null, 'No backend got traffic');
-        backends[backendWithTraffic!].shutdown(error => {
-          assert.ifError(error);
-          backends[backendWithTraffic!].resetCallCount();
-          client.sendNCalls(100, error => {
-            assert.ifError(error);
-            let backendWithTraffic2: number | null = null;
-            for (let i = 0; i < backends.length; i++) {
-              if (backendWithTraffic2 === null) {
-                if (backends[i].getCallCount() > 0) {
-                  backendWithTraffic2 = i;
-                }
-              } else {
-                assert.strictEqual(backends[i].getCallCount(), 0, `Backends ${backendWithTraffic2} and ${i} both got traffic`);
-              }
-            }
-            assert.notStrictEqual(backendWithTraffic2, null, 'No backend got traffic');
-            assert.notStrictEqual(backendWithTraffic2, backendWithTraffic, `Traffic went to the same backend ${backendWithTraffic} after shutdown`);
-            done();
-          });
-        });
-      });
-    }, reason => done(reason));
+      } else {
+        assert.strictEqual(backends[i].getCallCount(), 0, `Backends ${backendWithTraffic2} and ${i} both got traffic`);
+      }
+    }
+    assert.notStrictEqual(backendWithTraffic2, null, 'No backend got traffic');
+    assert.notStrictEqual(backendWithTraffic2, backendWithTraffic, `Traffic went to the same backend ${backendWithTraffic} after shutdown`);
   })
 });

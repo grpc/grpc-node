@@ -15,7 +15,7 @@
  *
  */
 
-import { ServerDuplexStream, Server, UntypedServiceImplementation, ServerCredentials, loadPackageDefinition } from "@grpc/grpc-js";
+import { ServerDuplexStream, Server, UntypedServiceImplementation, ServerCredentials, loadPackageDefinition, experimental, logVerbosity } from "@grpc/grpc-js";
 import { AnyExtension, loadSync } from "@grpc/proto-loader";
 import { EventEmitter } from "stream";
 import { Cluster } from "../src/generated/envoy/config/cluster/v3/Cluster";
@@ -31,6 +31,12 @@ import * as adsTypes from '../src/generated/ads';
 import * as lrsTypes from '../src/generated/lrs';
 import { LoadStatsRequest__Output } from "../src/generated/envoy/service/load_stats/v3/LoadStatsRequest";
 import { LoadStatsResponse } from "../src/generated/envoy/service/load_stats/v3/LoadStatsResponse";
+
+const TRACER_NAME = 'control_plane_server';
+
+function trace(text: string) {
+  experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 const loadedProtos = loadPackageDefinition(loadSync(
   [
@@ -110,7 +116,7 @@ function isAdsTypeUrl(value: string): value is AdsTypeUrl {
   return ADS_TYPE_URLS.has(value);
 }
 
-export class XdsServer {
+export class ControlPlaneServer {
   private resourceMap: ResourceMap = {
     [EDS_TYPE_URL]: {
       resourceTypeVersion: 0,
@@ -134,6 +140,7 @@ export class XdsServer {
   private clients = new Map<string, ServerDuplexStream<DiscoveryRequest__Output, DiscoveryResponse>>();
   private server: Server | null = null;
   private port: number | null = null;
+  private nextStreamId: number = 0;
 
   addResponseListener(listener: ResponseListener) {
     this.responseListeners.add(listener);
@@ -144,6 +151,7 @@ export class XdsServer {
   }
 
   setResource<T extends AdsTypeUrl>(resource: ResourceAny<T>, name: string) {
+    trace(`Set resource type_url=${resource['@type']} name=${name}`);
     const resourceTypeState = this.resourceMap[resource["@type"]] as ResourceTypeState<T>;
     resourceTypeState.resourceTypeVersion += 1;
     let resourceState: ResourceState<T> | undefined = resourceTypeState.resourceNameMap.get(name);
@@ -160,18 +168,22 @@ export class XdsServer {
   }
 
   setLdsResource(resource: Listener) {
+    trace(`setLdsResource(${resource.name!})`);
     this.setResource({...resource, '@type': LDS_TYPE_URL}, resource.name!);
   }
 
   setRdsResource(resource: RouteConfiguration) {
+    trace(`setRdsResource(${resource.name!})`);
     this.setResource({...resource, '@type': RDS_TYPE_URL}, resource.name!);
   }
 
   setCdsResource(resource: Cluster) {
+    trace(`setCdsResource(${resource.name!})`);
     this.setResource({...resource, '@type': CDS_TYPE_URL}, resource.name!);
   }
 
   setEdsResource(resource: ClusterLoadAssignment) {
+    trace(`setEdsResource(${resource.cluster_name!})`);
     this.setResource({...resource, '@type': EDS_TYPE_URL}, resource.cluster_name!);
   }
 
@@ -271,6 +283,7 @@ export class XdsServer {
     const requestedResourceNames = new Set(request.resource_names);
     const resourceTypeState = this.resourceMap[request.type_url];
     const updatedResources = new Set<string>();
+    trace(`Received request type_url=${request.type_url} names=[${Array.from(requestedResourceNames)}]`);
     for (const resourceName of requestedResourceNames) {
       if (this.maybeSubscribe(request.type_url, clientName, resourceName) || resourceTypeState.resourceNameMap.get(resourceName)!.resourceTypeVersion > clientResourceVersion) {
         updatedResources.add(resourceName);
@@ -282,8 +295,14 @@ export class XdsServer {
     }
   }
 
+  private getStreamId(): number {
+    const id = this.nextStreamId;
+    this.nextStreamId += 1;
+    return id;
+  }
+
   StreamAggregatedResources(call: ServerDuplexStream<DiscoveryRequest__Output, DiscoveryResponse>) {
-    const clientName = call.getPeer();
+    const clientName = `${call.getPeer()}(${this.getStreamId()})`;
     this.clients.set(clientName, call);
     call.on('data', (request: DiscoveryRequest__Output) => {
       this.handleRequest(clientName, request);
@@ -319,7 +338,6 @@ export class XdsServer {
       if (!error) {
         this.server = server;
         this.port = port;
-        server.start();
       }
       callback(error, port);
     });
@@ -348,7 +366,8 @@ export class XdsServer {
       node: {
         id: 'test',
         locality: {}
-      }
+      },
+      server_listener_resource_name_template: '%s'
     }
     return JSON.stringify(bootstrapInfo);
   }

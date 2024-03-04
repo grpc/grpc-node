@@ -56,6 +56,7 @@ export interface BootstrapInfo {
   node: Node;
   authorities: {[authorityName: string]: Authority};
   clientDefaultListenerResourceNameTemplate: string;
+  serverListenerResourceNameTemplate: string | null;
 }
 
 const KNOWN_SERVER_FEATURES = ['ignore_resource_deletion'];
@@ -308,6 +309,11 @@ function validateAuthoritiesMap(obj: any): {[authorityName: string]: Authority} 
 export function validateBootstrapConfig(obj: any): BootstrapInfo {
   const xdsServers = obj.xds_servers.map(validateXdsServerConfig);
   const node = validateNode(obj.node);
+  if ('server_listener_resource_name_template' in obj) {
+    if (typeof obj.server_listener_resource_name_template !== 'string') {
+      throw new Error(`server_listener_resource_name_template: expected string, got ${typeof obj.server_listener_resource_name_template}`);
+    }
+  }
   if (EXPERIMENTAL_FEDERATION) {
     if ('client_default_listener_resource_name_template' in obj) {
       if (typeof obj.client_default_listener_resource_name_template !== 'string') {
@@ -318,14 +324,16 @@ export function validateBootstrapConfig(obj: any): BootstrapInfo {
       xdsServers: xdsServers,
       node: node,
       authorities: validateAuthoritiesMap(obj.authorities),
-      clientDefaultListenerResourceNameTemplate: obj.client_default_listener_resource_name_template ?? '%s'
+      clientDefaultListenerResourceNameTemplate: obj.client_default_listener_resource_name_template ?? '%s',
+      serverListenerResourceNameTemplate: obj.server_listener_resource_name_template ?? null
     };
   } else {
     return {
       xdsServers: xdsServers,
       node: node,
       authorities: {},
-      clientDefaultListenerResourceNameTemplate: '%s'
+      clientDefaultListenerResourceNameTemplate: '%s',
+      serverListenerResourceNameTemplate: obj.server_listener_resource_name_template ?? null
     };
   }
 }
@@ -394,4 +402,22 @@ export function loadBootstrapInfo(): BootstrapInfo {
   throw new Error(
     'The GRPC_XDS_BOOTSTRAP or GRPC_XDS_BOOTSTRAP_CONFIG environment variables need to be set to the path to the bootstrap file to use xDS'
   );
+}
+
+/**
+ * Encode a text string as a valid path of a URI, as specified in RFC-3986 section 3.3
+ * @param uriPath A value representing an unencoded URI path
+ * @returns
+ */
+
+export function encodeURIPath(uriPath: string): string {
+  return uriPath.replace(/[^A-Za-z0-9._~!$&^()*+,;=/-]/g, substring => encodeURIComponent(substring));
+}
+
+export function formatTemplateString(templateString: string, value: string): string {
+  if (templateString.startsWith('xdstp:')) {
+    return templateString.replace(/%s/g, encodeURIPath(value));
+  } else {
+    return templateString.replace(/%s/g, value);
+  }
 }
