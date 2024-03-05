@@ -200,11 +200,11 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
   }
 
   _final(callback: Function): void {
+    callback(null);
     this.call.sendStatus({
       ...this.pendingStatus,
       metadata: this.pendingStatus.metadata ?? this.trailingMetadata,
     });
-    callback(null);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -273,11 +273,11 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType>
   }
 
   _final(callback: Function): void {
+    callback(null);
     this.call.sendStatus({
       ...this.pendingStatus,
       metadata: this.pendingStatus.metadata ?? this.trailingMetadata,
     });
-    callback(null);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

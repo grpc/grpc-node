@@ -842,7 +842,6 @@ export class BaseServerInterceptingCall
     if (this.checkCancelled()) {
       return;
     }
-    this.notifyOnCancel();
 
     trace(
       'Request to method ' +
@@ -869,8 +868,11 @@ export class BaseServerInterceptingCall
           };
 
           this.stream.sendTrailers(trailersToSend);
+          this.notifyOnCancel();
         });
         this.stream.end();
+      } else {
+        this.notifyOnCancel();
       }
     } else {
       if (this.callEventTracker && !this.streamEnded) {
@@ -886,6 +888,7 @@ export class BaseServerInterceptingCall
         ...status.metadata?.toHttp2Headers(),
       };
       this.stream.respond(trailersToSend, { endStream: true });
+      this.notifyOnCancel();
     }
   }
   startRead(): void {
