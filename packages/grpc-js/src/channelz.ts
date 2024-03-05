@@ -133,6 +133,11 @@ interface TraceEvent {
  */
 const TARGET_RETAINED_TRACES = 32;
 
+/**
+ * Default number of sockets/servers/channels/subchannels to return
+ */
+const DEFAULT_MAX_RESULTS = 100;
+
 export class ChannelzTraceStub {
   readonly events: TraceEvent[] = [];
   readonly creationTimestamp: Date = new Date();
@@ -198,19 +203,15 @@ export class ChannelzTrace {
   }
 }
 
+type RefOrderedMap = OrderedMap<
+  number,
+  { ref: { id: number; kind: EntityTypes; name: string }; count: number }
+>;
+
 export class ChannelzChildrenTracker {
-  private channelChildren = new OrderedMap<
-    number,
-    { ref: ChannelRef; count: number }
-  >();
-  private subchannelChildren = new OrderedMap<
-    number,
-    { ref: SubchannelRef; count: number }
-  >();
-  private socketChildren = new OrderedMap<
-    number,
-    { ref: SocketRef; count: number }
-  >();
+  private channelChildren: RefOrderedMap = new OrderedMap();
+  private subchannelChildren: RefOrderedMap = new OrderedMap();
+  private socketChildren: RefOrderedMap = new OrderedMap();
   private trackerMap = {
     [EntityTypes.channel]: this.channelChildren,
     [EntityTypes.subchannel]: this.subchannelChildren,
@@ -219,16 +220,19 @@ export class ChannelzChildrenTracker {
 
   refChild(child: ChannelRef | SubchannelRef | SocketRef) {
     const tracker = this.trackerMap[child.kind];
-    const trackedChild = tracker.getElementByKey(child.id);
+    const trackedChild = tracker.find(child.id);
 
-    if (trackedChild === undefined) {
-      tracker.setElement(child.id, {
-        // @ts-expect-error union issues
-        ref: child,
-        count: 1,
-      });
+    if (trackedChild.equals(tracker.end())) {
+      tracker.setElement(
+        child.id,
+        {
+          ref: child,
+          count: 1,
+        },
+        trackedChild
+      );
     } else {
-      trackedChild.count += 1;
+      trackedChild.pointer[1].count += 1;
     }
   }
 
@@ -245,9 +249,9 @@ export class ChannelzChildrenTracker {
 
   getChildLists(): ChannelzChildren {
     return {
-      channels: this.channelChildren,
-      subchannels: this.subchannelChildren,
-      sockets: this.socketChildren,
+      channels: this.channelChildren as ChannelzChildren['channels'],
+      subchannels: this.subchannelChildren as ChannelzChildren['subchannels'],
+      sockets: this.socketChildren as ChannelzChildren['sockets'],
     };
   }
 }
@@ -585,7 +589,8 @@ function GetTopChannels(
   call: ServerUnaryCall<GetTopChannelsRequest__Output, GetTopChannelsResponse>,
   callback: sendUnaryData<GetTopChannelsResponse>
 ): void {
-  const maxResults = parseInt(call.request.max_results, 10) || 100;
+  const maxResults =
+    parseInt(call.request.max_results, 10) || DEFAULT_MAX_RESULTS;
   const resultList: ChannelMessage[] = [];
   const startId = parseInt(call.request.start_channel_id, 10);
   const channelEntries = entityMaps[EntityTypes.channel];
@@ -649,7 +654,8 @@ function GetServers(
   call: ServerUnaryCall<GetServersRequest__Output, GetServersResponse>,
   callback: sendUnaryData<GetServersResponse>
 ): void {
-  const maxResults = parseInt(call.request.max_results, 10) || 100;
+  const maxResults =
+    parseInt(call.request.max_results, 10) || DEFAULT_MAX_RESULTS;
   const startId = parseInt(call.request.start_server_id, 10);
   const serverEntries = entityMaps[EntityTypes.server];
   const resultList: ServerMessage[] = [];
@@ -820,7 +826,8 @@ function GetServerSockets(
   }
 
   const startId = parseInt(call.request.start_socket_id, 10);
-  const maxResults = parseInt(call.request.max_results, 10) || 100;
+  const maxResults =
+    parseInt(call.request.max_results, 10) || DEFAULT_MAX_RESULTS;
   const resolvedInfo = serverEntry.getInfo();
   // If we wanted to include listener sockets in the result, this line would
   // instead say

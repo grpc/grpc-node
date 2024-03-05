@@ -368,7 +368,7 @@ export class Server {
     };
   }
 
-  private getChannelzSessionInfoGetter(
+  private getChannelzSessionInfo(
     session: http2.ServerHttp2Session
   ): SocketInfo {
     const sessionInfo = this.sessions.get(session)!;
@@ -1494,7 +1494,7 @@ export class Server {
     return (session: http2.ServerHttp2Session) => {
       const channelzRef = registerChannelzSocket(
         session.socket?.remoteAddress ?? 'unknown',
-        this.getChannelzSessionInfoGetter.bind(this, session),
+        this.getChannelzSessionInfo.bind(this, session),
         this.channelzEnabled
       );
 
