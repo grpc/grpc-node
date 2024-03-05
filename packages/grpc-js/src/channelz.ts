@@ -66,28 +66,26 @@ export type TraceSeverity =
   | 'CT_WARNING'
   | 'CT_ERROR';
 
-export interface ChannelRef {
+interface Ref {
+  kind: EntityTypes;
+  id: number;
+  name: string;
+}
+
+export interface ChannelRef extends Ref {
   kind: EntityTypes.channel;
-  id: number;
-  name: string;
 }
 
-export interface SubchannelRef {
+export interface SubchannelRef extends Ref {
   kind: EntityTypes.subchannel;
-  id: number;
-  name: string;
 }
 
-export interface ServerRef {
+export interface ServerRef extends Ref {
   kind: EntityTypes.server;
-  id: number;
-  name: string;
 }
 
-export interface SocketRef {
+export interface SocketRef extends Ref {
   kind: EntityTypes.socket;
-  id: number;
-  name: string;
 }
 
 function channelRefToMessage(ref: ChannelRef): ChannelRefMessage {
@@ -361,6 +359,8 @@ export const enum EntityTypes {
   socket = 'socket',
 }
 
+type EntryOrderedMap = OrderedMap<number, { ref: Ref; getInfo: () => any }>;
+
 const entityMaps = {
   [EntityTypes.channel]: new OrderedMap<number, ChannelEntry>(),
   [EntityTypes.subchannel]: new OrderedMap<number, SubchannelEntry>(),
@@ -404,6 +404,8 @@ const generateRegisterFn = <R extends EntityTypes>(kind: R) => {
     return nextId++;
   }
 
+  const entityMap: EntryOrderedMap = entityMaps[kind];
+
   return (
     name: string,
     getInfo: () => InfoByType<R>,
@@ -412,8 +414,7 @@ const generateRegisterFn = <R extends EntityTypes>(kind: R) => {
     const id = getNextId();
     const ref = { id, name, kind } as RefByType<R>;
     if (channelzEnabled) {
-      // @ts-expect-error typing issues
-      entityMaps[kind].setElement(id, { ref, getInfo });
+      entityMap.setElement(id, { ref, getInfo });
     }
     return ref;
   };
