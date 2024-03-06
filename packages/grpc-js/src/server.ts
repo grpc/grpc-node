@@ -64,8 +64,11 @@ import {
 } from './uri-parser';
 import {
   ChannelzCallTracker,
+  ChannelzCallTrackerStub,
   ChannelzChildrenTracker,
+  ChannelzChildrenTrackerStub,
   ChannelzTrace,
+  ChannelzTraceStub,
   registerChannelzServer,
   registerChannelzSocket,
   ServerInfo,
@@ -87,10 +90,12 @@ import { CallEventTracker } from './transport';
 const UNLIMITED_CONNECTION_AGE_MS = ~(1 << 31);
 const KEEPALIVE_MAX_TIME_MS = ~(1 << 31);
 const KEEPALIVE_TIMEOUT_MS = 20000;
+const MAX_CONNECTION_IDLE_MS = ~(1 << 31);
 
 const { HTTP2_HEADER_PATH } = http2.constants;
 
 const TRACER_NAME = 'server';
+const kMaxAge = Buffer.from('max_age');
 
 type AnyHttp2Server = http2.Http2Server | http2.Http2SecureServer;
 
@@ -177,9 +182,10 @@ function getDefaultHandler(handlerType: HandlerType, methodName: string) {
 
 interface ChannelzSessionInfo {
   ref: SocketRef;
-  streamTracker: ChannelzCallTracker;
+  streamTracker: ChannelzCallTracker | ChannelzCallTrackerStub;
   messagesSent: number;
   messagesReceived: number;
+  keepAlivesSent: number;
   lastMessageSentTimestamp: Date | null;
   lastMessageReceivedTimestamp: Date | null;
 }
@@ -236,6 +242,13 @@ interface Http2ServerInfo {
   sessions: Set<http2.ServerHttp2Session>;
 }
 
+interface SessionIdleTimeoutTracker {
+  activeStreams: number;
+  lastIdle: number;
+  timeout: NodeJS.Timeout;
+  onClose: (session: http2.ServerHttp2Session) => void | null;
+}
+
 export interface ServerOptions extends ChannelOptions {
   interceptors?: ServerInterceptor[];
 }
@@ -243,6 +256,10 @@ export interface ServerOptions extends ChannelOptions {
 export class Server {
   private boundPorts: Map<string, BoundPort> = new Map();
   private http2Servers: Map<AnyHttp2Server, Http2ServerInfo> = new Map();
+  private sessionIdleTimeouts = new Map<
+    http2.ServerHttp2Session,
+    SessionIdleTimeoutTracker
+  >();
 
   private handlers: Map<string, UntypedHandler> = new Map<
     string,
@@ -261,16 +278,22 @@ export class Server {
   // Channelz Info
   private readonly channelzEnabled: boolean = true;
   private channelzRef: ServerRef;
-  private channelzTrace = new ChannelzTrace();
-  private callTracker = new ChannelzCallTracker();
-  private listenerChildrenTracker = new ChannelzChildrenTracker();
-  private sessionChildrenTracker = new ChannelzChildrenTracker();
+  private channelzTrace: ChannelzTrace | ChannelzTraceStub;
+  private callTracker: ChannelzCallTracker | ChannelzCallTrackerStub;
+  private listenerChildrenTracker:
+    | ChannelzChildrenTracker
+    | ChannelzChildrenTrackerStub;
+  private sessionChildrenTracker:
+    | ChannelzChildrenTracker
+    | ChannelzChildrenTrackerStub;
 
   private readonly maxConnectionAgeMs: number;
   private readonly maxConnectionAgeGraceMs: number;
 
   private readonly keepaliveTimeMs: number;
   private readonly keepaliveTimeoutMs: number;
+
+  private readonly sessionIdleTimeout: number;
 
   private readonly interceptors: ServerInterceptor[];
 
@@ -284,14 +307,24 @@ export class Server {
     this.options = options ?? {};
     if (this.options['grpc.enable_channelz'] === 0) {
       this.channelzEnabled = false;
+      this.channelzTrace = new ChannelzTraceStub();
+      this.callTracker = new ChannelzCallTrackerStub();
+      this.listenerChildrenTracker = new ChannelzChildrenTrackerStub();
+      this.sessionChildrenTracker = new ChannelzChildrenTrackerStub();
+    } else {
+      this.channelzTrace = new ChannelzTrace();
+      this.callTracker = new ChannelzCallTracker();
+      this.listenerChildrenTracker = new ChannelzChildrenTracker();
+      this.sessionChildrenTracker = new ChannelzChildrenTracker();
     }
+
     this.channelzRef = registerChannelzServer(
+      'server',
       () => this.getChannelzInfo(),
       this.channelzEnabled
     );
-    if (this.channelzEnabled) {
-      this.channelzTrace.addTrace('CT_INFO', 'Server created');
-    }
+
+    this.channelzTrace.addTrace('CT_INFO', 'Server created');
     this.maxConnectionAgeMs =
       this.options['grpc.max_connection_age_ms'] ?? UNLIMITED_CONNECTION_AGE_MS;
     this.maxConnectionAgeGraceMs =
@@ -301,6 +334,9 @@ export class Server {
       this.options['grpc.keepalive_time_ms'] ?? KEEPALIVE_MAX_TIME_MS;
     this.keepaliveTimeoutMs =
       this.options['grpc.keepalive_timeout_ms'] ?? KEEPALIVE_TIMEOUT_MS;
+    this.sessionIdleTimeout =
+      this.options['grpc.max_connection_idle_ms'] ?? MAX_CONNECTION_IDLE_MS;
+
     this.commonServerOptions = {
       maxSendHeaderBlockLength: Number.MAX_SAFE_INTEGER,
     };
@@ -332,67 +368,63 @@ export class Server {
     };
   }
 
-  private getChannelzSessionInfoGetter(
+  private getChannelzSessionInfo(
     session: http2.ServerHttp2Session
-  ): () => SocketInfo {
-    return () => {
-      const sessionInfo = this.sessions.get(session)!;
-      const sessionSocket = session.socket;
-      const remoteAddress = sessionSocket.remoteAddress
-        ? stringToSubchannelAddress(
-            sessionSocket.remoteAddress,
-            sessionSocket.remotePort
-          )
-        : null;
-      const localAddress = sessionSocket.localAddress
-        ? stringToSubchannelAddress(
-            sessionSocket.localAddress!,
-            sessionSocket.localPort
-          )
-        : null;
-      let tlsInfo: TlsInfo | null;
-      if (session.encrypted) {
-        const tlsSocket: TLSSocket = sessionSocket as TLSSocket;
-        const cipherInfo: CipherNameAndProtocol & { standardName?: string } =
-          tlsSocket.getCipher();
-        const certificate = tlsSocket.getCertificate();
-        const peerCertificate = tlsSocket.getPeerCertificate();
-        tlsInfo = {
-          cipherSuiteStandardName: cipherInfo.standardName ?? null,
-          cipherSuiteOtherName: cipherInfo.standardName
-            ? null
-            : cipherInfo.name,
-          localCertificate:
-            certificate && 'raw' in certificate ? certificate.raw : null,
-          remoteCertificate:
-            peerCertificate && 'raw' in peerCertificate
-              ? peerCertificate.raw
-              : null,
-        };
-      } else {
-        tlsInfo = null;
-      }
-      const socketInfo: SocketInfo = {
-        remoteAddress: remoteAddress,
-        localAddress: localAddress,
-        security: tlsInfo,
-        remoteName: null,
-        streamsStarted: sessionInfo.streamTracker.callsStarted,
-        streamsSucceeded: sessionInfo.streamTracker.callsSucceeded,
-        streamsFailed: sessionInfo.streamTracker.callsFailed,
-        messagesSent: sessionInfo.messagesSent,
-        messagesReceived: sessionInfo.messagesReceived,
-        keepAlivesSent: 0,
-        lastLocalStreamCreatedTimestamp: null,
-        lastRemoteStreamCreatedTimestamp:
-          sessionInfo.streamTracker.lastCallStartedTimestamp,
-        lastMessageSentTimestamp: sessionInfo.lastMessageSentTimestamp,
-        lastMessageReceivedTimestamp: sessionInfo.lastMessageReceivedTimestamp,
-        localFlowControlWindow: session.state.localWindowSize ?? null,
-        remoteFlowControlWindow: session.state.remoteWindowSize ?? null,
+  ): SocketInfo {
+    const sessionInfo = this.sessions.get(session)!;
+    const sessionSocket = session.socket;
+    const remoteAddress = sessionSocket.remoteAddress
+      ? stringToSubchannelAddress(
+          sessionSocket.remoteAddress,
+          sessionSocket.remotePort
+        )
+      : null;
+    const localAddress = sessionSocket.localAddress
+      ? stringToSubchannelAddress(
+          sessionSocket.localAddress!,
+          sessionSocket.localPort
+        )
+      : null;
+    let tlsInfo: TlsInfo | null;
+    if (session.encrypted) {
+      const tlsSocket: TLSSocket = sessionSocket as TLSSocket;
+      const cipherInfo: CipherNameAndProtocol & { standardName?: string } =
+        tlsSocket.getCipher();
+      const certificate = tlsSocket.getCertificate();
+      const peerCertificate = tlsSocket.getPeerCertificate();
+      tlsInfo = {
+        cipherSuiteStandardName: cipherInfo.standardName ?? null,
+        cipherSuiteOtherName: cipherInfo.standardName ? null : cipherInfo.name,
+        localCertificate:
+          certificate && 'raw' in certificate ? certificate.raw : null,
+        remoteCertificate:
+          peerCertificate && 'raw' in peerCertificate
+            ? peerCertificate.raw
+            : null,
       };
-      return socketInfo;
+    } else {
+      tlsInfo = null;
+    }
+    const socketInfo: SocketInfo = {
+      remoteAddress: remoteAddress,
+      localAddress: localAddress,
+      security: tlsInfo,
+      remoteName: null,
+      streamsStarted: sessionInfo.streamTracker.callsStarted,
+      streamsSucceeded: sessionInfo.streamTracker.callsSucceeded,
+      streamsFailed: sessionInfo.streamTracker.callsFailed,
+      messagesSent: sessionInfo.messagesSent,
+      messagesReceived: sessionInfo.messagesReceived,
+      keepAlivesSent: sessionInfo.keepAlivesSent,
+      lastLocalStreamCreatedTimestamp: null,
+      lastRemoteStreamCreatedTimestamp:
+        sessionInfo.streamTracker.lastCallStartedTimestamp,
+      lastMessageSentTimestamp: sessionInfo.lastMessageSentTimestamp,
+      lastMessageReceivedTimestamp: sessionInfo.lastMessageReceivedTimestamp,
+      localFlowControlWindow: session.state.localWindowSize ?? null,
+      remoteFlowControlWindow: session.state.remoteWindowSize ?? null,
     };
+    return socketInfo;
   }
 
   private trace(text: string): void {
@@ -581,9 +613,8 @@ export class Server {
         const channelzRef = this.registerListenerToChannelz(
           boundSubchannelAddress
         );
-        if (this.channelzEnabled) {
-          this.listenerChildrenTracker.refChild(channelzRef);
-        }
+        this.listenerChildrenTracker.refChild(channelzRef);
+
         this.http2Servers.set(http2Server, {
           channelzRef: channelzRef,
           sessions: new Set(),
@@ -854,7 +885,7 @@ export class Server {
     );
     const serverInfo = this.http2Servers.get(server);
     server.close(() => {
-      if (this.channelzEnabled && serverInfo) {
+      if (serverInfo) {
         this.listenerChildrenTracker.unrefChild(serverInfo.channelzRef);
         unregisterChannelzRef(serverInfo.channelzRef);
       }
@@ -870,15 +901,14 @@ export class Server {
     this.trace('Closing session initiated by ' + session.socket?.remoteAddress);
     const sessionInfo = this.sessions.get(session);
     const closeCallback = () => {
-      if (this.channelzEnabled && sessionInfo) {
+      if (sessionInfo) {
         this.sessionChildrenTracker.unrefChild(sessionInfo.ref);
         unregisterChannelzRef(sessionInfo.ref);
       }
-      this.sessions.delete(session);
       callback?.();
     };
     if (session.closed) {
-      process.nextTick(closeCallback);
+      queueMicrotask(closeCallback);
     } else {
       session.close(closeCallback);
     }
@@ -956,14 +986,13 @@ export class Server {
     const allSessions: Set<http2.Http2Session> = new Set();
     for (const http2Server of boundPortObject.listeningServers) {
       const serverEntry = this.http2Servers.get(http2Server);
-      if (!serverEntry) {
-        continue;
-      }
-      for (const session of serverEntry.sessions) {
-        allSessions.add(session);
-        this.closeSession(session, () => {
-          allSessions.delete(session);
-        });
+      if (serverEntry) {
+        for (const session of serverEntry.sessions) {
+          allSessions.add(session);
+          this.closeSession(session, () => {
+            allSessions.delete(session);
+          });
+        }
       }
     }
     /* After the grace time ends, send another goaway to all remaining sessions
@@ -995,9 +1024,7 @@ export class Server {
       session.destroy(http2.constants.NGHTTP2_CANCEL as any);
     });
     this.sessions.clear();
-    if (this.channelzEnabled) {
-      unregisterChannelzRef(this.channelzRef);
-    }
+    unregisterChannelzRef(this.channelzRef);
 
     this.shutdown = true;
   }
@@ -1049,9 +1076,7 @@ export class Server {
 
   tryShutdown(callback: (error?: Error) => void): void {
     const wrappedCallback = (error?: Error) => {
-      if (this.channelzEnabled) {
-        unregisterChannelzRef(this.channelzRef);
-      }
+      unregisterChannelzRef(this.channelzRef);
       callback(error);
     };
     let pendingChecks = 0;
@@ -1065,24 +1090,26 @@ export class Server {
     }
     this.shutdown = true;
 
-    for (const server of this.http2Servers.keys()) {
+    for (const [serverKey, server] of this.http2Servers.entries()) {
       pendingChecks++;
-      const serverString = this.http2Servers.get(server)!.channelzRef.name;
+      const serverString = server.channelzRef.name;
       this.trace('Waiting for server ' + serverString + ' to close');
-      this.closeServer(server, () => {
+      this.closeServer(serverKey, () => {
         this.trace('Server ' + serverString + ' finished closing');
         maybeCallback();
       });
+
+      for (const session of server.sessions.keys()) {
+        pendingChecks++;
+        const sessionString = session.socket?.remoteAddress;
+        this.trace('Waiting for session ' + sessionString + ' to close');
+        this.closeSession(session, () => {
+          this.trace('Session ' + sessionString + ' finished closing');
+          maybeCallback();
+        });
+      }
     }
-    for (const session of this.sessions.keys()) {
-      pendingChecks++;
-      const sessionString = session.socket?.remoteAddress;
-      this.trace('Waiting for session ' + sessionString + ' to close');
-      this.closeSession(session, () => {
-        this.trace('Session ' + sessionString + ' finished closing');
-        maybeCallback();
-      });
-    }
+
     if (pendingChecks === 0) {
       wrappedCallback();
     }
@@ -1160,16 +1187,17 @@ export class Server {
     };
     stream.respond(trailersToSend, { endStream: true });
 
-    if (this.channelzEnabled) {
-      this.callTracker.addCallFailed();
-      channelzSessionInfo?.streamTracker.addCallFailed();
-    }
+    this.callTracker.addCallFailed();
+    channelzSessionInfo?.streamTracker.addCallFailed();
   }
 
   private _channelzHandler(
     stream: http2.ServerHttp2Stream,
     headers: http2.IncomingHttpHeaders
   ) {
+    // for handling idle timeout
+    this.onStreamOpened(stream);
+
     const channelzSessionInfo = this.sessions.get(
       stream.session as http2.ServerHttp2Session
     );
@@ -1250,6 +1278,9 @@ export class Server {
     stream: http2.ServerHttp2Stream,
     headers: http2.IncomingHttpHeaders
   ) {
+    // for handling idle timeout
+    this.onStreamOpened(stream);
+
     if (this._verifyContentType(stream, headers) !== true) {
       return;
     }
@@ -1285,17 +1316,21 @@ export class Server {
 
   private _runHandlerForCall(
     call: ServerInterceptingCallInterface,
-    handler: Handler<any, any>
+    handler:
+      | UntypedUnaryHandler
+      | UntypedClientStreamingHandler
+      | UntypedServerStreamingHandler
+      | UntypedBidiStreamingHandler
   ): boolean {
     const { type } = handler;
     if (type === 'unary') {
-      handleUnary(call, handler as UntypedUnaryHandler);
+      handleUnary(call, handler);
     } else if (type === 'clientStream') {
-      handleClientStreaming(call, handler as UntypedClientStreamingHandler);
+      handleClientStreaming(call, handler);
     } else if (type === 'serverStream') {
-      handleServerStreaming(call, handler as UntypedServerStreamingHandler);
+      handleServerStreaming(call, handler);
     } else if (type === 'bidi') {
-      handleBidiStreaming(call, handler as UntypedBidiStreamingHandler);
+      handleBidiStreaming(call, handler);
     } else {
       return false;
     }
@@ -1325,11 +1360,141 @@ export class Server {
       ? this._channelzHandler
       : this._streamHandler;
 
+    const sessionHandler = this.channelzEnabled
+      ? this._channelzSessionHandler(http2Server)
+      : this._sessionHandler(http2Server);
+
     http2Server.on('stream', handler.bind(this));
-    http2Server.on('session', session => {
+    http2Server.on('session', sessionHandler);
+  }
+
+  private _sessionHandler(
+    http2Server: http2.Http2Server | http2.Http2SecureServer
+  ) {
+    return (session: http2.ServerHttp2Session) => {
+      this.http2Servers.get(http2Server)?.sessions.add(session);
+
+      let connectionAgeTimer: NodeJS.Timeout | null = null;
+      let connectionAgeGraceTimer: NodeJS.Timeout | null = null;
+      let keeapliveTimeTimer: NodeJS.Timeout | null = null;
+      let keepaliveTimeoutTimer: NodeJS.Timeout | null = null;
+      let sessionClosedByServer = false;
+
+      const idleTimeoutObj = this.enableIdleTimeout(session);
+
+      if (this.maxConnectionAgeMs !== UNLIMITED_CONNECTION_AGE_MS) {
+        // Apply a random jitter within a +/-10% range
+        const jitterMagnitude = this.maxConnectionAgeMs / 10;
+        const jitter = Math.random() * jitterMagnitude * 2 - jitterMagnitude;
+
+        connectionAgeTimer = setTimeout(() => {
+          sessionClosedByServer = true;
+
+          this.trace(
+            'Connection dropped by max connection age: ' +
+              session.socket?.remoteAddress
+          );
+
+          try {
+            session.goaway(
+              http2.constants.NGHTTP2_NO_ERROR,
+              ~(1 << 31),
+              kMaxAge
+            );
+          } catch (e) {
+            // The goaway can't be sent because the session is already closed
+            session.destroy();
+            return;
+          }
+          session.close();
+
+          /* Allow a grace period after sending the GOAWAY before forcibly
+           * closing the connection. */
+          if (this.maxConnectionAgeGraceMs !== UNLIMITED_CONNECTION_AGE_MS) {
+            connectionAgeGraceTimer = setTimeout(() => {
+              session.destroy();
+            }, this.maxConnectionAgeGraceMs);
+            connectionAgeGraceTimer.unref?.();
+          }
+        }, this.maxConnectionAgeMs + jitter);
+        connectionAgeTimer.unref?.();
+      }
+
+      if (this.keepaliveTimeMs < KEEPALIVE_MAX_TIME_MS) {
+        keeapliveTimeTimer = setInterval(() => {
+          keepaliveTimeoutTimer = setTimeout(() => {
+            sessionClosedByServer = true;
+            session.close();
+          }, this.keepaliveTimeoutMs);
+          keepaliveTimeoutTimer.unref?.();
+
+          try {
+            session.ping(
+              (err: Error | null, duration: number, payload: Buffer) => {
+                if (keepaliveTimeoutTimer) {
+                  clearTimeout(keepaliveTimeoutTimer);
+                }
+
+                if (err) {
+                  sessionClosedByServer = true;
+                  this.trace(
+                    'Connection dropped due to error of a ping frame ' +
+                      err.message +
+                      ' return in ' +
+                      duration
+                  );
+                  session.close();
+                }
+              }
+            );
+          } catch (e) {
+            clearTimeout(keepaliveTimeoutTimer);
+            // The ping can't be sent because the session is already closed
+            session.destroy();
+          }
+        }, this.keepaliveTimeMs);
+        keeapliveTimeTimer.unref?.();
+      }
+
+      session.on('close', () => {
+        if (!sessionClosedByServer) {
+          this.trace(
+            `Connection dropped by client ${session.socket?.remoteAddress}`
+          );
+        }
+
+        if (connectionAgeTimer) {
+          clearTimeout(connectionAgeTimer);
+        }
+
+        if (connectionAgeGraceTimer) {
+          clearTimeout(connectionAgeGraceTimer);
+        }
+
+        if (keeapliveTimeTimer) {
+          clearInterval(keeapliveTimeTimer);
+          if (keepaliveTimeoutTimer) {
+            clearTimeout(keepaliveTimeoutTimer);
+          }
+        }
+
+        if (idleTimeoutObj !== null) {
+          clearTimeout(idleTimeoutObj.timeout);
+          this.sessionIdleTimeouts.delete(session);
+        }
+
+        this.http2Servers.get(http2Server)?.sessions.delete(session);
+      });
+    };
+  }
+
+  private _channelzSessionHandler(
+    http2Server: http2.Http2Server | http2.Http2SecureServer
+  ) {
+    return (session: http2.ServerHttp2Session) => {
       const channelzRef = registerChannelzSocket(
-        session.socket.remoteAddress ?? 'unknown',
-        this.getChannelzSessionInfoGetter(session),
+        session.socket?.remoteAddress ?? 'unknown',
+        this.getChannelzSessionInfo.bind(this, session),
         this.channelzEnabled
       );
 
@@ -1338,40 +1503,47 @@ export class Server {
         streamTracker: new ChannelzCallTracker(),
         messagesSent: 0,
         messagesReceived: 0,
+        keepAlivesSent: 0,
         lastMessageSentTimestamp: null,
         lastMessageReceivedTimestamp: null,
       };
 
       this.http2Servers.get(http2Server)?.sessions.add(session);
       this.sessions.set(session, channelzSessionInfo);
-      const clientAddress = session.socket.remoteAddress;
-      if (this.channelzEnabled) {
-        this.channelzTrace.addTrace(
-          'CT_INFO',
-          'Connection established by client ' + clientAddress
-        );
-        this.sessionChildrenTracker.refChild(channelzRef);
-      }
+      const clientAddress = `${session.socket.remoteAddress}:${session.socket.remotePort}`;
+
+      this.channelzTrace.addTrace(
+        'CT_INFO',
+        'Connection established by client ' + clientAddress
+      );
+      this.trace('Connection established by client ' + clientAddress);
+      this.sessionChildrenTracker.refChild(channelzRef);
+
       let connectionAgeTimer: NodeJS.Timeout | null = null;
       let connectionAgeGraceTimer: NodeJS.Timeout | null = null;
+      let keeapliveTimeTimer: NodeJS.Timeout | null = null;
+      let keepaliveTimeoutTimer: NodeJS.Timeout | null = null;
       let sessionClosedByServer = false;
+
+      const idleTimeoutObj = this.enableIdleTimeout(session);
+
       if (this.maxConnectionAgeMs !== UNLIMITED_CONNECTION_AGE_MS) {
         // Apply a random jitter within a +/-10% range
         const jitterMagnitude = this.maxConnectionAgeMs / 10;
         const jitter = Math.random() * jitterMagnitude * 2 - jitterMagnitude;
+
         connectionAgeTimer = setTimeout(() => {
           sessionClosedByServer = true;
-          if (this.channelzEnabled) {
-            this.channelzTrace.addTrace(
-              'CT_INFO',
-              'Connection dropped by max connection age from ' + clientAddress
-            );
-          }
+          this.channelzTrace.addTrace(
+            'CT_INFO',
+            'Connection dropped by max connection age from ' + clientAddress
+          );
+
           try {
             session.goaway(
               http2.constants.NGHTTP2_NO_ERROR,
               ~(1 << 31),
-              Buffer.from('max_age')
+              kMaxAge
             );
           } catch (e) {
             // The goaway can't be sent because the session is already closed
@@ -1379,61 +1551,191 @@ export class Server {
             return;
           }
           session.close();
+
           /* Allow a grace period after sending the GOAWAY before forcibly
            * closing the connection. */
           if (this.maxConnectionAgeGraceMs !== UNLIMITED_CONNECTION_AGE_MS) {
             connectionAgeGraceTimer = setTimeout(() => {
               session.destroy();
-            }, this.maxConnectionAgeGraceMs).unref?.();
+            }, this.maxConnectionAgeGraceMs);
+            connectionAgeGraceTimer.unref?.();
           }
-        }, this.maxConnectionAgeMs + jitter).unref?.();
+        }, this.maxConnectionAgeMs + jitter);
+        connectionAgeTimer.unref?.();
       }
-      const keeapliveTimeTimer: NodeJS.Timeout | null = setInterval(() => {
-        const timeoutTImer = setTimeout(() => {
-          sessionClosedByServer = true;
-          if (this.channelzEnabled) {
+
+      if (this.keepaliveTimeMs < KEEPALIVE_MAX_TIME_MS) {
+        keeapliveTimeTimer = setInterval(() => {
+          keepaliveTimeoutTimer = setTimeout(() => {
+            sessionClosedByServer = true;
             this.channelzTrace.addTrace(
               'CT_INFO',
               'Connection dropped by keepalive timeout from ' + clientAddress
             );
-          }
-          session.close();
-        }, this.keepaliveTimeoutMs).unref?.();
-        try {
-          session.ping(
-            (err: Error | null, duration: number, payload: Buffer) => {
-              clearTimeout(timeoutTImer);
-            }
-          );
-        } catch (e) {
-          // The ping can't be sent because the session is already closed
-          session.destroy();
-        }
-      }, this.keepaliveTimeMs).unref?.();
-      session.on('close', () => {
-        if (this.channelzEnabled) {
-          if (!sessionClosedByServer) {
-            this.channelzTrace.addTrace(
-              'CT_INFO',
-              'Connection dropped by client ' + clientAddress
+
+            session.close();
+          }, this.keepaliveTimeoutMs);
+          keepaliveTimeoutTimer.unref?.();
+
+          try {
+            session.ping(
+              (err: Error | null, duration: number, payload: Buffer) => {
+                if (keepaliveTimeoutTimer) {
+                  clearTimeout(keepaliveTimeoutTimer);
+                }
+
+                if (err) {
+                  sessionClosedByServer = true;
+                  this.channelzTrace.addTrace(
+                    'CT_INFO',
+                    'Connection dropped due to error of a ping frame ' +
+                      err.message +
+                      ' return in ' +
+                      duration
+                  );
+
+                  session.close();
+                }
+              }
             );
+            channelzSessionInfo.keepAlivesSent += 1;
+          } catch (e) {
+            clearTimeout(keepaliveTimeoutTimer);
+            // The ping can't be sent because the session is already closed
+            session.destroy();
           }
-          this.sessionChildrenTracker.unrefChild(channelzRef);
-          unregisterChannelzRef(channelzRef);
+        }, this.keepaliveTimeMs);
+        keeapliveTimeTimer.unref?.();
+      }
+
+      session.on('close', () => {
+        if (!sessionClosedByServer) {
+          this.channelzTrace.addTrace(
+            'CT_INFO',
+            'Connection dropped by client ' + clientAddress
+          );
         }
+
+        this.sessionChildrenTracker.unrefChild(channelzRef);
+        unregisterChannelzRef(channelzRef);
+
         if (connectionAgeTimer) {
           clearTimeout(connectionAgeTimer);
         }
+
         if (connectionAgeGraceTimer) {
           clearTimeout(connectionAgeGraceTimer);
         }
+
         if (keeapliveTimeTimer) {
-          clearTimeout(keeapliveTimeTimer);
+          clearInterval(keeapliveTimeTimer);
+          if (keepaliveTimeoutTimer) {
+            clearTimeout(keepaliveTimeoutTimer);
+          }
         }
+
+        if (idleTimeoutObj !== null) {
+          clearTimeout(idleTimeoutObj.timeout);
+          this.sessionIdleTimeouts.delete(session);
+        }
+
         this.http2Servers.get(http2Server)?.sessions.delete(session);
         this.sessions.delete(session);
       });
-    });
+    };
+  }
+
+  private enableIdleTimeout(
+    session: http2.ServerHttp2Session
+  ): SessionIdleTimeoutTracker | null {
+    if (this.sessionIdleTimeout >= MAX_CONNECTION_IDLE_MS) {
+      return null;
+    }
+
+    const idleTimeoutObj: SessionIdleTimeoutTracker = {
+      activeStreams: 0,
+      lastIdle: Date.now(),
+      onClose: this.onStreamClose.bind(this, session),
+      timeout: setTimeout(
+        this.onIdleTimeout,
+        this.sessionIdleTimeout,
+        this,
+        session
+      ),
+    };
+    idleTimeoutObj.timeout.unref?.();
+    this.sessionIdleTimeouts.set(session, idleTimeoutObj);
+
+    const { socket } = session;
+    this.trace(
+      'Enable idle timeout for ' +
+        socket.remoteAddress +
+        ':' +
+        socket.remotePort
+    );
+
+    return idleTimeoutObj;
+  }
+
+  private onIdleTimeout(
+    this: undefined,
+    ctx: Server,
+    session: http2.ServerHttp2Session
+  ) {
+    const { socket } = session;
+    const sessionInfo = ctx.sessionIdleTimeouts.get(session);
+
+    // if it is called while we have activeStreams - timer will not be rescheduled
+    // until last active stream is closed, then it will call .refresh() on the timer
+    // important part is to not clearTimeout(timer) or it becomes unusable
+    // for future refreshes
+    if (
+      sessionInfo !== undefined &&
+      sessionInfo.activeStreams === 0 &&
+      Date.now() - sessionInfo.lastIdle >= ctx.sessionIdleTimeout
+    ) {
+      ctx.trace(
+        'Session idle timeout triggered for ' +
+          socket?.remoteAddress +
+          ':' +
+          socket?.remotePort +
+          ' last idle at ' +
+          sessionInfo.lastIdle
+      );
+
+      ctx.closeSession(session);
+    }
+  }
+
+  private onStreamOpened(stream: http2.ServerHttp2Stream) {
+    const session = stream.session as http2.ServerHttp2Session;
+
+    const idleTimeoutObj = this.sessionIdleTimeouts.get(session);
+    if (idleTimeoutObj) {
+      idleTimeoutObj.activeStreams += 1;
+      stream.once('close', idleTimeoutObj.onClose);
+    }
+  }
+
+  private onStreamClose(session: http2.ServerHttp2Session) {
+    const idleTimeoutObj = this.sessionIdleTimeouts.get(session);
+
+    if (idleTimeoutObj) {
+      idleTimeoutObj.activeStreams -= 1;
+      if (idleTimeoutObj.activeStreams === 0) {
+        idleTimeoutObj.lastIdle = Date.now();
+        idleTimeoutObj.timeout.refresh();
+
+        this.trace(
+          'Session onStreamClose' +
+            session.socket?.remoteAddress +
+            ':' +
+            session.socket?.remotePort +
+            ' at ' +
+            idleTimeoutObj.lastIdle
+        );
+      }
+    }
   }
 }
 

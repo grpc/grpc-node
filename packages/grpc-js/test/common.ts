@@ -31,7 +31,7 @@ import {
   HealthListener,
   SubchannelInterface,
 } from '../src/subchannel-interface';
-import { SubchannelRef } from '../src/channelz';
+import { EntityTypes, SubchannelRef } from '../src/channelz';
 import { Subchannel } from '../src/subchannel';
 import { ConnectivityState } from '../src/connectivity-state';
 
@@ -140,6 +140,27 @@ export class TestClient {
     return this.client.getChannel().getConnectivityState(false);
   }
 
+  waitForClientState(
+    deadline: grpc.Deadline,
+    state: ConnectivityState,
+    callback: (error?: Error) => void
+  ) {
+    this.client
+      .getChannel()
+      .watchConnectivityState(this.getChannelState(), deadline, err => {
+        if (err) {
+          return callback(err);
+        }
+
+        const currentState = this.getChannelState();
+        if (currentState === state) {
+          callback();
+        } else {
+          return this.waitForClientState(deadline, currentState, callback);
+        }
+      });
+  }
+
   close() {
     this.client.close();
   }
@@ -196,7 +217,7 @@ export class MockSubchannel implements SubchannelInterface {
   unref(): void {}
   getChannelzRef(): SubchannelRef {
     return {
-      kind: 'subchannel',
+      kind: EntityTypes.subchannel,
       id: -1,
       name: this.address,
     };

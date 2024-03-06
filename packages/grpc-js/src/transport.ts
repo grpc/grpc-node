@@ -28,6 +28,7 @@ import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
 import {
   ChannelzCallTracker,
+  ChannelzCallTrackerStub,
   registerChannelzSocket,
   SocketInfo,
   SocketRef,
@@ -136,7 +137,7 @@ class Http2Transport implements Transport {
   // Channelz info
   private channelzRef: SocketRef;
   private readonly channelzEnabled: boolean = true;
-  private streamTracker = new ChannelzCallTracker();
+  private streamTracker: ChannelzCallTracker | ChannelzCallTrackerStub;
   private keepalivesSent = 0;
   private messagesSent = 0;
   private messagesReceived = 0;
@@ -159,12 +160,17 @@ class Http2Transport implements Transport {
 
     if (options['grpc.enable_channelz'] === 0) {
       this.channelzEnabled = false;
+      this.streamTracker = new ChannelzCallTrackerStub();
+    } else {
+      this.streamTracker = new ChannelzCallTracker();
     }
+
     this.channelzRef = registerChannelzSocket(
       this.subchannelAddressString,
       () => this.getChannelzInfo(),
       this.channelzEnabled
     );
+
     // Build user-agent string.
     this.userAgent = [
       options['grpc.primary_user_agent'],
@@ -192,6 +198,7 @@ class Http2Transport implements Transport {
       this.stopKeepalivePings();
       this.handleDisconnect();
     });
+
     session.once(
       'goaway',
       (errorCode: number, lastStreamID: number, opaqueData?: Buffer) => {
@@ -214,11 +221,13 @@ class Http2Transport implements Transport {
         this.reportDisconnectToOwner(tooManyPings);
       }
     );
+
     session.once('error', error => {
       /* Do nothing here. Any error should also trigger a close event, which is
        * where we want to handle that.  */
       this.trace('connection closed with error ' + (error as Error).message);
     });
+
     if (logging.isTracerEnabled(TRACER_NAME)) {
       session.on('remoteSettings', (settings: http2.Settings) => {
         this.trace(
@@ -237,6 +246,7 @@ class Http2Transport implements Transport {
         );
       });
     }
+
     /* Start the keepalive timer last, because this can trigger trace logs,
      * which should only happen after everything else is set up. */
     if (this.keepaliveWithoutCalls) {
@@ -467,7 +477,8 @@ class Http2Transport implements Transport {
       );
       this.keepaliveTimerId = setTimeout(() => {
         this.maybeSendPing();
-      }, this.keepaliveTimeMs).unref?.();
+      }, this.keepaliveTimeMs);
+      this.keepaliveTimerId.unref?.();
     }
     /* Otherwise, there is already either a keepalive timer or a ping pending,
      * wait for those to resolve. */
@@ -625,6 +636,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
   private session: http2.ClientHttp2Session | null = null;
   private isShutdown = false;
   constructor(private channelTarget: GrpcUri) {}
+
   private trace(text: string) {
     logging.trace(
       LogVerbosity.DEBUG,
@@ -632,6 +644,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       uriToString(this.channelTarget) + ' ' + text
     );
   }
+
   private createSession(
     address: SubchannelAddress,
     credentials: ChannelCredentials,
@@ -641,6 +654,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
     if (this.isShutdown) {
       return Promise.reject();
     }
+
     return new Promise<Http2Transport>((resolve, reject) => {
       let remoteName: string | null;
       if (proxyConnectionResult.realTarget) {
@@ -767,6 +781,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       });
     });
   }
+
   connect(
     address: SubchannelAddress,
     credentials: ChannelCredentials,

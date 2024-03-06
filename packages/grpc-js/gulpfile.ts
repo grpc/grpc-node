@@ -35,14 +35,17 @@ const pkgPath = path.resolve(jsCoreDir, 'package.json');
 const supportedVersionRange = require(pkgPath).engines.node;
 const versionNotSupported = () => {
   console.log(`Skipping grpc-js task for Node ${process.version}`);
-  return () => { return Promise.resolve(); };
+  return () => {
+    return Promise.resolve();
+  };
 };
 const identity = (value: any): any => value;
-const checkTask = semver.satisfies(process.version, supportedVersionRange) ?
-    identity : versionNotSupported;
+const checkTask = semver.satisfies(process.version, supportedVersionRange)
+  ? identity
+  : versionNotSupported;
 
 const execNpmVerb = (verb: string, ...args: string[]) =>
-  execa('npm', [verb, ...args], {cwd: jsCoreDir, stdio: 'inherit'});
+  execa('npm', [verb, ...args], { cwd: jsCoreDir, stdio: 'inherit' });
 const execNpmCommand = execNpmVerb.bind(null, 'run');
 
 const install = checkTask(() => execNpmVerb('install', '--unsafe-perm'));
@@ -64,22 +67,20 @@ const cleanAll = gulp.parallel(clean);
  */
 const compile = checkTask(() => execNpmCommand('compile'));
 
-const copyTestFixtures = checkTask(() => ncpP(`${jsCoreDir}/test/fixtures`, `${outDir}/test/fixtures`));
+const copyTestFixtures = checkTask(() =>
+  ncpP(`${jsCoreDir}/test/fixtures`, `${outDir}/test/fixtures`)
+);
 
 const runTests = checkTask(() => {
   process.env.GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION = 'true';
-  return gulp.src(`${outDir}/test/**/*.js`)
-    .pipe(mocha({reporter: 'mocha-jenkins-reporter',
-                 require: ['ts-node/register']}));
+  return gulp.src(`${outDir}/test/**/*.js`).pipe(
+    mocha({
+      reporter: 'mocha-jenkins-reporter',
+      require: ['ts-node/register'],
+    })
+  );
 });
 
 const test = gulp.series(install, copyTestFixtures, runTests);
 
-export {
-  install,
-  lint,
-  clean,
-  cleanAll,
-  compile,
-  test
-}
+export { install, lint, clean, cleanAll, compile, test };

@@ -212,6 +212,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
         methodConfig: [],
       };
     }
+
     this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
     this.childLoadBalancer = new ChildLoadBalancerHandler(
       {

@@ -19,12 +19,12 @@ import { EventEmitter } from 'events';
 import { Duplex, Readable, Writable } from 'stream';
 
 import { Status } from './constants';
-import { Deserialize, Serialize } from './make-client';
+import type { Deserialize, Serialize } from './make-client';
 import { Metadata } from './metadata';
-import { ObjectReadable, ObjectWritable } from './object-stream';
-import { StatusObject, PartialStatusObject } from './call-interface';
-import { Deadline } from './deadline';
-import { ServerInterceptingCallInterface } from './server-interceptors';
+import type { ObjectReadable, ObjectWritable } from './object-stream';
+import type { StatusObject, PartialStatusObject } from './call-interface';
+import type { Deadline } from './deadline';
+import type { ServerInterceptingCallInterface } from './server-interceptors';
 
 export type ServerStatusResponse = Partial<StatusObject>;
 
@@ -330,7 +330,7 @@ export interface UnaryHandler<RequestType, ResponseType> {
   func: handleUnaryCall<RequestType, ResponseType>;
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
-  type: HandlerType;
+  type: 'unary';
   path: string;
 }
 
@@ -338,7 +338,7 @@ export interface ClientStreamingHandler<RequestType, ResponseType> {
   func: handleClientStreamingCall<RequestType, ResponseType>;
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
-  type: HandlerType;
+  type: 'clientStream';
   path: string;
 }
 
@@ -346,7 +346,7 @@ export interface ServerStreamingHandler<RequestType, ResponseType> {
   func: handleServerStreamingCall<RequestType, ResponseType>;
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
-  type: HandlerType;
+  type: 'serverStream';
   path: string;
 }
 
@@ -354,7 +354,7 @@ export interface BidiStreamingHandler<RequestType, ResponseType> {
   func: handleBidiStreamingCall<RequestType, ResponseType>;
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
-  type: HandlerType;
+  type: 'bidi';
   path: string;
 }
 
