@@ -33,7 +33,7 @@ const packageDefinition = protoLoader.loadSync(
 const echoProto = grpc.loadPackageDefinition(packageDefinition).grpc.examples.echo;
 
 const keepaliveOptions = {
-  // Ping the client every 10 seconds to ensure the connection is still active
+  // Ping the server every 10 seconds to ensure the connection is still active
   'grpc.keepalive_time_ms': 10_000,
   // Wait 1 second for the ping ack before assuming the connection is dead
   'grpc.keepalive_timeout_ms': 1_000,

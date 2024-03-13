@@ -12,5 +12,5 @@ node server.js
 ## Start the client
 
 ```
-GRPC_TRACE=transport,keepalive GRPC_VERBOSITY=DEBUG client.js
+GRPC_TRACE=transport,keepalive GRPC_VERBOSITY=DEBUG node client.js
 ```
