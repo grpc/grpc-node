@@ -62,6 +62,14 @@ export interface ChannelOptions {
    */
   'grpc-node.tls_enable_trace'?: number;
   'grpc.lb.ring_hash.ring_size_cap'?: number;
+  /**
+   * This option will set the "content-subtype" for a request.
+   * For example, a "content-subtype" of "proto" will result in a content-type of
+   * "application/grpc+proto". And this will always be lowercase. See
+   * https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#requests for
+   * more details.
+   */
+  'grpc-node.http_content_subtype'?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
