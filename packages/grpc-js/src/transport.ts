@@ -124,7 +124,6 @@ class Http2Transport implements Transport {
   private keepaliveWithoutCalls = false;
 
   private userAgent: string;
-  private contentSubtype?: string;
 
   private activeCalls: Set<Http2SubchannelCall> = new Set();
 
@@ -174,10 +173,6 @@ class Http2Transport implements Transport {
     ]
       .filter(e => e)
       .join(' '); // remove falsey values first
-
-    if ('grpc.http_content_subtype' in options) {
-      this.contentSubtype = options['grpc-node.http_content_subtype'];
-    }
 
     if ('grpc.keepalive_time_ms' in options) {
       this.keepaliveTimeMs = options['grpc.keepalive_time_ms']!;
@@ -513,8 +508,9 @@ class Http2Transport implements Transport {
     headers[HTTP2_HEADER_TE] = 'trailers';
 
     let contentTypeHeader = 'application/grpc';
-    if (this.contentSubtype) {
-      contentTypeHeader += `+${this.contentSubtype}`;
+    const { contentSubtype } = metadata.getOptions();
+    if (contentSubtype) {
+      contentTypeHeader += `+${contentSubtype}`;
     }
     headers[HTTP2_HEADER_CONTENT_TYPE] = contentTypeHeader;
 

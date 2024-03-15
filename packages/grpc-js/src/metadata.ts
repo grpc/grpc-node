@@ -81,6 +81,14 @@ export interface MetadataOptions {
   cacheableRequest?: boolean;
   /* Signal that the initial metadata should be corked. Defaults to false. */
   corked?: boolean;
+  /**
+   * This option will set the "content-subtype" for a request.
+   * For example, a "content-subtype" of "proto" will result in a content-type of
+   * "application/grpc+proto". And this will always be lowercase. See
+   * https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#requests for
+   * more details.
+   */
+  contentSubtype?: string;
 }
 
 /**
