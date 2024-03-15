@@ -70,6 +70,7 @@ export interface SubchannelCall {
   startRead(): void;
   halfClose(): void;
   getCallNumber(): number;
+  getDeadlineInfo(): string[];
 }
 
 export interface StatusObjectWithRstCode extends StatusObject {
@@ -287,6 +288,9 @@ export class Http2SubchannelCall implements SubchannelCall {
       }
       this.callEventTracker.onStreamEnd(false);
     });
+  }
+  getDeadlineInfo(): string[] {
+    return [`remote_addr=${this.getPeer()}`];
   }
 
   public onDisconnect() {
