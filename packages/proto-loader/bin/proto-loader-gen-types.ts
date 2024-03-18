@@ -153,7 +153,7 @@ function getImportLine(dependency: Protobuf.Type | Protobuf.Enum | Protobuf.Serv
       throw new Error('Invalid object passed to getImportLine');
     }
   }
-  return `import type { ${importedTypes} } from '${filePath}';`
+  return `import type { ${importedTypes} } from '${filePath}.ts';`
 }
 
 function getChildMessagesAndEnums(namespace: Protobuf.NamespaceBase): (Protobuf.Type | Protobuf.Enum)[] {
