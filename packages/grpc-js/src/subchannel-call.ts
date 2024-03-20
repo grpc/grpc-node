@@ -105,6 +105,8 @@ export class Http2SubchannelCall implements SubchannelCall {
 
   private internalError: SystemError | null = null;
 
+  private serverEndedCall = false;
+
   constructor(
     private readonly http2Stream: http2.ClientHttp2Stream,
     private readonly callEventTracker: CallEventTracker,
@@ -182,6 +184,7 @@ export class Http2SubchannelCall implements SubchannelCall {
       this.maybeOutputStatus();
     });
     http2Stream.on('close', () => {
+      this.serverEndedCall = true;
       /* Use process.next tick to ensure that this code happens after any
        * "error" event that may be emitted at about the same time, so that
        * we can bubble up the error message from that event. */
@@ -400,6 +403,7 @@ export class Http2SubchannelCall implements SubchannelCall {
   }
 
   private handleTrailers(headers: http2.IncomingHttpHeaders) {
+    this.serverEndedCall = true;
     this.callEventTracker.onStreamEnd(true);
     let headersString = '';
     for (const header of Object.keys(headers)) {
@@ -445,7 +449,15 @@ export class Http2SubchannelCall implements SubchannelCall {
   private destroyHttp2Stream() {
     // The http2 stream could already have been destroyed if cancelWithStatus
     // is called in response to an internal http2 error.
-    if (!this.http2Stream.destroyed) {
+    if (this.http2Stream.destroyed) {
+      return;
+    }
+    /* If the server ended the call, sending an RST_STREAM is redundant, so we
+     * just half close on the client side instead to finish closing the stream.
+     */
+    if (this.serverEndedCall) {
+      this.http2Stream.end();
+    } else {
       /* If the call has ended with an OK status, communicate that when closing
        * the stream, partly to avoid a situation in which we detect an error
        * RST_STREAM as a result after we have the status */
