@@ -261,7 +261,8 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
         statusObject.code +
         ' details="' +
         statusObject.details +
-        '"'
+        '" start time=' +
+        this.startTime.toISOString()
     );
     this.bufferTracker.freeAll(this.callNumber);
     this.writeBufferOffset = this.writeBufferOffset + this.writeBuffer.length;

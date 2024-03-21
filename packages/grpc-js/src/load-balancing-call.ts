@@ -121,7 +121,8 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
           status.code +
           ' details="' +
           status.details +
-          '"'
+          '" start time=' +
+          this.startTime.toISOString()
       );
       const finalStatus = { ...status, progress };
       this.listener?.onReceiveStatus(finalStatus);
