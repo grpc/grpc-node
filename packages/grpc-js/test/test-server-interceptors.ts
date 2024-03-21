@@ -30,25 +30,22 @@ const testAuthInterceptor: grpc.ServerInterceptor = (
   methodDescriptor,
   call
 ) => {
-  return new grpc.ServerInterceptingCall(call, {
-    start: next => {
-      const authListener: grpc.ServerListener = {
-        onReceiveMetadata: (metadata, mdNext) => {
-          if (
-            metadata.get(AUTH_HEADER_KEY)?.[0] !== AUTH_HEADER_ALLOWED_VALUE
-          ) {
-            call.sendStatus({
-              code: grpc.status.UNAUTHENTICATED,
-              details: 'Auth metadata not correct',
-            });
-          } else {
-            mdNext(metadata);
-          }
-        },
-      };
-      next(authListener);
-    },
-  });
+  const authListener = (new grpc.ServerListenerBuilder())
+    .withOnReceiveMetadata((metadata, mdNext) => {
+      if (
+        metadata.get(AUTH_HEADER_KEY)?.[0] !== AUTH_HEADER_ALLOWED_VALUE
+      ) {
+        call.sendStatus({
+          code: grpc.status.UNAUTHENTICATED,
+          details: 'Auth metadata not correct',
+        });
+      } else {
+        mdNext(metadata);
+      }
+    }).build();
+  const responder = (new grpc.ResponderBuilder())
+    .withStart(next => next(authListener)).build();
+  return new grpc.ServerInterceptingCall(call, responder);
 };
 
 let eventCounts = {

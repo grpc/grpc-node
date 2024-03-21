@@ -345,7 +345,12 @@ export class ServerInterceptingCall implements ServerInterceptingCallInterface {
     private nextCall: ServerInterceptingCallInterface,
     responder?: Responder
   ) {
-    this.responder = { ...defaultResponder, ...responder };
+    this.responder = {
+      start: responder?.start ?? defaultResponder.start,
+      sendMetadata: responder?.sendMetadata ?? defaultResponder.sendMetadata,
+      sendMessage: responder?.sendMessage ?? defaultResponder.sendMessage,
+      sendStatus: responder?.sendStatus ?? defaultResponder.sendStatus,
+    };
   }
 
   private processPendingMessage() {
@@ -369,8 +374,17 @@ export class ServerInterceptingCall implements ServerInterceptingCallInterface {
   start(listener: InterceptingServerListener): void {
     this.responder.start(interceptedListener => {
       const fullInterceptedListener: FullServerListener = {
-        ...defaultServerListener,
-        ...interceptedListener,
+        onReceiveMetadata:
+          interceptedListener?.onReceiveMetadata ??
+          defaultServerListener.onReceiveMetadata,
+        onReceiveMessage:
+          interceptedListener?.onReceiveMessage ??
+          defaultServerListener.onReceiveMessage,
+        onReceiveHalfClose:
+          interceptedListener?.onReceiveHalfClose ??
+          defaultServerListener.onReceiveHalfClose,
+        onCancel:
+          interceptedListener?.onCancel ?? defaultServerListener.onCancel,
       };
       const finalInterceptingListener = new InterceptingServerListenerImpl(
         fullInterceptedListener,
