@@ -114,8 +114,8 @@ Consume the types:
 ```ts
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
-import { ProtoGrpcType } from './proto/example';
-import { ExampleHandlers } from './proto/example_package/Example';
+import type { ProtoGrpcType } from './proto/example.ts';
+import type { ExampleHandlers } from './proto/example_package/Example.ts';
 
 const exampleServer: ExampleHandlers = {
   // server handlers implementation...
