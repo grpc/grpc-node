@@ -1,6 +1,6 @@
 // Original file: deps/googleapis/google/api/http.proto
 
-import type { IHttpRule as I_google_api_HttpRule, OHttpRule as O_google_api_HttpRule } from '../../google/api/HttpRule';
+import type { IHttpRule as I_google_api_HttpRule, OHttpRule as O_google_api_HttpRule } from '../../google/api/HttpRule.ts';
 
 /**
  * Defines the HTTP configuration for an API service. It contains a list of

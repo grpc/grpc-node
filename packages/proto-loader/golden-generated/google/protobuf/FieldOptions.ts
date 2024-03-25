@@ -1,7 +1,7 @@
 // Original file: null
 
-import type { IUninterpretedOption as I_google_protobuf_UninterpretedOption, OUninterpretedOption as O_google_protobuf_UninterpretedOption } from '../../google/protobuf/UninterpretedOption';
-import type { IFieldBehavior as I_google_api_FieldBehavior, OFieldBehavior as O_google_api_FieldBehavior } from '../../google/api/FieldBehavior';
+import type { IUninterpretedOption as I_google_protobuf_UninterpretedOption, OUninterpretedOption as O_google_protobuf_UninterpretedOption } from '../../google/protobuf/UninterpretedOption.ts';
+import type { IFieldBehavior as I_google_api_FieldBehavior, OFieldBehavior as O_google_api_FieldBehavior } from '../../google/api/FieldBehavior.ts';
 
 // Original file: null
 

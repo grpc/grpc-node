@@ -1,6 +1,6 @@
 // Original file: null
 
-import type { IOneofOptions as I_google_protobuf_OneofOptions, OOneofOptions as O_google_protobuf_OneofOptions } from '../../google/protobuf/OneofOptions';
+import type { IOneofOptions as I_google_protobuf_OneofOptions, OOneofOptions as O_google_protobuf_OneofOptions } from '../../google/protobuf/OneofOptions.ts';
 
 export interface IOneofDescriptorProto {
   'name'?: (string);

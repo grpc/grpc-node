@@ -1,7 +1,7 @@
 // Original file: deps/googleapis/google/api/http.proto
 
-import type { ICustomHttpPattern as I_google_api_CustomHttpPattern, OCustomHttpPattern as O_google_api_CustomHttpPattern } from '../../google/api/CustomHttpPattern';
-import type { IHttpRule as I_google_api_HttpRule, OHttpRule as O_google_api_HttpRule } from '../../google/api/HttpRule';
+import type { ICustomHttpPattern as I_google_api_CustomHttpPattern, OCustomHttpPattern as O_google_api_CustomHttpPattern } from '../../google/api/CustomHttpPattern.ts';
+import type { IHttpRule as I_google_api_HttpRule, OHttpRule as O_google_api_HttpRule } from '../../google/api/HttpRule.ts';
 
 /**
  * # gRPC Transcoding

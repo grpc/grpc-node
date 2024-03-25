@@ -1,9 +1,9 @@
 // Original file: deps/gapic-showcase/schema/google/showcase/v1beta1/echo.proto
 
-import type { ITimestamp as I_google_protobuf_Timestamp, OTimestamp as O_google_protobuf_Timestamp } from '../../../google/protobuf/Timestamp';
-import type { IStatus as I_google_rpc_Status, OStatus as O_google_rpc_Status } from '../../../google/rpc/Status';
-import type { IWaitResponse as I_google_showcase_v1beta1_WaitResponse, OWaitResponse as O_google_showcase_v1beta1_WaitResponse } from '../../../google/showcase/v1beta1/WaitResponse';
-import type { IDuration as I_google_protobuf_Duration, ODuration as O_google_protobuf_Duration } from '../../../google/protobuf/Duration';
+import type { ITimestamp as I_google_protobuf_Timestamp, OTimestamp as O_google_protobuf_Timestamp } from '../../../google/protobuf/Timestamp.ts';
+import type { IStatus as I_google_rpc_Status, OStatus as O_google_rpc_Status } from '../../../google/rpc/Status.ts';
+import type { IWaitResponse as I_google_showcase_v1beta1_WaitResponse, OWaitResponse as O_google_showcase_v1beta1_WaitResponse } from '../../../google/showcase/v1beta1/WaitResponse.ts';
+import type { IDuration as I_google_protobuf_Duration, ODuration as O_google_protobuf_Duration } from '../../../google/protobuf/Duration.ts';
 
 /**
  * The request for Wait method.

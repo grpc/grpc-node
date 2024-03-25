@@ -1,10 +1,10 @@
 // Original file: null
 
-import type { IFieldDescriptorProto as I_google_protobuf_FieldDescriptorProto, OFieldDescriptorProto as O_google_protobuf_FieldDescriptorProto } from '../../google/protobuf/FieldDescriptorProto';
-import type { IDescriptorProto as I_google_protobuf_DescriptorProto, ODescriptorProto as O_google_protobuf_DescriptorProto } from '../../google/protobuf/DescriptorProto';
-import type { IEnumDescriptorProto as I_google_protobuf_EnumDescriptorProto, OEnumDescriptorProto as O_google_protobuf_EnumDescriptorProto } from '../../google/protobuf/EnumDescriptorProto';
-import type { IMessageOptions as I_google_protobuf_MessageOptions, OMessageOptions as O_google_protobuf_MessageOptions } from '../../google/protobuf/MessageOptions';
-import type { IOneofDescriptorProto as I_google_protobuf_OneofDescriptorProto, OOneofDescriptorProto as O_google_protobuf_OneofDescriptorProto } from '../../google/protobuf/OneofDescriptorProto';
+import type { IFieldDescriptorProto as I_google_protobuf_FieldDescriptorProto, OFieldDescriptorProto as O_google_protobuf_FieldDescriptorProto } from '../../google/protobuf/FieldDescriptorProto.ts';
+import type { IDescriptorProto as I_google_protobuf_DescriptorProto, ODescriptorProto as O_google_protobuf_DescriptorProto } from '../../google/protobuf/DescriptorProto.ts';
+import type { IEnumDescriptorProto as I_google_protobuf_EnumDescriptorProto, OEnumDescriptorProto as O_google_protobuf_EnumDescriptorProto } from '../../google/protobuf/EnumDescriptorProto.ts';
+import type { IMessageOptions as I_google_protobuf_MessageOptions, OMessageOptions as O_google_protobuf_MessageOptions } from '../../google/protobuf/MessageOptions.ts';
+import type { IOneofDescriptorProto as I_google_protobuf_OneofDescriptorProto, OOneofDescriptorProto as O_google_protobuf_OneofDescriptorProto } from '../../google/protobuf/OneofDescriptorProto.ts';
 
 export interface I_google_protobuf_DescriptorProto_ExtensionRange {
   'start'?: (number);

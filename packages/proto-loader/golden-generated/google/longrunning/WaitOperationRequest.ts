@@ -1,6 +1,6 @@
 // Original file: deps/googleapis/google/longrunning/operations.proto
 
-import type { IDuration as I_google_protobuf_Duration, ODuration as O_google_protobuf_Duration } from '../../google/protobuf/Duration';
+import type { IDuration as I_google_protobuf_Duration, ODuration as O_google_protobuf_Duration } from '../../google/protobuf/Duration.ts';
 
 /**
  * The request message for [Operations.WaitOperation][google.longrunning.Operations.WaitOperation].

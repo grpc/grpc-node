@@ -1,6 +1,6 @@
 // Original file: deps/gapic-showcase/schema/google/showcase/v1beta1/echo.proto
 
-import type { IEchoResponse as I_google_showcase_v1beta1_EchoResponse, OEchoResponse as O_google_showcase_v1beta1_EchoResponse } from '../../../google/showcase/v1beta1/EchoResponse';
+import type { IEchoResponse as I_google_showcase_v1beta1_EchoResponse, OEchoResponse as O_google_showcase_v1beta1_EchoResponse } from '../../../google/showcase/v1beta1/EchoResponse.ts';
 
 /**
  * The response for the PagedExpand method.

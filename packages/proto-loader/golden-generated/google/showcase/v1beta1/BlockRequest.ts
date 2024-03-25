@@ -1,8 +1,8 @@
 // Original file: deps/gapic-showcase/schema/google/showcase/v1beta1/echo.proto
 
-import type { IDuration as I_google_protobuf_Duration, ODuration as O_google_protobuf_Duration } from '../../../google/protobuf/Duration';
-import type { IStatus as I_google_rpc_Status, OStatus as O_google_rpc_Status } from '../../../google/rpc/Status';
-import type { IBlockResponse as I_google_showcase_v1beta1_BlockResponse, OBlockResponse as O_google_showcase_v1beta1_BlockResponse } from '../../../google/showcase/v1beta1/BlockResponse';
+import type { IDuration as I_google_protobuf_Duration, ODuration as O_google_protobuf_Duration } from '../../../google/protobuf/Duration.ts';
+import type { IStatus as I_google_rpc_Status, OStatus as O_google_rpc_Status } from '../../../google/rpc/Status.ts';
+import type { IBlockResponse as I_google_showcase_v1beta1_BlockResponse, OBlockResponse as O_google_showcase_v1beta1_BlockResponse } from '../../../google/showcase/v1beta1/BlockResponse.ts';
 
 /**
  * The request for Block method.

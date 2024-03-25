@@ -1,6 +1,6 @@
 // Original file: deps/googleapis/google/longrunning/operations.proto
 
-import type { IOperation as I_google_longrunning_Operation, OOperation as O_google_longrunning_Operation } from '../../google/longrunning/Operation';
+import type { IOperation as I_google_longrunning_Operation, OOperation as O_google_longrunning_Operation } from '../../google/longrunning/Operation.ts';
 
 /**
  * The response message for [Operations.ListOperations][google.longrunning.Operations.ListOperations].

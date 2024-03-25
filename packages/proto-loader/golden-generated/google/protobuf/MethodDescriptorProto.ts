@@ -1,6 +1,6 @@
 // Original file: null
 
-import type { IMethodOptions as I_google_protobuf_MethodOptions, OMethodOptions as O_google_protobuf_MethodOptions } from '../../google/protobuf/MethodOptions';
+import type { IMethodOptions as I_google_protobuf_MethodOptions, OMethodOptions as O_google_protobuf_MethodOptions } from '../../google/protobuf/MethodOptions.ts';
 
 export interface IMethodDescriptorProto {
   'name'?: (string);
