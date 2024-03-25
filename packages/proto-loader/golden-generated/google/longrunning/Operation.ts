@@ -1,7 +1,7 @@
 // Original file: deps/googleapis/google/longrunning/operations.proto
 
-import type { IAny as I_google_protobuf_Any, OAny as O_google_protobuf_Any } from '../../google/protobuf/Any';
-import type { IStatus as I_google_rpc_Status, OStatus as O_google_rpc_Status } from '../../google/rpc/Status';
+import type { IAny as I_google_protobuf_Any, OAny as O_google_protobuf_Any } from '../../google/protobuf/Any.ts';
+import type { IStatus as I_google_rpc_Status, OStatus as O_google_rpc_Status } from '../../google/rpc/Status.ts';
 
 /**
  * This resource represents a long-running operation that is the result of a

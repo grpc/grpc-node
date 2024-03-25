@@ -1,6 +1,6 @@
 // Original file: null
 
-import type { IFieldOptions as I_google_protobuf_FieldOptions, OFieldOptions as O_google_protobuf_FieldOptions } from '../../google/protobuf/FieldOptions';
+import type { IFieldOptions as I_google_protobuf_FieldOptions, OFieldOptions as O_google_protobuf_FieldOptions } from '../../google/protobuf/FieldOptions.ts';
 
 // Original file: null
 

@@ -2,15 +2,15 @@
 
 import type * as grpc from '@grpc/grpc-js'
 import type { MethodDefinition } from '@grpc/proto-loader'
-import type { IBlockRequest as I_google_showcase_v1beta1_BlockRequest, OBlockRequest as O_google_showcase_v1beta1_BlockRequest } from '../../../google/showcase/v1beta1/BlockRequest';
-import type { IBlockResponse as I_google_showcase_v1beta1_BlockResponse, OBlockResponse as O_google_showcase_v1beta1_BlockResponse } from '../../../google/showcase/v1beta1/BlockResponse';
-import type { IEchoRequest as I_google_showcase_v1beta1_EchoRequest, OEchoRequest as O_google_showcase_v1beta1_EchoRequest } from '../../../google/showcase/v1beta1/EchoRequest';
-import type { IEchoResponse as I_google_showcase_v1beta1_EchoResponse, OEchoResponse as O_google_showcase_v1beta1_EchoResponse } from '../../../google/showcase/v1beta1/EchoResponse';
-import type { IExpandRequest as I_google_showcase_v1beta1_ExpandRequest, OExpandRequest as O_google_showcase_v1beta1_ExpandRequest } from '../../../google/showcase/v1beta1/ExpandRequest';
-import type { IOperation as I_google_longrunning_Operation, OOperation as O_google_longrunning_Operation } from '../../../google/longrunning/Operation';
-import type { IPagedExpandRequest as I_google_showcase_v1beta1_PagedExpandRequest, OPagedExpandRequest as O_google_showcase_v1beta1_PagedExpandRequest } from '../../../google/showcase/v1beta1/PagedExpandRequest';
-import type { IPagedExpandResponse as I_google_showcase_v1beta1_PagedExpandResponse, OPagedExpandResponse as O_google_showcase_v1beta1_PagedExpandResponse } from '../../../google/showcase/v1beta1/PagedExpandResponse';
-import type { IWaitRequest as I_google_showcase_v1beta1_WaitRequest, OWaitRequest as O_google_showcase_v1beta1_WaitRequest } from '../../../google/showcase/v1beta1/WaitRequest';
+import type { IBlockRequest as I_google_showcase_v1beta1_BlockRequest, OBlockRequest as O_google_showcase_v1beta1_BlockRequest } from '../../../google/showcase/v1beta1/BlockRequest.ts';
+import type { IBlockResponse as I_google_showcase_v1beta1_BlockResponse, OBlockResponse as O_google_showcase_v1beta1_BlockResponse } from '../../../google/showcase/v1beta1/BlockResponse.ts';
+import type { IEchoRequest as I_google_showcase_v1beta1_EchoRequest, OEchoRequest as O_google_showcase_v1beta1_EchoRequest } from '../../../google/showcase/v1beta1/EchoRequest.ts';
+import type { IEchoResponse as I_google_showcase_v1beta1_EchoResponse, OEchoResponse as O_google_showcase_v1beta1_EchoResponse } from '../../../google/showcase/v1beta1/EchoResponse.ts';
+import type { IExpandRequest as I_google_showcase_v1beta1_ExpandRequest, OExpandRequest as O_google_showcase_v1beta1_ExpandRequest } from '../../../google/showcase/v1beta1/ExpandRequest.ts';
+import type { IOperation as I_google_longrunning_Operation, OOperation as O_google_longrunning_Operation } from '../../../google/longrunning/Operation.ts';
+import type { IPagedExpandRequest as I_google_showcase_v1beta1_PagedExpandRequest, OPagedExpandRequest as O_google_showcase_v1beta1_PagedExpandRequest } from '../../../google/showcase/v1beta1/PagedExpandRequest.ts';
+import type { IPagedExpandResponse as I_google_showcase_v1beta1_PagedExpandResponse, OPagedExpandResponse as O_google_showcase_v1beta1_PagedExpandResponse } from '../../../google/showcase/v1beta1/PagedExpandResponse.ts';
+import type { IWaitRequest as I_google_showcase_v1beta1_WaitRequest, OWaitRequest as O_google_showcase_v1beta1_WaitRequest } from '../../../google/showcase/v1beta1/WaitRequest.ts';
 
 /**
  * This service is used showcase the four main types of rpcs - unary, server

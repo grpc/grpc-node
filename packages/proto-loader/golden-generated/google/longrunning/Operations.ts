@@ -2,14 +2,14 @@
 
 import type * as grpc from '@grpc/grpc-js'
 import type { MethodDefinition } from '@grpc/proto-loader'
-import type { ICancelOperationRequest as I_google_longrunning_CancelOperationRequest, OCancelOperationRequest as O_google_longrunning_CancelOperationRequest } from '../../google/longrunning/CancelOperationRequest';
-import type { IDeleteOperationRequest as I_google_longrunning_DeleteOperationRequest, ODeleteOperationRequest as O_google_longrunning_DeleteOperationRequest } from '../../google/longrunning/DeleteOperationRequest';
-import type { IEmpty as I_google_protobuf_Empty, OEmpty as O_google_protobuf_Empty } from '../../google/protobuf/Empty';
-import type { IGetOperationRequest as I_google_longrunning_GetOperationRequest, OGetOperationRequest as O_google_longrunning_GetOperationRequest } from '../../google/longrunning/GetOperationRequest';
-import type { IListOperationsRequest as I_google_longrunning_ListOperationsRequest, OListOperationsRequest as O_google_longrunning_ListOperationsRequest } from '../../google/longrunning/ListOperationsRequest';
-import type { IListOperationsResponse as I_google_longrunning_ListOperationsResponse, OListOperationsResponse as O_google_longrunning_ListOperationsResponse } from '../../google/longrunning/ListOperationsResponse';
-import type { IOperation as I_google_longrunning_Operation, OOperation as O_google_longrunning_Operation } from '../../google/longrunning/Operation';
-import type { IWaitOperationRequest as I_google_longrunning_WaitOperationRequest, OWaitOperationRequest as O_google_longrunning_WaitOperationRequest } from '../../google/longrunning/WaitOperationRequest';
+import type { ICancelOperationRequest as I_google_longrunning_CancelOperationRequest, OCancelOperationRequest as O_google_longrunning_CancelOperationRequest } from '../../google/longrunning/CancelOperationRequest.ts';
+import type { IDeleteOperationRequest as I_google_longrunning_DeleteOperationRequest, ODeleteOperationRequest as O_google_longrunning_DeleteOperationRequest } from '../../google/longrunning/DeleteOperationRequest.ts';
+import type { IEmpty as I_google_protobuf_Empty, OEmpty as O_google_protobuf_Empty } from '../../google/protobuf/Empty.ts';
+import type { IGetOperationRequest as I_google_longrunning_GetOperationRequest, OGetOperationRequest as O_google_longrunning_GetOperationRequest } from '../../google/longrunning/GetOperationRequest.ts';
+import type { IListOperationsRequest as I_google_longrunning_ListOperationsRequest, OListOperationsRequest as O_google_longrunning_ListOperationsRequest } from '../../google/longrunning/ListOperationsRequest.ts';
+import type { IListOperationsResponse as I_google_longrunning_ListOperationsResponse, OListOperationsResponse as O_google_longrunning_ListOperationsResponse } from '../../google/longrunning/ListOperationsResponse.ts';
+import type { IOperation as I_google_longrunning_Operation, OOperation as O_google_longrunning_Operation } from '../../google/longrunning/Operation.ts';
+import type { IWaitOperationRequest as I_google_longrunning_WaitOperationRequest, OWaitOperationRequest as O_google_longrunning_WaitOperationRequest } from '../../google/longrunning/WaitOperationRequest.ts';
 
 /**
  * Manages long-running operations with an API service.

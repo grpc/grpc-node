@@ -1,7 +1,7 @@
 // Original file: null
 
-import type { IMethodDescriptorProto as I_google_protobuf_MethodDescriptorProto, OMethodDescriptorProto as O_google_protobuf_MethodDescriptorProto } from '../../google/protobuf/MethodDescriptorProto';
-import type { IServiceOptions as I_google_protobuf_ServiceOptions, OServiceOptions as O_google_protobuf_ServiceOptions } from '../../google/protobuf/ServiceOptions';
+import type { IMethodDescriptorProto as I_google_protobuf_MethodDescriptorProto, OMethodDescriptorProto as O_google_protobuf_MethodDescriptorProto } from '../../google/protobuf/MethodDescriptorProto.ts';
+import type { IServiceOptions as I_google_protobuf_ServiceOptions, OServiceOptions as O_google_protobuf_ServiceOptions } from '../../google/protobuf/ServiceOptions.ts';
 
 export interface IServiceDescriptorProto {
   'name'?: (string);

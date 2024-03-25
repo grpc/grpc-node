@@ -1,6 +1,6 @@
 // Original file: null
 
-import type { IEnumValueOptions as I_google_protobuf_EnumValueOptions, OEnumValueOptions as O_google_protobuf_EnumValueOptions } from '../../google/protobuf/EnumValueOptions';
+import type { IEnumValueOptions as I_google_protobuf_EnumValueOptions, OEnumValueOptions as O_google_protobuf_EnumValueOptions } from '../../google/protobuf/EnumValueOptions.ts';
 
 export interface IEnumValueDescriptorProto {
   'name'?: (string);
