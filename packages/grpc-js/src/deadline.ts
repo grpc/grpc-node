@@ -93,3 +93,14 @@ export function deadlineToString(deadline: Deadline): string {
     }
   }
 }
+
+/**
+ * Calculate the difference between two dates as a number of seconds and format
+ * it as a string.
+ * @param startDate
+ * @param endDate
+ * @returns
+ */
+export function formatDateDifference(startDate: Date, endDate: Date): string {
+  return ((endDate.getTime() - startDate.getTime()) / 1000).toFixed(3) + 's';
+}

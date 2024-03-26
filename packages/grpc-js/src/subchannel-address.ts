@@ -15,7 +15,7 @@
  *
  */
 
-import { isIP } from 'net';
+import { isIP, isIPv6 } from 'net';
 
 export interface TcpSubchannelAddress {
   port: number;
@@ -63,7 +63,11 @@ export function subchannelAddressEqual(
 
 export function subchannelAddressToString(address: SubchannelAddress): string {
   if (isTcpSubchannelAddress(address)) {
-    return address.host + ':' + address.port;
+    if (isIPv6(address.host)) {
+      return '[' + address.host + ']:' + address.port;
+    } else {
+      return address.host + ':' + address.port;
+    }
   } else {
     return address.path;
   }

@@ -171,3 +171,7 @@ export interface Call {
   getCallNumber(): number;
   setCredentials(credentials: CallCredentials): void;
 }
+
+export interface DeadlineInfoProvider {
+  getDeadlineInfo(): string[];
+}

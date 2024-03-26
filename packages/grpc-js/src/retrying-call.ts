@@ -17,12 +17,13 @@
 
 import { CallCredentials } from './call-credentials';
 import { LogVerbosity, Status } from './constants';
-import { Deadline } from './deadline';
+import { Deadline, formatDateDifference } from './deadline';
 import { Metadata } from './metadata';
 import { CallConfig } from './resolver';
 import * as logging from './logging';
 import {
   Call,
+  DeadlineInfoProvider,
   InterceptingListener,
   MessageContext,
   StatusObject,
@@ -121,6 +122,7 @@ interface UnderlyingCall {
   state: UnderlyingCallState;
   call: LoadBalancingCall;
   nextMessageToSend: number;
+  startTime: Date;
 }
 
 /**
@@ -170,7 +172,7 @@ interface WriteBufferEntry {
 
 const PREVIONS_RPC_ATTEMPTS_METADATA_KEY = 'grpc-previous-rpc-attempts';
 
-export class RetryingCall implements Call {
+export class RetryingCall implements Call, DeadlineInfoProvider {
   private state: RetryingCallState;
   private listener: InterceptingListener | null = null;
   private initialMetadata: Metadata | null = null;
@@ -198,6 +200,7 @@ export class RetryingCall implements Call {
   private committedCallIndex: number | null = null;
   private initialRetryBackoffSec = 0;
   private nextRetryBackoffSec = 0;
+  private startTime: Date;
   constructor(
     private readonly channel: InternalChannel,
     private readonly callConfig: CallConfig,
@@ -223,6 +226,22 @@ export class RetryingCall implements Call {
     } else {
       this.state = 'TRANSPARENT_ONLY';
     }
+    this.startTime = new Date();
+  }
+  getDeadlineInfo(): string[] {
+    if (this.underlyingCalls.length === 0) {
+      return [];
+    }
+    const deadlineInfo: string[] = [];
+    const latestCall = this.underlyingCalls[this.underlyingCalls.length - 1];
+    if (this.underlyingCalls.length > 1) {
+      deadlineInfo.push(`previous attempts: ${this.underlyingCalls.length - 1}`);
+    }
+    if (latestCall.startTime > this.startTime) {
+      deadlineInfo.push(`time to current attempt start: ${formatDateDifference(this.startTime, latestCall.startTime)}`);
+    }
+    deadlineInfo.push(...latestCall.call.getDeadlineInfo());
+    return deadlineInfo;
   }
   getCallNumber(): number {
     return this.callNumber;
@@ -242,7 +261,8 @@ export class RetryingCall implements Call {
         statusObject.code +
         ' details="' +
         statusObject.details +
-        '"'
+        '" start time=' +
+        this.startTime.toISOString()
     );
     this.bufferTracker.freeAll(this.callNumber);
     this.writeBufferOffset = this.writeBufferOffset + this.writeBuffer.length;
@@ -628,6 +648,7 @@ export class RetryingCall implements Call {
       state: 'ACTIVE',
       call: child,
       nextMessageToSend: 0,
+      startTime: new Date()
     });
     const previousAttempts = this.attempts - 1;
     const initialMetadata = this.initialMetadata!.clone();
