@@ -22,6 +22,8 @@ FROM node:18-slim as build
 WORKDIR /node/src/grpc-node
 COPY . .
 
+WORKDIR /node/src/grpc-node/packages/proto-loader
+RUN npm install
 WORKDIR /node/src/grpc-node/packages/grpc-js
 RUN npm install
 WORKDIR /node/src/grpc-node/packages/grpc-js-xds

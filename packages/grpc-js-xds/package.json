@@ -33,6 +33,7 @@
   "homepage": "https://github.com/grpc/grpc-node#readme",
   "devDependencies": {
     "@grpc/grpc-js": "file:../grpc-js",
+    "@grpc/proto-loader": "file:../proto-loader",
     "@types/gulp": "^4.0.6",
     "@types/gulp-mocha": "0.0.32",
     "@types/mocha": "^5.2.6",
