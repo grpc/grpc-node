@@ -110,7 +110,7 @@ export type ClientOptions = Partial<ChannelOptions> & {
 };
 
 function getErrorStackString(error: Error): string {
-  return error.stack!.split('\n').slice(1).join('\n');
+  return error.stack?.split('\n').slice(1).join('\n') || 'no stack trace available';
 }
 
 /**
