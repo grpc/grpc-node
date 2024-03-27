@@ -1,6 +1,6 @@
 // Original file: proto/channelz.proto
 
-import type { Server as _grpc_channelz_v1_Server, Server__Output as _grpc_channelz_v1_Server__Output } from '../../../grpc/channelz/v1/Server';
+import type { Server as _grpc_channelz_v1_Server, Server__Output as _grpc_channelz_v1_Server__Output } from '../../../grpc/channelz/v1/Server.ts';
 
 export interface GetServerResponse {
   /**
