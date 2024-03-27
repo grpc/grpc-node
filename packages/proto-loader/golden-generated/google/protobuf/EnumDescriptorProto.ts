@@ -1,7 +1,7 @@
 // Original file: null
 
-import type { IEnumValueDescriptorProto as I_google_protobuf_EnumValueDescriptorProto, OEnumValueDescriptorProto as O_google_protobuf_EnumValueDescriptorProto } from '../../google/protobuf/EnumValueDescriptorProto.ts';
-import type { IEnumOptions as I_google_protobuf_EnumOptions, OEnumOptions as O_google_protobuf_EnumOptions } from '../../google/protobuf/EnumOptions.ts';
+import type { IEnumValueDescriptorProto as I_google_protobuf_EnumValueDescriptorProto, OEnumValueDescriptorProto as O_google_protobuf_EnumValueDescriptorProto } from '../../google/protobuf/EnumValueDescriptorProto';
+import type { IEnumOptions as I_google_protobuf_EnumOptions, OEnumOptions as O_google_protobuf_EnumOptions } from '../../google/protobuf/EnumOptions';
 
 export interface IEnumDescriptorProto {
   'name'?: (string);

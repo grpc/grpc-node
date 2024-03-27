@@ -1,6 +1,6 @@
 // Original file: deps/gapic-showcase/schema/google/showcase/v1beta1/echo.proto
 
-import type { ITimestamp as I_google_protobuf_Timestamp, OTimestamp as O_google_protobuf_Timestamp } from '../../../google/protobuf/Timestamp.ts';
+import type { ITimestamp as I_google_protobuf_Timestamp, OTimestamp as O_google_protobuf_Timestamp } from '../../../google/protobuf/Timestamp';
 
 /**
  * The metadata for Wait operation.
