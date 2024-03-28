@@ -31,6 +31,7 @@ RUN npm install
 
 FROM gcr.io/distroless/nodejs18-debian11:latest
 WORKDIR /node/src/grpc-node
+COPY --from=build /node/src/grpc-node/packages/proto-loader ./packages/proto-loader/
 COPY --from=build /node/src/grpc-node/packages/grpc-js ./packages/grpc-js/
 COPY --from=build /node/src/grpc-node/packages/grpc-js-xds ./packages/grpc-js-xds/
 
