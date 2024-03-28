@@ -1,6 +1,6 @@
 // Original file: deps/googleapis/google/rpc/status.proto
 
-import type { IAny as I_google_protobuf_Any, OAny as O_google_protobuf_Any } from '../../google/protobuf/Any.ts';
+import type { IAny as I_google_protobuf_Any, OAny as O_google_protobuf_Any } from '../../google/protobuf/Any';
 
 /**
  * The `Status` type defines a logical error model that is suitable for
