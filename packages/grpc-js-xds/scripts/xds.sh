@@ -34,6 +34,9 @@ echo "source $NVM_DIR/nvm.sh" > ~/.profile
 echo "source $NVM_DIR/nvm.sh" > ~/.shrc
 export ENV=~/.shrc
 
+cd $base/../proto-loader
+npm install
+
 cd $base/../grpc-js
 npm install
 
