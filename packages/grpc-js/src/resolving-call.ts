@@ -19,6 +19,7 @@ import { CallCredentials } from './call-credentials';
 import {
   Call,
   CallStreamOptions,
+  DeadlineInfoProvider,
   InterceptingListener,
   MessageContext,
   StatusObject,
@@ -27,6 +28,7 @@ import { LogVerbosity, Propagate, Status } from './constants';
 import {
   Deadline,
   deadlineToString,
+  formatDateDifference,
   getRelativeTimeout,
   minDeadline,
 } from './deadline';
@@ -39,7 +41,7 @@ import { restrictControlPlaneStatusCode } from './control-plane-status';
 const TRACER_NAME = 'resolving_call';
 
 export class ResolvingCall implements Call {
-  private child: Call | null = null;
+  private child: (Call & DeadlineInfoProvider) | null = null;
   private readPending = false;
   private pendingMessage: { context: MessageContext; message: Buffer } | null =
     null;
@@ -55,6 +57,10 @@ export class ResolvingCall implements Call {
   private statusWatchers: ((status: StatusObject) => void)[] = [];
   private deadlineTimer: NodeJS.Timeout = setTimeout(() => {}, 0);
   private filterStack: FilterStack | null = null;
+
+  private deadlineStartTime: Date | null = null;
+  private configReceivedTime: Date | null = null;
+  private childStartTime: Date | null = null;
 
   constructor(
     private readonly channel: InternalChannel,
@@ -97,12 +103,37 @@ export class ResolvingCall implements Call {
 
   private runDeadlineTimer() {
     clearTimeout(this.deadlineTimer);
+    this.deadlineStartTime = new Date();
     this.trace('Deadline: ' + deadlineToString(this.deadline));
     const timeout = getRelativeTimeout(this.deadline);
     if (timeout !== Infinity) {
       this.trace('Deadline will be reached in ' + timeout + 'ms');
       const handleDeadline = () => {
-        this.cancelWithStatus(Status.DEADLINE_EXCEEDED, 'Deadline exceeded');
+        if (!this.deadlineStartTime) {
+          this.cancelWithStatus(Status.DEADLINE_EXCEEDED, 'Deadline exceeded');
+          return;
+        }
+        const deadlineInfo: string[] = [];
+        const deadlineEndTime = new Date();
+        deadlineInfo.push(`Deadline exceeded after ${formatDateDifference(this.deadlineStartTime, deadlineEndTime)}`);
+        if (this.configReceivedTime) {
+          if (this.configReceivedTime > this.deadlineStartTime) {
+            deadlineInfo.push(`name resolution: ${formatDateDifference(this.deadlineStartTime, this.configReceivedTime)}`);
+          }
+          if (this.childStartTime) {
+            if (this.childStartTime > this.configReceivedTime) {
+              deadlineInfo.push(`metadata filters: ${formatDateDifference(this.configReceivedTime, this.childStartTime)}`);
+            }
+          } else {
+            deadlineInfo.push('waiting for metadata filters');
+          }
+        } else {
+          deadlineInfo.push('waiting for name resolution');
+        }
+        if (this.child) {
+          deadlineInfo.push(...this.child.getDeadlineInfo());
+        }
+        this.cancelWithStatus(Status.DEADLINE_EXCEEDED, deadlineInfo.join(','));
       };
       if (timeout <= 0) {
         process.nextTick(handleDeadline);
@@ -176,6 +207,7 @@ export class ResolvingCall implements Call {
       return;
     }
     // configResult.type === 'SUCCESS'
+    this.configReceivedTime = new Date();
     const config = configResult.config;
     if (config.status !== Status.OK) {
       const { code, details } = restrictControlPlaneStatusCode(
@@ -215,6 +247,7 @@ export class ResolvingCall implements Call {
           this.deadline
         );
         this.trace('Created child [' + this.child.getCallNumber() + ']');
+        this.childStartTime = new Date();
         this.child.start(filteredMetadata, {
           onReceiveMetadata: metadata => {
             this.trace('Received metadata');

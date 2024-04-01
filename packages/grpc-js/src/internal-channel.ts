@@ -684,7 +684,7 @@ export class InternalChannel {
     host: string,
     credentials: CallCredentials,
     deadline: Deadline
-  ): Call {
+  ): LoadBalancingCall | RetryingCall {
     // Create a RetryingCall if retries are enabled
     if (this.options['grpc.enable_retries'] === 0) {
       return this.createLoadBalancingCall(
