@@ -694,11 +694,13 @@ export class Http2SubchannelConnector implements SubchannelConnector {
         if (options['grpc.ssl_target_name_override']) {
           const sslTargetNameOverride =
             options['grpc.ssl_target_name_override']!;
+          const originalCheckServerIdentity =
+            connectionOptions.checkServerIdentity ?? checkServerIdentity;
           connectionOptions.checkServerIdentity = (
             host: string,
             cert: PeerCertificate
           ): Error | undefined => {
-            return checkServerIdentity(sslTargetNameOverride, cert);
+            return originalCheckServerIdentity(sslTargetNameOverride, cert);
           };
           connectionOptions.servername = sslTargetNameOverride;
         } else {
@@ -804,11 +806,13 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       // This option is used for testing only.
       if (options['grpc.ssl_target_name_override']) {
         const sslTargetNameOverride = options['grpc.ssl_target_name_override']!;
+        const originalCheckServerIdentity =
+          connectionOptions.checkServerIdentity ?? checkServerIdentity;
         connectionOptions.checkServerIdentity = (
           host: string,
           cert: PeerCertificate
         ): Error | undefined => {
-          return checkServerIdentity(sslTargetNameOverride, cert);
+          return originalCheckServerIdentity(sslTargetNameOverride, cert);
         };
         connectionOptions.servername = sslTargetNameOverride;
       } else {
