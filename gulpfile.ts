@@ -23,15 +23,15 @@ import * as reflection from './packages/grpc-reflection/gulpfile';
 import * as protobuf from './packages/proto-loader/gulpfile';
 import * as internalTest from './test/gulpfile';
 
-const installAll = gulp.series(jsCore.install, healthCheck.install, protobuf.install, internalTest.install, jsXds.install, reflection.install);
+const installAll = gulp.series(protobuf.install, jsCore.install, healthCheck.install, internalTest.install, jsXds.install, reflection.install);
 
 const lint = gulp.parallel(jsCore.lint);
 
-const build = gulp.series(jsCore.compile, protobuf.compile, jsXds.compile);
+const build = gulp.series(protobuf.compile, jsCore.compile, jsXds.compile);
 
 const setup = gulp.series(installAll);
 
-const setupPureJSInterop = gulp.series(jsCore.install, protobuf.install, internalTest.install);
+const setupPureJSInterop = gulp.series(protobuf.install, jsCore.install, internalTest.install);
 
 const clean = gulp.series(jsCore.clean, protobuf.clean, jsXds.clean);
 
