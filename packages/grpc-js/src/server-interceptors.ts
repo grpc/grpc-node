@@ -866,7 +866,7 @@ export class BaseServerInterceptingCall
         status.details
     );
 
-    if (this.stream.headersSent) {
+    if (this.metadataSent) {
       if (!this.wantTrailers) {
         this.wantTrailers = true;
         this.stream.once('wantTrailers', () => {
