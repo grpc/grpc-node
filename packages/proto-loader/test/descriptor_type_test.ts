@@ -140,10 +140,10 @@ describe('Descriptor types', () => {
     assert.deepStrictEqual(service.Hello.options, {
       deprecated: true,
       idempotency_level: 'NO_SIDE_EFFECTS',
-      uninterpreted_option: {
+      uninterpreted_option: [{
         name: {
           name_part: 'foo',
-          is_extension:  false,
+          is_extension: false,
         },
         identifier_value: 'bar',
         positive_int_value: 9007199254740991,
@@ -151,7 +151,7 @@ describe('Descriptor types', () => {
         double_value: 1.2345,
         string_value: 'foobar',
         aggregate_value: 'foobar'
-      },
+      }],
       '(google.api.http)': {
         post: '/hello',
         body: '*',

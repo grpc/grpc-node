@@ -250,7 +250,18 @@ function createSerializer(cls: Protobuf.Type): Serialize<object> {
 }
 
 function mapMethodOptions(options: Partial<MethodOptions>[] | undefined): MethodOptions {
-  return (options || []).reduce((obj: MethodOptions, item: Partial<MethodOptions>) => ({ ...obj, ...item  }),
+  return (options || []).reduce((obj: MethodOptions, item: Partial<MethodOptions>) => {
+    for (const [key, value] of Object.entries(item)) {
+      switch (key) {
+        case 'uninterpreted_option' :
+          obj.uninterpreted_option.push(item.uninterpreted_option as UninterpretedOption);
+          break;
+        default:
+          obj[key] = value
+      }
+    }
+    return obj
+  },
     {
       deprecated: false,
       idempotency_level: IdempotencyLevel.IDEMPOTENCY_UNKNOWN,
