@@ -153,9 +153,9 @@ describe('Descriptor types', () => {
         aggregate_value: 'foobar'
       },
       '(google.api.http)': {
-        post: "/hello",
-        body: "*",
-        response_body: "*",
+        post: '/hello',
+        body: '*',
+        response_body: '*',
         additional_bindings: {}
       },
       '(google.api.method_signature)': 'bar'
@@ -170,7 +170,7 @@ describe('Descriptor types', () => {
       idempotency_level: 'IDEMPOTENCY_UNKNOWN',
       uninterpreted_option: [],
       '(google.api.http)': {
-        get: "/hello",
+        get: '/hello',
         additional_bindings: {
           body: '*',
           get: '/hello-world'
