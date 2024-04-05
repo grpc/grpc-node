@@ -139,7 +139,7 @@ describe('Descriptor types', () => {
     const service = packageDefinition.Hello as proto_loader.ServiceDefinition
     assert.deepStrictEqual(service.Hello.options, {
       deprecated: true,
-      idempotency_level: 'IDEMPOTENCY_UNKNOWN',
+      idempotency_level: 'NO_SIDE_EFFECTS',
       uninterpreted_option: {
         name: {
           name_part: 'foo',
@@ -164,6 +164,18 @@ describe('Descriptor types', () => {
       deprecated: false,
       idempotency_level: 'IDEMPOTENCY_UNKNOWN',
       uninterpreted_option: []
+    })
+    assert.deepStrictEqual(service.HelloWithSomeOptions.options, {
+      deprecated: true,
+      idempotency_level: 'IDEMPOTENCY_UNKNOWN',
+      uninterpreted_option: [],
+      '(google.api.http)': {
+        get: "/hello",
+        additional_bindings: {
+          body: '*',
+          get: '/hello-world'
+        }
+      },
     })
   })
 });

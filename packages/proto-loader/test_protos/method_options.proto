@@ -13,7 +13,7 @@ message MethodSignature {
 service Hello {
   rpc Hello (Empty) returns (Empty) {
     option deprecated = true;
-    option idempotency_level = IDEMPOTENCY_UNKNOWN;
+    option idempotency_level = NO_SIDE_EFFECTS;
     option uninterpreted_option = {
       name: {
         name_part: 'foo'
@@ -35,4 +35,14 @@ service Hello {
     option (google.api.method_signature) = 'bar';
   }
   rpc HelloWithoutOptions (Empty) returns (Empty) {}
+  rpc HelloWithSomeOptions (Empty) returns (Empty) {
+    option deprecated = true;
+    option (google.api.http) = {
+      get: "/hello"
+      additional_bindings: {
+        get: "/hello-world"
+        body: "*"
+      }
+    };
+  }
 }
