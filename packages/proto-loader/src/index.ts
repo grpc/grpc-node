@@ -249,10 +249,13 @@ function createSerializer(cls: Protobuf.Type): Serialize<object> {
   };
 }
 
-function mapMethodOptions(options: Partial<MethodOptions>[] | undefined): MethodOptions | undefined {
-  return Array.isArray(options) ?
-    options.reduce((obj: MethodOptions, item: Partial<MethodOptions>) => ({ ...obj, ...item  }), {}) :
-    undefined;
+function mapMethodOptions(options: Partial<MethodOptions>[] | undefined): MethodOptions {
+  return (options || []).reduce((obj: MethodOptions, item: Partial<MethodOptions>) => ({ ...obj, ...item  }),
+    {
+      deprecated: false,
+      idempotency_level: IdempotencyLevel.IDEMPOTENCY_UNKNOWN,
+      uninterpreted_option: []
+    });
 }
 
 function createMethodDefinition(

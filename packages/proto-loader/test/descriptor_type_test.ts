@@ -160,6 +160,10 @@ describe('Descriptor types', () => {
       },
       '(google.api.method_signature)': 'bar'
     })
-    assert(service.HelloWithoutOptions.options === undefined)
+    assert.deepStrictEqual(service.HelloWithoutOptions.options, {
+      deprecated: false,
+      idempotency_level: 'IDEMPOTENCY_UNKNOWN',
+      uninterpreted_option: []
+    })
   })
 });
