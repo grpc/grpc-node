@@ -137,9 +137,9 @@ export interface UninterpretedOption {
 }
 
 export interface MethodOptions {
-  deprecated?: boolean;
-  idempotency_level?: IdempotencyLevel|keyof typeof IdempotencyLevel;
-  uninterpreted_option?: UninterpretedOption;
+  deprecated: boolean;
+  idempotency_level: IdempotencyLevel|keyof typeof IdempotencyLevel;
+  uninterpreted_option: UninterpretedOption;
   [k: string]: unknown;
 }
 
