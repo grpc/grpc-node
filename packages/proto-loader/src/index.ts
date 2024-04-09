@@ -115,6 +115,34 @@ export interface EnumTypeDefinition extends ProtobufTypeDefinition {
   format: 'Protocol Buffer 3 EnumDescriptorProto';
 }
 
+export enum IdempotencyLevel {
+  IDEMPOTENCY_UNKNOWN = 'IDEMPOTENCY_UNKNOWN',
+  NO_SIDE_EFFECTS = 'NO_SIDE_EFFECTS',
+  IDEMPOTENT = 'IDEMPOTENT'
+}
+
+export interface NamePart {
+  name_part: string;
+  is_extension: boolean;
+}
+
+export interface UninterpretedOption {
+  name?: NamePart[];
+  identifier_value?: string;
+  positive_int_value?: number;
+  negative_int_value?: number;
+  double_value?: number;
+  string_value?: string;
+  aggregate_value?: string;
+}
+
+export interface MethodOptions {
+  deprecated: boolean;
+  idempotency_level: IdempotencyLevel;
+  uninterpreted_option: UninterpretedOption[];
+  [k: string]: unknown;
+}
+
 export interface MethodDefinition<RequestType, ResponseType, OutputRequestType=RequestType, OutputResponseType=ResponseType> {
   path: string;
   requestStream: boolean;
@@ -126,6 +154,7 @@ export interface MethodDefinition<RequestType, ResponseType, OutputRequestType=R
   originalName?: string;
   requestType: MessageTypeDefinition;
   responseType: MessageTypeDefinition;
+  options: MethodOptions;
 }
 
 export interface ServiceDefinition {
@@ -220,6 +249,27 @@ function createSerializer(cls: Protobuf.Type): Serialize<object> {
   };
 }
 
+function mapMethodOptions(options: Partial<MethodOptions>[] | undefined): MethodOptions {
+  return (options || []).reduce((obj: MethodOptions, item: Partial<MethodOptions>) => {
+    for (const [key, value] of Object.entries(item)) {
+      switch (key) {
+        case 'uninterpreted_option' :
+          obj.uninterpreted_option.push(item.uninterpreted_option as UninterpretedOption);
+          break;
+        default:
+          obj[key] = value
+      }
+    }
+    return obj
+  },
+    {
+      deprecated: false,
+      idempotency_level: IdempotencyLevel.IDEMPOTENCY_UNKNOWN,
+      uninterpreted_option: [],
+    }
+  ) as MethodOptions;
+}
+
 function createMethodDefinition(
   method: Protobuf.Method,
   serviceName: string,
@@ -242,6 +292,7 @@ function createMethodDefinition(
     originalName: camelCase(method.name),
     requestType: createMessageDefinition(requestType, fileDescriptors),
     responseType: createMessageDefinition(responseType, fileDescriptors),
+    options: mapMethodOptions(method.parsedOptions),
   };
 }
 
