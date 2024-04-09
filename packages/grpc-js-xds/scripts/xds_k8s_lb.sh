@@ -19,8 +19,9 @@ set -eo pipefail
 readonly GITHUB_REPOSITORY_NAME="grpc-node"
 readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/psm-interop/${TEST_DRIVER_BRANCH:-main}/.kokoro/psm_interop_kokoro_lib.sh"
 ## xDS test client Docker images
-readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/java-server:558b5b0bfac8e21755c223063274a779b3898afe"
-readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/node-client"
+readonly DOCKER_REGISTRY="us-docker.pkg.dev"
+readonly SERVER_IMAGE_NAME="us-docker.pkg.dev/grpc-testing/psm-interop/java-server:canonical"
+readonly CLIENT_IMAGE_NAME="us-docker.pkg.dev/grpc-testing/psm-interop/node-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
 readonly BUILD_APP_PATH="packages/grpc-js-xds/interop/Dockerfile"
 readonly LANGUAGE_NAME="Node"
@@ -46,7 +47,7 @@ build_test_app_docker_images() {
     -t "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     .
 
-  gcloud -q auth configure-docker
+  gcloud -q auth configure-docker "${DOCKER_REGISTRY}"
   docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
   if is_version_branch "${TESTING_VERSION}"; then
     tag_and_push_docker_image "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}" "${TESTING_VERSION}"
