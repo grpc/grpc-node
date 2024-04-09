@@ -154,7 +154,7 @@ export interface MethodDefinition<RequestType, ResponseType, OutputRequestType=R
   originalName?: string;
   requestType: MessageTypeDefinition;
   responseType: MessageTypeDefinition;
-  options?: MethodOptions;
+  options: MethodOptions;
 }
 
 export interface ServiceDefinition {
@@ -265,8 +265,9 @@ function mapMethodOptions(options: Partial<MethodOptions>[] | undefined): Method
     {
       deprecated: false,
       idempotency_level: IdempotencyLevel.IDEMPOTENCY_UNKNOWN,
-      uninterpreted_option: []
-    });
+      uninterpreted_option: [],
+    }
+  ) as MethodOptions;
 }
 
 function createMethodDefinition(
