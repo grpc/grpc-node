@@ -513,7 +513,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     }
     const rawAddressList = endpointList;
     if (rawAddressList.length === 0) {
-      throw new Error('No addresses in endpoint list passed to pick_first');
+      throw new Error('出现问题，No addresses in endpoint list passed to pick_first');
     }
     const addressList = interleaveAddressFamilies(rawAddressList);
     this.latestAddressList = addressList;
