@@ -511,9 +511,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     if (lbConfig.getShuffleAddressList()) {
       endpointList = shuffled(endpointList);
     }
-    const rawAddressList = ([] as SubchannelAddress[]).concat(
-      ...endpointList.map(endpoint => endpoint.addresses)
-    );
+    const rawAddressList = endpointList;
     if (rawAddressList.length === 0) {
       throw new Error('No addresses in endpoint list passed to pick_first');
     }
