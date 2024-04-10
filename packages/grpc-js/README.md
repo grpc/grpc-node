@@ -1,4 +1,4 @@
-# Pure JavaScript gRPC Client
+# 纯JS实现的GRPC客户端
 
 ## Installation
 
