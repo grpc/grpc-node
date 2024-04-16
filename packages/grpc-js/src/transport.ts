@@ -507,7 +507,11 @@ class Http2Transport implements Transport {
     headers[HTTP2_HEADER_PATH] = method;
     headers[HTTP2_HEADER_TE] = 'trailers';
     // Set default 'user-agent' header if it's not explicitly set in the metadata
-    if (!headers[HTTP2_HEADER_USER_AGENT]) {
+    if (
+      !Object.keys(headers).some(
+        key => key.toLowerCase() === HTTP2_HEADER_USER_AGENT
+      )
+    ) {
       headers[HTTP2_HEADER_USER_AGENT] = this.userAgent;
     }
     let http2Stream: http2.ClientHttp2Stream;
