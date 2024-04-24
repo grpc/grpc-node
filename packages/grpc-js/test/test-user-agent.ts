@@ -107,8 +107,7 @@ describe('Configuring user-agent via metadata', () => {
 
   it('should honor user-agent via metadata regardless of case', done => {
     const metadata = new CustomMetadata();
-    const userAgentHeader = 'User-Agent';
-    metadata.set(userAgentHeader, 'Custom-User-Agent');
+    metadata.set('User-Agent', 'Custom-User-Agent');
 
     client.echo(
       { value: 'test value', value2: 3 },
