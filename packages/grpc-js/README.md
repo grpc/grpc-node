@@ -69,7 +69,7 @@ Many channel arguments supported in `grpc` are not supported in `@grpc/grpc-js`.
   - `channelOverride`
   - `channelFactoryOverride`
 
-  > **Note**: If user-agent is passed in the request metadata, it will take precedence and be used instead of the one set using the `grpc.primary_user_agent` or `grpc.secondary_user_agent` channel options.
+  > **Note**: `user-agent` passed in the request metadata will take precedence over  `grpc.primary_user_agent` and `grpc.secondary_user_agent` channel options.
 
 ## Some Notes on API Guarantees
 

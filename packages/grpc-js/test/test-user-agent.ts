@@ -14,7 +14,17 @@ import * as Package from '../package.json';
 const { HTTP2_HEADER_USER_AGENT } = http2.constants;
 const clientVersion = Package.version;
 
-describe('Handling of user-agent in gRPC Requests', () => {
+// Added to preserve key casing for testing scenarios
+class CustomMetadata extends grpc.Metadata {
+  set(key: string, value: grpc.MetadataValue) {
+    this.internalRepr.set(key, [value]);
+  }
+  get(key: string) {
+    return this.internalRepr.get(key) || [];
+  }
+}
+
+describe('Configuring user-agent via metadata', () => {
   let server: Server;
   let client: ServiceClient;
   let lastCallMetadata: grpc.Metadata; // Store the metadata from the last call
@@ -74,7 +84,7 @@ describe('Handling of user-agent in gRPC Requests', () => {
     );
   });
 
-  it('should not override user-agent if set in metadata', done => {
+  it('should prioritize user-agent set via metadata over the one set via channel options', done => {
     const metadata = new grpc.Metadata();
     metadata.set(HTTP2_HEADER_USER_AGENT, 'custom-user-agent');
 
@@ -88,6 +98,28 @@ describe('Handling of user-agent in gRPC Requests', () => {
           assert.strictEqual(
             lastCallMetadata.get(HTTP2_HEADER_USER_AGENT)[0],
             'custom-user-agent'
+          );
+          done();
+        }
+      }
+    );
+  });
+
+  it('should honor user-agent via metadata regardless of case', done => {
+    const metadata = new CustomMetadata();
+    const userAgentHeader = 'User-Agent';
+    metadata.set(userAgentHeader, 'Custom-User-Agent');
+
+    client.echo(
+      { value: 'test value', value2: 3 },
+      metadata,
+      (err: grpc.ServiceError, response: Response) => {
+        if (err) {
+          done(err);
+        } else {
+          assert.strictEqual(
+            lastCallMetadata.get(HTTP2_HEADER_USER_AGENT)[0],
+            'Custom-User-Agent'
           );
           done();
         }
