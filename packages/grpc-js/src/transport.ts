@@ -502,11 +502,18 @@ class Http2Transport implements Transport {
   ): Http2SubchannelCall {
     const headers = metadata.toHttp2Headers();
     headers[HTTP2_HEADER_AUTHORITY] = host;
-    headers[HTTP2_HEADER_USER_AGENT] = this.userAgent;
     headers[HTTP2_HEADER_CONTENT_TYPE] = 'application/grpc';
     headers[HTTP2_HEADER_METHOD] = 'POST';
     headers[HTTP2_HEADER_PATH] = method;
     headers[HTTP2_HEADER_TE] = 'trailers';
+    // Set default 'user-agent' header if it's not explicitly set in the metadata
+    if (
+      !Object.keys(headers).some(
+        key => key.toLowerCase() === HTTP2_HEADER_USER_AGENT
+      )
+    ) {
+      headers[HTTP2_HEADER_USER_AGENT] = this.userAgent;
+    }
     let http2Stream: http2.ClientHttp2Stream;
     /* In theory, if an error is thrown by session.request because session has
      * become unusable (e.g. because it has received a goaway), this subchannel

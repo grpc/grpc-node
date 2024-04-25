@@ -69,6 +69,8 @@ Many channel arguments supported in `grpc` are not supported in `@grpc/grpc-js`.
   - `channelOverride`
   - `channelFactoryOverride`
 
+  > **Note**: `user-agent` passed in the request metadata will take precedence over  `grpc.primary_user_agent` and `grpc.secondary_user_agent` channel options.
+
 ## Some Notes on API Guarantees
 
 The public API of this library follows semantic versioning, with some caveats:
