@@ -24,6 +24,7 @@ export interface Extension {
    * [#not-implemented-hide:] Type descriptor of extension configuration proto.
    * [#comment:TODO(yanavlasov): Link to the doc with existing configuration protos.]
    * [#comment:TODO(yanavlasov): Add tests when PR #9391 lands.]
+   * @deprecated
    */
   'type_descriptor'?: (string);
   /**
@@ -64,6 +65,7 @@ export interface Extension__Output {
    * [#not-implemented-hide:] Type descriptor of extension configuration proto.
    * [#comment:TODO(yanavlasov): Link to the doc with existing configuration protos.]
    * [#comment:TODO(yanavlasov): Add tests when PR #9391 lands.]
+   * @deprecated
    */
   'type_descriptor': (string);
   /**

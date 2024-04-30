@@ -4,28 +4,57 @@ import type { RegexMatchAndSubstitute as _envoy_type_matcher_v3_RegexMatchAndSub
 
 // Original file: deps/envoy-api/envoy/config/route/v3/route_components.proto
 
-export enum _envoy_config_route_v3_RedirectAction_RedirectResponseCode {
+export const _envoy_config_route_v3_RedirectAction_RedirectResponseCode = {
   /**
    * Moved Permanently HTTP Status Code - 301.
    */
-  MOVED_PERMANENTLY = 0,
+  MOVED_PERMANENTLY: 'MOVED_PERMANENTLY',
   /**
    * Found HTTP Status Code - 302.
    */
-  FOUND = 1,
+  FOUND: 'FOUND',
   /**
    * See Other HTTP Status Code - 303.
    */
-  SEE_OTHER = 2,
+  SEE_OTHER: 'SEE_OTHER',
   /**
    * Temporary Redirect HTTP Status Code - 307.
    */
-  TEMPORARY_REDIRECT = 3,
+  TEMPORARY_REDIRECT: 'TEMPORARY_REDIRECT',
   /**
    * Permanent Redirect HTTP Status Code - 308.
    */
-  PERMANENT_REDIRECT = 4,
-}
+  PERMANENT_REDIRECT: 'PERMANENT_REDIRECT',
+} as const;
+
+export type _envoy_config_route_v3_RedirectAction_RedirectResponseCode =
+  /**
+   * Moved Permanently HTTP Status Code - 301.
+   */
+  | 'MOVED_PERMANENTLY'
+  | 0
+  /**
+   * Found HTTP Status Code - 302.
+   */
+  | 'FOUND'
+  | 1
+  /**
+   * See Other HTTP Status Code - 303.
+   */
+  | 'SEE_OTHER'
+  | 2
+  /**
+   * Temporary Redirect HTTP Status Code - 307.
+   */
+  | 'TEMPORARY_REDIRECT'
+  | 3
+  /**
+   * Permanent Redirect HTTP Status Code - 308.
+   */
+  | 'PERMANENT_REDIRECT'
+  | 4
+
+export type _envoy_config_route_v3_RedirectAction_RedirectResponseCode__Output = typeof _envoy_config_route_v3_RedirectAction_RedirectResponseCode[keyof typeof _envoy_config_route_v3_RedirectAction_RedirectResponseCode]
 
 /**
  * [#next-free-field: 10]
@@ -58,7 +87,7 @@ export interface RedirectAction {
    * The HTTP status code to use in the redirect response. The default response
    * code is MOVED_PERMANENTLY (301).
    */
-  'response_code'?: (_envoy_config_route_v3_RedirectAction_RedirectResponseCode | keyof typeof _envoy_config_route_v3_RedirectAction_RedirectResponseCode);
+  'response_code'?: (_envoy_config_route_v3_RedirectAction_RedirectResponseCode);
   /**
    * The scheme portion of the URL will be swapped with "https".
    */
@@ -155,7 +184,7 @@ export interface RedirectAction__Output {
    * The HTTP status code to use in the redirect response. The default response
    * code is MOVED_PERMANENTLY (301).
    */
-  'response_code': (keyof typeof _envoy_config_route_v3_RedirectAction_RedirectResponseCode);
+  'response_code': (_envoy_config_route_v3_RedirectAction_RedirectResponseCode__Output);
   /**
    * The scheme portion of the URL will be swapped with "https".
    */

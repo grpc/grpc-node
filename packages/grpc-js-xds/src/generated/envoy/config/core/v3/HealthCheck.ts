@@ -9,11 +9,10 @@ import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig
 import type { UInt64Value as _google_protobuf_UInt64Value, UInt64Value__Output as _google_protobuf_UInt64Value__Output } from '../../../../google/protobuf/UInt64Value';
 import type { HeaderValueOption as _envoy_config_core_v3_HeaderValueOption, HeaderValueOption__Output as _envoy_config_core_v3_HeaderValueOption__Output } from '../../../../envoy/config/core/v3/HeaderValueOption';
 import type { Int64Range as _envoy_type_v3_Int64Range, Int64Range__Output as _envoy_type_v3_Int64Range__Output } from '../../../../envoy/type/v3/Int64Range';
-import type { CodecClientType as _envoy_type_v3_CodecClientType } from '../../../../envoy/type/v3/CodecClientType';
+import type { CodecClientType as _envoy_type_v3_CodecClientType, CodecClientType__Output as _envoy_type_v3_CodecClientType__Output } from '../../../../envoy/type/v3/CodecClientType';
 import type { StringMatcher as _envoy_type_matcher_v3_StringMatcher, StringMatcher__Output as _envoy_type_matcher_v3_StringMatcher__Output } from '../../../../envoy/type/matcher/v3/StringMatcher';
-import type { RequestMethod as _envoy_config_core_v3_RequestMethod } from '../../../../envoy/config/core/v3/RequestMethod';
+import type { RequestMethod as _envoy_config_core_v3_RequestMethod, RequestMethod__Output as _envoy_config_core_v3_RequestMethod__Output } from '../../../../envoy/config/core/v3/RequestMethod';
 import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
-import type { Long } from '@grpc/proto-loader';
 
 /**
  * Custom health check.
@@ -183,7 +182,7 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck {
   /**
    * Use specified application protocol for health checks.
    */
-  'codec_client_type'?: (_envoy_type_v3_CodecClientType | keyof typeof _envoy_type_v3_CodecClientType);
+  'codec_client_type'?: (_envoy_type_v3_CodecClientType);
   /**
    * An optional service name parameter which is used to validate the identity of
    * the health checked cluster using a :ref:`StringMatcher
@@ -197,7 +196,7 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck {
    * CONNECT method is disallowed because it is not appropriate for health check request.
    * If a non-200 response is expected by the method, it needs to be set in :ref:`expected_statuses <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.expected_statuses>`.
    */
-  'method'?: (_envoy_config_core_v3_RequestMethod | keyof typeof _envoy_config_core_v3_RequestMethod);
+  'method'?: (_envoy_config_core_v3_RequestMethod);
 }
 
 /**
@@ -272,7 +271,7 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck__Output {
   /**
    * Use specified application protocol for health checks.
    */
-  'codec_client_type': (keyof typeof _envoy_type_v3_CodecClientType);
+  'codec_client_type': (_envoy_type_v3_CodecClientType__Output);
   /**
    * An optional service name parameter which is used to validate the identity of
    * the health checked cluster using a :ref:`StringMatcher
@@ -286,7 +285,7 @@ export interface _envoy_config_core_v3_HealthCheck_HttpHealthCheck__Output {
    * CONNECT method is disallowed because it is not appropriate for health check request.
    * If a non-200 response is expected by the method, it needs to be set in :ref:`expected_statuses <envoy_v3_api_field_config.core.v3.HealthCheck.HttpHealthCheck.expected_statuses>`.
    */
-  'method': (keyof typeof _envoy_config_core_v3_RequestMethod);
+  'method': (_envoy_config_core_v3_RequestMethod__Output);
 }
 
 /**
@@ -497,6 +496,7 @@ export interface HealthCheck {
    * in the file sink extension.
    * 
    * Specifies the path to the :ref:`health check event log <arch_overview_health_check_logging>`.
+   * @deprecated
    */
   'event_log_path'?: (string);
   /**
@@ -687,6 +687,7 @@ export interface HealthCheck__Output {
    * in the file sink extension.
    * 
    * Specifies the path to the :ref:`health check event log <arch_overview_health_check_logging>`.
+   * @deprecated
    */
   'event_log_path': (string);
   /**

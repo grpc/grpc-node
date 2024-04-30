@@ -9,20 +9,40 @@ import type { HTTPResponseProperties as _envoy_data_accesslog_v3_HTTPResponsePro
 /**
  * HTTP version
  */
-export enum _envoy_data_accesslog_v3_HTTPAccessLogEntry_HTTPVersion {
-  PROTOCOL_UNSPECIFIED = 0,
-  HTTP10 = 1,
-  HTTP11 = 2,
-  HTTP2 = 3,
-  HTTP3 = 4,
-}
+export const _envoy_data_accesslog_v3_HTTPAccessLogEntry_HTTPVersion = {
+  PROTOCOL_UNSPECIFIED: 'PROTOCOL_UNSPECIFIED',
+  HTTP10: 'HTTP10',
+  HTTP11: 'HTTP11',
+  HTTP2: 'HTTP2',
+  HTTP3: 'HTTP3',
+} as const;
+
+/**
+ * HTTP version
+ */
+export type _envoy_data_accesslog_v3_HTTPAccessLogEntry_HTTPVersion =
+  | 'PROTOCOL_UNSPECIFIED'
+  | 0
+  | 'HTTP10'
+  | 1
+  | 'HTTP11'
+  | 2
+  | 'HTTP2'
+  | 3
+  | 'HTTP3'
+  | 4
+
+/**
+ * HTTP version
+ */
+export type _envoy_data_accesslog_v3_HTTPAccessLogEntry_HTTPVersion__Output = typeof _envoy_data_accesslog_v3_HTTPAccessLogEntry_HTTPVersion[keyof typeof _envoy_data_accesslog_v3_HTTPAccessLogEntry_HTTPVersion]
 
 export interface HTTPAccessLogEntry {
   /**
    * Common properties shared by all Envoy access logs.
    */
   'common_properties'?: (_envoy_data_accesslog_v3_AccessLogCommon | null);
-  'protocol_version'?: (_envoy_data_accesslog_v3_HTTPAccessLogEntry_HTTPVersion | keyof typeof _envoy_data_accesslog_v3_HTTPAccessLogEntry_HTTPVersion);
+  'protocol_version'?: (_envoy_data_accesslog_v3_HTTPAccessLogEntry_HTTPVersion);
   /**
    * Description of the incoming HTTP request.
    */
@@ -38,7 +58,7 @@ export interface HTTPAccessLogEntry__Output {
    * Common properties shared by all Envoy access logs.
    */
   'common_properties': (_envoy_data_accesslog_v3_AccessLogCommon__Output | null);
-  'protocol_version': (keyof typeof _envoy_data_accesslog_v3_HTTPAccessLogEntry_HTTPVersion);
+  'protocol_version': (_envoy_data_accesslog_v3_HTTPAccessLogEntry_HTTPVersion__Output);
   /**
    * Description of the incoming HTTP request.
    */

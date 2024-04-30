@@ -79,6 +79,7 @@ export interface FilterChain {
    * This field is deprecated. Add a
    * :ref:`PROXY protocol listener filter <config_listener_filters_proxy_protocol>`
    * explicitly instead.
+   * @deprecated
    */
   'use_proxy_proto'?: (_google_protobuf_BoolValue | null);
   /**
@@ -149,6 +150,7 @@ export interface FilterChain__Output {
    * This field is deprecated. Add a
    * :ref:`PROXY protocol listener filter <config_listener_filters_proxy_protocol>`
    * explicitly instead.
+   * @deprecated
    */
   'use_proxy_proto': (_google_protobuf_BoolValue__Output | null);
   /**

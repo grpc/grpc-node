@@ -398,7 +398,7 @@ function makeSingleRequest(client: TestServiceClient, type: CallType, failOnFail
   const startTime = process.hrtime.bigint();
   const deadline = new Date();
   deadline.setSeconds(deadline.getSeconds() + currentConfig.timeoutSec);
-  const callback = (error: grpc.ServiceError | undefined, value: Empty__Output | undefined) => {
+  const callback = (error: grpc.ServiceError | null, value: Empty__Output | undefined) => {
     const statusCode = error?.code ?? grpc.status.OK;
     const duration = process.hrtime.bigint() - startTime;
     const durationSeconds = Number(duration / TIMESTAMP_ONE_SECOND) | 0;

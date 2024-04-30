@@ -2,7 +2,6 @@
 
 import type { UInt64Value as _google_protobuf_UInt64Value, UInt64Value__Output as _google_protobuf_UInt64Value__Output } from '../../../../google/protobuf/UInt64Value';
 import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../../google/protobuf/BoolValue';
-import type { Long } from '@grpc/proto-loader';
 
 /**
  * Generic UDP socket configuration.

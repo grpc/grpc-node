@@ -3,7 +3,7 @@
 import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../google/protobuf/Any';
 import type { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../../google/protobuf/Timestamp';
 import type { UpdateFailureState as _envoy_admin_v3_UpdateFailureState, UpdateFailureState__Output as _envoy_admin_v3_UpdateFailureState__Output } from '../../../envoy/admin/v3/UpdateFailureState';
-import type { ClientResourceStatus as _envoy_admin_v3_ClientResourceStatus } from '../../../envoy/admin/v3/ClientResourceStatus';
+import type { ClientResourceStatus as _envoy_admin_v3_ClientResourceStatus, ClientResourceStatus__Output as _envoy_admin_v3_ClientResourceStatus__Output } from '../../../envoy/admin/v3/ClientResourceStatus';
 
 /**
  * [#next-free-field: 6]
@@ -36,7 +36,7 @@ export interface _envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig {
    * The client status of this resource.
    * [#not-implemented-hide:]
    */
-  'client_status'?: (_envoy_admin_v3_ClientResourceStatus | keyof typeof _envoy_admin_v3_ClientResourceStatus);
+  'client_status'?: (_envoy_admin_v3_ClientResourceStatus);
 }
 
 /**
@@ -70,7 +70,7 @@ export interface _envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig__Output {
    * The client status of this resource.
    * [#not-implemented-hide:]
    */
-  'client_status': (keyof typeof _envoy_admin_v3_ClientResourceStatus);
+  'client_status': (_envoy_admin_v3_ClientResourceStatus__Output);
 }
 
 /**
