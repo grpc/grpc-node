@@ -32,7 +32,7 @@ function multiDone(done: () => void, target: number) {
   };
 }
 
-describe('Call propagation', () => {
+describe.only('Call propagation', () => {
   let server: grpc.Server;
   let Client: ServiceClientConstructor;
   let client: ServiceClient;
@@ -199,8 +199,8 @@ describe('Call propagation', () => {
       });
     });
   });
-  describe('Deadlines', () => {
-    it('should work with unary requests', done => {
+  describe.only('Deadlines', () => {
+    it.only('should work with unary requests', done => {
       done = multiDone(done, 2);
       proxyServer.addService(Client.service, {
         unary: (

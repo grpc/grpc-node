@@ -10,6 +10,7 @@
     "pretty": true,
     "sourceMap": true,
     "strict": true,
+    "alwaysStrict": true,
     "lib": ["es2017"],
     "outDir": "build",
     "target": "es2017",

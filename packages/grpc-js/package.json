@@ -2,6 +2,7 @@
   "name": "@grpc/grpc-js",
   "version": "1.10.6",
   "description": "gRPC Library for Node - pure JS implementation",
+  "module": "commonjs",
   "homepage": "https://grpc.io/",
   "repository": "https://github.com/grpc/grpc-node/tree/master/packages/grpc-js",
   "main": "build/src/index.js",
@@ -20,12 +21,12 @@
     "@types/lodash": "^4.14.202",
     "@types/mocha": "^10.0.6",
     "@types/ncp": "^2.0.8",
-    "@types/node": ">=20.11.20",
+    "@types/node": "^20.12.7",
     "@types/pify": "^5.0.4",
     "@types/semver": "^7.5.8",
-    "@typescript-eslint/eslint-plugin": "^7.1.0",
-    "@typescript-eslint/parser": "^7.1.0",
-    "@typescript-eslint/typescript-estree": "^7.1.0",
+    "@typescript-eslint/eslint-plugin": "^7.7.1",
+    "@typescript-eslint/parser": "^7.7.1",
+    "@typescript-eslint/typescript-estree": "^7.7.1",
     "clang-format": "^1.8.0",
     "eslint": "^8.42.0",
     "eslint-config-prettier": "^8.8.0",
@@ -40,10 +41,10 @@
     "ncp": "^2.0.0",
     "pify": "^4.0.1",
     "prettier": "^2.8.8",
-    "rimraf": "^3.0.2",
+    "rimraf": "^5.0.5",
     "semver": "^7.6.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.4.5"
   },
   "contributors": [
     {
@@ -67,7 +68,8 @@
   },
   "dependencies": {
     "@grpc/proto-loader": "^0.7.10",
-    "@js-sdsl/ordered-map": "^4.4.2"
+    "@js-sdsl/ordered-map": "^4.4.2",
+    "reusify": "^1.0.4"
   },
   "files": [
     "src/**/*.ts",
