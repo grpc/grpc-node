@@ -706,16 +706,12 @@ export class BaseServerInterceptingCall
       throw new Error(`Invalid queue entry type: ${queueEntry.type}`);
     }
 
-    const compressed = queueEntry.compressedMessage!.compressed === 1;
-    const compressedMessageEncoding = compressed
-      ? this.incomingEncoding
-      : 'identity';
+    const msg = queueEntry.compressedMessage!;
+    const compressed = msg!.compressed === 1;
     const decompressedMessage = compressed
-      ? await this.decompressMessage(
-          queueEntry.compressedMessage!.message,
-          compressedMessageEncoding
-        )
-      : queueEntry.compressedMessage!.message;
+      ? await this.decompressMessage(msg.message, this.incomingEncoding)
+      : msg.message;
+
     try {
       queueEntry.parsedMessage = this.handler.deserialize(decompressedMessage);
     } catch (err) {

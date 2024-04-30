@@ -196,7 +196,7 @@ function StreamDecoder2(this: StreamDecoder2) {
 
         // readSizeRemaining >=0 here
         if (readSizeRemaining === 0) {
-          if (that.readMessageRemaining > 0) {
+          if (that.readMessageSize > 0) {
             that.readState = ReadState.READING_MESSAGE;
             that.readMessageRemaining = that.readMessageSize;
           } else {
@@ -213,7 +213,7 @@ function StreamDecoder2(this: StreamDecoder2) {
         let { readMessageRemaining } = that;
         toRead = Math.min(len - readHead, readMessageRemaining);
 
-        if (toRead === readMessageRemaining) {
+        if (toRead === readMessageSize) {
           that.readPartialMessage = data.subarray(readHead, readHead + toRead);
         } else {
           if (that.readPartialMessage === null) {
@@ -221,7 +221,7 @@ function StreamDecoder2(this: StreamDecoder2) {
           }
 
           data.copy(
-            that.readPartialMessage!,
+            that.readPartialMessage,
             readMessageSize - readMessageRemaining,
             readHead,
             readHead + toRead
@@ -241,6 +241,8 @@ function StreamDecoder2(this: StreamDecoder2) {
           });
 
           that.readState = ReadState.NO_DATA;
+        } else {
+          that.readMessageRemaining = readMessageRemaining;
         }
       } else {
         throw new Error('Unexpected read state');
