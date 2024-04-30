@@ -18,7 +18,7 @@
 import * as assert from 'assert';
 import * as http2 from 'http2';
 import { range } from 'lodash';
-import { Metadata, MetadataObject, MetadataValue } from '../src/metadata';
+import { Metadata, MetadataObject } from '../src/metadata';
 
 class TestMetadata extends Metadata {
   getInternalRepresentation() {
@@ -272,20 +272,26 @@ describe('Metadata', () => {
       metadata.add('key-bin', Buffer.from(range(16, 32)));
       metadata.add('key-bin', Buffer.from(range(0, 32)));
       const headers = metadata.toHttp2Headers();
-      assert.deepStrictEqual(headers, {
-        key1: ['value1'],
-        key2: ['value2'],
-        key3: ['value3a', 'value3b'],
-        'key-bin': [
-          'AAECAwQFBgcICQoLDA0ODw==',
-          'EBESExQVFhcYGRobHB0eHw==',
-          'AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=',
-        ],
-      });
+      assert.deepStrictEqual(
+        headers,
+        Object.setPrototypeOf(
+          {
+            key1: ['value1'],
+            key2: ['value2'],
+            key3: ['value3a', 'value3b'],
+            'key-bin': [
+              'AAECAwQFBgcICQoLDA0ODw==',
+              'EBESExQVFhcYGRobHB0eHw==',
+              'AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=',
+            ],
+          },
+          null
+        )
+      );
     });
 
     it('creates an empty header object from empty Metadata', () => {
-      assert.deepStrictEqual(metadata.toHttp2Headers(), {});
+      assert.deepStrictEqual(metadata.toHttp2Headers(), Object.create(null));
     });
   });
 
@@ -304,7 +310,7 @@ describe('Metadata', () => {
       };
       const metadataFromHeaders = TestMetadata.fromHttp2Headers(headers);
       const internalRepr = metadataFromHeaders.getInternalRepresentation();
-      const expected: MetadataObject = new Map<string, MetadataValue[]>([
+      const expected: MetadataObject = Object.fromEntries([
         ['key1', ['value1']],
         ['key2', ['value2']],
         ['key3', ['value3a', 'value3b']],
@@ -318,13 +324,13 @@ describe('Metadata', () => {
           ],
         ],
       ]);
-      assert.deepStrictEqual(internalRepr, expected);
+      assert.deepEqual(internalRepr, Object.setPrototypeOf(expected, null));
     });
 
     it('creates an empty Metadata object from empty headers', () => {
       const metadataFromHeaders = TestMetadata.fromHttp2Headers({});
       const internalRepr = metadataFromHeaders.getInternalRepresentation();
-      assert.deepStrictEqual(internalRepr, new Map<string, MetadataValue[]>());
+      assert.deepEqual(internalRepr, Object.create(null));
     });
   });
 });

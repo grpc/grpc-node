@@ -1,13 +1,9 @@
-import {
-  Server,
-  ServerUnaryCall,
-  sendUnaryData,
-  ServerCredentials,
-} from '../build/src/index';
-import { echoService } from './helpers/utils';
+/* eslint-disable node/no-unpublished-import */
+const { Server, ServerCredentials } = require('@grpc/grpc-js');
+const { echoService } = require('./helpers/utils');
 
 const serviceImpl = {
-  echo: (call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) => {
+  echo: (call, callback) => {
     callback(null, call.request);
   },
 };
@@ -26,7 +22,7 @@ async function main() {
     5e3
   ).unref();
 
-  await new Promise<void>((resolve, reject) => {
+  await new Promise((resolve, reject) => {
     server.bindAsync('localhost:9999', credentials, (error, port) => {
       if (error) {
         reject(error);

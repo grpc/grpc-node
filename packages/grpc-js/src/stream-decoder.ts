@@ -45,7 +45,7 @@ interface StreamDecoder {
   write(data: Buffer): GrpcFrame[];
 }
 
-function StreamDecoder(this: StreamDecoder) {
+export function StreamDecoder(this: StreamDecoder) {
   // reusify reference
   this.next = null;
 

@@ -10,6 +10,10 @@ This folder contains basic benchmarks to approximate performance impact of chang
 For mac os:
 `DYLD_INSERT_LIBRARIES=$(brew --prefix jemalloc)/lib/libjemalloc.dylib pnpm ts-node --transpile-only ./benchmarks/server.ts`
 
+`DYLD_INSERT_LIBRARIES=$(brew --prefix jemalloc)/lib/libjemalloc.dylib NODE_ENV=production clinic flame -- node -r ts-node/register/transpile-only ./benchmarks/server.ts`
+
+`DYLD_INSERT_LIBRARIES=$(brew --prefix jemalloc)/lib/libjemalloc.dylib NODE_ENV=production node -r ts-node/register/transpile-only --trace-opt --trace-deopt ./benchmarks/server.ts`
+
 2. h2load -n200000 -m 50 http://localhost:9999/EchoService/Echo -c10 -t 10 -H 'content-type: application/grpc' -d ./echo-unary.bin
 
 Baseline on M1 Max Laptop:

@@ -1,13 +1,13 @@
-import * as fs from 'node:fs';
-import { resolve } from 'node:path';
-import { echoService } from './utils';
+const fs = require('node:fs');
+const { resolve } = require('node:path');
+const { echoService } = require('./utils');
 
 /**
  * Serialize a message to a length-delimited byte string.
  * @param value
  * @returns
  */
-function serializeMessage(serialize: any, value: any) {
+function serializeMessage(serialize, value) {
   const messageBuffer = serialize(value);
   const byteLength = messageBuffer.byteLength;
   const output = Buffer.allocUnsafe(byteLength + 5);
@@ -27,11 +27,15 @@ const binaryMessage = serializeMessage(
   }
 );
 
-console.log(
-  'Service %s\nEcho binary bytes: %d, hex: %s',
-  echoService.service.Echo.path,
-  binaryMessage.length,
-  binaryMessage.toString('hex')
-);
+if (require.main === module) {
+  console.log(
+    'Service %s\nEcho binary bytes: %d, hex: %s',
+    echoService.service.Echo.path,
+    binaryMessage.length,
+    binaryMessage.toString('hex')
+  );
 
-fs.writeFileSync(resolve(__dirname, '../echo-unary.bin'), binaryMessage);
+  fs.writeFileSync(resolve(__dirname, '../echo-unary.bin'), binaryMessage);
+}
+
+exports.serializeMessage = serializeMessage;
