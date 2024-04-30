@@ -20,7 +20,7 @@ import * as os from 'os';
 
 import { Status } from './constants';
 import { Metadata } from './metadata';
-import { StreamDecoder } from './stream-decoder';
+import { decoder } from './stream-decoder';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import {
@@ -83,7 +83,7 @@ export interface SubchannelCallInterceptingListener
 }
 
 export class Http2SubchannelCall implements SubchannelCall {
-  private decoder = new StreamDecoder();
+  private decoder = decoder.get();
 
   private isReadFilterPending = false;
   private isPushPending = false;
@@ -175,9 +175,16 @@ export class Http2SubchannelCall implements SubchannelCall {
       const messages = this.decoder.write(data);
 
       for (const message of messages) {
-        this.trace('parsed message of length ' + message.length);
+        this.trace('parsed message of length ' + message.size);
         this.callEventTracker!.addMessageReceived();
-        this.tryPush(message);
+
+        // TODO: a teach all the client-side interceptors to work with decoded GrpcFrames
+        const messageBytes = Buffer.allocUnsafe(message.size + 5);
+        messageBytes.writeUint8(message.compressed, 0);
+        messageBytes.writeUint32BE(message.size, 1);
+        message.message.copy(messageBytes, 5);
+
+        this.tryPush(messageBytes);
       }
     });
     http2Stream.on('end', () => {
@@ -186,6 +193,8 @@ export class Http2SubchannelCall implements SubchannelCall {
     });
     http2Stream.on('close', () => {
       this.serverEndedCall = true;
+      decoder.release(this.decoder);
+
       /* Use process.next tick to ensure that this code happens after any
        * "error" event that may be emitted at about the same time, so that
        * we can bubble up the error message from that event. */

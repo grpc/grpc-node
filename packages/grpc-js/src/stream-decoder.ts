@@ -17,6 +17,11 @@
 
 // @ts-expect-error no types
 import * as reusify from 'reusify';
+export interface GrpcFrame {
+  compressed: number;
+  size: number;
+  message: Buffer;
+}
 
 const enum ReadState {
   NO_DATA,
@@ -24,100 +29,11 @@ const enum ReadState {
   READING_MESSAGE,
 }
 
-export interface GrpcFrame {
-  compressed: number;
-  size: number;
-  message: Buffer;
-}
-
-export class StreamDecoder {
-  private readState: ReadState = ReadState.NO_DATA;
-  private readCompressFlag: Buffer = Buffer.alloc(1);
-  private readPartialSize: Buffer = Buffer.alloc(4);
-  private readSizeRemaining = 4;
-  private readMessageSize = 0;
-  private readPartialMessage: Buffer[] = [];
-  private readMessageRemaining = 0;
-
-  write(data: Buffer): Buffer[] {
-    let readHead = 0;
-    let toRead: number;
-    const result: Buffer[] = [];
-
-    while (readHead < data.length) {
-      switch (this.readState) {
-        case ReadState.NO_DATA:
-          this.readCompressFlag = data.slice(readHead, readHead + 1);
-          readHead += 1;
-          this.readState = ReadState.READING_SIZE;
-          this.readPartialSize.fill(0);
-          this.readSizeRemaining = 4;
-          this.readMessageSize = 0;
-          this.readMessageRemaining = 0;
-          this.readPartialMessage = [];
-          break;
-        case ReadState.READING_SIZE:
-          toRead = Math.min(data.length - readHead, this.readSizeRemaining);
-          data.copy(
-            this.readPartialSize,
-            4 - this.readSizeRemaining,
-            readHead,
-            readHead + toRead
-          );
-          this.readSizeRemaining -= toRead;
-          readHead += toRead;
-          // readSizeRemaining >=0 here
-          if (this.readSizeRemaining === 0) {
-            this.readMessageSize = this.readPartialSize.readUInt32BE(0);
-            this.readMessageRemaining = this.readMessageSize;
-            if (this.readMessageRemaining > 0) {
-              this.readState = ReadState.READING_MESSAGE;
-            } else {
-              const message = Buffer.concat(
-                [this.readCompressFlag, this.readPartialSize],
-                5
-              );
-
-              this.readState = ReadState.NO_DATA;
-              result.push(message);
-            }
-          }
-          break;
-        case ReadState.READING_MESSAGE:
-          toRead = Math.min(data.length - readHead, this.readMessageRemaining);
-          this.readPartialMessage.push(data.slice(readHead, readHead + toRead));
-          this.readMessageRemaining -= toRead;
-          readHead += toRead;
-          // readMessageRemaining >=0 here
-          if (this.readMessageRemaining === 0) {
-            // At this point, we have read a full message
-            const framedMessageBuffers = [
-              this.readCompressFlag,
-              this.readPartialSize,
-            ].concat(this.readPartialMessage);
-            const framedMessage = Buffer.concat(
-              framedMessageBuffers,
-              this.readMessageSize + 5
-            );
-
-            this.readState = ReadState.NO_DATA;
-            result.push(framedMessage);
-          }
-          break;
-        default:
-          throw new Error('Unexpected read state');
-      }
-    }
-
-    return result;
-  }
-}
-
 const kMessageSizeBytes = 4 as const;
 const kEmptyMessage = Buffer.alloc(0);
 
-interface StreamDecoder2 {
-  next: StreamDecoder2 | null;
+interface StreamDecoder {
+  next: StreamDecoder | null;
   readState: ReadState;
   readCompressFlag: number;
   readPartialSize: Buffer;
@@ -129,7 +45,7 @@ interface StreamDecoder2 {
   write(data: Buffer): GrpcFrame[];
 }
 
-function StreamDecoder2(this: StreamDecoder2) {
+function StreamDecoder(this: StreamDecoder) {
   // reusify reference
   this.next = null;
 
@@ -253,4 +169,7 @@ function StreamDecoder2(this: StreamDecoder2) {
   };
 }
 
-export const decoder = reusify(StreamDecoder2);
+export const decoder = reusify(StreamDecoder) as {
+  get(): StreamDecoder;
+  release(decoder: StreamDecoder): void;
+};

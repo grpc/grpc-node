@@ -44,11 +44,7 @@ function trace(text: string) {
   logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
 }
 
-interface GrpcWriteFrame {
-  header: Buffer;
-  message: Buffer;
-  size: number;
-}
+type GrpcWriteFrame = [header: Buffer, message: Buffer];
 
 export interface ServerMetadataListener {
   (metadata: Metadata, next: (metadata: Metadata) => void): void;
@@ -671,34 +667,29 @@ export class BaseServerInterceptingCall
     const messageBuffer = this.handler.serialize(value);
     const { byteLength } = messageBuffer;
 
-    const buffer = Buffer.allocUnsafe(5);
-    buffer.writeUint8(0, 0);
-    buffer.writeUint32BE(byteLength, 1);
+    const header = Buffer.allocUnsafe(5);
+    header.writeUint8(0, 0);
+    header.writeUint32BE(byteLength, 1);
 
-    return {
-      size: byteLength,
-      header: buffer,
-      message: messageBuffer,
-    };
+    return [header, messageBuffer];
   }
 
   private decompressMessage(
     message: Buffer,
     encoding: string
-  ): Buffer | Promise<Buffer> {
-    switch (encoding) {
-      case 'deflate':
-        return inflate(message);
-      case 'gzip':
-        return unzip(message);
-      case 'identity':
-        return message;
-      default:
-        return Promise.reject({
-          code: Status.UNIMPLEMENTED,
-          details: `Received message compressed with unsupported encoding "${encoding}"`,
-        });
+  ): Promise<Buffer> {
+    if (encoding === 'deflate') {
+      return inflate(message);
     }
+
+    if (encoding === 'gzip') {
+      return unzip(message);
+    }
+
+    throw {
+      code: Status.UNIMPLEMENTED,
+      details: `Received message compressed with unsupported encoding "${encoding}"`,
+    };
   }
 
   private async decompressAndMaybePush(queueEntry: ReadQueueEntry) {
@@ -708,19 +699,21 @@ export class BaseServerInterceptingCall
 
     const msg = queueEntry.compressedMessage!;
     const compressed = msg!.compressed === 1;
-    const decompressedMessage = compressed
-      ? await this.decompressMessage(msg.message, this.incomingEncoding)
-      : msg.message;
 
     try {
+      const decompressedMessage = compressed
+        ? await this.decompressMessage(msg.message, this.incomingEncoding)
+        : msg.message;
+
       queueEntry.parsedMessage = this.handler.deserialize(decompressedMessage);
-    } catch (err) {
+    } catch (err: any) {
       this.sendStatus({
-        code: Status.INTERNAL,
-        details: `Error deserializing request: ${(err as Error).message}`,
+        code: err.code || Status.INTERNAL,
+        details: err.details || `Error deserializing request: ${err.message}`,
       });
       return;
     }
+
     queueEntry.type = 'READABLE';
     this.maybePushNextMessage();
   }
@@ -834,11 +827,11 @@ export class BaseServerInterceptingCall
 
     if (
       this.maxSendMessageSize !== -1 &&
-      response.size > this.maxSendMessageSize
+      response[1].length > this.maxSendMessageSize
     ) {
       this.sendStatus({
         code: Status.RESOURCE_EXHAUSTED,
-        details: `Sent message larger than max (${response.size} vs. ${this.maxSendMessageSize})`,
+        details: `Sent message larger than max (${response[1].length} vs. ${this.maxSendMessageSize})`,
         metadata: null,
       });
       return;
@@ -848,12 +841,13 @@ export class BaseServerInterceptingCall
       'Request to ' +
         this.handler.path +
         ' sent data frame of size ' +
-        response.size
+        response[1].length
     );
     const { stream } = this;
-    stream.cork();
-    stream.write(response.header);
-    stream.write(response.message, error => {
+
+    // TODO: measure cork() / uncork() ?
+    stream.write(response[0]);
+    stream.write(response[1], error => {
       if (error) {
         this.sendStatus({
           code: Status.INTERNAL,
@@ -865,7 +859,6 @@ export class BaseServerInterceptingCall
       this.callEventTracker?.addMessageSent();
       callback();
     });
-    stream.uncork();
   }
   sendStatus(status: PartialStatusObject): void {
     if (this.checkCancelled()) {
