@@ -1,4 +1,4 @@
-const { createBenchmarkSuite } = require('../common');
+const { benchmark, createBenchmarkSuite } = require('../common');
 const {
   sensitiveHeaders,
   constants: {
@@ -11,8 +11,6 @@ const {
   Metadata: MetadataOriginal,
 } = require('@grpc/grpc-js/build/src/metadata');
 const { Metadata } = require('../../build/src/metadata');
-
-const suite = createBenchmarkSuite('Metadata');
 
 const GRPC_ACCEPT_ENCODING_HEADER = 'grpc-accept-encoding';
 const GRPC_ENCODING_HEADER = 'grpc-encoding';
@@ -36,35 +34,42 @@ const headers = Object.setPrototypeOf(
 const ogMeta = MetadataOriginal.fromHttp2Headers(headers);
 const currentMeta = Metadata.fromHttp2Headers(headers);
 
-suite
-  .add('grpc-js@1.10.6 fromHttp2Headers', function () {
-    return MetadataOriginal.fromHttp2Headers(headers);
+const removeHeaders = metadata => {
+  metadata.remove(GRPC_TIMEOUT_HEADER);
+  metadata.remove(GRPC_ENCODING_HEADER);
+  metadata.remove(GRPC_ACCEPT_ENCODING_HEADER);
+  metadata.remove(HTTP2_HEADER_ACCEPT_ENCODING);
+  metadata.remove(HTTP2_HEADER_TE);
+  metadata.remove(HTTP2_HEADER_CONTENT_TYPE);
+};
+
+removeHeaders(ogMeta);
+removeHeaders(currentMeta);
+
+createBenchmarkSuite('fromHttp2Headers')
+  .add('1.10.6', function () {
+    MetadataOriginal.fromHttp2Headers(headers);
   })
-  .add('grpc-js@1.10.6 toHttp2Headers', function () {
+  .add('current', function () {
+    Metadata.fromHttp2Headers(headers);
+  });
+
+createBenchmarkSuite('fromHttp2Headers + common operations')
+  .add('1.10.6', () => {
+    const metadata = MetadataOriginal.fromHttp2Headers(headers);
+    removeHeaders(metadata);
+  })
+  .add('current', () => {
+    const metadata = Metadata.fromHttp2Headers(headers);
+    removeHeaders(metadata);
+  });
+
+createBenchmarkSuite('toHttp2Headers')
+  .add('1.10.6', function () {
     return ogMeta.toHttp2Headers();
   })
-  .add('grpc-js@1.10.6 fromHttp2Headers + common operations', function () {
-    const metadata = MetadataOriginal.fromHttp2Headers(headers);
-    metadata.remove(GRPC_TIMEOUT_HEADER);
-    metadata.remove(GRPC_ENCODING_HEADER);
-    metadata.remove(GRPC_ACCEPT_ENCODING_HEADER);
-    metadata.remove(HTTP2_HEADER_ACCEPT_ENCODING);
-    metadata.remove(HTTP2_HEADER_TE);
-    metadata.remove(HTTP2_HEADER_CONTENT_TYPE);
-  })
-  .add('current fromHttp2Headers', function () {
-    return Metadata.fromHttp2Headers(headers);
-  })
-  .add('current toHttp2Headers', function () {
+  .add('current', function () {
     return currentMeta.toHttp2Headers();
-  })
-  .add('current + common operations', function () {
-    const metadata = Metadata.fromHttp2Headers(headers);
-    metadata.remove(GRPC_TIMEOUT_HEADER);
-    metadata.remove(GRPC_ENCODING_HEADER);
-    metadata.remove(GRPC_ACCEPT_ENCODING_HEADER);
-    metadata.remove(HTTP2_HEADER_ACCEPT_ENCODING);
-    metadata.remove(HTTP2_HEADER_TE);
-    metadata.remove(HTTP2_HEADER_CONTENT_TYPE);
-  })
-  .run({ async: false });
+  });
+
+benchmark.run();
