@@ -32,16 +32,19 @@ export interface LoadBalancerAccumulatedStatsResponse {
   /**
    * The total number of RPCs have ever issued for each type.
    * Deprecated: use stats_per_method.rpcs_started instead.
+   * @deprecated
    */
   'num_rpcs_started_by_method'?: ({[key: string]: number});
   /**
    * The total number of RPCs have ever completed successfully for each type.
    * Deprecated: use stats_per_method.result instead.
+   * @deprecated
    */
   'num_rpcs_succeeded_by_method'?: ({[key: string]: number});
   /**
    * The total number of RPCs have ever failed for each type.
    * Deprecated: use stats_per_method.result instead.
+   * @deprecated
    */
   'num_rpcs_failed_by_method'?: ({[key: string]: number});
   /**
@@ -58,21 +61,24 @@ export interface LoadBalancerAccumulatedStatsResponse__Output {
   /**
    * The total number of RPCs have ever issued for each type.
    * Deprecated: use stats_per_method.rpcs_started instead.
+   * @deprecated
    */
   'num_rpcs_started_by_method': ({[key: string]: number});
   /**
    * The total number of RPCs have ever completed successfully for each type.
    * Deprecated: use stats_per_method.result instead.
+   * @deprecated
    */
   'num_rpcs_succeeded_by_method': ({[key: string]: number});
   /**
    * The total number of RPCs have ever failed for each type.
    * Deprecated: use stats_per_method.result instead.
+   * @deprecated
    */
   'num_rpcs_failed_by_method': ({[key: string]: number});
   /**
    * Per-method RPC statistics.  The key is the RpcType in string form; e.g.
    * 'EMPTY_CALL' or 'UNARY_CALL'
    */
-  'stats_per_method'?: ({[key: string]: _grpc_testing_LoadBalancerAccumulatedStatsResponse_MethodStats__Output});
+  'stats_per_method': ({[key: string]: _grpc_testing_LoadBalancerAccumulatedStatsResponse_MethodStats__Output});
 }

@@ -4,7 +4,7 @@ import type { ApiConfigSource as _envoy_config_core_v3_ApiConfigSource, ApiConfi
 import type { AggregatedConfigSource as _envoy_config_core_v3_AggregatedConfigSource, AggregatedConfigSource__Output as _envoy_config_core_v3_AggregatedConfigSource__Output } from '../../../../envoy/config/core/v3/AggregatedConfigSource';
 import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
 import type { SelfConfigSource as _envoy_config_core_v3_SelfConfigSource, SelfConfigSource__Output as _envoy_config_core_v3_SelfConfigSource__Output } from '../../../../envoy/config/core/v3/SelfConfigSource';
-import type { ApiVersion as _envoy_config_core_v3_ApiVersion } from '../../../../envoy/config/core/v3/ApiVersion';
+import type { ApiVersion as _envoy_config_core_v3_ApiVersion, ApiVersion__Output as _envoy_config_core_v3_ApiVersion__Output } from '../../../../envoy/config/core/v3/ApiVersion';
 import type { Authority as _xds_core_v3_Authority, Authority__Output as _xds_core_v3_Authority__Output } from '../../../../xds/core/v3/Authority';
 import type { PathConfigSource as _envoy_config_core_v3_PathConfigSource, PathConfigSource__Output as _envoy_config_core_v3_PathConfigSource__Output } from '../../../../envoy/config/core/v3/PathConfigSource';
 
@@ -20,6 +20,7 @@ import type { PathConfigSource as _envoy_config_core_v3_PathConfigSource, PathCo
 export interface ConfigSource {
   /**
    * Deprecated in favor of ``path_config_source``. Use that field instead.
+   * @deprecated
    */
   'path'?: (string);
   /**
@@ -60,7 +61,7 @@ export interface ConfigSource {
    * will request for resources and the resource type that the client will in
    * turn expect to be delivered.
    */
-  'resource_api_version'?: (_envoy_config_core_v3_ApiVersion | keyof typeof _envoy_config_core_v3_ApiVersion);
+  'resource_api_version'?: (_envoy_config_core_v3_ApiVersion);
   /**
    * Authorities that this config source may be used for. An authority specified in a xdstp:// URL
    * is resolved to a ``ConfigSource`` prior to configuration fetch. This field provides the
@@ -87,6 +88,7 @@ export interface ConfigSource {
 export interface ConfigSource__Output {
   /**
    * Deprecated in favor of ``path_config_source``. Use that field instead.
+   * @deprecated
    */
   'path'?: (string);
   /**
@@ -127,7 +129,7 @@ export interface ConfigSource__Output {
    * will request for resources and the resource type that the client will in
    * turn expect to be delivered.
    */
-  'resource_api_version': (keyof typeof _envoy_config_core_v3_ApiVersion);
+  'resource_api_version': (_envoy_config_core_v3_ApiVersion__Output);
   /**
    * Authorities that this config source may be used for. An authority specified in a xdstp:// URL
    * is resolved to a ``ConfigSource`` prior to configuration fetch. This field provides the

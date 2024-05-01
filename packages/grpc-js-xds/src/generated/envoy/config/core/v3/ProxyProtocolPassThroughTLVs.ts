@@ -3,23 +3,37 @@
 
 // Original file: deps/envoy-api/envoy/config/core/v3/proxy_protocol.proto
 
-export enum _envoy_config_core_v3_ProxyProtocolPassThroughTLVs_PassTLVsMatchType {
+export const _envoy_config_core_v3_ProxyProtocolPassThroughTLVs_PassTLVsMatchType = {
   /**
    * Pass all TLVs.
    */
-  INCLUDE_ALL = 0,
+  INCLUDE_ALL: 'INCLUDE_ALL',
   /**
    * Pass specific TLVs defined in tlv_type.
    */
-  INCLUDE = 1,
-}
+  INCLUDE: 'INCLUDE',
+} as const;
+
+export type _envoy_config_core_v3_ProxyProtocolPassThroughTLVs_PassTLVsMatchType =
+  /**
+   * Pass all TLVs.
+   */
+  | 'INCLUDE_ALL'
+  | 0
+  /**
+   * Pass specific TLVs defined in tlv_type.
+   */
+  | 'INCLUDE'
+  | 1
+
+export type _envoy_config_core_v3_ProxyProtocolPassThroughTLVs_PassTLVsMatchType__Output = typeof _envoy_config_core_v3_ProxyProtocolPassThroughTLVs_PassTLVsMatchType[keyof typeof _envoy_config_core_v3_ProxyProtocolPassThroughTLVs_PassTLVsMatchType]
 
 export interface ProxyProtocolPassThroughTLVs {
   /**
    * The strategy to pass through TLVs. Default is INCLUDE_ALL.
    * If INCLUDE_ALL is set, all TLVs will be passed through no matter the tlv_type field.
    */
-  'match_type'?: (_envoy_config_core_v3_ProxyProtocolPassThroughTLVs_PassTLVsMatchType | keyof typeof _envoy_config_core_v3_ProxyProtocolPassThroughTLVs_PassTLVsMatchType);
+  'match_type'?: (_envoy_config_core_v3_ProxyProtocolPassThroughTLVs_PassTLVsMatchType);
   /**
    * The TLV types that are applied based on match_type.
    * TLV type is defined as uint8_t in proxy protocol. See `the spec
@@ -33,7 +47,7 @@ export interface ProxyProtocolPassThroughTLVs__Output {
    * The strategy to pass through TLVs. Default is INCLUDE_ALL.
    * If INCLUDE_ALL is set, all TLVs will be passed through no matter the tlv_type field.
    */
-  'match_type': (keyof typeof _envoy_config_core_v3_ProxyProtocolPassThroughTLVs_PassTLVsMatchType);
+  'match_type': (_envoy_config_core_v3_ProxyProtocolPassThroughTLVs_PassTLVsMatchType__Output);
   /**
    * The TLV types that are applied based on match_type.
    * TLV type is defined as uint8_t in proxy protocol. See `the spec

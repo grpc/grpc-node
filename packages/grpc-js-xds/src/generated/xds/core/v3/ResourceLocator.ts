@@ -97,11 +97,21 @@ export interface _xds_core_v3_ResourceLocator_Directive__Output {
 
 // Original file: deps/xds/xds/core/v3/resource_locator.proto
 
-export enum _xds_core_v3_ResourceLocator_Scheme {
-  XDSTP = 0,
-  HTTP = 1,
-  FILE = 2,
-}
+export const _xds_core_v3_ResourceLocator_Scheme = {
+  XDSTP: 'XDSTP',
+  HTTP: 'HTTP',
+  FILE: 'FILE',
+} as const;
+
+export type _xds_core_v3_ResourceLocator_Scheme =
+  | 'XDSTP'
+  | 0
+  | 'HTTP'
+  | 1
+  | 'FILE'
+  | 2
+
+export type _xds_core_v3_ResourceLocator_Scheme__Output = typeof _xds_core_v3_ResourceLocator_Scheme[keyof typeof _xds_core_v3_ResourceLocator_Scheme]
 
 /**
  * xDS resource locators identify a xDS resource name and instruct the
@@ -125,7 +135,7 @@ export interface ResourceLocator {
   /**
    * URI scheme.
    */
-  'scheme'?: (_xds_core_v3_ResourceLocator_Scheme | keyof typeof _xds_core_v3_ResourceLocator_Scheme);
+  'scheme'?: (_xds_core_v3_ResourceLocator_Scheme);
   /**
    * Opaque identifier for the resource. Any '/' will not be escaped during URI
    * encoding and will form part of the URI path. This may end
@@ -183,7 +193,7 @@ export interface ResourceLocator__Output {
   /**
    * URI scheme.
    */
-  'scheme': (keyof typeof _xds_core_v3_ResourceLocator_Scheme);
+  'scheme': (_xds_core_v3_ResourceLocator_Scheme__Output);
   /**
    * Opaque identifier for the resource. Any '/' will not be escaped during URI
    * encoding and will form part of the URI path. This may end

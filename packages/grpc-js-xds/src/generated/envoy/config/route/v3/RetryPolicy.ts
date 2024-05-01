@@ -141,7 +141,7 @@ export interface _envoy_config_route_v3_RetryPolicy_ResetHeader {
   /**
    * The format of the reset header.
    */
-  'format'?: (_envoy_config_route_v3_RetryPolicy_ResetHeaderFormat | keyof typeof _envoy_config_route_v3_RetryPolicy_ResetHeaderFormat);
+  'format'?: (_envoy_config_route_v3_RetryPolicy_ResetHeaderFormat);
 }
 
 export interface _envoy_config_route_v3_RetryPolicy_ResetHeader__Output {
@@ -156,15 +156,23 @@ export interface _envoy_config_route_v3_RetryPolicy_ResetHeader__Output {
   /**
    * The format of the reset header.
    */
-  'format': (keyof typeof _envoy_config_route_v3_RetryPolicy_ResetHeaderFormat);
+  'format': (_envoy_config_route_v3_RetryPolicy_ResetHeaderFormat__Output);
 }
 
 // Original file: deps/envoy-api/envoy/config/route/v3/route_components.proto
 
-export enum _envoy_config_route_v3_RetryPolicy_ResetHeaderFormat {
-  SECONDS = 0,
-  UNIX_TIMESTAMP = 1,
-}
+export const _envoy_config_route_v3_RetryPolicy_ResetHeaderFormat = {
+  SECONDS: 'SECONDS',
+  UNIX_TIMESTAMP: 'UNIX_TIMESTAMP',
+} as const;
+
+export type _envoy_config_route_v3_RetryPolicy_ResetHeaderFormat =
+  | 'SECONDS'
+  | 0
+  | 'UNIX_TIMESTAMP'
+  | 1
+
+export type _envoy_config_route_v3_RetryPolicy_ResetHeaderFormat__Output = typeof _envoy_config_route_v3_RetryPolicy_ResetHeaderFormat[keyof typeof _envoy_config_route_v3_RetryPolicy_ResetHeaderFormat]
 
 export interface _envoy_config_route_v3_RetryPolicy_RetryBackOff {
   /**

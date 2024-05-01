@@ -159,6 +159,7 @@ export interface Http2ProtocolOptions {
    * <envoy_v3_api_field_config.core.v3.Http2ProtocolOptions.override_stream_error_on_invalid_http_message>`
    * 
    * See `RFC7540, sec. 8.1 <https://tools.ietf.org/html/rfc7540#section-8.1>`_ for details.
+   * @deprecated
    */
   'stream_error_on_invalid_http_messaging'?: (boolean);
   /**
@@ -339,6 +340,7 @@ export interface Http2ProtocolOptions__Output {
    * <envoy_v3_api_field_config.core.v3.Http2ProtocolOptions.override_stream_error_on_invalid_http_message>`
    * 
    * See `RFC7540, sec. 8.1 <https://tools.ietf.org/html/rfc7540#section-8.1>`_ for details.
+   * @deprecated
    */
   'stream_error_on_invalid_http_messaging': (boolean);
   /**

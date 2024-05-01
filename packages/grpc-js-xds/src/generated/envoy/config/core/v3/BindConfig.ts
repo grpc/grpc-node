@@ -31,6 +31,7 @@ export interface BindConfig {
   /**
    * Deprecated by
    * :ref:`extra_source_addresses <envoy_v3_api_field_config.core.v3.BindConfig.extra_source_addresses>`
+   * @deprecated
    */
   'additional_source_addresses'?: (_envoy_config_core_v3_SocketAddress)[];
   /**
@@ -72,6 +73,7 @@ export interface BindConfig__Output {
   /**
    * Deprecated by
    * :ref:`extra_source_addresses <envoy_v3_api_field_config.core.v3.BindConfig.extra_source_addresses>`
+   * @deprecated
    */
   'additional_source_addresses': (_envoy_config_core_v3_SocketAddress__Output)[];
   /**
