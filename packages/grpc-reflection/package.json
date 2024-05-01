@@ -1,6 +1,6 @@
 {
   "name": "@grpc/reflection",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "author": {
     "name": "Google Inc."
   },
@@ -31,7 +31,7 @@
     "generate-types": "proto-loader-gen-types --longs String --enums String --bytes Array --defaults --oneofs --includeComments --includeDirs proto/ -O src/generated grpc/reflection/v1/reflection.proto grpc/reflection/v1alpha/reflection.proto"
   },
   "dependencies": {
-    "@grpc/proto-loader": "^0.7.10",
+    "@grpc/proto-loader": "^0.7.13",
     "protobufjs": "^7.2.5"
   },
   "peerDependencies": {
