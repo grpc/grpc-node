@@ -8,7 +8,6 @@ const {
   StreamDecoder: NewStreamDecoder,
   decoder: decoderManager,
 } = require('../../build/src/stream-decoder');
-const { buffer } = require('stream/consumers');
 
 const suite = createBenchmarkSuite('Stream Decoder');
 
