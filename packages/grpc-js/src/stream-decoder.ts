@@ -112,9 +112,18 @@ export function StreamDecoder(this: StreamDecoder) {
 
         // readSizeRemaining >=0 here
         if (readSizeRemaining === 0) {
-          if (that.readMessageSize > 0) {
+          const { readMessageSize } = that;
+          if (readMessageSize > 0) {
             that.readState = ReadState.READING_MESSAGE;
-            that.readMessageRemaining = that.readMessageSize;
+            that.readMessageRemaining = readMessageSize;
+
+            // allocate buffer / partial message array if we don't have all the data yet
+            if (len - readHead < readMessageSize) {
+              that.readPartialMessage =
+                readMessageSize <= Buffer.poolSize * 0.5
+                  ? Buffer.allocUnsafe(readMessageSize)
+                  : Buffer.allocUnsafeSlow(readMessageSize);
+            }
           } else {
             that.readState = ReadState.NO_DATA;
             result.push({
@@ -132,12 +141,8 @@ export function StreamDecoder(this: StreamDecoder) {
         if (toRead === readMessageSize) {
           that.readPartialMessage = data.subarray(readHead, readHead + toRead);
         } else {
-          if (that.readPartialMessage === null) {
-            that.readPartialMessage = Buffer.allocUnsafe(readMessageSize);
-          }
-
           data.copy(
-            that.readPartialMessage,
+            that.readPartialMessage!,
             readMessageSize - readMessageRemaining,
             readHead,
             readHead + toRead
@@ -153,7 +158,7 @@ export function StreamDecoder(this: StreamDecoder) {
           result.push({
             compressed: that.readCompressFlag,
             size: readMessageSize,
-            message: that.readPartialMessage,
+            message: that.readPartialMessage!,
           });
 
           that.readState = ReadState.NO_DATA;

@@ -6,103 +6,131 @@ const {
 } = require('@grpc/grpc-js/build/src/stream-decoder');
 const {
   StreamDecoder: NewStreamDecoder,
+  decoder: decoderManager,
 } = require('../../build/src/stream-decoder');
+const { buffer } = require('stream/consumers');
 
 const suite = createBenchmarkSuite('Stream Decoder');
 
-const smallBinary = serializeMessage(
+const serializedSmallBinary = serializeMessage(
   echoService.service.Echo.requestSerialize,
   {
     value: 'string-val',
     value2: 10,
   }
 );
+const getSmallBinary = () => {
+  const buf = Buffer.allocUnsafe(serializedSmallBinary.length);
+  serializedSmallBinary.copy(buf);
+  return buf;
+};
 
-const smallBinarySplitPartOne = Buffer.from(smallBinary.subarray(0, 3));
-const smallBinarySplitPartTwo = Buffer.from(smallBinary.subarray(3, 5));
-const smallBinarySplitPartThree = Buffer.from(smallBinary.subarray(5));
+const getSmallSplit = () => {
+  const binary = getSmallBinary();
+  return [binary.subarray(0, 3), binary.subarray(3, 5), binary.subarray(5)];
+};
 
-const largeBinary = serializeMessage(
+const largeObj = {
+  value: 'a'.repeat(2 ** 16),
+  value2: 12803182109,
+};
+const serializedLargeObj = serializeMessage(
   echoService.service.Echo.requestSerialize,
-  {
-    value: 'a'.repeat(2 ** 16),
-    value2: 12803182109,
-  }
+  largeObj
 );
 
-const largeBinarySplitPartOne = Buffer.from(largeBinary.subarray(0, 4096));
-const largeBinarySplitPartTwo = Buffer.from(largeBinary.subarray(4096));
+const getLargeBinary = () => {
+  const buf = Buffer.allocUnsafeSlow(serializedLargeObj.length);
+  serializedLargeObj.copy(buf);
+  return buf;
+};
 
-const cachedSD2 = new NewStreamDecoder();
-const cachedOG = new OGStreamDecoder();
+const getLargeSplit = () => {
+  const binary = getLargeBinary();
+  return [
+    binary.subarray(0, Math.ceil(Buffer.poolSize * 0.5)),
+    binary.subarray(Math.ceil(Buffer.poolSize * 0.5)),
+  ];
+};
+
+const originalCached = new OGStreamDecoder();
+const currentCached = decoderManager.get();
 
 suite
+  // mark -- original decoder, fresh copies
   .add('original stream decoder', function () {
     const decoder = new OGStreamDecoder();
-    decoder.write(smallBinary);
-  })
-  .add('original stream decoder cached', function () {
-    cachedOG.write(smallBinary);
-  })
-  .add('stream decoder v2', function () {
-    const decoder = new NewStreamDecoder();
-    decoder.write(smallBinary);
-  })
-  .add('stream decoder v2 cached', function () {
-    cachedSD2.write(smallBinary);
-  })
-  .add('original stream decoder - large', function () {
-    const decoder = new OGStreamDecoder();
-    decoder.write(largeBinary);
-  })
-  .add('original stream decoder cached - large', function () {
-    cachedOG.write(largeBinary);
-  })
-  .add('stream decoder v2 - large', function () {
-    const decoder = new NewStreamDecoder();
-    decoder.write(largeBinary);
-  })
-  .add('stream decoder v2 cached - large', function () {
-    cachedSD2.write(largeBinary);
+    decoder.write(getSmallBinary());
   })
   .add('original stream decoder - small split', function () {
     const decoder = new OGStreamDecoder();
-    decoder.write(smallBinarySplitPartOne);
-    decoder.write(smallBinarySplitPartTwo);
-    decoder.write(smallBinarySplitPartThree);
+    for (const item of getSmallSplit()) {
+      decoder.write(item);
+    }
   })
-  .add('original stream decoder cached - small split', function () {
-    cachedOG.write(smallBinarySplitPartOne);
-    cachedOG.write(smallBinarySplitPartTwo);
-    cachedOG.write(smallBinarySplitPartThree);
-  })
-  .add('stream decoder v2 - small split', function () {
-    const decoder = new NewStreamDecoder();
-    decoder.write(smallBinarySplitPartOne);
-    decoder.write(smallBinarySplitPartTwo);
-    decoder.write(smallBinarySplitPartThree);
-  })
-  .add('stream decoder v2 cached - small split', function () {
-    cachedSD2.write(smallBinarySplitPartOne);
-    cachedSD2.write(smallBinarySplitPartTwo);
-    cachedSD2.write(smallBinarySplitPartThree);
+  .add('original stream decoder - large', function () {
+    const decoder = new OGStreamDecoder();
+    decoder.write(getLargeBinary());
   })
   .add('original stream decoder - large split', function () {
     const decoder = new OGStreamDecoder();
-    decoder.write(largeBinarySplitPartOne);
-    decoder.write(largeBinarySplitPartTwo);
+    for (const item of getLargeSplit()) {
+      decoder.write(item);
+    }
+  })
+  // original decoder - cached instance
+  .add('original stream decoder cached', function () {
+    originalCached.write(getSmallBinary());
+  })
+  .add('original stream decoder cached - small split', function () {
+    for (const item of getSmallSplit()) {
+      originalCached.write(item);
+    }
+  })
+  .add('original stream decoder cached - large', function () {
+    originalCached.write(getLargeBinary());
   })
   .add('original stream decoder cached - large split', function () {
-    cachedOG.write(largeBinarySplitPartOne);
-    cachedOG.write(largeBinarySplitPartTwo);
+    for (const item of getLargeSplit()) {
+      originalCached.write(item);
+    }
+  })
+  // decoder v2 - new instance
+  .add('stream decoder v2', function () {
+    const decoder = new NewStreamDecoder();
+    decoder.write(getSmallBinary());
+  })
+  .add('stream decoder v2 - small split', function () {
+    const decoder = new NewStreamDecoder();
+    for (const item of getSmallSplit()) {
+      decoder.write(item);
+    }
+  })
+  .add('stream decoder v2 - large', function () {
+    const decoder = new NewStreamDecoder();
+    decoder.write(getLargeBinary());
   })
   .add('stream decoder v2 - large split', function () {
     const decoder = new NewStreamDecoder();
-    decoder.write(largeBinarySplitPartOne);
-    decoder.write(largeBinarySplitPartTwo);
+    for (const item of getLargeSplit()) {
+      decoder.write(item);
+    }
+  })
+  // decoder v2 - cached
+  .add('stream decoder v2 cached', function () {
+    currentCached.write(getSmallBinary());
+  })
+  .add('stream decoder v2 cached - small split', function () {
+    for (const item of getSmallSplit()) {
+      currentCached.write(item);
+    }
+  })
+  .add('stream decoder v2 cached - large', function () {
+    currentCached.write(getLargeBinary());
   })
   .add('stream decoder v2 cached - large split', function () {
-    cachedSD2.write(largeBinarySplitPartOne);
-    cachedSD2.write(largeBinarySplitPartTwo);
+    for (const item of getLargeSplit()) {
+      currentCached.write(item);
+    }
   })
   .run({ async: false });
