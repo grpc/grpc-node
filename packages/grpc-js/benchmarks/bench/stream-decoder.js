@@ -1,4 +1,4 @@
-const { createBenchmarkSuite } = require('../common');
+const { benchmark, createBenchmarkSuite } = require('../common');
 const { serializeMessage } = require('../helpers/encode');
 const { echoService } = require('../helpers/utils');
 const {
@@ -8,8 +8,6 @@ const {
   StreamDecoder: NewStreamDecoder,
   decoder: decoderManager,
 } = require('../../build/src/stream-decoder');
-
-const suite = createBenchmarkSuite('Stream Decoder');
 
 const serializedSmallBinary = serializeMessage(
   echoService.service.Echo.requestSerialize,
@@ -55,81 +53,86 @@ const getLargeSplit = () => {
 const originalCached = new OGStreamDecoder();
 const currentCached = decoderManager.get();
 
-suite
+createBenchmarkSuite('Small Payload')
   // mark -- original decoder, fresh copies
-  .add('original stream decoder', function () {
+  .add('1.10.6', function () {
     const decoder = new OGStreamDecoder();
     decoder.write(getSmallBinary());
   })
-  .add('original stream decoder - small split', function () {
+  .add('1.10.6 cached', function () {
+    const decoder = new OGStreamDecoder();
+    decoder.write(getSmallBinary());
+  })
+  .add('current', function () {
+    const decoder = new NewStreamDecoder();
+    decoder.write(getSmallBinary());
+  })
+  .add('current cached', function () {
+    currentCached.write(getSmallBinary());
+  });
+
+createBenchmarkSuite('Small Payload Chunked')
+  .add('1.10.6', function () {
     const decoder = new OGStreamDecoder();
     for (const item of getSmallSplit()) {
       decoder.write(item);
     }
   })
-  .add('original stream decoder - large', function () {
-    const decoder = new OGStreamDecoder();
-    decoder.write(getLargeBinary());
-  })
-  .add('original stream decoder - large split', function () {
-    const decoder = new OGStreamDecoder();
-    for (const item of getLargeSplit()) {
-      decoder.write(item);
-    }
-  })
-  // original decoder - cached instance
-  .add('original stream decoder cached', function () {
-    originalCached.write(getSmallBinary());
-  })
-  .add('original stream decoder cached - small split', function () {
+  .add('1.10.6 cached', function () {
     for (const item of getSmallSplit()) {
       originalCached.write(item);
     }
   })
-  .add('original stream decoder cached - large', function () {
+  .add('current', function () {
+    const decoder = new NewStreamDecoder();
+    for (const item of getSmallSplit()) {
+      decoder.write(item);
+    }
+  })
+  .add('current cached', function () {
+    for (const item of getSmallSplit()) {
+      currentCached.write(item);
+    }
+  });
+
+createBenchmarkSuite('Large Payload')
+  .add('1.10.6', function () {
+    const decoder = new OGStreamDecoder();
+    decoder.write(getLargeBinary());
+  })
+  .add('1.10.6 cached', function () {
     originalCached.write(getLargeBinary());
   })
-  .add('original stream decoder cached - large split', function () {
+  .add('current', function () {
+    const decoder = new NewStreamDecoder();
+    decoder.write(getLargeBinary());
+  })
+  .add('current cached', function () {
+    currentCached.write(getLargeBinary());
+  });
+
+createBenchmarkSuite('Large Payload Chunked')
+  .add('1.10.6', function () {
+    const decoder = new OGStreamDecoder();
+    for (const item of getLargeSplit()) {
+      decoder.write(item);
+    }
+  })
+  .add('1.10.6 cached', function () {
     for (const item of getLargeSplit()) {
       originalCached.write(item);
     }
   })
-  // decoder v2 - new instance
-  .add('stream decoder v2', function () {
-    const decoder = new NewStreamDecoder();
-    decoder.write(getSmallBinary());
-  })
-  .add('stream decoder v2 - small split', function () {
-    const decoder = new NewStreamDecoder();
-    for (const item of getSmallSplit()) {
-      decoder.write(item);
-    }
-  })
-  .add('stream decoder v2 - large', function () {
-    const decoder = new NewStreamDecoder();
-    decoder.write(getLargeBinary());
-  })
-  .add('stream decoder v2 - large split', function () {
+  .add('current', function () {
     const decoder = new NewStreamDecoder();
     for (const item of getLargeSplit()) {
       decoder.write(item);
     }
   })
-  // decoder v2 - cached
-  .add('stream decoder v2 cached', function () {
-    currentCached.write(getSmallBinary());
-  })
-  .add('stream decoder v2 cached - small split', function () {
-    for (const item of getSmallSplit()) {
-      currentCached.write(item);
-    }
-  })
-  .add('stream decoder v2 cached - large', function () {
-    currentCached.write(getLargeBinary());
-  })
-  .add('stream decoder v2 cached - large split', function () {
+  .add('current cached', function () {
     for (const item of getLargeSplit()) {
       currentCached.write(item);
     }
-  })
-  .run({ async: false });
+  });
+
+benchmark.run();
