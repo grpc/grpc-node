@@ -1057,6 +1057,8 @@ export class Server {
   /**
    * @deprecated No longer needed as of version 1.10.x
    */
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   @deprecate(
     'Calling start() is no longer necessary. It can be safely omitted.'
   )

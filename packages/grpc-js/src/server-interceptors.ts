@@ -31,7 +31,7 @@ import * as http2 from 'http2';
 import { getErrorMessage } from './error';
 import * as zlib from 'zlib';
 import { promisify } from 'util';
-import { StreamDecoder } from './stream-decoder';
+import { GrpcFrame, decoder } from './stream-decoder';
 import { CallEventTracker } from './transport';
 import * as logging from './logging';
 
@@ -43,6 +43,8 @@ const TRACER_NAME = 'server_call';
 function trace(text: string) {
   logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
 }
+
+type GrpcWriteFrame = [header: Buffer, message: Buffer];
 
 export interface ServerMetadataListener {
   (metadata: Metadata, next: (metadata: Metadata) => void): void;
@@ -478,7 +480,7 @@ type ReadQueueEntryType = 'COMPRESSED' | 'READABLE' | 'HALF_CLOSE';
 
 interface ReadQueueEntry {
   type: ReadQueueEntryType;
-  compressedMessage: Buffer | null;
+  compressedMessage: GrpcFrame | null;
   parsedMessage: any;
 }
 
@@ -496,7 +498,7 @@ export class BaseServerInterceptingCall
   private wantTrailers = false;
   private cancelNotified = false;
   private incomingEncoding = 'identity';
-  private decoder = new StreamDecoder();
+  private decoder = decoder.get();
   private readQueue: ReadQueueEntry[] = [];
   private isReadPending = false;
   private receivedHalfClose = false;
@@ -536,6 +538,9 @@ export class BaseServerInterceptingCall
       }
 
       this.notifyOnCancel();
+
+      // release current decoder
+      decoder.release(this.decoder);
     });
 
     this.stream.on('data', (data: Buffer) => {
@@ -632,7 +637,7 @@ export class BaseServerInterceptingCall
     }
     this.cancelNotified = true;
     this.cancelled = true;
-    process.nextTick(() => {
+    queueMicrotask(() => {
       this.listener?.onCancel();
     });
     if (this.deadlineTimer) {
@@ -658,35 +663,33 @@ export class BaseServerInterceptingCall
    * @param value
    * @returns
    */
-  private serializeMessage(value: any) {
+  private serializeMessage(value: any): GrpcWriteFrame {
     const messageBuffer = this.handler.serialize(value);
-    const byteLength = messageBuffer.byteLength;
-    const output = Buffer.allocUnsafe(byteLength + 5);
-    /* Note: response compression is currently not supported, so this
-     * compressed bit is always 0. */
-    output.writeUInt8(0, 0);
-    output.writeUInt32BE(byteLength, 1);
-    messageBuffer.copy(output, 5);
-    return output;
+    const { byteLength } = messageBuffer;
+
+    const header = Buffer.allocUnsafe(5);
+    header.writeUint8(0, 0);
+    header.writeUint32BE(byteLength, 1);
+
+    return [header, messageBuffer];
   }
 
   private decompressMessage(
     message: Buffer,
     encoding: string
-  ): Buffer | Promise<Buffer> {
-    switch (encoding) {
-      case 'deflate':
-        return inflate(message.subarray(5));
-      case 'gzip':
-        return unzip(message.subarray(5));
-      case 'identity':
-        return message.subarray(5);
-      default:
-        return Promise.reject({
-          code: Status.UNIMPLEMENTED,
-          details: `Received message compressed with unsupported encoding "${encoding}"`,
-        });
+  ): Promise<Buffer> {
+    if (encoding === 'deflate') {
+      return inflate(message);
     }
+
+    if (encoding === 'gzip') {
+      return unzip(message);
+    }
+
+    throw {
+      code: Status.UNIMPLEMENTED,
+      details: `Received message compressed with unsupported encoding "${encoding}"`,
+    };
   }
 
   private async decompressAndMaybePush(queueEntry: ReadQueueEntry) {
@@ -694,23 +697,23 @@ export class BaseServerInterceptingCall
       throw new Error(`Invalid queue entry type: ${queueEntry.type}`);
     }
 
-    const compressed = queueEntry.compressedMessage!.readUInt8(0) === 1;
-    const compressedMessageEncoding = compressed
-      ? this.incomingEncoding
-      : 'identity';
-    const decompressedMessage = await this.decompressMessage(
-      queueEntry.compressedMessage!,
-      compressedMessageEncoding
-    );
+    const msg = queueEntry.compressedMessage!;
+    const compressed = msg!.compressed === 1;
+
     try {
+      const decompressedMessage = compressed
+        ? await this.decompressMessage(msg.message, this.incomingEncoding)
+        : msg.message;
+
       queueEntry.parsedMessage = this.handler.deserialize(decompressedMessage);
-    } catch (err) {
+    } catch (err: any) {
       this.sendStatus({
-        code: Status.INTERNAL,
-        details: `Error deserializing request: ${(err as Error).message}`,
+        code: err.code || Status.INTERNAL,
+        details: err.details || `Error deserializing request: ${err.message}`,
       });
       return;
     }
+
     queueEntry.type = 'READABLE';
     this.maybePushNextMessage();
   }
@@ -743,26 +746,27 @@ export class BaseServerInterceptingCall
         ' received data frame of size ' +
         data.length
     );
-    const rawMessages = this.decoder.write(data);
+    const rawMessages: GrpcFrame[] = this.decoder.write(data);
 
-    for (const messageBytes of rawMessages) {
+    if (rawMessages.length > 0) {
       this.stream.pause();
+    }
+
+    for (const message of rawMessages) {
       if (
         this.maxReceiveMessageSize !== -1 &&
-        messageBytes.length - 5 > this.maxReceiveMessageSize
+        message.size > this.maxReceiveMessageSize
       ) {
         this.sendStatus({
           code: Status.RESOURCE_EXHAUSTED,
-          details: `Received message larger than max (${
-            messageBytes.length - 5
-          } vs. ${this.maxReceiveMessageSize})`,
+          details: `Received message larger than max (${message.size} vs. ${this.maxReceiveMessageSize})`,
           metadata: null,
         });
         return;
       }
       const queueEntry: ReadQueueEntry = {
         type: 'COMPRESSED',
-        compressedMessage: messageBytes,
+        compressedMessage: message,
         parsedMessage: null,
       };
       this.readQueue.push(queueEntry);
@@ -809,7 +813,7 @@ export class BaseServerInterceptingCall
     if (this.checkCancelled()) {
       return;
     }
-    let response: Buffer;
+    let response: GrpcWriteFrame;
     try {
       response = this.serializeMessage(message);
     } catch (e) {
@@ -823,11 +827,11 @@ export class BaseServerInterceptingCall
 
     if (
       this.maxSendMessageSize !== -1 &&
-      response.length - 5 > this.maxSendMessageSize
+      response[1].length > this.maxSendMessageSize
     ) {
       this.sendStatus({
         code: Status.RESOURCE_EXHAUSTED,
-        details: `Sent message larger than max (${response.length} vs. ${this.maxSendMessageSize})`,
+        details: `Sent message larger than max (${response[1].length} vs. ${this.maxSendMessageSize})`,
         metadata: null,
       });
       return;
@@ -837,9 +841,13 @@ export class BaseServerInterceptingCall
       'Request to ' +
         this.handler.path +
         ' sent data frame of size ' +
-        response.length
+        response[1].length
     );
-    this.stream.write(response, error => {
+    const { stream } = this;
+
+    // TODO: measure cork() / uncork() ?
+    stream.write(response[0]);
+    stream.write(response[1], error => {
       if (error) {
         this.sendStatus({
           code: Status.INTERNAL,
