@@ -26,6 +26,8 @@ const headers = Object.setPrototypeOf(
     'user-agent': 'h2load nghttp2/1.58.0',
     'content-type': 'application/grpc',
     'content-length': '19',
+    [GRPC_ACCEPT_ENCODING_HEADER]: 'identity,deflate,gzip',
+    [GRPC_ENCODING_HEADER]: 'identity',
     [sensitiveHeaders]: [],
   },
   null
@@ -35,13 +37,13 @@ const ogMeta = MetadataOriginal.fromHttp2Headers(headers);
 const currentMeta = Metadata.fromHttp2Headers(headers);
 
 suite
-  .add('grpc-js@1.0.6 fromHttp2Headers', function () {
+  .add('grpc-js@1.10.6 fromHttp2Headers', function () {
     return MetadataOriginal.fromHttp2Headers(headers);
   })
-  .add('grpc-js@1.0.6 toHttp2Headers', function () {
+  .add('grpc-js@1.10.6 toHttp2Headers', function () {
     return ogMeta.toHttp2Headers();
   })
-  .add('grpc-js@1.0.6 fromHttp2Headers + common operations', function () {
+  .add('grpc-js@1.10.6 fromHttp2Headers + common operations', function () {
     const metadata = MetadataOriginal.fromHttp2Headers(headers);
     metadata.remove(GRPC_TIMEOUT_HEADER);
     metadata.remove(GRPC_ENCODING_HEADER);

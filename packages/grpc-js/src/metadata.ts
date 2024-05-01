@@ -188,7 +188,7 @@ export class Metadata {
 
   addStrings(key: string, values: string[]): void {
     validateStrings(key, values);
-    this.internalRepr[key] = values;
+    this.internalRepr[key] = values.slice(); // shallow copy
   }
 
   addBuffer(key: string, value: Buffer): void {
@@ -206,10 +206,11 @@ export class Metadata {
    * @param key The key whose values should be removed.
    */
   remove(key: string): void {
-    key = normalizeKey(key);
+    const k = normalizeKey(key);
     // validate(key);
-    if (this.internalRepr[key] !== undefined) {
-      this.internalRepr[key] = undefined; // expensive, but cheaper in new versions
+    const { internalRepr } = this;
+    if (k in internalRepr) {
+      internalRepr[k] = undefined; // expensive, but cheaper in new versions
     }
   }
 
@@ -311,14 +312,13 @@ export class Metadata {
    * Creates an OutgoingHttpHeaders object that can be used with the http2 API.
    */
   toHttp2Headers(): http2.OutgoingHttpHeaders {
-    const o = this.internalRepr;
     const result: http2.OutgoingHttpHeaders = Object.create(null);
+    const o = this.internalRepr;
 
     for (const k in o) {
       const cur = o[k];
       if (cur !== undefined) {
-        // @ts-expect-error manual buffer conversion
-        result[k] = isBinaryKey(k) ? cur.map(bufToString) : cur;
+        result[k] = isBinaryKey(k) ? cur.map(bufToString) : (cur as string[]);
       }
     }
 
@@ -390,17 +390,11 @@ function handleMetadataValue(
 ): void {
   if (isBinaryKey(key)) {
     if (isArray(values)) {
-      result.addBuffers(
-        key,
-        values.map(v => Buffer.from(v, 'base64'))
-      );
+      result.addBuffers(key, values.map(toBufferFromBase64));
     } else if (isCustomMetadata(key)) {
-      result.addBuffers(
-        key,
-        values.split(',').map(val => Buffer.from(val.trim(), 'base64'))
-      );
+      result.addBuffers(key, values.split(',').map(toBufferFromBase64Trim));
     } else {
-      result.addBuffer(key, Buffer.from(values, 'base64'));
+      result.addBuffer(key, toBufferFromBase64(values));
     }
   } else {
     if (isArray(values)) {
@@ -414,3 +408,7 @@ function handleMetadataValue(
 const bufToString = (val: string | Buffer): string => {
   return Buffer.isBuffer(val) ? val.toString('base64') : val;
 };
+
+const toBufferFromBase64 = (v: string): Buffer => Buffer.from(v, 'base64');
+const toBufferFromBase64Trim = (v: string): Buffer =>
+  Buffer.from(v.trim(), 'base64');
