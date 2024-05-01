@@ -82,6 +82,39 @@ export interface SubchannelCallInterceptingListener
   onReceiveStatus(status: StatusObjectWithRstCode): void;
 }
 
+function mapHttpStatusCode(code: number): StatusObject {
+  const details = `Received HTTP status code ${code}`;
+  let mappedStatusCode: number;
+  switch (code) {
+    // TODO(murgatroid99): handle 100 and 101
+    case 400:
+      mappedStatusCode = Status.INTERNAL;
+      break;
+    case 401:
+      mappedStatusCode = Status.UNAUTHENTICATED;
+      break;
+    case 403:
+      mappedStatusCode = Status.PERMISSION_DENIED;
+      break;
+    case 404:
+      mappedStatusCode = Status.UNIMPLEMENTED;
+      break;
+    case 429:
+    case 502:
+    case 503:
+    case 504:
+      mappedStatusCode = Status.UNAVAILABLE;
+      break;
+    default:
+      mappedStatusCode = Status.UNKNOWN;
+  }
+  return {
+    code: mappedStatusCode,
+    details: details,
+    metadata: new Metadata()
+  };
+}
+
 export class Http2SubchannelCall implements SubchannelCall {
   private decoder = new StreamDecoder();
 
@@ -98,8 +131,7 @@ export class Http2SubchannelCall implements SubchannelCall {
 
   private unpushedReadMessages: Buffer[] = [];
 
-  // Status code mapped from :status. To be used if grpc-status is not received
-  private mappedStatusCode: Status = Status.UNKNOWN;
+  private httpStatusCode: number | undefined;
 
   // This is populated (non-null) if and only if the call has ended
   private finalStatus: StatusObject | null = null;
@@ -121,29 +153,7 @@ export class Http2SubchannelCall implements SubchannelCall {
         headersString += '\t\t' + header + ': ' + headers[header] + '\n';
       }
       this.trace('Received server headers:\n' + headersString);
-      switch (headers[':status']) {
-        // TODO(murgatroid99): handle 100 and 101
-        case 400:
-          this.mappedStatusCode = Status.INTERNAL;
-          break;
-        case 401:
-          this.mappedStatusCode = Status.UNAUTHENTICATED;
-          break;
-        case 403:
-          this.mappedStatusCode = Status.PERMISSION_DENIED;
-          break;
-        case 404:
-          this.mappedStatusCode = Status.UNIMPLEMENTED;
-          break;
-        case 429:
-        case 502:
-        case 503:
-        case 504:
-          this.mappedStatusCode = Status.UNAVAILABLE;
-          break;
-        default:
-          this.mappedStatusCode = Status.UNKNOWN;
-      }
+      this.httpStatusCode = headers[':status'];
 
       if (flags & http2.constants.NGHTTP2_FLAG_END_STREAM) {
         this.handleTrailers(headers);
@@ -208,8 +218,14 @@ export class Http2SubchannelCall implements SubchannelCall {
             if (this.finalStatus !== null) {
               return;
             }
-            code = Status.INTERNAL;
-            details = `Received RST_STREAM with code ${http2Stream.rstCode}`;
+            if (this.httpStatusCode && this.httpStatusCode !== 200) {
+              const mappedStatus = mapHttpStatusCode(this.httpStatusCode);
+              code = mappedStatus.code;
+              details = mappedStatus.details;
+            } else {
+              code = Status.INTERNAL;
+              details = `Received RST_STREAM with code ${http2Stream.rstCode} (Call ended without gRPC status)`;
+            }
             break;
           case http2.constants.NGHTTP2_REFUSED_STREAM:
             code = Status.UNAVAILABLE;
@@ -421,31 +437,38 @@ export class Http2SubchannelCall implements SubchannelCall {
       metadata = new Metadata();
     }
     const metadataMap = metadata.getMap();
-    let code: Status = this.mappedStatusCode;
-    if (
-      code === Status.UNKNOWN &&
-      typeof metadataMap['grpc-status'] === 'string'
-    ) {
-      const receivedStatus = Number(metadataMap['grpc-status']);
-      if (receivedStatus in Status) {
-        code = receivedStatus;
-        this.trace('received status code ' + receivedStatus + ' from server');
-      }
+    let status: StatusObject;
+    if (typeof metadataMap['grpc-status'] === 'string') {
+      const receivedStatus: Status = Number(metadataMap['grpc-status']);
+      this.trace('received status code ' + receivedStatus + ' from server');
       metadata.remove('grpc-status');
-    }
-    let details = '';
-    if (typeof metadataMap['grpc-message'] === 'string') {
-      try {
-        details = decodeURI(metadataMap['grpc-message']);
-      } catch (e) {
-        details = metadataMap['grpc-message'];
+      let details = '';
+      if (typeof metadataMap['grpc-message'] === 'string') {
+        try {
+          details = decodeURI(metadataMap['grpc-message']);
+        } catch (e) {
+          details = metadataMap['grpc-message'];
+        }
+        metadata.remove('grpc-message');
+        this.trace(
+          'received status details string "' + details + '" from server'
+        );
       }
-      metadata.remove('grpc-message');
-      this.trace(
-        'received status details string "' + details + '" from server'
-      );
+      status = {
+        code: receivedStatus,
+        details: details,
+        metadata: metadata
+      };
+    } else if (this.httpStatusCode) {
+      status = mapHttpStatusCode(this.httpStatusCode);
+      status.metadata = metadata;
+    } else {
+      status = {
+        code: Status.UNKNOWN,
+        details: 'No status information received',
+        metadata: metadata
+      };
     }
-    const status: StatusObject = { code, details, metadata };
     // This is a no-op if the call was already ended when handling headers.
     this.endCall(status);
   }
