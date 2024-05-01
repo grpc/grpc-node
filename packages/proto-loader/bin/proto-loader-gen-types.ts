@@ -555,7 +555,7 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
   formatter.indent();
   for (const methodName of Object.keys(serviceType.methods).sort()) {
     const method = serviceType.methods[methodName];
-    for (const name of [methodName, camelCase(methodName)]) {
+    for (const name of new Set([methodName, camelCase(methodName)])) {
       if (CLIENT_RESERVED_METHOD_NAMES.has(name)) {
         continue;
       }
