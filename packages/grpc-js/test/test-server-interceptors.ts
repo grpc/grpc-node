@@ -153,7 +153,7 @@ describe('Server interceptors', () => {
         grpc.ServerCredentials.createInsecure(),
         (error, port) => {
           assert.ifError(error);
-          client = new TestClient(port, false);
+          client = new TestClient(`localhost:${port}`, false);
           done();
         }
       );
@@ -195,7 +195,7 @@ describe('Server interceptors', () => {
         grpc.ServerCredentials.createInsecure(),
         (error, port) => {
           assert.ifError(error);
-          client = new TestClient(port, false);
+          client = new TestClient(`localhost:${port}`, false);
           done();
         }
       );
@@ -246,7 +246,7 @@ describe('Server interceptors', () => {
         grpc.ServerCredentials.createInsecure(),
         (error, port) => {
           assert.ifError(error);
-          client = new TestClient(port, false);
+          client = new TestClient(`localhost:${port}`, false);
           done();
         }
       );
@@ -292,7 +292,7 @@ describe('Server interceptors', () => {
         grpc.ServerCredentials.createInsecure(),
         (error, port) => {
           assert.ifError(error);
-          client = new TestClient(port, false);
+          client = new TestClient(`localhost:${port}`, false);
           done();
         }
       );

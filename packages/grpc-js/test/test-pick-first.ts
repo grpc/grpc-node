@@ -811,7 +811,7 @@ describe('pick_first load balancing policy', () => {
       before(async () => {
         server = new TestServer(false);
         await server.start();
-        client = new TestClient(server.port!, false, {
+        client = TestClient.createFromServer(server, {
           'grpc.service_config': JSON.stringify(serviceConfig),
         });
       });
