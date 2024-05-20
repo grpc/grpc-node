@@ -16,13 +16,13 @@
  *
  */
 
-import camelCase = require('lodash.camelcase');
+import camelCase from 'lodash.camelcase';
 import * as Protobuf from 'protobufjs';
 import * as descriptor from 'protobufjs/ext/descriptor';
 
 import { loadProtosWithOptionsSync, loadProtosWithOptions, Options, addCommonProtos } from './util';
 
-import Long = require('long');
+import Long from 'long';
 
 export { Options, Long };
 

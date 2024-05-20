@@ -15,7 +15,7 @@
  *
  */
 
-import * as assert from 'assert';
+import assert from 'assert';
 import { rpcFileDescriptorSet } from '../test_protos/rpc.desc';
 import { readFileSync } from 'fs';
 
