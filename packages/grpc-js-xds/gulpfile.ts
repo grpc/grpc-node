@@ -17,9 +17,9 @@
 
 import * as gulp from 'gulp';
 
-import * as mocha from 'gulp-mocha';
+import mocha from 'gulp-mocha';
 import * as path from 'path';
-import * as execa from 'execa';
+import execa from 'execa';
 import * as semver from 'semver';
 
 Error.stackTraceLimit = Infinity;

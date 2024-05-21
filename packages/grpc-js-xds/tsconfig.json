@@ -6,7 +6,8 @@
     "target": "es2020",
     "lib": ["es2020"],
     "module": "commonjs",
-    "incremental": true
+    "incremental": true,
+    "esModuleInterop": true
   },
   "include": [
     "src/**/*.ts",

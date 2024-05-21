@@ -15,7 +15,7 @@
  *
  */
 
-import * as assert from 'assert';
+import assert from 'assert';
 
 import * as grpc from '../src';
 import { Server, ServerCredentials } from '../src';

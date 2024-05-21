@@ -17,7 +17,7 @@
 
 // Allow `any` data type for testing runtime type checking.
 // tslint:disable no-any
-import * as assert from 'assert';
+import assert from 'assert';
 import * as fs from 'fs';
 import * as http2 from 'http2';
 import * as path from 'path';
