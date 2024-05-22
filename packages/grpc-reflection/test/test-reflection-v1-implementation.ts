@@ -1,4 +1,4 @@
-import assert from 'assert';
+import * as assert from 'assert';
 import * as path from 'path';
 import { FileDescriptorProto, IFileDescriptorProto } from 'protobufjs/ext/descriptor';
 import * as protoLoader from '@grpc/proto-loader';

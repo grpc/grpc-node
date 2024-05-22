@@ -15,7 +15,7 @@
  *
  */
 
-import assert from 'assert';
+import * as assert from 'assert';
 import * as protoLoader from '@grpc/proto-loader';
 import * as grpc from '../src';
 

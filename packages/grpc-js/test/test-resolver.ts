@@ -17,7 +17,7 @@
 
 // Allow `any` data type for testing runtime type checking.
 // tslint:disable no-any
-import assert from 'assert';
+import * as assert from 'assert';
 import * as resolverManager from '../src/resolver';
 import * as resolver_dns from '../src/resolver-dns';
 import * as resolver_uds from '../src/resolver-uds';

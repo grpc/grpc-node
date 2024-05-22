@@ -15,7 +15,7 @@
  *
  */
 
-import assert from 'assert';
+import * as assert from 'assert';
 import * as path from 'path';
 import * as grpc from '../src';
 import { loadProtoFile } from './common';
