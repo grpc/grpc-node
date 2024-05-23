@@ -16,7 +16,7 @@
  *
  */
 
-import * as assert from 'assert';
+import assert from 'assert';
 import * as grpc from '@grpc/grpc-js';
 import { HealthImplementation, ServingStatusMap, service as healthServiceDefinition } from '../src/health';
 import { HealthClient } from './generated/grpc/health/v1/Health';

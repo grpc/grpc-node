@@ -15,7 +15,7 @@
  *
  */
 
-import * as assert from 'assert';
+import assert from 'assert';
 
 import { ConnectivityState } from '../src/connectivity-state';
 import {

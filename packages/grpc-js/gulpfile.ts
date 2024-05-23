@@ -17,10 +17,10 @@
 
 import * as gulp from 'gulp';
 
-import * as mocha from 'gulp-mocha';
+import mocha from 'gulp-mocha';
 import * as path from 'path';
-import * as execa from 'execa';
-import * as pify from 'pify';
+import execa from 'execa';
+import pify from 'pify';
 import * as semver from 'semver';
 import { ncp } from 'ncp';
 

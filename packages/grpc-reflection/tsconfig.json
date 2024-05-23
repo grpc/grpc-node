@@ -17,7 +17,8 @@
     "resolveJsonModule": true,
     "incremental": true,
     "types": ["mocha"],
-    "noUnusedLocals": true
+    "noUnusedLocals": true,
+    "esModuleInterop": true
   },
   "include": [
     "src/**/*.ts",

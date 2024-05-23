@@ -16,8 +16,8 @@
  */
 
 import * as gulp from 'gulp';
-import * as mocha from 'gulp-mocha';
-import * as execa from 'execa';
+import mocha from 'gulp-mocha';
+import execa from 'execa';
 import * as path from 'path';
 
 const reflectionDir = __dirname;
