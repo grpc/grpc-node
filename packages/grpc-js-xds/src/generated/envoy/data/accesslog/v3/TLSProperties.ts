@@ -52,13 +52,27 @@ export interface _envoy_data_accesslog_v3_TLSProperties_CertificateProperties_Su
 
 // Original file: deps/envoy-api/envoy/data/accesslog/v3/accesslog.proto
 
-export enum _envoy_data_accesslog_v3_TLSProperties_TLSVersion {
-  VERSION_UNSPECIFIED = 0,
-  TLSv1 = 1,
-  TLSv1_1 = 2,
-  TLSv1_2 = 3,
-  TLSv1_3 = 4,
-}
+export const _envoy_data_accesslog_v3_TLSProperties_TLSVersion = {
+  VERSION_UNSPECIFIED: 'VERSION_UNSPECIFIED',
+  TLSv1: 'TLSv1',
+  TLSv1_1: 'TLSv1_1',
+  TLSv1_2: 'TLSv1_2',
+  TLSv1_3: 'TLSv1_3',
+} as const;
+
+export type _envoy_data_accesslog_v3_TLSProperties_TLSVersion =
+  | 'VERSION_UNSPECIFIED'
+  | 0
+  | 'TLSv1'
+  | 1
+  | 'TLSv1_1'
+  | 2
+  | 'TLSv1_2'
+  | 3
+  | 'TLSv1_3'
+  | 4
+
+export type _envoy_data_accesslog_v3_TLSProperties_TLSVersion__Output = typeof _envoy_data_accesslog_v3_TLSProperties_TLSVersion[keyof typeof _envoy_data_accesslog_v3_TLSProperties_TLSVersion]
 
 /**
  * Properties of a negotiated TLS connection.
@@ -68,7 +82,7 @@ export interface TLSProperties {
   /**
    * Version of TLS that was negotiated.
    */
-  'tls_version'?: (_envoy_data_accesslog_v3_TLSProperties_TLSVersion | keyof typeof _envoy_data_accesslog_v3_TLSProperties_TLSVersion);
+  'tls_version'?: (_envoy_data_accesslog_v3_TLSProperties_TLSVersion);
   /**
    * TLS cipher suite negotiated during handshake. The value is a
    * four-digit hex code defined by the IANA TLS Cipher Suite Registry
@@ -107,7 +121,7 @@ export interface TLSProperties__Output {
   /**
    * Version of TLS that was negotiated.
    */
-  'tls_version': (keyof typeof _envoy_data_accesslog_v3_TLSProperties_TLSVersion);
+  'tls_version': (_envoy_data_accesslog_v3_TLSProperties_TLSVersion__Output);
   /**
    * TLS cipher suite negotiated during handshake. The value is a
    * four-digit hex code defined by the IANA TLS Cipher Suite Registry

@@ -25,7 +25,7 @@ import { Endpoint, SubchannelAddress } from './subchannel-address';
 import { ChannelOptions } from './channel-options';
 import { ConnectivityState } from './connectivity-state';
 import { Picker } from './picker';
-import { ChannelRef, SubchannelRef } from './channelz';
+import type { ChannelRef, SubchannelRef } from './channelz';
 import { SubchannelInterface } from './subchannel-interface';
 
 const TYPE_NAME = 'child_load_balancer_helper';

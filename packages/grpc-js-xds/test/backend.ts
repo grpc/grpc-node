@@ -15,7 +15,7 @@
  *
  */
 
-import { loadPackageDefinition, sendUnaryData, Server, ServerCredentials, ServerUnaryCall, UntypedServiceImplementation } from "@grpc/grpc-js";
+import { loadPackageDefinition, sendUnaryData, Server, ServerCredentials, ServerOptions, ServerUnaryCall, UntypedServiceImplementation } from "@grpc/grpc-js";
 import { loadSync } from "@grpc/proto-loader";
 import { ProtoGrpcType } from "./generated/echo";
 import { EchoRequest__Output } from "./generated/grpc/testing/EchoRequest";
@@ -43,7 +43,7 @@ export class Backend {
   private receivedCallCount = 0;
   private callListeners: (() => void)[] = [];
   private port: number | null = null;
-  constructor() {
+  constructor(private serverOptions?: ServerOptions) {
   }
   Echo(call: ServerUnaryCall<EchoRequest__Output, EchoResponse>, callback: sendUnaryData<EchoResponse>) {
     // call.request.params is currently ignored
@@ -76,13 +76,12 @@ export class Backend {
     if (this.server) {
       throw new Error("Backend already running");
     }
-    this.server = new Server();
+    this.server = new Server(this.serverOptions);
     this.server.addService(loadedProtos.grpc.testing.EchoTestService.service, this as unknown as UntypedServiceImplementation);
     const boundPort = this.port ?? 0;
     this.server.bindAsync(`localhost:${boundPort}`, ServerCredentials.createInsecure(), (error, port) => {
       if (!error) {
         this.port = port;
-        this.server!.start();
       }
       callback(error, port);
     })

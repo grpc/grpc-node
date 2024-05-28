@@ -36,5 +36,5 @@ export interface LoadBalancerStatsResponse__Output {
    * The number of RPCs that failed to record a remote peer.
    */
   'num_failures': (number);
-  'rpcs_by_method'?: ({[key: string]: _grpc_testing_LoadBalancerStatsResponse_RpcsByPeer__Output});
+  'rpcs_by_method': ({[key: string]: _grpc_testing_LoadBalancerStatsResponse_RpcsByPeer__Output});
 }

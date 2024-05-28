@@ -106,7 +106,9 @@ export class BackoffTimeout {
 
   private runTimer(delay: number) {
     this.endTime = this.startTime;
-    this.endTime.setMilliseconds(this.endTime.getMilliseconds() + this.nextDelay);
+    this.endTime.setMilliseconds(
+      this.endTime.getMilliseconds() + this.nextDelay
+    );
     clearTimeout(this.timerId);
     this.timerId = setTimeout(() => {
       this.callback();

@@ -3,9 +3,24 @@
 /**
  * The type of payload that should be returned.
  */
-export enum PayloadType {
+export const PayloadType = {
   /**
    * Compressable text format.
    */
-  COMPRESSABLE = 0,
-}
+  COMPRESSABLE: 'COMPRESSABLE',
+} as const;
+
+/**
+ * The type of payload that should be returned.
+ */
+export type PayloadType =
+  /**
+   * Compressable text format.
+   */
+  | 'COMPRESSABLE'
+  | 0
+
+/**
+ * The type of payload that should be returned.
+ */
+export type PayloadType__Output = typeof PayloadType[keyof typeof PayloadType]

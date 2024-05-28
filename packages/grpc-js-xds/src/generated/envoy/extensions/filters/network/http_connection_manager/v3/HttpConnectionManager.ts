@@ -24,7 +24,7 @@ import type { PathTransformation as _envoy_type_http_v3_PathTransformation, Path
 
 // Original file: deps/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
 
-export enum _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_CodecType {
+export const _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_CodecType = {
   /**
    * For every new connection, the connection manager will determine which
    * codec to use. This mode supports both ALPN for TLS listeners as well as
@@ -32,24 +32,56 @@ export enum _envoy_extensions_filters_network_http_connection_manager_v3_HttpCon
    * is preferred, otherwise protocol inference is used. In almost all cases,
    * this is the right option to choose for this setting.
    */
-  AUTO = 0,
+  AUTO: 'AUTO',
   /**
    * The connection manager will assume that the client is speaking HTTP/1.1.
    */
-  HTTP1 = 1,
+  HTTP1: 'HTTP1',
   /**
    * The connection manager will assume that the client is speaking HTTP/2
    * (Envoy does not require HTTP/2 to take place over TLS or to use ALPN.
    * Prior knowledge is allowed).
    */
-  HTTP2 = 2,
+  HTTP2: 'HTTP2',
   /**
    * [#not-implemented-hide:] QUIC implementation is not production ready yet. Use this enum with
    * caution to prevent accidental execution of QUIC code. I.e. `!= HTTP2` is no longer sufficient
    * to distinguish HTTP1 and HTTP2 traffic.
    */
-  HTTP3 = 3,
-}
+  HTTP3: 'HTTP3',
+} as const;
+
+export type _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_CodecType =
+  /**
+   * For every new connection, the connection manager will determine which
+   * codec to use. This mode supports both ALPN for TLS listeners as well as
+   * protocol inference for plaintext listeners. If ALPN data is available, it
+   * is preferred, otherwise protocol inference is used. In almost all cases,
+   * this is the right option to choose for this setting.
+   */
+  | 'AUTO'
+  | 0
+  /**
+   * The connection manager will assume that the client is speaking HTTP/1.1.
+   */
+  | 'HTTP1'
+  | 1
+  /**
+   * The connection manager will assume that the client is speaking HTTP/2
+   * (Envoy does not require HTTP/2 to take place over TLS or to use ALPN.
+   * Prior knowledge is allowed).
+   */
+  | 'HTTP2'
+  | 2
+  /**
+   * [#not-implemented-hide:] QUIC implementation is not production ready yet. Use this enum with
+   * caution to prevent accidental execution of QUIC code. I.e. `!= HTTP2` is no longer sufficient
+   * to distinguish HTTP1 and HTTP2 traffic.
+   */
+  | 'HTTP3'
+  | 3
+
+export type _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_CodecType__Output = typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_CodecType[keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_CodecType]
 
 // Original file: deps/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
 
@@ -57,32 +89,73 @@ export enum _envoy_extensions_filters_network_http_connection_manager_v3_HttpCon
  * How to handle the :ref:`config_http_conn_man_headers_x-forwarded-client-cert` (XFCC) HTTP
  * header.
  */
-export enum _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ForwardClientCertDetails {
+export const _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ForwardClientCertDetails = {
   /**
    * Do not send the XFCC header to the next hop. This is the default value.
    */
-  SANITIZE = 0,
+  SANITIZE: 'SANITIZE',
   /**
    * When the client connection is mTLS (Mutual TLS), forward the XFCC header
    * in the request.
    */
-  FORWARD_ONLY = 1,
+  FORWARD_ONLY: 'FORWARD_ONLY',
   /**
    * When the client connection is mTLS, append the client certificate
    * information to the request’s XFCC header and forward it.
    */
-  APPEND_FORWARD = 2,
+  APPEND_FORWARD: 'APPEND_FORWARD',
   /**
    * When the client connection is mTLS, reset the XFCC header with the client
    * certificate information and send it to the next hop.
    */
-  SANITIZE_SET = 3,
+  SANITIZE_SET: 'SANITIZE_SET',
   /**
    * Always forward the XFCC header in the request, regardless of whether the
    * client connection is mTLS.
    */
-  ALWAYS_FORWARD_ONLY = 4,
-}
+  ALWAYS_FORWARD_ONLY: 'ALWAYS_FORWARD_ONLY',
+} as const;
+
+/**
+ * How to handle the :ref:`config_http_conn_man_headers_x-forwarded-client-cert` (XFCC) HTTP
+ * header.
+ */
+export type _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ForwardClientCertDetails =
+  /**
+   * Do not send the XFCC header to the next hop. This is the default value.
+   */
+  | 'SANITIZE'
+  | 0
+  /**
+   * When the client connection is mTLS (Mutual TLS), forward the XFCC header
+   * in the request.
+   */
+  | 'FORWARD_ONLY'
+  | 1
+  /**
+   * When the client connection is mTLS, append the client certificate
+   * information to the request’s XFCC header and forward it.
+   */
+  | 'APPEND_FORWARD'
+  | 2
+  /**
+   * When the client connection is mTLS, reset the XFCC header with the client
+   * certificate information and send it to the next hop.
+   */
+  | 'SANITIZE_SET'
+  | 3
+  /**
+   * Always forward the XFCC header in the request, regardless of whether the
+   * client connection is mTLS.
+   */
+  | 'ALWAYS_FORWARD_ONLY'
+  | 4
+
+/**
+ * How to handle the :ref:`config_http_conn_man_headers_x-forwarded-client-cert` (XFCC) HTTP
+ * header.
+ */
+export type _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ForwardClientCertDetails__Output = typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ForwardClientCertDetails[keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ForwardClientCertDetails]
 
 export interface _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_HcmAccessLogOptions {
   /**
@@ -162,16 +235,30 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
 
 // Original file: deps/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
 
-export enum _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_OperationName {
+export const _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_OperationName = {
   /**
    * The HTTP listener is used for ingress/incoming requests.
    */
-  INGRESS = 0,
+  INGRESS: 'INGRESS',
   /**
    * The HTTP listener is used for egress/outgoing requests.
    */
-  EGRESS = 1,
-}
+  EGRESS: 'EGRESS',
+} as const;
+
+export type _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_OperationName =
+  /**
+   * The HTTP listener is used for ingress/incoming requests.
+   */
+  | 'INGRESS'
+  | 0
+  /**
+   * The HTTP listener is used for egress/outgoing requests.
+   */
+  | 'EGRESS'
+  | 1
+
+export type _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_OperationName__Output = typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_OperationName[keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_OperationName]
 
 /**
  * [#not-implemented-hide:] Transformations that apply to path headers. Transformations are applied
@@ -253,22 +340,22 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
  * Determines the action for request that contain %2F, %2f, %5C or %5c sequences in the URI path.
  * This operation occurs before URL normalization and the merge slashes transformations if they were enabled.
  */
-export enum _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathWithEscapedSlashesAction {
+export const _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathWithEscapedSlashesAction = {
   /**
    * Default behavior specific to implementation (i.e. Envoy) of this configuration option.
    * Envoy, by default, takes the KEEP_UNCHANGED action.
    * NOTE: the implementation may change the default behavior at-will.
    */
-  IMPLEMENTATION_SPECIFIC_DEFAULT = 0,
+  IMPLEMENTATION_SPECIFIC_DEFAULT: 'IMPLEMENTATION_SPECIFIC_DEFAULT',
   /**
    * Keep escaped slashes.
    */
-  KEEP_UNCHANGED = 1,
+  KEEP_UNCHANGED: 'KEEP_UNCHANGED',
   /**
    * Reject client request with the 400 status. gRPC requests will be rejected with the INTERNAL (13) error code.
    * The "httpN.downstream_rq_failed_path_normalization" counter is incremented for each rejected request.
    */
-  REJECT_REQUEST = 2,
+  REJECT_REQUEST: 'REJECT_REQUEST',
   /**
    * Unescape %2F and %5C sequences and redirect request to the new path if these sequences were present.
    * Redirect occurs after path normalization and merge slashes transformations if they were configured.
@@ -278,14 +365,62 @@ export enum _envoy_extensions_filters_network_http_connection_manager_v3_HttpCon
    * The "httpN.downstream_rq_redirected_with_normalized_path" counter is incremented for each
    * redirected request.
    */
-  UNESCAPE_AND_REDIRECT = 3,
+  UNESCAPE_AND_REDIRECT: 'UNESCAPE_AND_REDIRECT',
   /**
    * Unescape %2F and %5C sequences.
    * Note: this option should not be enabled if intermediaries perform path based access control as
    * it may lead to path confusion vulnerabilities.
    */
-  UNESCAPE_AND_FORWARD = 4,
-}
+  UNESCAPE_AND_FORWARD: 'UNESCAPE_AND_FORWARD',
+} as const;
+
+/**
+ * Determines the action for request that contain %2F, %2f, %5C or %5c sequences in the URI path.
+ * This operation occurs before URL normalization and the merge slashes transformations if they were enabled.
+ */
+export type _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathWithEscapedSlashesAction =
+  /**
+   * Default behavior specific to implementation (i.e. Envoy) of this configuration option.
+   * Envoy, by default, takes the KEEP_UNCHANGED action.
+   * NOTE: the implementation may change the default behavior at-will.
+   */
+  | 'IMPLEMENTATION_SPECIFIC_DEFAULT'
+  | 0
+  /**
+   * Keep escaped slashes.
+   */
+  | 'KEEP_UNCHANGED'
+  | 1
+  /**
+   * Reject client request with the 400 status. gRPC requests will be rejected with the INTERNAL (13) error code.
+   * The "httpN.downstream_rq_failed_path_normalization" counter is incremented for each rejected request.
+   */
+  | 'REJECT_REQUEST'
+  | 2
+  /**
+   * Unescape %2F and %5C sequences and redirect request to the new path if these sequences were present.
+   * Redirect occurs after path normalization and merge slashes transformations if they were configured.
+   * NOTE: gRPC requests will be rejected with the INTERNAL (13) error code.
+   * This option minimizes possibility of path confusion exploits by forcing request with unescaped slashes to
+   * traverse all parties: downstream client, intermediate proxies, Envoy and upstream server.
+   * The "httpN.downstream_rq_redirected_with_normalized_path" counter is incremented for each
+   * redirected request.
+   */
+  | 'UNESCAPE_AND_REDIRECT'
+  | 3
+  /**
+   * Unescape %2F and %5C sequences.
+   * Note: this option should not be enabled if intermediaries perform path based access control as
+   * it may lead to path confusion vulnerabilities.
+   */
+  | 'UNESCAPE_AND_FORWARD'
+  | 4
+
+/**
+ * Determines the action for request that contain %2F, %2f, %5C or %5c sequences in the URI path.
+ * This operation occurs before URL normalization and the merge slashes transformations if they were enabled.
+ */
+export type _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathWithEscapedSlashesAction__Output = typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathWithEscapedSlashesAction[keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathWithEscapedSlashesAction]
 
 /**
  * Configures the manner in which the Proxy-Status HTTP response header is
@@ -405,22 +540,43 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
 
 // Original file: deps/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
 
-export enum _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ServerHeaderTransformation {
+export const _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ServerHeaderTransformation = {
   /**
    * Overwrite any Server header with the contents of server_name.
    */
-  OVERWRITE = 0,
+  OVERWRITE: 'OVERWRITE',
   /**
    * If no Server header is present, append Server server_name
    * If a Server header is present, pass it through.
    */
-  APPEND_IF_ABSENT = 1,
+  APPEND_IF_ABSENT: 'APPEND_IF_ABSENT',
   /**
    * Pass through the value of the server header, and do not append a header
    * if none is present.
    */
-  PASS_THROUGH = 2,
-}
+  PASS_THROUGH: 'PASS_THROUGH',
+} as const;
+
+export type _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ServerHeaderTransformation =
+  /**
+   * Overwrite any Server header with the contents of server_name.
+   */
+  | 'OVERWRITE'
+  | 0
+  /**
+   * If no Server header is present, append Server server_name
+   * If a Server header is present, pass it through.
+   */
+  | 'APPEND_IF_ABSENT'
+  | 1
+  /**
+   * Pass through the value of the server header, and do not append a header
+   * if none is present.
+   */
+  | 'PASS_THROUGH'
+  | 2
+
+export type _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ServerHeaderTransformation__Output = typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ServerHeaderTransformation[keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ServerHeaderTransformation]
 
 /**
  * [#next-free-field: 7]
@@ -737,7 +893,7 @@ export interface HttpConnectionManager {
   /**
    * Supplies the type of codec that the connection manager should use.
    */
-  'codec_type'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_CodecType | keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_CodecType);
+  'codec_type'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_CodecType);
   /**
    * The human readable prefix to use when emitting statistics for the
    * connection manager. See the :ref:`statistics documentation <config_http_conn_man_stats>` for
@@ -825,7 +981,7 @@ export interface HttpConnectionManager {
    * How to handle the :ref:`config_http_conn_man_headers_x-forwarded-client-cert` (XFCC) HTTP
    * header.
    */
-  'forward_client_cert_details'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ForwardClientCertDetails | keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ForwardClientCertDetails);
+  'forward_client_cert_details'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ForwardClientCertDetails);
   /**
    * This field is valid only when :ref:`forward_client_cert_details
    * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.forward_client_cert_details>`
@@ -1025,7 +1181,7 @@ export interface HttpConnectionManager {
    * By default, Envoy will overwrite the header with the value specified in
    * server_name.
    */
-  'server_header_transformation'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ServerHeaderTransformation | keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ServerHeaderTransformation);
+  'server_header_transformation'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ServerHeaderTransformation);
   /**
    * Additional settings for HTTP requests handled by the connection manager. These will be
    * applicable to both HTTP1 and HTTP2 requests.
@@ -1136,7 +1292,7 @@ export interface HttpConnectionManager {
    * :ref:`header validation configuration <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.typed_header_validation_config>`
    * is present.]
    */
-  'path_with_escaped_slashes_action'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathWithEscapedSlashesAction | keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathWithEscapedSlashesAction);
+  'path_with_escaped_slashes_action'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathWithEscapedSlashesAction);
   /**
    * The configuration for the original IP detection extensions.
    * 
@@ -1234,6 +1390,7 @@ export interface HttpConnectionManager {
    * Note that if both this field and :ref:`access_log_flush_interval
    * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.HcmAccessLogOptions.access_log_flush_interval>`
    * are specified, the former (deprecated field) is ignored.
+   * @deprecated
    */
   'access_log_flush_interval'?: (_google_protobuf_Duration | null);
   /**
@@ -1244,6 +1401,7 @@ export interface HttpConnectionManager {
    * Note that if both this field and :ref:`flush_access_log_on_new_request
    * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.HcmAccessLogOptions.flush_access_log_on_new_request>`
    * are specified, the former (deprecated field) is ignored.
+   * @deprecated
    */
   'flush_access_log_on_new_request'?: (boolean);
   /**
@@ -1261,7 +1419,7 @@ export interface HttpConnectionManager__Output {
   /**
    * Supplies the type of codec that the connection manager should use.
    */
-  'codec_type': (keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_CodecType);
+  'codec_type': (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_CodecType__Output);
   /**
    * The human readable prefix to use when emitting statistics for the
    * connection manager. See the :ref:`statistics documentation <config_http_conn_man_stats>` for
@@ -1349,7 +1507,7 @@ export interface HttpConnectionManager__Output {
    * How to handle the :ref:`config_http_conn_man_headers_x-forwarded-client-cert` (XFCC) HTTP
    * header.
    */
-  'forward_client_cert_details': (keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ForwardClientCertDetails);
+  'forward_client_cert_details': (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ForwardClientCertDetails__Output);
   /**
    * This field is valid only when :ref:`forward_client_cert_details
    * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.forward_client_cert_details>`
@@ -1549,7 +1707,7 @@ export interface HttpConnectionManager__Output {
    * By default, Envoy will overwrite the header with the value specified in
    * server_name.
    */
-  'server_header_transformation': (keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ServerHeaderTransformation);
+  'server_header_transformation': (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ServerHeaderTransformation__Output);
   /**
    * Additional settings for HTTP requests handled by the connection manager. These will be
    * applicable to both HTTP1 and HTTP2 requests.
@@ -1660,7 +1818,7 @@ export interface HttpConnectionManager__Output {
    * :ref:`header validation configuration <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.typed_header_validation_config>`
    * is present.]
    */
-  'path_with_escaped_slashes_action': (keyof typeof _envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathWithEscapedSlashesAction);
+  'path_with_escaped_slashes_action': (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathWithEscapedSlashesAction__Output);
   /**
    * The configuration for the original IP detection extensions.
    * 
@@ -1758,6 +1916,7 @@ export interface HttpConnectionManager__Output {
    * Note that if both this field and :ref:`access_log_flush_interval
    * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.HcmAccessLogOptions.access_log_flush_interval>`
    * are specified, the former (deprecated field) is ignored.
+   * @deprecated
    */
   'access_log_flush_interval': (_google_protobuf_Duration__Output | null);
   /**
@@ -1768,6 +1927,7 @@ export interface HttpConnectionManager__Output {
    * Note that if both this field and :ref:`flush_access_log_on_new_request
    * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.HcmAccessLogOptions.flush_access_log_on_new_request>`
    * are specified, the former (deprecated field) is ignored.
+   * @deprecated
    */
   'flush_access_log_on_new_request': (boolean);
   /**

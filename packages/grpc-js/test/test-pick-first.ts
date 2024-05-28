@@ -561,28 +561,43 @@ describe('pick_first load balancing policy', () => {
         },
         updateState: updateStateCallBackForExpectedStateSequence(
           [ConnectivityState.CONNECTING, ConnectivityState.TRANSIENT_FAILURE],
-          err => setImmediate(() => {
-            assert.strictEqual(reresolutionRequestCount, targetReresolutionRequestCount);
-            done(err);
-          })
+          err =>
+            setImmediate(() => {
+              assert.strictEqual(
+                reresolutionRequestCount,
+                targetReresolutionRequestCount
+              );
+              done(err);
+            })
         ),
         requestReresolution: () => {
           reresolutionRequestCount += 1;
-        }
+        },
       }
     );
     const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
-    pickFirst.updateAddressList([{ addresses: [{ host: 'localhost', port: 1 }]}], config);
+    pickFirst.updateAddressList(
+      [{ addresses: [{ host: 'localhost', port: 1 }] }],
+      config
+    );
     process.nextTick(() => {
       subchannels[0].transitionToState(ConnectivityState.TRANSIENT_FAILURE);
       process.nextTick(() => {
-        pickFirst.updateAddressList([{ addresses: [{ host: 'localhost', port: 2 }]}], config);
+        pickFirst.updateAddressList(
+          [{ addresses: [{ host: 'localhost', port: 2 }] }],
+          config
+        );
         process.nextTick(() => {
           subchannels[1].transitionToState(ConnectivityState.TRANSIENT_FAILURE);
           process.nextTick(() => {
-            pickFirst.updateAddressList([{ addresses: [{ host: 'localhost', port: 3 }]}], config);
+            pickFirst.updateAddressList(
+              [{ addresses: [{ host: 'localhost', port: 3 }] }],
+              config
+            );
             process.nextTick(() => {
-              subchannels[2].transitionToState(ConnectivityState.TRANSIENT_FAILURE);
+              subchannels[2].transitionToState(
+                ConnectivityState.TRANSIENT_FAILURE
+              );
             });
           });
         });
@@ -606,22 +621,35 @@ describe('pick_first load balancing policy', () => {
         },
         updateState: updateStateCallBackForExpectedStateSequence(
           [ConnectivityState.TRANSIENT_FAILURE],
-          err => setImmediate(() => {
-            assert.strictEqual(reresolutionRequestCount, targetReresolutionRequestCount);
-            done(err);
-          })
+          err =>
+            setImmediate(() => {
+              assert.strictEqual(
+                reresolutionRequestCount,
+                targetReresolutionRequestCount
+              );
+              done(err);
+            })
         ),
         requestReresolution: () => {
           reresolutionRequestCount += 1;
-        }
+        },
       }
     );
     const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
-    pickFirst.updateAddressList([{ addresses: [{ host: 'localhost', port: 1 }]}], config);
+    pickFirst.updateAddressList(
+      [{ addresses: [{ host: 'localhost', port: 1 }] }],
+      config
+    );
     process.nextTick(() => {
-      pickFirst.updateAddressList([{ addresses: [{ host: 'localhost', port: 2 }]}], config);
+      pickFirst.updateAddressList(
+        [{ addresses: [{ host: 'localhost', port: 2 }] }],
+        config
+      );
       process.nextTick(() => {
-        pickFirst.updateAddressList([{ addresses: [{ host: 'localhost', port: 2 }]}], config);
+        pickFirst.updateAddressList(
+          [{ addresses: [{ host: 'localhost', port: 2 }] }],
+          config
+        );
       });
     });
   });
@@ -639,13 +667,20 @@ describe('pick_first load balancing policy', () => {
           return subchannel;
         },
         updateState: updateStateCallBackForExpectedStateSequence(
-          [ConnectivityState.READY, ConnectivityState.IDLE, ConnectivityState.READY],
+          [
+            ConnectivityState.READY,
+            ConnectivityState.IDLE,
+            ConnectivityState.READY,
+          ],
           done
         ),
       }
     );
     const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
-    pickFirst.updateAddressList([{ addresses: [{ host: 'localhost', port: 1 }]}], config);
+    pickFirst.updateAddressList(
+      [{ addresses: [{ host: 'localhost', port: 1 }] }],
+      config
+    );
     process.nextTick(() => {
       subchannels[0].transitionToState(ConnectivityState.IDLE);
       process.nextTick(() => {
@@ -776,7 +811,7 @@ describe('pick_first load balancing policy', () => {
       before(async () => {
         server = new TestServer(false);
         await server.start();
-        client = new TestClient(server.port!, false, {
+        client = TestClient.createFromServer(server, {
           'grpc.service_config': JSON.stringify(serviceConfig),
         });
       });

@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/config/core/v3/config_source.proto
 
-import type { ApiVersion as _envoy_config_core_v3_ApiVersion } from '../../../../envoy/config/core/v3/ApiVersion';
+import type { ApiVersion as _envoy_config_core_v3_ApiVersion, ApiVersion__Output as _envoy_config_core_v3_ApiVersion__Output } from '../../../../envoy/config/core/v3/ApiVersion';
 
 /**
  * [#not-implemented-hide:]
@@ -13,7 +13,7 @@ export interface SelfConfigSource {
    * API version for xDS transport protocol. This describes the xDS gRPC/REST
    * endpoint and version of [Delta]DiscoveryRequest/Response used on the wire.
    */
-  'transport_api_version'?: (_envoy_config_core_v3_ApiVersion | keyof typeof _envoy_config_core_v3_ApiVersion);
+  'transport_api_version'?: (_envoy_config_core_v3_ApiVersion);
 }
 
 /**
@@ -27,5 +27,5 @@ export interface SelfConfigSource__Output {
    * API version for xDS transport protocol. This describes the xDS gRPC/REST
    * endpoint and version of [Delta]DiscoveryRequest/Response used on the wire.
    */
-  'transport_api_version': (keyof typeof _envoy_config_core_v3_ApiVersion);
+  'transport_api_version': (_envoy_config_core_v3_ApiVersion__Output);
 }

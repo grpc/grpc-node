@@ -156,10 +156,21 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     ) {
       this.updateState(
         ConnectivityState.TRANSIENT_FAILURE,
-        new UnavailablePicker({details: `No connection established. Last error: ${this.lastError}`})
+        new UnavailablePicker({
+          details: `No connection established. Last error: ${this.lastError}`,
+        })
       );
     } else {
       this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
+    }
+    /* round_robin should keep all children connected, this is how we do that.
+     * We can't do this more efficiently in the individual child's updateState
+     * callback because that doesn't have a reference to which child the state
+     * change is associated with. */
+    for (const child of this.children) {
+      if (child.getConnectivityState() === ConnectivityState.IDLE) {
+        child.exitIdle();
+      }
     }
   }
 

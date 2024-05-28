@@ -12,24 +12,61 @@ import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output a
  * as a security measure due to systems that treat '_' and '-' as interchangeable. Envoy by default allows client request headers with underscore
  * characters.
  */
-export enum _envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction {
+export const _envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction = {
   /**
    * Allow headers with underscores. This is the default behavior.
    */
-  ALLOW = 0,
+  ALLOW: 'ALLOW',
   /**
    * Reject client request. HTTP/1 requests are rejected with the 400 status. HTTP/2 requests
    * end with the stream reset. The "httpN.requests_rejected_with_underscores_in_headers" counter
    * is incremented for each rejected request.
    */
-  REJECT_REQUEST = 1,
+  REJECT_REQUEST: 'REJECT_REQUEST',
   /**
    * Drop the client header with name containing underscores. The header is dropped before the filter chain is
    * invoked and as such filters will not see dropped headers. The
    * "httpN.dropped_headers_with_underscores" is incremented for each dropped header.
    */
-  DROP_HEADER = 2,
-}
+  DROP_HEADER: 'DROP_HEADER',
+} as const;
+
+/**
+ * Action to take when Envoy receives client request with header names containing underscore
+ * characters.
+ * Underscore character is allowed in header names by the RFC-7230 and this behavior is implemented
+ * as a security measure due to systems that treat '_' and '-' as interchangeable. Envoy by default allows client request headers with underscore
+ * characters.
+ */
+export type _envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction =
+  /**
+   * Allow headers with underscores. This is the default behavior.
+   */
+  | 'ALLOW'
+  | 0
+  /**
+   * Reject client request. HTTP/1 requests are rejected with the 400 status. HTTP/2 requests
+   * end with the stream reset. The "httpN.requests_rejected_with_underscores_in_headers" counter
+   * is incremented for each rejected request.
+   */
+  | 'REJECT_REQUEST'
+  | 1
+  /**
+   * Drop the client header with name containing underscores. The header is dropped before the filter chain is
+   * invoked and as such filters will not see dropped headers. The
+   * "httpN.dropped_headers_with_underscores" is incremented for each dropped header.
+   */
+  | 'DROP_HEADER'
+  | 2
+
+/**
+ * Action to take when Envoy receives client request with header names containing underscore
+ * characters.
+ * Underscore character is allowed in header names by the RFC-7230 and this behavior is implemented
+ * as a security measure due to systems that treat '_' and '-' as interchangeable. Envoy by default allows client request headers with underscore
+ * characters.
+ */
+export type _envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction__Output = typeof _envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction[keyof typeof _envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction]
 
 /**
  * [#next-free-field: 7]
@@ -81,7 +118,7 @@ export interface HttpProtocolOptions {
    * Note: this only affects client headers. It does not affect headers added
    * by Envoy filters and does not have any impact if added to cluster config.
    */
-  'headers_with_underscores_action'?: (_envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction | keyof typeof _envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction);
+  'headers_with_underscores_action'?: (_envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction);
   /**
    * Optional maximum requests for both upstream and downstream connections.
    * If not specified, there is no limit.
@@ -141,7 +178,7 @@ export interface HttpProtocolOptions__Output {
    * Note: this only affects client headers. It does not affect headers added
    * by Envoy filters and does not have any impact if added to cluster config.
    */
-  'headers_with_underscores_action': (keyof typeof _envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction);
+  'headers_with_underscores_action': (_envoy_config_core_v3_HttpProtocolOptions_HeadersWithUnderscoresAction__Output);
   /**
    * Optional maximum requests for both upstream and downstream connections.
    * If not specified, there is no limit.

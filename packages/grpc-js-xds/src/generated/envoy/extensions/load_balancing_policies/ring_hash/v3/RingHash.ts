@@ -4,29 +4,55 @@ import type { UInt64Value as _google_protobuf_UInt64Value, UInt64Value__Output a
 import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../../google/protobuf/UInt32Value';
 import type { ConsistentHashingLbConfig as _envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig, ConsistentHashingLbConfig__Output as _envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig__Output } from '../../../../../envoy/extensions/load_balancing_policies/common/v3/ConsistentHashingLbConfig';
 import type { _envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig, _envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig__Output } from '../../../../../envoy/extensions/load_balancing_policies/common/v3/LocalityLbConfig';
-import type { Long } from '@grpc/proto-loader';
 
 // Original file: deps/envoy-api/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.proto
 
 /**
  * The hash function used to hash hosts onto the ketama ring.
  */
-export enum _envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_HashFunction {
+export const _envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_HashFunction = {
   /**
    * Currently defaults to XX_HASH.
    */
-  DEFAULT_HASH = 0,
+  DEFAULT_HASH: 'DEFAULT_HASH',
   /**
    * Use `xxHash <https://github.com/Cyan4973/xxHash>`_.
    */
-  XX_HASH = 1,
+  XX_HASH: 'XX_HASH',
   /**
    * Use `MurmurHash2 <https://sites.google.com/site/murmurhash/>`_, this is compatible with
    * std:hash<string> in GNU libstdc++ 3.4.20 or above. This is typically the case when compiled
    * on Linux and not macOS.
    */
-  MURMUR_HASH_2 = 2,
-}
+  MURMUR_HASH_2: 'MURMUR_HASH_2',
+} as const;
+
+/**
+ * The hash function used to hash hosts onto the ketama ring.
+ */
+export type _envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_HashFunction =
+  /**
+   * Currently defaults to XX_HASH.
+   */
+  | 'DEFAULT_HASH'
+  | 0
+  /**
+   * Use `xxHash <https://github.com/Cyan4973/xxHash>`_.
+   */
+  | 'XX_HASH'
+  | 1
+  /**
+   * Use `MurmurHash2 <https://sites.google.com/site/murmurhash/>`_, this is compatible with
+   * std:hash<string> in GNU libstdc++ 3.4.20 or above. This is typically the case when compiled
+   * on Linux and not macOS.
+   */
+  | 'MURMUR_HASH_2'
+  | 2
+
+/**
+ * The hash function used to hash hosts onto the ketama ring.
+ */
+export type _envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_HashFunction__Output = typeof _envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_HashFunction[keyof typeof _envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_HashFunction]
 
 /**
  * This configuration allows the built-in RING_HASH LB policy to be configured via the LB policy
@@ -39,7 +65,7 @@ export interface RingHash {
    * The hash function used to hash hosts onto the ketama ring. The value defaults to
    * :ref:`XX_HASH<envoy_v3_api_enum_value_config.cluster.v3.Cluster.RingHashLbConfig.HashFunction.XX_HASH>`.
    */
-  'hash_function'?: (_envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_HashFunction | keyof typeof _envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_HashFunction);
+  'hash_function'?: (_envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_HashFunction);
   /**
    * Minimum hash ring size. The larger the ring is (that is, the more hashes there are for each
    * provided host) the better the request distribution will reflect the desired weights. Defaults
@@ -60,6 +86,7 @@ export interface RingHash {
    * .. note::
    * This is deprecated and please use :ref:`consistent_hashing_lb_config
    * <envoy_v3_api_field_extensions.load_balancing_policies.ring_hash.v3.RingHash.consistent_hashing_lb_config>` instead.
+   * @deprecated
    */
   'use_hostname_for_hashing'?: (boolean);
   /**
@@ -83,6 +110,7 @@ export interface RingHash {
    * .. note::
    * This is deprecated and please use :ref:`consistent_hashing_lb_config
    * <envoy_v3_api_field_extensions.load_balancing_policies.ring_hash.v3.RingHash.consistent_hashing_lb_config>` instead.
+   * @deprecated
    */
   'hash_balance_factor'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -106,7 +134,7 @@ export interface RingHash__Output {
    * The hash function used to hash hosts onto the ketama ring. The value defaults to
    * :ref:`XX_HASH<envoy_v3_api_enum_value_config.cluster.v3.Cluster.RingHashLbConfig.HashFunction.XX_HASH>`.
    */
-  'hash_function': (keyof typeof _envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_HashFunction);
+  'hash_function': (_envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_HashFunction__Output);
   /**
    * Minimum hash ring size. The larger the ring is (that is, the more hashes there are for each
    * provided host) the better the request distribution will reflect the desired weights. Defaults
@@ -127,6 +155,7 @@ export interface RingHash__Output {
    * .. note::
    * This is deprecated and please use :ref:`consistent_hashing_lb_config
    * <envoy_v3_api_field_extensions.load_balancing_policies.ring_hash.v3.RingHash.consistent_hashing_lb_config>` instead.
+   * @deprecated
    */
   'use_hostname_for_hashing': (boolean);
   /**
@@ -150,6 +179,7 @@ export interface RingHash__Output {
    * .. note::
    * This is deprecated and please use :ref:`consistent_hashing_lb_config
    * <envoy_v3_api_field_extensions.load_balancing_policies.ring_hash.v3.RingHash.consistent_hashing_lb_config>` instead.
+   * @deprecated
    */
   'hash_balance_factor': (_google_protobuf_UInt32Value__Output | null);
   /**

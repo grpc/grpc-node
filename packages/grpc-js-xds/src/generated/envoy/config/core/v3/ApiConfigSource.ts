@@ -3,7 +3,7 @@
 import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
 import type { GrpcService as _envoy_config_core_v3_GrpcService, GrpcService__Output as _envoy_config_core_v3_GrpcService__Output } from '../../../../envoy/config/core/v3/GrpcService';
 import type { RateLimitSettings as _envoy_config_core_v3_RateLimitSettings, RateLimitSettings__Output as _envoy_config_core_v3_RateLimitSettings__Output } from '../../../../envoy/config/core/v3/RateLimitSettings';
-import type { ApiVersion as _envoy_config_core_v3_ApiVersion } from '../../../../envoy/config/core/v3/ApiVersion';
+import type { ApiVersion as _envoy_config_core_v3_ApiVersion, ApiVersion__Output as _envoy_config_core_v3_ApiVersion__Output } from '../../../../envoy/config/core/v3/ApiVersion';
 import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig, TypedExtensionConfig__Output as _envoy_config_core_v3_TypedExtensionConfig__Output } from '../../../../envoy/config/core/v3/TypedExtensionConfig';
 
 // Original file: deps/envoy-api/envoy/config/core/v3/config_source.proto
@@ -11,41 +11,91 @@ import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig
 /**
  * APIs may be fetched via either REST or gRPC.
  */
-export enum _envoy_config_core_v3_ApiConfigSource_ApiType {
+export const _envoy_config_core_v3_ApiConfigSource_ApiType = {
   /**
    * Ideally this would be 'reserved 0' but one can't reserve the default
    * value. Instead we throw an exception if this is ever used.
+   * @deprecated
    */
-  DEPRECATED_AND_UNAVAILABLE_DO_NOT_USE = 0,
+  DEPRECATED_AND_UNAVAILABLE_DO_NOT_USE: 'DEPRECATED_AND_UNAVAILABLE_DO_NOT_USE',
   /**
    * REST-JSON v2 API. The `canonical JSON encoding
    * <https://developers.google.com/protocol-buffers/docs/proto3#json>`_ for
    * the v2 protos is used.
    */
-  REST = 1,
+  REST: 'REST',
   /**
    * SotW gRPC service.
    */
-  GRPC = 2,
+  GRPC: 'GRPC',
   /**
    * Using the delta xDS gRPC service, i.e. DeltaDiscovery{Request,Response}
    * rather than Discovery{Request,Response}. Rather than sending Envoy the entire state
    * with every update, the xDS server only sends what has changed since the last update.
    */
-  DELTA_GRPC = 3,
+  DELTA_GRPC: 'DELTA_GRPC',
   /**
    * SotW xDS gRPC with ADS. All resources which resolve to this configuration source will be
    * multiplexed on a single connection to an ADS endpoint.
    * [#not-implemented-hide:]
    */
-  AGGREGATED_GRPC = 5,
+  AGGREGATED_GRPC: 'AGGREGATED_GRPC',
   /**
    * Delta xDS gRPC with ADS. All resources which resolve to this configuration source will be
    * multiplexed on a single connection to an ADS endpoint.
    * [#not-implemented-hide:]
    */
-  AGGREGATED_DELTA_GRPC = 6,
-}
+  AGGREGATED_DELTA_GRPC: 'AGGREGATED_DELTA_GRPC',
+} as const;
+
+/**
+ * APIs may be fetched via either REST or gRPC.
+ */
+export type _envoy_config_core_v3_ApiConfigSource_ApiType =
+  /**
+   * Ideally this would be 'reserved 0' but one can't reserve the default
+   * value. Instead we throw an exception if this is ever used.
+   */
+  | 'DEPRECATED_AND_UNAVAILABLE_DO_NOT_USE'
+  | 0
+  /**
+   * REST-JSON v2 API. The `canonical JSON encoding
+   * <https://developers.google.com/protocol-buffers/docs/proto3#json>`_ for
+   * the v2 protos is used.
+   */
+  | 'REST'
+  | 1
+  /**
+   * SotW gRPC service.
+   */
+  | 'GRPC'
+  | 2
+  /**
+   * Using the delta xDS gRPC service, i.e. DeltaDiscovery{Request,Response}
+   * rather than Discovery{Request,Response}. Rather than sending Envoy the entire state
+   * with every update, the xDS server only sends what has changed since the last update.
+   */
+  | 'DELTA_GRPC'
+  | 3
+  /**
+   * SotW xDS gRPC with ADS. All resources which resolve to this configuration source will be
+   * multiplexed on a single connection to an ADS endpoint.
+   * [#not-implemented-hide:]
+   */
+  | 'AGGREGATED_GRPC'
+  | 5
+  /**
+   * Delta xDS gRPC with ADS. All resources which resolve to this configuration source will be
+   * multiplexed on a single connection to an ADS endpoint.
+   * [#not-implemented-hide:]
+   */
+  | 'AGGREGATED_DELTA_GRPC'
+  | 6
+
+/**
+ * APIs may be fetched via either REST or gRPC.
+ */
+export type _envoy_config_core_v3_ApiConfigSource_ApiType__Output = typeof _envoy_config_core_v3_ApiConfigSource_ApiType[keyof typeof _envoy_config_core_v3_ApiConfigSource_ApiType]
 
 /**
  * API configuration source. This identifies the API type and cluster that Envoy
@@ -56,7 +106,7 @@ export interface ApiConfigSource {
   /**
    * API type (gRPC, REST, delta gRPC)
    */
-  'api_type'?: (_envoy_config_core_v3_ApiConfigSource_ApiType | keyof typeof _envoy_config_core_v3_ApiConfigSource_ApiType);
+  'api_type'?: (_envoy_config_core_v3_ApiConfigSource_ApiType);
   /**
    * Cluster names should be used only with REST. If > 1
    * cluster is defined, clusters will be cycled through if any kind of failure
@@ -94,7 +144,7 @@ export interface ApiConfigSource {
    * API version for xDS transport protocol. This describes the xDS gRPC/REST
    * endpoint and version of [Delta]DiscoveryRequest/Response used on the wire.
    */
-  'transport_api_version'?: (_envoy_config_core_v3_ApiVersion | keyof typeof _envoy_config_core_v3_ApiVersion);
+  'transport_api_version'?: (_envoy_config_core_v3_ApiVersion);
   /**
    * A list of config validators that will be executed when a new update is
    * received from the ApiConfigSource. Note that each validator handles a
@@ -117,7 +167,7 @@ export interface ApiConfigSource__Output {
   /**
    * API type (gRPC, REST, delta gRPC)
    */
-  'api_type': (keyof typeof _envoy_config_core_v3_ApiConfigSource_ApiType);
+  'api_type': (_envoy_config_core_v3_ApiConfigSource_ApiType__Output);
   /**
    * Cluster names should be used only with REST. If > 1
    * cluster is defined, clusters will be cycled through if any kind of failure
@@ -155,7 +205,7 @@ export interface ApiConfigSource__Output {
    * API version for xDS transport protocol. This describes the xDS gRPC/REST
    * endpoint and version of [Delta]DiscoveryRequest/Response used on the wire.
    */
-  'transport_api_version': (keyof typeof _envoy_config_core_v3_ApiVersion);
+  'transport_api_version': (_envoy_config_core_v3_ApiVersion__Output);
   /**
    * A list of config validators that will be executed when a new update is
    * received from the ApiConfigSource. Note that each validator handles a

@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/data/accesslog/v3/accesslog.proto
 
-import type { RequestMethod as _envoy_config_core_v3_RequestMethod } from '../../../../envoy/config/core/v3/RequestMethod';
+import type { RequestMethod as _envoy_config_core_v3_RequestMethod, RequestMethod__Output as _envoy_config_core_v3_RequestMethod__Output } from '../../../../envoy/config/core/v3/RequestMethod';
 import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 import type { Long } from '@grpc/proto-loader';
 
@@ -11,7 +11,7 @@ export interface HTTPRequestProperties {
   /**
    * The request method (RFC 7231/2616).
    */
-  'request_method'?: (_envoy_config_core_v3_RequestMethod | keyof typeof _envoy_config_core_v3_RequestMethod);
+  'request_method'?: (_envoy_config_core_v3_RequestMethod);
   /**
    * The scheme portion of the incoming request URI.
    */
@@ -90,7 +90,7 @@ export interface HTTPRequestProperties__Output {
   /**
    * The request method (RFC 7231/2616).
    */
-  'request_method': (keyof typeof _envoy_config_core_v3_RequestMethod);
+  'request_method': (_envoy_config_core_v3_RequestMethod__Output);
   /**
    * The scheme portion of the incoming request URI.
    */

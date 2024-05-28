@@ -21,7 +21,7 @@ export interface ResponseParameters {
    * implement the full compression tests by introspecting the call to verify
    * the response's compression status.
    */
-  'compressed'?: (_grpc_testing_BoolValue);
+  'compressed'?: (_grpc_testing_BoolValue | null);
 }
 
 /**
@@ -43,5 +43,5 @@ export interface ResponseParameters__Output {
    * implement the full compression tests by introspecting the call to verify
    * the response's compression status.
    */
-  'compressed'?: (_grpc_testing_BoolValue__Output);
+  'compressed': (_grpc_testing_BoolValue__Output | null);
 }

@@ -91,4 +91,32 @@ describe('core xDS functionality', () => {
       });
     }, reason => done(reason));
   });
+  it('should handle connections aging out', function(done) {
+    this.timeout(5000);
+    const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [new Backend({'grpc.max_connection_age_ms': 1000})], locality:{region: 'region1'}}]);
+    const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
+    routeGroup.startAllBackends().then(() => {
+      xdsServer.setEdsResource(cluster.getEndpointConfig());
+      xdsServer.setCdsResource(cluster.getClusterConfig());
+      xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
+      xdsServer.setLdsResource(routeGroup.getListener());
+      xdsServer.addResponseListener((typeUrl, responseState) => {
+        if (responseState.state === 'NACKED') {
+          client.stopCalls();
+          assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
+        }
+      })
+      client = XdsTestClient.createFromServer('listener1', xdsServer);
+      client.sendOneCall(error => {
+        assert.ifError(error);
+        // Make another call after the max_connection_age_ms expires
+        setTimeout(() => {
+          client.sendOneCall(error => {
+            done(error);
+          })
+        }, 1100);
+      });
+    }, reason => done(reason));
+
+  })
 });

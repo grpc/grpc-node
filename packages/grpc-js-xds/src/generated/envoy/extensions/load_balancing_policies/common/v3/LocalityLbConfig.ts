@@ -2,7 +2,6 @@
 
 import type { Percent as _envoy_type_v3_Percent, Percent__Output as _envoy_type_v3_Percent__Output } from '../../../../../envoy/type/v3/Percent';
 import type { UInt64Value as _google_protobuf_UInt64Value, UInt64Value__Output as _google_protobuf_UInt64Value__Output } from '../../../../../google/protobuf/UInt64Value';
-import type { Long } from '@grpc/proto-loader';
 
 /**
  * Configuration for :ref:`locality weighted load balancing

@@ -1,6 +1,6 @@
 // Original file: proto/grpc/testing/messages.proto
 
-import type { PayloadType as _grpc_testing_PayloadType } from '../../grpc/testing/PayloadType';
+import type { PayloadType as _grpc_testing_PayloadType, PayloadType__Output as _grpc_testing_PayloadType__Output } from '../../grpc/testing/PayloadType';
 import type { ResponseParameters as _grpc_testing_ResponseParameters, ResponseParameters__Output as _grpc_testing_ResponseParameters__Output } from '../../grpc/testing/ResponseParameters';
 import type { Payload as _grpc_testing_Payload, Payload__Output as _grpc_testing_Payload__Output } from '../../grpc/testing/Payload';
 import type { EchoStatus as _grpc_testing_EchoStatus, EchoStatus__Output as _grpc_testing_EchoStatus__Output } from '../../grpc/testing/EchoStatus';
@@ -15,7 +15,7 @@ export interface StreamingOutputCallRequest {
    * might be of different types. This is to simulate a mixed type of payload
    * stream.
    */
-  'response_type'?: (_grpc_testing_PayloadType | keyof typeof _grpc_testing_PayloadType);
+  'response_type'?: (_grpc_testing_PayloadType);
   /**
    * Configuration for each expected response message.
    */
@@ -23,11 +23,11 @@ export interface StreamingOutputCallRequest {
   /**
    * Optional input payload sent along with the request.
    */
-  'payload'?: (_grpc_testing_Payload);
+  'payload'?: (_grpc_testing_Payload | null);
   /**
    * Whether server should return a given status
    */
-  'response_status'?: (_grpc_testing_EchoStatus);
+  'response_status'?: (_grpc_testing_EchoStatus | null);
 }
 
 /**
@@ -40,7 +40,7 @@ export interface StreamingOutputCallRequest__Output {
    * might be of different types. This is to simulate a mixed type of payload
    * stream.
    */
-  'response_type': (keyof typeof _grpc_testing_PayloadType);
+  'response_type': (_grpc_testing_PayloadType__Output);
   /**
    * Configuration for each expected response message.
    */
@@ -48,9 +48,9 @@ export interface StreamingOutputCallRequest__Output {
   /**
    * Optional input payload sent along with the request.
    */
-  'payload'?: (_grpc_testing_Payload__Output);
+  'payload': (_grpc_testing_Payload__Output | null);
   /**
    * Whether server should return a given status
    */
-  'response_status'?: (_grpc_testing_EchoStatus__Output);
+  'response_status': (_grpc_testing_EchoStatus__Output | null);
 }

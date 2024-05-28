@@ -5,20 +5,39 @@ import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output a
 
 // Original file: deps/envoy-api/envoy/config/listener/v3/listener_components.proto
 
-export enum _envoy_config_listener_v3_FilterChainMatch_ConnectionSourceType {
+export const _envoy_config_listener_v3_FilterChainMatch_ConnectionSourceType = {
   /**
    * Any connection source matches.
    */
-  ANY = 0,
+  ANY: 'ANY',
   /**
    * Match a connection originating from the same host.
    */
-  SAME_IP_OR_LOOPBACK = 1,
+  SAME_IP_OR_LOOPBACK: 'SAME_IP_OR_LOOPBACK',
   /**
    * Match a connection originating from a different host.
    */
-  EXTERNAL = 2,
-}
+  EXTERNAL: 'EXTERNAL',
+} as const;
+
+export type _envoy_config_listener_v3_FilterChainMatch_ConnectionSourceType =
+  /**
+   * Any connection source matches.
+   */
+  | 'ANY'
+  | 0
+  /**
+   * Match a connection originating from the same host.
+   */
+  | 'SAME_IP_OR_LOOPBACK'
+  | 1
+  /**
+   * Match a connection originating from a different host.
+   */
+  | 'EXTERNAL'
+  | 2
+
+export type _envoy_config_listener_v3_FilterChainMatch_ConnectionSourceType__Output = typeof _envoy_config_listener_v3_FilterChainMatch_ConnectionSourceType[keyof typeof _envoy_config_listener_v3_FilterChainMatch_ConnectionSourceType]
 
 /**
  * Specifies the match criteria for selecting a specific filter chain for a
@@ -154,7 +173,7 @@ export interface FilterChainMatch {
   /**
    * Specifies the connection source IP match type. Can be any, local or external network.
    */
-  'source_type'?: (_envoy_config_listener_v3_FilterChainMatch_ConnectionSourceType | keyof typeof _envoy_config_listener_v3_FilterChainMatch_ConnectionSourceType);
+  'source_type'?: (_envoy_config_listener_v3_FilterChainMatch_ConnectionSourceType);
   /**
    * The criteria is satisfied if the directly connected source IP address of the downstream
    * connection is contained in at least one of the specified subnets. If the parameter is not
@@ -297,7 +316,7 @@ export interface FilterChainMatch__Output {
   /**
    * Specifies the connection source IP match type. Can be any, local or external network.
    */
-  'source_type': (keyof typeof _envoy_config_listener_v3_FilterChainMatch_ConnectionSourceType);
+  'source_type': (_envoy_config_listener_v3_FilterChainMatch_ConnectionSourceType__Output);
   /**
    * The criteria is satisfied if the directly connected source IP address of the downstream
    * connection is contained in at least one of the specified subnets. If the parameter is not

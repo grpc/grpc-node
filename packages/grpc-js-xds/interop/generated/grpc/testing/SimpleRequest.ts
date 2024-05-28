@@ -1,6 +1,6 @@
 // Original file: proto/grpc/testing/messages.proto
 
-import type { PayloadType as _grpc_testing_PayloadType } from '../../grpc/testing/PayloadType';
+import type { PayloadType as _grpc_testing_PayloadType, PayloadType__Output as _grpc_testing_PayloadType__Output } from '../../grpc/testing/PayloadType';
 import type { Payload as _grpc_testing_Payload, Payload__Output as _grpc_testing_Payload__Output } from '../../grpc/testing/Payload';
 import type { BoolValue as _grpc_testing_BoolValue, BoolValue__Output as _grpc_testing_BoolValue__Output } from '../../grpc/testing/BoolValue';
 import type { EchoStatus as _grpc_testing_EchoStatus, EchoStatus__Output as _grpc_testing_EchoStatus__Output } from '../../grpc/testing/EchoStatus';
@@ -13,7 +13,7 @@ export interface SimpleRequest {
    * Desired payload type in the response from the server.
    * If response_type is RANDOM, server randomly chooses one from other formats.
    */
-  'response_type'?: (_grpc_testing_PayloadType | keyof typeof _grpc_testing_PayloadType);
+  'response_type'?: (_grpc_testing_PayloadType);
   /**
    * Desired payload size in the response from the server.
    */
@@ -21,7 +21,7 @@ export interface SimpleRequest {
   /**
    * Optional input payload sent along with the request.
    */
-  'payload'?: (_grpc_testing_Payload);
+  'payload'?: (_grpc_testing_Payload | null);
   /**
    * Whether SimpleResponse should include username.
    */
@@ -36,15 +36,15 @@ export interface SimpleRequest {
    * implement the full compression tests by introspecting the call to verify
    * the response's compression status.
    */
-  'response_compressed'?: (_grpc_testing_BoolValue);
+  'response_compressed'?: (_grpc_testing_BoolValue | null);
   /**
    * Whether server should return a given status
    */
-  'response_status'?: (_grpc_testing_EchoStatus);
+  'response_status'?: (_grpc_testing_EchoStatus | null);
   /**
    * Whether the server should expect this request to be compressed.
    */
-  'expect_compressed'?: (_grpc_testing_BoolValue);
+  'expect_compressed'?: (_grpc_testing_BoolValue | null);
   /**
    * Whether SimpleResponse should include server_id.
    */
@@ -63,7 +63,7 @@ export interface SimpleRequest__Output {
    * Desired payload type in the response from the server.
    * If response_type is RANDOM, server randomly chooses one from other formats.
    */
-  'response_type': (keyof typeof _grpc_testing_PayloadType);
+  'response_type': (_grpc_testing_PayloadType__Output);
   /**
    * Desired payload size in the response from the server.
    */
@@ -71,7 +71,7 @@ export interface SimpleRequest__Output {
   /**
    * Optional input payload sent along with the request.
    */
-  'payload'?: (_grpc_testing_Payload__Output);
+  'payload': (_grpc_testing_Payload__Output | null);
   /**
    * Whether SimpleResponse should include username.
    */
@@ -86,15 +86,15 @@ export interface SimpleRequest__Output {
    * implement the full compression tests by introspecting the call to verify
    * the response's compression status.
    */
-  'response_compressed'?: (_grpc_testing_BoolValue__Output);
+  'response_compressed': (_grpc_testing_BoolValue__Output | null);
   /**
    * Whether server should return a given status
    */
-  'response_status'?: (_grpc_testing_EchoStatus__Output);
+  'response_status': (_grpc_testing_EchoStatus__Output | null);
   /**
    * Whether the server should expect this request to be compressed.
    */
-  'expect_compressed'?: (_grpc_testing_BoolValue__Output);
+  'expect_compressed': (_grpc_testing_BoolValue__Output | null);
   /**
    * Whether SimpleResponse should include server_id.
    */

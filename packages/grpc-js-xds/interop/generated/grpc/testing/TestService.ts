@@ -1,6 +1,7 @@
 // Original file: proto/grpc/testing/test.proto
 
 import type * as grpc from '@grpc/grpc-js'
+import type { MethodDefinition } from '@grpc/proto-loader'
 import type { Empty as _grpc_testing_Empty, Empty__Output as _grpc_testing_Empty__Output } from '../../grpc/testing/Empty';
 import type { SimpleRequest as _grpc_testing_SimpleRequest, SimpleRequest__Output as _grpc_testing_SimpleRequest__Output } from '../../grpc/testing/SimpleRequest';
 import type { SimpleResponse as _grpc_testing_SimpleResponse, SimpleResponse__Output as _grpc_testing_SimpleResponse__Output } from '../../grpc/testing/SimpleResponse';
@@ -19,34 +20,34 @@ export interface TestServiceClient extends grpc.Client {
    * headers set such that a caching HTTP proxy (such as GFE) can
    * satisfy subsequent requests.
    */
-  CacheableUnaryCall(argument: _grpc_testing_SimpleRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_SimpleResponse__Output) => void): grpc.ClientUnaryCall;
-  CacheableUnaryCall(argument: _grpc_testing_SimpleRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_testing_SimpleResponse__Output) => void): grpc.ClientUnaryCall;
-  CacheableUnaryCall(argument: _grpc_testing_SimpleRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_SimpleResponse__Output) => void): grpc.ClientUnaryCall;
-  CacheableUnaryCall(argument: _grpc_testing_SimpleRequest, callback: (error?: grpc.ServiceError, result?: _grpc_testing_SimpleResponse__Output) => void): grpc.ClientUnaryCall;
+  CacheableUnaryCall(argument: _grpc_testing_SimpleRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_SimpleResponse__Output>): grpc.ClientUnaryCall;
+  CacheableUnaryCall(argument: _grpc_testing_SimpleRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_testing_SimpleResponse__Output>): grpc.ClientUnaryCall;
+  CacheableUnaryCall(argument: _grpc_testing_SimpleRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_SimpleResponse__Output>): grpc.ClientUnaryCall;
+  CacheableUnaryCall(argument: _grpc_testing_SimpleRequest, callback: grpc.requestCallback<_grpc_testing_SimpleResponse__Output>): grpc.ClientUnaryCall;
   /**
    * One request followed by one response. Response has cache control
    * headers set such that a caching HTTP proxy (such as GFE) can
    * satisfy subsequent requests.
    */
-  cacheableUnaryCall(argument: _grpc_testing_SimpleRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_SimpleResponse__Output) => void): grpc.ClientUnaryCall;
-  cacheableUnaryCall(argument: _grpc_testing_SimpleRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_testing_SimpleResponse__Output) => void): grpc.ClientUnaryCall;
-  cacheableUnaryCall(argument: _grpc_testing_SimpleRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_SimpleResponse__Output) => void): grpc.ClientUnaryCall;
-  cacheableUnaryCall(argument: _grpc_testing_SimpleRequest, callback: (error?: grpc.ServiceError, result?: _grpc_testing_SimpleResponse__Output) => void): grpc.ClientUnaryCall;
+  cacheableUnaryCall(argument: _grpc_testing_SimpleRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_SimpleResponse__Output>): grpc.ClientUnaryCall;
+  cacheableUnaryCall(argument: _grpc_testing_SimpleRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_testing_SimpleResponse__Output>): grpc.ClientUnaryCall;
+  cacheableUnaryCall(argument: _grpc_testing_SimpleRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_SimpleResponse__Output>): grpc.ClientUnaryCall;
+  cacheableUnaryCall(argument: _grpc_testing_SimpleRequest, callback: grpc.requestCallback<_grpc_testing_SimpleResponse__Output>): grpc.ClientUnaryCall;
   
   /**
    * One empty request followed by one empty response.
    */
-  EmptyCall(argument: _grpc_testing_Empty, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_Empty__Output) => void): grpc.ClientUnaryCall;
-  EmptyCall(argument: _grpc_testing_Empty, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_testing_Empty__Output) => void): grpc.ClientUnaryCall;
-  EmptyCall(argument: _grpc_testing_Empty, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_Empty__Output) => void): grpc.ClientUnaryCall;
-  EmptyCall(argument: _grpc_testing_Empty, callback: (error?: grpc.ServiceError, result?: _grpc_testing_Empty__Output) => void): grpc.ClientUnaryCall;
+  EmptyCall(argument: _grpc_testing_Empty, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_Empty__Output>): grpc.ClientUnaryCall;
+  EmptyCall(argument: _grpc_testing_Empty, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_testing_Empty__Output>): grpc.ClientUnaryCall;
+  EmptyCall(argument: _grpc_testing_Empty, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_Empty__Output>): grpc.ClientUnaryCall;
+  EmptyCall(argument: _grpc_testing_Empty, callback: grpc.requestCallback<_grpc_testing_Empty__Output>): grpc.ClientUnaryCall;
   /**
    * One empty request followed by one empty response.
    */
-  emptyCall(argument: _grpc_testing_Empty, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_Empty__Output) => void): grpc.ClientUnaryCall;
-  emptyCall(argument: _grpc_testing_Empty, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_testing_Empty__Output) => void): grpc.ClientUnaryCall;
-  emptyCall(argument: _grpc_testing_Empty, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_Empty__Output) => void): grpc.ClientUnaryCall;
-  emptyCall(argument: _grpc_testing_Empty, callback: (error?: grpc.ServiceError, result?: _grpc_testing_Empty__Output) => void): grpc.ClientUnaryCall;
+  emptyCall(argument: _grpc_testing_Empty, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_Empty__Output>): grpc.ClientUnaryCall;
+  emptyCall(argument: _grpc_testing_Empty, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_testing_Empty__Output>): grpc.ClientUnaryCall;
+  emptyCall(argument: _grpc_testing_Empty, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_Empty__Output>): grpc.ClientUnaryCall;
+  emptyCall(argument: _grpc_testing_Empty, callback: grpc.requestCallback<_grpc_testing_Empty__Output>): grpc.ClientUnaryCall;
   
   /**
    * A sequence of requests with each request served by the server immediately.
@@ -84,18 +85,18 @@ export interface TestServiceClient extends grpc.Client {
    * A sequence of requests followed by one response (streamed upload).
    * The server returns the aggregated size of client payload as the result.
    */
-  StreamingInputCall(metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
-  StreamingInputCall(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
-  StreamingInputCall(options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
-  StreamingInputCall(callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
+  StreamingInputCall(metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_StreamingInputCallResponse__Output>): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
+  StreamingInputCall(metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_testing_StreamingInputCallResponse__Output>): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
+  StreamingInputCall(options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_StreamingInputCallResponse__Output>): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
+  StreamingInputCall(callback: grpc.requestCallback<_grpc_testing_StreamingInputCallResponse__Output>): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
   /**
    * A sequence of requests followed by one response (streamed upload).
    * The server returns the aggregated size of client payload as the result.
    */
-  streamingInputCall(metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
-  streamingInputCall(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
-  streamingInputCall(options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
-  streamingInputCall(callback: (error?: grpc.ServiceError, result?: _grpc_testing_StreamingInputCallResponse__Output) => void): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
+  streamingInputCall(metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_StreamingInputCallResponse__Output>): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
+  streamingInputCall(metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_testing_StreamingInputCallResponse__Output>): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
+  streamingInputCall(options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_StreamingInputCallResponse__Output>): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
+  streamingInputCall(callback: grpc.requestCallback<_grpc_testing_StreamingInputCallResponse__Output>): grpc.ClientWritableStream<_grpc_testing_StreamingInputCallRequest>;
   
   /**
    * One request followed by a sequence of responses (streamed download).
@@ -113,34 +114,34 @@ export interface TestServiceClient extends grpc.Client {
   /**
    * One request followed by one response.
    */
-  UnaryCall(argument: _grpc_testing_SimpleRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_SimpleResponse__Output) => void): grpc.ClientUnaryCall;
-  UnaryCall(argument: _grpc_testing_SimpleRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_testing_SimpleResponse__Output) => void): grpc.ClientUnaryCall;
-  UnaryCall(argument: _grpc_testing_SimpleRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_SimpleResponse__Output) => void): grpc.ClientUnaryCall;
-  UnaryCall(argument: _grpc_testing_SimpleRequest, callback: (error?: grpc.ServiceError, result?: _grpc_testing_SimpleResponse__Output) => void): grpc.ClientUnaryCall;
+  UnaryCall(argument: _grpc_testing_SimpleRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_SimpleResponse__Output>): grpc.ClientUnaryCall;
+  UnaryCall(argument: _grpc_testing_SimpleRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_testing_SimpleResponse__Output>): grpc.ClientUnaryCall;
+  UnaryCall(argument: _grpc_testing_SimpleRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_SimpleResponse__Output>): grpc.ClientUnaryCall;
+  UnaryCall(argument: _grpc_testing_SimpleRequest, callback: grpc.requestCallback<_grpc_testing_SimpleResponse__Output>): grpc.ClientUnaryCall;
   /**
    * One request followed by one response.
    */
-  unaryCall(argument: _grpc_testing_SimpleRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_SimpleResponse__Output) => void): grpc.ClientUnaryCall;
-  unaryCall(argument: _grpc_testing_SimpleRequest, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_testing_SimpleResponse__Output) => void): grpc.ClientUnaryCall;
-  unaryCall(argument: _grpc_testing_SimpleRequest, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_SimpleResponse__Output) => void): grpc.ClientUnaryCall;
-  unaryCall(argument: _grpc_testing_SimpleRequest, callback: (error?: grpc.ServiceError, result?: _grpc_testing_SimpleResponse__Output) => void): grpc.ClientUnaryCall;
+  unaryCall(argument: _grpc_testing_SimpleRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_SimpleResponse__Output>): grpc.ClientUnaryCall;
+  unaryCall(argument: _grpc_testing_SimpleRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_testing_SimpleResponse__Output>): grpc.ClientUnaryCall;
+  unaryCall(argument: _grpc_testing_SimpleRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_SimpleResponse__Output>): grpc.ClientUnaryCall;
+  unaryCall(argument: _grpc_testing_SimpleRequest, callback: grpc.requestCallback<_grpc_testing_SimpleResponse__Output>): grpc.ClientUnaryCall;
   
   /**
    * The test server will not implement this method. It will be used
    * to test the behavior when clients call unimplemented methods.
    */
-  UnimplementedCall(argument: _grpc_testing_Empty, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_Empty__Output) => void): grpc.ClientUnaryCall;
-  UnimplementedCall(argument: _grpc_testing_Empty, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_testing_Empty__Output) => void): grpc.ClientUnaryCall;
-  UnimplementedCall(argument: _grpc_testing_Empty, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_Empty__Output) => void): grpc.ClientUnaryCall;
-  UnimplementedCall(argument: _grpc_testing_Empty, callback: (error?: grpc.ServiceError, result?: _grpc_testing_Empty__Output) => void): grpc.ClientUnaryCall;
+  UnimplementedCall(argument: _grpc_testing_Empty, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_Empty__Output>): grpc.ClientUnaryCall;
+  UnimplementedCall(argument: _grpc_testing_Empty, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_testing_Empty__Output>): grpc.ClientUnaryCall;
+  UnimplementedCall(argument: _grpc_testing_Empty, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_Empty__Output>): grpc.ClientUnaryCall;
+  UnimplementedCall(argument: _grpc_testing_Empty, callback: grpc.requestCallback<_grpc_testing_Empty__Output>): grpc.ClientUnaryCall;
   /**
    * The test server will not implement this method. It will be used
    * to test the behavior when clients call unimplemented methods.
    */
-  unimplementedCall(argument: _grpc_testing_Empty, metadata: grpc.Metadata, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_Empty__Output) => void): grpc.ClientUnaryCall;
-  unimplementedCall(argument: _grpc_testing_Empty, metadata: grpc.Metadata, callback: (error?: grpc.ServiceError, result?: _grpc_testing_Empty__Output) => void): grpc.ClientUnaryCall;
-  unimplementedCall(argument: _grpc_testing_Empty, options: grpc.CallOptions, callback: (error?: grpc.ServiceError, result?: _grpc_testing_Empty__Output) => void): grpc.ClientUnaryCall;
-  unimplementedCall(argument: _grpc_testing_Empty, callback: (error?: grpc.ServiceError, result?: _grpc_testing_Empty__Output) => void): grpc.ClientUnaryCall;
+  unimplementedCall(argument: _grpc_testing_Empty, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_Empty__Output>): grpc.ClientUnaryCall;
+  unimplementedCall(argument: _grpc_testing_Empty, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_testing_Empty__Output>): grpc.ClientUnaryCall;
+  unimplementedCall(argument: _grpc_testing_Empty, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_testing_Empty__Output>): grpc.ClientUnaryCall;
+  unimplementedCall(argument: _grpc_testing_Empty, callback: grpc.requestCallback<_grpc_testing_Empty__Output>): grpc.ClientUnaryCall;
   
 }
 
@@ -199,4 +200,15 @@ export interface TestServiceHandlers extends grpc.UntypedServiceImplementation {
    */
   UnimplementedCall: grpc.handleUnaryCall<_grpc_testing_Empty__Output, _grpc_testing_Empty>;
   
+}
+
+export interface TestServiceDefinition extends grpc.ServiceDefinition {
+  CacheableUnaryCall: MethodDefinition<_grpc_testing_SimpleRequest, _grpc_testing_SimpleResponse, _grpc_testing_SimpleRequest__Output, _grpc_testing_SimpleResponse__Output>
+  EmptyCall: MethodDefinition<_grpc_testing_Empty, _grpc_testing_Empty, _grpc_testing_Empty__Output, _grpc_testing_Empty__Output>
+  FullDuplexCall: MethodDefinition<_grpc_testing_StreamingOutputCallRequest, _grpc_testing_StreamingOutputCallResponse, _grpc_testing_StreamingOutputCallRequest__Output, _grpc_testing_StreamingOutputCallResponse__Output>
+  HalfDuplexCall: MethodDefinition<_grpc_testing_StreamingOutputCallRequest, _grpc_testing_StreamingOutputCallResponse, _grpc_testing_StreamingOutputCallRequest__Output, _grpc_testing_StreamingOutputCallResponse__Output>
+  StreamingInputCall: MethodDefinition<_grpc_testing_StreamingInputCallRequest, _grpc_testing_StreamingInputCallResponse, _grpc_testing_StreamingInputCallRequest__Output, _grpc_testing_StreamingInputCallResponse__Output>
+  StreamingOutputCall: MethodDefinition<_grpc_testing_StreamingOutputCallRequest, _grpc_testing_StreamingOutputCallResponse, _grpc_testing_StreamingOutputCallRequest__Output, _grpc_testing_StreamingOutputCallResponse__Output>
+  UnaryCall: MethodDefinition<_grpc_testing_SimpleRequest, _grpc_testing_SimpleResponse, _grpc_testing_SimpleRequest__Output, _grpc_testing_SimpleResponse__Output>
+  UnimplementedCall: MethodDefinition<_grpc_testing_Empty, _grpc_testing_Empty, _grpc_testing_Empty__Output, _grpc_testing_Empty__Output>
 }
