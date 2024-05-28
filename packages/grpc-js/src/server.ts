@@ -1459,6 +1459,26 @@ export class Server {
           session.destroy();
         }
       }, this.keepaliveTimeMs).unref?.();
+      session.once('goaway', (errorCode, opaqueData) => {
+        if (keepaliveInterval) {
+          if (this.channelzEnabled) {
+            if (errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM) {
+              this.channelzTrace.addTrace(
+                'CT_INFO',
+                `Client sent GOAWAY for too many pings ${clientAddress}`
+              );
+            } else {
+              this.channelzTrace.addTrace(
+                'CT_INFO',
+                `Client sent GOAWAY ${clientAddress} with error code ${errorCode} and opaque data ${opaqueData.toString()}`
+              );
+            }
+          }
+          clearInterval(keepaliveInterval);
+          keepaliveInterval = null;
+        }
+        session.destroy();
+      });
       session.on('close', () => {
         if (this.channelzEnabled) {
           if (!sessionClosedByServer) {
