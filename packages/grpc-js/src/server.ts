@@ -1376,8 +1376,7 @@ export class Server {
 
       let connectionAgeTimer: NodeJS.Timeout | null = null;
       let connectionAgeGraceTimer: NodeJS.Timeout | null = null;
-      let keeapliveTimeTimer: NodeJS.Timeout | null = null;
-      let keepaliveTimeoutTimer: NodeJS.Timeout | null = null;
+      let keepaliveInterval: NodeJS.Timeout | null = null;
       let sessionClosedByServer = false;
 
       const idleTimeoutObj = this.enableIdleTimeout(session);
@@ -1421,40 +1420,73 @@ export class Server {
       }
 
       if (this.keepaliveTimeMs < KEEPALIVE_MAX_TIME_MS) {
-        keeapliveTimeTimer = setInterval(() => {
-          keepaliveTimeoutTimer = setTimeout(() => {
-            sessionClosedByServer = true;
-            session.close();
+        keepaliveInterval = setInterval(() => {
+          // NOTE to self: document in PR that prior implementation would overwrite the prior pending timeout
+          // if the timeout had not occurred before the prior interval had elapsed (bad bug)
+          const keepaliveTimeout = setTimeout(() => {
+            if (keepaliveInterval) {
+              clearInterval(keepaliveInterval);
+              keepaliveInterval = null;
+              sessionClosedByServer = true;
+              this.trace('Connection dropped by keepalive timeout');
+              session.close();
+            }
           }, this.keepaliveTimeoutMs);
-          keepaliveTimeoutTimer.unref?.();
+          keepaliveTimeout.unref?.();
 
           try {
-            session.ping(
-              (err: Error | null, duration: number, payload: Buffer) => {
-                if (keepaliveTimeoutTimer) {
-                  clearTimeout(keepaliveTimeoutTimer);
+            if (
+              !session.ping(
+                (err: Error | null, duration: number, payload: Buffer) => {
+                  clearTimeout(keepaliveTimeout);
+                  if (err) {
+                    if (keepaliveInterval) {
+                      clearInterval(keepaliveInterval);
+                      keepaliveInterval = null;
+                    }
+                    sessionClosedByServer = true;
+                    this.trace(
+                      'Connection dropped due to error with ping frame ' +
+                        err.message +
+                        ' return in ' +
+                        duration
+                    );
+                    session.close();
+                  }
                 }
-
-                if (err) {
-                  sessionClosedByServer = true;
-                  this.trace(
-                    'Connection dropped due to error of a ping frame ' +
-                      err.message +
-                      ' return in ' +
-                      duration
-                  );
-                  session.close();
-                }
-              }
-            );
+              )
+            ) {
+              throw new Error('Server keepalive ping send failed');
+            }
           } catch (e) {
-            clearTimeout(keepaliveTimeoutTimer);
-            // The ping can't be sent because the session is already closed
+            // The ping can't be sent because the session is already closed, max outstanding pings reached, etc
+            clearTimeout(keepaliveTimeout);
+            if (keepaliveInterval) {
+              clearInterval(keepaliveInterval);
+              keepaliveInterval = null;
+            }
+            this.trace(
+              'Connection dropped due to error sending ping frame ' +
+                (e instanceof Error ? e.message : 'unknown error')
+            );
             session.destroy();
           }
         }, this.keepaliveTimeMs);
-        keeapliveTimeTimer.unref?.();
+        keepaliveInterval.unref?.();
       }
+
+      session.once('goaway', (errorCode, lastStreamID, opaqueData) => {
+        if (errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM) {
+          this.trace('Connection dropped by client due to ENHANCE_YOUR_CALM');
+        } else {
+          this.trace(
+            'Connection dropped by client via GOAWAY with error code ' +
+              errorCode
+          );
+        }
+        sessionClosedByServer = true;
+        session.destroy();
+      });
 
       session.on('close', () => {
         if (!sessionClosedByServer) {
@@ -1471,11 +1503,9 @@ export class Server {
           clearTimeout(connectionAgeGraceTimer);
         }
 
-        if (keeapliveTimeTimer) {
-          clearInterval(keeapliveTimeTimer);
-          if (keepaliveTimeoutTimer) {
-            clearTimeout(keepaliveTimeoutTimer);
-          }
+        if (keepaliveInterval) {
+          clearInterval(keepaliveInterval);
+          keepaliveInterval = null;
         }
 
         if (idleTimeoutObj !== null) {
@@ -1521,8 +1551,7 @@ export class Server {
 
       let connectionAgeTimer: NodeJS.Timeout | null = null;
       let connectionAgeGraceTimer: NodeJS.Timeout | null = null;
-      let keeapliveTimeTimer: NodeJS.Timeout | null = null;
-      let keepaliveTimeoutTimer: NodeJS.Timeout | null = null;
+      let keepaliveInterval: NodeJS.Timeout | null = null;
       let sessionClosedByServer = false;
 
       const idleTimeoutObj = this.enableIdleTimeout(session);
@@ -1565,48 +1594,84 @@ export class Server {
       }
 
       if (this.keepaliveTimeMs < KEEPALIVE_MAX_TIME_MS) {
-        keeapliveTimeTimer = setInterval(() => {
-          keepaliveTimeoutTimer = setTimeout(() => {
-            sessionClosedByServer = true;
-            this.channelzTrace.addTrace(
-              'CT_INFO',
-              'Connection dropped by keepalive timeout from ' + clientAddress
-            );
-
-            session.close();
+        keepaliveInterval = setInterval(() => {
+          const keepaliveTimeout = setTimeout(() => {
+            if (keepaliveInterval) {
+              clearInterval(keepaliveInterval);
+              keepaliveInterval = null;
+              sessionClosedByServer = true;
+              this.channelzTrace.addTrace(
+                'CT_INFO',
+                'Connection dropped by keepalive timeout from ' + clientAddress
+              );
+              session.close();
+            }
           }, this.keepaliveTimeoutMs);
-          keepaliveTimeoutTimer.unref?.();
+          keepaliveTimeout.unref?.();
 
           try {
-            session.ping(
-              (err: Error | null, duration: number, payload: Buffer) => {
-                if (keepaliveTimeoutTimer) {
-                  clearTimeout(keepaliveTimeoutTimer);
+            if (
+              !session.ping(
+                (err: Error | null, duration: number, payload: Buffer) => {
+                  clearTimeout(keepaliveTimeout);
+                  if (err) {
+                    if (keepaliveInterval) {
+                      clearInterval(keepaliveInterval);
+                      keepaliveInterval = null;
+                    }
+                    sessionClosedByServer = true;
+                    this.channelzTrace.addTrace(
+                      'CT_INFO',
+                      'Connection dropped due to error with ping frame ' +
+                        err.message +
+                        ' return in ' +
+                        duration
+                    );
+                    session.close();
+                  }
                 }
-
-                if (err) {
-                  sessionClosedByServer = true;
-                  this.channelzTrace.addTrace(
-                    'CT_INFO',
-                    'Connection dropped due to error of a ping frame ' +
-                      err.message +
-                      ' return in ' +
-                      duration
-                  );
-
-                  session.close();
-                }
-              }
-            );
+              )
+            ) {
+              throw new Error('Server keepalive ping send failed');
+            }
             channelzSessionInfo.keepAlivesSent += 1;
           } catch (e) {
-            clearTimeout(keepaliveTimeoutTimer);
-            // The ping can't be sent because the session is already closed
+            // The ping can't be sent because the session is already closed, max outstanding pings reached, etc
+            clearTimeout(keepaliveTimeout);
+            if (keepaliveInterval) {
+              clearInterval(keepaliveInterval);
+              keepaliveInterval = null;
+            }
+            this.channelzTrace.addTrace(
+              'CT_INFO',
+              'Connection dropped due to error sending ping frame ' +
+                (e instanceof Error ? e.message : 'unknown error')
+            );
             session.destroy();
           }
         }, this.keepaliveTimeMs);
-        keeapliveTimeTimer.unref?.();
+        keepaliveInterval.unref?.();
       }
+
+      session.once('goaway', (errorCode, lastStreamID, opaqueData) => {
+        if (errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM) {
+          this.channelzTrace.addTrace(
+            'CT_INFO',
+            'Connection dropped by client due GOAWAY of ENHANCE_YOUR_CALM from ' +
+              clientAddress
+          );
+        } else {
+          this.channelzTrace.addTrace(
+            'CT_INFO',
+            'Connection dropped by client via GOAWAY with error code ' +
+              errorCode +
+              ' from ' +
+              clientAddress
+          );
+        }
+        sessionClosedByServer = true;
+        session.destroy();
+      });
 
       session.on('close', () => {
         if (!sessionClosedByServer) {
@@ -1627,11 +1692,9 @@ export class Server {
           clearTimeout(connectionAgeGraceTimer);
         }
 
-        if (keeapliveTimeTimer) {
-          clearInterval(keeapliveTimeTimer);
-          if (keepaliveTimeoutTimer) {
-            clearTimeout(keepaliveTimeoutTimer);
-          }
+        if (keepaliveInterval) {
+          clearInterval(keepaliveInterval);
+          keepaliveInterval = null;
         }
 
         if (idleTimeoutObj !== null) {
