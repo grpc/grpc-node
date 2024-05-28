@@ -1421,8 +1421,6 @@ export class Server {
 
       if (this.keepaliveTimeMs < KEEPALIVE_MAX_TIME_MS) {
         keepaliveInterval = setInterval(() => {
-          // NOTE to self: document in PR that prior implementation would overwrite the prior pending timeout
-          // if the timeout had not occurred before the prior interval had elapsed (bad bug)
           const keepaliveTimeout = setTimeout(() => {
             if (keepaliveInterval) {
               clearInterval(keepaliveInterval);
