@@ -151,14 +151,22 @@ describe('Server', () => {
     });
 
     it('succeeds when called with an already bound port', done => {
-      server.bindAsync('localhost:0', ServerCredentials.createInsecure(), (err, port) => {
-        assert.ifError(err);
-        server.bindAsync(`localhost:${port}`, ServerCredentials.createInsecure(), (err2, port2) => {
-          assert.ifError(err2);
-          assert.strictEqual(port, port2);
-          done();
-        });
-      });
+      server.bindAsync(
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert.ifError(err);
+          server.bindAsync(
+            `localhost:${port}`,
+            ServerCredentials.createInsecure(),
+            (err2, port2) => {
+              assert.ifError(err2);
+              assert.strictEqual(port, port2);
+              done();
+            }
+          );
+        }
+      );
     });
 
     it('fails when called on a bound port with different credentials', done => {
@@ -167,15 +175,19 @@ describe('Server', () => {
         [{ private_key: key, cert_chain: cert }],
         true
       );
-      server.bindAsync('localhost:0', ServerCredentials.createInsecure(), (err, port) => {
-        assert.ifError(err);
-        server.bindAsync(`localhost:${port}`, secureCreds, (err2, port2) => {
-          assert(err2 !== null);
-          assert.match(err2.message, /credentials/);
-          done();
-        })
-      });
-    })
+      server.bindAsync(
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert.ifError(err);
+          server.bindAsync(`localhost:${port}`, secureCreds, (err2, port2) => {
+            assert(err2 !== null);
+            assert.match(err2.message, /credentials/);
+            done();
+          });
+        }
+      );
+    });
   });
 
   describe('unbind', () => {
@@ -190,42 +202,73 @@ describe('Server', () => {
       assert.throws(() => {
         server.unbind('localhost:0');
       }, /port 0/);
-      server.bindAsync('localhost:0', ServerCredentials.createInsecure(), (err, port) => {
-        assert.ifError(err);
-        assert.notStrictEqual(port, 0);
-        assert.throws(() => {
-          server.unbind('localhost:0');
-        }, /port 0/);
-        done();
-      })
+      server.bindAsync(
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert.ifError(err);
+          assert.notStrictEqual(port, 0);
+          assert.throws(() => {
+            server.unbind('localhost:0');
+          }, /port 0/);
+          done();
+        }
+      );
     });
 
     it('successfully unbinds a bound ephemeral port', done => {
-      server.bindAsync('localhost:0', ServerCredentials.createInsecure(), (err, port) => {
-        client = new grpc.Client(`localhost:${port}`, grpc.credentials.createInsecure());
-        client.makeUnaryRequest('/math.Math/Div', x => x, x => x, Buffer.from('abc'), (callError1, result) => {
-          assert(callError1);
-          // UNIMPLEMENTED means that the request reached the call handling code
-          assert.strictEqual(callError1.code, grpc.status.UNIMPLEMENTED);
-          server.unbind(`localhost:${port}`);
-          const deadline = new Date();
-          deadline.setSeconds(deadline.getSeconds() + 1);
-          client!.makeUnaryRequest('/math.Math/Div', x => x, x => x, Buffer.from('abc'), {deadline: deadline}, (callError2, result) => {
-            assert(callError2);
-            // DEADLINE_EXCEEDED means that the server is unreachable
-            assert(callError2.code === grpc.status.DEADLINE_EXCEEDED || callError2.code === grpc.status.UNAVAILABLE);
-            done();
-          });
-        });
-      })
+      server.bindAsync(
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          client = new grpc.Client(
+            `localhost:${port}`,
+            grpc.credentials.createInsecure()
+          );
+          client.makeUnaryRequest(
+            '/math.Math/Div',
+            x => x,
+            x => x,
+            Buffer.from('abc'),
+            (callError1, result) => {
+              assert(callError1);
+              // UNIMPLEMENTED means that the request reached the call handling code
+              assert.strictEqual(callError1.code, grpc.status.UNIMPLEMENTED);
+              server.unbind(`localhost:${port}`);
+              const deadline = new Date();
+              deadline.setSeconds(deadline.getSeconds() + 1);
+              client!.makeUnaryRequest(
+                '/math.Math/Div',
+                x => x,
+                x => x,
+                Buffer.from('abc'),
+                { deadline: deadline },
+                (callError2, result) => {
+                  assert(callError2);
+                  // DEADLINE_EXCEEDED means that the server is unreachable
+                  assert(
+                    callError2.code === grpc.status.DEADLINE_EXCEEDED ||
+                      callError2.code === grpc.status.UNAVAILABLE
+                  );
+                  done();
+                }
+              );
+            }
+          );
+        }
+      );
     });
 
     it('cancels a bindAsync in progress', done => {
-      server.bindAsync('localhost:50051', ServerCredentials.createInsecure(), (err, port) => {
-        assert(err);
-        assert.match(err.message, /cancelled by unbind/);
-        done();
-      });
+      server.bindAsync(
+        'localhost:50051',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert(err);
+          assert.match(err.message, /cancelled by unbind/);
+          done();
+        }
+      );
       server.unbind('localhost:50051');
     });
   });
@@ -284,7 +327,7 @@ describe('Server', () => {
       call.on('data', () => {
         server.drain(`localhost:${portNumber!}`, 100);
       });
-      call.write({value: 'abc'});
+      call.write({ value: 'abc' });
     });
   });
 

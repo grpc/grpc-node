@@ -15,22 +15,43 @@ import type { Metadata as _envoy_config_core_v3_Metadata, Metadata__Output as _e
 
 // Original file: deps/envoy-api/envoy/config/route/v3/route_components.proto
 
-export enum _envoy_config_route_v3_VirtualHost_TlsRequirementType {
+export const _envoy_config_route_v3_VirtualHost_TlsRequirementType = {
   /**
    * No TLS requirement for the virtual host.
    */
-  NONE = 0,
+  NONE: 'NONE',
   /**
    * External requests must use TLS. If a request is external and it is not
    * using TLS, a 301 redirect will be sent telling the client to use HTTPS.
    */
-  EXTERNAL_ONLY = 1,
+  EXTERNAL_ONLY: 'EXTERNAL_ONLY',
   /**
    * All requests must use TLS. If a request is not using TLS, a 301 redirect
    * will be sent telling the client to use HTTPS.
    */
-  ALL = 2,
-}
+  ALL: 'ALL',
+} as const;
+
+export type _envoy_config_route_v3_VirtualHost_TlsRequirementType =
+  /**
+   * No TLS requirement for the virtual host.
+   */
+  | 'NONE'
+  | 0
+  /**
+   * External requests must use TLS. If a request is external and it is not
+   * using TLS, a 301 redirect will be sent telling the client to use HTTPS.
+   */
+  | 'EXTERNAL_ONLY'
+  | 1
+  /**
+   * All requests must use TLS. If a request is not using TLS, a 301 redirect
+   * will be sent telling the client to use HTTPS.
+   */
+  | 'ALL'
+  | 2
+
+export type _envoy_config_route_v3_VirtualHost_TlsRequirementType__Output = typeof _envoy_config_route_v3_VirtualHost_TlsRequirementType[keyof typeof _envoy_config_route_v3_VirtualHost_TlsRequirementType]
 
 /**
  * The top level element in the routing configuration is a virtual host. Each virtual host has
@@ -77,7 +98,7 @@ export interface VirtualHost {
    * Specifies the type of TLS enforcement the virtual host expects. If this option is not
    * specified, there is no TLS requirement for the virtual host.
    */
-  'require_tls'?: (_envoy_config_route_v3_VirtualHost_TlsRequirementType | keyof typeof _envoy_config_route_v3_VirtualHost_TlsRequirementType);
+  'require_tls'?: (_envoy_config_route_v3_VirtualHost_TlsRequirementType);
   /**
    * A list of virtual clusters defined for this virtual host. Virtual clusters
    * are used for additional statistics gathering.
@@ -107,6 +128,7 @@ export interface VirtualHost {
    * This option has been deprecated. Please use
    * :ref:`VirtualHost.typed_per_filter_config<envoy_v3_api_field_config.route.v3.VirtualHost.typed_per_filter_config>`
    * to configure the CORS HTTP filter.
+   * @deprecated
    */
   'cors'?: (_envoy_config_route_v3_CorsPolicy | null);
   /**
@@ -261,7 +283,7 @@ export interface VirtualHost__Output {
    * Specifies the type of TLS enforcement the virtual host expects. If this option is not
    * specified, there is no TLS requirement for the virtual host.
    */
-  'require_tls': (keyof typeof _envoy_config_route_v3_VirtualHost_TlsRequirementType);
+  'require_tls': (_envoy_config_route_v3_VirtualHost_TlsRequirementType__Output);
   /**
    * A list of virtual clusters defined for this virtual host. Virtual clusters
    * are used for additional statistics gathering.
@@ -291,6 +313,7 @@ export interface VirtualHost__Output {
    * This option has been deprecated. Please use
    * :ref:`VirtualHost.typed_per_filter_config<envoy_v3_api_field_config.route.v3.VirtualHost.typed_per_filter_config>`
    * to configure the CORS HTTP filter.
+   * @deprecated
    */
   'cors': (_envoy_config_route_v3_CorsPolicy__Output | null);
   /**

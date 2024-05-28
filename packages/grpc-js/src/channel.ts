@@ -20,7 +20,7 @@ import { ChannelOptions } from './channel-options';
 import { ServerSurfaceCall } from './server-call';
 
 import { ConnectivityState } from './connectivity-state';
-import { ChannelRef } from './channelz';
+import type { ChannelRef } from './channelz';
 import { Call } from './call-interface';
 import { InternalChannel } from './internal-channel';
 import { Deadline } from './deadline';

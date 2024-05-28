@@ -8,7 +8,7 @@ import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _goo
 /**
  * Describes the supported actions types for header append action.
  */
-export enum _envoy_config_core_v3_HeaderValueOption_HeaderAppendAction {
+export const _envoy_config_core_v3_HeaderValueOption_HeaderAppendAction = {
   /**
    * If the header already exists, this action will result in:
    * 
@@ -17,24 +17,63 @@ export enum _envoy_config_core_v3_HeaderValueOption_HeaderAppendAction {
    * 
    * If the header doesn't exist then this will add new header with specified key and value.
    */
-  APPEND_IF_EXISTS_OR_ADD = 0,
+  APPEND_IF_EXISTS_OR_ADD: 'APPEND_IF_EXISTS_OR_ADD',
   /**
    * This action will add the header if it doesn't already exist. If the header
    * already exists then this will be a no-op.
    */
-  ADD_IF_ABSENT = 1,
+  ADD_IF_ABSENT: 'ADD_IF_ABSENT',
   /**
    * This action will overwrite the specified value by discarding any existing values if
    * the header already exists. If the header doesn't exist then this will add the header
    * with specified key and value.
    */
-  OVERWRITE_IF_EXISTS_OR_ADD = 2,
+  OVERWRITE_IF_EXISTS_OR_ADD: 'OVERWRITE_IF_EXISTS_OR_ADD',
   /**
    * This action will overwrite the specified value by discarding any existing values if
    * the header already exists. If the header doesn't exist then this will be no-op.
    */
-  OVERWRITE_IF_EXISTS = 3,
-}
+  OVERWRITE_IF_EXISTS: 'OVERWRITE_IF_EXISTS',
+} as const;
+
+/**
+ * Describes the supported actions types for header append action.
+ */
+export type _envoy_config_core_v3_HeaderValueOption_HeaderAppendAction =
+  /**
+   * If the header already exists, this action will result in:
+   * 
+   * - Comma-concatenated for predefined inline headers.
+   * - Duplicate header added in the ``HeaderMap`` for other headers.
+   * 
+   * If the header doesn't exist then this will add new header with specified key and value.
+   */
+  | 'APPEND_IF_EXISTS_OR_ADD'
+  | 0
+  /**
+   * This action will add the header if it doesn't already exist. If the header
+   * already exists then this will be a no-op.
+   */
+  | 'ADD_IF_ABSENT'
+  | 1
+  /**
+   * This action will overwrite the specified value by discarding any existing values if
+   * the header already exists. If the header doesn't exist then this will add the header
+   * with specified key and value.
+   */
+  | 'OVERWRITE_IF_EXISTS_OR_ADD'
+  | 2
+  /**
+   * This action will overwrite the specified value by discarding any existing values if
+   * the header already exists. If the header doesn't exist then this will be no-op.
+   */
+  | 'OVERWRITE_IF_EXISTS'
+  | 3
+
+/**
+ * Describes the supported actions types for header append action.
+ */
+export type _envoy_config_core_v3_HeaderValueOption_HeaderAppendAction__Output = typeof _envoy_config_core_v3_HeaderValueOption_HeaderAppendAction[keyof typeof _envoy_config_core_v3_HeaderValueOption_HeaderAppendAction]
 
 /**
  * Header name/value pair plus option to control append behavior.
@@ -54,6 +93,7 @@ export interface HeaderValueOption {
    * The :ref:`external authorization service <envoy_v3_api_msg_service.auth.v3.CheckResponse>` and
    * :ref:`external processor service <envoy_v3_api_msg_service.ext_proc.v3.ProcessingResponse>` have
    * default value (``false``) for this field.
+   * @deprecated
    */
   'append'?: (_google_protobuf_BoolValue | null);
   /**
@@ -62,7 +102,7 @@ export interface HeaderValueOption {
    * Value defaults to :ref:`APPEND_IF_EXISTS_OR_ADD
    * <envoy_v3_api_enum_value_config.core.v3.HeaderValueOption.HeaderAppendAction.APPEND_IF_EXISTS_OR_ADD>`.
    */
-  'append_action'?: (_envoy_config_core_v3_HeaderValueOption_HeaderAppendAction | keyof typeof _envoy_config_core_v3_HeaderValueOption_HeaderAppendAction);
+  'append_action'?: (_envoy_config_core_v3_HeaderValueOption_HeaderAppendAction);
   /**
    * Is the header value allowed to be empty? If false (default), custom headers with empty values are dropped,
    * otherwise they are added.
@@ -88,6 +128,7 @@ export interface HeaderValueOption__Output {
    * The :ref:`external authorization service <envoy_v3_api_msg_service.auth.v3.CheckResponse>` and
    * :ref:`external processor service <envoy_v3_api_msg_service.ext_proc.v3.ProcessingResponse>` have
    * default value (``false``) for this field.
+   * @deprecated
    */
   'append': (_google_protobuf_BoolValue__Output | null);
   /**
@@ -96,7 +137,7 @@ export interface HeaderValueOption__Output {
    * Value defaults to :ref:`APPEND_IF_EXISTS_OR_ADD
    * <envoy_v3_api_enum_value_config.core.v3.HeaderValueOption.HeaderAppendAction.APPEND_IF_EXISTS_OR_ADD>`.
    */
-  'append_action': (keyof typeof _envoy_config_core_v3_HeaderValueOption_HeaderAppendAction);
+  'append_action': (_envoy_config_core_v3_HeaderValueOption_HeaderAppendAction__Output);
   /**
    * Is the header value allowed to be empty? If false (default), custom headers with empty values are dropped,
    * otherwise they are added.

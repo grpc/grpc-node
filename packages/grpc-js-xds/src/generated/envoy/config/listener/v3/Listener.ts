@@ -8,7 +8,7 @@ import type { Metadata as _envoy_config_core_v3_Metadata, Metadata__Output as _e
 import type { ListenerFilter as _envoy_config_listener_v3_ListenerFilter, ListenerFilter__Output as _envoy_config_listener_v3_ListenerFilter__Output } from '../../../../envoy/config/listener/v3/ListenerFilter';
 import type { SocketOption as _envoy_config_core_v3_SocketOption, SocketOption__Output as _envoy_config_core_v3_SocketOption__Output } from '../../../../envoy/config/core/v3/SocketOption';
 import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
-import type { TrafficDirection as _envoy_config_core_v3_TrafficDirection } from '../../../../envoy/config/core/v3/TrafficDirection';
+import type { TrafficDirection as _envoy_config_core_v3_TrafficDirection, TrafficDirection__Output as _envoy_config_core_v3_TrafficDirection__Output } from '../../../../envoy/config/core/v3/TrafficDirection';
 import type { UdpListenerConfig as _envoy_config_listener_v3_UdpListenerConfig, UdpListenerConfig__Output as _envoy_config_listener_v3_UdpListenerConfig__Output } from '../../../../envoy/config/listener/v3/UdpListenerConfig';
 import type { ApiListener as _envoy_config_listener_v3_ApiListener, ApiListener__Output as _envoy_config_listener_v3_ApiListener__Output } from '../../../../envoy/config/listener/v3/ApiListener';
 import type { AccessLog as _envoy_config_accesslog_v3_AccessLog, AccessLog__Output as _envoy_config_accesslog_v3_AccessLog__Output } from '../../../../envoy/config/accesslog/v3/AccessLog';
@@ -82,19 +82,36 @@ export interface _envoy_config_listener_v3_Listener_DeprecatedV1__Output {
 
 // Original file: deps/envoy-api/envoy/config/listener/v3/listener.proto
 
-export enum _envoy_config_listener_v3_Listener_DrainType {
+export const _envoy_config_listener_v3_Listener_DrainType = {
   /**
    * Drain in response to calling /healthcheck/fail admin endpoint (along with the health check
    * filter), listener removal/modification, and hot restart.
    */
-  DEFAULT = 0,
+  DEFAULT: 'DEFAULT',
   /**
    * Drain in response to listener removal/modification and hot restart. This setting does not
    * include /healthcheck/fail. This setting may be desirable if Envoy is hosting both ingress
    * and egress listeners.
    */
-  MODIFY_ONLY = 1,
-}
+  MODIFY_ONLY: 'MODIFY_ONLY',
+} as const;
+
+export type _envoy_config_listener_v3_Listener_DrainType =
+  /**
+   * Drain in response to calling /healthcheck/fail admin endpoint (along with the health check
+   * filter), listener removal/modification, and hot restart.
+   */
+  | 'DEFAULT'
+  | 0
+  /**
+   * Drain in response to listener removal/modification and hot restart. This setting does not
+   * include /healthcheck/fail. This setting may be desirable if Envoy is hosting both ingress
+   * and egress listeners.
+   */
+  | 'MODIFY_ONLY'
+  | 1
+
+export type _envoy_config_listener_v3_Listener_DrainType__Output = typeof _envoy_config_listener_v3_Listener_DrainType[keyof typeof _envoy_config_listener_v3_Listener_DrainType]
 
 /**
  * A connection balancer implementation that does exact balancing. This means that a lock is
@@ -176,12 +193,13 @@ export interface Listener {
   'metadata'?: (_envoy_config_core_v3_Metadata | null);
   /**
    * [#not-implemented-hide:]
+   * @deprecated
    */
   'deprecated_v1'?: (_envoy_config_listener_v3_Listener_DeprecatedV1 | null);
   /**
    * The type of draining to perform at a listener-wide level.
    */
-  'drain_type'?: (_envoy_config_listener_v3_Listener_DrainType | keyof typeof _envoy_config_listener_v3_Listener_DrainType);
+  'drain_type'?: (_envoy_config_listener_v3_Listener_DrainType);
   /**
    * Listener filters have the opportunity to manipulate and augment the connection metadata that
    * is used in connection filter chain matching, for example. These filters are run before any in
@@ -261,7 +279,7 @@ export interface Listener {
    * This property is required on Windows for listeners using the original destination filter,
    * see :ref:`Original Destination <config_listener_filters_original_dst>`.
    */
-  'traffic_direction'?: (_envoy_config_core_v3_TrafficDirection | keyof typeof _envoy_config_core_v3_TrafficDirection);
+  'traffic_direction'?: (_envoy_config_core_v3_TrafficDirection);
   /**
    * Whether a connection should be created when listener filters timeout. Default is false.
    * 
@@ -312,6 +330,7 @@ export interface Listener {
   'connection_balance_config'?: (_envoy_config_listener_v3_Listener_ConnectionBalanceConfig | null);
   /**
    * Deprecated. Use ``enable_reuse_port`` instead.
+   * @deprecated
    */
   'reuse_port'?: (boolean);
   /**
@@ -482,12 +501,13 @@ export interface Listener__Output {
   'metadata': (_envoy_config_core_v3_Metadata__Output | null);
   /**
    * [#not-implemented-hide:]
+   * @deprecated
    */
   'deprecated_v1': (_envoy_config_listener_v3_Listener_DeprecatedV1__Output | null);
   /**
    * The type of draining to perform at a listener-wide level.
    */
-  'drain_type': (keyof typeof _envoy_config_listener_v3_Listener_DrainType);
+  'drain_type': (_envoy_config_listener_v3_Listener_DrainType__Output);
   /**
    * Listener filters have the opportunity to manipulate and augment the connection metadata that
    * is used in connection filter chain matching, for example. These filters are run before any in
@@ -567,7 +587,7 @@ export interface Listener__Output {
    * This property is required on Windows for listeners using the original destination filter,
    * see :ref:`Original Destination <config_listener_filters_original_dst>`.
    */
-  'traffic_direction': (keyof typeof _envoy_config_core_v3_TrafficDirection);
+  'traffic_direction': (_envoy_config_core_v3_TrafficDirection__Output);
   /**
    * Whether a connection should be created when listener filters timeout. Default is false.
    * 
@@ -618,6 +638,7 @@ export interface Listener__Output {
   'connection_balance_config': (_envoy_config_listener_v3_Listener_ConnectionBalanceConfig__Output | null);
   /**
    * Deprecated. Use ``enable_reuse_port`` instead.
+   * @deprecated
    */
   'reuse_port': (boolean);
   /**

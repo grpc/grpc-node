@@ -309,7 +309,8 @@ class DnsResolver implements Resolver {
       if (this.continueResolving) {
         this.startResolutionWithBackoff();
       }
-    }, this.minTimeBetweenResolutionsMs).unref?.();
+    }, this.minTimeBetweenResolutionsMs);
+    this.nextResolutionTimer.unref?.();
     this.isNextResolutionTimerRunning = true;
   }
 
@@ -335,9 +336,14 @@ class DnsResolver implements Resolver {
     if (this.pendingLookupPromise === null) {
       if (this.isNextResolutionTimerRunning || this.backoff.isRunning()) {
         if (this.isNextResolutionTimerRunning) {
-          trace('resolution update delayed by "min time between resolutions" rate limit');
+          trace(
+            'resolution update delayed by "min time between resolutions" rate limit'
+          );
         } else {
-          trace('resolution update delayed by backoff timer until ' + this.backoff.getEndTime().toISOString());
+          trace(
+            'resolution update delayed by backoff timer until ' +
+              this.backoff.getEndTime().toISOString()
+          );
         }
         this.continueResolving = true;
       } else {

@@ -26,24 +26,26 @@ const echoService = loadProtoFile(protoFile)
 
 const AUTH_HEADER_KEY = 'auth';
 const AUTH_HEADER_ALLOWED_VALUE = 'allowed';
-const testAuthInterceptor: grpc.ServerInterceptor = (methodDescriptor, call) => {
-  return new grpc.ServerInterceptingCall(call, {
-    start: next => {
-      const authListener: grpc.ServerListener = {
-        onReceiveMetadata: (metadata, mdNext) => {
-          if (metadata.get(AUTH_HEADER_KEY)?.[0] !== AUTH_HEADER_ALLOWED_VALUE) {
-            call.sendStatus({
-              code: grpc.status.UNAUTHENTICATED,
-              details: 'Auth metadata not correct'
-            });
-          } else {
-            mdNext(metadata);
-          }
-        }
-      };
-      next(authListener);
-    }
-  });
+const testAuthInterceptor: grpc.ServerInterceptor = (
+  methodDescriptor,
+  call
+) => {
+  const authListener = (new grpc.ServerListenerBuilder())
+    .withOnReceiveMetadata((metadata, mdNext) => {
+      if (
+        metadata.get(AUTH_HEADER_KEY)?.[0] !== AUTH_HEADER_ALLOWED_VALUE
+      ) {
+        call.sendStatus({
+          code: grpc.status.UNAUTHENTICATED,
+          details: 'Auth metadata not correct',
+        });
+      } else {
+        mdNext(metadata);
+      }
+    }).build();
+  const responder = (new grpc.ResponderBuilder())
+    .withStart(next => next(authListener)).build();
+  return new grpc.ServerInterceptingCall(call, responder);
 };
 
 let eventCounts = {
@@ -52,7 +54,7 @@ let eventCounts = {
   receiveHalfClose: 0,
   sendMetadata: 0,
   sendMessage: 0,
-  sendStatus: 0
+  sendStatus: 0,
 };
 
 function resetEventCounts() {
@@ -62,7 +64,7 @@ function resetEventCounts() {
     receiveHalfClose: 0,
     sendMetadata: 0,
     sendMessage: 0,
-    sendStatus: 0
+    sendStatus: 0,
   };
 }
 
@@ -72,7 +74,10 @@ function resetEventCounts() {
  * @param methodDescription
  * @param call
  */
-const testLoggingInterceptor: grpc.ServerInterceptor = (methodDescription, call) => {
+const testLoggingInterceptor: grpc.ServerInterceptor = (
+  methodDescription,
+  call
+) => {
   return new grpc.ServerInterceptingCall(call, {
     start: next => {
       next({
@@ -87,7 +92,7 @@ const testLoggingInterceptor: grpc.ServerInterceptor = (methodDescription, call)
         onReceiveHalfClose: hcNext => {
           eventCounts.receiveHalfClose += 1;
           hcNext();
-        }
+        },
       });
     },
     sendMetadata: (metadata, mdNext) => {
@@ -101,21 +106,24 @@ const testLoggingInterceptor: grpc.ServerInterceptor = (methodDescription, call)
     sendStatus: (status, statusNext) => {
       eventCounts.sendStatus += 1;
       statusNext(status);
-    }
+    },
   });
 };
 
-const testHeaderInjectionInterceptor: grpc.ServerInterceptor = (methodDescriptor, call) => {
+const testHeaderInjectionInterceptor: grpc.ServerInterceptor = (
+  methodDescriptor,
+  call
+) => {
   return new grpc.ServerInterceptingCall(call, {
     start: next => {
       const authListener: grpc.ServerListener = {
         onReceiveMetadata: (metadata, mdNext) => {
           metadata.set('injected-header', 'present');
           mdNext(metadata);
-        }
+        },
       };
       next(authListener);
-    }
+    },
   });
 };
 
@@ -126,22 +134,29 @@ describe('Server interceptors', () => {
     /* Tests that an interceptor can entirely prevent the handler from being
      * invoked, based on the contents of the metadata. */
     before(done => {
-      server = new grpc.Server({interceptors: [testAuthInterceptor]});
+      server = new grpc.Server({ interceptors: [testAuthInterceptor] });
       server.addService(echoService.service, {
         echo: (
           call: grpc.ServerUnaryCall<any, any>,
           callback: grpc.sendUnaryData<any>
         ) => {
           // A test will fail if a request makes it to the handler without the correct auth header
-          assert.strictEqual(call.metadata.get(AUTH_HEADER_KEY)?.[0], AUTH_HEADER_ALLOWED_VALUE);
+          assert.strictEqual(
+            call.metadata.get(AUTH_HEADER_KEY)?.[0],
+            AUTH_HEADER_ALLOWED_VALUE
+          );
           callback(null, call.request);
         },
       });
-      server.bindAsync('localhost:0', grpc.ServerCredentials.createInsecure(), (error, port) => {
-        assert.ifError(error);
-        client = new TestClient(port, false);
-        done();
-      });
+      server.bindAsync(
+        'localhost:0',
+        grpc.ServerCredentials.createInsecure(),
+        (error, port) => {
+          assert.ifError(error);
+          client = new TestClient(`localhost:${port}`, false);
+          done();
+        }
+      );
     });
     after(done => {
       client.close();
@@ -165,7 +180,7 @@ describe('Server interceptors', () => {
     let server: grpc.Server;
     let client: TestClient;
     before(done => {
-      server = new grpc.Server({interceptors: [testLoggingInterceptor]});
+      server = new grpc.Server({ interceptors: [testLoggingInterceptor] });
       server.addService(echoService.service, {
         echo: (
           call: grpc.ServerUnaryCall<any, any>,
@@ -175,11 +190,15 @@ describe('Server interceptors', () => {
           callback(null, call.request);
         },
       });
-      server.bindAsync('localhost:0', grpc.ServerCredentials.createInsecure(), (error, port) => {
-        assert.ifError(error);
-        client = new TestClient(port, false);
-        done();
-      });
+      server.bindAsync(
+        'localhost:0',
+        grpc.ServerCredentials.createInsecure(),
+        (error, port) => {
+          assert.ifError(error);
+          client = new TestClient(`localhost:${port}`, false);
+          done();
+        }
+      );
     });
     after(done => {
       client.close();
@@ -197,7 +216,7 @@ describe('Server interceptors', () => {
           receiveHalfClose: 1,
           sendMetadata: 1,
           sendMessage: 1,
-          sendStatus: 1
+          sendStatus: 1,
         });
         done();
       });
@@ -207,21 +226,30 @@ describe('Server interceptors', () => {
     let server: grpc.Server;
     let client: TestClient;
     before(done => {
-      server = new grpc.Server({interceptors: [testHeaderInjectionInterceptor]});
+      server = new grpc.Server({
+        interceptors: [testHeaderInjectionInterceptor],
+      });
       server.addService(echoService.service, {
         echo: (
           call: grpc.ServerUnaryCall<any, any>,
           callback: grpc.sendUnaryData<any>
         ) => {
-          assert.strictEqual(call.metadata.get('injected-header')?.[0], 'present');
+          assert.strictEqual(
+            call.metadata.get('injected-header')?.[0],
+            'present'
+          );
           callback(null, call.request);
         },
       });
-      server.bindAsync('localhost:0', grpc.ServerCredentials.createInsecure(), (error, port) => {
-        assert.ifError(error);
-        client = new TestClient(port, false);
-        done();
-      });
+      server.bindAsync(
+        'localhost:0',
+        grpc.ServerCredentials.createInsecure(),
+        (error, port) => {
+          assert.ifError(error);
+          client = new TestClient(`localhost:${port}`, false);
+          done();
+        }
+      );
     });
     after(done => {
       client.close();
@@ -235,23 +263,39 @@ describe('Server interceptors', () => {
     let server: grpc.Server;
     let client: TestClient;
     before(done => {
-      server = new grpc.Server({interceptors: [testAuthInterceptor, testLoggingInterceptor, testHeaderInjectionInterceptor]});
+      server = new grpc.Server({
+        interceptors: [
+          testAuthInterceptor,
+          testLoggingInterceptor,
+          testHeaderInjectionInterceptor,
+        ],
+      });
       server.addService(echoService.service, {
         echo: (
           call: grpc.ServerUnaryCall<any, any>,
           callback: grpc.sendUnaryData<any>
         ) => {
-          assert.strictEqual(call.metadata.get(AUTH_HEADER_KEY)?.[0], AUTH_HEADER_ALLOWED_VALUE);
-          assert.strictEqual(call.metadata.get('injected-header')?.[0], 'present');
+          assert.strictEqual(
+            call.metadata.get(AUTH_HEADER_KEY)?.[0],
+            AUTH_HEADER_ALLOWED_VALUE
+          );
+          assert.strictEqual(
+            call.metadata.get('injected-header')?.[0],
+            'present'
+          );
           call.sendMetadata(new grpc.Metadata());
           callback(null, call.request);
         },
       });
-      server.bindAsync('localhost:0', grpc.ServerCredentials.createInsecure(), (error, port) => {
-        assert.ifError(error);
-        client = new TestClient(port, false);
-        done();
-      });
+      server.bindAsync(
+        'localhost:0',
+        grpc.ServerCredentials.createInsecure(),
+        (error, port) => {
+          assert.ifError(error);
+          client = new TestClient(`localhost:${port}`, false);
+          done();
+        }
+      );
     });
     after(done => {
       client.close();
@@ -271,7 +315,7 @@ describe('Server interceptors', () => {
           receiveHalfClose: 0,
           sendMetadata: 0,
           sendMessage: 0,
-          sendStatus: 0
+          sendStatus: 0,
         });
         done();
       });
@@ -287,7 +331,7 @@ describe('Server interceptors', () => {
           receiveHalfClose: 1,
           sendMetadata: 1,
           sendMessage: 1,
-          sendStatus: 1
+          sendStatus: 1,
         });
         done();
       });

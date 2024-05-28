@@ -19,6 +19,8 @@ import * as loader from '@grpc/proto-loader';
 import * as assert2 from './assert2';
 import * as path from 'path';
 import * as grpc from '../src';
+import * as fsPromises from 'fs/promises';
+import * as os from 'os';
 
 import {
   GrpcObject,
@@ -31,7 +33,7 @@ import {
   HealthListener,
   SubchannelInterface,
 } from '../src/subchannel-interface';
-import { SubchannelRef } from '../src/channelz';
+import { EntityTypes, SubchannelRef } from '../src/channelz';
 import { Subchannel } from '../src/subchannel';
 import { ConnectivityState } from '../src/connectivity-state';
 
@@ -71,28 +73,47 @@ const serviceImpl = {
 
 export class TestServer {
   private server: grpc.Server;
-  public port: number | null = null;
+  private target: string | null = null;
   constructor(public useTls: boolean, options?: grpc.ServerOptions) {
     this.server = new grpc.Server(options);
     this.server.addService(echoService.service, serviceImpl);
   }
-  start(): Promise<void> {
-    let credentials: grpc.ServerCredentials;
+
+  private getCredentials(): grpc.ServerCredentials {
     if (this.useTls) {
-      credentials = grpc.ServerCredentials.createSsl(null, [
+      return grpc.ServerCredentials.createSsl(null, [
         { private_key: key, cert_chain: cert },
       ]);
     } else {
-      credentials = grpc.ServerCredentials.createInsecure();
+      return grpc.ServerCredentials.createInsecure();
     }
+  }
+
+  start(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.server.bindAsync('localhost:0', credentials, (error, port) => {
+      this.server.bindAsync('localhost:0', this.getCredentials(), (error, port) => {
         if (error) {
           reject(error);
           return;
         }
-        this.port = port;
+        this.target = `localhost:${port}`;
         resolve();
+      });
+    });
+  }
+
+  startUds(): Promise<void> {
+    return fsPromises.mkdtemp(path.join(os.tmpdir(), 'uds')).then(dir => {
+      return new Promise<void>((resolve, reject) => {
+        const target = `unix://${dir}/socket`;
+        this.server.bindAsync(target, this.getCredentials(), (error, port) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          this.target = target;
+          resolve();
+        });
       });
     });
   }
@@ -100,25 +121,29 @@ export class TestServer {
   shutdown() {
     this.server.forceShutdown();
   }
+
+  getTarget() {
+    if (this.target === null) {
+      throw new Error('Server not yet started');
+    }
+    return this.target;
+  }
 }
 
 export class TestClient {
   private client: ServiceClient;
-  constructor(port: number, useTls: boolean, options?: grpc.ChannelOptions) {
+  constructor(target: string, useTls: boolean, options?: grpc.ChannelOptions) {
     let credentials: grpc.ChannelCredentials;
     if (useTls) {
       credentials = grpc.credentials.createSsl(ca);
     } else {
       credentials = grpc.credentials.createInsecure();
     }
-    this.client = new echoService(`localhost:${port}`, credentials, options);
+    this.client = new echoService(target, credentials, options);
   }
 
   static createFromServer(server: TestServer, options?: grpc.ChannelOptions) {
-    if (server.port === null) {
-      throw new Error('Cannot create client, server not started');
-    }
-    return new TestClient(server.port, server.useTls, options);
+    return new TestClient(server.getTarget(), server.useTls, options);
   }
 
   waitForReady(deadline: grpc.Deadline, callback: (error?: Error) => void) {
@@ -129,12 +154,36 @@ export class TestClient {
     this.client.echo({}, callback);
   }
 
-  sendRequestWithMetadata(metadata: grpc.Metadata, callback: (error?: grpc.ServiceError) => void) {
+  sendRequestWithMetadata(
+    metadata: grpc.Metadata,
+    callback: (error?: grpc.ServiceError) => void
+  ) {
     this.client.echo({}, metadata, callback);
   }
 
   getChannelState() {
     return this.client.getChannel().getConnectivityState(false);
+  }
+
+  waitForClientState(
+    deadline: grpc.Deadline,
+    state: ConnectivityState,
+    callback: (error?: Error) => void
+  ) {
+    this.client
+      .getChannel()
+      .watchConnectivityState(this.getChannelState(), deadline, err => {
+        if (err) {
+          return callback(err);
+        }
+
+        const currentState = this.getChannelState();
+        if (currentState === state) {
+          callback();
+        } else {
+          return this.waitForClientState(deadline, currentState, callback);
+        }
+      });
   }
 
   close() {
@@ -193,7 +242,7 @@ export class MockSubchannel implements SubchannelInterface {
   unref(): void {}
   getChannelzRef(): SubchannelRef {
     return {
-      kind: 'subchannel',
+      kind: EntityTypes.subchannel,
       id: -1,
       name: this.address,
     };

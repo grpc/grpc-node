@@ -4,20 +4,39 @@ import type { Long } from '@grpc/proto-loader';
 
 // Original file: deps/envoy-api/envoy/config/core/v3/socket_option.proto
 
-export enum _envoy_config_core_v3_SocketOption_SocketState {
+export const _envoy_config_core_v3_SocketOption_SocketState = {
   /**
    * Socket options are applied after socket creation but before binding the socket to a port
    */
-  STATE_PREBIND = 0,
+  STATE_PREBIND: 'STATE_PREBIND',
   /**
    * Socket options are applied after binding the socket to a port but before calling listen()
    */
-  STATE_BOUND = 1,
+  STATE_BOUND: 'STATE_BOUND',
   /**
    * Socket options are applied after calling listen()
    */
-  STATE_LISTENING = 2,
-}
+  STATE_LISTENING: 'STATE_LISTENING',
+} as const;
+
+export type _envoy_config_core_v3_SocketOption_SocketState =
+  /**
+   * Socket options are applied after socket creation but before binding the socket to a port
+   */
+  | 'STATE_PREBIND'
+  | 0
+  /**
+   * Socket options are applied after binding the socket to a port but before calling listen()
+   */
+  | 'STATE_BOUND'
+  | 1
+  /**
+   * Socket options are applied after calling listen()
+   */
+  | 'STATE_LISTENING'
+  | 2
+
+export type _envoy_config_core_v3_SocketOption_SocketState__Output = typeof _envoy_config_core_v3_SocketOption_SocketState[keyof typeof _envoy_config_core_v3_SocketOption_SocketState]
 
 /**
  * Generic socket option message. This would be used to set socket options that
@@ -70,7 +89,7 @@ export interface SocketOption {
    * The state in which the option will be applied. When used in BindConfig
    * STATE_PREBIND is currently the only valid value.
    */
-  'state'?: (_envoy_config_core_v3_SocketOption_SocketState | keyof typeof _envoy_config_core_v3_SocketOption_SocketState);
+  'state'?: (_envoy_config_core_v3_SocketOption_SocketState);
   'value'?: "int_value"|"buf_value";
 }
 
@@ -125,6 +144,6 @@ export interface SocketOption__Output {
    * The state in which the option will be applied. When used in BindConfig
    * STATE_PREBIND is currently the only valid value.
    */
-  'state': (keyof typeof _envoy_config_core_v3_SocketOption_SocketState);
+  'state': (_envoy_config_core_v3_SocketOption_SocketState__Output);
   'value': "int_value"|"buf_value";
 }

@@ -10,14 +10,14 @@ export interface StreamingInputCallRequest {
   /**
    * Optional input payload sent along with the request.
    */
-  'payload'?: (_grpc_testing_Payload);
+  'payload'?: (_grpc_testing_Payload | null);
   /**
    * Whether the server should expect this request to be compressed. This field
    * is "nullable" in order to interoperate seamlessly with servers not able to
    * implement the full compression tests by introspecting the call to verify
    * the request's compression status.
    */
-  'expect_compressed'?: (_grpc_testing_BoolValue);
+  'expect_compressed'?: (_grpc_testing_BoolValue | null);
 }
 
 /**
@@ -27,12 +27,12 @@ export interface StreamingInputCallRequest__Output {
   /**
    * Optional input payload sent along with the request.
    */
-  'payload'?: (_grpc_testing_Payload__Output);
+  'payload': (_grpc_testing_Payload__Output | null);
   /**
    * Whether the server should expect this request to be compressed. This field
    * is "nullable" in order to interoperate seamlessly with servers not able to
    * implement the full compression tests by introspecting the call to verify
    * the request's compression status.
    */
-  'expect_compressed'?: (_grpc_testing_BoolValue__Output);
+  'expect_compressed': (_grpc_testing_BoolValue__Output | null);
 }

@@ -583,7 +583,8 @@ export class InternalChannel {
         return;
       }
       const now = new Date();
-      const timeSinceLastActivity = now.valueOf() - this.lastActivityTimestamp.valueOf();
+      const timeSinceLastActivity =
+        now.valueOf() - this.lastActivityTimestamp.valueOf();
       if (timeSinceLastActivity >= this.idleTimeoutMs) {
         this.trace(
           'Idle timer triggered after ' +
@@ -603,7 +604,10 @@ export class InternalChannel {
   }
 
   private maybeStartIdleTimer() {
-    if (this.connectivityState !== ConnectivityState.SHUTDOWN && !this.idleTimer) {
+    if (
+      this.connectivityState !== ConnectivityState.SHUTDOWN &&
+      !this.idleTimer
+    ) {
       this.startIdleTimeout(this.idleTimeoutMs);
     }
   }
@@ -680,7 +684,7 @@ export class InternalChannel {
     host: string,
     credentials: CallCredentials,
     deadline: Deadline
-  ): Call {
+  ): LoadBalancingCall | RetryingCall {
     // Create a RetryingCall if retries are enabled
     if (this.options['grpc.enable_retries'] === 0) {
       return this.createLoadBalancingCall(

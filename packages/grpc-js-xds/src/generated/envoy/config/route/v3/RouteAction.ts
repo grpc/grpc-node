@@ -5,7 +5,7 @@ import type { Metadata as _envoy_config_core_v3_Metadata, Metadata__Output as _e
 import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../../google/protobuf/BoolValue';
 import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
 import type { RetryPolicy as _envoy_config_route_v3_RetryPolicy, RetryPolicy__Output as _envoy_config_route_v3_RetryPolicy__Output } from '../../../../envoy/config/route/v3/RetryPolicy';
-import type { RoutingPriority as _envoy_config_core_v3_RoutingPriority } from '../../../../envoy/config/core/v3/RoutingPriority';
+import type { RoutingPriority as _envoy_config_core_v3_RoutingPriority, RoutingPriority__Output as _envoy_config_core_v3_RoutingPriority__Output } from '../../../../envoy/config/core/v3/RoutingPriority';
 import type { RateLimit as _envoy_config_route_v3_RateLimit, RateLimit__Output as _envoy_config_route_v3_RateLimit__Output } from '../../../../envoy/config/route/v3/RateLimit';
 import type { CorsPolicy as _envoy_config_route_v3_CorsPolicy, CorsPolicy__Output as _envoy_config_route_v3_CorsPolicy__Output } from '../../../../envoy/config/route/v3/CorsPolicy';
 import type { HedgePolicy as _envoy_config_route_v3_HedgePolicy, HedgePolicy__Output as _envoy_config_route_v3_HedgePolicy__Output } from '../../../../envoy/config/route/v3/HedgePolicy';
@@ -20,20 +20,39 @@ import type { ProxyProtocolConfig as _envoy_config_core_v3_ProxyProtocolConfig, 
 
 // Original file: deps/envoy-api/envoy/config/route/v3/route_components.proto
 
-export enum _envoy_config_route_v3_RouteAction_ClusterNotFoundResponseCode {
+export const _envoy_config_route_v3_RouteAction_ClusterNotFoundResponseCode = {
   /**
    * HTTP status code - 503 Service Unavailable.
    */
-  SERVICE_UNAVAILABLE = 0,
+  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
   /**
    * HTTP status code - 404 Not Found.
    */
-  NOT_FOUND = 1,
+  NOT_FOUND: 'NOT_FOUND',
   /**
    * HTTP status code - 500 Internal Server Error.
    */
-  INTERNAL_SERVER_ERROR = 2,
-}
+  INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
+} as const;
+
+export type _envoy_config_route_v3_RouteAction_ClusterNotFoundResponseCode =
+  /**
+   * HTTP status code - 503 Service Unavailable.
+   */
+  | 'SERVICE_UNAVAILABLE'
+  | 0
+  /**
+   * HTTP status code - 404 Not Found.
+   */
+  | 'NOT_FOUND'
+  | 1
+  /**
+   * HTTP status code - 500 Internal Server Error.
+   */
+  | 'INTERNAL_SERVER_ERROR'
+  | 2
+
+export type _envoy_config_route_v3_RouteAction_ClusterNotFoundResponseCode__Output = typeof _envoy_config_route_v3_RouteAction_ClusterNotFoundResponseCode[keyof typeof _envoy_config_route_v3_RouteAction_ClusterNotFoundResponseCode]
 
 /**
  * Configuration for sending data upstream as a raw data payload. This is used for
@@ -338,11 +357,30 @@ export interface _envoy_config_route_v3_RouteAction_HashPolicy_Header__Output {
 /**
  * Configures :ref:`internal redirect <arch_overview_internal_redirects>` behavior.
  * [#next-major-version: remove this definition - it's defined in the InternalRedirectPolicy message.]
+ * @deprecated
  */
-export enum _envoy_config_route_v3_RouteAction_InternalRedirectAction {
-  PASS_THROUGH_INTERNAL_REDIRECT = 0,
-  HANDLE_INTERNAL_REDIRECT = 1,
-}
+export const _envoy_config_route_v3_RouteAction_InternalRedirectAction = {
+  PASS_THROUGH_INTERNAL_REDIRECT: 'PASS_THROUGH_INTERNAL_REDIRECT',
+  HANDLE_INTERNAL_REDIRECT: 'HANDLE_INTERNAL_REDIRECT',
+} as const;
+
+/**
+ * Configures :ref:`internal redirect <arch_overview_internal_redirects>` behavior.
+ * [#next-major-version: remove this definition - it's defined in the InternalRedirectPolicy message.]
+ * @deprecated
+ */
+export type _envoy_config_route_v3_RouteAction_InternalRedirectAction =
+  | 'PASS_THROUGH_INTERNAL_REDIRECT'
+  | 0
+  | 'HANDLE_INTERNAL_REDIRECT'
+  | 1
+
+/**
+ * Configures :ref:`internal redirect <arch_overview_internal_redirects>` behavior.
+ * [#next-major-version: remove this definition - it's defined in the InternalRedirectPolicy message.]
+ * @deprecated
+ */
+export type _envoy_config_route_v3_RouteAction_InternalRedirectAction__Output = typeof _envoy_config_route_v3_RouteAction_InternalRedirectAction[keyof typeof _envoy_config_route_v3_RouteAction_InternalRedirectAction]
 
 export interface _envoy_config_route_v3_RouteAction_MaxStreamDuration {
   /**
@@ -719,7 +757,7 @@ export interface RouteAction {
   /**
    * Optionally specifies the :ref:`routing priority <arch_overview_http_routing_priority>`.
    */
-  'priority'?: (_envoy_config_core_v3_RoutingPriority | keyof typeof _envoy_config_core_v3_RoutingPriority);
+  'priority'?: (_envoy_config_core_v3_RoutingPriority);
   /**
    * Specifies a set of rate limit configurations that could be applied to the
    * route.
@@ -732,6 +770,7 @@ export interface RouteAction {
    * request.
    * 
    * This field is deprecated. Please use :ref:`vh_rate_limits <envoy_v3_api_field_extensions.filters.http.ratelimit.v3.RateLimitPerRoute.vh_rate_limits>`
+   * @deprecated
    */
   'include_vh_rate_limits'?: (_google_protobuf_BoolValue | null);
   /**
@@ -760,13 +799,14 @@ export interface RouteAction {
    * :ref:`Route.typed_per_filter_config<envoy_v3_api_field_config.route.v3.Route.typed_per_filter_config>` or
    * :ref:`WeightedCluster.ClusterWeight.typed_per_filter_config<envoy_v3_api_field_config.route.v3.WeightedCluster.ClusterWeight.typed_per_filter_config>`
    * to configure the CORS HTTP filter.
+   * @deprecated
    */
   'cors'?: (_envoy_config_route_v3_CorsPolicy | null);
   /**
    * The HTTP status code to use when configured cluster is not found.
    * The default response code is 503 Service Unavailable.
    */
-  'cluster_not_found_response_code'?: (_envoy_config_route_v3_RouteAction_ClusterNotFoundResponseCode | keyof typeof _envoy_config_route_v3_RouteAction_ClusterNotFoundResponseCode);
+  'cluster_not_found_response_code'?: (_envoy_config_route_v3_RouteAction_ClusterNotFoundResponseCode);
   /**
    * Deprecated by :ref:`grpc_timeout_header_max <envoy_v3_api_field_config.route.v3.RouteAction.MaxStreamDuration.grpc_timeout_header_max>`
    * If present, and the request is a gRPC request, use the
@@ -788,6 +828,7 @@ export interface RouteAction {
    * :ref:`config_http_filters_router_x-envoy-upstream-rq-timeout-ms`,
    * :ref:`config_http_filters_router_x-envoy-upstream-rq-per-try-timeout-ms`, and the
    * :ref:`retry overview <arch_overview_http_routing_retry>`.
+   * @deprecated
    */
   'max_grpc_timeout'?: (_google_protobuf_Duration | null);
   /**
@@ -816,7 +857,10 @@ export interface RouteAction {
    */
   'idle_timeout'?: (_google_protobuf_Duration | null);
   'upgrade_configs'?: (_envoy_config_route_v3_RouteAction_UpgradeConfig)[];
-  'internal_redirect_action'?: (_envoy_config_route_v3_RouteAction_InternalRedirectAction | keyof typeof _envoy_config_route_v3_RouteAction_InternalRedirectAction);
+  /**
+   * @deprecated
+   */
+  'internal_redirect_action'?: (_envoy_config_route_v3_RouteAction_InternalRedirectAction);
   /**
    * Indicates that the route has a hedge policy. Note that if this is set,
    * it'll take precedence over the virtual host level hedge policy entirely
@@ -832,6 +876,7 @@ export interface RouteAction {
    * The offset will only be applied if the provided grpc_timeout is greater than the offset. This
    * ensures that the offset will only ever decrease the timeout and never set it to 0 (meaning
    * infinity).
+   * @deprecated
    */
   'grpc_timeout_offset'?: (_google_protobuf_Duration | null);
   /**
@@ -873,6 +918,7 @@ export interface RouteAction {
    * will pass the redirect back to downstream.
    * 
    * If not specified, at most one redirect will be followed.
+   * @deprecated
    */
   'max_internal_redirects'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -1105,7 +1151,7 @@ export interface RouteAction__Output {
   /**
    * Optionally specifies the :ref:`routing priority <arch_overview_http_routing_priority>`.
    */
-  'priority': (keyof typeof _envoy_config_core_v3_RoutingPriority);
+  'priority': (_envoy_config_core_v3_RoutingPriority__Output);
   /**
    * Specifies a set of rate limit configurations that could be applied to the
    * route.
@@ -1118,6 +1164,7 @@ export interface RouteAction__Output {
    * request.
    * 
    * This field is deprecated. Please use :ref:`vh_rate_limits <envoy_v3_api_field_extensions.filters.http.ratelimit.v3.RateLimitPerRoute.vh_rate_limits>`
+   * @deprecated
    */
   'include_vh_rate_limits': (_google_protobuf_BoolValue__Output | null);
   /**
@@ -1146,13 +1193,14 @@ export interface RouteAction__Output {
    * :ref:`Route.typed_per_filter_config<envoy_v3_api_field_config.route.v3.Route.typed_per_filter_config>` or
    * :ref:`WeightedCluster.ClusterWeight.typed_per_filter_config<envoy_v3_api_field_config.route.v3.WeightedCluster.ClusterWeight.typed_per_filter_config>`
    * to configure the CORS HTTP filter.
+   * @deprecated
    */
   'cors': (_envoy_config_route_v3_CorsPolicy__Output | null);
   /**
    * The HTTP status code to use when configured cluster is not found.
    * The default response code is 503 Service Unavailable.
    */
-  'cluster_not_found_response_code': (keyof typeof _envoy_config_route_v3_RouteAction_ClusterNotFoundResponseCode);
+  'cluster_not_found_response_code': (_envoy_config_route_v3_RouteAction_ClusterNotFoundResponseCode__Output);
   /**
    * Deprecated by :ref:`grpc_timeout_header_max <envoy_v3_api_field_config.route.v3.RouteAction.MaxStreamDuration.grpc_timeout_header_max>`
    * If present, and the request is a gRPC request, use the
@@ -1174,6 +1222,7 @@ export interface RouteAction__Output {
    * :ref:`config_http_filters_router_x-envoy-upstream-rq-timeout-ms`,
    * :ref:`config_http_filters_router_x-envoy-upstream-rq-per-try-timeout-ms`, and the
    * :ref:`retry overview <arch_overview_http_routing_retry>`.
+   * @deprecated
    */
   'max_grpc_timeout': (_google_protobuf_Duration__Output | null);
   /**
@@ -1202,7 +1251,10 @@ export interface RouteAction__Output {
    */
   'idle_timeout': (_google_protobuf_Duration__Output | null);
   'upgrade_configs': (_envoy_config_route_v3_RouteAction_UpgradeConfig__Output)[];
-  'internal_redirect_action': (keyof typeof _envoy_config_route_v3_RouteAction_InternalRedirectAction);
+  /**
+   * @deprecated
+   */
+  'internal_redirect_action': (_envoy_config_route_v3_RouteAction_InternalRedirectAction__Output);
   /**
    * Indicates that the route has a hedge policy. Note that if this is set,
    * it'll take precedence over the virtual host level hedge policy entirely
@@ -1218,6 +1270,7 @@ export interface RouteAction__Output {
    * The offset will only be applied if the provided grpc_timeout is greater than the offset. This
    * ensures that the offset will only ever decrease the timeout and never set it to 0 (meaning
    * infinity).
+   * @deprecated
    */
   'grpc_timeout_offset': (_google_protobuf_Duration__Output | null);
   /**
@@ -1259,6 +1312,7 @@ export interface RouteAction__Output {
    * will pass the redirect back to downstream.
    * 
    * If not specified, at most one redirect will be followed.
+   * @deprecated
    */
   'max_internal_redirects': (_google_protobuf_UInt32Value__Output | null);
   /**

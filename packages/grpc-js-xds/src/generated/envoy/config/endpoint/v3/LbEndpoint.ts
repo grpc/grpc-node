@@ -1,7 +1,7 @@
 // Original file: deps/envoy-api/envoy/config/endpoint/v3/endpoint_components.proto
 
 import type { Endpoint as _envoy_config_endpoint_v3_Endpoint, Endpoint__Output as _envoy_config_endpoint_v3_Endpoint__Output } from '../../../../envoy/config/endpoint/v3/Endpoint';
-import type { HealthStatus as _envoy_config_core_v3_HealthStatus } from '../../../../envoy/config/core/v3/HealthStatus';
+import type { HealthStatus as _envoy_config_core_v3_HealthStatus, HealthStatus__Output as _envoy_config_core_v3_HealthStatus__Output } from '../../../../envoy/config/core/v3/HealthStatus';
 import type { Metadata as _envoy_config_core_v3_Metadata, Metadata__Output as _envoy_config_core_v3_Metadata__Output } from '../../../../envoy/config/core/v3/Metadata';
 import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 
@@ -14,7 +14,7 @@ export interface LbEndpoint {
   /**
    * Optional health status when known and supplied by EDS server.
    */
-  'health_status'?: (_envoy_config_core_v3_HealthStatus | keyof typeof _envoy_config_core_v3_HealthStatus);
+  'health_status'?: (_envoy_config_core_v3_HealthStatus);
   /**
    * The endpoint metadata specifies values that may be used by the load
    * balancer to select endpoints in a cluster for a given request. The filter
@@ -56,7 +56,7 @@ export interface LbEndpoint__Output {
   /**
    * Optional health status when known and supplied by EDS server.
    */
-  'health_status': (keyof typeof _envoy_config_core_v3_HealthStatus);
+  'health_status': (_envoy_config_core_v3_HealthStatus__Output);
   /**
    * The endpoint metadata specifies values that may be used by the load
    * balancer to select endpoints in a cluster for a given request. The filter

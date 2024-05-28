@@ -22,7 +22,6 @@ import type { MapRules as _validate_MapRules, MapRules__Output as _validate_MapR
 import type { AnyRules as _validate_AnyRules, AnyRules__Output as _validate_AnyRules__Output } from '../validate/AnyRules';
 import type { DurationRules as _validate_DurationRules, DurationRules__Output as _validate_DurationRules__Output } from '../validate/DurationRules';
 import type { TimestampRules as _validate_TimestampRules, TimestampRules__Output as _validate_TimestampRules__Output } from '../validate/TimestampRules';
-import type { Long } from '@grpc/proto-loader';
 
 /**
  * FieldRules encapsulates the rules for each type of field. Depending on the

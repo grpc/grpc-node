@@ -3,17 +3,42 @@
 /**
  * Identifies the direction of the traffic relative to the local Envoy.
  */
-export enum TrafficDirection {
+export const TrafficDirection = {
   /**
    * Default option is unspecified.
    */
-  UNSPECIFIED = 0,
+  UNSPECIFIED: 'UNSPECIFIED',
   /**
    * The transport is used for incoming traffic.
    */
-  INBOUND = 1,
+  INBOUND: 'INBOUND',
   /**
    * The transport is used for outgoing traffic.
    */
-  OUTBOUND = 2,
-}
+  OUTBOUND: 'OUTBOUND',
+} as const;
+
+/**
+ * Identifies the direction of the traffic relative to the local Envoy.
+ */
+export type TrafficDirection =
+  /**
+   * Default option is unspecified.
+   */
+  | 'UNSPECIFIED'
+  | 0
+  /**
+   * The transport is used for incoming traffic.
+   */
+  | 'INBOUND'
+  | 1
+  /**
+   * The transport is used for outgoing traffic.
+   */
+  | 'OUTBOUND'
+  | 2
+
+/**
+ * Identifies the direction of the traffic relative to the local Envoy.
+ */
+export type TrafficDirection__Output = typeof TrafficDirection[keyof typeof TrafficDirection]

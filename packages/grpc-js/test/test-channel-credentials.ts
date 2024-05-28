@@ -150,8 +150,12 @@ describe('ChannelCredentials Implementation', () => {
 describe('ChannelCredentials usage', () => {
   let client: ServiceClient;
   let server: grpc.Server;
+  let portNum: number;
+  let caCert: Buffer;
+  const hostnameOverride = 'foo.test.google.fr';
   before(async () => {
     const { ca, key, cert } = await pFixtures;
+    caCert = ca;
     const serverCreds = grpc.ServerCredentials.createSsl(null, [
       { private_key: key, cert_chain: cert },
     ]);
@@ -178,9 +182,10 @@ describe('ChannelCredentials usage', () => {
           reject(err);
           return;
         }
+        portNum = port;
         client = new echoService(`localhost:${port}`, combinedCreds, {
-          'grpc.ssl_target_name_override': 'foo.test.google.fr',
-          'grpc.default_authority': 'foo.test.google.fr',
+          'grpc.ssl_target_name_override': hostnameOverride,
+          'grpc.default_authority': hostnameOverride,
         });
         server.start();
         resolve();
@@ -203,6 +208,27 @@ describe('ChannelCredentials usage', () => {
       'metadata',
       assert2.mustCall((metadata: grpc.Metadata) => {
         assert.deepStrictEqual(metadata.get('test-key'), ['test-value']);
+      })
+    );
+    assert2.afterMustCallsSatisfied(done);
+  });
+
+  it('Should call the checkServerIdentity callback', done => {
+    const channelCreds = ChannelCredentials.createSsl(caCert, null, null, {
+      checkServerIdentity: assert2.mustCall((hostname, cert) => {
+        assert.strictEqual(hostname, hostnameOverride);
+        return undefined;
+      }),
+    });
+    const client = new echoService(`localhost:${portNum}`, channelCreds, {
+      'grpc.ssl_target_name_override': hostnameOverride,
+      'grpc.default_authority': hostnameOverride,
+    });
+    client.echo(
+      { value: 'test value', value2: 3 },
+      assert2.mustCall((error: ServiceError, response: any) => {
+        assert.ifError(error);
+        assert.deepStrictEqual(response, { value: 'test value', value2: 3 });
       })
     );
     assert2.afterMustCallsSatisfied(done);

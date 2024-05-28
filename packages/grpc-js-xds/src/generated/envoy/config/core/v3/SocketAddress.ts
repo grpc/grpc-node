@@ -3,16 +3,24 @@
 
 // Original file: deps/envoy-api/envoy/config/core/v3/address.proto
 
-export enum _envoy_config_core_v3_SocketAddress_Protocol {
-  TCP = 0,
-  UDP = 1,
-}
+export const _envoy_config_core_v3_SocketAddress_Protocol = {
+  TCP: 'TCP',
+  UDP: 'UDP',
+} as const;
+
+export type _envoy_config_core_v3_SocketAddress_Protocol =
+  | 'TCP'
+  | 0
+  | 'UDP'
+  | 1
+
+export type _envoy_config_core_v3_SocketAddress_Protocol__Output = typeof _envoy_config_core_v3_SocketAddress_Protocol[keyof typeof _envoy_config_core_v3_SocketAddress_Protocol]
 
 /**
  * [#next-free-field: 7]
  */
 export interface SocketAddress {
-  'protocol'?: (_envoy_config_core_v3_SocketAddress_Protocol | keyof typeof _envoy_config_core_v3_SocketAddress_Protocol);
+  'protocol'?: (_envoy_config_core_v3_SocketAddress_Protocol);
   /**
    * The address for this socket. :ref:`Listeners <config_listeners>` will bind
    * to the address. An empty address is not allowed. Specify ``0.0.0.0`` or ``::``
@@ -56,7 +64,7 @@ export interface SocketAddress {
  * [#next-free-field: 7]
  */
 export interface SocketAddress__Output {
-  'protocol': (keyof typeof _envoy_config_core_v3_SocketAddress_Protocol);
+  'protocol': (_envoy_config_core_v3_SocketAddress_Protocol__Output);
   /**
    * The address for this socket. :ref:`Listeners <config_listeners>` will bind
    * to the address. An empty address is not allowed. Specify ``0.0.0.0`` or ``::``

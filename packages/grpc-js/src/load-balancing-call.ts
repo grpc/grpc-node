@@ -18,6 +18,7 @@
 import { CallCredentials } from './call-credentials';
 import {
   Call,
+  DeadlineInfoProvider,
   InterceptingListener,
   MessageContext,
   StatusObject,
@@ -25,7 +26,7 @@ import {
 import { SubchannelCall } from './subchannel-call';
 import { ConnectivityState } from './connectivity-state';
 import { LogVerbosity, Status } from './constants';
-import { Deadline, getDeadlineTimeoutString } from './deadline';
+import { Deadline, formatDateDifference, getDeadlineTimeoutString } from './deadline';
 import { InternalChannel } from './internal-channel';
 import { Metadata } from './metadata';
 import { PickResultType } from './picker';
@@ -48,7 +49,7 @@ export interface LoadBalancingCallInterceptingListener
   onReceiveStatus(status: StatusObjectWithProgress): void;
 }
 
-export class LoadBalancingCall implements Call {
+export class LoadBalancingCall implements Call, DeadlineInfoProvider {
   private child: SubchannelCall | null = null;
   private readPending = false;
   private pendingMessage: { context: MessageContext; message: Buffer } | null =
@@ -59,6 +60,8 @@ export class LoadBalancingCall implements Call {
   private metadata: Metadata | null = null;
   private listener: InterceptingListener | null = null;
   private onCallEnded: ((statusCode: Status) => void) | null = null;
+  private startTime: Date;
+  private childStartTime: Date | null = null;
   constructor(
     private readonly channel: InternalChannel,
     private readonly callConfig: CallConfig,
@@ -80,6 +83,26 @@ export class LoadBalancingCall implements Call {
     /* Currently, call credentials are only allowed on HTTPS connections, so we
      * can assume that the scheme is "https" */
     this.serviceUrl = `https://${hostname}/${serviceName}`;
+    this.startTime = new Date();
+  }
+  getDeadlineInfo(): string[] {
+    const deadlineInfo: string[] = [];
+    if (this.childStartTime) {
+      if (this.childStartTime > this.startTime) {
+        if (this.metadata?.getOptions().waitForReady) {
+          deadlineInfo.push('wait_for_ready');
+        }
+        deadlineInfo.push(`LB pick: ${formatDateDifference(this.startTime, this.childStartTime)}`);
+      }
+      deadlineInfo.push(...this.child!.getDeadlineInfo());
+      return deadlineInfo;
+    } else {
+      if (this.metadata?.getOptions().waitForReady) {
+        deadlineInfo.push('wait_for_ready');
+      }
+      deadlineInfo.push('Waiting for LB pick');
+    }
+    return deadlineInfo;
   }
 
   private trace(text: string): void {
@@ -98,7 +121,8 @@ export class LoadBalancingCall implements Call {
           status.code +
           ' details="' +
           status.details +
-          '"'
+          '" start time=' +
+          this.startTime.toISOString()
       );
       const finalStatus = { ...status, progress };
       this.listener?.onReceiveStatus(finalStatus);
@@ -145,7 +169,9 @@ export class LoadBalancingCall implements Call {
                * metadata generation finished, we shouldn't do anything with
                * it. */
               if (this.ended) {
-                this.trace('Credentials metadata generation finished after call ended');
+                this.trace(
+                  'Credentials metadata generation finished after call ended'
+                );
                 return;
               }
               finalMetadata.merge(credsMetadata);
@@ -207,6 +233,7 @@ export class LoadBalancingCall implements Call {
                       }
                     },
                   });
+                this.childStartTime = new Date();
               } catch (error) {
                 this.trace(
                   'Failed to start call on picked subchannel ' +

@@ -31,6 +31,7 @@ export interface _envoy_type_matcher_v3_RegexMatcher_GoogleRE2 {
    * 
    * Although this field is deprecated, the program size will still be checked against the
    * global ``re2.max_program_size.error_level`` runtime value.
+   * @deprecated
    */
   'max_program_size'?: (_google_protobuf_UInt32Value | null);
 }
@@ -64,6 +65,7 @@ export interface _envoy_type_matcher_v3_RegexMatcher_GoogleRE2__Output {
    * 
    * Although this field is deprecated, the program size will still be checked against the
    * global ``re2.max_program_size.error_level`` runtime value.
+   * @deprecated
    */
   'max_program_size': (_google_protobuf_UInt32Value__Output | null);
 }
@@ -74,6 +76,7 @@ export interface _envoy_type_matcher_v3_RegexMatcher_GoogleRE2__Output {
 export interface RegexMatcher {
   /**
    * Google's RE2 regex engine.
+   * @deprecated
    */
   'google_re2'?: (_envoy_type_matcher_v3_RegexMatcher_GoogleRE2 | null);
   /**
@@ -90,6 +93,7 @@ export interface RegexMatcher {
 export interface RegexMatcher__Output {
   /**
    * Google's RE2 regex engine.
+   * @deprecated
    */
   'google_re2'?: (_envoy_type_matcher_v3_RegexMatcher_GoogleRE2__Output | null);
   /**
