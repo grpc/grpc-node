@@ -1407,8 +1407,9 @@ export class Server {
           }
         }, this.maxConnectionAgeMs + jitter).unref?.();
       }
-      const keeapliveTimeTimer: NodeJS.Timeout | null = setInterval(() => {
-        const timeoutTImer = setTimeout(() => {
+      let keepaliveInterval: NodeJS.Timeout | null = null;
+      keepaliveInterval = setInterval(() => {
+        const keepaliveTimeout = setTimeout(() => {
           sessionClosedByServer = true;
           if (this.channelzEnabled) {
             this.channelzTrace.addTrace(
@@ -1419,13 +1420,42 @@ export class Server {
           session.close();
         }, this.keepaliveTimeoutMs).unref?.();
         try {
-          session.ping(
-            (err: Error | null, duration: number, payload: Buffer) => {
-              clearTimeout(timeoutTImer);
-            }
-          );
+          if (
+            !session.ping(
+              (err: Error | null, duration: number, payload: Buffer) => {
+                clearTimeout(keepaliveTimeout);
+                if (err) {
+                  if (keepaliveInterval) {
+                    if (this.channelzEnabled) {
+                      this.channelzTrace.addTrace(
+                        'CT_INFO',
+                        'Connection dropped by keepalive failure from ' +
+                          clientAddress
+                      );
+                    }
+                    clearInterval(keepaliveInterval);
+                    keepaliveInterval = null;
+                  }
+                  session.destroy();
+                }
+              }
+            )
+          ) {
+            throw new Error('Server keepalive ping send failed');
+          }
         } catch (e) {
           // The ping can't be sent because the session is already closed
+          clearTimeout(keepaliveTimeout);
+          if (keepaliveInterval) {
+            if (this.channelzEnabled) {
+              this.channelzTrace.addTrace(
+                'CT_INFO',
+                'Connection dropped by keepalive error from ' + clientAddress
+              );
+            }
+            clearInterval(keepaliveInterval);
+            keepaliveInterval = null;
+          }
           session.destroy();
         }
       }, this.keepaliveTimeMs).unref?.();
@@ -1446,8 +1476,9 @@ export class Server {
         if (connectionAgeGraceTimer) {
           clearTimeout(connectionAgeGraceTimer);
         }
-        if (keeapliveTimeTimer) {
-          clearTimeout(keeapliveTimeTimer);
+        if (keepaliveInterval) {
+          clearInterval(keepaliveInterval);
+          keepaliveInterval = null;
         }
         this.http2Servers.get(http2Server)?.sessions.delete(session);
         this.sessions.delete(session);
