@@ -80,7 +80,7 @@ function getProxyInfo(): ProxyInfo {
   if (proxyUrl.username) {
     if (proxyUrl.password) {
       log(LogVerbosity.INFO, 'userinfo found in proxy URI');
-      userCred = `${proxyUrl.username}:${proxyUrl.password}`;
+      userCred = decodeURIComponent(`${proxyUrl.username}:${proxyUrl.password}`);
     } else {
       userCred = proxyUrl.username;
     }
