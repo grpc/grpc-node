@@ -1467,29 +1467,35 @@ export class Server {
         this.keepaliveTrace(
           'Sending ping with timeout ' + this.keepaliveTimeoutMs + 'ms'
         );
-        const pingSentSuccessfully = session.ping(
-          (err: Error | null, duration: number, payload: Buffer) => {
-            clearKeepaliveTimeout();
-            if (err) {
-              this.keepaliveTrace('Ping failed with error: ' + err.message);
-              this.trace(
-                'Connection dropped due to error of a ping frame ' +
-                  err.message +
-                  ' return in ' +
-                  duration
-              );
-              sessionClosedByServer = true;
-              session.close();
-            } else {
-              this.keepaliveTrace('Received ping response');
-              maybeStartKeepalivePingTimer();
+        let pingSendError = '';
+        try {
+          const pingSentSuccessfully = session.ping(
+            (err: Error | null, duration: number, payload: Buffer) => {
+              clearKeepaliveTimeout();
+              if (err) {
+                this.keepaliveTrace('Ping failed with error: ' + err.message);
+                sessionClosedByServer = true;
+                session.close();
+              } else {
+                this.keepaliveTrace('Received ping response');
+                maybeStartKeepalivePingTimer();
+              }
             }
+          );
+          if (!pingSentSuccessfully) {
+            pingSendError = 'Ping returned false';
           }
-        );
+        } catch (e) {
+          // grpc/grpc-node#2139
+          pingSendError =
+            (e instanceof Error ? e.message : '') || 'Unknown error';
+        }
 
-        if (!pingSentSuccessfully) {
-          this.keepaliveTrace('Ping failed to send');
-          this.trace('Connection dropped due to failure to send ping frame');
+        if (pingSendError) {
+          this.keepaliveTrace('Ping send failed: ' + pingSendError);
+          this.trace(
+            'Connection dropped due to ping send error: ' + pingSendError
+          );
           sessionClosedByServer = true;
           session.close();
           return;
@@ -1650,32 +1656,42 @@ export class Server {
         this.keepaliveTrace(
           'Sending ping with timeout ' + this.keepaliveTimeoutMs + 'ms'
         );
-        const pingSentSuccessfully = session.ping(
-          (err: Error | null, duration: number, payload: Buffer) => {
-            clearKeepaliveTimeout();
-            if (err) {
-              this.keepaliveTrace('Ping failed with error: ' + err.message);
-              this.channelzTrace.addTrace(
-                'CT_INFO',
-                'Connection dropped due to error of a ping frame ' +
-                  err.message +
-                  ' return in ' +
-                  duration
-              );
-              sessionClosedByServer = true;
-              session.close();
-            } else {
-              this.keepaliveTrace('Received ping response');
-              maybeStartKeepalivePingTimer();
+        let pingSendError = '';
+        try {
+          const pingSentSuccessfully = session.ping(
+            (err: Error | null, duration: number, payload: Buffer) => {
+              clearKeepaliveTimeout();
+              if (err) {
+                this.keepaliveTrace('Ping failed with error: ' + err.message);
+                this.channelzTrace.addTrace(
+                  'CT_INFO',
+                  'Connection dropped due to error of a ping frame ' +
+                    err.message +
+                    ' return in ' +
+                    duration
+                );
+                sessionClosedByServer = true;
+                session.close();
+              } else {
+                this.keepaliveTrace('Received ping response');
+                maybeStartKeepalivePingTimer();
+              }
             }
+          );
+          if (!pingSentSuccessfully) {
+            pingSendError = 'Ping returned false';
           }
-        );
+        } catch (e) {
+          // grpc/grpc-node#2139
+          pingSendError =
+            (e instanceof Error ? e.message : '') || 'Unknown error';
+        }
 
-        if (!pingSentSuccessfully) {
-          this.keepaliveTrace('Ping failed to send');
+        if (pingSendError) {
+          this.keepaliveTrace('Ping send failed: ' + pingSendError);
           this.channelzTrace.addTrace(
             'CT_INFO',
-            'Connection dropped due failure to send ping frame'
+            'Connection dropped due to ping send error: ' + pingSendError
           );
           sessionClosedByServer = true;
           session.close();

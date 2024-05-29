@@ -431,20 +431,29 @@ class Http2Transport implements Transport {
       this.handleDisconnect();
     }, this.keepaliveTimeoutMs);
     this.keepaliveTimeout.unref?.();
-    const pingSentSuccessfully = this.session.ping(
-      (err: Error | null, duration: number, payload: Buffer) => {
-        this.clearKeepaliveTimeout();
-        if (err) {
-          this.keepaliveTrace('Ping failed with error ' + err.message);
-          this.handleDisconnect();
-        } else {
-          this.keepaliveTrace('Received ping response');
-          this.maybeStartKeepalivePingTimer();
+    let pingSendError = '';
+    try {
+      const pingSentSuccessfully = this.session.ping(
+        (err: Error | null, duration: number, payload: Buffer) => {
+          this.clearKeepaliveTimeout();
+          if (err) {
+            this.keepaliveTrace('Ping failed with error ' + err.message);
+            this.handleDisconnect();
+          } else {
+            this.keepaliveTrace('Received ping response');
+            this.maybeStartKeepalivePingTimer();
+          }
         }
+      );
+      if (!pingSentSuccessfully) {
+        pingSendError = 'Ping returned false';
       }
-    );
-    if (!pingSentSuccessfully) {
-      this.keepaliveTrace('Ping failed to send');
+    } catch (e) {
+      // grpc/grpc-node#2139
+      pingSendError = (e instanceof Error ? e.message : '') || 'Unknown error';
+    }
+    if (pingSendError) {
+      this.keepaliveTrace('Ping send failed: ' + pingSendError);
       this.handleDisconnect();
     }
   }
