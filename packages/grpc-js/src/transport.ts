@@ -113,7 +113,7 @@ class Http2Transport implements Transport {
   /**
    * Timer reference indicating when to send the next ping or when the most recent ping will be considered lost.
    */
-  private keepaliveTimeout: NodeJS.Timeout | null = null;
+  private keepaliveTimer: NodeJS.Timeout | null = null;
   /**
    * Indicates that the keepalive timer ran out while there were no active
    * calls, and a ping should be sent the next time a call starts.
@@ -416,7 +416,7 @@ class Http2Transport implements Transport {
       this.pendingSendKeepalivePing = true;
       return;
     }
-    if (this.keepaliveTimeout) {
+    if (this.keepaliveTimer) {
       console.error('keepaliveTimeout is not null');
       return;
     }
@@ -426,11 +426,11 @@ class Http2Transport implements Transport {
     this.keepaliveTrace(
       'Sending ping with timeout ' + this.keepaliveTimeoutMs + 'ms'
     );
-    this.keepaliveTimeout = setTimeout(() => {
+    this.keepaliveTimer = setTimeout(() => {
       this.keepaliveTrace('Ping timeout passed without response');
       this.handleDisconnect();
     }, this.keepaliveTimeoutMs);
-    this.keepaliveTimeout.unref?.();
+    this.keepaliveTimer.unref?.();
     let pingSendError = '';
     try {
       const pingSentSuccessfully = this.session.ping(
@@ -471,14 +471,14 @@ class Http2Transport implements Transport {
     if (this.pendingSendKeepalivePing) {
       this.pendingSendKeepalivePing = false;
       this.maybeSendPing();
-    } else if (!this.keepaliveTimeout) {
+    } else if (!this.keepaliveTimer) {
       this.keepaliveTrace(
         'Starting keepalive timer for ' + this.keepaliveTimeMs + 'ms'
       );
-      this.keepaliveTimeout = setTimeout(() => {
+      this.keepaliveTimer = setTimeout(() => {
         this.maybeSendPing();
       }, this.keepaliveTimeMs);
-      this.keepaliveTimeout.unref?.();
+      this.keepaliveTimer.unref?.();
     }
     /* Otherwise, there is already either a keepalive timer or a ping pending,
      * wait for those to resolve. */
@@ -488,9 +488,9 @@ class Http2Transport implements Transport {
    * Clears whichever keepalive timeout is currently active, if any.
    */
   private clearKeepaliveTimeout() {
-    if (this.keepaliveTimeout) {
-      clearTimeout(this.keepaliveTimeout);
-      this.keepaliveTimeout = null;
+    if (this.keepaliveTimer) {
+      clearTimeout(this.keepaliveTimer);
+      this.keepaliveTimer = null;
     }
   }
 

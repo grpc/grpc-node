@@ -1384,8 +1384,7 @@ export class Server {
 
       let connectionAgeTimer: NodeJS.Timeout | null = null;
       let connectionAgeGraceTimer: NodeJS.Timeout | null = null;
-      let keepaliveTimeout: NodeJS.Timeout | null = null;
-      let keepaliveDisabled = false;
+      let keepaliveTimer: NodeJS.Timeout | null = null;
       let sessionClosedByServer = false;
 
       const idleTimeoutObj = this.enableIdleTimeout(session);
@@ -1429,15 +1428,15 @@ export class Server {
       }
 
       const clearKeepaliveTimeout = () => {
-        if (keepaliveTimeout) {
-          clearTimeout(keepaliveTimeout);
-          keepaliveTimeout = null;
+        if (keepaliveTimer) {
+          clearTimeout(keepaliveTimer);
+          keepaliveTimer = null;
         }
       };
 
       const canSendPing = () => {
         return (
-          !keepaliveDisabled &&
+          !session.destroyed &&
           this.keepaliveTimeMs < KEEPALIVE_MAX_TIME_MS &&
           this.keepaliveTimeMs > 0
         );
@@ -1453,11 +1452,11 @@ export class Server {
         this.keepaliveTrace(
           'Starting keepalive timer for ' + this.keepaliveTimeMs + 'ms'
         );
-        keepaliveTimeout = setTimeout(() => {
+        keepaliveTimer = setTimeout(() => {
           clearKeepaliveTimeout();
           sendPing();
         }, this.keepaliveTimeMs);
-        keepaliveTimeout.unref?.();
+        keepaliveTimer.unref?.();
       };
 
       sendPing = () => {
@@ -1501,14 +1500,14 @@ export class Server {
           return;
         }
 
-        keepaliveTimeout = setTimeout(() => {
+        keepaliveTimer = setTimeout(() => {
           clearKeepaliveTimeout();
           this.keepaliveTrace('Ping timeout passed without response');
           this.trace('Connection dropped by keepalive timeout');
           sessionClosedByServer = true;
           session.close();
         }, this.keepaliveTimeoutMs);
-        keepaliveTimeout.unref?.();
+        keepaliveTimer.unref?.();
       };
 
       maybeStartKeepalivePingTimer();
@@ -1528,7 +1527,6 @@ export class Server {
           clearTimeout(connectionAgeGraceTimer);
         }
 
-        keepaliveDisabled = true;
         clearKeepaliveTimeout();
 
         if (idleTimeoutObj !== null) {
@@ -1575,7 +1573,6 @@ export class Server {
       let connectionAgeTimer: NodeJS.Timeout | null = null;
       let connectionAgeGraceTimer: NodeJS.Timeout | null = null;
       let keepaliveTimeout: NodeJS.Timeout | null = null;
-      let keepaliveDisabled = false;
       let sessionClosedByServer = false;
 
       const idleTimeoutObj = this.enableIdleTimeout(session);
@@ -1626,7 +1623,7 @@ export class Server {
 
       const canSendPing = () => {
         return (
-          !keepaliveDisabled &&
+          !session.destroyed &&
           this.keepaliveTimeMs < KEEPALIVE_MAX_TIME_MS &&
           this.keepaliveTimeMs > 0
         );
@@ -1734,7 +1731,6 @@ export class Server {
           clearTimeout(connectionAgeGraceTimer);
         }
 
-        keepaliveDisabled = true;
         clearKeepaliveTimeout();
 
         if (idleTimeoutObj !== null) {
