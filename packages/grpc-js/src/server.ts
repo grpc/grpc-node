@@ -1443,6 +1443,9 @@ export class Server {
         );
       };
 
+      /* eslint-disable-next-line prefer-const */
+      let sendPing: () => void; // hoisted for use in maybeStartKeepalivePingTimer
+
       const maybeStartKeepalivePingTimer = () => {
         if (!canSendPing()) {
           return;
@@ -1457,7 +1460,7 @@ export class Server {
         keepaliveTimeout.unref?.();
       };
 
-      const sendPing = () => {
+      sendPing = () => {
         if (!canSendPing()) {
           return;
         }
