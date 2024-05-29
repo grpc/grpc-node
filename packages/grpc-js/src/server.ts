@@ -435,6 +435,14 @@ export class Server {
     );
   }
 
+  private keepaliveTrace(text: string): void {
+    logging.trace(
+      LogVerbosity.DEBUG,
+      'keepalive',
+      '(' + this.channelzRef.id + ') ' + text
+    );
+  }
+
   addProtoService(): never {
     throw new Error('Not implemented. Use addService() instead');
   }
@@ -1376,7 +1384,8 @@ export class Server {
 
       let connectionAgeTimer: NodeJS.Timeout | null = null;
       let connectionAgeGraceTimer: NodeJS.Timeout | null = null;
-      let keepaliveInterval: NodeJS.Timeout | null = null;
+      let keepaliveTimeout: NodeJS.Timeout | null = null;
+      let keepaliveDisabled = false;
       let sessionClosedByServer = false;
 
       const idleTimeoutObj = this.enableIdleTimeout(session);
@@ -1419,72 +1428,73 @@ export class Server {
         connectionAgeTimer.unref?.();
       }
 
-      if (this.keepaliveTimeMs < KEEPALIVE_MAX_TIME_MS) {
-        keepaliveInterval = setInterval(() => {
-          const keepaliveTimeout = setTimeout(() => {
-            if (keepaliveInterval) {
-              clearInterval(keepaliveInterval);
-              keepaliveInterval = null;
-              sessionClosedByServer = true;
-              this.trace('Connection dropped by keepalive timeout');
-              session.close();
-            }
-          }, this.keepaliveTimeoutMs);
-          keepaliveTimeout.unref?.();
-
-          try {
-            if (
-              !session.ping(
-                (err: Error | null, duration: number, payload: Buffer) => {
-                  clearTimeout(keepaliveTimeout);
-                  if (err) {
-                    if (keepaliveInterval) {
-                      clearInterval(keepaliveInterval);
-                      keepaliveInterval = null;
-                    }
-                    sessionClosedByServer = true;
-                    this.trace(
-                      'Connection dropped due to error with ping frame ' +
-                        err.message +
-                        ' return in ' +
-                        duration
-                    );
-                    session.close();
-                  }
-                }
-              )
-            ) {
-              throw new Error('Server keepalive ping send failed');
-            }
-          } catch (e) {
-            // The ping can't be sent because the session is already closed, max outstanding pings reached, etc
-            clearTimeout(keepaliveTimeout);
-            if (keepaliveInterval) {
-              clearInterval(keepaliveInterval);
-              keepaliveInterval = null;
-            }
-            this.trace(
-              'Connection dropped due to error sending ping frame ' +
-                (e instanceof Error ? e.message : 'unknown error')
-            );
-            session.destroy();
-          }
-        }, this.keepaliveTimeMs);
-        keepaliveInterval.unref?.();
-      }
-
-      session.once('goaway', (errorCode, lastStreamID, opaqueData) => {
-        if (errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM) {
-          this.trace('Connection dropped by client due to ENHANCE_YOUR_CALM');
-        } else {
-          this.trace(
-            'Connection dropped by client via GOAWAY with error code ' +
-              errorCode
-          );
+      const clearKeepaliveTimeout = () => {
+        if (keepaliveTimeout) {
+          clearTimeout(keepaliveTimeout);
+          keepaliveTimeout = null;
         }
-        sessionClosedByServer = true;
-        session.destroy();
-      });
+      };
+
+      const canSendPing = () => {
+        return (
+          !keepaliveDisabled &&
+          this.keepaliveTimeMs < KEEPALIVE_MAX_TIME_MS &&
+          this.keepaliveTimeMs > 0
+        );
+      };
+
+      const maybeStartKeepalivePingTimer = () => {
+        if (!canSendPing()) {
+          return;
+        }
+        this.keepaliveTrace(
+          'Starting keepalive timer for ' + this.keepaliveTimeMs + 'ms'
+        );
+        keepaliveTimeout = setTimeout(() => {
+          clearKeepaliveTimeout();
+          sendPing();
+        }, this.keepaliveTimeMs);
+        keepaliveTimeout.unref?.();
+      };
+
+      const sendPing = () => {
+        if (!canSendPing()) {
+          return;
+        }
+        this.keepaliveTrace(
+          'Sending ping with timeout ' + this.keepaliveTimeoutMs + 'ms'
+        );
+        const pingSentSuccessfully = session.ping(
+          (err: Error | null, duration: number, payload: Buffer) => {
+            clearKeepaliveTimeout();
+            if (err) {
+              this.keepaliveTrace('Ping failed with error: ' + err.message);
+              sessionClosedByServer = true;
+              session.close();
+            } else {
+              this.keepaliveTrace('Received ping response');
+              maybeStartKeepalivePingTimer();
+            }
+          }
+        );
+
+        if (!pingSentSuccessfully) {
+          this.keepaliveTrace('Ping failed to send');
+          sessionClosedByServer = true;
+          session.close();
+          return;
+        }
+
+        keepaliveTimeout = setTimeout(() => {
+          clearKeepaliveTimeout();
+          this.keepaliveTrace('Ping timeout passed without response');
+          sessionClosedByServer = true;
+          session.close();
+        }, this.keepaliveTimeoutMs);
+        keepaliveTimeout.unref?.();
+      };
+
+      maybeStartKeepalivePingTimer();
 
       session.on('close', () => {
         if (!sessionClosedByServer) {
@@ -1501,10 +1511,8 @@ export class Server {
           clearTimeout(connectionAgeGraceTimer);
         }
 
-        if (keepaliveInterval) {
-          clearInterval(keepaliveInterval);
-          keepaliveInterval = null;
-        }
+        keepaliveDisabled = true;
+        clearKeepaliveTimeout();
 
         if (idleTimeoutObj !== null) {
           clearTimeout(idleTimeoutObj.timeout);
@@ -1549,7 +1557,8 @@ export class Server {
 
       let connectionAgeTimer: NodeJS.Timeout | null = null;
       let connectionAgeGraceTimer: NodeJS.Timeout | null = null;
-      let keepaliveInterval: NodeJS.Timeout | null = null;
+      let keepaliveTimeout: NodeJS.Timeout | null = null;
+      let keepaliveDisabled = false;
       let sessionClosedByServer = false;
 
       const idleTimeoutObj = this.enableIdleTimeout(session);
@@ -1591,85 +1600,90 @@ export class Server {
         connectionAgeTimer.unref?.();
       }
 
-      if (this.keepaliveTimeMs < KEEPALIVE_MAX_TIME_MS) {
-        keepaliveInterval = setInterval(() => {
-          const keepaliveTimeout = setTimeout(() => {
-            if (keepaliveInterval) {
-              clearInterval(keepaliveInterval);
-              keepaliveInterval = null;
-              sessionClosedByServer = true;
+      const clearKeepaliveTimeout = () => {
+        if (keepaliveTimeout) {
+          clearTimeout(keepaliveTimeout);
+          keepaliveTimeout = null;
+        }
+      };
+
+      const canSendPing = () => {
+        return (
+          !keepaliveDisabled &&
+          this.keepaliveTimeMs < KEEPALIVE_MAX_TIME_MS &&
+          this.keepaliveTimeMs > 0
+        );
+      };
+
+      const maybeStartKeepalivePingTimer = () => {
+        if (!canSendPing()) {
+          return;
+        }
+        this.keepaliveTrace(
+          'Starting keepalive timer for ' + this.keepaliveTimeMs + 'ms'
+        );
+        keepaliveTimeout = setTimeout(() => {
+          clearKeepaliveTimeout();
+          sendPing();
+        }, this.keepaliveTimeMs);
+        keepaliveTimeout.unref?.();
+      };
+
+      const sendPing = () => {
+        if (!canSendPing()) {
+          return;
+        }
+        this.keepaliveTrace(
+          'Sending ping with timeout ' + this.keepaliveTimeoutMs + 'ms'
+        );
+        const pingSentSuccessfully = session.ping(
+          (err: Error | null, duration: number, payload: Buffer) => {
+            clearKeepaliveTimeout();
+            if (err) {
+              this.keepaliveTrace('Ping failed with error: ' + err.message);
               this.channelzTrace.addTrace(
                 'CT_INFO',
-                'Connection dropped by keepalive timeout from ' + clientAddress
+                'Connection dropped due to error of a ping frame ' +
+                  err.message +
+                  ' return in ' +
+                  duration
               );
+              sessionClosedByServer = true;
               session.close();
+            } else {
+              this.keepaliveTrace('Received ping response');
+              maybeStartKeepalivePingTimer();
             }
-          }, this.keepaliveTimeoutMs);
-          keepaliveTimeout.unref?.();
-
-          try {
-            if (
-              !session.ping(
-                (err: Error | null, duration: number, payload: Buffer) => {
-                  clearTimeout(keepaliveTimeout);
-                  if (err) {
-                    if (keepaliveInterval) {
-                      clearInterval(keepaliveInterval);
-                      keepaliveInterval = null;
-                    }
-                    sessionClosedByServer = true;
-                    this.channelzTrace.addTrace(
-                      'CT_INFO',
-                      'Connection dropped due to error with ping frame ' +
-                        err.message +
-                        ' return in ' +
-                        duration
-                    );
-                    session.close();
-                  }
-                }
-              )
-            ) {
-              throw new Error('Server keepalive ping send failed');
-            }
-            channelzSessionInfo.keepAlivesSent += 1;
-          } catch (e) {
-            // The ping can't be sent because the session is already closed, max outstanding pings reached, etc
-            clearTimeout(keepaliveTimeout);
-            if (keepaliveInterval) {
-              clearInterval(keepaliveInterval);
-              keepaliveInterval = null;
-            }
-            this.channelzTrace.addTrace(
-              'CT_INFO',
-              'Connection dropped due to error sending ping frame ' +
-                (e instanceof Error ? e.message : 'unknown error')
-            );
-            session.destroy();
           }
-        }, this.keepaliveTimeMs);
-        keepaliveInterval.unref?.();
-      }
+        );
 
-      session.once('goaway', (errorCode, lastStreamID, opaqueData) => {
-        if (errorCode === http2.constants.NGHTTP2_ENHANCE_YOUR_CALM) {
+        if (!pingSentSuccessfully) {
+          this.keepaliveTrace('Ping failed to send');
           this.channelzTrace.addTrace(
             'CT_INFO',
-            'Connection dropped by client due GOAWAY of ENHANCE_YOUR_CALM from ' +
-              clientAddress
+            'Connection dropped due failure to send ping frame'
           );
-        } else {
-          this.channelzTrace.addTrace(
-            'CT_INFO',
-            'Connection dropped by client via GOAWAY with error code ' +
-              errorCode +
-              ' from ' +
-              clientAddress
-          );
+          sessionClosedByServer = true;
+          session.close();
+          return;
         }
-        sessionClosedByServer = true;
-        session.destroy();
-      });
+
+        channelzSessionInfo.keepAlivesSent += 1;
+
+        keepaliveTimeout = setTimeout(() => {
+          clearKeepaliveTimeout();
+          this.keepaliveTrace('Ping timeout passed without response');
+          this.channelzTrace.addTrace(
+            'CT_INFO',
+            'Connection dropped by keepalive timeout from ' + clientAddress
+          );
+          sessionClosedByServer = true;
+          session.close();
+        }, this.keepaliveTimeoutMs);
+        keepaliveTimeout.unref?.();
+      };
+
+      maybeStartKeepalivePingTimer();
 
       session.on('close', () => {
         if (!sessionClosedByServer) {
@@ -1690,10 +1704,8 @@ export class Server {
           clearTimeout(connectionAgeGraceTimer);
         }
 
-        if (keepaliveInterval) {
-          clearInterval(keepaliveInterval);
-          keepaliveInterval = null;
-        }
+        keepaliveDisabled = true;
+        clearKeepaliveTimeout();
 
         if (idleTimeoutObj !== null) {
           clearTimeout(idleTimeoutObj.timeout);

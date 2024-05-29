@@ -101,28 +101,29 @@ class Http2Transport implements Transport {
   /**
    * The amount of time in between sending pings
    */
-  private keepaliveTimeMs = -1;
+  private readonly keepaliveTimeMs: number;
   /**
    * The amount of time to wait for an acknowledgement after sending a ping
    */
-  private keepaliveTimeoutMs: number = KEEPALIVE_TIMEOUT_MS;
+  private readonly keepaliveTimeoutMs: number;
   /**
-   * Timer reference for timeout that indicates when to send the next ping
+   * Indicates whether keepalive pings should be sent without any active calls
    */
-  private keepaliveTimerId: NodeJS.Timeout | null = null;
+  private readonly keepaliveWithoutCalls: boolean;
+  /**
+   * Timer reference indicating when to send the next ping or when the most recent ping will be considered lost.
+   */
+  private keepaliveTimeout: NodeJS.Timeout | null = null;
   /**
    * Indicates that the keepalive timer ran out while there were no active
    * calls, and a ping should be sent the next time a call starts.
    */
   private pendingSendKeepalivePing = false;
   /**
-   * Timer reference tracking when the most recent ping will be considered lost
+   * Indicates when keepalives should no longer be performed for this transport. Used to prevent a race where a
+   * latent session.ping(..) callback is called after the transport has been notified to disconnect.
    */
-  private keepaliveTimeoutId: NodeJS.Timeout | null = null;
-  /**
-   * Indicates whether keepalive pings should be sent without any active calls
-   */
-  private keepaliveWithoutCalls = false;
+  private keepaliveDisabled = false;
 
   private userAgent: string;
 
@@ -182,9 +183,13 @@ class Http2Transport implements Transport {
 
     if ('grpc.keepalive_time_ms' in options) {
       this.keepaliveTimeMs = options['grpc.keepalive_time_ms']!;
+    } else {
+      this.keepaliveTimeMs = -1;
     }
     if ('grpc.keepalive_timeout_ms' in options) {
       this.keepaliveTimeoutMs = options['grpc.keepalive_timeout_ms']!;
+    } else {
+      this.keepaliveTimeoutMs = KEEPALIVE_TIMEOUT_MS;
     }
     if ('grpc.keepalive_permit_without_calls' in options) {
       this.keepaliveWithoutCalls =
@@ -195,7 +200,6 @@ class Http2Transport implements Transport {
 
     session.once('close', () => {
       this.trace('session closed');
-      this.stopKeepalivePings();
       this.handleDisconnect();
     });
 
@@ -383,6 +387,8 @@ class Http2Transport implements Transport {
    * Handle connection drops, but not GOAWAYs.
    */
   private handleDisconnect() {
+    this.keepaliveDisabled = true;
+    this.clearKeepaliveTimeout();
     this.reportDisconnectToOwner(false);
     /* Give calls an event loop cycle to finish naturally before reporting the
      * disconnnection to them. */
@@ -397,33 +403,21 @@ class Http2Transport implements Transport {
     this.disconnectListeners.push(listener);
   }
 
-  private clearKeepaliveTimer() {
-    if (!this.keepaliveTimerId) {
-      return;
-    }
-    clearTimeout(this.keepaliveTimerId);
-    this.keepaliveTimerId = null;
-  }
-
-  private clearKeepaliveTimeout() {
-    if (!this.keepaliveTimeoutId) {
-      return;
-    }
-    clearTimeout(this.keepaliveTimeoutId);
-    this.keepaliveTimeoutId = null;
-  }
-
   private canSendPing() {
     return (
+      !this.keepaliveDisabled &&
       this.keepaliveTimeMs > 0 &&
       (this.keepaliveWithoutCalls || this.activeCalls.size > 0)
     );
   }
 
   private maybeSendPing() {
-    this.clearKeepaliveTimer();
     if (!this.canSendPing()) {
       this.pendingSendKeepalivePing = true;
+      return;
+    }
+    if (this.keepaliveTimeout) {
+      console.error('keepaliveTimeout is not null');
       return;
     }
     if (this.channelzEnabled) {
@@ -432,28 +426,25 @@ class Http2Transport implements Transport {
     this.keepaliveTrace(
       'Sending ping with timeout ' + this.keepaliveTimeoutMs + 'ms'
     );
-    if (!this.keepaliveTimeoutId) {
-      this.keepaliveTimeoutId = setTimeout(() => {
-        this.keepaliveTrace('Ping timeout passed without response');
-        this.handleDisconnect();
-      }, this.keepaliveTimeoutMs);
-      this.keepaliveTimeoutId.unref?.();
-    }
-    try {
-      this.session!.ping(
-        (err: Error | null, duration: number, payload: Buffer) => {
-          if (err) {
-            this.keepaliveTrace('Ping failed with error ' + err.message);
-            this.handleDisconnect();
-          }
+    this.keepaliveTimeout = setTimeout(() => {
+      this.keepaliveTrace('Ping timeout passed without response');
+      this.handleDisconnect();
+    }, this.keepaliveTimeoutMs);
+    this.keepaliveTimeout.unref?.();
+    const pingSentSuccessfully = this.session.ping(
+      (err: Error | null, duration: number, payload: Buffer) => {
+        this.clearKeepaliveTimeout();
+        if (err) {
+          this.keepaliveTrace('Ping failed with error ' + err.message);
+          this.handleDisconnect();
+        } else {
           this.keepaliveTrace('Received ping response');
-          this.clearKeepaliveTimeout();
           this.maybeStartKeepalivePingTimer();
         }
-      );
-    } catch (e) {
-      /* If we fail to send a ping, the connection is no longer functional, so
-       * we should discard it. */
+      }
+    );
+    if (!pingSentSuccessfully) {
+      this.keepaliveTrace('Ping failed to send');
       this.handleDisconnect();
     }
   }
@@ -471,25 +462,27 @@ class Http2Transport implements Transport {
     if (this.pendingSendKeepalivePing) {
       this.pendingSendKeepalivePing = false;
       this.maybeSendPing();
-    } else if (!this.keepaliveTimerId && !this.keepaliveTimeoutId) {
+    } else if (!this.keepaliveTimeout) {
       this.keepaliveTrace(
         'Starting keepalive timer for ' + this.keepaliveTimeMs + 'ms'
       );
-      this.keepaliveTimerId = setTimeout(() => {
+      this.keepaliveTimeout = setTimeout(() => {
         this.maybeSendPing();
       }, this.keepaliveTimeMs);
-      this.keepaliveTimerId.unref?.();
+      this.keepaliveTimeout.unref?.();
     }
     /* Otherwise, there is already either a keepalive timer or a ping pending,
      * wait for those to resolve. */
   }
 
-  private stopKeepalivePings() {
-    if (this.keepaliveTimerId) {
-      clearTimeout(this.keepaliveTimerId);
-      this.keepaliveTimerId = null;
+  /**
+   * Clears whichever keepalive timeout is currently active, if any.
+   */
+  private clearKeepaliveTimeout() {
+    if (this.keepaliveTimeout) {
+      clearTimeout(this.keepaliveTimeout);
+      this.keepaliveTimeout = null;
     }
-    this.clearKeepaliveTimeout();
   }
 
   private removeActiveCall(call: Http2SubchannelCall) {
@@ -533,7 +526,7 @@ class Http2Transport implements Transport {
      * error here.
      */
     try {
-      http2Stream = this.session!.request(headers);
+      http2Stream = this.session.request(headers);
     } catch (e) {
       this.handleDisconnect();
       throw e;
