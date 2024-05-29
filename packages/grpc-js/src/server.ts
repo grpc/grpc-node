@@ -18,50 +18,10 @@
 import * as http2 from 'http2';
 import * as util from 'util';
 
+import { CipherNameAndProtocol, TLSSocket } from 'tls';
 import { ServiceError } from './call';
-import { Status, LogVerbosity } from './constants';
-import { Deserialize, Serialize, ServiceDefinition } from './make-client';
-import { Metadata } from './metadata';
-import {
-  BidiStreamingHandler,
-  ClientStreamingHandler,
-  HandleCall,
-  Handler,
-  HandlerType,
-  sendUnaryData,
-  ServerDuplexStream,
-  ServerDuplexStreamImpl,
-  ServerReadableStream,
-  ServerStreamingHandler,
-  ServerUnaryCall,
-  ServerWritableStream,
-  ServerWritableStreamImpl,
-  UnaryHandler,
-  ServerErrorResponse,
-  ServerStatusResponse,
-  serverErrorToStatus,
-} from './server-call';
-import { ServerCredentials } from './server-credentials';
+import { PartialStatusObject } from './call-interface';
 import { ChannelOptions } from './channel-options';
-import {
-  createResolver,
-  ResolverListener,
-  mapUriDefaultScheme,
-} from './resolver';
-import * as logging from './logging';
-import {
-  SubchannelAddress,
-  isTcpSubchannelAddress,
-  subchannelAddressToString,
-  stringToSubchannelAddress,
-} from './subchannel-address';
-import {
-  GrpcUri,
-  combineHostPort,
-  parseUri,
-  splitHostPort,
-  uriToString,
-} from './uri-parser';
 import {
   ChannelzCallTracker,
   ChannelzCallTrackerStub,
@@ -69,23 +29,63 @@ import {
   ChannelzChildrenTrackerStub,
   ChannelzTrace,
   ChannelzTraceStub,
-  registerChannelzServer,
-  registerChannelzSocket,
   ServerInfo,
   ServerRef,
   SocketInfo,
   SocketRef,
   TlsInfo,
+  registerChannelzServer,
+  registerChannelzSocket,
   unregisterChannelzRef,
 } from './channelz';
-import { CipherNameAndProtocol, TLSSocket } from 'tls';
+import { LogVerbosity, Status } from './constants';
+import * as logging from './logging';
+import { Deserialize, Serialize, ServiceDefinition } from './make-client';
+import { Metadata } from './metadata';
+import {
+  ResolverListener,
+  createResolver,
+  mapUriDefaultScheme,
+} from './resolver';
+import {
+  BidiStreamingHandler,
+  ClientStreamingHandler,
+  HandleCall,
+  Handler,
+  HandlerType,
+  ServerDuplexStream,
+  ServerDuplexStreamImpl,
+  ServerErrorResponse,
+  ServerReadableStream,
+  ServerStatusResponse,
+  ServerStreamingHandler,
+  ServerUnaryCall,
+  ServerWritableStream,
+  ServerWritableStreamImpl,
+  UnaryHandler,
+  sendUnaryData,
+  serverErrorToStatus,
+} from './server-call';
+import { ServerCredentials } from './server-credentials';
 import {
   ServerInterceptingCallInterface,
   ServerInterceptor,
   getServerInterceptingCall,
 } from './server-interceptors';
-import { PartialStatusObject } from './call-interface';
+import {
+  SubchannelAddress,
+  isTcpSubchannelAddress,
+  stringToSubchannelAddress,
+  subchannelAddressToString,
+} from './subchannel-address';
 import { CallEventTracker } from './transport';
+import {
+  GrpcUri,
+  combineHostPort,
+  parseUri,
+  splitHostPort,
+  uriToString,
+} from './uri-parser';
 
 const UNLIMITED_CONNECTION_AGE_MS = ~(1 << 31);
 const KEEPALIVE_MAX_TIME_MS = ~(1 << 31);
@@ -1469,6 +1469,12 @@ export class Server {
             clearKeepaliveTimeout();
             if (err) {
               this.keepaliveTrace('Ping failed with error: ' + err.message);
+              this.trace(
+                'Connection dropped due to error of a ping frame ' +
+                  err.message +
+                  ' return in ' +
+                  duration
+              );
               sessionClosedByServer = true;
               session.close();
             } else {
@@ -1480,6 +1486,7 @@ export class Server {
 
         if (!pingSentSuccessfully) {
           this.keepaliveTrace('Ping failed to send');
+          this.trace('Connection dropped due to failure to send ping frame');
           sessionClosedByServer = true;
           session.close();
           return;
