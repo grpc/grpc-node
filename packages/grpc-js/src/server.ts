@@ -18,67 +18,43 @@
 import * as http2 from 'http2';
 import * as util from 'util';
 
-import { CipherNameAndProtocol, TLSSocket } from 'tls';
 import { ServiceError } from './call';
-import { PartialStatusObject } from './call-interface';
-import { ChannelOptions } from './channel-options';
-import {
-  ChannelzCallTracker,
-  ChannelzCallTrackerStub,
-  ChannelzChildrenTracker,
-  ChannelzChildrenTrackerStub,
-  ChannelzTrace,
-  ChannelzTraceStub,
-  ServerInfo,
-  ServerRef,
-  SocketInfo,
-  SocketRef,
-  TlsInfo,
-  registerChannelzServer,
-  registerChannelzSocket,
-  unregisterChannelzRef,
-} from './channelz';
-import { LogVerbosity, Status } from './constants';
-import * as logging from './logging';
+import { Status, LogVerbosity } from './constants';
 import { Deserialize, Serialize, ServiceDefinition } from './make-client';
 import { Metadata } from './metadata';
-import {
-  ResolverListener,
-  createResolver,
-  mapUriDefaultScheme,
-} from './resolver';
 import {
   BidiStreamingHandler,
   ClientStreamingHandler,
   HandleCall,
   Handler,
   HandlerType,
+  sendUnaryData,
   ServerDuplexStream,
   ServerDuplexStreamImpl,
-  ServerErrorResponse,
   ServerReadableStream,
-  ServerStatusResponse,
   ServerStreamingHandler,
   ServerUnaryCall,
   ServerWritableStream,
   ServerWritableStreamImpl,
   UnaryHandler,
-  sendUnaryData,
+  ServerErrorResponse,
+  ServerStatusResponse,
   serverErrorToStatus,
 } from './server-call';
 import { ServerCredentials } from './server-credentials';
+import { ChannelOptions } from './channel-options';
 import {
-  ServerInterceptingCallInterface,
-  ServerInterceptor,
-  getServerInterceptingCall,
-} from './server-interceptors';
+  createResolver,
+  ResolverListener,
+  mapUriDefaultScheme,
+} from './resolver';
+import * as logging from './logging';
 import {
   SubchannelAddress,
   isTcpSubchannelAddress,
-  stringToSubchannelAddress,
   subchannelAddressToString,
+  stringToSubchannelAddress,
 } from './subchannel-address';
-import { CallEventTracker } from './transport';
 import {
   GrpcUri,
   combineHostPort,
@@ -86,6 +62,30 @@ import {
   splitHostPort,
   uriToString,
 } from './uri-parser';
+import {
+  ChannelzCallTracker,
+  ChannelzCallTrackerStub,
+  ChannelzChildrenTracker,
+  ChannelzChildrenTrackerStub,
+  ChannelzTrace,
+  ChannelzTraceStub,
+  registerChannelzServer,
+  registerChannelzSocket,
+  ServerInfo,
+  ServerRef,
+  SocketInfo,
+  SocketRef,
+  TlsInfo,
+  unregisterChannelzRef,
+} from './channelz';
+import { CipherNameAndProtocol, TLSSocket } from 'tls';
+import {
+  ServerInterceptingCallInterface,
+  ServerInterceptor,
+  getServerInterceptingCall,
+} from './server-interceptors';
+import { PartialStatusObject } from './call-interface';
+import { CallEventTracker } from './transport';
 
 const UNLIMITED_CONNECTION_AGE_MS = ~(1 << 31);
 const KEEPALIVE_MAX_TIME_MS = ~(1 << 31);
