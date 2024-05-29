@@ -1495,6 +1495,7 @@ export class Server {
         keepaliveTimeout = setTimeout(() => {
           clearKeepaliveTimeout();
           this.keepaliveTrace('Ping timeout passed without response');
+          this.trace('Connection dropped by keepalive timeout');
           sessionClosedByServer = true;
           session.close();
         }, this.keepaliveTimeoutMs);
