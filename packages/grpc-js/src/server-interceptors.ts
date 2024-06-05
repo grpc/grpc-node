@@ -30,13 +30,9 @@ import {
 import * as http2 from 'http2';
 import { getErrorMessage } from './error';
 import * as zlib from 'zlib';
-import { promisify } from 'util';
 import { StreamDecoder } from './stream-decoder';
 import { CallEventTracker } from './transport';
 import * as logging from './logging';
-
-const unzip = promisify(zlib.unzip);
-const inflate = promisify(zlib.inflate);
 
 const TRACER_NAME = 'server_call';
 
@@ -496,7 +492,7 @@ export class BaseServerInterceptingCall
   private wantTrailers = false;
   private cancelNotified = false;
   private incomingEncoding = 'identity';
-  private decoder = new StreamDecoder();
+  private decoder: StreamDecoder;
   private readQueue: ReadQueueEntry[] = [];
   private isReadPending = false;
   private receivedHalfClose = false;
@@ -553,6 +549,8 @@ export class BaseServerInterceptingCall
     if ('grpc.max_receive_message_length' in options) {
       this.maxReceiveMessageSize = options['grpc.max_receive_message_length']!;
     }
+
+    this.decoder = new StreamDecoder(this.maxReceiveMessageSize);
 
     const metadata = Metadata.fromHttp2Headers(headers);
 
@@ -674,18 +672,41 @@ export class BaseServerInterceptingCall
     message: Buffer,
     encoding: string
   ): Buffer | Promise<Buffer> {
-    switch (encoding) {
-      case 'deflate':
-        return inflate(message.subarray(5));
-      case 'gzip':
-        return unzip(message.subarray(5));
-      case 'identity':
-        return message.subarray(5);
-      default:
-        return Promise.reject({
-          code: Status.UNIMPLEMENTED,
-          details: `Received message compressed with unsupported encoding "${encoding}"`,
+    const messageContents = message.subarray(5);
+    if (encoding === 'identity') {
+      return messageContents;
+    } else if (encoding === 'deflate' || encoding === 'gzip') {
+      let decompresser: zlib.Gunzip | zlib.Deflate;
+      if (encoding === 'deflate') {
+        decompresser = zlib.createInflate();
+      } else {
+        decompresser = zlib.createGunzip();
+      }
+      return new Promise((resolve, reject) => {
+        let totalLength = 0
+        const messageParts: Buffer[] = [];
+        decompresser.on('data', (chunk: Buffer) => {
+          messageParts.push(chunk);
+          totalLength += chunk.byteLength;
+          if (this.maxReceiveMessageSize !== -1 && totalLength > this.maxReceiveMessageSize) {
+            decompresser.destroy();
+            reject({
+              code: Status.RESOURCE_EXHAUSTED,
+              details: `Received message that decompresses to a size larger than ${this.maxReceiveMessageSize}`
+            });
+          }
         });
+        decompresser.on('end', () => {
+          resolve(Buffer.concat(messageParts));
+        });
+        decompresser.write(messageContents);
+        decompresser.end();
+      });
+    } else {
+      return Promise.reject({
+        code: Status.UNIMPLEMENTED,
+        details: `Received message compressed with unsupported encoding "${encoding}"`,
+      });
     }
   }
 
@@ -698,10 +719,16 @@ export class BaseServerInterceptingCall
     const compressedMessageEncoding = compressed
       ? this.incomingEncoding
       : 'identity';
-    const decompressedMessage = await this.decompressMessage(
-      queueEntry.compressedMessage!,
-      compressedMessageEncoding
-    );
+    let decompressedMessage: Buffer;
+    try {
+      decompressedMessage = await this.decompressMessage(
+        queueEntry.compressedMessage!,
+        compressedMessageEncoding
+      );
+    } catch (err) {
+      this.sendStatus(err as PartialStatusObject);
+      return;
+    }
     try {
       queueEntry.parsedMessage = this.handler.deserialize(decompressedMessage);
     } catch (err) {
@@ -743,23 +770,16 @@ export class BaseServerInterceptingCall
         ' received data frame of size ' +
         data.length
     );
-    const rawMessages = this.decoder.write(data);
+    let rawMessages: Buffer[];
+    try {
+      rawMessages = this.decoder.write(data);
+    } catch (e) {
+      this.sendStatus({ code: Status.RESOURCE_EXHAUSTED, details: (e as Error).message });
+      return;
+    }
 
     for (const messageBytes of rawMessages) {
       this.stream.pause();
-      if (
-        this.maxReceiveMessageSize !== -1 &&
-        messageBytes.length - 5 > this.maxReceiveMessageSize
-      ) {
-        this.sendStatus({
-          code: Status.RESOURCE_EXHAUSTED,
-          details: `Received message larger than max (${
-            messageBytes.length - 5
-          } vs. ${this.maxReceiveMessageSize})`,
-          metadata: null,
-        });
-        return;
-      }
       const queueEntry: ReadQueueEntry = {
         type: 'COMPRESSED',
         compressedMessage: messageBytes,

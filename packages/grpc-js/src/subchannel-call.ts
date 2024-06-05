@@ -18,7 +18,7 @@
 import * as http2 from 'http2';
 import * as os from 'os';
 
-import { Status } from './constants';
+import { DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH, Status } from './constants';
 import { Metadata } from './metadata';
 import { StreamDecoder } from './stream-decoder';
 import * as logging from './logging';
@@ -116,7 +116,7 @@ function mapHttpStatusCode(code: number): StatusObject {
 }
 
 export class Http2SubchannelCall implements SubchannelCall {
-  private decoder = new StreamDecoder();
+  private decoder: StreamDecoder;
 
   private isReadFilterPending = false;
   private isPushPending = false;
@@ -147,6 +147,8 @@ export class Http2SubchannelCall implements SubchannelCall {
     private readonly transport: Transport,
     private readonly callId: number
   ) {
+    const maxReceiveMessageLength = transport.getOptions()['grpc.max_receive_message_length'] ?? DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH;
+    this.decoder = new StreamDecoder(maxReceiveMessageLength);
     http2Stream.on('response', (headers, flags) => {
       let headersString = '';
       for (const header of Object.keys(headers)) {
@@ -182,7 +184,13 @@ export class Http2SubchannelCall implements SubchannelCall {
         return;
       }
       this.trace('receive HTTP/2 data frame of length ' + data.length);
-      const messages = this.decoder.write(data);
+      let messages: Buffer[];
+      try {
+        messages = this.decoder.write(data);
+      } catch (e) {
+        this.cancelWithStatus(Status.RESOURCE_EXHAUSTED, (e as Error).message);
+        return;
+      }
 
       for (const message of messages) {
         this.trace('parsed message of length ' + message.length);
