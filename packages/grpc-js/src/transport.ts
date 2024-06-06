@@ -119,11 +119,6 @@ class Http2Transport implements Transport {
    * calls, and a ping should be sent the next time a call starts.
    */
   private pendingSendKeepalivePing = false;
-  /**
-   * Indicates when keepalives should no longer be performed for this transport. Used to prevent a race where a
-   * latent session.ping(..) callback is called after the transport has been notified to disconnect.
-   */
-  private keepaliveDisabled = false;
 
   private userAgent: string;
 
@@ -387,7 +382,6 @@ class Http2Transport implements Transport {
    * Handle connection drops, but not GOAWAYs.
    */
   private handleDisconnect() {
-    this.keepaliveDisabled = true;
     this.clearKeepaliveTimeout();
     this.reportDisconnectToOwner(false);
     /* Give calls an event loop cycle to finish naturally before reporting the
@@ -396,6 +390,7 @@ class Http2Transport implements Transport {
       for (const call of this.activeCalls) {
         call.onDisconnect();
       }
+      this.session.destroy();
     });
   }
 
@@ -405,7 +400,7 @@ class Http2Transport implements Transport {
 
   private canSendPing() {
     return (
-      !this.keepaliveDisabled &&
+      !this.session.destroyed &&
       this.keepaliveTimeMs > 0 &&
       (this.keepaliveWithoutCalls || this.activeCalls.size > 0)
     );
