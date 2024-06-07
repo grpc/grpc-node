@@ -83,6 +83,7 @@ export interface TransportDisconnectListener {
 export interface Transport {
   getChannelzRef(): SocketRef;
   getPeerName(): string;
+  getOptions(): ChannelOptions;
   createCall(
     metadata: Metadata,
     host: string,
@@ -146,7 +147,7 @@ class Http2Transport implements Transport {
   constructor(
     private session: http2.ClientHttp2Session,
     subchannelAddress: SubchannelAddress,
-    options: ChannelOptions,
+    private options: ChannelOptions,
     /**
      * Name of the remote server, if it is not the same as the subchannel
      * address, i.e. if connecting through an HTTP CONNECT proxy.
@@ -599,6 +600,10 @@ class Http2Transport implements Transport {
 
   getPeerName() {
     return this.subchannelAddressString;
+  }
+
+  getOptions() {
+    return this.options;
   }
 
   shutdown() {

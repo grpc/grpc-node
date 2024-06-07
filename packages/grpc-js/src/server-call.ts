@@ -19,7 +19,6 @@ import { EventEmitter } from 'events';
 import * as http2 from 'http2';
 import { Duplex, Readable, Writable } from 'stream';
 import * as zlib from 'zlib';
-import { promisify } from 'util';
 
 import {
   Status,
@@ -38,8 +37,6 @@ import { Deadline } from './deadline';
 import { getErrorCode, getErrorMessage } from './error';
 
 const TRACER_NAME = 'server_call';
-const unzip = promisify(zlib.unzip);
-const inflate = promisify(zlib.inflate);
 
 function trace(text: string): void {
   logging.trace(LogVerbosity.DEBUG, TRACER_NAME, text);
@@ -480,19 +477,42 @@ export class Http2ServerCallStream<
   private getDecompressedMessage(
     message: Buffer,
     encoding: string
-  ): Buffer | Promise<Buffer> {
-    if (encoding === 'deflate') {
-      return inflate(message.subarray(5));
-    } else if (encoding === 'gzip') {
-      return unzip(message.subarray(5));
-    } else if (encoding === 'identity') {
-      return message.subarray(5);
+  ): Buffer | Promise<Buffer> {    const messageContents = message.subarray(5);
+    if (encoding === 'identity') {
+      return messageContents;
+    } else if (encoding === 'deflate' || encoding === 'gzip') {
+      let decompresser: zlib.Gunzip | zlib.Deflate;
+      if (encoding === 'deflate') {
+        decompresser = zlib.createInflate();
+      } else {
+        decompresser = zlib.createGunzip();
+      }
+      return new Promise((resolve, reject) => {
+        let totalLength = 0
+        const messageParts: Buffer[] = [];
+        decompresser.on('data', (chunk: Buffer) => {
+          messageParts.push(chunk);
+          totalLength += chunk.byteLength;
+          if (this.maxReceiveMessageSize !== -1 && totalLength > this.maxReceiveMessageSize) {
+            decompresser.destroy();
+            reject({
+              code: Status.RESOURCE_EXHAUSTED,
+              details: `Received message that decompresses to a size larger than ${this.maxReceiveMessageSize}`
+            });
+          }
+        });
+        decompresser.on('end', () => {
+          resolve(Buffer.concat(messageParts));
+        });
+        decompresser.write(messageContents);
+        decompresser.end();
+      });
+    } else {
+      return Promise.reject({
+        code: Status.UNIMPLEMENTED,
+        details: `Received message compressed with unsupported encoding "${encoding}"`,
+      });
     }
-
-    return Promise.reject({
-      code: Status.UNIMPLEMENTED,
-      details: `Received message compressed with unsupported encoding "${encoding}"`,
-    });
   }
 
   sendMetadata(customMetadata?: Metadata) {
@@ -816,7 +836,7 @@ export class Http2ServerCallStream<
       | ServerDuplexStream<RequestType, ResponseType>,
     encoding: string
   ) {
-    const decoder = new StreamDecoder();
+    const decoder = new StreamDecoder(this.maxReceiveMessageSize);
 
     let readsDone = false;
 
@@ -832,29 +852,34 @@ export class Http2ServerCallStream<
     };
 
     this.stream.on('data', async (data: Buffer) => {
-      const messages = decoder.write(data);
+      let messages: Buffer[];
+      try {
+        messages = decoder.write(data);
+      } catch (e) {
+        this.sendError({
+          code: Status.RESOURCE_EXHAUSTED,
+          details: (e as Error).message
+        });
+        return;
+      }
 
       pendingMessageProcessing = true;
       this.stream.pause();
       for (const message of messages) {
-        if (
-          this.maxReceiveMessageSize !== -1 &&
-          message.length > this.maxReceiveMessageSize
-        ) {
-          this.sendError({
-            code: Status.RESOURCE_EXHAUSTED,
-            details: `Received message larger than max (${message.length} vs. ${this.maxReceiveMessageSize})`,
-          });
-          return;
-        }
         this.emit('receiveMessage');
 
         const compressed = message.readUInt8(0) === 1;
         const compressedMessageEncoding = compressed ? encoding : 'identity';
-        const decompressedMessage = await this.getDecompressedMessage(
-          message,
-          compressedMessageEncoding
-        );
+        let decompressedMessage: Buffer;
+        try {
+          decompressedMessage = await this.getDecompressedMessage(
+            message,
+            compressedMessageEncoding
+          );
+        } catch (e) {
+          this.sendError(e as Partial<StatusObject>);
+          return;
+        }
 
         // Encountered an error with decompression; it'll already have been propogated back
         // Just return early
