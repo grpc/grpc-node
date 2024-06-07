@@ -422,6 +422,7 @@ class Http2Transport implements Transport {
       'Sending ping with timeout ' + this.keepaliveTimeoutMs + 'ms'
     );
     this.keepaliveTimer = setTimeout(() => {
+      this.keepaliveTimer = null;
       this.keepaliveTrace('Ping timeout passed without response');
       this.handleDisconnect();
     }, this.keepaliveTimeoutMs);
@@ -471,6 +472,7 @@ class Http2Transport implements Transport {
         'Starting keepalive timer for ' + this.keepaliveTimeMs + 'ms'
       );
       this.keepaliveTimer = setTimeout(() => {
+        this.keepaliveTimer = null;
         this.maybeSendPing();
       }, this.keepaliveTimeMs);
       this.keepaliveTimer.unref?.();
