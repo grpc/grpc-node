@@ -1,6 +1,6 @@
 {
   "name": "@grpc/grpc-js",
-  "version": "1.9.14",
+  "version": "1.9.15",
   "description": "gRPC Library for Node - pure JS implementation",
   "homepage": "https://grpc.io/",
   "repository": "https://github.com/grpc/grpc-node/tree/master/packages/grpc-js",
