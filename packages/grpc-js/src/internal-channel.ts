@@ -33,7 +33,6 @@ import {
 } from './resolver';
 import { trace } from './logging';
 import { SubchannelAddress } from './subchannel-address';
-import { MaxMessageSizeFilterFactory } from './max-message-size-filter';
 import { mapProxyName } from './http_proxy';
 import { GrpcUri, parseUri, uriToString } from './uri-parser';
 import { ServerSurfaceCall } from './server-call';
@@ -310,7 +309,6 @@ export class InternalChannel {
       }
     );
     this.filterStackFactory = new FilterStackFactory([
-      new MaxMessageSizeFilterFactory(this.options),
       new CompressionFilterFactory(this, this.options),
     ]);
     this.trace('Channel constructed with options ' + JSON.stringify(options, undefined, 2));
