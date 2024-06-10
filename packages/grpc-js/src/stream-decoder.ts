@@ -30,6 +30,8 @@ export class StreamDecoder {
   private readPartialMessage: Buffer[] = [];
   private readMessageRemaining = 0;
 
+  constructor(private maxReadMessageLength: number) {}
+
   write(data: Buffer): Buffer[] {
     let readHead = 0;
     let toRead: number;
@@ -60,6 +62,9 @@ export class StreamDecoder {
           // readSizeRemaining >=0 here
           if (this.readSizeRemaining === 0) {
             this.readMessageSize = this.readPartialSize.readUInt32BE(0);
+            if (this.maxReadMessageLength !== -1 && this.readMessageSize > this.maxReadMessageLength) {
+              throw new Error(`Received message larger than max (${this.readMessageSize} vs ${this.maxReadMessageLength})`);
+            }
             this.readMessageRemaining = this.readMessageSize;
             if (this.readMessageRemaining > 0) {
               this.readState = ReadState.READING_MESSAGE;
