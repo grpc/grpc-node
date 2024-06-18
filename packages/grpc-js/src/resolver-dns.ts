@@ -20,9 +20,8 @@ import {
   registerResolver,
   registerDefaultScheme,
 } from './resolver';
-import * as dns from 'dns';
-import * as dnsPromises from 'dns/promises';
-import * as util from 'util';
+import { AnyRecord } from 'dns';
+import * as dns from 'dns/promises';
 import { extractAndSelectServiceConfig, ServiceConfig } from './service-config';
 import { Status } from './constants';
 import { StatusObject } from './call-interface';
@@ -48,8 +47,6 @@ export const DEFAULT_PORT = 443;
 
 const DEFAULT_MIN_TIME_BETWEEN_RESOLUTIONS_MS = 30_000;
 
-const resolveTxtPromise = util.promisify(dns.resolveTxt);
-
 /**
  * Resolver implementation that handles DNS names and IP addresses.
  */
@@ -63,7 +60,7 @@ class DnsResolver implements Resolver {
    * Failures are handled by the backoff timer.
    */
   private readonly minTimeBetweenResolutionsMs: number;
-  private pendingLookupPromise: Promise<string[]> | null = null;
+  private pendingLookupPromise: Promise<AnyRecord[]> | null = null;
   private pendingTxtPromise: Promise<string[][]> | null = null;
   private latestLookupResult: Endpoint[] | null = null;
   private latestServiceConfig: ServiceConfig | null = null;
@@ -76,7 +73,7 @@ class DnsResolver implements Resolver {
   private isNextResolutionTimerRunning = false;
   private isServiceConfigEnabled = true;
   private returnedIpResult = false;
-  private resolver = new dnsPromises.Resolver();
+  private resolver = new dns.Resolver();
 
   constructor(
     private target: GrpcUri,
@@ -194,7 +191,7 @@ class DnsResolver implements Resolver {
        * because when looking up a single family, dns.lookup outputs an error
        * if the name exists but there are no records for that family, and that
        * error is indistinguishable from other kinds of errors */
-      this.pendingLookupPromise = this.resolver.resolve(hostname);
+      this.pendingLookupPromise = this.resolver.resolveAny(hostname);
       this.pendingLookupPromise.then(
         addressList => {
           if (this.pendingLookupPromise === null) {
@@ -203,9 +200,11 @@ class DnsResolver implements Resolver {
           this.pendingLookupPromise = null;
           this.backoff.reset();
           this.backoff.stop();
-          const subchannelAddresses: TcpSubchannelAddress[] = addressList.map(
-            addr => ({ host: addr, port: +this.port! })
-          );
+          const subchannelAddresses: TcpSubchannelAddress[] = addressList
+            .filter(addr => {
+              addr.type === 'A' || addr.type === 'AAAA';
+            })
+            .map(addr => ({ host: addr.address, port: +this.port! }));
           this.latestLookupResult = subchannelAddresses.map(address => ({
             addresses: [address],
           }));
@@ -258,7 +257,7 @@ class DnsResolver implements Resolver {
         /* We handle the TXT query promise differently than the others because
          * the name resolution attempt as a whole is a success even if the TXT
          * lookup fails */
-        this.pendingTxtPromise = resolveTxtPromise(hostname);
+        this.pendingTxtPromise = this.resolver.resolveTxt(hostname);
         this.pendingTxtPromise.then(
           txtRecord => {
             if (this.pendingTxtPromise === null) {
