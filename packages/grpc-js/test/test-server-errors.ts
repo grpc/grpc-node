@@ -287,6 +287,98 @@ describe('Server serialization failure handling', () => {
   });
 });
 
+describe('Cardinality violations', () => {
+  let client: ServiceClient;
+  let server: Server;
+  let responseCount: number = 1;
+  const testMessage = Buffer.from([]);
+  before(done => {
+    const serverServiceDefinition = {
+      testMethod: {
+        path: '/TestService/TestMethod/',
+        requestStream: false,
+        responseStream: true,
+        requestSerialize: identity,
+        requestDeserialize: identity,
+        responseDeserialize: identity,
+        responseSerialize: identity
+      }
+    };
+    const clientServiceDefinition = {
+      testMethod: {
+        path: '/TestService/TestMethod/',
+        requestStream: true,
+        responseStream: false,
+        requestSerialize: identity,
+        requestDeserialize: identity,
+        responseDeserialize: identity,
+        responseSerialize: identity
+      }
+    };
+    const TestClient = grpc.makeClientConstructor(clientServiceDefinition, 'TestService');
+    server = new grpc.Server();
+    server.addService(serverServiceDefinition, {
+      testMethod(stream: ServerWritableStream<any, any>) {
+        for (let i = 0; i < responseCount; i++) {
+          stream.write(testMessage);
+        }
+        stream.end();
+      }
+    });
+    server.bindAsync('localhost:0', serverInsecureCreds, (error, port) => {
+      assert.ifError(error);
+      client = new TestClient(`localhost:${port}`, clientInsecureCreds);
+      done();
+    });
+  });
+  beforeEach(() => {
+    responseCount = 1;
+  });
+  after(done => {
+    client.close();
+    server.tryShutdown(done);
+  });
+  it('Should fail if the client sends too few messages', done => {
+    const call = client.testMethod((err: ServiceError, data: any) => {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
+      done();
+    });
+    call.end();
+  });
+  it('Should fail if the client sends too many messages', done => {
+    const call = client.testMethod((err: ServiceError, data: any) => {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
+      done();
+    });
+    call.write(testMessage);
+    call.write(testMessage);
+    call.end();
+  });
+  it('Should fail if the server sends too few messages', done => {
+    responseCount = 0;
+    const call = client.testMethod((err: ServiceError, data: any) => {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
+      done();
+    });
+    call.write(testMessage);
+    call.end();
+  });
+  it('Should fail if the server sends too many messages', done => {
+    responseCount = 2;
+    const call = client.testMethod((err: ServiceError, data: any) => {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
+      done();
+    });
+    call.write(testMessage);
+    call.end();
+  });
+
+});
+
 describe('Other conditions', () => {
   let client: ServiceClient;
   let server: Server;
