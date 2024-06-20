@@ -21,7 +21,7 @@ import { WriteObject, WriteFlags } from './call-interface';
 import { Channel } from './channel';
 import { ChannelOptions } from './channel-options';
 import { CompressionAlgorithms } from './compression-algorithms';
-import { DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH, LogVerbosity, Status } from './constants';
+import { DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH, DEFAULT_MAX_SEND_MESSAGE_LENGTH, LogVerbosity, Status } from './constants';
 import { BaseFilter, Filter, FilterFactory } from './filter';
 import * as logging from './logging';
 import { Metadata, MetadataValue } from './metadata';
@@ -219,6 +219,7 @@ export class CompressionFilter extends BaseFilter implements Filter {
   private receiveCompression: CompressionHandler = new IdentityHandler();
   private currentCompressionAlgorithm: CompressionAlgorithm = 'identity';
   private maxReceiveMessageLength: number;
+  private maxSendMessageLength: number;
 
   constructor(
     channelOptions: ChannelOptions,
@@ -228,7 +229,8 @@ export class CompressionFilter extends BaseFilter implements Filter {
 
     const compressionAlgorithmKey =
       channelOptions['grpc.default_compression_algorithm'];
-    this.maxReceiveMessageLength = channelOptions['grpc.max_receive_message_length'] ?? DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH
+    this.maxReceiveMessageLength = channelOptions['grpc.max_receive_message_length'] ?? DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH;
+    this.maxSendMessageLength = channelOptions['grpc.max_send_message_length'] ?? DEFAULT_MAX_SEND_MESSAGE_LENGTH;
     if (compressionAlgorithmKey !== undefined) {
       if (isCompressionAlgorithmKey(compressionAlgorithmKey)) {
         const clientSelectedEncoding = CompressionAlgorithms[
@@ -314,6 +316,12 @@ export class CompressionFilter extends BaseFilter implements Filter {
      * and the output is a framed and possibly compressed message. For this
      * reason, this filter should be at the bottom of the filter stack */
     const resolvedMessage: WriteObject = await message;
+    if (this.maxSendMessageLength !== -1 && resolvedMessage.message.length > this.maxSendMessageLength) {
+      throw {
+        code: Status.RESOURCE_EXHAUSTED,
+        details: `Attempted to send message with a size larger than ${this.maxSendMessageLength}`
+      };
+    }
     let compress: boolean;
     if (this.sendCompression instanceof IdentityHandler) {
       compress = false;
