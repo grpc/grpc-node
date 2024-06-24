@@ -9,7 +9,7 @@ for general contribution guidelines.
 
 ## Maintainers (in alphabetical order)
 
- - [gnossen](https://github.com/gnossen), Google In
+ - [gnossen](https://github.com/gnossen), Google Inc.
  - [murgatroid99](https://github.com/murgatroid99), Google Inc.
  - [sergiitk](https://github.com/sergiitk), Google Inc.
  - [temawi](https://github.com/temawi), Google Inc.
