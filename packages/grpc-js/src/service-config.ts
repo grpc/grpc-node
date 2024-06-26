@@ -143,7 +143,7 @@ function validateRetryPolicy(obj: any): RetryPolicy {
     !DURATION_REGEX.test(obj.initialBackoff)
   ) {
     throw new Error(
-      'Invalid method config retry policy: initialBackoff must be a string consisting of a positive integer followed by s'
+      'Invalid method config retry policy: initialBackoff must be a string consisting of a positive integer or decimal followed by s'
     );
   }
   if (
@@ -152,7 +152,7 @@ function validateRetryPolicy(obj: any): RetryPolicy {
     !DURATION_REGEX.test(obj.maxBackoff)
   ) {
     throw new Error(
-      'Invalid method config retry policy: maxBackoff must be a string consisting of a positive integer followed by s'
+      'Invalid method config retry policy: maxBackoff must be a string consisting of a positive integer or decimal followed by s'
     );
   }
   if (
@@ -228,18 +228,18 @@ function validateHedgingPolicy(obj: any): HedgingPolicy {
       if (typeof value === 'number') {
         if (!Object.values(Status).includes(value)) {
           throw new Error(
-            'Invlid method config hedging policy: nonFatalStatusCodes value not in status code range'
+            'Invalid method config hedging policy: nonFatalStatusCodes value not in status code range'
           );
         }
       } else if (typeof value === 'string') {
         if (!Object.values(Status).includes(value.toUpperCase())) {
           throw new Error(
-            'Invlid method config hedging policy: nonFatalStatusCodes value not a status code name'
+            'Invalid method config hedging policy: nonFatalStatusCodes value not a status code name'
           );
         }
       } else {
         throw new Error(
-          'Invlid method config hedging policy: nonFatalStatusCodes value must be a string or number'
+          'Invalid method config hedging policy: nonFatalStatusCodes value must be a string or number'
         );
       }
     }
