@@ -297,15 +297,21 @@ class DnsResolver implements Resolver {
 
   private async lookup(hostname: string): Promise<TcpSubchannelAddress[]> {
     if (process.env[DNS_RESOLUTION_ENV] === 'true') {
-      const records = await this.independentResolver.resolveAny(hostname);
-      const addressList = records.filter(addr => {
-        addr.type === 'A' || addr.type === 'AAAA';
-      }) as unknown as { address: string }[];
+      const records = await Promise.allSettled([
+        this.independentResolver.resolve4(hostname),
+        this.independentResolver.resolve6(hostname),
+      ]);
 
-      return addressList.map(addr => ({
-        host: addr.address,
-        port: +this.port!,
-      }));
+      return records
+        .reduce<string[]>((acc, result) => {
+          return result.status === 'fulfilled'
+            ? [...acc, ...result.value]
+            : acc;
+        }, [])
+        .map(addr => ({
+          host: addr,
+          port: +this.port!,
+        }));
     }
 
     /* We lookup both address families here and then split them up later
