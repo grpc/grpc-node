@@ -15,7 +15,7 @@
  *
  */
 
-import { SubchannelRef } from './channelz';
+import type { SubchannelRef } from './channelz';
 import { ConnectivityState } from './connectivity-state';
 import { Subchannel } from './subchannel';
 

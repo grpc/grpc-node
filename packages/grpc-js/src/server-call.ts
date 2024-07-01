@@ -18,15 +18,13 @@
 import { EventEmitter } from 'events';
 import { Duplex, Readable, Writable } from 'stream';
 
-import {
-  Status,
-} from './constants';
-import { Deserialize, Serialize } from './make-client';
+import { Status } from './constants';
+import type { Deserialize, Serialize } from './make-client';
 import { Metadata } from './metadata';
-import { ObjectReadable, ObjectWritable } from './object-stream';
-import { StatusObject, PartialStatusObject } from './call-interface';
-import { Deadline } from './deadline';
-import { ServerInterceptingCallInterface } from './server-interceptors';
+import type { ObjectReadable, ObjectWritable } from './object-stream';
+import type { StatusObject, PartialStatusObject } from './call-interface';
+import type { Deadline } from './deadline';
+import type { ServerInterceptingCallInterface } from './server-interceptors';
 
 export type ServerStatusResponse = Partial<StatusObject>;
 
@@ -56,11 +54,14 @@ export type ServerDuplexStream<RequestType, ResponseType> = ServerSurfaceCall &
   ObjectReadable<RequestType> &
   ObjectWritable<ResponseType> & { end: (metadata?: Metadata) => void };
 
-export function serverErrorToStatus(error: ServerErrorResponse | ServerStatusResponse, overrideTrailers?: Metadata | undefined): PartialStatusObject {
+export function serverErrorToStatus(
+  error: ServerErrorResponse | ServerStatusResponse,
+  overrideTrailers?: Metadata | undefined
+): PartialStatusObject {
   const status: PartialStatusObject = {
     code: Status.UNKNOWN,
     details: 'message' in error ? error.message : 'Unknown Error',
-    metadata: overrideTrailers ?? error.metadata ?? null
+    metadata: overrideTrailers ?? error.metadata ?? null,
   };
 
   if (
@@ -154,7 +155,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
   private trailingMetadata: Metadata;
   private pendingStatus: PartialStatusObject = {
     code: Status.OK,
-    details: 'OK'
+    details: 'OK',
   };
 
   constructor(
@@ -199,11 +200,11 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
   }
 
   _final(callback: Function): void {
+    callback(null);
     this.call.sendStatus({
       ...this.pendingStatus,
       metadata: this.pendingStatus.metadata ?? this.trailingMetadata,
     });
-    callback(null);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -224,7 +225,7 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType>
   private trailingMetadata: Metadata;
   private pendingStatus: PartialStatusObject = {
     code: Status.OK,
-    details: 'OK'
+    details: 'OK',
   };
 
   constructor(
@@ -272,11 +273,11 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType>
   }
 
   _final(callback: Function): void {
+    callback(null);
     this.call.sendStatus({
       ...this.pendingStatus,
       metadata: this.pendingStatus.metadata ?? this.trailingMetadata,
     });
-    callback(null);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -329,7 +330,7 @@ export interface UnaryHandler<RequestType, ResponseType> {
   func: handleUnaryCall<RequestType, ResponseType>;
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
-  type: HandlerType;
+  type: 'unary';
   path: string;
 }
 
@@ -337,7 +338,7 @@ export interface ClientStreamingHandler<RequestType, ResponseType> {
   func: handleClientStreamingCall<RequestType, ResponseType>;
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
-  type: HandlerType;
+  type: 'clientStream';
   path: string;
 }
 
@@ -345,7 +346,7 @@ export interface ServerStreamingHandler<RequestType, ResponseType> {
   func: handleServerStreamingCall<RequestType, ResponseType>;
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
-  type: HandlerType;
+  type: 'serverStream';
   path: string;
 }
 
@@ -353,7 +354,7 @@ export interface BidiStreamingHandler<RequestType, ResponseType> {
   func: handleBidiStreamingCall<RequestType, ResponseType>;
   serialize: Serialize<ResponseType>;
   deserialize: Deserialize<RequestType>;
-  type: HandlerType;
+  type: 'bidi';
   path: string;
 }
 

@@ -15,7 +15,7 @@
  *
  */
 
-import { loadPackageDefinition, sendUnaryData, Server, ServerCredentials, ServerUnaryCall, UntypedServiceImplementation } from "@grpc/grpc-js";
+import { loadPackageDefinition, sendUnaryData, Server, ServerCredentials, ServerOptions, ServerUnaryCall, UntypedServiceImplementation } from "@grpc/grpc-js";
 import { loadSync } from "@grpc/proto-loader";
 import { ProtoGrpcType } from "./generated/echo";
 import { EchoRequest__Output } from "./generated/grpc/testing/EchoRequest";
@@ -49,7 +49,7 @@ export class Backend {
   private server: Server | null = null;
   private receivedCallCount = 0;
   private callListeners: (() => void)[] = [];
-  constructor(private port: number, private useXdsServer: boolean) {
+  constructor(private port: number, private useXdsServer: boolean, private serverOptions?: ServerOptions) {
   }
   Echo(call: ServerUnaryCall<EchoRequest__Output, EchoResponse>, callback: sendUnaryData<EchoResponse>) {
     // call.request.params is currently ignored
@@ -83,7 +83,7 @@ export class Backend {
       throw new Error("Backend already running");
     }
     if (this.useXdsServer) {
-      this.server = new XdsServer({[BOOTSTRAP_CONFIG_KEY]: controlPlaneServer.getBootstrapInfoString()});
+      this.server = new XdsServer({...this.serverOptions, [BOOTSTRAP_CONFIG_KEY]: controlPlaneServer.getBootstrapInfoString()});
     } else {
       this.server = new Server();
     }
@@ -145,7 +145,7 @@ export class Backend {
   }
 }
 
-export async function createBackends(count: number, useXdsServer?: boolean): Promise<Backend[]> {
+export async function createBackends(count: number, useXdsServer?: boolean, serverOptions?: ServerOptions): Promise<Backend[]> {
   const ports = await findFreePorts(count);
-  return ports.map(port => new Backend(port, useXdsServer ?? true));
+  return ports.map(port => new Backend(port, useXdsServer ?? true, serverOptions));
 }

@@ -78,6 +78,7 @@ export interface Node {
    * for filtering :ref:`listeners <config_listeners>` to be returned. For example,
    * if there is a listener bound to port 80, the list can optionally contain the
    * SocketAddress ``(0.0.0.0,80)``. The field is optional and just a hint.
+   * @deprecated
    */
   'listening_addresses'?: (_envoy_config_core_v3_Address)[];
   /**
@@ -162,6 +163,7 @@ export interface Node__Output {
    * for filtering :ref:`listeners <config_listeners>` to be returned. For example,
    * if there is a listener bound to port 80, the list can optionally contain the
    * SocketAddress ``(0.0.0.0,80)``. The field is optional and just a hint.
+   * @deprecated
    */
   'listening_addresses': (_envoy_config_core_v3_Address__Output)[];
   /**

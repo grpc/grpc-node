@@ -5,12 +5,21 @@ import type { FractionalPercent as _envoy_type_v3_FractionalPercent, FractionalP
 
 // Original file: deps/envoy-api/envoy/extensions/filters/common/fault/v3/fault.proto
 
-export enum _envoy_extensions_filters_common_fault_v3_FaultDelay_FaultDelayType {
+export const _envoy_extensions_filters_common_fault_v3_FaultDelay_FaultDelayType = {
   /**
    * Unused and deprecated.
    */
-  FIXED = 0,
-}
+  FIXED: 'FIXED',
+} as const;
+
+export type _envoy_extensions_filters_common_fault_v3_FaultDelay_FaultDelayType =
+  /**
+   * Unused and deprecated.
+   */
+  | 'FIXED'
+  | 0
+
+export type _envoy_extensions_filters_common_fault_v3_FaultDelay_FaultDelayType__Output = typeof _envoy_extensions_filters_common_fault_v3_FaultDelay_FaultDelayType[keyof typeof _envoy_extensions_filters_common_fault_v3_FaultDelay_FaultDelayType]
 
 /**
  * Fault delays are controlled via an HTTP header (if applicable). See the

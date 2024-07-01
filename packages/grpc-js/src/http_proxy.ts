@@ -80,7 +80,7 @@ function getProxyInfo(): ProxyInfo {
   if (proxyUrl.username) {
     if (proxyUrl.password) {
       log(LogVerbosity.INFO, 'userinfo found in proxy URI');
-      userCred = `${proxyUrl.username}:${proxyUrl.password}`;
+      userCred = decodeURIComponent(`${proxyUrl.username}:${proxyUrl.password}`);
     } else {
       userCred = proxyUrl.username;
     }
@@ -233,6 +233,12 @@ export function getProxiedConnection(
             ' through proxy ' +
             proxyAddressString
         );
+        // The HTTP client may have already read a few bytes of the proxied
+        // connection. If that's the case, put them back into the socket.
+        // See https://github.com/grpc/grpc-node/issues/2744.
+        if (head.length > 0) {
+          socket.unshift(head);
+        }
         if ('secureContext' in connectionOptions) {
           /* The proxy is connecting to a TLS server, so upgrade this socket
            * connection to a TLS connection.

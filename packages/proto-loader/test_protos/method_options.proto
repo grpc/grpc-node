@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/httpbody.proto";
+
+message Empty {}
+
+message MethodSignature {
+  repeated string method_signature = 1;
+}
+
+service Hello {
+  rpc Hello (Empty) returns (Empty) {
+    option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option uninterpreted_option = {
+      name: {
+        name_part: 'foo'
+        is_extension:  false
+      }
+      identifier_value: 'bar'
+      positive_int_value: 9007199254740991
+      negative_int_value: -9007199254740991
+      double_value: 1.2345
+      string_value: 'foobar'
+      aggregate_value: 'foobar'
+    };
+    option (google.api.http) = {
+      post: "/hello"
+      body: "*"
+      response_body: "*"
+      additional_bindings: {}
+    };
+    option (google.api.method_signature) = 'bar';
+  }
+  rpc HelloWithoutOptions (Empty) returns (Empty) {}
+  rpc HelloWithSomeOptions (Empty) returns (Empty) {
+    option deprecated = true;
+    option (google.api.http) = {
+      get: "/hello"
+      additional_bindings: {
+        get: "/hello-world"
+        body: "*"
+      }
+    };
+  }
+}

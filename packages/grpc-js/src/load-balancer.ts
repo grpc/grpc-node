@@ -19,7 +19,7 @@ import { ChannelOptions } from './channel-options';
 import { Endpoint, SubchannelAddress } from './subchannel-address';
 import { ConnectivityState } from './connectivity-state';
 import { Picker } from './picker';
-import { ChannelRef, SubchannelRef } from './channelz';
+import type { ChannelRef, SubchannelRef } from './channelz';
 import { SubchannelInterface } from './subchannel-interface';
 import { LoadBalancingConfig } from './service-config';
 import { log } from './logging';

@@ -8,17 +8,21 @@ See [CONTRIBUTING.md](https://github.com/grpc/grpc-community/blob/master/CONTRIB
 for general contribution guidelines.
 
 ## Maintainers (in alphabetical order)
- 
- - [jtattermusch](https://github.com/jtattermusch), Google Inc.
+
+ - [gnossen](https://github.com/gnossen), Google Inc.
  - [murgatroid99](https://github.com/murgatroid99), Google Inc.
- - [nicolasnoble](https://github.com/nicolasnoble), Google Inc.
- - [srini100](https://github.com/srini100), Google Inc.
+ - [sergiitk](https://github.com/sergiitk), Google Inc.
+ - [temawi](https://github.com/temawi), Google Inc.
  - [wenbozhu](https://github.com/wenbozhu), Google Inc.
 
  ## Emeritus Maintainers (in alphabetical order)
- - [jiangtaoli2016](https://github.com/jiangtaoli2016), Google Inc.
- - [kjin](https://github.com/kjin), Google Inc.
- - [matt-kwong](https://github.com/matt-kwong), Google Inc.
- - [ofrobots](https://github.com/ofrobots), Google Inc.
- - [WeiranFang](https://github.com/WeiranFang), Google Inc.
+ - [jiangtaoli2016](https://github.com/jiangtaoli2016)
+ - [jtattermusch](https://github.com/jtattermusch)
+ - [kjin](https://github.com/kjin)
+ - [matt-kwong](https://github.com/matt-kwong)
+ - [nicolasnoble](https://github.com/nicolasnoble)
+ - [nimf](https://github.com/nimf)
+ - [ofrobots](https://github.com/ofrobots)
+ - [srini100](https://github.com/srini100)
+ - [WeiranFang](https://github.com/WeiranFang)
  

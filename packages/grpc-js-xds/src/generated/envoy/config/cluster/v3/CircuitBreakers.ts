@@ -1,6 +1,6 @@
 // Original file: deps/envoy-api/envoy/config/cluster/v3/circuit_breaker.proto
 
-import type { RoutingPriority as _envoy_config_core_v3_RoutingPriority } from '../../../../envoy/config/core/v3/RoutingPriority';
+import type { RoutingPriority as _envoy_config_core_v3_RoutingPriority, RoutingPriority__Output as _envoy_config_core_v3_RoutingPriority__Output } from '../../../../envoy/config/core/v3/RoutingPriority';
 import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 import type { Percent as _envoy_type_v3_Percent, Percent__Output as _envoy_type_v3_Percent__Output } from '../../../../envoy/type/v3/Percent';
 
@@ -50,7 +50,7 @@ export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds {
    * The :ref:`RoutingPriority<envoy_v3_api_enum_config.core.v3.RoutingPriority>`
    * the specified CircuitBreaker settings apply to.
    */
-  'priority'?: (_envoy_config_core_v3_RoutingPriority | keyof typeof _envoy_config_core_v3_RoutingPriority);
+  'priority'?: (_envoy_config_core_v3_RoutingPriority);
   /**
    * The maximum number of connections that Envoy will make to the upstream
    * cluster. If not specified, the default is 1024.
@@ -114,7 +114,7 @@ export interface _envoy_config_cluster_v3_CircuitBreakers_Thresholds__Output {
    * The :ref:`RoutingPriority<envoy_v3_api_enum_config.core.v3.RoutingPriority>`
    * the specified CircuitBreaker settings apply to.
    */
-  'priority': (keyof typeof _envoy_config_core_v3_RoutingPriority);
+  'priority': (_envoy_config_core_v3_RoutingPriority__Output);
   /**
    * The maximum number of connections that Envoy will make to the upstream
    * cluster. If not specified, the default is 1024.

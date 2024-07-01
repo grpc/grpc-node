@@ -184,7 +184,7 @@ export {
   ServiceDefinition,
   UntypedHandleCall,
   UntypedServiceImplementation,
-  VerifyOptions
+  VerifyOptions,
 };
 
 /**** Server ****/
@@ -264,7 +264,12 @@ export { getChannelzServiceDefinition, getChannelzHandlers } from './channelz';
 
 export { addAdminServicesToServer } from './admin';
 
-export { ServiceConfig, LoadBalancingConfig, MethodConfig, RetryPolicy } from './service-config';
+export {
+  ServiceConfig,
+  LoadBalancingConfig,
+  MethodConfig,
+  RetryPolicy,
+} from './service-config';
 
 export {
   ServerListener,
@@ -275,7 +280,7 @@ export {
   ResponderBuilder,
   ServerInterceptingCallInterface,
   ServerInterceptingCall,
-  ServerInterceptor
+  ServerInterceptor,
 } from './server-interceptors';
 
 import * as experimental from './experimental';

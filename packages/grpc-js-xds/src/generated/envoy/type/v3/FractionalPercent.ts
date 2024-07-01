@@ -6,26 +6,57 @@
 /**
  * Fraction percentages support several fixed denominator values.
  */
-export enum _envoy_type_v3_FractionalPercent_DenominatorType {
+export const _envoy_type_v3_FractionalPercent_DenominatorType = {
   /**
    * 100.
    * 
    * **Example**: 1/100 = 1%.
    */
-  HUNDRED = 0,
+  HUNDRED: 'HUNDRED',
   /**
    * 10,000.
    * 
    * **Example**: 1/10000 = 0.01%.
    */
-  TEN_THOUSAND = 1,
+  TEN_THOUSAND: 'TEN_THOUSAND',
   /**
    * 1,000,000.
    * 
    * **Example**: 1/1000000 = 0.0001%.
    */
-  MILLION = 2,
-}
+  MILLION: 'MILLION',
+} as const;
+
+/**
+ * Fraction percentages support several fixed denominator values.
+ */
+export type _envoy_type_v3_FractionalPercent_DenominatorType =
+  /**
+   * 100.
+   * 
+   * **Example**: 1/100 = 1%.
+   */
+  | 'HUNDRED'
+  | 0
+  /**
+   * 10,000.
+   * 
+   * **Example**: 1/10000 = 0.01%.
+   */
+  | 'TEN_THOUSAND'
+  | 1
+  /**
+   * 1,000,000.
+   * 
+   * **Example**: 1/1000000 = 0.0001%.
+   */
+  | 'MILLION'
+  | 2
+
+/**
+ * Fraction percentages support several fixed denominator values.
+ */
+export type _envoy_type_v3_FractionalPercent_DenominatorType__Output = typeof _envoy_type_v3_FractionalPercent_DenominatorType[keyof typeof _envoy_type_v3_FractionalPercent_DenominatorType]
 
 /**
  * A fractional percentage is used in cases in which for performance reasons performing floating
@@ -44,7 +75,7 @@ export interface FractionalPercent {
    * Specifies the denominator. If the denominator specified is less than the numerator, the final
    * fractional percentage is capped at 1 (100%).
    */
-  'denominator'?: (_envoy_type_v3_FractionalPercent_DenominatorType | keyof typeof _envoy_type_v3_FractionalPercent_DenominatorType);
+  'denominator'?: (_envoy_type_v3_FractionalPercent_DenominatorType);
 }
 
 /**
@@ -64,5 +95,5 @@ export interface FractionalPercent__Output {
    * Specifies the denominator. If the denominator specified is less than the numerator, the final
    * fractional percentage is capped at 1 (100%).
    */
-  'denominator': (keyof typeof _envoy_type_v3_FractionalPercent_DenominatorType);
+  'denominator': (_envoy_type_v3_FractionalPercent_DenominatorType__Output);
 }

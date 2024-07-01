@@ -3,7 +3,6 @@
 import type { Int64Range as _envoy_type_v3_Int64Range, Int64Range__Output as _envoy_type_v3_Int64Range__Output } from '../../../../envoy/type/v3/Int64Range';
 import type { RegexMatcher as _envoy_type_matcher_v3_RegexMatcher, RegexMatcher__Output as _envoy_type_matcher_v3_RegexMatcher__Output } from '../../../../envoy/type/matcher/v3/RegexMatcher';
 import type { StringMatcher as _envoy_type_matcher_v3_StringMatcher, StringMatcher__Output as _envoy_type_matcher_v3_StringMatcher__Output } from '../../../../envoy/type/matcher/v3/StringMatcher';
-import type { Long } from '@grpc/proto-loader';
 
 /**
  * .. attention::
@@ -42,6 +41,7 @@ export interface HeaderMatcher {
   /**
    * If specified, header match will be performed based on the value of the header.
    * This field is deprecated. Please use :ref:`string_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.string_match>`.
+   * @deprecated
    */
   'exact_match'?: (string);
   /**
@@ -80,6 +80,7 @@ export interface HeaderMatcher {
    * Examples:
    * 
    * * The prefix ``abcd`` matches the value ``abcdxyz``, but not for ``abcxyz``.
+   * @deprecated
    */
   'prefix_match'?: (string);
   /**
@@ -90,6 +91,7 @@ export interface HeaderMatcher {
    * Examples:
    * 
    * * The suffix ``abcd`` matches the value ``xyzabcd``, but not for ``xyzbcd``.
+   * @deprecated
    */
   'suffix_match'?: (string);
   /**
@@ -97,6 +99,7 @@ export interface HeaderMatcher {
    * header value must match the regex. The rule will not match if only a subsequence of the
    * request header value matches the regex.
    * This field is deprecated. Please use :ref:`string_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.string_match>`.
+   * @deprecated
    */
   'safe_regex_match'?: (_envoy_type_matcher_v3_RegexMatcher | null);
   /**
@@ -108,6 +111,7 @@ export interface HeaderMatcher {
    * Examples:
    * 
    * * The value ``abcd`` matches the value ``xyzabcdpqr``, but not for ``xyzbcdpqr``.
+   * @deprecated
    */
   'contains_match'?: (string);
   /**
@@ -186,6 +190,7 @@ export interface HeaderMatcher__Output {
   /**
    * If specified, header match will be performed based on the value of the header.
    * This field is deprecated. Please use :ref:`string_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.string_match>`.
+   * @deprecated
    */
   'exact_match'?: (string);
   /**
@@ -224,6 +229,7 @@ export interface HeaderMatcher__Output {
    * Examples:
    * 
    * * The prefix ``abcd`` matches the value ``abcdxyz``, but not for ``abcxyz``.
+   * @deprecated
    */
   'prefix_match'?: (string);
   /**
@@ -234,6 +240,7 @@ export interface HeaderMatcher__Output {
    * Examples:
    * 
    * * The suffix ``abcd`` matches the value ``xyzabcd``, but not for ``xyzbcd``.
+   * @deprecated
    */
   'suffix_match'?: (string);
   /**
@@ -241,6 +248,7 @@ export interface HeaderMatcher__Output {
    * header value must match the regex. The rule will not match if only a subsequence of the
    * request header value matches the regex.
    * This field is deprecated. Please use :ref:`string_match <envoy_v3_api_field_config.route.v3.HeaderMatcher.string_match>`.
+   * @deprecated
    */
   'safe_regex_match'?: (_envoy_type_matcher_v3_RegexMatcher__Output | null);
   /**
@@ -252,6 +260,7 @@ export interface HeaderMatcher__Output {
    * Examples:
    * 
    * * The value ``abcd`` matches the value ``xyzabcdpqr``, but not for ``xyzbcdpqr``.
+   * @deprecated
    */
   'contains_match'?: (string);
   /**

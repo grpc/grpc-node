@@ -7,7 +7,7 @@ import type { Duration as _google_protobuf_Duration, Duration__Output as _google
 import type { ResponseFlags as _envoy_data_accesslog_v3_ResponseFlags, ResponseFlags__Output as _envoy_data_accesslog_v3_ResponseFlags__Output } from '../../../../envoy/data/accesslog/v3/ResponseFlags';
 import type { Metadata as _envoy_config_core_v3_Metadata, Metadata__Output as _envoy_config_core_v3_Metadata__Output } from '../../../../envoy/config/core/v3/Metadata';
 import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
-import type { AccessLogType as _envoy_data_accesslog_v3_AccessLogType } from '../../../../envoy/data/accesslog/v3/AccessLogType';
+import type { AccessLogType as _envoy_data_accesslog_v3_AccessLogType, AccessLogType__Output as _envoy_data_accesslog_v3_AccessLogType__Output } from '../../../../envoy/data/accesslog/v3/AccessLogType';
 import type { Long } from '@grpc/proto-loader';
 
 /**
@@ -176,6 +176,7 @@ export interface AccessLogCommon {
    * 
    * This field is deprecated in favor of ``access_log_type`` for better indication of the
    * type of the access log record.
+   * @deprecated
    */
   'intermediate_log_entry'?: (boolean);
   /**
@@ -212,7 +213,7 @@ export interface AccessLogCommon {
    * For more information about how access log behaves and when it is being recorded,
    * please refer to :ref:`access logging <arch_overview_access_logs>`.
    */
-  'access_log_type'?: (_envoy_data_accesslog_v3_AccessLogType | keyof typeof _envoy_data_accesslog_v3_AccessLogType);
+  'access_log_type'?: (_envoy_data_accesslog_v3_AccessLogType);
 }
 
 /**
@@ -381,6 +382,7 @@ export interface AccessLogCommon__Output {
    * 
    * This field is deprecated in favor of ``access_log_type`` for better indication of the
    * type of the access log record.
+   * @deprecated
    */
   'intermediate_log_entry': (boolean);
   /**
@@ -417,5 +419,5 @@ export interface AccessLogCommon__Output {
    * For more information about how access log behaves and when it is being recorded,
    * please refer to :ref:`access logging <arch_overview_access_logs>`.
    */
-  'access_log_type': (keyof typeof _envoy_data_accesslog_v3_AccessLogType);
+  'access_log_type': (_envoy_data_accesslog_v3_AccessLogType__Output);
 }

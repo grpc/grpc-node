@@ -20,6 +20,7 @@ import { rpcFileDescriptorSet } from '../test_protos/rpc.desc';
 import { readFileSync } from 'fs';
 
 import * as proto_loader from '../src/index';
+import { dirname } from 'path';
 
 // Relative path from build output directory to test_protos directory
 const TEST_PROTO_DIR = `${__dirname}/../../test_protos/`;
@@ -128,4 +129,53 @@ describe('Descriptor types', () => {
     // This will throw if the file descriptor object cannot be parsed
     proto_loader.loadFileDescriptorSetFromObject(rpcFileDescriptorSet);
   });
+
+  it('Can parse method options into object correctly', () => {
+    const includeDirs = [
+      dirname(require.resolve('google-proto-files/package.json'))
+    ];
+    const packageDefinition = proto_loader.loadSync(`${TEST_PROTO_DIR}/method_options.proto`, { includeDirs });
+    assert('Hello' in packageDefinition);
+    const service = packageDefinition.Hello as proto_loader.ServiceDefinition
+    assert.deepStrictEqual(service.Hello.options, {
+      deprecated: true,
+      idempotency_level: 'NO_SIDE_EFFECTS',
+      uninterpreted_option: [{
+        name: {
+          name_part: 'foo',
+          is_extension: false,
+        },
+        identifier_value: 'bar',
+        positive_int_value: 9007199254740991,
+        negative_int_value: -9007199254740991,
+        double_value: 1.2345,
+        string_value: 'foobar',
+        aggregate_value: 'foobar'
+      }],
+      '(google.api.http)': {
+        post: '/hello',
+        body: '*',
+        response_body: '*',
+        additional_bindings: {}
+      },
+      '(google.api.method_signature)': 'bar'
+    })
+    assert.deepStrictEqual(service.HelloWithoutOptions.options, {
+      deprecated: false,
+      idempotency_level: 'IDEMPOTENCY_UNKNOWN',
+      uninterpreted_option: []
+    })
+    assert.deepStrictEqual(service.HelloWithSomeOptions.options, {
+      deprecated: true,
+      idempotency_level: 'IDEMPOTENCY_UNKNOWN',
+      uninterpreted_option: [],
+      '(google.api.http)': {
+        get: '/hello',
+        additional_bindings: {
+          body: '*',
+          get: '/hello-world'
+        }
+      },
+    })
+  })
 });

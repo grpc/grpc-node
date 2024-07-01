@@ -222,6 +222,7 @@ export interface WeightedCluster {
    * value, if this is greater than 0.
    * This field is now deprecated, and the client will use the sum of all
    * cluster weights. It is up to the management server to supply the correct weights.
+   * @deprecated
    */
   'total_weight'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -264,6 +265,7 @@ export interface WeightedCluster__Output {
    * value, if this is greater than 0.
    * This field is now deprecated, and the client will use the sum of all
    * cluster weights. It is up to the management server to supply the correct weights.
+   * @deprecated
    */
   'total_weight': (_google_protobuf_UInt32Value__Output | null);
   /**

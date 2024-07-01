@@ -1,7 +1,7 @@
 // Original file: proto/grpc/testing/messages.proto
 
 import type { Payload as _grpc_testing_Payload, Payload__Output as _grpc_testing_Payload__Output } from '../../grpc/testing/Payload';
-import type { GrpclbRouteType as _grpc_testing_GrpclbRouteType } from '../../grpc/testing/GrpclbRouteType';
+import type { GrpclbRouteType as _grpc_testing_GrpclbRouteType, GrpclbRouteType__Output as _grpc_testing_GrpclbRouteType__Output } from '../../grpc/testing/GrpclbRouteType';
 
 /**
  * Unary response, as configured by the request.
@@ -10,7 +10,7 @@ export interface SimpleResponse {
   /**
    * Payload to increase message size.
    */
-  'payload'?: (_grpc_testing_Payload);
+  'payload'?: (_grpc_testing_Payload | null);
   /**
    * The user the request came from, for verifying authentication was
    * successful when the client expected it.
@@ -28,7 +28,7 @@ export interface SimpleResponse {
   /**
    * gRPCLB Path.
    */
-  'grpclb_route_type'?: (_grpc_testing_GrpclbRouteType | keyof typeof _grpc_testing_GrpclbRouteType);
+  'grpclb_route_type'?: (_grpc_testing_GrpclbRouteType);
   /**
    * Server hostname.
    */
@@ -42,7 +42,7 @@ export interface SimpleResponse__Output {
   /**
    * Payload to increase message size.
    */
-  'payload'?: (_grpc_testing_Payload__Output);
+  'payload': (_grpc_testing_Payload__Output | null);
   /**
    * The user the request came from, for verifying authentication was
    * successful when the client expected it.
@@ -60,7 +60,7 @@ export interface SimpleResponse__Output {
   /**
    * gRPCLB Path.
    */
-  'grpclb_route_type': (keyof typeof _grpc_testing_GrpclbRouteType);
+  'grpclb_route_type': (_grpc_testing_GrpclbRouteType__Output);
   /**
    * Server hostname.
    */

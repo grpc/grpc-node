@@ -9,7 +9,7 @@ export interface StreamingOutputCallResponse {
   /**
    * Payload to increase response size.
    */
-  'payload'?: (_grpc_testing_Payload);
+  'payload'?: (_grpc_testing_Payload | null);
 }
 
 /**
@@ -19,5 +19,5 @@ export interface StreamingOutputCallResponse__Output {
   /**
    * Payload to increase response size.
    */
-  'payload'?: (_grpc_testing_Payload__Output);
+  'payload': (_grpc_testing_Payload__Output | null);
 }

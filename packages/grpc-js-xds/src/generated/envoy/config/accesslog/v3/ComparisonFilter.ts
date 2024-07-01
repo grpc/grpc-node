@@ -4,20 +4,39 @@ import type { RuntimeUInt32 as _envoy_config_core_v3_RuntimeUInt32, RuntimeUInt3
 
 // Original file: deps/envoy-api/envoy/config/accesslog/v3/accesslog.proto
 
-export enum _envoy_config_accesslog_v3_ComparisonFilter_Op {
+export const _envoy_config_accesslog_v3_ComparisonFilter_Op = {
   /**
    * =
    */
-  EQ = 0,
+  EQ: 'EQ',
   /**
    * >=
    */
-  GE = 1,
+  GE: 'GE',
   /**
    * <=
    */
-  LE = 2,
-}
+  LE: 'LE',
+} as const;
+
+export type _envoy_config_accesslog_v3_ComparisonFilter_Op =
+  /**
+   * =
+   */
+  | 'EQ'
+  | 0
+  /**
+   * >=
+   */
+  | 'GE'
+  | 1
+  /**
+   * <=
+   */
+  | 'LE'
+  | 2
+
+export type _envoy_config_accesslog_v3_ComparisonFilter_Op__Output = typeof _envoy_config_accesslog_v3_ComparisonFilter_Op[keyof typeof _envoy_config_accesslog_v3_ComparisonFilter_Op]
 
 /**
  * Filter on an integer comparison.
@@ -26,7 +45,7 @@ export interface ComparisonFilter {
   /**
    * Comparison operator.
    */
-  'op'?: (_envoy_config_accesslog_v3_ComparisonFilter_Op | keyof typeof _envoy_config_accesslog_v3_ComparisonFilter_Op);
+  'op'?: (_envoy_config_accesslog_v3_ComparisonFilter_Op);
   /**
    * Value to compare against.
    */
@@ -40,7 +59,7 @@ export interface ComparisonFilter__Output {
   /**
    * Comparison operator.
    */
-  'op': (keyof typeof _envoy_config_accesslog_v3_ComparisonFilter_Op);
+  'op': (_envoy_config_accesslog_v3_ComparisonFilter_Op__Output);
   /**
    * Value to compare against.
    */

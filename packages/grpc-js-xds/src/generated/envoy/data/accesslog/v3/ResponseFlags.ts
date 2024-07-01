@@ -6,20 +6,37 @@
 /**
  * Reasons why the request was unauthorized
  */
-export enum _envoy_data_accesslog_v3_ResponseFlags_Unauthorized_Reason {
-  REASON_UNSPECIFIED = 0,
+export const _envoy_data_accesslog_v3_ResponseFlags_Unauthorized_Reason = {
+  REASON_UNSPECIFIED: 'REASON_UNSPECIFIED',
   /**
    * The request was denied by the external authorization service.
    */
-  EXTERNAL_SERVICE = 1,
-}
+  EXTERNAL_SERVICE: 'EXTERNAL_SERVICE',
+} as const;
+
+/**
+ * Reasons why the request was unauthorized
+ */
+export type _envoy_data_accesslog_v3_ResponseFlags_Unauthorized_Reason =
+  | 'REASON_UNSPECIFIED'
+  | 0
+  /**
+   * The request was denied by the external authorization service.
+   */
+  | 'EXTERNAL_SERVICE'
+  | 1
+
+/**
+ * Reasons why the request was unauthorized
+ */
+export type _envoy_data_accesslog_v3_ResponseFlags_Unauthorized_Reason__Output = typeof _envoy_data_accesslog_v3_ResponseFlags_Unauthorized_Reason[keyof typeof _envoy_data_accesslog_v3_ResponseFlags_Unauthorized_Reason]
 
 export interface _envoy_data_accesslog_v3_ResponseFlags_Unauthorized {
-  'reason'?: (_envoy_data_accesslog_v3_ResponseFlags_Unauthorized_Reason | keyof typeof _envoy_data_accesslog_v3_ResponseFlags_Unauthorized_Reason);
+  'reason'?: (_envoy_data_accesslog_v3_ResponseFlags_Unauthorized_Reason);
 }
 
 export interface _envoy_data_accesslog_v3_ResponseFlags_Unauthorized__Output {
-  'reason': (keyof typeof _envoy_data_accesslog_v3_ResponseFlags_Unauthorized_Reason);
+  'reason': (_envoy_data_accesslog_v3_ResponseFlags_Unauthorized_Reason__Output);
 }
 
 /**

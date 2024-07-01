@@ -1,6 +1,6 @@
 // Original file: deps/protoc-gen-validate/validate/validate.proto
 
-import type { KnownRegex as _validate_KnownRegex } from '../validate/KnownRegex';
+import type { KnownRegex as _validate_KnownRegex, KnownRegex__Output as _validate_KnownRegex__Output } from '../validate/KnownRegex';
 import type { Long } from '@grpc/proto-loader';
 
 /**
@@ -129,7 +129,7 @@ export interface StringRules {
   /**
    * WellKnownRegex specifies a common well known pattern defined as a regex.
    */
-  'well_known_regex'?: (_validate_KnownRegex | keyof typeof _validate_KnownRegex);
+  'well_known_regex'?: (_validate_KnownRegex);
   /**
    * This applies to regexes HTTP_HEADER_NAME and HTTP_HEADER_VALUE to enable
    * strict header validation.
@@ -271,7 +271,7 @@ export interface StringRules__Output {
   /**
    * WellKnownRegex specifies a common well known pattern defined as a regex.
    */
-  'well_known_regex'?: (keyof typeof _validate_KnownRegex);
+  'well_known_regex'?: (_validate_KnownRegex__Output);
   /**
    * This applies to regexes HTTP_HEADER_NAME and HTTP_HEADER_VALUE to enable
    * strict header validation.

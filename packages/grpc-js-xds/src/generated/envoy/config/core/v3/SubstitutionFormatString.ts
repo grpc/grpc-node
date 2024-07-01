@@ -29,6 +29,7 @@ export interface SubstitutionFormatString {
    * upstream connect error:503:path=/foo
    * 
    * Deprecated in favor of :ref:`text_format_source <envoy_v3_api_field_config.core.v3.SubstitutionFormatString.text_format_source>`. To migrate text format strings, use the :ref:`inline_string <envoy_v3_api_field_config.core.v3.DataSource.inline_string>` field.
+   * @deprecated
    */
   'text_format'?: (string);
   /**
@@ -130,6 +131,7 @@ export interface SubstitutionFormatString__Output {
    * upstream connect error:503:path=/foo
    * 
    * Deprecated in favor of :ref:`text_format_source <envoy_v3_api_field_config.core.v3.SubstitutionFormatString.text_format_source>`. To migrate text format strings, use the :ref:`inline_string <envoy_v3_api_field_config.core.v3.DataSource.inline_string>` field.
+   * @deprecated
    */
   'text_format'?: (string);
   /**

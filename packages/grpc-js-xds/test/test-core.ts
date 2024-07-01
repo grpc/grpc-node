@@ -100,4 +100,39 @@ describe('core xDS functionality', () => {
       }, reason => done(reason));
     }, reason => done(reason));
   });
+  it('should handle connections aging out', function(done) {
+    this.timeout(5000);
+    createBackends(1, true, {'grpc.max_connection_age_ms': 1000}).then(([backend]) => {
+      const serverRoute = new FakeServerRoute(backend.getPort(), 'serverRoute');
+      xdsServer.setRdsResource(serverRoute.getRouteConfiguration());
+      xdsServer.setLdsResource(serverRoute.getListener());
+      xdsServer.addResponseListener((typeUrl, responseState) => {
+        if (responseState.state === 'NACKED') {
+          client.stopCalls();
+          assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
+        }
+      });
+      const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [backend], locality:{region: 'region1'}}]);
+      const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
+      routeGroup.startAllBackends(xdsServer).then(() => {
+        xdsServer.setEdsResource(cluster.getEndpointConfig());
+        xdsServer.setCdsResource(cluster.getClusterConfig());
+        xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
+        xdsServer.setLdsResource(routeGroup.getListener());
+        const serverRoute = new FakeServerRoute(backend.getPort(), 'serverRoute');
+        xdsServer.setRdsResource(serverRoute.getRouteConfiguration());
+        xdsServer.setLdsResource(serverRoute.getListener());
+        client = XdsTestClient.createFromServer('listener1', xdsServer);
+        client.sendOneCall(error => {
+          assert.ifError(error);
+          // Make another call after the max_connection_age_ms expires
+          setTimeout(() => {
+            client.sendOneCall(error => {
+              done(error);
+            })
+          }, 1100);
+        });
+      }, reason => done(reason));
+    }, reason => done(reason));
+  })
 });

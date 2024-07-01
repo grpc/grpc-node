@@ -40,6 +40,7 @@ export interface _envoy_config_route_v3_RateLimit_Action {
    * 
    * .. attention::
    * This field has been deprecated in favor of the :ref:`metadata <envoy_v3_api_field_config.route.v3.RateLimit.Action.metadata>` field
+   * @deprecated
    */
   'dynamic_metadata'?: (_envoy_config_route_v3_RateLimit_Action_DynamicMetaData | null);
   /**
@@ -101,6 +102,7 @@ export interface _envoy_config_route_v3_RateLimit_Action__Output {
    * 
    * .. attention::
    * This field has been deprecated in favor of the :ref:`metadata <envoy_v3_api_field_config.route.v3.RateLimit.Action.metadata>` field
+   * @deprecated
    */
   'dynamic_metadata'?: (_envoy_config_route_v3_RateLimit_Action_DynamicMetaData__Output | null);
   /**
@@ -438,7 +440,7 @@ export interface _envoy_config_route_v3_RateLimit_Action_MetaData {
   /**
    * Source of metadata
    */
-  'source'?: (_envoy_config_route_v3_RateLimit_Action_MetaData_Source | keyof typeof _envoy_config_route_v3_RateLimit_Action_MetaData_Source);
+  'source'?: (_envoy_config_route_v3_RateLimit_Action_MetaData_Source);
   /**
    * If set to true, Envoy skips the descriptor while calling rate limiting service
    * when ``metadata_key`` is empty and ``default_value`` is not set. By default it skips calling the
@@ -474,7 +476,7 @@ export interface _envoy_config_route_v3_RateLimit_Action_MetaData__Output {
   /**
    * Source of metadata
    */
-  'source': (keyof typeof _envoy_config_route_v3_RateLimit_Action_MetaData_Source);
+  'source': (_envoy_config_route_v3_RateLimit_Action_MetaData_Source__Output);
   /**
    * If set to true, Envoy skips the descriptor while calling rate limiting service
    * when ``metadata_key`` is empty and ``default_value`` is not set. By default it skips calling the
@@ -643,16 +645,30 @@ export interface _envoy_config_route_v3_RateLimit_Action_RequestHeaders__Output 
 
 // Original file: deps/envoy-api/envoy/config/route/v3/route_components.proto
 
-export enum _envoy_config_route_v3_RateLimit_Action_MetaData_Source {
+export const _envoy_config_route_v3_RateLimit_Action_MetaData_Source = {
   /**
    * Query :ref:`dynamic metadata <well_known_dynamic_metadata>`
    */
-  DYNAMIC = 0,
+  DYNAMIC: 'DYNAMIC',
   /**
    * Query :ref:`route entry metadata <envoy_v3_api_field_config.route.v3.Route.metadata>`
    */
-  ROUTE_ENTRY = 1,
-}
+  ROUTE_ENTRY: 'ROUTE_ENTRY',
+} as const;
+
+export type _envoy_config_route_v3_RateLimit_Action_MetaData_Source =
+  /**
+   * Query :ref:`dynamic metadata <well_known_dynamic_metadata>`
+   */
+  | 'DYNAMIC'
+  | 0
+  /**
+   * Query :ref:`route entry metadata <envoy_v3_api_field_config.route.v3.Route.metadata>`
+   */
+  | 'ROUTE_ENTRY'
+  | 1
+
+export type _envoy_config_route_v3_RateLimit_Action_MetaData_Source__Output = typeof _envoy_config_route_v3_RateLimit_Action_MetaData_Source[keyof typeof _envoy_config_route_v3_RateLimit_Action_MetaData_Source]
 
 /**
  * The following descriptor entry is appended to the descriptor:

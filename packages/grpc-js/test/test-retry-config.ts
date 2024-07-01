@@ -101,19 +101,19 @@ const RETRY_TEST_CASES: TestCase[] = [
       retryableStatusCodes: [14],
     },
     error:
-      /retry policy: initialBackoff must be a string consisting of a positive integer followed by s/,
+      /retry policy: initialBackoff must be a string consisting of a positive integer or decimal followed by s/,
   },
   {
     description: 'a non-numeric initialBackoff',
     config: { ...validRetryConfig, initialBackoff: 'abcs' },
     error:
-      /retry policy: initialBackoff must be a string consisting of a positive integer followed by s/,
+      /retry policy: initialBackoff must be a string consisting of a positive integer or decimal followed by s/,
   },
   {
     description: 'an initialBackoff without an s',
     config: { ...validRetryConfig, initialBackoff: '123' },
     error:
-      /retry policy: initialBackoff must be a string consisting of a positive integer followed by s/,
+      /retry policy: initialBackoff must be a string consisting of a positive integer or decimal followed by s/,
   },
   {
     description: 'omitted maxBackoff',
@@ -124,19 +124,19 @@ const RETRY_TEST_CASES: TestCase[] = [
       retryableStatusCodes: [14],
     },
     error:
-      /retry policy: maxBackoff must be a string consisting of a positive integer followed by s/,
+      /retry policy: maxBackoff must be a string consisting of a positive integer or decimal followed by s/,
   },
   {
     description: 'a non-numeric maxBackoff',
     config: { ...validRetryConfig, maxBackoff: 'abcs' },
     error:
-      /retry policy: maxBackoff must be a string consisting of a positive integer followed by s/,
+      /retry policy: maxBackoff must be a string consisting of a positive integer or decimal followed by s/,
   },
   {
     description: 'an maxBackoff without an s',
     config: { ...validRetryConfig, maxBackoff: '123' },
     error:
-      /retry policy: maxBackoff must be a string consisting of a positive integer followed by s/,
+      /retry policy: maxBackoff must be a string consisting of a positive integer or decimal followed by s/,
   },
   {
     description: 'omitted backoffMultiplier',
