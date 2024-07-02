@@ -32,6 +32,7 @@ import { GrpcUri, uriToString, splitHostPort } from './uri-parser';
 import { isIPv6, isIPv4 } from 'net';
 import { ChannelOptions } from './channel-options';
 import { BackoffOptions, BackoffTimeout } from './backoff-timeout';
+import { GRPC_NODE_USE_ALTERNATIVE_RESOLVER } from './environment';
 
 const TRACER_NAME = 'dns_resolver';
 
@@ -44,8 +45,7 @@ function trace(text: string): void {
  */
 export const DEFAULT_PORT = 443;
 
-const DEFAULT_MIN_TIME_BETWEEN_RESOLUTIONS_MS = 30_000,
-  DNS_RESOLUTION_ENV = 'GRPC_DNS_RESOLVER_TODO';
+const DEFAULT_MIN_TIME_BETWEEN_RESOLUTIONS_MS = 30_000;
 
 /**
  * Resolver implementation that handles DNS names and IP addresses.
@@ -296,7 +296,7 @@ class DnsResolver implements Resolver {
   }
 
   private async lookup(hostname: string): Promise<TcpSubchannelAddress[]> {
-    if (process.env[DNS_RESOLUTION_ENV] === 'true') {
+    if (GRPC_NODE_USE_ALTERNATIVE_RESOLVER) {
       const records = await Promise.allSettled([
         this.independentResolver.resolve4(hostname),
         this.independentResolver.resolve6(hostname),
@@ -323,7 +323,7 @@ class DnsResolver implements Resolver {
   }
 
   private async resolveTxt(hostname: string): Promise<string[][]> {
-    if (process.env[DNS_RESOLUTION_ENV] === 'true') {
+    if (GRPC_NODE_USE_ALTERNATIVE_RESOLVER) {
       return this.independentResolver.resolveTxt(hostname);
     }
 
