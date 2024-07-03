@@ -21,6 +21,11 @@ import { ProtoGrpcType } from "./generated/echo";
 import { EchoRequest__Output } from "./generated/grpc/testing/EchoRequest";
 import { EchoResponse } from "./generated/grpc/testing/EchoResponse";
 
+import * as net from 'net';
+import { XdsServer } from "../src";
+import { ControlPlaneServer } from "./xds-server";
+import { findFreePorts } from 'find-free-ports';
+
 const loadedProtos = loadPackageDefinition(loadSync(
   [
     'grpc/testing/echo.proto'
@@ -38,12 +43,13 @@ const loadedProtos = loadPackageDefinition(loadSync(
     ],
   })) as unknown as ProtoGrpcType;
 
+const BOOTSTRAP_CONFIG_KEY = 'grpc.TEST_ONLY_DO_NOT_USE_IN_PROD.xds_bootstrap_config';
+
 export class Backend {
   private server: Server | null = null;
   private receivedCallCount = 0;
   private callListeners: (() => void)[] = [];
-  private port: number | null = null;
-  constructor(private serverOptions?: ServerOptions) {
+  constructor(private port: number, private useXdsServer: boolean, private serverOptions?: ServerOptions) {
   }
   Echo(call: ServerUnaryCall<EchoRequest__Output, EchoResponse>, callback: sendUnaryData<EchoResponse>) {
     // call.request.params is currently ignored
@@ -72,24 +78,28 @@ export class Backend {
     this.callListeners.push(listener);
   }
 
-  start(callback: (error: Error | null, port: number) => void) {
+  start(controlPlaneServer: ControlPlaneServer, callback: (error: Error | null, port: number) => void) {
     if (this.server) {
       throw new Error("Backend already running");
     }
-    this.server = new Server(this.serverOptions);
-    this.server.addService(loadedProtos.grpc.testing.EchoTestService.service, this as unknown as UntypedServiceImplementation);
-    const boundPort = this.port ?? 0;
-    this.server.bindAsync(`localhost:${boundPort}`, ServerCredentials.createInsecure(), (error, port) => {
+    if (this.useXdsServer) {
+      this.server = new XdsServer({...this.serverOptions, [BOOTSTRAP_CONFIG_KEY]: controlPlaneServer.getBootstrapInfoString()});
+    } else {
+      this.server = new Server();
+    }
+    const server = this.server;
+    server.addService(loadedProtos.grpc.testing.EchoTestService.service, this as unknown as UntypedServiceImplementation);
+    server.bindAsync(`[::1]:${this.port}`, ServerCredentials.createInsecure(), (error, port) => {
       if (!error) {
         this.port = port;
       }
       callback(error, port);
-    })
+    });
   }
 
-  startAsync(): Promise<number> {
+  startAsync(controlPlaneServer: ControlPlaneServer): Promise<number> {
     return new Promise((resolve, reject) => {
-      this.start((error, port) => {
+      this.start(controlPlaneServer, (error, port) => {
         if (error) {
           reject(error);
         } else {
@@ -100,9 +110,6 @@ export class Backend {
   }
 
   getPort(): number {
-    if (this.port === null) {
-      throw new Error('Port not set. Backend not yet started.');
-    }
     return this.port;
   }
 
@@ -136,4 +143,9 @@ export class Backend {
       });
     });
   }
+}
+
+export async function createBackends(count: number, useXdsServer?: boolean, serverOptions?: ServerOptions): Promise<Backend[]> {
+  const ports = await findFreePorts(count);
+  return ports.map(port => new Backend(port, useXdsServer ?? true, serverOptions));
 }

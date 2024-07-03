@@ -18,6 +18,7 @@
 import { SecureServerOptions } from 'http2';
 import { CIPHER_SUITES, getDefaultRootsData } from './tls-helpers';
 import { SecureContextOptions } from 'tls';
+import { ServerInterceptor } from '.';
 
 export interface KeyCertPair {
   private_key: Buffer;
@@ -50,6 +51,9 @@ export abstract class ServerCredentials {
   abstract _isSecure(): boolean;
   _getSettings(): SecureServerOptions | null {
     return this.latestContextOptions;
+  }
+  _getInterceptors(): ServerInterceptor[] {
+    return [];
   }
   abstract _equals(other: ServerCredentials): boolean;
 
@@ -213,4 +217,43 @@ class SecureServerCredentials extends ServerCredentials {
      * equality check is needed. */
     return true;
   }
+}
+
+class InterceptorServerCredentials extends ServerCredentials {
+  constructor(private readonly childCredentials: ServerCredentials, private readonly interceptors: ServerInterceptor[]) {
+    super();
+  }
+  _isSecure(): boolean {
+    return this.childCredentials._isSecure();
+  }
+  _equals(other: ServerCredentials): boolean {
+    if (!(other instanceof InterceptorServerCredentials)) {
+      return false;
+    }
+    if (!(this.childCredentials._equals(other.childCredentials))) {
+      return false;
+    }
+    if (this.interceptors.length !== other.interceptors.length) {
+      return false;
+    }
+    for (let i = 0; i < this.interceptors.length; i++) {
+      if (this.interceptors[i] !== other.interceptors[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+  override _getInterceptors(): ServerInterceptor[] {
+    return this.interceptors;
+  }
+  override _addWatcher(watcher: SecureContextWatcher): void {
+    this.childCredentials._addWatcher(watcher);
+  }
+  override _removeWatcher(watcher: SecureContextWatcher): void {
+    this.childCredentials._removeWatcher(watcher);
+  }
+}
+
+export function createServerCredentialsWithInterceptors(credentials: ServerCredentials, interceptors: ServerInterceptor[]): ServerCredentials {
+  return new InterceptorServerCredentials(credentials, interceptors);
 }

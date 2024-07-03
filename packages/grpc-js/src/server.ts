@@ -594,7 +594,7 @@ export class Server {
     }
 
     http2Server.setTimeout(0, noop);
-    this._setupHandlers(http2Server);
+    this._setupHandlers(http2Server, credentials._getInterceptors());
     return http2Server;
   }
 
@@ -1280,6 +1280,7 @@ export class Server {
   }
 
   private _channelzHandler(
+    extraInterceptors: ServerInterceptor[],
     stream: http2.ServerHttp2Stream,
     headers: http2.IncomingHttpHeaders
   ) {
@@ -1343,7 +1344,7 @@ export class Server {
     };
 
     const call = getServerInterceptingCall(
-      this.interceptors,
+      [...extraInterceptors, ...this.interceptors],
       stream,
       headers,
       callEventTracker,
@@ -1363,6 +1364,7 @@ export class Server {
   }
 
   private _streamHandler(
+    extraInterceptors: ServerInterceptor[],
     stream: http2.ServerHttp2Stream,
     headers: http2.IncomingHttpHeaders
   ) {
@@ -1386,7 +1388,7 @@ export class Server {
     }
 
     const call = getServerInterceptingCall(
-      this.interceptors,
+      [...extraInterceptors, ...this.interceptors],
       stream,
       headers,
       null,
@@ -1427,7 +1429,8 @@ export class Server {
   }
 
   private _setupHandlers(
-    http2Server: http2.Http2Server | http2.Http2SecureServer
+    http2Server: http2.Http2Server | http2.Http2SecureServer,
+    extraInterceptors: ServerInterceptor[]
   ): void {
     if (http2Server === null) {
       return;
@@ -1452,7 +1455,7 @@ export class Server {
       ? this._channelzSessionHandler(http2Server)
       : this._sessionHandler(http2Server);
 
-    http2Server.on('stream', handler.bind(this));
+    http2Server.on('stream', handler.bind(this, extraInterceptors));
     http2Server.on('session', sessionHandler);
   }
 

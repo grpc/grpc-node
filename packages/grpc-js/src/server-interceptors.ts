@@ -332,6 +332,10 @@ export interface ServerInterceptingCallInterface {
    * Return the call deadline set by the client. The value is Infinity if there is no deadline.
    */
   getDeadline(): Deadline;
+  /**
+   * Return the host requested by the client in the ":authority" header.
+   */
+  getHost(): string;
 }
 
 export class ServerInterceptingCall implements ServerInterceptingCallInterface {
@@ -432,6 +436,9 @@ export class ServerInterceptingCall implements ServerInterceptingCallInterface {
   getDeadline(): Deadline {
     return this.nextCall.getDeadline();
   }
+  getHost(): string {
+    return this.nextCall.getHost();
+  }
 }
 
 export interface ServerInterceptor {
@@ -501,6 +508,7 @@ export class BaseServerInterceptingCall
   private isReadPending = false;
   private receivedHalfClose = false;
   private streamEnded = false;
+  private host: string;
 
   constructor(
     private readonly stream: http2.ServerHttp2Stream,
@@ -554,6 +562,7 @@ export class BaseServerInterceptingCall
       this.maxReceiveMessageSize = options['grpc.max_receive_message_length']!;
     }
 
+    this.host = headers[':authority'] ?? headers.host!;
     const metadata = Metadata.fromHttp2Headers(headers);
 
     if (logging.isTracerEnabled(TRACER_NAME)) {
@@ -933,6 +942,9 @@ export class BaseServerInterceptingCall
   }
   getDeadline(): Deadline {
     return this.deadline;
+  }
+  getHost(): string {
+    return this.host;
   }
 }
 

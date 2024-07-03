@@ -29,6 +29,7 @@ import { LocalityLbEndpoints } from "../src/generated/envoy/config/endpoint/v3/L
 import { LbEndpoint } from "../src/generated/envoy/config/endpoint/v3/LbEndpoint";
 import { ClusterConfig } from "../src/generated/envoy/extensions/clusters/aggregate/v3/ClusterConfig";
 import { Any } from "../src/generated/google/protobuf/Any";
+import { ControlPlaneServer } from "./xds-server";
 
 interface Endpoint {
   locality: Locality;
@@ -64,7 +65,7 @@ export interface FakeCluster {
   getClusterConfig(): Cluster;
   getAllClusterConfigs(): Cluster[];
   getName(): string;
-  startAllBackends(): Promise<any>;
+  startAllBackends(controlPlaneServer: ControlPlaneServer): Promise<any>;
   haveAllBackendsReceivedTraffic(): boolean;
   waitForAllBackendsToReceiveTraffic(): Promise<void>;
 }
@@ -121,8 +122,8 @@ export class FakeEdsCluster implements FakeCluster {
     return this.clusterName;
   }
 
-  startAllBackends(): Promise<any> {
-    return Promise.all(this.endpoints.map(endpoint => Promise.all(endpoint.backends.map(backend => backend.startAsync()))));
+  startAllBackends(controlPlaneServer: ControlPlaneServer): Promise<any> {
+    return Promise.all(this.endpoints.map(endpoint => Promise.all(endpoint.backends.map(backend => backend.startAsync(controlPlaneServer)))));
   }
 
   haveAllBackendsReceivedTraffic(): boolean {
@@ -192,8 +193,8 @@ export class FakeDnsCluster implements FakeCluster {
   getName(): string {
     return this.name;
   }
-  startAllBackends(): Promise<any> {
-    return this.backend.startAsync();
+  startAllBackends(controlPlaneServer: ControlPlaneServer): Promise<any> {
+    return this.backend.startAsync(controlPlaneServer);
   }
   haveAllBackendsReceivedTraffic(): boolean {
     return this.backend.getCallCount() > 0;
@@ -231,8 +232,8 @@ export class FakeAggregateCluster implements FakeCluster {
   getName(): string {
     return this.name;
   }
-  startAllBackends(): Promise<any> {
-    return Promise.all(this.children.map(child => child.startAllBackends()));
+  startAllBackends(controlPlaneServer: ControlPlaneServer): Promise<any> {
+    return Promise.all(this.children.map(child => child.startAllBackends(controlPlaneServer)));
   }
   haveAllBackendsReceivedTraffic(): boolean {
     for (const child of this.children) {
@@ -320,12 +321,12 @@ export class FakeRouteGroup {
     };
   }
 
-  startAllBackends(): Promise<any> {
+  startAllBackends(controlPlaneServer: ControlPlaneServer): Promise<any> {
     return Promise.all(this.routes.map(route => {
       if (route.cluster) {
-        return route.cluster.startAllBackends();
+        return route.cluster.startAllBackends(controlPlaneServer);
       } else if (route.weightedClusters) {
-        return Promise.all(route.weightedClusters.map(clusterWeight => clusterWeight.cluster.startAllBackends()));
+        return Promise.all(route.weightedClusters.map(clusterWeight => clusterWeight.cluster.startAllBackends(controlPlaneServer)));
       } else {
         return Promise.resolve();
       }
@@ -357,5 +358,71 @@ export class FakeRouteGroup {
         return Promise.resolve();
       }
     }));
+  }
+}
+
+const DEFAULT_BASE_SERVER_LISTENER: Listener = {
+  default_filter_chain: {
+    filter_chain_match: {
+      source_type: 'SAME_IP_OR_LOOPBACK'
+    }
+  }
+};
+
+const DEFAULT_BASE_SERVER_ROUTE_CONFIG: RouteConfiguration = {
+  virtual_hosts: [{
+    domains: ['*'],
+    routes: [{
+      match: {
+        prefix: ''
+      },
+      action: 'non_forwarding_action',
+      non_forwarding_action: {}
+    }]
+  }]
+};
+
+export class FakeServerRoute {
+  private listener: Listener;
+  private routeConfiguration: RouteConfiguration;
+  constructor(port: number, routeName: string, baseListener?: Listener | undefined, baseRouteConfiguration?: RouteConfiguration) {
+    this.listener = baseListener ?? DEFAULT_BASE_SERVER_LISTENER;
+    this.listener.name = `[::1]:${port}`;
+    this.listener.address = {
+      socket_address: {
+        address: '::1',
+        port_value: port
+      }
+    }
+    const httpConnectionManager: HttpConnectionManager & AnyExtension = {
+      '@type': HTTP_CONNECTION_MANGER_TYPE_URL,
+      rds: {
+        route_config_name: routeName,
+        config_source: {ads: {}}
+      }
+    };
+    this.listener.api_listener = {
+      api_listener: httpConnectionManager
+    }
+    const filterList = [{
+      typed_config: httpConnectionManager
+    }];
+    if (this.listener.default_filter_chain) {
+      this.listener.default_filter_chain.filters = filterList;
+    }
+    for (const filterChain of this.listener.filter_chains ?? []) {
+      filterChain.filters = filterList;
+    }
+
+    this.routeConfiguration = baseRouteConfiguration ?? DEFAULT_BASE_SERVER_ROUTE_CONFIG;
+    this.routeConfiguration.name = routeName;
+  }
+
+  getRouteConfiguration(): RouteConfiguration {
+    return this.routeConfiguration;
+  }
+
+  getListener(): Listener {
+    return this.listener;
   }
 }

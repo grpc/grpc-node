@@ -199,6 +199,7 @@ class AdsResponseParser {
       return;
     }
     if (!this.result.type) {
+      this.adsCallState.client.trace('Received resource for uninitialized type ' + resource.type_url);
       return;
     }
     const decodeContext: XdsDecodeContext = {
@@ -228,6 +229,7 @@ class AdsResponseParser {
     const resourceState = this.adsCallState.client.xdsClient.authorityStateMap.get(parsedName.authority)?.resourceMap.get(this.result.type)?.get(parsedName.key);
     if (!resourceState) {
       // No subscription for this resource
+      this.adsCallState.client.trace('Received resource of type ' + this.result.type.getTypeUrl() + ' named ' + decodeResult.name + ' with no subscriptions');
       return;
     }
     if (resourceState.deletionIgnored) {
@@ -248,8 +250,9 @@ class AdsResponseParser {
       return;
     }
     if (!decodeResult.value) {
+      this.adsCallState.client.trace('Failed to parse resource of type ' + this.result.type.getTypeUrl());
       return;
-    }
+     }
     this.adsCallState.client.trace('Parsed resource of type ' + this.result.type.getTypeUrl() + ': ' + JSON.stringify(decodeResult.value, (key, value) => (value && value.type === 'Buffer' && Array.isArray(value.data)) ? (value.data as Number[]).map(n => n.toString(16)).join('') : value, 2));
     this.result.haveValidResources = true;
     if (this.result.type.resourcesEqual(resourceState.cachedResource, decodeResult.value)) {
@@ -263,6 +266,7 @@ class AdsResponseParser {
       version: this.result.version!
     };
     process.nextTick(() => {
+      trace('Notifying ' + resourceState.watchers.size + ' watchers of ' + this.result.type?.getTypeUrl() + ' update');
       for (const watcher of resourceState.watchers) {
         watcher.onGenericResourceChanged(decodeResult.value!);
       }

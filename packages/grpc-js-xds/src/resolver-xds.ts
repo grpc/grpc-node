@@ -29,11 +29,8 @@ import { Listener__Output } from './generated/envoy/config/listener/v3/Listener'
 import { RouteConfiguration__Output } from './generated/envoy/config/route/v3/RouteConfiguration';
 import { HttpConnectionManager__Output } from './generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpConnectionManager';
 import { VirtualHost__Output } from './generated/envoy/config/route/v3/VirtualHost';
-import { RouteMatch__Output } from './generated/envoy/config/route/v3/RouteMatch';
-import { HeaderMatcher__Output } from './generated/envoy/config/route/v3/HeaderMatcher';
 import ConfigSelector = experimental.ConfigSelector;
-import { ContainsValueMatcher, ExactValueMatcher, FullMatcher, HeaderMatcher, Matcher, PathExactValueMatcher, PathPrefixValueMatcher, PathSafeRegexValueMatcher, PrefixValueMatcher, PresentValueMatcher, RangeValueMatcher, RejectValueMatcher, SafeRegexValueMatcher, SuffixValueMatcher, ValueMatcher } from './matcher';
-import { envoyFractionToFraction, Fraction } from "./fraction";
+import { Matcher } from './matcher';
 import { HashPolicy, RouteAction, SingleClusterRouteAction, WeightedCluster, WeightedClusterRouteAction } from './route-action';
 import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL } from './resources';
 import Duration = experimental.Duration;
@@ -47,6 +44,8 @@ import { ListenerResourceType } from './xds-resource-type/listener-resource-type
 import { RouteConfigurationResourceType } from './xds-resource-type/route-config-resource-type';
 import { protoDurationToDuration } from './duration';
 import { loadXxhashApi } from './xxhash';
+import { formatTemplateString } from './xds-bootstrap';
+import { getPredicateForMatcher } from './route';
 
 const TRACER_NAME = 'xds_resolver';
 
@@ -97,8 +96,12 @@ function domainMatch(matchType: MatchType, domainPattern: string, expectedHostNa
   }
 }
 
-function findVirtualHostForDomain(virutalHostList: VirtualHost__Output[], domain: string): VirtualHost__Output | null {
-  let targetVhost: VirtualHost__Output | null = null;
+interface HasDomains {
+  domains: string[];
+}
+
+export function findVirtualHostForDomain<T extends HasDomains>(virutalHostList: T[], domain: string): T | null {
+  let targetVhost: T | null = null;
   let bestMatchType: MatchType = MatchType.INVALID_MATCH;
   let longestMatch = 0;
   for (const virtualHost of virutalHostList) {
@@ -130,81 +133,6 @@ function findVirtualHostForDomain(virutalHostList: VirtualHost__Output[], domain
 
 const numberRegex = new RE2(/^-?\d+$/u);
 
-function getPredicateForHeaderMatcher(headerMatch: HeaderMatcher__Output): Matcher {
-  let valueChecker: ValueMatcher;
-  switch (headerMatch.header_match_specifier) {
-    case 'exact_match':
-      valueChecker = new ExactValueMatcher(headerMatch.exact_match!, false);
-      break;
-    case 'safe_regex_match':
-      valueChecker = new SafeRegexValueMatcher(headerMatch.safe_regex_match!.regex);
-      break;
-    case 'range_match':
-      const start = BigInt(headerMatch.range_match!.start);
-      const end = BigInt(headerMatch.range_match!.end);
-      valueChecker = new RangeValueMatcher(start, end);
-      break;
-    case 'present_match':
-      valueChecker = new PresentValueMatcher();
-      break;
-    case 'prefix_match':
-      valueChecker = new PrefixValueMatcher(headerMatch.prefix_match!, false);
-      break;
-    case 'suffix_match':
-      valueChecker = new SuffixValueMatcher(headerMatch.suffix_match!, false);
-      break;
-    case 'string_match':
-      const stringMatch = headerMatch.string_match!
-      switch (stringMatch.match_pattern) {
-        case 'exact':
-          valueChecker = new ExactValueMatcher(stringMatch.exact!, stringMatch.ignore_case);
-          break;
-        case 'safe_regex':
-          valueChecker = new SafeRegexValueMatcher(stringMatch.safe_regex!.regex);
-          break;
-        case 'prefix':
-          valueChecker = new PrefixValueMatcher(stringMatch.prefix!, stringMatch.ignore_case);
-          break;
-        case 'suffix':
-          valueChecker = new SuffixValueMatcher(stringMatch.suffix!, stringMatch.ignore_case);
-          break;
-        case 'contains':
-          valueChecker = new ContainsValueMatcher(stringMatch.contains!, stringMatch.ignore_case);
-          break;
-      }
-      break;
-    default:
-      valueChecker = new RejectValueMatcher();
-  }
-  return new HeaderMatcher(headerMatch.name, valueChecker, headerMatch.invert_match);
-}
-
-function getPredicateForMatcher(routeMatch: RouteMatch__Output): Matcher {
-  let pathMatcher: ValueMatcher;
-  const caseInsensitive = routeMatch.case_sensitive?.value === false;
-  switch (routeMatch.path_specifier) {
-    case 'prefix':
-      pathMatcher = new PathPrefixValueMatcher(routeMatch.prefix!, caseInsensitive);
-      break;
-    case 'path':
-      pathMatcher = new PathExactValueMatcher(routeMatch.path!, caseInsensitive);
-      break;
-    case 'safe_regex':
-      pathMatcher = new PathSafeRegexValueMatcher(routeMatch.safe_regex!.regex);
-      break;
-    default:
-      pathMatcher = new RejectValueMatcher();
-  }
-  const headerMatchers: Matcher[] = routeMatch.headers.map(getPredicateForHeaderMatcher);
-  let runtimeFraction: Fraction | null;
-  if (!routeMatch.runtime_fraction?.default_value) {
-    runtimeFraction = null;
-  } else {
-    runtimeFraction = envoyFractionToFraction(routeMatch.runtime_fraction.default_value)
-  }
-  return new FullMatcher(pathMatcher, headerMatchers, runtimeFraction);
-}
-
 function protoDurationToSecondsString(duration: Duration__Output): string {
   return `${duration.seconds + duration.nanos / 1_000_000_000}s`;
 }
@@ -213,23 +141,6 @@ const DEFAULT_RETRY_BASE_INTERVAL = '0.025s'
 
 function getDefaultRetryMaxInterval(baseInterval: string): string {
   return `${Number.parseFloat(baseInterval.substring(0, baseInterval.length - 1)) * 10}s`;
-}
-
-/**
- * Encode a text string as a valid path of a URI, as specified in RFC-3986 section 3.3
- * @param uriPath A value representing an unencoded URI path
- * @returns
- */
-function encodeURIPath(uriPath: string): string {
-  return uriPath.replace(/[^A-Za-z0-9._~!$&^()*+,;=/-]/g, substring => encodeURIComponent(substring));
-}
-
-function formatTemplateString(templateString: string, value: string): string {
-  if (templateString.startsWith('xdstp:')) {
-    return templateString.replace(/%s/g, encodeURIPath(value));
-  } else {
-    return templateString.replace(/%s/g, value);
-  }
 }
 
 export function getListenerResourceName(bootstrapConfig: BootstrapInfo, target: GrpcUri): string {
@@ -325,6 +236,7 @@ class XdsResolver implements Resolver {
           case 'route_config':
             if (this.latestRouteConfigName) {
               RouteConfigurationResourceType.cancelWatch(this.xdsClient, this.latestRouteConfigName, this.rdsWatcher);
+              this.latestRouteConfigName = null;
             }
             this.handleRouteConfig(httpConnectionManager.route_config!);
             break;
@@ -342,6 +254,10 @@ class XdsResolver implements Resolver {
       },
       onResourceDoesNotExist: () => {
         trace('Resolution error for target ' + uriToString(this.target) + ': LDS resource does not exist');
+        if (this.latestRouteConfigName) {
+          RouteConfigurationResourceType.cancelWatch(this.xdsClient, this.latestRouteConfigName, this.rdsWatcher);
+          this.latestRouteConfigName = null;
+        }
         this.reportResolutionError(`Listener ${this.target} does not exist`);
       }
     });

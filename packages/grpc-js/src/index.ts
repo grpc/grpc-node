@@ -48,6 +48,7 @@ import {
 } from './make-client';
 import { Metadata, MetadataOptions, MetadataValue } from './metadata';
 import {
+  ConnectionInjector,
   Server,
   ServerOptions,
   UntypedHandleCall,
@@ -227,7 +228,7 @@ export const setLogVerbosity = (verbosity: LogVerbosity): void => {
   logging.setLoggerVerbosity(verbosity);
 };
 
-export { Server, ServerOptions };
+export { ConnectionInjector, Server, ServerOptions };
 export { ServerCredentials };
 export { KeyCertPair };
 
