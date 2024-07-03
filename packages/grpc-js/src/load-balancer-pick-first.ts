@@ -32,7 +32,7 @@ import {
   PickResultType,
   UnavailablePicker,
 } from './picker';
-import { Endpoint, SubchannelAddress } from './subchannel-address';
+import { Endpoint, SubchannelAddress, subchannelAddressToString } from './subchannel-address';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import {
@@ -348,7 +348,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       if (newState !== ConnectivityState.READY) {
         this.removeCurrentPick();
         this.calculateAndReportNewState();
-        this.requestReresolution();
       }
       return;
     }
@@ -483,6 +482,13 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       subchannel: this.channelControlHelper.createSubchannel(address, {}),
       hasReportedTransientFailure: false,
     }));
+    trace('connectToAddressList([' + addressList.map(address => subchannelAddressToString(address)) + '])');
+    for (const { subchannel } of newChildrenList) {
+      if (subchannel.getConnectivityState() === ConnectivityState.READY) {
+        this.pickSubchannel(subchannel);
+        return;
+      }
+    }
     /* Ref each subchannel before resetting the list, to ensure that
      * subchannels shared between the list don't drop to 0 refs during the
      * transition. */
@@ -527,6 +533,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     const rawAddressList = ([] as SubchannelAddress[]).concat(
       ...endpointList.map(endpoint => endpoint.addresses)
     );
+    trace('updateAddressList([' + rawAddressList.map(address => subchannelAddressToString(address)) + '])');
     if (rawAddressList.length === 0) {
       throw new Error('No addresses in endpoint list passed to pick_first');
     }
