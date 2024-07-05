@@ -62,3 +62,8 @@ can be set.
   - INFO - log INFO and ERROR message
   - ERROR - log only errors (default)
   - NONE - won't log any
+
+* GRPC_NODE_USE_ALTERNATIVE_RESOLVER
+  Allows changing dns resolve behavior and parse DNS server authority as described in https://github.com/grpc/grpc/blob/master/doc/naming.md
+  - true - use alternative resolver
+  - false - use default resolver (default)
