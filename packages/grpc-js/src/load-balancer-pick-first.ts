@@ -485,6 +485,8 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     trace('connectToAddressList([' + addressList.map(address => subchannelAddressToString(address)) + '])');
     for (const { subchannel } of newChildrenList) {
       if (subchannel.getConnectivityState() === ConnectivityState.READY) {
+        this.channelControlHelper.addChannelzChild(subchannel.getChannelzRef());
+        subchannel.addConnectivityStateListener(this.subchannelStateListener);
         this.pickSubchannel(subchannel);
         return;
       }
@@ -500,10 +502,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     this.children = newChildrenList;
     for (const { subchannel } of this.children) {
       subchannel.addConnectivityStateListener(this.subchannelStateListener);
-      if (subchannel.getConnectivityState() === ConnectivityState.READY) {
-        this.pickSubchannel(subchannel);
-        return;
-      }
     }
     for (const child of this.children) {
       if (
