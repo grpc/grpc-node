@@ -460,7 +460,7 @@ describe('Name Resolver', () => {
             }
           },
         },
-        {}
+        { 'grpc.dns_min_time_between_resolutions_ms': 2000 }
       );
       resolver.updateResolution();
       setTimeout(() => {
