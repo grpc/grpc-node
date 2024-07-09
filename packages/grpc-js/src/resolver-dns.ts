@@ -302,6 +302,10 @@ class DnsResolver implements Resolver {
         this.independentResolver.resolve6(hostname),
       ]);
 
+      if (records.every(result => result.status === 'rejected')) {
+        throw new Error((records[0] as PromiseRejectedResult).reason);
+      }
+
       return records
         .reduce<string[]>((acc, result) => {
           return result.status === 'fulfilled'
