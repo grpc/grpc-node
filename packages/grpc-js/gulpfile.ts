@@ -83,7 +83,7 @@ const runTests = checkTask(() => {
 
 const testWithAlternativeResolver = checkTask(() => {
   process.env.GRPC_NODE_USE_ALTERNATIVE_RESOLVER = 'true';
-  return gulp.src(`${outDir}/test/**/test-resolver.js`).pipe(
+  return gulp.src(`${outDir}/test/test-resolver.js`).pipe(
     mocha({
       reporter: 'mocha-jenkins-reporter',
       require: ['ts-node/register'],
