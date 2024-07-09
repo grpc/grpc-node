@@ -73,7 +73,7 @@ class DnsResolver implements Resolver {
   private isNextResolutionTimerRunning = false;
   private isServiceConfigEnabled = true;
   private returnedIpResult = false;
-  private independentResolver = new dns.Resolver();
+  private alternativeResolver = new dns.Resolver();
 
   constructor(
     private target: GrpcUri,
@@ -82,7 +82,7 @@ class DnsResolver implements Resolver {
   ) {
     trace('Resolver constructed for target ' + uriToString(target));
     if (target.authority) {
-      this.independentResolver.setServers([target.authority]);
+      this.alternativeResolver.setServers([target.authority]);
     }
     const hostPort = splitHostPort(target.path);
     if (hostPort === null) {
@@ -297,9 +297,11 @@ class DnsResolver implements Resolver {
 
   private async lookup(hostname: string): Promise<TcpSubchannelAddress[]> {
     if (GRPC_NODE_USE_ALTERNATIVE_RESOLVER) {
+      trace('Using alternative DNS resolver.');
+
       const records = await Promise.allSettled([
-        this.independentResolver.resolve4(hostname),
-        this.independentResolver.resolve6(hostname),
+        this.alternativeResolver.resolve4(hostname),
+        this.alternativeResolver.resolve6(hostname),
       ]);
 
       if (records.every(result => result.status === 'rejected')) {
@@ -328,7 +330,8 @@ class DnsResolver implements Resolver {
 
   private async resolveTxt(hostname: string): Promise<string[][]> {
     if (GRPC_NODE_USE_ALTERNATIVE_RESOLVER) {
-      return this.independentResolver.resolveTxt(hostname);
+      trace('Using alternative DNS resolver.');
+      return this.alternativeResolver.resolveTxt(hostname);
     }
 
     return dns.resolveTxt(hostname);

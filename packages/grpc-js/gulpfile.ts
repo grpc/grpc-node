@@ -91,11 +91,17 @@ const testWithAlternativeResolver = checkTask(() => {
   );
 });
 
+const resetEnv = () => {
+  process.env.GRPC_NODE_USE_ALTERNATIVE_RESOLVER = 'false';
+  return Promise.resolve();
+};
+
 const test = gulp.series(
   install,
   copyTestFixtures,
   runTests,
-  testWithAlternativeResolver
+  testWithAlternativeResolver,
+  resetEnv
 );
 
 export { install, lint, clean, cleanAll, compile, test };
