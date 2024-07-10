@@ -97,6 +97,21 @@ describe('Client without a server', () => {
       }
     );
   });
+  it('close should force calls to end', done => {
+    client.makeUnaryRequest(
+      '/service/method',
+      x => x,
+      x => x,
+      Buffer.from([]),
+      new grpc.Metadata({waitForReady: true}),
+      (error, value) => {
+        assert(error);
+        assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
+        done();
+      }
+    );
+    client.close();
+  });
 });
 
 describe('Client with a nonexistent target domain', () => {
@@ -132,5 +147,20 @@ describe('Client with a nonexistent target domain', () => {
         );
       }
     );
+  });
+  it('close should force calls to end', done => {
+    client.makeUnaryRequest(
+      '/service/method',
+      x => x,
+      x => x,
+      Buffer.from([]),
+      new grpc.Metadata({waitForReady: true}),
+      (error, value) => {
+        assert(error);
+        assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
+        done();
+      }
+    );
+    client.close();
   });
 });

@@ -20,7 +20,7 @@ import { ChannelOptions } from './channel-options';
 import { ResolvingLoadBalancer } from './resolving-load-balancer';
 import { SubchannelPool, getSubchannelPool } from './subchannel-pool';
 import { ChannelControlHelper } from './load-balancer';
-import { UnavailablePicker, Picker, QueuePicker } from './picker';
+import { UnavailablePicker, Picker, QueuePicker, PickArgs, PickResult, PickResultType } from './picker';
 import { Metadata } from './metadata';
 import { Status, LogVerbosity, Propagate } from './constants';
 import { FilterStackFactory } from './filter-stack';
@@ -33,7 +33,6 @@ import {
 } from './resolver';
 import { trace } from './logging';
 import { SubchannelAddress } from './subchannel-address';
-import { MaxMessageSizeFilterFactory } from './max-message-size-filter';
 import { mapProxyName } from './http_proxy';
 import { GrpcUri, parseUri, uriToString } from './uri-parser';
 import { ServerSurfaceCall } from './server-call';
@@ -140,6 +139,22 @@ class ChannelSubchannelWrapper
     if (this.refCount <= 0) {
       this.child.removeConnectivityStateListener(this.subchannelStateListener);
       this.channel.removeWrappedSubchannel(this);
+    }
+  }
+}
+
+class ShutdownPicker implements Picker {
+  pick(pickArgs: PickArgs): PickResult {
+    return {
+      pickResultType: PickResultType.DROP,
+      status: {
+        code: Status.UNAVAILABLE,
+        details: 'Channel closed before call started',
+        metadata: new Metadata()
+      },
+      subchannel: null,
+      onCallStarted: null,
+      onCallEnded: null
     }
   }
 }
@@ -402,7 +417,6 @@ export class InternalChannel {
       }
     );
     this.filterStackFactory = new FilterStackFactory([
-      new MaxMessageSizeFilterFactory(this.options),
       new CompressionFilterFactory(this, this.options),
     ]);
     this.trace(
@@ -538,7 +552,9 @@ export class InternalChannel {
   }
 
   getConfig(method: string, metadata: Metadata): GetConfigResult {
-    this.resolvingLoadBalancer.exitIdle();
+    if (this.connectivityState !== ConnectivityState.SHUTDOWN) {
+      this.resolvingLoadBalancer.exitIdle();
+    }
     if (this.configSelector) {
       return {
         type: 'SUCCESS',
@@ -747,6 +763,15 @@ export class InternalChannel {
   close() {
     this.resolvingLoadBalancer.destroy();
     this.updateState(ConnectivityState.SHUTDOWN);
+    this.currentPicker = new ShutdownPicker();
+    for (const call of this.configSelectionQueue) {
+      call.cancelWithStatus(Status.UNAVAILABLE, 'Channel closed before call started');
+    }
+    this.configSelectionQueue = [];
+    for (const call of this.pickQueue) {
+      call.cancelWithStatus(Status.UNAVAILABLE, 'Channel closed before call started');
+    }
+    this.pickQueue = [];
     clearInterval(this.callRefTimer);
     if (this.idleTimer) {
       clearTimeout(this.idleTimer);

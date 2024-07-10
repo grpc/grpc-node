@@ -21,7 +21,7 @@ import { WriteObject, WriteFlags } from './call-interface';
 import { Channel } from './channel';
 import { ChannelOptions } from './channel-options';
 import { CompressionAlgorithms } from './compression-algorithms';
-import { LogVerbosity } from './constants';
+import { DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH, DEFAULT_MAX_SEND_MESSAGE_LENGTH, LogVerbosity, Status } from './constants';
 import { BaseFilter, Filter, FilterFactory } from './filter';
 import * as logging from './logging';
 import { Metadata, MetadataValue } from './metadata';
@@ -98,6 +98,10 @@ class IdentityHandler extends CompressionHandler {
 }
 
 class DeflateHandler extends CompressionHandler {
+  constructor(private maxRecvMessageLength: number) {
+    super();
+  }
+
   compressMessage(message: Buffer) {
     return new Promise<Buffer>((resolve, reject) => {
       zlib.deflate(message, (err, output) => {
@@ -112,18 +116,34 @@ class DeflateHandler extends CompressionHandler {
 
   decompressMessage(message: Buffer) {
     return new Promise<Buffer>((resolve, reject) => {
-      zlib.inflate(message, (err, output) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(output);
+      let totalLength = 0;
+      const messageParts: Buffer[] = [];
+      const decompresser = zlib.createInflate();
+      decompresser.on('data', (chunk: Buffer) => {
+        messageParts.push(chunk);
+        totalLength += chunk.byteLength;
+        if (this.maxRecvMessageLength !== -1 && totalLength > this.maxRecvMessageLength) {
+          decompresser.destroy();
+          reject({
+            code: Status.RESOURCE_EXHAUSTED,
+            details: `Received message that decompresses to a size larger than ${this.maxRecvMessageLength}`
+          });
         }
       });
+      decompresser.on('end', () => {
+        resolve(Buffer.concat(messageParts));
+      });
+      decompresser.write(message);
+      decompresser.end();
     });
   }
 }
 
 class GzipHandler extends CompressionHandler {
+  constructor(private maxRecvMessageLength: number) {
+    super();
+  }
+
   compressMessage(message: Buffer) {
     return new Promise<Buffer>((resolve, reject) => {
       zlib.gzip(message, (err, output) => {
@@ -138,13 +158,25 @@ class GzipHandler extends CompressionHandler {
 
   decompressMessage(message: Buffer) {
     return new Promise<Buffer>((resolve, reject) => {
-      zlib.unzip(message, (err, output) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(output);
+      let totalLength = 0;
+      const messageParts: Buffer[] = [];
+      const decompresser = zlib.createGunzip();
+      decompresser.on('data', (chunk: Buffer) => {
+        messageParts.push(chunk);
+        totalLength += chunk.byteLength;
+        if (this.maxRecvMessageLength !== -1 && totalLength > this.maxRecvMessageLength) {
+          decompresser.destroy();
+          reject({
+            code: Status.RESOURCE_EXHAUSTED,
+            details: `Received message that decompresses to a size larger than ${this.maxRecvMessageLength}`
+          });
         }
       });
+      decompresser.on('end', () => {
+        resolve(Buffer.concat(messageParts));
+      });
+      decompresser.write(message);
+      decompresser.end();
     });
   }
 }
@@ -169,14 +201,14 @@ class UnknownHandler extends CompressionHandler {
   }
 }
 
-function getCompressionHandler(compressionName: string): CompressionHandler {
+function getCompressionHandler(compressionName: string, maxReceiveMessageSize: number): CompressionHandler {
   switch (compressionName) {
     case 'identity':
       return new IdentityHandler();
     case 'deflate':
-      return new DeflateHandler();
+      return new DeflateHandler(maxReceiveMessageSize);
     case 'gzip':
-      return new GzipHandler();
+      return new GzipHandler(maxReceiveMessageSize);
     default:
       return new UnknownHandler(compressionName);
   }
@@ -186,6 +218,8 @@ export class CompressionFilter extends BaseFilter implements Filter {
   private sendCompression: CompressionHandler = new IdentityHandler();
   private receiveCompression: CompressionHandler = new IdentityHandler();
   private currentCompressionAlgorithm: CompressionAlgorithm = 'identity';
+  private maxReceiveMessageLength: number;
+  private maxSendMessageLength: number;
 
   constructor(
     channelOptions: ChannelOptions,
@@ -195,6 +229,8 @@ export class CompressionFilter extends BaseFilter implements Filter {
 
     const compressionAlgorithmKey =
       channelOptions['grpc.default_compression_algorithm'];
+    this.maxReceiveMessageLength = channelOptions['grpc.max_receive_message_length'] ?? DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH;
+    this.maxSendMessageLength = channelOptions['grpc.max_send_message_length'] ?? DEFAULT_MAX_SEND_MESSAGE_LENGTH;
     if (compressionAlgorithmKey !== undefined) {
       if (isCompressionAlgorithmKey(compressionAlgorithmKey)) {
         const clientSelectedEncoding = CompressionAlgorithms[
@@ -215,7 +251,8 @@ export class CompressionFilter extends BaseFilter implements Filter {
         ) {
           this.currentCompressionAlgorithm = clientSelectedEncoding;
           this.sendCompression = getCompressionHandler(
-            this.currentCompressionAlgorithm
+            this.currentCompressionAlgorithm,
+            -1
           );
         }
       } else {
@@ -247,7 +284,7 @@ export class CompressionFilter extends BaseFilter implements Filter {
     if (receiveEncoding.length > 0) {
       const encoding: MetadataValue = receiveEncoding[0];
       if (typeof encoding === 'string') {
-        this.receiveCompression = getCompressionHandler(encoding);
+        this.receiveCompression = getCompressionHandler(encoding, this.maxReceiveMessageLength);
       }
     }
     metadata.remove('grpc-encoding');
@@ -279,6 +316,12 @@ export class CompressionFilter extends BaseFilter implements Filter {
      * and the output is a framed and possibly compressed message. For this
      * reason, this filter should be at the bottom of the filter stack */
     const resolvedMessage: WriteObject = await message;
+    if (this.maxSendMessageLength !== -1 && resolvedMessage.message.length > this.maxSendMessageLength) {
+      throw {
+        code: Status.RESOURCE_EXHAUSTED,
+        details: `Attempted to send message with a size larger than ${this.maxSendMessageLength}`
+      };
+    }
     let compress: boolean;
     if (this.sendCompression instanceof IdentityHandler) {
       compress = false;

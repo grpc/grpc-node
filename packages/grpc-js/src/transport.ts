@@ -84,6 +84,7 @@ export interface TransportDisconnectListener {
 export interface Transport {
   getChannelzRef(): SocketRef;
   getPeerName(): string;
+  getOptions(): ChannelOptions;
   createCall(
     metadata: Metadata,
     host: string,
@@ -101,28 +102,24 @@ class Http2Transport implements Transport {
   /**
    * The amount of time in between sending pings
    */
-  private keepaliveTimeMs = -1;
+  private readonly keepaliveTimeMs: number;
   /**
    * The amount of time to wait for an acknowledgement after sending a ping
    */
-  private keepaliveTimeoutMs: number = KEEPALIVE_TIMEOUT_MS;
+  private readonly keepaliveTimeoutMs: number;
   /**
-   * Timer reference for timeout that indicates when to send the next ping
+   * Indicates whether keepalive pings should be sent without any active calls
    */
-  private keepaliveTimerId: NodeJS.Timeout | null = null;
+  private readonly keepaliveWithoutCalls: boolean;
+  /**
+   * Timer reference indicating when to send the next ping or when the most recent ping will be considered lost.
+   */
+  private keepaliveTimer: NodeJS.Timeout | null = null;
   /**
    * Indicates that the keepalive timer ran out while there were no active
    * calls, and a ping should be sent the next time a call starts.
    */
   private pendingSendKeepalivePing = false;
-  /**
-   * Timer reference tracking when the most recent ping will be considered lost
-   */
-  private keepaliveTimeoutId: NodeJS.Timeout | null = null;
-  /**
-   * Indicates whether keepalive pings should be sent without any active calls
-   */
-  private keepaliveWithoutCalls = false;
 
   private userAgent: string;
 
@@ -147,7 +144,7 @@ class Http2Transport implements Transport {
   constructor(
     private session: http2.ClientHttp2Session,
     subchannelAddress: SubchannelAddress,
-    options: ChannelOptions,
+    private options: ChannelOptions,
     /**
      * Name of the remote server, if it is not the same as the subchannel
      * address, i.e. if connecting through an HTTP CONNECT proxy.
@@ -182,9 +179,13 @@ class Http2Transport implements Transport {
 
     if ('grpc.keepalive_time_ms' in options) {
       this.keepaliveTimeMs = options['grpc.keepalive_time_ms']!;
+    } else {
+      this.keepaliveTimeMs = -1;
     }
     if ('grpc.keepalive_timeout_ms' in options) {
       this.keepaliveTimeoutMs = options['grpc.keepalive_timeout_ms']!;
+    } else {
+      this.keepaliveTimeoutMs = KEEPALIVE_TIMEOUT_MS;
     }
     if ('grpc.keepalive_permit_without_calls' in options) {
       this.keepaliveWithoutCalls =
@@ -195,7 +196,6 @@ class Http2Transport implements Transport {
 
     session.once('close', () => {
       this.trace('session closed');
-      this.stopKeepalivePings();
       this.handleDisconnect();
     });
 
@@ -383,6 +383,7 @@ class Http2Transport implements Transport {
    * Handle connection drops, but not GOAWAYs.
    */
   private handleDisconnect() {
+    this.clearKeepaliveTimeout();
     this.reportDisconnectToOwner(false);
     /* Give calls an event loop cycle to finish naturally before reporting the
      * disconnnection to them. */
@@ -390,6 +391,7 @@ class Http2Transport implements Transport {
       for (const call of this.activeCalls) {
         call.onDisconnect();
       }
+      this.session.destroy();
     });
   }
 
@@ -397,33 +399,21 @@ class Http2Transport implements Transport {
     this.disconnectListeners.push(listener);
   }
 
-  private clearKeepaliveTimer() {
-    if (!this.keepaliveTimerId) {
-      return;
-    }
-    clearTimeout(this.keepaliveTimerId);
-    this.keepaliveTimerId = null;
-  }
-
-  private clearKeepaliveTimeout() {
-    if (!this.keepaliveTimeoutId) {
-      return;
-    }
-    clearTimeout(this.keepaliveTimeoutId);
-    this.keepaliveTimeoutId = null;
-  }
-
   private canSendPing() {
     return (
+      !this.session.destroyed &&
       this.keepaliveTimeMs > 0 &&
       (this.keepaliveWithoutCalls || this.activeCalls.size > 0)
     );
   }
 
   private maybeSendPing() {
-    this.clearKeepaliveTimer();
     if (!this.canSendPing()) {
       this.pendingSendKeepalivePing = true;
+      return;
+    }
+    if (this.keepaliveTimer) {
+      console.error('keepaliveTimeout is not null');
       return;
     }
     if (this.channelzEnabled) {
@@ -432,28 +422,35 @@ class Http2Transport implements Transport {
     this.keepaliveTrace(
       'Sending ping with timeout ' + this.keepaliveTimeoutMs + 'ms'
     );
-    if (!this.keepaliveTimeoutId) {
-      this.keepaliveTimeoutId = setTimeout(() => {
-        this.keepaliveTrace('Ping timeout passed without response');
-        this.handleDisconnect();
-      }, this.keepaliveTimeoutMs);
-      this.keepaliveTimeoutId.unref?.();
-    }
+    this.keepaliveTimer = setTimeout(() => {
+      this.keepaliveTimer = null;
+      this.keepaliveTrace('Ping timeout passed without response');
+      this.handleDisconnect();
+    }, this.keepaliveTimeoutMs);
+    this.keepaliveTimer.unref?.();
+    let pingSendError = '';
     try {
-      this.session!.ping(
+      const pingSentSuccessfully = this.session.ping(
         (err: Error | null, duration: number, payload: Buffer) => {
+          this.clearKeepaliveTimeout();
           if (err) {
             this.keepaliveTrace('Ping failed with error ' + err.message);
             this.handleDisconnect();
+          } else {
+            this.keepaliveTrace('Received ping response');
+            this.maybeStartKeepalivePingTimer();
           }
-          this.keepaliveTrace('Received ping response');
-          this.clearKeepaliveTimeout();
-          this.maybeStartKeepalivePingTimer();
         }
       );
+      if (!pingSentSuccessfully) {
+        pingSendError = 'Ping returned false';
+      }
     } catch (e) {
-      /* If we fail to send a ping, the connection is no longer functional, so
-       * we should discard it. */
+      // grpc/grpc-node#2139
+      pingSendError = (e instanceof Error ? e.message : '') || 'Unknown error';
+    }
+    if (pingSendError) {
+      this.keepaliveTrace('Ping send failed: ' + pingSendError);
       this.handleDisconnect();
     }
   }
@@ -471,25 +468,28 @@ class Http2Transport implements Transport {
     if (this.pendingSendKeepalivePing) {
       this.pendingSendKeepalivePing = false;
       this.maybeSendPing();
-    } else if (!this.keepaliveTimerId && !this.keepaliveTimeoutId) {
+    } else if (!this.keepaliveTimer) {
       this.keepaliveTrace(
         'Starting keepalive timer for ' + this.keepaliveTimeMs + 'ms'
       );
-      this.keepaliveTimerId = setTimeout(() => {
+      this.keepaliveTimer = setTimeout(() => {
+        this.keepaliveTimer = null;
         this.maybeSendPing();
       }, this.keepaliveTimeMs);
-      this.keepaliveTimerId.unref?.();
+      this.keepaliveTimer.unref?.();
     }
     /* Otherwise, there is already either a keepalive timer or a ping pending,
      * wait for those to resolve. */
   }
 
-  private stopKeepalivePings() {
-    if (this.keepaliveTimerId) {
-      clearTimeout(this.keepaliveTimerId);
-      this.keepaliveTimerId = null;
+  /**
+   * Clears whichever keepalive timeout is currently active, if any.
+   */
+  private clearKeepaliveTimeout() {
+    if (this.keepaliveTimer) {
+      clearTimeout(this.keepaliveTimer);
+      this.keepaliveTimer = null;
     }
-    this.clearKeepaliveTimeout();
   }
 
   private removeActiveCall(call: Http2SubchannelCall) {
@@ -533,7 +533,7 @@ class Http2Transport implements Transport {
      * error here.
      */
     try {
-      http2Stream = this.session!.request(headers);
+      http2Stream = this.session.request(headers);
     } catch (e) {
       this.handleDisconnect();
       throw e;
@@ -615,6 +615,10 @@ class Http2Transport implements Transport {
 
   getPeerName() {
     return this.subchannelAddressString;
+  }
+
+  getOptions() {
+    return this.options;
   }
 
   shutdown() {

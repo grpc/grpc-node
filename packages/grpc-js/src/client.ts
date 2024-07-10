@@ -330,7 +330,7 @@ export class Client {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onReceiveMessage(message: any) {
         if (responseMessage !== null) {
-          call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
+          call.cancelWithStatus(Status.UNIMPLEMENTED, 'Too many responses received');
         }
         responseMessage = message;
       },
@@ -345,7 +345,7 @@ export class Client {
             callProperties.callback!(
               callErrorFromStatus(
                 {
-                  code: Status.INTERNAL,
+                  code: Status.UNIMPLEMENTED,
                   details: 'No message received',
                   metadata: status.metadata,
                 },
@@ -463,9 +463,10 @@ export class Client {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onReceiveMessage(message: any) {
         if (responseMessage !== null) {
-          call.cancelWithStatus(Status.INTERNAL, 'Too many responses received');
+          call.cancelWithStatus(Status.UNIMPLEMENTED, 'Too many responses received');
         }
         responseMessage = message;
+        call.startRead();
       },
       onReceiveStatus(status: StatusObject) {
         if (receivedStatus) {
@@ -478,7 +479,7 @@ export class Client {
             callProperties.callback!(
               callErrorFromStatus(
                 {
-                  code: Status.INTERNAL,
+                  code: Status.UNIMPLEMENTED,
                   details: 'No message received',
                   metadata: status.metadata,
                 },
