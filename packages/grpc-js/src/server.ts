@@ -1790,19 +1790,22 @@ export class Server {
     // for future refreshes
     if (
       sessionInfo !== undefined &&
-      sessionInfo.activeStreams === 0 &&
-      Date.now() - sessionInfo.lastIdle >= ctx.sessionIdleTimeout
+      sessionInfo.activeStreams === 0
     ) {
-      ctx.trace(
-        'Session idle timeout triggered for ' +
-          socket?.remoteAddress +
-          ':' +
-          socket?.remotePort +
-          ' last idle at ' +
-          sessionInfo.lastIdle
-      );
+      if (Date.now() - sessionInfo.lastIdle >= ctx.sessionIdleTimeout) {
+        ctx.trace(
+          'Session idle timeout triggered for ' +
+            socket?.remoteAddress +
+            ':' +
+            socket?.remotePort +
+            ' last idle at ' +
+            sessionInfo.lastIdle
+        );
 
-      ctx.closeSession(session);
+        ctx.closeSession(session);
+      } else {
+        sessionInfo.timeout.refresh();
+      }
     }
   }
 

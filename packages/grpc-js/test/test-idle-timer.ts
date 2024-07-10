@@ -199,7 +199,7 @@ describe('Server idle timer', () => {
         grpc.connectivityState.READY
       );
       client?.waitForClientState(
-        Date.now() + 600,
+        Date.now() + 1500,
         grpc.connectivityState.IDLE,
         done
       );
@@ -217,7 +217,7 @@ describe('Server idle timer', () => {
       );
 
       client!.waitForClientState(
-        Date.now() + 600,
+        Date.now() + 1500,
         grpc.connectivityState.IDLE,
         err => {
           if (err) return done(err);
@@ -248,7 +248,7 @@ describe('Server idle timer', () => {
       );
 
       client!.waitForClientState(
-        Date.now() + 600,
+        Date.now() + 1500,
         grpc.connectivityState.IDLE,
         done
       );
