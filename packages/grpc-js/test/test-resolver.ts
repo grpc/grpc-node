@@ -31,6 +31,7 @@ import {
   subchannelAddressEqual,
 } from '../src/subchannel-address';
 import { parseUri, GrpcUri } from '../src/uri-parser';
+import { GRPC_NODE_USE_ALTERNATIVE_RESOLVER } from '../src/environment';
 
 function hasMatchingAddress(
   endpointList: Endpoint[],
@@ -55,7 +56,10 @@ describe('Name Resolver', () => {
   describe('DNS Names', function () {
     // For some reason DNS queries sometimes take a long time on Windows
     this.timeout(4000);
-    it('Should resolve localhost properly', done => {
+    it('Should resolve localhost properly', function (done) {
+      if (GRPC_NODE_USE_ALTERNATIVE_RESOLVER) {
+        this.skip();
+      }
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('localhost:50051')!
       )!;
@@ -82,7 +86,10 @@ describe('Name Resolver', () => {
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
-    it('Should default to port 443', done => {
+    it('Should default to port 443', function (done) {
+      if (GRPC_NODE_USE_ALTERNATIVE_RESOLVER) {
+        this.skip();
+      }
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('localhost')!
       )!;
@@ -402,7 +409,10 @@ describe('Name Resolver', () => {
       const resolver2 = resolverManager.createResolver(target2, listener, {});
       resolver2.updateResolution();
     });
-    it('should not keep repeating successful resolutions', done => {
+    it('should not keep repeating successful resolutions', function (done) {
+      if (GRPC_NODE_USE_ALTERNATIVE_RESOLVER) {
+        this.skip();
+      }
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('localhost')!
       )!;

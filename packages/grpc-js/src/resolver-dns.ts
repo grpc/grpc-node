@@ -20,8 +20,7 @@ import {
   registerResolver,
   registerDefaultScheme,
 } from './resolver';
-import * as dns from 'dns';
-import * as util from 'util';
+import { promises as dns } from 'node:dns';
 import { extractAndSelectServiceConfig, ServiceConfig } from './service-config';
 import { Status } from './constants';
 import { StatusObject } from './call-interface';
@@ -33,6 +32,7 @@ import { GrpcUri, uriToString, splitHostPort } from './uri-parser';
 import { isIPv6, isIPv4 } from 'net';
 import { ChannelOptions } from './channel-options';
 import { BackoffOptions, BackoffTimeout } from './backoff-timeout';
+import { GRPC_NODE_USE_ALTERNATIVE_RESOLVER } from './environment';
 
 const TRACER_NAME = 'dns_resolver';
 
@@ -47,9 +47,6 @@ export const DEFAULT_PORT = 443;
 
 const DEFAULT_MIN_TIME_BETWEEN_RESOLUTIONS_MS = 30_000;
 
-const resolveTxtPromise = util.promisify(dns.resolveTxt);
-const dnsLookupPromise = util.promisify(dns.lookup);
-
 /**
  * Resolver implementation that handles DNS names and IP addresses.
  */
@@ -63,7 +60,7 @@ class DnsResolver implements Resolver {
    * Failures are handled by the backoff timer.
    */
   private readonly minTimeBetweenResolutionsMs: number;
-  private pendingLookupPromise: Promise<dns.LookupAddress[]> | null = null;
+  private pendingLookupPromise: Promise<TcpSubchannelAddress[]> | null = null;
   private pendingTxtPromise: Promise<string[][]> | null = null;
   private latestLookupResult: Endpoint[] | null = null;
   private latestServiceConfig: ServiceConfig | null = null;
@@ -76,12 +73,17 @@ class DnsResolver implements Resolver {
   private isNextResolutionTimerRunning = false;
   private isServiceConfigEnabled = true;
   private returnedIpResult = false;
+  private alternativeResolver = new dns.Resolver();
+
   constructor(
     private target: GrpcUri,
     private listener: ResolverListener,
     channelOptions: ChannelOptions
   ) {
     trace('Resolver constructed for target ' + uriToString(target));
+    if (target.authority) {
+      this.alternativeResolver.setServers([target.authority]);
+    }
     const hostPort = splitHostPort(target.path);
     if (hostPort === null) {
       this.ipResult = null;
@@ -185,11 +187,7 @@ class DnsResolver implements Resolver {
        * revert to an effectively blank one. */
       this.latestLookupResult = null;
       const hostname: string = this.dnsHostname;
-      /* We lookup both address families here and then split them up later
-       * because when looking up a single family, dns.lookup outputs an error
-       * if the name exists but there are no records for that family, and that
-       * error is indistinguishable from other kinds of errors */
-      this.pendingLookupPromise = dnsLookupPromise(hostname, { all: true });
+      this.pendingLookupPromise = this.lookup(hostname);
       this.pendingLookupPromise.then(
         addressList => {
           if (this.pendingLookupPromise === null) {
@@ -198,17 +196,12 @@ class DnsResolver implements Resolver {
           this.pendingLookupPromise = null;
           this.backoff.reset();
           this.backoff.stop();
-          const subchannelAddresses: TcpSubchannelAddress[] = addressList.map(
-            addr => ({ host: addr.address, port: +this.port! })
-          );
-          this.latestLookupResult = subchannelAddresses.map(address => ({
+          this.latestLookupResult = addressList.map(address => ({
             addresses: [address],
           }));
           const allAddressesString: string =
             '[' +
-            subchannelAddresses
-              .map(addr => addr.host + ':' + addr.port)
-              .join(',') +
+            addressList.map(addr => addr.host + ':' + addr.port).join(',') +
             ']';
           trace(
             'Resolved addresses for target ' +
@@ -253,7 +246,7 @@ class DnsResolver implements Resolver {
         /* We handle the TXT query promise differently than the others because
          * the name resolution attempt as a whole is a success even if the TXT
          * lookup fails */
-        this.pendingTxtPromise = resolveTxtPromise(hostname);
+        this.pendingTxtPromise = this.resolveTxt(hostname);
         this.pendingTxtPromise.then(
           txtRecord => {
             if (this.pendingTxtPromise === null) {
@@ -300,6 +293,48 @@ class DnsResolver implements Resolver {
         );
       }
     }
+  }
+
+  private async lookup(hostname: string): Promise<TcpSubchannelAddress[]> {
+    if (GRPC_NODE_USE_ALTERNATIVE_RESOLVER) {
+      trace('Using alternative DNS resolver.');
+
+      const records = await Promise.allSettled([
+        this.alternativeResolver.resolve4(hostname),
+        this.alternativeResolver.resolve6(hostname),
+      ]);
+
+      if (records.every(result => result.status === 'rejected')) {
+        throw new Error((records[0] as PromiseRejectedResult).reason);
+      }
+
+      return records
+        .reduce<string[]>((acc, result) => {
+          return result.status === 'fulfilled'
+            ? [...acc, ...result.value]
+            : acc;
+        }, [])
+        .map(addr => ({
+          host: addr,
+          port: +this.port!,
+        }));
+    }
+
+    /* We lookup both address families here and then split them up later
+     * because when looking up a single family, dns.lookup outputs an error
+     * if the name exists but there are no records for that family, and that
+     * error is indistinguishable from other kinds of errors */
+    const addressList = await dns.lookup(hostname, { all: true });
+    return addressList.map(addr => ({ host: addr.address, port: +this.port! }));
+  }
+
+  private async resolveTxt(hostname: string): Promise<string[][]> {
+    if (GRPC_NODE_USE_ALTERNATIVE_RESOLVER) {
+      trace('Using alternative DNS resolver.');
+      return this.alternativeResolver.resolveTxt(hostname);
+    }
+
+    return dns.resolveTxt(hostname);
   }
 
   private startNextResolutionTimer() {

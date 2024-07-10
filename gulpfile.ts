@@ -41,7 +41,7 @@ const nativeTestOnly = gulp.parallel(healthCheck.test);
 
 const nativeTest = gulp.series(build, nativeTestOnly);
 
-const testOnly = gulp.parallel(jsCore.test, nativeTestOnly, protobuf.test, jsXds.test, reflection.test);
+const testOnly = gulp.series(jsCore.test, nativeTestOnly, protobuf.test, jsXds.test, reflection.test);
 
 const test = gulp.series(build, testOnly, internalTest.test);
 

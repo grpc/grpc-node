@@ -81,6 +81,27 @@ const runTests = checkTask(() => {
   );
 });
 
-const test = gulp.series(install, copyTestFixtures, runTests);
+const testWithAlternativeResolver = checkTask(() => {
+  process.env.GRPC_NODE_USE_ALTERNATIVE_RESOLVER = 'true';
+  return gulp.src(`${outDir}/test/test-resolver.js`).pipe(
+    mocha({
+      reporter: 'mocha-jenkins-reporter',
+      require: ['ts-node/register'],
+    })
+  );
+});
+
+const resetEnv = () => {
+  process.env.GRPC_NODE_USE_ALTERNATIVE_RESOLVER = 'false';
+  return Promise.resolve();
+};
+
+const test = gulp.series(
+  install,
+  copyTestFixtures,
+  runTests,
+  testWithAlternativeResolver,
+  resetEnv
+);
 
 export { install, lint, clean, cleanAll, compile, test };
