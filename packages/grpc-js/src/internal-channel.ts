@@ -842,4 +842,8 @@ export class InternalChannel {
       propagateFlags
     );
   }
+
+  getOptions() {
+    return this.options;
+  }
 }

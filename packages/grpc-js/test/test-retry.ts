@@ -281,6 +281,48 @@ describe('Retries', () => {
         }
       );
     });
+
+    it('Should be able to make more than 5 attempts with a channel argument', done => {
+      const serviceConfig = {
+        loadBalancingConfig: [],
+        methodConfig: [
+          {
+            name: [
+              {
+                service: 'EchoService',
+              },
+            ],
+            retryPolicy: {
+              maxAttempts: 10,
+              initialBackoff: '0.1s',
+              maxBackoff: '10s',
+              backoffMultiplier: 1.2,
+              retryableStatusCodes: [14, 'RESOURCE_EXHAUSTED'],
+            },
+          },
+        ],
+      };
+      const client2 = new EchoService(
+        `localhost:${port}`,
+        grpc.credentials.createInsecure(),
+        {
+          'grpc.service_config': JSON.stringify(serviceConfig),
+          'grpc-node.retry_max_attempts_limit': 8
+        }
+      );
+      const metadata = new grpc.Metadata();
+      metadata.set('succeed-on-retry-attempt', '7');
+      metadata.set('respond-with-status', `${grpc.status.RESOURCE_EXHAUSTED}`);
+      client2.echo(
+        { value: 'test value', value2: 3 },
+        metadata,
+        (error: grpc.ServiceError, response: any) => {
+          assert.ifError(error);
+          assert.deepStrictEqual(response, { value: 'test value', value2: 3 });
+          done();
+        }
+      );
+    });
   });
 
   describe('Client with hedging configured', () => {
