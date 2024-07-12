@@ -33,6 +33,7 @@ import {
 } from '../src/server-call';
 
 import { loadProtoFile } from './common';
+import { CompressionAlgorithms } from '../src/compression-algorithms';
 
 const protoFile = join(__dirname, 'fixtures', 'test_service.proto');
 const testServiceDef = loadProtoFile(protoFile);
@@ -286,6 +287,98 @@ describe('Server serialization failure handling', () => {
   });
 });
 
+describe('Cardinality violations', () => {
+  let client: ServiceClient;
+  let server: Server;
+  let responseCount: number = 1;
+  const testMessage = Buffer.from([]);
+  before(done => {
+    const serverServiceDefinition = {
+      testMethod: {
+        path: '/TestService/TestMethod/',
+        requestStream: false,
+        responseStream: true,
+        requestSerialize: identity,
+        requestDeserialize: identity,
+        responseDeserialize: identity,
+        responseSerialize: identity
+      }
+    };
+    const clientServiceDefinition = {
+      testMethod: {
+        path: '/TestService/TestMethod/',
+        requestStream: true,
+        responseStream: false,
+        requestSerialize: identity,
+        requestDeserialize: identity,
+        responseDeserialize: identity,
+        responseSerialize: identity
+      }
+    };
+    const TestClient = grpc.makeClientConstructor(clientServiceDefinition, 'TestService');
+    server = new grpc.Server();
+    server.addService(serverServiceDefinition, {
+      testMethod(stream: ServerWritableStream<any, any>) {
+        for (let i = 0; i < responseCount; i++) {
+          stream.write(testMessage);
+        }
+        stream.end();
+      }
+    });
+    server.bindAsync('localhost:0', serverInsecureCreds, (error, port) => {
+      assert.ifError(error);
+      client = new TestClient(`localhost:${port}`, clientInsecureCreds);
+      done();
+    });
+  });
+  beforeEach(() => {
+    responseCount = 1;
+  });
+  after(done => {
+    client.close();
+    server.tryShutdown(done);
+  });
+  it('Should fail if the client sends too few messages', done => {
+    const call = client.testMethod((err: ServiceError, data: any) => {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
+      done();
+    });
+    call.end();
+  });
+  it('Should fail if the client sends too many messages', done => {
+    const call = client.testMethod((err: ServiceError, data: any) => {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
+      done();
+    });
+    call.write(testMessage);
+    call.write(testMessage);
+    call.end();
+  });
+  it('Should fail if the server sends too few messages', done => {
+    responseCount = 0;
+    const call = client.testMethod((err: ServiceError, data: any) => {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
+      done();
+    });
+    call.write(testMessage);
+    call.end();
+  });
+  it('Should fail if the server sends too many messages', done => {
+    responseCount = 2;
+    const call = client.testMethod((err: ServiceError, data: any) => {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
+      done();
+    });
+    call.write(testMessage);
+    call.end();
+  });
+
+});
+
 describe('Other conditions', () => {
   let client: ServiceClient;
   let server: Server;
@@ -310,7 +403,7 @@ describe('Other conditions', () => {
             trailerMetadata
           );
         } else {
-          cb(null, { count: 1 }, trailerMetadata);
+          cb(null, { count: 1, message: 'a'.repeat(req.responseLength) }, trailerMetadata);
         }
       },
 
@@ -320,6 +413,7 @@ describe('Other conditions', () => {
       ) {
         let count = 0;
         let errored = false;
+        let responseLength = 0;
 
         stream.on('data', (data: any) => {
           if (data.error) {
@@ -327,13 +421,14 @@ describe('Other conditions', () => {
             errored = true;
             cb(new Error(message) as ServiceError, null, trailerMetadata);
           } else {
+            responseLength += data.responseLength;
             count++;
           }
         });
 
         stream.on('end', () => {
           if (!errored) {
-            cb(null, { count }, trailerMetadata);
+            cb(null, { count, message: 'a'.repeat(responseLength) }, trailerMetadata);
           }
         });
       },
@@ -349,7 +444,7 @@ describe('Other conditions', () => {
           });
         } else {
           for (let i = 1; i <= 5; i++) {
-            stream.write({ count: i });
+            stream.write({ count: i, message: 'a'.repeat(req.responseLength) });
             if (req.errorAfter && req.errorAfter === i) {
               stream.emit('error', {
                 code: grpc.status.UNKNOWN,
@@ -376,7 +471,7 @@ describe('Other conditions', () => {
             err.metadata.add('count', '' + count);
             stream.emit('error', err);
           } else {
-            stream.write({ count });
+            stream.write({ count, message: 'a'.repeat(data.responseLength) });
             count++;
           }
         });
@@ -737,6 +832,44 @@ describe('Other conditions', () => {
         assert.strictEqual(error.details, 'Requested error');
         assert.strictEqual(actualDataCount, expectedDataCount);
         done();
+      });
+    });
+  });
+
+  describe('Max message size', () => {
+    const largeMessage = 'a'.repeat(10_000_000);
+    it('Should be enforced on the server', done => {
+      client.unary({ message: largeMessage }, (error?: ServiceError) => {
+        assert(error);
+        assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
+        done();
+      });
+    });
+    it('Should be enforced on the client', done => {
+      client.unary({ responseLength: 10_000_000 }, (error?: ServiceError) => {
+        assert(error);
+        assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
+        done();
+      });
+    });
+    describe('Compressed messages', () => {
+      it('Should be enforced with gzip', done => {
+        const compressingClient = new testServiceClient(`localhost:${port}`, clientInsecureCreds, {'grpc.default_compression_algorithm': CompressionAlgorithms.gzip});
+        compressingClient.unary({ message: largeMessage }, (error?: ServiceError) => {
+          assert(error);
+          assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
+          assert.match(error.details, /Received message that decompresses to a size larger/);
+          done();
+        });
+      });
+      it('Should be enforced with deflate', done => {
+        const compressingClient = new testServiceClient(`localhost:${port}`, clientInsecureCreds, {'grpc.default_compression_algorithm': CompressionAlgorithms.deflate});
+        compressingClient.unary({ message: largeMessage }, (error?: ServiceError) => {
+          assert(error);
+          assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
+          assert.match(error.details, /Received message that decompresses to a size larger/);
+          done();
+        });
       });
     });
   });
