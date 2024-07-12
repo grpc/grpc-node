@@ -37,6 +37,7 @@ export type ServerSurfaceCall = {
   sendMetadata(responseMetadata: Metadata): void;
   getDeadline(): Deadline;
   getPath(): string;
+  getHost(): string;
 } & EventEmitter;
 
 export type ServerUnaryCall<RequestType, ResponseType> = ServerSurfaceCall & {
@@ -109,6 +110,10 @@ export class ServerUnaryCallImpl<RequestType, ResponseType>
   getPath(): string {
     return this.path;
   }
+
+  getHost(): string {
+    return this.call.getHost();
+  }
 }
 
 export class ServerReadableStreamImpl<RequestType, ResponseType>
@@ -144,6 +149,10 @@ export class ServerReadableStreamImpl<RequestType, ResponseType>
 
   getPath(): string {
     return this.path;
+  }
+
+  getHost(): string {
+    return this.call.getHost();
   }
 }
 
@@ -188,6 +197,10 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
 
   getPath(): string {
     return this.path;
+  }
+
+  getHost(): string {
+    return this.call.getHost();
   }
 
   _write(
@@ -257,6 +270,10 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType>
 
   getPath(): string {
     return this.path;
+  }
+
+  getHost(): string {
+    return this.call.getHost();
   }
 
   _read(size: number) {
