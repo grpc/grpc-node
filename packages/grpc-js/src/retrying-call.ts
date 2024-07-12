@@ -172,6 +172,8 @@ interface WriteBufferEntry {
 
 const PREVIONS_RPC_ATTEMPTS_METADATA_KEY = 'grpc-previous-rpc-attempts';
 
+const DEFAULT_MAX_ATTEMPTS_LIMIT = 5;
+
 export class RetryingCall implements Call, DeadlineInfoProvider {
   private state: RetryingCallState;
   private listener: InterceptingListener | null = null;
@@ -201,6 +203,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
   private initialRetryBackoffSec = 0;
   private nextRetryBackoffSec = 0;
   private startTime: Date;
+  private maxAttempts: number;
   constructor(
     private readonly channel: InternalChannel,
     private readonly callConfig: CallConfig,
@@ -212,6 +215,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     private readonly bufferTracker: MessageBufferTracker,
     private readonly retryThrottler?: RetryThrottler
   ) {
+    const maxAttemptsLimit = channel.getOptions()['grpc-node.retry_max_attempts_limit'] ?? DEFAULT_MAX_ATTEMPTS_LIMIT;
     if (callConfig.methodConfig.retryPolicy) {
       this.state = 'RETRY';
       const retryPolicy = callConfig.methodConfig.retryPolicy;
@@ -221,10 +225,13 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
           retryPolicy.initialBackoff.length - 1
         )
       );
+      this.maxAttempts = Math.min(retryPolicy.maxAttempts, maxAttemptsLimit);
     } else if (callConfig.methodConfig.hedgingPolicy) {
       this.state = 'HEDGING';
+      this.maxAttempts = Math.min(callConfig.methodConfig.hedgingPolicy.maxAttempts, maxAttemptsLimit);
     } else {
       this.state = 'TRANSPARENT_ONLY';
+      this.maxAttempts = 1;
     }
     this.startTime = new Date();
   }
@@ -419,8 +426,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
       callback(false);
       return;
     }
-    const retryPolicy = this.callConfig!.methodConfig.retryPolicy!;
-    if (this.attempts >= Math.min(retryPolicy.maxAttempts, 5)) {
+    if (this.attempts >= this.maxAttempts) {
       callback(false);
       return;
     }
@@ -596,8 +602,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     if (!this.callConfig.methodConfig.hedgingPolicy) {
       return;
     }
-    const hedgingPolicy = this.callConfig.methodConfig.hedgingPolicy;
-    if (this.attempts >= Math.min(hedgingPolicy.maxAttempts, 5)) {
+    if (this.attempts >= this.maxAttempts) {
       return;
     }
     this.attempts += 1;
@@ -616,7 +621,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
       return;
     }
     const hedgingPolicy = this.callConfig.methodConfig.hedgingPolicy;
-    if (this.attempts >= Math.min(hedgingPolicy.maxAttempts, 5)) {
+    if (this.attempts >= this.maxAttempts) {
       return;
     }
     const hedgingDelayString = hedgingPolicy.hedgingDelay ?? '0s';
