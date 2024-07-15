@@ -69,6 +69,7 @@ Many channel arguments supported in `grpc` are not supported in `@grpc/grpc-js`.
   - `grpc.client_idle_timeout_ms`
   - `grpc-node.max_session_memory`
   - `grpc-node.tls_enable_trace`
+  - `grpc-node.retry_max_attempts_limit`
   - `channelOverride`
   - `channelFactoryOverride`
 

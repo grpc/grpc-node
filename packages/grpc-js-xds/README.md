@@ -35,3 +35,4 @@ const client = new MyServiceClient('xds:///example.com:123');
  - [xDS Custom Load Balancer Configuration](https://github.com/grpc/proposal/blob/master/A52-xds-custom-lb-policies.md) (Custom load balancer registration not currently supported)
  - [xDS Ring Hash LB Policy](https://github.com/grpc/proposal/blob/master/A42-xds-ring-hash-lb-policy.md)
  - [`pick_first` via xDS](https://github.com/grpc/proposal/blob/master/A62-pick-first.md#pick_first-via-xds-1) (Currently experimental, enabled by environment variable `GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG`)
+ - [xDS-Enabled Servers](https://github.com/grpc/proposal/blob/master/A36-xds-for-servers.md)
