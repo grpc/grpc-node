@@ -53,4 +53,14 @@ export {
   FailurePercentageEjectionConfig,
 } from './load-balancer-outlier-detection';
 
-export { createServerCredentialsWithInterceptors } from './server-credentials';
+export { createServerCredentialsWithInterceptors, createCertificateProviderServerCredentials } from './server-credentials';
+export {
+  CaCertificateUpdate,
+  CaCertificateUpdateListener,
+  IdentityCertificateUpdate,
+  IdentityCertificateUpdateListener,
+  CertificateProvider,
+  FileWatcherCertificateProvider,
+  FileWatcherCertificateProviderConfig
+} from './certificate-provider';
+export { createCertificateProviderChannelCredentials } from './channel-credentials';

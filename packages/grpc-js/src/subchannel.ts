@@ -155,6 +155,7 @@ export class Subchannel {
       'Subchannel constructed with options ' +
         JSON.stringify(options, undefined, 2)
     );
+    credentials._ref();
   }
 
   private getChannelzInfo(): SubchannelInfo {
@@ -290,11 +291,21 @@ export class Subchannel {
     if (oldStates.indexOf(this.connectivityState) === -1) {
       return false;
     }
-    this.trace(
-      ConnectivityState[this.connectivityState] +
-        ' -> ' +
-        ConnectivityState[newState]
-    );
+    if (errorMessage) {
+      this.trace(
+        ConnectivityState[this.connectivityState] +
+          ' -> ' +
+          ConnectivityState[newState] +
+          ' with error "' + errorMessage + '"'
+      );
+
+    } else {
+      this.trace(
+        ConnectivityState[this.connectivityState] +
+          ' -> ' +
+          ConnectivityState[newState]
+      );
+    }
     if (this.channelzEnabled) {
       this.channelzTrace.addTrace(
         'CT_INFO',
@@ -354,6 +365,7 @@ export class Subchannel {
     if (this.refcount === 0) {
       this.channelzTrace.addTrace('CT_INFO', 'Shutting down');
       unregisterChannelzRef(this.channelzRef);
+      this.credentials._unref();
       process.nextTick(() => {
         this.transitionToState(
           [ConnectivityState.CONNECTING, ConnectivityState.READY],

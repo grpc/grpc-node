@@ -676,8 +676,13 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       const targetAuthority = getDefaultAuthority(
         proxyConnectionResult.realTarget ?? this.channelTarget
       );
-      let connectionOptions: http2.SecureClientSessionOptions =
-        credentials._getConnectionOptions() || {};
+      let connectionOptions: http2.SecureClientSessionOptions | null =
+        credentials._getConnectionOptions();
+
+      if (!connectionOptions) {
+        reject('Credentials not loaded');
+        return;
+      }
       connectionOptions.maxSendHeaderBlockLength = Number.MAX_SAFE_INTEGER;
       if ('grpc-node.max_session_memory' in options) {
         connectionOptions.maxSessionMemory =
@@ -800,8 +805,12 @@ export class Http2SubchannelConnector implements SubchannelConnector {
      * upgrade it's connection to support tls if needed.
      * This is a workaround for https://github.com/nodejs/node/issues/32922
      * See https://github.com/grpc/grpc-node/pull/1369 for more info. */
-    const connectionOptions: ConnectionOptions =
-      credentials._getConnectionOptions() || {};
+    const connectionOptions: ConnectionOptions | null =
+      credentials._getConnectionOptions();
+
+    if (!connectionOptions) {
+      return Promise.reject('Credentials not loaded');
+    }
 
     if ('secureContext' in connectionOptions) {
       connectionOptions.ALPNProtocols = ['h2'];

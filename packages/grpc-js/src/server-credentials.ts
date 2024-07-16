@@ -19,6 +19,7 @@ import { SecureServerOptions } from 'http2';
 import { CIPHER_SUITES, getDefaultRootsData } from './tls-helpers';
 import { SecureContextOptions } from 'tls';
 import { ServerInterceptor } from '.';
+import { CaCertificateUpdate, CaCertificateUpdateListener, CertificateProvider, IdentityCertificateUpdate, IdentityCertificateUpdateListener } from './certificate-provider';
 
 export interface KeyCertPair {
   private_key: Buffer;
@@ -38,12 +39,11 @@ export abstract class ServerCredentials {
   _removeWatcher(watcher: SecureContextWatcher) {
     this.watchers.delete(watcher);
   }
+  protected getWatcherCount() {
+    return this.watchers.size;
+  }
   protected updateSecureContextOptions(options: SecureServerOptions | null) {
-    if (options) {
-      this.latestContextOptions = options;
-    } else {
-      this.latestContextOptions = null;
-    }
+    this.latestContextOptions = options;
     for (const watcher of this.watchers) {
       watcher(this.latestContextOptions);
     }
@@ -217,6 +217,91 @@ class SecureServerCredentials extends ServerCredentials {
      * equality check is needed. */
     return true;
   }
+}
+
+class CertificateProviderServerCredentials extends ServerCredentials {
+  private latestCaUpdate: CaCertificateUpdate | null = null;
+  private latestIdentityUpdate: IdentityCertificateUpdate | null = null;
+  private caCertificateUpdateListener: CaCertificateUpdateListener = this.handleCaCertificateUpdate.bind(this);
+  private identityCertificateUpdateListener: IdentityCertificateUpdateListener = this.handleIdentityCertitificateUpdate.bind(this);
+  constructor(
+    private identityCertificateProvider: CertificateProvider,
+    private caCertificateProvider: CertificateProvider | null,
+    private requireClientCertificate: boolean
+  ) {
+    super();
+  }
+  _addWatcher(watcher: SecureContextWatcher): void {
+    if (this.getWatcherCount() === 0) {
+      this.caCertificateProvider?.addCaCertificateListener(this.caCertificateUpdateListener);
+      this.identityCertificateProvider.addIdentityCertificateListener(this.identityCertificateUpdateListener);
+    }
+    super._addWatcher(watcher);
+  }
+  _removeWatcher(watcher: SecureContextWatcher): void {
+    super._removeWatcher(watcher);
+    if (this.getWatcherCount() === 0) {
+      this.caCertificateProvider?.removeCaCertificateListener(this.caCertificateUpdateListener);
+      this.identityCertificateProvider.removeIdentityCertificateListener(this.identityCertificateUpdateListener);
+    }
+  }
+  _isSecure(): boolean {
+    return true;
+  }
+  _equals(other: ServerCredentials): boolean {
+    if (this === other) {
+      return true;
+    }
+    if (!(other instanceof CertificateProviderServerCredentials)) {
+      return false;
+    }
+    return (
+      this.caCertificateProvider === other.caCertificateProvider &&
+      this.identityCertificateProvider === other.identityCertificateProvider &&
+      this.requireClientCertificate === other.requireClientCertificate
+    )
+  }
+
+  private calculateSecureContextOptions(): SecureServerOptions | null {
+    if (this.latestIdentityUpdate === null) {
+      return null;
+    }
+    if (this.caCertificateProvider !== null && this.latestCaUpdate === null) {
+      return null;
+    }
+    return {
+      ca: this.latestCaUpdate?.caCertificate,
+      cert: this.latestIdentityUpdate.certificate,
+      key: this.latestIdentityUpdate.privateKey,
+      requestCert: this.latestIdentityUpdate !== null,
+      rejectUnauthorized: this.requireClientCertificate
+    };
+  }
+
+  private finalizeUpdate() {
+    this.updateSecureContextOptions(this.calculateSecureContextOptions());
+  }
+
+  private handleCaCertificateUpdate(update: CaCertificateUpdate | null) {
+    this.latestCaUpdate = update;
+    this.finalizeUpdate();
+  }
+
+  private handleIdentityCertitificateUpdate(update: IdentityCertificateUpdate | null) {
+    this.latestIdentityUpdate = update;
+    this.finalizeUpdate();
+  }
+}
+
+export function createCertificateProviderServerCredentials(
+  caCertificateProvider: CertificateProvider,
+  identityCertificateProvider: CertificateProvider | null,
+  requireClientCertificate: boolean
+) {
+  return new CertificateProviderServerCredentials(
+    caCertificateProvider,
+    identityCertificateProvider,
+    requireClientCertificate);
 }
 
 class InterceptorServerCredentials extends ServerCredentials {
