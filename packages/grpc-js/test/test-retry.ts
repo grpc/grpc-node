@@ -323,6 +323,21 @@ describe('Retries', () => {
         }
       );
     });
+
+    it('Should not retry on custom error code', done => {
+      const metadata = new grpc.Metadata();
+      metadata.set('succeed-on-retry-attempt', '2');
+      metadata.set('respond-with-status', '300');
+      client.echo(
+        { value: 'test value', value2: 3 },
+        metadata,
+        (error: grpc.ServiceError, response: any) => {
+          assert(error);
+          assert.strictEqual(error.details, 'Failed on retry 0');
+          done();
+        }
+      );
+    });
   });
 
   describe('Client with hedging configured', () => {
