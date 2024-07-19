@@ -333,6 +333,7 @@ describe('Retries', () => {
         metadata,
         (error: grpc.ServiceError, response: any) => {
           assert(error);
+          assert.strictEqual(error.code, 300);
           assert.strictEqual(error.details, 'Failed on retry 0');
           done();
         }
