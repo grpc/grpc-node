@@ -62,7 +62,6 @@ export interface FileWatcherCertificateProviderConfig {
 
 export class FileWatcherCertificateProvider implements CertificateProvider {
   private refreshTimer: NodeJS.Timeout | null = null;
-  private fileReadCanceller: AbortController | null = null;
   private fileResultPromise: Promise<[PromiseSettledResult<Buffer>, PromiseSettledResult<Buffer>, PromiseSettledResult<Buffer>]> | null = null;
   private latestCaUpdate: CaCertificateUpdate | null = null;
   private caListeners: Set<CaCertificateUpdateListener> = new Set();
@@ -86,20 +85,18 @@ export class FileWatcherCertificateProvider implements CertificateProvider {
     if (this.fileResultPromise) {
       return;
     }
-    this.fileReadCanceller = new AbortController();
     this.fileResultPromise = Promise.allSettled([
-      this.config.certificateFile ? fs.readFile(this.config.certificateFile, {signal: this.fileReadCanceller.signal}) : Promise.reject<Buffer>(),
-      this.config.privateKeyFile ? fs.readFile(this.config.privateKeyFile, {signal: this.fileReadCanceller.signal}) : Promise.reject<Buffer>(),
-      this.config.caCertificateFile ? fs.readFile(this.config.caCertificateFile, {signal: this.fileReadCanceller.signal}) : Promise.reject<Buffer>()
+      this.config.certificateFile ? fs.readFile(this.config.certificateFile) : Promise.reject<Buffer>(),
+      this.config.privateKeyFile ? fs.readFile(this.config.privateKeyFile) : Promise.reject<Buffer>(),
+      this.config.caCertificateFile ? fs.readFile(this.config.caCertificateFile) : Promise.reject<Buffer>()
     ]);
     this.fileResultPromise.then(([certificateResult, privateKeyResult, caCertificateResult]) => {
-      if (this.fileReadCanceller?.signal.aborted) {
+      if (!this.refreshTimer) {
         return;
       }
       trace('File watcher read certificates certificate' + (certificateResult ? '!=' : '==') + 'null, privateKey' + (privateKeyResult ? '!=' : '==') + 'null, CA certificate' + (caCertificateResult ? '!=' : '==') + 'null');
       this.lastUpdateTime = new Date();
       this.fileResultPromise = null;
-      this.fileReadCanceller = null;
       if (certificateResult.status === 'fulfilled' && privateKeyResult.status === 'fulfilled') {
         this.latestIdentityUpdate = {
           certificate: certificateResult.value,
@@ -145,7 +142,6 @@ export class FileWatcherCertificateProvider implements CertificateProvider {
 
   private maybeStopWatchingFiles() {
     if (this.caListeners.size === 0 && this.identityListeners.size === 0) {
-      this.fileReadCanceller?.abort();
       this.fileResultPromise = null;
       if (this.refreshTimer) {
         clearInterval(this.refreshTimer);
