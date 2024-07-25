@@ -24,6 +24,7 @@ import {
 
 import { CallCredentials } from './call-credentials';
 import { CIPHER_SUITES, getDefaultRootsData } from './tls-helpers';
+import { CaCertificateUpdate, CaCertificateUpdateListener, CertificateProvider, IdentityCertificateUpdate, IdentityCertificateUpdateListener } from './certificate-provider';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function verifyIsBufferOrNull(obj: any, friendlyName: string): void {
@@ -100,6 +101,14 @@ export abstract class ChannelCredentials {
    */
   abstract _equals(other: ChannelCredentials): boolean;
 
+  _ref(): void {
+    // Do nothing by default
+  }
+
+  _unref(): void {
+    // Do nothing by default
+  }
+
   /**
    * Return a new ChannelCredentials instance with a given set of credentials.
    * The resulting instance can be used to construct a Channel that communicates
@@ -172,7 +181,7 @@ class InsecureChannelCredentialsImpl extends ChannelCredentials {
   }
 
   _getConnectionOptions(): ConnectionOptions | null {
-    return null;
+    return {};
   }
   _isSecure(): boolean {
     return false;
@@ -229,12 +238,100 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
   }
 }
 
+class CertificateProviderChannelCredentialsImpl extends ChannelCredentials {
+  private refcount: number = 0;
+  private latestCaUpdate: CaCertificateUpdate | null = null;
+  private latestIdentityUpdate: IdentityCertificateUpdate | null = null;
+  private caCertificateUpdateListener: CaCertificateUpdateListener = this.handleCaCertificateUpdate.bind(this);
+  private identityCertificateUpdateListener: IdentityCertificateUpdateListener = this.handleIdentityCertitificateUpdate.bind(this);
+  constructor(
+    private caCertificateProvider: CertificateProvider,
+    private identityCertificateProvider: CertificateProvider | null,
+    private verifyOptions: VerifyOptions | null
+  ) {
+    super();
+  }
+  compose(callCredentials: CallCredentials): ChannelCredentials {
+    const combinedCallCredentials =
+      this.callCredentials.compose(callCredentials);
+    return new ComposedChannelCredentialsImpl(
+      this,
+      combinedCallCredentials
+    );
+  }
+  _getConnectionOptions(): ConnectionOptions | null {
+    if (this.latestCaUpdate === null) {
+      return null;
+    }
+    if (this.identityCertificateProvider !== null && this.latestIdentityUpdate === null) {
+      return null;
+    }
+    const secureContext: SecureContext = createSecureContext({
+      ca: this.latestCaUpdate.caCertificate,
+      key: this.latestIdentityUpdate?.privateKey,
+      cert: this.latestIdentityUpdate?.certificate,
+      ciphers: CIPHER_SUITES
+    });
+    const options: ConnectionOptions = {
+      secureContext: secureContext
+    };
+    if (this.verifyOptions?.checkServerIdentity) {
+      options.checkServerIdentity = this.verifyOptions.checkServerIdentity;
+    }
+    return options;
+  }
+  _isSecure(): boolean {
+    return true;
+  }
+  _equals(other: ChannelCredentials): boolean {
+    if (this === other) {
+      return true;
+    }
+    if (other instanceof CertificateProviderChannelCredentialsImpl) {
+      return this.caCertificateProvider === other.caCertificateProvider &&
+        this.identityCertificateProvider === other.identityCertificateProvider &&
+        this.verifyOptions?.checkServerIdentity === other.verifyOptions?.checkServerIdentity;
+    } else {
+      return false;
+    }
+  }
+  _ref(): void {
+    if (this.refcount === 0) {
+      this.caCertificateProvider.addCaCertificateListener(this.caCertificateUpdateListener);
+      this.identityCertificateProvider?.addIdentityCertificateListener(this.identityCertificateUpdateListener);
+    }
+    this.refcount += 1;
+  }
+  _unref(): void {
+    this.refcount -= 1;
+    if (this.refcount === 0) {
+      this.caCertificateProvider.removeCaCertificateListener(this.caCertificateUpdateListener);
+      this.identityCertificateProvider?.removeIdentityCertificateListener(this.identityCertificateUpdateListener);
+    }
+  }
+
+  private handleCaCertificateUpdate(update: CaCertificateUpdate | null) {
+    this.latestCaUpdate = update;
+  }
+
+  private handleIdentityCertitificateUpdate(update: IdentityCertificateUpdate | null) {
+    this.latestIdentityUpdate = update;
+  }
+}
+
+export function createCertificateProviderChannelCredentials(caCertificateProvider: CertificateProvider, identityCertificateProvider: CertificateProvider | null, verifyOptions?: VerifyOptions) {
+  return new CertificateProviderChannelCredentialsImpl(caCertificateProvider, identityCertificateProvider, verifyOptions ?? null);
+}
+
 class ComposedChannelCredentialsImpl extends ChannelCredentials {
   constructor(
-    private channelCredentials: SecureChannelCredentialsImpl,
+    private channelCredentials: ChannelCredentials,
     callCreds: CallCredentials
   ) {
     super(callCreds);
+    if (!channelCredentials._isSecure()) {
+      throw new Error('Cannot compose insecure credentials');
+    }
   }
   compose(callCredentials: CallCredentials) {
     const combinedCallCredentials =

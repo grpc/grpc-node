@@ -309,6 +309,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       this.requestReresolution();
     }
     if (this.stickyTransientFailureMode) {
+      this.calculateAndReportNewState();
       return;
     }
     this.stickyTransientFailureMode = true;

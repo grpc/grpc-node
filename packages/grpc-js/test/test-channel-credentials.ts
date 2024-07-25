@@ -74,7 +74,7 @@ describe('ChannelCredentials Implementation', () => {
       const creds = assert2.noThrowAndReturn(() =>
         ChannelCredentials.createInsecure()
       );
-      assert.ok(!creds._getConnectionOptions());
+      assert.ok(!creds._getConnectionOptions()?.secureContext);
     });
   });
 
