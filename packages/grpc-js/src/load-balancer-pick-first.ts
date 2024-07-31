@@ -320,21 +320,16 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   private removeCurrentPick() {
     if (this.currentPick !== null) {
-      /* Unref can cause a state change, which can cause a change in the value
-       * of this.currentPick, so we hold a local reference to make sure that
-       * does not impact this function. */
-      const currentPick = this.currentPick;
-      this.currentPick = null;
-      currentPick.unref();
-      currentPick.removeConnectivityStateListener(this.subchannelStateListener);
+      this.currentPick.removeConnectivityStateListener(this.subchannelStateListener);
       this.channelControlHelper.removeChannelzChild(
-        currentPick.getChannelzRef()
+        this.currentPick.getChannelzRef()
       );
-      if (this.reportHealthStatus) {
-        currentPick.removeHealthStateWatcher(
-          this.pickedSubchannelHealthListener
-        );
-      }
+      this.currentPick.removeHealthStateWatcher(
+        this.pickedSubchannelHealthListener
+      );
+      // Unref last, to avoid triggering listeners
+      this.currentPick.unref();
+      this.currentPick = null;
     }
   }
 
@@ -418,20 +413,25 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     this.connectionDelayTimeout.unref?.();
   }
 
+  /**
+   * Declare that the specified subchannel should be used to make requests.
+   * This functions the same independent of whether subchannel is a member of
+   * this.children and whether it is equal to this.currentPick.
+   * Prerequisite: subchannel.getConnectivityState() === READY.
+   * @param subchannel
+   */
   private pickSubchannel(subchannel: SubchannelInterface) {
-    if (this.currentPick && subchannel.realSubchannelEquals(this.currentPick)) {
-      return;
-    }
     trace('Pick subchannel with address ' + subchannel.getAddress());
     this.stickyTransientFailureMode = false;
-    this.removeCurrentPick();
-    this.currentPick = subchannel;
+    /* Ref before removeCurrentPick and resetSubchannelList to avoid the
+     * refcount dropping to 0 during this process. */
     subchannel.ref();
-    if (this.reportHealthStatus) {
-      subchannel.addHealthStateWatcher(this.pickedSubchannelHealthListener);
-    }
     this.channelControlHelper.addChannelzChild(subchannel.getChannelzRef());
+    this.removeCurrentPick();
     this.resetSubchannelList();
+    subchannel.addConnectivityStateListener(this.subchannelStateListener);
+    subchannel.addHealthStateWatcher(this.pickedSubchannelHealthListener);
+    this.currentPick = subchannel;
     clearTimeout(this.connectionDelayTimeout);
     this.calculateAndReportNewState();
   }
@@ -448,20 +448,11 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   private resetSubchannelList() {
     for (const child of this.children) {
-      if (
-        !(
-          this.currentPick &&
-          child.subchannel.realSubchannelEquals(this.currentPick)
-        )
-      ) {
-        /* The connectivity state listener is the same whether the subchannel
-         * is in the list of children or it is the currentPick, so if it is in
-         * both, removing it here would cause problems. In particular, that
-         * always happens immediately after the subchannel is picked. */
-        child.subchannel.removeConnectivityStateListener(
-          this.subchannelStateListener
-        );
-      }
+      /* Always remoev the connectivity state listener. If the subchannel is
+         getting picked, it will be re-added then. */
+      child.subchannel.removeConnectivityStateListener(
+        this.subchannelStateListener
+      );
       /* Refs are counted independently for the children list and the
        * currentPick, so we call unref whether or not the child is the
        * currentPick. Channelz child references are also refcounted, so
@@ -478,15 +469,13 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   }
 
   private connectToAddressList(addressList: SubchannelAddress[]) {
+    trace('connectToAddressList([' + addressList.map(address => subchannelAddressToString(address)) + '])');
     const newChildrenList = addressList.map(address => ({
       subchannel: this.channelControlHelper.createSubchannel(address, {}),
       hasReportedTransientFailure: false,
     }));
-    trace('connectToAddressList([' + addressList.map(address => subchannelAddressToString(address)) + '])');
     for (const { subchannel } of newChildrenList) {
       if (subchannel.getConnectivityState() === ConnectivityState.READY) {
-        this.channelControlHelper.addChannelzChild(subchannel.getChannelzRef());
-        subchannel.addConnectivityStateListener(this.subchannelStateListener);
         this.pickSubchannel(subchannel);
         return;
       }
@@ -522,6 +511,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     if (!(lbConfig instanceof PickFirstLoadBalancingConfig)) {
       return;
     }
+    this.requestedResolutionSinceLastUpdate = false;
     /* Previously, an update would be discarded if it was identical to the
      * previous update, to minimize churn. Now the DNS resolver is
      * rate-limited, so that is less of a concern. */
