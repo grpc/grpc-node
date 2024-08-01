@@ -223,9 +223,8 @@ class Http2Transport implements Transport {
     );
 
     session.once('error', error => {
-      /* Do nothing here. Any error should also trigger a close event, which is
-       * where we want to handle that.  */
       this.trace('connection closed with error ' + (error as Error).message);
+      this.handleDisconnect();
     });
 
     if (logging.isTracerEnabled(TRACER_NAME)) {
@@ -383,6 +382,9 @@ class Http2Transport implements Transport {
    * Handle connection drops, but not GOAWAYs.
    */
   private handleDisconnect() {
+    if (this.disconnectHandled) {
+      return;
+    }
     this.clearKeepaliveTimeout();
     this.reportDisconnectToOwner(false);
     /* Give calls an event loop cycle to finish naturally before reporting the
@@ -768,6 +770,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       );
       this.session = session;
       let errorMessage = 'Failed to connect';
+      let reportedError = false;
       session.unref();
       session.once('connect', () => {
         session.removeAllListeners();
@@ -778,12 +781,19 @@ export class Http2SubchannelConnector implements SubchannelConnector {
         this.session = null;
         // Leave time for error event to happen before rejecting
         setImmediate(() => {
-          reject(`${errorMessage} (${new Date().toISOString()})`);
+          if (!reportedError) {
+            reportedError = true;
+            reject(`${errorMessage} (${new Date().toISOString()})`);
+          }
         });
       });
       session.once('error', error => {
         errorMessage = (error as Error).message;
         this.trace('connection failed with error ' + errorMessage);
+        if (!reportedError) {
+          reportedError = true;
+          reject(`${errorMessage} (${new Date().toISOString()})`);
+        }
       });
     });
   }
