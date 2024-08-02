@@ -213,8 +213,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    */
   private connectionDelayTimeout: NodeJS.Timeout;
 
-  private triedAllSubchannels = false;
-
   /**
    * The LB policy enters sticky TRANSIENT_FAILURE mode when all
    * subchannels have failed to connect at least once, and it stays in that
@@ -224,12 +222,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   private stickyTransientFailureMode = false;
 
   private reportHealthStatus: boolean;
-
-  /**
-   * Indicates whether we called channelControlHelper.requestReresolution since
-   * the last call to updateAddressList
-   */
-  private requestedResolutionSinceLastUpdate = false;
 
   /**
    * The most recent error reported by any subchannel as it transitioned to
@@ -257,6 +249,10 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   private allChildrenHaveReportedTF(): boolean {
     return this.children.every(child => child.hasReportedTransientFailure);
+  }
+
+  private resetChildrenReportedTF() {
+    this.children.every(child => child.hasReportedTransientFailure = false);
   }
 
   private calculateAndReportNewState() {
@@ -291,7 +287,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   }
 
   private requestReresolution() {
-    this.requestedResolutionSinceLastUpdate = true;
     this.channelControlHelper.requestReresolution();
   }
 
@@ -299,15 +294,8 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     if (!this.allChildrenHaveReportedTF()) {
       return;
     }
-    if (!this.requestedResolutionSinceLastUpdate) {
-      /* Each time we get an update we reset each subchannel's
-       * hasReportedTransientFailure flag, so the next time we get to this
-       * point after that, each subchannel has reported TRANSIENT_FAILURE
-       * at least once since then. That is the trigger for requesting
-       * reresolution, whether or not the LB policy is already in sticky TF
-       * mode. */
-      this.requestReresolution();
-    }
+    this.requestReresolution();
+    this.resetChildrenReportedTF();
     if (this.stickyTransientFailureMode) {
       return;
     }
@@ -369,9 +357,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   private startNextSubchannelConnecting(startIndex: number) {
     clearTimeout(this.connectionDelayTimeout);
-    if (this.triedAllSubchannels) {
-      return;
-    }
     for (const [index, child] of this.children.entries()) {
       if (index >= startIndex) {
         const subchannelState = child.subchannel.getConnectivityState();
@@ -384,7 +369,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
         }
       }
     }
-    this.triedAllSubchannels = true;
     this.maybeEnterStickyTransientFailureMode();
   }
 
@@ -464,8 +448,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     }
     this.currentSubchannelIndex = 0;
     this.children = [];
-    this.triedAllSubchannels = false;
-    this.requestedResolutionSinceLastUpdate = false;
   }
 
   private connectToAddressList(addressList: SubchannelAddress[]) {
@@ -511,7 +493,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     if (!(lbConfig instanceof PickFirstLoadBalancingConfig)) {
       return;
     }
-    this.requestedResolutionSinceLastUpdate = false;
     /* Previously, an update would be discarded if it was identical to the
      * previous update, to minimize churn. Now the DNS resolver is
      * rate-limited, so that is less of a concern. */
