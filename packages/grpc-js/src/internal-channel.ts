@@ -427,11 +427,11 @@ export class InternalChannel {
     trace(
       LogVerbosity.DEBUG,
       'channel_stacktrace',
-      '(' +
+     () => ('(' +
         this.channelzRef.id +
         ') ' +
         'Channel constructed \n' +
-        error.stack?.substring(error.stack.indexOf('\n') + 1)
+        error.stack?.substring(error.stack.indexOf('\n') + 1))
     );
     this.lastActivityTimestamp = new Date();
   }

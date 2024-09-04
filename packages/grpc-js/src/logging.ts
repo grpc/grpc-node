@@ -109,9 +109,15 @@ const allEnabled = enabledTracers.has('all');
 export function trace(
   severity: LogVerbosity,
   tracer: string,
-  text: string
+  text: string | (() => string)
 ): void {
   if (isTracerEnabled(tracer)) {
+    let textValue = text;
+    
+    if(typeof text === 'function') {
+      textValue = text();
+    }
+    
     log(
       severity,
       new Date().toISOString() +
@@ -122,10 +128,11 @@ export function trace(
         ' | ' +
         tracer +
         ' | ' +
-        text
+        textValue
     );
   }
 }
+
 
 export function isTracerEnabled(tracer: string): boolean {
   return (
