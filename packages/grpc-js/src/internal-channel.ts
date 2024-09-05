@@ -31,7 +31,7 @@ import {
   getDefaultAuthority,
   mapUriDefaultScheme,
 } from './resolver';
-import { trace } from './logging';
+import { trace, isTracerEnabled } from './logging';
 import { SubchannelAddress } from './subchannel-address';
 import { mapProxyName } from './http_proxy';
 import { GrpcUri, parseUri, uriToString } from './uri-parser';
@@ -424,15 +424,17 @@ export class InternalChannel {
         JSON.stringify(options, undefined, 2)
     );
     const error = new Error();
-    trace(
-      LogVerbosity.DEBUG,
-      'channel_stacktrace',
-      '(' +
-        this.channelzRef.id +
-        ') ' +
-        'Channel constructed \n' +
-        error.stack?.substring(error.stack.indexOf('\n') + 1)
-    );
+    if (isTracerEnabled('channel_stacktrace')){
+      trace(
+        LogVerbosity.DEBUG,
+        'channel_stacktrace',
+        '(' +
+          this.channelzRef.id +
+          ') ' +
+          'Channel constructed \n' +
+          error.stack?.substring(error.stack.indexOf('\n') + 1)
+      );
+    }
     this.lastActivityTimestamp = new Date();
   }
 
