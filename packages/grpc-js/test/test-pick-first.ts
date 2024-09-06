@@ -31,6 +31,7 @@ import { Metadata } from '../src/metadata';
 import { Picker } from '../src/picker';
 import { Endpoint, subchannelAddressToString } from '../src/subchannel-address';
 import { MockSubchannel, TestClient, TestServer } from './common';
+import { credentials } from '../src';
 
 function updateStateCallBackForExpectedStateSequence(
   expectedStateSequence: ConnectivityState[],
@@ -97,6 +98,7 @@ describe('Shuffler', () => {
 describe('pick_first load balancing policy', () => {
   const config = new PickFirstLoadBalancingConfig(false);
   let subchannels: MockSubchannel[] = [];
+  const creds = credentials.createInsecure();
   const baseChannelControlHelper: ChannelControlHelper = {
     createSubchannel: (subchannelAddress, subchannelArgs) => {
       const subchannel = new MockSubchannel(
@@ -123,7 +125,7 @@ describe('pick_first load balancing policy', () => {
         ),
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [{ addresses: [{ host: 'localhost', port: 1 }] }],
       config
@@ -142,7 +144,7 @@ describe('pick_first load balancing policy', () => {
         ),
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [
         { addresses: [{ host: 'localhost', port: 1 }] },
@@ -164,7 +166,7 @@ describe('pick_first load balancing policy', () => {
         ),
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [
         {
@@ -198,7 +200,7 @@ describe('pick_first load balancing policy', () => {
         ),
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [{ addresses: [{ host: 'localhost', port: 1 }] }],
       config
@@ -214,7 +216,7 @@ describe('pick_first load balancing policy', () => {
         ),
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [
         { addresses: [{ host: 'localhost', port: 1 }] },
@@ -236,7 +238,7 @@ describe('pick_first load balancing policy', () => {
         ),
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [
         { addresses: [{ host: 'localhost', port: 1 }] },
@@ -261,7 +263,7 @@ describe('pick_first load balancing policy', () => {
         ),
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [
         { addresses: [{ host: 'localhost', port: 1 }] },
@@ -300,7 +302,7 @@ describe('pick_first load balancing policy', () => {
         ),
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [
         { addresses: [{ host: 'localhost', port: 1 }] },
@@ -327,7 +329,7 @@ describe('pick_first load balancing policy', () => {
         ),
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [
         { addresses: [{ host: 'localhost', port: 1 }] },
@@ -358,7 +360,7 @@ describe('pick_first load balancing policy', () => {
         ),
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [
         { addresses: [{ host: 'localhost', port: 1 }] },
@@ -396,7 +398,7 @@ describe('pick_first load balancing policy', () => {
         ),
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [
         { addresses: [{ host: 'localhost', port: 1 }] },
@@ -431,7 +433,7 @@ describe('pick_first load balancing policy', () => {
         ),
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [{ addresses: [{ host: 'localhost', port: 1 }] }],
       config
@@ -459,7 +461,7 @@ describe('pick_first load balancing policy', () => {
         ),
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [{ addresses: [{ host: 'localhost', port: 1 }] }],
       config
@@ -494,7 +496,7 @@ describe('pick_first load balancing policy', () => {
         ),
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [{ addresses: [{ host: 'localhost', port: 1 }] }],
       config
@@ -529,7 +531,7 @@ describe('pick_first load balancing policy', () => {
         ),
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [{ addresses: [{ host: 'localhost', port: 1 }] }],
       config
@@ -575,7 +577,7 @@ describe('pick_first load balancing policy', () => {
         },
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [{ addresses: [{ host: 'localhost', port: 1 }] }],
       config
@@ -635,7 +637,7 @@ describe('pick_first load balancing policy', () => {
         },
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [{ addresses: [{ host: 'localhost', port: 1 }] }],
       config
@@ -676,7 +678,7 @@ describe('pick_first load balancing policy', () => {
         ),
       }
     );
-    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
     pickFirst.updateAddressList(
       [{ addresses: [{ host: 'localhost', port: 1 }] }],
       config
@@ -720,7 +722,7 @@ describe('pick_first load balancing policy', () => {
       for (let i = 0; i < 10; i++) {
         endpoints.push({ addresses: [{ host: 'localhost', port: i + 1 }] });
       }
-      const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+      const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
       /* Pick from 10 subchannels 5 times, with address randomization enabled,
        * and verify that at least two different subchannels are picked. The
        * probability choosing the same address every time is 1/10,000, which
@@ -776,7 +778,7 @@ describe('pick_first load balancing policy', () => {
       for (let i = 0; i < 10; i++) {
         endpoints.push({ addresses: [{ host: 'localhost', port: i + 1 }] });
       }
-      const pickFirst = new PickFirstLoadBalancer(channelControlHelper, {});
+      const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
       pickFirst.updateAddressList(endpoints, config);
       process.nextTick(() => {
         pickFirst.updateAddressList(endpoints, config);

@@ -15,7 +15,7 @@
  *
  */
 
-import { ChannelOptions, LoadBalancingConfig, Metadata, connectivityState, experimental, logVerbosity, status } from "@grpc/grpc-js";
+import { ChannelCredentials, ChannelOptions, LoadBalancingConfig, Metadata, connectivityState, experimental, logVerbosity, status } from "@grpc/grpc-js";
 import { registerLoadBalancerType } from "@grpc/grpc-js/build/src/load-balancer";
 import { EXPERIMENTAL_DUALSTACK_ENDPOINTS, EXPERIMENTAL_OUTLIER_DETECTION } from "./environment";
 import { Locality__Output } from "./generated/envoy/config/core/v3/Locality";
@@ -249,14 +249,14 @@ export class XdsClusterResolver implements LoadBalancer {
   private xdsClient: XdsClient | null = null;
   private childBalancer: ChildLoadBalancerHandler;
 
-  constructor(private readonly channelControlHelper: ChannelControlHelper, options: ChannelOptions) {
+  constructor(private readonly channelControlHelper: ChannelControlHelper, credentials: ChannelCredentials, options: ChannelOptions) {
     this.childBalancer = new ChildLoadBalancerHandler(experimental.createChildChannelControlHelper(channelControlHelper, {
       requestReresolution: () => {
         for (const entry of this.discoveryMechanismList) {
           entry.resolver?.updateResolution();
         }
       }
-    }), options);
+    }), credentials, options);
   }
 
   private maybeUpdateChild() {

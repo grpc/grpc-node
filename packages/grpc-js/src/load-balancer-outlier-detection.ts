@@ -43,6 +43,7 @@ import {
 } from './subchannel-interface';
 import * as logging from './logging';
 import { LoadBalancingConfig } from './service-config';
+import { ChannelCredentials } from './channel-credentials';
 
 const TRACER_NAME = 'outlier_detection';
 
@@ -469,17 +470,20 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
 
   constructor(
     channelControlHelper: ChannelControlHelper,
+    credentials: ChannelCredentials,
     options: ChannelOptions
   ) {
     this.childBalancer = new ChildLoadBalancerHandler(
       createChildChannelControlHelper(channelControlHelper, {
         createSubchannel: (
           subchannelAddress: SubchannelAddress,
-          subchannelArgs: ChannelOptions
+          subchannelArgs: ChannelOptions,
+          credentialsOverride: ChannelCredentials | null
         ) => {
           const originalSubchannel = channelControlHelper.createSubchannel(
             subchannelAddress,
-            subchannelArgs
+            subchannelArgs,
+            credentialsOverride
           );
           const mapEntry =
             this.entryMap.getForSubchannelAddress(subchannelAddress);
@@ -505,6 +509,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
           }
         },
       }),
+      credentials,
       options
     );
     this.ejectionTimer = setInterval(() => {}, 0);
