@@ -87,6 +87,7 @@ describe('CallCredentials', () => {
         generateFromServiceURL
       );
       const metadata: Metadata = await callCredentials.generateMetadata({
+        method_name: 'bar',
         service_url: 'foo',
       });
 
@@ -98,7 +99,7 @@ describe('CallCredentials', () => {
         CallCredentials.createFromMetadataGenerator(generateWithError);
       let metadata: Metadata | null = null;
       try {
-        metadata = await callCredentials.generateMetadata({ service_url: '' });
+        metadata = await callCredentials.generateMetadata({ method_name: '', service_url: '' });
       } catch (err) {
         assert.ok(err instanceof Error);
       }
@@ -139,6 +140,7 @@ describe('CallCredentials', () => {
         testCases.map(async testCase => {
           const { credentials, expected } = testCase;
           const metadata: Metadata = await credentials.generateMetadata({
+            method_name: '',
             service_url: '',
           });
 

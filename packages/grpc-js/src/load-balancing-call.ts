@@ -162,7 +162,7 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
     switch (pickResult.pickResultType) {
       case PickResultType.COMPLETE:
         this.credentials
-          .generateMetadata({ service_url: this.serviceUrl })
+          .generateMetadata({ method_name: this.methodName, service_url: this.serviceUrl })
           .then(
             credsMetadata => {
               /* If this call was cancelled (e.g. by the deadline) before

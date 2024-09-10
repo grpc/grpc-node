@@ -18,6 +18,7 @@
 import { Metadata } from './metadata';
 
 export interface CallMetadataOptions {
+  method_name: string;
   service_url: string;
 }
 
