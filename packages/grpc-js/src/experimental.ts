@@ -7,7 +7,7 @@ export {
   createResolver,
 } from './resolver';
 export { GrpcUri, uriToString, splitHostPort, HostPort } from './uri-parser';
-export { Duration, durationToMs } from './duration';
+export { Duration, durationToMs, parseDuration } from './duration';
 export { BackoffTimeout } from './backoff-timeout';
 export {
   LoadBalancer,

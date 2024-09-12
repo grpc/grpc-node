@@ -19,6 +19,11 @@ import * as fs from 'fs';
 import { EXPERIMENTAL_FEDERATION } from './environment';
 import { Struct } from './generated/google/protobuf/Struct';
 import { Value } from './generated/google/protobuf/Value';
+import { experimental } from '@grpc/grpc-js';
+
+import parseDuration = experimental.parseDuration;
+import durationToMs = experimental.durationToMs;
+import FileWatcherCertificateProviderConfig = experimental.FileWatcherCertificateProviderConfig;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -51,12 +56,20 @@ export interface Authority {
   xdsServers?: XdsServerConfig[];
 }
 
+export type PluginConfig = FileWatcherCertificateProviderConfig;
+
+export interface CertificateProviderConfig {
+  pluginName: string;
+  config: PluginConfig;
+}
+
 export interface BootstrapInfo {
   xdsServers: XdsServerConfig[];
   node: Node;
   authorities: {[authorityName: string]: Authority};
   clientDefaultListenerResourceNameTemplate: string;
   serverListenerResourceNameTemplate: string | null;
+  certificateProviders: {[instanceName: string]: CertificateProviderConfig};
 }
 
 const KNOWN_SERVER_FEATURES = ['ignore_resource_deletion'];
@@ -306,6 +319,71 @@ function validateAuthoritiesMap(obj: any): {[authorityName: string]: Authority} 
   return result;
 }
 
+function validateFileWatcherPluginConfig(obj: any, instanceName: string): FileWatcherCertificateProviderConfig {
+  if ('certificate_file' in obj && typeof obj.certificate_file !== 'string') {
+    throw new Error(`certificate_providers[${instanceName}].config.certificate_file: expected string, got ${typeof obj.certificate_file}`);
+  }
+  if ('private_key_file' in obj && typeof obj.private_key_file !== 'string') {
+    throw new Error(`certificate_providers[${instanceName}].config.private_key_file: expected string, got ${typeof obj.private_key_file}`);
+  }
+  if ('ca_certificate_file' in obj && typeof obj.ca_certificate_file !== 'string') {
+    throw new Error(`certificate_providers[${instanceName}].config.ca_certificate_file: expected string, got ${typeof obj.ca_certificate_file}`);
+  }
+  if (typeof obj.refresh_interval !== 'string') {
+    throw new Error(`certificate_providers[${instanceName}].config.refresh_interval: expected string, got ${typeof obj.refresh_interval}`);
+  }
+  if (('private_key_file' in obj) !== ('certificate_file' in obj)) {
+    throw new Error(`certificate_providers[${instanceName}].config: private_key_file and certificate_file must be provided or omitted together`);
+  }
+  if (!('private_key_file' in obj) && !('ca_certificate_file' in obj)) {
+    throw new Error(`certificate_providers[${instanceName}].config: either private_key_file and certificate_file or ca_certificate_file must be set`);
+  }
+  const refreshDuration = parseDuration(obj.refresh_interval);
+  if (!refreshDuration) {
+    throw new Error(`certificate_providers[${instanceName}].config.refresh_interval: failed to parse duration from value ${obj.refresh_interval}`);
+  }
+  return {
+    certificateFile: obj.certificate_file,
+    privateKeyFile: obj.private_key_file,
+    caCertificateFile: obj.caCertificateFile,
+    refreshIntervalMs: durationToMs(refreshDuration)
+  };
+}
+
+const pluginConfigValidators: {[typeName: string]: (obj: any, instanceName: string) => PluginConfig} = {
+  'file_watcher': validateFileWatcherPluginConfig
+};
+
+function validateCertificateProvider(obj: any, instanceName: string): CertificateProviderConfig {
+  if (!('plugin_name' in obj) || typeof obj.plugin_name !== 'string') {
+    throw new Error(`certificate_providers[${instanceName}].plugin_name: expected string, got ${typeof obj.plugin_name}`);
+  }
+  if (!(obj.plugin_name in pluginConfigValidators)) {
+    throw new Error(`certificate_providers[${instanceName}]: unknown plugin_name ${obj.plugin_name}`);
+  }
+  if (!obj.config) {
+    throw new Error(`certificate_providers[${instanceName}].config: expected object, got ${typeof obj.config}`);
+  }
+  if (!(obj.plugin_name in pluginConfigValidators)) {
+    throw new Error(`certificate_providers[${instanceName}].config: unknown plugin_name ${obj.plugin_name}`);
+  }
+  return {
+    pluginName: obj.plugin_name,
+    config: pluginConfigValidators[obj.plugin_name]!(obj.config, instanceName)
+  };
+}
+
+function validateCertificateProvidersMap(obj: any): {[instanceName: string]: CertificateProviderConfig} {
+  if (!obj) {
+    return {};
+  }
+  const result: {[instanceName: string]: CertificateProviderConfig} = {};
+  for (const [name, provider] of Object.entries(obj)) {
+    result[name] = validateCertificateProvider(provider, name);
+  }
+  return result;
+}
+
 export function validateBootstrapConfig(obj: any): BootstrapInfo {
   const xdsServers = obj.xds_servers.map(validateXdsServerConfig);
   const node = validateNode(obj.node);
@@ -325,7 +403,8 @@ export function validateBootstrapConfig(obj: any): BootstrapInfo {
       node: node,
       authorities: validateAuthoritiesMap(obj.authorities),
       clientDefaultListenerResourceNameTemplate: obj.client_default_listener_resource_name_template ?? '%s',
-      serverListenerResourceNameTemplate: obj.server_listener_resource_name_template ?? null
+      serverListenerResourceNameTemplate: obj.server_listener_resource_name_template ?? null,
+      certificateProviders: validateCertificateProvidersMap(obj.certificate_providers)
     };
   } else {
     return {
@@ -333,7 +412,8 @@ export function validateBootstrapConfig(obj: any): BootstrapInfo {
       node: node,
       authorities: {},
       clientDefaultListenerResourceNameTemplate: '%s',
-      serverListenerResourceNameTemplate: obj.server_listener_resource_name_template ?? null
+      serverListenerResourceNameTemplate: obj.server_listener_resource_name_template ?? null,
+      certificateProviders: validateCertificateProvidersMap(obj.certificate_providers)
     };
   }
 }

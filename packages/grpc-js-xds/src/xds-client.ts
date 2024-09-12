@@ -19,7 +19,7 @@ import { Channel, ChannelCredentials, ClientDuplexStream, Metadata, StatusObject
 import { XdsDecodeContext, XdsDecodeResult, XdsResourceType } from "./xds-resource-type/xds-resource-type";
 import { XdsResourceName, parseXdsResourceName, xdsResourceNameToString } from "./resources";
 import { Node } from "./generated/envoy/config/core/v3/Node";
-import { BootstrapInfo, XdsServerConfig, loadBootstrapInfo, serverConfigEqual } from "./xds-bootstrap";
+import { BootstrapInfo, CertificateProviderConfig, XdsServerConfig, loadBootstrapInfo, serverConfigEqual } from "./xds-bootstrap";
 import BackoffTimeout = experimental.BackoffTimeout;
 import { DiscoveryRequest } from "./generated/envoy/service/discovery/v3/DiscoveryRequest";
 import { DiscoveryResponse__Output } from "./generated/envoy/service/discovery/v3/DiscoveryResponse";
@@ -35,6 +35,8 @@ import { LoadStatsResponse__Output } from "./generated/envoy/service/load_stats/
 import { Locality, Locality__Output } from "./generated/envoy/config/core/v3/Locality";
 import { Duration } from "./generated/google/protobuf/Duration";
 import { registerXdsClientWithCsds } from "./csds";
+import CertificateProvider = experimental.CertificateProvider;
+import FileWatcherCertificateProvider = experimental.FileWatcherCertificateProvider;
 
 const TRACER_NAME = 'xds_client';
 
@@ -1111,6 +1113,15 @@ interface AuthorityState {
 
 const userAgentName = 'gRPC Node Pure JS';
 
+function createCertificateProvider(config: CertificateProviderConfig) {
+  switch (config.pluginName) {
+    case 'file_watcher':
+      return new FileWatcherCertificateProvider(config.config);
+    default:
+      throw new Error(`Unexpected certificate provider plugin name ${config.pluginName}`);
+  }
+}
+
 export class XdsClient {
   /**
    * authority -> authority state
@@ -1119,6 +1130,8 @@ export class XdsClient {
   private clients: ClientMapEntry[] = [];
   private typeRegistry: Map<string, XdsResourceType> = new Map();
   private bootstrapInfo: BootstrapInfo | null = null;
+  private certificateProviderRegistry: Map<string, CertificateProvider> = new Map();
+  private certificateProviderRegistryPopulated = false;
 
   constructor(bootstrapInfoOverride?: BootstrapInfo) {
     if (bootstrapInfoOverride) {
@@ -1297,6 +1310,16 @@ export class XdsClient {
 
   removeClusterLocalityStats(lrsServer: XdsServerConfig, clusterName: string, edsServiceName: string, locality: Locality__Output) {
     this.getClient(lrsServer)?.removeClusterLocalityStats(clusterName, edsServiceName, locality);
+  }
+
+  getCertificateProvider(instanceName: string): CertificateProvider | undefined {
+    if (!this.certificateProviderRegistryPopulated) {
+      for (const [name, config] of Object.entries(this.getBootstrapInfo().certificateProviders)) {
+        this.certificateProviderRegistry.set(name, createCertificateProvider(config));
+      }
+      this.certificateProviderRegistryPopulated = true;
+    }
+    return this.certificateProviderRegistry.get(instanceName);
   }
 }
 
