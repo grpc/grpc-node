@@ -110,6 +110,13 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
       channelControlHelper,
       {
         updateState: (connectivityState, picker) => {
+          /* Ensure that name resolution is requested again after active
+           * connections are dropped. This is more aggressive than necessary to
+           * accomplish that, so we are counting on resolvers to have
+           * reasonable rate limits. */
+          if (this.currentState === ConnectivityState.READY && connectivityState !== ConnectivityState.READY) {
+            this.channelControlHelper.requestReresolution();
+          }
           this.calculateAndUpdateState();
         },
       }
