@@ -34,3 +34,15 @@ export function durationToMs(duration: Duration): number {
 export function isDuration(value: any): value is Duration {
   return typeof value.seconds === 'number' && typeof value.nanos === 'number';
 }
+
+const durationRegex = /^(\d+)(?:\.(\d+))?s$/;
+export function parseDuration(value: string): Duration | null {
+  const match = value.match(durationRegex);
+  if (!match) {
+    return null;
+  }
+  return {
+    seconds: Number.parseInt(match[1], 10),
+    nanos: Number.parseInt(match[2].padEnd(9, '0'), 10)
+  };
+}

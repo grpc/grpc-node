@@ -49,10 +49,6 @@ export interface CertificateProvider {
   removeIdentityCertificateListener(listener: IdentityCertificateUpdateListener): void;
 }
 
-export interface CertificateProviderProvider<Provider> {
-  getInstance(): Provider;
-}
-
 export interface FileWatcherCertificateProviderConfig {
   certificateFile?: string | undefined;
   privateKeyFile?: string | undefined;
