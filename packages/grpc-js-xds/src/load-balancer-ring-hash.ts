@@ -15,7 +15,7 @@
  *
  */
 
-import { experimental, logVerbosity, connectivityState, status, Metadata, ChannelOptions, LoadBalancingConfig } from '@grpc/grpc-js';
+import { experimental, logVerbosity, connectivityState, status, Metadata, ChannelOptions, LoadBalancingConfig, ChannelCredentials } from '@grpc/grpc-js';
 import { isLocalityEndpoint } from './load-balancer-priority';
 import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import LeafLoadBalancer = experimental.LeafLoadBalancer;
@@ -226,7 +226,7 @@ class RingHashLoadBalancer implements LoadBalancer {
   private currentState: connectivityState = connectivityState.IDLE;
   private ring: RingEntry[] = [];
   private ringHashSizeCap = DEFAULT_RING_SIZE_CAP;
-  constructor(private channelControlHelper: ChannelControlHelper, private options: ChannelOptions) {
+  constructor(private channelControlHelper: ChannelControlHelper, private credentials: ChannelCredentials, private options: ChannelOptions) {
     this.childChannelControlHelper = createChildChannelControlHelper(
       channelControlHelper,
       {
@@ -407,7 +407,7 @@ class RingHashLoadBalancer implements LoadBalancer {
       } else {
         this.leafMap.set(
           endpoint,
-          new LeafLoadBalancer(endpoint, this.childChannelControlHelper, this.options)
+          new LeafLoadBalancer(endpoint, this.childChannelControlHelper, this.credentials, this.options)
         );
       }
       const weight = this.leafWeightMap.get(endpoint);

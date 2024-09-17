@@ -40,6 +40,7 @@ import { Endpoint } from './subchannel-address';
 import { GrpcUri, uriToString } from './uri-parser';
 import { ChildLoadBalancerHandler } from './load-balancer-child-handler';
 import { ChannelOptions } from './channel-options';
+import { ChannelCredentials } from './channel-credentials';
 
 const TRACER_NAME = 'resolving_load_balancer';
 
@@ -198,6 +199,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   constructor(
     private readonly target: GrpcUri,
     private readonly channelControlHelper: ChannelControlHelper,
+    credentials: ChannelCredentials,
     channelOptions: ChannelOptions,
     private readonly onSuccessfulResolution: ResolutionCallback,
     private readonly onFailedResolution: ResolutionFailureCallback
@@ -243,6 +245,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
         removeChannelzChild:
           channelControlHelper.removeChannelzChild.bind(channelControlHelper),
       },
+      credentials,
       channelOptions
     );
     this.innerResolver = createResolver(

@@ -27,6 +27,7 @@ import { ConnectivityState } from './connectivity-state';
 import { Picker } from './picker';
 import type { ChannelRef, SubchannelRef } from './channelz';
 import { SubchannelInterface } from './subchannel-interface';
+import { ChannelCredentials } from './channel-credentials';
 
 const TYPE_NAME = 'child_load_balancer_helper';
 
@@ -40,11 +41,13 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
     constructor(private parent: ChildLoadBalancerHandler) {}
     createSubchannel(
       subchannelAddress: SubchannelAddress,
-      subchannelArgs: ChannelOptions
+      subchannelArgs: ChannelOptions,
+      credentialsOverride: ChannelCredentials | null
     ): SubchannelInterface {
       return this.parent.channelControlHelper.createSubchannel(
         subchannelAddress,
-        subchannelArgs
+        subchannelArgs,
+        credentialsOverride
       );
     }
     updateState(connectivityState: ConnectivityState, picker: Picker): void {
@@ -86,6 +89,7 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
 
   constructor(
     private readonly channelControlHelper: ChannelControlHelper,
+    private readonly credentials: ChannelCredentials,
     private readonly options: ChannelOptions
   ) {}
 
@@ -114,7 +118,7 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
       this.configUpdateRequiresNewPolicyInstance(this.latestConfig, lbConfig)
     ) {
       const newHelper = new this.ChildPolicyHelper(this);
-      const newChild = createLoadBalancer(lbConfig, newHelper, this.options)!;
+      const newChild = createLoadBalancer(lbConfig, newHelper, this.credentials, this.options)!;
       newHelper.setChild(newChild);
       if (this.currentChild === null) {
         this.currentChild = newChild;

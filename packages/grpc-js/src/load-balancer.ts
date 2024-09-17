@@ -24,6 +24,7 @@ import { SubchannelInterface } from './subchannel-interface';
 import { LoadBalancingConfig } from './service-config';
 import { log } from './logging';
 import { LogVerbosity } from './constants';
+import { ChannelCredentials } from './channel-credentials';
 
 /**
  * A collection of functions associated with a channel that a load balancer
@@ -37,7 +38,8 @@ export interface ChannelControlHelper {
    */
   createSubchannel(
     subchannelAddress: SubchannelAddress,
-    subchannelArgs: ChannelOptions
+    subchannelArgs: ChannelOptions,
+    credentialsOverride: ChannelCredentials | null
   ): SubchannelInterface;
   /**
    * Passes a new subchannel picker up to the channel. This is called if either
@@ -130,6 +132,7 @@ export interface LoadBalancer {
 export interface LoadBalancerConstructor {
   new (
     channelControlHelper: ChannelControlHelper,
+    credentials: ChannelCredentials,
     options: ChannelOptions
   ): LoadBalancer;
 }
@@ -173,12 +176,14 @@ export function registerDefaultLoadBalancerType(typeName: string) {
 export function createLoadBalancer(
   config: TypedLoadBalancingConfig,
   channelControlHelper: ChannelControlHelper,
+  credentials: ChannelCredentials,
   options: ChannelOptions
 ): LoadBalancer | null {
   const typeName = config.getLoadBalancerName();
   if (typeName in registeredLoadBalancerTypes) {
     return new registeredLoadBalancerTypes[typeName].LoadBalancer(
       channelControlHelper,
+      credentials,
       options
     );
   } else {
