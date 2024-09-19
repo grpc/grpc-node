@@ -200,7 +200,7 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
         verifyOptions.checkServerIdentity;
     }
 
-    if (verifyOptions?.rejectUnauthorized) {
+    if (verifyOptions?.rejectUnauthorized !== undefined) {
       this.connectionOptions.rejectUnauthorized =
         verifyOptions.rejectUnauthorized;
     }
