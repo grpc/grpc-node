@@ -53,6 +53,7 @@ export interface VerifyOptions {
    * has been performed on the peer certificate.
    */
   checkServerIdentity?: CheckServerIdentityCallback;
+  rejectUnauthorized?: boolean;
 }
 
 /**
@@ -197,6 +198,11 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
     if (verifyOptions?.checkServerIdentity) {
       this.connectionOptions.checkServerIdentity =
         verifyOptions.checkServerIdentity;
+    }
+
+    if (verifyOptions?.rejectUnauthorized) {
+      this.connectionOptions.rejectUnauthorized =
+        verifyOptions.rejectUnauthorized;
     }
   }
 

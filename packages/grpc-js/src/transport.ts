@@ -743,7 +743,6 @@ export class Http2SubchannelConnector implements SubchannelConnector {
         ...connectionOptions,
         ...address,
         enableTrace: options['grpc-node.tls_enable_trace'] === 1,
-        rejectUnauthorized: options['grpc-node.tls_reject_unauthorized'] ?? true,
       };
 
       /* http2.connect uses the options here:
@@ -837,9 +836,6 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       }
       if (options['grpc-node.tls_enable_trace']) {
         connectionOptions.enableTrace = true;
-      }
-      if (options['grpc-node.tls_reject_unauthorized']) {
-        connectionOptions.rejectUnauthorized = options['grpc-node.tls_reject_unauthorized'];
       }
     }
 
