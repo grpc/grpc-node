@@ -43,6 +43,6 @@ export function parseDuration(value: string): Duration | null {
   }
   return {
     seconds: Number.parseInt(match[1], 10),
-    nanos: Number.parseInt(match[2].padEnd(9, '0'), 10)
+    nanos: match[2] ? Number.parseInt(match[2].padEnd(9, '0'), 10) : 0
   };
 }
