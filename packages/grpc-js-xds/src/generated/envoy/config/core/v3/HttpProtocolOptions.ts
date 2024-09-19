@@ -99,10 +99,9 @@ export interface HttpProtocolOptions {
   'max_headers_count'?: (_google_protobuf_UInt32Value | null);
   /**
    * The maximum duration of a connection. The duration is defined as a period since a connection
-   * was established. If not set, there is no max duration. When max_connection_duration is reached
-   * and if there are no active streams, the connection will be closed. If the connection is a
-   * downstream connection and there are any active streams, the drain sequence will kick-in,
-   * and the connection will be force-closed after the drain period. See :ref:`drain_timeout
+   * was established. If not set, there is no max duration. When max_connection_duration is reached,
+   * the drain sequence will kick-in. The connection will be closed after the drain timeout period
+   * if there are no active streams. See :ref:`drain_timeout
    * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.drain_timeout>`.
    */
   'max_connection_duration'?: (_google_protobuf_Duration | null);
@@ -159,10 +158,9 @@ export interface HttpProtocolOptions__Output {
   'max_headers_count': (_google_protobuf_UInt32Value__Output | null);
   /**
    * The maximum duration of a connection. The duration is defined as a period since a connection
-   * was established. If not set, there is no max duration. When max_connection_duration is reached
-   * and if there are no active streams, the connection will be closed. If the connection is a
-   * downstream connection and there are any active streams, the drain sequence will kick-in,
-   * and the connection will be force-closed after the drain period. See :ref:`drain_timeout
+   * was established. If not set, there is no max duration. When max_connection_duration is reached,
+   * the drain sequence will kick-in. The connection will be closed after the drain timeout period
+   * if there are no active streams. See :ref:`drain_timeout
    * <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.drain_timeout>`.
    */
   'max_connection_duration': (_google_protobuf_Duration__Output | null);

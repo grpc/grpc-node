@@ -28,6 +28,7 @@ import { RouteConfiguration__Output } from './generated/envoy/config/route/v3/Ro
 import { ClusterConfig__Output } from './generated/envoy/extensions/clusters/aggregate/v3/ClusterConfig';
 import { HttpConnectionManager__Output } from './generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpConnectionManager';
 import { EXPERIMENTAL_FEDERATION } from './environment';
+import { DownstreamTlsContext__Output } from './generated/envoy/extensions/transport_sockets/tls/v3/DownstreamTlsContext';
 
 export const EDS_TYPE_URL = 'type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment';
 export const CDS_TYPE_URL = 'type.googleapis.com/envoy.config.cluster.v3.Cluster';
@@ -50,10 +51,14 @@ export const CLUSTER_CONFIG_TYPE_URL = 'type.googleapis.com/envoy.extensions.clu
 
 export type ClusterConfigTypeUrl = 'type.googleapis.com/envoy.extensions.clusters.aggregate.v3.ClusterConfig';
 
+export const DOWNSTREAM_TLS_CONTEXT_TYPE_URL = 'type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext';
+
+export type DownstreamTlsContextTypeUrl = 'type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext';
+
 /**
  * Map type URLs to their corresponding message types
  */
-export type AdsOutputType<T extends AdsTypeUrl | HttpConnectionManagerTypeUrl | ClusterConfigTypeUrl> = T extends EdsTypeUrl
+export type AdsOutputType<T extends AdsTypeUrl | HttpConnectionManagerTypeUrl | ClusterConfigTypeUrl | DownstreamTlsContextTypeUrl> = T extends EdsTypeUrl
   ? ClusterLoadAssignment__Output
   : T extends CdsTypeUrl
   ? Cluster__Output
@@ -63,17 +68,20 @@ export type AdsOutputType<T extends AdsTypeUrl | HttpConnectionManagerTypeUrl | 
   ? Listener__Output
   : T extends HttpConnectionManagerTypeUrl
   ? HttpConnectionManager__Output
-  : ClusterConfig__Output;
+  : T extends ClusterConfigTypeUrl
+  ? ClusterConfig__Output
+  : DownstreamTlsContext__Output;
 
 
 
 const resourceRoot = loadProtosWithOptionsSync([
-  'envoy/config/listener/v3/listener.proto', 
+  'envoy/config/listener/v3/listener.proto',
   'envoy/config/route/v3/route.proto',
   'envoy/config/cluster/v3/cluster.proto',
   'envoy/config/endpoint/v3/endpoint.proto',
   'envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto',
-  'envoy/extensions/clusters/aggregate/v3/cluster.proto'], {
+  'envoy/extensions/clusters/aggregate/v3/cluster.proto',
+  'envoy/extensions/transport_sockets/tls/v3/tls.proto'], {
     keepCase: true,
     includeDirs: [
       // Paths are relative to src/build
@@ -92,7 +100,7 @@ const toObjectOptions = {
   oneofs: true
 }
 
-export function decodeSingleResource<T extends AdsTypeUrl | HttpConnectionManagerTypeUrl | ClusterConfigTypeUrl>(targetTypeUrl: T, message: Buffer): AdsOutputType<T> {
+export function decodeSingleResource<T extends AdsTypeUrl | HttpConnectionManagerTypeUrl | ClusterConfigTypeUrl | DownstreamTlsContextTypeUrl>(targetTypeUrl: T, message: Buffer): AdsOutputType<T> {
   const name = targetTypeUrl.substring(targetTypeUrl.lastIndexOf('/') + 1);
   const type = resourceRoot.lookup(name);
   if (type) {

@@ -59,11 +59,16 @@ export interface ProtoGrpcType {
           HttpProtocolOptions: MessageTypeDefinition
           HttpUri: MessageTypeDefinition
           KeepaliveSettings: MessageTypeDefinition
+          KeyValue: MessageTypeDefinition
+          KeyValueAppend: MessageTypeDefinition
+          KeyValueMutation: MessageTypeDefinition
           Locality: MessageTypeDefinition
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition
           PathConfigSource: MessageTypeDefinition
           Pipe: MessageTypeDefinition
+          ProxyProtocolConfig: MessageTypeDefinition
+          ProxyProtocolPassThroughTLVs: MessageTypeDefinition
           QueryParameter: MessageTypeDefinition
           QuicKeepAliveSettings: MessageTypeDefinition
           QuicProtocolOptions: MessageTypeDefinition
@@ -230,6 +235,7 @@ export interface ProtoGrpcType {
         CollectionEntry: MessageTypeDefinition
         ContextParams: MessageTypeDefinition
         ResourceLocator: MessageTypeDefinition
+        TypedExtensionConfig: MessageTypeDefinition
       }
     }
   }

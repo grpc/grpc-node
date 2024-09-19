@@ -16,10 +16,11 @@
  */
 
 import { Any__Output } from "../generated/google/protobuf/Any";
-import { XdsServerConfig } from "../xds-bootstrap";
+import { BootstrapInfo, XdsServerConfig } from "../xds-bootstrap";
 
 export interface XdsDecodeContext {
   server: XdsServerConfig;
+  bootstrap: BootstrapInfo;
 }
 
 export interface XdsDecodeResult {

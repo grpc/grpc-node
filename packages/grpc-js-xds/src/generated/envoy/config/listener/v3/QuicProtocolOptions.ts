@@ -5,10 +5,11 @@ import type { Duration as _google_protobuf_Duration, Duration__Output as _google
 import type { RuntimeFeatureFlag as _envoy_config_core_v3_RuntimeFeatureFlag, RuntimeFeatureFlag__Output as _envoy_config_core_v3_RuntimeFeatureFlag__Output } from '../../../../envoy/config/core/v3/RuntimeFeatureFlag';
 import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig, TypedExtensionConfig__Output as _envoy_config_core_v3_TypedExtensionConfig__Output } from '../../../../envoy/config/core/v3/TypedExtensionConfig';
+import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../../google/protobuf/BoolValue';
 
 /**
  * Configuration specific to the UDP QUIC listener.
- * [#next-free-field: 10]
+ * [#next-free-field: 12]
  */
 export interface QuicProtocolOptions {
   'quic_protocol_options'?: (_envoy_config_core_v3_QuicProtocolOptions | null);
@@ -60,16 +61,27 @@ export interface QuicProtocolOptions {
   'connection_id_generator_config'?: (_envoy_config_core_v3_TypedExtensionConfig | null);
   /**
    * Configure the server's preferred address to advertise so that client can migrate to it. See :ref:`example <envoy_v3_api_msg_extensions.quic.server_preferred_address.v3.FixedServerPreferredAddressConfig>` which configures a pair of v4 and v6 preferred addresses.
-   * The current QUICHE implementation will advertise only one of the preferred IPv4 and IPv6 addresses based on the address family the client initially connects with, and only if the client is also QUICHE-based.
+   * The current QUICHE implementation will advertise only one of the preferred IPv4 and IPv6 addresses based on the address family the client initially connects with.
    * If not specified, Envoy will not advertise any server's preferred address.
    * [#extension-category: envoy.quic.server_preferred_address]
    */
   'server_preferred_address_config'?: (_envoy_config_core_v3_TypedExtensionConfig | null);
+  /**
+   * Configure the server to send transport parameter `disable_active_migration <https://www.rfc-editor.org/rfc/rfc9000#section-18.2-4.30.1>`_.
+   * Defaults to false (do not send this transport parameter).
+   */
+  'send_disable_active_migration'?: (_google_protobuf_BoolValue | null);
+  /**
+   * Configure which implementation of ``quic::QuicConnectionDebugVisitor`` to be used for this listener.
+   * If not specified, no debug visitor will be attached to connections.
+   * [#extension-category: envoy.quic.connection_debug_visitor]
+   */
+  'connection_debug_visitor_config'?: (_envoy_config_core_v3_TypedExtensionConfig | null);
 }
 
 /**
  * Configuration specific to the UDP QUIC listener.
- * [#next-free-field: 10]
+ * [#next-free-field: 12]
  */
 export interface QuicProtocolOptions__Output {
   'quic_protocol_options': (_envoy_config_core_v3_QuicProtocolOptions__Output | null);
@@ -121,9 +133,20 @@ export interface QuicProtocolOptions__Output {
   'connection_id_generator_config': (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
   /**
    * Configure the server's preferred address to advertise so that client can migrate to it. See :ref:`example <envoy_v3_api_msg_extensions.quic.server_preferred_address.v3.FixedServerPreferredAddressConfig>` which configures a pair of v4 and v6 preferred addresses.
-   * The current QUICHE implementation will advertise only one of the preferred IPv4 and IPv6 addresses based on the address family the client initially connects with, and only if the client is also QUICHE-based.
+   * The current QUICHE implementation will advertise only one of the preferred IPv4 and IPv6 addresses based on the address family the client initially connects with.
    * If not specified, Envoy will not advertise any server's preferred address.
    * [#extension-category: envoy.quic.server_preferred_address]
    */
   'server_preferred_address_config': (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
+  /**
+   * Configure the server to send transport parameter `disable_active_migration <https://www.rfc-editor.org/rfc/rfc9000#section-18.2-4.30.1>`_.
+   * Defaults to false (do not send this transport parameter).
+   */
+  'send_disable_active_migration': (_google_protobuf_BoolValue__Output | null);
+  /**
+   * Configure which implementation of ``quic::QuicConnectionDebugVisitor`` to be used for this listener.
+   * If not specified, no debug visitor will be attached to connections.
+   * [#extension-category: envoy.quic.connection_debug_visitor]
+   */
+  'connection_debug_visitor_config': (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
 }

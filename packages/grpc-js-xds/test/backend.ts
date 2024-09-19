@@ -25,6 +25,7 @@ import * as net from 'net';
 import { XdsServer } from "../src";
 import { ControlPlaneServer } from "./xds-server";
 import { findFreePorts } from 'find-free-ports';
+import { XdsServerCredentials } from "../src/xds-credentials";
 
 const loadedProtos = loadPackageDefinition(loadSync(
   [
@@ -89,7 +90,9 @@ export class Backend {
     }
     const server = this.server;
     server.addService(loadedProtos.grpc.testing.EchoTestService.service, this as unknown as UntypedServiceImplementation);
-    server.bindAsync(`[::1]:${this.port}`, ServerCredentials.createInsecure(), (error, port) => {
+    const insecureCredentials = ServerCredentials.createInsecure();
+    const xdsCredentials = new XdsServerCredentials(insecureCredentials);
+    server.bindAsync(`[::1]:${this.port}`, xdsCredentials, (error, port) => {
       if (!error) {
         this.port = port;
       }

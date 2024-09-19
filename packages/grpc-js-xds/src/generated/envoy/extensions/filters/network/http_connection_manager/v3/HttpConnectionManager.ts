@@ -887,7 +887,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
 }
 
 /**
- * [#next-free-field: 57]
+ * [#next-free-field: 58]
  */
 export interface HttpConnectionManager {
   /**
@@ -950,9 +950,10 @@ export interface HttpConnectionManager {
    * race with the final GOAWAY frame. During this grace period, Envoy will
    * continue to accept new streams. After the grace period, a final GOAWAY
    * frame is sent and Envoy will start refusing new streams. Draining occurs
-   * both when a connection hits the idle timeout or during general server
-   * draining. The default grace period is 5000 milliseconds (5 seconds) if this
-   * option is not specified.
+   * either when a connection hits the idle timeout, when :ref:`max_connection_duration
+   * <envoy_v3_api_field_config.core.v3.HttpProtocolOptions.max_connection_duration>`
+   * is reached, or during general server draining. The default grace period is
+   * 5000 milliseconds (5 seconds) if this option is not specified.
    */
   'drain_timeout'?: (_google_protobuf_Duration | null);
   /**
@@ -1408,12 +1409,17 @@ export interface HttpConnectionManager {
    * Additional access log options for HTTP connection manager.
    */
   'access_log_options'?: (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_HcmAccessLogOptions | null);
+  /**
+   * Append the :ref:`config_http_conn_man_headers_x-envoy-local-overloaded` HTTP header in the scenario where
+   * the Overload Manager has been triggered.
+   */
+  'append_local_overload'?: (boolean);
   'route_specifier'?: "rds"|"route_config"|"scoped_routes";
   'strip_port_mode'?: "strip_any_host_port";
 }
 
 /**
- * [#next-free-field: 57]
+ * [#next-free-field: 58]
  */
 export interface HttpConnectionManager__Output {
   /**
@@ -1476,9 +1482,10 @@ export interface HttpConnectionManager__Output {
    * race with the final GOAWAY frame. During this grace period, Envoy will
    * continue to accept new streams. After the grace period, a final GOAWAY
    * frame is sent and Envoy will start refusing new streams. Draining occurs
-   * both when a connection hits the idle timeout or during general server
-   * draining. The default grace period is 5000 milliseconds (5 seconds) if this
-   * option is not specified.
+   * either when a connection hits the idle timeout, when :ref:`max_connection_duration
+   * <envoy_v3_api_field_config.core.v3.HttpProtocolOptions.max_connection_duration>`
+   * is reached, or during general server draining. The default grace period is
+   * 5000 milliseconds (5 seconds) if this option is not specified.
    */
   'drain_timeout': (_google_protobuf_Duration__Output | null);
   /**
@@ -1934,6 +1941,11 @@ export interface HttpConnectionManager__Output {
    * Additional access log options for HTTP connection manager.
    */
   'access_log_options': (_envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_HcmAccessLogOptions__Output | null);
+  /**
+   * Append the :ref:`config_http_conn_man_headers_x-envoy-local-overloaded` HTTP header in the scenario where
+   * the Overload Manager has been triggered.
+   */
+  'append_local_overload': (boolean);
   'route_specifier': "rds"|"route_config"|"scoped_routes";
   'strip_port_mode': "strip_any_host_port";
 }

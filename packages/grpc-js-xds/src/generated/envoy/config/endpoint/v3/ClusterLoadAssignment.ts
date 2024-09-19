@@ -56,6 +56,12 @@ export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy {
    * 
    * Envoy supports only one element and will NACK if more than one element is present.
    * Other xDS-capable data planes will not necessarily have this limitation.
+   * 
+   * In Envoy, this ``drop_overloads`` config can be overridden by a runtime key
+   * "load_balancing_policy.drop_overload_limit" setting. This runtime key can be set to
+   * any integer number between 0 and 100. 0 means drop 0%. 100 means drop 100%.
+   * When both ``drop_overloads`` config and "load_balancing_policy.drop_overload_limit"
+   * setting are in place, the min of these two wins.
    */
   'drop_overloads'?: (_envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload)[];
   /**
@@ -123,6 +129,12 @@ export interface _envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__Output 
    * 
    * Envoy supports only one element and will NACK if more than one element is present.
    * Other xDS-capable data planes will not necessarily have this limitation.
+   * 
+   * In Envoy, this ``drop_overloads`` config can be overridden by a runtime key
+   * "load_balancing_policy.drop_overload_limit" setting. This runtime key can be set to
+   * any integer number between 0 and 100. 0 means drop 0%. 100 means drop 100%.
+   * When both ``drop_overloads`` config and "load_balancing_policy.drop_overload_limit"
+   * setting are in place, the min of these two wins.
    */
   'drop_overloads': (_envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload__Output)[];
   /**

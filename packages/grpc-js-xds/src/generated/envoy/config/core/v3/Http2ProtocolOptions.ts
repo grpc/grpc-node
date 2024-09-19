@@ -83,10 +83,10 @@ export interface Http2ProtocolOptions {
    */
   'allow_connect'?: (boolean);
   /**
-   * [#not-implemented-hide:] Hiding until envoy has full metadata support.
+   * [#not-implemented-hide:] Hiding until Envoy has full metadata support.
    * Still under implementation. DO NOT USE.
    * 
-   * Allows metadata. See [metadata
+   * Allows sending and receiving HTTP/2 METADATA frames. See [metadata
    * docs](https://github.com/envoyproxy/envoy/blob/main/source/docs/h2_metadata.md) for more
    * information.
    */
@@ -264,10 +264,10 @@ export interface Http2ProtocolOptions__Output {
    */
   'allow_connect': (boolean);
   /**
-   * [#not-implemented-hide:] Hiding until envoy has full metadata support.
+   * [#not-implemented-hide:] Hiding until Envoy has full metadata support.
    * Still under implementation. DO NOT USE.
    * 
-   * Allows metadata. See [metadata
+   * Allows sending and receiving HTTP/2 METADATA frames. See [metadata
    * docs](https://github.com/envoyproxy/envoy/blob/main/source/docs/h2_metadata.md) for more
    * information.
    */
