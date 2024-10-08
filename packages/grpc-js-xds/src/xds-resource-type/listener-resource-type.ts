@@ -19,7 +19,7 @@ import { logVerbosity, experimental } from "@grpc/grpc-js";
 import { EXPERIMENTAL_FAULT_INJECTION } from "../environment";
 import { Listener__Output } from "../generated/envoy/config/listener/v3/Listener";
 import { Any__Output } from "../generated/google/protobuf/Any";
-import { HTTP_CONNECTION_MANGER_TYPE_URL, LDS_TYPE_URL, decodeSingleResource } from "../resources";
+import { DOWNSTREAM_TLS_CONTEXT_TYPE_URL, HTTP_CONNECTION_MANGER_TYPE_URL, LDS_TYPE_URL, decodeSingleResource } from "../resources";
 import { XdsDecodeContext, XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
 import { getTopLevelFilterUrl, validateTopLevelFilter } from "../http-filter";
 import { RouteConfigurationResourceType } from "./route-config-resource-type";
@@ -29,6 +29,7 @@ import { FilterChainMatch__Output, _envoy_config_listener_v3_FilterChainMatch_Co
 import { crossProduct } from "../cross-product";
 import { FilterChain__Output } from "../generated/envoy/config/listener/v3/FilterChain";
 import { HttpConnectionManager__Output } from "../generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpConnectionManager";
+import { CertificateValidationContext__Output } from "../generated/envoy/extensions/transport_sockets/tls/v3/CertificateValidationContext";
 
 const TRACER_NAME = 'xds_client';
 
@@ -128,7 +129,7 @@ function validateHttpConnectionManager(httpConnectionManager: HttpConnectionMana
   return true;
 }
 
-function validateFilterChain(filterChain: FilterChain__Output): boolean {
+function validateFilterChain(context: XdsDecodeContext, filterChain: FilterChain__Output): boolean {
   if (filterChain.filters.length !== 1) {
     return false;
   }
@@ -138,6 +139,63 @@ function validateFilterChain(filterChain: FilterChain__Output): boolean {
   const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, filterChain.filters[0].typed_config.value);
   if (!validateHttpConnectionManager(httpConnectionManager)) {
     return false;
+  }
+  if (filterChain.transport_socket) {
+    const transportSocket = filterChain.transport_socket;
+    if (transportSocket.name !== 'envoy.transport_sockets.tls') {
+      return false;
+    }
+    if (transportSocket.typed_config?.type_url !== DOWNSTREAM_TLS_CONTEXT_TYPE_URL) {
+      return false;
+    }
+    const downstreamTlsContext = decodeSingleResource(DOWNSTREAM_TLS_CONTEXT_TYPE_URL, transportSocket.typed_config.value);
+    if (!downstreamTlsContext.common_tls_context) {
+      return false;
+    }
+    const commonTlsContext = downstreamTlsContext.common_tls_context;
+    if (!commonTlsContext.tls_certificate_provider_instance) {
+      return false;
+    }
+    if (!(commonTlsContext.tls_certificate_provider_instance.instance_name in context.bootstrap.certificateProviders)) {
+      return false;
+    }
+    let validationContext: CertificateValidationContext__Output | null;
+    switch (commonTlsContext.validation_context_type) {
+      case 'validation_context_sds_secret_config':
+        return false;
+      case 'validation_context':
+        if (!commonTlsContext.validation_context) {
+          return false;
+        }
+        validationContext = commonTlsContext.validation_context;
+        break;
+      case 'combined_validation_context':
+        if (!commonTlsContext.combined_validation_context) {
+          return false;
+        }
+        validationContext = commonTlsContext.combined_validation_context.default_validation_context;
+        break;
+      default:
+        return false;
+    }
+    if (validationContext?.ca_certificate_provider_instance && !(validationContext.ca_certificate_provider_instance.instance_name in context.bootstrap.certificateProviders)) {
+      return false;
+    }
+    if (downstreamTlsContext.require_client_certificate && !validationContext) {
+      return false;
+    }
+    if (commonTlsContext.tls_params) {
+      return false;
+    }
+    if (commonTlsContext.custom_handshaker) {
+      return false;
+    }
+    if (downstreamTlsContext.require_sni?.value) {
+      return false;
+    }
+    if (downstreamTlsContext.ocsp_staple_policy !== 'LENIENT_STAPLING') {
+      return false;
+    }
   }
   return true;
 }
@@ -155,7 +213,7 @@ export class ListenerResourceType extends XdsResourceType {
     return 'envoy.config.listener.v3.Listener';
   }
 
-  private validateResource(message: Listener__Output): Listener__Output | null {
+  private validateResource(context: XdsDecodeContext, message: Listener__Output): Listener__Output | null {
     if (
       !(
         message.api_listener?.api_listener &&
@@ -185,11 +243,11 @@ export class ListenerResourceType extends XdsResourceType {
           seenMatches.push(match);
         }
       }
-      if (!validateFilterChain(filterChain)) {
+      if (!validateFilterChain(context, filterChain)) {
         return null;
       }
     }
-    if (message.default_filter_chain && !validateFilterChain(message.default_filter_chain)) {
+    if (message.default_filter_chain && !validateFilterChain(context, message.default_filter_chain)) {
       return null;
     }
     return message;
@@ -203,7 +261,7 @@ export class ListenerResourceType extends XdsResourceType {
     }
     const message = decodeSingleResource(LDS_TYPE_URL, resource.value);
     trace('Decoded raw resource of type ' + LDS_TYPE_URL + ': ' + JSON.stringify(message, (key, value) => (value && value.type === 'Buffer' && Array.isArray(value.data)) ? (value.data as Number[]).map(n => n.toString(16)).join('') : value, 2));
-    const validatedMessage = this.validateResource(message);
+    const validatedMessage = this.validateResource(context, message);
     if (validatedMessage) {
       return {
         name: validatedMessage.name,

@@ -469,7 +469,8 @@ export interface _envoy_config_route_v3_RouteAction_HashPolicy_QueryParameter__O
  * collected for the shadow cluster making this feature useful for testing.
  * 
  * During shadowing, the host/authority header is altered such that ``-shadow`` is appended. This is
- * useful for logging. For example, ``cluster1`` becomes ``cluster1-shadow``.
+ * useful for logging. For example, ``cluster1`` becomes ``cluster1-shadow``. This behavior can be
+ * disabled by setting ``disable_shadow_host_suffix_append`` to ``true``.
  * 
  * .. note::
  * 
@@ -478,7 +479,7 @@ export interface _envoy_config_route_v3_RouteAction_HashPolicy_QueryParameter__O
  * .. note::
  * 
  * Shadowing doesn't support Http CONNECT and upgrades.
- * [#next-free-field: 6]
+ * [#next-free-field: 7]
  */
 export interface _envoy_config_route_v3_RouteAction_RequestMirrorPolicy {
   /**
@@ -520,6 +521,10 @@ export interface _envoy_config_route_v3_RouteAction_RequestMirrorPolicy {
    * Determines if the trace span should be sampled. Defaults to true.
    */
   'trace_sampled'?: (_google_protobuf_BoolValue | null);
+  /**
+   * Disables appending the ``-shadow`` suffix to the shadowed ``Host`` header. Defaults to ``false``.
+   */
+  'disable_shadow_host_suffix_append'?: (boolean);
 }
 
 /**
@@ -529,7 +534,8 @@ export interface _envoy_config_route_v3_RouteAction_RequestMirrorPolicy {
  * collected for the shadow cluster making this feature useful for testing.
  * 
  * During shadowing, the host/authority header is altered such that ``-shadow`` is appended. This is
- * useful for logging. For example, ``cluster1`` becomes ``cluster1-shadow``.
+ * useful for logging. For example, ``cluster1`` becomes ``cluster1-shadow``. This behavior can be
+ * disabled by setting ``disable_shadow_host_suffix_append`` to ``true``.
  * 
  * .. note::
  * 
@@ -538,7 +544,7 @@ export interface _envoy_config_route_v3_RouteAction_RequestMirrorPolicy {
  * .. note::
  * 
  * Shadowing doesn't support Http CONNECT and upgrades.
- * [#next-free-field: 6]
+ * [#next-free-field: 7]
  */
 export interface _envoy_config_route_v3_RouteAction_RequestMirrorPolicy__Output {
   /**
@@ -580,6 +586,10 @@ export interface _envoy_config_route_v3_RouteAction_RequestMirrorPolicy__Output 
    * Determines if the trace span should be sampled. Defaults to true.
    */
   'trace_sampled': (_google_protobuf_BoolValue__Output | null);
+  /**
+   * Disables appending the ``-shadow`` suffix to the shadowed ``Host`` header. Defaults to ``false``.
+   */
+  'disable_shadow_host_suffix_append': (boolean);
 }
 
 /**
@@ -1010,7 +1020,6 @@ export interface RouteAction {
    * :ref:`host_rewrite_path_regex <envoy_v3_api_field_config.route.v3.RouteAction.host_rewrite_path_regex>`)
    * causes the original value of the host header, if any, to be appended to the
    * :ref:`config_http_conn_man_headers_x-forwarded-host` HTTP header if it is different to the last value appended.
-   * This can be disabled by setting the runtime guard ``envoy_reloadable_features_append_xfh_idempotent`` to false.
    */
   'append_x_forwarded_host'?: (boolean);
   /**
@@ -1404,7 +1413,6 @@ export interface RouteAction__Output {
    * :ref:`host_rewrite_path_regex <envoy_v3_api_field_config.route.v3.RouteAction.host_rewrite_path_regex>`)
    * causes the original value of the host header, if any, to be appended to the
    * :ref:`config_http_conn_man_headers_x-forwarded-host` HTTP header if it is different to the last value appended.
-   * This can be disabled by setting the runtime guard ``envoy_reloadable_features_append_xfh_idempotent`` to false.
    */
   'append_x_forwarded_host': (boolean);
   /**

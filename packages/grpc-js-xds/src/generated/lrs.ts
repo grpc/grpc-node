@@ -29,6 +29,9 @@ export interface ProtoGrpcType {
           HeaderValue: MessageTypeDefinition
           HeaderValueOption: MessageTypeDefinition
           HttpUri: MessageTypeDefinition
+          KeyValue: MessageTypeDefinition
+          KeyValueAppend: MessageTypeDefinition
+          KeyValueMutation: MessageTypeDefinition
           Locality: MessageTypeDefinition
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition
@@ -57,6 +60,7 @@ export interface ProtoGrpcType {
         v3: {
           ClusterStats: MessageTypeDefinition
           EndpointLoadMetricStats: MessageTypeDefinition
+          UnnamedEndpointLoadMetricStats: MessageTypeDefinition
           UpstreamEndpointStats: MessageTypeDefinition
           UpstreamLocalityStats: MessageTypeDefinition
         }

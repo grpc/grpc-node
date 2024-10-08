@@ -3,11 +3,12 @@
 import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
 import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _google_protobuf_BoolValue__Output } from '../../../../google/protobuf/BoolValue';
+import type { TypedExtensionConfig as _envoy_config_core_v3_TypedExtensionConfig, TypedExtensionConfig__Output as _envoy_config_core_v3_TypedExtensionConfig__Output } from '../../../../envoy/config/core/v3/TypedExtensionConfig';
 
 /**
  * See the :ref:`architecture overview <arch_overview_outlier_detection>` for
  * more information on outlier detection.
- * [#next-free-field: 24]
+ * [#next-free-field: 26]
  */
 export interface OutlierDetection {
   /**
@@ -30,8 +31,8 @@ export interface OutlierDetection {
    */
   'base_ejection_time'?: (_google_protobuf_Duration | null);
   /**
-   * The maximum % of an upstream cluster that can be ejected due to outlier
-   * detection. Defaults to 10% but will eject at least one host regardless of the value.
+   * The maximum % of an upstream cluster that can be ejected due to outlier detection. Defaults to 10% .
+   * Will eject at least one host regardless of the value if :ref:`always_eject_one_host<envoy_v3_api_field_config.cluster.v3.OutlierDetection.always_eject_one_host>` is enabled.
    */
   'max_ejection_percent'?: (_google_protobuf_UInt32Value | null);
   /**
@@ -171,12 +172,22 @@ export interface OutlierDetection {
    * Defaults to true.
    */
   'successful_active_health_check_uneject_host'?: (_google_protobuf_BoolValue | null);
+  /**
+   * Set of host's passive monitors.
+   * [#not-implemented-hide:]
+   */
+  'monitors'?: (_envoy_config_core_v3_TypedExtensionConfig)[];
+  /**
+   * If enabled, at least one host is ejected regardless of the value of :ref:`max_ejection_percent<envoy_v3_api_field_config.cluster.v3.OutlierDetection.max_ejection_percent>`.
+   * Defaults to false.
+   */
+  'always_eject_one_host'?: (_google_protobuf_BoolValue | null);
 }
 
 /**
  * See the :ref:`architecture overview <arch_overview_outlier_detection>` for
  * more information on outlier detection.
- * [#next-free-field: 24]
+ * [#next-free-field: 26]
  */
 export interface OutlierDetection__Output {
   /**
@@ -199,8 +210,8 @@ export interface OutlierDetection__Output {
    */
   'base_ejection_time': (_google_protobuf_Duration__Output | null);
   /**
-   * The maximum % of an upstream cluster that can be ejected due to outlier
-   * detection. Defaults to 10% but will eject at least one host regardless of the value.
+   * The maximum % of an upstream cluster that can be ejected due to outlier detection. Defaults to 10% .
+   * Will eject at least one host regardless of the value if :ref:`always_eject_one_host<envoy_v3_api_field_config.cluster.v3.OutlierDetection.always_eject_one_host>` is enabled.
    */
   'max_ejection_percent': (_google_protobuf_UInt32Value__Output | null);
   /**
@@ -340,4 +351,14 @@ export interface OutlierDetection__Output {
    * Defaults to true.
    */
   'successful_active_health_check_uneject_host': (_google_protobuf_BoolValue__Output | null);
+  /**
+   * Set of host's passive monitors.
+   * [#not-implemented-hide:]
+   */
+  'monitors': (_envoy_config_core_v3_TypedExtensionConfig__Output)[];
+  /**
+   * If enabled, at least one host is ejected regardless of the value of :ref:`max_ejection_percent<envoy_v3_api_field_config.cluster.v3.OutlierDetection.max_ejection_percent>`.
+   * Defaults to false.
+   */
+  'always_eject_one_host': (_google_protobuf_BoolValue__Output | null);
 }

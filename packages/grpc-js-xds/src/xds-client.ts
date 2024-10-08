@@ -205,7 +205,8 @@ class AdsResponseParser {
       return;
     }
     const decodeContext: XdsDecodeContext = {
-      server: this.adsCallState.client.xdsServerConfig
+      server: this.adsCallState.client.xdsServerConfig,
+      bootstrap: this.adsCallState.client.xdsClient.getBootstrapInfo()
     };
     let decodeResult: XdsDecodeResult;
     try {
@@ -1140,7 +1141,7 @@ export class XdsClient {
     registerXdsClientWithCsds(this);
   }
 
-  private getBootstrapInfo() {
+  getBootstrapInfo() {
     if (!this.bootstrapInfo) {
       this.bootstrapInfo = loadBootstrapInfo();
     }

@@ -12,6 +12,7 @@ import type { Int64Range as _envoy_type_v3_Int64Range, Int64Range__Output as _en
 import type { CodecClientType as _envoy_type_v3_CodecClientType, CodecClientType__Output as _envoy_type_v3_CodecClientType__Output } from '../../../../envoy/type/v3/CodecClientType';
 import type { StringMatcher as _envoy_type_matcher_v3_StringMatcher, StringMatcher__Output as _envoy_type_matcher_v3_StringMatcher__Output } from '../../../../envoy/type/matcher/v3/StringMatcher';
 import type { RequestMethod as _envoy_config_core_v3_RequestMethod, RequestMethod__Output as _envoy_config_core_v3_RequestMethod__Output } from '../../../../envoy/config/core/v3/RequestMethod';
+import type { ProxyProtocolConfig as _envoy_config_core_v3_ProxyProtocolConfig, ProxyProtocolConfig__Output as _envoy_config_core_v3_ProxyProtocolConfig__Output } from '../../../../envoy/config/core/v3/ProxyProtocolConfig';
 import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
 
 /**
@@ -349,6 +350,14 @@ export interface _envoy_config_core_v3_HealthCheck_TcpHealthCheck {
    * necessarily contiguous.
    */
   'receive'?: (_envoy_config_core_v3_HealthCheck_Payload)[];
+  /**
+   * When setting this value, it tries to attempt health check request with ProxyProtocol.
+   * When ``send`` is presented, they are sent after preceding ProxyProtocol header.
+   * Only ProxyProtocol header is sent when ``send`` is not presented.
+   * It allows to use both ProxyProtocol V1 and V2. In V1, it presents L3/L4. In V2, it includes
+   * LOCAL command and doesn't include L3/L4.
+   */
+  'proxy_protocol_config'?: (_envoy_config_core_v3_ProxyProtocolConfig | null);
 }
 
 export interface _envoy_config_core_v3_HealthCheck_TcpHealthCheck__Output {
@@ -362,6 +371,14 @@ export interface _envoy_config_core_v3_HealthCheck_TcpHealthCheck__Output {
    * necessarily contiguous.
    */
   'receive': (_envoy_config_core_v3_HealthCheck_Payload__Output)[];
+  /**
+   * When setting this value, it tries to attempt health check request with ProxyProtocol.
+   * When ``send`` is presented, they are sent after preceding ProxyProtocol header.
+   * Only ProxyProtocol header is sent when ``send`` is not presented.
+   * It allows to use both ProxyProtocol V1 and V2. In V1, it presents L3/L4. In V2, it includes
+   * LOCAL command and doesn't include L3/L4.
+   */
+  'proxy_protocol_config': (_envoy_config_core_v3_ProxyProtocolConfig__Output | null);
 }
 
 /**
@@ -397,7 +414,7 @@ export interface _envoy_config_core_v3_HealthCheck_TlsOptions__Output {
 }
 
 /**
- * [#next-free-field: 26]
+ * [#next-free-field: 27]
  */
 export interface HealthCheck {
   /**
@@ -584,11 +601,17 @@ export interface HealthCheck {
    * [#extension-category: envoy.health_check.event_sinks]
    */
   'event_logger'?: (_envoy_config_core_v3_TypedExtensionConfig)[];
+  /**
+   * If set to true, health check success events will always be logged. If set to false, only host addition event will be logged
+   * if it is the first successful health check, or if the healthy threshold is reached.
+   * The default value is false.
+   */
+  'always_log_health_check_success'?: (boolean);
   'health_checker'?: "http_health_check"|"tcp_health_check"|"grpc_health_check"|"custom_health_check";
 }
 
 /**
- * [#next-free-field: 26]
+ * [#next-free-field: 27]
  */
 export interface HealthCheck__Output {
   /**
@@ -775,5 +798,11 @@ export interface HealthCheck__Output {
    * [#extension-category: envoy.health_check.event_sinks]
    */
   'event_logger': (_envoy_config_core_v3_TypedExtensionConfig__Output)[];
+  /**
+   * If set to true, health check success events will always be logged. If set to false, only host addition event will be logged
+   * if it is the first successful health check, or if the healthy threshold is reached.
+   * The default value is false.
+   */
+  'always_log_health_check_success': (boolean);
   'health_checker': "http_health_check"|"tcp_health_check"|"grpc_health_check"|"custom_health_check";
 }

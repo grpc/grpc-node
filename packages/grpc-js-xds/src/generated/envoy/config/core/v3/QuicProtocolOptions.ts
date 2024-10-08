@@ -2,10 +2,11 @@
 
 import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
 import type { QuicKeepAliveSettings as _envoy_config_core_v3_QuicKeepAliveSettings, QuicKeepAliveSettings__Output as _envoy_config_core_v3_QuicKeepAliveSettings__Output } from '../../../../envoy/config/core/v3/QuicKeepAliveSettings';
+import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
 
 /**
  * QUIC protocol options which apply to both downstream and upstream connections.
- * [#next-free-field: 8]
+ * [#next-free-field: 9]
  */
 export interface QuicProtocolOptions {
   /**
@@ -16,7 +17,7 @@ export interface QuicProtocolOptions {
   /**
    * `Initial stream-level flow-control receive window
    * <https://tools.ietf.org/html/draft-ietf-quic-transport-34#section-4.1>`_ size. Valid values range from
-   * 1 to 16777216 (2^24, maximum supported by QUICHE) and defaults to 65536 (2^16).
+   * 1 to 16777216 (2^24, maximum supported by QUICHE) and defaults to 16777216 (16 * 1024 * 1024).
    * 
    * NOTE: 16384 (2^14) is the minimum window size supported in Google QUIC. If configured smaller than it, we will use 16384 instead.
    * QUICHE IETF Quic implementation supports 1 bytes window. We only support increasing the default window size now, so it's also the minimum.
@@ -28,8 +29,8 @@ export interface QuicProtocolOptions {
   'initial_stream_window_size'?: (_google_protobuf_UInt32Value | null);
   /**
    * Similar to ``initial_stream_window_size``, but for connection-level
-   * flow-control. Valid values rage from 1 to 25165824 (24MB, maximum supported by QUICHE) and defaults to 65536 (2^16).
-   * window. Currently, this has the same minimum/default as ``initial_stream_window_size``.
+   * flow-control. Valid values rage from 1 to 25165824 (24MB, maximum supported by QUICHE) and defaults
+   * to 25165824 (24 * 1024 * 1024).
    * 
    * NOTE: 16384 (2^14) is the minimum window size supported in Google QUIC. We only support increasing the default
    * window size now, so it's also the minimum.
@@ -57,11 +58,18 @@ export interface QuicProtocolOptions {
    * `QUICHE <https://github.com/google/quiche/blob/main/quiche/quic/core/crypto/crypto_protocol.h>`_ and to be sent by upstream connections.
    */
   'client_connection_options'?: (string);
+  /**
+   * The duration that a QUIC connection stays idle before it closes itself. If this field is not present, QUICHE
+   * default 600s will be applied.
+   * For internal corporate network, a long timeout is often fine.
+   * But for client facing network, 30s is usually a good choice.
+   */
+  'idle_network_timeout'?: (_google_protobuf_Duration | null);
 }
 
 /**
  * QUIC protocol options which apply to both downstream and upstream connections.
- * [#next-free-field: 8]
+ * [#next-free-field: 9]
  */
 export interface QuicProtocolOptions__Output {
   /**
@@ -72,7 +80,7 @@ export interface QuicProtocolOptions__Output {
   /**
    * `Initial stream-level flow-control receive window
    * <https://tools.ietf.org/html/draft-ietf-quic-transport-34#section-4.1>`_ size. Valid values range from
-   * 1 to 16777216 (2^24, maximum supported by QUICHE) and defaults to 65536 (2^16).
+   * 1 to 16777216 (2^24, maximum supported by QUICHE) and defaults to 16777216 (16 * 1024 * 1024).
    * 
    * NOTE: 16384 (2^14) is the minimum window size supported in Google QUIC. If configured smaller than it, we will use 16384 instead.
    * QUICHE IETF Quic implementation supports 1 bytes window. We only support increasing the default window size now, so it's also the minimum.
@@ -84,8 +92,8 @@ export interface QuicProtocolOptions__Output {
   'initial_stream_window_size': (_google_protobuf_UInt32Value__Output | null);
   /**
    * Similar to ``initial_stream_window_size``, but for connection-level
-   * flow-control. Valid values rage from 1 to 25165824 (24MB, maximum supported by QUICHE) and defaults to 65536 (2^16).
-   * window. Currently, this has the same minimum/default as ``initial_stream_window_size``.
+   * flow-control. Valid values rage from 1 to 25165824 (24MB, maximum supported by QUICHE) and defaults
+   * to 25165824 (24 * 1024 * 1024).
    * 
    * NOTE: 16384 (2^14) is the minimum window size supported in Google QUIC. We only support increasing the default
    * window size now, so it's also the minimum.
@@ -113,4 +121,11 @@ export interface QuicProtocolOptions__Output {
    * `QUICHE <https://github.com/google/quiche/blob/main/quiche/quic/core/crypto/crypto_protocol.h>`_ and to be sent by upstream connections.
    */
   'client_connection_options': (string);
+  /**
+   * The duration that a QUIC connection stays idle before it closes itself. If this field is not present, QUICHE
+   * default 600s will be applied.
+   * For internal corporate network, a long timeout is often fine.
+   * But for client facing network, 30s is usually a good choice.
+   */
+  'idle_network_timeout': (_google_protobuf_Duration__Output | null);
 }

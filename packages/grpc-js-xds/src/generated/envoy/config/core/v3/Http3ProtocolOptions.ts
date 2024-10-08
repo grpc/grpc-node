@@ -5,7 +5,7 @@ import type { BoolValue as _google_protobuf_BoolValue, BoolValue__Output as _goo
 
 /**
  * A message which allows using HTTP/3.
- * [#next-free-field: 6]
+ * [#next-free-field: 7]
  */
 export interface Http3ProtocolOptions {
   'quic_protocol_options'?: (_envoy_config_core_v3_QuicProtocolOptions | null);
@@ -27,11 +27,20 @@ export interface Http3ProtocolOptions {
    * Note that HTTP/3 CONNECT is not yet an RFC.
    */
   'allow_extended_connect'?: (boolean);
+  /**
+   * [#not-implemented-hide:] Hiding until Envoy has full metadata support.
+   * Still under implementation. DO NOT USE.
+   * 
+   * Allows sending and receiving HTTP/3 METADATA frames. See [metadata
+   * docs](https://github.com/envoyproxy/envoy/blob/main/source/docs/h2_metadata.md) for more
+   * information.
+   */
+  'allow_metadata'?: (boolean);
 }
 
 /**
  * A message which allows using HTTP/3.
- * [#next-free-field: 6]
+ * [#next-free-field: 7]
  */
 export interface Http3ProtocolOptions__Output {
   'quic_protocol_options': (_envoy_config_core_v3_QuicProtocolOptions__Output | null);
@@ -53,4 +62,13 @@ export interface Http3ProtocolOptions__Output {
    * Note that HTTP/3 CONNECT is not yet an RFC.
    */
   'allow_extended_connect': (boolean);
+  /**
+   * [#not-implemented-hide:] Hiding until Envoy has full metadata support.
+   * Still under implementation. DO NOT USE.
+   * 
+   * Allows sending and receiving HTTP/3 METADATA frames. See [metadata
+   * docs](https://github.com/envoyproxy/envoy/blob/main/source/docs/h2_metadata.md) for more
+   * information.
+   */
+  'allow_metadata': (boolean);
 }

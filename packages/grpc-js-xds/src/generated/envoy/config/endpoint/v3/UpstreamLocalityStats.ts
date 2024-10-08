@@ -3,13 +3,14 @@
 import type { Locality as _envoy_config_core_v3_Locality, Locality__Output as _envoy_config_core_v3_Locality__Output } from '../../../../envoy/config/core/v3/Locality';
 import type { EndpointLoadMetricStats as _envoy_config_endpoint_v3_EndpointLoadMetricStats, EndpointLoadMetricStats__Output as _envoy_config_endpoint_v3_EndpointLoadMetricStats__Output } from '../../../../envoy/config/endpoint/v3/EndpointLoadMetricStats';
 import type { UpstreamEndpointStats as _envoy_config_endpoint_v3_UpstreamEndpointStats, UpstreamEndpointStats__Output as _envoy_config_endpoint_v3_UpstreamEndpointStats__Output } from '../../../../envoy/config/endpoint/v3/UpstreamEndpointStats';
+import type { UnnamedEndpointLoadMetricStats as _envoy_config_endpoint_v3_UnnamedEndpointLoadMetricStats, UnnamedEndpointLoadMetricStats__Output as _envoy_config_endpoint_v3_UnnamedEndpointLoadMetricStats__Output } from '../../../../envoy/config/endpoint/v3/UnnamedEndpointLoadMetricStats';
 import type { Long } from '@grpc/proto-loader';
 
 /**
  * These are stats Envoy reports to the management server at a frequency defined by
  * :ref:`LoadStatsResponse.load_reporting_interval<envoy_v3_api_field_service.load_stats.v3.LoadStatsResponse.load_reporting_interval>`.
  * Stats per upstream region/zone and optionally per subzone.
- * [#next-free-field: 9]
+ * [#next-free-field: 15]
  */
 export interface UpstreamLocalityStats {
   /**
@@ -32,7 +33,8 @@ export interface UpstreamLocalityStats {
    */
   'total_error_requests'?: (number | string | Long);
   /**
-   * Stats for multi-dimensional load balancing.
+   * Named stats for multi-dimensional load balancing.
+   * These typically come from endpoint metrics reported via ORCA.
    */
   'load_metric_stats'?: (_envoy_config_endpoint_v3_EndpointLoadMetricStats)[];
   /**
@@ -52,13 +54,56 @@ export interface UpstreamLocalityStats {
    * upstream endpoints in the locality.
    */
   'total_issued_requests'?: (number | string | Long);
+  /**
+   * The total number of connections in an established state at the time of the
+   * report. This field is aggregated over all the upstream endpoints in the
+   * locality.
+   * In Envoy, this information may be based on ``upstream_cx_active metric``.
+   * [#not-implemented-hide:]
+   */
+  'total_active_connections'?: (number | string | Long);
+  /**
+   * The total number of connections opened since the last report.
+   * This field is aggregated over all the upstream endpoints in the locality.
+   * In Envoy, this information may be based on ``upstream_cx_total`` metric
+   * compared to itself between start and end of an interval, i.e.
+   * ``upstream_cx_total``(now) - ``upstream_cx_total``(now -
+   * load_report_interval).
+   * [#not-implemented-hide:]
+   */
+  'total_new_connections'?: (number | string | Long);
+  /**
+   * The total number of connection failures since the last report.
+   * This field is aggregated over all the upstream endpoints in the locality.
+   * In Envoy, this information may be based on ``upstream_cx_connect_fail``
+   * metric compared to itself between start and end of an interval, i.e.
+   * ``upstream_cx_connect_fail``(now) - ``upstream_cx_connect_fail``(now -
+   * load_report_interval).
+   * [#not-implemented-hide:]
+   */
+  'total_fail_connections'?: (number | string | Long);
+  /**
+   * CPU utilization stats for multi-dimensional load balancing.
+   * This typically comes from endpoint metrics reported via ORCA.
+   */
+  'cpu_utilization'?: (_envoy_config_endpoint_v3_UnnamedEndpointLoadMetricStats | null);
+  /**
+   * Memory utilization for multi-dimensional load balancing.
+   * This typically comes from endpoint metrics reported via ORCA.
+   */
+  'mem_utilization'?: (_envoy_config_endpoint_v3_UnnamedEndpointLoadMetricStats | null);
+  /**
+   * Blended application-defined utilization for multi-dimensional load balancing.
+   * This typically comes from endpoint metrics reported via ORCA.
+   */
+  'application_utilization'?: (_envoy_config_endpoint_v3_UnnamedEndpointLoadMetricStats | null);
 }
 
 /**
  * These are stats Envoy reports to the management server at a frequency defined by
  * :ref:`LoadStatsResponse.load_reporting_interval<envoy_v3_api_field_service.load_stats.v3.LoadStatsResponse.load_reporting_interval>`.
  * Stats per upstream region/zone and optionally per subzone.
- * [#next-free-field: 9]
+ * [#next-free-field: 15]
  */
 export interface UpstreamLocalityStats__Output {
   /**
@@ -81,7 +126,8 @@ export interface UpstreamLocalityStats__Output {
    */
   'total_error_requests': (string);
   /**
-   * Stats for multi-dimensional load balancing.
+   * Named stats for multi-dimensional load balancing.
+   * These typically come from endpoint metrics reported via ORCA.
    */
   'load_metric_stats': (_envoy_config_endpoint_v3_EndpointLoadMetricStats__Output)[];
   /**
@@ -101,4 +147,47 @@ export interface UpstreamLocalityStats__Output {
    * upstream endpoints in the locality.
    */
   'total_issued_requests': (string);
+  /**
+   * The total number of connections in an established state at the time of the
+   * report. This field is aggregated over all the upstream endpoints in the
+   * locality.
+   * In Envoy, this information may be based on ``upstream_cx_active metric``.
+   * [#not-implemented-hide:]
+   */
+  'total_active_connections': (string);
+  /**
+   * The total number of connections opened since the last report.
+   * This field is aggregated over all the upstream endpoints in the locality.
+   * In Envoy, this information may be based on ``upstream_cx_total`` metric
+   * compared to itself between start and end of an interval, i.e.
+   * ``upstream_cx_total``(now) - ``upstream_cx_total``(now -
+   * load_report_interval).
+   * [#not-implemented-hide:]
+   */
+  'total_new_connections': (string);
+  /**
+   * The total number of connection failures since the last report.
+   * This field is aggregated over all the upstream endpoints in the locality.
+   * In Envoy, this information may be based on ``upstream_cx_connect_fail``
+   * metric compared to itself between start and end of an interval, i.e.
+   * ``upstream_cx_connect_fail``(now) - ``upstream_cx_connect_fail``(now -
+   * load_report_interval).
+   * [#not-implemented-hide:]
+   */
+  'total_fail_connections': (string);
+  /**
+   * CPU utilization stats for multi-dimensional load balancing.
+   * This typically comes from endpoint metrics reported via ORCA.
+   */
+  'cpu_utilization': (_envoy_config_endpoint_v3_UnnamedEndpointLoadMetricStats__Output | null);
+  /**
+   * Memory utilization for multi-dimensional load balancing.
+   * This typically comes from endpoint metrics reported via ORCA.
+   */
+  'mem_utilization': (_envoy_config_endpoint_v3_UnnamedEndpointLoadMetricStats__Output | null);
+  /**
+   * Blended application-defined utilization for multi-dimensional load balancing.
+   * This typically comes from endpoint metrics reported via ORCA.
+   */
+  'application_utilization': (_envoy_config_endpoint_v3_UnnamedEndpointLoadMetricStats__Output | null);
 }

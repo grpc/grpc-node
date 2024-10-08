@@ -1602,7 +1602,7 @@ export interface _envoy_config_cluster_v3_Cluster_TransportSocketMatch {
    */
   'name'?: (string);
   /**
-   * Optional endpoint metadata match criteria.
+   * Optional metadata match criteria.
    * The connection to the endpoint with metadata matching what is set in this field
    * will use the transport socket configuration specified here.
    * The endpoint's metadata entry in ``envoy.transport_socket_match`` is used to match
@@ -1626,7 +1626,7 @@ export interface _envoy_config_cluster_v3_Cluster_TransportSocketMatch__Output {
    */
   'name': (string);
   /**
-   * Optional endpoint metadata match criteria.
+   * Optional metadata match criteria.
    * The connection to the endpoint with metadata matching what is set in this field
    * will use the transport socket configuration specified here.
    * The endpoint's metadata entry in ``envoy.transport_socket_match`` is used to match
@@ -1700,7 +1700,7 @@ export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConf
 
 /**
  * Configuration for a single upstream cluster.
- * [#next-free-field: 57]
+ * [#next-free-field: 58]
  */
 export interface Cluster {
   /**
@@ -2004,12 +2004,14 @@ export interface Cluster {
    */
   'lrs_server'?: (_envoy_config_core_v3_ConfigSource | null);
   /**
-   * Configuration to use different transport sockets for different endpoints.
-   * The entry of ``envoy.transport_socket_match`` in the
-   * :ref:`LbEndpoint.Metadata <envoy_v3_api_field_config.endpoint.v3.LbEndpoint.metadata>`
-   * is used to match against the transport sockets as they appear in the list. The first
-   * :ref:`match <envoy_v3_api_msg_config.cluster.v3.Cluster.TransportSocketMatch>` is used.
-   * For example, with the following match
+   * Configuration to use different transport sockets for different endpoints. The entry of
+   * ``envoy.transport_socket_match`` in the :ref:`LbEndpoint.Metadata
+   * <envoy_v3_api_field_config.endpoint.v3.LbEndpoint.metadata>` is used to match against the
+   * transport sockets as they appear in the list. If a match is not found, the search continues in
+   * :ref:`LocalityLbEndpoints.Metadata
+   * <envoy_v3_api_field_config.endpoint.v3.LocalityLbEndpoints.metadata>`. The first :ref:`match
+   * <envoy_v3_api_msg_config.cluster.v3.Cluster.TransportSocketMatch>` is used. For example, with
+   * the following match
    * 
    * .. code-block:: yaml
    * 
@@ -2033,8 +2035,9 @@ export interface Cluster {
    * socket match in case above.
    * 
    * If an endpoint metadata's value under ``envoy.transport_socket_match`` does not match any
-   * ``TransportSocketMatch``, socket configuration fallbacks to use the ``tls_context`` or
-   * ``transport_socket`` specified in this cluster.
+   * ``TransportSocketMatch``, the locality metadata is then checked for a match. Barring any
+   * matches in the endpoint or locality metadata, the socket configuration fallbacks to use the
+   * ``tls_context`` or ``transport_socket`` specified in this cluster.
    * 
    * This field allows gradual and flexible transport socket configuration changes.
    * 
@@ -2173,6 +2176,23 @@ export interface Cluster {
    * Optional configuration for the RoundRobin load balancing policy.
    */
   'round_robin_lb_config'?: (_envoy_config_cluster_v3_Cluster_RoundRobinLbConfig | null);
+  /**
+   * [#not-implemented-hide:]
+   * A list of metric names from ORCA load reports to propagate to LRS.
+   * 
+   * For map fields in the ORCA proto, the string will be of the form ``<map_field_name>.<map_key>``.
+   * For example, the string ``named_metrics.foo`` will mean to look for the key ``foo`` in the ORCA
+   * ``named_metrics`` field.
+   * 
+   * The special map key ``*`` means to report all entries in the map (e.g., ``named_metrics.*`` means to
+   * report all entries in the ORCA named_metrics field). Note that this should be used only with trusted
+   * backends.
+   * 
+   * The metric names in LRS will follow the same semantics as this field. In other words, if this field
+   * contains ``named_metrics.foo``, then the LRS load report will include the data with that same string
+   * as the key.
+   */
+  'lrs_report_endpoint_metrics'?: (string)[];
   'cluster_discovery_type'?: "type"|"cluster_type";
   /**
    * Optional configuration for the load balancing algorithm selected by
@@ -2189,7 +2209,7 @@ export interface Cluster {
 
 /**
  * Configuration for a single upstream cluster.
- * [#next-free-field: 57]
+ * [#next-free-field: 58]
  */
 export interface Cluster__Output {
   /**
@@ -2493,12 +2513,14 @@ export interface Cluster__Output {
    */
   'lrs_server': (_envoy_config_core_v3_ConfigSource__Output | null);
   /**
-   * Configuration to use different transport sockets for different endpoints.
-   * The entry of ``envoy.transport_socket_match`` in the
-   * :ref:`LbEndpoint.Metadata <envoy_v3_api_field_config.endpoint.v3.LbEndpoint.metadata>`
-   * is used to match against the transport sockets as they appear in the list. The first
-   * :ref:`match <envoy_v3_api_msg_config.cluster.v3.Cluster.TransportSocketMatch>` is used.
-   * For example, with the following match
+   * Configuration to use different transport sockets for different endpoints. The entry of
+   * ``envoy.transport_socket_match`` in the :ref:`LbEndpoint.Metadata
+   * <envoy_v3_api_field_config.endpoint.v3.LbEndpoint.metadata>` is used to match against the
+   * transport sockets as they appear in the list. If a match is not found, the search continues in
+   * :ref:`LocalityLbEndpoints.Metadata
+   * <envoy_v3_api_field_config.endpoint.v3.LocalityLbEndpoints.metadata>`. The first :ref:`match
+   * <envoy_v3_api_msg_config.cluster.v3.Cluster.TransportSocketMatch>` is used. For example, with
+   * the following match
    * 
    * .. code-block:: yaml
    * 
@@ -2522,8 +2544,9 @@ export interface Cluster__Output {
    * socket match in case above.
    * 
    * If an endpoint metadata's value under ``envoy.transport_socket_match`` does not match any
-   * ``TransportSocketMatch``, socket configuration fallbacks to use the ``tls_context`` or
-   * ``transport_socket`` specified in this cluster.
+   * ``TransportSocketMatch``, the locality metadata is then checked for a match. Barring any
+   * matches in the endpoint or locality metadata, the socket configuration fallbacks to use the
+   * ``tls_context`` or ``transport_socket`` specified in this cluster.
    * 
    * This field allows gradual and flexible transport socket configuration changes.
    * 
@@ -2662,6 +2685,23 @@ export interface Cluster__Output {
    * Optional configuration for the RoundRobin load balancing policy.
    */
   'round_robin_lb_config'?: (_envoy_config_cluster_v3_Cluster_RoundRobinLbConfig__Output | null);
+  /**
+   * [#not-implemented-hide:]
+   * A list of metric names from ORCA load reports to propagate to LRS.
+   * 
+   * For map fields in the ORCA proto, the string will be of the form ``<map_field_name>.<map_key>``.
+   * For example, the string ``named_metrics.foo`` will mean to look for the key ``foo`` in the ORCA
+   * ``named_metrics`` field.
+   * 
+   * The special map key ``*`` means to report all entries in the map (e.g., ``named_metrics.*`` means to
+   * report all entries in the ORCA named_metrics field). Note that this should be used only with trusted
+   * backends.
+   * 
+   * The metric names in LRS will follow the same semantics as this field. In other words, if this field
+   * contains ``named_metrics.foo``, then the LRS load report will include the data with that same string
+   * as the key.
+   */
+  'lrs_report_endpoint_metrics': (string)[];
   'cluster_discovery_type': "type"|"cluster_type";
   /**
    * Optional configuration for the load balancing algorithm selected by
