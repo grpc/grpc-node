@@ -398,7 +398,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     return list.some(
       value =>
         value === code ||
-        value.toString().toLowerCase() === Status[code].toLowerCase()
+        value.toString().toLowerCase() === Status[code]?.toLowerCase()
     );
   }
 

@@ -20,7 +20,7 @@ import {
   registerResolver,
   registerDefaultScheme,
 } from './resolver';
-import { promises as dns } from 'node:dns';
+import { promises as dns } from 'dns';
 import { extractAndSelectServiceConfig, ServiceConfig } from './service-config';
 import { Status } from './constants';
 import { StatusObject } from './call-interface';
