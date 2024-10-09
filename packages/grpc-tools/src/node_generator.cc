@@ -204,7 +204,7 @@ void PrintService(const ServiceDescriptor* service, Printer* out,
   if (!params.generate_package_definition) {
     out->Print(template_vars,
                "exports.$name$Client = "
-               "grpc.makeGenericClientConstructor($name$Service);\n");
+               "grpc.makeGenericClientConstructor($name$Service, '$name$');\n");
   }
   out->PrintRaw(GetNodeComments(service, false).c_str());
 }
