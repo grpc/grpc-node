@@ -84,7 +84,7 @@ describe('core xDS functionality', () => {
         const serverRoute = new FakeServerRoute(backend.getPort(), 'serverRoute');
         xdsServer.setRdsResource(serverRoute.getRouteConfiguration());
         xdsServer.setLdsResource(serverRoute.getListener());
-        client = XdsTestClient.createFromServer('listener1', xdsServer, {
+        client = XdsTestClient.createFromServer('listener1', xdsServer, undefined, {
           'grpc.client_idle_timeout_ms': 1000,
         });
         client.sendOneCall(error => {
@@ -102,7 +102,7 @@ describe('core xDS functionality', () => {
   });
   it('should handle connections aging out', function(done) {
     this.timeout(5000);
-    createBackends(1, true, {'grpc.max_connection_age_ms': 1000}).then(([backend]) => {
+    createBackends(1, true, undefined, {'grpc.max_connection_age_ms': 1000}).then(([backend]) => {
       const serverRoute = new FakeServerRoute(backend.getPort(), 'serverRoute');
       xdsServer.setRdsResource(serverRoute.getRouteConfiguration());
       xdsServer.setLdsResource(serverRoute.getListener());

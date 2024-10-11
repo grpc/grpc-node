@@ -15,7 +15,7 @@
  *
  */
 
-import { ChannelOptions, credentials, loadPackageDefinition, ServiceError } from "@grpc/grpc-js";
+import { ChannelCredentials, ChannelOptions, credentials, loadPackageDefinition, ServiceError } from "@grpc/grpc-js";
 import { loadSync } from "@grpc/proto-loader";
 import { ProtoGrpcType } from "./generated/echo";
 import { EchoTestServiceClient } from "./generated/grpc/testing/EchoTestService";
@@ -44,14 +44,14 @@ export class XdsTestClient {
   private client: EchoTestServiceClient;
   private callInterval: NodeJS.Timer;
 
-  constructor(target: string, bootstrapInfo: string, options?: ChannelOptions) {
-    this.client = new loadedProtos.grpc.testing.EchoTestService(target, credentials.createInsecure(), {...options, [BOOTSTRAP_CONFIG_KEY]: bootstrapInfo});
+  constructor(target: string, bootstrapInfo: string, creds?: ChannelCredentials | undefined, options?: ChannelOptions) {
+    this.client = new loadedProtos.grpc.testing.EchoTestService(target, creds ?? credentials.createInsecure(), {...options, [BOOTSTRAP_CONFIG_KEY]: bootstrapInfo});
     this.callInterval = setInterval(() => {}, 0);
     clearInterval(this.callInterval);
   }
 
-  static createFromServer(targetName: string, xdsServer: ControlPlaneServer, options?: ChannelOptions) {
-    return new XdsTestClient(`xds:///${targetName}`, xdsServer.getBootstrapInfoString(), options);
+  static createFromServer(targetName: string, xdsServer: ControlPlaneServer, creds?: ChannelCredentials | undefined, options?: ChannelOptions) {
+    return new XdsTestClient(`xds:///${targetName}`, xdsServer.getBootstrapInfoString(), creds, options);
   }
 
   startCalls(interval: number) {

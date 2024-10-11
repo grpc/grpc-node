@@ -50,7 +50,7 @@ export class Backend {
   private server: Server | null = null;
   private receivedCallCount = 0;
   private callListeners: (() => void)[] = [];
-  constructor(private port: number, private useXdsServer: boolean, private serverOptions?: ServerOptions) {
+  constructor(private port: number, private useXdsServer: boolean, private creds?: ServerCredentials | undefined, private serverOptions?: ServerOptions) {
   }
   Echo(call: ServerUnaryCall<EchoRequest__Output, EchoResponse>, callback: sendUnaryData<EchoResponse>) {
     // call.request.params is currently ignored
@@ -90,9 +90,8 @@ export class Backend {
     }
     const server = this.server;
     server.addService(loadedProtos.grpc.testing.EchoTestService.service, this as unknown as UntypedServiceImplementation);
-    const insecureCredentials = ServerCredentials.createInsecure();
-    const xdsCredentials = new XdsServerCredentials(insecureCredentials);
-    server.bindAsync(`[::1]:${this.port}`, xdsCredentials, (error, port) => {
+    const credentials = this.creds ?? ServerCredentials.createInsecure();
+    server.bindAsync(`[::1]:${this.port}`, credentials, (error, port) => {
       if (!error) {
         this.port = port;
       }
@@ -148,7 +147,7 @@ export class Backend {
   }
 }
 
-export async function createBackends(count: number, useXdsServer?: boolean, serverOptions?: ServerOptions): Promise<Backend[]> {
+export async function createBackends(count: number, useXdsServer?: boolean, creds?: ServerCredentials | undefined, serverOptions?: ServerOptions): Promise<Backend[]> {
   const ports = await findFreePorts(count);
-  return ports.map(port => new Backend(port, useXdsServer ?? true, serverOptions));
+  return ports.map(port => new Backend(port, useXdsServer ?? true, creds, serverOptions));
 }

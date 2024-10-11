@@ -32,6 +32,7 @@ import * as typed_struct_lb from './lb-policy-registry/typed-struct';
 import * as pick_first_lb from './lb-policy-registry/pick-first';
 
 export { XdsServer } from './server';
+export { XdsServerCredentials } from './xds-credentials';
 
 /**
  * Register the "xds:" name scheme with the @grpc/grpc-js library.
