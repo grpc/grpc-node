@@ -31,6 +31,7 @@ import * as adsTypes from '../src/generated/ads';
 import * as lrsTypes from '../src/generated/lrs';
 import { LoadStatsRequest__Output } from "../src/generated/envoy/service/load_stats/v3/LoadStatsRequest";
 import { LoadStatsResponse } from "../src/generated/envoy/service/load_stats/v3/LoadStatsResponse";
+import * as path from 'path';
 
 const TRACER_NAME = 'control_plane_server';
 
@@ -367,7 +368,18 @@ export class ControlPlaneServer {
         id: 'test',
         locality: {}
       },
-      server_listener_resource_name_template: '%s'
+      server_listener_resource_name_template: '%s',
+      certificate_providers: {
+        test_certificates: {
+          plugin_name: 'file_watcher',
+          config: {
+            certificate_file: path.join(__dirname, 'fixtures', 'server1.pem'),
+            private_key_file: path.join(__dirname, 'fixtures', 'server1.key'),
+            ca_certificate_file: path.join(__dirname, 'fixtures', 'ca.pem'),
+            refresh_interval: '60s'
+          }
+        }
+      }
     }
     return JSON.stringify(bootstrapInfo);
   }
