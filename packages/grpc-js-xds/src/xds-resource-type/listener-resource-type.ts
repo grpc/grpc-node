@@ -143,34 +143,46 @@ function validateFilterChain(context: XdsDecodeContext, filterChain: FilterChain
   if (filterChain.transport_socket) {
     const transportSocket = filterChain.transport_socket;
     if (transportSocket.name !== 'envoy.transport_sockets.tls') {
+      trace('Wrong transportSocket.name');
+      return false;
+    }
+    if (!transportSocket.typed_config) {
+      trace('No typed_config');
       return false;
     }
     if (transportSocket.typed_config?.type_url !== DOWNSTREAM_TLS_CONTEXT_TYPE_URL) {
+      trace(`Wrong typed_config type_url: ${transportSocket.typed_config?.type_url}`);
       return false;
     }
     const downstreamTlsContext = decodeSingleResource(DOWNSTREAM_TLS_CONTEXT_TYPE_URL, transportSocket.typed_config.value);
     if (!downstreamTlsContext.common_tls_context) {
+      trace('No common_tls_context');
       return false;
     }
     const commonTlsContext = downstreamTlsContext.common_tls_context;
     if (!commonTlsContext.tls_certificate_provider_instance) {
+      trace('No tls_certificate_provider_instance');
       return false;
     }
     if (!(commonTlsContext.tls_certificate_provider_instance.instance_name in context.bootstrap.certificateProviders)) {
+      trace('Unmatched tls_certificate_provider_instance instance_name');
       return false;
     }
     let validationContext: CertificateValidationContext__Output | null;
     switch (commonTlsContext.validation_context_type) {
       case 'validation_context_sds_secret_config':
+        trace('Unexpected validation_context_sds_secret_config')
         return false;
       case 'validation_context':
         if (!commonTlsContext.validation_context) {
+          trace('Missing validation_context');
           return false;
         }
         validationContext = commonTlsContext.validation_context;
         break;
       case 'combined_validation_context':
         if (!commonTlsContext.combined_validation_context) {
+          trace('Missing combined_validation_context')
           return false;
         }
         validationContext = commonTlsContext.combined_validation_context.default_validation_context;
@@ -179,21 +191,27 @@ function validateFilterChain(context: XdsDecodeContext, filterChain: FilterChain
         return false;
     }
     if (validationContext?.ca_certificate_provider_instance && !(validationContext.ca_certificate_provider_instance.instance_name in context.bootstrap.certificateProviders)) {
+      trace('Unmatched validationContext instance_name');
       return false;
     }
     if (downstreamTlsContext.require_client_certificate && !validationContext) {
+      trace('require_client_certificate set without validationContext');
       return false;
     }
     if (commonTlsContext.tls_params) {
+      trace('tls_params set');
       return false;
     }
     if (commonTlsContext.custom_handshaker) {
+      trace('custom_handshaker set');
       return false;
     }
     if (downstreamTlsContext.require_sni?.value) {
+      trace('require_sni set');
       return false;
     }
     if (downstreamTlsContext.ocsp_staple_policy !== 'LENIENT_STAPLING') {
+      trace('Unexpected ocsp_staple_policy');
       return false;
     }
   }

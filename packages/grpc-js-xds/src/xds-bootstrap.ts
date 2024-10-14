@@ -345,7 +345,7 @@ function validateFileWatcherPluginConfig(obj: any, instanceName: string): FileWa
   return {
     certificateFile: obj.certificate_file,
     privateKeyFile: obj.private_key_file,
-    caCertificateFile: obj.caCertificateFile,
+    caCertificateFile: obj.ca_certificate_file,
     refreshIntervalMs: durationToMs(refreshDuration)
   };
 }

@@ -225,24 +225,24 @@ class CertificateProviderServerCredentials extends ServerCredentials {
   private caCertificateUpdateListener: CaCertificateUpdateListener = this.handleCaCertificateUpdate.bind(this);
   private identityCertificateUpdateListener: IdentityCertificateUpdateListener = this.handleIdentityCertitificateUpdate.bind(this);
   constructor(
-    private caCertificateProvider: CertificateProvider,
-    private identityCertificateProvider: CertificateProvider | null,
+    private identityCertificateProvider: CertificateProvider,
+    private caCertificateProvider: CertificateProvider | null,
     private requireClientCertificate: boolean
   ) {
     super();
   }
   _addWatcher(watcher: SecureContextWatcher): void {
     if (this.getWatcherCount() === 0) {
-      this.caCertificateProvider.addCaCertificateListener(this.caCertificateUpdateListener);
-      this.identityCertificateProvider?.addIdentityCertificateListener(this.identityCertificateUpdateListener);
+      this.caCertificateProvider?.addCaCertificateListener(this.caCertificateUpdateListener);
+      this.identityCertificateProvider.addIdentityCertificateListener(this.identityCertificateUpdateListener);
     }
     super._addWatcher(watcher);
   }
   _removeWatcher(watcher: SecureContextWatcher): void {
     super._removeWatcher(watcher);
     if (this.getWatcherCount() === 0) {
-      this.caCertificateProvider.removeCaCertificateListener(this.caCertificateUpdateListener);
-      this.identityCertificateProvider?.removeIdentityCertificateListener(this.identityCertificateUpdateListener);
+      this.caCertificateProvider?.removeCaCertificateListener(this.caCertificateUpdateListener);
+      this.identityCertificateProvider.removeIdentityCertificateListener(this.identityCertificateUpdateListener);
     }
   }
   _isSecure(): boolean {
@@ -279,7 +279,8 @@ class CertificateProviderServerCredentials extends ServerCredentials {
   }
 
   private finalizeUpdate() {
-    this.updateSecureContextOptions(this.calculateSecureContextOptions());
+    const secureContextOptions = this.calculateSecureContextOptions();
+    this.updateSecureContextOptions(secureContextOptions);
   }
 
   private handleCaCertificateUpdate(update: CaCertificateUpdate | null) {
