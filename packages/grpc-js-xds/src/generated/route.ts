@@ -34,6 +34,9 @@ export interface ProtoGrpcType {
           HeaderValue: MessageTypeDefinition
           HeaderValueOption: MessageTypeDefinition
           HttpUri: MessageTypeDefinition
+          KeyValue: MessageTypeDefinition
+          KeyValueAppend: MessageTypeDefinition
+          KeyValueMutation: MessageTypeDefinition
           Locality: MessageTypeDefinition
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition

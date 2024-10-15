@@ -18,6 +18,7 @@ import { Listener__Output } from "./generated/envoy/config/listener/v3/Listener"
 import { FilterChain__Output } from "./generated/envoy/config/listener/v3/FilterChain";
 import { UInt32Value__Output } from "./generated/google/protobuf/UInt32Value";
 import { CidrRange__Output } from "./generated/envoy/config/core/v3/CidrRange";
+import { decodeSingleResource, DOWNSTREAM_TLS_CONTEXT_TYPE_URL } from "./resources";
 
 function nullableValueEquals<T>(first: T | null, second: T | null, valueEquals: (a: T, b: T) => boolean): boolean {
   if (first === null && second === null) {
@@ -106,6 +107,38 @@ function filterChainsEquivalent(first: FilterChain__Output, second: FilterChain_
       return false;
     }
     if (firstMatch.transport_protocol !== secondMatch.transport_protocol) {
+      return false;
+    }
+  }
+  if ((first.transport_socket === null) !== (second.transport_socket !== null)) {
+    return false;
+  }
+  if (first.transport_socket) {
+    const firstTlsContext = decodeSingleResource(DOWNSTREAM_TLS_CONTEXT_TYPE_URL, first.transport_socket.typed_config!.value);
+    const secondTlsContext = decodeSingleResource(DOWNSTREAM_TLS_CONTEXT_TYPE_URL, second.transport_socket!.typed_config!.value);
+    const firstCommonContext = firstTlsContext.common_tls_context!;
+    const secondCommonContext = secondTlsContext.common_tls_context!;
+    if (firstCommonContext.tls_certificate_provider_instance?.instance_name !== secondCommonContext.tls_certificate_provider_instance?.instance_name) {
+      return false;
+    }
+    if (firstCommonContext.validation_context_type !== secondCommonContext.validation_context_type) {
+      return false;
+    }
+    switch (firstCommonContext.validation_context_type) {
+      case 'validation_context':
+        if (firstCommonContext.validation_context?.ca_certificate_provider_instance?.instance_name !== secondCommonContext.validation_context?.ca_certificate_provider_instance?.instance_name) {
+          return false;
+        }
+        break;
+      case 'combined_validation_context':
+        if (firstCommonContext.combined_validation_context?.default_validation_context?.ca_certificate_provider_instance?.instance_name !== secondCommonContext.validation_context?.ca_certificate_provider_instance?.instance_name) {
+          return false;
+        }
+        break;
+      default:
+        return false;
+    }
+    if (firstTlsContext.require_client_certificate?.value !== secondTlsContext.require_client_certificate?.value) {
       return false;
     }
   }

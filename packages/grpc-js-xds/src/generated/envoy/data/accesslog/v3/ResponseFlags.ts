@@ -41,7 +41,7 @@ export interface _envoy_data_accesslog_v3_ResponseFlags_Unauthorized__Output {
 
 /**
  * Flags indicating occurrences during request/response processing.
- * [#next-free-field: 28]
+ * [#next-free-field: 29]
  */
 export interface ResponseFlags {
   /**
@@ -153,11 +153,15 @@ export interface ResponseFlags {
    * Indicates a DNS resolution failed.
    */
   'dns_resolution_failure'?: (boolean);
+  /**
+   * Indicates a downstream remote codec level reset was received on the stream
+   */
+  'downstream_remote_reset'?: (boolean);
 }
 
 /**
  * Flags indicating occurrences during request/response processing.
- * [#next-free-field: 28]
+ * [#next-free-field: 29]
  */
 export interface ResponseFlags__Output {
   /**
@@ -269,4 +273,8 @@ export interface ResponseFlags__Output {
    * Indicates a DNS resolution failed.
    */
   'dns_resolution_failure': (boolean);
+  /**
+   * Indicates a downstream remote codec level reset was received on the stream
+   */
+  'downstream_remote_reset': (boolean);
 }

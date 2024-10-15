@@ -38,11 +38,16 @@ export interface ProtoGrpcType {
           HealthStatus: EnumTypeDefinition
           HealthStatusSet: MessageTypeDefinition
           HttpUri: MessageTypeDefinition
+          KeyValue: MessageTypeDefinition
+          KeyValueAppend: MessageTypeDefinition
+          KeyValueMutation: MessageTypeDefinition
           Locality: MessageTypeDefinition
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition
           PathConfigSource: MessageTypeDefinition
           Pipe: MessageTypeDefinition
+          ProxyProtocolConfig: MessageTypeDefinition
+          ProxyProtocolPassThroughTLVs: MessageTypeDefinition
           QueryParameter: MessageTypeDefinition
           RateLimitSettings: MessageTypeDefinition
           RemoteDataSource: MessageTypeDefinition
@@ -186,6 +191,7 @@ export interface ProtoGrpcType {
       v3: {
         Authority: MessageTypeDefinition
         ContextParams: MessageTypeDefinition
+        TypedExtensionConfig: MessageTypeDefinition
       }
     }
   }

@@ -62,6 +62,9 @@ export interface ProtoGrpcType {
           HttpUri: MessageTypeDefinition
           JsonFormatOptions: MessageTypeDefinition
           KeepaliveSettings: MessageTypeDefinition
+          KeyValue: MessageTypeDefinition
+          KeyValueAppend: MessageTypeDefinition
+          KeyValueMutation: MessageTypeDefinition
           Locality: MessageTypeDefinition
           Metadata: MessageTypeDefinition
           Node: MessageTypeDefinition

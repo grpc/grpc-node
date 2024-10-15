@@ -13,7 +13,7 @@ import type { StringMatcher as _envoy_type_matcher_v3_StringMatcher, StringMatch
  * :ref:`CorsPolicy in filter extension <envoy_v3_api_msg_extensions.filters.http.cors.v3.CorsPolicy>`
  * as as alternative.
  * 
- * [#next-free-field: 13]
+ * [#next-free-field: 14]
  */
 export interface CorsPolicy {
   /**
@@ -70,6 +70,11 @@ export interface CorsPolicy {
    * More details refer to https://developer.chrome.com/blog/private-network-access-preflight.
    */
   'allow_private_network_access'?: (_google_protobuf_BoolValue | null);
+  /**
+   * Specifies if preflight requests not matching the configured allowed origin should be forwarded
+   * to the upstream. Default is true.
+   */
+  'forward_not_matching_preflights'?: (_google_protobuf_BoolValue | null);
   'enabled_specifier'?: "filter_enabled";
 }
 
@@ -82,7 +87,7 @@ export interface CorsPolicy {
  * :ref:`CorsPolicy in filter extension <envoy_v3_api_msg_extensions.filters.http.cors.v3.CorsPolicy>`
  * as as alternative.
  * 
- * [#next-free-field: 13]
+ * [#next-free-field: 14]
  */
 export interface CorsPolicy__Output {
   /**
@@ -139,5 +144,10 @@ export interface CorsPolicy__Output {
    * More details refer to https://developer.chrome.com/blog/private-network-access-preflight.
    */
   'allow_private_network_access': (_google_protobuf_BoolValue__Output | null);
+  /**
+   * Specifies if preflight requests not matching the configured allowed origin should be forwarded
+   * to the upstream. Default is true.
+   */
+  'forward_not_matching_preflights': (_google_protobuf_BoolValue__Output | null);
   'enabled_specifier': "filter_enabled";
 }

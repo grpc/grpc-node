@@ -15,7 +15,7 @@
  */
 
 import { ConnectionInjector, Metadata, Server, ServerCredentials, ServerInterceptingCall, ServerInterceptor, ServerOptions, StatusObject, experimental, logVerbosity, status } from "@grpc/grpc-js";
-import { BootstrapInfo, formatTemplateString, loadBootstrapInfo, validateBootstrapConfig } from "./xds-bootstrap";
+import { BootstrapInfo, formatTemplateString, loadBootstrapInfo, validateBootstrapConfig, XdsServerConfig } from "./xds-bootstrap";
 import * as net from "net";
 import HostPort = experimental.HostPort;
 import splitHostPort = experimental.splitHostPort;
@@ -29,12 +29,14 @@ import { FilterChainMatch__Output, _envoy_config_listener_v3_FilterChainMatch_Co
 import { CidrRange, cidrRangeEqual, cidrRangeMessageToCidrRange, inCidrRange, normalizeCidrRange } from "./cidr";
 import { Matcher } from "./matcher";
 import { listenersEquivalent } from "./server-listener";
-import { HTTP_CONNECTION_MANGER_TYPE_URL, decodeSingleResource } from "./resources";
+import { DOWNSTREAM_TLS_CONTEXT_TYPE_URL, HTTP_CONNECTION_MANGER_TYPE_URL, decodeSingleResource } from "./resources";
 import { FilterChain__Output } from "./generated/envoy/config/listener/v3/FilterChain";
 import { getPredicateForMatcher } from "./route";
 import { crossProduct } from "./cross-product";
 import { findVirtualHostForDomain } from "./resolver-xds";
 import { LogVerbosity } from "@grpc/grpc-js/build/src/constants";
+import { XdsServerCredentials } from "./xds-credentials";
+import { CertificateValidationContext__Output } from "./generated/envoy/extensions/transport_sockets/tls/v3/CertificateValidationContext";
 
 const TRACER_NAME = 'xds_server';
 
@@ -154,6 +156,37 @@ class FilterChainEntry {
           });
         }
       });
+    }
+    if (credentials instanceof XdsServerCredentials) {
+      if (filterChain.transport_socket) {
+        const downstreamTlsContext = decodeSingleResource(DOWNSTREAM_TLS_CONTEXT_TYPE_URL, filterChain.transport_socket.typed_config!.value);
+        const commonTlsContext = downstreamTlsContext.common_tls_context!;
+        const instanceCertificateProvider = configParameters.xdsClient.getCertificateProvider(commonTlsContext.tls_certificate_provider_instance!.instance_name);
+        if (!instanceCertificateProvider) {
+          throw new Error(`Invalid TLS context detected: unrecognized certificate instance name: ${commonTlsContext.tls_certificate_provider_instance!.instance_name}`);
+        }
+        let validationContext: CertificateValidationContext__Output | null;
+        switch (commonTlsContext?.validation_context_type) {
+          case 'validation_context':
+            validationContext = commonTlsContext.validation_context!;
+            break;
+          case 'combined_validation_context':
+            validationContext = commonTlsContext.combined_validation_context!.default_validation_context;
+            break;
+          default:
+            throw new Error(`Invalid TLS context detected: invalid validation_context_type: ${commonTlsContext.validation_context_type}`);
+        }
+        let caCertificateProvider: experimental.CertificateProvider | null = null;
+        if (validationContext?.ca_certificate_provider_instance) {
+          caCertificateProvider = configParameters.xdsClient.getCertificateProvider(validationContext.ca_certificate_provider_instance.instance_name) ?? null;
+          if (!caCertificateProvider) {
+            throw new Error(`Invalid TLS context detected: unrecognized certificate instance name: ${validationContext.ca_certificate_provider_instance.instance_name}`);
+          }
+        }
+        credentials = experimental.createCertificateProviderServerCredentials(instanceCertificateProvider, caCertificateProvider, downstreamTlsContext.require_client_certificate?.value ?? false);
+      } else {
+        credentials = credentials.getFallbackCredentials();
+      }
     }
     const interceptingCredentials = createServerCredentialsWithInterceptors(credentials, [interceptor]);
     this.connectionInjector = configParameters.createConnectionInjector(interceptingCredentials);

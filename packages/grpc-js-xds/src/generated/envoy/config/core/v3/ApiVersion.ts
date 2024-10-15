@@ -6,14 +6,11 @@
  */
 export const ApiVersion = {
   /**
-   * When not specified, we assume v2, to ease migration to Envoy's stable API
-   * versioning. If a client does not support v2 (e.g. due to deprecation), this
-   * is an invalid value.
-   * @deprecated
+   * When not specified, we assume v3; it is the only supported version.
    */
   AUTO: 'AUTO',
   /**
-   * Use xDS v2 API.
+   * Use xDS v2 API. This is no longer supported.
    * @deprecated
    */
   V2: 'V2',
@@ -29,14 +26,12 @@ export const ApiVersion = {
  */
 export type ApiVersion =
   /**
-   * When not specified, we assume v2, to ease migration to Envoy's stable API
-   * versioning. If a client does not support v2 (e.g. due to deprecation), this
-   * is an invalid value.
+   * When not specified, we assume v3; it is the only supported version.
    */
   | 'AUTO'
   | 0
   /**
-   * Use xDS v2 API.
+   * Use xDS v2 API. This is no longer supported.
    */
   | 'V2'
   | 1

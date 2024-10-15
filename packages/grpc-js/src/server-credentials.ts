@@ -279,7 +279,8 @@ class CertificateProviderServerCredentials extends ServerCredentials {
   }
 
   private finalizeUpdate() {
-    this.updateSecureContextOptions(this.calculateSecureContextOptions());
+    const secureContextOptions = this.calculateSecureContextOptions();
+    this.updateSecureContextOptions(secureContextOptions);
   }
 
   private handleCaCertificateUpdate(update: CaCertificateUpdate | null) {

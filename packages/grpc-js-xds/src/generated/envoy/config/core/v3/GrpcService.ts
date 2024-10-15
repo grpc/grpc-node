@@ -3,8 +3,8 @@
 import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../../google/protobuf/Duration';
 import type { HeaderValue as _envoy_config_core_v3_HeaderValue, HeaderValue__Output as _envoy_config_core_v3_HeaderValue__Output } from '../../../../envoy/config/core/v3/HeaderValue';
 import type { RetryPolicy as _envoy_config_core_v3_RetryPolicy, RetryPolicy__Output as _envoy_config_core_v3_RetryPolicy__Output } from '../../../../envoy/config/core/v3/RetryPolicy';
-import type { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_Struct__Output } from '../../../../google/protobuf/Struct';
 import type { UInt32Value as _google_protobuf_UInt32Value, UInt32Value__Output as _google_protobuf_UInt32Value__Output } from '../../../../google/protobuf/UInt32Value';
+import type { Struct as _google_protobuf_Struct, Struct__Output as _google_protobuf_Struct__Output } from '../../../../google/protobuf/Struct';
 import type { DataSource as _envoy_config_core_v3_DataSource, DataSource__Output as _envoy_config_core_v3_DataSource__Output } from '../../../../envoy/config/core/v3/DataSource';
 import type { Empty as _google_protobuf_Empty, Empty__Output as _google_protobuf_Empty__Output } from '../../../../google/protobuf/Empty';
 import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../../google/protobuf/Any';
@@ -146,6 +146,9 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials
   'credential_specifier': "ssl_credentials"|"google_default"|"local_credentials";
 }
 
+/**
+ * [#next-free-field: 6]
+ */
 export interface _envoy_config_core_v3_GrpcService_EnvoyGrpc {
   /**
    * The name of the upstream gRPC cluster. SSL credentials will be supplied
@@ -165,8 +168,25 @@ export interface _envoy_config_core_v3_GrpcService_EnvoyGrpc {
    * If not set, xDS gRPC streams default base interval:500ms, maximum interval:30s will be applied.
    */
   'retry_policy'?: (_envoy_config_core_v3_RetryPolicy | null);
+  /**
+   * Maximum gRPC message size that is allowed to be received.
+   * If a message over this limit is received, the gRPC stream is terminated with the RESOURCE_EXHAUSTED error.
+   * This limit is applied to individual messages in the streaming response and not the total size of streaming response.
+   * Defaults to 0, which means unlimited.
+   */
+  'max_receive_message_length'?: (_google_protobuf_UInt32Value | null);
+  /**
+   * This provides gRPC client level control over envoy generated headers.
+   * If false, the header will be sent but it can be overridden by per stream option.
+   * If true, the header will be removed and can not be overridden by per stream option.
+   * Default to false.
+   */
+  'skip_envoy_headers'?: (boolean);
 }
 
+/**
+ * [#next-free-field: 6]
+ */
 export interface _envoy_config_core_v3_GrpcService_EnvoyGrpc__Output {
   /**
    * The name of the upstream gRPC cluster. SSL credentials will be supplied
@@ -186,6 +206,20 @@ export interface _envoy_config_core_v3_GrpcService_EnvoyGrpc__Output {
    * If not set, xDS gRPC streams default base interval:500ms, maximum interval:30s will be applied.
    */
   'retry_policy': (_envoy_config_core_v3_RetryPolicy__Output | null);
+  /**
+   * Maximum gRPC message size that is allowed to be received.
+   * If a message over this limit is received, the gRPC stream is terminated with the RESOURCE_EXHAUSTED error.
+   * This limit is applied to individual messages in the streaming response and not the total size of streaming response.
+   * Defaults to 0, which means unlimited.
+   */
+  'max_receive_message_length': (_google_protobuf_UInt32Value__Output | null);
+  /**
+   * This provides gRPC client level control over envoy generated headers.
+   * If false, the header will be sent but it can be overridden by per stream option.
+   * If true, the header will be removed and can not be overridden by per stream option.
+   * Default to false.
+   */
+  'skip_envoy_headers': (boolean);
 }
 
 /**
@@ -507,7 +541,7 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_
 /**
  * gRPC service configuration. This is used by :ref:`ApiConfigSource
  * <envoy_v3_api_msg_config.core.v3.ApiConfigSource>` and filter configurations.
- * [#next-free-field: 6]
+ * [#next-free-field: 7]
  */
 export interface GrpcService {
   /**
@@ -535,13 +569,18 @@ export interface GrpcService {
    * <config_http_conn_man_headers_custom_request_headers>`.
    */
   'initial_metadata'?: (_envoy_config_core_v3_HeaderValue)[];
+  /**
+   * Optional default retry policy for streams toward the service.
+   * If an async stream doesn't have retry policy configured in its stream options, this retry policy is used.
+   */
+  'retry_policy'?: (_envoy_config_core_v3_RetryPolicy | null);
   'target_specifier'?: "envoy_grpc"|"google_grpc";
 }
 
 /**
  * gRPC service configuration. This is used by :ref:`ApiConfigSource
  * <envoy_v3_api_msg_config.core.v3.ApiConfigSource>` and filter configurations.
- * [#next-free-field: 6]
+ * [#next-free-field: 7]
  */
 export interface GrpcService__Output {
   /**
@@ -569,5 +608,10 @@ export interface GrpcService__Output {
    * <config_http_conn_man_headers_custom_request_headers>`.
    */
   'initial_metadata': (_envoy_config_core_v3_HeaderValue__Output)[];
+  /**
+   * Optional default retry policy for streams toward the service.
+   * If an async stream doesn't have retry policy configured in its stream options, this retry policy is used.
+   */
+  'retry_policy': (_envoy_config_core_v3_RetryPolicy__Output | null);
   'target_specifier': "envoy_grpc"|"google_grpc";
 }

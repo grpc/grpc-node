@@ -90,7 +90,7 @@ export class FileWatcherCertificateProvider implements CertificateProvider {
       if (!this.refreshTimer) {
         return;
       }
-      trace('File watcher read certificates certificate' + (certificateResult ? '!=' : '==') + 'null, privateKey' + (privateKeyResult ? '!=' : '==') + 'null, CA certificate' + (caCertificateResult ? '!=' : '==') + 'null');
+      trace('File watcher read certificates certificate ' + certificateResult.status + ', privateKey ' + privateKeyResult.status + ', CA certificate ' + caCertificateResult.status);
       this.lastUpdateTime = new Date();
       this.fileResultPromise = null;
       if (certificateResult.status === 'fulfilled' && privateKeyResult.status === 'fulfilled') {
