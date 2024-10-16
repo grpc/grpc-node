@@ -47,6 +47,7 @@ type GeneratorOptions = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
   outputTemplate: string;
   inputBranded: boolean;
   outputBranded: boolean;
+  suppressPermissiveTypes: boolean;
 }
 
 class TextFormatter {
@@ -146,7 +147,11 @@ function getImportLine(dependency: Protobuf.Type | Protobuf.Enum | Protobuf.Serv
     }
   } else {
     if (dependency instanceof Protobuf.Type || dependency instanceof Protobuf.Enum) {
-      importedTypes = `${inputName(dependency.name)} as ${inputName(typeInterfaceName)}, ${outputName(dependency.name)} as ${outputName(typeInterfaceName)}`;
+      if (options.suppressPermissiveTypes) {
+        importedTypes = `${outputName(dependency.name)} as ${outputName(typeInterfaceName)}`;
+      } else {
+        importedTypes = `${inputName(dependency.name)} as ${inputName(typeInterfaceName)}, ${outputName(dependency.name)} as ${outputName(typeInterfaceName)}`;
+      }
     } else if (dependency instanceof Protobuf.Service) {
       importedTypes = `${dependency.name}Client as ${typeInterfaceName}Client, ${dependency.name}Definition as ${typeInterfaceName}Definition`;
     } else {
@@ -457,8 +462,10 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
   for (const childType of childTypes.sort(compareName)) {
     const nameOverride = getTypeInterfaceName(childType);
     if (childType instanceof Protobuf.Type) {
-      generatePermissiveMessageInterface(formatter, childType, options, nameOverride);
-      formatter.writeLine('');
+      if (!options.suppressPermissiveTypes) {
+        generatePermissiveMessageInterface(formatter, childType, options, nameOverride);
+        formatter.writeLine('');
+      }
       generateRestrictedMessageInterface(formatter, childType, options, nameOverride);
     } else {
       generateEnumInterface(formatter, childType, options, nameOverride);
@@ -466,8 +473,10 @@ function generateMessageInterfaces(formatter: TextFormatter, messageType: Protob
     formatter.writeLine('');
   }
 
-  generatePermissiveMessageInterface(formatter, messageType, options);
-  formatter.writeLine('');
+  if (!options.suppressPermissiveTypes) {
+    generatePermissiveMessageInterface(formatter, messageType, options);
+    formatter.writeLine('');
+  }
   generateRestrictedMessageInterface(formatter, messageType, options);
 }
 
@@ -491,20 +500,22 @@ function generateEnumInterface(formatter: TextFormatter, enumType: Protobuf.Enum
   formatter.writeLine('} as const;');
 
   // Permissive Type
-  formatter.writeLine('');
-  if (options.includeComments) {
-    formatComment(formatter, enumType.comment, enumType.options);
-  }
-  formatter.writeLine(`export type ${inputName(name)} =`)
-  formatter.indent();
-  for (const key of Object.keys(enumType.values)) {
+  if (!options.suppressPermissiveTypes) {
+    formatter.writeLine('');
     if (options.includeComments) {
-      formatComment(formatter, enumType.comments[key]);
+      formatComment(formatter, enumType.comment, enumType.options);
     }
-    formatter.writeLine(`| '${key}'`);
-    formatter.writeLine(`| ${enumType.values[key]}`);
+    formatter.writeLine(`export type ${inputName(name)} =`)
+    formatter.indent();
+    for (const key of Object.keys(enumType.values)) {
+      if (options.includeComments) {
+        formatComment(formatter, enumType.comments[key]);
+      }
+      formatter.writeLine(`| '${key}'`);
+      formatter.writeLine(`| ${enumType.values[key]}`);
+    }
+    formatter.unindent();
   }
-  formatter.unindent();
 
   // Restrictive Type
   formatter.writeLine('');
@@ -877,6 +888,7 @@ async function runScript() {
     .option('outputTemplate', { string: true, default: `${templateStr}__Output` })
     .option('inputBranded', boolDefaultFalseOption)
     .option('outputBranded', boolDefaultFalseOption)
+    .option('suppressPermissiveTypes', boolDefaultFalseOption)
     .coerce('longs', value => {
       switch (value) {
         case 'String': return String;
@@ -916,6 +928,7 @@ async function runScript() {
       outputTemplate: 'Template for mapping output or "restricted" type names',
       inputBranded: 'Output property for branded type for  "permissive" types with fullName of the Message as its value',
       outputBranded: 'Output property for branded type for  "restricted" types with fullName of the Message as its value',
+      suppressPermissiveTypes: `Don't output "permissive" types`,
     }).demandOption(['outDir'])
     .demand(1)
     .usage('$0 [options] filenames...')
