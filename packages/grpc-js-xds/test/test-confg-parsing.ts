@@ -66,186 +66,21 @@ const allTestCases: {[lbPolicyName: string]: TestCase[]} = {
       error: /string.*cluster/
     }
   ],
-  xds_cluster_resolver: [
-    {
-      name: 'empty fields',
-      input: {
-        discovery_mechanisms: [],
-        xds_lb_policy: []
-      }
-    },
-    {
-      name: 'missing discovery_mechanisms',
-      input: {
-        xds_lb_policy: []
-      },
-      error: /discovery_mechanisms/
-    },
-    {
-      name: 'missing xds_lb_policy',
-      input: {
-        discovery_mechanisms: []
-      },
-      error: /xds_lb_policy/
-    },
-    {
-      name: 'discovery_mechanism: EDS',
-      input: {
-        discovery_mechanisms: [{
-          cluster: 'abc',
-          type: 'EDS'
-        }],
-        xds_lb_policy: []
-      },
-      output: {
-        discovery_mechanisms: [{
-          cluster: 'abc',
-          type: 'EDS',
-          lrs_load_reporting_server: undefined
-        }],
-        xds_lb_policy: []
-      }
-    },
-    {
-      name: 'discovery_mechanism: LOGICAL_DNS',
-      input: {
-        discovery_mechanisms: [{
-          cluster: 'abc',
-          type: 'LOGICAL_DNS'
-        }],
-        xds_lb_policy: []
-      },
-      output: {
-        discovery_mechanisms: [{
-          cluster: 'abc',
-          type: 'LOGICAL_DNS',
-          lrs_load_reporting_server: undefined
-        }],
-        xds_lb_policy: []
-      }
-    },
-    {
-      name: 'discovery_mechanism: undefined optional fields',
-      input: {
-        discovery_mechanisms: [{
-          cluster: 'abc',
-          type: 'EDS',
-          max_concurrent_requests: undefined,
-          eds_service_name: undefined,
-          dns_hostname: undefined,
-          lrs_load_reporting_server: undefined
-        }],
-        xds_lb_policy: []
-      }
-    },
-    {
-      name: 'discovery_mechanism: populated optional fields',
-      input: {
-        discovery_mechanisms: [{
-          cluster: 'abc',
-          type: 'EDS',
-          max_concurrent_requests: 100,
-          eds_service_name: 'def',
-          dns_hostname: 'localhost',
-          lrs_load_reporting_server: {
-            server_uri: 'localhost:12345',
-            channel_creds: [{
-              type: 'google_default',
-              config: {}
-            }],
-            server_features: ['test']
-          }
-        }],
-        xds_lb_policy: []
-      }
-    }
-  ],
   xds_cluster_impl: [
     {
-      name: 'only required fields',
+      name: 'required fields',
       input: {
         cluster: 'abc',
-        eds_service_name: 'def',
-        drop_categories: [],
-        lrs_load_reporting_server: {
-          server_uri: 'localhost:12345',
-          channel_creds: [{
-            type: 'google_default',
-            config: {}
-          }],
-          server_features: ['test']
-        },
+        child_policy: [{round_robin: {}}]
+      }
+    },
+    {
+      name: 'non-string cluster',
+      input: {
+        cluster: 123,
         child_policy: [{round_robin: {}}]
       },
-      output: {
-        cluster: 'abc',
-        eds_service_name: 'def',
-        drop_categories: [],
-        lrs_load_reporting_server: {
-          server_uri: 'localhost:12345',
-          channel_creds: [{
-            type: 'google_default',
-            config: {}
-          }],
-          server_features: ['test']
-        },
-        child_policy: [{round_robin: {}}],
-        max_concurrent_requests: 1024
-      }
-    },
-    {
-      name: 'undefined optional fields',
-      input: {
-        cluster: 'abc',
-        eds_service_name: 'def',
-        drop_categories: [],
-        lrs_load_reporting_server: {
-          server_uri: 'localhost:12345',
-          channel_creds: [{
-            type: 'google_default',
-            config: {}
-          }],
-          server_features: ['test']
-        },
-        child_policy: [{round_robin: {}}],
-        max_concurrent_requests: undefined
-      },
-      output: {
-        cluster: 'abc',
-        eds_service_name: 'def',
-        drop_categories: [],
-        lrs_load_reporting_server: {
-          server_uri: 'localhost:12345',
-          channel_creds: [{
-            type: 'google_default',
-            config: {}
-          }],
-          server_features: ['test']
-        },
-        child_policy: [{round_robin: {}}],
-        max_concurrent_requests: 1024
-      }
-    },
-    {
-      name: 'populated optional fields',
-      input: {
-        cluster: 'abc',
-        eds_service_name: 'def',
-        drop_categories: [{
-          category: 'test',
-          requests_per_million: 100
-        }],
-        lrs_load_reporting_server: {
-          server_uri: 'localhost:12345',
-          channel_creds: [{
-            type: 'google_default',
-            config: {}
-          }],
-          server_features: ['test']
-        },
-        child_policy: [{round_robin: {}}],
-        max_concurrent_requests: 123
-      },
+      error: /string.*cluster/
     }
   ],
   priority: [

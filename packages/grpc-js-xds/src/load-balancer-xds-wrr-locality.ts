@@ -21,7 +21,7 @@ import { ChannelCredentials, ChannelOptions, LoadBalancingConfig, experimental, 
 import { loadProtosWithOptionsSync } from "@grpc/proto-loader/build/src/util";
 import { WeightedTargetRaw } from "./load-balancer-weighted-target";
 import { isLocalityEndpoint } from "./load-balancer-priority";
-import { localityToName } from "./load-balancer-xds-cluster-resolver";
+import { localityToName } from "./load-balancer-cds";
 import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import LoadBalancer = experimental.LoadBalancer;
 import ChannelControlHelper = experimental.ChannelControlHelper;

@@ -33,7 +33,7 @@ import { DOWNSTREAM_TLS_CONTEXT_TYPE_URL, HTTP_CONNECTION_MANGER_TYPE_URL, decod
 import { FilterChain__Output } from "./generated/envoy/config/listener/v3/FilterChain";
 import { getPredicateForMatcher } from "./route";
 import { crossProduct } from "./cross-product";
-import { findVirtualHostForDomain } from "./resolver-xds";
+import { findVirtualHostForDomain } from "./xds-dependency-manager";
 import { LogVerbosity } from "@grpc/grpc-js/build/src/constants";
 import { XdsServerCredentials } from "./xds-credentials";
 import { CertificateValidationContext__Output } from "./generated/envoy/extensions/transport_sockets/tls/v3/CertificateValidationContext";
