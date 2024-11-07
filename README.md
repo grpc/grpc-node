@@ -1,5 +1,3 @@
-[![grpc-tools Build](https://github.com/grpc/grpc-node/actions/workflows/grpc-tools-build.yml/badge.svg)](https://github.com/grpc/grpc-node/actions/workflows/grpc-tools-build.yml)
-
 # gRPC on Node.js
 
 ## Implementations
