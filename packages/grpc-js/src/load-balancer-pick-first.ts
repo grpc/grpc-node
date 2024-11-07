@@ -275,6 +275,13 @@ export class PickFirstLoadBalancer implements LoadBalancer {
           new PickFirstPicker(this.currentPick)
         );
       }
+    } else if (this.latestAddressList?.length === 0) {
+      this.updateState(
+        ConnectivityState.TRANSIENT_FAILURE,
+        new UnavailablePicker({
+          details: `No connection established. Last error: ${this.lastError}`,
+        })
+      );
     } else if (this.children.length === 0) {
       this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
     } else {

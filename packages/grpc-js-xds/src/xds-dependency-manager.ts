@@ -653,8 +653,9 @@ export class XdsDependencyManager {
           this.subscribedClusters[clusterName] -= 1;
           if (this.subscribedClusters[clusterName] <= 0) {
             delete this.subscribedClusters[clusterName];
-            this.pruneOrphanClusters();
-            this.maybeSendUpdate();
+            if (this.pruneOrphanClusters()) {
+              this.maybeSendUpdate();
+            }
           }
         }
       }
@@ -682,7 +683,12 @@ export class XdsDependencyManager {
     delete this.clusterForest[clusterName];
   }
 
-  private pruneOrphanClusters() {
+  /**
+   * Prune any clusters that are not descendents of any root clusters,
+   * including subscribed clusters.
+   * @returns True if any clusters were pruned, false otherwise
+   */
+  private pruneOrphanClusters(): boolean {
     const toCheck = [...this.clusterRoots, ...Object.keys(this.subscribedClusters)];
     const visited = new Set<string>();
     while(toCheck.length > 0) {
@@ -695,11 +701,14 @@ export class XdsDependencyManager {
       }
       visited.add(next);
     }
+    let removedAnyClusters = false;
     for (const clusterName of Object.keys(this.clusterForest)) {
       if (!visited.has(clusterName)) {
+        removedAnyClusters = true;
         this.removeCluster(clusterName);
       }
     }
+    return removedAnyClusters;
   }
 
   private handleRouteConfig(routeConfig: RouteConfiguration__Output) {
