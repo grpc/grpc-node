@@ -227,13 +227,14 @@ class XdsClusterManager implements LoadBalancer {
       this.children.get(name)!.destroy();
       this.children.delete(name);
     }
-    // Add new children that were not in the previous config
+    // Update all children, and add any new ones
     for (const [name, childConfig] of configChildren.entries()) {
-      if (!this.children.has(name)) {
-        const newChild = new this.XdsClusterManagerChildImpl(this, name);
-        newChild.updateAddressList(endpointList, childConfig, attributes);
-        this.children.set(name, newChild);
+      let child = this.children.get(name);
+      if (!child) {
+        child = new this.XdsClusterManagerChildImpl(this, name);
+        this.children.set(name, child);
       }
+      child.updateAddressList(endpointList, childConfig, attributes);
     }
     this.updatesPaused = false;
     this.updateState();
