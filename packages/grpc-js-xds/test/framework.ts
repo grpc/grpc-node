@@ -386,7 +386,7 @@ export class FakeServerRoute {
   private listener: Listener;
   private routeConfiguration: RouteConfiguration;
   constructor(port: number, routeName: string, baseListener?: Listener | undefined, baseRouteConfiguration?: RouteConfiguration) {
-    this.listener = baseListener ?? DEFAULT_BASE_SERVER_LISTENER;
+    this.listener = baseListener ?? {...DEFAULT_BASE_SERVER_LISTENER};
     this.listener.name = `[::1]:${port}`;
     this.listener.address = {
       socket_address: {
@@ -414,7 +414,7 @@ export class FakeServerRoute {
       filterChain.filters = filterList;
     }
 
-    this.routeConfiguration = baseRouteConfiguration ?? DEFAULT_BASE_SERVER_ROUTE_CONFIG;
+    this.routeConfiguration = baseRouteConfiguration ?? {...DEFAULT_BASE_SERVER_ROUTE_CONFIG};
     this.routeConfiguration.name = routeName;
   }
 
