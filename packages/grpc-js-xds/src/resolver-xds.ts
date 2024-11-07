@@ -18,17 +18,13 @@ import * as protoLoader from '@grpc/proto-loader';
 
 import { RE2 } from 're2-wasm';
 
-import { getSingletonXdsClient, Watcher, XdsClient } from './xds-client';
-import { StatusObject, status, logVerbosity, Metadata, experimental, ChannelOptions, ServiceConfig, LoadBalancingConfig, RetryPolicy } from '@grpc/grpc-js';
+import { getSingletonXdsClient, XdsClient } from './xds-client';
+import { status, logVerbosity, Metadata, experimental, ChannelOptions, ServiceConfig, LoadBalancingConfig, RetryPolicy } from '@grpc/grpc-js';
 import Resolver = experimental.Resolver;
 import GrpcUri = experimental.GrpcUri;
 import ResolverListener = experimental.ResolverListener;
 import uriToString = experimental.uriToString;
 import registerResolver = experimental.registerResolver;
-import { Listener__Output } from './generated/envoy/config/listener/v3/Listener';
-import { RouteConfiguration__Output } from './generated/envoy/config/route/v3/RouteConfiguration';
-import { HttpConnectionManager__Output } from './generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpConnectionManager';
-import { VirtualHost__Output } from './generated/envoy/config/route/v3/VirtualHost';
 import ConfigSelector = experimental.ConfigSelector;
 import { Matcher } from './matcher';
 import { HashPolicy, RouteAction, SingleClusterRouteAction, WeightedCluster, WeightedClusterRouteAction } from './route-action';
@@ -40,98 +36,17 @@ import { EXPERIMENTAL_FAULT_INJECTION, EXPERIMENTAL_FEDERATION, EXPERIMENTAL_RET
 import Filter = experimental.Filter;
 import FilterFactory = experimental.FilterFactory;
 import { BootstrapInfo, loadBootstrapInfo, validateBootstrapConfig } from './xds-bootstrap';
-import { ListenerResourceType } from './xds-resource-type/listener-resource-type';
-import { RouteConfigurationResourceType } from './xds-resource-type/route-config-resource-type';
 import { protoDurationToDuration } from './duration';
 import { loadXxhashApi } from './xxhash';
 import { formatTemplateString } from './xds-bootstrap';
 import { getPredicateForMatcher } from './route';
+import { XdsConfig, XdsConfigWatcher, XdsDependencyManager } from './xds-dependency-manager';
 
 const TRACER_NAME = 'xds_resolver';
 
 function trace(text: string): void {
   experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
 }
-
-// Better match type has smaller value.
-enum MatchType {
-  EXACT_MATCH,
-  SUFFIX_MATCH,
-  PREFIX_MATCH,
-  UNIVERSE_MATCH,
-  INVALID_MATCH,
-};
-
-function domainPatternMatchType(domainPattern: string): MatchType {
-  if (domainPattern.length === 0) {
-    return MatchType.INVALID_MATCH;
-  }
-  if (domainPattern.indexOf('*') < 0) {
-    return MatchType.EXACT_MATCH;
-  }
-  if (domainPattern === '*') {
-    return MatchType.UNIVERSE_MATCH;
-  }
-  if (domainPattern.startsWith('*')) {
-    return MatchType.SUFFIX_MATCH;
-  }
-  if (domainPattern.endsWith('*')) {
-    return MatchType.PREFIX_MATCH;
-  }
-  return MatchType.INVALID_MATCH;
-}
-
-function domainMatch(matchType: MatchType, domainPattern: string, expectedHostName: string) {
-  switch (matchType) {
-    case MatchType.EXACT_MATCH:
-      return expectedHostName === domainPattern;
-    case MatchType.SUFFIX_MATCH:
-      return expectedHostName.endsWith(domainPattern.substring(1));
-    case MatchType.PREFIX_MATCH:
-      return expectedHostName.startsWith(domainPattern.substring(0, domainPattern.length - 1));
-    case MatchType.UNIVERSE_MATCH:
-      return true;
-    case MatchType.INVALID_MATCH:
-      return false;
-  }
-}
-
-interface HasDomains {
-  domains: string[];
-}
-
-export function findVirtualHostForDomain<T extends HasDomains>(virutalHostList: T[], domain: string): T | null {
-  let targetVhost: T | null = null;
-  let bestMatchType: MatchType = MatchType.INVALID_MATCH;
-  let longestMatch = 0;
-  for (const virtualHost of virutalHostList) {
-    for (const domainPattern of virtualHost.domains) {
-      const matchType = domainPatternMatchType(domainPattern);
-      // If we already have a match of a better type, skip this one
-      if (matchType > bestMatchType) {
-        continue;
-      }
-      // If we already have a longer match of the same type, skip this one
-      if (matchType === bestMatchType && domainPattern.length <= longestMatch) {
-        continue;
-      }
-      if (domainMatch(matchType, domainPattern, domain)) {
-        targetVhost = virtualHost;
-        bestMatchType = matchType;
-        longestMatch = domainPattern.length;
-      }
-      if (bestMatchType === MatchType.EXACT_MATCH) {
-        break;
-      }
-    }
-    if (bestMatchType === MatchType.EXACT_MATCH) {
-      break;
-    }
-  }
-  return targetVhost;
-}
-
-const numberRegex = new RE2(/^-?\d+$/u);
 
 function protoDurationToSecondsString(duration: Duration__Output): string {
   return `${duration.seconds + duration.nanos / 1_000_000_000}s`;
@@ -166,29 +81,15 @@ const RETRY_CODES: {[key: string]: status} = {
 };
 
 class XdsResolver implements Resolver {
-  private hasReportedSuccess = false;
 
-  private ldsWatcher: Watcher<Listener__Output>;
-  private rdsWatcher: Watcher<RouteConfiguration__Output>
-  private isLdsWatcherActive = false;
   private listenerResourceName: string | null = null;
-  /**
-   * The latest route config name from an LDS response. The RDS watcher is
-   * actively watching that name if and only if this is not null.
-   */
-  private latestRouteConfigName: string | null = null;
-
-  private latestRouteConfig: RouteConfiguration__Output | null = null;
-
-  private clusterRefcounts = new Map<string, {inLastConfig: boolean, refCount: number}>();
-
-  private latestDefaultTimeout: Duration | undefined = undefined;
-
-  private ldsHttpFilterConfigs: {name: string, config: HttpFilterConfig}[] = [];
 
   private bootstrapInfo: BootstrapInfo | null = null;
 
   private xdsClient: XdsClient;
+
+  private xdsConfigWatcher: XdsConfigWatcher;
+  private xdsDependencyManager: XdsDependencyManager | null = null;
 
   constructor(
     private target: GrpcUri,
@@ -202,116 +103,47 @@ class XdsResolver implements Resolver {
     } else {
       this.xdsClient = getSingletonXdsClient();
     }
-    this.ldsWatcher = new Watcher<Listener__Output>({
-      onResourceChanged: (update: Listener__Output) => {
-        const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, update.api_listener!.api_listener!.value);
-        const defaultTimeout = httpConnectionManager.common_http_protocol_options?.idle_timeout;
-        if (defaultTimeout === null || defaultTimeout === undefined) {
-          this.latestDefaultTimeout = undefined;
-        } else {
-          this.latestDefaultTimeout = protoDurationToDuration(defaultTimeout);
-        }
-        if (EXPERIMENTAL_FAULT_INJECTION) {
-          this.ldsHttpFilterConfigs = [];
-          for (const filter of httpConnectionManager.http_filters) {
-            // typed_config must be set here, or validation would have failed
-            const filterConfig = parseTopLevelFilterConfig(filter.typed_config!);
-            if (filterConfig) {
-              this.ldsHttpFilterConfigs.push({name: filter.name, config: filterConfig});
-            }
-          }
-        }
-        switch (httpConnectionManager.route_specifier) {
-          case 'rds': {
-            const routeConfigName = httpConnectionManager.rds!.route_config_name;
-            if (this.latestRouteConfigName !== routeConfigName) {
-              if (this.latestRouteConfigName !== null) {
-                RouteConfigurationResourceType.cancelWatch(this.xdsClient, this.latestRouteConfigName, this.rdsWatcher);
-              }
-              RouteConfigurationResourceType.startWatch(this.xdsClient, routeConfigName, this.rdsWatcher);
-              this.latestRouteConfigName = routeConfigName;
-            }
-            break;
-          }
-          case 'route_config':
-            if (this.latestRouteConfigName) {
-              RouteConfigurationResourceType.cancelWatch(this.xdsClient, this.latestRouteConfigName, this.rdsWatcher);
-              this.latestRouteConfigName = null;
-            }
-            this.handleRouteConfig(httpConnectionManager.route_config!);
-            break;
-          default:
-            // This is prevented by the validation rules
-        }
+    this.xdsConfigWatcher = {
+      onUpdate: xdsConfig => {
+        this.handleXdsConfig(xdsConfig);
       },
-      onError: (error: StatusObject) => {
-        /* A transient error only needs to bubble up as a failure if we have
-         * not already provided a ServiceConfig for the upper layer to use */
-        if (!this.hasReportedSuccess) {
-          trace('Resolution error for target ' + uriToString(this.target) + ' due to xDS client transient error ' + error.details);
-          this.reportResolutionError(error.details);
-        }
+      onError: (context, status) => {
+        trace('Resolution error for target ' + uriToString(this.target) + ' due to xDS client transient error retrieving ' + context + ': ' + status.details);
+        this.reportResolutionError(`Error retrieving resource ${context}: ${status.details}`);
       },
-      onResourceDoesNotExist: () => {
-        trace('Resolution error for target ' + uriToString(this.target) + ': LDS resource does not exist');
-        if (this.latestRouteConfigName) {
-          RouteConfigurationResourceType.cancelWatch(this.xdsClient, this.latestRouteConfigName, this.rdsWatcher);
-          this.latestRouteConfigName = null;
-        }
-        this.reportResolutionError(`Listener ${this.target} does not exist`);
-      }
-    });
-    this.rdsWatcher = new Watcher<RouteConfiguration__Output>({
-      onResourceChanged: (update: RouteConfiguration__Output) => {
-        this.handleRouteConfig(update);
-      },
-      onError: (error: StatusObject) => {
-        /* A transient error only needs to bubble up as a failure if we have
-         * not already provided a ServiceConfig for the upper layer to use */
-        if (!this.hasReportedSuccess) {
-          trace('Resolution error for target ' + uriToString(this.target) + ' due to xDS client transient error ' + error.details);
-          this.reportResolutionError(error.details);
-        }
-      },
-      onResourceDoesNotExist: () => {
-        trace('Resolution error for target ' + uriToString(this.target) + ' and route config ' + this.latestRouteConfigName + ': RDS resource does not exist');
-        this.reportResolutionError(`Route config ${this.latestRouteConfigName} does not exist`);
-      }
-    });
-  }
-
-  private refCluster(clusterName: string) {
-    const refCount = this.clusterRefcounts.get(clusterName);
-    if (refCount) {
-      refCount.refCount += 1;
-    }
-  }
-
-  private unrefCluster(clusterName: string) {
-    const refCount = this.clusterRefcounts.get(clusterName);
-    if (refCount) {
-      refCount.refCount -= 1;
-      if (!refCount.inLastConfig && refCount.refCount === 0) {
-        this.clusterRefcounts.delete(clusterName);
-        this.handleRouteConfig(this.latestRouteConfig!);
+      onResourceDoesNotExist: context => {
+        trace('Resolution error for target ' + uriToString(this.target) + ': ' + context + ' does not exist');
+        /* Return an empty endpoint list and service config, to explicitly
+         * invalidate any previously returned service config */
+        this.listener.onSuccessfulResolution([], null, null, null, {});
       }
     }
   }
 
-  private async handleRouteConfig(routeConfig: RouteConfiguration__Output) {
+  private async handleXdsConfig(xdsConfig: XdsConfig) {
     /* We need to load the xxhash API before this function finishes, because
      * it is invoked in the config selector, which can be called immediately
      * after this function returns. */
     await loadXxhashApi();
-    this.latestRouteConfig = routeConfig;
-    /* Select the virtual host using the default authority override if it
-     * exists, and the channel target otherwise. */
-    const hostDomain = this.channelOptions['grpc.default_authority'] ?? this.target.path;
-    const virtualHost = findVirtualHostForDomain(routeConfig.virtual_hosts, hostDomain);
-    if (virtualHost === null) {
-      this.reportResolutionError('No matching route found for ' + hostDomain);
-      return;
+    const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, xdsConfig.listener.api_listener!.api_listener!.value);
+    const configDefaultTimeout = httpConnectionManager.common_http_protocol_options?.idle_timeout;
+    let defaultTimeout: Duration | undefined = undefined;
+    if (configDefaultTimeout === null || configDefaultTimeout === undefined) {
+      defaultTimeout = undefined;
+    } else {
+      defaultTimeout = protoDurationToDuration(configDefaultTimeout);
     }
+    const ldsHttpFilterConfigs: {name: string, config: HttpFilterConfig}[] = [];
+    if (EXPERIMENTAL_FAULT_INJECTION) {
+      for (const filter of httpConnectionManager.http_filters) {
+        // typed_config must be set here, or validation would have failed
+        const filterConfig = parseTopLevelFilterConfig(filter.typed_config!);
+        if (filterConfig) {
+          ldsHttpFilterConfigs.push({name: filter.name, config: filterConfig});
+        }
+      }
+    }
+    const virtualHost = xdsConfig.virtualHost;
     const virtualHostHttpFilterOverrides = new Map<string, HttpFilterConfig>();
     if (EXPERIMENTAL_FAULT_INJECTION) {
       for (const [name, filter] of Object.entries(virtualHost.typed_per_filter_config ?? {})) {
@@ -335,7 +167,7 @@ class XdsResolver implements Resolver {
       } else if (route.route?.max_stream_duration?.max_stream_duration) {
         timeout = protoDurationToDuration(route.route.max_stream_duration.max_stream_duration);
       } else {
-        timeout = this.latestDefaultTimeout;
+        timeout = defaultTimeout;
       }
       // "A value of 0 indicates the application's deadline is used without modification."
       if (timeout?.seconds === 0 && timeout.nanos === 0) {
@@ -405,7 +237,7 @@ class XdsResolver implements Resolver {
           allConfigClusters.add(cluster);
           const extraFilterFactories: FilterFactory<Filter>[] = [];
           if (EXPERIMENTAL_FAULT_INJECTION) {
-            for (const filterConfig of this.ldsHttpFilterConfigs) {
+            for (const filterConfig of ldsHttpFilterConfigs) {
               if (routeHttpFilterOverrides.has(filterConfig.name)) {
                 const filter = createHttpFilter(filterConfig.config, routeHttpFilterOverrides.get(filterConfig.name)!);
                 if (filter) {
@@ -440,7 +272,7 @@ class XdsResolver implements Resolver {
                   clusterHttpFilterOverrides.set(name, parsedConfig);
                 }
               }
-              for (const filterConfig of this.ldsHttpFilterConfigs) {
+              for (const filterConfig of ldsHttpFilterConfigs) {
                 if (clusterHttpFilterOverrides.has(filterConfig.name)) {
                   const filter = createHttpFilter(filterConfig.config, clusterHttpFilterOverrides.get(filterConfig.name)!);
                   if (filter) {
@@ -477,31 +309,13 @@ class XdsResolver implements Resolver {
       const routeMatcher = getPredicateForMatcher(route.match!);
       matchList.push({matcher: routeMatcher, action: routeAction});
     }
-    /* Mark clusters that are not in this route config, and remove ones with
-      * no references */
-    for (const [name, refCount] of Array.from(this.clusterRefcounts.entries())) {
-      if (!allConfigClusters.has(name)) {
-        refCount.inLastConfig = false;
-        if (refCount.refCount === 0) {
-          this.clusterRefcounts.delete(name);
-        }
-      }
-    }
-    // Add any new clusters from this route config
-    for (const name of allConfigClusters) {
-      if (this.clusterRefcounts.has(name)) {
-        this.clusterRefcounts.get(name)!.inLastConfig = true;
-      } else {
-        this.clusterRefcounts.set(name, {inLastConfig: true, refCount: 0});
-      }
-    }
     const configSelector: ConfigSelector = (methodName, metadata, channelId) => {
       for (const {matcher, action} of matchList) {
         if (matcher.apply(methodName, metadata)) {
           const clusterResult = action.getCluster();
-          this.refCluster(clusterResult.name);
+          const unrefCluster = this.xdsDependencyManager!.addClusterSubscription(clusterResult.name);
           const onCommitted = () => {
-            this.unrefCluster(clusterResult.name);
+            unrefCluster();
           }
           let hash: string;
           if (EXPERIMENTAL_RING_HASH) {
@@ -532,7 +346,7 @@ class XdsResolver implements Resolver {
       trace('=> ' + action.toString());
     }
     const clusterConfigMap: {[key: string]: {child_policy: LoadBalancingConfig[]}} = {};
-    for (const clusterName of this.clusterRefcounts.keys()) {
+    for (const clusterName of allConfigClusters) {
       clusterConfigMap[clusterName] = {child_policy: [{cds: {cluster: clusterName}}]};
     }
     const lbPolicyConfig = {xds_cluster_manager: {children: clusterConfigMap}};
@@ -540,7 +354,10 @@ class XdsResolver implements Resolver {
       methodConfig: [],
       loadBalancingConfig: [lbPolicyConfig]
     }
-    this.listener.onSuccessfulResolution([], serviceConfig, null, configSelector, {xdsClient: this.xdsClient});
+    this.listener.onSuccessfulResolution([], serviceConfig, null, configSelector, {
+      xdsClient: this.xdsClient,
+      xdsConfig: xdsConfig
+    });
   }
 
   private reportResolutionError(reason: string) {
@@ -554,18 +371,19 @@ class XdsResolver implements Resolver {
   }
 
   private startResolution(): void {
-    if (!this.isLdsWatcherActive) {
+    if (!this.xdsDependencyManager) {
       trace('Starting resolution for target ' + uriToString(this.target));
       try {
-        this.listenerResourceName = getListenerResourceName(this.bootstrapInfo!, this.target);
+        const listenerResourceName = getListenerResourceName(this.bootstrapInfo!, this.target);
         trace('Resolving target ' + uriToString(this.target) + ' with Listener resource name ' + this.listenerResourceName);
-        ListenerResourceType.startWatch(this.xdsClient, this.listenerResourceName, this.ldsWatcher);
-        this.isLdsWatcherActive = true;
-
+        const hostDomain = this.channelOptions['grpc.default_authority'] ?? this.target.path;
+        this.xdsDependencyManager = new XdsDependencyManager(this.xdsClient, listenerResourceName, hostDomain, this.xdsConfigWatcher);
       } catch (e) {
         this.reportResolutionError((e as Error).message);
+        return;
       }
     }
+    this.xdsDependencyManager.updateResolution();
   }
 
   updateResolution(): void {
@@ -581,23 +399,19 @@ class XdsResolver implements Resolver {
         this.startResolution();
       }
     } else {
-      if (!this.isLdsWatcherActive) {
+      if (!this.xdsDependencyManager) {
         trace('Starting resolution for target ' + uriToString(this.target));
-        ListenerResourceType.startWatch(this.xdsClient, this.target.path, this.ldsWatcher);
-        this.listenerResourceName = this.target.path;
-        this.isLdsWatcherActive = true;
+        const hostDomain = this.channelOptions['grpc.default_authority'] ?? this.target.path;
+        this.xdsDependencyManager = new XdsDependencyManager(this.xdsClient, this.target.path, hostDomain, this.xdsConfigWatcher);
       }
+      this.xdsDependencyManager.updateResolution();
     }
   }
 
   destroy() {
-    if (this.listenerResourceName) {
-      ListenerResourceType.cancelWatch(this.xdsClient, this.listenerResourceName, this.ldsWatcher);
-      this.isLdsWatcherActive = false;
-    }
-    if (this.latestRouteConfigName) {
-      RouteConfigurationResourceType.cancelWatch(this.xdsClient, this.latestRouteConfigName, this.rdsWatcher);
-      this.latestRouteConfigName = null;
+    if (this.xdsDependencyManager) {
+      this.xdsDependencyManager.destroy();
+      this.xdsDependencyManager = null;
     }
   }
 

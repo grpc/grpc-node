@@ -139,6 +139,9 @@ export function shuffled<T>(list: T[]): T[] {
 function interleaveAddressFamilies(
   addressList: SubchannelAddress[]
 ): SubchannelAddress[] {
+  if (addressList.length === 0) {
+    return [];
+  }
   const result: SubchannelAddress[] = [];
   const ipv6Addresses: SubchannelAddress[] = [];
   const ipv4Addresses: SubchannelAddress[] = [];
@@ -272,6 +275,13 @@ export class PickFirstLoadBalancer implements LoadBalancer {
           new PickFirstPicker(this.currentPick)
         );
       }
+    } else if (this.latestAddressList?.length === 0) {
+      this.updateState(
+        ConnectivityState.TRANSIENT_FAILURE,
+        new UnavailablePicker({
+          details: `No connection established. Last error: ${this.lastError}`,
+        })
+      );
     } else if (this.children.length === 0) {
       this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
     } else {
@@ -507,7 +517,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     );
     trace('updateAddressList([' + rawAddressList.map(address => subchannelAddressToString(address)) + '])');
     if (rawAddressList.length === 0) {
-      throw new Error('No addresses in endpoint list passed to pick_first');
+      this.lastError = 'No addresses resolved';
     }
     const addressList = interleaveAddressFamilies(rawAddressList);
     this.latestAddressList = addressList;

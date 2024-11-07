@@ -770,6 +770,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     if (!(lbConfig instanceof OutlierDetectionLoadBalancingConfig)) {
       return;
     }
+    trace('Received update with config: ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2))
     for (const endpoint of endpointList) {
       if (!this.entryMap.has(endpoint)) {
         trace('Adding map entry for ' + endpointToString(endpoint));
