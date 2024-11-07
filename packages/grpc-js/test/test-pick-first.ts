@@ -690,6 +690,19 @@ describe('pick_first load balancing policy', () => {
       });
     });
   });
+  it('Should report TRANSIENT_FAILURE with no addresses', done => {
+    const channelControlHelper = createChildChannelControlHelper(
+      baseChannelControlHelper,
+      {
+        updateState: updateStateCallBackForExpectedStateSequence(
+          [ConnectivityState.TRANSIENT_FAILURE],
+          done
+        ),
+      }
+    );
+    const pickFirst = new PickFirstLoadBalancer(channelControlHelper, creds, {});
+    pickFirst.updateAddressList([], config);
+  });
   describe('Address list randomization', () => {
     const shuffleConfig = new PickFirstLoadBalancingConfig(true);
     it('Should pick different subchannels after multiple updates', done => {
