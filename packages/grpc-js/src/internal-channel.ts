@@ -294,14 +294,13 @@ export class InternalChannel {
     const channelControlHelper: ChannelControlHelper = {
       createSubchannel: (
         subchannelAddress: SubchannelAddress,
-        subchannelArgs: ChannelOptions,
-        credentialsOverride: ChannelCredentials | null
+        subchannelArgs: ChannelOptions
       ) => {
         const subchannel = this.subchannelPool.getOrCreateSubchannel(
           this.target,
           subchannelAddress,
           Object.assign({}, this.options, subchannelArgs),
-          credentialsOverride ?? this.credentials
+          this.credentials
         );
         subchannel.throttleKeepalive(this.keepaliveTime);
         if (this.channelzEnabled) {
@@ -350,7 +349,6 @@ export class InternalChannel {
     this.resolvingLoadBalancer = new ResolvingLoadBalancer(
       this.target,
       channelControlHelper,
-      credentials,
       options,
       (serviceConfig, configSelector) => {
         if (serviceConfig.retryThrottling) {
