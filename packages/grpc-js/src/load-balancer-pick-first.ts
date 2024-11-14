@@ -43,7 +43,6 @@ import {
 import { isTcpSubchannelAddress } from './subchannel-address';
 import { isIPv6 } from 'net';
 import { ChannelOptions } from './channel-options';
-import { ChannelCredentials } from './channel-credentials';
 
 const TRACER_NAME = 'pick_first';
 
@@ -244,7 +243,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    */
   constructor(
     private readonly channelControlHelper: ChannelControlHelper,
-    credentials: ChannelCredentials,
     options: ChannelOptions
   ) {
     this.connectionDelayTimeout = setTimeout(() => {}, 0);
@@ -466,7 +464,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   private connectToAddressList(addressList: SubchannelAddress[]) {
     trace('connectToAddressList([' + addressList.map(address => subchannelAddressToString(address)) + '])');
     const newChildrenList = addressList.map(address => ({
-      subchannel: this.channelControlHelper.createSubchannel(address, {}, null),
+      subchannel: this.channelControlHelper.createSubchannel(address, {}),
       hasReportedTransientFailure: false,
     }));
     for (const { subchannel } of newChildrenList) {
@@ -562,7 +560,6 @@ export class LeafLoadBalancer {
   constructor(
     private endpoint: Endpoint,
     channelControlHelper: ChannelControlHelper,
-    credentials: ChannelCredentials,
     options: ChannelOptions
   ) {
     const childChannelControlHelper = createChildChannelControlHelper(
@@ -577,7 +574,6 @@ export class LeafLoadBalancer {
     );
     this.pickFirstBalancer = new PickFirstLoadBalancer(
       childChannelControlHelper,
-      credentials,
       { ...options, [REPORT_HEALTH_STATUS_OPTION_NAME]: true }
     );
     this.latestPicker = new QueuePicker(this.pickFirstBalancer);

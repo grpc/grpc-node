@@ -15,7 +15,7 @@
  *
  */
 
-import { experimental, logVerbosity, status as Status, Metadata, connectivityState, ChannelOptions, ChannelCredentials } from "@grpc/grpc-js";
+import { experimental, logVerbosity, status as Status, Metadata, connectivityState, ChannelOptions } from "@grpc/grpc-js";
 import { validateXdsServerConfig, XdsServerConfig } from "./xds-bootstrap";
 import { getSingletonXdsClient, XdsClient, XdsClusterDropStats, XdsClusterLocalityStats } from "./xds-client";
 import { LocalityEndpoint } from "./load-balancer-priority";
@@ -211,13 +211,13 @@ class XdsClusterImplBalancer implements LoadBalancer {
   private xdsClient: XdsClient | null = null;
   private latestClusterConfig: ClusterConfig | null = null;
 
-  constructor(private readonly channelControlHelper: ChannelControlHelper, credentials: ChannelCredentials, options: ChannelOptions) {
+  constructor(private readonly channelControlHelper: ChannelControlHelper, options: ChannelOptions) {
       this.childBalancer = new ChildLoadBalancerHandler(createChildChannelControlHelper(channelControlHelper, {
-        createSubchannel: (subchannelAddress, subchannelArgs, credentialsOverride) => {
+        createSubchannel: (subchannelAddress, subchannelArgs) => {
           if (!this.xdsClient || !this.latestConfig || !this.lastestEndpointList || !this.latestClusterConfig) {
             throw new Error('xds_cluster_impl: invalid state: createSubchannel called with xdsClient or latestConfig not populated');
           }
-          const wrapperChild = channelControlHelper.createSubchannel(subchannelAddress, subchannelArgs, credentialsOverride);
+          const wrapperChild = channelControlHelper.createSubchannel(subchannelAddress, subchannelArgs);
           let locality: Locality__Output | null = null;
           for (const endpoint of this.lastestEndpointList) {
             if (endpointHasAddress(endpoint, subchannelAddress)) {
@@ -248,7 +248,7 @@ class XdsClusterImplBalancer implements LoadBalancer {
             channelControlHelper.updateState(connectivityState, picker);
           }
         }
-      }), credentials, options);
+      }), options);
     }
   updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
     if (!(lbConfig instanceof XdsClusterImplLoadBalancingConfig)) {
