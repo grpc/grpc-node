@@ -760,12 +760,12 @@ function generateRootFile(formatter: TextFormatter, root: Protobuf.Root, options
   generateServiceImports(formatter, root, options);
   formatter.writeLine('');
 
-  formatter.writeLine('type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {');
+  formatter.writeLine('type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = grpc.ServiceClientConstructor & {');
   formatter.writeLine('  new(...args: ConstructorParameters<Constructor>): Subtype;');
   formatter.writeLine('};');
   formatter.writeLine('');
 
-  formatter.writeLine('export interface ProtoGrpcType {');
+  formatter.writeLine('export interface ProtoGrpcType extends grpc.GrpcObject {');
   formatter.indent();
   for (const nested of root.nestedArray) {
     generateSingleLoadedDefinitionType(formatter, nested, options);
