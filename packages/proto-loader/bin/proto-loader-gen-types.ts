@@ -551,7 +551,7 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
   if (options.includeComments) {
     formatComment(formatter, serviceType.comment, serviceType.options);
   }
-  formatter.writeLine(`export interface ${serviceType.name}Client extends grpc.Client {`);
+  formatter.writeLine(`export interface ${serviceType.name}Client extends grpc.ServiceClient {`);
   formatter.indent();
   for (const methodName of Object.keys(serviceType.methods).sort()) {
     const method = serviceType.methods[methodName];
