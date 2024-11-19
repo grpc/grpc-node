@@ -122,9 +122,7 @@ const exampleServer: ExampleHandlers = {
 };
 
 const packageDefinition = protoLoader.loadSync('./proto/example.proto');
-const proto = (grpc.loadPackageDefinition(
-  packageDefinition
-) as unknown) as ProtoGrpcType;
+const proto: ProtoGrpcType = grpc.loadPackageDefinition(packageDefinition) as ProtoGrpcType;
 
 const server = new grpc.Server();
 server.addService(proto.example_package.Example.service, exampleServer);

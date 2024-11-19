@@ -1,13 +1,13 @@
 import type * as grpc from '../index';
 import type { MessageTypeDefinition } from '@grpc/proto-loader';
 
-import type { ChannelzClient as _grpc_channelz_v1_ChannelzClient, ChannelzDefinition as _grpc_channelz_v1_ChannelzDefinition } from './grpc/channelz/v1/Channelz.ts';
+import type { ChannelzClient as _grpc_channelz_v1_ChannelzClient, ChannelzDefinition as _grpc_channelz_v1_ChannelzDefinition } from './grpc/channelz/v1/Channelz';
 
-type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {
-  new(...args: ConstructorParameters<Constructor>): Subtype;
-};
+type SubtypeConstructor<Subtype extends grpc.ServiceClient> = {
+  new (address: string, credentials: grpc.ChannelCredentials, options?: Partial<grpc.ChannelOptions>): Subtype;
+} & grpc.ServiceClientConstructor;
 
-export interface ProtoGrpcType {
+export interface ProtoGrpcType extends grpc.GrpcObject {
   google: {
     protobuf: {
       Any: MessageTypeDefinition
@@ -38,7 +38,7 @@ export interface ProtoGrpcType {
          * Channelz is a service exposed by gRPC servers that provides detailed debug
          * information.
          */
-        Channelz: SubtypeConstructor<typeof grpc.Client, _grpc_channelz_v1_ChannelzClient> & { service: _grpc_channelz_v1_ChannelzDefinition }
+        Channelz: SubtypeConstructor<_grpc_channelz_v1_ChannelzClient> & { service: _grpc_channelz_v1_ChannelzDefinition }
         GetChannelRequest: MessageTypeDefinition
         GetChannelResponse: MessageTypeDefinition
         GetServerRequest: MessageTypeDefinition
