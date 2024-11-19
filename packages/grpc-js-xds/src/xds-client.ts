@@ -1322,6 +1322,15 @@ export class XdsClient {
     }
     return this.certificateProviderRegistry.get(instanceName);
   }
+
+  /**
+   * Returns a valid JSON-stringifiable object, to avoid causing a circular
+   * reference error when an object containing this object is stringified.
+   * @returns
+   */
+  toJSON(): object {
+    return {};
+  }
 }
 
 let singletonXdsClient: XdsClient | null = null;

@@ -30,6 +30,7 @@ import { XdsConfig } from './xds-dependency-manager';
 import { LocalityEndpoint, PriorityChildRaw } from './load-balancer-priority';
 import { Locality__Output } from './generated/envoy/config/core/v3/Locality';
 import { AGGREGATE_CLUSTER_BACKWARDS_COMPAT, EXPERIMENTAL_OUTLIER_DETECTION } from './environment';
+import { XDS_CONFIG_KEY } from './resolver-xds';
 
 const TRACER_NAME = 'cds_balancer';
 
@@ -91,6 +92,8 @@ export function localityToName(locality: Locality__Output) {
   return `{region=${locality.region},zone=${locality.zone},sub_zone=${locality.sub_zone}}`;
 }
 
+export const ROOT_CLUSTER_KEY = 'grpc.internal.root_cluster';
+
 export class CdsLoadBalancer implements LoadBalancer {
   private childBalancer: ChildLoadBalancerHandler;
 
@@ -99,8 +102,8 @@ export class CdsLoadBalancer implements LoadBalancer {
   private priorityNames: string[] = [];
   private nextPriorityChildNumber = 0;
 
-  constructor(private readonly channelControlHelper: ChannelControlHelper, options: ChannelOptions) {
-    this.childBalancer = new ChildLoadBalancerHandler(channelControlHelper, options);
+  constructor(private readonly channelControlHelper: ChannelControlHelper) {
+    this.childBalancer = new ChildLoadBalancerHandler(channelControlHelper);
   }
 
   private getNextPriorityName(cluster: string) {
@@ -110,14 +113,14 @@ export class CdsLoadBalancer implements LoadBalancer {
   updateAddressList(
     endpointList: Endpoint[],
     lbConfig: TypedLoadBalancingConfig,
-    attributes: { [key: string]: unknown }
+    options: ChannelOptions
   ): void {
     if (!(lbConfig instanceof CdsLoadBalancingConfig)) {
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig, undefined, 2));
       return;
     }
     trace('Received update with config ' + JSON.stringify(lbConfig, undefined, 2));
-    const xdsConfig = attributes.xdsConfig as XdsConfig;
+    const xdsConfig = options[XDS_CONFIG_KEY] as XdsConfig;
     const clusterName = lbConfig.getCluster();
     const maybeClusterConfig = xdsConfig.clusters.get(clusterName);
     if (!maybeClusterConfig) {
@@ -165,7 +168,7 @@ export class CdsLoadBalancer implements LoadBalancer {
         this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `LB policy config parsing failed with error ${(e as Error).message}`, metadata: new Metadata()}));
         return;
       }
-      this.childBalancer.updateAddressList(endpointList, typedChildConfig, {...attributes, rootCluster: clusterName});
+      this.childBalancer.updateAddressList(endpointList, typedChildConfig, {...options, [ROOT_CLUSTER_KEY]: clusterName});
     } else {
       if (!clusterConfig.children.endpoints) {
         trace('Received update with no resolved endpoints for cluster ' + clusterName);
@@ -180,8 +183,8 @@ export class CdsLoadBalancer implements LoadBalancer {
       if (clusterConfig.cluster.type === 'EDS') {
         endpointPickingPolicy = clusterConfig.cluster.lbPolicyConfig;
         if (AGGREGATE_CLUSTER_BACKWARDS_COMPAT) {
-          if (typeof attributes.rootCluster === 'string') {
-            const maybeRootClusterConfig = xdsConfig.clusters.get(attributes.rootCluster);
+          if (typeof options[ROOT_CLUSTER_KEY] === 'string') {
+            const maybeRootClusterConfig = xdsConfig.clusters.get(options[ROOT_CLUSTER_KEY]);
             if (maybeRootClusterConfig?.success) {
               endpointPickingPolicy = maybeRootClusterConfig.value.cluster.lbPolicyConfig;
             }
@@ -279,7 +282,7 @@ export class CdsLoadBalancer implements LoadBalancer {
         return;
       }
       trace(JSON.stringify(typedChildConfig.toJsonObject(), undefined, 2));
-      this.childBalancer.updateAddressList(childEndpointList, typedChildConfig, attributes);
+      this.childBalancer.updateAddressList(childEndpointList, typedChildConfig, options);
     }
   }
   exitIdle(): void {

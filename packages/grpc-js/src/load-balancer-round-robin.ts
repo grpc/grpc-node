@@ -103,8 +103,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
   private lastError: string | null = null;
 
   constructor(
-    private readonly channelControlHelper: ChannelControlHelper,
-    private readonly options: ChannelOptions
+    private readonly channelControlHelper: ChannelControlHelper
   ) {
     this.childChannelControlHelper = createChildChannelControlHelper(
       channelControlHelper,
@@ -204,7 +203,8 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
 
   updateAddressList(
     endpointList: Endpoint[],
-    lbConfig: TypedLoadBalancingConfig
+    lbConfig: TypedLoadBalancingConfig,
+    options: ChannelOptions
   ): void {
     this.resetSubchannelList();
     trace('Connect to endpoint list ' + endpointList.map(endpointToString));
@@ -214,7 +214,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
         new LeafLoadBalancer(
           endpoint,
           this.childChannelControlHelper,
-          this.options
+          options
         )
     );
     for (const child of this.children) {

@@ -224,7 +224,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    */
   private stickyTransientFailureMode = false;
 
-  private reportHealthStatus: boolean;
+  private reportHealthStatus: boolean = false;
 
   /**
    * The most recent error reported by any subchannel as it transitioned to
@@ -234,6 +234,8 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   private latestAddressList: SubchannelAddress[] | null = null;
 
+  private latestOptions: ChannelOptions = {};
+
   /**
    * Load balancer that attempts to connect to each backend in the address list
    * in order, and picks the first one that connects, using it for every
@@ -242,12 +244,10 @@ export class PickFirstLoadBalancer implements LoadBalancer {
    *     this load balancer's owner.
    */
   constructor(
-    private readonly channelControlHelper: ChannelControlHelper,
-    options: ChannelOptions
+    private readonly channelControlHelper: ChannelControlHelper
   ) {
     this.connectionDelayTimeout = setTimeout(() => {}, 0);
     clearTimeout(this.connectionDelayTimeout);
-    this.reportHealthStatus = options[REPORT_HEALTH_STATUS_OPTION_NAME];
   }
 
   private allChildrenHaveReportedTF(): boolean {
@@ -461,10 +461,10 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     this.children = [];
   }
 
-  private connectToAddressList(addressList: SubchannelAddress[]) {
+  private connectToAddressList(addressList: SubchannelAddress[], options: ChannelOptions) {
     trace('connectToAddressList([' + addressList.map(address => subchannelAddressToString(address)) + '])');
     const newChildrenList = addressList.map(address => ({
-      subchannel: this.channelControlHelper.createSubchannel(address, {}),
+      subchannel: this.channelControlHelper.createSubchannel(address, options),
       hasReportedTransientFailure: false,
     }));
     for (const { subchannel } of newChildrenList) {
@@ -499,11 +499,13 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   updateAddressList(
     endpointList: Endpoint[],
-    lbConfig: TypedLoadBalancingConfig
+    lbConfig: TypedLoadBalancingConfig,
+    options: ChannelOptions
   ): void {
     if (!(lbConfig instanceof PickFirstLoadBalancingConfig)) {
       return;
     }
+    this.reportHealthStatus = options[REPORT_HEALTH_STATUS_OPTION_NAME];
     /* Previously, an update would be discarded if it was identical to the
      * previous update, to minimize churn. Now the DNS resolver is
      * rate-limited, so that is less of a concern. */
@@ -519,7 +521,8 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     }
     const addressList = interleaveAddressFamilies(rawAddressList);
     this.latestAddressList = addressList;
-    this.connectToAddressList(addressList);
+    this.latestOptions = options;
+    this.connectToAddressList(addressList, options);
   }
 
   exitIdle() {
@@ -527,7 +530,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       this.currentState === ConnectivityState.IDLE &&
       this.latestAddressList
     ) {
-      this.connectToAddressList(this.latestAddressList);
+      this.connectToAddressList(this.latestAddressList, this.latestOptions);
     }
   }
 
@@ -560,7 +563,7 @@ export class LeafLoadBalancer {
   constructor(
     private endpoint: Endpoint,
     channelControlHelper: ChannelControlHelper,
-    options: ChannelOptions
+    private options: ChannelOptions
   ) {
     const childChannelControlHelper = createChildChannelControlHelper(
       channelControlHelper,
@@ -573,14 +576,17 @@ export class LeafLoadBalancer {
       }
     );
     this.pickFirstBalancer = new PickFirstLoadBalancer(
-      childChannelControlHelper,
-      { ...options, [REPORT_HEALTH_STATUS_OPTION_NAME]: true }
+      childChannelControlHelper
     );
     this.latestPicker = new QueuePicker(this.pickFirstBalancer);
   }
 
   startConnecting() {
-    this.pickFirstBalancer.updateAddressList([this.endpoint], LEAF_CONFIG);
+    this.pickFirstBalancer.updateAddressList(
+      [this.endpoint],
+      LEAF_CONFIG,
+      { ...this.options, [REPORT_HEALTH_STATUS_OPTION_NAME]: true }
+    );
   }
 
   /**
@@ -589,7 +595,8 @@ export class LeafLoadBalancer {
    * attempt is not already in progress.
    * @param newEndpoint
    */
-  updateEndpoint(newEndpoint: Endpoint) {
+  updateEndpoint(newEndpoint: Endpoint, newOptions: ChannelOptions) {
+    this.options = newOptions;
     this.endpoint = newEndpoint;
     if (this.latestState !== ConnectivityState.IDLE) {
       this.startConnecting();

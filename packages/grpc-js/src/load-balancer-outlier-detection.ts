@@ -468,8 +468,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
   private timerStartTime: Date | null = null;
 
   constructor(
-    channelControlHelper: ChannelControlHelper,
-    options: ChannelOptions
+    channelControlHelper: ChannelControlHelper
   ) {
     this.childBalancer = new ChildLoadBalancerHandler(
       createChildChannelControlHelper(channelControlHelper, {
@@ -504,8 +503,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
             channelControlHelper.updateState(connectivityState, picker);
           }
         },
-      }),
-      options
+      })
     );
     this.ejectionTimer = setInterval(() => {}, 0);
     clearInterval(this.ejectionTimer);
@@ -760,7 +758,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
   updateAddressList(
     endpointList: Endpoint[],
     lbConfig: TypedLoadBalancingConfig,
-    attributes: { [key: string]: unknown }
+    options: ChannelOptions
   ): void {
     if (!(lbConfig instanceof OutlierDetectionLoadBalancingConfig)) {
       return;
@@ -779,7 +777,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     }
     this.entryMap.deleteMissing(endpointList);
     const childPolicy = lbConfig.getChildPolicy();
-    this.childBalancer.updateAddressList(endpointList, childPolicy, attributes);
+    this.childBalancer.updateAddressList(endpointList, childPolicy, options);
 
     if (
       lbConfig.getSuccessRateEjectionConfig() ||

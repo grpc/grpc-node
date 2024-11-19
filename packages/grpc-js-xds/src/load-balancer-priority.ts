@@ -197,7 +197,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
             this.parent.channelControlHelper.requestReresolution();
           }
         }
-      }), parent.options);
+      }));
       this.picker = new QueuePicker(this.childBalancer);
       this.startFailoverTimer();
     }
@@ -307,7 +307,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
    * The attributes object from the latest update, saved to be passed along to
    * each new child as they are created
    */
-  private latestAttributes: { [key: string]: unknown } = {};
+  private latestOptions: ChannelOptions = {};
   /**
    * The latest load balancing policies and address lists for each child from
    * the latest update
@@ -323,7 +323,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
 
   private updatesPaused = false;
 
-  constructor(private channelControlHelper: ChannelControlHelper, private options: ChannelOptions) {}
+  constructor(private channelControlHelper: ChannelControlHelper) {}
 
   private updateState(state: ConnectivityState, picker: Picker) {
     trace(
@@ -392,7 +392,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
         child.updateAddressList(
           childUpdate.subchannelAddress,
           childUpdate.lbConfig,
-          this.latestAttributes
+          this.latestOptions
         );
       } else {
         /* We're going to try to use this child, so reactivate it if it has been
@@ -431,7 +431,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
   updateAddressList(
     endpointList: Endpoint[],
     lbConfig: TypedLoadBalancingConfig,
-    attributes: { [key: string]: unknown }
+    options: ChannelOptions
   ): void {
     if (!(lbConfig instanceof PriorityLoadBalancingConfig)) {
       // Reject a config of the wrong type
@@ -467,7 +467,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
       }
       childAddressList.push(childAddress);
     }
-    this.latestAttributes = attributes;
+    this.latestOptions = options;
     this.latestUpdates.clear();
     this.priorities = lbConfig.getPriorities();
     this.updatesPaused = true;
@@ -486,7 +486,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
         existingChild.updateAddressList(
           childAddresses,
           childConfig.config,
-          attributes
+          options
         );
       }
     }

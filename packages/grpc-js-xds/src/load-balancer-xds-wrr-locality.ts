@@ -73,10 +73,10 @@ class XdsWrrLocalityLoadBalancingConfig implements TypedLoadBalancingConfig {
 
 class XdsWrrLocalityLoadBalancer implements LoadBalancer {
   private childBalancer: ChildLoadBalancerHandler;
-  constructor(private readonly channelControlHelper: ChannelControlHelper, options: ChannelOptions) {
-    this.childBalancer = new ChildLoadBalancerHandler(channelControlHelper, options);
+  constructor(private readonly channelControlHelper: ChannelControlHelper) {
+    this.childBalancer = new ChildLoadBalancerHandler(channelControlHelper);
   }
-  updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+  updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, options: ChannelOptions): void {
     if (!(lbConfig instanceof XdsWrrLocalityLoadBalancingConfig)) {
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig, undefined, 2));
       return;
@@ -99,7 +99,7 @@ class XdsWrrLocalityLoadBalancer implements LoadBalancer {
         targets: targets
       }
     };
-    this.childBalancer.updateAddressList(endpointList, parseLoadBalancingConfig(childConfig), attributes);
+    this.childBalancer.updateAddressList(endpointList, parseLoadBalancingConfig(childConfig), options);
   }
   exitIdle(): void {
     this.childBalancer.exitIdle();

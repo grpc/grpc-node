@@ -84,7 +84,7 @@ const RPC_BEHAVIOR_CHILD_CONFIG = parseLoadBalancingConfig({round_robin: {}});
 class RpcBehaviorLoadBalancer implements LoadBalancer {
   private child: ChildLoadBalancerHandler;
   private latestConfig: RpcBehaviorLoadBalancingConfig | null = null;
-  constructor(channelControlHelper: ChannelControlHelper, options: ChannelOptions) {
+  constructor(channelControlHelper: ChannelControlHelper) {
     const childChannelControlHelper = createChildChannelControlHelper(channelControlHelper, {
       updateState: (state, picker) => {
         if (state === connectivityState.READY && this.latestConfig) {
@@ -93,14 +93,14 @@ class RpcBehaviorLoadBalancer implements LoadBalancer {
         channelControlHelper.updateState(state, picker);
       }
     });
-    this.child = new ChildLoadBalancerHandler(childChannelControlHelper, options);
+    this.child = new ChildLoadBalancerHandler(childChannelControlHelper);
   }
-  updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+  updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, options: ChannelOptions): void {
     if (!(lbConfig instanceof RpcBehaviorLoadBalancingConfig)) {
       return;
     }
     this.latestConfig = lbConfig;
-    this.child.updateAddressList(endpointList, RPC_BEHAVIOR_CHILD_CONFIG, attributes);
+    this.child.updateAddressList(endpointList, RPC_BEHAVIOR_CHILD_CONFIG, options);
   }
   exitIdle(): void {
     this.child.exitIdle();
