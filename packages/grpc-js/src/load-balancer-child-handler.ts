@@ -30,7 +30,7 @@ import { SubchannelInterface } from './subchannel-interface';
 
 const TYPE_NAME = 'child_load_balancer_helper';
 
-export class ChildLoadBalancerHandler implements LoadBalancer {
+export class ChildLoadBalancerHandler {
   private currentChild: LoadBalancer | null = null;
   private pendingChild: LoadBalancer | null = null;
   private latestConfig: TypedLoadBalancingConfig | null = null;
@@ -85,8 +85,7 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
   };
 
   constructor(
-    private readonly channelControlHelper: ChannelControlHelper,
-    private readonly options: ChannelOptions
+    private readonly channelControlHelper: ChannelControlHelper
   ) {}
 
   protected configUpdateRequiresNewPolicyInstance(
@@ -105,7 +104,7 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
   updateAddressList(
     endpointList: Endpoint[],
     lbConfig: TypedLoadBalancingConfig,
-    attributes: { [key: string]: unknown }
+    options: ChannelOptions
   ): void {
     let childToUpdate: LoadBalancer;
     if (
@@ -114,7 +113,7 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
       this.configUpdateRequiresNewPolicyInstance(this.latestConfig, lbConfig)
     ) {
       const newHelper = new this.ChildPolicyHelper(this);
-      const newChild = createLoadBalancer(lbConfig, newHelper, this.options)!;
+      const newChild = createLoadBalancer(lbConfig, newHelper)!;
       newHelper.setChild(newChild);
       if (this.currentChild === null) {
         this.currentChild = newChild;
@@ -134,7 +133,7 @@ export class ChildLoadBalancerHandler implements LoadBalancer {
       }
     }
     this.latestConfig = lbConfig;
-    childToUpdate.updateAddressList(endpointList, lbConfig, attributes);
+    childToUpdate.updateAddressList(endpointList, lbConfig, options);
   }
   exitIdle(): void {
     if (this.currentChild) {

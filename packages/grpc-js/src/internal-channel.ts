@@ -159,6 +159,8 @@ class ShutdownPicker implements Picker {
   }
 }
 
+export const SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX = 'grpc.internal.no_subchannel';
+
 export class InternalChannel {
   private readonly resolvingLoadBalancer: ResolvingLoadBalancer;
   private readonly subchannelPool: SubchannelPool;
@@ -296,10 +298,16 @@ export class InternalChannel {
         subchannelAddress: SubchannelAddress,
         subchannelArgs: ChannelOptions
       ) => {
+        const finalSubchannelArgs: ChannelOptions = {};
+        for (const [key, value] of Object.entries(subchannelArgs)) {
+          if (!key.startsWith(SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX)) {
+            finalSubchannelArgs[key] = value;
+          }
+        }
         const subchannel = this.subchannelPool.getOrCreateSubchannel(
           this.target,
           subchannelAddress,
-          Object.assign({}, this.options, subchannelArgs),
+          finalSubchannelArgs,
           this.credentials
         );
         subchannel.throttleKeepalive(this.keepaliveTime);

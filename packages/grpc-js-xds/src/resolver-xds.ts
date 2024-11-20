@@ -80,6 +80,9 @@ const RETRY_CODES: {[key: string]: status} = {
   'unavailable': status.UNAVAILABLE
 };
 
+export const XDS_CONFIG_KEY = `${experimental.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX}.xds_config`;
+export const XDS_CLIENT_KEY = 'grpc.internal.xds_client';
+
 class XdsResolver implements Resolver {
 
   private listenerResourceName: string | null = null;
@@ -355,8 +358,8 @@ class XdsResolver implements Resolver {
       loadBalancingConfig: [lbPolicyConfig]
     }
     this.listener.onSuccessfulResolution([], serviceConfig, null, configSelector, {
-      xdsClient: this.xdsClient,
-      xdsConfig: xdsConfig
+      [XDS_CLIENT_KEY]: this.xdsClient,
+      [XDS_CONFIG_KEY]: xdsConfig
     });
   }
 

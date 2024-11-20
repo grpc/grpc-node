@@ -178,7 +178,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
         updateState: (connectivityState: ConnectivityState, picker: Picker) => {
           this.updateState(connectivityState, picker);
         },
-      }), parent.options);
+      }));
 
       this.picker = new QueuePicker(this.childBalancer);
     }
@@ -190,9 +190,9 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
       this.parent.maybeUpdateState();
     }
 
-    updateAddressList(endpointList: Endpoint[], lbConfig: WeightedTarget, attributes: { [key: string]: unknown; }): void {
+    updateAddressList(endpointList: Endpoint[], lbConfig: WeightedTarget, options: ChannelOptions): void {
       this.weight = lbConfig.weight;
-      this.childBalancer.updateAddressList(endpointList, lbConfig.child_policy, attributes);
+      this.childBalancer.updateAddressList(endpointList, lbConfig.child_policy, options);
     }
     exitIdle(): void {
       this.childBalancer.exitIdle();
@@ -243,7 +243,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
   private targetList: string[] = [];
   private updatesPaused = false;
 
-  constructor(private channelControlHelper: ChannelControlHelper, private options: ChannelOptions) {}
+  constructor(private channelControlHelper: ChannelControlHelper) {}
 
   private maybeUpdateState() {
     if (!this.updatesPaused) {
@@ -319,7 +319,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
     this.channelControlHelper.updateState(connectivityState, picker);
   }
 
-  updateAddressList(addressList: Endpoint[], lbConfig: TypedLoadBalancingConfig, attributes: { [key: string]: unknown; }): void {
+  updateAddressList(addressList: Endpoint[], lbConfig: TypedLoadBalancingConfig, options: ChannelOptions): void {
     if (!(lbConfig instanceof WeightedTargetLoadBalancingConfig)) {
       // Reject a config of the wrong type
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));
@@ -365,7 +365,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
       }
       const targetEndpoints = childEndpointMap.get(targetName) ?? [];
       trace('Assigning target ' + targetName + ' address list ' + targetEndpoints.map(endpoint => '(' + endpointToString(endpoint) + ' path=' + endpoint.localityPath + ')'));
-      target.updateAddressList(targetEndpoints, targetConfig, attributes);
+      target.updateAddressList(targetEndpoints, targetConfig, options);
     }
 
     // Deactivate targets that are not in the new config

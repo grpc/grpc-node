@@ -225,8 +225,7 @@ class RingHashLoadBalancer implements LoadBalancer {
   private updatesPaused = false;
   private currentState: connectivityState = connectivityState.IDLE;
   private ring: RingEntry[] = [];
-  private ringHashSizeCap = DEFAULT_RING_SIZE_CAP;
-  constructor(private channelControlHelper: ChannelControlHelper, private options: ChannelOptions) {
+  constructor(private channelControlHelper: ChannelControlHelper) {
     this.childChannelControlHelper = createChildChannelControlHelper(
       channelControlHelper,
       {
@@ -254,9 +253,6 @@ class RingHashLoadBalancer implements LoadBalancer {
         },
       }
     );
-    if (options['grpc.lb.ring_hash.ring_size_cap'] !== undefined) {
-      this.ringHashSizeCap = options['grpc.lb.ring_hash.ring_size_cap'];
-    }
   }
 
   private calculateAndUpdateState() {
@@ -316,7 +312,8 @@ class RingHashLoadBalancer implements LoadBalancer {
 
   private constructRing(
     endpointList: Endpoint[],
-    config: RingHashLoadBalancingConfig
+    config: RingHashLoadBalancingConfig,
+    ringHashSizeCap: number
   ) {
     this.ring = [];
     const endpointWeights: EndpointWeight[] = [];
@@ -336,8 +333,8 @@ class RingHashLoadBalancer implements LoadBalancer {
         minNormalizedWeight
       );
     }
-    const minRingSize = Math.min(config.getMinRingSize(), this.ringHashSizeCap);
-    const maxRingSize = Math.min(config.getMaxRingSize(), this.ringHashSizeCap);
+    const minRingSize = Math.min(config.getMinRingSize(), ringHashSizeCap);
+    const maxRingSize = Math.min(config.getMaxRingSize(), ringHashSizeCap);
     /* Calculate a scale factor that meets the following conditions:
      *  1. The result is between minRingSize and maxRingSize, inclusive
      *  2. The smallest normalized weight is scaled to a whole number, if it
@@ -390,7 +387,7 @@ class RingHashLoadBalancer implements LoadBalancer {
   updateAddressList(
     endpointList: Endpoint[],
     lbConfig: TypedLoadBalancingConfig,
-    attributes: { [key: string]: unknown }
+    options: ChannelOptions
   ): void {
     if (!(lbConfig instanceof RingHashLoadBalancingConfig)) {
       trace('Discarding address update with unrecognized config ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));
@@ -403,11 +400,11 @@ class RingHashLoadBalancer implements LoadBalancer {
     for (const endpoint of endpointList) {
       const leafBalancer = this.leafMap.get(endpoint);
       if (leafBalancer) {
-        leafBalancer.updateEndpoint(endpoint);
+        leafBalancer.updateEndpoint(endpoint, options);
       } else {
         this.leafMap.set(
           endpoint,
-          new LeafLoadBalancer(endpoint, this.childChannelControlHelper, this.options)
+          new LeafLoadBalancer(endpoint, this.childChannelControlHelper, options)
         );
       }
       const weight = this.leafWeightMap.get(endpoint);
@@ -420,8 +417,9 @@ class RingHashLoadBalancer implements LoadBalancer {
     for (const leaf of removedLeaves) {
       leaf.destroy();
     }
+    const ringHashSizeCap = options['grpc.lb.ring_hash.ring_size_cap'] ?? DEFAULT_RING_SIZE_CAP
     loadXxhashApi().then(() => {
-      this.constructRing(dedupedEndpointList, lbConfig);
+      this.constructRing(dedupedEndpointList, lbConfig, ringHashSizeCap);
       this.updatesPaused = false;
       this.calculateAndUpdateState();
     });

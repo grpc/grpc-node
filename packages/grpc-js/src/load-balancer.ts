@@ -33,7 +33,7 @@ export interface ChannelControlHelper {
   /**
    * Returns a subchannel connected to the specified address.
    * @param subchannelAddress The address to connect to
-   * @param subchannelArgs Extra channel arguments specified by the load balancer
+   * @param subchannelArgs Channel arguments to use to construct the subchannel
    */
   createSubchannel(
     subchannelAddress: SubchannelAddress,
@@ -102,7 +102,7 @@ export interface LoadBalancer {
   updateAddressList(
     endpointList: Endpoint[],
     lbConfig: TypedLoadBalancingConfig,
-    attributes: { [key: string]: unknown }
+    channelOptions: ChannelOptions
   ): void;
   /**
    * If the load balancer is currently in the IDLE state, start connecting.
@@ -129,8 +129,7 @@ export interface LoadBalancer {
 
 export interface LoadBalancerConstructor {
   new (
-    channelControlHelper: ChannelControlHelper,
-    options: ChannelOptions
+    channelControlHelper: ChannelControlHelper
   ): LoadBalancer;
 }
 
@@ -172,14 +171,12 @@ export function registerDefaultLoadBalancerType(typeName: string) {
 
 export function createLoadBalancer(
   config: TypedLoadBalancingConfig,
-  channelControlHelper: ChannelControlHelper,
-  options: ChannelOptions
+  channelControlHelper: ChannelControlHelper
 ): LoadBalancer | null {
   const typeName = config.getLoadBalancerName();
   if (typeName in registeredLoadBalancerTypes) {
     return new registeredLoadBalancerTypes[typeName].LoadBalancer(
-      channelControlHelper,
-      options
+      channelControlHelper
     );
   } else {
     return null;

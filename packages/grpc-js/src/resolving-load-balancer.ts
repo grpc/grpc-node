@@ -198,7 +198,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   constructor(
     private readonly target: GrpcUri,
     private readonly channelControlHelper: ChannelControlHelper,
-    channelOptions: ChannelOptions,
+    private readonly channelOptions: ChannelOptions,
     private readonly onSuccessfulResolution: ResolutionCallback,
     private readonly onFailedResolution: ResolutionFailureCallback
   ) {
@@ -242,8 +242,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
           channelControlHelper.addChannelzChild.bind(channelControlHelper),
         removeChannelzChild:
           channelControlHelper.removeChannelzChild.bind(channelControlHelper),
-      },
-      channelOptions
+      }
     );
     this.innerResolver = createResolver(
       target,
@@ -302,7 +301,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
           this.childLoadBalancer.updateAddressList(
             endpointList,
             loadBalancingConfig,
-            attributes
+            {...this.channelOptions, ...attributes}
           );
           const finalServiceConfig =
             workingServiceConfig ?? this.defaultServiceConfig;
