@@ -102,7 +102,7 @@ export class Watcher<UpdateType> implements ResourceWatcherInterface {
 const RESOURCE_TIMEOUT_MS = 15_000;
 
 class ResourceTimer {
-  private timer: NodeJS.Timer | null = null;
+  private timer: NodeJS.Timeout | null = null;
   private resourceSeen = false;
   constructor(private callState: AdsCallState, private type: XdsResourceType, private name: XdsResourceName) {}
 
@@ -666,7 +666,7 @@ class ClusterLoadReportMap {
 }
 
 class LrsCallState {
-  private statsTimer: NodeJS.Timer | null = null;
+  private statsTimer: NodeJS.Timeout | null = null;
   private sentInitialMessage = false;
   constructor(private client: XdsSingleServerClient, private call: LrsCall, private node: Node) {
     call.on('data', (message: LoadStatsResponse__Output) => {

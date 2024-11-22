@@ -141,8 +141,8 @@ export class PriorityLoadBalancer implements LoadBalancer {
     private connectivityState: ConnectivityState = ConnectivityState.IDLE;
     private picker: Picker;
     private childBalancer: ChildLoadBalancerHandler;
-    private failoverTimer: NodeJS.Timer | null = null;
-    private deactivationTimer: NodeJS.Timer | null = null;
+    private failoverTimer: NodeJS.Timeout | null = null;
+    private deactivationTimer: NodeJS.Timeout | null = null;
     private seenReadyOrIdleSinceTransientFailure = false;
     constructor(private parent: PriorityLoadBalancer, private name: string, ignoreReresolutionRequests: boolean) {
       this.childBalancer = new ChildLoadBalancerHandler(experimental.createChildChannelControlHelper(this.parent.channelControlHelper, {
