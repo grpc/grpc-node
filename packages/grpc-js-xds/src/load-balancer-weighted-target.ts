@@ -170,7 +170,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
     private connectivityState: ConnectivityState = ConnectivityState.IDLE;
     private picker: Picker;
     private childBalancer: ChildLoadBalancerHandler;
-    private deactivationTimer: NodeJS.Timer | null = null;
+    private deactivationTimer: NodeJS.Timeout | null = null;
     private weight: number = 0;
 
     constructor(private parent: WeightedTargetLoadBalancer, private name: string) {
