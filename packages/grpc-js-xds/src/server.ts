@@ -493,7 +493,7 @@ interface MatchFieldEvaluator<MatcherType, FieldType> {
   isMoreSpecific: (matcher1: MatcherType, matcher2: MatcherType) => boolean;
 }
 
-type FieldType<MatcherType> = MatcherType extends CidrRange ? (string | undefined) : MatcherType extends (ConnectionSourceType) ? {localAddress: string, remoteAddress?: (string | undefined)} : MatcherType extends number ? number | undefined : never;
+type FieldType<MatcherType> = MatcherType extends CidrRange ? (string | undefined) : MatcherType extends (ConnectionSourceType) ? {localAddress?: (string | undefined), remoteAddress?: (string | undefined)} : MatcherType extends number ? number | undefined : never;
 
 function cidrRangeMatch(range: CidrRange | undefined, address: string | undefined): boolean {
   return !range || (!!address && inCidrRange(range, address));
@@ -506,14 +506,14 @@ function cidrRangeMoreSpecific(range1: CidrRange | undefined, range2: CidrRange 
   return !!range1 && range1.prefixLen > range2.prefixLen;
 }
 
-function sourceTypeMatch(sourceType: ConnectionSourceType, addresses: {localAddress: string, remoteAddress?: (string | undefined)}): boolean {
+function sourceTypeMatch(sourceType: ConnectionSourceType, addresses: {localAddress?: (string | undefined), remoteAddress?: (string | undefined)}): boolean {
   switch (sourceType) {
     case "ANY":
       return true;
     case "SAME_IP_OR_LOOPBACK":
-      return !!addresses.remoteAddress && isSameIpOrLoopback(addresses.remoteAddress, addresses.localAddress);
+      return !!addresses.localAddress && !!addresses.remoteAddress && isSameIpOrLoopback(addresses.remoteAddress, addresses.localAddress);
     case "EXTERNAL":
-      return !!addresses.remoteAddress && !isSameIpOrLoopback(addresses.remoteAddress, addresses.localAddress);
+      return !!addresses.localAddress && !!addresses.remoteAddress && !isSameIpOrLoopback(addresses.remoteAddress, addresses.localAddress);
   }
 }
 
@@ -523,7 +523,7 @@ const cidrRangeEvaluator: MatchFieldEvaluator<CidrRange | undefined, string | un
   isMoreSpecific: cidrRangeMoreSpecific
 };
 
-const sourceTypeEvaluator: MatchFieldEvaluator<ConnectionSourceType, {localAddress: string, remoteAddress?: (string | undefined)}> = {
+const sourceTypeEvaluator: MatchFieldEvaluator<ConnectionSourceType, {localAddress?: (string | undefined), remoteAddress?: (string | undefined)}> = {
   isMatch: sourceTypeMatch,
   matcherEqual: (matcher1, matcher2) => matcher1 === matcher2,
   isMoreSpecific: (matcher1, matcher2) => matcher1 !== 'ANY' && matcher2 === 'ANY'
