@@ -15,7 +15,7 @@
  *
  */
 
-import { ChannelCredentials } from './channel-credentials';
+import { ChannelCredentials, SecureConnector } from './channel-credentials';
 import { Metadata } from './metadata';
 import { ChannelOptions } from './channel-options';
 import { ConnectivityState } from './connectivity-state';
@@ -102,6 +102,8 @@ export class Subchannel {
   // Channelz socket info
   private streamTracker: ChannelzCallTracker | ChannelzCallTrackerStub;
 
+  private secureConnector: SecureConnector;
+
   /**
    * A class representing a connection to a single backend.
    * @param channelTarget The target string for the channel as a whole
@@ -116,7 +118,7 @@ export class Subchannel {
     private channelTarget: GrpcUri,
     private subchannelAddress: SubchannelAddress,
     private options: ChannelOptions,
-    private credentials: ChannelCredentials,
+    credentials: ChannelCredentials,
     private connector: SubchannelConnector
   ) {
     const backoffOptions: BackoffOptions = {
@@ -155,7 +157,7 @@ export class Subchannel {
       'Subchannel constructed with options ' +
         JSON.stringify(options, undefined, 2)
     );
-    credentials._ref();
+    this.secureConnector = credentials._createSecureConnector(channelTarget, options);
   }
 
   private getChannelzInfo(): SubchannelInfo {
@@ -230,7 +232,7 @@ export class Subchannel {
       options = { ...options, 'grpc.keepalive_time_ms': adjustedKeepaliveTime };
     }
     this.connector
-      .connect(this.subchannelAddress, this.credentials, options)
+      .connect(this.subchannelAddress, this.secureConnector, options)
       .then(
         transport => {
           if (
@@ -365,7 +367,7 @@ export class Subchannel {
     if (this.refcount === 0) {
       this.channelzTrace.addTrace('CT_INFO', 'Shutting down');
       unregisterChannelzRef(this.channelzRef);
-      this.credentials._unref();
+      this.secureConnector.destroy();
       process.nextTick(() => {
         this.transitionToState(
           [ConnectivityState.CONNECTING, ConnectivityState.READY],

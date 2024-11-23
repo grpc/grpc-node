@@ -69,46 +69,7 @@ const pFixtures = Promise.all(
 });
 
 describe('ChannelCredentials Implementation', () => {
-  describe('createInsecure', () => {
-    it('should return a ChannelCredentials object with no associated secure context', () => {
-      const creds = assert2.noThrowAndReturn(() =>
-        ChannelCredentials.createInsecure()
-      );
-      assert.ok(!creds._getConnectionOptions()?.secureContext);
-    });
-  });
-
   describe('createSsl', () => {
-    it('should work when given no arguments', () => {
-      const creds: ChannelCredentials = assert2.noThrowAndReturn(() =>
-        ChannelCredentials.createSsl()
-      );
-      assert.ok(!!creds._getConnectionOptions());
-    });
-
-    it('should work with just a CA override', async () => {
-      const { ca } = await pFixtures;
-      const creds = assert2.noThrowAndReturn(() =>
-        ChannelCredentials.createSsl(ca)
-      );
-      assert.ok(!!creds._getConnectionOptions());
-    });
-
-    it('should work with just a private key and cert chain', async () => {
-      const { key, cert } = await pFixtures;
-      const creds = assert2.noThrowAndReturn(() =>
-        ChannelCredentials.createSsl(null, key, cert)
-      );
-      assert.ok(!!creds._getConnectionOptions());
-    });
-
-    it('should work with three parameters specified', async () => {
-      const { ca, key, cert } = await pFixtures;
-      const creds = assert2.noThrowAndReturn(() =>
-        ChannelCredentials.createSsl(ca, key, cert)
-      );
-      assert.ok(!!creds._getConnectionOptions());
-    });
 
     it('should throw if just one of private key and cert chain are missing', async () => {
       const { ca, key, cert } = await pFixtures;
