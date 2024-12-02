@@ -37,7 +37,7 @@
     "@types/gulp": "^4.0.6",
     "@types/gulp-mocha": "0.0.32",
     "@types/mocha": "^5.2.6",
-    "@types/node": "^13.11.1",
+    "@types/node": ">=20.11.20",
     "@types/yargs": "^15.0.5",
     "find-free-ports": "^3.1.1",
     "gts": "^5.0.1",
