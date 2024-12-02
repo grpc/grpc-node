@@ -141,8 +141,8 @@ const RECURSION_DEPTH_LIMIT = 15;
 
 /**
  * Prerequisite: isClusterTreeFullyUpdated(tree, root)
- * @param tree 
- * @param root 
+ * @param tree
+ * @param root
  */
 function getDiscoveryMechanismList(tree: ClusterTree, root: string): DiscoveryMechanism[] {
   const visited = new Set<string>();
@@ -208,7 +208,7 @@ export class CdsLoadBalancer implements LoadBalancer {
           try {
             discoveryMechanismList = getDiscoveryMechanismList(this.clusterTree, this.latestConfig!.getCluster());
           } catch (e) {
-            this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: e.message, metadata: new Metadata()}));
+            this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: (e as Error).message, metadata: new Metadata()}));
             return;
           }
           const clusterResolverConfig = new XdsClusterResolverLoadBalancingConfig(

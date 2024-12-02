@@ -208,14 +208,14 @@ class AdsResponseParser {
     try {
       decodeResult = this.result.type.decode(decodeContext, resource);
     } catch (e) {
-      this.result.errors.push(`${errorPrefix} ${e.message}`);
+      this.result.errors.push(`${errorPrefix} ${(e as Error).message}`);
       return;
     }
     let parsedName: XdsResourceName;
     try {
       parsedName = parseXdsResourceName(decodeResult.name, this.result.type!.getTypeUrl());
     } catch (e) {
-      this.result.errors.push(`${errorPrefix} ${e.message}`);
+      this.result.errors.push(`${errorPrefix} ${(e as Error).message}`);
       return;
     }
     this.adsCallState.typeStates.get(this.result.type!)?.subscribedResources.get(parsedName.authority)?.get(parsedName.key)?.markSeen();
