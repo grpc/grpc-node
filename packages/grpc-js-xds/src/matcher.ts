@@ -71,7 +71,7 @@ export class SafeRegexValueMatcher implements ValueMatcher {
 const numberRegex = new RE2(/^-?\d+$/u);
 
 export class RangeValueMatcher implements ValueMatcher {
-  constructor(private start: BigInt, private end: BigInt) {}
+  constructor(private start: bigint, private end: bigint) {}
 
   apply(value: string) {
     if (!numberRegex.test(value)) {

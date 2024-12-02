@@ -102,7 +102,7 @@ export class Watcher<UpdateType> implements ResourceWatcherInterface {
 const RESOURCE_TIMEOUT_MS = 15_000;
 
 class ResourceTimer {
-  private timer: NodeJS.Timer | null = null;
+  private timer: NodeJS.Timeout | null = null;
   private resourceSeen = false;
   constructor(private callState: AdsCallState, private type: XdsResourceType, private name: XdsResourceName) {}
 
@@ -208,14 +208,14 @@ class AdsResponseParser {
     try {
       decodeResult = this.result.type.decode(decodeContext, resource);
     } catch (e) {
-      this.result.errors.push(`${errorPrefix} ${e.message}`);
+      this.result.errors.push(`${errorPrefix} ${(e as Error).message}`);
       return;
     }
     let parsedName: XdsResourceName;
     try {
       parsedName = parseXdsResourceName(decodeResult.name, this.result.type!.getTypeUrl());
     } catch (e) {
-      this.result.errors.push(`${errorPrefix} ${e.message}`);
+      this.result.errors.push(`${errorPrefix} ${(e as Error).message}`);
       return;
     }
     this.adsCallState.typeStates.get(this.result.type!)?.subscribedResources.get(parsedName.authority)?.get(parsedName.key)?.markSeen();
@@ -666,7 +666,7 @@ class ClusterLoadReportMap {
 }
 
 class LrsCallState {
-  private statsTimer: NodeJS.Timer | null = null;
+  private statsTimer: NodeJS.Timeout | null = null;
   private sentInitialMessage = false;
   constructor(private client: XdsSingleServerClient, private call: LrsCall, private node: Node) {
     call.on('data', (message: LoadStatsResponse__Output) => {

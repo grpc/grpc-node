@@ -634,7 +634,7 @@ class XdsResolver implements Resolver {
         this.isLdsWatcherActive = true;
 
       } catch (e) {
-        this.reportResolutionError(e.message);
+        this.reportResolutionError((e as Error).message);
       }
     }
   }
@@ -647,7 +647,7 @@ class XdsResolver implements Resolver {
         try {
           this.bootstrapInfo = loadBootstrapInfo();
         } catch (e) {
-          this.reportResolutionError(e.message);
+          this.reportResolutionError((e as Error).message);
         }
         this.startResolution();
       }

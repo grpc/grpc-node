@@ -116,7 +116,7 @@ export function validateTopLevelFilter(httpFilter: HttpFilter__Output): boolean 
   try {
     typeUrl = getTopLevelFilterUrl(encodedConfig);
   } catch (e) {
-    trace(httpFilter.name + ' validation failed with error ' + e.message);
+    trace(httpFilter.name + ' validation failed with error ' + (e as Error).message);
     return false;
   }
   const registryEntry = FILTER_REGISTRY.get(typeUrl);

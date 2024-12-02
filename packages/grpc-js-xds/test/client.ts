@@ -42,7 +42,7 @@ const BOOTSTRAP_CONFIG_KEY = 'grpc.TEST_ONLY_DO_NOT_USE_IN_PROD.xds_bootstrap_co
 
 export class XdsTestClient {
   private client: EchoTestServiceClient;
-  private callInterval: NodeJS.Timer;
+  private callInterval: NodeJS.Timeout;
 
   constructor(target: string, bootstrapInfo: string, options?: ChannelOptions) {
     this.client = new loadedProtos.grpc.testing.EchoTestService(target, credentials.createInsecure(), {...options, [BOOTSTRAP_CONFIG_KEY]: bootstrapInfo});
