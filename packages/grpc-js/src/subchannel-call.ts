@@ -140,6 +140,8 @@ export class Http2SubchannelCall implements SubchannelCall {
 
   private serverEndedCall = false;
 
+  private connectionDropped = false;
+
   constructor(
     private readonly http2Stream: http2.ClientHttp2Stream,
     private readonly callEventTracker: CallEventTracker,
@@ -240,8 +242,16 @@ export class Http2SubchannelCall implements SubchannelCall {
             details = 'Stream refused by server';
             break;
           case http2.constants.NGHTTP2_CANCEL:
-            code = Status.CANCELLED;
-            details = 'Call cancelled';
+            /* Bug reports indicate that Node synthesizes a NGHTTP2_CANCEL
+             * code from connection drops. We want to prioritize reporting
+             * an unavailable status when that happens. */
+            if (this.connectionDropped) {
+              code = Status.UNAVAILABLE;
+              details = 'Connection dropped';
+            } else {
+              code = Status.CANCELLED;
+              details = 'Call cancelled';
+            }
             break;
           case http2.constants.NGHTTP2_ENHANCE_YOUR_CALM:
             code = Status.RESOURCE_EXHAUSTED;
@@ -321,10 +331,15 @@ export class Http2SubchannelCall implements SubchannelCall {
   }
 
   public onDisconnect() {
-    this.endCall({
-      code: Status.UNAVAILABLE,
-      details: 'Connection dropped',
-      metadata: new Metadata(),
+    this.connectionDropped = true;
+    /* Give the call an event loop cycle to finish naturally before reporting
+     * the disconnection as an error. */
+    setImmediate(() => {
+      this.endCall({
+        code: Status.UNAVAILABLE,
+        details: 'Connection dropped',
+        metadata: new Metadata(),
+      });
     });
   }
 

@@ -387,17 +387,13 @@ class Http2Transport implements Transport {
    * Handle connection drops, but not GOAWAYs.
    */
   private handleDisconnect() {
-    if (this.disconnectHandled) {
-      return;
-    }
     this.clearKeepaliveTimeout();
     this.reportDisconnectToOwner(false);
-    /* Give calls an event loop cycle to finish naturally before reporting the
-     * disconnnection to them. */
+    for (const call of this.activeCalls) {
+      call.onDisconnect();
+    }
+    // Wait an event loop cycle before destroying the connection
     setImmediate(() => {
-      for (const call of this.activeCalls) {
-        call.onDisconnect();
-      }
       this.session.destroy();
     });
   }
