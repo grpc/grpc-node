@@ -759,7 +759,6 @@ export class InternalChannel {
       method,
       finalOptions,
       this.filterStackFactory.clone(),
-      this.credentials._getCallCredentials(),
       callNumber
     );
 

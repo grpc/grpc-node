@@ -21,12 +21,13 @@ import * as path from 'path';
 import { promisify } from 'util';
 
 import { CallCredentials } from '../src/call-credentials';
-import { ChannelCredentials } from '../src/channel-credentials';
+import { ChannelCredentials, createCertificateProviderChannelCredentials } from '../src/channel-credentials';
 import * as grpc from '../src';
 import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
 
 import { assert2, loadProtoFile, mockFunction } from './common';
 import { sendUnaryData, ServerUnaryCall, ServiceError } from '../src';
+import { FileWatcherCertificateProvider } from '../src/certificate-provider';
 
 const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
 const echoService = loadProtoFile(protoFile)
@@ -87,7 +88,7 @@ describe('ChannelCredentials Implementation', () => {
       const channelCreds = ChannelCredentials.createSsl();
       const callCreds = new CallCredentialsMock();
       const composedChannelCreds = channelCreds.compose(callCreds);
-      assert.strictEqual(composedChannelCreds._getCallCredentials(), callCreds);
+      assert.ok(composedChannelCreds instanceof ChannelCredentials);
     });
 
     it('should be chainable', () => {
@@ -99,11 +100,9 @@ describe('ChannelCredentials Implementation', () => {
         .compose(callCreds2);
       // Build a mock object that should be an identical copy
       const composedCallCreds = callCreds1.compose(callCreds2);
-      assert.ok(
-        composedCallCreds._equals(
-          composedChannelCreds._getCallCredentials() as CallCredentialsMock
-        )
-      );
+      const composedChannelCreds2 = ChannelCredentials.createSsl()
+        .compose(composedCallCreds);
+      assert.ok(composedChannelCreds._equals(composedChannelCreds2));
     });
   });
 });
@@ -194,4 +193,28 @@ describe('ChannelCredentials usage', () => {
     );
     assert2.afterMustCallsSatisfied(done);
   });
+  it('Should handle certificate providers', done => {
+    const certificateProvider = new FileWatcherCertificateProvider({
+      caCertificateFile: `${__dirname}/fixtures/ca.pem`,
+      certificateFile: `${__dirname}/fixtures/server1.pem`,
+      privateKeyFile: `${__dirname}/fixtures/server1.pem`,
+      refreshIntervalMs: 1000
+    });
+    const channelCreds = createCertificateProviderChannelCredentials(certificateProvider, null);
+    const client = new echoService(`localhost:${portNum}`, channelCreds, {
+      'grpc.ssl_target_name_override': hostnameOverride,
+      'grpc.default_authority': hostnameOverride,
+    });
+    client.echo(
+      { value: 'test value', value2: 3 },
+      new grpc.Metadata({waitForReady: true}),
+      (error: ServiceError, response: any) => {
+        client.close();
+        assert.ifError(error);
+        assert.deepStrictEqual(response, { value: 'test value', value2: 3 });
+        done();
+      }
+    );
+
+  })
 });

@@ -24,12 +24,13 @@ import { Route } from "../src/generated/envoy/config/route/v3/Route";
 import { Listener } from "../src/generated/envoy/config/listener/v3/Listener";
 import { HttpConnectionManager } from "../src/generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpConnectionManager";
 import { AnyExtension } from "@grpc/proto-loader";
-import { CLUSTER_CONFIG_TYPE_URL, HTTP_CONNECTION_MANGER_TYPE_URL } from "../src/resources";
+import { CLUSTER_CONFIG_TYPE_URL, HTTP_CONNECTION_MANGER_TYPE_URL, UPSTREAM_TLS_CONTEXT_TYPE_URL } from "../src/resources";
 import { LocalityLbEndpoints } from "../src/generated/envoy/config/endpoint/v3/LocalityLbEndpoints";
 import { LbEndpoint } from "../src/generated/envoy/config/endpoint/v3/LbEndpoint";
 import { ClusterConfig } from "../src/generated/envoy/extensions/clusters/aggregate/v3/ClusterConfig";
 import { Any } from "../src/generated/google/protobuf/Any";
 import { ControlPlaneServer } from "./xds-server";
+import { UpstreamTlsContext } from "../src/generated/envoy/extensions/transport_sockets/tls/v3/UpstreamTlsContext";
 
 interface Endpoint {
   locality: Locality;
@@ -71,7 +72,13 @@ export interface FakeCluster {
 }
 
 export class FakeEdsCluster implements FakeCluster {
-  constructor(private clusterName: string, private endpointName: string, private endpoints: Endpoint[], private loadBalancingPolicyOverride?: Any | 'RING_HASH') {}
+  constructor(
+    private clusterName: string,
+    private endpointName: string,
+    private endpoints: Endpoint[],
+    private loadBalancingPolicyOverride?: Any | 'RING_HASH' | undefined,
+    private upstreamTlsContext?: UpstreamTlsContext
+  ) {}
 
   getEndpointConfig(): ClusterLoadAssignment {
     return {
@@ -110,6 +117,14 @@ export class FakeEdsCluster implements FakeCluster {
       }
     } else {
       result.lb_policy = 'ROUND_ROBIN';
+    }
+    if (this.upstreamTlsContext) {
+      result.transport_socket = {
+        typed_config: {
+          '@type': UPSTREAM_TLS_CONTEXT_TYPE_URL,
+          ...this.upstreamTlsContext
+        }
+      }
     }
     return result;
   }

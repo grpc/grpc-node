@@ -15,7 +15,7 @@
  *
  */
 
-import { CDS_TYPE_URL, CLUSTER_CONFIG_TYPE_URL, decodeSingleResource } from "../resources";
+import { CDS_TYPE_URL, CLUSTER_CONFIG_TYPE_URL, decodeSingleResource, UPSTREAM_TLS_CONTEXT_TYPE_URL } from "../resources";
 import { XdsDecodeContext, XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
 import { LoadBalancingConfig, experimental, logVerbosity } from "@grpc/grpc-js";
 import { XdsServerConfig } from "../xds-bootstrap";
@@ -31,6 +31,8 @@ import { convertToLoadBalancingConfig } from "../lb-policy-registry";
 import SuccessRateEjectionConfig = experimental.SuccessRateEjectionConfig;
 import FailurePercentageEjectionConfig = experimental.FailurePercentageEjectionConfig;
 import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
+import { StringMatcher__Output } from "../generated/envoy/type/matcher/v3/StringMatcher";
+import { CertificateValidationContext__Output } from "../generated/envoy/extensions/transport_sockets/tls/v3/CertificateValidationContext";
 
 const TRACER_NAME = 'xds_client';
 
@@ -38,6 +40,11 @@ function trace(text: string): void {
   experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
 }
 
+export interface SecurityUpdate {
+  caCertificateProviderInstance: string;
+  identityCertificateProviderInstance?: string;
+  subjectAltNameMatchers: StringMatcher__Output[];
+}
 
 export interface CdsUpdate {
   type: 'AGGREGATE' | 'EDS' | 'LOGICAL_DNS';
@@ -49,6 +56,7 @@ export interface CdsUpdate {
   dnsHostname?: string;
   lbPolicyConfig: LoadBalancingConfig[];
   outlierDetectionUpdate?: experimental.OutlierDetectionRawConfig;
+  securityUpdate?: SecurityUpdate;
 }
 
 function convertOutlierDetectionUpdate(outlierDetection: OutlierDetection__Output | null): experimental.OutlierDetectionRawConfig | undefined {
@@ -201,6 +209,85 @@ export class ClusterResourceType extends XdsResourceType {
         }
       }
     }
+    let securityUpdate: SecurityUpdate | undefined = undefined;
+    if (message.transport_socket) {
+      const transportSocket = message.transport_socket;
+      if (!transportSocket.typed_config) {
+        trace('transportSocket.typed_config missing');
+        return null;
+      }
+      if (transportSocket.typed_config.type_url !== UPSTREAM_TLS_CONTEXT_TYPE_URL) {
+        trace('Incorrect transportSocket.typed_config.type_url: ' + transportSocket.typed_config.type_url)
+        return null;
+      }
+      const upstreamTlsContext = decodeSingleResource(UPSTREAM_TLS_CONTEXT_TYPE_URL, transportSocket.typed_config.value);
+      if (!upstreamTlsContext.common_tls_context) {
+        trace('Could not decode UpstreamTlsContext');
+        return null;
+      }
+      trace('Decoded UpstreamTlsContext: ' + JSON.stringify(upstreamTlsContext, undefined, 2));
+      const commonTlsContext = upstreamTlsContext.common_tls_context;
+      let validationContext: CertificateValidationContext__Output;
+      switch (commonTlsContext.validation_context_type) {
+        case 'validation_context_sds_secret_config':
+          return null;
+        case 'validation_context':
+          if (!commonTlsContext.validation_context) {
+            return null;
+          }
+          validationContext = commonTlsContext.validation_context;
+          break;
+        case 'combined_validation_context':
+          if (!commonTlsContext.combined_validation_context?.default_validation_context) {
+            return null;
+          }
+          validationContext = commonTlsContext.combined_validation_context.default_validation_context;
+          break;
+        default:
+          return null;
+      }
+      if (!validationContext.ca_certificate_provider_instance) {
+        return null;
+      }
+      if (!(validationContext.ca_certificate_provider_instance.instance_name in context.bootstrap.certificateProviders)) {
+        return null;
+      }
+      if (validationContext.verify_certificate_spki.length > 0) {
+        return null;
+      }
+      if (validationContext.verify_certificate_hash.length > 0) {
+        return null;
+      }
+      if (validationContext.require_signed_certificate_timestamp) {
+        return null;
+      }
+      if (validationContext.crl) {
+        return null;
+      }
+      if (validationContext.custom_validator_config) {
+        return null;
+      }
+      if (commonTlsContext.tls_certificate_provider_instance) {
+        if (!(commonTlsContext.tls_certificate_provider_instance.instance_name in context.bootstrap.certificateProviders)) {
+          return null;
+        }
+      } else {
+        if (commonTlsContext.tls_certificates.length > 0 || commonTlsContext.tls_certificate_sds_secret_configs.length > 0) {
+          return null;
+        }
+      }
+      if (commonTlsContext.tls_params) {
+        return null;
+      }
+      if (commonTlsContext.custom_handshaker) {
+        return null;
+      }
+      securityUpdate = {
+        caCertificateProviderInstance: validationContext.ca_certificate_provider_instance.instance_name,
+        identityCertificateProviderInstance: commonTlsContext.tls_certificate_provider_instance?.instance_name,
+        subjectAltNameMatchers: validationContext.match_subject_alt_names
+      }
+    }
     if (message.cluster_discovery_type === 'cluster_type') {
       if (!(message.cluster_type?.typed_config && message.cluster_type.typed_config.type_url === CLUSTER_CONFIG_TYPE_URL)) {
         return null;
@@ -214,7 +301,8 @@ export class ClusterResourceType extends XdsResourceType {
         name: message.name,
         aggregateChildren: clusterConfig.clusters,
         outlierDetectionUpdate: convertOutlierDetectionUpdate(null),
-        lbPolicyConfig: [lbPolicyConfig]
+        lbPolicyConfig: [lbPolicyConfig],
+        securityUpdate: securityUpdate
       };
     } else {
       let maxConcurrentRequests: number | undefined = undefined;
@@ -238,7 +326,8 @@ export class ClusterResourceType extends XdsResourceType {
           edsServiceName: message.eds_cluster_config.service_name === '' ? undefined : message.eds_cluster_config.service_name,
           lrsLoadReportingServer: message.lrs_server ? context.server : undefined,
           outlierDetectionUpdate: convertOutlierDetectionUpdate(message.outlier_detection),
-          lbPolicyConfig: [lbPolicyConfig]
+          lbPolicyConfig: [lbPolicyConfig],
+          securityUpdate: securityUpdate
         }
       } else if (message.type === 'LOGICAL_DNS') {
         if (!message.load_assignment) {
@@ -268,7 +357,8 @@ export class ClusterResourceType extends XdsResourceType {
           dnsHostname: `${socketAddress.address}:${socketAddress.port_value}`,
           lrsLoadReportingServer: message.lrs_server ? context.server : undefined,
           outlierDetectionUpdate: convertOutlierDetectionUpdate(message.outlier_detection),
-          lbPolicyConfig: [lbPolicyConfig]
+          lbPolicyConfig: [lbPolicyConfig],
+          securityUpdate: securityUpdate
         };
       }
     }

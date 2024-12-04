@@ -30,7 +30,11 @@ import { XdsConfig } from './xds-dependency-manager';
 import { LocalityEndpoint, PriorityChildRaw } from './load-balancer-priority';
 import { Locality__Output } from './generated/envoy/config/core/v3/Locality';
 import { AGGREGATE_CLUSTER_BACKWARDS_COMPAT, EXPERIMENTAL_OUTLIER_DETECTION } from './environment';
-import { XDS_CONFIG_KEY } from './resolver-xds';
+import { XDS_CLIENT_KEY, XDS_CONFIG_KEY } from './resolver-xds';
+import { ContainsValueMatcher, Matcher, PrefixValueMatcher, RejectValueMatcher, SafeRegexValueMatcher, SuffixValueMatcher, ValueMatcher } from './matcher';
+import { StringMatcher__Output } from './generated/envoy/type/matcher/v3/StringMatcher';
+import { isIPv6 } from 'net';
+import { formatIPv6, parseIPv6 } from './cidr';
 
 const TRACER_NAME = 'cds_balancer';
 
@@ -67,6 +71,125 @@ class CdsLoadBalancingConfig implements TypedLoadBalancingConfig {
   }
 }
 
+type SupportedSanType = 'DNS' | 'URI' | 'email' | 'IP Address';
+
+function isSupportedSanType(type: string): type is SupportedSanType {
+  return ['DNS', 'URI', 'email', 'IP Address'].includes(type);
+}
+
+class DnsExactValueMatcher implements ValueMatcher {
+  constructor(private targetValue: string, private ignoreCase: boolean) {
+    if (ignoreCase) {
+      this.targetValue = this.targetValue.toLowerCase();
+    }
+  }
+  apply(entry: string): boolean {
+    let [type, value] = entry.split(':');
+    if (!isSupportedSanType(type)) {
+      return false;
+    }
+    if (!value) {
+      return false;
+    }
+    if (this.ignoreCase) {
+      value = value.toLowerCase();
+    }
+    if (type === 'DNS' && value.startsWith('*.') && this.targetValue.includes('.', 1)) {
+      return value.substring(2) === this.targetValue.substring(this.targetValue.indexOf('.') + 1);
+    } else {
+      return value === this.targetValue;
+    }
+  }
+
+  toString() {
+    return 'DnsExact(' + this.targetValue + ', ignore_case=' + this.ignoreCase + ')';
+  }
+}
+
+function canonicalizeSanEntryValue(type: SupportedSanType, value: string): string {
+  if (type === 'IP Address' && isIPv6(value)) {
+    return formatIPv6(parseIPv6(value));
+  }
+  return value;
+}
+
+class SanEntryMatcher implements ValueMatcher {
+  private childMatcher: ValueMatcher;
+  constructor(matcherConfig: StringMatcher__Output) {
+    const ignoreCase = matcherConfig.ignore_case;
+    switch(matcherConfig.match_pattern) {
+      case 'exact':
+        throw new Error('Unexpected exact matcher in SAN entry matcher');
+      case 'prefix':
+        this.childMatcher = new PrefixValueMatcher(matcherConfig.prefix!, ignoreCase);
+        break;
+      case 'suffix':
+        this.childMatcher = new SuffixValueMatcher(matcherConfig.suffix!, ignoreCase);
+        break;
+      case 'safe_regex':
+        this.childMatcher = new SafeRegexValueMatcher(matcherConfig.safe_regex!.regex);
+        break;
+      case 'contains':
+        this.childMatcher = new ContainsValueMatcher(matcherConfig.contains!, ignoreCase);
+        break;
+      default:
+        this.childMatcher = new RejectValueMatcher();
+    }
+  }
+  apply(entry: string): boolean {
+    let [type, value] = entry.split(':');
+    if (!isSupportedSanType(type)) {
+      return false;
+    }
+    value = canonicalizeSanEntryValue(type, value);
+    if (!entry) {
+      return false;
+    }
+    return this.childMatcher.apply(value);
+  }
+  toString(): string {
+    return this.childMatcher.toString();
+  }
+
+}
+
+export class SanMatcher implements ValueMatcher {
+  private childMatchers: ValueMatcher[];
+  constructor(matcherConfigs: StringMatcher__Output[]) {
+    this.childMatchers = matcherConfigs.map(config => {
+      if (config.match_pattern === 'exact') {
+        return new DnsExactValueMatcher(config.exact!, config.ignore_case);
+      } else {
+        return new SanEntryMatcher(config);
+      }
+    });
+  }
+  apply(value: string): boolean {
+    if (this.childMatchers.length === 0) {
+      return true;
+    }
+    for (const entry of value.split(', ')) {
+      for (const matcher of this.childMatchers) {
+        const checkResult = matcher.apply(entry);
+        if (checkResult) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  toString(): string {
+    return 'SanMatcher(' + this.childMatchers.map(matcher => matcher.toString()).sort().join(', ') + ')';
+  }
+
+  equals(other: SanMatcher): boolean {
+    return this.toString() === other.toString();
+  }
+}
+
+export const CA_CERT_PROVIDER_KEY = 'grpc.internal.ca_cert_provider';
+export const IDENTITY_CERT_PROVIDER_KEY = 'grpc.internal.identity_cert_provider';
+export const SAN_MATCHER_KEY = 'grpc.internal.san_matcher';
 
 const RECURSION_DEPTH_LIMIT = 15;
 
@@ -101,6 +224,8 @@ export class CdsLoadBalancer implements LoadBalancer {
   private localityPriorities: Map<string, number> = new Map();
   private priorityNames: string[] = [];
   private nextPriorityChildNumber = 0;
+
+  private latestSanMatcher: SanMatcher | null = null;
 
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
     this.childBalancer = new ChildLoadBalancerHandler(channelControlHelper);
@@ -140,7 +265,7 @@ export class CdsLoadBalancer implements LoadBalancer {
         leafClusters = getLeafClusters(xdsConfig, clusterName);
       } catch (e) {
         trace('xDS config parsing failed with error ' + (e as Error).message);
-        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `xDS config parsing failed with error ${(e as Error).message}`, metadata: new Metadata()}));
+        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `xDS config parsing failed with error ${(e as Error).message}`}));
         return;
       }
       const priorityChildren: {[name: string]: PriorityChildRaw} = {};
@@ -165,7 +290,7 @@ export class CdsLoadBalancer implements LoadBalancer {
         typedChildConfig = parseLoadBalancingConfig(childConfig);
       } catch (e) {
         trace('LB policy config parsing failed with error ' + (e as Error).message);
-        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `LB policy config parsing failed with error ${(e as Error).message}`, metadata: new Metadata()}));
+        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `LB policy config parsing failed with error ${(e as Error).message}`}));
         return;
       }
       this.childBalancer.updateAddressList(endpointList, typedChildConfig, {...options, [ROOT_CLUSTER_KEY]: clusterName});
@@ -272,17 +397,39 @@ export class CdsLoadBalancer implements LoadBalancer {
       } else {
         childConfig = xdsClusterImplConfig;
       }
-      trace(JSON.stringify(childConfig, undefined, 2));
       let typedChildConfig: TypedLoadBalancingConfig;
       try {
         typedChildConfig = parseLoadBalancingConfig(childConfig);
       } catch (e) {
         trace('LB policy config parsing failed with error ' + (e as Error).message);
-        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `LB policy config parsing failed with error ${(e as Error).message}`, metadata: new Metadata()}));
+        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `LB policy config parsing failed with error ${(e as Error).message}`}));
         return;
       }
-      trace(JSON.stringify(typedChildConfig.toJsonObject(), undefined, 2));
-      this.childBalancer.updateAddressList(childEndpointList, typedChildConfig, options);
+      const childOptions: ChannelOptions = {...options};
+      if (clusterConfig.cluster.securityUpdate) {
+        const securityUpdate = clusterConfig.cluster.securityUpdate;
+        const xdsClient = options[XDS_CLIENT_KEY] as XdsClient;
+        const caCertProvider = xdsClient.getCertificateProvider(securityUpdate.caCertificateProviderInstance);
+        if (!caCertProvider) {
+          this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `Cluster ${clusterName} configured with CA certificate provider ${securityUpdate.caCertificateProviderInstance} not in bootstrap`}));
+          return;
+        }
+        if (securityUpdate.identityCertificateProviderInstance) {
+          const identityCertProvider = xdsClient.getCertificateProvider(securityUpdate.identityCertificateProviderInstance);
+          if (!identityCertProvider) {
+            this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `Cluster ${clusterName} configured with identity certificate provider ${securityUpdate.identityCertificateProviderInstance} not in bootstrap`}));
+            return;
+          }
+          childOptions[IDENTITY_CERT_PROVIDER_KEY] = identityCertProvider;
+        }
+        childOptions[CA_CERT_PROVIDER_KEY] = caCertProvider;
+        const sanMatcher = new SanMatcher(securityUpdate.subjectAltNameMatchers);
+        if (this.latestSanMatcher === null || !this.latestSanMatcher.equals(sanMatcher)) {
+          this.latestSanMatcher = sanMatcher;
+        }
+        childOptions[SAN_MATCHER_KEY] = this.latestSanMatcher;
+      }
+      this.childBalancer.updateAddressList(childEndpointList, typedChildConfig, childOptions);
     }
   }
   exitIdle(): void {
