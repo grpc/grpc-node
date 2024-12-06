@@ -70,6 +70,7 @@ Many channel arguments supported in `grpc` are not supported in `@grpc/grpc-js`.
   - `grpc-node.max_session_memory`
   - `grpc-node.tls_enable_trace`
   - `grpc-node.retry_max_attempts_limit`
+  - `grpc-node.http2_initial_window_size`
   - `channelOverride`
   - `channelFactoryOverride`
 
