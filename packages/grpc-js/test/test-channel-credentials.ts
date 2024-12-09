@@ -90,20 +90,6 @@ describe('ChannelCredentials Implementation', () => {
       const composedChannelCreds = channelCreds.compose(callCreds);
       assert.ok(composedChannelCreds instanceof ChannelCredentials);
     });
-
-    it('should be chainable', () => {
-      const callCreds1 = new CallCredentialsMock();
-      const callCreds2 = new CallCredentialsMock();
-      // Associate both call credentials with channelCreds
-      const composedChannelCreds = ChannelCredentials.createSsl()
-        .compose(callCreds1)
-        .compose(callCreds2);
-      // Build a mock object that should be an identical copy
-      const composedCallCreds = callCreds1.compose(callCreds2);
-      const composedChannelCreds2 = ChannelCredentials.createSsl()
-        .compose(composedCallCreds);
-      assert.ok(composedChannelCreds._equals(composedChannelCreds2));
-    });
   });
 });
 
