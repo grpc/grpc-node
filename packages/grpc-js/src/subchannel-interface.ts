@@ -15,6 +15,7 @@
  *
  */
 
+import { CallCredentials } from './call-credentials';
 import type { SubchannelRef } from './channelz';
 import { ConnectivityState } from './connectivity-state';
 import { Subchannel } from './subchannel';
@@ -61,6 +62,11 @@ export interface SubchannelInterface {
    * to avoid implementing getRealSubchannel
    */
   realSubchannelEquals(other: SubchannelInterface): boolean;
+  /**
+   * Get the call credentials associated with the channel credentials for this
+   * subchannel.
+   */
+  getCallCredentials(): CallCredentials;
 }
 
 export abstract class BaseSubchannelWrapper implements SubchannelInterface {
@@ -133,5 +139,8 @@ export abstract class BaseSubchannelWrapper implements SubchannelInterface {
   }
   realSubchannelEquals(other: SubchannelInterface): boolean {
     return this.getRealSubchannel() === other.getRealSubchannel();
+  }
+  getCallCredentials(): CallCredentials {
+    return this.child.getCallCredentials();
   }
 }

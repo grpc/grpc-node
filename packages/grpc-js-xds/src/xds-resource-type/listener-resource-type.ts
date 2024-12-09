@@ -198,6 +198,21 @@ function validateFilterChain(context: XdsDecodeContext, filterChain: FilterChain
       trace('require_client_certificate set without validationContext');
       return false;
     }
+    if (validationContext && validationContext.verify_certificate_spki.length > 0) {
+      return false;
+    }
+    if (validationContext && validationContext.verify_certificate_hash.length > 0) {
+      return false;
+    }
+    if (validationContext?.require_signed_certificate_timestamp) {
+      return false;
+    }
+    if (validationContext?.crl) {
+      return false;
+    }
+    if (validationContext?.custom_validator_config) {
+      return false;
+    }
     if (commonTlsContext.tls_params) {
       trace('tls_params set');
       return false;

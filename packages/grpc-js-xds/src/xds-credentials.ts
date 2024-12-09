@@ -15,7 +15,43 @@
  *
  */
 
-import { ServerCredentials } from "@grpc/grpc-js";
+import { CallCredentials, ChannelCredentials, ChannelOptions, ServerCredentials, VerifyOptions, experimental } from "@grpc/grpc-js";
+import { CA_CERT_PROVIDER_KEY, IDENTITY_CERT_PROVIDER_KEY, SAN_MATCHER_KEY, SanMatcher } from "./load-balancer-cds";
+import GrpcUri = experimental.GrpcUri;
+import SecureConnector = experimental.SecureConnector;
+import createCertificateProviderChannelCredentials = experimental.createCertificateProviderChannelCredentials;
+
+export class XdsChannelCredentials extends ChannelCredentials {
+  constructor(private fallbackCredentials: ChannelCredentials) {
+    super();
+  }
+  _isSecure(): boolean {
+    return true;
+  }
+  _equals(other: ChannelCredentials): boolean {
+    return other instanceof XdsChannelCredentials && this.fallbackCredentials === other.fallbackCredentials;
+  }
+  _createSecureConnector(channelTarget: GrpcUri, options: ChannelOptions, callCredentials?: CallCredentials): SecureConnector {
+    if (options[CA_CERT_PROVIDER_KEY]) {
+      const verifyOptions: VerifyOptions = {};
+      if (options[SAN_MATCHER_KEY]) {
+        const matcher = options[SAN_MATCHER_KEY] as SanMatcher;
+        verifyOptions.checkServerIdentity = (hostname, cert) => {
+          if (cert.subjectaltname && matcher.apply(cert.subjectaltname)) {
+            return undefined;
+          } else {
+            return new Error('No matching subject alternative name found in certificate');
+          }
+        }
+      }
+      const certProviderCreds = createCertificateProviderChannelCredentials(options[CA_CERT_PROVIDER_KEY], options[IDENTITY_CERT_PROVIDER_KEY] ?? null, verifyOptions);
+      return certProviderCreds._createSecureConnector(channelTarget, options, callCredentials);
+    } else {
+      return this.fallbackCredentials._createSecureConnector(channelTarget, options, callCredentials);
+    }
+  }
+
+}
 
 export class XdsServerCredentials extends ServerCredentials {
   constructor(private fallbackCredentials: ServerCredentials) {

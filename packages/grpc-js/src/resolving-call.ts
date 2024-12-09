@@ -62,12 +62,18 @@ export class ResolvingCall implements Call {
   private configReceivedTime: Date | null = null;
   private childStartTime: Date | null = null;
 
+  /**
+   * Credentials configured for this specific call. Does not include
+   * call credentials associated with the channel credentials used to create
+   * the channel.
+   */
+  private credentials: CallCredentials = CallCredentials.createEmpty();
+
   constructor(
     private readonly channel: InternalChannel,
     private readonly method: string,
     options: CallStreamOptions,
     private readonly filterStackFactory: FilterStackFactory,
-    private credentials: CallCredentials,
     private callNumber: number
   ) {
     this.deadline = options.deadline;
@@ -351,7 +357,7 @@ export class ResolvingCall implements Call {
     }
   }
   setCredentials(credentials: CallCredentials): void {
-    this.credentials = this.credentials.compose(credentials);
+    this.credentials = credentials;
   }
 
   addStatusWatcher(watcher: (status: StatusObject) => void) {

@@ -161,7 +161,8 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
     );
     switch (pickResult.pickResultType) {
       case PickResultType.COMPLETE:
-        this.credentials
+        const combinedCallCredentials = this.credentials.compose(pickResult.subchannel!.getCallCredentials());
+        combinedCallCredentials
           .generateMetadata({ method_name: this.methodName, service_url: this.serviceUrl })
           .then(
             credsMetadata => {

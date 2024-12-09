@@ -65,6 +65,7 @@ export interface VerifyOptions {
 
 export interface SecureConnector {
   connect(socket: Socket): Promise<Socket>;
+  getCallCredentials(): CallCredentials;
   destroy(): void;
 }
 
@@ -74,24 +75,14 @@ export interface SecureConnector {
  * over a channel initialized with an instance of this class.
  */
 export abstract class ChannelCredentials {
-  protected callCredentials: CallCredentials;
-
-  protected constructor(callCredentials?: CallCredentials) {
-    this.callCredentials = callCredentials || CallCredentials.createEmpty();
-  }
   /**
    * Returns a copy of this object with the included set of per-call credentials
    * expanded to include callCredentials.
    * @param callCredentials A CallCredentials object to associate with this
    * instance.
    */
-  abstract compose(callCredentials: CallCredentials): ChannelCredentials;
-
-  /**
-   * Gets the set of per-call credentials associated with this instance.
-   */
-  _getCallCredentials(): CallCredentials {
-    return this.callCredentials;
+  compose(callCredentials: CallCredentials): ChannelCredentials {
+    return new ComposedChannelCredentialsImpl(this, callCredentials);
   }
 
   /**
@@ -106,7 +97,7 @@ export abstract class ChannelCredentials {
    */
   abstract _equals(other: ChannelCredentials): boolean;
 
-  abstract _createSecureConnector(channelTarget: GrpcUri, options: ChannelOptions): SecureConnector;
+  abstract _createSecureConnector(channelTarget: GrpcUri, options: ChannelOptions, callCredentials?: CallCredentials): SecureConnector;
 
   /**
    * Return a new ChannelCredentials instance with a given set of credentials.
@@ -175,7 +166,7 @@ class InsecureChannelCredentialsImpl extends ChannelCredentials {
     super();
   }
 
-  compose(callCredentials: CallCredentials): never {
+  override compose(callCredentials: CallCredentials): never {
     throw new Error('Cannot compose insecure credentials');
   }
   _isSecure(): boolean {
@@ -184,10 +175,13 @@ class InsecureChannelCredentialsImpl extends ChannelCredentials {
   _equals(other: ChannelCredentials): boolean {
     return other instanceof InsecureChannelCredentialsImpl;
   }
-  _createSecureConnector(channelTarget: GrpcUri, options: ChannelOptions): SecureConnector {
+  _createSecureConnector(channelTarget: GrpcUri, options: ChannelOptions, callCredentials?: CallCredentials): SecureConnector {
     return {
       connect(socket) {
         return Promise.resolve(socket);
+      },
+      getCallCredentials: () => {
+        return callCredentials ?? CallCredentials.createEmpty();
       },
       destroy() {}
     }
@@ -251,7 +245,7 @@ function getConnectionOptions(secureContext: SecureContext, verifyOptions: Verif
 }
 
 class SecureConnectorImpl implements SecureConnector {
-  constructor(private connectionOptions: ConnectionOptions) {
+  constructor(private connectionOptions: ConnectionOptions, private callCredentials: CallCredentials) {
   }
   connect(socket: Socket): Promise<Socket> {
     const tlsConnectOptions: ConnectionOptions = {
@@ -267,6 +261,9 @@ class SecureConnectorImpl implements SecureConnector {
       });
     });
   }
+  getCallCredentials(): CallCredentials {
+    return this.callCredentials;
+  }
   destroy() {}
 }
 
@@ -278,11 +275,6 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
     super();
   }
 
-  compose(callCredentials: CallCredentials): ChannelCredentials {
-    const combinedCallCredentials =
-      this.callCredentials.compose(callCredentials);
-    return new ComposedChannelCredentialsImpl(this, combinedCallCredentials);
-  }
   _isSecure(): boolean {
     return true;
   }
@@ -300,26 +292,35 @@ class SecureChannelCredentialsImpl extends ChannelCredentials {
       return false;
     }
   }
-  _createSecureConnector(channelTarget: GrpcUri, options: ChannelOptions): SecureConnector {
+  _createSecureConnector(channelTarget: GrpcUri, options: ChannelOptions, callCredentials?: CallCredentials): SecureConnector {
     const connectionOptions = getConnectionOptions(this.secureContext, this.verifyOptions, channelTarget, options);
-    return new SecureConnectorImpl(connectionOptions);
+    return new SecureConnectorImpl(connectionOptions, callCredentials ?? CallCredentials.createEmpty());
   }
 }
 
 class CertificateProviderChannelCredentialsImpl extends ChannelCredentials {
   private refcount: number = 0;
-  private latestCaUpdate: CaCertificateUpdate | null = null;
-  private latestIdentityUpdate: IdentityCertificateUpdate | null = null;
+  /**
+   * `undefined` means that the certificates have not yet been loaded. `null`
+   * means that an attempt to load them has completed, and has failed.
+   */
+  private latestCaUpdate: CaCertificateUpdate | null | undefined = undefined;
+  /**
+   * `undefined` means that the certificates have not yet been loaded. `null`
+   * means that an attempt to load them has completed, and has failed.
+   */
+  private latestIdentityUpdate: IdentityCertificateUpdate | null | undefined = undefined;
   private caCertificateUpdateListener: CaCertificateUpdateListener = this.handleCaCertificateUpdate.bind(this);
   private identityCertificateUpdateListener: IdentityCertificateUpdateListener = this.handleIdentityCertitificateUpdate.bind(this);
+  private secureContextWatchers: ((context: SecureContext | null) => void)[] = [];
   private static SecureConnectorImpl = class implements SecureConnector {
-    constructor(private parent: CertificateProviderChannelCredentialsImpl, private channelTarget: GrpcUri, private options: ChannelOptions) {}
+    constructor(private parent: CertificateProviderChannelCredentialsImpl, private channelTarget: GrpcUri, private options: ChannelOptions, private callCredentials: CallCredentials) {}
 
     connect(socket: Socket): Promise<Socket> {
-      return new Promise((resolve, reject) => {
-        const secureContext = this.parent.getLatestSecureContext();
+      return new Promise(async (resolve, reject) => {
+        const secureContext = await this.parent.getSecureContext();
         if (!secureContext) {
-          reject(new Error('Credentials not loaded'));
+          reject(new Error('Failed to load credentials'));
           return;
         }
         const connnectionOptions = getConnectionOptions(secureContext, this.parent.verifyOptions, this.channelTarget, this.options);
@@ -336,6 +337,10 @@ class CertificateProviderChannelCredentialsImpl extends ChannelCredentials {
       });
     }
 
+    getCallCredentials(): CallCredentials {
+      return this.callCredentials;
+    }
+
     destroy() {
       this.parent.unref();
     }
@@ -346,14 +351,6 @@ class CertificateProviderChannelCredentialsImpl extends ChannelCredentials {
     private verifyOptions: VerifyOptions
   ) {
     super();
-  }
-  compose(callCredentials: CallCredentials): ChannelCredentials {
-    const combinedCallCredentials =
-      this.callCredentials.compose(callCredentials);
-    return new ComposedChannelCredentialsImpl(
-      this,
-      combinedCallCredentials
-    );
   }
   _isSecure(): boolean {
     return true;
@@ -384,24 +381,55 @@ class CertificateProviderChannelCredentialsImpl extends ChannelCredentials {
       this.identityCertificateProvider?.removeIdentityCertificateListener(this.identityCertificateUpdateListener);
     }
   }
-  _createSecureConnector(channelTarget: GrpcUri, options: ChannelOptions): SecureConnector {
+  _createSecureConnector(channelTarget: GrpcUri, options: ChannelOptions, callCredentials?: CallCredentials): SecureConnector {
     this.ref();
-    return new CertificateProviderChannelCredentialsImpl.SecureConnectorImpl(this, channelTarget, options);
+    return new CertificateProviderChannelCredentialsImpl.SecureConnectorImpl(this, channelTarget, options, callCredentials ?? CallCredentials.createEmpty());
+  }
+
+  private maybeUpdateWatchers() {
+    if (this.hasReceivedUpdates()) {
+      for (const watcher of this.secureContextWatchers) {
+        watcher(this.getLatestSecureContext());
+      }
+      this.secureContextWatchers = [];
+    }
   }
 
   private handleCaCertificateUpdate(update: CaCertificateUpdate | null) {
     this.latestCaUpdate = update;
+    this.maybeUpdateWatchers();
   }
 
   private handleIdentityCertitificateUpdate(update: IdentityCertificateUpdate | null) {
     this.latestIdentityUpdate = update;
+    this.maybeUpdateWatchers();
+  }
+
+  private hasReceivedUpdates(): boolean {
+    if (this.latestCaUpdate === undefined) {
+      return false;
+    }
+    if (this.identityCertificateProvider && this.latestIdentityUpdate === undefined) {
+      return false;
+    }
+    return true;
+  }
+
+  private getSecureContext(): Promise<SecureContext | null> {
+    if (this.hasReceivedUpdates()) {
+      return Promise.resolve(this.getLatestSecureContext());
+    } else {
+      return new Promise(resolve => {
+        this.secureContextWatchers.push(resolve);
+      });
+    }
   }
 
   private getLatestSecureContext(): SecureContext | null {
-    if (this.latestCaUpdate === null) {
+    if (!this.latestCaUpdate) {
       return null;
     }
-    if (this.identityCertificateProvider !== null && this.latestIdentityUpdate === null) {
+    if (this.identityCertificateProvider !== null && !this.latestIdentityUpdate) {
       return null;
     }
     return createSecureContext({
@@ -420,9 +448,9 @@ export function createCertificateProviderChannelCredentials(caCertificateProvide
 class ComposedChannelCredentialsImpl extends ChannelCredentials {
   constructor(
     private channelCredentials: ChannelCredentials,
-    callCreds: CallCredentials
+    private callCredentials: CallCredentials
   ) {
-    super(callCreds);
+    super();
     if (!channelCredentials._isSecure()) {
       throw new Error('Cannot compose insecure credentials');
     }
@@ -451,7 +479,8 @@ class ComposedChannelCredentialsImpl extends ChannelCredentials {
       return false;
     }
   }
-  _createSecureConnector(channelTarget: GrpcUri, options: ChannelOptions): SecureConnector {
-    return this.channelCredentials._createSecureConnector(channelTarget, options);
+  _createSecureConnector(channelTarget: GrpcUri, options: ChannelOptions, callCredentials?: CallCredentials): SecureConnector {
+    const combinedCallCredentials = this.callCredentials.compose(callCredentials ?? CallCredentials.createEmpty());
+    return this.channelCredentials._createSecureConnector(channelTarget, options, combinedCallCredentials);
   }
 }

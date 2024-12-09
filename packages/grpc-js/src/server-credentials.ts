@@ -338,6 +338,9 @@ class InterceptorServerCredentials extends ServerCredentials {
   override _removeWatcher(watcher: SecureContextWatcher): void {
     this.childCredentials._removeWatcher(watcher);
   }
+  override _getSettings(): SecureServerOptions | null {
+    return this.childCredentials._getSettings();
+  }
 }
 
 export function createServerCredentialsWithInterceptors(credentials: ServerCredentials, interceptors: ServerInterceptor[]): ServerCredentials {

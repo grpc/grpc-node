@@ -29,6 +29,7 @@ import { ClusterConfig__Output } from './generated/envoy/extensions/clusters/agg
 import { HttpConnectionManager__Output } from './generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpConnectionManager';
 import { EXPERIMENTAL_FEDERATION } from './environment';
 import { DownstreamTlsContext__Output } from './generated/envoy/extensions/transport_sockets/tls/v3/DownstreamTlsContext';
+import { UpstreamTlsContext__Output } from './generated/envoy/extensions/transport_sockets/tls/v3/UpstreamTlsContext';
 
 export const EDS_TYPE_URL = 'type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment';
 export const CDS_TYPE_URL = 'type.googleapis.com/envoy.config.cluster.v3.Cluster';
@@ -55,10 +56,16 @@ export const DOWNSTREAM_TLS_CONTEXT_TYPE_URL = 'type.googleapis.com/envoy.extens
 
 export type DownstreamTlsContextTypeUrl = 'type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext';
 
+export const UPSTREAM_TLS_CONTEXT_TYPE_URL = 'type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext';
+
+export type UpstreamTlsContextTypeUrl = 'type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext';
+
+export type ResourceTypeUrl = AdsTypeUrl | HttpConnectionManagerTypeUrl | ClusterConfigTypeUrl | DownstreamTlsContextTypeUrl | UpstreamTlsContextTypeUrl;
+
 /**
  * Map type URLs to their corresponding message types
  */
-export type AdsOutputType<T extends AdsTypeUrl | HttpConnectionManagerTypeUrl | ClusterConfigTypeUrl | DownstreamTlsContextTypeUrl> = T extends EdsTypeUrl
+export type AdsOutputType<T extends ResourceTypeUrl> = T extends EdsTypeUrl
   ? ClusterLoadAssignment__Output
   : T extends CdsTypeUrl
   ? Cluster__Output
@@ -70,6 +77,8 @@ export type AdsOutputType<T extends AdsTypeUrl | HttpConnectionManagerTypeUrl | 
   ? HttpConnectionManager__Output
   : T extends ClusterConfigTypeUrl
   ? ClusterConfig__Output
+  : T extends UpstreamTlsContextTypeUrl
+  ? UpstreamTlsContext__Output
   : DownstreamTlsContext__Output;
 
 
@@ -100,7 +109,7 @@ const toObjectOptions = {
   oneofs: true
 }
 
-export function decodeSingleResource<T extends AdsTypeUrl | HttpConnectionManagerTypeUrl | ClusterConfigTypeUrl | DownstreamTlsContextTypeUrl>(targetTypeUrl: T, message: Buffer): AdsOutputType<T> {
+export function decodeSingleResource<T extends ResourceTypeUrl>(targetTypeUrl: T, message: Buffer): AdsOutputType<T> {
   const name = targetTypeUrl.substring(targetTypeUrl.lastIndexOf('/') + 1);
   const type = resourceRoot.lookup(name);
   if (type) {

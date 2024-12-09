@@ -46,6 +46,7 @@ import {
 import { SubchannelCallInterceptingListener } from './subchannel-call';
 import { SubchannelCall } from './subchannel-call';
 import { CallEventTracker, SubchannelConnector, Transport } from './transport';
+import { CallCredentials } from './call-credentials';
 
 const TRACER_NAME = 'subchannel';
 
@@ -54,7 +55,7 @@ const TRACER_NAME = 'subchannel';
  * to calculate it */
 const KEEPALIVE_MAX_TIME_MS = ~(1 << 31);
 
-export class Subchannel {
+export class Subchannel implements SubchannelInterface {
   /**
    * The subchannel's current connectivity state. Invariant: `session` === `null`
    * if and only if `connectivityState` is IDLE or TRANSIENT_FAILURE.
@@ -514,5 +515,8 @@ export class Subchannel {
     if (newKeepaliveTime > this.keepaliveTime) {
       this.keepaliveTime = newKeepaliveTime;
     }
+  }
+  getCallCredentials(): CallCredentials {
+    return this.secureConnector.getCallCredentials();
   }
 }
