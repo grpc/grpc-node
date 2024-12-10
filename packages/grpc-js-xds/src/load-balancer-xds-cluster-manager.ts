@@ -128,18 +128,21 @@ class XdsClusterManager implements LoadBalancer {
 
     constructor(private parent: XdsClusterManager, private name: string) {
       this.childBalancer = new ChildLoadBalancerHandler(experimental.createChildChannelControlHelper(this.parent.channelControlHelper, {
-        updateState: (connectivityState: ConnectivityState, picker: Picker) => {
-          this.updateState(connectivityState, picker);
+        updateState: (connectivityState: ConnectivityState, picker: Picker, errorMessage: string | null) => {
+          this.updateState(connectivityState, picker, errorMessage);
         },
       }));
 
       this.picker = new QueuePicker(this.childBalancer);
     }
 
-    private updateState(connectivityState: ConnectivityState, picker: Picker) {
+    private updateState(connectivityState: ConnectivityState, picker: Picker, errorMessage: string | null) {
       trace('Child ' + this.name + ' ' + ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[connectivityState]);
       this.connectivityState = connectivityState;
       this.picker = picker;
+      if (errorMessage) {
+        this.parent.latestChildErrorMessage = errorMessage;
+      }
       this.parent.maybeUpdateState();
     }
     updateAddressList(endpointList: Endpoint[], childConfig: TypedLoadBalancingConfig, options: ChannelOptions): void {
@@ -167,6 +170,7 @@ class XdsClusterManager implements LoadBalancer {
   // Shutdown is a placeholder value that will never appear in normal operation.
   private currentState: ConnectivityState = ConnectivityState.SHUTDOWN;
   private updatesPaused = false;
+  private latestChildErrorMessage: string | null = null;
   constructor(private channelControlHelper: ChannelControlHelper) {}
 
   private maybeUpdateState() {
@@ -195,6 +199,7 @@ class XdsClusterManager implements LoadBalancer {
       }
     }
     let connectivityState: ConnectivityState;
+    let errorMessage: string | null = null;
     if (anyReady) {
       connectivityState = ConnectivityState.READY;
     } else if (anyConnecting) {
@@ -203,8 +208,9 @@ class XdsClusterManager implements LoadBalancer {
       connectivityState = ConnectivityState.IDLE;
     } else {
       connectivityState = ConnectivityState.TRANSIENT_FAILURE;
+      errorMessage = `xds_cluster_manager: No connection established. Latest error: ${this.latestChildErrorMessage}`;
     }
-    this.channelControlHelper.updateState(connectivityState, new XdsClusterManagerPicker(pickerMap));
+    this.channelControlHelper.updateState(connectivityState, new XdsClusterManagerPicker(pickerMap), errorMessage);
   }
 
   updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, options: ChannelOptions): void {

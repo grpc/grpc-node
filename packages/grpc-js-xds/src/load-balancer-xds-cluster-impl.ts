@@ -241,12 +241,12 @@ class XdsClusterImplBalancer implements LoadBalancer {
           }
           return new LocalitySubchannelWrapper(wrapperChild, statsObj);
         },
-        updateState: (connectivityState, originalPicker) => {
+        updateState: (connectivityState, originalPicker, errorMessage) => {
           if (this.latestConfig === null || this.latestClusterConfig === null || this.latestClusterConfig.children.type === 'aggregate' || !this.latestClusterConfig.children.endpoints) {
-            channelControlHelper.updateState(connectivityState, originalPicker);
+            channelControlHelper.updateState(connectivityState, originalPicker, errorMessage);
           } else {
             const picker = new XdsClusterImplPicker(originalPicker, getCallCounterMapKey(this.latestConfig.getCluster(), this.latestClusterConfig.cluster.edsServiceName), this.latestClusterConfig.cluster.maxConcurrentRequests ?? DEFAULT_MAX_CONCURRENT_REQUESTS, this.latestClusterConfig.children.endpoints.dropCategories, this.clusterDropStats);
-            channelControlHelper.updateState(connectivityState, picker);
+            channelControlHelper.updateState(connectivityState, picker, errorMessage);
           }
         }
       }));
@@ -266,7 +266,7 @@ class XdsClusterImplBalancer implements LoadBalancer {
     if (!maybeClusterConfig.success) {
       this.latestClusterConfig = null;
       this.childBalancer.destroy();
-      this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker(maybeClusterConfig.error));
+      this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker(maybeClusterConfig.error), maybeClusterConfig.error.details);
       return;
     }
     const clusterConfig = maybeClusterConfig.value;
@@ -276,7 +276,7 @@ class XdsClusterImplBalancer implements LoadBalancer {
     }
     if (!clusterConfig.children.endpoints) {
       this.childBalancer.destroy();
-      this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({details: clusterConfig.children.resolutionNote}));
+      this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({details: clusterConfig.children.resolutionNote}), clusterConfig.children.resolutionNote ?? null);
 
     }
     this.lastestEndpointList = endpointList;

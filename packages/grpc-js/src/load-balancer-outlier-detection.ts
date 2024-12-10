@@ -493,14 +493,15 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
           mapEntry?.subchannelWrappers.push(subchannelWrapper);
           return subchannelWrapper;
         },
-        updateState: (connectivityState: ConnectivityState, picker: Picker) => {
+        updateState: (connectivityState: ConnectivityState, picker: Picker, errorMessage: string) => {
           if (connectivityState === ConnectivityState.READY) {
             channelControlHelper.updateState(
               connectivityState,
-              new OutlierDetectionPicker(picker, this.isCountingEnabled())
+              new OutlierDetectionPicker(picker, this.isCountingEnabled()),
+              errorMessage
             );
           } else {
-            channelControlHelper.updateState(connectivityState, picker);
+            channelControlHelper.updateState(connectivityState, picker, errorMessage);
           }
         },
       })

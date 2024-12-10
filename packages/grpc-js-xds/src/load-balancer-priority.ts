@@ -166,6 +166,7 @@ interface PriorityChildBalancer {
   isFailoverTimerPending(): boolean;
   getConnectivityState(): ConnectivityState;
   getPicker(): Picker;
+  getErrorMessage(): string | null;
   getName(): string;
   destroy(): void;
 }
@@ -183,14 +184,15 @@ export class PriorityLoadBalancer implements LoadBalancer {
   private PriorityChildImpl = class implements PriorityChildBalancer {
     private connectivityState: ConnectivityState = ConnectivityState.IDLE;
     private picker: Picker;
+    private errorMessage: string | null = null;
     private childBalancer: ChildLoadBalancerHandler;
     private failoverTimer: NodeJS.Timeout | null = null;
     private deactivationTimer: NodeJS.Timeout | null = null;
     private seenReadyOrIdleSinceTransientFailure = false;
     constructor(private parent: PriorityLoadBalancer, private name: string, ignoreReresolutionRequests: boolean) {
       this.childBalancer = new ChildLoadBalancerHandler(experimental.createChildChannelControlHelper(this.parent.channelControlHelper, {
-        updateState: (connectivityState: ConnectivityState, picker: Picker) => {
-          this.updateState(connectivityState, picker);
+        updateState: (connectivityState: ConnectivityState, picker: Picker, errorMessage: string | null) => {
+          this.updateState(connectivityState, picker, errorMessage);
         },
         requestReresolution: () => {
           if (!ignoreReresolutionRequests) {
@@ -202,10 +204,11 @@ export class PriorityLoadBalancer implements LoadBalancer {
       this.startFailoverTimer();
     }
 
-    private updateState(connectivityState: ConnectivityState, picker: Picker) {
+    private updateState(connectivityState: ConnectivityState, picker: Picker, errorMessage: string | null) {
       trace('Child ' + this.name + ' ' + ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[connectivityState]);
       this.connectivityState = connectivityState;
       this.picker = picker;
+      this.errorMessage = errorMessage;
       if (connectivityState === ConnectivityState.CONNECTING) {
         if (this.seenReadyOrIdleSinceTransientFailure && this.failoverTimer === null) {
           this.startFailoverTimer();
@@ -226,9 +229,11 @@ export class PriorityLoadBalancer implements LoadBalancer {
         this.failoverTimer = setTimeout(() => {
           trace('Failover timer triggered for child ' + this.name);
           this.failoverTimer = null;
+          const errorMessage = `No connection established. Last error: ${this.errorMessage}`;
           this.updateState(
             ConnectivityState.TRANSIENT_FAILURE,
-            new UnavailablePicker()
+            new UnavailablePicker({code: Status.UNAVAILABLE, details: errorMessage}),
+            errorMessage
           );
         }, DEFAULT_FAILOVER_TIME_MS);
       }
@@ -285,6 +290,10 @@ export class PriorityLoadBalancer implements LoadBalancer {
       return this.picker;
     }
 
+    getErrorMessage() {
+      return this.errorMessage;
+    }
+
     getName() {
       return this.name;
     }
@@ -325,7 +334,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
 
   constructor(private channelControlHelper: ChannelControlHelper) {}
 
-  private updateState(state: ConnectivityState, picker: Picker) {
+  private updateState(state: ConnectivityState, picker: Picker, errorMessage: string | null) {
     trace(
         'Transitioning to ' +
         ConnectivityState[state]
@@ -336,7 +345,7 @@ export class PriorityLoadBalancer implements LoadBalancer {
     if (state === ConnectivityState.IDLE) {
       picker = new QueuePicker(this, picker);
     }
-    this.channelControlHelper.updateState(state, picker);
+    this.channelControlHelper.updateState(state, picker, errorMessage);
   }
 
   private onChildStateChange(child: PriorityChildBalancer) {
@@ -363,7 +372,8 @@ export class PriorityLoadBalancer implements LoadBalancer {
     const chosenChild = this.children.get(this.priorities[priority])!;
     this.updateState(
       chosenChild.getConnectivityState(),
-      chosenChild.getPicker()
+      chosenChild.getPicker(),
+      chosenChild.getErrorMessage()
     );
     if (deactivateLowerPriorities) {
       for (let i = priority + 1; i < this.priorities.length; i++) {
@@ -374,7 +384,8 @@ export class PriorityLoadBalancer implements LoadBalancer {
 
   private choosePriority() {
     if (this.priorities.length === 0) {
-      this.updateState(ConnectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: Status.UNAVAILABLE, details: 'priority policy has empty priority list', metadata: new Metadata()}));
+      const errorMessage = 'priority policy has empty priority list';
+      this.updateState(ConnectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: Status.UNAVAILABLE, details: errorMessage}), errorMessage);
       return;
     }
 
