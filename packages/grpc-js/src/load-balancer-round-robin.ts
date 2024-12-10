@@ -164,7 +164,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     } else if (
       this.countChildrenWithState(ConnectivityState.TRANSIENT_FAILURE) > 0
     ) {
-      const errorMessage = `No connection established. Last error: ${this.lastError}`;
+      const errorMessage = `round_robin: No connection established. Last error: ${this.lastError}`;
       this.updateState(
         ConnectivityState.TRANSIENT_FAILURE,
         new UnavailablePicker({
