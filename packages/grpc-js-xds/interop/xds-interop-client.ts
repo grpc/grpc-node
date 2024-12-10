@@ -91,11 +91,11 @@ class RpcBehaviorLoadBalancer implements LoadBalancer {
   private latestConfig: RpcBehaviorLoadBalancingConfig | null = null;
   constructor(channelControlHelper: ChannelControlHelper) {
     const childChannelControlHelper = createChildChannelControlHelper(channelControlHelper, {
-      updateState: (connectivityState, picker) => {
+      updateState: (connectivityState, picker, errorMessage) => {
         if (connectivityState === grpc.connectivityState.READY && this.latestConfig) {
           picker = new RpcBehaviorPicker(picker, this.latestConfig.getRpcBehavior());
         }
-        channelControlHelper.updateState(connectivityState, picker);
+        channelControlHelper.updateState(connectivityState, picker, errorMessage);
       }
     });
     this.child = new ChildLoadBalancerHandler(childChannelControlHelper);

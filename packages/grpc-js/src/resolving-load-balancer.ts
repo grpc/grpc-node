@@ -160,6 +160,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   private readonly childLoadBalancer: ChildLoadBalancerHandler;
   private latestChildState: ConnectivityState = ConnectivityState.IDLE;
   private latestChildPicker: Picker = new QueuePicker(this);
+  private latestChildErrorMessage: string | null = null;
   /**
    * This resolving load balancer's current connectivity state.
    */
@@ -213,7 +214,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
       };
     }
 
-    this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
+    this.updateState(ConnectivityState.IDLE, new QueuePicker(this), null);
     this.childLoadBalancer = new ChildLoadBalancerHandler(
       {
         createSubchannel:
@@ -233,10 +234,11 @@ export class ResolvingLoadBalancer implements LoadBalancer {
             this.updateResolution();
           }
         },
-        updateState: (newState: ConnectivityState, picker: Picker) => {
+        updateState: (newState: ConnectivityState, picker: Picker, errorMessage: string | null) => {
           this.latestChildState = newState;
           this.latestChildPicker = picker;
-          this.updateState(newState, picker);
+          this.latestChildErrorMessage = errorMessage;
+          this.updateState(newState, picker, errorMessage);
         },
         addChannelzChild:
           channelControlHelper.addChannelzChild.bind(channelControlHelper),
@@ -325,7 +327,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
         this.updateResolution();
         this.continueResolving = false;
       } else {
-        this.updateState(this.latestChildState, this.latestChildPicker);
+        this.updateState(this.latestChildState, this.latestChildPicker, this.latestChildErrorMessage);
       }
     }, backoffOptions);
     this.backoffTimeout.unref();
@@ -338,12 +340,12 @@ export class ResolvingLoadBalancer implements LoadBalancer {
        * is an appropriate value here if the child LB policy is unset.
        * Otherwise, we want to delegate to the child here, in case that
        * triggers something. */
-      this.updateState(ConnectivityState.CONNECTING, this.latestChildPicker);
+      this.updateState(ConnectivityState.CONNECTING, this.latestChildPicker, this.latestChildErrorMessage);
     }
     this.backoffTimeout.runOnce();
   }
 
-  private updateState(connectivityState: ConnectivityState, picker: Picker) {
+  private updateState(connectivityState: ConnectivityState, picker: Picker, errorMessage: string | null) {
     trace(
       uriToString(this.target) +
         ' ' +
@@ -356,14 +358,15 @@ export class ResolvingLoadBalancer implements LoadBalancer {
       picker = new QueuePicker(this, picker);
     }
     this.currentState = connectivityState;
-    this.channelControlHelper.updateState(connectivityState, picker);
+    this.channelControlHelper.updateState(connectivityState, picker, errorMessage);
   }
 
   private handleResolutionFailure(error: StatusObject) {
     if (this.latestChildState === ConnectivityState.IDLE) {
       this.updateState(
         ConnectivityState.TRANSIENT_FAILURE,
-        new UnavailablePicker(error)
+        new UnavailablePicker(error),
+        error.details
       );
       this.onFailedResolution(error);
     }

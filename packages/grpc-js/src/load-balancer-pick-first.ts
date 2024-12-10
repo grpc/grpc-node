@@ -261,37 +261,44 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   private calculateAndReportNewState() {
     if (this.currentPick) {
       if (this.reportHealthStatus && !this.currentPick.isHealthy()) {
+        const errorMessage = `Picked subchannel ${this.currentPick.getAddress()} is unhealthy`;
         this.updateState(
           ConnectivityState.TRANSIENT_FAILURE,
           new UnavailablePicker({
-            details: `Picked subchannel ${this.currentPick.getAddress()} is unhealthy`,
-          })
+            details: errorMessage,
+          }),
+          errorMessage
         );
       } else {
         this.updateState(
           ConnectivityState.READY,
-          new PickFirstPicker(this.currentPick)
+          new PickFirstPicker(this.currentPick),
+          null
         );
       }
     } else if (this.latestAddressList?.length === 0) {
+      const errorMessage = `No connection established. Last error: ${this.lastError}`;
       this.updateState(
         ConnectivityState.TRANSIENT_FAILURE,
         new UnavailablePicker({
-          details: `No connection established. Last error: ${this.lastError}`,
-        })
+          details: errorMessage,
+        }),
+        errorMessage
       );
     } else if (this.children.length === 0) {
-      this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
+      this.updateState(ConnectivityState.IDLE, new QueuePicker(this), null);
     } else {
       if (this.stickyTransientFailureMode) {
+        const errorMessage = `No connection established. Last error: ${this.lastError}`;
         this.updateState(
           ConnectivityState.TRANSIENT_FAILURE,
           new UnavailablePicker({
-            details: `No connection established. Last error: ${this.lastError}`,
-          })
+            details: errorMessage,
+          }),
+          errorMessage
         );
       } else {
-        this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
+        this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this), null);
       }
     }
   }
@@ -431,14 +438,14 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     this.calculateAndReportNewState();
   }
 
-  private updateState(newState: ConnectivityState, picker: Picker) {
+  private updateState(newState: ConnectivityState, picker: Picker, errorMessage: string | null) {
     trace(
       ConnectivityState[this.currentState] +
         ' -> ' +
         ConnectivityState[newState]
     );
     this.currentState = newState;
-    this.channelControlHelper.updateState(newState, picker);
+    this.channelControlHelper.updateState(newState, picker, errorMessage);
   }
 
   private resetSubchannelList() {
@@ -568,10 +575,10 @@ export class LeafLoadBalancer {
     const childChannelControlHelper = createChildChannelControlHelper(
       channelControlHelper,
       {
-        updateState: (connectivityState, picker) => {
+        updateState: (connectivityState, picker, errorMessage) => {
           this.latestState = connectivityState;
           this.latestPicker = picker;
-          channelControlHelper.updateState(connectivityState, picker);
+          channelControlHelper.updateState(connectivityState, picker, errorMessage);
         },
       }
     );

@@ -254,7 +254,7 @@ export class CdsLoadBalancer implements LoadBalancer {
     }
     if (!maybeClusterConfig.success) {
       this.childBalancer.destroy();
-      this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker(maybeClusterConfig.error));
+      this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker(maybeClusterConfig.error), maybeClusterConfig.error.details);
       return;
     }
     const clusterConfig = maybeClusterConfig.value;
@@ -265,7 +265,8 @@ export class CdsLoadBalancer implements LoadBalancer {
         leafClusters = getLeafClusters(xdsConfig, clusterName);
       } catch (e) {
         trace('xDS config parsing failed with error ' + (e as Error).message);
-        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `xDS config parsing failed with error ${(e as Error).message}`}));
+        const errorMessage = `xDS config parsing failed with error ${(e as Error).message}`;
+        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: errorMessage}), errorMessage);
         return;
       }
       const priorityChildren: {[name: string]: PriorityChildRaw} = {};
@@ -290,14 +291,16 @@ export class CdsLoadBalancer implements LoadBalancer {
         typedChildConfig = parseLoadBalancingConfig(childConfig);
       } catch (e) {
         trace('LB policy config parsing failed with error ' + (e as Error).message);
-        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `LB policy config parsing failed with error ${(e as Error).message}`}));
+        const errorMessage = `LB policy config parsing failed with error ${(e as Error).message}`;
+        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: errorMessage}), errorMessage);
         return;
       }
       this.childBalancer.updateAddressList(endpointList, typedChildConfig, {...options, [ROOT_CLUSTER_KEY]: clusterName});
     } else {
       if (!clusterConfig.children.endpoints) {
         trace('Received update with no resolved endpoints for cluster ' + clusterName);
-        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `Cluster ${clusterName} resolution failed: ${clusterConfig.children.resolutionNote}`}));
+        const errorMessage = `Cluster ${clusterName} resolution failed: ${clusterConfig.children.resolutionNote}`;
+        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: errorMessage}), errorMessage);
         return;
       }
       const newPriorityNames: string[] = [];
@@ -402,7 +405,8 @@ export class CdsLoadBalancer implements LoadBalancer {
         typedChildConfig = parseLoadBalancingConfig(childConfig);
       } catch (e) {
         trace('LB policy config parsing failed with error ' + (e as Error).message);
-        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `LB policy config parsing failed with error ${(e as Error).message}`}));
+        const errorMessage = `LB policy config parsing failed with error ${(e as Error).message}`;
+        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: errorMessage}), errorMessage);
         return;
       }
       const childOptions: ChannelOptions = {...options};
@@ -411,13 +415,15 @@ export class CdsLoadBalancer implements LoadBalancer {
         const xdsClient = options[XDS_CLIENT_KEY] as XdsClient;
         const caCertProvider = xdsClient.getCertificateProvider(securityUpdate.caCertificateProviderInstance);
         if (!caCertProvider) {
-          this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `Cluster ${clusterName} configured with CA certificate provider ${securityUpdate.caCertificateProviderInstance} not in bootstrap`}));
+          const errorMessage = `Cluster ${clusterName} configured with CA certificate provider ${securityUpdate.caCertificateProviderInstance} not in bootstrap`;
+          this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: errorMessage}), errorMessage);
           return;
         }
         if (securityUpdate.identityCertificateProviderInstance) {
           const identityCertProvider = xdsClient.getCertificateProvider(securityUpdate.identityCertificateProviderInstance);
           if (!identityCertProvider) {
-            this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `Cluster ${clusterName} configured with identity certificate provider ${securityUpdate.identityCertificateProviderInstance} not in bootstrap`}));
+            const errorMessage = `Cluster ${clusterName} configured with identity certificate provider ${securityUpdate.identityCertificateProviderInstance} not in bootstrap`;
+            this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: errorMessage}), errorMessage);
             return;
           }
           childOptions[IDENTITY_CERT_PROVIDER_KEY] = identityCertProvider;

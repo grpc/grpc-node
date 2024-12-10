@@ -108,13 +108,16 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     this.childChannelControlHelper = createChildChannelControlHelper(
       channelControlHelper,
       {
-        updateState: (connectivityState, picker) => {
+        updateState: (connectivityState, picker, errorMessage) => {
           /* Ensure that name resolution is requested again after active
            * connections are dropped. This is more aggressive than necessary to
            * accomplish that, so we are counting on resolvers to have
            * reasonable rate limits. */
           if (this.currentState === ConnectivityState.READY && connectivityState !== ConnectivityState.READY) {
             this.channelControlHelper.requestReresolution();
+          }
+          if (errorMessage) {
+            this.lastError = errorMessage;
           }
           this.calculateAndUpdateState();
         },
@@ -153,21 +156,24 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
             picker: child.getPicker(),
           })),
           index
-        )
+        ),
+        null
       );
     } else if (this.countChildrenWithState(ConnectivityState.CONNECTING) > 0) {
-      this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this));
+      this.updateState(ConnectivityState.CONNECTING, new QueuePicker(this), null);
     } else if (
       this.countChildrenWithState(ConnectivityState.TRANSIENT_FAILURE) > 0
     ) {
+      const errorMessage = `round_robin: No connection established. Last error: ${this.lastError}`;
       this.updateState(
         ConnectivityState.TRANSIENT_FAILURE,
         new UnavailablePicker({
-          details: `No connection established. Last error: ${this.lastError}`,
-        })
+          details: errorMessage,
+        }),
+        errorMessage
       );
     } else {
-      this.updateState(ConnectivityState.IDLE, new QueuePicker(this));
+      this.updateState(ConnectivityState.IDLE, new QueuePicker(this), null);
     }
     /* round_robin should keep all children connected, this is how we do that.
      * We can't do this more efficiently in the individual child's updateState
@@ -180,7 +186,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     }
   }
 
-  private updateState(newState: ConnectivityState, picker: Picker) {
+  private updateState(newState: ConnectivityState, picker: Picker, errorMessage: string | null) {
     trace(
       ConnectivityState[this.currentState] +
         ' -> ' +
@@ -192,7 +198,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
       this.currentReadyPicker = null;
     }
     this.currentState = newState;
-    this.channelControlHelper.updateState(newState, picker);
+    this.channelControlHelper.updateState(newState, picker, errorMessage);
   }
 
   private resetSubchannelList() {

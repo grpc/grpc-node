@@ -46,7 +46,11 @@ export interface ChannelControlHelper {
    * @param connectivityState New connectivity state
    * @param picker New picker
    */
-  updateState(connectivityState: ConnectivityState, picker: Picker): void;
+  updateState(
+    connectivityState: ConnectivityState,
+    picker: Picker,
+    errorMessage: string | null
+  ): void;
   /**
    * Request new data from the resolver.
    */

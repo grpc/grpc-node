@@ -175,18 +175,21 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
 
     constructor(private parent: WeightedTargetLoadBalancer, private name: string) {
       this.childBalancer = new ChildLoadBalancerHandler(experimental.createChildChannelControlHelper(this.parent.channelControlHelper, {
-        updateState: (connectivityState: ConnectivityState, picker: Picker) => {
-          this.updateState(connectivityState, picker);
+        updateState: (connectivityState: ConnectivityState, picker: Picker, errorMessage: string | null) => {
+          this.updateState(connectivityState, picker, errorMessage);
         },
       }));
 
       this.picker = new QueuePicker(this.childBalancer);
     }
 
-    private updateState(connectivityState: ConnectivityState, picker: Picker) {
+    private updateState(connectivityState: ConnectivityState, picker: Picker, errorMessage: string | null) {
       trace('Target ' + this.name + ' ' + ConnectivityState[this.connectivityState] + ' -> ' + ConnectivityState[connectivityState]);
       this.connectivityState = connectivityState;
       this.picker = picker;
+      if (errorMessage) {
+        this.parent.latestChildErrorMessage = errorMessage;
+      }
       this.parent.maybeUpdateState();
     }
 
@@ -242,6 +245,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
    */
   private targetList: string[] = [];
   private updatesPaused = false;
+  private latestChildErrorMessage: string | null = null;
 
   constructor(private channelControlHelper: ChannelControlHelper) {}
 
@@ -297,6 +301,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
     }
 
     let picker: Picker;
+    let errorMessage: string | null = null;
     switch (connectivityState) {
       case ConnectivityState.READY:
         picker = new WeightedTargetPicker(pickerList);
@@ -306,9 +311,10 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
         picker = new QueuePicker(this);
         break;
       default:
+        const errorMessage = `weighted_target: all children report state TRANSIENT_FAILURE. Latest error: ${this.latestChildErrorMessage}`;
         picker = new UnavailablePicker({
           code: Status.UNAVAILABLE,
-          details: 'weighted_target: all children report state TRANSIENT_FAILURE',
+          details: errorMessage,
           metadata: new Metadata()
         });
     }
@@ -316,7 +322,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
         'Transitioning to ' +
         ConnectivityState[connectivityState]
     );
-    this.channelControlHelper.updateState(connectivityState, picker);
+    this.channelControlHelper.updateState(connectivityState, picker, errorMessage);
   }
 
   updateAddressList(addressList: Endpoint[], lbConfig: TypedLoadBalancingConfig, options: ChannelOptions): void {
