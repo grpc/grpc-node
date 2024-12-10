@@ -59,9 +59,9 @@ export interface FileWatcherCertificateProviderConfig {
 export class FileWatcherCertificateProvider implements CertificateProvider {
   private refreshTimer: NodeJS.Timeout | null = null;
   private fileResultPromise: Promise<[PromiseSettledResult<Buffer>, PromiseSettledResult<Buffer>, PromiseSettledResult<Buffer>]> | null = null;
-  private latestCaUpdate: CaCertificateUpdate | null = null;
+  private latestCaUpdate: CaCertificateUpdate | null | undefined = undefined;
   private caListeners: Set<CaCertificateUpdateListener> = new Set();
-  private latestIdentityUpdate: IdentityCertificateUpdate | null = null;
+  private latestIdentityUpdate: IdentityCertificateUpdate | null | undefined = undefined;
   private identityListeners: Set<IdentityCertificateUpdateListener> = new Set();
   private lastUpdateTime: Date | null = null;
 
@@ -105,6 +105,8 @@ export class FileWatcherCertificateProvider implements CertificateProvider {
         this.latestCaUpdate = {
           caCertificate: caCertificateResult.value
         };
+      } else {
+        this.latestCaUpdate = null;
       }
       for (const listener of this.identityListeners) {
         listener(this.latestIdentityUpdate);
@@ -128,8 +130,8 @@ export class FileWatcherCertificateProvider implements CertificateProvider {
       }
       if (timeSinceLastUpdate > this.config.refreshIntervalMs * 2) {
         // Clear out old updates if they are definitely stale
-        this.latestCaUpdate = null;
-        this.latestIdentityUpdate = null;
+        this.latestCaUpdate = undefined;
+        this.latestIdentityUpdate = undefined;
       }
       this.refreshTimer = setInterval(() => this.updateCertificates(), this.config.refreshIntervalMs);
       trace('File watcher started watching');
@@ -149,7 +151,9 @@ export class FileWatcherCertificateProvider implements CertificateProvider {
   addCaCertificateListener(listener: CaCertificateUpdateListener): void {
     this.caListeners.add(listener);
     this.maybeStartWatchingFiles();
-    process.nextTick(listener, this.latestCaUpdate);
+    if (this.latestCaUpdate !== undefined) {
+      process.nextTick(listener, this.latestCaUpdate);
+    }
   }
   removeCaCertificateListener(listener: CaCertificateUpdateListener): void {
     this.caListeners.delete(listener);
@@ -158,7 +162,9 @@ export class FileWatcherCertificateProvider implements CertificateProvider {
   addIdentityCertificateListener(listener: IdentityCertificateUpdateListener): void {
     this.identityListeners.add(listener);
     this.maybeStartWatchingFiles();
-    process.nextTick(listener, this.latestIdentityUpdate);
+    if (this.latestIdentityUpdate !== undefined) {
+      process.nextTick(listener, this.latestIdentityUpdate);
+    }
   }
   removeIdentityCertificateListener(listener: IdentityCertificateUpdateListener): void {
     this.identityListeners.delete(listener);

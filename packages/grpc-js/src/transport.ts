@@ -729,9 +729,17 @@ export class Http2SubchannelConnector implements SubchannelConnector {
     if (this.isShutdown) {
       return Promise.reject();
     }
-    const tcpConnection = await this.tcpConnect(address, options);
-    const secureConnection = await secureConnector.connect(tcpConnection);
-    return this.createSession(secureConnection, address, options);
+    let tcpConnection: net.Socket | null = null;
+    let secureConnection: net.Socket | null  = null;
+    try {
+      tcpConnection = await this.tcpConnect(address, options);
+      secureConnection = await secureConnector.connect(tcpConnection);
+      return this.createSession(secureConnection, address, options);
+    } catch (e) {
+      tcpConnection?.destroy();
+      secureConnection?.destroy();
+      throw e;
+    }
   }
 
   shutdown(): void {

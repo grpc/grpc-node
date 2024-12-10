@@ -15,7 +15,7 @@
  *
  */
 
-import { ChannelCredentials, ChannelOptions, credentials, loadPackageDefinition, ServiceError } from "@grpc/grpc-js";
+import { ChannelCredentials, ChannelOptions, credentials, loadPackageDefinition, Metadata, ServiceError } from "@grpc/grpc-js";
 import { loadSync } from "@grpc/proto-loader";
 import { ProtoGrpcType } from "./generated/echo";
 import { EchoTestServiceClient } from "./generated/grpc/testing/EchoTestService";
@@ -76,7 +76,7 @@ export class XdsTestClient {
 
   sendOneCall(callback: (error: ServiceError | null) => void) {
     const deadline = new Date();
-    deadline.setMilliseconds(deadline.getMilliseconds() + 500);
+    deadline.setMilliseconds(deadline.getMilliseconds() + 1500);
     this.client.echo({message: 'test'}, {deadline}, (error, value) => {
       callback(error);
     });

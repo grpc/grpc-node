@@ -258,6 +258,9 @@ export class MockSubchannel implements SubchannelInterface {
   }
   addHealthStateWatcher(listener: HealthListener): void {}
   removeHealthStateWatcher(listener: HealthListener): void {}
+  getCallCredentials(): grpc.CallCredentials {
+    return grpc.CallCredentials.createEmpty();
+  }
 }
 
 export { assert2 };
