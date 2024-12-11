@@ -23,7 +23,7 @@ jobs:
         run: |
           docker build -t kokoro-native-image tools/release/native
           docker run -v /var/run/docker.sock:/var/run/docker.sock -v $GITHUB_WORKSPACE:$GITHUB_WORKSPACE kokoro-native-image $GITHUB_WORKSPACE/packages/grpc-tools/build_binaries.sh
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: grpc-tools_linux
           path: artifacts/
@@ -36,7 +36,7 @@ jobs:
           submodules: recursive
       - name: Build
         run: packages/grpc-tools/build_binaries.sh
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: grpc-tools_macos
           path: artifacts/
@@ -55,7 +55,7 @@ jobs:
       - name: Build
         run: powershell -File ./packages/grpc-tools/build_binaries.ps1
         shell: cmd
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v4
         with:
           name: grpc-tools_windows_${{matrix.arch}}
           path: artifacts/
@@ -64,12 +64,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: [linux_build, macos_build, windows_build]
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
       - name: Copy
         run: |
           mkdir artifacts
           cp -r ./**/* artifacts/
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: combined-artifacts
           path: artifacts/
