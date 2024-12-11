@@ -672,6 +672,11 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       const session = http2.connect(`http://${targetPath}`, {
         createConnection: (authority, option) => {
           return underlyingConnection;
+        },
+        settings: {
+          initialWindowSize:
+            options['grpc-node.http2_initial_window_size'] ||
+            http2.getDefaultSettings().initialWindowSize,
         }
       });
       this.session = session;
