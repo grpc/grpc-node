@@ -1,8 +1,8 @@
 // Original file: proto/channelz.proto
 
-import type { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../../google/protobuf/Timestamp.ts';
-import type { Int64Value as _google_protobuf_Int64Value, Int64Value__Output as _google_protobuf_Int64Value__Output } from '../../../google/protobuf/Int64Value.ts';
-import type { SocketOption as _grpc_channelz_v1_SocketOption, SocketOption__Output as _grpc_channelz_v1_SocketOption__Output } from '../../../grpc/channelz/v1/SocketOption.ts';
+import type { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../../google/protobuf/Timestamp';
+import type { Int64Value as _google_protobuf_Int64Value, Int64Value__Output as _google_protobuf_Int64Value__Output } from '../../../google/protobuf/Int64Value';
+import type { SocketOption as _grpc_channelz_v1_SocketOption, SocketOption__Output as _grpc_channelz_v1_SocketOption__Output } from '../../../grpc/channelz/v1/SocketOption';
 import type { Long } from '@grpc/proto-loader';
 
 /**
