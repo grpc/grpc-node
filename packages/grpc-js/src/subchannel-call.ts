@@ -190,7 +190,22 @@ export class Http2SubchannelCall implements SubchannelCall {
       try {
         messages = this.decoder.write(data);
       } catch (e) {
-        this.cancelWithStatus(Status.RESOURCE_EXHAUSTED, (e as Error).message);
+        /* Some servers send HTML error pages along with HTTP status codes.
+         * When the client attempts to parse this as a length-delimited
+         * message, the parsed message size is greater than the default limit,
+         * resulting in a message decoding error. In that situation, the HTTP
+         * error code information is more useful to the user than the
+         * RESOURCE_EXHAUSTED error is, so we report that instead. Normally,
+         * we delay processing the HTTP status until after the stream ends, to
+         * prioritize reporting the gRPC status from trailers if it is present,
+         * but when there is a message parsing error we end the stream early
+         * before processing trailers. */
+        if (this.httpStatusCode !== undefined && this.httpStatusCode !== 200) {
+          const mappedStatus = mapHttpStatusCode(this.httpStatusCode);
+          this.cancelWithStatus(mappedStatus.code, mappedStatus.details);
+        } else {
+          this.cancelWithStatus(Status.RESOURCE_EXHAUSTED, (e as Error).message);
+        }
         return;
       }
 
