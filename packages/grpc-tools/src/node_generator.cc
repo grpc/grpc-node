@@ -120,7 +120,8 @@ grpc::string NodeObjectPath(const Descriptor* descriptor) {
 }
 
 // Prints out the message serializer and deserializer functions
-void PrintMessageTransformer(const Descriptor* descriptor, Printer* out) {
+void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
+                             const Parameters& params) {
   map<grpc::string, grpc::string> template_vars;
   grpc::string full_name = descriptor->full_name();
   template_vars["identifier_name"] = MessageIdentifierName(full_name);
@@ -129,12 +130,14 @@ void PrintMessageTransformer(const Descriptor* descriptor, Printer* out) {
   // Print the serializer
   out->Print(template_vars, "function serialize_$identifier_name$(arg) {\n");
   out->Indent();
-  out->Print(template_vars, "if (!(arg instanceof $node_name$)) {\n");
-  out->Indent();
-  out->Print(template_vars,
-             "throw new Error('Expected argument of type $name$');\n");
-  out->Outdent();
-  out->Print("}\n");
+  if (!params.omit_serialize_instanceof) {
+    out->Print(template_vars, "if (!(arg instanceof $node_name$)) {\n");
+    out->Indent();
+    out->Print(template_vars,
+               "throw new Error('Expected argument of type $name$');\n");
+    out->Outdent();
+    out->Print("}\n");
+  }
   out->Print("return Buffer.from(arg.serializeBinary());\n");
   out->Outdent();
   out->Print("}\n\n");
@@ -232,12 +235,13 @@ void PrintImports(const FileDescriptor* file, Printer* out,
   out->Print("\n");
 }
 
-void PrintTransformers(const FileDescriptor* file, Printer* out) {
+void PrintTransformers(const FileDescriptor* file, Printer* out,
+                       const Parameters& params) {
   map<grpc::string, const Descriptor*> messages = GetAllMessages(file);
   for (std::map<grpc::string, const Descriptor*>::iterator it =
            messages.begin();
        it != messages.end(); it++) {
-    PrintMessageTransformer(it->second, out);
+    PrintMessageTransformer(it->second, out, params);
   }
   out->Print("\n");
 }
@@ -273,7 +277,7 @@ grpc::string GenerateFile(const FileDescriptor* file,
 
     PrintImports(file, &out, params);
 
-    PrintTransformers(file, &out);
+    PrintTransformers(file, &out, params);
 
     PrintServices(file, &out, params);
 

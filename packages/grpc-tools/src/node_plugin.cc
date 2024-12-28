@@ -39,6 +39,7 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     grpc_node_generator::Parameters generator_parameters;
     generator_parameters.generate_package_definition = false;
     generator_parameters.grpc_js = false;
+    generator_parameters.omit_serialize_instanceof = false;
     if (!parameter.empty()) {
       std::vector<grpc::string> parameters_list =
           grpc_generator::tokenize(parameter, ",");
@@ -48,6 +49,8 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
           generator_parameters.generate_package_definition = true;
         } else if (*parameter_string == "grpc_js") {
           generator_parameters.grpc_js = true;
+        } else if (*parameter_string == "omit_serialize_instanceof") {
+          generator_parameters.omit_serialize_instanceof = true;
         }
       }
     }
