@@ -102,7 +102,7 @@ export const recognizedOptions = {
   'grpc-node.tls_enable_trace': true,
   'grpc.lb.ring_hash.ring_size_cap': true,
   'grpc-node.retry_max_attempts_limit': true,
-  'grpc-node.http2_initial_window_size': true,
+  'grpc-node.flow_control_window': true,
 };
 
 export function channelOptionsEqual(
