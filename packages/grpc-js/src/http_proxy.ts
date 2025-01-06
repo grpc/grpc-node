@@ -119,6 +119,56 @@ function getNoProxyHostList(): string[] {
   }
 }
 
+interface CIDRNotation {
+  ip: number;
+  prefixLength: number;
+}
+
+/*
+ * The groups correspond to CIDR parts as follows:
+ * 1. ip
+ * 2. prefixLength
+ */
+const CIDR_REGEX = /^([0-9.]+)(?:\/([0-9]+))?$/;
+
+export function parseCIDR(cidrString: string): CIDRNotation | null {
+  const parsedCIDR = CIDR_REGEX.exec(cidrString);
+  if (parsedCIDR && parsedCIDR.length === 3) {
+    return {
+      ip: ipToInt(parsedCIDR[1]),
+      prefixLength: parseInt(parsedCIDR[2] ?? '32', 10),
+    };
+  }
+  return null;
+}
+
+function ipToInt(ip: string) {
+  return ip.split(".").reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0);
+}
+
+function isIpInCIDR(cidr: CIDRNotation, serverHost: string) {
+  const ip = cidr.ip;
+  const mask = -1 << (32 - cidr.prefixLength);
+  const hostIP = ipToInt(serverHost);
+
+  const networkAddress = ip & mask;
+  const broadcastAddress = networkAddress | ~mask;
+
+  return hostIP >= networkAddress && hostIP <= broadcastAddress;
+}
+
+function checkHostInNoProxyHostList(serverHost: string): boolean {
+  for (const host of getNoProxyHostList()) {
+    const parsedCIDR = parseCIDR(host);
+    // host is a single IP address or a CIDR notation or a domain
+    if (parsedCIDR && isIpInCIDR(parsedCIDR, serverHost) || serverHost.endsWith(host)) {
+      trace('Not using proxy for target in no_proxy list: ' + serverHost);
+      return true;
+    }
+  }
+  return false;
+}
+
 export interface ProxyMapResult {
   target: GrpcUri;
   extraOptions: ChannelOptions;
@@ -147,13 +197,9 @@ export function mapProxyName(
     return noProxyResult;
   }
   const serverHost = hostPort.host;
-  for (const host of getNoProxyHostList()) {
-    if (host === serverHost) {
-      trace(
-        'Not using proxy for target in no_proxy list: ' + uriToString(target)
-      );
-      return noProxyResult;
-    }
+  if (checkHostInNoProxyHostList(serverHost)) {
+    trace('Not using proxy for target in no_proxy list: ' + uriToString(target));
+    return noProxyResult;
   }
   const extraOptions: ChannelOptions = {
     'grpc.http_connect_target': uriToString(target),
