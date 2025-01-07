@@ -455,9 +455,6 @@ class AdsCallState {
     if (authorityMap.size === 0) {
       typeState.subscribedResources.delete(name.authority);
     }
-    if (typeState.subscribedResources.size === 0) {
-      this.typeStates.delete(type);
-    }
     this.updateNames(type);
   }
 
