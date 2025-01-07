@@ -140,6 +140,8 @@ export class Http2SubchannelCall implements SubchannelCall {
 
   private serverEndedCall = false;
 
+  private connectionDropped = false;
+
   constructor(
     private readonly http2Stream: http2.ClientHttp2Stream,
     private readonly callEventTracker: CallEventTracker,
@@ -188,7 +190,22 @@ export class Http2SubchannelCall implements SubchannelCall {
       try {
         messages = this.decoder.write(data);
       } catch (e) {
-        this.cancelWithStatus(Status.RESOURCE_EXHAUSTED, (e as Error).message);
+        /* Some servers send HTML error pages along with HTTP status codes.
+         * When the client attempts to parse this as a length-delimited
+         * message, the parsed message size is greater than the default limit,
+         * resulting in a message decoding error. In that situation, the HTTP
+         * error code information is more useful to the user than the
+         * RESOURCE_EXHAUSTED error is, so we report that instead. Normally,
+         * we delay processing the HTTP status until after the stream ends, to
+         * prioritize reporting the gRPC status from trailers if it is present,
+         * but when there is a message parsing error we end the stream early
+         * before processing trailers. */
+        if (this.httpStatusCode !== undefined && this.httpStatusCode !== 200) {
+          const mappedStatus = mapHttpStatusCode(this.httpStatusCode);
+          this.cancelWithStatus(mappedStatus.code, mappedStatus.details);
+        } else {
+          this.cancelWithStatus(Status.RESOURCE_EXHAUSTED, (e as Error).message);
+        }
         return;
       }
 
@@ -240,8 +257,16 @@ export class Http2SubchannelCall implements SubchannelCall {
             details = 'Stream refused by server';
             break;
           case http2.constants.NGHTTP2_CANCEL:
-            code = Status.CANCELLED;
-            details = 'Call cancelled';
+            /* Bug reports indicate that Node synthesizes a NGHTTP2_CANCEL
+             * code from connection drops. We want to prioritize reporting
+             * an unavailable status when that happens. */
+            if (this.connectionDropped) {
+              code = Status.UNAVAILABLE;
+              details = 'Connection dropped';
+            } else {
+              code = Status.CANCELLED;
+              details = 'Call cancelled';
+            }
             break;
           case http2.constants.NGHTTP2_ENHANCE_YOUR_CALM:
             code = Status.RESOURCE_EXHAUSTED;
@@ -321,10 +346,15 @@ export class Http2SubchannelCall implements SubchannelCall {
   }
 
   public onDisconnect() {
-    this.endCall({
-      code: Status.UNAVAILABLE,
-      details: 'Connection dropped',
-      metadata: new Metadata(),
+    this.connectionDropped = true;
+    /* Give the call an event loop cycle to finish naturally before reporting
+     * the disconnection as an error. */
+    setImmediate(() => {
+      this.endCall({
+        code: Status.UNAVAILABLE,
+        details: 'Connection dropped',
+        metadata: new Metadata(),
+      });
     });
   }
 
