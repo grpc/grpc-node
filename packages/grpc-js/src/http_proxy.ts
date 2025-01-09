@@ -17,7 +17,7 @@
 
 import { log } from './logging';
 import { LogVerbosity } from './constants';
-import { Socket } from 'net';
+import { isIPv4, Socket } from 'net';
 import * as http from 'http';
 import * as logging from './logging';
 import {
@@ -129,17 +129,20 @@ interface CIDRNotation {
  * 1. ip
  * 2. prefixLength
  */
-const CIDR_REGEX = /^([0-9.]+)(?:\/([0-9]+))?$/;
 
 export function parseCIDR(cidrString: string): CIDRNotation | null {
-  const parsedCIDR = CIDR_REGEX.exec(cidrString);
-  if (parsedCIDR && parsedCIDR.length === 3) {
-    return {
-      ip: ipToInt(parsedCIDR[1]),
-      prefixLength: parseInt(parsedCIDR[2] ?? '32', 10),
-    };
-  }
-  return null;
+  const splitRange = cidrString.split('/');  
+  if (splitRange.length !== 2) {  
+    return null;  
+  }  
+  const prefixLength = parseInt(splitRange[1], 10);  
+  if (!isIPv4(splitRange[0]) || Number.isNaN(prefixLength) || prefixLength < 0 || prefixLength > 32) {  
+    return null;  
+  }  
+  return {  
+    ip: ipToInt(splitRange[0]),  
+    prefixLength: prefixLength  
+  };
 }
 
 function ipToInt(ip: string) {
@@ -157,8 +160,15 @@ function isIpInCIDR(cidr: CIDRNotation, serverHost: string) {
 function hostMatchesNoProxyList(serverHost: string): boolean {
   for (const host of getNoProxyHostList()) {
     const parsedCIDR = parseCIDR(host);
-    // host is a single IP address or a CIDR notation or a domain
-    if (parsedCIDR && isIpInCIDR(parsedCIDR, serverHost) || serverHost.endsWith(host)) {
+    // host is a single IP or a domain name suffix
+    if (!parsedCIDR) {
+      if (host === serverHost || serverHost.includes(host)) {
+        trace('Not using proxy for target in no_proxy list: ' + serverHost);
+        return true;
+      }
+    }
+    // host is a CIDR or a domain
+    else if (isIpInCIDR(parsedCIDR, serverHost)) {
       trace('Not using proxy for target in no_proxy list: ' + serverHost);
       return true;
     }
