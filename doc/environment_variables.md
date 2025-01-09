@@ -11,10 +11,11 @@ can be set.
   checked in order, and the first one that has a value is used.
 
 * no_grpc_proxy, no_proxy
-  A comma separated list of hostnames to connect to without using a proxy even
-  if a proxy is set. These variables are checked in order, and the first one
+  A comma separated list of comma-separated list of hostnames, IP addresses,
+  or CIDR blocks to connect to without using a proxy even
+  if a proxy is set, for example: no_proxy=example.com,192.168.0.1,192.168.0.0/16.
+  These variables are checked in order, and the first one
   that has a value is used.
-  The `no_proxy` environment variable could be a comma-separated list of hostnames, IP addresses, or CIDR blocks (no_proxy=example.com,192.168.0.1,192.168.0.0/16).
 
 * GRPC_SSL_CIPHER_SUITES
   A colon separated list of cipher suites to use with OpenSSL

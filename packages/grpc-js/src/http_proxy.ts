@@ -151,13 +151,10 @@ function isIpInCIDR(cidr: CIDRNotation, serverHost: string) {
   const mask = -1 << (32 - cidr.prefixLength);
   const hostIP = ipToInt(serverHost);
 
-  const networkAddress = ip & mask;
-  const broadcastAddress = networkAddress | ~mask;
-
-  return hostIP >= networkAddress && hostIP <= broadcastAddress;
+  return (hostIP & mask) === (ip & mask);
 }
 
-function checkHostInNoProxyHostList(serverHost: string): boolean {
+function hostMatchesNoProxyList(serverHost: string): boolean {
   for (const host of getNoProxyHostList()) {
     const parsedCIDR = parseCIDR(host);
     // host is a single IP address or a CIDR notation or a domain
@@ -197,7 +194,7 @@ export function mapProxyName(
     return noProxyResult;
   }
   const serverHost = hostPort.host;
-  if (checkHostInNoProxyHostList(serverHost)) {
+  if (hostMatchesNoProxyList(serverHost)) {
     trace('Not using proxy for target in no_proxy list: ' + uriToString(target));
     return noProxyResult;
   }
