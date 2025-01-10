@@ -160,17 +160,17 @@ function isIpInCIDR(cidr: CIDRNotation, serverHost: string) {
 function hostMatchesNoProxyList(serverHost: string): boolean {
   for (const host of getNoProxyHostList()) {
     const parsedCIDR = parseCIDR(host);
+    // host is a CIDR and serverHost is an IP address
+    if (isIPv4(serverHost) && parsedCIDR && isIpInCIDR(parsedCIDR, serverHost)) {
+      trace('Not using proxy for target in no_proxy list: ' + serverHost);
+      return true;
+    }
     // host is a single IP or a domain name suffix
-    if (!parsedCIDR) {
-      if (host === serverHost || serverHost.includes(host)) {
+    else {
+      if (serverHost.endsWith(host)) {
         trace('Not using proxy for target in no_proxy list: ' + serverHost);
         return true;
       }
-    }
-    // host is a CIDR or a domain
-    else if (isIpInCIDR(parsedCIDR, serverHost)) {
-      trace('Not using proxy for target in no_proxy list: ' + serverHost);
-      return true;
     }
   }
   return false;
