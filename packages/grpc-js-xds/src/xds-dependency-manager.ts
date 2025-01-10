@@ -136,7 +136,9 @@ interface ClusterGraph {
   [name: string]: ClusterEntry;
 }
 
-function isClusterTreeFullyUpdated(tree: ClusterGraph, roots: string[]): boolean {
+type ClusterTreeUpdatedResult = {result: true} | {result: false, reason: string};
+
+function isClusterTreeFullyUpdated(tree: ClusterGraph, roots: string[]): ClusterTreeUpdatedResult {
   const toCheck: string[] = [...roots];
   const visited = new Set<string>();
   while (toCheck.length > 0) {
@@ -145,19 +147,31 @@ function isClusterTreeFullyUpdated(tree: ClusterGraph, roots: string[]): boolean
       continue;
     }
     visited.add(next);
-    if (!tree[next] || !tree[next].latestUpdate) {
-      return false;
+    if (!tree[next]) {
+      return {
+        result: false,
+        reason: 'Missing expected cluster entry ' + next
+      };
+    }
+    if (!tree[next].latestUpdate) {
+      return {
+        result: false,
+        reason: 'Cluster entry ' + next + ' not updated'
+      };
     }
     if (tree[next].latestUpdate.success) {
       if (tree[next].latestUpdate.value.type !== 'AGGREGATE') {
-        if (!(tree[next].latestUpdate.value.latestUpdate || tree[next].latestUpdate.value.latestUpdate)) {
-          return false;
+        if (!(tree[next].latestUpdate.value.latestUpdate)) {
+          return {
+            result: false,
+            reason: 'Cluster entry ' + next + ' endpoint not updated'
+          };
         }
       }
     }
     toCheck.push(...tree[next].children);
   }
-  return true;
+  return {result: true};
 }
 
 // Better match type has smaller value.
@@ -353,11 +367,13 @@ export class XdsDependencyManager {
             const routeConfigName = httpConnectionManager.rds!.route_config_name;
             if (this.latestRouteConfigName !== routeConfigName) {
               if (this.latestRouteConfigName !== null) {
+                this.trace('RDS.cancelWatch(' + this.latestRouteConfigName + '): Route config name changed');
                 RouteConfigurationResourceType.cancelWatch(this.xdsClient, this.latestRouteConfigName, this.rdsWatcher);
                 this.latestRouteConfiguration = null;
                 this.clusterRoots = [];
                 this.pruneOrphanClusters();
               }
+              this.trace('RDS.startWatch(' + routeConfigName + '): New route config name');
               RouteConfigurationResourceType.startWatch(this.xdsClient, routeConfigName, this.rdsWatcher);
               this.latestRouteConfigName = routeConfigName;
             }
@@ -365,6 +381,7 @@ export class XdsDependencyManager {
           }
           case 'route_config':
             if (this.latestRouteConfigName) {
+              this.trace('RDS.cancelWatch(' + this.latestRouteConfigName + '): Listener switched to embedded route config');
               RouteConfigurationResourceType.cancelWatch(this.xdsClient, this.latestRouteConfigName, this.rdsWatcher);
               this.latestRouteConfigName = null;
             }
@@ -378,13 +395,14 @@ export class XdsDependencyManager {
         /* A transient error only needs to bubble up as a failure if we have
          * not already provided a ServiceConfig for the upper layer to use */
         if (!this.latestListener) {
-          trace('Resolution error for target ' + listenerResourceName + ' due to xDS client transient error ' + error.details);
+          this.trace('Resolution error due to xDS client transient error ' + error.details);
           this.watcher.onError(`Listener ${listenerResourceName}`, error);
         }
       },
       onResourceDoesNotExist: () => {
-        trace('Resolution error for target ' + listenerResourceName + ': LDS resource does not exist');
+        this.trace('Resolution error: LDS resource does not exist');
         if (this.latestRouteConfigName) {
+          this.trace('RDS.cancelWatch(' + this.latestRouteConfigName + '): LDS resource does not exist');
           RouteConfigurationResourceType.cancelWatch(this.xdsClient, this.latestRouteConfigName, this.rdsWatcher);
           this.latestRouteConfigName = null;
           this.latestRouteConfiguration = null;
@@ -409,11 +427,26 @@ export class XdsDependencyManager {
         this.pruneOrphanClusters();
       }
     });
+    this.trace('LDS.startWatch(' + listenerResourceName + '): Startup');
     ListenerResourceType.startWatch(this.xdsClient, listenerResourceName, this.ldsWatcher);
   }
 
+  private trace(text: string) {
+    trace('[' + this.listenerResourceName + '] ' + text);
+  }
+
   private maybeSendUpdate() {
-    if (!(this.latestListener && this.latestRouteConfiguration && isClusterTreeFullyUpdated(this.clusterForest, this.clusterRoots))) {
+    if (!this.latestListener) {
+      this.trace('Not sending update: no Listener update received');
+      return;
+    }
+    if (!this.latestRouteConfiguration) {
+      this.trace('Not sending update: no RouteConfiguration update received');
+      return;
+    }
+    const clusterTreeUpdated = isClusterTreeFullyUpdated(this.clusterForest, this.clusterRoots);
+    if (!clusterTreeUpdated.result) {
+      this.trace('Not sending update: ' + clusterTreeUpdated.reason);
       return;
     }
     const update: XdsConfig = {
@@ -424,6 +457,7 @@ export class XdsDependencyManager {
     };
     for (const [clusterName, entry] of Object.entries(this.clusterForest)) {
       if (!entry.latestUpdate) {
+        this.trace('Not sending update: Cluster entry ' + clusterName + ' not updated (not caught by isClusterTreeFullyUpdated)');
         return;
       }
       if (entry.latestUpdate.success) {
@@ -471,6 +505,7 @@ export class XdsDependencyManager {
                   case 'AGGREGATE':
                     break;
                   case 'EDS':
+                    this.trace('EDS.cancelWatch(' + entry.latestUpdate.value.edsServiceName + '): Cluster switched to aggregate');
                     EndpointResourceType.cancelWatch(this.xdsClient, entry.latestUpdate.value.edsServiceName, entry.latestUpdate.value.watcher);
                     break;
                   case 'LOGICAL_DNS':
@@ -503,7 +538,9 @@ export class XdsDependencyManager {
                   case 'EDS':
                     // If the names are the same, keep the watch
                     if (entry.latestUpdate.value.edsServiceName !== edsServiceName) {
+                      this.trace('EDS.cancelWatch(' + entry.latestUpdate.value.edsServiceName + '): EDS service name changed');
                       EndpointResourceType.cancelWatch(this.xdsClient, entry.latestUpdate.value.edsServiceName, entry.latestUpdate.value.watcher);
+                      this.trace('EDS.startWatch(' + edsServiceName + '): EDS service name changed');
                       EndpointResourceType.startWatch(this.xdsClient, edsServiceName, entry.latestUpdate.value.watcher);
                       entry.latestUpdate.value.edsServiceName = edsServiceName;
                       entry.latestUpdate.value.latestUpdate = undefined;
@@ -550,6 +587,7 @@ export class XdsDependencyManager {
                   watcher: edsWatcher
                 }
               };
+              this.trace('EDS.startWatch(' + edsServiceName + '): New EDS service name');
               EndpointResourceType.startWatch(this.xdsClient, edsServiceName, edsWatcher);
               this.maybeSendUpdate();
               break;
@@ -561,6 +599,7 @@ export class XdsDependencyManager {
                     this.pruneOrphanClusters();
                     break;
                   case 'EDS':
+                    this.trace('EDS.cancelWatch(' + entry.latestUpdate.value.edsServiceName + '): Cluster switched to DNS');
                     EndpointResourceType.cancelWatch(this.xdsClient, entry.latestUpdate.value.edsServiceName, entry.latestUpdate.value.watcher);
                     break;
                   case 'LOGICAL_DNS':
@@ -571,7 +610,7 @@ export class XdsDependencyManager {
                     }
                 }
               }
-              trace('Creating DNS resolver');
+              this.trace('Creating DNS resolver for hostname ' + update.dnsHostname!);
               const resolver = createResolver({scheme: 'dns', path: update.dnsHostname!}, {
                 onSuccessfulResolution: endpointList => {
                   if (entry.latestUpdate?.success && entry.latestUpdate.value.type === 'LOGICAL_DNS') {
@@ -616,6 +655,7 @@ export class XdsDependencyManager {
           if (entry.latestUpdate?.success) {
             switch (entry.latestUpdate.value.type) {
               case 'EDS':
+                this.trace('EDS.cancelWatch(' + entry.latestUpdate.value.edsServiceName + '): CDS resource does not exist');
                 EndpointResourceType.cancelWatch(this.xdsClient, entry.latestUpdate.value.edsServiceName, entry.latestUpdate.value.watcher);
                 break;
               case 'LOGICAL_DNS':
@@ -639,6 +679,7 @@ export class XdsDependencyManager {
       children: []
     }
     this.clusterForest[clusterName] = entry;
+    this.trace('CDS.startWatch(' + clusterName + '): Cluster added');
     ClusterResourceType.startWatch(this.xdsClient, clusterName, entry.watcher);
   }
 
@@ -670,6 +711,7 @@ export class XdsDependencyManager {
     if (entry.latestUpdate?.success) {
       switch (entry.latestUpdate.value.type) {
         case 'EDS':
+          this.trace('EDS.cancelWatch(' + entry.latestUpdate.value.edsServiceName + '): Cluster ' + clusterName + ' removed');
           EndpointResourceType.cancelWatch(this.xdsClient, entry.latestUpdate.value.edsServiceName, entry.latestUpdate.value.watcher);
           break;
         case 'LOGICAL_DNS':
@@ -679,6 +721,7 @@ export class XdsDependencyManager {
           break;
       }
     }
+    this.trace('CDS.cancelWatch(' + clusterName + '): Cluster removed');
     ClusterResourceType.cancelWatch(this.xdsClient, clusterName, entry.watcher);
     delete this.clusterForest[clusterName];
   }
@@ -761,8 +804,10 @@ export class XdsDependencyManager {
   }
 
   destroy() {
+    this.trace('LDS.cancelWatch(' + this.listenerResourceName + '): destroy');
     ListenerResourceType.cancelWatch(this.xdsClient, this.listenerResourceName, this.ldsWatcher);
     if (this.latestRouteConfigName) {
+      this.trace('RDS.cancelWatch(' + this.latestRouteConfigName + '): destroy');
       RouteConfigurationResourceType.cancelWatch(this.xdsClient, this.latestRouteConfigName, this.rdsWatcher);
     }
     this.clusterRoots = [];

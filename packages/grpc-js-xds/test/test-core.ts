@@ -164,6 +164,38 @@ describe('core xDS functionality', () => {
     xdsServer.setEdsResource(cluster2.getEndpointConfig());
     await cluster2.waitForAllBackendsToReceiveTraffic();
     client.stopCalls();
-
+  });
+  it('should handle switching to a different cluster', async () => {
+    const [backend1, backend2] = await createBackends(2);
+    const serverRoute1 = new FakeServerRoute(backend1.getPort(), 'serverRoute');
+    const serverRoute2 = new FakeServerRoute(backend2.getPort(), 'serverRoute2');
+    xdsServer.setRdsResource(serverRoute1.getRouteConfiguration());
+    xdsServer.setLdsResource(serverRoute1.getListener());
+    xdsServer.setRdsResource(serverRoute2.getRouteConfiguration());
+    xdsServer.setLdsResource(serverRoute2.getListener());
+    xdsServer.addResponseListener((typeUrl, responseState) => {
+      if (responseState.state === 'NACKED') {
+        client?.stopCalls();
+        assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
+      }
+    });
+    const cluster1 = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [backend1], locality:{region: 'region1'}}]);
+    const routeGroup1 = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster1}]);
+    await routeGroup1.startAllBackends(xdsServer);
+    xdsServer.setEdsResource(cluster1.getEndpointConfig());
+    xdsServer.setCdsResource(cluster1.getClusterConfig());
+    xdsServer.setRdsResource(routeGroup1.getRouteConfiguration());
+    xdsServer.setLdsResource(routeGroup1.getListener());
+    client = XdsTestClient.createFromServer('listener1', xdsServer);
+    client.startCalls(100);
+    await cluster1.waitForAllBackendsToReceiveTraffic();
+    const cluster2 = new FakeEdsCluster('cluster2', 'endpoint2', [{backends: [backend2], locality:{region: 'region2'}}]);
+    const routeGroup2 = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster2}]);
+    await cluster2.startAllBackends(xdsServer);
+    xdsServer.setEdsResource(cluster2.getEndpointConfig());
+    xdsServer.setCdsResource(cluster2.getClusterConfig());
+    xdsServer.setRdsResource(routeGroup2.getRouteConfiguration());
+    await cluster2.waitForAllBackendsToReceiveTraffic();
+    client.stopCalls();
   })
 });
