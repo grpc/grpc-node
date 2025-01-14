@@ -37,7 +37,8 @@ export interface CallConfig {
  * https://github.com/grpc/proposal/blob/master/A31-xds-timeout-support-and-config-selector.md#new-functionality-in-grpc
  */
 export interface ConfigSelector {
-  (methodName: string, metadata: Metadata, channelId: number): CallConfig;
+  invoke(methodName: string, metadata: Metadata, channelId: number): CallConfig;
+  unref(): void;
 }
 
 /**
