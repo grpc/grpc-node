@@ -296,6 +296,7 @@ class AdsCallState {
   public typeStates: Map<XdsResourceType, ResourceTypeState> = new Map();
   private receivedAnyResponse = false;
   private sentInitialMessage = false;
+  private streamStarted = false;
   constructor(public client: XdsSingleServerClient, private call: AdsCall, private node: Node) {
     // Populate subscription map with existing subscriptions
     for (const [authority, authorityState] of client.xdsClient.authorityStateMap) {
@@ -438,6 +439,9 @@ class AdsCallState {
     }
     if (!authorityMap.has(name.key)) {
       const timer = new ResourceTimer(this, type, name);
+      if (this.streamStarted) {
+        timer.markAdsStreamStarted();
+      }
       authorityMap.set(name.key, timer);
       if (!delaySend) {
         this.updateNames(type);
@@ -502,6 +506,7 @@ class AdsCallState {
    * stream.
    */
   markStreamStarted() {
+    this.streamStarted = true;
     for (const [type, typeState] of this.typeStates) {
       for (const [authority, authorityMap] of typeState.subscribedResources) {
         for (const resourceTimer of authorityMap.values()) {
