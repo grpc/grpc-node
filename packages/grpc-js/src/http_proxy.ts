@@ -17,7 +17,7 @@
 
 import { log } from './logging';
 import { LogVerbosity } from './constants';
-import { Socket } from 'net';
+import { isIPv4, Socket } from 'net';
 import * as http from 'http';
 import * as logging from './logging';
 import {
@@ -119,6 +119,58 @@ function getNoProxyHostList(): string[] {
   }
 }
 
+interface CIDRNotation {
+  ip: number;
+  prefixLength: number;
+}
+
+/*
+ * The groups correspond to CIDR parts as follows:
+ * 1. ip
+ * 2. prefixLength
+ */
+
+export function parseCIDR(cidrString: string): CIDRNotation | null {
+  const splitRange = cidrString.split('/');  
+  if (splitRange.length !== 2) {  
+    return null;  
+  }  
+  const prefixLength = parseInt(splitRange[1], 10);  
+  if (!isIPv4(splitRange[0]) || Number.isNaN(prefixLength) || prefixLength < 0 || prefixLength > 32) {  
+    return null;  
+  }  
+  return {  
+    ip: ipToInt(splitRange[0]),  
+    prefixLength: prefixLength  
+  };
+}
+
+function ipToInt(ip: string) {
+  return ip.split(".").reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0);
+}
+
+function isIpInCIDR(cidr: CIDRNotation, serverHost: string) {
+  const ip = cidr.ip;
+  const mask = -1 << (32 - cidr.prefixLength);
+  const hostIP = ipToInt(serverHost);
+
+  return (hostIP & mask) === (ip & mask);
+}
+
+function hostMatchesNoProxyList(serverHost: string): boolean {
+  for (const host of getNoProxyHostList()) {
+    const parsedCIDR = parseCIDR(host);
+    // host is a CIDR and serverHost is an IP address
+    if (isIPv4(serverHost) && parsedCIDR && isIpInCIDR(parsedCIDR, serverHost)) {
+      return true;
+    } else if (serverHost.endsWith(host)) {
+      // host is a single IP or a domain name suffix
+      return true;
+    }
+  }
+  return false;
+}
+
 export interface ProxyMapResult {
   target: GrpcUri;
   extraOptions: ChannelOptions;
@@ -147,13 +199,9 @@ export function mapProxyName(
     return noProxyResult;
   }
   const serverHost = hostPort.host;
-  for (const host of getNoProxyHostList()) {
-    if (host === serverHost) {
-      trace(
-        'Not using proxy for target in no_proxy list: ' + uriToString(target)
-      );
-      return noProxyResult;
-    }
+  if (hostMatchesNoProxyList(serverHost)) {
+    trace('Not using proxy for target in no_proxy list: ' + uriToString(target));
+    return noProxyResult;
   }
   const extraOptions: ChannelOptions = {
     'grpc.http_connect_target': uriToString(target),
