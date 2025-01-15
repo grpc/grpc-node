@@ -245,7 +245,7 @@ export class ResolvingCall implements Call {
     this.filterStack = this.filterStackFactory.createFilter();
     this.filterStack.sendMetadata(Promise.resolve(this.metadata)).then(
       filteredMetadata => {
-        this.child = this.channel.createInnerCall(
+        this.child = this.channel.createRetryingCall(
           config,
           this.method,
           this.host,

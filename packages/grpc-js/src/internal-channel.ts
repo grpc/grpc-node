@@ -705,33 +705,6 @@ export class InternalChannel {
     );
   }
 
-  createInnerCall(
-    callConfig: CallConfig,
-    method: string,
-    host: string,
-    credentials: CallCredentials,
-    deadline: Deadline
-  ): LoadBalancingCall | RetryingCall {
-    // Create a RetryingCall if retries are enabled
-    if (this.options['grpc.enable_retries'] === 0) {
-      return this.createLoadBalancingCall(
-        callConfig,
-        method,
-        host,
-        credentials,
-        deadline
-      );
-    } else {
-      return this.createRetryingCall(
-        callConfig,
-        method,
-        host,
-        credentials,
-        deadline
-      );
-    }
-  }
-
   createResolvingCall(
     method: string,
     deadline: Deadline,
