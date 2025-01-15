@@ -377,6 +377,7 @@ export class InternalChannel {
             'Address resolution succeeded'
           );
         }
+        this.configSelector?.unref();
         this.configSelector = configSelector;
         this.currentResolutionError = null;
         /* We process the queue asynchronously to ensure that the corresponding
@@ -568,7 +569,7 @@ export class InternalChannel {
     if (this.configSelector) {
       return {
         type: 'SUCCESS',
-        config: this.configSelector(method, metadata, this.randomChannelId),
+        config: this.configSelector.invoke(method, metadata, this.randomChannelId),
       };
     } else {
       if (this.currentResolutionError) {
@@ -790,6 +791,8 @@ export class InternalChannel {
     }
 
     this.subchannelPool.unrefUnusedSubchannels();
+    this.configSelector?.unref();
+    this.configSelector = null;
   }
 
   getTarget() {

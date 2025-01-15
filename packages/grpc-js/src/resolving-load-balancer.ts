@@ -103,43 +103,46 @@ function findMatchingConfig(
 function getDefaultConfigSelector(
   serviceConfig: ServiceConfig | null
 ): ConfigSelector {
-  return function defaultConfigSelector(
-    methodName: string,
-    metadata: Metadata
-  ) {
-    const splitName = methodName.split('/').filter(x => x.length > 0);
-    const service = splitName[0] ?? '';
-    const method = splitName[1] ?? '';
-    if (serviceConfig && serviceConfig.methodConfig) {
-      /* Check for the following in order, and return the first method
-       * config that matches:
-       * 1. A name that exactly matches the service and method
-       * 2. A name with no method set that matches the service
-       * 3. An empty name
-       */
-      for (const matchLevel of NAME_MATCH_LEVEL_ORDER) {
-        const matchingConfig = findMatchingConfig(
-          service,
-          method,
-          serviceConfig.methodConfig,
-          matchLevel
-        );
-        if (matchingConfig) {
-          return {
-            methodConfig: matchingConfig,
-            pickInformation: {},
-            status: Status.OK,
-            dynamicFilterFactories: [],
-          };
+  return {
+      invoke(
+      methodName: string,
+      metadata: Metadata
+    ) {
+      const splitName = methodName.split('/').filter(x => x.length > 0);
+      const service = splitName[0] ?? '';
+      const method = splitName[1] ?? '';
+      if (serviceConfig && serviceConfig.methodConfig) {
+        /* Check for the following in order, and return the first method
+        * config that matches:
+        * 1. A name that exactly matches the service and method
+        * 2. A name with no method set that matches the service
+        * 3. An empty name
+        */
+        for (const matchLevel of NAME_MATCH_LEVEL_ORDER) {
+          const matchingConfig = findMatchingConfig(
+            service,
+            method,
+            serviceConfig.methodConfig,
+            matchLevel
+          );
+          if (matchingConfig) {
+            return {
+              methodConfig: matchingConfig,
+              pickInformation: {},
+              status: Status.OK,
+              dynamicFilterFactories: [],
+            };
+          }
         }
       }
-    }
-    return {
-      methodConfig: { name: [] },
-      pickInformation: {},
-      status: Status.OK,
-      dynamicFilterFactories: [],
-    };
+      return {
+        methodConfig: { name: [] },
+        pickInformation: {},
+        status: Status.OK,
+        dynamicFilterFactories: [],
+      };
+    },
+    unref() {}
   };
 }
 
@@ -298,6 +301,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
                 'All load balancer options in service config are not compatible',
               metadata: new Metadata(),
             });
+            configSelector?.unref();
             return;
           }
           this.childLoadBalancer.updateAddressList(
