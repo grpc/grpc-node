@@ -254,7 +254,6 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
                 );
                 return;
               }
-              this.callConfig.onCommitted?.();
               pickResult.onCallStarted?.();
               this.onCallEnded = pickResult.onCallEnded;
               this.trace(
