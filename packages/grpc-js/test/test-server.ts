@@ -55,9 +55,7 @@ const loadedTestServiceProto = protoLoader.loadSync(
   }
 );
 
-const testServiceGrpcObject = grpc.loadPackageDefinition(
-  loadedTestServiceProto
-) as unknown as TestServiceGrpcType;
+const testServiceGrpcObject: TestServiceGrpcType = grpc.loadPackageDefinition(loadedTestServiceProto) as TestServiceGrpcType;
 
 const ca = fs.readFileSync(path.join(__dirname, 'fixtures', 'ca.pem'));
 const key = fs.readFileSync(path.join(__dirname, 'fixtures', 'server1.key'));
