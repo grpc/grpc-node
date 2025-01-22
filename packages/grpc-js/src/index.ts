@@ -44,6 +44,7 @@ import {
   makeClientConstructor,
   MethodDefinition,
   Serialize,
+  ServerMethodDefinition,
   ServiceDefinition,
 } from './make-client';
 import { Metadata, MetadataOptions, MetadataValue } from './metadata';
@@ -181,6 +182,7 @@ export {
   ServerWritableStream,
   ServerDuplexStream,
   ServerErrorResponse,
+  ServerMethodDefinition,
   ServiceDefinition,
   UntypedHandleCall,
   UntypedServiceImplementation,

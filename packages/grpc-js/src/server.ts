@@ -99,6 +99,10 @@ const { HTTP2_HEADER_PATH } = http2.constants;
 const TRACER_NAME = 'server';
 const kMaxAge = Buffer.from('max_age');
 
+function serverCallTrace(text: string) {
+  logging.trace(LogVerbosity.DEBUG, 'server_call', text);
+}
+
 type AnyHttp2Server = http2.Http2Server | http2.Http2SecureServer;
 
 interface BindResult {
@@ -1248,7 +1252,7 @@ export class Server {
   }
 
   private _retrieveHandler(path: string): Handler<any, any> | null {
-    this.trace(
+    serverCallTrace(
       'Received call to method ' +
         path +
         ' at address ' +
@@ -1258,7 +1262,7 @@ export class Server {
     const handler = this.handlers.get(path);
 
     if (handler === undefined) {
-      this.trace(
+      serverCallTrace(
         'No handler registered for method ' +
           path +
           '. Sending UNIMPLEMENTED status.'

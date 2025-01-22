@@ -23,9 +23,12 @@ import { ProtoGrpcType } from './generated/test';
 
 import * as protoLoader from '@grpc/proto-loader';
 import * as yargs from 'yargs';
-import { TestServiceHandlers } from './generated/grpc/testing/TestService';
 import * as os from 'os';
 import { HealthImplementation } from 'grpc-health-check';
+import { Empty__Output, Empty } from './generated/grpc/testing/Empty';
+import { SimpleRequest__Output } from './generated/grpc/testing/SimpleRequest';
+import { SimpleResponse } from './generated/grpc/testing/SimpleResponse';
+import { ReflectionService } from '@grpc/reflection';
 
 const packageDefinition = protoLoader.loadSync('grpc/testing/test.proto', {
   keepCase: true,
@@ -49,7 +52,7 @@ function setAsyncTimeout(delayMs: number): Promise<void> {
 
 const HOSTNAME = os.hostname();
 
-function testInfoInterceptor(methodDescriptor: grpc.MethodDefinition<any, any>, call: grpc.ServerInterceptingCall) {
+function testInfoInterceptor(methodDescriptor: grpc.ServerMethodDefinition<any, any>, call: grpc.ServerInterceptingCallInterface) {
   const listener: grpc.ServerListener = {
     onReceiveMetadata: async (metadata, next) => {
       let attemptNum = 0;
@@ -142,11 +145,11 @@ function testInfoInterceptor(methodDescriptor: grpc.MethodDefinition<any, any>, 
   return new grpc.ServerInterceptingCall(call, responder);
 };
 
-const testServiceHandler: Partial<TestServiceHandlers> = {
-  EmptyCall: (call, callback) => {
+const testServiceHandler = {
+  EmptyCall: (call: grpc.ServerUnaryCall<Empty__Output, Empty>, callback: grpc.sendUnaryData<Empty>) => {
     callback(null, {});
   },
-  UnaryCall: (call, callback) => {
+  UnaryCall: (call: grpc.ServerUnaryCall<SimpleRequest__Output, SimpleResponse>, callback: grpc.sendUnaryData<SimpleResponse>) => {
     callback(null, {
       hostname: HOSTNAME,
       payload: {
@@ -156,17 +159,120 @@ const testServiceHandler: Partial<TestServiceHandlers> = {
   }
 };
 
+function serverBindPromise(server: grpc.Server, port: string, credentials: grpc.ServerCredentials): Promise<number> {
+  return new Promise((resolve, reject) => {
+    server.bindAsync(port, credentials, (error, port) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(port);
+      }
+    })
+  })
+}
 
+function getIPv4Address(): string | null {
+  for (const [name, addressList] of Object.entries(os.networkInterfaces())) {
+    if (name === 'lo' || !addressList) {
+      continue;
+    }
+    for (const address of addressList) {
+      if (address.family === 'IPv4') {
+        return address.address;
+      }
+    }
+  }
+  return null;
+}
 
-function main() {
+function getIPv6Addresses(): string[] {
+  const ipv6Addresses: string[] = [];
+  for (const [name, addressList] of Object.entries(os.networkInterfaces())) {
+    if (name === 'lo' || !addressList) {
+      continue;
+    }
+    for (const address of addressList) {
+      if (address.family === 'IPv6') {
+        ipv6Addresses.push(address.address);
+      }
+    }
+  }
+  return ipv6Addresses;
+}
+
+async function main() {
   const argv = yargs
     .string(['port', 'maintenance_port', 'address_type'])
     .boolean(['secure_mode'])
+    .choices('address_type', ['IPV4', 'IPV6', 'IPV$_IPV6'])
     .demandOption(['port', 'maintenance_port'])
     .default('address_type', 'IPV4_IPV6')
     .default('secure_mode', false)
     .parse()
     console.log('Starting xDS interop server. Args: ', argv);
-  const healthImpl = new HealthImplementation({'': 'SERVING'});
+  const healthImpl = new HealthImplementation({'': 'NOT_SERVING'});
+  const xdsUpdateHealthServiceImpl = {
+    SetServing(call: grpc.ServerUnaryCall<Empty, Empty__Output>, callback: grpc.sendUnaryData<Empty__Output>) {
+      healthImpl.setStatus('', 'SERVING');
+      callback(null, {});
+    },
+    SetNotServing(call: grpc.ServerUnaryCall<Empty, Empty__Output>, callback: grpc.sendUnaryData<Empty__Output>) {
+      healthImpl.setStatus('', 'NOT_SERVING');
+      callback(null, {});
+    }
+  }
+  const reflection = new ReflectionService(packageDefinition, {
+    services: ['grpc.testing.TestService']
+  })
+  if (argv.secure_mode) {
+    if (argv.address_type !== 'IPV4_IPV6') {
+      throw new Error('Secure mode only supports IPV4_IPV6 address type');
+    }
+    const maintenanceServer = new grpc.Server();
+    maintenanceServer.addService(loadedProto.grpc.testing.XdsUpdateHealthService.service, xdsUpdateHealthServiceImpl)
+    healthImpl.addToServer(maintenanceServer);
+    reflection.addToServer(maintenanceServer);
+    grpc.addAdminServicesToServer(maintenanceServer);
 
+    const server = new grpc_xds.XdsServer({interceptors: [testInfoInterceptor]});
+    server.addService(loadedProto.grpc.testing.TestService.service, testServiceHandler);
+    const xdsCreds = new grpc_xds.XdsServerCredentials(grpc.ServerCredentials.createInsecure());
+    await Promise.all([
+      serverBindPromise(maintenanceServer, `[::]:${argv.maintenance_port}`, grpc.ServerCredentials.createInsecure()),
+      serverBindPromise(server, `[::]:${argv.port}`, xdsCreds)
+    ]);
+  } else {
+    const server = new grpc.Server({interceptors: [testInfoInterceptor]});
+    server.addService(loadedProto.grpc.testing.XdsUpdateHealthService.service, xdsUpdateHealthServiceImpl);
+    healthImpl.addToServer(server);
+    reflection.addToServer(server);
+    grpc.addAdminServicesToServer(server);
+    server.addService(loadedProto.grpc.testing.TestService.service, testServiceHandler);
+    const creds = grpc.ServerCredentials.createInsecure();
+    switch (argv.address_type) {
+      case 'IPV4_IPV6':
+        await serverBindPromise(server, `[::]:${argv.port}`, creds);
+        break;
+      case 'IPV4':
+        await serverBindPromise(server, `127.0.0.1:${argv.port}`, creds);
+        const address = getIPv4Address();
+        if (address) {
+          await serverBindPromise(server, `${address}:${argv.port}`, creds);
+        }
+        break;
+      case 'IPV6':
+        await serverBindPromise(server, `[::1]:${argv.port}`, creds);
+        for (const address of getIPv6Addresses()) {
+          await serverBindPromise(server, `${address}:${argv.port}`, creds);
+        }
+        break;
+      default:
+        throw new Error(`Unknown address type: ${argv.address_type}`);
+    }
+  }
+  healthImpl.setStatus('', 'SERVING');
+}
+
+if (require.main === module) {
+  main();
 }
