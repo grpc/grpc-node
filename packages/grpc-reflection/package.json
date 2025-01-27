@@ -39,6 +39,7 @@
   },
   "devDependencies": {
     "@grpc/grpc-js": "file:../grpc-js",
+    "@types/mocha": "^10.0.10",
     "copyfiles": "^2.4.1",
     "typescript": "^5.2.2"
   }
