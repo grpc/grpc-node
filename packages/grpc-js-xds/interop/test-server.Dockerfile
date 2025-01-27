@@ -14,7 +14,7 @@
 
 # Dockerfile for building the xDS interop client. To build the image, run the
 # following command from grpc-node directory:
-# docker build -t <TAG> -f packages/grpc-js-xds/interop/Dockerfile .
+# docker build -t <TAG> -f packages/grpc-js-xds/interop/test-server.Dockerfile .
 
 FROM node:18-slim as build
 
@@ -24,6 +24,10 @@ COPY . .
 
 WORKDIR /node/src/grpc-node/packages/proto-loader
 RUN npm install
+WORKDIR /node/src/grpc-node/packages/grpc-health-check
+RUN npm install
+WORKDIR /node/src/grpc-node/packages/grpc-reflection
+RUN npm install
 WORKDIR /node/src/grpc-node/packages/grpc-js
 RUN npm install
 WORKDIR /node/src/grpc-node/packages/grpc-js-xds
@@ -32,6 +36,8 @@ RUN npm install
 FROM gcr.io/distroless/nodejs18-debian11:latest
 WORKDIR /node/src/grpc-node
 COPY --from=build /node/src/grpc-node/packages/proto-loader ./packages/proto-loader/
+COPY --from=build /node/src/grpc-node/packages/grpc-health-check ./packages/grpc-health-check/
+COPY --from=build /node/src/grpc-node/packages/grpc-reflection ./packages/grpc-reflection/
 COPY --from=build /node/src/grpc-node/packages/grpc-js ./packages/grpc-js/
 COPY --from=build /node/src/grpc-node/packages/grpc-js-xds ./packages/grpc-js-xds/
 
