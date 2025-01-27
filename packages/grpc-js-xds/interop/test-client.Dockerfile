@@ -24,11 +24,11 @@ COPY . .
 
 WORKDIR /node/src/grpc-node/packages/proto-loader
 RUN npm install
+WORKDIR /node/src/grpc-node/packages/grpc-js
+RUN npm install
 WORKDIR /node/src/grpc-node/packages/grpc-health-check
 RUN npm install
 WORKDIR /node/src/grpc-node/packages/grpc-reflection
-RUN npm install
-WORKDIR /node/src/grpc-node/packages/grpc-js
 RUN npm install
 WORKDIR /node/src/grpc-node/packages/grpc-js-xds
 RUN npm install
