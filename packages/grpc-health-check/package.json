@@ -35,6 +35,7 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@grpc/grpc-js": "file:../grpc-js",
+    "@types/mocha": "^10.0.10",
     "typescript": "^5.2.2"
   }
 }
