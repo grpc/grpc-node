@@ -35,6 +35,5 @@ psm::lang::build_docker_images() {
   psm::tools::run_verbose git submodule update --init --recursive
   psm::tools::run_verbose git submodule status
 
-  psm::build::docker_images_generic "${client_dockerfile}"
-  psm::build::docker_images_generic "${server_dockerfile}"
+  psm::build::docker_images_generic "${client_dockerfile}" "${server_dockerfile}"
 }
