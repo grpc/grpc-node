@@ -127,6 +127,7 @@ function testInfoInterceptor(methodDescriptor: grpc.ServerMethodDefinition<any, 
           }
           if (attemptNum === targetAttempt) {
             next(metadata);
+            return;
           }
         }
       }
