@@ -204,8 +204,8 @@ async function main() {
   const argv = yargs
     .string(['port', 'maintenance_port', 'address_type'])
     .boolean(['secure_mode'])
-    .choices('address_type', ['IPV4', 'IPV6', 'IPV$_IPV6'])
-    .demandOption(['port', 'maintenance_port'])
+    .choices('address_type', ['IPV4', 'IPV6', 'IPV4_IPV6'])
+    .demandOption(['port'])
     .default('address_type', 'IPV4_IPV6')
     .default('secure_mode', false)
     .parse()
