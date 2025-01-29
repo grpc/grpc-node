@@ -186,7 +186,6 @@ describe('Server interceptors', () => {
           call: grpc.ServerUnaryCall<any, any>,
           callback: grpc.sendUnaryData<any>
         ) => {
-          call.sendMetadata(new grpc.Metadata());
           callback(null, call.request);
         },
       });
