@@ -214,10 +214,12 @@ async function main() {
   const healthImpl = new HealthImplementation({'': 'NOT_SERVING'});
   const xdsUpdateHealthServiceImpl = {
     SetServing(call: grpc.ServerUnaryCall<Empty, Empty__Output>, callback: grpc.sendUnaryData<Empty__Output>) {
+      console.log('SetServing called');
       healthImpl.setStatus('', 'SERVING');
       callback(null, {});
     },
     SetNotServing(call: grpc.ServerUnaryCall<Empty, Empty__Output>, callback: grpc.sendUnaryData<Empty__Output>) {
+      console.log('SetNotServing called');
       healthImpl.setStatus('', 'NOT_SERVING');
       callback(null, {});
     }
