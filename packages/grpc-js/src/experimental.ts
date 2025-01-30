@@ -63,5 +63,5 @@ export {
   FileWatcherCertificateProvider,
   FileWatcherCertificateProviderConfig
 } from './certificate-provider';
-export { createCertificateProviderChannelCredentials, SecureConnector } from './channel-credentials';
+export { createCertificateProviderChannelCredentials, SecureConnector, SecureConnectResult } from './channel-credentials';
 export { SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX } from './internal-channel';

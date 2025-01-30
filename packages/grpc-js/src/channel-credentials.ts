@@ -63,8 +63,13 @@ export interface VerifyOptions {
   rejectUnauthorized?: boolean;
 }
 
+export interface SecureConnectResult {
+  socket: Socket;
+  secure: boolean;
+}
+
 export interface SecureConnector {
-  connect(socket: Socket): Promise<Socket>;
+  connect(socket: Socket): Promise<SecureConnectResult>;
   getCallCredentials(): CallCredentials;
   destroy(): void;
 }
@@ -178,7 +183,10 @@ class InsecureChannelCredentialsImpl extends ChannelCredentials {
   _createSecureConnector(channelTarget: GrpcUri, options: ChannelOptions, callCredentials?: CallCredentials): SecureConnector {
     return {
       connect(socket) {
-        return Promise.resolve(socket);
+        return Promise.resolve({
+          socket,
+          secure: false
+        });
       },
       getCallCredentials: () => {
         return callCredentials ?? CallCredentials.createEmpty();
@@ -247,14 +255,17 @@ function getConnectionOptions(secureContext: SecureContext, verifyOptions: Verif
 class SecureConnectorImpl implements SecureConnector {
   constructor(private connectionOptions: ConnectionOptions, private callCredentials: CallCredentials) {
   }
-  connect(socket: Socket): Promise<Socket> {
+  connect(socket: Socket): Promise<SecureConnectResult> {
     const tlsConnectOptions: ConnectionOptions = {
       socket: socket,
       ...this.connectionOptions
     };
-    return new Promise<Socket>((resolve, reject) => {
+    return new Promise<SecureConnectResult>((resolve, reject) => {
       const tlsSocket = tlsConnect(tlsConnectOptions, () => {
-        resolve(tlsSocket)
+        resolve({
+          socket: tlsSocket,
+          secure: true
+        })
       });
       tlsSocket.on('error', (error: Error) => {
         reject(error);
@@ -316,7 +327,7 @@ class CertificateProviderChannelCredentialsImpl extends ChannelCredentials {
   private static SecureConnectorImpl = class implements SecureConnector {
     constructor(private parent: CertificateProviderChannelCredentialsImpl, private channelTarget: GrpcUri, private options: ChannelOptions, private callCredentials: CallCredentials) {}
 
-    connect(socket: Socket): Promise<Socket> {
+    connect(socket: Socket): Promise<SecureConnectResult> {
       return new Promise(async (resolve, reject) => {
         const secureContext = await this.parent.getSecureContext();
         if (!secureContext) {
@@ -329,7 +340,10 @@ class CertificateProviderChannelCredentialsImpl extends ChannelCredentials {
           ...connnectionOptions
         }
         const tlsSocket = tlsConnect(tlsConnectOptions, () => {
-          resolve(tlsSocket)
+          resolve({
+            socket: tlsSocket,
+            secure: true
+          });
         });
         tlsSocket.on('error', (error: Error) => {
           reject(error);
