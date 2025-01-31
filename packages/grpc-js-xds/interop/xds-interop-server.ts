@@ -52,6 +52,8 @@ function setAsyncTimeout(delayMs: number): Promise<void> {
 
 const HOSTNAME = os.hostname();
 
+const TEST_SERVICE_NAME = '/grpc.testing.TestService/';
+
 function testInfoInterceptor(methodDescriptor: grpc.ServerMethodDefinition<any, any>, call: grpc.ServerInterceptingCallInterface) {
   const listener: grpc.ServerListener = {
     onReceiveMetadata: async (metadata, next) => {
@@ -146,6 +148,29 @@ function testInfoInterceptor(methodDescriptor: grpc.ServerMethodDefinition<any, 
   return new grpc.ServerInterceptingCall(call, responder);
 };
 
+function adminServiceInterceptor(methodDescriptor: grpc.ServerMethodDefinition<any, any>, call: grpc.ServerInterceptingCallInterface): grpc.ServerInterceptingCall {
+  const listener: grpc.ServerListener = {
+    onReceiveMessage: (message, next) => {
+      console.log(`Received request to method ${methodDescriptor.path}: ${JSON.stringify(message)}`);
+      next(message);
+    }
+  }
+  const responder: grpc.Responder = {
+    start: next => {
+      next(listener);
+    }
+  };
+  return new grpc.ServerInterceptingCall(call, responder);
+}
+
+function unifiedInterceptor(methodDescriptor: grpc.ServerMethodDefinition<any, any>, call: grpc.ServerInterceptingCallInterface): grpc.ServerInterceptingCall {
+  if (methodDescriptor.path.startsWith(TEST_SERVICE_NAME)) {
+    return testInfoInterceptor(methodDescriptor, call);
+  } else {
+    return adminServiceInterceptor(methodDescriptor, call);
+  }
+}
+
 const testServiceHandler = {
   EmptyCall: (call: grpc.ServerUnaryCall<Empty__Output, Empty>, callback: grpc.sendUnaryData<Empty>) => {
     callback(null, {});
@@ -214,12 +239,10 @@ async function main() {
   const healthImpl = new HealthImplementation({'': 'NOT_SERVING'});
   const xdsUpdateHealthServiceImpl = {
     SetServing(call: grpc.ServerUnaryCall<Empty, Empty__Output>, callback: grpc.sendUnaryData<Empty__Output>) {
-      console.log('SetServing called');
       healthImpl.setStatus('', 'SERVING');
       callback(null, {});
     },
     SetNotServing(call: grpc.ServerUnaryCall<Empty, Empty__Output>, callback: grpc.sendUnaryData<Empty__Output>) {
-      console.log('SetNotServing called');
       healthImpl.setStatus('', 'NOT_SERVING');
       callback(null, {});
     }
@@ -231,7 +254,7 @@ async function main() {
     if (argv.address_type !== 'IPV4_IPV6') {
       throw new Error('Secure mode only supports IPV4_IPV6 address type');
     }
-    const maintenanceServer = new grpc.Server();
+    const maintenanceServer = new grpc.Server({interceptors: [adminServiceInterceptor]});
     maintenanceServer.addService(loadedProto.grpc.testing.XdsUpdateHealthService.service, xdsUpdateHealthServiceImpl)
     healthImpl.addToServer(maintenanceServer);
     reflection.addToServer(maintenanceServer);
@@ -245,7 +268,7 @@ async function main() {
       serverBindPromise(server, `[::]:${argv.port}`, xdsCreds)
     ]);
   } else {
-    const server = new grpc.Server({interceptors: [testInfoInterceptor]});
+    const server = new grpc.Server({interceptors: [unifiedInterceptor]});
     server.addService(loadedProto.grpc.testing.XdsUpdateHealthService.service, xdsUpdateHealthServiceImpl);
     healthImpl.addToServer(server);
     reflection.addToServer(server);
