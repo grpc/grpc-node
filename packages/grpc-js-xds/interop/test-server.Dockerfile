@@ -33,6 +33,10 @@ RUN npm install
 WORKDIR /node/src/grpc-node/packages/grpc-js-xds
 RUN npm install
 
+ENV TINI_VERSION v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+
 FROM gcr.io/distroless/nodejs18-debian11:latest
 WORKDIR /node/src/grpc-node
 COPY --from=build /node/src/grpc-node/packages/proto-loader ./packages/proto-loader/
@@ -44,4 +48,7 @@ COPY --from=build /node/src/grpc-node/packages/grpc-js-xds ./packages/grpc-js-xd
 ENV GRPC_VERBOSITY="DEBUG"
 ENV GRPC_TRACE=xds_client,server,xds_server
 
-ENTRYPOINT [ "/nodejs/bin/node", "/node/src/grpc-node/packages/grpc-js-xds/build/interop/xds-interop-server" ]
+# tini serves as PID 1 and enables the server to properly respond to signals.
+COPY --from=build /tini /tini
+
+ENTRYPOINT [ "/tini", "-g", "-vv", "--", "/nodejs/bin/node", "/node/src/grpc-node/packages/grpc-js-xds/build/interop/xds-interop-server" ]
