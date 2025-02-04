@@ -690,7 +690,8 @@ class LrsCallState {
 
   destroy() {
     if (this.statsTimer) {
-      this.statsTimer = clearInterval(this.statsTimer);
+      clearInterval(this.statsTimer);
+      this.statsTimer = null;
     }
     return null;
   }
