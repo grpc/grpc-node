@@ -688,6 +688,14 @@ class LrsCallState {
     this.sendStats();
   }
 
+  destroy() {
+    if (this.statsTimer) {
+      clearInterval(this.statsTimer);
+      this.statsTimer = null;
+    }
+    return null;
+  }
+
   private handleStreamStatus(status: StatusObject) {
     this.client.trace(
       'LRS stream ended. code=' + status.code + ' details= ' + status.details
@@ -938,7 +946,7 @@ class XdsSingleServerClient {
   }
 
   handleLrsStreamEnd() {
-    this.lrsCallState = null;
+    this.lrsCallState = this.lrsCallState ? this.lrsCallState.destroy() : null;
     /* The backoff timer would start the stream when it finishes. If it is not
      * running, restart the stream immediately. */
     if (!this.lrsBackoff.isRunning()) {
