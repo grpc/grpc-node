@@ -20,3 +20,7 @@ one of the following:
    gRPC library, and instead generates `PackageDefinition` objects that can
    be passed to the `loadPackageDefinition` function provided by both the
    `grpc` and `@grpc/grpc-js` libraries.
+ - `omit_serialize_instanceof`: Omit the `instanceof` check for messages in
+   client code. This is useful when the message was renamed or is from a
+   different package, and serialization would fail with
+   `Expected argument of type …`.

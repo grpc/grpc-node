@@ -28,6 +28,8 @@ struct Parameters {
   bool generate_package_definition;
   // Use pure JavaScript gRPC Client
   bool grpc_js;
+  // Omit instanceof check for messages in serialize methods
+  bool omit_serialize_instanceof;
 };
 
 grpc::string GenerateFile(const grpc::protobuf::FileDescriptor* file,

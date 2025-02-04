@@ -83,6 +83,30 @@ const RETRY_CODES: {[key: string]: status} = {
 export const XDS_CONFIG_KEY = `${experimental.SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX}.xds_config`;
 export const XDS_CLIENT_KEY = 'grpc.internal.xds_client';
 
+/**
+ * Tracks a dynamic subscription to a cluster that is currently or previously
+ * referenced in a RouteConfiguration.
+ */
+class ClusterRef {
+  private refCount = 0;
+  constructor(private unsubscribe: () => void) {}
+
+  ref() {
+    this.refCount += 1;
+  }
+
+  unref() {
+    this.refCount -= 1;
+    if (this.refCount <= 0) {
+      this.unsubscribe();
+    }
+  }
+
+  hasRef() {
+    return this.refCount > 0;
+  }
+}
+
 class XdsResolver implements Resolver {
 
   private listenerResourceName: string | null = null;
@@ -93,6 +117,7 @@ class XdsResolver implements Resolver {
 
   private xdsConfigWatcher: XdsConfigWatcher;
   private xdsDependencyManager: XdsDependencyManager | null = null;
+  private clusterRefs: Map<string, ClusterRef> = new Map();
 
   constructor(
     private target: GrpcUri,
@@ -123,11 +148,20 @@ class XdsResolver implements Resolver {
     }
   }
 
+  private pruneUnusedClusters() {
+    for (const [cluster, clusterRef] of this.clusterRefs) {
+      if (!clusterRef.hasRef()) {
+        this.clusterRefs.delete(cluster);
+      }
+    }
+  }
+
   private async handleXdsConfig(xdsConfig: XdsConfig) {
     /* We need to load the xxhash API before this function finishes, because
      * it is invoked in the config selector, which can be called immediately
      * after this function returns. */
     await loadXxhashApi();
+    this.pruneUnusedClusters();
     const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, xdsConfig.listener.api_listener!.api_listener!.value);
     const configDefaultTimeout = httpConnectionManager.common_http_protocol_options?.idle_timeout;
     let defaultTimeout: Duration | undefined = undefined;
@@ -312,44 +346,60 @@ class XdsResolver implements Resolver {
       const routeMatcher = getPredicateForMatcher(route.match!);
       matchList.push({matcher: routeMatcher, action: routeAction});
     }
-    const configSelector: ConfigSelector = (methodName, metadata, channelId) => {
-      for (const {matcher, action} of matchList) {
-        if (matcher.apply(methodName, metadata)) {
-          const clusterResult = action.getCluster();
-          const unrefCluster = this.xdsDependencyManager!.addClusterSubscription(clusterResult.name);
-          const onCommitted = () => {
-            unrefCluster();
+    for (const cluster of allConfigClusters) {
+      let clusterRef = this.clusterRefs.get(cluster);
+      if (!clusterRef) {
+        clusterRef = new ClusterRef(this.xdsDependencyManager!.addClusterSubscription(cluster));
+        this.clusterRefs.set(cluster, clusterRef);
+      }
+      clusterRef.ref();
+    }
+    const configSelector: ConfigSelector = {
+      invoke: (methodName, metadata, channelId) => {
+        for (const {matcher, action} of matchList) {
+          if (matcher.apply(methodName, metadata)) {
+            const clusterResult = action.getCluster();
+            const clusterRef = this.clusterRefs.get(clusterResult.name)!;
+            clusterRef.ref();
+            const onCommitted = () => {
+              clusterRef.unref();
+            }
+            let hash: string;
+            if (EXPERIMENTAL_RING_HASH) {
+              hash = `${action.getHash(metadata, channelId)}`;
+            } else {
+              hash = '';
+            }
+            return {
+              methodConfig: clusterResult.methodConfig,
+              onCommitted: onCommitted,
+              pickInformation: {cluster: clusterResult.name, hash: hash},
+              status: status.OK,
+              dynamicFilterFactories: clusterResult.dynamicFilterFactories
+            };
           }
-          let hash: string;
-          if (EXPERIMENTAL_RING_HASH) {
-            hash = `${action.getHash(metadata, channelId)}`;
-          } else {
-            hash = '';
-          }
-          return {
-            methodConfig: clusterResult.methodConfig,
-            onCommitted: onCommitted,
-            pickInformation: {cluster: clusterResult.name, hash: hash},
-            status: status.OK,
-            dynamicFilterFactories: clusterResult.dynamicFilterFactories
-          };
+        }
+        return {
+          methodConfig: {name: []},
+          // These fields won't be used here, but they're set because of some TypeScript weirdness
+          pickInformation: {cluster: '', hash: ''},
+          status: status.UNAVAILABLE,
+          dynamicFilterFactories: []
+        };
+      },
+      unref: () => {
+        for (const cluster of allConfigClusters) {
+          this.clusterRefs.get(cluster)?.unref();
         }
       }
-      return {
-        methodConfig: {name: []},
-        // These fields won't be used here, but they're set because of some TypeScript weirdness
-        pickInformation: {cluster: '', hash: ''},
-        status: status.UNAVAILABLE,
-        dynamicFilterFactories: []
-      };
-    };
+    }
     trace('Created ConfigSelector with configuration:');
     for (const {matcher, action} of matchList) {
       trace(matcher.toString());
       trace('=> ' + action.toString());
     }
     const clusterConfigMap: {[key: string]: {child_policy: LoadBalancingConfig[]}} = {};
-    for (const clusterName of allConfigClusters) {
+    for (const clusterName of this.clusterRefs.keys()) {
       clusterConfigMap[clusterName] = {child_policy: [{cds: {cluster: clusterName}}]};
     }
     const lbPolicyConfig = {xds_cluster_manager: {children: clusterConfigMap}};

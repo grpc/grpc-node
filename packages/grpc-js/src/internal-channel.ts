@@ -377,6 +377,7 @@ export class InternalChannel {
             'Address resolution succeeded'
           );
         }
+        this.configSelector?.unref();
         this.configSelector = configSelector;
         this.currentResolutionError = null;
         /* We process the queue asynchronously to ensure that the corresponding
@@ -568,7 +569,7 @@ export class InternalChannel {
     if (this.configSelector) {
       return {
         type: 'SUCCESS',
-        config: this.configSelector(method, metadata, this.randomChannelId),
+        config: this.configSelector.invoke(method, metadata, this.randomChannelId),
       };
     } else {
       if (this.currentResolutionError) {
@@ -704,33 +705,6 @@ export class InternalChannel {
     );
   }
 
-  createInnerCall(
-    callConfig: CallConfig,
-    method: string,
-    host: string,
-    credentials: CallCredentials,
-    deadline: Deadline
-  ): LoadBalancingCall | RetryingCall {
-    // Create a RetryingCall if retries are enabled
-    if (this.options['grpc.enable_retries'] === 0) {
-      return this.createLoadBalancingCall(
-        callConfig,
-        method,
-        host,
-        credentials,
-        deadline
-      );
-    } else {
-      return this.createRetryingCall(
-        callConfig,
-        method,
-        host,
-        credentials,
-        deadline
-      );
-    }
-  }
-
   createResolvingCall(
     method: string,
     deadline: Deadline,
@@ -790,6 +764,8 @@ export class InternalChannel {
     }
 
     this.subchannelPool.unrefUnusedSubchannels();
+    this.configSelector?.unref();
+    this.configSelector = null;
   }
 
   getTarget() {

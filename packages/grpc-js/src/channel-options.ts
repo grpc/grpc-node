@@ -64,6 +64,7 @@ export interface ChannelOptions {
   'grpc-node.tls_enable_trace'?: number;
   'grpc.lb.ring_hash.ring_size_cap'?: number;
   'grpc-node.retry_max_attempts_limit'?: number;
+  'grpc-node.flow_control_window'?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
@@ -101,6 +102,7 @@ export const recognizedOptions = {
   'grpc-node.tls_enable_trace': true,
   'grpc.lb.ring_hash.ring_size_cap': true,
   'grpc-node.retry_max_attempts_limit': true,
+  'grpc-node.flow_control_window': true,
 };
 
 export function channelOptionsEqual(

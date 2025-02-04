@@ -133,8 +133,9 @@ interface UnderlyingCall {
  * transparent retry attempts may still be sent
  * COMMITTED: One attempt is committed, and no new attempts will be
  * sent
+ * NO_RETRY: Retries are disabled. Exists to track the transition to COMMITTED
  */
-type RetryingCallState = 'RETRY' | 'HEDGING' | 'TRANSPARENT_ONLY' | 'COMMITTED';
+type RetryingCallState = 'RETRY' | 'HEDGING' | 'TRANSPARENT_ONLY' | 'COMMITTED' | 'NO_RETRY';
 
 /**
  * The different types of objects that can be stored in the write buffer, with
@@ -229,6 +230,9 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     } else if (callConfig.methodConfig.hedgingPolicy) {
       this.state = 'HEDGING';
       this.maxAttempts = Math.min(callConfig.methodConfig.hedgingPolicy.maxAttempts, maxAttemptsLimit);
+    } else if (channel.getOptions()['grpc.enable_retries'] === 0) {
+      this.state = 'NO_RETRY';
+      this.maxAttempts = 1;
     } else {
       this.state = 'TRANSPARENT_ONLY';
       this.maxAttempts = 1;
@@ -318,8 +322,15 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     if (this.state !== 'COMMITTED') {
       return;
     }
-    const earliestNeededMessageIndex =
-      this.underlyingCalls[this.committedCallIndex!].nextMessageToSend;
+    let earliestNeededMessageIndex: number;
+    if (this.underlyingCalls[this.committedCallIndex!].state === 'COMPLETED') {
+      /* If the committed call is completed, clear all messages, even if some
+       * have not been sent. */
+      earliestNeededMessageIndex = this.getNextBufferIndex();
+    } else {
+      earliestNeededMessageIndex =
+        this.underlyingCalls[this.committedCallIndex!].nextMessageToSend;
+    }
     for (
       let messageIndex = this.writeBufferOffset;
       messageIndex < earliestNeededMessageIndex;
@@ -343,9 +354,6 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     if (this.state === 'COMMITTED') {
       return;
     }
-    if (this.underlyingCalls[index].state === 'COMPLETED') {
-      return;
-    }
     this.trace(
       'Committing call [' +
         this.underlyingCalls[index].call.getCallNumber() +
@@ -353,6 +361,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
         index
     );
     this.state = 'COMMITTED';
+    this.callConfig.onCommitted?.();
     this.committedCallIndex = index;
     for (let i = 0; i < this.underlyingCalls.length; i++) {
       if (i === index) {
@@ -471,6 +480,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
   ) {
     switch (this.state) {
       case 'COMMITTED':
+      case 'NO_RETRY':
       case 'TRANSPARENT_ONLY':
         this.commitCall(callIndex);
         this.reportStatus(status);
@@ -562,6 +572,11 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     this.underlyingCalls[callIndex].state = 'COMPLETED';
     if (status.code === Status.OK) {
       this.retryThrottler?.addCallSucceeded();
+      this.commitCall(callIndex);
+      this.reportStatus(status);
+      return;
+    }
+    if (this.state === 'NO_RETRY') {
       this.commitCall(callIndex);
       this.reportStatus(status);
       return;

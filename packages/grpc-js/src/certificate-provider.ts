@@ -15,9 +15,10 @@
  *
  */
 
-import * as fs from 'fs/promises';
+import * as fs from 'fs';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
+import { promisify } from 'util';
 
 const TRACER_NAME = 'certificate_provider';
 
@@ -56,6 +57,8 @@ export interface FileWatcherCertificateProviderConfig {
   refreshIntervalMs: number;
 }
 
+const readFilePromise = promisify(fs.readFile);
+
 export class FileWatcherCertificateProvider implements CertificateProvider {
   private refreshTimer: NodeJS.Timeout | null = null;
   private fileResultPromise: Promise<[PromiseSettledResult<Buffer>, PromiseSettledResult<Buffer>, PromiseSettledResult<Buffer>]> | null = null;
@@ -82,9 +85,9 @@ export class FileWatcherCertificateProvider implements CertificateProvider {
       return;
     }
     this.fileResultPromise = Promise.allSettled([
-      this.config.certificateFile ? fs.readFile(this.config.certificateFile) : Promise.reject<Buffer>(),
-      this.config.privateKeyFile ? fs.readFile(this.config.privateKeyFile) : Promise.reject<Buffer>(),
-      this.config.caCertificateFile ? fs.readFile(this.config.caCertificateFile) : Promise.reject<Buffer>()
+      this.config.certificateFile ? readFilePromise(this.config.certificateFile) : Promise.reject<Buffer>(),
+      this.config.privateKeyFile ? readFilePromise(this.config.privateKeyFile) : Promise.reject<Buffer>(),
+      this.config.caCertificateFile ? readFilePromise(this.config.caCertificateFile) : Promise.reject<Buffer>()
     ]);
     this.fileResultPromise.then(([certificateResult, privateKeyResult, caCertificateResult]) => {
       if (!this.refreshTimer) {

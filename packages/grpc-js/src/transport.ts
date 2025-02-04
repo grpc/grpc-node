@@ -21,7 +21,7 @@ import {
   TLSSocket,
 } from 'tls';
 import { PartialStatusObject } from './call-interface';
-import { SecureConnector } from './channel-credentials';
+import { SecureConnector, SecureConnectResult } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
 import {
   ChannelzCallTracker,
@@ -225,6 +225,11 @@ class Http2Transport implements Transport {
       this.handleDisconnect();
     });
 
+    session.socket.once('close', () => {
+      this.trace('connection closed');
+      this.handleDisconnect();
+    });
+
     if (logging.isTracerEnabled(TRACER_NAME)) {
       session.on('remoteSettings', (settings: http2.Settings) => {
         this.trace(
@@ -380,17 +385,13 @@ class Http2Transport implements Transport {
    * Handle connection drops, but not GOAWAYs.
    */
   private handleDisconnect() {
-    if (this.disconnectHandled) {
-      return;
-    }
     this.clearKeepaliveTimeout();
     this.reportDisconnectToOwner(false);
-    /* Give calls an event loop cycle to finish naturally before reporting the
-     * disconnnection to them. */
+    for (const call of this.activeCalls) {
+      call.onDisconnect();
+    }
+    // Wait an event loop cycle before destroying the connection
     setImmediate(() => {
-      for (const call of this.activeCalls) {
-        call.onDisconnect();
-      }
       this.session.destroy();
     });
   }
@@ -650,7 +651,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
   }
 
   private createSession(
-    underlyingConnection: Socket,
+    secureConnectResult: SecureConnectResult,
     address: SubchannelAddress,
     options: ChannelOptions
   ): Promise<Http2Transport> {
@@ -668,10 +669,16 @@ export class Http2SubchannelConnector implements SubchannelConnector {
           remoteName = uriToString(parsedTarget);
         }
       }
+      const scheme = secureConnectResult.secure ? 'https' : 'http';
       const targetPath = getDefaultAuthority(realTarget);
-      const session = http2.connect(`http://${targetPath}`, {
+      const session = http2.connect(`${scheme}://${targetPath}`, {
         createConnection: (authority, option) => {
-          return underlyingConnection;
+          return secureConnectResult.socket;
+        },
+        settings: {
+          initialWindowSize:
+            options['grpc-node.flow_control_window'] ??
+            http2.getDefaultSettings().initialWindowSize,
         }
       });
       this.session = session;
@@ -730,14 +737,14 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       return Promise.reject();
     }
     let tcpConnection: net.Socket | null = null;
-    let secureConnection: net.Socket | null  = null;
+    let secureConnectResult: SecureConnectResult | null  = null;
     try {
       tcpConnection = await this.tcpConnect(address, options);
-      secureConnection = await secureConnector.connect(tcpConnection);
-      return this.createSession(secureConnection, address, options);
+      secureConnectResult = await secureConnector.connect(tcpConnection);
+      return this.createSession(secureConnectResult, address, options);
     } catch (e) {
       tcpConnection?.destroy();
-      secureConnection?.destroy();
+      secureConnectResult?.socket.destroy();
       throw e;
     }
   }
