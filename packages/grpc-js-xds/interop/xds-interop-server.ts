@@ -230,7 +230,6 @@ async function main() {
   const argv = yargs
     .string(['port', 'maintenance_port', 'address_type'])
     .boolean(['secure_mode'])
-    .choices('address_type', ['IPV4', 'IPV6', 'IPV4_IPV6'])
     .demandOption(['port'])
     .default('address_type', 'IPV4_IPV6')
     .default('secure_mode', false)
@@ -250,8 +249,9 @@ async function main() {
   const reflection = new ReflectionService(packageDefinition, {
     services: ['grpc.testing.TestService']
   })
+  const addressType = argv.address_type.toUpperCase();
   if (argv.secure_mode) {
-    if (argv.address_type !== 'IPV4_IPV6') {
+    if (addressType !== 'IPV4_IPV6') {
       throw new Error('Secure mode only supports IPV4_IPV6 address type');
     }
     const maintenanceServer = new grpc.Server({interceptors: [adminServiceInterceptor]});
@@ -275,7 +275,7 @@ async function main() {
     grpc.addAdminServicesToServer(server);
     server.addService(loadedProto.grpc.testing.TestService.service, testServiceHandler);
     const creds = grpc.ServerCredentials.createInsecure();
-    switch (argv.address_type) {
+    switch (addressType) {
       case 'IPV4_IPV6':
         await serverBindPromise(server, `[::]:${argv.port}`, creds);
         break;
