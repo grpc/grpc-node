@@ -289,7 +289,11 @@ async function main() {
       case 'IPV6':
         await serverBindPromise(server, `[::1]:${argv.port}`, creds);
         for (const address of getIPv6Addresses()) {
-          await serverBindPromise(server, `[${address}]:${argv.port}`, creds);
+          try {
+            await serverBindPromise(server, `[${address}]:${argv.port}`, creds);
+          } catch (e) {
+            console.log(`Binding ${address} failed with error ${(e as Error).message}`);
+          }
         }
         break;
       default:
