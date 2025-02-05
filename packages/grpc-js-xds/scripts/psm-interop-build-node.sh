@@ -28,11 +28,12 @@ set -eo pipefail
 #   Writes the output of docker image build stdout, stderr
 #######################################
 psm::lang::build_docker_images() {
-  local client_dockerfile="packages/grpc-js-xds/interop/Dockerfile"
+  local client_dockerfile="packages/grpc-js-xds/interop/test-client.Dockerfile"
+  local server_dockerfile="packages/grpc-js-xds/interop/test-server.Dockerfile"
 
   cd "${SRC_DIR}"
   psm::tools::run_verbose git submodule update --init --recursive
   psm::tools::run_verbose git submodule status
 
-  psm::build::docker_images_generic "${client_dockerfile}"
+  psm::build::docker_images_generic "${client_dockerfile}" "${server_dockerfile}"
 }

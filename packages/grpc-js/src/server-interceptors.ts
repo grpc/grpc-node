@@ -337,6 +337,7 @@ export interface ServerInterceptingCallInterface {
 export class ServerInterceptingCall implements ServerInterceptingCallInterface {
   private responder: FullResponder;
   private processingMetadata = false;
+  private sentMetadata = false;
   private processingMessage = false;
   private pendingMessage: any = null;
   private pendingMessageCallback: (() => void) | null = null;
@@ -395,6 +396,7 @@ export class ServerInterceptingCall implements ServerInterceptingCallInterface {
   }
   sendMetadata(metadata: Metadata): void {
     this.processingMetadata = true;
+    this.sentMetadata = true;
     this.responder.sendMetadata(metadata, interceptedMetadata => {
       this.processingMetadata = false;
       this.nextCall.sendMetadata(interceptedMetadata);
@@ -404,6 +406,9 @@ export class ServerInterceptingCall implements ServerInterceptingCallInterface {
   }
   sendMessage(message: any, callback: () => void): void {
     this.processingMessage = true;
+    if (!this.sentMetadata) {
+      this.sendMetadata(new Metadata());
+    }
     this.responder.sendMessage(message, interceptedMessage => {
       this.processingMessage = false;
       if (this.processingMetadata) {
