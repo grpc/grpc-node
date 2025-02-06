@@ -228,11 +228,10 @@ function getIPv6Addresses(): string[] {
 
 async function main() {
   const argv = yargs
-    .string(['port', 'maintenance_port', 'address_type'])
-    .boolean(['secure_mode'])
+    .string(['port', 'maintenance_port', 'address_type', 'secure_mode'])
     .demandOption(['port'])
     .default('address_type', 'IPV4_IPV6')
-    .default('secure_mode', false)
+    .default('secure_mode', 'false')
     .parse()
     console.log('Starting xDS interop server. Args: ', argv);
   const healthImpl = new HealthImplementation({'': 'NOT_SERVING'});
@@ -250,7 +249,8 @@ async function main() {
     services: ['grpc.testing.TestService']
   })
   const addressType = argv.address_type.toUpperCase();
-  if (argv.secure_mode) {
+  const secureMode = argv.secure_mode.toLowerCase() == 'true';
+  if (secureMode) {
     if (addressType !== 'IPV4_IPV6') {
       throw new Error('Secure mode only supports IPV4_IPV6 address type');
     }
