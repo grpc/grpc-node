@@ -40,6 +40,12 @@ npm install
 cd $base/../grpc-js
 npm install
 
+cd $base/../grpc-health-check
+npm install
+
+cd $base/../grpc-reflection
+npm install
+
 # grpc-js-xds has a dev dependency on "../grpc-js", so it should pull that in automatically
 cd $base
 git submodule update --init --recursive
