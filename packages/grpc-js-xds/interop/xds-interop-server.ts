@@ -265,7 +265,7 @@ async function main() {
     const xdsCreds = new grpc_xds.XdsServerCredentials(grpc.ServerCredentials.createInsecure());
     await Promise.all([
       serverBindPromise(maintenanceServer, `[::]:${argv.maintenance_port}`, grpc.ServerCredentials.createInsecure()),
-      serverBindPromise(server, `[::]:${argv.port}`, xdsCreds)
+      serverBindPromise(server, `0.0.0.0:${argv.port}`, xdsCreds)
     ]);
   } else {
     const server = new grpc.Server({interceptors: [unifiedInterceptor]});
