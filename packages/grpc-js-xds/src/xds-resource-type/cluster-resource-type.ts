@@ -265,27 +265,23 @@ export class ClusterResourceType extends XdsResourceType {
         }
       };
     } else if(EXPERIMENTAL_RING_HASH && message.lb_policy === 'RING_HASH') {
-      if (message.ring_hash_lb_config) {
-        if (message.ring_hash_lb_config.hash_function !== 'XX_HASH') {
-          errors.push(`unsupported ring_hash_lb_config.hash_function: ${message.ring_hash_lb_config.hash_function}`);
-        }
-        const minRingSize = message.ring_hash_lb_config.minimum_ring_size ? Number(message.ring_hash_lb_config.minimum_ring_size.value) : 1024;
-        if (minRingSize > 8_388_608) {
-          errors.push(`ring_hash_lb_config.minimum_ring_size is too large: ${minRingSize}`);
-        }
-        const maxRingSize = message.ring_hash_lb_config.maximum_ring_size ? Number(message.ring_hash_lb_config.maximum_ring_size.value) : 8_388_608;
-        if (maxRingSize > 8_388_608) {
-          errors.push(`ring_hash_lb_config.maximum_ring_size is too large: ${maxRingSize}`);
-        }
-        lbPolicyConfig = {
-          ring_hash: {
-            min_ring_size: minRingSize,
-            max_ring_size: maxRingSize
-          }
-        };
-      } else {
-        errors.push(`lb_policy == RING_HASH but ring_hash_lb_config is unset`);
+      if (message.ring_hash_lb_config && message.ring_hash_lb_config.hash_function !== 'XX_HASH') {
+        errors.push(`unsupported ring_hash_lb_config.hash_function: ${message.ring_hash_lb_config.hash_function}`);
       }
+      const minRingSize = message.ring_hash_lb_config?.minimum_ring_size ? Number(message.ring_hash_lb_config.minimum_ring_size.value) : 1024;
+      if (minRingSize > 8_388_608) {
+        errors.push(`ring_hash_lb_config.minimum_ring_size is too large: ${minRingSize}`);
+      }
+      const maxRingSize = message.ring_hash_lb_config?.maximum_ring_size ? Number(message.ring_hash_lb_config.maximum_ring_size.value) : 8_388_608;
+      if (maxRingSize > 8_388_608) {
+        errors.push(`ring_hash_lb_config.maximum_ring_size is too large: ${maxRingSize}`);
+      }
+      lbPolicyConfig = {
+        ring_hash: {
+          min_ring_size: minRingSize,
+          max_ring_size: maxRingSize
+        }
+      };
     } else {
       if (EXPERIMENTAL_CUSTOM_LB_CONFIG) {
         errors.push(`load_balancing_policy unset and unsupported lb_policy: ${message.lb_policy}`);
