@@ -16,7 +16,7 @@
  */
 
 import { CDS_TYPE_URL, CLUSTER_CONFIG_TYPE_URL, decodeSingleResource, UPSTREAM_TLS_CONTEXT_TYPE_URL } from "../resources";
-import { XdsDecodeContext, XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
+import { ValidationResult, XdsDecodeContext, XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
 import { LoadBalancingConfig, experimental, logVerbosity } from "@grpc/grpc-js";
 import { XdsServerConfig } from "../xds-bootstrap";
 import { Duration__Output } from "../generated/google/protobuf/Duration";
@@ -33,6 +33,8 @@ import FailurePercentageEjectionConfig = experimental.FailurePercentageEjectionC
 import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
 import { StringMatcher__Output } from "../generated/envoy/type/matcher/v3/StringMatcher";
 import { CertificateValidationContext__Output } from "../generated/envoy/extensions/transport_sockets/tls/v3/CertificateValidationContext";
+import { SocketAddress__Output } from "../generated/envoy/config/core/v3/SocketAddress";
+import { TransportSocket__Output } from "../generated/envoy/config/core/v3/TransportSocket";
 
 const TRACER_NAME = 'xds_client';
 
@@ -137,20 +139,124 @@ export class ClusterResourceType extends XdsResourceType {
     return percentage.value >=0 && percentage.value <= 100;
   }
 
-  private validateResource(context: XdsDecodeContext, message: Cluster__Output): CdsUpdate | null {
-    let lbPolicyConfig: LoadBalancingConfig;
+  private validateTransportSocket(context: XdsDecodeContext, transportSocket: TransportSocket__Output): ValidationResult<SecurityUpdate> {
+    const errors: string[] = [];
+    if (!transportSocket.typed_config) {
+      errors.push('transport_socket.typed_config unset');
+      return {
+        valid: false,
+        errors
+      };
+    }
+    if (transportSocket.typed_config.type_url !== UPSTREAM_TLS_CONTEXT_TYPE_URL) {
+      errors.push(`Unexpected transport_socket.typed_config.type_url: ${transportSocket.typed_config.type_url}`);
+      return {
+        valid: false,
+        errors
+      };
+    }
+    const upstreamTlsContext = decodeSingleResource(UPSTREAM_TLS_CONTEXT_TYPE_URL, transportSocket.typed_config.value);
+    if (!upstreamTlsContext.common_tls_context) {
+      errors.push('UpstreamTlsContext.common_tls_context unset');
+      return {
+        valid: false,
+        errors
+      };
+    }
+    trace('Decoded UpstreamTlsContext: ' + JSON.stringify(upstreamTlsContext, undefined, 2));
+    const commonTlsContext = upstreamTlsContext.common_tls_context;
+    if (commonTlsContext.tls_certificate_provider_instance) {
+      if (!(commonTlsContext.tls_certificate_provider_instance.instance_name in context.bootstrap.certificateProviders)) {
+        errors.push(`Unmatched UpstreamTlsContext.tls_certificate_provider_instance.instance_name: ${commonTlsContext.tls_certificate_provider_instance.instance_name}`);
+      }
+    } else {
+      if (commonTlsContext.tls_certificates.length > 0 ) {
+        errors.push('UpstreamTlsContext.common_tls_contexttls_certificate_provider_instance unset but UpstreamTlsContext.common_tls_context.tls_certificates populated');
+      }
+      if (commonTlsContext.tls_certificate_sds_secret_configs.length > 0) {
+        errors.push('UpstreamTlsContext.common_tls_contexttls_certificate_provider_instance unset but UpstreamTlsContext.common_tls_context.tls_certificates_sds_secret_config populated');
+      }
+    }
+    if (commonTlsContext.tls_params) {
+      errors.push('UpstreamTlsContext.common_tls_context.tls_params set');
+    }
+    if (commonTlsContext.custom_handshaker) {
+      errors.push('UpstreamTlsContext.common_tls_context.custom_handshaker set');
+    }
+    let validationContext: CertificateValidationContext__Output | null = null;
+    switch (commonTlsContext.validation_context_type) {
+      case 'validation_context_sds_secret_config':
+        errors.push('Unexpected UpstreamTlsContext.common_tls_context.validation_context_sds_secret_config');
+        break;
+      case 'validation_context':
+        if (!commonTlsContext.validation_context) {
+          errors.push('Empty UpstreamTlsContext.common_tls_context.validation_context');
+          break;
+        }
+        validationContext = commonTlsContext.validation_context;
+        break;
+      case 'combined_validation_context':
+        if (!commonTlsContext.combined_validation_context?.default_validation_context) {
+          errors.push('Empty UpstreamTlsContext.common_tls_context.combined_validation_context.default_validation_context');
+          break;
+        }
+        validationContext = commonTlsContext.combined_validation_context.default_validation_context;
+        break;
+      default:
+        errors.push(`Unsupported UpstreamTlsContext.common_tls_context.validation_context_type: ${commonTlsContext.validation_context_type}`);
+    }
+    if (validationContext) {
+      if (validationContext.verify_certificate_spki.length > 0) {
+        errors.push('ValidationContext.verify_certificate_spki populated');
+      }
+      if (validationContext.verify_certificate_hash.length > 0) {
+        errors.push('ValidationContext.verify_certificate_hash populated');
+      }
+      if (validationContext.require_signed_certificate_timestamp) {
+        errors.push('ValidationContext.require_signed_certificate_timestamp set');
+      }
+      if (validationContext.crl) {
+        errors.push('ValidationContext.crl set');
+      }
+      if (validationContext.custom_validator_config) {
+        errors.push('ValidationContext.custom_validator_config set')
+      }
+      if (validationContext.ca_certificate_provider_instance) {
+        if (!(validationContext.ca_certificate_provider_instance.instance_name in context.bootstrap.certificateProviders)) {
+          errors.push(`Unmatched ValidationContext.ca_certificate_provider_instance.instance_name: ${validationContext.ca_certificate_provider_instance.instance_name}`);
+        }
+        if (errors.length === 0) {
+          return {
+            valid: true,
+            result: {
+              caCertificateProviderInstance: validationContext.ca_certificate_provider_instance.instance_name,
+              identityCertificateProviderInstance: commonTlsContext.tls_certificate_provider_instance?.instance_name,
+              subjectAltNameMatchers: validationContext.match_subject_alt_names
+            }
+          }
+        }
+      } else {
+        errors.push('ValidationContext.ca_certificate_provider_instance unset');
+      }
+    }
+    return {
+      valid: false,
+      errors
+    }
+  }
+
+  private validateResource(context: XdsDecodeContext, message: Cluster__Output): ValidationResult<CdsUpdate> {
+    /* lbPolicyConfig starts as an empty config to satisfy the type checker.
+     * In all cases, either it should be reassigned or an error should be set.
+     * Either way, this empty config should never actually be used. */
+    let lbPolicyConfig: LoadBalancingConfig = {};
+    const errors: string[] = [];
     if (EXPERIMENTAL_CUSTOM_LB_CONFIG && message.load_balancing_policy) {
       try {
         lbPolicyConfig = convertToLoadBalancingConfig(message.load_balancing_policy);
-      } catch (e) {
-        trace('LB policy config parsing failed with error ' + e);
-        return null;
-      }
-      try {
         parseLoadBalancingConfig(lbPolicyConfig);
       } catch (e) {
-        trace('LB policy config parsing failed with error ' + e);
-        return null;
+        errors.push(`load_balancing_policy parsing failed with error ${(e as Error).message}`);
       }
     } else if (message.lb_policy === 'ROUND_ROBIN') {
       lbPolicyConfig = {
@@ -159,151 +265,103 @@ export class ClusterResourceType extends XdsResourceType {
         }
       };
     } else if(EXPERIMENTAL_RING_HASH && message.lb_policy === 'RING_HASH') {
-      if (message.ring_hash_lb_config && message.ring_hash_lb_config.hash_function !== 'XX_HASH') {
-        return null;
-      }
-      const minRingSize = message.ring_hash_lb_config?.minimum_ring_size ? Number(message.ring_hash_lb_config.minimum_ring_size.value) : 1024;
-      if (minRingSize > 8_388_608) {
-        return null;
-      }
-      const maxRingSize = message.ring_hash_lb_config?.maximum_ring_size ? Number(message.ring_hash_lb_config.maximum_ring_size.value) : 8_388_608;
-      if (maxRingSize > 8_388_608) {
-        return null;
-      }
-      lbPolicyConfig = {
-        ring_hash: {
-          min_ring_size: minRingSize,
-          max_ring_size: maxRingSize
+      if (message.ring_hash_lb_config) {
+        if (message.ring_hash_lb_config.hash_function !== 'XX_HASH') {
+          errors.push(`unsupported ring_hash_lb_config.hash_function: ${message.ring_hash_lb_config.hash_function}`);
         }
-      };
+        const minRingSize = message.ring_hash_lb_config.minimum_ring_size ? Number(message.ring_hash_lb_config.minimum_ring_size.value) : 1024;
+        if (minRingSize > 8_388_608) {
+          errors.push(`ring_hash_lb_config.minimum_ring_size is too large: ${minRingSize}`);
+        }
+        const maxRingSize = message.ring_hash_lb_config.maximum_ring_size ? Number(message.ring_hash_lb_config.maximum_ring_size.value) : 8_388_608;
+        if (maxRingSize > 8_388_608) {
+          errors.push(`ring_hash_lb_config.maximum_ring_size is too large: ${maxRingSize}`);
+        }
+        lbPolicyConfig = {
+          ring_hash: {
+            min_ring_size: minRingSize,
+            max_ring_size: maxRingSize
+          }
+        };
+      } else {
+        errors.push(`lb_policy == RING_HASH but ring_hash_lb_config is unset`);
+      }
     } else {
-      return null;
+      if (EXPERIMENTAL_CUSTOM_LB_CONFIG) {
+        errors.push(`load_balancing_policy unset and unsupported lb_policy: ${message.lb_policy}`);
+      } else {
+        errors.push(`unsupported lb_policy: ${message.lb_policy}`);
+      }
     }
     if (message.lrs_server) {
       if (!message.lrs_server.self) {
-        return null;
+        errors.push(`lrs_server set but lrs_server.self unset`);
       }
     }
     if (EXPERIMENTAL_OUTLIER_DETECTION) {
       if (message.outlier_detection) {
         if (!this.validateNonnegativeDuration(message.outlier_detection.interval)) {
-          return null;
+          errors.push('outlier_detection.interval out of range');
         }
         if (!this.validateNonnegativeDuration(message.outlier_detection.base_ejection_time)) {
-          return null;
+          errors.push('outlier_detection.base_ejection_time out of range');
         }
         if (!this.validateNonnegativeDuration(message.outlier_detection.max_ejection_time)) {
-          return null;
+          errors.push('outlier_detection.max_ejection_time out of range');
         }
         if (!this.validatePercentage(message.outlier_detection.max_ejection_percent)) {
-          return null;
+          errors.push('outlier_detection.max_ejection_percent out of range');
         }
         if (!this.validatePercentage(message.outlier_detection.enforcing_success_rate)) {
-          return null;
+          errors.push('outlier_detection.enforcing_success_rate out of range');
         }
         if (!this.validatePercentage(message.outlier_detection.failure_percentage_threshold)) {
-          return null;
+          errors.push('outlier_detection.failure_percentage_threshold out of range');
         }
         if (!this.validatePercentage(message.outlier_detection.enforcing_failure_percentage)) {
-          return null;
+          errors.push('outlier_detection.enforcing_failure_percentage out of range');
         }
       }
     }
     let securityUpdate: SecurityUpdate | undefined = undefined;
     if (message.transport_socket) {
-      const transportSocket = message.transport_socket;
-      if (!transportSocket.typed_config) {
-        trace('transportSocket.typed_config missing');
-        return null;
-      }
-      if (transportSocket.typed_config.type_url !== UPSTREAM_TLS_CONTEXT_TYPE_URL) {
-        trace('Incorrect transportSocket.typed_config.type_url: ' + transportSocket.typed_config.type_url)
-        return null;
-      }
-      const upstreamTlsContext = decodeSingleResource(UPSTREAM_TLS_CONTEXT_TYPE_URL, transportSocket.typed_config.value);
-      if (!upstreamTlsContext.common_tls_context) {
-        trace('Could not decode UpstreamTlsContext');
-        return null;
-      }
-      trace('Decoded UpstreamTlsContext: ' + JSON.stringify(upstreamTlsContext, undefined, 2));
-      const commonTlsContext = upstreamTlsContext.common_tls_context;
-      let validationContext: CertificateValidationContext__Output;
-      switch (commonTlsContext.validation_context_type) {
-        case 'validation_context_sds_secret_config':
-          return null;
-        case 'validation_context':
-          if (!commonTlsContext.validation_context) {
-            return null;
-          }
-          validationContext = commonTlsContext.validation_context;
-          break;
-        case 'combined_validation_context':
-          if (!commonTlsContext.combined_validation_context?.default_validation_context) {
-            return null;
-          }
-          validationContext = commonTlsContext.combined_validation_context.default_validation_context;
-          break;
-        default:
-          return null;
-      }
-      if (!validationContext.ca_certificate_provider_instance) {
-        return null;
-      }
-      if (!(validationContext.ca_certificate_provider_instance.instance_name in context.bootstrap.certificateProviders)) {
-        return null;
-      }
-      if (validationContext.verify_certificate_spki.length > 0) {
-        return null;
-      }
-      if (validationContext.verify_certificate_hash.length > 0) {
-        return null;
-      }
-      if (validationContext.require_signed_certificate_timestamp) {
-        return null;
-      }
-      if (validationContext.crl) {
-        return null;
-      }
-      if (validationContext.custom_validator_config) {
-        return null;
-      }
-      if (commonTlsContext.tls_certificate_provider_instance) {
-        if (!(commonTlsContext.tls_certificate_provider_instance.instance_name in context.bootstrap.certificateProviders)) {
-          return null;
-        }
+      const validationResult = this.validateTransportSocket(context, message.transport_socket);
+      if (validationResult.valid) {
+        securityUpdate = validationResult.result;
       } else {
-        if (commonTlsContext.tls_certificates.length > 0 || commonTlsContext.tls_certificate_sds_secret_configs.length > 0) {
-          return null;
-        }
-      }
-      if (commonTlsContext.tls_params) {
-        return null;
-      }
-      if (commonTlsContext.custom_handshaker) {
-        return null;
-      }
-      securityUpdate = {
-        caCertificateProviderInstance: validationContext.ca_certificate_provider_instance.instance_name,
-        identityCertificateProviderInstance: commonTlsContext.tls_certificate_provider_instance?.instance_name,
-        subjectAltNameMatchers: validationContext.match_subject_alt_names
+        errors.push(...validationResult.errors);
       }
     }
     if (message.cluster_discovery_type === 'cluster_type') {
-      if (!(message.cluster_type?.typed_config && message.cluster_type.typed_config.type_url === CLUSTER_CONFIG_TYPE_URL)) {
-        return null;
-      }
-      const clusterConfig = decodeSingleResource(CLUSTER_CONFIG_TYPE_URL, message.cluster_type.typed_config.value);
-      if (clusterConfig.clusters.length === 0) {
-        return null;
+      if (message.cluster_type?.typed_config) {
+        if (message.cluster_type.typed_config.type_url === CLUSTER_CONFIG_TYPE_URL) {
+          const clusterConfig = decodeSingleResource(CLUSTER_CONFIG_TYPE_URL, message.cluster_type.typed_config.value);
+          if (clusterConfig.clusters.length === 0) {
+            errors.push(`cluster_type.typed_config.clusters.length == ${clusterConfig.clusters.length}`);
+          }
+          if (errors.length === 0) {
+            return {
+              valid: true,
+              result: {
+                type: 'AGGREGATE',
+                name: message.name,
+                aggregateChildren: clusterConfig.clusters,
+                outlierDetectionUpdate: convertOutlierDetectionUpdate(null),
+                lbPolicyConfig: [lbPolicyConfig],
+                securityUpdate: securityUpdate
+              }
+            };
+          }
+        } else {
+          errors.push(`Unexpected cluster_type.typed_config.type_url: ${message.cluster_type.typed_config.type_url}`);
+        }
+      } else {
+        errors.push('cluster_type.typed_config unset') ;
       }
       return {
-        type: 'AGGREGATE',
-        name: message.name,
-        aggregateChildren: clusterConfig.clusters,
-        outlierDetectionUpdate: convertOutlierDetectionUpdate(null),
-        lbPolicyConfig: [lbPolicyConfig],
-        securityUpdate: securityUpdate
-      };
+        valid: false,
+        errors
+      }
     } else {
       let maxConcurrentRequests: number | undefined = undefined;
       for (const threshold of message.circuit_breakers?.thresholds ?? []) {
@@ -312,57 +370,91 @@ export class ClusterResourceType extends XdsResourceType {
         }
       }
       if (message.type === 'EDS') {
-        if (!message.eds_cluster_config?.eds_config?.ads && !message.eds_cluster_config?.eds_config?.self) {
-          return null;
+        if (message.eds_cluster_config) {
+          if (!message.eds_cluster_config.eds_config?.ads && !message.eds_cluster_config.eds_config?.self) {
+            errors.push('eds_cluster_config.eds_config.ads and eds_cluster_config.eds_config.self both unset');
+          }
+          if (message.name.startsWith('xdstp:') && message.eds_cluster_config.service_name === '') {
+            errors.push('name starts with "xdstp:" and eds_cluster_config.service_name is empty');
+          }
+        } else {
+          errors.push('type == EDS but eds_cluster_config is unset');
         }
-        if (message.name.startsWith('xdstp:') && message.eds_cluster_config.service_name === '') {
-          return null;
-        }
-        return {
-          type: 'EDS',
-          name: message.name,
-          aggregateChildren: [],
-          maxConcurrentRequests: maxConcurrentRequests,
-          edsServiceName: message.eds_cluster_config.service_name === '' ? undefined : message.eds_cluster_config.service_name,
-          lrsLoadReportingServer: message.lrs_server ? context.server : undefined,
-          outlierDetectionUpdate: convertOutlierDetectionUpdate(message.outlier_detection),
-          lbPolicyConfig: [lbPolicyConfig],
-          securityUpdate: securityUpdate
+        if (errors.length === 0) {
+          return {
+            valid: true,
+            result: {
+              type: 'EDS',
+              name: message.name,
+              aggregateChildren: [],
+              maxConcurrentRequests: maxConcurrentRequests,
+              edsServiceName: message.eds_cluster_config!.service_name === '' ? undefined : message.eds_cluster_config!.service_name,
+              lrsLoadReportingServer: message.lrs_server ? context.server : undefined,
+              outlierDetectionUpdate: convertOutlierDetectionUpdate(message.outlier_detection),
+              lbPolicyConfig: [lbPolicyConfig],
+              securityUpdate: securityUpdate
+            }
+          }
+        } else {
+          return {
+            valid: false,
+            errors
+          };
         }
       } else if (message.type === 'LOGICAL_DNS') {
-        if (!message.load_assignment) {
-          return null;
+        let socketAddress: SocketAddress__Output | null | undefined = undefined;
+        if (message.load_assignment) {
+          if (message.load_assignment.endpoints.length === 1) {
+            if (message.load_assignment.endpoints[0].lb_endpoints.length === 1) {
+              socketAddress = message.load_assignment.endpoints[0].lb_endpoints[0].endpoint?.address?.socket_address;
+              if (socketAddress) {
+                if (socketAddress.address === '') {
+                  errors.push('load_assignment.endpoints[0].lb_endpoints[0].endpoint.address.socket_address.address is empty');
+                }
+                if (socketAddress.port_specifier !== 'port_value') {
+                  errors.push(`Unsupported load_assignment.endpoints[0].lb_endpoints[0].endpoint.address.socket_address.port_value: ${socketAddress.port_value}`);
+                }
+              } else {
+                errors.push('load_assignment.endpoints[0].lb_endpoints[0].endpoint.address.socket_address is not set');
+              }
+            } else {
+              errors.push(`load_assignment.endpoints[0].lb_endpoints.length == ${message.load_assignment.endpoints[0].lb_endpoints.length}`);
+            }
+          } else {
+            errors.push(`load_assignment.endpoints.length == ${message.load_assignment.endpoints.length}`);
+          }
+        } else {
+          errors.push(`load_assignment unset`);
         }
-        if (message.load_assignment.endpoints.length !== 1) {
-          return null;
+        if (errors.length === 0) {
+          return {
+            valid: true,
+            result: {
+              type: 'LOGICAL_DNS',
+              name: message.name,
+              aggregateChildren: [],
+              maxConcurrentRequests: maxConcurrentRequests,
+              dnsHostname: `${socketAddress!.address}:${socketAddress!.port_value}`,
+              lrsLoadReportingServer: message.lrs_server ? context.server : undefined,
+              outlierDetectionUpdate: convertOutlierDetectionUpdate(message.outlier_detection),
+              lbPolicyConfig: [lbPolicyConfig],
+              securityUpdate: securityUpdate
+            }
+          };
+        } else {
+          return {
+            valid: false,
+            errors
+          }
         }
-        if (message.load_assignment.endpoints[0].lb_endpoints.length !== 1) {
-          return null;
-        }
-        const socketAddress = message.load_assignment.endpoints[0].lb_endpoints[0].endpoint?.address?.socket_address;
-        if (!socketAddress) {
-          return null;
-        }
-        if (socketAddress.address === '') {
-          return null;
-        }
-        if (socketAddress.port_specifier !== 'port_value') {
-          return null;
-        }
-        return {
-          type: 'LOGICAL_DNS',
-          name: message.name,
-          aggregateChildren: [],
-          maxConcurrentRequests: maxConcurrentRequests,
-          dnsHostname: `${socketAddress.address}:${socketAddress.port_value}`,
-          lrsLoadReportingServer: message.lrs_server ? context.server : undefined,
-          outlierDetectionUpdate: convertOutlierDetectionUpdate(message.outlier_detection),
-          lbPolicyConfig: [lbPolicyConfig],
-          securityUpdate: securityUpdate
-        };
+      } else {
+        errors.push(`Unsupported type ${message.type}`);
       }
     }
-    return null;
+    return {
+      valid: false,
+      errors
+    };
   }
 
   decode(context:XdsDecodeContext, resource: Any__Output): XdsDecodeResult {
@@ -373,16 +465,16 @@ export class ClusterResourceType extends XdsResourceType {
     }
     const message = decodeSingleResource(CDS_TYPE_URL, resource.value);
     trace('Decoded raw resource of type ' + CDS_TYPE_URL + ': ' + JSON.stringify(message, undefined, 2));
-    const validatedMessage = this.validateResource(context, message);
-    if (validatedMessage) {
+    const validationResult = this.validateResource(context, message);
+    if (validationResult.valid) {
       return {
-        name: validatedMessage.name,
-        value: validatedMessage
+        name: validationResult.result.name,
+        value: validationResult.result
       };
     } else {
       return {
         name: message.name,
-        error: 'Cluster message validation failed'
+        error: `Cluster message validation failed: [${validationResult.errors}]`
       };
     }
   }

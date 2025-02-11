@@ -20,7 +20,7 @@ import { EXPERIMENTAL_FAULT_INJECTION } from "../environment";
 import { Listener__Output } from "../generated/envoy/config/listener/v3/Listener";
 import { Any__Output } from "../generated/google/protobuf/Any";
 import { DOWNSTREAM_TLS_CONTEXT_TYPE_URL, HTTP_CONNECTION_MANGER_TYPE_URL, LDS_TYPE_URL, decodeSingleResource } from "../resources";
-import { XdsDecodeContext, XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
+import { ValidationResult, XdsDecodeContext, XdsDecodeResult, XdsResourceType } from "./xds-resource-type";
 import { getTopLevelFilterUrl, validateTopLevelFilter } from "../http-filter";
 import { RouteConfigurationResourceType } from "./route-config-resource-type";
 import { Watcher, XdsClient } from "../xds-client";
@@ -30,6 +30,7 @@ import { crossProduct } from "../cross-product";
 import { FilterChain__Output } from "../generated/envoy/config/listener/v3/FilterChain";
 import { HttpConnectionManager__Output } from "../generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpConnectionManager";
 import { CertificateValidationContext__Output } from "../generated/envoy/extensions/transport_sockets/tls/v3/CertificateValidationContext";
+import { TransportSocket__Output } from "../generated/envoy/config/core/v3/TransportSocket";
 
 const TRACER_NAME = 'xds_client';
 
@@ -84,31 +85,32 @@ function normalizeFilterChainMatch(filterChainMatch: FilterChainMatch__Output): 
   }));
 }
 
-function validateHttpConnectionManager(httpConnectionManager: HttpConnectionManager__Output): boolean {
+/**
+ * @param httpConnectionManager
+ * @returns A list of validation errors, if there are any. An empty list indicates success
+ */
+function validateHttpConnectionManager(httpConnectionManager: HttpConnectionManager__Output): string[] {
+  const errors: string[] = [];
   if (EXPERIMENTAL_FAULT_INJECTION) {
     const filterNames = new Set<string>();
     for (const [index, httpFilter] of httpConnectionManager.http_filters.entries()) {
       if (filterNames.has(httpFilter.name)) {
-        trace('LDS response validation failed: duplicate HTTP filter name ' + httpFilter.name);
-        return false;
+        errors.push(`duplicate HTTP filter name: ${httpFilter.name}`);
       }
       filterNames.add(httpFilter.name);
       if (!validateTopLevelFilter(httpFilter)) {
-        trace('LDS response validation failed: ' + httpFilter.name + ' filter validation failed');
-        return false;
+        errors.push(`${httpFilter.name} filter validation failed`);
       }
       /* Validate that the last filter, and only the last filter, is the
        * router filter. */
       const filterUrl = getTopLevelFilterUrl(httpFilter.typed_config!)
       if (index < httpConnectionManager.http_filters.length - 1) {
         if (filterUrl === ROUTER_FILTER_URL) {
-          trace('LDS response validation failed: router filter is before end of list');
-          return false;
+          errors.push('router filter is before the end of the list');
         }
       } else {
         if (filterUrl !== ROUTER_FILTER_URL) {
-          trace('LDS response validation failed: final filter is ' + filterUrl);
-          return false;
+          errors.push(`final filter is ${filterUrl}`);
         }
       }
     }
@@ -116,121 +118,133 @@ function validateHttpConnectionManager(httpConnectionManager: HttpConnectionMana
   switch (httpConnectionManager.route_specifier) {
     case 'rds':
       if (!httpConnectionManager.rds?.config_source?.ads && !httpConnectionManager.rds?.config_source?.self) {
-        return false;
+        errors.push('rds.config_source.ads and rds.config_source.self both unset');
       }
       break;
-    case 'route_config':
-      if (!RouteConfigurationResourceType.get().validateResource(httpConnectionManager.route_config!)) {
-        return false;
+    case 'route_config': {
+      const routeConfigValidationResult = RouteConfigurationResourceType.get().validateResource(httpConnectionManager.route_config!);
+      if (!routeConfigValidationResult.valid) {
+        errors.push(...routeConfigValidationResult.errors.map(error => `route_config: ${error}`));
       }
       break;
-    default: return false;
+    }
+    default:
+      errors.push(`unexpected route_specifier ${httpConnectionManager.route_specifier}`);
   }
-  return true;
+  return errors;
 }
 
-function validateFilterChain(context: XdsDecodeContext, filterChain: FilterChain__Output): boolean {
-  if (filterChain.filters.length !== 1) {
-    return false;
+/**
+ * @param context
+ * @param transportSocket A list of validation errors, if there are any. An empty list indicates success
+ */
+function validateTransportSocket(context: XdsDecodeContext, transportSocket: TransportSocket__Output): string[] {
+  const errors: string[] = []
+  if (transportSocket.name !== 'envoy.transport_sockets.tls') {
+    errors.push(`Unexpected transport_socket.name: ${transportSocket.name}`);
   }
-  if (filterChain.filters[0].typed_config?.type_url !== HTTP_CONNECTION_MANGER_TYPE_URL) {
-    return false;
+  if (!transportSocket.typed_config) {
+    errors.push('transport_socket.typed_config missing');
+    return errors;
   }
-  const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, filterChain.filters[0].typed_config.value);
-  if (!validateHttpConnectionManager(httpConnectionManager)) {
-    return false;
+  if (transportSocket.typed_config.type_url !== DOWNSTREAM_TLS_CONTEXT_TYPE_URL) {
+    errors.push(`Unexpected transport_socket.typed_config.type_url: ${transportSocket.typed_config.type_url}`);
+    return errors;
+  }
+  const downstreamTlsContext = decodeSingleResource(DOWNSTREAM_TLS_CONTEXT_TYPE_URL, transportSocket.typed_config.value);
+  if (downstreamTlsContext.require_sni?.value) {
+    errors.push(`DownstreamTlsContext.require_sni set`);
+  }
+  if (downstreamTlsContext.ocsp_staple_policy !== 'LENIENT_STAPLING') {
+    errors.push(`Unsupported DownstreamTlsContext.ocsp_staple_policy: ${downstreamTlsContext.ocsp_staple_policy}`);
+  }
+  if (!downstreamTlsContext.common_tls_context) {
+    errors.push('Missing DownstreamTlsContext.common_tls_context');
+    return errors;
+  }
+  const commonTlsContext = downstreamTlsContext.common_tls_context;
+  let validationContext: CertificateValidationContext__Output | null = null;
+  switch (commonTlsContext.validation_context_type) {
+    case 'validation_context_sds_secret_config':
+      errors.push('Unexpected DownstreamTlsContext.common_tls_context.validation_context_sds_secret_config');
+      break;
+    case 'validation_context':
+      if (!commonTlsContext.validation_context) {
+        errors.push('Empty DownstreamTlsContext.common_tls_context.validation_context');
+        break;
+      }
+      validationContext = commonTlsContext.validation_context;
+      break;
+    case 'combined_validation_context':
+      if (!commonTlsContext.combined_validation_context) {
+        errors.push('Empty DownstreamTlsContext.common_tls_context.combined_validation_context')
+        break;
+      }
+      validationContext = commonTlsContext.combined_validation_context.default_validation_context;
+      break;
+    default:
+      errors.push(`Unsupported DownstreamTlsContext.common_tls_context.validation_context_type: ${commonTlsContext.validation_context_type}`);
+  }
+  if (downstreamTlsContext.require_client_certificate && !validationContext) {
+    errors.push('DownstreamTlsContext.require_client_certificate set without any validationContext');
+  }
+  if (validationContext) {
+    if (validationContext.ca_certificate_provider_instance && !(validationContext.ca_certificate_provider_instance.instance_name in context.bootstrap.certificateProviders)) {
+      errors.push(`Unmatched CertificateValidationContext.ca_certificate_provider.instance_name: ${validationContext.ca_certificate_provider_instance.instance_name}`);
+    }
+    if (validationContext.verify_certificate_spki.length > 0) {
+      errors.push('CertificateValidationContext.verify_certificate_spki populated');
+    }
+    if (validationContext.verify_certificate_hash.length > 0) {
+      errors.push('CertificateValidationContext.verify_certificate_hash populated');
+    }
+    if (validationContext.require_signed_certificate_timestamp) {
+      errors.push('CertificateValidationContext.require_signed_certificate_timestamp set');
+    }
+    if (validationContext.crl) {
+      errors.push('CertificateValidationContext.crl set');
+    }
+    if (validationContext.custom_validator_config) {
+      errors.push('CertificateValidationContext.custom_validator_config set');
+    }
+  }
+  if (commonTlsContext.tls_certificate_provider_instance) {
+    if (!(commonTlsContext.tls_certificate_provider_instance.instance_name in context.bootstrap.certificateProviders)) {
+      errors.push(`Unmatched DownstreamTlsContext.tls_certificate_provider_instance.instance_name: ${commonTlsContext.tls_certificate_provider_instance.instance_name}`);
+    }
+  } else {
+    errors.push('DownstreamTlsContext.common_tls_context.tls_certificate_provider_instance');
+  }
+  if (commonTlsContext.tls_params) {
+    errors.push('DownstreamTlsContext.common_tls_context.tls_params set');
+  }
+  if (commonTlsContext.custom_handshaker) {
+    errors.push('DownstreamTlsContext.common_tls_context.custom_handshaker set');
+  }
+  return errors;
+}
+
+/**
+ * @param context
+ * @param filterChain
+ * @returns A list of validation errors, if there are any. An empty list indicates success
+ */
+function validateFilterChain(context: XdsDecodeContext, filterChain: FilterChain__Output): string[] {
+  const errors: string[] = [];
+  if (filterChain.filters.length === 1) {
+    if (filterChain.filters[0].typed_config?.type_url === HTTP_CONNECTION_MANGER_TYPE_URL) {
+      const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, filterChain.filters[0].typed_config.value);
+      errors.push(...validateHttpConnectionManager(httpConnectionManager).map(error => `filters[0].typed_config: ${error}`));
+    } else {
+      errors.push(`Unexpected value of filters[0].typed_config.type_url: ${filterChain.filters[0].typed_config?.type_url}`);
+    }
+  } else {
+    errors.push(`Incorrect filters length: ${filterChain.filters.length}`);
   }
   if (filterChain.transport_socket) {
-    const transportSocket = filterChain.transport_socket;
-    if (transportSocket.name !== 'envoy.transport_sockets.tls') {
-      trace('Wrong transportSocket.name');
-      return false;
-    }
-    if (!transportSocket.typed_config) {
-      trace('No typed_config');
-      return false;
-    }
-    if (transportSocket.typed_config?.type_url !== DOWNSTREAM_TLS_CONTEXT_TYPE_URL) {
-      trace(`Wrong typed_config type_url: ${transportSocket.typed_config?.type_url}`);
-      return false;
-    }
-    const downstreamTlsContext = decodeSingleResource(DOWNSTREAM_TLS_CONTEXT_TYPE_URL, transportSocket.typed_config.value);
-    if (!downstreamTlsContext.common_tls_context) {
-      trace('No common_tls_context');
-      return false;
-    }
-    const commonTlsContext = downstreamTlsContext.common_tls_context;
-    if (!commonTlsContext.tls_certificate_provider_instance) {
-      trace('No tls_certificate_provider_instance');
-      return false;
-    }
-    if (!(commonTlsContext.tls_certificate_provider_instance.instance_name in context.bootstrap.certificateProviders)) {
-      trace('Unmatched tls_certificate_provider_instance instance_name');
-      return false;
-    }
-    let validationContext: CertificateValidationContext__Output | null;
-    switch (commonTlsContext.validation_context_type) {
-      case 'validation_context_sds_secret_config':
-        trace('Unexpected validation_context_sds_secret_config')
-        return false;
-      case 'validation_context':
-        if (!commonTlsContext.validation_context) {
-          trace('Missing validation_context');
-          return false;
-        }
-        validationContext = commonTlsContext.validation_context;
-        break;
-      case 'combined_validation_context':
-        if (!commonTlsContext.combined_validation_context) {
-          trace('Missing combined_validation_context')
-          return false;
-        }
-        validationContext = commonTlsContext.combined_validation_context.default_validation_context;
-        break;
-      default:
-        return false;
-    }
-    if (validationContext?.ca_certificate_provider_instance && !(validationContext.ca_certificate_provider_instance.instance_name in context.bootstrap.certificateProviders)) {
-      trace('Unmatched validationContext instance_name');
-      return false;
-    }
-    if (downstreamTlsContext.require_client_certificate && !validationContext) {
-      trace('require_client_certificate set without validationContext');
-      return false;
-    }
-    if (validationContext && validationContext.verify_certificate_spki.length > 0) {
-      return false;
-    }
-    if (validationContext && validationContext.verify_certificate_hash.length > 0) {
-      return false;
-    }
-    if (validationContext?.require_signed_certificate_timestamp) {
-      return false;
-    }
-    if (validationContext?.crl) {
-      return false;
-    }
-    if (validationContext?.custom_validator_config) {
-      return false;
-    }
-    if (commonTlsContext.tls_params) {
-      trace('tls_params set');
-      return false;
-    }
-    if (commonTlsContext.custom_handshaker) {
-      trace('custom_handshaker set');
-      return false;
-    }
-    if (downstreamTlsContext.require_sni?.value) {
-      trace('require_sni set');
-      return false;
-    }
-    if (downstreamTlsContext.ocsp_staple_policy !== 'LENIENT_STAPLING') {
-      trace('Unexpected ocsp_staple_policy');
-      return false;
-    }
+    errors.push(...validateTransportSocket(context, filterChain.transport_socket));
   }
-  return true;
+  return errors;
 }
 
 export class ListenerResourceType extends XdsResourceType {
@@ -246,24 +260,22 @@ export class ListenerResourceType extends XdsResourceType {
     return 'envoy.config.listener.v3.Listener';
   }
 
-  private validateResource(context: XdsDecodeContext, message: Listener__Output): Listener__Output | null {
+  private validateResource(context: XdsDecodeContext, message: Listener__Output): ValidationResult<Listener__Output> {
+    const errors: string[] = [];
     if (
-      !(
-        message.api_listener?.api_listener &&
-        message.api_listener.api_listener.type_url === HTTP_CONNECTION_MANGER_TYPE_URL
-      )
+      message.api_listener?.api_listener &&
+      message.api_listener.api_listener.type_url === HTTP_CONNECTION_MANGER_TYPE_URL
     ) {
-      return null;
-    }
-    const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, message.api_listener!.api_listener.value);
-    if (!validateHttpConnectionManager(httpConnectionManager)) {
-      return null;
+      const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, message.api_listener!.api_listener.value);
+      errors.push(...validateHttpConnectionManager(httpConnectionManager).map(error => `api_listener.api_listener: ${error}`));
+    } else {
+      errors.push(`api_listener.api_listener.type_url != ${HTTP_CONNECTION_MANGER_TYPE_URL}`);
     }
     if (message.listener_filters.length > 0) {
-      return null;
+      errors.push('listener_filters populated');
     }
     if (message.use_original_dst?.value === true) {
-      return null;
+      errors.push('use_original_dst.value == true');
     }
     const seenMatches: NormalizedFilterChainMatch[] = [];
     for (const filterChain of message.filter_chains) {
@@ -271,19 +283,27 @@ export class ListenerResourceType extends XdsResourceType {
         const normalizedMatches = normalizeFilterChainMatch(filterChain.filter_chain_match);
         for (const match of normalizedMatches) {
           if (seenMatches.some(prevMatch => normalizedFilterChainMatchEquals(match, prevMatch))) {
-            return null;
+            errors.push(`duplicate filter_chain_match entry in filter chain ${filterChain.name}`);
           }
           seenMatches.push(match);
         }
       }
-      if (!validateFilterChain(context, filterChain)) {
-        return null;
-      }
+      errors.push(...validateFilterChain(context, filterChain).map(error => `filter_chains[${filterChain.name}]: ${error}`));
     }
-    if (message.default_filter_chain && !validateFilterChain(context, message.default_filter_chain)) {
-      return null;
+    if (message.default_filter_chain) {
+      errors.push(...validateFilterChain(context, message.default_filter_chain).map(error => `default_filter_chain: ${error}`));
     }
-    return message;
+    if (errors.length === 0) {
+      return {
+        valid: true,
+        result: message
+      };
+    } else {
+      return {
+        valid: false,
+        errors
+      };
+    }
   }
 
   decode(context: XdsDecodeContext, resource: Any__Output): XdsDecodeResult {
@@ -294,16 +314,16 @@ export class ListenerResourceType extends XdsResourceType {
     }
     const message = decodeSingleResource(LDS_TYPE_URL, resource.value);
     trace('Decoded raw resource of type ' + LDS_TYPE_URL + ': ' + JSON.stringify(message, (key, value) => (value && value.type === 'Buffer' && Array.isArray(value.data)) ? (value.data as Number[]).map(n => n.toString(16)).join('') : value, 2));
-    const validatedMessage = this.validateResource(context, message);
-    if (validatedMessage) {
+    const validationResult = this.validateResource(context, message);
+    if (validationResult.valid) {
       return {
-        name: validatedMessage.name,
-        value: validatedMessage
+        name: validationResult.result.name,
+        value: validationResult.result
       };
     } else {
       return {
         name: message.name,
-        error: 'Listener message validation failed'
+        error: `Listener message validation failed: [${validationResult.errors}]`
       };
     }
   }
