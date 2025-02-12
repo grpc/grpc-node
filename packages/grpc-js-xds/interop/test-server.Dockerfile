@@ -46,7 +46,7 @@ COPY --from=build /node/src/grpc-node/packages/grpc-js ./packages/grpc-js/
 COPY --from=build /node/src/grpc-node/packages/grpc-js-xds ./packages/grpc-js-xds/
 
 ENV GRPC_VERBOSITY="DEBUG"
-ENV GRPC_TRACE=xds_client,server,xds_server
+ENV GRPC_TRACE=xds_client,server,xds_server,http_filter
 
 # tini serves as PID 1 and enables the server to properly respond to signals.
 COPY --from=build /tini /tini
