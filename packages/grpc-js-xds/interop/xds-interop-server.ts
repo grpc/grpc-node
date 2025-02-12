@@ -30,6 +30,8 @@ import { SimpleRequest__Output } from './generated/grpc/testing/SimpleRequest';
 import { SimpleResponse } from './generated/grpc/testing/SimpleResponse';
 import { ReflectionService } from '@grpc/reflection';
 
+grpc_xds.register();
+
 const packageDefinition = protoLoader.loadSync('grpc/testing/test.proto', {
   keepCase: true,
   defaults: true,
