@@ -262,14 +262,15 @@ export class ListenerResourceType extends XdsResourceType {
 
   private validateResource(context: XdsDecodeContext, message: Listener__Output): ValidationResult<Listener__Output> {
     const errors: string[] = [];
-    if (
-      message.api_listener?.api_listener &&
-      message.api_listener.api_listener.type_url === HTTP_CONNECTION_MANGER_TYPE_URL
-    ) {
-      const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, message.api_listener!.api_listener.value);
-      errors.push(...validateHttpConnectionManager(httpConnectionManager).map(error => `api_listener.api_listener: ${error}`));
-    } else {
-      errors.push(`api_listener.api_listener.type_url != ${HTTP_CONNECTION_MANGER_TYPE_URL}`);
+    if (message.api_listener?.api_listener) {
+      if (
+        message.api_listener.api_listener.type_url === HTTP_CONNECTION_MANGER_TYPE_URL
+      ) {
+        const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, message.api_listener!.api_listener.value);
+        errors.push(...validateHttpConnectionManager(httpConnectionManager).map(error => `api_listener.api_listener: ${error}`));
+      } else {
+        errors.push(`api_listener.api_listener.type_url != ${HTTP_CONNECTION_MANGER_TYPE_URL}`);
+      }
     }
     if (message.listener_filters.length > 0) {
       errors.push('listener_filters populated');
