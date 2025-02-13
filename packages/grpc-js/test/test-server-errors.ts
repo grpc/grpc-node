@@ -395,10 +395,11 @@ describe('Other conditions', () => {
         const req = call.request;
 
         if (req.error) {
+          const code = req.code || grpc.status.UNKNOWN;
           const details = req.message || 'Requested error';
 
           cb(
-            { code: grpc.status.UNKNOWN, details } as ServiceError,
+            { code, details } as ServiceError,
             null,
             trailerMetadata
           );
@@ -812,6 +813,18 @@ describe('Other conditions', () => {
           assert(err);
           assert.strictEqual(err.code, grpc.status.UNKNOWN);
           assert.strictEqual(err.details, 'an error message, with a comma');
+          done();
+        }
+      );
+    });
+
+    it('for a non-standard error code', done => {
+      client.unary(
+        { error: true, code: 57 },
+        (err: ServiceError, data: any) => {
+          assert(err);
+          assert.strictEqual(err.code, 57);
+          assert.strictEqual(err.details, 'Requested error');
           done();
         }
       );
