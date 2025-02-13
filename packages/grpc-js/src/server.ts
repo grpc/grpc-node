@@ -576,9 +576,11 @@ export class Server {
         enableTrace: this.options['grpc-node.tls_enable_trace'] === 1
       };
       let areCredentialsValid = credentialsSettings !== null;
+      this.trace('Initial credentials valid: ' + areCredentialsValid);
       http2Server = http2.createSecureServer(secureServerOptions);
-      http2Server.on('connection', (socket: Socket) => {
+      http2Server.prependListener('connection', (socket: Socket) => {
         if (!areCredentialsValid) {
+          this.trace('Dropped connection from ' + JSON.stringify(socket.address()) + ' due to unloaded credentials');
           socket.destroy();
         }
       });
@@ -596,6 +598,7 @@ export class Server {
           (http2Server as http2.Http2SecureServer).setSecureContext(options);
         }
         areCredentialsValid = options !== null;
+        this.trace('Post-update credentials valid: ' + areCredentialsValid);
       }
       credentials._addWatcher(credsWatcher);
       http2Server.on('close', () => {

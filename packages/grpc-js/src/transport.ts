@@ -738,7 +738,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
     }
     let tcpConnection: net.Socket | null = null;
     let secureConnectResult: SecureConnectResult | null  = null;
-    const addressString = this.trace(subchannelAddressToString(address));
+    const addressString = subchannelAddressToString(address);
     try {
       tcpConnection = await this.tcpConnect(address, options);
       this.trace(addressString + ' ' + 'Established TCP connection');
