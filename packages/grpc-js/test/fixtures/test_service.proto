@@ -22,6 +22,7 @@ message Request {
   string message = 2;
   int32 errorAfter = 3;
   int32 responseLength = 4;
+  int32 code = 5;
 }
 
 message Response {
