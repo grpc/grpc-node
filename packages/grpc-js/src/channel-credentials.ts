@@ -262,6 +262,10 @@ class SecureConnectorImpl implements SecureConnector {
     };
     return new Promise<SecureConnectResult>((resolve, reject) => {
       const tlsSocket = tlsConnect(tlsConnectOptions, () => {
+        if (!tlsSocket.authorized) {
+          reject(tlsSocket.authorizationError);
+          return;
+        }
         resolve({
           socket: tlsSocket,
           secure: true
@@ -340,6 +344,10 @@ class CertificateProviderChannelCredentialsImpl extends ChannelCredentials {
           ...connnectionOptions
         }
         const tlsSocket = tlsConnect(tlsConnectOptions, () => {
+          if (!tlsSocket.authorized) {
+            reject(tlsSocket.authorizationError);
+            return;
+          }
           resolve({
             socket: tlsSocket,
             secure: true

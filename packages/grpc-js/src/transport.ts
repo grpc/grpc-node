@@ -225,8 +225,8 @@ class Http2Transport implements Transport {
       this.handleDisconnect();
     });
 
-    session.socket.once('close', () => {
-      this.trace('connection closed');
+    session.socket.once('close', (hadError) => {
+      this.trace('connection closed. hadError=' + hadError);
       this.handleDisconnect();
     });
 
