@@ -235,28 +235,30 @@ class RingHashLoadBalancer implements LoadBalancer {
             this.latestErrorMessage = errorMessage;
           }
           this.calculateAndUpdateState();
-          /* If this LB policy is in the TRANSIENT_FAILURE state, requests will
-           * not trigger new connections, so we need to explicitly try connecting
-           * to other endpoints that are currently IDLE to try to eventually
-           * connect to something. */
-          if (
-            state === connectivityState.TRANSIENT_FAILURE &&
-            this.currentState === connectivityState.TRANSIENT_FAILURE
-          ) {
-            for (const leaf of this.leafMap.values()) {
-              const leafState = leaf.getConnectivityState();
-              if (leafState === connectivityState.CONNECTING) {
-                break;
-              }
-              if (leafState === connectivityState.IDLE) {
-                leaf.startConnecting();
-                break;
-              }
-            }
-          }
+          this.maybeProactivelyConnect();
         },
       }
     );
+  }
+
+  private maybeProactivelyConnect() {
+    /* If this LB policy is in the TRANSIENT_FAILURE or CONNECTING state,
+     * requests will not trigger new connections, so we need to explicitly try
+     * connecting to other endpoints that are currently IDLE to try to
+     * eventually connect to something. */
+    if (!(this.currentState === connectivityState.TRANSIENT_FAILURE || this.currentState === connectivityState.CONNECTING)) {
+      return;
+    }
+    for (const leaf of this.leafMap.values()) {
+      const leafState = leaf.getConnectivityState();
+      if (leafState === connectivityState.CONNECTING) {
+        break;
+      }
+      if (leafState === connectivityState.IDLE) {
+        leaf.startConnecting();
+        break;
+      }
+    }
   }
 
   private calculateAndUpdateState() {
@@ -432,6 +434,7 @@ class RingHashLoadBalancer implements LoadBalancer {
       this.constructRing(dedupedEndpointList, lbConfig, ringHashSizeCap);
       this.updatesPaused = false;
       this.calculateAndUpdateState();
+      this.maybeProactivelyConnect();
     });
   }
   exitIdle(): void {
