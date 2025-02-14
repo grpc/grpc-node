@@ -1,6 +1,6 @@
 // Original file: proto/channelz.proto
 
-import type { Socket as _grpc_channelz_v1_Socket, Socket__Output as _grpc_channelz_v1_Socket__Output } from '../../../grpc/channelz/v1/Socket.ts';
+import type { Socket as _grpc_channelz_v1_Socket, Socket__Output as _grpc_channelz_v1_Socket__Output } from '../../../grpc/channelz/v1/Socket';
 
 export interface GetSocketResponse {
   /**

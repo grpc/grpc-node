@@ -881,11 +881,8 @@ export function getChannelzServiceDefinition(): ChannelzDefinition {
     oneofs: true,
     includeDirs: [`${__dirname}/../../proto`],
   });
-  const channelzGrpcObject = loadPackageDefinition(
-    loadedProto
-  ) as unknown as ChannelzProtoGrpcType;
-  loadedChannelzDefinition =
-    channelzGrpcObject.grpc.channelz.v1.Channelz.service;
+  const channelzGrpcObject = loadPackageDefinition(loadedProto) as ChannelzProtoGrpcType;
+  loadedChannelzDefinition = channelzGrpcObject.grpc.channelz.v1.Channelz.service;
   return loadedChannelzDefinition;
 }
 

@@ -1,6 +1,6 @@
 // Original file: proto/channelz.proto
 
-import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../google/protobuf/Any.ts';
+import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../google/protobuf/Any';
 
 /**
  * SocketOption represents socket options for a socket.  Specifically, these
