@@ -519,7 +519,9 @@ function main() {
      * channels do not share any subchannels. It does not have any
      * inherent function. */
     console.log(`Interop client channel ${i} starting sending ${argv.qps} QPS to ${argv.server}`);
-    sendConstantQps(new loadedProto.grpc.testing.TestService(argv.server, grpc.credentials.createInsecure(), {'unique': i, 'grpc-node.tls_enable_trace': 1}),
+    const insecureCreds = grpc.credentials.createInsecure();
+    const creds = new grpc_xds.XdsChannelCredentials(insecureCreds);
+    sendConstantQps(new loadedProto.grpc.testing.TestService(argv.server, creds, {'unique': i}),
       argv.qps,
       argv.fail_on_failed_rpcs === 'true',
       callStatsTracker);

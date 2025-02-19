@@ -262,7 +262,7 @@ async function main() {
     reflection.addToServer(maintenanceServer);
     grpc.addAdminServicesToServer(maintenanceServer);
 
-    const server = new grpc_xds.XdsServer({interceptors: [testInfoInterceptor], 'grpc-node.tls_enable_trace': 1});
+    const server = new grpc_xds.XdsServer({interceptors: [testInfoInterceptor]});
     server.addService(loadedProto.grpc.testing.TestService.service, testServiceHandler);
     const xdsCreds = new grpc_xds.XdsServerCredentials(grpc.ServerCredentials.createInsecure());
     await Promise.all([
