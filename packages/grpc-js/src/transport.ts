@@ -685,7 +685,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       let errorMessage = 'Failed to connect';
       let reportedError = false;
       session.unref();
-      session.once('connect', () => {
+      session.once('remoteSettings', () => {
         session.removeAllListeners();
         resolve(new Http2Transport(session, address, options, remoteName));
         this.session = null;

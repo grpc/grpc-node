@@ -201,6 +201,21 @@ describe('ChannelCredentials usage', () => {
         done();
       }
     );
-
-  })
+  });
+  it('Should never connect when using insecure creds with a secure server', done => {
+    const client = new echoService(`localhost:${portNum}`, grpc.credentials.createInsecure());
+    const deadline = new Date();
+    deadline.setSeconds(deadline.getSeconds() + 1);
+    client.echo(
+      { value: 'test value', value2: 3 },
+      new grpc.Metadata({waitForReady: true}),
+      {deadline},
+      (error: ServiceError, response: any) => {
+        client.close();
+        assert(error);
+        assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
+        done();
+      }
+    );
+  });
 });
