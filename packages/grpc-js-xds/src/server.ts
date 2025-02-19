@@ -159,6 +159,7 @@ class FilterChainEntry {
     }
     if (credentials instanceof XdsServerCredentials) {
       if (filterChain.transport_socket) {
+        trace('Using secure credentials');
         const downstreamTlsContext = decodeSingleResource(DOWNSTREAM_TLS_CONTEXT_TYPE_URL, filterChain.transport_socket.typed_config!.value);
         const commonTlsContext = downstreamTlsContext.common_tls_context!;
         const instanceCertificateProvider = configParameters.xdsClient.getCertificateProvider(commonTlsContext.tls_certificate_provider_instance!.instance_name);
@@ -185,6 +186,7 @@ class FilterChainEntry {
         }
         credentials = experimental.createCertificateProviderServerCredentials(instanceCertificateProvider, caCertificateProvider, downstreamTlsContext.require_client_certificate?.value ?? false);
       } else {
+        trace('Using fallback credentials');
         credentials = credentials.getFallbackCredentials();
       }
     }

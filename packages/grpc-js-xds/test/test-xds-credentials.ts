@@ -366,4 +366,81 @@ describe('Client xDS credentials', () => {
       });
     }
   });
+  describe('Client and server xDS credentials', () => {
+    let xdsServer: ControlPlaneServer;
+    let client: XdsTestClient;
+    beforeEach(done => {
+      xdsServer = new ControlPlaneServer();
+      xdsServer.startServer(error => {
+        done(error);
+      });
+    });
+    afterEach(() => {
+      client?.close();
+      xdsServer?.shutdownServer();
+    });
+    it('Should use identity and CA certificates when configured', async () => {
+      const [backend] = await createBackends(1, true, new XdsServerCredentials(ServerCredentials.createInsecure()));
+      const downstreamTlsContext: DownstreamTlsContext & AnyExtension = {
+        '@type': DOWNSTREAM_TLS_CONTEXT_TYPE_URL,
+        common_tls_context: {
+          tls_certificate_provider_instance: {
+            instance_name: 'test_certificates'
+          },
+          validation_context: {
+            ca_certificate_provider_instance: {
+              instance_name: 'test_certificates'
+            }
+          }
+        },
+        ocsp_staple_policy: 'LENIENT_STAPLING',
+        require_client_certificate: {
+          value: true
+        }
+      }
+      const baseServerListener: Listener = {
+        default_filter_chain: {
+          filter_chain_match: {
+            source_type: 'SAME_IP_OR_LOOPBACK'
+          },
+          transport_socket: {
+            name: 'envoy.transport_sockets.tls',
+            typed_config: downstreamTlsContext
+          }
+        }
+      }
+      const serverRoute = new FakeServerRoute(backend.getPort(), 'serverRoute', baseServerListener);
+      xdsServer.setRdsResource(serverRoute.getRouteConfiguration());
+      xdsServer.setLdsResource(serverRoute.getListener());
+      xdsServer.addResponseListener((typeUrl, responseState) => {
+        if (responseState.state === 'NACKED') {
+          client?.stopCalls();
+          assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
+        }
+      });
+      const upstreamTlsContext: UpstreamTlsContext = {
+        common_tls_context: {
+          tls_certificate_provider_instance: {
+            instance_name: 'test_certificates'
+          },
+          validation_context: {
+            ca_certificate_provider_instance: {
+              instance_name: 'test_certificates'
+            }
+          }
+        }
+      };
+      const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [backend], locality:{region: 'region1'}}], undefined, upstreamTlsContext);
+      const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
+      await routeGroup.startAllBackends(xdsServer);
+      xdsServer.setEdsResource(cluster.getEndpointConfig());
+      xdsServer.setCdsResource(cluster.getClusterConfig());
+      xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
+      xdsServer.setLdsResource(routeGroup.getListener());
+      client = XdsTestClient.createFromServer('listener1', xdsServer, new XdsChannelCredentials(credentials.createInsecure()));
+      const error = await client.sendOneCallAsync();
+      assert.strictEqual(error, null);
+    });
+
+  });
 });
