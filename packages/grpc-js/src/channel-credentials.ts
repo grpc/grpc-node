@@ -339,7 +339,7 @@ class CertificateProviderChannelCredentialsImpl extends ChannelCredentials {
     constructor(private parent: CertificateProviderChannelCredentialsImpl, private channelTarget: GrpcUri, private options: ChannelOptions, private callCredentials: CallCredentials) {}
 
     connect(socket: Socket): Promise<SecureConnectResult> {
-      return new Promise(async (resolve, reject) => {
+      return new Promise((resolve, reject) => {
         const secureContext = this.parent.getLatestSecureContext();
         if (!secureContext) {
           reject(new Error('Failed to load credentials'));

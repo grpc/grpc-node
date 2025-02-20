@@ -289,6 +289,7 @@ class ListenerConfig {
   handleConnection(socket: net.Socket) {
     const matchingFilter = selectMostSpecificallyMatchingFilter(this.filterChainEntries, socket) ?? this.defaultFilterChain;
     if (!matchingFilter) {
+      trace('Rejecting connection from ' + socket.remoteAddress + ': No filter matched');
       socket.destroy();
       return;
     }
@@ -456,7 +457,19 @@ class BoundPortEntry {
 
 function normalizeFilterChainMatch(filterChainMatch: FilterChainMatch__Output | null): NormalizedFilterChainMatch[] {
   if (!filterChainMatch) {
-    return [];
+    filterChainMatch = {
+      address_suffix: '',
+      application_protocols: [],
+      destination_port: null,
+      direct_source_prefix_ranges: [],
+      prefix_ranges: [],
+      server_names: [],
+      source_ports: [],
+      source_prefix_ranges: [],
+      source_type: 'ANY',
+      suffix_len: null,
+      transport_protocol: 'raw_buffer'
+    };
   }
   if (filterChainMatch.destination_port) {
     return [];
