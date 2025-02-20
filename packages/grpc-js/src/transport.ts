@@ -717,12 +717,19 @@ export class Http2SubchannelConnector implements SubchannelConnector {
         return proxiedSocket;
       } else {
         return new Promise<Socket>((resolve, reject) => {
+          const closeCallback = () => {
+            reject(new Error('Socket closed'));
+          };
+          const errorCallback = (error: Error) => {
+            reject(error);
+          }
           const socket = net.connect(address, () => {
+            socket.removeListener('close', closeCallback);
+            socket.removeListener('error', errorCallback);
             resolve(socket);
           });
-          socket.once('error', (error) => {
-            reject(error);
-          });
+          socket.once('close', closeCallback);
+          socket.once('error', errorCallback);
         });
       }
     });
@@ -740,6 +747,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
     let secureConnectResult: SecureConnectResult | null  = null;
     const addressString = subchannelAddressToString(address);
     try {
+      await secureConnector.waitForReady();
       tcpConnection = await this.tcpConnect(address, options);
       this.trace(addressString + ' ' + 'Established TCP connection');
       secureConnectResult = await secureConnector.connect(tcpConnection);

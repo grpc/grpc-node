@@ -70,6 +70,7 @@ export interface SecureConnectResult {
 
 export interface SecureConnector {
   connect(socket: Socket): Promise<SecureConnectResult>;
+  waitForReady(): Promise<void>;
   getCallCredentials(): CallCredentials;
   destroy(): void;
 }
@@ -188,6 +189,9 @@ class InsecureChannelCredentialsImpl extends ChannelCredentials {
           secure: false
         });
       },
+      waitForReady: () => {
+        return Promise.resolve();
+      },
       getCallCredentials: () => {
         return callCredentials ?? CallCredentials.createEmpty();
       },
@@ -276,6 +280,9 @@ class SecureConnectorImpl implements SecureConnector {
       });
     });
   }
+  waitForReady(): Promise<void> {
+    return Promise.resolve();
+  }
   getCallCredentials(): CallCredentials {
     return this.callCredentials;
   }
@@ -333,17 +340,28 @@ class CertificateProviderChannelCredentialsImpl extends ChannelCredentials {
 
     connect(socket: Socket): Promise<SecureConnectResult> {
       return new Promise(async (resolve, reject) => {
-        const secureContext = await this.parent.getSecureContext();
+        const secureContext = this.parent.getLatestSecureContext();
         if (!secureContext) {
           reject(new Error('Failed to load credentials'));
           return;
+        }
+        if (socket.closed) {
+          reject(new Error('Socket closed while loading credentials'));
         }
         const connnectionOptions = getConnectionOptions(secureContext, this.parent.verifyOptions, this.channelTarget, this.options);
         const tlsConnectOptions: ConnectionOptions = {
           socket: socket,
           ...connnectionOptions
         }
+        const closeCallback = () => {
+          reject(new Error('Socket closed'));
+        };
+        const errorCallback = (error: Error) => {
+          reject(error);
+        }
         const tlsSocket = tlsConnect(tlsConnectOptions, () => {
+          tlsSocket.removeListener('close', closeCallback);
+          tlsSocket.removeListener('error', errorCallback);
           if (!tlsSocket.authorized) {
             reject(tlsSocket.authorizationError);
             return;
@@ -353,10 +371,13 @@ class CertificateProviderChannelCredentialsImpl extends ChannelCredentials {
             secure: true
           });
         });
-        tlsSocket.on('error', (error: Error) => {
-          reject(error);
-        });
+        tlsSocket.once('close', closeCallback);
+        tlsSocket.once('error', errorCallback);
       });
+    }
+
+    async waitForReady(): Promise<void> {
+      await this.parent.getSecureContext();
     }
 
     getCallCredentials(): CallCredentials {
