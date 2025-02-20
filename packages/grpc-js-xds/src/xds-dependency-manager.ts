@@ -360,6 +360,10 @@ export class XdsDependencyManager {
   constructor(private xdsClient: XdsClient, private listenerResourceName: string, private dataPlaneAuthority: string, private watcher: XdsConfigWatcher) {
     this.ldsWatcher = new Watcher<Listener__Output>({
       onResourceChanged: (update: Listener__Output) => {
+        if (!update.api_listener) {
+          this.trace('Received Listener resource not usable on client');
+          return;
+        }
         this.latestListener = update;
         const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, update.api_listener!.api_listener!.value);
         switch (httpConnectionManager.route_specifier) {

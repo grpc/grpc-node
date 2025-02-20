@@ -294,6 +294,9 @@ export class ListenerResourceType extends XdsResourceType {
     if (message.default_filter_chain) {
       errors.push(...validateFilterChain(context, message.default_filter_chain).map(error => `default_filter_chain: ${error}`));
     }
+    if (!message.api_listener && !message.default_filter_chain && message.filter_chains.length === 0) {
+      errors.push('No api_listener and no filter_chains and no default_filter_chain');
+    }
     if (errors.length === 0) {
       return {
         valid: true,
