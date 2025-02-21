@@ -84,11 +84,13 @@ class DnsExactValueMatcher implements ValueMatcher {
     }
   }
   apply(entry: string): boolean {
-    let [type, value] = entry.split(':');
-    if (!isSupportedSanType(type)) {
+    const colonIndex = entry.indexOf(':');
+    if (colonIndex < 0) {
       return false;
     }
-    if (!value) {
+    const type = entry.substring(0, colonIndex);
+    let value = entry.substring(colonIndex + 1);
+    if (!isSupportedSanType(type)) {
       return false;
     }
     if (this.ignoreCase) {
@@ -137,14 +139,16 @@ class SanEntryMatcher implements ValueMatcher {
     }
   }
   apply(entry: string): boolean {
-    let [type, value] = entry.split(':');
+    const colonIndex = entry.indexOf(':');
+    if (colonIndex < 0) {
+      return false;
+    }
+    const type = entry.substring(0, colonIndex);
+    let value = entry.substring(colonIndex + 1);
     if (!isSupportedSanType(type)) {
       return false;
     }
     value = canonicalizeSanEntryValue(type, value);
-    if (!entry) {
-      return false;
-    }
     return this.childMatcher.apply(value);
   }
   toString(): string {
