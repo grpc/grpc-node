@@ -20,7 +20,12 @@ import { CA_CERT_PROVIDER_KEY, IDENTITY_CERT_PROVIDER_KEY, SAN_MATCHER_KEY, SanM
 import GrpcUri = experimental.GrpcUri;
 import SecureConnector = experimental.SecureConnector;
 import createCertificateProviderChannelCredentials = experimental.createCertificateProviderChannelCredentials;
-import trace = experimental.trace;
+
+const TRACER_NAME = 'xds_channel_credentials';
+
+function trace(text: string) {
+  experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 export class XdsChannelCredentials extends ChannelCredentials {
   constructor(private fallbackCredentials: ChannelCredentials) {
@@ -34,7 +39,7 @@ export class XdsChannelCredentials extends ChannelCredentials {
   }
   _createSecureConnector(channelTarget: GrpcUri, options: ChannelOptions, callCredentials?: CallCredentials): SecureConnector {
     if (options[CA_CERT_PROVIDER_KEY]) {
-      trace(logVerbosity.DEBUG, 'xds_channel_credentials', 'Using secure credentials');
+      trace('Using secure credentials');
       const verifyOptions: VerifyOptions = {};
       if (options[SAN_MATCHER_KEY]) {
         const matcher = options[SAN_MATCHER_KEY] as SanMatcher;
@@ -42,7 +47,7 @@ export class XdsChannelCredentials extends ChannelCredentials {
           if (cert.subjectaltname && matcher.apply(cert.subjectaltname)) {
             return undefined;
           } else {
-            trace(logVerbosity.DEBUG, 'xds_channel_credentials', 'No matching subject alternative name found in certificate');
+            trace('Subject alternative name not matched: ' + cert.subjectaltname);
             return new Error('No matching subject alternative name found in certificate');
           }
         }
@@ -50,7 +55,7 @@ export class XdsChannelCredentials extends ChannelCredentials {
       const certProviderCreds = createCertificateProviderChannelCredentials(options[CA_CERT_PROVIDER_KEY], options[IDENTITY_CERT_PROVIDER_KEY] ?? null, verifyOptions);
       return certProviderCreds._createSecureConnector(channelTarget, options, callCredentials);
     } else {
-      trace(logVerbosity.DEBUG, 'xds_channel_credentials', 'Using fallback credentials');
+      trace('Using fallback credentials');
       return this.fallbackCredentials._createSecureConnector(channelTarget, options, callCredentials);
     }
   }

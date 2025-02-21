@@ -433,6 +433,7 @@ export class CdsLoadBalancer implements LoadBalancer {
         if (this.latestSanMatcher === null || !this.latestSanMatcher.equals(sanMatcher)) {
           this.latestSanMatcher = sanMatcher;
         }
+        trace('Configured subject alternative name matcher: ' + sanMatcher);
         childOptions[SAN_MATCHER_KEY] = this.latestSanMatcher;
       }
       this.childBalancer.updateAddressList(childEndpointList, typedChildConfig, childOptions);
