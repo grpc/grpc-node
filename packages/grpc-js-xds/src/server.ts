@@ -628,8 +628,9 @@ export class XdsServer extends Server {
     if (!hostPort || !isValidIpPort(hostPort)) {
       throw new Error(`Listening port string must have the format IP:port with non-zero port, got ${port}`);
     }
+    const channelzRef = this.experimentalRegisterListenerToChannelz({host: hostPort.host, port: hostPort.port!});
     const configParameters: ConfigParameters = {
-      createConnectionInjector: (credentials) => this.createConnectionInjector(credentials),
+      createConnectionInjector: (credentials) => this.experimentalCreateConnectionInjectorWithChannelzRef(credentials, channelzRef),
       drainGraceTimeMs: this.drainGraceTimeMs,
       listenerResourceNameTemplate: this.listenerResourceNameTemplate,
       xdsClient: this.xdsClient

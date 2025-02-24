@@ -539,7 +539,12 @@ export class Server {
     throw new Error('Not implemented. Use bindAsync() instead');
   }
 
-  private registerListenerToChannelz(boundAddress: SubchannelAddress) {
+  /**
+   * This API is experimental, so API stability is not guaranteed across minor versions.
+   * @param boundAddress
+   * @returns
+   */
+  protected experimentalRegisterListenerToChannelz(boundAddress: SubchannelAddress) {
     return registerChannelzSocket(
       subchannelAddressToString(boundAddress),
       () => {
@@ -649,7 +654,7 @@ export class Server {
           };
         }
 
-        const channelzRef = this.registerListenerToChannelz(
+        const channelzRef = this.experimentalRegisterListenerToChannelz(
           boundSubchannelAddress
         );
         this.listenerChildrenTracker.refChild(channelzRef);
@@ -945,15 +950,17 @@ export class Server {
     );
   }
 
-  createConnectionInjector(credentials: ServerCredentials): ConnectionInjector {
+  /**
+   * This API is experimental, so API stability is not guaranteed across minor versions.
+   * @param credentials
+   * @param channelzRef
+   * @returns
+   */
+  protected experimentalCreateConnectionInjectorWithChannelzRef(credentials: ServerCredentials, channelzRef: SocketRef) {
     if (credentials === null || !(credentials instanceof ServerCredentials)) {
       throw new TypeError('creds must be a ServerCredentials object');
     }
     const server = this.createHttp2Server(credentials);
-    const channelzRef = this.registerInjectorToChannelz();
-    if (this.channelzEnabled) {
-      this.listenerChildrenTracker.refChild(channelzRef);
-    }
     const sessionsSet: Set<http2.ServerHttp2Session> = new Set();
     this.http2Servers.set(server, {
       channelzRef: channelzRef,
@@ -980,6 +987,17 @@ export class Server {
         }
       }
     };
+  }
+
+  createConnectionInjector(credentials: ServerCredentials): ConnectionInjector {
+    if (credentials === null || !(credentials instanceof ServerCredentials)) {
+      throw new TypeError('creds must be a ServerCredentials object');
+    }
+    const channelzRef = this.registerInjectorToChannelz();
+    if (this.channelzEnabled) {
+      this.listenerChildrenTracker.refChild(channelzRef);
+    }
+    return this.experimentalCreateConnectionInjectorWithChannelzRef(credentials, channelzRef);
   }
 
   private closeServer(server: AnyHttp2Server, callback?: () => void) {
