@@ -160,6 +160,10 @@ function adminServiceInterceptor(methodDescriptor: grpc.ServerMethodDefinition<a
   const responder: grpc.Responder = {
     start: next => {
       next(listener);
+    },
+    sendMessage: (message, next) => {
+      console.log(`Responded to request to method ${methodDescriptor.path}: ${JSON.stringify(message)}`);
+      next(message);
     }
   };
   return new grpc.ServerInterceptingCall(call, responder);

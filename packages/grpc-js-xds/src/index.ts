@@ -33,10 +33,16 @@ import * as pick_first_lb from './lb-policy-registry/pick-first';
 export { XdsServer } from './server';
 export { XdsChannelCredentials, XdsServerCredentials } from './xds-credentials';
 
+let registered = false;
+
 /**
  * Register the "xds:" name scheme with the @grpc/grpc-js library.
  */
 export function register() {
+  if (registered) {
+    return;
+  }
+  registered = true;
   resolver_xds.setup();
   load_balancer_cds.setup();
   xds_cluster_impl.setup();
