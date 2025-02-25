@@ -960,6 +960,9 @@ export class Server {
     if (credentials === null || !(credentials instanceof ServerCredentials)) {
       throw new TypeError('creds must be a ServerCredentials object');
     }
+    if (this.channelzEnabled) {
+      this.listenerChildrenTracker.refChild(channelzRef);
+    }
     const server = this.createHttp2Server(credentials);
     const sessionsSet: Set<http2.ServerHttp2Session> = new Set();
     this.http2Servers.set(server, {
@@ -994,9 +997,6 @@ export class Server {
       throw new TypeError('creds must be a ServerCredentials object');
     }
     const channelzRef = this.registerInjectorToChannelz();
-    if (this.channelzEnabled) {
-      this.listenerChildrenTracker.refChild(channelzRef);
-    }
     return this.experimentalCreateConnectionInjectorWithChannelzRef(credentials, channelzRef);
   }
 
