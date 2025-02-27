@@ -167,16 +167,18 @@ class FilterChainEntry {
         if (!instanceCertificateProvider) {
           throw new Error(`Invalid TLS context detected: unrecognized certificate instance name: ${commonTlsContext.tls_certificate_provider_instance!.instance_name}`);
         }
-        let validationContext: CertificateValidationContext__Output | null;
-        switch (commonTlsContext?.validation_context_type) {
-          case 'validation_context':
-            validationContext = commonTlsContext.validation_context!;
-            break;
-          case 'combined_validation_context':
-            validationContext = commonTlsContext.combined_validation_context!.default_validation_context;
-            break;
-          default:
-            throw new Error(`Invalid TLS context detected: invalid validation_context_type: ${commonTlsContext.validation_context_type}`);
+        let validationContext: CertificateValidationContext__Output | null = null;
+        if (commonTlsContext?.validation_context_type) {
+          switch (commonTlsContext?.validation_context_type) {
+            case 'validation_context':
+              validationContext = commonTlsContext.validation_context!;
+              break;
+            case 'combined_validation_context':
+              validationContext = commonTlsContext.combined_validation_context!.default_validation_context;
+              break;
+            default:
+              throw new Error(`Invalid TLS context detected: invalid validation_context_type: ${commonTlsContext.validation_context_type}`);
+          }
         }
         let caCertificateProvider: experimental.CertificateProvider | null = null;
         if (validationContext?.ca_certificate_provider_instance) {
