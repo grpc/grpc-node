@@ -165,26 +165,28 @@ function validateTransportSocket(context: XdsDecodeContext, transportSocket: Tra
   }
   const commonTlsContext = downstreamTlsContext.common_tls_context;
   let validationContext: CertificateValidationContext__Output | null = null;
-  switch (commonTlsContext.validation_context_type) {
-    case 'validation_context_sds_secret_config':
-      errors.push('Unexpected DownstreamTlsContext.common_tls_context.validation_context_sds_secret_config');
-      break;
-    case 'validation_context':
-      if (!commonTlsContext.validation_context) {
-        errors.push('Empty DownstreamTlsContext.common_tls_context.validation_context');
+  if (commonTlsContext.validation_context_type) {
+    switch (commonTlsContext.validation_context_type) {
+      case 'validation_context_sds_secret_config':
+        errors.push('Unexpected DownstreamTlsContext.common_tls_context.validation_context_sds_secret_config');
         break;
-      }
-      validationContext = commonTlsContext.validation_context;
-      break;
-    case 'combined_validation_context':
-      if (!commonTlsContext.combined_validation_context) {
-        errors.push('Empty DownstreamTlsContext.common_tls_context.combined_validation_context')
+      case 'validation_context':
+        if (!commonTlsContext.validation_context) {
+          errors.push('Empty DownstreamTlsContext.common_tls_context.validation_context');
+          break;
+        }
+        validationContext = commonTlsContext.validation_context;
         break;
-      }
-      validationContext = commonTlsContext.combined_validation_context.default_validation_context;
-      break;
-    default:
-      errors.push(`Unsupported DownstreamTlsContext.common_tls_context.validation_context_type: ${commonTlsContext.validation_context_type}`);
+      case 'combined_validation_context':
+        if (!commonTlsContext.combined_validation_context) {
+          errors.push('Empty DownstreamTlsContext.common_tls_context.combined_validation_context')
+          break;
+        }
+        validationContext = commonTlsContext.combined_validation_context.default_validation_context;
+        break;
+      default:
+        errors.push(`Unsupported DownstreamTlsContext.common_tls_context.validation_context_type: ${commonTlsContext.validation_context_type}`);
+    }
   }
   if (downstreamTlsContext.require_client_certificate && !validationContext) {
     errors.push('DownstreamTlsContext.require_client_certificate set without any validationContext');
