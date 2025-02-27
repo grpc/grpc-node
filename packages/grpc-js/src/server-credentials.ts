@@ -32,7 +32,11 @@ export interface SecureContextWatcher {
 
 export abstract class ServerCredentials {
   private watchers: Set<SecureContextWatcher> = new Set();
-  private latestContextOptions: SecureServerOptions | null = null;
+  private latestContextOptions: SecureContextOptions | null = null;
+  constructor(private serverConstructorOptions: SecureServerOptions | null, contextOptions?: SecureContextOptions) {
+    this.latestContextOptions = contextOptions ?? null;
+  }
+
   _addWatcher(watcher: SecureContextWatcher) {
     this.watchers.add(watcher);
   }
@@ -42,15 +46,20 @@ export abstract class ServerCredentials {
   protected getWatcherCount() {
     return this.watchers.size;
   }
-  protected updateSecureContextOptions(options: SecureServerOptions | null) {
+  protected updateSecureContextOptions(options: SecureContextOptions | null) {
     this.latestContextOptions = options;
     for (const watcher of this.watchers) {
       watcher(this.latestContextOptions);
     }
   }
-  abstract _isSecure(): boolean;
-  _getSettings(): SecureServerOptions | null {
+  _isSecure(): boolean {
+    return this.serverConstructorOptions !== null;
+  }
+  _getSecureContextOptions(): SecureContextOptions | null {
     return this.latestContextOptions;
+  }
+  _getConstructorOptions(): SecureServerOptions | null {
+    return this.serverConstructorOptions;
   }
   _getInterceptors(): ServerInterceptor[] {
     return [];
@@ -101,18 +110,19 @@ export abstract class ServerCredentials {
     }
 
     return new SecureServerCredentials({
+      requestCert: checkClientCertificate,
+      ciphers: CIPHER_SUITES,
+    }, {
       ca: rootCerts ?? getDefaultRootsData() ?? undefined,
       cert,
       key,
-      requestCert: checkClientCertificate,
-      ciphers: CIPHER_SUITES,
     });
   }
 }
 
 class InsecureServerCredentials extends ServerCredentials {
-  _isSecure(): boolean {
-    return false;
+  constructor() {
+    super(null);
   }
 
   _getSettings(): null {
@@ -127,17 +137,9 @@ class InsecureServerCredentials extends ServerCredentials {
 class SecureServerCredentials extends ServerCredentials {
   private options: SecureServerOptions;
 
-  constructor(options: SecureServerOptions) {
-    super();
-    this.options = options;
-  }
-
-  _isSecure(): boolean {
-    return true;
-  }
-
-  _getSettings(): SecureServerOptions {
-    return this.options;
+  constructor(constructorOptions: SecureServerOptions, contextOptions: SecureContextOptions) {
+    super(constructorOptions, contextOptions);
+    this.options = {...constructorOptions, ...contextOptions};
   }
 
   /**
@@ -229,7 +231,11 @@ class CertificateProviderServerCredentials extends ServerCredentials {
     private caCertificateProvider: CertificateProvider | null,
     private requireClientCertificate: boolean
   ) {
-    super();
+    super({
+      requestCert: caCertificateProvider !== null,
+      rejectUnauthorized: requireClientCertificate,
+      ciphers: CIPHER_SUITES
+    });
   }
   _addWatcher(watcher: SecureContextWatcher): void {
     if (this.getWatcherCount() === 0) {
@@ -245,9 +251,6 @@ class CertificateProviderServerCredentials extends ServerCredentials {
       this.identityCertificateProvider.removeIdentityCertificateListener(this.identityCertificateUpdateListener);
     }
   }
-  _isSecure(): boolean {
-    return true;
-  }
   _equals(other: ServerCredentials): boolean {
     if (this === other) {
       return true;
@@ -262,7 +265,7 @@ class CertificateProviderServerCredentials extends ServerCredentials {
     )
   }
 
-  private calculateSecureContextOptions(): SecureServerOptions | null {
+  private calculateSecureContextOptions(): SecureContextOptions | null {
     if (this.latestIdentityUpdate === null) {
       return null;
     }
@@ -271,10 +274,8 @@ class CertificateProviderServerCredentials extends ServerCredentials {
     }
     return {
       ca: this.latestCaUpdate?.caCertificate,
-      cert: this.latestIdentityUpdate.certificate,
-      key: this.latestIdentityUpdate.privateKey,
-      requestCert: this.latestIdentityUpdate !== null,
-      rejectUnauthorized: this.requireClientCertificate
+      cert: [this.latestIdentityUpdate.certificate],
+      key: [this.latestIdentityUpdate.privateKey],
     };
   }
 
@@ -307,7 +308,7 @@ export function createCertificateProviderServerCredentials(
 
 class InterceptorServerCredentials extends ServerCredentials {
   constructor(private readonly childCredentials: ServerCredentials, private readonly interceptors: ServerInterceptor[]) {
-    super();
+    super({});
   }
   _isSecure(): boolean {
     return this.childCredentials._isSecure();
@@ -338,8 +339,11 @@ class InterceptorServerCredentials extends ServerCredentials {
   override _removeWatcher(watcher: SecureContextWatcher): void {
     this.childCredentials._removeWatcher(watcher);
   }
-  override _getSettings(): SecureServerOptions | null {
-    return this.childCredentials._getSettings();
+  override _getConstructorOptions(): SecureServerOptions | null {
+    return this.childCredentials._getConstructorOptions();
+  }
+  override _getSecureContextOptions(): SecureContextOptions | null {
+    return this.childCredentials._getSecureContextOptions();
   }
 }
 

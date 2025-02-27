@@ -574,13 +574,15 @@ export class Server {
   private createHttp2Server(credentials: ServerCredentials) {
     let http2Server: http2.Http2Server | http2.Http2SecureServer;
     if (credentials._isSecure()) {
-      const credentialsSettings = credentials._getSettings();
+      const constructorOptions = credentials._getConstructorOptions();
+      const contextOptions = credentials._getSecureContextOptions();
       const secureServerOptions: http2.SecureServerOptions = {
         ...this.commonServerOptions,
-        ...credentialsSettings,
+        ...constructorOptions,
+        ...contextOptions,
         enableTrace: this.options['grpc-node.tls_enable_trace'] === 1
       };
-      let areCredentialsValid = credentialsSettings !== null;
+      let areCredentialsValid = contextOptions !== null;
       this.trace('Initial credentials valid: ' + areCredentialsValid);
       http2Server = http2.createSecureServer(secureServerOptions);
       http2Server.prependListener('connection', (socket: Socket) => {
@@ -600,7 +602,13 @@ export class Server {
       });
       const credsWatcher: SecureContextWatcher = options => {
         if (options) {
-          (http2Server as http2.Http2SecureServer).setSecureContext(options);
+          const secureServer = http2Server as http2.Http2SecureServer;
+          try {
+            secureServer.setSecureContext(options);
+          } catch (e) {
+            logging.log(LogVerbosity.ERROR, 'Failed to set secure context with error ' + (e as Error).message);
+            options = null;
+          }
         }
         areCredentialsValid = options !== null;
         this.trace('Post-update credentials valid: ' + areCredentialsValid);

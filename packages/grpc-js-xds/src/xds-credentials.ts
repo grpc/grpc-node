@@ -64,7 +64,7 @@ export class XdsChannelCredentials extends ChannelCredentials {
 
 export class XdsServerCredentials extends ServerCredentials {
   constructor(private fallbackCredentials: ServerCredentials) {
-    super();
+    super({});
   }
 
   getFallbackCredentials() {

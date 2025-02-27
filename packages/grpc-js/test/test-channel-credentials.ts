@@ -28,6 +28,7 @@ import { ServiceClient, ServiceClientConstructor } from '../src/make-client';
 import { assert2, loadProtoFile, mockFunction } from './common';
 import { sendUnaryData, ServerUnaryCall, ServiceError } from '../src';
 import { FileWatcherCertificateProvider } from '../src/certificate-provider';
+import { createCertificateProviderServerCredentials } from '../src/server-credentials';
 
 const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
 const echoService = loadProtoFile(protoFile)
@@ -183,7 +184,7 @@ describe('ChannelCredentials usage', () => {
     const certificateProvider = new FileWatcherCertificateProvider({
       caCertificateFile: `${__dirname}/fixtures/ca.pem`,
       certificateFile: `${__dirname}/fixtures/server1.pem`,
-      privateKeyFile: `${__dirname}/fixtures/server1.pem`,
+      privateKeyFile: `${__dirname}/fixtures/server1.key`,
       refreshIntervalMs: 1000
     });
     const channelCreds = createCertificateProviderChannelCredentials(certificateProvider, null);
@@ -193,7 +194,6 @@ describe('ChannelCredentials usage', () => {
     });
     client.echo(
       { value: 'test value', value2: 3 },
-      new grpc.Metadata({waitForReady: true}),
       (error: ServiceError, response: any) => {
         client.close();
         assert.ifError(error);
@@ -218,4 +218,134 @@ describe('ChannelCredentials usage', () => {
       }
     );
   });
+});
+
+describe('Channel credentials mtls', () => {
+  let client: ServiceClient;
+  let server: grpc.Server;
+  let portNum: number;
+  let caCert: Buffer;
+  let keyValue: Buffer;
+  let certValue: Buffer;
+  const hostnameOverride = 'foo.test.google.fr';
+  before(async () => {
+    const { ca, key, cert } = await pFixtures;
+    caCert = ca;
+    keyValue = key;
+    certValue = cert;
+    const serverCreds = grpc.ServerCredentials.createSsl(ca, [
+      { private_key: key, cert_chain: cert },
+    ], true);
+    return new Promise<void>((resolve, reject) => {
+      server = new grpc.Server();
+      server.addService(echoService.service, {
+        echo(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
+          call.sendMetadata(call.metadata);
+          callback(null, call.request);
+        },
+      });
+
+      server.bindAsync('localhost:0', serverCreds, (err, port) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        portNum = port;
+        resolve();
+      });
+    });
+  });
+  afterEach(() => {
+    client.close();
+  });
+  after(() => {
+    server.forceShutdown();
+  });
+
+  it('Should work with client provided certificates', done => {
+    const channelCreds = ChannelCredentials.createSsl(caCert, keyValue, certValue);
+    client = new echoService(`localhost:${portNum}`, channelCreds, {
+      'grpc.ssl_target_name_override': hostnameOverride,
+      'grpc.default_authority': hostnameOverride,
+    });
+    client.echo({ value: 'test value', value2: 3 }, (error: ServiceError, response: any) => {
+      assert.ifError(error);
+      done();
+    });
+  });
+  it('Should fail if the client does not provide certificates', done => {
+    const channelCreds = ChannelCredentials.createSsl(caCert);
+    client = new echoService(`localhost:${portNum}`, channelCreds, {
+      'grpc.ssl_target_name_override': hostnameOverride,
+      'grpc.default_authority': hostnameOverride,
+    });
+    client.echo({ value: 'test value', value2: 3 }, (error: ServiceError, response: any) => {
+      assert(error);
+      assert.strictEqual(error.code, grpc.status.UNAVAILABLE);
+      done();
+    });
+  });
+});
+
+describe('Channel credentials certificate provider mtls', () => {
+  const certificateProvider = new FileWatcherCertificateProvider({
+    caCertificateFile: `${__dirname}/fixtures/ca.pem`,
+    certificateFile: `${__dirname}/fixtures/server1.pem`,
+    privateKeyFile: `${__dirname}/fixtures/server1.key`,
+    refreshIntervalMs: 1000
+  });
+  const hostnameOverride = 'foo.test.google.fr';
+  let client: ServiceClient;
+  let server: grpc.Server;
+  let portNum: number;
+  before(done => {
+    const serverCreds = createCertificateProviderServerCredentials(certificateProvider, certificateProvider, true);
+    server = new grpc.Server();
+    server.addService(echoService.service, {
+      echo(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
+        call.sendMetadata(call.metadata);
+        callback(null, call.request);
+      },
+    });
+
+    server.bindAsync('localhost:0', serverCreds, (err, port) => {
+      if (err) {
+        done(err);
+        return;
+      }
+      portNum = port;
+      done();
+    });
+  });
+  afterEach(() => {
+    client.close();
+  });
+  after(() => {
+    server.forceShutdown();
+  });
+
+  it('Should work with client provided certificates', done => {
+    const channelCreds = createCertificateProviderChannelCredentials(certificateProvider, certificateProvider);
+    client = new echoService(`localhost:${portNum}`, channelCreds, {
+      'grpc.ssl_target_name_override': hostnameOverride,
+      'grpc.default_authority': hostnameOverride,
+    });
+    client.echo({ value: 'test value', value2: 3 }, (error: ServiceError, response: any) => {
+      assert.ifError(error);
+      done();
+    });
+  });
+  it('Should fail if the client does not provide certificates', done => {
+    const channelCreds = createCertificateProviderChannelCredentials(certificateProvider, null);
+    client = new echoService(`localhost:${portNum}`, channelCreds, {
+      'grpc.ssl_target_name_override': hostnameOverride,
+      'grpc.default_authority': hostnameOverride,
+    });
+    client.echo({ value: 'test value', value2: 3 }, (error: ServiceError, response: any) => {
+      assert(error);
+      assert.strictEqual(error.code, grpc.status.UNAVAILABLE);
+      done();
+    });
+  });
+
 });

@@ -152,6 +152,7 @@ function validateTransportSocket(context: XdsDecodeContext, transportSocket: Tra
     return errors;
   }
   const downstreamTlsContext = decodeSingleResource(DOWNSTREAM_TLS_CONTEXT_TYPE_URL, transportSocket.typed_config.value);
+  trace('Decoded DownstreamTlsContext: ' + JSON.stringify(downstreamTlsContext, undefined, 2));
   if (downstreamTlsContext.require_sni?.value) {
     errors.push(`DownstreamTlsContext.require_sni set`);
   }

@@ -31,6 +31,8 @@ import { Socket } from 'net';
 import { ChannelOptions } from './channel-options';
 import { GrpcUri, parseUri, splitHostPort } from './uri-parser';
 import { getDefaultAuthority } from './resolver';
+import { log } from './logging';
+import { LogVerbosity } from './constants';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function verifyIsBufferOrNull(obj: any, friendlyName: string): void {
@@ -475,12 +477,17 @@ class CertificateProviderChannelCredentialsImpl extends ChannelCredentials {
     if (this.identityCertificateProvider !== null && !this.latestIdentityUpdate) {
       return null;
     }
-    return createSecureContext({
-      ca: this.latestCaUpdate.caCertificate,
-      key: this.latestIdentityUpdate?.privateKey,
-      cert: this.latestIdentityUpdate?.certificate,
-      ciphers: CIPHER_SUITES
-    });
+    try {
+      return createSecureContext({
+        ca: this.latestCaUpdate.caCertificate,
+        key: this.latestIdentityUpdate?.privateKey,
+        cert: this.latestIdentityUpdate?.certificate,
+        ciphers: CIPHER_SUITES
+      });
+    } catch (e) {
+      log(LogVerbosity.ERROR, 'Failed to createSecureContext with error ' + (e as Error).message);
+      return null;
+    }
   }
 }
 
