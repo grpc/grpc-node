@@ -83,6 +83,7 @@ interface ConfigParameters {
   createConnectionInjector: (credentials: ServerCredentials) => ConnectionInjector;
   drainGraceTimeMs: number;
   listenerResourceNameTemplate: string;
+  unregisterChannelzRef: () => void;
 }
 
 class FilterChainEntry {
@@ -452,6 +453,7 @@ class BoundPortEntry {
     this.tcpServer.close();
     const resourceName = formatTemplateString(this.configParameters.listenerResourceNameTemplate, this.boundAddress);
     ListenerResourceType.cancelWatch(this.configParameters.xdsClient, resourceName, this.listenerWatcher);
+    this.configParameters.unregisterChannelzRef();
   }
 }
 
@@ -633,7 +635,8 @@ export class XdsServer extends Server {
       createConnectionInjector: (credentials) => this.experimentalCreateConnectionInjectorWithChannelzRef(credentials, channelzRef),
       drainGraceTimeMs: this.drainGraceTimeMs,
       listenerResourceNameTemplate: this.listenerResourceNameTemplate,
-      xdsClient: this.xdsClient
+      xdsClient: this.xdsClient,
+      unregisterChannelzRef: () => this.experimentalUnregisterListenerFromChannelz(channelzRef)
     };
     const portEntry = new BoundPortEntry(configParameters, port, creds);
     const servingStatusListener: ServingStatusListener = statusObject => {

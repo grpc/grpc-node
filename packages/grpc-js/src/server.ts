@@ -246,6 +246,7 @@ interface BoundPort {
 interface Http2ServerInfo {
   channelzRef: SocketRef;
   sessions: Set<http2.ServerHttp2Session>;
+  ownsChannelzRef: boolean;
 }
 
 interface SessionIdleTimeoutTracker {
@@ -571,6 +572,10 @@ export class Server {
     );
   }
 
+  protected experimentalUnregisterListenerFromChannelz(channelzRef: SocketRef) {
+    unregisterChannelzRef(channelzRef);
+  }
+
   private createHttp2Server(credentials: ServerCredentials) {
     let http2Server: http2.Http2Server | http2.Http2SecureServer;
     if (credentials._isSecure()) {
@@ -670,6 +675,7 @@ export class Server {
         this.http2Servers.set(http2Server, {
           channelzRef: channelzRef,
           sessions: new Set(),
+          ownsChannelzRef: true
         });
         boundPortObject.listeningServers.add(http2Server);
         this.trace(
@@ -964,7 +970,7 @@ export class Server {
    * @param channelzRef
    * @returns
    */
-  protected experimentalCreateConnectionInjectorWithChannelzRef(credentials: ServerCredentials, channelzRef: SocketRef) {
+  protected experimentalCreateConnectionInjectorWithChannelzRef(credentials: ServerCredentials, channelzRef: SocketRef, ownsChannelzRef=false) {
     if (credentials === null || !(credentials instanceof ServerCredentials)) {
       throw new TypeError('creds must be a ServerCredentials object');
     }
@@ -975,7 +981,8 @@ export class Server {
     const sessionsSet: Set<http2.ServerHttp2Session> = new Set();
     this.http2Servers.set(server, {
       channelzRef: channelzRef,
-      sessions: sessionsSet
+      sessions: sessionsSet,
+      ownsChannelzRef
     });
     return {
       injectConnection: (connection: Duplex) => {
@@ -1005,7 +1012,7 @@ export class Server {
       throw new TypeError('creds must be a ServerCredentials object');
     }
     const channelzRef = this.registerInjectorToChannelz();
-    return this.experimentalCreateConnectionInjectorWithChannelzRef(credentials, channelzRef);
+    return this.experimentalCreateConnectionInjectorWithChannelzRef(credentials, channelzRef, true);
   }
 
   private closeServer(server: AnyHttp2Server, callback?: () => void) {
@@ -1014,7 +1021,7 @@ export class Server {
     );
     const serverInfo = this.http2Servers.get(server);
     server.close(() => {
-      if (serverInfo) {
+      if (serverInfo && serverInfo.ownsChannelzRef) {
         this.listenerChildrenTracker.unrefChild(serverInfo.channelzRef);
         unregisterChannelzRef(serverInfo.channelzRef);
       }
