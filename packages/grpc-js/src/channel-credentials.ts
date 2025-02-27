@@ -31,6 +31,8 @@ import { Socket } from 'net';
 import { ChannelOptions } from './channel-options';
 import { GrpcUri, parseUri, splitHostPort } from './uri-parser';
 import { getDefaultAuthority } from './resolver';
+import { log } from './logging';
+import { LogVerbosity } from './constants';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function verifyIsBufferOrNull(obj: any, friendlyName: string): void {
@@ -70,6 +72,7 @@ export interface SecureConnectResult {
 
 export interface SecureConnector {
   connect(socket: Socket): Promise<SecureConnectResult>;
+  waitForReady(): Promise<void>;
   getCallCredentials(): CallCredentials;
   destroy(): void;
 }
@@ -188,6 +191,9 @@ class InsecureChannelCredentialsImpl extends ChannelCredentials {
           secure: false
         });
       },
+      waitForReady: () => {
+        return Promise.resolve();
+      },
       getCallCredentials: () => {
         return callCredentials ?? CallCredentials.createEmpty();
       },
@@ -262,6 +268,10 @@ class SecureConnectorImpl implements SecureConnector {
     };
     return new Promise<SecureConnectResult>((resolve, reject) => {
       const tlsSocket = tlsConnect(tlsConnectOptions, () => {
+        if (!tlsSocket.authorized) {
+          reject(tlsSocket.authorizationError);
+          return;
+        }
         resolve({
           socket: tlsSocket,
           secure: true
@@ -271,6 +281,9 @@ class SecureConnectorImpl implements SecureConnector {
         reject(error);
       });
     });
+  }
+  waitForReady(): Promise<void> {
+    return Promise.resolve();
   }
   getCallCredentials(): CallCredentials {
     return this.callCredentials;
@@ -328,27 +341,45 @@ class CertificateProviderChannelCredentialsImpl extends ChannelCredentials {
     constructor(private parent: CertificateProviderChannelCredentialsImpl, private channelTarget: GrpcUri, private options: ChannelOptions, private callCredentials: CallCredentials) {}
 
     connect(socket: Socket): Promise<SecureConnectResult> {
-      return new Promise(async (resolve, reject) => {
-        const secureContext = await this.parent.getSecureContext();
+      return new Promise((resolve, reject) => {
+        const secureContext = this.parent.getLatestSecureContext();
         if (!secureContext) {
           reject(new Error('Failed to load credentials'));
           return;
+        }
+        if (socket.closed) {
+          reject(new Error('Socket closed while loading credentials'));
         }
         const connnectionOptions = getConnectionOptions(secureContext, this.parent.verifyOptions, this.channelTarget, this.options);
         const tlsConnectOptions: ConnectionOptions = {
           socket: socket,
           ...connnectionOptions
         }
+        const closeCallback = () => {
+          reject(new Error('Socket closed'));
+        };
+        const errorCallback = (error: Error) => {
+          reject(error);
+        }
         const tlsSocket = tlsConnect(tlsConnectOptions, () => {
+          tlsSocket.removeListener('close', closeCallback);
+          tlsSocket.removeListener('error', errorCallback);
+          if (!tlsSocket.authorized) {
+            reject(tlsSocket.authorizationError);
+            return;
+          }
           resolve({
             socket: tlsSocket,
             secure: true
           });
         });
-        tlsSocket.on('error', (error: Error) => {
-          reject(error);
-        });
+        tlsSocket.once('close', closeCallback);
+        tlsSocket.once('error', errorCallback);
       });
+    }
+
+    async waitForReady(): Promise<void> {
+      await this.parent.getSecureContext();
     }
 
     getCallCredentials(): CallCredentials {
@@ -446,12 +477,17 @@ class CertificateProviderChannelCredentialsImpl extends ChannelCredentials {
     if (this.identityCertificateProvider !== null && !this.latestIdentityUpdate) {
       return null;
     }
-    return createSecureContext({
-      ca: this.latestCaUpdate.caCertificate,
-      key: this.latestIdentityUpdate?.privateKey,
-      cert: this.latestIdentityUpdate?.certificate,
-      ciphers: CIPHER_SUITES
-    });
+    try {
+      return createSecureContext({
+        ca: this.latestCaUpdate.caCertificate,
+        key: this.latestIdentityUpdate?.privateKey,
+        cert: this.latestIdentityUpdate?.certificate,
+        ciphers: CIPHER_SUITES
+      });
+    } catch (e) {
+      log(LogVerbosity.ERROR, 'Failed to createSecureContext with error ' + (e as Error).message);
+      return null;
+    }
   }
 }
 

@@ -225,8 +225,8 @@ class Http2Transport implements Transport {
       this.handleDisconnect();
     });
 
-    session.socket.once('close', () => {
-      this.trace('connection closed');
+    session.socket.once('close', (hadError) => {
+      this.trace('connection closed. hadError=' + hadError);
       this.handleDisconnect();
     });
 
@@ -659,6 +659,10 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       return Promise.reject();
     }
 
+    if (secureConnectResult.socket.closed) {
+      return Promise.reject('Connection closed before starting HTTP/2 handshake');
+    }
+
     return new Promise<Http2Transport>((resolve, reject) => {
       let remoteName: string | null = null;
       let realTarget: GrpcUri = this.channelTarget;
@@ -671,6 +675,26 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       }
       const scheme = secureConnectResult.secure ? 'https' : 'http';
       const targetPath = getDefaultAuthority(realTarget);
+      const closeHandler = () => {
+        this.session?.destroy();
+        this.session = null;
+        // Leave time for error event to happen before rejecting
+        setImmediate(() => {
+          if (!reportedError) {
+            reportedError = true;
+            reject(`${errorMessage.trim()} (${new Date().toISOString()})`);
+          }
+        });
+      };
+      const errorHandler = (error: Error) => {
+        this.session?.destroy();
+        errorMessage = (error as Error).message;
+        this.trace('connection failed with error ' + errorMessage);
+        if (!reportedError) {
+          reportedError = true;
+          reject(`${errorMessage} (${new Date().toISOString()})`);
+        }
+      };
       const session = http2.connect(`${scheme}://${targetPath}`, {
         createConnection: (authority, option) => {
           return secureConnectResult.socket;
@@ -685,29 +709,17 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       let errorMessage = 'Failed to connect';
       let reportedError = false;
       session.unref();
-      session.once('connect', () => {
+      session.once('remoteSettings', () => {
         session.removeAllListeners();
+        secureConnectResult.socket.removeListener('close', closeHandler);
+        secureConnectResult.socket.removeListener('error', errorHandler);
         resolve(new Http2Transport(session, address, options, remoteName));
         this.session = null;
       });
-      session.once('close', () => {
-        this.session = null;
-        // Leave time for error event to happen before rejecting
-        setImmediate(() => {
-          if (!reportedError) {
-            reportedError = true;
-            reject(`${errorMessage} (${new Date().toISOString()})`);
-          }
-        });
-      });
-      session.once('error', error => {
-        errorMessage = (error as Error).message;
-        this.trace('connection failed with error ' + errorMessage);
-        if (!reportedError) {
-          reportedError = true;
-          reject(`${errorMessage} (${new Date().toISOString()})`);
-        }
-      });
+      session.once('close', closeHandler);
+      session.once('error', errorHandler);
+      secureConnectResult.socket.once('close', closeHandler);
+      secureConnectResult.socket.once('error', errorHandler);
     });
   }
 
@@ -717,12 +729,19 @@ export class Http2SubchannelConnector implements SubchannelConnector {
         return proxiedSocket;
       } else {
         return new Promise<Socket>((resolve, reject) => {
+          const closeCallback = () => {
+            reject(new Error('Socket closed'));
+          };
+          const errorCallback = (error: Error) => {
+            reject(error);
+          }
           const socket = net.connect(address, () => {
+            socket.removeListener('close', closeCallback);
+            socket.removeListener('error', errorCallback);
             resolve(socket);
           });
-          socket.once('error', (error) => {
-            reject(error);
-          });
+          socket.once('close', closeCallback);
+          socket.once('error', errorCallback);
         });
       }
     });
@@ -738,9 +757,15 @@ export class Http2SubchannelConnector implements SubchannelConnector {
     }
     let tcpConnection: net.Socket | null = null;
     let secureConnectResult: SecureConnectResult | null  = null;
+    const addressString = subchannelAddressToString(address);
     try {
+      this.trace(addressString + ' Waiting for secureConnector to be ready');
+      await secureConnector.waitForReady();
+      this.trace(addressString + ' secureConnector is ready');
       tcpConnection = await this.tcpConnect(address, options);
+      this.trace(addressString + ' Established TCP connection');
       secureConnectResult = await secureConnector.connect(tcpConnection);
+      this.trace(addressString + ' Established secure connection');
       return this.createSession(secureConnectResult, address, options);
     } catch (e) {
       tcpConnection?.destroy();

@@ -152,6 +152,7 @@ function validateTransportSocket(context: XdsDecodeContext, transportSocket: Tra
     return errors;
   }
   const downstreamTlsContext = decodeSingleResource(DOWNSTREAM_TLS_CONTEXT_TYPE_URL, transportSocket.typed_config.value);
+  trace('Decoded DownstreamTlsContext: ' + JSON.stringify(downstreamTlsContext, undefined, 2));
   if (downstreamTlsContext.require_sni?.value) {
     errors.push(`DownstreamTlsContext.require_sni set`);
   }
@@ -164,26 +165,28 @@ function validateTransportSocket(context: XdsDecodeContext, transportSocket: Tra
   }
   const commonTlsContext = downstreamTlsContext.common_tls_context;
   let validationContext: CertificateValidationContext__Output | null = null;
-  switch (commonTlsContext.validation_context_type) {
-    case 'validation_context_sds_secret_config':
-      errors.push('Unexpected DownstreamTlsContext.common_tls_context.validation_context_sds_secret_config');
-      break;
-    case 'validation_context':
-      if (!commonTlsContext.validation_context) {
-        errors.push('Empty DownstreamTlsContext.common_tls_context.validation_context');
+  if (commonTlsContext.validation_context_type) {
+    switch (commonTlsContext.validation_context_type) {
+      case 'validation_context_sds_secret_config':
+        errors.push('Unexpected DownstreamTlsContext.common_tls_context.validation_context_sds_secret_config');
         break;
-      }
-      validationContext = commonTlsContext.validation_context;
-      break;
-    case 'combined_validation_context':
-      if (!commonTlsContext.combined_validation_context) {
-        errors.push('Empty DownstreamTlsContext.common_tls_context.combined_validation_context')
+      case 'validation_context':
+        if (!commonTlsContext.validation_context) {
+          errors.push('Empty DownstreamTlsContext.common_tls_context.validation_context');
+          break;
+        }
+        validationContext = commonTlsContext.validation_context;
         break;
-      }
-      validationContext = commonTlsContext.combined_validation_context.default_validation_context;
-      break;
-    default:
-      errors.push(`Unsupported DownstreamTlsContext.common_tls_context.validation_context_type: ${commonTlsContext.validation_context_type}`);
+      case 'combined_validation_context':
+        if (!commonTlsContext.combined_validation_context) {
+          errors.push('Empty DownstreamTlsContext.common_tls_context.combined_validation_context')
+          break;
+        }
+        validationContext = commonTlsContext.combined_validation_context.default_validation_context;
+        break;
+      default:
+        errors.push(`Unsupported DownstreamTlsContext.common_tls_context.validation_context_type: ${commonTlsContext.validation_context_type}`);
+    }
   }
   if (downstreamTlsContext.require_client_certificate && !validationContext) {
     errors.push('DownstreamTlsContext.require_client_certificate set without any validationContext');
@@ -262,14 +265,15 @@ export class ListenerResourceType extends XdsResourceType {
 
   private validateResource(context: XdsDecodeContext, message: Listener__Output): ValidationResult<Listener__Output> {
     const errors: string[] = [];
-    if (
-      message.api_listener?.api_listener &&
-      message.api_listener.api_listener.type_url === HTTP_CONNECTION_MANGER_TYPE_URL
-    ) {
-      const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, message.api_listener!.api_listener.value);
-      errors.push(...validateHttpConnectionManager(httpConnectionManager).map(error => `api_listener.api_listener: ${error}`));
-    } else {
-      errors.push(`api_listener.api_listener.type_url != ${HTTP_CONNECTION_MANGER_TYPE_URL}`);
+    if (message.api_listener?.api_listener) {
+      if (
+        message.api_listener.api_listener.type_url === HTTP_CONNECTION_MANGER_TYPE_URL
+      ) {
+        const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, message.api_listener!.api_listener.value);
+        errors.push(...validateHttpConnectionManager(httpConnectionManager).map(error => `api_listener.api_listener: ${error}`));
+      } else {
+        errors.push(`api_listener.api_listener.type_url != ${HTTP_CONNECTION_MANGER_TYPE_URL}`);
+      }
     }
     if (message.listener_filters.length > 0) {
       errors.push('listener_filters populated');
@@ -292,6 +296,9 @@ export class ListenerResourceType extends XdsResourceType {
     }
     if (message.default_filter_chain) {
       errors.push(...validateFilterChain(context, message.default_filter_chain).map(error => `default_filter_chain: ${error}`));
+    }
+    if (!message.api_listener && !message.default_filter_chain && message.filter_chains.length === 0) {
+      errors.push('No api_listener and no filter_chains and no default_filter_chain');
     }
     if (errors.length === 0) {
       return {

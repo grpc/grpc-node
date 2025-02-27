@@ -15,11 +15,17 @@
  *
  */
 
-import { CallCredentials, ChannelCredentials, ChannelOptions, ServerCredentials, VerifyOptions, experimental } from "@grpc/grpc-js";
+import { CallCredentials, ChannelCredentials, ChannelOptions, ServerCredentials, VerifyOptions, experimental, logVerbosity } from "@grpc/grpc-js";
 import { CA_CERT_PROVIDER_KEY, IDENTITY_CERT_PROVIDER_KEY, SAN_MATCHER_KEY, SanMatcher } from "./load-balancer-cds";
 import GrpcUri = experimental.GrpcUri;
 import SecureConnector = experimental.SecureConnector;
 import createCertificateProviderChannelCredentials = experimental.createCertificateProviderChannelCredentials;
+
+const TRACER_NAME = 'xds_channel_credentials';
+
+function trace(text: string) {
+  experimental.trace(logVerbosity.DEBUG, TRACER_NAME, text);
+}
 
 export class XdsChannelCredentials extends ChannelCredentials {
   constructor(private fallbackCredentials: ChannelCredentials) {
@@ -33,6 +39,7 @@ export class XdsChannelCredentials extends ChannelCredentials {
   }
   _createSecureConnector(channelTarget: GrpcUri, options: ChannelOptions, callCredentials?: CallCredentials): SecureConnector {
     if (options[CA_CERT_PROVIDER_KEY]) {
+      trace('Using secure credentials');
       const verifyOptions: VerifyOptions = {};
       if (options[SAN_MATCHER_KEY]) {
         const matcher = options[SAN_MATCHER_KEY] as SanMatcher;
@@ -40,6 +47,7 @@ export class XdsChannelCredentials extends ChannelCredentials {
           if (cert.subjectaltname && matcher.apply(cert.subjectaltname)) {
             return undefined;
           } else {
+            trace('Subject alternative name not matched: ' + cert.subjectaltname);
             return new Error('No matching subject alternative name found in certificate');
           }
         }
@@ -47,6 +55,7 @@ export class XdsChannelCredentials extends ChannelCredentials {
       const certProviderCreds = createCertificateProviderChannelCredentials(options[CA_CERT_PROVIDER_KEY], options[IDENTITY_CERT_PROVIDER_KEY] ?? null, verifyOptions);
       return certProviderCreds._createSecureConnector(channelTarget, options, callCredentials);
     } else {
+      trace('Using fallback credentials');
       return this.fallbackCredentials._createSecureConnector(channelTarget, options, callCredentials);
     }
   }
@@ -55,7 +64,7 @@ export class XdsChannelCredentials extends ChannelCredentials {
 
 export class XdsServerCredentials extends ServerCredentials {
   constructor(private fallbackCredentials: ServerCredentials) {
-    super();
+    super({});
   }
 
   getFallbackCredentials() {

@@ -30,6 +30,8 @@ import { SimpleRequest__Output } from './generated/grpc/testing/SimpleRequest';
 import { SimpleResponse } from './generated/grpc/testing/SimpleResponse';
 import { ReflectionService } from '@grpc/reflection';
 
+grpc_xds.register();
+
 const packageDefinition = protoLoader.loadSync('grpc/testing/test.proto', {
   keepCase: true,
   defaults: true,
@@ -158,6 +160,10 @@ function adminServiceInterceptor(methodDescriptor: grpc.ServerMethodDefinition<a
   const responder: grpc.Responder = {
     start: next => {
       next(listener);
+    },
+    sendMessage: (message, next) => {
+      console.log(`Responded to request to method ${methodDescriptor.path}: ${JSON.stringify(message)}`);
+      next(message);
     }
   };
   return new grpc.ServerInterceptingCall(call, responder);
@@ -228,11 +234,10 @@ function getIPv6Addresses(): string[] {
 
 async function main() {
   const argv = yargs
-    .string(['port', 'maintenance_port', 'address_type'])
-    .boolean(['secure_mode'])
+    .string(['port', 'maintenance_port', 'address_type', 'secure_mode'])
     .demandOption(['port'])
     .default('address_type', 'IPV4_IPV6')
-    .default('secure_mode', false)
+    .default('secure_mode', 'false')
     .parse()
     console.log('Starting xDS interop server. Args: ', argv);
   const healthImpl = new HealthImplementation({'': 'NOT_SERVING'});
@@ -250,7 +255,8 @@ async function main() {
     services: ['grpc.testing.TestService']
   })
   const addressType = argv.address_type.toUpperCase();
-  if (argv.secure_mode) {
+  const secureMode = argv.secure_mode.toLowerCase() == 'true';
+  if (secureMode) {
     if (addressType !== 'IPV4_IPV6') {
       throw new Error('Secure mode only supports IPV4_IPV6 address type');
     }
@@ -265,7 +271,7 @@ async function main() {
     const xdsCreds = new grpc_xds.XdsServerCredentials(grpc.ServerCredentials.createInsecure());
     await Promise.all([
       serverBindPromise(maintenanceServer, `[::]:${argv.maintenance_port}`, grpc.ServerCredentials.createInsecure()),
-      serverBindPromise(server, `[::]:${argv.port}`, xdsCreds)
+      serverBindPromise(server, `0.0.0.0:${argv.port}`, xdsCreds)
     ]);
   } else {
     const server = new grpc.Server({interceptors: [unifiedInterceptor]});

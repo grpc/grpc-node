@@ -83,6 +83,7 @@ interface ConfigParameters {
   createConnectionInjector: (credentials: ServerCredentials) => ConnectionInjector;
   drainGraceTimeMs: number;
   listenerResourceNameTemplate: string;
+  unregisterChannelzRef: () => void;
 }
 
 class FilterChainEntry {
@@ -159,22 +160,25 @@ class FilterChainEntry {
     }
     if (credentials instanceof XdsServerCredentials) {
       if (filterChain.transport_socket) {
+        trace('Using secure credentials');
         const downstreamTlsContext = decodeSingleResource(DOWNSTREAM_TLS_CONTEXT_TYPE_URL, filterChain.transport_socket.typed_config!.value);
         const commonTlsContext = downstreamTlsContext.common_tls_context!;
         const instanceCertificateProvider = configParameters.xdsClient.getCertificateProvider(commonTlsContext.tls_certificate_provider_instance!.instance_name);
         if (!instanceCertificateProvider) {
           throw new Error(`Invalid TLS context detected: unrecognized certificate instance name: ${commonTlsContext.tls_certificate_provider_instance!.instance_name}`);
         }
-        let validationContext: CertificateValidationContext__Output | null;
-        switch (commonTlsContext?.validation_context_type) {
-          case 'validation_context':
-            validationContext = commonTlsContext.validation_context!;
-            break;
-          case 'combined_validation_context':
-            validationContext = commonTlsContext.combined_validation_context!.default_validation_context;
-            break;
-          default:
-            throw new Error(`Invalid TLS context detected: invalid validation_context_type: ${commonTlsContext.validation_context_type}`);
+        let validationContext: CertificateValidationContext__Output | null = null;
+        if (commonTlsContext?.validation_context_type) {
+          switch (commonTlsContext?.validation_context_type) {
+            case 'validation_context':
+              validationContext = commonTlsContext.validation_context!;
+              break;
+            case 'combined_validation_context':
+              validationContext = commonTlsContext.combined_validation_context!.default_validation_context;
+              break;
+            default:
+              throw new Error(`Invalid TLS context detected: invalid validation_context_type: ${commonTlsContext.validation_context_type}`);
+          }
         }
         let caCertificateProvider: experimental.CertificateProvider | null = null;
         if (validationContext?.ca_certificate_provider_instance) {
@@ -185,6 +189,7 @@ class FilterChainEntry {
         }
         credentials = experimental.createCertificateProviderServerCredentials(instanceCertificateProvider, caCertificateProvider, downstreamTlsContext.require_client_certificate?.value ?? false);
       } else {
+        trace('Using fallback credentials');
         credentials = credentials.getFallbackCredentials();
       }
     }
@@ -287,6 +292,7 @@ class ListenerConfig {
   handleConnection(socket: net.Socket) {
     const matchingFilter = selectMostSpecificallyMatchingFilter(this.filterChainEntries, socket) ?? this.defaultFilterChain;
     if (!matchingFilter) {
+      trace('Rejecting connection from ' + socket.remoteAddress + ': No filter matched');
       socket.destroy();
       return;
     }
@@ -449,12 +455,25 @@ class BoundPortEntry {
     this.tcpServer.close();
     const resourceName = formatTemplateString(this.configParameters.listenerResourceNameTemplate, this.boundAddress);
     ListenerResourceType.cancelWatch(this.configParameters.xdsClient, resourceName, this.listenerWatcher);
+    this.configParameters.unregisterChannelzRef();
   }
 }
 
 function normalizeFilterChainMatch(filterChainMatch: FilterChainMatch__Output | null): NormalizedFilterChainMatch[] {
   if (!filterChainMatch) {
-    return [];
+    filterChainMatch = {
+      address_suffix: '',
+      application_protocols: [],
+      destination_port: null,
+      direct_source_prefix_ranges: [],
+      prefix_ranges: [],
+      server_names: [],
+      source_ports: [],
+      source_prefix_ranges: [],
+      source_type: 'ANY',
+      suffix_len: null,
+      transport_protocol: 'raw_buffer'
+    };
   }
   if (filterChainMatch.destination_port) {
     return [];
@@ -613,11 +632,13 @@ export class XdsServer extends Server {
     if (!hostPort || !isValidIpPort(hostPort)) {
       throw new Error(`Listening port string must have the format IP:port with non-zero port, got ${port}`);
     }
+    const channelzRef = this.experimentalRegisterListenerToChannelz({host: hostPort.host, port: hostPort.port!});
     const configParameters: ConfigParameters = {
-      createConnectionInjector: (credentials) => this.createConnectionInjector(credentials),
+      createConnectionInjector: (credentials) => this.experimentalCreateConnectionInjectorWithChannelzRef(credentials, channelzRef),
       drainGraceTimeMs: this.drainGraceTimeMs,
       listenerResourceNameTemplate: this.listenerResourceNameTemplate,
-      xdsClient: this.xdsClient
+      xdsClient: this.xdsClient,
+      unregisterChannelzRef: () => this.experimentalUnregisterListenerFromChannelz(channelzRef)
     };
     const portEntry = new BoundPortEntry(configParameters, port, creds);
     const servingStatusListener: ServingStatusListener = statusObject => {

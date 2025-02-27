@@ -360,6 +360,11 @@ export class XdsDependencyManager {
   constructor(private xdsClient: XdsClient, private listenerResourceName: string, private dataPlaneAuthority: string, private watcher: XdsConfigWatcher) {
     this.ldsWatcher = new Watcher<Listener__Output>({
       onResourceChanged: (update: Listener__Output) => {
+        if (!update.api_listener) {
+          this.trace('Received Listener resource not usable on client');
+          this.handleListenerDoesNotExist();
+          return;
+        }
         this.latestListener = update;
         const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, update.api_listener!.api_listener!.value);
         switch (httpConnectionManager.route_specifier) {
@@ -401,15 +406,7 @@ export class XdsDependencyManager {
       },
       onResourceDoesNotExist: () => {
         this.trace('Resolution error: LDS resource does not exist');
-        if (this.latestRouteConfigName) {
-          this.trace('RDS.cancelWatch(' + this.latestRouteConfigName + '): LDS resource does not exist');
-          RouteConfigurationResourceType.cancelWatch(this.xdsClient, this.latestRouteConfigName, this.rdsWatcher);
-          this.latestRouteConfigName = null;
-          this.latestRouteConfiguration = null;
-          this.clusterRoots = [];
-          this.pruneOrphanClusters();
-        }
-        this.watcher.onResourceDoesNotExist(`Listener ${listenerResourceName}`);
+        this.handleListenerDoesNotExist();
       }
     });
     this.rdsWatcher = new Watcher<RouteConfiguration__Output>({
@@ -433,6 +430,19 @@ export class XdsDependencyManager {
 
   private trace(text: string) {
     trace('[' + this.listenerResourceName + '] ' + text);
+  }
+
+  private handleListenerDoesNotExist() {
+    if (this.latestRouteConfigName) {
+      this.trace('RDS.cancelWatch(' + this.latestRouteConfigName + '): LDS resource does not exist');
+      RouteConfigurationResourceType.cancelWatch(this.xdsClient, this.latestRouteConfigName, this.rdsWatcher);
+      this.latestRouteConfigName = null;
+      this.latestRouteConfiguration = null;
+      this.clusterRoots = [];
+      this.pruneOrphanClusters();
+    }
+    this.watcher.onResourceDoesNotExist(`Listener ${this.listenerResourceName}`);
+
   }
 
   private maybeSendUpdate() {

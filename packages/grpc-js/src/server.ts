@@ -246,6 +246,7 @@ interface BoundPort {
 interface Http2ServerInfo {
   channelzRef: SocketRef;
   sessions: Set<http2.ServerHttp2Session>;
+  ownsChannelzRef: boolean;
 }
 
 interface SessionIdleTimeoutTracker {
@@ -539,7 +540,12 @@ export class Server {
     throw new Error('Not implemented. Use bindAsync() instead');
   }
 
-  private registerListenerToChannelz(boundAddress: SubchannelAddress) {
+  /**
+   * This API is experimental, so API stability is not guaranteed across minor versions.
+   * @param boundAddress
+   * @returns
+   */
+  protected experimentalRegisterListenerToChannelz(boundAddress: SubchannelAddress) {
     return registerChannelzSocket(
       subchannelAddressToString(boundAddress),
       () => {
@@ -566,19 +572,27 @@ export class Server {
     );
   }
 
+  protected experimentalUnregisterListenerFromChannelz(channelzRef: SocketRef) {
+    unregisterChannelzRef(channelzRef);
+  }
+
   private createHttp2Server(credentials: ServerCredentials) {
     let http2Server: http2.Http2Server | http2.Http2SecureServer;
     if (credentials._isSecure()) {
-      const credentialsSettings = credentials._getSettings();
+      const constructorOptions = credentials._getConstructorOptions();
+      const contextOptions = credentials._getSecureContextOptions();
       const secureServerOptions: http2.SecureServerOptions = {
         ...this.commonServerOptions,
-        ...credentialsSettings,
+        ...constructorOptions,
+        ...contextOptions,
         enableTrace: this.options['grpc-node.tls_enable_trace'] === 1
       };
-      let areCredentialsValid = credentialsSettings !== null;
+      let areCredentialsValid = contextOptions !== null;
+      this.trace('Initial credentials valid: ' + areCredentialsValid);
       http2Server = http2.createSecureServer(secureServerOptions);
-      http2Server.on('connection', (socket: Socket) => {
+      http2Server.prependListener('connection', (socket: Socket) => {
         if (!areCredentialsValid) {
+          this.trace('Dropped connection from ' + JSON.stringify(socket.address()) + ' due to unloaded credentials');
           socket.destroy();
         }
       });
@@ -593,9 +607,16 @@ export class Server {
       });
       const credsWatcher: SecureContextWatcher = options => {
         if (options) {
-          (http2Server as http2.Http2SecureServer).setSecureContext(options);
+          const secureServer = http2Server as http2.Http2SecureServer;
+          try {
+            secureServer.setSecureContext(options);
+          } catch (e) {
+            logging.log(LogVerbosity.ERROR, 'Failed to set secure context with error ' + (e as Error).message);
+            options = null;
+          }
         }
         areCredentialsValid = options !== null;
+        this.trace('Post-update credentials valid: ' + areCredentialsValid);
       }
       credentials._addWatcher(credsWatcher);
       http2Server.on('close', () => {
@@ -646,7 +667,7 @@ export class Server {
           };
         }
 
-        const channelzRef = this.registerListenerToChannelz(
+        const channelzRef = this.experimentalRegisterListenerToChannelz(
           boundSubchannelAddress
         );
         this.listenerChildrenTracker.refChild(channelzRef);
@@ -654,6 +675,7 @@ export class Server {
         this.http2Servers.set(http2Server, {
           channelzRef: channelzRef,
           sessions: new Set(),
+          ownsChannelzRef: true
         });
         boundPortObject.listeningServers.add(http2Server);
         this.trace(
@@ -942,19 +964,25 @@ export class Server {
     );
   }
 
-  createConnectionInjector(credentials: ServerCredentials): ConnectionInjector {
+  /**
+   * This API is experimental, so API stability is not guaranteed across minor versions.
+   * @param credentials
+   * @param channelzRef
+   * @returns
+   */
+  protected experimentalCreateConnectionInjectorWithChannelzRef(credentials: ServerCredentials, channelzRef: SocketRef, ownsChannelzRef=false) {
     if (credentials === null || !(credentials instanceof ServerCredentials)) {
       throw new TypeError('creds must be a ServerCredentials object');
     }
-    const server = this.createHttp2Server(credentials);
-    const channelzRef = this.registerInjectorToChannelz();
     if (this.channelzEnabled) {
       this.listenerChildrenTracker.refChild(channelzRef);
     }
+    const server = this.createHttp2Server(credentials);
     const sessionsSet: Set<http2.ServerHttp2Session> = new Set();
     this.http2Servers.set(server, {
       channelzRef: channelzRef,
-      sessions: sessionsSet
+      sessions: sessionsSet,
+      ownsChannelzRef
     });
     return {
       injectConnection: (connection: Duplex) => {
@@ -979,13 +1007,21 @@ export class Server {
     };
   }
 
+  createConnectionInjector(credentials: ServerCredentials): ConnectionInjector {
+    if (credentials === null || !(credentials instanceof ServerCredentials)) {
+      throw new TypeError('creds must be a ServerCredentials object');
+    }
+    const channelzRef = this.registerInjectorToChannelz();
+    return this.experimentalCreateConnectionInjectorWithChannelzRef(credentials, channelzRef, true);
+  }
+
   private closeServer(server: AnyHttp2Server, callback?: () => void) {
     this.trace(
       'Closing server with address ' + JSON.stringify(server.address())
     );
     const serverInfo = this.http2Servers.get(server);
     server.close(() => {
-      if (serverInfo) {
+      if (serverInfo && serverInfo.ownsChannelzRef) {
         this.listenerChildrenTracker.unrefChild(serverInfo.channelzRef);
         unregisterChannelzRef(serverInfo.channelzRef);
       }

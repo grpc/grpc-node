@@ -460,6 +460,23 @@ function parseIPv6Chunk(addressChunk: string): number[] {
   return result.concat(...bytePairs);
 }
 
+function isIPv6MappedIPv4(ipAddress: string) {
+  return isIPv6(ipAddress) && ipAddress.toLowerCase().startsWith('::ffff:') && isIPv4(ipAddress.substring(7));
+}
+
+/**
+ * Prerequisite: isIPv4(ipAddress)
+ * @param ipAddress
+ * @returns
+ */
+function ipv4AddressStringToBuffer(ipAddress: string): Buffer {
+  return Buffer.from(
+    Uint8Array.from(
+      ipAddress.split('.').map(segment => Number.parseInt(segment))
+    )
+  );
+}
+
 /**
  * Converts an IPv4 or IPv6 address from string representation to binary
  * representation
@@ -468,11 +485,9 @@ function parseIPv6Chunk(addressChunk: string): number[] {
  */
 function ipAddressStringToBuffer(ipAddress: string): Buffer | null {
   if (isIPv4(ipAddress)) {
-    return Buffer.from(
-      Uint8Array.from(
-        ipAddress.split('.').map(segment => Number.parseInt(segment))
-      )
-    );
+    return ipv4AddressStringToBuffer(ipAddress);
+  } else if (isIPv6MappedIPv4(ipAddress)) {
+    return ipv4AddressStringToBuffer(ipAddress.substring(7));
   } else if (isIPv6(ipAddress)) {
     let leftSection: string;
     let rightSection: string;
