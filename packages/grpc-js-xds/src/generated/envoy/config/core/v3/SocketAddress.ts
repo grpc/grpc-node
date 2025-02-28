@@ -101,5 +101,5 @@ export interface SocketAddress__Output {
    * IPv6 space as ``::FFFF:<IPv4-address>``.
    */
   'ipv4_compat': (boolean);
-  'port_specifier': "port_value"|"named_port";
+  'port_specifier'?: "port_value"|"named_port";
 }

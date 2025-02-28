@@ -94,5 +94,5 @@ export interface HttpFilter__Output {
    * Terminal filters (e.g. ``envoy.filters.http.router``) cannot be marked as disabled.
    */
   'disabled': (boolean);
-  'config_type': "typed_config"|"config_discovery";
+  'config_type'?: "typed_config"|"config_discovery";
 }

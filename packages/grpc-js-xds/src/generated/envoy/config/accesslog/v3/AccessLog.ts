@@ -34,5 +34,5 @@ export interface AccessLog__Output {
    * Custom configuration that must be set according to the access logger extension being instantiated.
    * [#extension-category: envoy.access_loggers]
    */
-  'config_type': "typed_config";
+  'config_type'?: "typed_config";
 }

@@ -57,7 +57,7 @@ export interface _envoy_service_discovery_v3_DynamicParameterConstraints_SingleC
    * special configuration based on that key.
    */
   'exists'?: (_envoy_service_discovery_v3_DynamicParameterConstraints_SingleConstraint_Exists__Output | null);
-  'constraint_type': "value"|"exists";
+  'constraint_type'?: "value"|"exists";
 }
 
 /**
@@ -115,5 +115,5 @@ export interface DynamicParameterConstraints__Output {
    * The inverse (NOT) of a set of constraints.
    */
   'not_constraints'?: (_envoy_service_discovery_v3_DynamicParameterConstraints__Output | null);
-  'type': "constraint"|"or_constraints"|"and_constraints"|"not_constraints";
+  'type'?: "constraint"|"or_constraints"|"and_constraints"|"not_constraints";
 }

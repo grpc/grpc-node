@@ -23,7 +23,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Sc
    * Specifies how a header field's value should be extracted.
    */
   'header_value_extractor'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor__Output | null);
-  'type': "header_value_extractor";
+  'type'?: "header_value_extractor";
 }
 
 /**
@@ -119,7 +119,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Sc
    * Specifies the key value pair to extract the value from.
    */
   'element'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement__Output | null);
-  'extract_type': "index"|"element";
+  'extract_type'?: "index"|"element";
 }
 
 /**
@@ -269,5 +269,5 @@ export interface ScopedRoutes__Output {
    * in this message.
    */
   'scoped_rds'?: (_envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds__Output | null);
-  'config_specifier': "scoped_route_configurations_list"|"scoped_rds";
+  'config_specifier'?: "scoped_route_configurations_list"|"scoped_rds";
 }

@@ -246,6 +246,6 @@ export interface RedirectAction__Output {
    * 2. If the source URI scheme is ``https`` and the port is explicitly
    * set to ``:443``, the port will be removed after the redirection
    */
-  'scheme_rewrite_specifier': "https_redirect"|"scheme_redirect";
-  'path_rewrite_specifier': "path_redirect"|"prefix_rewrite"|"regex_rewrite";
+  'scheme_rewrite_specifier'?: "https_redirect"|"scheme_redirect";
+  'path_rewrite_specifier'?: "path_redirect"|"prefix_rewrite"|"regex_rewrite";
 }

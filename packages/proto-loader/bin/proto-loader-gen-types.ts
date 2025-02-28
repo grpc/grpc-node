@@ -398,7 +398,7 @@ function generateRestrictedMessageInterface(formatter: TextFormatter, messageTyp
       if (options.includeComments) {
         formatComment(formatter, oneof.comment, oneof.options);
       }
-      formatter.writeLine(`'${oneof.name}': ${typeString};`);
+      formatter.writeLine(`'${oneof.name}'?: ${typeString};`);
     }
   }
   if (options.outputBranded) {

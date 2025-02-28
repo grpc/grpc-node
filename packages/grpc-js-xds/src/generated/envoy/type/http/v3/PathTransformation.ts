@@ -74,7 +74,7 @@ export interface _envoy_type_http_v3_PathTransformation_Operation__Output {
    * Enable merging adjacent slashes.
    */
   'merge_slashes'?: (_envoy_type_http_v3_PathTransformation_Operation_MergeSlashes__Output | null);
-  'operation_specifier': "normalize_path_rfc_3986"|"merge_slashes";
+  'operation_specifier'?: "normalize_path_rfc_3986"|"merge_slashes";
 }
 
 export interface PathTransformation {

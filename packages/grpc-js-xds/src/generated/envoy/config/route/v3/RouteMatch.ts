@@ -325,5 +325,5 @@ export interface RouteMatch__Output {
    * [#extension-category: envoy.path.match]
    */
   'path_match_policy'?: (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
-  'path_specifier': "prefix"|"path"|"safe_regex"|"connect_matcher"|"path_separated_prefix"|"path_match_policy";
+  'path_specifier'?: "prefix"|"path"|"safe_regex"|"connect_matcher"|"path_separated_prefix"|"path_match_policy";
 }

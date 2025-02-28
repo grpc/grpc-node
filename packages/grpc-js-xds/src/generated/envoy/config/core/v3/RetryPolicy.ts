@@ -20,7 +20,7 @@ export interface _envoy_config_core_v3_RetryPolicy_RetryHostPredicate {
 export interface _envoy_config_core_v3_RetryPolicy_RetryHostPredicate__Output {
   'name': (string);
   'typed_config'?: (_google_protobuf_Any__Output | null);
-  'config_type': "typed_config";
+  'config_type'?: "typed_config";
 }
 
 /**
@@ -38,7 +38,7 @@ export interface _envoy_config_core_v3_RetryPolicy_RetryPriority {
 export interface _envoy_config_core_v3_RetryPolicy_RetryPriority__Output {
   'name': (string);
   'typed_config'?: (_google_protobuf_Any__Output | null);
-  'config_type': "typed_config";
+  'config_type'?: "typed_config";
 }
 
 /**

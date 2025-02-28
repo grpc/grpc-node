@@ -149,5 +149,5 @@ export interface CorsPolicy__Output {
    * to the upstream. Default is true.
    */
   'forward_not_matching_preflights': (_google_protobuf_BoolValue__Output | null);
-  'enabled_specifier': "filter_enabled";
+  'enabled_specifier'?: "filter_enabled";
 }

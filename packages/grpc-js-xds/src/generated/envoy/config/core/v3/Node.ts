@@ -174,5 +174,5 @@ export interface Node__Output {
    * parameter then appears in this field during future discovery requests.
    */
   'dynamic_parameters': ({[key: string]: _xds_core_v3_ContextParams__Output});
-  'user_agent_version_type': "user_agent_version"|"user_agent_build_version";
+  'user_agent_version_type'?: "user_agent_version"|"user_agent_build_version";
 }

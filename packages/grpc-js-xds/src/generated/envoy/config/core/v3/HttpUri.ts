@@ -75,5 +75,5 @@ export interface HttpUri__Output {
    * inline DNS resolution. See `issue
    * <https://github.com/envoyproxy/envoy/issues/1606>`_.
    */
-  'http_upstream_type': "cluster";
+  'http_upstream_type'?: "cluster";
 }

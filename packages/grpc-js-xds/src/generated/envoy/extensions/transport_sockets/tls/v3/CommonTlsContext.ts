@@ -61,7 +61,7 @@ export interface _envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_Cer
    * certificate providers of a cluster.
    * This config could be supplied inline or (in future) a named xDS resource.
    */
-  'config': "typed_config";
+  'config'?: "typed_config";
 }
 
 /**
@@ -383,5 +383,5 @@ export interface CommonTlsContext__Output {
    * TLS key log configuration
    */
   'key_log': (_envoy_extensions_transport_sockets_tls_v3_TlsKeyLog__Output | null);
-  'validation_context_type': "validation_context"|"validation_context_sds_secret_config"|"combined_validation_context"|"validation_context_certificate_provider"|"validation_context_certificate_provider_instance";
+  'validation_context_type'?: "validation_context"|"validation_context_sds_secret_config"|"combined_validation_context"|"validation_context_certificate_provider"|"validation_context_certificate_provider_instance";
 }

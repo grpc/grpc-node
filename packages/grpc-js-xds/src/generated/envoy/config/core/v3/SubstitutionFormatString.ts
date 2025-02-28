@@ -206,5 +206,5 @@ export interface SubstitutionFormatString__Output {
    * If json_format is used, the options will be applied to the output JSON string.
    */
   'json_format_options': (_envoy_config_core_v3_JsonFormatOptions__Output | null);
-  'format': "text_format"|"json_format"|"text_format_source";
+  'format'?: "text_format"|"json_format"|"text_format_source";
 }

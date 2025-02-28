@@ -44,5 +44,5 @@ export interface OEchoRequest {
    * The severity to be echoed by the server.
    */
   'severity': (O_google_showcase_v1beta1_Severity);
-  'response': "content"|"error";
+  'response'?: "content"|"error";
 }

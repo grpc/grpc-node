@@ -51,6 +51,6 @@ export interface OWaitRequest {
    * The duration of this operation.
    */
   'ttl'?: (O_google_protobuf_Duration | null);
-  'end': "end_time"|"ttl";
-  'response': "error"|"success";
+  'end'?: "end_time"|"ttl";
+  'response'?: "error"|"success";
 }

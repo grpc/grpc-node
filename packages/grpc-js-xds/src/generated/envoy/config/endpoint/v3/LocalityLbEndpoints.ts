@@ -163,5 +163,5 @@ export interface LocalityLbEndpoints__Output {
   /**
    * [#not-implemented-hide:]
    */
-  'lb_config': "load_balancer_endpoints"|"leds_cluster_locality_config";
+  'lb_config'?: "load_balancer_endpoints"|"leds_cluster_locality_config";
 }

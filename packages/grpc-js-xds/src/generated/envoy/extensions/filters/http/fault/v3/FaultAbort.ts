@@ -63,5 +63,5 @@ export interface FaultAbort__Output {
    * gRPC status code to use to abort the gRPC request.
    */
   'grpc_status'?: (number);
-  'error_type': "http_status"|"grpc_status"|"header_abort";
+  'error_type'?: "http_status"|"grpc_status"|"header_abort";
 }

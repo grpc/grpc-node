@@ -47,5 +47,5 @@ export interface PrivateKeyProvider__Output {
   /**
    * Private key method provider specific configuration.
    */
-  'config_type': "typed_config";
+  'config_type'?: "typed_config";
 }

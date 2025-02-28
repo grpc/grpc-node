@@ -145,5 +145,5 @@ export interface SocketOption__Output {
    * STATE_PREBIND is currently the only valid value.
    */
   'state': (_envoy_config_core_v3_SocketOption_SocketState__Output);
-  'value': "int_value"|"buf_value";
+  'value'?: "int_value"|"buf_value";
 }

@@ -116,5 +116,5 @@ export interface StringMatcher__Output {
    * [#extension-category: envoy.string_matcher]
    */
   'custom'?: (_xds_core_v3_TypedExtensionConfig__Output | null);
-  'match_pattern': "exact"|"prefix"|"suffix"|"safe_regex"|"contains"|"custom";
+  'match_pattern'?: "exact"|"prefix"|"suffix"|"safe_regex"|"contains"|"custom";
 }

@@ -65,5 +65,5 @@ export interface PerXdsConfig__Output {
    * @deprecated
    */
   'client_status': (_envoy_service_status_v3_ClientConfigStatus__Output);
-  'per_xds_config': "listener_config"|"cluster_config"|"route_config"|"scoped_route_config"|"endpoint_config";
+  'per_xds_config'?: "listener_config"|"cluster_config"|"route_config"|"scoped_route_config"|"endpoint_config";
 }

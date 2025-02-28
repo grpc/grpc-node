@@ -187,5 +187,5 @@ export interface DownstreamTlsContext__Output {
    * relevant only for TLSv1.2 and earlier.)
    */
   'disable_stateful_session_resumption': (boolean);
-  'session_ticket_keys_type': "session_ticket_keys"|"session_ticket_keys_sds_secret_config"|"disable_stateless_session_resumption";
+  'session_ticket_keys_type'?: "session_ticket_keys"|"session_ticket_keys_sds_secret_config"|"disable_stateless_session_resumption";
 }

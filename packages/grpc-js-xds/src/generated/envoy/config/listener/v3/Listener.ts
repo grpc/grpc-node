@@ -47,7 +47,7 @@ export interface _envoy_config_listener_v3_Listener_ConnectionBalanceConfig__Out
    * [#extension-category: envoy.network.connection_balance]
    */
   'extend_balance'?: (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
-  'balance_type': "exact_balance"|"extend_balance";
+  'balance_type'?: "exact_balance"|"extend_balance";
 }
 
 /**
@@ -768,5 +768,5 @@ export interface Listener__Output {
   /**
    * The exclusive listener type and the corresponding config.
    */
-  'listener_specifier': "internal_listener";
+  'listener_specifier'?: "internal_listener";
 }

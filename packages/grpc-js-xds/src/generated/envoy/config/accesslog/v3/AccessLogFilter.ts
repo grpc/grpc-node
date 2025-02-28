@@ -131,5 +131,5 @@ export interface AccessLogFilter__Output {
    * Log Type Filter
    */
   'log_type_filter'?: (_envoy_config_accesslog_v3_LogTypeFilter__Output | null);
-  'filter_specifier': "status_code_filter"|"duration_filter"|"not_health_check_filter"|"traceable_filter"|"runtime_filter"|"and_filter"|"or_filter"|"header_filter"|"response_flag_filter"|"grpc_status_filter"|"extension_filter"|"metadata_filter"|"log_type_filter";
+  'filter_specifier'?: "status_code_filter"|"duration_filter"|"not_health_check_filter"|"traceable_filter"|"runtime_filter"|"and_filter"|"or_filter"|"header_filter"|"response_flag_filter"|"grpc_status_filter"|"extension_filter"|"metadata_filter"|"log_type_filter";
 }

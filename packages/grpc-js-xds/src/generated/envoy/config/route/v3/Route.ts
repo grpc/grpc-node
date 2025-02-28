@@ -264,5 +264,5 @@ export interface Route__Output {
    * statistics use a non-trivial amount of memory(approximately 1KiB per route).
    */
   'stat_prefix': (string);
-  'action': "route"|"redirect"|"direct_response"|"filter_action"|"non_forwarding_action";
+  'action'?: "route"|"redirect"|"direct_response"|"filter_action"|"non_forwarding_action";
 }

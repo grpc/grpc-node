@@ -132,5 +132,5 @@ export interface ListenerFilterChainMatchPredicate__Output {
    * the owning listener filter is after :ref:`an original_dst listener filter <config_listener_filters_original_dst>`.
    */
   'destination_port_range'?: (_envoy_type_v3_Int32Range__Output | null);
-  'rule': "or_match"|"and_match"|"not_match"|"any_match"|"destination_port_range";
+  'rule'?: "or_match"|"and_match"|"not_match"|"any_match"|"destination_port_range";
 }
