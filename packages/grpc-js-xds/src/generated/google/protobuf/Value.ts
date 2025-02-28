@@ -21,5 +21,5 @@ export interface Value__Output {
   'boolValue'?: (boolean);
   'structValue'?: (_google_protobuf_Struct__Output | null);
   'listValue'?: (_google_protobuf_ListValue__Output | null);
-  'kind': "nullValue"|"numberValue"|"stringValue"|"boolValue"|"structValue"|"listValue";
+  'kind'?: "nullValue"|"numberValue"|"stringValue"|"boolValue"|"structValue"|"listValue";
 }

@@ -299,5 +299,5 @@ export interface HeaderMatcher__Output {
   /**
    * Specifies how the header match will be performed to route the request.
    */
-  'header_match_specifier': "exact_match"|"safe_regex_match"|"range_match"|"present_match"|"prefix_match"|"suffix_match"|"contains_match"|"string_match";
+  'header_match_specifier'?: "exact_match"|"safe_regex_match"|"range_match"|"present_match"|"prefix_match"|"suffix_match"|"contains_match"|"string_match";
 }

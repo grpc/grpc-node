@@ -323,7 +323,7 @@ export interface _envoy_config_route_v3_RouteAction_HashPolicy__Output {
    * it's a terminal policy.
    */
   'terminal': (boolean);
-  'policy_specifier': "header"|"cookie"|"connection_properties"|"query_parameter"|"filter_state";
+  'policy_specifier'?: "header"|"cookie"|"connection_properties"|"query_parameter"|"filter_state";
 }
 
 export interface _envoy_config_route_v3_RouteAction_HashPolicy_Header {
@@ -1430,6 +1430,6 @@ export interface RouteAction__Output {
    * [#extension-category: envoy.path.rewrite]
    */
   'path_rewrite_policy': (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
-  'cluster_specifier': "cluster"|"cluster_header"|"weighted_clusters"|"cluster_specifier_plugin"|"inline_cluster_specifier_plugin";
-  'host_rewrite_specifier': "host_rewrite_literal"|"auto_host_rewrite"|"host_rewrite_header"|"host_rewrite_path_regex";
+  'cluster_specifier'?: "cluster"|"cluster_header"|"weighted_clusters"|"cluster_specifier_plugin"|"inline_cluster_specifier_plugin";
+  'host_rewrite_specifier'?: "host_rewrite_literal"|"auto_host_rewrite"|"host_rewrite_header"|"host_rewrite_path_regex";
 }

@@ -128,7 +128,7 @@ export interface _envoy_config_route_v3_RateLimit_Action__Output {
    * Rate limit on the existence of query parameters.
    */
   'query_parameter_value_match'?: (_envoy_config_route_v3_RateLimit_Action_QueryParameterValueMatch__Output | null);
-  'action_specifier': "source_cluster"|"destination_cluster"|"request_headers"|"remote_address"|"generic_key"|"header_value_match"|"dynamic_metadata"|"metadata"|"extension"|"masked_remote_address"|"query_parameter_value_match";
+  'action_specifier'?: "source_cluster"|"destination_cluster"|"request_headers"|"remote_address"|"generic_key"|"header_value_match"|"dynamic_metadata"|"metadata"|"extension"|"masked_remote_address"|"query_parameter_value_match";
 }
 
 /**
@@ -498,7 +498,7 @@ export interface _envoy_config_route_v3_RateLimit_Override__Output {
    * Limit override from dynamic metadata.
    */
   'dynamic_metadata'?: (_envoy_config_route_v3_RateLimit_Override_DynamicMetadata__Output | null);
-  'override_specifier': "dynamic_metadata";
+  'override_specifier'?: "dynamic_metadata";
 }
 
 /**

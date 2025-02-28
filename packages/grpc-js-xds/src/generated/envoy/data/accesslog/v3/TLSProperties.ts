@@ -47,7 +47,7 @@ export interface _envoy_data_accesslog_v3_TLSProperties_CertificateProperties_Su
    * [#not-implemented-hide:]
    */
   'dns'?: (string);
-  'san': "uri"|"dns";
+  'san'?: "uri"|"dns";
 }
 
 // Original file: deps/envoy-api/envoy/data/accesslog/v3/accesslog.proto

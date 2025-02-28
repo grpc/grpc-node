@@ -535,7 +535,7 @@ export interface _envoy_extensions_filters_network_http_connection_manager_v3_Ht
    * If neither of these values are set, this value defaults to ``server_name``,
    * which itself defaults to "envoy".
    */
-  'proxy_name': "use_node_id"|"literal_proxy_name";
+  'proxy_name'?: "use_node_id"|"literal_proxy_name";
 }
 
 // Original file: deps/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
@@ -1946,6 +1946,6 @@ export interface HttpConnectionManager__Output {
    * the Overload Manager has been triggered.
    */
   'append_local_overload': (boolean);
-  'route_specifier': "rds"|"route_config"|"scoped_routes";
-  'strip_port_mode': "strip_any_host_port";
+  'route_specifier'?: "rds"|"route_config"|"scoped_routes";
+  'strip_port_mode'?: "strip_any_host_port";
 }

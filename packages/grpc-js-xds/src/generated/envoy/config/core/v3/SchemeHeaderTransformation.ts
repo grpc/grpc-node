@@ -36,5 +36,5 @@ export interface SchemeHeaderTransformation__Output {
    * If scheme_to_overwrite is set, this field is not used.
    */
   'match_upstream': (boolean);
-  'transformation': "scheme_to_overwrite";
+  'transformation'?: "scheme_to_overwrite";
 }

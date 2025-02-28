@@ -792,8 +792,7 @@ export class XdsDependencyManager {
           }
           break;
         default:
-          /* The validation logic should prevent us from reaching this point.
-           * This is just for the type checker. */
+          // The cluster_specifier can be unset. If so, just ignore it
           break;
       }
     }

@@ -31,5 +31,5 @@ export interface ExtensionFilter__Output {
   /**
    * Custom configuration that depends on the filter being instantiated.
    */
-  'config_type': "typed_config";
+  'config_type'?: "typed_config";
 }

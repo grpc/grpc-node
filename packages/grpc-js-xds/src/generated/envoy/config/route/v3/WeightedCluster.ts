@@ -190,7 +190,7 @@ export interface _envoy_config_route_v3_WeightedCluster_ClusterWeight__Output {
    * this value.
    */
   'host_rewrite_literal'?: (string);
-  'host_rewrite_specifier': "host_rewrite_literal";
+  'host_rewrite_specifier'?: "host_rewrite_literal";
 }
 
 /**
@@ -276,5 +276,5 @@ export interface WeightedCluster__Output {
    * the process for the consistency. And the value is a unsigned number between 0 and UINT64_MAX.
    */
   'header_name'?: (string);
-  'random_value_specifier': "header_name";
+  'random_value_specifier'?: "header_name";
 }

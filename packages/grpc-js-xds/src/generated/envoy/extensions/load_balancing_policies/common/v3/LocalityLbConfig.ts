@@ -96,5 +96,5 @@ export interface LocalityLbConfig__Output {
    * Enable locality weighted load balancing.
    */
   'locality_weighted_lb_config'?: (_envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig__Output | null);
-  'locality_config_specifier': "zone_aware_lb_config"|"locality_weighted_lb_config";
+  'locality_config_specifier'?: "zone_aware_lb_config"|"locality_weighted_lb_config";
 }

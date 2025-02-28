@@ -32,5 +32,5 @@ export interface Secret__Output {
   'session_ticket_keys'?: (_envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys__Output | null);
   'validation_context'?: (_envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext__Output | null);
   'generic_secret'?: (_envoy_extensions_transport_sockets_tls_v3_GenericSecret__Output | null);
-  'type': "tls_certificate"|"session_ticket_keys"|"validation_context"|"generic_secret";
+  'type'?: "tls_certificate"|"session_ticket_keys"|"validation_context"|"generic_secret";
 }

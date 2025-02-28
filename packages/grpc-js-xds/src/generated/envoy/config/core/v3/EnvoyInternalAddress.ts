@@ -36,5 +36,5 @@ export interface EnvoyInternalAddress__Output {
    * example, may be set to the final destination IP for the target internal listener.
    */
   'endpoint_id': (string);
-  'address_name_specifier': "server_listener_name";
+  'address_name_specifier'?: "server_listener_name";
 }

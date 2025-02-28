@@ -39,5 +39,5 @@ export interface TransportSocket__Output {
    * Implementation specific configuration which depends on the implementation being instantiated.
    * See the supported transport socket implementations for further documentation.
    */
-  'config_type': "typed_config";
+  'config_type'?: "typed_config";
 }

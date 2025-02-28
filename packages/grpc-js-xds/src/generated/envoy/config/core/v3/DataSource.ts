@@ -81,5 +81,5 @@ export interface DataSource__Output {
    * details.
    */
   'watched_directory': (_envoy_config_core_v3_WatchedDirectory__Output | null);
-  'specifier': "filename"|"inline_bytes"|"inline_string"|"environment_variable";
+  'specifier'?: "filename"|"inline_bytes"|"inline_string"|"environment_variable";
 }

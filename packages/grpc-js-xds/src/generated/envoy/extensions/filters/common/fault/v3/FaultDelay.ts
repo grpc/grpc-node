@@ -84,5 +84,5 @@ export interface FaultDelay__Output {
    * Fault delays are controlled via an HTTP header (if applicable).
    */
   'header_delay'?: (_envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay__Output | null);
-  'fault_delay_secifier': "fixed_delay"|"header_delay";
+  'fault_delay_secifier'?: "fixed_delay"|"header_delay";
 }

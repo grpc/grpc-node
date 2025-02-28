@@ -94,5 +94,5 @@ export interface OOperation {
    * If `done` == `false`, neither `error` nor `response` is set.
    * If `done` == `true`, exactly one of `error` or `response` is set.
    */
-  'result': "error"|"response";
+  'result'?: "error"|"response";
 }

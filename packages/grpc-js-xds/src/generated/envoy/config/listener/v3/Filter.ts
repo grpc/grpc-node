@@ -46,5 +46,5 @@ export interface Filter__Output {
    * listener closes the connections.
    */
   'config_discovery'?: (_envoy_config_core_v3_ExtensionConfigSource__Output | null);
-  'config_type': "typed_config"|"config_discovery";
+  'config_type'?: "typed_config"|"config_discovery";
 }

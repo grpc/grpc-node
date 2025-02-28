@@ -179,7 +179,7 @@ export interface _envoy_config_cluster_v3_Cluster_CommonLbConfig__Output {
    * set with an empty set of statuses then host overrides will be ignored by the load balancing.
    */
   'override_host_status': (_envoy_config_core_v3_HealthStatusSet__Output | null);
-  'locality_config_specifier': "zone_aware_lb_config"|"locality_weighted_lb_config";
+  'locality_config_specifier'?: "zone_aware_lb_config"|"locality_weighted_lb_config";
 }
 
 /**
@@ -2702,7 +2702,7 @@ export interface Cluster__Output {
    * as the key.
    */
   'lrs_report_endpoint_metrics': (string)[];
-  'cluster_discovery_type': "type"|"cluster_type";
+  'cluster_discovery_type'?: "type"|"cluster_type";
   /**
    * Optional configuration for the load balancing algorithm selected by
    * LbPolicy. Currently only
@@ -2713,5 +2713,5 @@ export interface Cluster__Output {
    * Specifying ring_hash_lb_config or maglev_lb_config or least_request_lb_config without setting the corresponding
    * LbPolicy will generate an error at runtime.
    */
-  'lb_config': "ring_hash_lb_config"|"maglev_lb_config"|"original_dst_lb_config"|"least_request_lb_config"|"round_robin_lb_config";
+  'lb_config'?: "ring_hash_lb_config"|"maglev_lb_config"|"original_dst_lb_config"|"least_request_lb_config"|"round_robin_lb_config";
 }

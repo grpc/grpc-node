@@ -74,5 +74,5 @@ export interface FaultRateLimit__Output {
    * Rate limits are controlled via an HTTP header (if applicable).
    */
   'header_limit'?: (_envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit__Output | null);
-  'limit_type': "fixed_limit"|"header_limit";
+  'limit_type'?: "fixed_limit"|"header_limit";
 }

@@ -127,11 +127,15 @@ export class RouteConfigurationResourceType extends XdsResourceType {
         const routeErrorPrefix = `${errorPrefix}.routes[${route.name}]`;
         const match = route.match;
         if (match) {
-          if (SUPPORTED_PATH_SPECIFIERS.indexOf(match.path_specifier) < 0) {
-            errors.push(`${routeErrorPrefix}.match: unsupported path_specifier: ${match.path_specifier}`);
+          if (match.path_specifier) {
+            if (SUPPORTED_PATH_SPECIFIERS.indexOf(match.path_specifier) < 0) {
+              errors.push(`${routeErrorPrefix}.match: unsupported path_specifier: ${match.path_specifier}`);
+            }
+          } else {
+            errors.push(`${routeErrorPrefix}.match: no path_specifier set`);
           }
           for (const headers of match.headers) {
-            if (SUPPPORTED_HEADER_MATCH_SPECIFIERS.indexOf(headers.header_match_specifier) < 0) {
+            if (headers.header_match_specifier && SUPPPORTED_HEADER_MATCH_SPECIFIERS.indexOf(headers.header_match_specifier) < 0) {
               errors.push(`${routeErrorPrefix}.match.headers[${headers.name}]: unsupported header_match_specifier: ${headers.header_match_specifier}`);
             }
           }
@@ -145,7 +149,7 @@ export class RouteConfigurationResourceType extends XdsResourceType {
               errors.push(`${routeErrorPrefix}.route unset`);
               break;
             }
-            if (SUPPORTED_CLUSTER_SPECIFIERS.indexOf(route.route.cluster_specifier) < 0) {
+            if (route.route.cluster_specifier && SUPPORTED_CLUSTER_SPECIFIERS.indexOf(route.route.cluster_specifier) < 0) {
               errors.push(`${routeErrorPrefix}: unsupported route.cluster_specifier: ${route.route.cluster_specifier}`);
             }
             if (EXPERIMENTAL_FAULT_INJECTION) {

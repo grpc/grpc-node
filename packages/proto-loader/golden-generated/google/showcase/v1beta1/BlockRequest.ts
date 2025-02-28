@@ -41,5 +41,5 @@ export interface OBlockRequest {
    * The response to be returned that will signify successful method call.
    */
   'success'?: (O_google_showcase_v1beta1_BlockResponse | null);
-  'response': "error"|"success";
+  'response'?: "error"|"success";
 }

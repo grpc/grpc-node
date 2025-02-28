@@ -33,5 +33,5 @@ export interface Address__Output {
    * <envoy_v3_api_field_config.listener.v3.Listener.internal_listener>`.
    */
   'envoy_internal_address'?: (_envoy_config_core_v3_EnvoyInternalAddress__Output | null);
-  'address': "socket_address"|"pipe"|"envoy_internal_address";
+  'address'?: "socket_address"|"pipe"|"envoy_internal_address";
 }
