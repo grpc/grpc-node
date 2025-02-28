@@ -125,10 +125,13 @@ class ChannelSubchannelWrapper
     ) => {
       channel.throttleKeepalive(keepaliveTime);
     };
-    childSubchannel.addConnectivityStateListener(this.subchannelStateListener);
   }
 
   ref(): void {
+    if (this.refCount === 0) {
+      this.child.addConnectivityStateListener(this.subchannelStateListener);
+      this.channel.addWrappedSubchannel(this);
+    }
     this.child.ref();
     this.refCount += 1;
   }
@@ -160,6 +163,25 @@ class ShutdownPicker implements Picker {
 }
 
 export const SUBCHANNEL_ARGS_EXCLUDE_KEY_PREFIX = 'grpc.internal.no_subchannel';
+class ChannelzInfoTracker {
+  readonly trace = new ChannelzTrace();
+  readonly callTracker = new ChannelzCallTracker();
+  readonly childrenTracker = new ChannelzChildrenTracker();
+  state: ConnectivityState = ConnectivityState.IDLE;
+  constructor(private target: string) {}
+
+  getChannelzInfoCallback(): () => ChannelInfo {
+    return () => {
+      return {
+        target: this.target,
+        state: this.state,
+        trace: this.trace,
+        callTracker: this.callTracker,
+        children: this.childrenTracker.getChildLists()
+      };
+    };
+  }
+}
 
 export class InternalChannel {
   private readonly resolvingLoadBalancer: ResolvingLoadBalancer;
@@ -181,9 +203,10 @@ export class InternalChannel {
    * event loop open while there are any pending calls for the channel that
    * have not yet been assigned to specific subchannels. In other words,
    * the invariant is that callRefTimer is reffed if and only if pickQueue
-   * is non-empty.
+   * is non-empty. In addition, the timer is null while the state is IDLE or
+   * SHUTDOWN and there are no pending calls.
    */
-  private readonly callRefTimer: NodeJS.Timeout;
+  private callRefTimer: NodeJS.Timeout | null = null;
   private configSelector: ConfigSelector | null = null;
   /**
    * This is the error from the name resolver if it failed most recently. It
@@ -205,11 +228,8 @@ export class InternalChannel {
 
   // Channelz info
   private readonly channelzEnabled: boolean = true;
-  private readonly originalTarget: string;
   private readonly channelzRef: ChannelRef;
-  private readonly channelzTrace: ChannelzTrace;
-  private readonly callTracker = new ChannelzCallTracker();
-  private readonly childrenTracker = new ChannelzChildrenTracker();
+  private readonly channelzInfoTracker: ChannelzInfoTracker;
 
   /**
    * Randomly generated ID to be passed to the config selector, for use by
@@ -238,7 +258,7 @@ export class InternalChannel {
         throw new TypeError('Channel options must be an object');
       }
     }
-    this.originalTarget = target;
+    this.channelzInfoTracker = new ChannelzInfoTracker(target);
     const originalTargetUri = parseUri(target);
     if (originalTargetUri === null) {
       throw new Error(`Could not parse target name "${target}"`);
@@ -252,21 +272,17 @@ export class InternalChannel {
       );
     }
 
-    this.callRefTimer = setInterval(() => {}, MAX_TIMEOUT_TIME);
-    this.callRefTimer.unref?.();
-
     if (this.options['grpc.enable_channelz'] === 0) {
       this.channelzEnabled = false;
     }
 
-    this.channelzTrace = new ChannelzTrace();
     this.channelzRef = registerChannelzChannel(
       target,
-      () => this.getChannelzInfo(),
+      this.channelzInfoTracker.getChannelzInfoCallback(),
       this.channelzEnabled
     );
     if (this.channelzEnabled) {
-      this.channelzTrace.addTrace('CT_INFO', 'Channel created');
+      this.channelzInfoTracker.trace.addTrace('CT_INFO', 'Channel created');
     }
 
     if (this.options['grpc.default_authority']) {
@@ -312,7 +328,7 @@ export class InternalChannel {
         );
         subchannel.throttleKeepalive(this.keepaliveTime);
         if (this.channelzEnabled) {
-          this.channelzTrace.addTrace(
+          this.channelzInfoTracker.trace.addTrace(
             'CT_INFO',
             'Created subchannel or used existing subchannel',
             subchannel.getChannelzRef()
@@ -322,7 +338,6 @@ export class InternalChannel {
           subchannel,
           this
         );
-        this.wrappedSubchannels.add(wrappedSubchannel);
         return wrappedSubchannel;
       },
       updateState: (connectivityState: ConnectivityState, picker: Picker) => {
@@ -345,12 +360,12 @@ export class InternalChannel {
       },
       addChannelzChild: (child: ChannelRef | SubchannelRef) => {
         if (this.channelzEnabled) {
-          this.childrenTracker.refChild(child);
+          this.channelzInfoTracker.childrenTracker.refChild(child);
         }
       },
       removeChannelzChild: (child: ChannelRef | SubchannelRef) => {
         if (this.channelzEnabled) {
-          this.childrenTracker.unrefChild(child);
+          this.channelzInfoTracker.childrenTracker.unrefChild(child);
         }
       },
     };
@@ -372,7 +387,7 @@ export class InternalChannel {
           RETRY_THROTTLER_MAP.delete(this.getTarget());
         }
         if (this.channelzEnabled) {
-          this.channelzTrace.addTrace(
+          this.channelzInfoTracker.trace.addTrace(
             'CT_INFO',
             'Address resolution succeeded'
           );
@@ -395,7 +410,7 @@ export class InternalChannel {
       },
       status => {
         if (this.channelzEnabled) {
-          this.channelzTrace.addTrace(
+          this.channelzInfoTracker.trace.addTrace(
             'CT_WARNING',
             'Address resolution failed with code ' +
               status.code +
@@ -447,16 +462,6 @@ export class InternalChannel {
     this.lastActivityTimestamp = new Date();
   }
 
-  private getChannelzInfo(): ChannelInfo {
-    return {
-      target: this.originalTarget,
-      state: this.connectivityState,
-      trace: this.channelzTrace,
-      callTracker: this.callTracker,
-      children: this.childrenTracker.getChildLists(),
-    };
-  }
-
   private trace(text: string, verbosityOverride?: LogVerbosity) {
     trace(
       verbosityOverride ?? LogVerbosity.DEBUG,
@@ -466,6 +471,9 @@ export class InternalChannel {
   }
 
   private callRefTimerRef() {
+    if (!this.callRefTimer) {
+      this.callRefTimer = setInterval(() => {}, MAX_TIMEOUT_TIME)
+    }
     // If the hasRef function does not exist, always run the code
     if (!this.callRefTimer.hasRef?.()) {
       this.trace(
@@ -479,15 +487,15 @@ export class InternalChannel {
   }
 
   private callRefTimerUnref() {
-    // If the hasRef function does not exist, always run the code
-    if (!this.callRefTimer.hasRef || this.callRefTimer.hasRef()) {
+    // If the timer or the hasRef function does not exist, always run the code
+    if (!this.callRefTimer?.hasRef || this.callRefTimer.hasRef()) {
       this.trace(
         'callRefTimer.unref | configSelectionQueue.length=' +
           this.configSelectionQueue.length +
           ' pickQueue.length=' +
           this.pickQueue.length
       );
-      this.callRefTimer.unref?.();
+      this.callRefTimer?.unref?.();
     }
   }
 
@@ -516,12 +524,13 @@ export class InternalChannel {
         ConnectivityState[newState]
     );
     if (this.channelzEnabled) {
-      this.channelzTrace.addTrace(
+      this.channelzInfoTracker.trace.addTrace(
         'CT_INFO',
         'Connectivity state change to ' + ConnectivityState[newState]
       );
     }
     this.connectivityState = newState;
+    this.channelzInfoTracker.state = newState;
     const watchersCopy = this.connectivityStateWatchers.slice();
     for (const watcherObject of watchersCopy) {
       if (newState !== watcherObject.currentState) {
@@ -544,6 +553,10 @@ export class InternalChannel {
         wrappedSubchannel.throttleKeepalive(newKeepaliveTime);
       }
     }
+  }
+
+  addWrappedSubchannel(wrappedSubchannel: ChannelSubchannelWrapper) {
+    this.wrappedSubchannels.add(wrappedSubchannel);
   }
 
   removeWrappedSubchannel(wrappedSubchannel: ChannelSubchannelWrapper) {
@@ -598,6 +611,10 @@ export class InternalChannel {
       clearTimeout(this.idleTimer);
       this.idleTimer = null;
     }
+    if (this.callRefTimer) {
+      clearInterval(this.callRefTimer);
+      this.callRefTimer = null;
+    }
   }
 
   private startIdleTimeout(timeoutMs: number) {
@@ -641,7 +658,7 @@ export class InternalChannel {
 
   private onCallStart() {
     if (this.channelzEnabled) {
-      this.callTracker.addCallStarted();
+      this.channelzInfoTracker.callTracker.addCallStarted();
     }
     this.callCount += 1;
   }
@@ -649,9 +666,9 @@ export class InternalChannel {
   private onCallEnd(status: StatusObject) {
     if (this.channelzEnabled) {
       if (status.code === Status.OK) {
-        this.callTracker.addCallSucceeded();
+        this.channelzInfoTracker.callTracker.addCallSucceeded();
       } else {
-        this.callTracker.addCallFailed();
+        this.channelzInfoTracker.callTracker.addCallFailed();
       }
     }
     this.callCount -= 1;
@@ -755,7 +772,9 @@ export class InternalChannel {
       call.cancelWithStatus(Status.UNAVAILABLE, 'Channel closed before call started');
     }
     this.pickQueue = [];
-    clearInterval(this.callRefTimer);
+    if (this.callRefTimer) {
+      clearInterval(this.callRefTimer);
+    }
     if (this.idleTimer) {
       clearTimeout(this.idleTimer);
     }
