@@ -47,6 +47,8 @@ type GeneratorOptions = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
   outputTemplate: string;
   inputBranded: boolean;
   outputBranded: boolean;
+  targetFileExtension?: string;
+  importFileExtension?: string;
 }
 
 class TextFormatter {
@@ -105,8 +107,8 @@ function getImportPath(to: Protobuf.Type | Protobuf.Enum | Protobuf.Service): st
   return stripLeadingPeriod(to.fullName).replace(/\./g, '/');
 }
 
-function getPath(to: Protobuf.Type | Protobuf.Enum | Protobuf.Service) {
-  return stripLeadingPeriod(to.fullName).replace(/\./g, '/') + '.ts';
+function getPath(to: Protobuf.Type | Protobuf.Enum | Protobuf.Service, extension: string = '.ts') {
+  return stripLeadingPeriod(to.fullName).replace(/\./g, '/') + extension;
 }
 
 function getPathToRoot(from: Protobuf.NamespaceBase) {
@@ -153,7 +155,7 @@ function getImportLine(dependency: Protobuf.Type | Protobuf.Enum | Protobuf.Serv
       throw new Error('Invalid object passed to getImportLine');
     }
   }
-  return `import type { ${importedTypes} } from '${filePath}';`
+  return `import type { ${importedTypes} } from '${filePath}${options.importFileExtension ?? ''}';`
 }
 
 function getChildMessagesAndEnums(namespace: Protobuf.NamespaceBase): (Protobuf.Type | Protobuf.Enum)[] {
@@ -787,21 +789,21 @@ function generateFilesForNamespace(namespace: Protobuf.NamespaceBase, options: G
     if (nested instanceof Protobuf.Type) {
       generateMessageInterfaces(fileFormatter, nested, options);
       if (options.verbose) {
-        console.log(`Writing ${options.outDir}/${getPath(nested)} from file ${nested.filename}`);
+        console.log(`Writing ${options.outDir}/${getPath(nested, options.targetFileExtension)} from file ${nested.filename}`);
       }
-      filePromises.push(writeFile(`${options.outDir}/${getPath(nested)}`, fileFormatter.getFullText()));
+      filePromises.push(writeFile(`${options.outDir}/${getPath(nested, options.targetFileExtension)}`, fileFormatter.getFullText()));
     } else if (nested instanceof Protobuf.Enum) {
       generateEnumInterface(fileFormatter, nested, options);
       if (options.verbose) {
-        console.log(`Writing ${options.outDir}/${getPath(nested)} from file ${nested.filename}`);
+        console.log(`Writing ${options.outDir}/${getPath(nested, options.targetFileExtension)} from file ${nested.filename}`);
       }
-      filePromises.push(writeFile(`${options.outDir}/${getPath(nested)}`, fileFormatter.getFullText()));
+      filePromises.push(writeFile(`${options.outDir}/${getPath(nested, options.targetFileExtension)}`, fileFormatter.getFullText()));
     } else if (nested instanceof Protobuf.Service) {
       generateServiceInterfaces(fileFormatter, nested, options);
       if (options.verbose) {
-        console.log(`Writing ${options.outDir}/${getPath(nested)} from file ${nested.filename}`);
+        console.log(`Writing ${options.outDir}/${getPath(nested, options.targetFileExtension)} from file ${nested.filename}`);
       }
-      filePromises.push(writeFile(`${options.outDir}/${getPath(nested)}`, fileFormatter.getFullText()));
+      filePromises.push(writeFile(`${options.outDir}/${getPath(nested, options.targetFileExtension)}`, fileFormatter.getFullText()));
     } else if (isNamespaceBase(nested)) {
       filePromises.push(...generateFilesForNamespace(nested, options));
     }
@@ -877,6 +879,8 @@ async function runScript() {
     .option('outputTemplate', { string: true, default: `${templateStr}__Output` })
     .option('inputBranded', boolDefaultFalseOption)
     .option('outputBranded', boolDefaultFalseOption)
+    .option('targetFileExtension', { string: true, default: '.ts' })
+    .option('importFileExtension', { string: true })
     .coerce('longs', value => {
       switch (value) {
         case 'String': return String;
@@ -916,6 +920,8 @@ async function runScript() {
       outputTemplate: 'Template for mapping output or "restricted" type names',
       inputBranded: 'Output property for branded type for  "permissive" types with fullName of the Message as its value',
       outputBranded: 'Output property for branded type for  "restricted" types with fullName of the Message as its value',
+      targetFileExtension: 'File extension for generated files. Defaults to .ts',
+      importFileExtension: 'File extension for import specifiers in generated code. Defaults to none (omitted)'
     }).demandOption(['outDir'])
     .demand(1)
     .usage('$0 [options] filenames...')
