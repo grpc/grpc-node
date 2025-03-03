@@ -107,8 +107,8 @@ function getImportPath(to: Protobuf.Type | Protobuf.Enum | Protobuf.Service): st
   return stripLeadingPeriod(to.fullName).replace(/\./g, '/');
 }
 
-function getPath(to: Protobuf.Type | Protobuf.Enum | Protobuf.Service, extension: string = '.ts') {
-  return stripLeadingPeriod(to.fullName).replace(/\./g, '/') + extension;
+function getPath(to: Protobuf.Type | Protobuf.Enum | Protobuf.Service, options: GeneratorOptions) {
+  return stripLeadingPeriod(to.fullName).replace(/\./g, '/') + options.targetFileExtension;
 }
 
 function getPathToRoot(from: Protobuf.NamespaceBase) {
@@ -155,7 +155,7 @@ function getImportLine(dependency: Protobuf.Type | Protobuf.Enum | Protobuf.Serv
       throw new Error('Invalid object passed to getImportLine');
     }
   }
-  return `import type { ${importedTypes} } from '${filePath}${options.importFileExtension ?? ''}';`
+  return `import type { ${importedTypes} } from '${filePath}${options.importFileExtension}';`
 }
 
 function getChildMessagesAndEnums(namespace: Protobuf.NamespaceBase): (Protobuf.Type | Protobuf.Enum)[] {
@@ -789,21 +789,21 @@ function generateFilesForNamespace(namespace: Protobuf.NamespaceBase, options: G
     if (nested instanceof Protobuf.Type) {
       generateMessageInterfaces(fileFormatter, nested, options);
       if (options.verbose) {
-        console.log(`Writing ${options.outDir}/${getPath(nested, options.targetFileExtension)} from file ${nested.filename}`);
+        console.log(`Writing ${options.outDir}/${getPath(nested, options)} from file ${nested.filename}`);
       }
-      filePromises.push(writeFile(`${options.outDir}/${getPath(nested, options.targetFileExtension)}`, fileFormatter.getFullText()));
+      filePromises.push(writeFile(`${options.outDir}/${getPath(nested, options)}`, fileFormatter.getFullText()));
     } else if (nested instanceof Protobuf.Enum) {
       generateEnumInterface(fileFormatter, nested, options);
       if (options.verbose) {
-        console.log(`Writing ${options.outDir}/${getPath(nested, options.targetFileExtension)} from file ${nested.filename}`);
+        console.log(`Writing ${options.outDir}/${getPath(nested, options)} from file ${nested.filename}`);
       }
-      filePromises.push(writeFile(`${options.outDir}/${getPath(nested, options.targetFileExtension)}`, fileFormatter.getFullText()));
+      filePromises.push(writeFile(`${options.outDir}/${getPath(nested, options)}`, fileFormatter.getFullText()));
     } else if (nested instanceof Protobuf.Service) {
       generateServiceInterfaces(fileFormatter, nested, options);
       if (options.verbose) {
-        console.log(`Writing ${options.outDir}/${getPath(nested, options.targetFileExtension)} from file ${nested.filename}`);
+        console.log(`Writing ${options.outDir}/${getPath(nested, options)} from file ${nested.filename}`);
       }
-      filePromises.push(writeFile(`${options.outDir}/${getPath(nested, options.targetFileExtension)}`, fileFormatter.getFullText()));
+      filePromises.push(writeFile(`${options.outDir}/${getPath(nested, options)}`, fileFormatter.getFullText()));
     } else if (isNamespaceBase(nested)) {
       filePromises.push(...generateFilesForNamespace(nested, options));
     }
@@ -880,7 +880,7 @@ async function runScript() {
     .option('inputBranded', boolDefaultFalseOption)
     .option('outputBranded', boolDefaultFalseOption)
     .option('targetFileExtension', { string: true, default: '.ts' })
-    .option('importFileExtension', { string: true })
+    .option('importFileExtension', { string: true, default: '' })
     .coerce('longs', value => {
       switch (value) {
         case 'String': return String;
