@@ -1,8 +1,8 @@
 // Original file: proto/channelz.proto
 
-import type { ServerRef as _grpc_channelz_v1_ServerRef, ServerRef__Output as _grpc_channelz_v1_ServerRef__Output } from '../../../grpc/channelz/v1/ServerRef.ts';
-import type { ServerData as _grpc_channelz_v1_ServerData, ServerData__Output as _grpc_channelz_v1_ServerData__Output } from '../../../grpc/channelz/v1/ServerData.ts';
-import type { SocketRef as _grpc_channelz_v1_SocketRef, SocketRef__Output as _grpc_channelz_v1_SocketRef__Output } from '../../../grpc/channelz/v1/SocketRef.ts';
+import type { ServerRef as _grpc_channelz_v1_ServerRef, ServerRef__Output as _grpc_channelz_v1_ServerRef__Output } from '../../../grpc/channelz/v1/ServerRef';
+import type { ServerData as _grpc_channelz_v1_ServerData, ServerData__Output as _grpc_channelz_v1_ServerData__Output } from '../../../grpc/channelz/v1/ServerData';
+import type { SocketRef as _grpc_channelz_v1_SocketRef, SocketRef__Output as _grpc_channelz_v1_SocketRef__Output } from '../../../grpc/channelz/v1/SocketRef';
 
 /**
  * Server represents a single server.  There may be multiple servers in a single

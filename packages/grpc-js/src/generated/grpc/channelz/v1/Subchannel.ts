@@ -1,9 +1,9 @@
 // Original file: proto/channelz.proto
 
-import type { SubchannelRef as _grpc_channelz_v1_SubchannelRef, SubchannelRef__Output as _grpc_channelz_v1_SubchannelRef__Output } from '../../../grpc/channelz/v1/SubchannelRef.ts';
-import type { ChannelData as _grpc_channelz_v1_ChannelData, ChannelData__Output as _grpc_channelz_v1_ChannelData__Output } from '../../../grpc/channelz/v1/ChannelData.ts';
-import type { ChannelRef as _grpc_channelz_v1_ChannelRef, ChannelRef__Output as _grpc_channelz_v1_ChannelRef__Output } from '../../../grpc/channelz/v1/ChannelRef.ts';
-import type { SocketRef as _grpc_channelz_v1_SocketRef, SocketRef__Output as _grpc_channelz_v1_SocketRef__Output } from '../../../grpc/channelz/v1/SocketRef.ts';
+import type { SubchannelRef as _grpc_channelz_v1_SubchannelRef, SubchannelRef__Output as _grpc_channelz_v1_SubchannelRef__Output } from '../../../grpc/channelz/v1/SubchannelRef';
+import type { ChannelData as _grpc_channelz_v1_ChannelData, ChannelData__Output as _grpc_channelz_v1_ChannelData__Output } from '../../../grpc/channelz/v1/ChannelData';
+import type { ChannelRef as _grpc_channelz_v1_ChannelRef, ChannelRef__Output as _grpc_channelz_v1_ChannelRef__Output } from '../../../grpc/channelz/v1/ChannelRef';
+import type { SocketRef as _grpc_channelz_v1_SocketRef, SocketRef__Output as _grpc_channelz_v1_SocketRef__Output } from '../../../grpc/channelz/v1/SocketRef';
 
 /**
  * Subchannel is a logical grouping of channels, subchannels, and sockets.

@@ -1,6 +1,6 @@
 // Original file: proto/channelz.proto
 
-import type { Channel as _grpc_channelz_v1_Channel, Channel__Output as _grpc_channelz_v1_Channel__Output } from '../../../grpc/channelz/v1/Channel.ts';
+import type { Channel as _grpc_channelz_v1_Channel, Channel__Output as _grpc_channelz_v1_Channel__Output } from '../../../grpc/channelz/v1/Channel';
 
 export interface GetChannelResponse {
   /**

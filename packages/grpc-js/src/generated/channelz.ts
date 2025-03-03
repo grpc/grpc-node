@@ -1,7 +1,7 @@
 import type * as grpc from '../index';
 import type { MessageTypeDefinition } from '@grpc/proto-loader';
 
-import type { ChannelzClient as _grpc_channelz_v1_ChannelzClient, ChannelzDefinition as _grpc_channelz_v1_ChannelzDefinition } from './grpc/channelz/v1/Channelz.ts';
+import type { ChannelzClient as _grpc_channelz_v1_ChannelzClient, ChannelzDefinition as _grpc_channelz_v1_ChannelzDefinition } from './grpc/channelz/v1/Channelz';
 
 type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {
   new(...args: ConstructorParameters<Constructor>): Subtype;

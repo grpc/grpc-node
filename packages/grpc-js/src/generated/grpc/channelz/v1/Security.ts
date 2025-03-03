@@ -1,6 +1,6 @@
 // Original file: proto/channelz.proto
 
-import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../google/protobuf/Any.ts';
+import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../google/protobuf/Any';
 
 export interface _grpc_channelz_v1_Security_OtherSecurity {
   /**
@@ -65,7 +65,7 @@ export interface _grpc_channelz_v1_Security_Tls__Output {
    * the certificate used by the remote endpoint.
    */
   'remote_certificate': (Buffer);
-  'cipher_suite': "standard_name"|"other_name";
+  'cipher_suite'?: "standard_name"|"other_name";
 }
 
 /**
@@ -83,5 +83,5 @@ export interface Security {
 export interface Security__Output {
   'tls'?: (_grpc_channelz_v1_Security_Tls__Output | null);
   'other'?: (_grpc_channelz_v1_Security_OtherSecurity__Output | null);
-  'model': "tls"|"other";
+  'model'?: "tls"|"other";
 }

@@ -1,6 +1,6 @@
 // Original file: proto/channelz.proto
 
-import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../google/protobuf/Duration.ts';
+import type { Duration as _google_protobuf_Duration, Duration__Output as _google_protobuf_Duration__Output } from '../../../google/protobuf/Duration';
 
 /**
  * For use with SocketOption's additional field.  This is primarily used for

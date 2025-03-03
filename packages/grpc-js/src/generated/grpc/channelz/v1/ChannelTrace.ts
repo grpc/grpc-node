@@ -1,7 +1,7 @@
 // Original file: proto/channelz.proto
 
-import type { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../../google/protobuf/Timestamp.ts';
-import type { ChannelTraceEvent as _grpc_channelz_v1_ChannelTraceEvent, ChannelTraceEvent__Output as _grpc_channelz_v1_ChannelTraceEvent__Output } from '../../../grpc/channelz/v1/ChannelTraceEvent.ts';
+import type { Timestamp as _google_protobuf_Timestamp, Timestamp__Output as _google_protobuf_Timestamp__Output } from '../../../google/protobuf/Timestamp';
+import type { ChannelTraceEvent as _grpc_channelz_v1_ChannelTraceEvent, ChannelTraceEvent__Output as _grpc_channelz_v1_ChannelTraceEvent__Output } from '../../../grpc/channelz/v1/ChannelTraceEvent';
 import type { Long } from '@grpc/proto-loader';
 
 /**
