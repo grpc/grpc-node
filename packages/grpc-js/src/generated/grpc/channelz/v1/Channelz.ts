@@ -2,20 +2,20 @@
 
 import type * as grpc from '../../../../index'
 import type { MethodDefinition } from '@grpc/proto-loader'
-import type { GetChannelRequest as _grpc_channelz_v1_GetChannelRequest, GetChannelRequest__Output as _grpc_channelz_v1_GetChannelRequest__Output } from '../../../grpc/channelz/v1/GetChannelRequest.ts';
-import type { GetChannelResponse as _grpc_channelz_v1_GetChannelResponse, GetChannelResponse__Output as _grpc_channelz_v1_GetChannelResponse__Output } from '../../../grpc/channelz/v1/GetChannelResponse.ts';
-import type { GetServerRequest as _grpc_channelz_v1_GetServerRequest, GetServerRequest__Output as _grpc_channelz_v1_GetServerRequest__Output } from '../../../grpc/channelz/v1/GetServerRequest.ts';
-import type { GetServerResponse as _grpc_channelz_v1_GetServerResponse, GetServerResponse__Output as _grpc_channelz_v1_GetServerResponse__Output } from '../../../grpc/channelz/v1/GetServerResponse.ts';
-import type { GetServerSocketsRequest as _grpc_channelz_v1_GetServerSocketsRequest, GetServerSocketsRequest__Output as _grpc_channelz_v1_GetServerSocketsRequest__Output } from '../../../grpc/channelz/v1/GetServerSocketsRequest.ts';
-import type { GetServerSocketsResponse as _grpc_channelz_v1_GetServerSocketsResponse, GetServerSocketsResponse__Output as _grpc_channelz_v1_GetServerSocketsResponse__Output } from '../../../grpc/channelz/v1/GetServerSocketsResponse.ts';
-import type { GetServersRequest as _grpc_channelz_v1_GetServersRequest, GetServersRequest__Output as _grpc_channelz_v1_GetServersRequest__Output } from '../../../grpc/channelz/v1/GetServersRequest.ts';
-import type { GetServersResponse as _grpc_channelz_v1_GetServersResponse, GetServersResponse__Output as _grpc_channelz_v1_GetServersResponse__Output } from '../../../grpc/channelz/v1/GetServersResponse.ts';
-import type { GetSocketRequest as _grpc_channelz_v1_GetSocketRequest, GetSocketRequest__Output as _grpc_channelz_v1_GetSocketRequest__Output } from '../../../grpc/channelz/v1/GetSocketRequest.ts';
-import type { GetSocketResponse as _grpc_channelz_v1_GetSocketResponse, GetSocketResponse__Output as _grpc_channelz_v1_GetSocketResponse__Output } from '../../../grpc/channelz/v1/GetSocketResponse.ts';
-import type { GetSubchannelRequest as _grpc_channelz_v1_GetSubchannelRequest, GetSubchannelRequest__Output as _grpc_channelz_v1_GetSubchannelRequest__Output } from '../../../grpc/channelz/v1/GetSubchannelRequest.ts';
-import type { GetSubchannelResponse as _grpc_channelz_v1_GetSubchannelResponse, GetSubchannelResponse__Output as _grpc_channelz_v1_GetSubchannelResponse__Output } from '../../../grpc/channelz/v1/GetSubchannelResponse.ts';
-import type { GetTopChannelsRequest as _grpc_channelz_v1_GetTopChannelsRequest, GetTopChannelsRequest__Output as _grpc_channelz_v1_GetTopChannelsRequest__Output } from '../../../grpc/channelz/v1/GetTopChannelsRequest.ts';
-import type { GetTopChannelsResponse as _grpc_channelz_v1_GetTopChannelsResponse, GetTopChannelsResponse__Output as _grpc_channelz_v1_GetTopChannelsResponse__Output } from '../../../grpc/channelz/v1/GetTopChannelsResponse.ts';
+import type { GetChannelRequest as _grpc_channelz_v1_GetChannelRequest, GetChannelRequest__Output as _grpc_channelz_v1_GetChannelRequest__Output } from '../../../grpc/channelz/v1/GetChannelRequest';
+import type { GetChannelResponse as _grpc_channelz_v1_GetChannelResponse, GetChannelResponse__Output as _grpc_channelz_v1_GetChannelResponse__Output } from '../../../grpc/channelz/v1/GetChannelResponse';
+import type { GetServerRequest as _grpc_channelz_v1_GetServerRequest, GetServerRequest__Output as _grpc_channelz_v1_GetServerRequest__Output } from '../../../grpc/channelz/v1/GetServerRequest';
+import type { GetServerResponse as _grpc_channelz_v1_GetServerResponse, GetServerResponse__Output as _grpc_channelz_v1_GetServerResponse__Output } from '../../../grpc/channelz/v1/GetServerResponse';
+import type { GetServerSocketsRequest as _grpc_channelz_v1_GetServerSocketsRequest, GetServerSocketsRequest__Output as _grpc_channelz_v1_GetServerSocketsRequest__Output } from '../../../grpc/channelz/v1/GetServerSocketsRequest';
+import type { GetServerSocketsResponse as _grpc_channelz_v1_GetServerSocketsResponse, GetServerSocketsResponse__Output as _grpc_channelz_v1_GetServerSocketsResponse__Output } from '../../../grpc/channelz/v1/GetServerSocketsResponse';
+import type { GetServersRequest as _grpc_channelz_v1_GetServersRequest, GetServersRequest__Output as _grpc_channelz_v1_GetServersRequest__Output } from '../../../grpc/channelz/v1/GetServersRequest';
+import type { GetServersResponse as _grpc_channelz_v1_GetServersResponse, GetServersResponse__Output as _grpc_channelz_v1_GetServersResponse__Output } from '../../../grpc/channelz/v1/GetServersResponse';
+import type { GetSocketRequest as _grpc_channelz_v1_GetSocketRequest, GetSocketRequest__Output as _grpc_channelz_v1_GetSocketRequest__Output } from '../../../grpc/channelz/v1/GetSocketRequest';
+import type { GetSocketResponse as _grpc_channelz_v1_GetSocketResponse, GetSocketResponse__Output as _grpc_channelz_v1_GetSocketResponse__Output } from '../../../grpc/channelz/v1/GetSocketResponse';
+import type { GetSubchannelRequest as _grpc_channelz_v1_GetSubchannelRequest, GetSubchannelRequest__Output as _grpc_channelz_v1_GetSubchannelRequest__Output } from '../../../grpc/channelz/v1/GetSubchannelRequest';
+import type { GetSubchannelResponse as _grpc_channelz_v1_GetSubchannelResponse, GetSubchannelResponse__Output as _grpc_channelz_v1_GetSubchannelResponse__Output } from '../../../grpc/channelz/v1/GetSubchannelResponse';
+import type { GetTopChannelsRequest as _grpc_channelz_v1_GetTopChannelsRequest, GetTopChannelsRequest__Output as _grpc_channelz_v1_GetTopChannelsRequest__Output } from '../../../grpc/channelz/v1/GetTopChannelsRequest';
+import type { GetTopChannelsResponse as _grpc_channelz_v1_GetTopChannelsResponse, GetTopChannelsResponse__Output as _grpc_channelz_v1_GetTopChannelsResponse__Output } from '../../../grpc/channelz/v1/GetTopChannelsResponse';
 
 /**
  * Channelz is a service exposed by gRPC servers that provides detailed debug

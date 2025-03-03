@@ -1,6 +1,6 @@
 // Original file: proto/channelz.proto
 
-import type { Subchannel as _grpc_channelz_v1_Subchannel, Subchannel__Output as _grpc_channelz_v1_Subchannel__Output } from '../../../grpc/channelz/v1/Subchannel.ts';
+import type { Subchannel as _grpc_channelz_v1_Subchannel, Subchannel__Output as _grpc_channelz_v1_Subchannel__Output } from '../../../grpc/channelz/v1/Subchannel';
 
 export interface GetSubchannelResponse {
   /**

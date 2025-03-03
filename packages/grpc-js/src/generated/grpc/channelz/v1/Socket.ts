@@ -1,9 +1,9 @@
 // Original file: proto/channelz.proto
 
-import type { SocketRef as _grpc_channelz_v1_SocketRef, SocketRef__Output as _grpc_channelz_v1_SocketRef__Output } from '../../../grpc/channelz/v1/SocketRef.ts';
-import type { SocketData as _grpc_channelz_v1_SocketData, SocketData__Output as _grpc_channelz_v1_SocketData__Output } from '../../../grpc/channelz/v1/SocketData.ts';
-import type { Address as _grpc_channelz_v1_Address, Address__Output as _grpc_channelz_v1_Address__Output } from '../../../grpc/channelz/v1/Address.ts';
-import type { Security as _grpc_channelz_v1_Security, Security__Output as _grpc_channelz_v1_Security__Output } from '../../../grpc/channelz/v1/Security.ts';
+import type { SocketRef as _grpc_channelz_v1_SocketRef, SocketRef__Output as _grpc_channelz_v1_SocketRef__Output } from '../../../grpc/channelz/v1/SocketRef';
+import type { SocketData as _grpc_channelz_v1_SocketData, SocketData__Output as _grpc_channelz_v1_SocketData__Output } from '../../../grpc/channelz/v1/SocketData';
+import type { Address as _grpc_channelz_v1_Address, Address__Output as _grpc_channelz_v1_Address__Output } from '../../../grpc/channelz/v1/Address';
+import type { Security as _grpc_channelz_v1_Security, Security__Output as _grpc_channelz_v1_Security__Output } from '../../../grpc/channelz/v1/Security';
 
 /**
  * Information about an actual connection.  Pronounced "sock-ay".

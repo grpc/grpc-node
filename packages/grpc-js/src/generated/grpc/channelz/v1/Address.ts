@@ -1,6 +1,6 @@
 // Original file: proto/channelz.proto
 
-import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../google/protobuf/Any.ts';
+import type { Any as _google_protobuf_Any, Any__Output as _google_protobuf_Any__Output } from '../../../google/protobuf/Any';
 
 /**
  * An address type not included above.
@@ -85,5 +85,5 @@ export interface Address__Output {
   'tcpip_address'?: (_grpc_channelz_v1_Address_TcpIpAddress__Output | null);
   'uds_address'?: (_grpc_channelz_v1_Address_UdsAddress__Output | null);
   'other_address'?: (_grpc_channelz_v1_Address_OtherAddress__Output | null);
-  'address': "tcpip_address"|"uds_address"|"other_address";
+  'address'?: "tcpip_address"|"uds_address"|"other_address";
 }
