@@ -104,10 +104,10 @@ Options:
       --outputBranded        Output property for branded type for  "restricted"
                              types with fullName of the Message as its value
                                                       [boolean] [default: false]
-      --targetFileExtension  File extension for generated files. Defaults to .ts
+      --targetFileExtension  File extension for generated files.
                                                        [string] [default: ".ts"]
       --importFileExtension  File extension for import specifiers in generated
-                             code. Defaults to none (omitted)           [string]
+                             code.                        [string] [default: ""]
 ```
 
 ### Example Usage

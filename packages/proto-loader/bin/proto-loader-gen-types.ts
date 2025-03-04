@@ -920,8 +920,8 @@ async function runScript() {
       outputTemplate: 'Template for mapping output or "restricted" type names',
       inputBranded: 'Output property for branded type for  "permissive" types with fullName of the Message as its value',
       outputBranded: 'Output property for branded type for  "restricted" types with fullName of the Message as its value',
-      targetFileExtension: 'File extension for generated files. Defaults to .ts',
-      importFileExtension: 'File extension for import specifiers in generated code. Defaults to none (omitted)'
+      targetFileExtension: 'File extension for generated files.',
+      importFileExtension: 'File extension for import specifiers in generated code.'
     }).demandOption(['outDir'])
     .demand(1)
     .usage('$0 [options] filenames...')
