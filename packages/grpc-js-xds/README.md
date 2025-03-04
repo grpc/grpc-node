@@ -1,6 +1,6 @@
 # @grpc/grpc-js xDS plugin
 
-This package provides support for the `xds://` URL scheme to the `@grpc/grpc-js` library. The latest version of this package is compatible with `@grpc/grpc-js` version 1.10.x.
+This package provides support for the `xds://` URL scheme to the `@grpc/grpc-js` library. The latest version of this package is compatible with `@grpc/grpc-js` version 1.13.x.
 
 ## Installation
 
@@ -36,3 +36,4 @@ const client = new MyServiceClient('xds:///example.com:123');
  - [xDS Ring Hash LB Policy](https://github.com/grpc/proposal/blob/master/A42-xds-ring-hash-lb-policy.md)
  - [`pick_first` via xDS](https://github.com/grpc/proposal/blob/master/A62-pick-first.md#pick_first-via-xds-1) (Currently experimental, enabled by environment variable `GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG`)
  - [xDS-Enabled Servers](https://github.com/grpc/proposal/blob/master/A36-xds-for-servers.md)
+ - [xDS-Based Security for gRPC Clients and Servers](https://github.com/grpc/proposal/blob/master/A29-xds-tls-security.md)
