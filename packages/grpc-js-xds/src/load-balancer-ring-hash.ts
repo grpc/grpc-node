@@ -249,15 +249,19 @@ class RingHashLoadBalancer implements LoadBalancer {
     if (!(this.currentState === connectivityState.TRANSIENT_FAILURE || this.currentState === connectivityState.CONNECTING)) {
       return;
     }
+    let firstIdleChild: LeafLoadBalancer | null = null;
     for (const leaf of this.leafMap.values()) {
       const leafState = leaf.getConnectivityState();
       if (leafState === connectivityState.CONNECTING) {
+        firstIdleChild = null;
         break;
       }
-      if (leafState === connectivityState.IDLE) {
-        leaf.startConnecting();
-        break;
+      if (leafState === connectivityState.IDLE && !firstIdleChild) {
+        firstIdleChild = leaf;
       }
+    }
+    if (firstIdleChild) {
+      firstIdleChild.startConnecting();
     }
   }
 
