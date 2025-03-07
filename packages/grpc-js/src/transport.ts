@@ -51,6 +51,7 @@ import {
 import { Metadata } from './metadata';
 import { getNextCallNumber } from './call-number';
 import { Socket } from 'net';
+import { AuthContext } from './auth-context';
 
 const TRACER_NAME = 'transport';
 const FLOW_CONTROL_TRACER_NAME = 'transport_flowctrl';
@@ -83,6 +84,7 @@ export interface Transport {
   getChannelzRef(): SocketRef;
   getPeerName(): string;
   getOptions(): ChannelOptions;
+  getAuthContext(): AuthContext;
   createCall(
     metadata: Metadata,
     host: string,
@@ -128,6 +130,8 @@ class Http2Transport implements Transport {
   private disconnectListeners: TransportDisconnectListener[] = [];
 
   private disconnectHandled = false;
+
+  private authContext: AuthContext;
 
   // Channelz info
   private channelzRef: SocketRef;
@@ -253,6 +257,15 @@ class Http2Transport implements Transport {
      * which should only happen after everything else is set up. */
     if (this.keepaliveWithoutCalls) {
       this.maybeStartKeepalivePingTimer();
+    }
+
+    if (session.socket instanceof TLSSocket) {
+      this.authContext = {
+        transportSecurityType: 'ssl',
+        sslPeerCertificate: session.socket.getPeerCertificate()
+      };
+    } else {
+      this.authContext = {};
     }
   }
 
@@ -620,6 +633,10 @@ class Http2Transport implements Transport {
 
   getOptions() {
     return this.options;
+  }
+
+  getAuthContext(): AuthContext {
+    return this.authContext;
   }
 
   shutdown() {

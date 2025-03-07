@@ -34,6 +34,7 @@ import { Channel } from './channel';
 import { CallOptions } from './client';
 import { ClientMethodDefinition } from './make-client';
 import { getErrorMessage } from './error';
+import { AuthContext } from './auth-context';
 
 /**
  * Error class associated with passing both interceptors and interceptor
@@ -198,6 +199,7 @@ export interface InterceptingCallInterface {
   sendMessage(message: any): void;
   startRead(): void;
   halfClose(): void;
+  getAuthContext(): AuthContext | null;
 }
 
 export class InterceptingCall implements InterceptingCallInterface {
@@ -338,6 +340,9 @@ export class InterceptingCall implements InterceptingCallInterface {
       }
     });
   }
+  getAuthContext(): AuthContext | null {
+    return this.nextCall.getAuthContext();
+  }
 }
 
 function getCall(channel: Channel, path: string, options: CallOptions): Call {
@@ -426,6 +431,9 @@ class BaseInterceptingCall implements InterceptingCallInterface {
   }
   halfClose(): void {
     this.call.halfClose();
+  }
+  getAuthContext(): AuthContext | null {
+    return this.call.getAuthContext();
   }
 }
 

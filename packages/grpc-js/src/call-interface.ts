@@ -15,6 +15,7 @@
  *
  */
 
+import { AuthContext } from './auth-context';
 import { CallCredentials } from './call-credentials';
 import { Status } from './constants';
 import { Deadline } from './deadline';
@@ -170,6 +171,7 @@ export interface Call {
   halfClose(): void;
   getCallNumber(): number;
   setCredentials(credentials: CallCredentials): void;
+  getAuthContext(): AuthContext | null;
 }
 
 export interface DeadlineInfoProvider {

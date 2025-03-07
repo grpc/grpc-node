@@ -24,6 +24,7 @@ import { EmitterAugmentation1 } from './events';
 import { Metadata } from './metadata';
 import { ObjectReadable, ObjectWritable, WriteCallback } from './object-stream';
 import { InterceptingCallInterface } from './client-interceptors';
+import { AuthContext } from './auth-context';
 
 /**
  * A type extending the built-in Error object with additional fields.
@@ -37,6 +38,7 @@ export type SurfaceCall = {
   call?: InterceptingCallInterface;
   cancel(): void;
   getPeer(): string;
+  getAuthContext(): AuthContext | null;
 } & EmitterAugmentation1<'metadata', Metadata> &
   EmitterAugmentation1<'status', StatusObject> &
   EventEmitter;
@@ -100,6 +102,10 @@ export class ClientUnaryCallImpl
   getPeer(): string {
     return this.call?.getPeer() ?? 'unknown';
   }
+
+  getAuthContext(): AuthContext | null {
+    return this.call?.getAuthContext() ?? null;
+  }
 }
 
 export class ClientReadableStreamImpl<ResponseType>
@@ -117,6 +123,10 @@ export class ClientReadableStreamImpl<ResponseType>
 
   getPeer(): string {
     return this.call?.getPeer() ?? 'unknown';
+  }
+
+  getAuthContext(): AuthContext | null {
+    return this.call?.getAuthContext() ?? null;
   }
 
   _read(_size: number): void {
@@ -139,6 +149,10 @@ export class ClientWritableStreamImpl<RequestType>
 
   getPeer(): string {
     return this.call?.getPeer() ?? 'unknown';
+  }
+
+  getAuthContext(): AuthContext | null {
+    return this.call?.getAuthContext() ?? null;
   }
 
   _write(chunk: RequestType, encoding: string, cb: WriteCallback) {
@@ -176,6 +190,10 @@ export class ClientDuplexStreamImpl<RequestType, ResponseType>
 
   getPeer(): string {
     return this.call?.getPeer() ?? 'unknown';
+  }
+
+  getAuthContext(): AuthContext | null {
+    return this.call?.getAuthContext() ?? null;
   }
 
   _read(_size: number): void {
