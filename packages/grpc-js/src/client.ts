@@ -479,7 +479,7 @@ export class Client {
             callProperties.callback!(
               callErrorFromStatus(
                 {
-                  code: Status.UNIMPLEMENTED,
+                  code: Status.DATA_LOSS,
                   details: 'No message received',
                   metadata: status.metadata,
                 },
