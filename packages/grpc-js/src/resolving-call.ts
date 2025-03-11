@@ -37,6 +37,7 @@ import { InternalChannel } from './internal-channel';
 import { Metadata } from './metadata';
 import * as logging from './logging';
 import { restrictControlPlaneStatusCode } from './control-plane-status';
+import { AuthContext } from './auth-context';
 
 const TRACER_NAME = 'resolving_call';
 
@@ -366,5 +367,13 @@ export class ResolvingCall implements Call {
 
   getCallNumber(): number {
     return this.callNumber;
+  }
+
+  getAuthContext(): AuthContext | null {
+    if (this.child) {
+      return this.child.getAuthContext();
+    } else {
+      return null;
+    }
   }
 }

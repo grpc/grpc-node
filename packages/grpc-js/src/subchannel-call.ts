@@ -30,6 +30,7 @@ import {
   WriteCallback,
 } from './call-interface';
 import { CallEventTracker, Transport } from './transport';
+import { AuthContext } from './auth-context';
 
 const TRACER_NAME = 'subchannel_call';
 
@@ -71,6 +72,7 @@ export interface SubchannelCall {
   halfClose(): void;
   getCallNumber(): number;
   getDeadlineInfo(): string[];
+  getAuthContext(): AuthContext;
 }
 
 export interface StatusObjectWithRstCode extends StatusObject {
@@ -554,6 +556,10 @@ export class Http2SubchannelCall implements SubchannelCall {
 
   getCallNumber(): number {
     return this.callId;
+  }
+
+  getAuthContext(): AuthContext {
+    return this.transport.getAuthContext();
   }
 
   startRead() {

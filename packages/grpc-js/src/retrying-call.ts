@@ -35,6 +35,7 @@ import {
   StatusObjectWithProgress,
 } from './load-balancing-call';
 import { InternalChannel } from './internal-channel';
+import { AuthContext } from './auth-context';
 
 const TRACER_NAME = 'retrying_call';
 
@@ -858,5 +859,12 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
   }
   getHost(): string {
     return this.host;
+  }
+  getAuthContext(): AuthContext | null {
+    if (this.committedCallIndex !== null) {
+      return this.underlyingCalls[this.committedCallIndex].call.getAuthContext();
+    } else {
+      return null;
+    }
   }
 }

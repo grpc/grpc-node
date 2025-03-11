@@ -25,6 +25,7 @@ import type { ObjectReadable, ObjectWritable } from './object-stream';
 import type { StatusObject, PartialStatusObject } from './call-interface';
 import type { Deadline } from './deadline';
 import type { ServerInterceptingCallInterface } from './server-interceptors';
+import { AuthContext } from './auth-context';
 
 export type ServerStatusResponse = Partial<StatusObject>;
 
@@ -38,6 +39,7 @@ export type ServerSurfaceCall = {
   getDeadline(): Deadline;
   getPath(): string;
   getHost(): string;
+  getAuthContext(): AuthContext;
 } & EventEmitter;
 
 export type ServerUnaryCall<RequestType, ResponseType> = ServerSurfaceCall & {
@@ -114,6 +116,10 @@ export class ServerUnaryCallImpl<RequestType, ResponseType>
   getHost(): string {
     return this.call.getHost();
   }
+
+  getAuthContext(): AuthContext {
+    return this.call.getAuthContext();
+  }
 }
 
 export class ServerReadableStreamImpl<RequestType, ResponseType>
@@ -153,6 +159,10 @@ export class ServerReadableStreamImpl<RequestType, ResponseType>
 
   getHost(): string {
     return this.call.getHost();
+  }
+
+  getAuthContext(): AuthContext {
+    return this.call.getAuthContext();
   }
 }
 
@@ -201,6 +211,10 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
 
   getHost(): string {
     return this.call.getHost();
+  }
+
+  getAuthContext(): AuthContext {
+    return this.call.getAuthContext();
   }
 
   _write(
@@ -274,6 +288,10 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType>
 
   getHost(): string {
     return this.call.getHost();
+  }
+
+  getAuthContext(): AuthContext {
+    return this.call.getAuthContext();
   }
 
   _read(size: number) {

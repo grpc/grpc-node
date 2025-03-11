@@ -218,6 +218,16 @@ describe('ChannelCredentials usage', () => {
       }
     );
   });
+  it('Should provide certificates in getAuthContext', done => {
+    const call = client.echo({ value: 'test value', value2: 3 }, (error: ServiceError, response: any) => {
+      assert.ifError(error);
+      const authContext = call.getAuthContext();
+      assert(authContext);
+      assert.strictEqual(authContext.transportSecurityType, 'ssl');
+      assert(authContext.sslPeerCertificate);
+      done();
+    });
+  })
 });
 
 describe('Channel credentials mtls', () => {

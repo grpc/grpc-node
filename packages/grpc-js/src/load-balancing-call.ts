@@ -35,6 +35,7 @@ import { splitHostPort } from './uri-parser';
 import * as logging from './logging';
 import { restrictControlPlaneStatusCode } from './control-plane-status';
 import * as http2 from 'http2';
+import { AuthContext } from './auth-context';
 
 const TRACER_NAME = 'load_balancing_call';
 
@@ -374,5 +375,13 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
 
   getCallNumber(): number {
     return this.callNumber;
+  }
+
+  getAuthContext(): AuthContext | null {
+    if (this.child) {
+      return this.child.getAuthContext();
+    } else {
+      return null;
+    }
   }
 }

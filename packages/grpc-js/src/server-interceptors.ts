@@ -33,6 +33,8 @@ import * as zlib from 'zlib';
 import { StreamDecoder } from './stream-decoder';
 import { CallEventTracker } from './transport';
 import * as logging from './logging';
+import { AuthContext } from './auth-context';
+import { TLSSocket } from 'tls';
 
 const TRACER_NAME = 'server_call';
 
@@ -332,6 +334,10 @@ export interface ServerInterceptingCallInterface {
    * Return the host requested by the client in the ":authority" header.
    */
   getHost(): string;
+  /**
+   * Return the auth context of the connection the call is associated with.
+   */
+  getAuthContext(): AuthContext;
 }
 
 export class ServerInterceptingCall implements ServerInterceptingCallInterface {
@@ -439,6 +445,9 @@ export class ServerInterceptingCall implements ServerInterceptingCallInterface {
   }
   getHost(): string {
     return this.nextCall.getHost();
+  }
+  getAuthContext(): AuthContext {
+    return this.nextCall.getAuthContext();
   }
 }
 
@@ -970,6 +979,16 @@ export class BaseServerInterceptingCall
   }
   getHost(): string {
     return this.host;
+  }
+  getAuthContext(): AuthContext {
+    if (this.stream.session?.socket instanceof TLSSocket) {
+      return {
+        transportSecurityType: 'ssl',
+        sslPeerCertificate: this.stream.session.socket.getPeerCertificate()
+      }
+    } else {
+      return {};
+    }
   }
 }
 
