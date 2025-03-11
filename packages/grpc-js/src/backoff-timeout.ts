@@ -132,8 +132,8 @@ export class BackoffTimeout {
     clearTimeout(this.timerId);
     this.timerId = setTimeout(() => {
       this.trace('timer fired');
-      this.callback();
       this.running = false;
+      this.callback();
     }, delay);
     if (!this.hasRef) {
       this.timerId.unref?.();
