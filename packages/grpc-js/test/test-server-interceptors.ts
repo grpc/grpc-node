@@ -127,6 +127,22 @@ const testHeaderInjectionInterceptor: grpc.ServerInterceptor = (
   });
 };
 
+const callExaminationInterceptor: grpc.ServerInterceptor = (
+  methodDescriptor,
+  call
+) => {
+  const connectionInfo = call.getConnectionInfo();
+  return new grpc.ServerInterceptingCall(call, {
+    sendMetadata: (metadata, next) => {
+      metadata.add('local-address', `${connectionInfo.localAddress}`);
+      metadata.add('local-port', `${connectionInfo.localPort}`);
+      metadata.add('remote-address', `${connectionInfo.remoteAddress}`);
+      metadata.add('remote-port', `${connectionInfo.remotePort}`);
+      next(metadata);
+    }
+  })
+}
+
 describe('Server interceptors', () => {
   describe('Auth-type interceptor', () => {
     let server: grpc.Server;
@@ -333,6 +349,47 @@ describe('Server interceptors', () => {
           sendStatus: 1,
         });
         done();
+      });
+    });
+  });
+  describe('Call properties', () => {
+    let server: grpc.Server;
+    let client: TestClient;
+    let portNum: number;
+    /* Tests that an interceptor can entirely prevent the handler from being
+     * invoked, based on the contents of the metadata. */
+    before(done => {
+      server = new grpc.Server({ interceptors: [callExaminationInterceptor] });
+      server.addService(echoService.service, {
+        echo: (
+          call: grpc.ServerUnaryCall<any, any>,
+          callback: grpc.sendUnaryData<any>
+        ) => {
+          callback(null, call.request);
+        },
+      });
+      server.bindAsync(
+        '[::1]:0',
+        grpc.ServerCredentials.createInsecure(),
+        (error, port) => {
+          assert.ifError(error);
+          client = new TestClient(`localhost:${port}`, false);
+          portNum = port;
+          done();
+        }
+      );
+    });
+    after(done => {
+      client.close();
+      server.tryShutdown(done);
+    });
+    it('Should get valid connection information', done => {
+      const call = client.sendRequest(done);
+      call.on('metadata', metadata => {
+        assert.strictEqual(metadata.get('local-address')[0], '::1');
+        assert.strictEqual(metadata.get('remote-address')[0], '::1');
+        assert.strictEqual(metadata.get('local-port')[0], `${portNum}`);
+        assert.notStrictEqual(metadata.get('remote-port')[0], 'undefined');
       });
     });
   });
