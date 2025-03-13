@@ -96,9 +96,7 @@ export interface XdsConfig {
 }
 
 export interface XdsConfigWatcher {
-  onUpdate(xdsConfig: XdsConfig): void;
-  onError(context: string, status: StatusObject): void;
-  onResourceDoesNotExist(context: string): void;
+  onUpdate(xdsConfig: StatusOr<XdsConfig>): void;
 }
 
 interface AggregateClusterInfo {
@@ -401,7 +399,13 @@ export class XdsDependencyManager {
          * not already provided a ServiceConfig for the upper layer to use */
         if (!this.latestListener) {
           this.trace('Resolution error due to xDS client transient error ' + error.details);
-          this.watcher.onError(`Listener ${listenerResourceName}`, error);
+          this.watcher.onUpdate({
+            success: false,
+            error: {
+              ...error,
+              details: `Listener ${listenerResourceName}: ${error.details}`
+            }
+          });
         }
       },
       onResourceDoesNotExist: () => {
@@ -415,11 +419,24 @@ export class XdsDependencyManager {
       },
       onError: (error: StatusObject) => {
         if (!this.latestRouteConfiguration) {
-          this.watcher.onError(`RouteConfiguration ${this.latestRouteConfigName}`, error);
+          this.watcher.onUpdate({
+            success: false,
+            error: {
+              ...error,
+              details: `RouteConfiguration ${this.latestRouteConfigName}: ${error.details}`
+            }
+          });
         }
       },
       onResourceDoesNotExist: () => {
-        this.watcher.onResourceDoesNotExist(`RouteConfiguration ${this.latestRouteConfigName}`);
+        this.watcher.onUpdate({
+          success: false,
+          error: {
+            code: status.UNAVAILABLE,
+            details: `RouteConfiguration ${this.latestRouteConfigName} does not exist`,
+            metadata: new Metadata()
+          }
+        });
         this.clusterRoots = [];
         this.pruneOrphanClusters();
       }
@@ -441,8 +458,14 @@ export class XdsDependencyManager {
       this.clusterRoots = [];
       this.pruneOrphanClusters();
     }
-    this.watcher.onResourceDoesNotExist(`Listener ${this.listenerResourceName}`);
-
+    this.watcher.onUpdate({
+      success: false,
+      error: {
+        code: status.UNAVAILABLE,
+        details: `Listener ${this.listenerResourceName} does not exist`,
+        metadata: new Metadata()
+      }
+    });
   }
 
   private maybeSendUpdate() {
@@ -498,7 +521,7 @@ export class XdsDependencyManager {
         });
       }
     }
-    this.watcher.onUpdate(update);
+    this.watcher.onUpdate({success: true, value: update});
   }
 
   private addCluster(clusterName: string) {
@@ -770,10 +793,13 @@ export class XdsDependencyManager {
     if (!virtualHost) {
       this.clusterRoots = [];
       this.pruneOrphanClusters();
-      this.watcher.onError(`RouteConfiguration ${routeConfig.name}`, {
-        code: status.UNAVAILABLE,
-        details: `No matching route found for ${this.dataPlaneAuthority}`,
-        metadata: new Metadata()
+      this.watcher.onUpdate({
+        success: false,
+        error: {
+          code: status.UNAVAILABLE,
+          details: `RouteConfiguration ${routeConfig.name}: No matching route found for ${this.dataPlaneAuthority}`,
+          metadata: new Metadata()
+        }
       });
       // Report error
       return;

@@ -132,18 +132,13 @@ class XdsResolver implements Resolver {
       this.xdsClient = getSingletonXdsClient();
     }
     this.xdsConfigWatcher = {
-      onUpdate: xdsConfig => {
-        this.handleXdsConfig(xdsConfig);
-      },
-      onError: (context, status) => {
-        trace('Resolution error for target ' + uriToString(this.target) + ' due to xDS client transient error retrieving ' + context + ': ' + status.details);
-        this.reportResolutionError(`Error retrieving resource ${context}: ${status.details}`);
-      },
-      onResourceDoesNotExist: context => {
-        trace('Resolution error for target ' + uriToString(this.target) + ': ' + context + ' does not exist');
-        /* Return an empty endpoint list and service config, to explicitly
-         * invalidate any previously returned service config */
-        this.listener.onSuccessfulResolution([], null, null, null, {});
+      onUpdate: maybeXdsConfig => {
+        if (maybeXdsConfig.success) {
+          this.handleXdsConfig(maybeXdsConfig.value);
+        } else {
+          // This should be in the resolution_note once that is implemented
+          this.reportResolutionError(`Resolution error for target ${uriToString(this.target)}: ${maybeXdsConfig.error.details}`);
+        }
       }
     }
   }
