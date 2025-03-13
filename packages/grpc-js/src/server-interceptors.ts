@@ -301,6 +301,13 @@ const defaultResponder: FullResponder = {
   },
 };
 
+export interface ConnectionInfo {
+  localAddress?: string | undefined;
+  localPort?: number | undefined;
+  remoteAddress?: string | undefined;
+  remotePort?: number | undefined;
+}
+
 export interface ServerInterceptingCallInterface {
   /**
    * Register the listener to handle inbound events.
@@ -338,6 +345,10 @@ export interface ServerInterceptingCallInterface {
    * Return the auth context of the connection the call is associated with.
    */
   getAuthContext(): AuthContext;
+  /**
+   * Return information about the connection used to make the call.
+   */
+  getConnectionInfo(): ConnectionInfo;
 }
 
 export class ServerInterceptingCall implements ServerInterceptingCallInterface {
@@ -449,6 +460,9 @@ export class ServerInterceptingCall implements ServerInterceptingCallInterface {
   getAuthContext(): AuthContext {
     return this.nextCall.getAuthContext();
   }
+  getConnectionInfo(): ConnectionInfo {
+    return this.nextCall.getConnectionInfo();
+  }
 }
 
 export interface ServerInterceptor {
@@ -519,6 +533,7 @@ export class BaseServerInterceptingCall
   private receivedHalfClose = false;
   private streamEnded = false;
   private host: string;
+  private connectionInfo: ConnectionInfo;
 
   constructor(
     private readonly stream: http2.ServerHttp2Stream,
@@ -606,6 +621,14 @@ export class BaseServerInterceptingCall
     metadata.remove(http2.constants.HTTP2_HEADER_TE);
     metadata.remove(http2.constants.HTTP2_HEADER_CONTENT_TYPE);
     this.metadata = metadata;
+
+    const socket = stream.session?.socket;
+    this.connectionInfo = {
+      localAddress: socket?.localAddress,
+      localPort: socket?.localPort,
+      remoteAddress: socket?.remoteAddress,
+      remotePort: socket?.remotePort
+    };
   }
 
   private handleTimeoutHeader(timeoutHeader: string) {
@@ -989,6 +1012,9 @@ export class BaseServerInterceptingCall
     } else {
       return {};
     }
+  }
+  getConnectionInfo(): ConnectionInfo {
+    return this.connectionInfo;
   }
 }
 
