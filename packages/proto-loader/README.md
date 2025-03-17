@@ -61,44 +61,53 @@ The `proto-loader-gen-types` script distributed with this package can be used to
 proto-loader-gen-types.js [options] filenames...
 
 Options:
-      --help             Show help                                     [boolean]
-      --version          Show version number                           [boolean]
-      --keepCase         Preserve the case of field names
+      --help                 Show help                                 [boolean]
+      --version              Show version number                       [boolean]
+      --keepCase             Preserve the case of field names
                                                       [boolean] [default: false]
-      --longs            The type that should be used to output 64 bit integer
-                         values. Can be String, Number[string] [default: "Long"]
-      --enums            The type that should be used to output enum fields. Can
-                         be String                  [string] [default: "number"]
-      --bytes            The type that should be used to output bytes fields.
-                         Can be String, Array       [string] [default: "Buffer"]
-      --defaults         Output default values for omitted fields
+      --longs                The type that should be used to output 64 bit
+                             integer values. Can be String, Number
+                                                      [string] [default: "Long"]
+      --enums                The type that should be used to output enum fields.
+                             Can be String          [string] [default: "number"]
+      --bytes                The type that should be used to output bytes
+                             fields. Can be String, Array
+                                                    [string] [default: "Buffer"]
+      --defaults             Output default values for omitted fields
                                                       [boolean] [default: false]
-      --arrays           Output default values for omitted repeated fields even
-                         if --defaults is not set     [boolean] [default: false]
-      --objects          Output default values for omitted message fields even
-                         if --defaults is not set     [boolean] [default: false]
-      --oneofs           Output virtual oneof fields set to the present field's
-                         name                         [boolean] [default: false]
-      --json             Represent Infinity and NaN as strings in float fields.
-                         Also decode google.protobuf.Any automatically
+      --arrays               Output default values for omitted repeated fields
+                             even if --defaults is not set
                                                       [boolean] [default: false]
-      --includeComments  Generate doc comments from comments in the original
-                         files                        [boolean] [default: false]
-  -I, --includeDirs      Directories to search for included files        [array]
-  -O, --outDir           Directory in which to output files  [string] [required]
-      --grpcLib          The gRPC implementation library that these types will
-                         be used with. If not provided, some types will not be
-                         generated                                      [string]
-      --inputTemplate    Template for mapping input or "permissive" type names
-                                                        [string] [default: "%s"]
-      --outputTemplate   Template for mapping output or "restricted" type names
-                                                [string] [default: "%s__Output"]
-      --inputBranded     Output property for branded type for  "permissive"
-                         types with fullName of the Message as its value
+      --objects              Output default values for omitted message fields
+                             even if --defaults is not set
                                                       [boolean] [default: false]
-      --outputBranded    Output property for branded type for  "restricted"
-                         types with fullName of the Message as its value
+      --oneofs               Output virtual oneof fields set to the present
+                             field's name             [boolean] [default: false]
+      --json                 Represent Infinity and NaN as strings in float
+                             fields. Also decode google.protobuf.Any
+                             automatically            [boolean] [default: false]
+      --includeComments      Generate doc comments from comments in the original
+                             files                    [boolean] [default: false]
+  -I, --includeDirs          Directories to search for included files    [array]
+  -O, --outDir               Directory in which to output files
+                                                             [string] [required]
+      --grpcLib              The gRPC implementation library that these types
+                             will be used with. If not provided, some types will
+                             not be generated                           [string]
+      --inputTemplate        Template for mapping input or "permissive" type
+                             names                      [string] [default: "%s"]
+      --outputTemplate       Template for mapping output or "restricted" type
+                             names              [string] [default: "%s__Output"]
+      --inputBranded         Output property for branded type for  "permissive"
+                             types with fullName of the Message as its value
                                                       [boolean] [default: false]
+      --outputBranded        Output property for branded type for  "restricted"
+                             types with fullName of the Message as its value
+                                                      [boolean] [default: false]
+      --targetFileExtension  File extension for generated files.
+                                                       [string] [default: ".ts"]
+      --importFileExtension  File extension for import specifiers in generated
+                             code.                        [string] [default: ""]
 ```
 
 ### Example Usage
