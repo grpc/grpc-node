@@ -31,6 +31,7 @@ import UnavailablePicker = experimental.UnavailablePicker;
 import subchannelAddressToString = experimental.subchannelAddressToString;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
 import EndpointMap = experimental.EndpointMap;
+import StatusOr = experimental.StatusOr;
 import { loadXxhashApi, xxhashApi } from './xxhash';
 import { EXPERIMENTAL_RING_HASH } from './environment';
 import { loadProtosWithOptionsSync } from '@grpc/proto-loader/build/src/util';
@@ -401,26 +402,44 @@ class RingHashLoadBalancer implements LoadBalancer {
   }
 
   updateAddressList(
-    endpointList: Endpoint[],
+    endpointList: StatusOr<Endpoint[]>,
     lbConfig: TypedLoadBalancingConfig,
-    options: ChannelOptions
-  ): void {
+    options: ChannelOptions,
+    resolutionNote: string
+  ): boolean {
     if (!(lbConfig instanceof RingHashLoadBalancingConfig)) {
       trace('Discarding address update with unrecognized config ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));
-      return;
+      return false;
+    }
+    if (!endpointList.ok) {
+      if (this.ring.length === 0) {
+        this.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker(endpointList.error), endpointList.error.details);
+      }
+      return true;
+    }
+    if (endpointList.value.length === 0) {
+      for (const ringEntry of this.ring) {
+        ringEntry.leafBalancer.destroy();
+      }
+      this.ring = [];
+      this.leafMap.clear();
+      this.leafWeightMap.clear();
+      const errorMessage = `No addresses resolved. Resolution note: ${resolutionNote}`;
+      this.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: errorMessage}), errorMessage);
+      return false;
     }
     trace('Received update with config ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));
     this.updatesPaused = true;
     this.leafWeightMap.clear();
     const dedupedEndpointList: Endpoint[] = [];
-    for (const endpoint of endpointList) {
+    for (const endpoint of endpointList.value) {
       const leafBalancer = this.leafMap.get(endpoint);
       if (leafBalancer) {
         leafBalancer.updateEndpoint(endpoint, options);
       } else {
         this.leafMap.set(
           endpoint,
-          new LeafLoadBalancer(endpoint, this.childChannelControlHelper, options)
+          new LeafLoadBalancer(endpoint, this.childChannelControlHelper, options, resolutionNote)
         );
       }
       const weight = this.leafWeightMap.get(endpoint);
@@ -429,7 +448,7 @@ class RingHashLoadBalancer implements LoadBalancer {
       }
       this.leafWeightMap.set(endpoint, (weight ?? 0) + (isLocalityEndpoint(endpoint) ? endpoint.endpointWeight : 1));
     }
-    const removedLeaves = this.leafMap.deleteMissing(endpointList);
+    const removedLeaves = this.leafMap.deleteMissing(endpointList.value);
     for (const leaf of removedLeaves) {
       leaf.destroy();
     }
@@ -440,6 +459,7 @@ class RingHashLoadBalancer implements LoadBalancer {
       this.calculateAndUpdateState();
       this.maybeProactivelyConnect();
     });
+    return true;
   }
   exitIdle(): void {
     /* This operation does not make sense here. We don't want to make the whole

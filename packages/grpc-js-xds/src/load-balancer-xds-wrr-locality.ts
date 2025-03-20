@@ -29,6 +29,7 @@ import ChildLoadBalancerHandler = experimental.ChildLoadBalancerHandler;
 import Endpoint = experimental.Endpoint;
 import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
+import StatusOr = experimental.StatusOr;
 import { Any__Output } from "./generated/google/protobuf/Any";
 import { WrrLocality__Output } from "./generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/WrrLocality";
 import { TypedExtensionConfig__Output } from "./generated/envoy/config/core/v3/TypedExtensionConfig";
@@ -76,15 +77,19 @@ class XdsWrrLocalityLoadBalancer implements LoadBalancer {
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
     this.childBalancer = new ChildLoadBalancerHandler(channelControlHelper);
   }
-  updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, options: ChannelOptions): void {
+  updateAddressList(endpointList: StatusOr<Endpoint[]>, lbConfig: TypedLoadBalancingConfig, options: ChannelOptions, resolutionNote: string): boolean {
     if (!(lbConfig instanceof XdsWrrLocalityLoadBalancingConfig)) {
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig, undefined, 2));
-      return;
+      return false;
+    }
+    if (!endpointList.ok) {
+      this.childBalancer.updateAddressList(endpointList, parseLoadBalancingConfig({weighted_target: { targets: [] }}), options, resolutionNote);
+      return true;
     }
     const targets: {[localityName: string]: WeightedTargetRaw} = {};
-    for (const address of endpointList) {
+    for (const address of endpointList.value) {
       if (!isLocalityEndpoint(address)) {
-        return;
+        return false;
       }
       const localityName = localityToName(address.locality);
       if (!(localityName in targets)) {
@@ -99,7 +104,8 @@ class XdsWrrLocalityLoadBalancer implements LoadBalancer {
         targets: targets
       }
     };
-    this.childBalancer.updateAddressList(endpointList, parseLoadBalancingConfig(childConfig), options);
+    this.childBalancer.updateAddressList(endpointList, parseLoadBalancingConfig(childConfig), options, resolutionNote);
+    return true;
   }
   exitIdle(): void {
     this.childBalancer.exitIdle();

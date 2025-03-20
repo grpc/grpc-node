@@ -23,7 +23,7 @@ import * as resolver_dns from '../src/resolver-dns';
 import * as resolver_uds from '../src/resolver-uds';
 import * as resolver_ip from '../src/resolver-ip';
 import { ServiceConfig } from '../src/service-config';
-import { StatusObject } from '../src/call-interface';
+import { StatusOr } from '../src/call-interface';
 import {
   Endpoint,
   SubchannelAddress,
@@ -63,25 +63,27 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('localhost:50051')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(
-            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 50051 })
-          );
-          assert(
-            hasMatchingAddress(endpointList, { host: '::1', port: 50051 })
-          );
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(
+          hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 50051 })
+        );
+        assert(
+          hasMatchingAddress(endpointList, { host: '::1', port: 50051 })
+        );
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
@@ -93,65 +95,71 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('localhost')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(
-            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 })
-          );
-          assert(hasMatchingAddress(endpointList, { host: '::1', port: 443 }));
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(
+          hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 })
+        );
+        assert(hasMatchingAddress(endpointList, { host: '::1', port: 443 }));
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
     it('Should correctly represent an ipv4 address', done => {
       const target = resolverManager.mapUriDefaultScheme(parseUri('1.2.3.4')!)!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(
-            hasMatchingAddress(endpointList, { host: '1.2.3.4', port: 443 })
-          );
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(
+          hasMatchingAddress(endpointList, { host: '1.2.3.4', port: 443 })
+        );
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
     });
     it('Should correctly represent an ipv6 address', done => {
       const target = resolverManager.mapUriDefaultScheme(parseUri('::1')!)!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(hasMatchingAddress(endpointList, { host: '::1', port: 443 }));
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(hasMatchingAddress(endpointList, { host: '::1', port: 443 }));
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
@@ -160,22 +168,24 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('[::1]:50051')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(
-            hasMatchingAddress(endpointList, { host: '::1', port: 50051 })
-          );
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(
+          hasMatchingAddress(endpointList, { host: '::1', port: 50051 })
+        );
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
@@ -184,20 +194,22 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('example.com')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(endpointList.length > 0);
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(endpointList.length > 0);
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
@@ -208,23 +220,21 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('grpctest.kleinsch.com')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          if (serviceConfig !== null) {
-            assert(
-              serviceConfig.loadBalancingPolicy === 'round_robin',
-              'Should have found round robin LB policy'
-            );
-            done();
-          }
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (serviceConfig !== null) {
+          assert(serviceConfig.ok);
+          assert(
+            serviceConfig.value.loadBalancingPolicy === 'round_robin',
+            'Should have found round robin LB policy'
+          );
+          done();
+        }
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
@@ -234,21 +244,18 @@ describe('Name Resolver', () => {
         parseUri('grpctest.kleinsch.com')!
       )!;
       let count = 0;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          assert(
-            serviceConfig === null,
-            'Should not have found service config'
-          );
-          count++;
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        assert(
+          serviceConfig === null,
+          'Should not have found service config'
+        );
+        count++;
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {
         'grpc.service_config_disable_resolution': 1,
@@ -271,25 +278,27 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('loopback4.unittest.grpc.io')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(
-            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 }),
-            `None of [${endpointList.map(addr =>
-              endpointToString(addr)
-            )}] matched '127.0.0.1:443'`
-          );
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(
+          hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 }),
+          `None of [${endpointList.map(addr =>
+            endpointToString(addr)
+          )}] matched '127.0.0.1:443'`
+        );
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
@@ -300,20 +309,22 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('loopback6.unittest.grpc.io')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(hasMatchingAddress(endpointList, { host: '::1', port: 443 }));
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(hasMatchingAddress(endpointList, { host: '::1', port: 443 }));
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
@@ -325,27 +336,27 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('loopback46.unittest.grpc.io')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(
-            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 }),
-            `None of [${endpointList.map(addr =>
-              endpointToString(addr)
-            )}] matched '127.0.0.1:443'`
-          );
-          /* TODO(murgatroid99): check for IPv6 result, once we can get that
-           * consistently */
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(
+          hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 }),
+          `None of [${endpointList.map(addr =>
+            endpointToString(addr)
+          )}] matched '127.0.0.1:443'`
+        );
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
@@ -356,20 +367,22 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('network-tools.com')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(endpointList.length > 0);
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(endpointList.length > 0);
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
@@ -386,23 +399,23 @@ describe('Name Resolver', () => {
       const target2 = resolverManager.mapUriDefaultScheme(
         parseUri('grpc-test4.sandbox.googleapis.com')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          assert(endpointList.length > 0);
-          completeCount += 1;
-          if (completeCount === 2) {
-            // Only handle the first resolution result
-            listener.onSuccessfulResolution = () => {};
-            done();
-          }
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (completeCount >= 2) {
+          return true;
+        }
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(endpointList.length > 0);
+        completeCount += 1;
+        if (completeCount === 2) {
+          done();
+        }
+        return true;
       };
       const resolver1 = resolverManager.createResolver(target1, listener, {});
       resolver1.updateResolution();
@@ -419,26 +432,25 @@ describe('Name Resolver', () => {
       let resultCount = 0;
       const resolver = resolverManager.createResolver(
         target,
-        {
-          onSuccessfulResolution: (
-            endpointList: Endpoint[],
-            serviceConfig: ServiceConfig | null,
-            serviceConfigError: StatusObject | null
-          ) => {
-            assert(
-              hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 })
-            );
-            assert(
-              hasMatchingAddress(endpointList, { host: '::1', port: 443 })
-            );
-            resultCount += 1;
-            if (resultCount === 1) {
-              process.nextTick(() => resolver.updateResolution());
-            }
-          },
-          onError: (error: StatusObject) => {
-            assert.ifError(error);
-          },
+        (
+          maybeEndpointList: StatusOr<Endpoint[]>,
+          attributes: { [key: string]: unknown},
+          serviceConfig: StatusOr<ServiceConfig> | null,
+          resolutionNote: string
+        ) => {
+          assert(maybeEndpointList.ok);
+          const endpointList = maybeEndpointList.value;
+          assert(
+            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 })
+          );
+          assert(
+            hasMatchingAddress(endpointList, { host: '::1', port: 443 })
+          );
+          resultCount += 1;
+          if (resultCount === 1) {
+            process.nextTick(() => resolver.updateResolution());
+          }
+          return true;
         },
         { 'grpc.dns_min_time_between_resolutions_ms': 2000 }
       );
@@ -455,20 +467,18 @@ describe('Name Resolver', () => {
       let resultCount = 0;
       const resolver = resolverManager.createResolver(
         target,
-        {
-          onSuccessfulResolution: (
-            endpointList: Endpoint[],
-            serviceConfig: ServiceConfig | null,
-            serviceConfigError: StatusObject | null
-          ) => {
-            assert.fail('Resolution succeeded unexpectedly');
-          },
-          onError: (error: StatusObject) => {
-            resultCount += 1;
-            if (resultCount === 1) {
-              process.nextTick(() => resolver.updateResolution());
-            }
-          },
+        (
+          maybeEndpointList: StatusOr<Endpoint[]>,
+          attributes: { [key: string]: unknown},
+          serviceConfig: StatusOr<ServiceConfig> | null,
+          resolutionNote: string
+        ) => {
+          assert(!maybeEndpointList.ok);
+          resultCount += 1;
+          if (resultCount === 1) {
+            process.nextTick(() => resolver.updateResolution());
+          }
+          return true;
         },
         {}
       );
@@ -484,20 +494,22 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('unix:socket')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(hasMatchingAddress(endpointList, { path: 'socket' }));
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(hasMatchingAddress(endpointList, { path: 'socket' }));
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
@@ -506,20 +518,22 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('unix:///tmp/socket')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(hasMatchingAddress(endpointList, { path: '/tmp/socket' }));
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(hasMatchingAddress(endpointList, { path: '/tmp/socket' }));
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
@@ -530,22 +544,24 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('ipv4:127.0.0.1')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(
-            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 })
-          );
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(
+          hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 })
+        );
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
@@ -554,22 +570,24 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('ipv4:127.0.0.1:50051')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(
-            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 50051 })
-          );
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(
+          hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 50051 })
+        );
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
@@ -578,25 +596,27 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('ipv4:127.0.0.1:50051,127.0.0.1:50052')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(
-            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 50051 })
-          );
-          assert(
-            hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 50052 })
-          );
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(
+          hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 50051 })
+        );
+        assert(
+          hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 50052 })
+        );
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
@@ -605,20 +625,22 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('ipv6:::1')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(hasMatchingAddress(endpointList, { host: '::1', port: 443 }));
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(hasMatchingAddress(endpointList, { host: '::1', port: 443 }));
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
@@ -627,22 +649,24 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('ipv6:[::1]:50051')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(
-            hasMatchingAddress(endpointList, { host: '::1', port: 50051 })
-          );
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(
+          hasMatchingAddress(endpointList, { host: '::1', port: 50051 })
+        );
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();
@@ -651,25 +675,27 @@ describe('Name Resolver', () => {
       const target = resolverManager.mapUriDefaultScheme(
         parseUri('ipv6:[::1]:50051,[::1]:50052')!
       )!;
-      const listener: resolverManager.ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: StatusObject | null
-        ) => {
-          // Only handle the first resolution result
-          listener.onSuccessfulResolution = () => {};
-          assert(
-            hasMatchingAddress(endpointList, { host: '::1', port: 50051 })
-          );
-          assert(
-            hasMatchingAddress(endpointList, { host: '::1', port: 50052 })
-          );
-          done();
-        },
-        onError: (error: StatusObject) => {
-          done(new Error(`Failed with status ${error.details}`));
-        },
+      let resultSeen = false;
+      const listener: resolverManager.ResolverListener = (
+        maybeEndpointList: StatusOr<Endpoint[]>,
+        attributes: { [key: string]: unknown},
+        serviceConfig: StatusOr<ServiceConfig> | null,
+        resolutionNote: string
+      ) => {
+        if (resultSeen) {
+          return true;
+        }
+        resultSeen = true;
+        assert(maybeEndpointList.ok);
+        const endpointList = maybeEndpointList.value;
+        assert(
+          hasMatchingAddress(endpointList, { host: '::1', port: 50051 })
+        );
+        assert(
+          hasMatchingAddress(endpointList, { host: '::1', port: 50052 })
+        );
+        done();
+        return true;
       };
       const resolver = resolverManager.createResolver(target, listener, {});
       resolver.updateResolution();

@@ -27,6 +27,7 @@ import { ConnectivityState } from './connectivity-state';
 import { Picker } from './picker';
 import type { ChannelRef, SubchannelRef } from './channelz';
 import { SubchannelInterface } from './subchannel-interface';
+import { StatusOr } from './call-interface';
 
 const TYPE_NAME = 'child_load_balancer_helper';
 
@@ -102,10 +103,11 @@ export class ChildLoadBalancerHandler {
    * @param attributes
    */
   updateAddressList(
-    endpointList: Endpoint[],
+    endpointList: StatusOr<Endpoint[]>,
     lbConfig: TypedLoadBalancingConfig,
-    options: ChannelOptions
-  ): void {
+    options: ChannelOptions,
+    resolutionNote: string
+  ): boolean {
     let childToUpdate: LoadBalancer;
     if (
       this.currentChild === null ||
@@ -133,7 +135,7 @@ export class ChildLoadBalancerHandler {
       }
     }
     this.latestConfig = lbConfig;
-    childToUpdate.updateAddressList(endpointList, lbConfig, options);
+    return childToUpdate.updateAddressList(endpointList, lbConfig, options, resolutionNote);
   }
   exitIdle(): void {
     if (this.currentChild) {

@@ -27,12 +27,11 @@ import {
   validateServiceConfig,
 } from './service-config';
 import { ConnectivityState } from './connectivity-state';
-import { ConfigSelector, createResolver, Resolver } from './resolver';
-import { ServiceError } from './call';
+import { CHANNEL_ARGS_CONFIG_SELECTOR_KEY, ConfigSelector, createResolver, Resolver } from './resolver';
 import { Picker, UnavailablePicker, QueuePicker } from './picker';
 import { BackoffOptions, BackoffTimeout } from './backoff-timeout';
 import { Status } from './constants';
-import { StatusObject } from './call-interface';
+import { StatusObject, StatusOr } from './call-interface';
 import { Metadata } from './metadata';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
@@ -251,75 +250,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
     );
     this.innerResolver = createResolver(
       target,
-      {
-        onSuccessfulResolution: (
-          endpointList: Endpoint[],
-          serviceConfig: ServiceConfig | null,
-          serviceConfigError: ServiceError | null,
-          configSelector: ConfigSelector | null,
-          attributes: { [key: string]: unknown }
-        ) => {
-          this.backoffTimeout.stop();
-          this.backoffTimeout.reset();
-          let workingServiceConfig: ServiceConfig | null = null;
-          /* This first group of conditionals implements the algorithm described
-           * in https://github.com/grpc/proposal/blob/master/A21-service-config-error-handling.md
-           * in the section called "Behavior on receiving a new gRPC Config".
-           */
-          if (serviceConfig === null) {
-            // Step 4 and 5
-            if (serviceConfigError === null) {
-              // Step 5
-              this.previousServiceConfig = null;
-              workingServiceConfig = this.defaultServiceConfig;
-            } else {
-              // Step 4
-              if (this.previousServiceConfig === null) {
-                // Step 4.ii
-                this.handleResolutionFailure(serviceConfigError);
-              } else {
-                // Step 4.i
-                workingServiceConfig = this.previousServiceConfig;
-              }
-            }
-          } else {
-            // Step 3
-            workingServiceConfig = serviceConfig;
-            this.previousServiceConfig = serviceConfig;
-          }
-          const workingConfigList =
-            workingServiceConfig?.loadBalancingConfig ?? [];
-          const loadBalancingConfig = selectLbConfigFromList(
-            workingConfigList,
-            true
-          );
-          if (loadBalancingConfig === null) {
-            // There were load balancing configs but none are supported. This counts as a resolution failure
-            this.handleResolutionFailure({
-              code: Status.UNAVAILABLE,
-              details:
-                'All load balancer options in service config are not compatible',
-              metadata: new Metadata(),
-            });
-            configSelector?.unref();
-            return;
-          }
-          this.childLoadBalancer.updateAddressList(
-            endpointList,
-            loadBalancingConfig,
-            {...this.channelOptions, ...attributes}
-          );
-          const finalServiceConfig =
-            workingServiceConfig ?? this.defaultServiceConfig;
-          this.onSuccessfulResolution(
-            finalServiceConfig,
-            configSelector ?? getDefaultConfigSelector(finalServiceConfig)
-          );
-        },
-        onError: (error: StatusObject) => {
-          this.handleResolutionFailure(error);
-        },
-      },
+      this.handleResolverResult.bind(this),
       channelOptions
     );
     const backoffOptions: BackoffOptions = {
@@ -335,6 +266,62 @@ export class ResolvingLoadBalancer implements LoadBalancer {
       }
     }, backoffOptions);
     this.backoffTimeout.unref();
+  }
+
+  private handleResolverResult(
+    endpointList: StatusOr<Endpoint[]>,
+    attributes: { [key: string]: unknown },
+    serviceConfig: StatusOr<ServiceConfig> | null,
+    resolutionNote: string
+  ): boolean {
+    this.backoffTimeout.stop();
+    this.backoffTimeout.reset();
+    let resultAccepted = true;
+    let workingServiceConfig: ServiceConfig | null = null;
+    if (serviceConfig === null) {
+      workingServiceConfig = this.defaultServiceConfig;
+    } else if (serviceConfig.ok) {
+      workingServiceConfig = serviceConfig.value;
+    } else {
+      if (this.previousServiceConfig !== null) {
+        workingServiceConfig = this.previousServiceConfig;
+      } else {
+        resultAccepted = false;
+        this.handleResolutionFailure(serviceConfig.error);
+      }
+    }
+
+    if (workingServiceConfig !== null) {
+      const workingConfigList =
+        workingServiceConfig?.loadBalancingConfig ?? [];
+      const loadBalancingConfig = selectLbConfigFromList(
+        workingConfigList,
+        true
+      );
+      if (loadBalancingConfig === null) {
+        resultAccepted = false;
+        this.handleResolutionFailure({
+          code: Status.UNAVAILABLE,
+          details:
+            'All load balancer options in service config are not compatible',
+          metadata: new Metadata(),
+        });
+      } else {
+        resultAccepted = this.childLoadBalancer.updateAddressList(
+          endpointList,
+          loadBalancingConfig,
+          {...this.channelOptions, ...attributes},
+          resolutionNote
+        );
+      }
+    }
+    if (resultAccepted) {
+      this.onSuccessfulResolution(
+        workingServiceConfig!,
+        attributes[CHANNEL_ARGS_CONFIG_SELECTOR_KEY] as ConfigSelector ?? getDefaultConfigSelector(workingServiceConfig!)
+      );
+    }
+    return resultAccepted;
   }
 
   private updateResolution() {
@@ -391,7 +378,7 @@ export class ResolvingLoadBalancer implements LoadBalancer {
   }
 
   updateAddressList(
-    endpointList: Endpoint[],
+    endpointList: StatusOr<Endpoint[]>,
     lbConfig: TypedLoadBalancingConfig | null
   ): never {
     throw new Error('updateAddressList not supported on ResolvingLoadBalancer');

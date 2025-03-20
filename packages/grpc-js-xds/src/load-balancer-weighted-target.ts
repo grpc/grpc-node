@@ -15,7 +15,7 @@
  *
  */
 
-import { connectivityState as ConnectivityState, status as Status, Metadata, logVerbosity, experimental, LoadBalancingConfig, ChannelOptions } from "@grpc/grpc-js";
+import { connectivityState as ConnectivityState, status as Status, Metadata, logVerbosity, experimental, LoadBalancingConfig, ChannelOptions, connectivityState, status } from "@grpc/grpc-js";
 import { isLocalityEndpoint, LocalityEndpoint } from "./load-balancer-priority";
 import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import LoadBalancer = experimental.LoadBalancer;
@@ -30,6 +30,8 @@ import UnavailablePicker = experimental.UnavailablePicker;
 import Endpoint = experimental.Endpoint;
 import endpointToString = experimental.endpointToString;
 import selectLbConfigFromList = experimental.selectLbConfigFromList;
+import StatusOr = experimental.StatusOr;
+import statusOrFromValue = experimental.statusOrFromValue;
 
 const TRACER_NAME = 'weighted_target';
 
@@ -154,7 +156,7 @@ class WeightedTargetPicker implements Picker {
 }
 
 interface WeightedChild {
-  updateAddressList(endpointList: Endpoint[], lbConfig: WeightedTarget, attributes: { [key: string]: unknown; }): void;
+  updateAddressList(endpointList: StatusOr<Endpoint[]>, lbConfig: WeightedTarget, options: ChannelOptions, resolutionNote: string): void;
   exitIdle(): void;
   resetBackoff(): void;
   destroy(): void;
@@ -193,9 +195,9 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
       this.parent.maybeUpdateState();
     }
 
-    updateAddressList(endpointList: Endpoint[], lbConfig: WeightedTarget, options: ChannelOptions): void {
+    updateAddressList(endpointList: StatusOr<Endpoint[]>, lbConfig: WeightedTarget, options: ChannelOptions, resolutionNote: string): void {
       this.weight = lbConfig.weight;
-      this.childBalancer.updateAddressList(endpointList, lbConfig.child_policy, options);
+      this.childBalancer.updateAddressList(endpointList, lbConfig.child_policy, options, resolutionNote);
     }
     exitIdle(): void {
       this.childBalancer.exitIdle();
@@ -325,26 +327,41 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
     this.channelControlHelper.updateState(connectivityState, picker, errorMessage);
   }
 
-  updateAddressList(addressList: Endpoint[], lbConfig: TypedLoadBalancingConfig, options: ChannelOptions): void {
+  updateAddressList(addressList: StatusOr<Endpoint[]>, lbConfig: TypedLoadBalancingConfig, options: ChannelOptions, resolutionNote: string): boolean {
     if (!(lbConfig instanceof WeightedTargetLoadBalancingConfig)) {
       // Reject a config of the wrong type
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));
-      return;
+      return false;
     }
-
+    if (!addressList.ok) {
+      if (this.targets.size === 0) {
+        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker(addressList.error), addressList.error.details);
+      }
+      return true;
+    }
+    if (addressList.value.length === 0) {
+      for (const target of this.targets.values()) {
+        target.destroy();
+      }
+      this.targets.clear();
+      this.targetList = [];
+      const errorMessage = `No addresses resolved. Resolution note: ${resolutionNote}`;
+      this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: errorMessage}), errorMessage);
+      return false;
+    }
     /* For each address, the first element of its localityPath array determines
      * which child it belongs to. So we bucket those addresses by that first
      * element, and pass along the rest of the localityPath for that child
      * to use. */
     const childEndpointMap = new Map<string, LocalityEndpoint[]>();
-    for (const address of addressList) {
+    for (const address of addressList.value) {
       if (!isLocalityEndpoint(address)) {
         // Reject address that cannot be associated with targets
-        return;
+        return false;
       }
       if (address.localityPath.length < 1) {
         // Reject address that cannot be associated with targets
-        return;
+        return false;
       }
       const childName = address.localityPath[0];
       const childAddress: LocalityEndpoint = {
@@ -371,7 +388,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
       }
       const targetEndpoints = childEndpointMap.get(targetName) ?? [];
       trace('Assigning target ' + targetName + ' address list ' + targetEndpoints.map(endpoint => '(' + endpointToString(endpoint) + ' path=' + endpoint.localityPath + ')'));
-      target.updateAddressList(targetEndpoints, targetConfig, options);
+      target.updateAddressList(statusOrFromValue(targetEndpoints), targetConfig, options, resolutionNote);
     }
 
     // Deactivate targets that are not in the new config
@@ -384,6 +401,7 @@ export class WeightedTargetLoadBalancer implements LoadBalancer {
     this.updatesPaused = false;
 
     this.updateState();
+    return true;
   }
   exitIdle(): void {
     for (const targetName of this.targetList) {

@@ -38,6 +38,7 @@ import PickResultType = experimental.PickResultType;
 import createChildChannelControlHelper = experimental.createChildChannelControlHelper;
 import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
+import StatusOr = experimental.StatusOr;
 import { PickFirst } from "../src/generated/envoy/extensions/load_balancing_policies/pick_first/v3/PickFirst";
 
 const LB_POLICY_NAME = 'test.RpcBehaviorLoadBalancer';
@@ -95,12 +96,12 @@ class RpcBehaviorLoadBalancer implements LoadBalancer {
     });
     this.child = new ChildLoadBalancerHandler(childChannelControlHelper);
   }
-  updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, options: ChannelOptions): void {
+  updateAddressList(endpointList: StatusOr<Endpoint[]>, lbConfig: TypedLoadBalancingConfig, options: ChannelOptions, resolutionNote: string): boolean {
     if (!(lbConfig instanceof RpcBehaviorLoadBalancingConfig)) {
-      return;
+      return false;
     }
     this.latestConfig = lbConfig;
-    this.child.updateAddressList(endpointList, RPC_BEHAVIOR_CHILD_CONFIG, options);
+    return this.child.updateAddressList(endpointList, RPC_BEHAVIOR_CHILD_CONFIG, options, resolutionNote);
   }
   exitIdle(): void {
     this.child.exitIdle();

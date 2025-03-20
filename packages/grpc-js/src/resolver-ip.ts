@@ -15,7 +15,7 @@
  */
 
 import { isIPv4, isIPv6 } from 'net';
-import { StatusObject } from './call-interface';
+import { StatusObject, statusOrFromError, statusOrFromValue } from './call-interface';
 import { ChannelOptions } from './channel-options';
 import { LogVerbosity, Status } from './constants';
 import { Metadata } from './metadata';
@@ -92,14 +92,18 @@ class IpResolver implements Resolver {
       this.hasReturnedResult = true;
       process.nextTick(() => {
         if (this.error) {
-          this.listener.onError(this.error);
+          this.listener(
+            statusOrFromError(this.error),
+            {},
+            null,
+            ''
+          );
         } else {
-          this.listener.onSuccessfulResolution(
-            this.endpoints,
+          this.listener(
+            statusOrFromValue(this.endpoints),
+            {},
             null,
-            null,
-            null,
-            {}
+            ''
           );
         }
       });

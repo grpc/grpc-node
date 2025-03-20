@@ -43,6 +43,7 @@ import {
 } from './subchannel-interface';
 import * as logging from './logging';
 import { LoadBalancingConfig } from './service-config';
+import { StatusOr } from './call-interface';
 
 const TRACER_NAME = 'outlier_detection';
 
@@ -757,28 +758,31 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
   }
 
   updateAddressList(
-    endpointList: Endpoint[],
+    endpointList: StatusOr<Endpoint[]>,
     lbConfig: TypedLoadBalancingConfig,
-    options: ChannelOptions
-  ): void {
+    options: ChannelOptions,
+    resolutionNote: string
+  ): boolean {
     if (!(lbConfig instanceof OutlierDetectionLoadBalancingConfig)) {
-      return;
+      return false;
     }
-    trace('Received update with config: ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2))
-    for (const endpoint of endpointList) {
-      if (!this.entryMap.has(endpoint)) {
-        trace('Adding map entry for ' + endpointToString(endpoint));
-        this.entryMap.set(endpoint, {
-          counter: new CallCounter(),
-          currentEjectionTimestamp: null,
-          ejectionTimeMultiplier: 0,
-          subchannelWrappers: [],
-        });
+    trace('Received update with config: ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));
+    if (endpointList.ok) {
+      for (const endpoint of endpointList.value) {
+        if (!this.entryMap.has(endpoint)) {
+          trace('Adding map entry for ' + endpointToString(endpoint));
+          this.entryMap.set(endpoint, {
+            counter: new CallCounter(),
+            currentEjectionTimestamp: null,
+            ejectionTimeMultiplier: 0,
+            subchannelWrappers: [],
+          });
+        }
       }
+      this.entryMap.deleteMissing(endpointList.value);
     }
-    this.entryMap.deleteMissing(endpointList);
     const childPolicy = lbConfig.getChildPolicy();
-    this.childBalancer.updateAddressList(endpointList, childPolicy, options);
+    this.childBalancer.updateAddressList(endpointList, childPolicy, options, resolutionNote);
 
     if (
       lbConfig.getSuccessRateEjectionConfig() ||
@@ -808,6 +812,7 @@ export class OutlierDetectionLoadBalancer implements LoadBalancer {
     }
 
     this.latestConfig = lbConfig;
+    return true;
   }
   exitIdle(): void {
     this.childBalancer.exitIdle();

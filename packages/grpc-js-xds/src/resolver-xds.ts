@@ -41,6 +41,9 @@ import { loadXxhashApi } from './xxhash';
 import { formatTemplateString } from './xds-bootstrap';
 import { getPredicateForMatcher } from './route';
 import { XdsConfig, XdsConfigWatcher, XdsDependencyManager } from './xds-dependency-manager';
+import statusOrFromValue = experimental.statusOrFromValue;
+import statusOrFromError = experimental.statusOrFromError;
+import CHANNEL_ARGS_CONFIG_SELECTOR_KEY = experimental.CHANNEL_ARGS_CONFIG_SELECTOR_KEY;
 
 const TRACER_NAME = 'xds_resolver';
 
@@ -143,7 +146,7 @@ class XdsResolver implements Resolver {
         trace('Resolution error for target ' + uriToString(this.target) + ': ' + context + ' does not exist');
         /* Return an empty endpoint list and service config, to explicitly
          * invalidate any previously returned service config */
-        this.listener.onSuccessfulResolution([], null, null, null, {});
+        this.listener(statusOrFromValue([]), {}, null, '');
       }
     }
   }
@@ -407,20 +410,20 @@ class XdsResolver implements Resolver {
       methodConfig: [],
       loadBalancingConfig: [lbPolicyConfig]
     }
-    this.listener.onSuccessfulResolution([], serviceConfig, null, configSelector, {
+    this.listener(statusOrFromValue([]), {
       [XDS_CLIENT_KEY]: this.xdsClient,
-      [XDS_CONFIG_KEY]: xdsConfig
-    });
+      [XDS_CONFIG_KEY]: xdsConfig,
+      [CHANNEL_ARGS_CONFIG_SELECTOR_KEY]: configSelector
+    }, statusOrFromValue(serviceConfig), '');
   }
 
   private reportResolutionError(reason: string) {
-    this.listener.onError({
+    this.listener(statusOrFromError({
       code: status.UNAVAILABLE,
       details: `xDS name resolution failed for target ${uriToString(
         this.target
-      )}: ${reason}`,
-      metadata: new Metadata(),
-    });
+      )}: ${reason}`
+    }), {}, null, '');
   }
 
   private startResolution(): void {
