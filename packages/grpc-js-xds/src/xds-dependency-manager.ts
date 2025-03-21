@@ -25,6 +25,7 @@ import { DropCategory } from "./load-balancer-xds-cluster-impl";
 import Endpoint = experimental.Endpoint;
 import Resolver = experimental.Resolver;
 import createResolver = experimental.createResolver;
+import StatusOr = experimental.StatusOr;
 import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL } from "./resources";
 import { RouteConfigurationResourceType } from "./xds-resource-type/route-config-resource-type";
 import { ListenerResourceType } from "./xds-resource-type/listener-resource-type";
@@ -73,14 +74,6 @@ export interface AggregateConfig {
 export interface ClusterConfig {
   cluster: CdsUpdate;
   children: EndpointConfig | AggregateConfig;
-}
-
-export type StatusOr<T> = {
-  success: true;
-  value: T
-} | {
-  success: false;
-  error: StatusObject;
 }
 
 export interface ClusterResult {
@@ -157,7 +150,7 @@ function isClusterTreeFullyUpdated(tree: ClusterGraph, roots: string[]): Cluster
         reason: 'Cluster entry ' + next + ' not updated'
       };
     }
-    if (tree[next].latestUpdate.success) {
+    if (tree[next].latestUpdate.ok) {
       if (tree[next].latestUpdate.value.type !== 'AGGREGATE') {
         if (!(tree[next].latestUpdate.value.latestUpdate)) {
           return {
@@ -400,7 +393,7 @@ export class XdsDependencyManager {
         if (!this.latestListener) {
           this.trace('Resolution error due to xDS client transient error ' + error.details);
           this.watcher.onUpdate({
-            success: false,
+            ok: false,
             error: {
               ...error,
               details: `Listener ${listenerResourceName}: ${error.details}`
@@ -420,7 +413,7 @@ export class XdsDependencyManager {
       onError: (error: StatusObject) => {
         if (!this.latestRouteConfiguration) {
           this.watcher.onUpdate({
-            success: false,
+            ok: false,
             error: {
               ...error,
               details: `RouteConfiguration ${this.latestRouteConfigName}: ${error.details}`
@@ -430,7 +423,7 @@ export class XdsDependencyManager {
       },
       onResourceDoesNotExist: () => {
         this.watcher.onUpdate({
-          success: false,
+          ok: false,
           error: {
             code: status.UNAVAILABLE,
             details: `RouteConfiguration ${this.latestRouteConfigName} does not exist`,
@@ -459,7 +452,7 @@ export class XdsDependencyManager {
       this.pruneOrphanClusters();
     }
     this.watcher.onUpdate({
-      success: false,
+      ok: false,
       error: {
         code: status.UNAVAILABLE,
         details: `Listener ${this.listenerResourceName} does not exist`,
@@ -493,7 +486,7 @@ export class XdsDependencyManager {
         this.trace('Not sending update: Cluster entry ' + clusterName + ' not updated (not caught by isClusterTreeFullyUpdated)');
         return;
       }
-      if (entry.latestUpdate.success) {
+      if (entry.latestUpdate.ok) {
         let clusterChildren: EndpointConfig | AggregateConfig;
         if (entry.latestUpdate.value.type === 'AGGREGATE') {
           clusterChildren = {
@@ -508,7 +501,7 @@ export class XdsDependencyManager {
           };
         }
         update.clusters.set(clusterName, {
-          success: true,
+          ok: true,
           value: {
             cluster: entry.latestUpdate.value.cdsUpdate,
             children: clusterChildren
@@ -516,12 +509,12 @@ export class XdsDependencyManager {
         });
       } else {
         update.clusters.set(clusterName, {
-          success: false,
+          ok: false,
           error: entry.latestUpdate.error
         });
       }
     }
-    this.watcher.onUpdate({success: true, value: update});
+    this.watcher.onUpdate({ok: true, value: update});
   }
 
   private addCluster(clusterName: string) {
@@ -533,7 +526,7 @@ export class XdsDependencyManager {
         onResourceChanged: (update: CdsUpdate) => {
           switch (update.type) {
             case 'AGGREGATE':
-              if (entry.latestUpdate?.success) {
+              if (entry.latestUpdate?.ok) {
                 switch (entry.latestUpdate.value.type) {
                   case 'AGGREGATE':
                     break;
@@ -548,7 +541,7 @@ export class XdsDependencyManager {
               }
               entry.children = update.aggregateChildren;
               entry.latestUpdate = {
-                success: true,
+                ok: true,
                 value: {
                   type: 'AGGREGATE',
                   cdsUpdate: update
@@ -562,7 +555,7 @@ export class XdsDependencyManager {
               break;
             case 'EDS':
               const edsServiceName = update.edsServiceName ?? clusterName;
-              if (entry.latestUpdate?.success) {
+              if (entry.latestUpdate?.ok) {
                 switch (entry.latestUpdate.value.type) {
                   case 'AGGREGATE':
                     entry.children = [];
@@ -589,14 +582,14 @@ export class XdsDependencyManager {
               }
               const edsWatcher = new Watcher<ClusterLoadAssignment__Output>({
                 onResourceChanged: (endpoint: ClusterLoadAssignment__Output) => {
-                  if (entry.latestUpdate?.success && entry.latestUpdate.value.type === 'EDS') {
+                  if (entry.latestUpdate?.ok && entry.latestUpdate.value.type === 'EDS') {
                     entry.latestUpdate.value.latestUpdate = getEdsResource(endpoint);
                     entry.latestUpdate.value.resolutionNote = undefined;
                     this.maybeSendUpdate();
                   }
                 },
                 onError: error => {
-                  if (entry.latestUpdate?.success && entry.latestUpdate.value.type === 'EDS') {
+                  if (entry.latestUpdate?.ok && entry.latestUpdate.value.type === 'EDS') {
                     if (!entry.latestUpdate.value.latestUpdate) {
                       entry.latestUpdate.value.resolutionNote = `Control plane error: ${error.details}`;
                       this.maybeSendUpdate();
@@ -604,7 +597,7 @@ export class XdsDependencyManager {
                   }
                 },
                 onResourceDoesNotExist: () => {
-                  if (entry.latestUpdate?.success && entry.latestUpdate.value.type === 'EDS') {
+                  if (entry.latestUpdate?.ok && entry.latestUpdate.value.type === 'EDS') {
                     entry.latestUpdate.value.resolutionNote = 'Resource does not exist';
                     entry.latestUpdate.value.latestUpdate = undefined;
                     this.maybeSendUpdate();
@@ -612,7 +605,7 @@ export class XdsDependencyManager {
                 }
               });
               entry.latestUpdate = {
-                success: true,
+                ok: true,
                 value: {
                   type: 'EDS',
                   cdsUpdate: update,
@@ -625,7 +618,7 @@ export class XdsDependencyManager {
               this.maybeSendUpdate();
               break;
             case 'LOGICAL_DNS': {
-              if (entry.latestUpdate?.success) {
+              if (entry.latestUpdate?.ok) {
                 switch (entry.latestUpdate.value.type) {
                   case 'AGGREGATE':
                     entry.children = [];
@@ -644,24 +637,24 @@ export class XdsDependencyManager {
                 }
               }
               this.trace('Creating DNS resolver for hostname ' + update.dnsHostname!);
-              const resolver = createResolver({scheme: 'dns', path: update.dnsHostname!}, {
-                onSuccessfulResolution: endpointList => {
-                  if (entry.latestUpdate?.success && entry.latestUpdate.value.type === 'LOGICAL_DNS') {
-                    entry.latestUpdate.value.latestUpdate = getDnsResource(endpointList);
+              const resolver = createResolver({scheme: 'dns', path: update.dnsHostname!}, endpointList => {
+                if (endpointList.ok) {
+                  if (entry.latestUpdate?.ok && entry.latestUpdate.value.type === 'LOGICAL_DNS') {
+                    entry.latestUpdate.value.latestUpdate = getDnsResource(endpointList.value);
                     this.maybeSendUpdate();
                   }
-                },
-                onError: error => {
-                  if (entry.latestUpdate?.success && entry.latestUpdate.value.type === 'LOGICAL_DNS') {
+                } else {
+                  if (entry.latestUpdate?.ok && entry.latestUpdate.value.type === 'LOGICAL_DNS') {
                     if (!entry.latestUpdate.value.latestUpdate) {
-                      entry.latestUpdate.value.resolutionNote = `DNS resolution error: ${error.details}`;
+                      entry.latestUpdate.value.resolutionNote = `DNS resolution error: ${endpointList.error.details}`;
                       this.maybeSendUpdate();
                     }
                   }
                 }
+                return true;
               }, {'grpc.service_config_disable_resolution': 1});
               entry.latestUpdate = {
-                success: true,
+                ok: true,
                 value: {
                   type: 'LOGICAL_DNS',
                   cdsUpdate: update,
@@ -676,16 +669,16 @@ export class XdsDependencyManager {
           }
         },
         onError: error => {
-          if (!entry.latestUpdate?.success) {
+          if (!entry.latestUpdate?.ok) {
             entry.latestUpdate = {
-              success: false,
+              ok: false,
               error: error
             };
             this.maybeSendUpdate();
           }
         },
         onResourceDoesNotExist: () => {
-          if (entry.latestUpdate?.success) {
+          if (entry.latestUpdate?.ok) {
             switch (entry.latestUpdate.value.type) {
               case 'EDS':
                 this.trace('EDS.cancelWatch(' + entry.latestUpdate.value.edsServiceName + '): CDS resource does not exist');
@@ -699,7 +692,7 @@ export class XdsDependencyManager {
             }
           }
           entry.latestUpdate = {
-            success: false,
+            ok: false,
             error: {
               code: status.UNAVAILABLE,
               details: `Cluster resource ${clusterName} does not exist`,
@@ -741,7 +734,7 @@ export class XdsDependencyManager {
       return;
     }
     const entry = this.clusterForest[clusterName];
-    if (entry.latestUpdate?.success) {
+    if (entry.latestUpdate?.ok) {
       switch (entry.latestUpdate.value.type) {
         case 'EDS':
           this.trace('EDS.cancelWatch(' + entry.latestUpdate.value.edsServiceName + '): Cluster ' + clusterName + ' removed');
@@ -794,7 +787,7 @@ export class XdsDependencyManager {
       this.clusterRoots = [];
       this.pruneOrphanClusters();
       this.watcher.onUpdate({
-        success: false,
+        ok: false,
         error: {
           code: status.UNAVAILABLE,
           details: `RouteConfiguration ${routeConfig.name}: No matching route found for ${this.dataPlaneAuthority}`,
@@ -832,7 +825,7 @@ export class XdsDependencyManager {
 
   updateResolution() {
     for (const clusterEntry of Object.values(this.clusterForest)) {
-      if (clusterEntry.latestUpdate?.success && clusterEntry.latestUpdate.value.type === 'LOGICAL_DNS') {
+      if (clusterEntry.latestUpdate?.ok && clusterEntry.latestUpdate.value.type === 'LOGICAL_DNS') {
         clusterEntry.latestUpdate.value.resolver.updateResolution();
       }
     }

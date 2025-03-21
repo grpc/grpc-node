@@ -41,6 +41,7 @@ import PickResult = grpc.experimental.PickResult;
 import PickResultType = grpc.experimental.PickResultType;
 import createChildChannelControlHelper = grpc.experimental.createChildChannelControlHelper;
 import parseLoadBalancingConfig = grpc.experimental.parseLoadBalancingConfig;
+import StatusOr = grpc.experimental.StatusOr;
 import { ChannelOptions } from '@grpc/grpc-js';
 
 grpc_xds.register();
@@ -100,12 +101,12 @@ class RpcBehaviorLoadBalancer implements LoadBalancer {
     });
     this.child = new ChildLoadBalancerHandler(childChannelControlHelper);
   }
-  updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, options: ChannelOptions): void {
+  updateAddressList(endpointList: StatusOr<Endpoint[]>, lbConfig: TypedLoadBalancingConfig, options: ChannelOptions, resolutionNote: string): boolean {
     if (!(lbConfig instanceof RpcBehaviorLoadBalancingConfig)) {
-      return;
+      return false;
     }
     this.latestConfig = lbConfig;
-    this.child.updateAddressList(endpointList, RPC_BEHAVIOR_CHILD_CONFIG, options);
+    return this.child.updateAddressList(endpointList, RPC_BEHAVIOR_CHILD_CONFIG, options, resolutionNote);
   }
   exitIdle(): void {
     this.child.exitIdle();

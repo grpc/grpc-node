@@ -41,6 +41,35 @@ export type PartialStatusObject = Pick<StatusObject, 'code' | 'details'> & {
   metadata?: Metadata | null | undefined;
 };
 
+export interface StatusOrOk<T> {
+  ok: true;
+  value: T;
+}
+
+export interface StatusOrError {
+  ok: false;
+  error: StatusObject;
+}
+
+export type StatusOr<T> = StatusOrOk<T> | StatusOrError;
+
+export function statusOrFromValue<T>(value: T): StatusOr<T> {
+  return {
+    ok: true,
+    value: value
+  };
+}
+
+export function statusOrFromError<T>(error: PartialStatusObject): StatusOr<T> {
+  return {
+    ok: false,
+    error: {
+      ...error,
+      metadata: error.metadata ?? new Metadata()
+    }
+  };
+}
+
 export const enum WriteFlags {
   BufferHint = 1,
   NoCompress = 2,

@@ -37,6 +37,7 @@ import selectLbConfigFromList = experimental.selectLbConfigFromList;
 import SubchannelInterface = experimental.SubchannelInterface;
 import BaseSubchannelWrapper = experimental.BaseSubchannelWrapper;
 import UnavailablePicker = experimental.UnavailablePicker;
+import StatusOr = experimental.StatusOr;
 import { Locality__Output } from "./generated/envoy/config/core/v3/Locality";
 import { ClusterConfig, XdsConfig } from "./xds-dependency-manager";
 import { CdsUpdate } from "./xds-resource-type/cluster-resource-type";
@@ -206,7 +207,7 @@ function getCallCounterMapKey(cluster: string, edsServiceName?: string): string 
 
 class XdsClusterImplBalancer implements LoadBalancer {
   private childBalancer: ChildLoadBalancerHandler;
-  private lastestEndpointList: Endpoint[] | null = null;
+  private lastestEndpointList: StatusOr<Endpoint[]> | null = null;
   private latestConfig: XdsClusterImplLoadBalancingConfig | null = null;
   private clusterDropStats: XdsClusterDropStats | null = null;
   private xdsClient: XdsClient | null = null;
@@ -215,12 +216,12 @@ class XdsClusterImplBalancer implements LoadBalancer {
   constructor(private readonly channelControlHelper: ChannelControlHelper) {
       this.childBalancer = new ChildLoadBalancerHandler(createChildChannelControlHelper(channelControlHelper, {
         createSubchannel: (subchannelAddress, subchannelArgs) => {
-          if (!this.xdsClient || !this.latestConfig || !this.lastestEndpointList || !this.latestClusterConfig) {
-            throw new Error('xds_cluster_impl: invalid state: createSubchannel called with xdsClient or latestConfig not populated');
+          if (!this.xdsClient || !this.latestConfig || !this.lastestEndpointList || !this.lastestEndpointList.ok || !this.latestClusterConfig) {
+            throw new Error('xds_cluster_impl: invalid state: createSubchannel called with xdsClient or latestConfig not populated or with resolver error');
           }
           const wrapperChild = channelControlHelper.createSubchannel(subchannelAddress, subchannelArgs);
           let locality: Locality__Output | null = null;
-          for (const endpoint of this.lastestEndpointList) {
+          for (const endpoint of this.lastestEndpointList.value) {
             if (endpointHasAddress(endpoint, subchannelAddress)) {
               locality = (endpoint as LocalityEndpoint).locality;
             }
@@ -251,28 +252,28 @@ class XdsClusterImplBalancer implements LoadBalancer {
         }
       }));
     }
-  updateAddressList(endpointList: Endpoint[], lbConfig: TypedLoadBalancingConfig, options: ChannelOptions): void {
+  updateAddressList(endpointList: StatusOr<Endpoint[]>, lbConfig: TypedLoadBalancingConfig, options: ChannelOptions, resolutionNote: string): boolean {
     if (!(lbConfig instanceof XdsClusterImplLoadBalancingConfig)) {
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));
-      return;
+      return false;
     }
     trace('Received update with config: ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));
     const xdsConfig = options[XDS_CONFIG_KEY] as XdsConfig;
     const maybeClusterConfig = xdsConfig.clusters.get(lbConfig.getCluster());
     if (!maybeClusterConfig) {
       trace('Received update with no config for cluster ' + lbConfig.getCluster());
-      return;
+      return false;
     }
-    if (!maybeClusterConfig.success) {
+    if (!maybeClusterConfig.ok) {
       this.latestClusterConfig = null;
       this.childBalancer.destroy();
       this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker(maybeClusterConfig.error), maybeClusterConfig.error.details);
-      return;
+      return false;
     }
     const clusterConfig = maybeClusterConfig.value;
     if (clusterConfig.children.type === 'aggregate') {
       trace('Received update for aggregate cluster ' + lbConfig.getCluster());
-      return;
+      return false;
     }
     if (!clusterConfig.children.endpoints) {
       this.childBalancer.destroy();
@@ -291,7 +292,8 @@ class XdsClusterImplBalancer implements LoadBalancer {
       );
     }
 
-    this.childBalancer.updateAddressList(endpointList, lbConfig.getChildPolicy(), options);
+    this.childBalancer.updateAddressList(endpointList, lbConfig.getChildPolicy(), options, resolutionNote);
+    return true;
   }
   exitIdle(): void {
     this.childBalancer.exitIdle();

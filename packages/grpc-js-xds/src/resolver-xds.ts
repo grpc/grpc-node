@@ -41,6 +41,9 @@ import { loadXxhashApi } from './xxhash';
 import { formatTemplateString } from './xds-bootstrap';
 import { getPredicateForMatcher } from './route';
 import { XdsConfig, XdsConfigWatcher, XdsDependencyManager } from './xds-dependency-manager';
+import statusOrFromValue = experimental.statusOrFromValue;
+import statusOrFromError = experimental.statusOrFromError;
+import CHANNEL_ARGS_CONFIG_SELECTOR_KEY = experimental.CHANNEL_ARGS_CONFIG_SELECTOR_KEY;
 
 const TRACER_NAME = 'xds_resolver';
 
@@ -133,11 +136,10 @@ class XdsResolver implements Resolver {
     }
     this.xdsConfigWatcher = {
       onUpdate: maybeXdsConfig => {
-        if (maybeXdsConfig.success) {
+        if (maybeXdsConfig.ok) {
           this.handleXdsConfig(maybeXdsConfig.value);
         } else {
-          // This should be in the resolution_note once that is implemented
-          this.reportResolutionError(`Resolution error for target ${uriToString(this.target)}: ${maybeXdsConfig.error.details}`);
+          this.listener(statusOrFromValue([]), {}, null, `Resolution error for target ${uriToString(this.target)}: ${maybeXdsConfig.error.details}`);
         }
       }
     }
@@ -402,20 +404,20 @@ class XdsResolver implements Resolver {
       methodConfig: [],
       loadBalancingConfig: [lbPolicyConfig]
     }
-    this.listener.onSuccessfulResolution([], serviceConfig, null, configSelector, {
+    this.listener(statusOrFromValue([]), {
       [XDS_CLIENT_KEY]: this.xdsClient,
-      [XDS_CONFIG_KEY]: xdsConfig
-    });
+      [XDS_CONFIG_KEY]: xdsConfig,
+      [CHANNEL_ARGS_CONFIG_SELECTOR_KEY]: configSelector
+    }, statusOrFromValue(serviceConfig), '');
   }
 
   private reportResolutionError(reason: string) {
-    this.listener.onError({
+    this.listener(statusOrFromError({
       code: status.UNAVAILABLE,
       details: `xDS name resolution failed for target ${uriToString(
         this.target
-      )}: ${reason}`,
-      metadata: new Metadata(),
-    });
+      )}: ${reason}`
+    }), {}, null, '');
   }
 
   private startResolution(): void {

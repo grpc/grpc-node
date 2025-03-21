@@ -43,6 +43,7 @@ import {
 import { isTcpSubchannelAddress } from './subchannel-address';
 import { isIPv6 } from 'net';
 import { ChannelOptions } from './channel-options';
+import { StatusOr, statusOrFromValue } from './call-interface';
 
 const TRACER_NAME = 'pick_first';
 
@@ -236,6 +237,8 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   private latestOptions: ChannelOptions = {};
 
+  private latestResolutionNote: string = '';
+
   /**
    * Load balancer that attempts to connect to each backend in the address list
    * in order, and picks the first one that connects, using it for every
@@ -277,7 +280,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
         );
       }
     } else if (this.latestAddressList?.length === 0) {
-      const errorMessage = `No connection established. Last error: ${this.lastError}`;
+      const errorMessage = `No connection established. Last error: ${this.lastError}. Resolution note: ${this.latestResolutionNote}`;
       this.updateState(
         ConnectivityState.TRANSIENT_FAILURE,
         new UnavailablePicker({
@@ -289,7 +292,7 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       this.updateState(ConnectivityState.IDLE, new QueuePicker(this), null);
     } else {
       if (this.stickyTransientFailureMode) {
-        const errorMessage = `No connection established. Last error: ${this.lastError}`;
+        const errorMessage = `No connection established. Last error: ${this.lastError}. Resolution note: ${this.latestResolutionNote}`;
         this.updateState(
           ConnectivityState.TRANSIENT_FAILURE,
           new UnavailablePicker({
@@ -505,13 +508,25 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   }
 
   updateAddressList(
-    endpointList: Endpoint[],
+    maybeEndpointList: StatusOr<Endpoint[]>,
     lbConfig: TypedLoadBalancingConfig,
-    options: ChannelOptions
-  ): void {
+    options: ChannelOptions,
+    resolutionNote: string
+  ): boolean {
     if (!(lbConfig instanceof PickFirstLoadBalancingConfig)) {
-      return;
+      return false;
     }
+    if (!maybeEndpointList.ok) {
+      if (this.children.length === 0 && this.currentPick === null) {
+        this.channelControlHelper.updateState(
+          ConnectivityState.TRANSIENT_FAILURE,
+          new UnavailablePicker(maybeEndpointList.error),
+          maybeEndpointList.error.details
+        );
+      }
+      return true;
+    }
+    let endpointList = maybeEndpointList.value;
     this.reportHealthStatus = options[REPORT_HEALTH_STATUS_OPTION_NAME];
     /* Previously, an update would be discarded if it was identical to the
      * previous update, to minimize churn. Now the DNS resolver is
@@ -523,13 +538,17 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       ...endpointList.map(endpoint => endpoint.addresses)
     );
     trace('updateAddressList([' + rawAddressList.map(address => subchannelAddressToString(address)) + '])');
-    if (rawAddressList.length === 0) {
-      this.lastError = 'No addresses resolved';
-    }
     const addressList = interleaveAddressFamilies(rawAddressList);
     this.latestAddressList = addressList;
     this.latestOptions = options;
     this.connectToAddressList(addressList, options);
+    this.latestResolutionNote = resolutionNote;
+    if (rawAddressList.length > 0) {
+      return true;
+    } else {
+      this.lastError = 'No addresses resolved';
+      return false;
+    }
   }
 
   exitIdle() {
@@ -570,7 +589,8 @@ export class LeafLoadBalancer {
   constructor(
     private endpoint: Endpoint,
     channelControlHelper: ChannelControlHelper,
-    private options: ChannelOptions
+    private options: ChannelOptions,
+    private resolutionNote: string
   ) {
     const childChannelControlHelper = createChildChannelControlHelper(
       channelControlHelper,
@@ -590,9 +610,10 @@ export class LeafLoadBalancer {
 
   startConnecting() {
     this.pickFirstBalancer.updateAddressList(
-      [this.endpoint],
+      statusOrFromValue([this.endpoint]),
       LEAF_CONFIG,
-      { ...this.options, [REPORT_HEALTH_STATUS_OPTION_NAME]: true }
+      { ...this.options, [REPORT_HEALTH_STATUS_OPTION_NAME]: true },
+      this.resolutionNote
     );
   }
 

@@ -24,6 +24,7 @@ import { SubchannelInterface } from './subchannel-interface';
 import { LoadBalancingConfig } from './service-config';
 import { log } from './logging';
 import { LogVerbosity } from './constants';
+import { StatusOr } from './call-interface';
 
 /**
  * A collection of functions associated with a channel that a load balancer
@@ -102,12 +103,16 @@ export interface LoadBalancer {
    * @param endpointList The new list of addresses to connect to
    * @param lbConfig The load balancing config object from the service config,
    *     if one was provided
+   * @param channelOptions Channel options from the channel, plus resolver
+   *     attributes
+   * @param resolutionNote A not from the resolver to include in errors
    */
   updateAddressList(
-    endpointList: Endpoint[],
+    endpointList: StatusOr<Endpoint[]>,
     lbConfig: TypedLoadBalancingConfig,
-    channelOptions: ChannelOptions
-  ): void;
+    channelOptions: ChannelOptions,
+    resolutionNote: string
+  ): boolean;
   /**
    * If the load balancer is currently in the IDLE state, start connecting.
    */

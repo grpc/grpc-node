@@ -150,15 +150,15 @@ export class TestClient {
     this.client.waitForReady(deadline, callback);
   }
 
-  sendRequest(callback: (error?: grpc.ServiceError) => void) {
-    this.client.echo({}, callback);
+  sendRequest(callback: (error?: grpc.ServiceError) => void): grpc.ClientUnaryCall {
+    return this.client.echo({}, callback);
   }
 
   sendRequestWithMetadata(
     metadata: grpc.Metadata,
     callback: (error?: grpc.ServiceError) => void
-  ) {
-    this.client.echo({}, metadata, callback);
+  ): grpc.ClientUnaryCall {
+    return this.client.echo({}, metadata, callback);
   }
 
   getChannelState() {

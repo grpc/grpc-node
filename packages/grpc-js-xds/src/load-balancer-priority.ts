@@ -27,6 +27,8 @@ import QueuePicker = experimental.QueuePicker;
 import UnavailablePicker = experimental.UnavailablePicker;
 import ChildLoadBalancerHandler = experimental.ChildLoadBalancerHandler;
 import selectLbConfigFromList = experimental.selectLbConfigFromList;
+import StatusOr = experimental.StatusOr;
+import statusOrFromValue = experimental.statusOrFromValue;
 import { Locality__Output } from './generated/envoy/config/core/v3/Locality';
 
 const TRACER_NAME = 'priority';
@@ -155,9 +157,10 @@ class PriorityLoadBalancingConfig implements TypedLoadBalancingConfig {
 
 interface PriorityChildBalancer {
   updateAddressList(
-    endpointList: Endpoint[],
+    endpointList: StatusOr<Endpoint[]>,
     lbConfig: TypedLoadBalancingConfig,
-    attributes: { [key: string]: unknown }
+    attributes: { [key: string]: unknown },
+    resolutionNote: string
   ): void;
   exitIdle(): void;
   resetBackoff(): void;
@@ -240,11 +243,12 @@ export class PriorityLoadBalancer implements LoadBalancer {
     }
 
     updateAddressList(
-      endpointList: Endpoint[],
+      endpointList: StatusOr<Endpoint[]>,
       lbConfig: TypedLoadBalancingConfig,
-      attributes: { [key: string]: unknown }
+      attributes: { [key: string]: unknown },
+      resolutionNote: string
     ): void {
-      this.childBalancer.updateAddressList(endpointList, lbConfig, attributes);
+      this.childBalancer.updateAddressList(endpointList, lbConfig, attributes, resolutionNote);
     }
 
     exitIdle() {
@@ -332,6 +336,8 @@ export class PriorityLoadBalancer implements LoadBalancer {
 
   private updatesPaused = false;
 
+  private latestResolutionNote: string = '';
+
   constructor(private channelControlHelper: ChannelControlHelper) {}
 
   private updateState(state: ConnectivityState, picker: Picker, errorMessage: string | null) {
@@ -401,9 +407,10 @@ export class PriorityLoadBalancer implements LoadBalancer {
         child = new this.PriorityChildImpl(this, childName, childUpdate.ignoreReresolutionRequests);
         this.children.set(childName, child);
         child.updateAddressList(
-          childUpdate.subchannelAddress,
+          statusOrFromValue(childUpdate.subchannelAddress),
           childUpdate.lbConfig,
-          this.latestOptions
+          this.latestOptions,
+          this.latestResolutionNote
         );
       } else {
         /* We're going to try to use this child, so reactivate it if it has been
@@ -440,14 +447,21 @@ export class PriorityLoadBalancer implements LoadBalancer {
   }
 
   updateAddressList(
-    endpointList: Endpoint[],
+    endpointList: StatusOr<Endpoint[]>,
     lbConfig: TypedLoadBalancingConfig,
-    options: ChannelOptions
-  ): void {
+    options: ChannelOptions,
+    resolutionNote: string
+  ): boolean {
     if (!(lbConfig instanceof PriorityLoadBalancingConfig)) {
       // Reject a config of the wrong type
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig.toJsonObject(), undefined, 2));
-      return;
+      return false;
+    }
+    if (!endpointList.ok) {
+      if (this.latestUpdates.size === 0) {
+        this.updateState(ConnectivityState.TRANSIENT_FAILURE, new UnavailablePicker(endpointList.error), endpointList.error.details);
+      }
+      return true;
     }
     /* For each address, the first element of its localityPath array determines
      * which child it belongs to. So we bucket those addresses by that first
@@ -457,14 +471,14 @@ export class PriorityLoadBalancer implements LoadBalancer {
       string,
       LocalityEndpoint[]
     >();
-    for (const endpoint of endpointList) {
+    for (const endpoint of endpointList.value) {
       if (!isLocalityEndpoint(endpoint)) {
         // Reject address that cannot be prioritized
-        return;
+        return false;
       }
       if (endpoint.localityPath.length < 1) {
         // Reject address that cannot be prioritized
-        return;
+        return false;
       }
       const childName = endpoint.localityPath[0];
       const childAddress: LocalityEndpoint = {
@@ -495,9 +509,10 @@ export class PriorityLoadBalancer implements LoadBalancer {
       const existingChild = this.children.get(childName);
       if (existingChild !== undefined) {
         existingChild.updateAddressList(
-          childAddresses,
+          statusOrFromValue(childAddresses),
           childConfig.config,
-          options
+          options,
+          resolutionNote
         );
       }
     }
@@ -509,7 +524,9 @@ export class PriorityLoadBalancer implements LoadBalancer {
       }
     }
     this.updatesPaused = false;
+    this.latestResolutionNote = resolutionNote;
     this.choosePriority();
+    return true;
   }
   exitIdle(): void {
     if (this.currentPriority !== null) {
