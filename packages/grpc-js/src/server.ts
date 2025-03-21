@@ -782,27 +782,31 @@ export class Server {
 
   private resolvePort(port: GrpcUri): Promise<SubchannelAddress[]> {
     return new Promise<SubchannelAddress[]>((resolve, reject) => {
-      const resolverListener: ResolverListener = {
-        onSuccessfulResolution: (
-          endpointList,
-          serviceConfig,
-          serviceConfigError
-        ) => {
-          // We only want one resolution result. Discard all future results
-          resolverListener.onSuccessfulResolution = () => {};
-          const addressList = ([] as SubchannelAddress[]).concat(
-            ...endpointList.map(endpoint => endpoint.addresses)
-          );
-          if (addressList.length === 0) {
-            reject(new Error(`No addresses resolved for port ${port}`));
-            return;
-          }
-          resolve(addressList);
-        },
-        onError: error => {
-          reject(new Error(error.details));
-        },
-      };
+      let seenResolution = false;
+      const resolverListener: ResolverListener = (
+        endpointList,
+        attributes,
+        serviceConfig,
+        resolutionNote
+      ) => {
+        if (seenResolution) {
+          return true;
+        }
+        seenResolution = true;
+        if (!endpointList.ok) {
+          reject(new Error(endpointList.error.details));
+          return true;
+        }
+        const addressList = ([] as SubchannelAddress[]).concat(
+          ...endpointList.value.map(endpoint => endpoint.addresses)
+        );
+        if (addressList.length === 0) {
+          reject(new Error(`No addresses resolved for port ${port}`));
+          return true;
+        }
+        resolve(addressList);
+        return true;
+      }
       const resolver = createResolver(port, resolverListener, this.options);
       resolver.updateResolution();
     });

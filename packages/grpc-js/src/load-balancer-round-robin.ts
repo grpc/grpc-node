@@ -39,6 +39,7 @@ import {
 } from './subchannel-address';
 import { LeafLoadBalancer } from './load-balancer-pick-first';
 import { ChannelOptions } from './channel-options';
+import { StatusOr } from './call-interface';
 
 const TRACER_NAME = 'round_robin';
 
@@ -205,14 +206,38 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     for (const child of this.children) {
       child.destroy();
     }
+    this.children = [];
   }
 
   updateAddressList(
-    endpointList: Endpoint[],
+    maybeEndpointList: StatusOr<Endpoint[]>,
     lbConfig: TypedLoadBalancingConfig,
-    options: ChannelOptions
-  ): void {
+    options: ChannelOptions,
+    resolutionNote: string
+  ): boolean {
+    if (!(lbConfig instanceof RoundRobinLoadBalancingConfig)) {
+      return false;
+    }
+    if (!maybeEndpointList.ok) {
+      if (this.children.length === 0) {
+        this.updateState(
+          ConnectivityState.TRANSIENT_FAILURE,
+          new UnavailablePicker(maybeEndpointList.error),
+          maybeEndpointList.error.details
+        );
+      }
+      return true;
+    }
+    const endpointList = maybeEndpointList.value;
     this.resetSubchannelList();
+    if (endpointList.length === 0) {
+      const errorMessage = `No addresses resolved. Resolution note: ${resolutionNote}`;
+      this.updateState(
+        ConnectivityState.TRANSIENT_FAILURE,
+        new UnavailablePicker({details: errorMessage}),
+        errorMessage
+      );
+    }
     trace('Connect to endpoint list ' + endpointList.map(endpointToString));
     this.updatesPaused = true;
     this.children = endpointList.map(
@@ -220,7 +245,8 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
         new LeafLoadBalancer(
           endpoint,
           this.childChannelControlHelper,
-          options
+          options,
+          resolutionNote
         )
     );
     for (const child of this.children) {
@@ -228,6 +254,7 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
     }
     this.updatesPaused = false;
     this.calculateAndUpdateState();
+    return true;
   }
 
   exitIdle(): void {

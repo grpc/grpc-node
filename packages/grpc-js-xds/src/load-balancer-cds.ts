@@ -26,6 +26,8 @@ import ChannelControlHelper = experimental.ChannelControlHelper;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
 import TypedLoadBalancingConfig = experimental.TypedLoadBalancingConfig;
 import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
+import StatusOr = experimental.StatusOr;
+import statusOrFromValue = experimental.statusOrFromValue;
 import { XdsConfig } from './xds-dependency-manager';
 import { LocalityEndpoint, PriorityChildRaw } from './load-balancer-priority';
 import { Locality__Output } from './generated/envoy/config/core/v3/Locality';
@@ -205,7 +207,7 @@ function getLeafClusters(xdsConfig: XdsConfig, rootCluster: string, depth = 0): 
   if (!maybeClusterConfig) {
     return [];
   }
-  if (!maybeClusterConfig.success) {
+  if (!maybeClusterConfig.ok) {
     return [rootCluster];
   }
   if (maybeClusterConfig.value.children.type === 'aggregate') {
@@ -240,13 +242,14 @@ export class CdsLoadBalancer implements LoadBalancer {
   }
 
   updateAddressList(
-    endpointList: Endpoint[],
+    endpointList: StatusOr<Endpoint[]>,
     lbConfig: TypedLoadBalancingConfig,
-    options: ChannelOptions
-  ): void {
+    options: ChannelOptions,
+    resolutionNote: string
+  ): boolean {
     if (!(lbConfig instanceof CdsLoadBalancingConfig)) {
       trace('Discarding address list update with unrecognized config ' + JSON.stringify(lbConfig, undefined, 2));
-      return;
+      return false;
     }
     trace('Received update with config ' + JSON.stringify(lbConfig, undefined, 2));
     const xdsConfig = options[XDS_CONFIG_KEY] as XdsConfig;
@@ -254,12 +257,12 @@ export class CdsLoadBalancer implements LoadBalancer {
     const maybeClusterConfig = xdsConfig.clusters.get(clusterName);
     if (!maybeClusterConfig) {
       trace('Received update with no config for cluster ' + clusterName);
-      return;
+      return false;
     }
-    if (!maybeClusterConfig.success) {
+    if (!maybeClusterConfig.ok) {
       this.childBalancer.destroy();
       this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker(maybeClusterConfig.error), maybeClusterConfig.error.details);
-      return;
+      return true;
     }
     const clusterConfig = maybeClusterConfig.value;
 
@@ -270,8 +273,8 @@ export class CdsLoadBalancer implements LoadBalancer {
       } catch (e) {
         trace('xDS config parsing failed with error ' + (e as Error).message);
         const errorMessage = `xDS config parsing failed with error ${(e as Error).message}`;
-        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: errorMessage}), errorMessage);
-        return;
+        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `${errorMessage} Resolution note: ${resolutionNote}`}), errorMessage);
+        return true;
       }
       const priorityChildren: {[name: string]: PriorityChildRaw} = {};
       for (const cluster of leafClusters) {
@@ -296,16 +299,16 @@ export class CdsLoadBalancer implements LoadBalancer {
       } catch (e) {
         trace('LB policy config parsing failed with error ' + (e as Error).message);
         const errorMessage = `LB policy config parsing failed with error ${(e as Error).message}`;
-        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: errorMessage}), errorMessage);
-        return;
+        this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: `${errorMessage} Resolution note: ${resolutionNote}`}), errorMessage);
+        return true;
       }
-      this.childBalancer.updateAddressList(endpointList, typedChildConfig, {...options, [ROOT_CLUSTER_KEY]: clusterName});
+      this.childBalancer.updateAddressList(endpointList, typedChildConfig, {...options, [ROOT_CLUSTER_KEY]: clusterName}, resolutionNote);
     } else {
       if (!clusterConfig.children.endpoints) {
         trace('Received update with no resolved endpoints for cluster ' + clusterName);
         const errorMessage = `Cluster ${clusterName} resolution failed: ${clusterConfig.children.resolutionNote}`;
         this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: errorMessage}), errorMessage);
-        return;
+        return false;
       }
       const newPriorityNames: string[] = [];
       const newLocalityPriorities = new Map<string, number>();
@@ -317,7 +320,7 @@ export class CdsLoadBalancer implements LoadBalancer {
         if (AGGREGATE_CLUSTER_BACKWARDS_COMPAT) {
           if (typeof options[ROOT_CLUSTER_KEY] === 'string') {
             const maybeRootClusterConfig = xdsConfig.clusters.get(options[ROOT_CLUSTER_KEY]);
-            if (maybeRootClusterConfig?.success) {
+            if (maybeRootClusterConfig?.ok) {
               endpointPickingPolicy = maybeRootClusterConfig.value.cluster.lbPolicyConfig;
             }
           }
@@ -409,9 +412,9 @@ export class CdsLoadBalancer implements LoadBalancer {
         typedChildConfig = parseLoadBalancingConfig(childConfig);
       } catch (e) {
         trace('LB policy config parsing failed with error ' + (e as Error).message);
-        const errorMessage = `LB policy config parsing failed with error ${(e as Error).message}`;
+        const errorMessage = `LB policy config parsing failed with error ${(e as Error).message}. Resolution note: ${resolutionNote}`;
         this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: errorMessage}), errorMessage);
-        return;
+        return false;
       }
       const childOptions: ChannelOptions = {...options};
       if (clusterConfig.cluster.securityUpdate) {
@@ -419,16 +422,16 @@ export class CdsLoadBalancer implements LoadBalancer {
         const xdsClient = options[XDS_CLIENT_KEY] as XdsClient;
         const caCertProvider = xdsClient.getCertificateProvider(securityUpdate.caCertificateProviderInstance);
         if (!caCertProvider) {
-          const errorMessage = `Cluster ${clusterName} configured with CA certificate provider ${securityUpdate.caCertificateProviderInstance} not in bootstrap`;
+          const errorMessage = `Cluster ${clusterName} configured with CA certificate provider ${securityUpdate.caCertificateProviderInstance} not in bootstrap. Resolution note: ${resolutionNote}`;
           this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: errorMessage}), errorMessage);
-          return;
+          return false;
         }
         if (securityUpdate.identityCertificateProviderInstance) {
           const identityCertProvider = xdsClient.getCertificateProvider(securityUpdate.identityCertificateProviderInstance);
           if (!identityCertProvider) {
-            const errorMessage = `Cluster ${clusterName} configured with identity certificate provider ${securityUpdate.identityCertificateProviderInstance} not in bootstrap`;
+            const errorMessage = `Cluster ${clusterName} configured with identity certificate provider ${securityUpdate.identityCertificateProviderInstance} not in bootstrap. Resolution note: ${resolutionNote}`;
             this.channelControlHelper.updateState(connectivityState.TRANSIENT_FAILURE, new UnavailablePicker({code: status.UNAVAILABLE, details: errorMessage}), errorMessage);
-            return;
+            return false;
           }
           childOptions[IDENTITY_CERT_PROVIDER_KEY] = identityCertProvider;
         }
@@ -440,8 +443,9 @@ export class CdsLoadBalancer implements LoadBalancer {
         trace('Configured subject alternative name matcher: ' + sanMatcher);
         childOptions[SAN_MATCHER_KEY] = this.latestSanMatcher;
       }
-      this.childBalancer.updateAddressList(childEndpointList, typedChildConfig, childOptions);
+      this.childBalancer.updateAddressList(statusOrFromValue(childEndpointList), typedChildConfig, childOptions, resolutionNote);
     }
+    return true;
   }
   exitIdle(): void {
     this.childBalancer.exitIdle();

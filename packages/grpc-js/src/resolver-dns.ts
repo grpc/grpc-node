@@ -23,7 +23,7 @@ import {
 import { promises as dns } from 'dns';
 import { extractAndSelectServiceConfig, ServiceConfig } from './service-config';
 import { Status } from './constants';
-import { StatusObject } from './call-interface';
+import { StatusObject, StatusOr, statusOrFromError, statusOrFromValue } from './call-interface';
 import { Metadata } from './metadata';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
@@ -62,9 +62,8 @@ class DnsResolver implements Resolver {
   private readonly minTimeBetweenResolutionsMs: number;
   private pendingLookupPromise: Promise<TcpSubchannelAddress[]> | null = null;
   private pendingTxtPromise: Promise<string[][]> | null = null;
-  private latestLookupResult: Endpoint[] | null = null;
-  private latestServiceConfig: ServiceConfig | null = null;
-  private latestServiceConfigError: StatusObject | null = null;
+  private latestLookupResult: StatusOr<Endpoint[]> | null = null;
+  private latestServiceConfigResult: StatusOr<ServiceConfig> | null = null;
   private percentage: number;
   private defaultResolutionError: StatusObject;
   private backoff: BackoffTimeout;
@@ -149,13 +148,12 @@ class DnsResolver implements Resolver {
       if (!this.returnedIpResult) {
         trace('Returning IP address for target ' + uriToString(this.target));
         setImmediate(() => {
-          this.listener.onSuccessfulResolution(
-            this.ipResult!,
+          this.listener(
+            statusOrFromValue(this.ipResult!),
+            {},
             null,
-            null,
-            null,
-            {}
-          );
+            ''
+          )
         });
         this.returnedIpResult = true;
       }
@@ -167,11 +165,15 @@ class DnsResolver implements Resolver {
     if (this.dnsHostname === null) {
       trace('Failed to parse DNS address ' + uriToString(this.target));
       setImmediate(() => {
-        this.listener.onError({
-          code: Status.UNAVAILABLE,
-          details: `Failed to parse DNS address ${uriToString(this.target)}`,
-          metadata: new Metadata(),
-        });
+        this.listener(
+          statusOrFromError({
+            code: Status.UNAVAILABLE,
+            details: `Failed to parse DNS address ${uriToString(this.target)}`
+          }),
+          {},
+          null,
+          ''
+        );
       });
       this.stopNextResolutionTimer();
     } else {
@@ -194,11 +196,9 @@ class DnsResolver implements Resolver {
             return;
           }
           this.pendingLookupPromise = null;
-          this.backoff.reset();
-          this.backoff.stop();
-          this.latestLookupResult = addressList.map(address => ({
+          this.latestLookupResult = statusOrFromValue(addressList.map(address => ({
             addresses: [address],
-          }));
+          })));
           const allAddressesString: string =
             '[' +
             addressList.map(addr => addr.host + ':' + addr.port).join(',') +
@@ -209,21 +209,17 @@ class DnsResolver implements Resolver {
               ': ' +
               allAddressesString
           );
-          if (this.latestLookupResult.length === 0) {
-            this.listener.onError(this.defaultResolutionError);
-            return;
-          }
           /* If the TXT lookup has not yet finished, both of the last two
            * arguments will be null, which is the equivalent of getting an
            * empty TXT response. When the TXT lookup does finish, its handler
            * can update the service config by using the same address list */
-          this.listener.onSuccessfulResolution(
+          const healthStatus = this.listener(
             this.latestLookupResult,
-            this.latestServiceConfig,
-            this.latestServiceConfigError,
-            null,
-            {}
+            {},
+            this.latestServiceConfigResult,
+            ''
           );
+          this.handleHealthStatus(healthStatus);
         },
         err => {
           if (this.pendingLookupPromise === null) {
@@ -237,7 +233,12 @@ class DnsResolver implements Resolver {
           );
           this.pendingLookupPromise = null;
           this.stopNextResolutionTimer();
-          this.listener.onError(this.defaultResolutionError);
+          this.listener(
+            statusOrFromError(this.defaultResolutionError),
+            {},
+            this.latestServiceConfigResult,
+            ''
+          )
         }
       );
       /* If there already is a still-pending TXT resolution, we can just use
@@ -253,31 +254,35 @@ class DnsResolver implements Resolver {
               return;
             }
             this.pendingTxtPromise = null;
+            let serviceConfig: ServiceConfig | null;
             try {
-              this.latestServiceConfig = extractAndSelectServiceConfig(
+              serviceConfig = extractAndSelectServiceConfig(
                 txtRecord,
                 this.percentage
               );
+              if (serviceConfig) {
+                this.latestServiceConfigResult = statusOrFromValue(serviceConfig);
+              } else {
+                this.latestServiceConfigResult = null;
+              }
             } catch (err) {
-              this.latestServiceConfigError = {
+              this.latestServiceConfigResult = statusOrFromError({
                 code: Status.UNAVAILABLE,
                 details: `Parsing service config failed with error ${
                   (err as Error).message
-                }`,
-                metadata: new Metadata(),
-              };
+                }`
+              });
             }
             if (this.latestLookupResult !== null) {
               /* We rely here on the assumption that calling this function with
                * identical parameters will be essentialy idempotent, and calling
                * it with the same address list and a different service config
                * should result in a fast and seamless switchover. */
-              this.listener.onSuccessfulResolution(
+              this.listener(
                 this.latestLookupResult,
-                this.latestServiceConfig,
-                this.latestServiceConfigError,
-                null,
-                {}
+                {},
+                this.latestServiceConfigResult,
+                ''
               );
             }
           },
@@ -292,6 +297,21 @@ class DnsResolver implements Resolver {
           }
         );
       }
+    }
+  }
+
+  /**
+   * The ResolverListener returns a boolean indicating whether the LB policy
+   * accepted the resolution result. A false result on an otherwise successful
+   * resolution should be treated as a resolution failure.
+   * @param healthStatus
+   */
+  private handleHealthStatus(healthStatus: boolean) {
+    if (healthStatus) {
+      this.backoff.stop();
+      this.backoff.reset();
+    } else {
+      this.continueResolving = true;
     }
   }
 
@@ -400,8 +420,7 @@ class DnsResolver implements Resolver {
     this.pendingLookupPromise = null;
     this.pendingTxtPromise = null;
     this.latestLookupResult = null;
-    this.latestServiceConfig = null;
-    this.latestServiceConfigError = null;
+    this.latestServiceConfigResult = null;
     this.returnedIpResult = false;
   }
 

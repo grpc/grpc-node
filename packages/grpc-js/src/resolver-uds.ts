@@ -18,6 +18,7 @@ import { Resolver, ResolverListener, registerResolver } from './resolver';
 import { Endpoint } from './subchannel-address';
 import { GrpcUri } from './uri-parser';
 import { ChannelOptions } from './channel-options';
+import { statusOrFromValue } from './call-interface';
 
 class UdsResolver implements Resolver {
   private hasReturnedResult = false;
@@ -39,12 +40,11 @@ class UdsResolver implements Resolver {
     if (!this.hasReturnedResult) {
       this.hasReturnedResult = true;
       process.nextTick(
-        this.listener.onSuccessfulResolution,
-        this.endpoints,
+        this.listener,
+        statusOrFromValue(this.endpoints),
+        {},
         null,
-        null,
-        null,
-        {}
+        ''
       );
     }
   }
