@@ -57,15 +57,15 @@ export class RetryThrottler {
   }
 
   addCallSucceeded() {
-    this.tokens = Math.max(this.tokens + this.tokenRatio, this.maxTokens);
+    this.tokens = Math.min(this.tokens + this.tokenRatio, this.maxTokens);
   }
 
   addCallFailed() {
-    this.tokens = Math.min(this.tokens - 1, 0);
+    this.tokens = Math.max(this.tokens - 1, 0);
   }
 
   canRetryCall() {
-    return this.tokens > this.maxTokens / 2;
+    return this.tokens > (this.maxTokens / 2);
   }
 }
 
@@ -217,7 +217,10 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     private readonly retryThrottler?: RetryThrottler
   ) {
     const maxAttemptsLimit = channel.getOptions()['grpc-node.retry_max_attempts_limit'] ?? DEFAULT_MAX_ATTEMPTS_LIMIT;
-    if (callConfig.methodConfig.retryPolicy) {
+    if (channel.getOptions()['grpc.enable_retries'] === 0) {
+      this.state = 'NO_RETRY';
+      this.maxAttempts = 1;
+    } else if (callConfig.methodConfig.retryPolicy) {
       this.state = 'RETRY';
       const retryPolicy = callConfig.methodConfig.retryPolicy;
       this.nextRetryBackoffSec = this.initialRetryBackoffSec = Number(
@@ -230,9 +233,6 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     } else if (callConfig.methodConfig.hedgingPolicy) {
       this.state = 'HEDGING';
       this.maxAttempts = Math.min(callConfig.methodConfig.hedgingPolicy.maxAttempts, maxAttemptsLimit);
-    } else if (channel.getOptions()['grpc.enable_retries'] === 0) {
-      this.state = 'NO_RETRY';
-      this.maxAttempts = 1;
     } else {
       this.state = 'TRANSPARENT_ONLY';
       this.maxAttempts = 1;
@@ -459,6 +459,9 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
         callback(true);
         this.attempts += 1;
         this.startNewAttempt();
+      } else {
+        this.trace('Retry attempt denied by throttling policy');
+        callback(false);
       }
     }, retryDelayMs);
   }
