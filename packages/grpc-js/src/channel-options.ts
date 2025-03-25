@@ -30,7 +30,18 @@ export interface ChannelOptions {
   'grpc.keepalive_permit_without_calls'?: number;
   'grpc.service_config'?: string;
   'grpc.max_concurrent_streams'?: number;
+  /* The initial delay before first reconnection attempt.
+   * Default value: INITIAL_BACKOFF_MS = 1000ms (1sec).
+   * If the connection fails, the delay is multiplied by BACKOFF_MULTIPLIER = 1.6 after each failure.
+   * grpc.min_reconnect_backoff_ms is the minimun allowed delay for a reconnect attempt.
+   * This sets a lower bound for the backoff delay.
+   * If not set, the initial reconnect backoff (1000ms) is used.
+  */
   'grpc.initial_reconnect_backoff_ms'?: number;
+  /* The maximum allowed delay between reconnection attempts.
+   * prevents the backoff from growing indefinitely.
+   * Default value: MAX_BACKOFF_MS = 120000ms (120sec).
+   */
   'grpc.max_reconnect_backoff_ms'?: number;
   'grpc.use_local_subchannel_pool'?: number;
   'grpc.max_send_message_length'?: number;
@@ -41,9 +52,18 @@ export interface ChannelOptions {
    */
   'grpc.http_connect_target'?: string;
   'grpc.http_connect_creds'?: string;
+  /* The channel argument specifies the default compression algorithm to be 
+     used for outgoing messages on a channel.
+   * Default value (if not explicitly set) 0 (No compression).
+   * grpc.efault_compression_level adjusts compression intensity in grpc c++ not implemented in grpc-js.
+  */
   'grpc.default_compression_algorithm'?: CompressionAlgorithms;
   'grpc.enable_channelz'?: number;
   'grpc.dns_min_time_between_resolutions_ms'?: number;
+  /* grpc.enable_retries enables or disables cleint side retries.
+   * Default value: 1 (enabled).
+   * The channel argument 'grpc.enable_deadline_checks' is not documented in gRPC Core and does not
+   exist in grpc-js.*/
   'grpc.enable_retries'?: number;
   'grpc.per_rpc_retry_buffer_size'?: number;
   /* This option is pattered like a core option, but the core does not have
@@ -52,7 +72,19 @@ export interface ChannelOptions {
    * implement this functionality using the ResourceQuota mechanism, so there
    * will probably not be any collision or other inconsistency. */
   'grpc.retry_buffer_size'?: number;
+  /* The maximun duration (in milliseconds) a connection can remain open before being forcefully closed.
+   * when this duration expires, the server sends a 'GOAWAY' frame to the client.
+   * New RPCs will not be accepted , but existing ones can continue untill they complete.
+   * If grpc.max_connection_age_ms is not set, active RPCs may be interrupted when the connection closes.
+   * Default value: Infinity (connection remains open unless explicitly set).
+   */
   'grpc.max_connection_age_ms'?: number;
+  /* Additional grace period (in milliseconds) after grpc.max_connection_age_grace_ms expires.
+   * Extends the connection lifetime beyond 'grpc.max_connection_age_grace_ms' if RPCs are still active.
+   * Helps prevent abrupt termination of long-running RPCs.
+   * once this grace period ends, any remaining RPCs will be forcefully terminated.
+   * Default value: Infinity (no forced termination unless explicitly set).
+   */
   'grpc.max_connection_age_grace_ms'?: number;
   'grpc.max_connection_idle_ms'?: number;
   'grpc-node.max_session_memory'?: number;
