@@ -16,7 +16,7 @@
 
 // This is a non-public, unstable API, but it's very convenient
 import { loadProtosWithOptionsSync } from '@grpc/proto-loader/build/src/util';
-import { experimental, logVerbosity } from '@grpc/grpc-js';
+import { experimental, logVerbosity, ServerInterceptor } from '@grpc/grpc-js';
 import { Any__Output } from './generated/google/protobuf/Any';
 import Filter = experimental.Filter;
 import FilterFactory = experimental.FilterFactory;
@@ -64,7 +64,8 @@ export interface HttpFilterFactoryConstructor<FilterType extends Filter> {
 export interface HttpFilterRegistryEntry {
   parseTopLevelFilterConfig(encodedConfig: Any__Output): HttpFilterConfig | null;
   parseOverrideFilterConfig(encodedConfig: Any__Output): HttpFilterConfig | null;
-  httpFilterConstructor: HttpFilterFactoryConstructor<Filter>;
+  httpFilterConstructor?: HttpFilterFactoryConstructor<Filter> | undefined;
+  createServerFilter?: ((config: HttpFilterConfig, overrideConfigMap: Map<string, HttpFilterConfig>) => ServerInterceptor) | undefined;
 }
 
 const FILTER_REGISTRY = new Map<string, HttpFilterRegistryEntry>();
@@ -106,7 +107,7 @@ export function getTopLevelFilterUrl(encodedConfig: Any__Output): string {
   }
 }
 
-export function validateTopLevelFilter(httpFilter: HttpFilter__Output): boolean {
+export function validateTopLevelFilter(httpFilter: HttpFilter__Output, client: boolean): boolean {
   if (!httpFilter.typed_config) {
     trace(httpFilter.name + ' validation failed: typed_config unset');
     return false;
@@ -121,6 +122,17 @@ export function validateTopLevelFilter(httpFilter: HttpFilter__Output): boolean 
   }
   const registryEntry = FILTER_REGISTRY.get(typeUrl);
   if (registryEntry) {
+    if (!httpFilter.is_optional) {
+      if (client) {
+        if (!registryEntry.httpFilterConstructor) {
+          return false;
+        }
+      } else {
+        if (!registryEntry.createServerFilter) {
+          return false;
+        }
+      }
+    }
     const parsedConfig = registryEntry.parseTopLevelFilterConfig(encodedConfig);
     if (parsedConfig === null) {
       trace(httpFilter.name + ' validation failed: config parsing failed');
@@ -185,7 +197,7 @@ export function validateOverrideFilter(encodedConfig: Any__Output): boolean {
   }
 }
 
-export function parseTopLevelFilterConfig(encodedConfig: Any__Output) {
+export function parseTopLevelFilterConfig(encodedConfig: Any__Output, client: boolean) {
   let typeUrl: string;
   try {
     typeUrl = getTopLevelFilterUrl(encodedConfig);
@@ -194,6 +206,15 @@ export function parseTopLevelFilterConfig(encodedConfig: Any__Output) {
   }
   const registryEntry = FILTER_REGISTRY.get(typeUrl);
   if (registryEntry) {
+    if (client) {
+      if (!registryEntry.httpFilterConstructor) {
+        return null;
+      }
+    } else {
+      if (!registryEntry.createServerFilter) {
+        return null;
+      }
+    }
     return registryEntry.parseTopLevelFilterConfig(encodedConfig);
   } else {
     // Filter type URL not found in registry
@@ -236,10 +257,19 @@ export function parseOverrideFilterConfig(encodedConfig: Any__Output) {
   }
 }
 
-export function createHttpFilter(config: HttpFilterConfig, overrideConfig?: HttpFilterConfig): FilterFactory<Filter> | null {
+export function createClientHttpFilter(config: HttpFilterConfig, overrideConfig?: HttpFilterConfig): FilterFactory<Filter> | null {
   const registryEntry = FILTER_REGISTRY.get(config.typeUrl);
-  if (registryEntry) {
+  if (registryEntry && registryEntry.httpFilterConstructor) {
     return new registryEntry.httpFilterConstructor(config, overrideConfig);
+  } else {
+    return null;
+  }
+}
+
+export function createServerHttpFilter(config: HttpFilterConfig, overrideConfigMap: Map<string, HttpFilterConfig>): ServerInterceptor | null {
+  const registryEntry = FILTER_REGISTRY.get(config.typeUrl);
+  if (registryEntry && registryEntry.createServerFilter) {
+    return registryEntry.createServerFilter(config, overrideConfigMap);
   } else {
     return null;
   }

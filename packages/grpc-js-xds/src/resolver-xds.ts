@@ -31,7 +31,7 @@ import { HashPolicy, RouteAction, SingleClusterRouteAction, WeightedCluster, Wei
 import { decodeSingleResource, HTTP_CONNECTION_MANGER_TYPE_URL } from './resources';
 import Duration = experimental.Duration;
 import { Duration__Output } from './generated/google/protobuf/Duration';
-import { createHttpFilter, HttpFilterConfig, parseOverrideFilterConfig, parseTopLevelFilterConfig } from './http-filter';
+import { createClientHttpFilter, HttpFilterConfig, parseOverrideFilterConfig, parseTopLevelFilterConfig } from './http-filter';
 import { EXPERIMENTAL_FAULT_INJECTION, EXPERIMENTAL_FEDERATION, EXPERIMENTAL_RETRY, EXPERIMENTAL_RING_HASH } from './environment';
 import Filter = experimental.Filter;
 import FilterFactory = experimental.FilterFactory;
@@ -171,7 +171,7 @@ class XdsResolver implements Resolver {
     if (EXPERIMENTAL_FAULT_INJECTION) {
       for (const filter of httpConnectionManager.http_filters) {
         // typed_config must be set here, or validation would have failed
-        const filterConfig = parseTopLevelFilterConfig(filter.typed_config!);
+        const filterConfig = parseTopLevelFilterConfig(filter.typed_config!, true);
         if (filterConfig) {
           ldsHttpFilterConfigs.push({name: filter.name, config: filterConfig});
         }
@@ -273,17 +273,17 @@ class XdsResolver implements Resolver {
           if (EXPERIMENTAL_FAULT_INJECTION) {
             for (const filterConfig of ldsHttpFilterConfigs) {
               if (routeHttpFilterOverrides.has(filterConfig.name)) {
-                const filter = createHttpFilter(filterConfig.config, routeHttpFilterOverrides.get(filterConfig.name)!);
+                const filter = createClientHttpFilter(filterConfig.config, routeHttpFilterOverrides.get(filterConfig.name)!);
                 if (filter) {
                   extraFilterFactories.push(filter);
                 }
               } else if (virtualHostHttpFilterOverrides.has(filterConfig.name)) {
-                const filter = createHttpFilter(filterConfig.config, virtualHostHttpFilterOverrides.get(filterConfig.name)!);
+                const filter = createClientHttpFilter(filterConfig.config, virtualHostHttpFilterOverrides.get(filterConfig.name)!);
                 if (filter) {
                   extraFilterFactories.push(filter);
                 }
               } else {
-                const filter = createHttpFilter(filterConfig.config);
+                const filter = createClientHttpFilter(filterConfig.config);
                 if (filter) {
                   extraFilterFactories.push(filter);
                 }
@@ -308,22 +308,22 @@ class XdsResolver implements Resolver {
               }
               for (const filterConfig of ldsHttpFilterConfigs) {
                 if (clusterHttpFilterOverrides.has(filterConfig.name)) {
-                  const filter = createHttpFilter(filterConfig.config, clusterHttpFilterOverrides.get(filterConfig.name)!);
+                  const filter = createClientHttpFilter(filterConfig.config, clusterHttpFilterOverrides.get(filterConfig.name)!);
                   if (filter) {
                     extraFilterFactories.push(filter);
                   }
                 } else if (routeHttpFilterOverrides.has(filterConfig.name)) {
-                  const filter = createHttpFilter(filterConfig.config, routeHttpFilterOverrides.get(filterConfig.name)!);
+                  const filter = createClientHttpFilter(filterConfig.config, routeHttpFilterOverrides.get(filterConfig.name)!);
                   if (filter) {
                     extraFilterFactories.push(filter);
                   }
                 } else if (virtualHostHttpFilterOverrides.has(filterConfig.name)) {
-                  const filter = createHttpFilter(filterConfig.config, virtualHostHttpFilterOverrides.get(filterConfig.name)!);
+                  const filter = createClientHttpFilter(filterConfig.config, virtualHostHttpFilterOverrides.get(filterConfig.name)!);
                   if (filter) {
                     extraFilterFactories.push(filter);
                   }
                 } else {
-                  const filter = createHttpFilter(filterConfig.config);
+                  const filter = createClientHttpFilter(filterConfig.config);
                   if (filter) {
                     extraFilterFactories.push(filter);
                   }

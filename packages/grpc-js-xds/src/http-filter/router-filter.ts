@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { experimental } from '@grpc/grpc-js';
+import { experimental, ServerInterceptingCall, ServerInterceptor } from '@grpc/grpc-js';
 import { Any__Output } from '../generated/google/protobuf/Any';
 import { HttpFilterConfig, registerHttpFilter } from '../http-filter';
 import Filter = experimental.Filter;
@@ -31,6 +31,21 @@ class RouterFilterFactory implements FilterFactory<RouterFilter> {
   }
 }
 
+function createServerHttpFilter(config: HttpFilterConfig, overrideConfigMap: Map<string, HttpFilterConfig>): ServerInterceptor {
+  return (methodDescriptor, call) => {
+    return new ServerInterceptingCall(call, {
+      start: next => {
+        next({
+          onReceiveMetadata: (metadata, next) => {
+            metadata.remove('grpc-route');
+            next(metadata);
+          }
+        })
+      }
+    });
+  };
+}
+
 const ROUTER_FILTER_URL = 'type.googleapis.com/envoy.extensions.filters.http.router.v3.Router';
 
 function parseConfig(encodedConfig: Any__Output): HttpFilterConfig | null {
@@ -44,6 +59,7 @@ export function setup() {
   registerHttpFilter(ROUTER_FILTER_URL, {
     parseTopLevelFilterConfig: parseConfig,
     parseOverrideFilterConfig: parseConfig,
-    httpFilterConstructor: RouterFilterFactory
+    httpFilterConstructor: RouterFilterFactory,
+    createServerFilter: createServerHttpFilter
   });
 }

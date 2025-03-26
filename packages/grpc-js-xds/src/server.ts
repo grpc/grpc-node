@@ -37,6 +37,7 @@ import { findVirtualHostForDomain } from "./xds-dependency-manager";
 import { LogVerbosity } from "@grpc/grpc-js/build/src/constants";
 import { XdsServerCredentials } from "./xds-credentials";
 import { CertificateValidationContext__Output } from "./generated/envoy/extensions/transport_sockets/tls/v3/CertificateValidationContext";
+import { createServerHttpFilter, HttpFilterConfig, parseOverrideFilterConfig, parseTopLevelFilterConfig } from "./http-filter";
 
 const TRACER_NAME = 'xds_server';
 
@@ -64,6 +65,7 @@ interface NormalizedFilterChainMatch {
 }
 
 interface RouteEntry {
+  id: string;
   matcher: Matcher;
   isNonForwardingAction: boolean;
 }
@@ -94,6 +96,10 @@ class FilterChainEntry {
   private virtualHosts: VirtualHostEntry[] | null = null;
   private connectionInjector: ConnectionInjector;
   private hasRouteConfigErrors = false;
+  /**
+   * filter name -> route ID -> config
+   */
+  private overrideConfigMaps = new Map<string, Map<string, HttpFilterConfig>>();
   constructor(private configParameters: ConfigParameters, filterChain: FilterChain__Output, credentials: ServerCredentials, onRouteConfigPopulated: () => void) {
     this.matchers = normalizeFilterChainMatch(filterChain.filter_chain_match);
     const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, filterChain.filters[0].typed_config!.value);
@@ -145,6 +151,7 @@ class FilterChainEntry {
               for (const route of virtualHost.routes) {
                 if (route.matcher.apply(methodDescriptor.path, metadata)) {
                   if (route.isNonForwardingAction) {
+                    metadata.set('grpc-route', route.id);
                     next(metadata);
                   } else {
                     call.sendStatus(routeErrorStatus);
@@ -157,6 +164,18 @@ class FilterChainEntry {
           });
         }
       });
+    }
+    const httpFilterInterceptors: ServerInterceptor[] = [];
+    for (const filter of httpConnectionManager.http_filters) {
+      const filterConfig = parseTopLevelFilterConfig(filter.typed_config!, false);
+      if (filterConfig) {
+        const filterOverrideConfigMap = new Map<string, HttpFilterConfig>();
+        this.overrideConfigMaps.set(filterConfig.typeUrl, filterOverrideConfigMap);
+        const filterInterceptor = createServerHttpFilter(filterConfig, filterOverrideConfigMap);
+        if (filterInterceptor) {
+          httpFilterInterceptors.push(filterInterceptor);
+        }
+      }
     }
     if (credentials instanceof XdsServerCredentials) {
       if (filterChain.transport_socket) {
@@ -193,20 +212,24 @@ class FilterChainEntry {
         credentials = credentials.getFallbackCredentials();
       }
     }
-    const interceptingCredentials = createServerCredentialsWithInterceptors(credentials, [interceptor]);
+    const interceptingCredentials = createServerCredentialsWithInterceptors(credentials, [interceptor, ...httpFilterInterceptors]);
     this.connectionInjector = configParameters.createConnectionInjector(interceptingCredentials);
   }
 
   private handleRouteConfigurationResource(routeConfig: RouteConfiguration__Output) {
     let hasRouteConfigErrors = false;
     this.virtualHosts = [];
-    for (const virtualHost of routeConfig.virtual_hosts) {
+    for (const overrideMap of this.overrideConfigMaps.values()) {
+      overrideMap.clear();
+    }
+    for (const [virtualHostIndex, virtualHost] of routeConfig.virtual_hosts.entries()) {
       const virtualHostEntry: VirtualHostEntry = {
         domains: virtualHost.domains,
         routes: []
       };
-      for (const route of virtualHost.routes) {
+      for (const [routeIndex, route] of virtualHost.routes.entries()) {
         const routeEntry: RouteEntry = {
+          id: `virtualhost=${virtualHostIndex} route=${routeIndex}`,
           matcher: getPredicateForMatcher(route.match!),
           isNonForwardingAction: route.action === 'non_forwarding_action'
         };
@@ -215,6 +238,12 @@ class FilterChainEntry {
           this.logConfigurationError('For domains matching [' + virtualHostEntry.domains + '] requests will be rejected for routes matching ' + routeEntry.matcher.toString());
         }
         virtualHostEntry.routes.push(routeEntry);
+        for (const [filterName, overrideConfig] of Object.entries(route.typed_per_filter_config)) {
+          const parsedConfig = parseOverrideFilterConfig(overrideConfig);
+          if (parsedConfig) {
+            this.overrideConfigMaps.get(filterName)?.set(routeEntry.id, parsedConfig);
+          }
+        }
       }
       this.virtualHosts.push(virtualHostEntry);
     }
