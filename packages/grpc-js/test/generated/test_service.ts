@@ -3,13 +3,13 @@ import type { MessageTypeDefinition } from '@grpc/proto-loader';
 
 import type { TestServiceClient as _TestServiceClient, TestServiceDefinition as _TestServiceDefinition } from './TestService';
 
-type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {
-  new(...args: ConstructorParameters<Constructor>): Subtype;
-};
+type SubtypeConstructor<Subtype extends grpc.ServiceClient> = {
+  new (address: string, credentials: grpc.ChannelCredentials, options?: Partial<grpc.ChannelOptions>): Subtype;
+} & grpc.ServiceClientConstructor;
 
-export interface ProtoGrpcType {
+export interface ProtoGrpcType extends grpc.GrpcObject {
   Request: MessageTypeDefinition
   Response: MessageTypeDefinition
-  TestService: SubtypeConstructor<typeof grpc.Client, _TestServiceClient> & { service: _TestServiceDefinition }
+  TestService: SubtypeConstructor<_TestServiceClient> & { service: _TestServiceDefinition }
 }
 
