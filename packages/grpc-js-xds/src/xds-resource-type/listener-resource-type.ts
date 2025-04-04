@@ -87,9 +87,10 @@ function normalizeFilterChainMatch(filterChainMatch: FilterChainMatch__Output): 
 
 /**
  * @param httpConnectionManager
+ * @param
  * @returns A list of validation errors, if there are any. An empty list indicates success
  */
-function validateHttpConnectionManager(httpConnectionManager: HttpConnectionManager__Output): string[] {
+function validateHttpConnectionManager(httpConnectionManager: HttpConnectionManager__Output, client: boolean): string[] {
   const errors: string[] = [];
   if (EXPERIMENTAL_FAULT_INJECTION) {
     const filterNames = new Set<string>();
@@ -98,7 +99,7 @@ function validateHttpConnectionManager(httpConnectionManager: HttpConnectionMana
         errors.push(`duplicate HTTP filter name: ${httpFilter.name}`);
       }
       filterNames.add(httpFilter.name);
-      if (!validateTopLevelFilter(httpFilter)) {
+      if (!validateTopLevelFilter(httpFilter, client)) {
         errors.push(`${httpFilter.name} filter validation failed`);
       }
       /* Validate that the last filter, and only the last filter, is the
@@ -237,7 +238,7 @@ function validateFilterChain(context: XdsDecodeContext, filterChain: FilterChain
   if (filterChain.filters.length === 1) {
     if (filterChain.filters[0].typed_config?.type_url === HTTP_CONNECTION_MANGER_TYPE_URL) {
       const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, filterChain.filters[0].typed_config.value);
-      errors.push(...validateHttpConnectionManager(httpConnectionManager).map(error => `filters[0].typed_config: ${error}`));
+      errors.push(...validateHttpConnectionManager(httpConnectionManager, false).map(error => `filters[0].typed_config: ${error}`));
     } else {
       errors.push(`Unexpected value of filters[0].typed_config.type_url: ${filterChain.filters[0].typed_config?.type_url}`);
     }
@@ -270,7 +271,7 @@ export class ListenerResourceType extends XdsResourceType {
         message.api_listener.api_listener.type_url === HTTP_CONNECTION_MANGER_TYPE_URL
       ) {
         const httpConnectionManager = decodeSingleResource(HTTP_CONNECTION_MANGER_TYPE_URL, message.api_listener!.api_listener.value);
-        errors.push(...validateHttpConnectionManager(httpConnectionManager).map(error => `api_listener.api_listener: ${error}`));
+        errors.push(...validateHttpConnectionManager(httpConnectionManager, true).map(error => `api_listener.api_listener: ${error}`));
       } else {
         errors.push(`api_listener.api_listener.type_url != ${HTTP_CONNECTION_MANGER_TYPE_URL}`);
       }

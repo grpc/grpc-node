@@ -213,8 +213,8 @@ function asyncTimeout(timeMs: number): Promise<void> {
 
 /**
  * Returns true with probability numerator/denominator.
- * @param numerator 
- * @param denominator 
+ * @param numerator
+ * @param denominator
  */
 function rollRandomPercentage(numerator: number, denominator: number): boolean {
   return Math.random() * denominator < numerator;
