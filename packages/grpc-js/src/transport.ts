@@ -695,16 +695,17 @@ export class Http2SubchannelConnector implements SubchannelConnector {
           reject(`${errorMessage} (${new Date().toISOString()})`);
         }
       };
-      const session = http2.connect(`${scheme}://${targetPath}`, {
+      const sessionOptions: http2.ClientSessionOptions = {
         createConnection: (authority, option) => {
           return secureConnectResult.socket;
-        },
-        settings: {
-          initialWindowSize:
-            options['grpc-node.flow_control_window'] ??
-            http2.getDefaultSettings().initialWindowSize,
         }
-      });
+      };
+      if (options['grpc-node.flow_control_window'] !== undefined) {
+        sessionOptions.settings = {
+          initialWindowSize: options['grpc-node.flow_control_window']
+        };
+      }
+      const session = http2.connect(`${scheme}://${targetPath}`, sessionOptions);
       this.session = session;
       let errorMessage = 'Failed to connect';
       let reportedError = false;
