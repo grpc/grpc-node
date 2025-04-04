@@ -763,6 +763,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       await secureConnector.waitForReady();
       this.trace(addressString + ' secureConnector is ready');
       tcpConnection = await this.tcpConnect(address, options);
+      tcpConnection.setNoDelay();
       this.trace(addressString + ' Established TCP connection');
       secureConnectResult = await secureConnector.connect(tcpConnection);
       this.trace(addressString + ' Established secure connection');
