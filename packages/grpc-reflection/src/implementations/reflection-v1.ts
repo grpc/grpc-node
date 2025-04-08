@@ -129,7 +129,7 @@ export class ReflectionV1Implementation {
 
         // if we didn't find anything then try just a FQN lookup
         if (!referencedFile) {
-          referencedFile = this.symbols[ref];
+          referencedFile = this.symbols[ref] ?? this.symbols[`.${ref}`];
         }
       }
 
