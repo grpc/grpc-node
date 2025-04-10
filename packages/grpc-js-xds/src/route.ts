@@ -18,8 +18,26 @@ import { RouteMatch__Output } from './generated/envoy/config/route/v3/RouteMatch
 import { HeaderMatcher__Output } from './generated/envoy/config/route/v3/HeaderMatcher';
 import { ContainsValueMatcher, ExactValueMatcher, FullMatcher, HeaderMatcher, Matcher, PathExactValueMatcher, PathPrefixValueMatcher, PathSafeRegexValueMatcher, PrefixValueMatcher, PresentValueMatcher, RangeValueMatcher, RejectValueMatcher, SafeRegexValueMatcher, SuffixValueMatcher, ValueMatcher } from './matcher';
 import { envoyFractionToFraction, Fraction } from "./fraction";
+import { StringMatcher__Output } from './generated/envoy/type/matcher/v3/StringMatcher';
 
-function getPredicateForHeaderMatcher(headerMatch: HeaderMatcher__Output): Matcher {
+export function getPredicateForStringMatcher(stringMatch: StringMatcher__Output): ValueMatcher {
+  switch (stringMatch.match_pattern) {
+    case 'exact':
+      return new ExactValueMatcher(stringMatch.exact!, stringMatch.ignore_case);
+    case 'safe_regex':
+      return new SafeRegexValueMatcher(stringMatch.safe_regex!.regex);
+    case 'prefix':
+      return new PrefixValueMatcher(stringMatch.prefix!, stringMatch.ignore_case);
+    case 'suffix':
+      return new SuffixValueMatcher(stringMatch.suffix!, stringMatch.ignore_case);
+    case 'contains':
+      return new ContainsValueMatcher(stringMatch.contains!, stringMatch.ignore_case);
+    default:
+      return new RejectValueMatcher();
+  }
+}
+
+export function getPredicateForHeaderMatcher(headerMatch: HeaderMatcher__Output): Matcher {
   let valueChecker: ValueMatcher;
   switch (headerMatch.header_match_specifier) {
     case 'exact_match':
@@ -43,26 +61,7 @@ function getPredicateForHeaderMatcher(headerMatch: HeaderMatcher__Output): Match
       valueChecker = new SuffixValueMatcher(headerMatch.suffix_match!, false);
       break;
     case 'string_match':
-      const stringMatch = headerMatch.string_match!;
-      switch (stringMatch.match_pattern) {
-        case 'exact':
-          valueChecker = new ExactValueMatcher(stringMatch.exact!, stringMatch.ignore_case);
-          break;
-        case 'safe_regex':
-          valueChecker = new SafeRegexValueMatcher(stringMatch.safe_regex!.regex);
-          break;
-        case 'prefix':
-          valueChecker = new PrefixValueMatcher(stringMatch.prefix!, stringMatch.ignore_case);
-          break;
-        case 'suffix':
-          valueChecker = new SuffixValueMatcher(stringMatch.suffix!, stringMatch.ignore_case);
-          break;
-        case 'contains':
-          valueChecker = new ContainsValueMatcher(stringMatch.contains!, stringMatch.ignore_case);
-          break;
-        default:
-          valueChecker = new RejectValueMatcher();
-      }
+      valueChecker = getPredicateForStringMatcher(headerMatch.string_match!);
       break;
     default:
       valueChecker = new RejectValueMatcher();

@@ -50,7 +50,6 @@ export interface FieldOptions {
   'weak'?: (boolean);
   'uninterpretedOption'?: (_google_protobuf_UninterpretedOption)[];
   '.validate.rules'?: (_validate_FieldRules | null);
-  '.udpa.annotations.sensitive'?: (boolean);
   '.envoy.annotations.deprecated_at_minor_version'?: (string);
   '.udpa.annotations.field_migrate'?: (_udpa_annotations_FieldMigrateAnnotation | null);
   '.envoy.annotations.disallowed_by_default'?: (boolean);
@@ -66,7 +65,6 @@ export interface FieldOptions__Output {
   'weak': (boolean);
   'uninterpretedOption': (_google_protobuf_UninterpretedOption__Output)[];
   '.validate.rules': (_validate_FieldRules__Output | null);
-  '.udpa.annotations.sensitive': (boolean);
   '.envoy.annotations.deprecated_at_minor_version': (string);
   '.udpa.annotations.field_migrate': (_udpa_annotations_FieldMigrateAnnotation__Output | null);
   '.envoy.annotations.disallowed_by_default': (boolean);
