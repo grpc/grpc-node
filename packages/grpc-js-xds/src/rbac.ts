@@ -278,8 +278,6 @@ export class MetadataPrincipal implements PrincipalRule {
   }
 }
 
-export type RbacAction = 'ALLOW' | 'DENY';
-
 export interface UnifiedInfo extends PermissionInfo, PrincipalInfo {}
 
 export class RbacPolicy {
@@ -301,15 +299,20 @@ export class RbacPolicy {
 }
 
 export class RbacPolicyGroup {
-  constructor(private policies: Map<string, RbacPolicy>, private action: RbacAction) {}
+  constructor(private policies: Map<string, RbacPolicy>, private allow: boolean) {}
 
-  apply(info: UnifiedInfo): RbacAction | null {
+  /**
+   *
+   * @param info
+   * @returns True if the call should be accepted, false if it should be rejected
+   */
+  apply(info: UnifiedInfo): boolean {
     for (const policy of this.policies.values()) {
       if (policy.matches(info)) {
-        return this.action;
+        return this.allow;
       }
     }
-    return null;
+    return !this.allow;
   }
 
   toString() {
@@ -318,7 +321,7 @@ export class RbacPolicyGroup {
       policyStrings.push(`${name}: ${policy.toString()}`);
     }
     return `RBAC
-    action=${this.action}
+    action=${this.allow ? 'ALLOW' : 'DENY'}
     policies:
     ${policyStrings.join('\n')}`;
   }
@@ -392,5 +395,5 @@ export function parseConfig(rbac: RBAC__Output): RbacPolicyGroup {
   for (const [name, policyConfig] of Object.entries(rbac.policies)) {
     policyMap.set(name, parsePolicy(policyConfig));
   }
-  return new RbacPolicyGroup(policyMap, rbac.action);
+  return new RbacPolicyGroup(policyMap, rbac.action === 'ALLOW');
 }

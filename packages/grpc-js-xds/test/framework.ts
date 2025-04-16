@@ -31,6 +31,7 @@ import { ClusterConfig } from "../src/generated/envoy/extensions/clusters/aggreg
 import { Any } from "../src/generated/google/protobuf/Any";
 import { ControlPlaneServer } from "./xds-server";
 import { UpstreamTlsContext } from "../src/generated/envoy/extensions/transport_sockets/tls/v3/UpstreamTlsContext";
+import { HttpFilter } from "../src/generated/envoy/extensions/filters/network/http_connection_manager/v3/HttpFilter";
 
 interface Endpoint {
   locality: Locality;
@@ -400,7 +401,7 @@ const DEFAULT_BASE_SERVER_ROUTE_CONFIG: RouteConfiguration = {
 export class FakeServerRoute {
   private listener: Listener;
   private routeConfiguration: RouteConfiguration;
-  constructor(port: number, routeName: string, baseListener?: Listener | undefined, baseRouteConfiguration?: RouteConfiguration) {
+  constructor(port: number, routeName: string, baseListener?: Listener | undefined, baseRouteConfiguration?: RouteConfiguration | undefined, httpFilters?: HttpFilter[]) {
     this.listener = baseListener ?? {...DEFAULT_BASE_SERVER_LISTENER};
     this.listener.name = `[::1]:${port}`;
     this.listener.address = {
@@ -414,11 +415,9 @@ export class FakeServerRoute {
       rds: {
         route_config_name: routeName,
         config_source: {ads: {}}
-      }
+      },
+      http_filters: httpFilters ?? []
     };
-    this.listener.api_listener = {
-      api_listener: httpConnectionManager
-    }
     const filterList = [{
       typed_config: httpConnectionManager
     }];

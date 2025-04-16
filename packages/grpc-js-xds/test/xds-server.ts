@@ -54,7 +54,9 @@ const loadedProtos = loadPackageDefinition(loadSync(
     'envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.proto',
     'envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.proto',
     'envoy/extensions/transport_sockets/tls/v3/tls.proto',
-    'xds/type/v3/typed_struct.proto'
+    'xds/type/v3/typed_struct.proto',
+    'envoy/extensions/filters/http/router/v3/router.proto',
+    'envoy/extensions/filters/http/rbac/v3/rbac.proto'
   ],
   {
     keepCase: true,

@@ -25,6 +25,7 @@ import * as xds_wrr_locality from './load-balancer-xds-wrr-locality';
 import * as ring_hash from './load-balancer-ring-hash';
 import * as router_filter from './http-filter/router-filter';
 import * as fault_injection_filter from './http-filter/fault-injection-filter';
+import * as rbac_filter from './http-filter/rbac-filter';
 import * as csds from './csds';
 import * as round_robin_lb from './lb-policy-registry/round-robin';
 import * as typed_struct_lb from './lb-policy-registry/typed-struct';
@@ -53,6 +54,7 @@ export function register() {
   ring_hash.setup();
   router_filter.setup();
   fault_injection_filter.setup();
+  rbac_filter.setup();
   csds.setup();
   round_robin_lb.setup();
   typed_struct_lb.setup();
