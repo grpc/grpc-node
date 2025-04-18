@@ -256,6 +256,7 @@ export {
 
 export {
   GrpcObject,
+  ServiceClient,
   ServiceClientConstructor,
   ProtobufTypeDefinition,
 } from './make-client';
