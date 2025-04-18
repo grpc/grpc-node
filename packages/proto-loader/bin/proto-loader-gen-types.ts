@@ -47,8 +47,8 @@ type GeneratorOptions = Protobuf.IParseOptions & Protobuf.IConversionOptions & {
   outputTemplate: string;
   inputBranded: boolean;
   outputBranded: boolean;
-  targetFileExtension?: string;
-  importFileExtension?: string;
+  targetFileExtension: string;
+  importFileExtension: string;
 }
 
 class TextFormatter {
@@ -832,7 +832,7 @@ async function writeAllFiles(protoFiles: string[], options: GeneratorOptions) {
   await fs.promises.mkdir(options.outDir, {recursive: true});
   const basenameMap = new Map<string, string[]>();
   for (const filename of protoFiles) {
-    const basename = path.basename(filename).replace(/\.proto$/, '.ts');
+    const basename = path.basename(filename).replace(/\.proto$/, options.targetFileExtension);
     if (basenameMap.has(basename)) {
       basenameMap.get(basename)!.push(filename);
     } else {
