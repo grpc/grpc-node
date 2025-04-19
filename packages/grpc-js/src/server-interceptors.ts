@@ -1005,9 +1005,10 @@ export class BaseServerInterceptingCall
   }
   getAuthContext(): AuthContext {
     if (this.stream.session?.socket instanceof TLSSocket) {
+      const peerCertificate = this.stream.session.socket.getPeerCertificate();
       return {
         transportSecurityType: 'ssl',
-        sslPeerCertificate: this.stream.session.socket.getPeerCertificate()
+        sslPeerCertificate: peerCertificate.raw ? peerCertificate : undefined
       }
     } else {
       return {};

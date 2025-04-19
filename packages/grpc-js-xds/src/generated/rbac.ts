@@ -93,6 +93,18 @@ export interface ProtoGrpcType {
         }
       }
     }
+    extensions: {
+      filters: {
+        http: {
+          rbac: {
+            v3: {
+              RBAC: MessageTypeDefinition
+              RBACPerRoute: MessageTypeDefinition
+            }
+          }
+        }
+      }
+    }
     type: {
       matcher: {
         v3: {
