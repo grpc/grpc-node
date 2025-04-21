@@ -19,7 +19,7 @@ import * as http2 from 'http2';
 import { log } from './logging';
 import { LogVerbosity } from './constants';
 import { getErrorMessage } from './error';
-const LEGAL_KEY_REGEX = /^[0-9a-z_.-]+$/;
+const LEGAL_KEY_REGEX = /^[:0-9a-z_.-]+$/;
 const LEGAL_NON_BINARY_VALUE_REGEX = /^[ -~]*$/;
 
 export type MetadataValue = string | Buffer;
@@ -222,6 +222,9 @@ export class Metadata {
     const result: http2.OutgoingHttpHeaders = {};
 
     for (const [key, values] of this.internalRepr) {
+      if (key.startsWith(':')) {
+        continue;
+      }
       // We assume that the user's interaction with this object is limited to
       // through its public API (i.e. keys and values are already validated).
       result[key] = values.map(bufToString);
