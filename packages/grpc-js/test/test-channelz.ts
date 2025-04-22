@@ -32,9 +32,7 @@ const loadedChannelzProto = protoLoader.loadSync('channelz.proto', {
   oneofs: true,
   includeDirs: [`${__dirname}/../../proto`],
 });
-const channelzGrpcObject = grpc.loadPackageDefinition(
-  loadedChannelzProto
-) as unknown as ProtoGrpcType;
+const channelzGrpcObject = grpc.loadPackageDefinition(loadedChannelzProto) as ProtoGrpcType;
 
 const TestServiceClient = loadProtoFile(
   `${__dirname}/fixtures/test_service.proto`

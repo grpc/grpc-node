@@ -19,7 +19,7 @@ import type { IWaitRequest as I_google_showcase_v1beta1_WaitRequest, OWaitReques
  * paginated calls. Set the 'showcase-trailer' metadata key on any method
  * to have the values echoed in the response trailers.
  */
-export interface EchoClient extends grpc.Client {
+export interface EchoClient extends grpc.ServiceClient {
   /**
    * This method will block (wait) for the requested amount of time
    * and then return the response or error.
