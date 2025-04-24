@@ -92,7 +92,7 @@ export interface _xds_core_v3_ResourceLocator_Directive__Output {
    * xdstp://.../foo#entry=bar.
    */
   'entry'?: (string);
-  'directive': "alt"|"entry";
+  'directive'?: "alt"|"entry";
 }
 
 // Original file: deps/xds/xds/core/v3/resource_locator.proto
@@ -226,5 +226,5 @@ export interface ResourceLocator__Output {
    * separation.
    */
   'directives': (_xds_core_v3_ResourceLocator_Directive__Output)[];
-  'context_param_specifier': "exact_context";
+  'context_param_specifier'?: "exact_context";
 }

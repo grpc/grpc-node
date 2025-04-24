@@ -45,7 +45,7 @@ export interface _envoy_config_core_v3_HealthCheck_CustomHealthCheck__Output {
    * being instantiated. See :api:`envoy/config/health_checker` for reference.
    * [#extension-category: envoy.health_checkers]
    */
-  'config_type': "typed_config";
+  'config_type'?: "typed_config";
 }
 
 /**
@@ -315,7 +315,7 @@ export interface _envoy_config_core_v3_HealthCheck_Payload__Output {
    * Binary payload.
    */
   'binary'?: (Buffer);
-  'payload': "text"|"binary";
+  'payload'?: "text"|"binary";
 }
 
 export interface _envoy_config_core_v3_HealthCheck_RedisHealthCheck {
@@ -775,5 +775,5 @@ export interface HealthCheck__Output {
    * [#extension-category: envoy.health_check.event_sinks]
    */
   'event_logger': (_envoy_config_core_v3_TypedExtensionConfig__Output)[];
-  'health_checker': "http_health_check"|"tcp_health_check"|"grpc_health_check"|"custom_health_check";
+  'health_checker'?: "http_health_check"|"tcp_health_check"|"grpc_health_check"|"custom_health_check";
 }

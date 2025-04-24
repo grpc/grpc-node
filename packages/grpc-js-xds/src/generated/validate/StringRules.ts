@@ -284,5 +284,5 @@ export interface StringRules__Output {
    * WellKnown rules provide advanced constraints against common string
    * patterns
    */
-  'well_known': "email"|"hostname"|"ip"|"ipv4"|"ipv6"|"uri"|"uri_ref"|"address"|"uuid"|"well_known_regex";
+  'well_known'?: "email"|"hostname"|"ip"|"ipv4"|"ipv6"|"uri"|"uri_ref"|"address"|"uuid"|"well_known_regex";
 }

@@ -101,5 +101,5 @@ export interface RegexMatcher__Output {
    * against the full string, not as a partial match.
    */
   'regex': (string);
-  'engine_type': "google_re2";
+  'engine_type'?: "google_re2";
 }

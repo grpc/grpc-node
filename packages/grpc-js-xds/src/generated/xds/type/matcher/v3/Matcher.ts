@@ -111,7 +111,7 @@ export interface _xds_type_matcher_v3_Matcher_MatcherTree__Output {
    * If the lookup succeeds, the match is considered successful, and
    * the corresponding OnMatch is used.
    */
-  'tree_type': "exact_match_map"|"prefix_match_map"|"custom_match";
+  'tree_type'?: "exact_match_map"|"prefix_match_map"|"custom_match";
 }
 
 /**
@@ -149,7 +149,7 @@ export interface _xds_type_matcher_v3_Matcher_OnMatch__Output {
    * Protocol-specific action to take.
    */
   'action'?: (_xds_core_v3_TypedExtensionConfig__Output | null);
-  'on_match': "matcher"|"action";
+  'on_match'?: "matcher"|"action";
 }
 
 /**
@@ -195,7 +195,7 @@ export interface _xds_type_matcher_v3_Matcher_MatcherList_Predicate__Output {
    * The invert of a predicate
    */
   'not_matcher'?: (_xds_type_matcher_v3_Matcher_MatcherList_Predicate__Output | null);
-  'match_type': "single_predicate"|"or_matcher"|"and_matcher"|"not_matcher";
+  'match_type'?: "single_predicate"|"or_matcher"|"and_matcher"|"not_matcher";
 }
 
 /**
@@ -251,7 +251,7 @@ export interface _xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredic
    * [#extension-category: envoy.matching.input_matchers]
    */
   'custom_match'?: (_xds_core_v3_TypedExtensionConfig__Output | null);
-  'matcher': "value_match"|"custom_match";
+  'matcher'?: "value_match"|"custom_match";
 }
 
 /**
@@ -303,5 +303,5 @@ export interface Matcher__Output {
    * If not specified, the matcher is considered not to have matched.
    */
   'on_no_match': (_xds_type_matcher_v3_Matcher_OnMatch__Output | null);
-  'matcher_type': "matcher_list"|"matcher_tree";
+  'matcher_type'?: "matcher_list"|"matcher_tree";
 }

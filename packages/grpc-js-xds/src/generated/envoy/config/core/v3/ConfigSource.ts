@@ -141,5 +141,5 @@ export interface ConfigSource__Output {
    * Local filesystem path configuration source.
    */
   'path_config_source'?: (_envoy_config_core_v3_PathConfigSource__Output | null);
-  'config_source_specifier': "path"|"path_config_source"|"api_config_source"|"ads"|"self";
+  'config_source_specifier'?: "path"|"path_config_source"|"api_config_source"|"ads"|"self";
 }

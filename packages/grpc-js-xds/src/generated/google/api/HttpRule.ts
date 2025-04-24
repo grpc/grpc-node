@@ -676,5 +676,5 @@ export interface HttpRule__Output {
    * used with any of the {get|put|post|delete|patch} methods. A custom method
    * can be defined using the 'custom' field.
    */
-  'pattern': "get"|"put"|"post"|"delete"|"patch"|"custom";
+  'pattern'?: "get"|"put"|"post"|"delete"|"patch"|"custom";
 }

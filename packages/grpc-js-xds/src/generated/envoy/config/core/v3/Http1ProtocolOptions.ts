@@ -42,7 +42,7 @@ export interface _envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat__Out
    * [#extension-category: envoy.http.stateful_header_formatters]
    */
   'stateful_formatter'?: (_envoy_config_core_v3_TypedExtensionConfig__Output | null);
-  'header_format': "proper_case_words"|"stateful_formatter";
+  'header_format'?: "proper_case_words"|"stateful_formatter";
 }
 
 export interface _envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords {

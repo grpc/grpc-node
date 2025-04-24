@@ -22,7 +22,7 @@ export interface _envoy_type_metadata_v3_MetadataKey_PathSegment__Output {
    * If specified, use the key to retrieve the value in a Struct.
    */
   'key'?: (string);
-  'segment': "key";
+  'segment'?: "key";
 }
 
 /**

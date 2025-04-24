@@ -149,5 +149,5 @@ export interface BytesRules__Output {
    * WellKnown rules provide advanced constraints against common byte
    * patterns
    */
-  'well_known': "ip"|"ipv4"|"ipv6";
+  'well_known'?: "ip"|"ipv4"|"ipv6";
 }

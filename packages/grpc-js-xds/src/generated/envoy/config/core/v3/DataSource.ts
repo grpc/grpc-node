@@ -44,5 +44,5 @@ export interface DataSource__Output {
    * Environment variable data source.
    */
   'environment_variable'?: (string);
-  'specifier': "filename"|"inline_bytes"|"inline_string"|"environment_variable";
+  'specifier'?: "filename"|"inline_bytes"|"inline_string"|"environment_variable";
 }

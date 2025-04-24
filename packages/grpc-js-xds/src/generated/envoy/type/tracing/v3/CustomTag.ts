@@ -194,5 +194,5 @@ export interface CustomTag__Output {
   /**
    * Used to specify what kind of custom tag.
    */
-  'type': "literal"|"environment"|"request_header"|"metadata";
+  'type'?: "literal"|"environment"|"request_header"|"metadata";
 }

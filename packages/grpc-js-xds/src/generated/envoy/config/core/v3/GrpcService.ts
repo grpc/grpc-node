@@ -95,7 +95,7 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials__O
    * See https://github.com/grpc/grpc/pull/19587.
    */
   'sts_service'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_StsService__Output | null);
-  'credential_specifier': "access_token"|"google_compute_engine"|"google_refresh_token"|"service_account_jwt_access"|"google_iam"|"from_plugin"|"sts_service";
+  'credential_specifier'?: "access_token"|"google_compute_engine"|"google_refresh_token"|"service_account_jwt_access"|"google_iam"|"from_plugin"|"sts_service";
 }
 
 /**
@@ -143,7 +143,7 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials
    */
   'google_default'?: (_google_protobuf_Empty__Output | null);
   'local_credentials'?: (_envoy_config_core_v3_GrpcService_GoogleGrpc_GoogleLocalCredentials__Output | null);
-  'credential_specifier': "ssl_credentials"|"google_default"|"local_credentials";
+  'credential_specifier'?: "ssl_credentials"|"google_default"|"local_credentials";
 }
 
 export interface _envoy_config_core_v3_GrpcService_EnvoyGrpc {
@@ -327,7 +327,7 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_Me
   /**
    * [#extension-category: envoy.grpc_credentials]
    */
-  'config_type': "typed_config";
+  'config_type'?: "typed_config";
 }
 
 export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials {
@@ -501,7 +501,7 @@ export interface _envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_
    * Pointer values are not supported, since they don't make any sense when
    * delivered via the API.
    */
-  'value_specifier': "string_value"|"int_value";
+  'value_specifier'?: "string_value"|"int_value";
 }
 
 /**
@@ -569,5 +569,5 @@ export interface GrpcService__Output {
    * <config_http_conn_man_headers_custom_request_headers>`.
    */
   'initial_metadata': (_envoy_config_core_v3_HeaderValue__Output)[];
-  'target_specifier': "envoy_grpc"|"google_grpc";
+  'target_specifier'?: "envoy_grpc"|"google_grpc";
 }

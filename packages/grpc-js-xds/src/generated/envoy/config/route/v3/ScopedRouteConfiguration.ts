@@ -15,7 +15,7 @@ export interface _envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment__O
    * A string to match against.
    */
   'string_key'?: (string);
-  'type': "string_key";
+  'type'?: "string_key";
 }
 
 /**
