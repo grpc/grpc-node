@@ -171,6 +171,8 @@ function getPredicateForHeaderMatcher(headerMatch: HeaderMatcher__Output): Match
         case 'contains':
           valueChecker = new ContainsValueMatcher(stringMatch.contains!, stringMatch.ignore_case);
           break;
+        default:
+          valueChecker = new RejectValueMatcher();
       }
       break;
     default:

@@ -139,5 +139,5 @@ export interface CorsPolicy__Output {
    * More details refer to https://developer.chrome.com/blog/private-network-access-preflight.
    */
   'allow_private_network_access': (_google_protobuf_BoolValue__Output | null);
-  'enabled_specifier': "filter_enabled";
+  'enabled_specifier'?: "filter_enabled";
 }

@@ -197,5 +197,5 @@ export interface SubstitutionFormatString__Output {
    * [#extension-category: envoy.formatter]
    */
   'formatters': (_envoy_config_core_v3_TypedExtensionConfig__Output)[];
-  'format': "text_format"|"json_format"|"text_format_source";
+  'format'?: "text_format"|"json_format"|"text_format_source";
 }

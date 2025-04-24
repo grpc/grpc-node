@@ -94,5 +94,5 @@ export interface MetadataKind__Output {
    * Host kind of metadata.
    */
   'host'?: (_envoy_type_metadata_v3_MetadataKind_Host__Output | null);
-  'kind': "request"|"route"|"cluster"|"host";
+  'kind'?: "request"|"route"|"cluster"|"host";
 }

@@ -43,5 +43,5 @@ export interface QueryParameterMatcher__Output {
    * Specifies whether a query parameter should be present.
    */
   'present_match'?: (boolean);
-  'query_parameter_match_specifier': "string_match"|"present_match";
+  'query_parameter_match_specifier'?: "string_match"|"present_match";
 }

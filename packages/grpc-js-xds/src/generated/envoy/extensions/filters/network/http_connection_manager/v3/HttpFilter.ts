@@ -76,5 +76,5 @@ export interface HttpFilter__Output {
    * Otherwise, clients that do not support this filter must reject the config.
    */
   'is_optional': (boolean);
-  'config_type': "typed_config"|"config_discovery";
+  'config_type'?: "typed_config"|"config_discovery";
 }

@@ -223,7 +223,7 @@ export interface _envoy_config_route_v3_RetryPolicy_RetryHostPredicate__Output {
   /**
    * [#extension-category: envoy.retry_host_predicates]
    */
-  'config_type': "typed_config";
+  'config_type'?: "typed_config";
 }
 
 export interface _envoy_config_route_v3_RetryPolicy_RetryPriority {
@@ -241,7 +241,7 @@ export interface _envoy_config_route_v3_RetryPolicy_RetryPriority__Output {
   /**
    * [#extension-category: envoy.retry_priorities]
    */
-  'config_type': "typed_config";
+  'config_type'?: "typed_config";
 }
 
 /**

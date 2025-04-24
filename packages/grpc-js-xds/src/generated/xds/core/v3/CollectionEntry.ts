@@ -86,5 +86,5 @@ export interface CollectionEntry__Output {
    * The resource is inlined in the list collection.
    */
   'inline_entry'?: (_xds_core_v3_CollectionEntry_InlineEntry__Output | null);
-  'resource_specifier': "locator"|"inline_entry";
+  'resource_specifier'?: "locator"|"inline_entry";
 }

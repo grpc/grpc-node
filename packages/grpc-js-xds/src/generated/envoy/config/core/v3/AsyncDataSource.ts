@@ -30,5 +30,5 @@ export interface AsyncDataSource__Output {
    * Remote async data source.
    */
   'remote'?: (_envoy_config_core_v3_RemoteDataSource__Output | null);
-  'specifier': "local"|"remote";
+  'specifier'?: "local"|"remote";
 }

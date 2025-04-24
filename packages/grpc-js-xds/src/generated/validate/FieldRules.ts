@@ -98,5 +98,5 @@ export interface FieldRules__Output {
   'any'?: (_validate_AnyRules__Output | null);
   'duration'?: (_validate_DurationRules__Output | null);
   'timestamp'?: (_validate_TimestampRules__Output | null);
-  'type': "float"|"double"|"int32"|"int64"|"uint32"|"uint64"|"sint32"|"sint64"|"fixed32"|"fixed64"|"sfixed32"|"sfixed64"|"bool"|"string"|"bytes"|"enum"|"repeated"|"map"|"any"|"duration"|"timestamp";
+  'type'?: "float"|"double"|"int32"|"int64"|"uint32"|"uint64"|"sint32"|"sint64"|"fixed32"|"fixed64"|"sfixed32"|"sfixed64"|"bool"|"string"|"bytes"|"enum"|"repeated"|"map"|"any"|"duration"|"timestamp";
 }

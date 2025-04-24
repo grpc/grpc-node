@@ -45,7 +45,7 @@ export interface _envoy_config_trace_v3_Tracing_Http__Output {
    * Trace driver specific configuration which must be set according to the driver being instantiated.
    * [#extension-category: envoy.tracers]
    */
-  'config_type': "typed_config";
+  'config_type'?: "typed_config";
 }
 
 /**

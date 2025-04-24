@@ -105,5 +105,5 @@ export interface StringMatcher__Output {
    * * *abc* matches the value *xyz.abc.def*
    */
   'contains'?: (string);
-  'match_pattern': "exact"|"prefix"|"suffix"|"safe_regex"|"contains";
+  'match_pattern'?: "exact"|"prefix"|"suffix"|"safe_regex"|"contains";
 }

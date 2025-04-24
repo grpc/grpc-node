@@ -119,18 +119,18 @@ export class RouteConfigurationResourceType extends XdsResourceType {
         if (!match) {
           return null;
         }
-        if (SUPPORTED_PATH_SPECIFIERS.indexOf(match.path_specifier) < 0) {
+        if (!match.path_specifier || SUPPORTED_PATH_SPECIFIERS.indexOf(match.path_specifier) < 0) {
           return null;
         }
         for (const headers of match.headers) {
-          if (SUPPPORTED_HEADER_MATCH_SPECIFIERS.indexOf(headers.header_match_specifier) < 0) {
+          if (!headers.header_match_specifier || SUPPPORTED_HEADER_MATCH_SPECIFIERS.indexOf(headers.header_match_specifier) < 0) {
             return null;
           }
         }
         if (route.action !== 'route') {
           return null;
         }
-        if ((route.route === undefined) || (route.route === null) || SUPPORTED_CLUSTER_SPECIFIERS.indexOf(route.route.cluster_specifier) < 0) {
+        if ((route.route === undefined) || (route.route === null) || !route.route.cluster_specifier || SUPPORTED_CLUSTER_SPECIFIERS.indexOf(route.route.cluster_specifier) < 0) {
           return null;
         }
         if (EXPERIMENTAL_FAULT_INJECTION) {

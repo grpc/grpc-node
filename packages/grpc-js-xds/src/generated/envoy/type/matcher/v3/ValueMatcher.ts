@@ -97,5 +97,5 @@ export interface ValueMatcher__Output {
   /**
    * Specifies how to match a value.
    */
-  'match_pattern': "null_match"|"double_match"|"string_match"|"bool_match"|"present_match"|"list_match";
+  'match_pattern'?: "null_match"|"double_match"|"string_match"|"bool_match"|"present_match"|"list_match";
 }

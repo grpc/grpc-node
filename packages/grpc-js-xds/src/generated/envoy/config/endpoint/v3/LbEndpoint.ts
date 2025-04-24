@@ -86,5 +86,5 @@ export interface LbEndpoint__Output {
   /**
    * Upstream host identifier or a named reference.
    */
-  'host_identifier': "endpoint"|"endpoint_name";
+  'host_identifier'?: "endpoint"|"endpoint_name";
 }

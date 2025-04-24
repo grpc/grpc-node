@@ -20,5 +20,5 @@ export interface SchemeHeaderTransformation__Output {
    * Overwrite any Scheme header with the contents of this string.
    */
   'scheme_to_overwrite'?: (string);
-  'transformation': "scheme_to_overwrite";
+  'transformation'?: "scheme_to_overwrite";
 }
