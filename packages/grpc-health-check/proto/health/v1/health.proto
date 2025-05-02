@@ -25,6 +25,13 @@ option java_multiple_files = true;
 option java_outer_classname = "HealthProto";
 option java_package = "io.grpc.health.v1";
 
+message HealthListRequest {}
+
+message HealthListResponse {
+  // statuses contains all the services and their respective status.
+  map<string, HealthCheckResponse> statuses = 1;
+}
+
 message HealthCheckRequest {
   string service = 1;
 }
@@ -70,4 +77,17 @@ service Health {
   // call.  If the call terminates with any other status (including OK),
   // clients should retry the call with appropriate exponential backoff.
   rpc Watch(HealthCheckRequest) returns (stream HealthCheckResponse);
+
+  // List provides a non-atomic snapshot of the health of all the available
+  // services.
+  //
+  // The server may respond with a RESOURCE_EXHAUSTED error if too many services
+  // exist.
+  //
+  // Clients should set a deadline when calling List, and can declare the server
+  // unhealthy if they do not receive a timely response.
+  //
+  // Clients should keep in mind that the list of health services exposed by an
+  // application can change over the lifetime of the process.
+  rpc List(HealthListRequest) returns (HealthListResponse);
 }
