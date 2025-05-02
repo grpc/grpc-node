@@ -1272,7 +1272,7 @@ export class Server {
     return this.channelzRef;
   }
 
-  private _checkCORS(
+  private _respondWithCORS(
     stream: http2.ServerHttp2Stream,
     headers: http2.IncomingHttpHeaders
   ): boolean {
@@ -1293,10 +1293,10 @@ export class Server {
         },
         { endStream: true }
       );
-      return false;
+      return true;
     }
 
-    return true;
+    return false;
   }
 
   private _verifyContentType(
@@ -1454,7 +1454,7 @@ export class Server {
     // for handling idle timeout
     this.onStreamOpened(stream);
 
-    if (!this._checkCORS(stream, headers)) {
+    if (this._respondWithCORS(stream, headers)) {
       return;
     }
 
