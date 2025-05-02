@@ -257,6 +257,7 @@ interface SessionIdleTimeoutTracker {
 }
 
 export interface ServerOptions extends ChannelOptions {
+  allowedOrigin?: string;
   interceptors?: ServerInterceptor[];
 }
 
@@ -299,6 +300,8 @@ export class Server {
   private sessionChildrenTracker:
     | ChannelzChildrenTracker
     | ChannelzChildrenTrackerStub;
+
+  private readonly allowedOrigin?: string;
 
   private readonly maxConnectionAgeMs: number;
   private readonly maxConnectionAgeGraceMs: number;
@@ -368,6 +371,7 @@ export class Server {
         maxConcurrentStreams: this.options['grpc.max_concurrent_streams'],
       };
     }
+    this.allowedOrigin = this.options.allowedOrigin;
     this.interceptors = this.options.interceptors ?? [];
     this.trace('Server constructed');
   }
@@ -1268,6 +1272,33 @@ export class Server {
     return this.channelzRef;
   }
 
+  private _checkCORS(
+    stream: http2.ServerHttp2Stream,
+    headers: http2.IncomingHttpHeaders
+  ): boolean {
+    const httpMethod = String(
+      headers[http2.constants.HTTP2_HEADER_METHOD] || ''
+    ).toLowerCase();
+
+    if (this.allowedOrigin && httpMethod === 'options') {
+      stream.respond(
+        {
+          [http2.constants.HTTP2_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN]:
+            this.allowedOrigin,
+          [http2.constants.HTTP2_HEADER_ACCESS_CONTROL_ALLOW_METHODS]:
+            'OPTIONS,POST',
+          [http2.constants.HTTP2_HEADER_ACCESS_CONTROL_ALLOW_HEADERS]:
+            'Accept-Encoding,Content-Type,Grpc-Accept-Encoding,Te,X-Grpc-Accept-Encoding,X-Te',
+          [http2.constants.HTTP2_HEADER_STATUS]: http2.constants.HTTP_STATUS_OK,
+        },
+        { endStream: true }
+      );
+      return false;
+    }
+
+    return true;
+  }
+
   private _verifyContentType(
     stream: http2.ServerHttp2Stream,
     headers: http2.IncomingHttpHeaders
@@ -1422,6 +1453,10 @@ export class Server {
   ) {
     // for handling idle timeout
     this.onStreamOpened(stream);
+
+    if (!this._checkCORS(stream, headers)) {
+      return;
+    }
 
     if (this._verifyContentType(stream, headers) !== true) {
       return;
