@@ -206,6 +206,18 @@ function getConnectionOptions(secureContext: SecureContext, verifyOptions: Verif
   const connectionOptions: ConnectionOptions = {
     secureContext: secureContext
   };
+  let realTarget: GrpcUri = channelTarget;
+  if ('grpc.http_connect_target' in options) {
+    const parsedTarget = parseUri(options['grpc.http_connect_target']!);
+    if (parsedTarget) {
+      realTarget = parsedTarget;
+    }
+  }
+  const targetPath = getDefaultAuthority(realTarget);
+  const hostPort = splitHostPort(targetPath);
+  const remoteHost = hostPort?.host ?? targetPath;
+  connectionOptions.host = remoteHost;
+
   if (verifyOptions.checkServerIdentity) {
     connectionOptions.checkServerIdentity = verifyOptions.checkServerIdentity;
   }
@@ -225,36 +237,11 @@ function getConnectionOptions(secureContext: SecureContext, verifyOptions: Verif
     };
     connectionOptions.servername = sslTargetNameOverride;
   } else {
-    if ('grpc.http_connect_target' in options) {
-      /* This is more or less how servername will be set in createSession
-       * if a connection is successfully established through the proxy.
-       * If the proxy is not used, these connectionOptions are discarded
-       * anyway */
-      const targetPath = getDefaultAuthority(
-        parseUri(options['grpc.http_connect_target'] as string) ?? {
-          path: 'localhost',
-        }
-      );
-      const hostPort = splitHostPort(targetPath);
-      connectionOptions.servername = hostPort?.host ?? targetPath;
-    }
+    connectionOptions.servername = remoteHost;
   }
   if (options['grpc-node.tls_enable_trace']) {
     connectionOptions.enableTrace = true;
   }
-
-  let realTarget: GrpcUri = channelTarget;
-  if ('grpc.http_connect_target' in options) {
-    const parsedTarget = parseUri(options['grpc.http_connect_target']!);
-    if (parsedTarget) {
-      realTarget = parsedTarget;
-    }
-  }
-  const targetPath = getDefaultAuthority(realTarget);
-  const hostPort = splitHostPort(targetPath);
-  const remoteHost = hostPort?.host ?? targetPath;
-  connectionOptions.host = remoteHost;
-  connectionOptions.servername = remoteHost;
   return connectionOptions;
 }
 
