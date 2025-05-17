@@ -21,6 +21,8 @@ import { loadSync, ServiceDefinition } from '@grpc/proto-loader';
 import { HealthCheckRequest__Output } from './generated/grpc/health/v1/HealthCheckRequest';
 import { HealthCheckResponse } from './generated/grpc/health/v1/HealthCheckResponse';
 import { sendUnaryData, Server, ServerUnaryCall, ServerWritableStream } from './server-type';
+import { HealthListRequest } from './generated/grpc/health/v1/HealthListRequest';
+import { HealthListResponse } from './generated/grpc/health/v1/HealthListResponse';
 
 const loadedProto = loadSync('health/v1/health.proto', {
   keepCase: true,
@@ -34,6 +36,8 @@ const loadedProto = loadSync('health/v1/health.proto', {
 export const service = loadedProto['grpc.health.v1.Health'] as ServiceDefinition;
 
 const GRPC_STATUS_NOT_FOUND = 5;
+const GRPC_STATUS_RESOURCE_EXHAUSTED = 8;
+const RESOURCE_EXHAUSTION_LIMIT = 100;
 
 export type ServingStatus = 'UNKNOWN' | 'SERVING' | 'NOT_SERVING';
 
@@ -104,7 +108,25 @@ export class HealthImplementation {
         } else {
           call.write({status: 'SERVICE_UNKNOWN'});
         }
-      }
+      },
+      list: (_call: ServerUnaryCall<HealthListRequest, HealthListResponse>, callback: sendUnaryData<HealthListResponse>) => {
+        const statuses: { [key: string]: HealthCheckResponse } = {};
+        let serviceCount = 0;
+
+        for (const [serviceName, status] of this.statusMap.entries()) {
+          if (serviceCount >= RESOURCE_EXHAUSTION_LIMIT) {
+            const error = {
+              code: GRPC_STATUS_RESOURCE_EXHAUSTED,
+              details: 'Too many services to list.',
+            };
+            callback(error, null);
+            return;
+          }
+          statuses[serviceName] = { status };
+          serviceCount++;
+        }
+        callback(null, { statuses });
+      },
     });
   }
 }
