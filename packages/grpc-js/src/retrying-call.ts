@@ -136,7 +136,12 @@ interface UnderlyingCall {
  * sent
  * NO_RETRY: Retries are disabled. Exists to track the transition to COMMITTED
  */
-type RetryingCallState = 'RETRY' | 'HEDGING' | 'TRANSPARENT_ONLY' | 'COMMITTED' | 'NO_RETRY';
+type RetryingCallState =
+  | 'RETRY'
+  | 'HEDGING'
+  | 'TRANSPARENT_ONLY'
+  | 'COMMITTED'
+  | 'NO_RETRY';
 
 /**
  * The different types of objects that can be stored in the write buffer, with
@@ -217,7 +222,9 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     private readonly bufferTracker: MessageBufferTracker,
     private readonly retryThrottler?: RetryThrottler
   ) {
-    const maxAttemptsLimit = channel.getOptions()['grpc-node.retry_max_attempts_limit'] ?? DEFAULT_MAX_ATTEMPTS_LIMIT;
+    const maxAttemptsLimit =
+      channel.getOptions()['grpc-node.retry_max_attempts_limit'] ??
+      DEFAULT_MAX_ATTEMPTS_LIMIT;
     if (callConfig.methodConfig.retryPolicy) {
       this.state = 'RETRY';
       const retryPolicy = callConfig.methodConfig.retryPolicy;
@@ -230,7 +237,10 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
       this.maxAttempts = Math.min(retryPolicy.maxAttempts, maxAttemptsLimit);
     } else if (callConfig.methodConfig.hedgingPolicy) {
       this.state = 'HEDGING';
-      this.maxAttempts = Math.min(callConfig.methodConfig.hedgingPolicy.maxAttempts, maxAttemptsLimit);
+      this.maxAttempts = Math.min(
+        callConfig.methodConfig.hedgingPolicy.maxAttempts,
+        maxAttemptsLimit
+      );
     } else if (channel.getOptions()['grpc.enable_retries'] === 0) {
       this.state = 'NO_RETRY';
       this.maxAttempts = 1;
@@ -247,10 +257,17 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     const deadlineInfo: string[] = [];
     const latestCall = this.underlyingCalls[this.underlyingCalls.length - 1];
     if (this.underlyingCalls.length > 1) {
-      deadlineInfo.push(`previous attempts: ${this.underlyingCalls.length - 1}`);
+      deadlineInfo.push(
+        `previous attempts: ${this.underlyingCalls.length - 1}`
+      );
     }
     if (latestCall.startTime > this.startTime) {
-      deadlineInfo.push(`time to current attempt start: ${formatDateDifference(this.startTime, latestCall.startTime)}`);
+      deadlineInfo.push(
+        `time to current attempt start: ${formatDateDifference(
+          this.startTime,
+          latestCall.startTime
+        )}`
+      );
     }
     deadlineInfo.push(...latestCall.call.getDeadlineInfo());
     return deadlineInfo;
@@ -412,12 +429,18 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     );
   }
 
+  private getNextRetryJitter() {
+    /* Jitter of +-20% is applied: https://github.com/grpc/proposal/blob/master/A6-client-retries.md#exponential-backoff */
+    return Math.random() * (1.2 - 0.8) + 0.8;
+  }
+
   private getNextRetryBackoffMs() {
     const retryPolicy = this.callConfig?.methodConfig.retryPolicy;
     if (!retryPolicy) {
       return 0;
     }
-    const nextBackoffMs = Math.random() * this.nextRetryBackoffSec * 1000;
+    const jitter = this.getNextRetryJitter();
+    const nextBackoffMs = jitter * this.nextRetryBackoffSec * 1000;
     const maxBackoffSec = Number(
       retryPolicy.maxBackoff.substring(0, retryPolicy.maxBackoff.length - 1)
     );
@@ -669,7 +692,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
       state: 'ACTIVE',
       call: child,
       nextMessageToSend: 0,
-      startTime: new Date()
+      startTime: new Date(),
     });
     const previousAttempts = this.attempts - 1;
     const initialMetadata = this.initialMetadata!.clone();
@@ -862,7 +885,9 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
   }
   getAuthContext(): AuthContext | null {
     if (this.committedCallIndex !== null) {
-      return this.underlyingCalls[this.committedCallIndex].call.getAuthContext();
+      return this.underlyingCalls[
+        this.committedCallIndex
+      ].call.getAuthContext();
     } else {
       return null;
     }
