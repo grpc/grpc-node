@@ -5,15 +5,19 @@ import type { IDescriptorProto as I_google_protobuf_DescriptorProto, ODescriptor
 import type { IEnumDescriptorProto as I_google_protobuf_EnumDescriptorProto, OEnumDescriptorProto as O_google_protobuf_EnumDescriptorProto } from '../../google/protobuf/EnumDescriptorProto';
 import type { IMessageOptions as I_google_protobuf_MessageOptions, OMessageOptions as O_google_protobuf_MessageOptions } from '../../google/protobuf/MessageOptions';
 import type { IOneofDescriptorProto as I_google_protobuf_OneofDescriptorProto, OOneofDescriptorProto as O_google_protobuf_OneofDescriptorProto } from '../../google/protobuf/OneofDescriptorProto';
+import type { ISymbolVisibility as I_google_protobuf_SymbolVisibility, OSymbolVisibility as O_google_protobuf_SymbolVisibility } from '../../google/protobuf/SymbolVisibility';
+import type { IExtensionRangeOptions as I_google_protobuf_ExtensionRangeOptions, OExtensionRangeOptions as O_google_protobuf_ExtensionRangeOptions } from '../../google/protobuf/ExtensionRangeOptions';
 
 export interface I_google_protobuf_DescriptorProto_ExtensionRange {
   'start'?: (number);
   'end'?: (number);
+  'options'?: (I_google_protobuf_ExtensionRangeOptions | null);
 }
 
 export interface O_google_protobuf_DescriptorProto_ExtensionRange {
   'start': (number);
   'end': (number);
+  'options': (O_google_protobuf_ExtensionRangeOptions | null);
 }
 
 export interface I_google_protobuf_DescriptorProto_ReservedRange {
@@ -37,6 +41,7 @@ export interface IDescriptorProto {
   'oneofDecl'?: (I_google_protobuf_OneofDescriptorProto)[];
   'reservedRange'?: (I_google_protobuf_DescriptorProto_ReservedRange)[];
   'reservedName'?: (string)[];
+  'visibility'?: (I_google_protobuf_SymbolVisibility);
 }
 
 export interface ODescriptorProto {
@@ -50,4 +55,5 @@ export interface ODescriptorProto {
   'oneofDecl': (O_google_protobuf_OneofDescriptorProto)[];
   'reservedRange': (O_google_protobuf_DescriptorProto_ReservedRange)[];
   'reservedName': (string)[];
+  'visibility': (O_google_protobuf_SymbolVisibility);
 }

@@ -6,17 +6,17 @@ import type { IFieldOptions as I_google_protobuf_FieldOptions, OFieldOptions as 
 
 export const _google_protobuf_FieldDescriptorProto_Label = {
   LABEL_OPTIONAL: 'LABEL_OPTIONAL',
-  LABEL_REQUIRED: 'LABEL_REQUIRED',
   LABEL_REPEATED: 'LABEL_REPEATED',
+  LABEL_REQUIRED: 'LABEL_REQUIRED',
 } as const;
 
 export type I_google_protobuf_FieldDescriptorProto_Label =
   | 'LABEL_OPTIONAL'
   | 1
-  | 'LABEL_REQUIRED'
-  | 2
   | 'LABEL_REPEATED'
   | 3
+  | 'LABEL_REQUIRED'
+  | 2
 
 export type O_google_protobuf_FieldDescriptorProto_Label = typeof _google_protobuf_FieldDescriptorProto_Label[keyof typeof _google_protobuf_FieldDescriptorProto_Label]
 
@@ -94,6 +94,7 @@ export interface IFieldDescriptorProto {
   'options'?: (I_google_protobuf_FieldOptions | null);
   'oneofIndex'?: (number);
   'jsonName'?: (string);
+  'proto3Optional'?: (boolean);
 }
 
 export interface OFieldDescriptorProto {
@@ -107,4 +108,5 @@ export interface OFieldDescriptorProto {
   'options': (O_google_protobuf_FieldOptions | null);
   'oneofIndex': (number);
   'jsonName': (string);
+  'proto3Optional': (boolean);
 }
