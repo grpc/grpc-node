@@ -6,6 +6,7 @@ import type { IServiceDescriptorProto as I_google_protobuf_ServiceDescriptorProt
 import type { IFieldDescriptorProto as I_google_protobuf_FieldDescriptorProto, OFieldDescriptorProto as O_google_protobuf_FieldDescriptorProto } from '../../google/protobuf/FieldDescriptorProto';
 import type { IFileOptions as I_google_protobuf_FileOptions, OFileOptions as O_google_protobuf_FileOptions } from '../../google/protobuf/FileOptions';
 import type { ISourceCodeInfo as I_google_protobuf_SourceCodeInfo, OSourceCodeInfo as O_google_protobuf_SourceCodeInfo } from '../../google/protobuf/SourceCodeInfo';
+import type { IEdition as I_google_protobuf_Edition, OEdition as O_google_protobuf_Edition } from '../../google/protobuf/Edition';
 
 export interface IFileDescriptorProto {
   'name'?: (string);
@@ -20,6 +21,8 @@ export interface IFileDescriptorProto {
   'publicDependency'?: (number)[];
   'weakDependency'?: (number)[];
   'syntax'?: (string);
+  'edition'?: (I_google_protobuf_Edition);
+  'optionDependency'?: (string)[];
 }
 
 export interface OFileDescriptorProto {
@@ -35,4 +38,6 @@ export interface OFileDescriptorProto {
   'publicDependency': (number)[];
   'weakDependency': (number)[];
   'syntax': (string);
+  'edition': (O_google_protobuf_Edition);
+  'optionDependency': (string)[];
 }
