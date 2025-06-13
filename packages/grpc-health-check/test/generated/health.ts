@@ -19,6 +19,8 @@ export interface ProtoGrpcType {
         Health: SubtypeConstructor<typeof grpc.Client, _grpc_health_v1_HealthClient> & { service: _grpc_health_v1_HealthDefinition }
         HealthCheckRequest: MessageTypeDefinition
         HealthCheckResponse: MessageTypeDefinition
+        HealthListRequest: MessageTypeDefinition
+        HealthListResponse: MessageTypeDefinition
       }
     }
   }
