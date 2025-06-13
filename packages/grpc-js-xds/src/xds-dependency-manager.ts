@@ -323,6 +323,9 @@ function getEdsResource(edsUpdate: ClusterLoadAssignment__Output): EndpointResou
 }
 
 function getDnsResource(endpoints: Endpoint[]): EndpointResource {
+  const endpoint: Endpoint = {
+    addresses: endpoints.map(endpoint => endpoint.addresses).flat()
+  }
   return {
     priorities: [{
       localities: [{
@@ -332,7 +335,7 @@ function getDnsResource(endpoints: Endpoint[]): EndpointResource {
           sub_zone: ''
         },
         weight: 1,
-        endpoints: endpoints.map(endpoint => ({endpoint: endpoint, weight: 1}))
+        endpoints: [{endpoint: endpoint, weight: 1}]
       }]
     }],
     dropCategories: []
