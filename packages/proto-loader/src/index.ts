@@ -107,8 +107,10 @@ export interface ProtobufTypeDefinition {
   fileDescriptorProtos: Buffer[];
 }
 
-export interface MessageTypeDefinition extends ProtobufTypeDefinition {
+export interface MessageTypeDefinition<InputType, OutputType> extends ProtobufTypeDefinition {
   format: 'Protocol Buffer 3 DescriptorProto';
+  serialize: Serialize<InputType>;
+  deserialize: Deserialize<OutputType>
 }
 
 export interface EnumTypeDefinition extends ProtobufTypeDefinition {
@@ -152,8 +154,8 @@ export interface MethodDefinition<RequestType, ResponseType, OutputRequestType=R
   requestDeserialize: Deserialize<OutputRequestType>;
   responseDeserialize: Deserialize<OutputResponseType>;
   originalName?: string;
-  requestType: MessageTypeDefinition;
-  responseType: MessageTypeDefinition;
+  requestType: MessageTypeDefinition<RequestType, OutputRequestType>;
+  responseType: MessageTypeDefinition<ResponseType, OutputResponseType>;
   options: MethodOptions;
 }
 
@@ -163,7 +165,7 @@ export interface ServiceDefinition {
 
 export type AnyDefinition =
   | ServiceDefinition
-  | MessageTypeDefinition
+  | MessageTypeDefinition<object, object>
   | EnumTypeDefinition;
 
 export interface PackageDefinition {
@@ -290,8 +292,8 @@ function createMethodDefinition(
     responseDeserialize: createDeserializer(responseType, options),
     // TODO(murgatroid99): Find a better way to handle this
     originalName: camelCase(method.name),
-    requestType: createMessageDefinition(requestType, fileDescriptors),
-    responseType: createMessageDefinition(responseType, fileDescriptors),
+    requestType: createMessageDefinition(requestType, options, fileDescriptors),
+    responseType: createMessageDefinition(responseType, options, fileDescriptors),
     options: mapMethodOptions(method.parsedOptions),
   };
 }
@@ -316,8 +318,9 @@ function createServiceDefinition(
 
 function createMessageDefinition(
   message: Protobuf.Type,
+  options: Options,
   fileDescriptors: Buffer[]
-): MessageTypeDefinition {
+): MessageTypeDefinition<object, object> {
   const messageDescriptor: protobuf.Message<
     descriptor.IDescriptorProto
   > = message.toDescriptor('proto3');
@@ -328,6 +331,8 @@ function createMessageDefinition(
       descriptorOptions
     ),
     fileDescriptorProtos: fileDescriptors,
+    serialize: createSerializer(message),
+    deserialize: createDeserializer(message, options)
   };
 }
 
@@ -361,7 +366,7 @@ function createDefinition(
   if (obj instanceof Protobuf.Service) {
     return createServiceDefinition(obj, name, options, fileDescriptors);
   } else if (obj instanceof Protobuf.Type) {
-    return createMessageDefinition(obj, fileDescriptors);
+    return createMessageDefinition(obj, options, fileDescriptors);
   } else if (obj instanceof Protobuf.Enum) {
     return createEnumDefinition(obj, fileDescriptors);
   } else {

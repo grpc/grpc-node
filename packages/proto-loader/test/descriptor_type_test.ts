@@ -27,7 +27,7 @@ const TEST_PROTO_DIR = `${__dirname}/../../test_protos/`;
 
 type TypeDefinition =
   | proto_loader.EnumTypeDefinition
-  | proto_loader.MessageTypeDefinition;
+  | proto_loader.MessageTypeDefinition<object, object>;
 
 function isTypeObject(obj: proto_loader.AnyDefinition): obj is TypeDefinition {
   return 'format' in obj;
