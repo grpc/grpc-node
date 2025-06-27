@@ -726,7 +726,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       // Send WINDOW_UPDATE now to avoid 65 KB start-window stall.
       const defaultWin = http2.getDefaultSettings().initialWindowSize ?? 65535; // 65 535 B
       const connWin = options[
-        'grpc-node.connection_flow_control_window'
+        'grpc-node.flow_control_window'
       ] as number | undefined;
   
       if (connWin && connWin > defaultWin) {
