@@ -722,6 +722,24 @@ export class Http2SubchannelConnector implements SubchannelConnector {
             http2.getDefaultSettings().initialWindowSize,
         }
       });
+
+      // Send WINDOW_UPDATE now to avoid 65 KB start-window stall.
+      const defaultWin = http2.getDefaultSettings().initialWindowSize; // 65 535 B
+      const connWin = options[
+        'grpc-node.connection_flow_control_window'
+      ] as number | undefined;
+  
+      if (connWin && connWin > defaultWin) {
+        try {
+          // Node ≥ 14.18
+          (session as any).setLocalWindowSize(connWin);
+        } catch {
+          // Older Node: bump by the delta
+          const delta = connWin - (session.state.localWindowSize ?? defaultWin);
+          if (delta > 0) (session as any).incrementWindowSize(delta);
+        }
+      }
+
       this.session = session;
       let errorMessage = 'Failed to connect';
       let reportedError = false;
