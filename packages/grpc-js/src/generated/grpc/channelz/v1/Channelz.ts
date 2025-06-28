@@ -21,7 +21,7 @@ import type { GetTopChannelsResponse as _grpc_channelz_v1_GetTopChannelsResponse
  * Channelz is a service exposed by gRPC servers that provides detailed debug
  * information.
  */
-export interface ChannelzClient extends grpc.Client {
+export interface ChannelzClient extends grpc.ServiceClient {
   /**
    * Returns a single Channel, or else a NOT_FOUND code.
    */

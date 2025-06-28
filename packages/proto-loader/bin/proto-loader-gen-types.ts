@@ -553,7 +553,7 @@ function generateServiceClientInterface(formatter: TextFormatter, serviceType: P
   if (options.includeComments) {
     formatComment(formatter, serviceType.comment, serviceType.options);
   }
-  formatter.writeLine(`export interface ${serviceType.name}Client extends grpc.Client {`);
+  formatter.writeLine(`export interface ${serviceType.name}Client extends grpc.ServiceClient {`);
   formatter.indent();
   for (const methodName of Object.keys(serviceType.methods).sort()) {
     const method = serviceType.methods[methodName];
@@ -731,7 +731,7 @@ function generateSingleLoadedDefinitionType(formatter: TextFormatter, nested: Pr
       formatComment(formatter, nested.comment, nested.options);
     }
     const typeInterfaceName = getTypeInterfaceName(nested);
-    formatter.writeLine(`${nested.name}: SubtypeConstructor<typeof grpc.Client, ${typeInterfaceName}Client> & { service: ${typeInterfaceName}Definition }`);
+    formatter.writeLine(`${nested.name}: SubtypeConstructor<${typeInterfaceName}Client> & { service: ${typeInterfaceName}Definition }`);
   } else if (nested instanceof Protobuf.Enum) {
     formatter.writeLine(`${nested.name}: EnumTypeDefinition`);
   } else if (nested instanceof Protobuf.Type) {
@@ -762,12 +762,12 @@ function generateRootFile(formatter: TextFormatter, root: Protobuf.Root, options
   generateServiceImports(formatter, root, options);
   formatter.writeLine('');
 
-  formatter.writeLine('type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {');
-  formatter.writeLine('  new(...args: ConstructorParameters<Constructor>): Subtype;');
-  formatter.writeLine('};');
+  formatter.writeLine('type SubtypeConstructor<Subtype extends grpc.ServiceClient> = {');
+  formatter.writeLine('  new (address: string, credentials: grpc.ChannelCredentials, options?: Partial<grpc.ChannelOptions>): Subtype;');
+  formatter.writeLine('} & grpc.ServiceClientConstructor;');
   formatter.writeLine('');
 
-  formatter.writeLine('export interface ProtoGrpcType {');
+  formatter.writeLine('export interface ProtoGrpcType extends grpc.GrpcObject {');
   formatter.indent();
   for (const nested of root.nestedArray) {
     generateSingleLoadedDefinitionType(formatter, nested, options);

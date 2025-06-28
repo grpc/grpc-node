@@ -5,7 +5,7 @@ import type { MethodDefinition } from '@grpc/proto-loader'
 import type { Request as _Request, Request__Output as _Request__Output } from './Request';
 import type { Response as _Response, Response__Output as _Response__Output } from './Response';
 
-export interface TestServiceClient extends grpc.Client {
+export interface TestServiceClient extends grpc.ServiceClient {
   BidiStream(metadata: grpc.Metadata, options?: grpc.CallOptions): grpc.ClientDuplexStream<_Request, _Response__Output>;
   BidiStream(options?: grpc.CallOptions): grpc.ClientDuplexStream<_Request, _Response__Output>;
   bidiStream(metadata: grpc.Metadata, options?: grpc.CallOptions): grpc.ClientDuplexStream<_Request, _Response__Output>;
