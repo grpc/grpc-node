@@ -21,10 +21,14 @@ export interface ProtoGrpcType {
   google: {
     protobuf: {
       DescriptorProto: MessageTypeDefinition
+      Edition: EnumTypeDefinition
       EnumDescriptorProto: MessageTypeDefinition
       EnumOptions: MessageTypeDefinition
       EnumValueDescriptorProto: MessageTypeDefinition
       EnumValueOptions: MessageTypeDefinition
+      ExtensionRangeOptions: MessageTypeDefinition
+      FeatureSet: MessageTypeDefinition
+      FeatureSetDefaults: MessageTypeDefinition
       FieldDescriptorProto: MessageTypeDefinition
       FieldOptions: MessageTypeDefinition
       FileDescriptorProto: MessageTypeDefinition
@@ -39,6 +43,7 @@ export interface ProtoGrpcType {
       ServiceDescriptorProto: MessageTypeDefinition
       ServiceOptions: MessageTypeDefinition
       SourceCodeInfo: MessageTypeDefinition
+      SymbolVisibility: EnumTypeDefinition
       UninterpretedOption: MessageTypeDefinition
     }
   }

@@ -11,10 +11,14 @@ export interface ProtoGrpcType {
     protobuf: {
       DescriptorProto: MessageTypeDefinition
       Duration: MessageTypeDefinition
+      Edition: EnumTypeDefinition
       EnumDescriptorProto: MessageTypeDefinition
       EnumOptions: MessageTypeDefinition
       EnumValueDescriptorProto: MessageTypeDefinition
       EnumValueOptions: MessageTypeDefinition
+      ExtensionRangeOptions: MessageTypeDefinition
+      FeatureSet: MessageTypeDefinition
+      FeatureSetDefaults: MessageTypeDefinition
       FieldDescriptorProto: MessageTypeDefinition
       FieldOptions: MessageTypeDefinition
       FileDescriptorProto: MessageTypeDefinition
@@ -32,6 +36,7 @@ export interface ProtoGrpcType {
       ServiceOptions: MessageTypeDefinition
       SourceCodeInfo: MessageTypeDefinition
       Struct: MessageTypeDefinition
+      SymbolVisibility: EnumTypeDefinition
       Timestamp: MessageTypeDefinition
       UninterpretedOption: MessageTypeDefinition
       Value: MessageTypeDefinition

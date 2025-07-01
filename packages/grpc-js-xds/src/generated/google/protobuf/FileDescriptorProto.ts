@@ -6,6 +6,7 @@ import type { ServiceDescriptorProto as _google_protobuf_ServiceDescriptorProto,
 import type { FieldDescriptorProto as _google_protobuf_FieldDescriptorProto, FieldDescriptorProto__Output as _google_protobuf_FieldDescriptorProto__Output } from '../../google/protobuf/FieldDescriptorProto';
 import type { FileOptions as _google_protobuf_FileOptions, FileOptions__Output as _google_protobuf_FileOptions__Output } from '../../google/protobuf/FileOptions';
 import type { SourceCodeInfo as _google_protobuf_SourceCodeInfo, SourceCodeInfo__Output as _google_protobuf_SourceCodeInfo__Output } from '../../google/protobuf/SourceCodeInfo';
+import type { Edition as _google_protobuf_Edition, Edition__Output as _google_protobuf_Edition__Output } from '../../google/protobuf/Edition';
 
 export interface FileDescriptorProto {
   'name'?: (string);
@@ -20,6 +21,8 @@ export interface FileDescriptorProto {
   'publicDependency'?: (number)[];
   'weakDependency'?: (number)[];
   'syntax'?: (string);
+  'edition'?: (_google_protobuf_Edition);
+  'optionDependency'?: (string)[];
 }
 
 export interface FileDescriptorProto__Output {
@@ -35,4 +38,6 @@ export interface FileDescriptorProto__Output {
   'publicDependency': (number)[];
   'weakDependency': (number)[];
   'syntax': (string);
+  'edition': (_google_protobuf_Edition__Output);
+  'optionDependency': (string)[];
 }

@@ -87,5 +87,5 @@ export interface ServerReflectionRequest__Output {
    * fields in message_request. The server distinguishes requests by their
    * defined field and then handles them using corresponding methods.
    */
-  'messageRequest': "fileByFilename"|"fileContainingSymbol"|"fileContainingExtension"|"allExtensionNumbersOfType"|"listServices";
+  'messageRequest'?: "fileByFilename"|"fileContainingSymbol"|"fileContainingExtension"|"allExtensionNumbersOfType"|"listServices";
 }
