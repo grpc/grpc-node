@@ -71,5 +71,5 @@ export interface ServerReflectionResponse__Output {
    * The server sets one of the following fields according to the message_request
    * in the request.
    */
-  'messageResponse': "fileDescriptorResponse"|"allExtensionNumbersResponse"|"listServicesResponse"|"errorResponse";
+  'messageResponse'?: "fileDescriptorResponse"|"allExtensionNumbersResponse"|"listServicesResponse"|"errorResponse";
 }
