@@ -715,12 +715,12 @@ function generateDefinitionImports(formatter: TextFormatter, namespace: Protobuf
   }
 }
 
-function generateServiceImports(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, options: GeneratorOptions) {
+function generateDynamicImports(formatter: TextFormatter, namespace: Protobuf.NamespaceBase, options: GeneratorOptions) {
   for (const nested of namespace.nestedArray.sort(compareName)) {
-    if (nested instanceof Protobuf.Service) {
+    if (nested instanceof Protobuf.Service || nested instanceof Protobuf.Type) {
       formatter.writeLine(getImportLine(nested, undefined, options));
-    } else if (isNamespaceBase(nested) && !(nested instanceof Protobuf.Type) && !(nested instanceof Protobuf.Enum)) {
-      generateServiceImports(formatter, nested, options);
+    } else if (isNamespaceBase(nested) && !(nested instanceof Protobuf.Enum)) {
+      generateDynamicImports(formatter, nested, options);
     }
   }
 }
@@ -735,7 +735,9 @@ function generateSingleLoadedDefinitionType(formatter: TextFormatter, nested: Pr
   } else if (nested instanceof Protobuf.Enum) {
     formatter.writeLine(`${nested.name}: EnumTypeDefinition`);
   } else if (nested instanceof Protobuf.Type) {
-    formatter.writeLine(`${nested.name}: MessageTypeDefinition`);
+    const typeInterfaceName = getTypeInterfaceName(nested);
+    const {inputName, outputName} = useNameFmter(options);
+    formatter.writeLine(`${nested.name}: MessageTypeDefinition<${inputName(typeInterfaceName)}, ${outputName(typeInterfaceName)}>`);
   } else if (isNamespaceBase(nested)) {
     generateLoadedDefinitionTypes(formatter, nested, options);
   }
@@ -759,7 +761,7 @@ function generateRootFile(formatter: TextFormatter, root: Protobuf.Root, options
   generateDefinitionImports(formatter, root, options);
   formatter.writeLine('');
 
-  generateServiceImports(formatter, root, options);
+  generateDynamicImports(formatter, root, options);
   formatter.writeLine('');
 
   formatter.writeLine('type SubtypeConstructor<Constructor extends new (...args: any) => any, Subtype> = {');
