@@ -57,7 +57,7 @@
     "compile": "tsc -p .",
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
     "lint": "eslint src/*.ts test/*.ts",
-    "prepare": "npm run generate-types && npm run compile",
+    "prepare": "npm run generate-types && npm run generate-test-types && npm run compile",
     "test": "gulp test",
     "check": "npm run lint",
     "fix": "eslint --fix src/*.ts test/*.ts",
