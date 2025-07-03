@@ -4,6 +4,8 @@ import type * as grpc from '@grpc/grpc-js'
 import type { MethodDefinition } from '@grpc/proto-loader'
 import type { HealthCheckRequest as _grpc_health_v1_HealthCheckRequest, HealthCheckRequest__Output as _grpc_health_v1_HealthCheckRequest__Output } from '../../../grpc/health/v1/HealthCheckRequest';
 import type { HealthCheckResponse as _grpc_health_v1_HealthCheckResponse, HealthCheckResponse__Output as _grpc_health_v1_HealthCheckResponse__Output } from '../../../grpc/health/v1/HealthCheckResponse';
+import type { HealthListRequest as _grpc_health_v1_HealthListRequest, HealthListRequest__Output as _grpc_health_v1_HealthListRequest__Output } from '../../../grpc/health/v1/HealthListRequest';
+import type { HealthListResponse as _grpc_health_v1_HealthListResponse, HealthListResponse__Output as _grpc_health_v1_HealthListResponse__Output } from '../../../grpc/health/v1/HealthListResponse';
 
 /**
  * Health is gRPC's mechanism for checking whether a server is able to handle
@@ -41,6 +43,41 @@ export interface HealthClient extends grpc.Client {
   check(argument: _grpc_health_v1_HealthCheckRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_health_v1_HealthCheckResponse__Output>): grpc.ClientUnaryCall;
   check(argument: _grpc_health_v1_HealthCheckRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_health_v1_HealthCheckResponse__Output>): grpc.ClientUnaryCall;
   check(argument: _grpc_health_v1_HealthCheckRequest, callback: grpc.requestCallback<_grpc_health_v1_HealthCheckResponse__Output>): grpc.ClientUnaryCall;
+  
+  /**
+   * List provides a non-atomic snapshot of the health of all the available
+   * services.
+   * 
+   * The server may respond with a RESOURCE_EXHAUSTED error if too many services
+   * exist.
+   * 
+   * Clients should set a deadline when calling List, and can declare the server
+   * unhealthy if they do not receive a timely response.
+   * 
+   * Clients should keep in mind that the list of health services exposed by an
+   * application can change over the lifetime of the process.
+   */
+  List(argument: _grpc_health_v1_HealthListRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_health_v1_HealthListResponse__Output>): grpc.ClientUnaryCall;
+  List(argument: _grpc_health_v1_HealthListRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_health_v1_HealthListResponse__Output>): grpc.ClientUnaryCall;
+  List(argument: _grpc_health_v1_HealthListRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_health_v1_HealthListResponse__Output>): grpc.ClientUnaryCall;
+  List(argument: _grpc_health_v1_HealthListRequest, callback: grpc.requestCallback<_grpc_health_v1_HealthListResponse__Output>): grpc.ClientUnaryCall;
+  /**
+   * List provides a non-atomic snapshot of the health of all the available
+   * services.
+   * 
+   * The server may respond with a RESOURCE_EXHAUSTED error if too many services
+   * exist.
+   * 
+   * Clients should set a deadline when calling List, and can declare the server
+   * unhealthy if they do not receive a timely response.
+   * 
+   * Clients should keep in mind that the list of health services exposed by an
+   * application can change over the lifetime of the process.
+   */
+  list(argument: _grpc_health_v1_HealthListRequest, metadata: grpc.Metadata, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_health_v1_HealthListResponse__Output>): grpc.ClientUnaryCall;
+  list(argument: _grpc_health_v1_HealthListRequest, metadata: grpc.Metadata, callback: grpc.requestCallback<_grpc_health_v1_HealthListResponse__Output>): grpc.ClientUnaryCall;
+  list(argument: _grpc_health_v1_HealthListRequest, options: grpc.CallOptions, callback: grpc.requestCallback<_grpc_health_v1_HealthListResponse__Output>): grpc.ClientUnaryCall;
+  list(argument: _grpc_health_v1_HealthListRequest, callback: grpc.requestCallback<_grpc_health_v1_HealthListResponse__Output>): grpc.ClientUnaryCall;
   
   /**
    * Performs a watch for the serving status of the requested service.
@@ -103,6 +140,21 @@ export interface HealthHandlers extends grpc.UntypedServiceImplementation {
   Check: grpc.handleUnaryCall<_grpc_health_v1_HealthCheckRequest__Output, _grpc_health_v1_HealthCheckResponse>;
   
   /**
+   * List provides a non-atomic snapshot of the health of all the available
+   * services.
+   * 
+   * The server may respond with a RESOURCE_EXHAUSTED error if too many services
+   * exist.
+   * 
+   * Clients should set a deadline when calling List, and can declare the server
+   * unhealthy if they do not receive a timely response.
+   * 
+   * Clients should keep in mind that the list of health services exposed by an
+   * application can change over the lifetime of the process.
+   */
+  List: grpc.handleUnaryCall<_grpc_health_v1_HealthListRequest__Output, _grpc_health_v1_HealthListResponse>;
+  
+  /**
    * Performs a watch for the serving status of the requested service.
    * The server will immediately send back a message indicating the current
    * serving status.  It will then subsequently send a new message whenever
@@ -125,5 +177,6 @@ export interface HealthHandlers extends grpc.UntypedServiceImplementation {
 
 export interface HealthDefinition extends grpc.ServiceDefinition {
   Check: MethodDefinition<_grpc_health_v1_HealthCheckRequest, _grpc_health_v1_HealthCheckResponse, _grpc_health_v1_HealthCheckRequest__Output, _grpc_health_v1_HealthCheckResponse__Output>
+  List: MethodDefinition<_grpc_health_v1_HealthListRequest, _grpc_health_v1_HealthListResponse, _grpc_health_v1_HealthListRequest__Output, _grpc_health_v1_HealthListResponse__Output>
   Watch: MethodDefinition<_grpc_health_v1_HealthCheckRequest, _grpc_health_v1_HealthCheckResponse, _grpc_health_v1_HealthCheckRequest__Output, _grpc_health_v1_HealthCheckResponse__Output>
 }
