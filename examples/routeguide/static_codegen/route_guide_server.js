@@ -22,7 +22,7 @@ var services = require('./route_guide_grpc_pb');
 var fs = require('fs');
 var parseArgs = require('minimist');
 var path = require('path');
-var _ = require('lodash');
+var _ = require('es-toolkit/compat');
 var grpc = require('@grpc/grpc-js');
 
 var COORD_FACTOR = 1e7;

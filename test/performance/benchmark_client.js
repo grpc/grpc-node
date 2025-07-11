@@ -29,7 +29,7 @@ var util = require('util');
 var EventEmitter = require('events');
 
 var async = require('async');
-var _ = require('lodash');
+var _ = require('es-toolkit/compat');
 var PoissonProcess = require('poisson-process');
 var Histogram = require('./histogram');
 

@@ -18,7 +18,7 @@
 
 'use strict';
 
-var _ = require('lodash');
+var _ = require('es-toolkit/compat');
 
 /**
  * This class represents a queue of callbacks that must happen sequentially,

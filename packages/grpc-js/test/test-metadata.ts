@@ -17,7 +17,7 @@
 
 import * as assert from 'assert';
 import * as http2 from 'http2';
-import { range } from 'lodash';
+import { range } from 'es-toolkit/compat';
 import { Metadata, MetadataObject, MetadataValue } from '../src/metadata';
 
 class TestMetadata extends Metadata {
