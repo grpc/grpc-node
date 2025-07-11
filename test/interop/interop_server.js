@@ -21,7 +21,7 @@
 var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
-var _ = require('lodash');
+var _ = require('es-toolkit/compat');
 var AsyncDelayQueue = require('./async_delay_queue');
 var grpc = require('../any_grpc').server;
 // TODO(murgatroid99): do this import more cleanly
