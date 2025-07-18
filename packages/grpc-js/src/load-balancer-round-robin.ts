@@ -90,6 +90,10 @@ class RoundRobinPicker implements Picker {
   }
 }
 
+function rotateArray<T>(list: T[], startIndex: number) {
+  return [...list.slice(startIndex), ...list.slice(0, startIndex)];
+}
+
 export class RoundRobinLoadBalancer implements LoadBalancer {
   private children: LeafLoadBalancer[] = [];
 
@@ -228,7 +232,8 @@ export class RoundRobinLoadBalancer implements LoadBalancer {
       }
       return true;
     }
-    const endpointList = maybeEndpointList.value;
+    const startIndex = (Math.random() * maybeEndpointList.value.length) | 0;
+    const endpointList = rotateArray(maybeEndpointList.value, startIndex);
     this.resetSubchannelList();
     if (endpointList.length === 0) {
       const errorMessage = `No addresses resolved. Resolution note: ${resolutionNote}`;
