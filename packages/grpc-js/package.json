@@ -57,14 +57,15 @@
     "compile": "tsc -p .",
     "format": "clang-format -i -style=\"{Language: JavaScript, BasedOnStyle: Google, ColumnLimit: 80}\" src/*.ts test/*.ts",
     "lint": "eslint src/*.ts test/*.ts",
-    "prepare": "npm run generate-types && npm run generate-test-types && npm run compile",
+    "prepare": "npm run copy-protos && npm run generate-types && npm run generate-test-types && npm run compile",
     "test": "gulp test",
     "check": "npm run lint",
     "fix": "eslint --fix src/*.ts test/*.ts",
     "pretest": "npm run generate-types && npm run generate-test-types && npm run compile",
     "posttest": "npm run check && madge -c ./build/src",
-    "generate-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --includeComments --includeDirs proto/ --include-dirs test/fixtures/ -O src/generated/ --grpcLib ../index channelz.proto",
-    "generate-test-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --includeComments --include-dirs test/fixtures/ -O test/generated/ --grpcLib ../../src/index test_service.proto"
+    "generate-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --includeComments --includeDirs proto/ --include-dirs proto/ proto/xds/ proto/protoc-gen-validate/ -O src/generated/ --grpcLib ../index channelz.proto xds/service/orca/v3/orca.proto",
+    "generate-test-types": "proto-loader-gen-types --keepCase --longs String --enums String --defaults --oneofs --includeComments --include-dirs test/fixtures/ -O test/generated/ --grpcLib ../../src/index test_service.proto",
+    "copy-protos": "node ./copy-protos"
   },
   "dependencies": {
     "@grpc/proto-loader": "^0.7.13",
@@ -73,7 +74,8 @@
   "files": [
     "src/**/*.ts",
     "build/src/**/*.{js,d.ts,js.map}",
-    "proto/*.proto",
+    "proto/**/*.proto",
+    "proto/**/LICENSE",
     "LICENSE",
     "deps/envoy-api/envoy/api/v2/**/*.proto",
     "deps/envoy-api/envoy/config/**/*.proto",

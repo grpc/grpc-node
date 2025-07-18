@@ -35,6 +35,7 @@ import { CallEventTracker } from './transport';
 import * as logging from './logging';
 import { AuthContext } from './auth-context';
 import { TLSSocket } from 'tls';
+import { PerRequestMetricsRecorder } from './orca';
 
 const TRACER_NAME = 'server_call';
 
@@ -349,6 +350,12 @@ export interface ServerInterceptingCallInterface {
    * Return information about the connection used to make the call.
    */
   getConnectionInfo(): ConnectionInfo;
+  /**
+   * Get the metrics recorder for this call. Metrics will not be sent unless
+   * the server was constructed with the `grpc.server_call_metric_recording`
+   * option.
+   */
+  getMetricsRecorder(): PerRequestMetricsRecorder;
 }
 
 export class ServerInterceptingCall implements ServerInterceptingCallInterface {
@@ -463,6 +470,9 @@ export class ServerInterceptingCall implements ServerInterceptingCallInterface {
   getConnectionInfo(): ConnectionInfo {
     return this.nextCall.getConnectionInfo();
   }
+  getMetricsRecorder(): PerRequestMetricsRecorder {
+    return this.nextCall.getMetricsRecorder();
+  }
 }
 
 export interface ServerInterceptor {
@@ -481,6 +491,7 @@ const GRPC_ENCODING_HEADER = 'grpc-encoding';
 const GRPC_MESSAGE_HEADER = 'grpc-message';
 const GRPC_STATUS_HEADER = 'grpc-status';
 const GRPC_TIMEOUT_HEADER = 'grpc-timeout';
+const GRPC_METRICS_HEADER = 'endpoint-load-metrics-bin';
 const DEADLINE_REGEX = /(\d{1,8})\s*([HMSmun])/;
 const deadlineUnitsToMs: DeadlineUnitIndexSignature = {
   H: 3600000,
@@ -534,6 +545,8 @@ export class BaseServerInterceptingCall
   private streamEnded = false;
   private host: string;
   private connectionInfo: ConnectionInfo;
+  private metricsRecorder = new PerRequestMetricsRecorder();
+  private shouldSendMetrics: boolean;
 
   constructor(
     private readonly stream: http2.ServerHttp2Stream,
@@ -629,6 +642,7 @@ export class BaseServerInterceptingCall
       remoteAddress: socket?.remoteAddress,
       remotePort: socket?.remotePort
     };
+    this.shouldSendMetrics = !!options['grpc.server_call_metric_recording'];
   }
 
   private handleTimeoutHeader(timeoutHeader: string) {
@@ -932,6 +946,11 @@ export class BaseServerInterceptingCall
         status.details
     );
 
+    const statusMetadata = status.metadata?.clone() ?? new Metadata();
+    if (this.shouldSendMetrics) {
+      statusMetadata.set(GRPC_METRICS_HEADER, this.metricsRecorder.serialize());
+    }
+
     if (this.metadataSent) {
       if (!this.wantTrailers) {
         this.wantTrailers = true;
@@ -941,10 +960,10 @@ export class BaseServerInterceptingCall
             this.callEventTracker.onStreamEnd(true);
             this.callEventTracker.onCallEnd(status);
           }
-          const trailersToSend = {
+          const trailersToSend: http2.OutgoingHttpHeaders = {
             [GRPC_STATUS_HEADER]: status.code,
             [GRPC_MESSAGE_HEADER]: encodeURI(status.details),
-            ...status.metadata?.toHttp2Headers(),
+            ...statusMetadata.toHttp2Headers(),
           };
 
           this.stream.sendTrailers(trailersToSend);
@@ -961,11 +980,11 @@ export class BaseServerInterceptingCall
         this.callEventTracker.onCallEnd(status);
       }
       // Trailers-only response
-      const trailersToSend = {
+      const trailersToSend: http2.OutgoingHttpHeaders = {
         [GRPC_STATUS_HEADER]: status.code,
         [GRPC_MESSAGE_HEADER]: encodeURI(status.details),
         ...defaultResponseHeaders,
-        ...status.metadata?.toHttp2Headers(),
+        ...statusMetadata.toHttp2Headers(),
       };
       this.stream.respond(trailersToSend, { endStream: true });
       this.notifyOnCancel();
@@ -1016,6 +1035,9 @@ export class BaseServerInterceptingCall
   }
   getConnectionInfo(): ConnectionInfo {
     return this.connectionInfo;
+  }
+  getMetricsRecorder(): PerRequestMetricsRecorder {
+    return this.metricsRecorder;
   }
 }
 
