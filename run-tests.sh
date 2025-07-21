@@ -58,7 +58,7 @@ do
   set +ex
   echo "Switching to node version $version"
   nvm install $version
-  nvm use $version
+  nvm use --delete-prefix $version
   set -ex
 
   export JUNIT_REPORT_PATH="reports/node$version/"
