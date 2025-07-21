@@ -76,6 +76,7 @@ describe('Name Resolver', () => {
         resultSeen = true;
         assert(maybeEndpointList.ok);
         const endpointList = maybeEndpointList.value;
+        console.log(`Endpoint list: ${JSON.stringify(endpointList)}`);
         assert(
           hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 50051 })
         );
@@ -108,6 +109,7 @@ describe('Name Resolver', () => {
         resultSeen = true;
         assert(maybeEndpointList.ok);
         const endpointList = maybeEndpointList.value;
+        console.log(`Endpoint list: ${JSON.stringify(endpointList)}`);
         assert(
           hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 })
         );
@@ -440,6 +442,7 @@ describe('Name Resolver', () => {
         ) => {
           assert(maybeEndpointList.ok);
           const endpointList = maybeEndpointList.value;
+          console.log(`Endpoint list: ${JSON.stringify(endpointList)}`);
           assert(
             hasMatchingAddress(endpointList, { host: '127.0.0.1', port: 443 })
           );
@@ -473,6 +476,7 @@ describe('Name Resolver', () => {
           serviceConfig: StatusOr<ServiceConfig> | null,
           resolutionNote: string
         ) => {
+          console.log(`Enpoint list: ${JSON.stringify(maybeEndpointList)}`);
           assert(!maybeEndpointList.ok);
           resultCount += 1;
           if (resultCount === 1) {
