@@ -63,9 +63,6 @@ do
 
   export JUNIT_REPORT_PATH="reports/node$version/"
 
-  # https://github.com/mapbox/node-pre-gyp/issues/362
-  npm install -g node-gyp
-
   mkdir -p "reports/node$version"
 
   node -e 'process.exit(process.version.startsWith("v'$version'") ? 0 : -1)'
@@ -80,7 +77,7 @@ do
 done
 
 set +ex
-nvm use 8
+nvm use 22
 set -ex
 
 node merge_kokoro_logs.js

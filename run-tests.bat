@@ -46,8 +46,6 @@ for %%v in (20 22) do (
   if "%%v"=="4" (
     call npm install -g npm@5
   )
-  @rem https://github.com/mapbox/node-pre-gyp/issues/362
-  call npm install -g node-gyp
   node -e "console.log(process.versions)"
 
   mkdir reports\node%%v
