@@ -65,6 +65,7 @@ do
 
   mkdir -p "reports/node$version"
 
+  node -p 'process.version'
   node -e 'process.exit(process.version.startsWith("v'$version'") ? 0 : -1)'
 
   # Install dependencies and link packages together.
