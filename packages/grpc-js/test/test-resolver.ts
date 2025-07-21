@@ -479,6 +479,7 @@ describe('Name Resolver', () => {
           console.log(`Enpoint list: ${JSON.stringify(maybeEndpointList)}`);
           assert(!maybeEndpointList.ok);
           resultCount += 1;
+          console.log(`resultCount: ${resultCount}`);
           if (resultCount === 1) {
             process.nextTick(() => resolver.updateResolution());
           }
