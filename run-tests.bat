@@ -28,8 +28,8 @@ SET JOBS=8
 
 call nvm version
 
-call nvm install 16
-call nvm use 16
+call nvm install 22
+call nvm use 22
 
 git submodule update --init --recursive
 
@@ -40,14 +40,12 @@ call npm install || goto :error
 SET JUNIT_REPORT_STACK=1
 SET FAILED=0
 
-for %%v in (14 16) do (
+for %%v in (20 22) do (
   call nvm install %%v
   call nvm use %%v
   if "%%v"=="4" (
     call npm install -g npm@5
   )
-  @rem https://github.com/mapbox/node-pre-gyp/issues/362
-  call npm install -g node-gyp
   node -e "console.log(process.versions)"
 
   mkdir reports\node%%v
