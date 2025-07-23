@@ -75,7 +75,7 @@ export interface ProtoGrpcType {
       OperationInfo: MessageTypeDefinition<I_google_longrunning_OperationInfo, O_google_longrunning_OperationInfo>
       /**
        * Manages long-running operations with an API service.
-       *
+       * 
        * When an API method normally takes long time to complete, it can be designed
        * to return [Operation][google.longrunning.Operation] to the client, and the client can use this
        * interface to receive the real response asynchronously by polling the
@@ -146,3 +146,4 @@ export interface ProtoGrpcType {
     }
   }
 }
+
