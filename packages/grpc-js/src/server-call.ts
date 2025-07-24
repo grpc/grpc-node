@@ -26,7 +26,7 @@ import type { StatusObject, PartialStatusObject } from './call-interface';
 import type { Deadline } from './deadline';
 import type { ServerInterceptingCallInterface } from './server-interceptors';
 import { AuthContext } from './auth-context';
-import { PerRequestMetricsRecorder } from './orca';
+import { PerRequestMetricRecorder } from './orca';
 
 export type ServerStatusResponse = Partial<StatusObject>;
 
@@ -41,7 +41,7 @@ export type ServerSurfaceCall = {
   getPath(): string;
   getHost(): string;
   getAuthContext(): AuthContext;
-  getMetricsRecorder(): PerRequestMetricsRecorder;
+  getMetricsRecorder(): PerRequestMetricRecorder;
 } & EventEmitter;
 
 export type ServerUnaryCall<RequestType, ResponseType> = ServerSurfaceCall & {
@@ -123,7 +123,7 @@ export class ServerUnaryCallImpl<RequestType, ResponseType>
     return this.call.getAuthContext();
   }
 
-  getMetricsRecorder(): PerRequestMetricsRecorder {
+  getMetricsRecorder(): PerRequestMetricRecorder {
     return this.call.getMetricsRecorder();
   }
 }
@@ -171,7 +171,7 @@ export class ServerReadableStreamImpl<RequestType, ResponseType>
     return this.call.getAuthContext();
   }
 
-  getMetricsRecorder(): PerRequestMetricsRecorder {
+  getMetricsRecorder(): PerRequestMetricRecorder {
     return this.call.getMetricsRecorder();
   }
 }
@@ -227,7 +227,7 @@ export class ServerWritableStreamImpl<RequestType, ResponseType>
     return this.call.getAuthContext();
   }
 
-  getMetricsRecorder(): PerRequestMetricsRecorder {
+  getMetricsRecorder(): PerRequestMetricRecorder {
     return this.call.getMetricsRecorder();
   }
 
@@ -308,7 +308,7 @@ export class ServerDuplexStreamImpl<RequestType, ResponseType>
     return this.call.getAuthContext();
   }
 
-  getMetricsRecorder(): PerRequestMetricsRecorder {
+  getMetricsRecorder(): PerRequestMetricRecorder {
     return this.call.getMetricsRecorder();
   }
 
