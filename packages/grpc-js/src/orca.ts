@@ -20,6 +20,9 @@ import { OrcaLoadReport } from "./generated/xds/data/orca/v3/OrcaLoadReport";
 import type { loadSync } from '@grpc/proto-loader';
 import { ProtoGrpcType as OrcaProtoGrpcType } from "./generated/orca";
 import { loadPackageDefinition } from "./make-client";
+import { OpenRcaServiceHandlers } from "./generated/xds/service/orca/v3/OpenRcaService";
+import { durationMessageToDuration, durationToMs } from "./duration";
+import { Server } from "./server";
 
 const loadedOrcaProto: OrcaProtoGrpcType | null = null;
 function loadOrcaProto(): OrcaProtoGrpcType {
@@ -47,7 +50,7 @@ function loadOrcaProto(): OrcaProtoGrpcType {
 /**
  * ORCA metrics recorder for a single request
  */
-export class PerRequestMetricsRecorder {
+export class PerRequestMetricRecorder {
   private message: OrcaLoadReport = {};
 
   /**
@@ -129,5 +132,77 @@ export class PerRequestMetricsRecorder {
   serialize(): Buffer {
     const orcaProto = loadOrcaProto();
     return orcaProto.xds.data.orca.v3.OrcaLoadReport.serialize(this.message);
+  }
+}
+
+const DEFAULT_REPORT_INTERVAL_MS = 30_000;
+
+export class ServerMetricRecorder {
+  private message: OrcaLoadReport = {};
+
+  private serviceImplementation: OpenRcaServiceHandlers = {
+    StreamCoreMetrics: call => {
+      const reportInterval = call.request.report_interval ?
+        durationToMs(durationMessageToDuration(call.request.report_interval)) :
+        DEFAULT_REPORT_INTERVAL_MS;
+      const reportTimer = setInterval(() => {
+        call.write(this.message);
+      }, reportInterval);
+      call.on('cancelled', () => {
+        clearInterval(reportTimer);
+      })
+    }
+  }
+
+  putUtilizationMetric(name: string, value: number) {
+    if (!this.message.utilization) {
+      this.message.utilization = {};
+    }
+    this.message.utilization[name] = value;
+  }
+
+  setAllUtilizationMetrics(metrics: {[name: string]: number}) {
+    this.message.utilization = {...metrics};
+  }
+
+  deleteUtilizationMetric(name: string) {
+    delete this.message.utilization?.[name];
+  }
+
+  setCpuUtilizationMetric(value: number) {
+    this.message.cpu_utilization = value;
+  }
+
+  deleteCpuUtilizationMetric() {
+    delete this.message.cpu_utilization;
+  }
+
+  setApplicationUtilizationMetric(value: number) {
+    this.message.application_utilization = value;
+  }
+
+  deleteApplicationUtilizationMetric() {
+    delete this.message.application_utilization;
+  }
+
+  setQpsMetric(value: number) {
+    this.message.rps_fractional = value;
+  }
+
+  deleteQpsMetric() {
+    delete this.message.rps_fractional;
+  }
+
+  setEpsMetric(value: number) {
+    this.message.eps = value;
+  }
+
+  deleteEpsMetric() {
+    delete this.message.eps;
+  }
+
+  addToServer(server: Server) {
+    const serviceDefinition = loadOrcaProto().xds.service.orca.v3.OpenRcaService.service;
+    server.addService(serviceDefinition, this.serviceImplementation);
   }
 }

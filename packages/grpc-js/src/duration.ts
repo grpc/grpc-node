@@ -20,6 +20,18 @@ export interface Duration {
   nanos: number;
 }
 
+export interface DurationMessage {
+  seconds: string;
+  nanos: number;
+}
+
+export function durationMessageToDuration(message: DurationMessage): Duration {
+  return {
+    seconds: Number.parseInt(message.seconds),
+    nanos: message.nanos
+  };
+}
+
 export function msToDuration(millis: number): Duration {
   return {
     seconds: (millis / 1000) | 0,
