@@ -28,11 +28,11 @@ cd $ROOT
 git submodule update --init --recursive
 
 if [ ! -n "$node_versions" ] ; then
-  node_versions="14 16"
+  node_versions="20 22"
 fi
 
 set +ex
-nvm install 8
+nvm install 22
 nvm install lts/*
 nvm use lts/*
 set -ex
@@ -58,16 +58,14 @@ do
   set +ex
   echo "Switching to node version $version"
   nvm install $version
-  nvm use $version
+  nvm use --delete-prefix $version
   set -ex
 
   export JUNIT_REPORT_PATH="reports/node$version/"
 
-  # https://github.com/mapbox/node-pre-gyp/issues/362
-  npm install -g node-gyp
-
   mkdir -p "reports/node$version"
 
+  node -p 'process.version'
   node -e 'process.exit(process.version.startsWith("v'$version'") ? 0 : -1)'
 
   # Install dependencies and link packages together.
@@ -80,7 +78,7 @@ do
 done
 
 set +ex
-nvm use 8
+nvm use 22
 set -ex
 
 node merge_kokoro_logs.js

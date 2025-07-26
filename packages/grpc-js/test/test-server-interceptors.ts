@@ -369,7 +369,7 @@ describe('Server interceptors', () => {
         },
       });
       server.bindAsync(
-        '[::1]:0',
+        '127.0.0.1:0',
         grpc.ServerCredentials.createInsecure(),
         (error, port) => {
           assert.ifError(error);
@@ -386,8 +386,8 @@ describe('Server interceptors', () => {
     it('Should get valid connection information', done => {
       const call = client.sendRequest(done);
       call.on('metadata', metadata => {
-        assert.strictEqual(metadata.get('local-address')[0], '::1');
-        assert.strictEqual(metadata.get('remote-address')[0], '::1');
+        assert.strictEqual(metadata.get('local-address')[0], '127.0.0.1');
+        assert.strictEqual(metadata.get('remote-address')[0], '127.0.0.1');
         assert.strictEqual(metadata.get('local-port')[0], `${portNum}`);
         assert.notStrictEqual(metadata.get('remote-port')[0], 'undefined');
       });
