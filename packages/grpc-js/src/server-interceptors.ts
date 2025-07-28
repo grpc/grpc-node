@@ -35,7 +35,7 @@ import { CallEventTracker } from './transport';
 import * as logging from './logging';
 import { AuthContext } from './auth-context';
 import { TLSSocket } from 'tls';
-import { PerRequestMetricsRecorder } from './orca';
+import { PerRequestMetricRecorder } from './orca';
 
 const TRACER_NAME = 'server_call';
 
@@ -355,7 +355,7 @@ export interface ServerInterceptingCallInterface {
    * the server was constructed with the `grpc.server_call_metric_recording`
    * option.
    */
-  getMetricsRecorder(): PerRequestMetricsRecorder;
+  getMetricsRecorder(): PerRequestMetricRecorder;
 }
 
 export class ServerInterceptingCall implements ServerInterceptingCallInterface {
@@ -470,7 +470,7 @@ export class ServerInterceptingCall implements ServerInterceptingCallInterface {
   getConnectionInfo(): ConnectionInfo {
     return this.nextCall.getConnectionInfo();
   }
-  getMetricsRecorder(): PerRequestMetricsRecorder {
+  getMetricsRecorder(): PerRequestMetricRecorder {
     return this.nextCall.getMetricsRecorder();
   }
 }
@@ -545,7 +545,7 @@ export class BaseServerInterceptingCall
   private streamEnded = false;
   private host: string;
   private connectionInfo: ConnectionInfo;
-  private metricsRecorder = new PerRequestMetricsRecorder();
+  private metricsRecorder = new PerRequestMetricRecorder();
   private shouldSendMetrics: boolean;
 
   constructor(
@@ -1036,7 +1036,7 @@ export class BaseServerInterceptingCall
   getConnectionInfo(): ConnectionInfo {
     return this.connectionInfo;
   }
-  getMetricsRecorder(): PerRequestMetricsRecorder {
+  getMetricsRecorder(): PerRequestMetricRecorder {
     return this.metricsRecorder;
   }
 }
