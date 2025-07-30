@@ -16,6 +16,7 @@
  */
 
 import { CallCredentials } from './call-credentials';
+import { Channel } from './channel';
 import type { SubchannelRef } from './channelz';
 import { ConnectivityState } from './connectivity-state';
 import { Subchannel } from './subchannel';
@@ -67,6 +68,10 @@ export interface SubchannelInterface {
    * subchannel.
    */
   getCallCredentials(): CallCredentials;
+  /**
+   * Get a channel that can be used to make requests with just this
+   */
+  getChannel(): Channel;
 }
 
 export abstract class BaseSubchannelWrapper implements SubchannelInterface {
@@ -142,5 +147,8 @@ export abstract class BaseSubchannelWrapper implements SubchannelInterface {
   }
   getCallCredentials(): CallCredentials {
     return this.child.getCallCredentials();
+  }
+  getChannel(): Channel {
+      return this.child.getChannel();
   }
 }

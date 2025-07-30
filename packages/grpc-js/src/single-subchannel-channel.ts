@@ -24,12 +24,13 @@ import { ChannelOptions } from "./channel-options";
 import { ChannelRef, ChannelzCallTracker, ChannelzChildrenTracker, ChannelzTrace, registerChannelzChannel, unregisterChannelzRef } from "./channelz";
 import { ConnectivityState } from "./connectivity-state";
 import { Propagate, Status } from "./constants";
+import { restrictControlPlaneStatusCode } from "./control-plane-status";
 import { Deadline, getRelativeTimeout } from "./deadline";
 import { Metadata } from "./metadata";
 import { getDefaultAuthority } from "./resolver";
 import { Subchannel } from "./subchannel";
 import { SubchannelCall } from "./subchannel-call";
-import { GrpcUri, uriToString } from "./uri-parser";
+import { GrpcUri, splitHostPort, uriToString } from "./uri-parser";
 
 class SubchannelCallWrapper implements Call {
   private childCall: SubchannelCall | null = null;
@@ -38,7 +39,20 @@ class SubchannelCallWrapper implements Call {
   private readPending = false;
   private halfClosePending = false;
   private pendingStatus: StatusObject | null = null;
+  private serviceUrl: string;
   constructor(private subchannel: Subchannel, private method: string, private options: CallStreamOptions, private callNumber: number) {
+    const splitPath: string[] = this.method.split('/');
+    let serviceName = '';
+    /* The standard path format is "/{serviceName}/{methodName}", so if we split
+      * by '/', the first item should be empty and the second should be the
+      * service name */
+    if (splitPath.length >= 2) {
+      serviceName = splitPath[1];
+    }
+    const hostname = splitHostPort(this.options.host)?.host ?? 'localhost';
+    /* Currently, call credentials are only allowed on HTTPS connections, so we
+      * can assume that the scheme is "https" */
+    this.serviceUrl = `https://${hostname}/${serviceName}`;
     const timeout = getRelativeTimeout(options.deadline);
     if (timeout !== Infinity) {
       if (timeout <= 0) {
@@ -79,16 +93,32 @@ class SubchannelCallWrapper implements Call {
       });
       return;
     }
-    this.childCall = this.subchannel.createCall(metadata, this.options.host, this.method, listener);
-    if (this.readPending) {
-      this.childCall.startRead();
-    }
-    if (this.pendingMessage) {
-      this.childCall.sendMessageWithContext(this.pendingMessage.context, this.pendingMessage.message);
-    }
-    if (this.halfClosePending) {
-      this.childCall.halfClose();
-    }
+    this.subchannel.getCallCredentials()
+      .generateMetadata({method_name: this.method, service_url: this.serviceUrl})
+      .then(credsMetadata => {
+        this.childCall = this.subchannel.createCall(credsMetadata, this.options.host, this.method, listener);
+        if (this.readPending) {
+          this.childCall.startRead();
+        }
+        if (this.pendingMessage) {
+          this.childCall.sendMessageWithContext(this.pendingMessage.context, this.pendingMessage.message);
+        }
+        if (this.halfClosePending) {
+          this.childCall.halfClose();
+        }
+      }, (error: Error & { code: number }) => {
+        const { code, details } = restrictControlPlaneStatusCode(
+          typeof error.code === 'number' ? error.code : Status.UNKNOWN,
+          `Getting metadata from plugin failed with error: ${error.message}`
+        );
+        listener.onReceiveStatus(
+          {
+            code: code,
+            details: details,
+            metadata: new Metadata(),
+          }
+        );
+      });
   }
   sendMessageWithContext(context: MessageContext, message: Buffer): void {
     if (this.childCall) {
