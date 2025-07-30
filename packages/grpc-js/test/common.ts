@@ -261,6 +261,9 @@ export class MockSubchannel implements SubchannelInterface {
   getCallCredentials(): grpc.CallCredentials {
     return grpc.CallCredentials.createEmpty();
   }
+  getChannel(): grpc.Channel {
+    throw new Error('Method not implemented');
+  }
 }
 
 export { assert2 };
