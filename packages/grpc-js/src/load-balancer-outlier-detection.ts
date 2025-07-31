@@ -428,13 +428,13 @@ class OutlierDetectionPicker implements Picker {
       if (mapEntry) {
         let onCallEnded = wrappedPick.onCallEnded;
         if (this.countCalls) {
-          onCallEnded = statusCode => {
+          onCallEnded = (statusCode, details, metadata) => {
             if (statusCode === Status.OK) {
               mapEntry.counter.addSuccess();
             } else {
               mapEntry.counter.addFailure();
             }
-            wrappedPick.onCallEnded?.(statusCode);
+            wrappedPick.onCallEnded?.(statusCode, details, metadata);
           };
         }
         return {

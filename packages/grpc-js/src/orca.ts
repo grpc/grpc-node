@@ -15,7 +15,7 @@
  *
  */
 
-import { OrcaLoadReport } from "./generated/xds/data/orca/v3/OrcaLoadReport";
+import { OrcaLoadReport, OrcaLoadReport__Output } from "./generated/xds/data/orca/v3/OrcaLoadReport";
 
 import type { loadSync } from '@grpc/proto-loader';
 import { ProtoGrpcType as OrcaProtoGrpcType } from "./generated/orca";
@@ -25,6 +25,7 @@ import { durationMessageToDuration, durationToMs } from "./duration";
 import { Server } from "./server";
 import { ChannelCredentials } from "./channel-credentials";
 import { Channel } from "./channel";
+import { OnCallEnded } from "./picker";
 
 const loadedOrcaProto: OrcaProtoGrpcType | null = null;
 function loadOrcaProto(): OrcaProtoGrpcType {
@@ -212,4 +213,36 @@ export class ServerMetricRecorder {
 export function createOrcaClient(channel: Channel): OpenRcaServiceClient {
   const ClientClass = loadOrcaProto().xds.service.orca.v3.OpenRcaService;
   return new ClientClass('unused', ChannelCredentials.createInsecure(), {channelOverride: channel});
+}
+
+export type MetricsListener = (loadReport: OrcaLoadReport__Output) => void;
+
+export const GRPC_METRICS_HEADER = 'endpoint-load-metrics-bin';
+const PARSED_LOAD_REPORT_KEY = 'grpc_orca_load_report';
+
+/**
+ * Create an onCallEnded callback for use in a picker.
+ * @param listener The listener to handle metrics, whenever they are provided.
+ * @param previousOnCallEnded The previous onCallEnded callback to propagate
+ * to, if applicable.
+ * @returns
+ */
+export function createMetricsReader(listener: MetricsListener, previousOnCallEnded: OnCallEnded | null): OnCallEnded {
+  return (code, details, metadata) => {
+    let parsedLoadReport = metadata.getOpaque(PARSED_LOAD_REPORT_KEY) as (OrcaLoadReport__Output | undefined);
+    if (parsedLoadReport) {
+      listener(parsedLoadReport);
+    } else {
+      const serializedLoadReport = metadata.get(GRPC_METRICS_HEADER);
+      if (serializedLoadReport.length > 0) {
+        const orcaProto = loadOrcaProto();
+        parsedLoadReport = orcaProto.xds.data.orca.v3.OrcaLoadReport.deserialize(serializedLoadReport[0] as Buffer);
+        listener(parsedLoadReport);
+        metadata.setOpaque(PARSED_LOAD_REPORT_KEY, parsedLoadReport);
+      }
+    }
+    if (previousOnCallEnded) {
+      previousOnCallEnded(code, details, metadata);
+    }
+  }
 }
