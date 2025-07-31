@@ -47,6 +47,8 @@ import { SubchannelCallInterceptingListener } from './subchannel-call';
 import { SubchannelCall } from './subchannel-call';
 import { CallEventTracker, SubchannelConnector, Transport } from './transport';
 import { CallCredentials } from './call-credentials';
+import { SingleSubchannelChannel } from './single-subchannel-channel';
+import { Channel } from './channel';
 
 const TRACER_NAME = 'subchannel';
 
@@ -518,5 +520,9 @@ export class Subchannel implements SubchannelInterface {
   }
   getCallCredentials(): CallCredentials {
     return this.secureConnector.getCallCredentials();
+  }
+
+  getChannel(): Channel {
+    return new SingleSubchannelChannel(this, this.channelTarget, this.options);
   }
 }

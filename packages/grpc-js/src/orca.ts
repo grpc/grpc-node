@@ -20,9 +20,11 @@ import { OrcaLoadReport } from "./generated/xds/data/orca/v3/OrcaLoadReport";
 import type { loadSync } from '@grpc/proto-loader';
 import { ProtoGrpcType as OrcaProtoGrpcType } from "./generated/orca";
 import { loadPackageDefinition } from "./make-client";
-import { OpenRcaServiceHandlers } from "./generated/xds/service/orca/v3/OpenRcaService";
+import { OpenRcaServiceClient, OpenRcaServiceHandlers } from "./generated/xds/service/orca/v3/OpenRcaService";
 import { durationMessageToDuration, durationToMs } from "./duration";
 import { Server } from "./server";
+import { ChannelCredentials } from "./channel-credentials";
+import { Channel } from "./channel";
 
 const loadedOrcaProto: OrcaProtoGrpcType | null = null;
 function loadOrcaProto(): OrcaProtoGrpcType {
@@ -205,4 +207,9 @@ export class ServerMetricRecorder {
     const serviceDefinition = loadOrcaProto().xds.service.orca.v3.OpenRcaService.service;
     server.addService(serviceDefinition, this.serviceImplementation);
   }
+}
+
+export function createOrcaClient(channel: Channel): OpenRcaServiceClient {
+  const ClientClass = loadOrcaProto().xds.service.orca.v3.OpenRcaService;
+  return new ClientClass('unused', ChannelCredentials.createInsecure(), {channelOverride: channel});
 }

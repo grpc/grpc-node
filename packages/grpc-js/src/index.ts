@@ -285,6 +285,8 @@ export {
   ServerInterceptor,
 } from './server-interceptors';
 
+export { ServerMetricRecorder } from './orca';
+
 import * as experimental from './experimental';
 export { experimental };
 
