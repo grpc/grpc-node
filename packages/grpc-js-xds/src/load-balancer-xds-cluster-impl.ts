@@ -179,8 +179,8 @@ class XdsClusterImplPicker implements Picker {
           pickSubchannel?.getStatsObject()?.addCallStarted();
           callCounterMap.startCall(this.callCounterMapKey);
         },
-        onCallEnded: status => {
-          originalPick.onCallEnded?.(status);
+        onCallEnded: (status, details, metadata) => {
+          originalPick.onCallEnded?.(status, details, metadata);
           pickSubchannel?.getStatsObject()?.addCallFinished(status !== Status.OK)
           callCounterMap.endCall(this.callCounterMapKey);
         }
