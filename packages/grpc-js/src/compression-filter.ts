@@ -65,7 +65,7 @@ abstract class CompressionHandler {
    */
   async readMessage(data: Buffer): Promise<Buffer> {
     const compressed = data.readUInt8(0) === 1;
-    let messageBuffer = data.slice(5);
+    let messageBuffer: Buffer<ArrayBufferLike> = data.slice(5);
     if (compressed) {
       messageBuffer = await this.decompressMessage(messageBuffer);
     }
