@@ -29,7 +29,7 @@ import { LogVerbosity, Status } from './constants';
 import { Deadline, formatDateDifference, getDeadlineTimeoutString } from './deadline';
 import { InternalChannel } from './internal-channel';
 import { Metadata } from './metadata';
-import { PickResultType } from './picker';
+import { OnCallEnded, PickResultType } from './picker';
 import { CallConfig } from './resolver';
 import { splitHostPort } from './uri-parser';
 import * as logging from './logging';
@@ -60,7 +60,7 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
   private serviceUrl: string;
   private metadata: Metadata | null = null;
   private listener: InterceptingListener | null = null;
-  private onCallEnded: ((statusCode: Status) => void) | null = null;
+  private onCallEnded: OnCallEnded | null = null;
   private startTime: Date;
   private childStartTime: Date | null = null;
   constructor(
@@ -127,7 +127,7 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
       );
       const finalStatus = { ...status, progress };
       this.listener?.onReceiveStatus(finalStatus);
-      this.onCallEnded?.(finalStatus.code);
+      this.onCallEnded?.(finalStatus.code, finalStatus.details, finalStatus.metadata);
     }
   }
 

@@ -47,7 +47,7 @@ import { StatusOr, statusOrFromValue } from './call-interface';
 import { OrcaLoadReport__Output } from './generated/xds/data/orca/v3/OrcaLoadReport';
 import { OpenRcaServiceClient } from './generated/xds/service/orca/v3/OpenRcaService';
 import { ClientReadableStream, ServiceError } from './call';
-import { createOrcaClient } from './orca';
+import { createOrcaClient, MetricsListener } from './orca';
 import { msToDuration } from './duration';
 import { BackoffTimeout } from './backoff-timeout';
 
@@ -64,8 +64,6 @@ const TYPE_NAME = 'pick_first';
  * connection on the next subchannel in the list, for Happy Eyeballs algorithm.
  */
 const CONNECTION_DELAY_INTERVAL_MS = 250;
-
-export type MetricsListener = (loadReport: OrcaLoadReport__Output) => void;
 
 export class PickFirstLoadBalancingConfig implements TypedLoadBalancingConfig {
   constructor(private readonly shuffleAddressList: boolean) {}

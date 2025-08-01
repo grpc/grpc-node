@@ -35,7 +35,7 @@ import { CallEventTracker } from './transport';
 import * as logging from './logging';
 import { AuthContext } from './auth-context';
 import { TLSSocket } from 'tls';
-import { PerRequestMetricRecorder } from './orca';
+import { GRPC_METRICS_HEADER, PerRequestMetricRecorder } from './orca';
 
 const TRACER_NAME = 'server_call';
 
@@ -491,7 +491,6 @@ const GRPC_ENCODING_HEADER = 'grpc-encoding';
 const GRPC_MESSAGE_HEADER = 'grpc-message';
 const GRPC_STATUS_HEADER = 'grpc-status';
 const GRPC_TIMEOUT_HEADER = 'grpc-timeout';
-const GRPC_METRICS_HEADER = 'endpoint-load-metrics-bin';
 const DEADLINE_REGEX = /(\d{1,8})\s*([HMSmun])/;
 const deadlineUnitsToMs: DeadlineUnitIndexSignature = {
   H: 3600000,

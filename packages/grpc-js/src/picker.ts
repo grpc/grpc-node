@@ -28,6 +28,8 @@ export enum PickResultType {
   DROP,
 }
 
+export type OnCallEnded = (statusCode: Status, details: string, metadata: Metadata) => void;
+
 export interface PickResult {
   pickResultType: PickResultType;
   /**
@@ -42,7 +44,7 @@ export interface PickResult {
    */
   status: StatusObject | null;
   onCallStarted: (() => void) | null;
-  onCallEnded: ((statusCode: Status) => void) | null;
+  onCallEnded: OnCallEnded | null;
 }
 
 export interface CompletePickResult extends PickResult {
@@ -50,7 +52,7 @@ export interface CompletePickResult extends PickResult {
   subchannel: SubchannelInterface | null;
   status: null;
   onCallStarted: (() => void) | null;
-  onCallEnded: ((statusCode: Status) => void) | null;
+  onCallEnded: OnCallEnded | null;
 }
 
 export interface QueuePickResult extends PickResult {
