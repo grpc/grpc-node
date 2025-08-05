@@ -149,4 +149,62 @@ describe('Health checking', () => {
       });
     })
   });
+  describe('list', () => {
+    it('Should return all registered service statuses', done => {
+      healthClient.list({}, (error, response) => {
+        assert.ifError(error);
+        assert(response);
+        assert.deepStrictEqual(response.statuses, {
+          '': { status: 'SERVING' },
+          'grpc.test.TestServiceNotServing': { status: 'NOT_SERVING' },
+          'grpc.test.TestServiceServing': { status: 'SERVING' }
+        });
+        done();
+      });
+    });
+
+    it('Should return an empty list when no services are registered', done => {
+      // Create a new server with no services registered
+      const emptyServer = new grpc.Server();
+      const emptyImpl = new HealthImplementation({});
+      emptyImpl.addToServer(emptyServer);
+      emptyServer.bindAsync('localhost:0', grpc.ServerCredentials.createInsecure(), (error, port) => {
+        assert.ifError(error);
+        const HealthClientConstructor = grpc.makeClientConstructor(healthServiceDefinition, 'grpc.health.v1.HealthService');
+        const emptyClient = new HealthClientConstructor(`localhost:${port}`, grpc.credentials.createInsecure()) as unknown as HealthClient;
+        emptyServer.start();
+        emptyClient.list({}, (error, response) => {
+          assert.ifError(error);
+          assert(response);
+          assert.deepStrictEqual(response.statuses, {});
+          emptyClient.close();
+          emptyServer.tryShutdown(done);
+        });
+      });
+    });
+
+    it('Should return RESOURCE_EXHAUSTED when too many services are registered', done => {
+      const largeStatusMap: ServingStatusMap = {};
+      for (let i = 0; i < 101; i++) {
+        largeStatusMap[`service-${i}`] = 'SERVING';
+      }
+      const largeServer = new grpc.Server();
+      const largeImpl = new HealthImplementation(largeStatusMap);
+      largeImpl.addToServer(largeServer);
+      largeServer.bindAsync('localhost:0', grpc.ServerCredentials.createInsecure(), (error, port) => {
+        assert.ifError(error);
+        const HealthClientConstructor = grpc.makeClientConstructor(healthServiceDefinition, 'grpc.health.v1.HealthService');
+        const largeClient = new HealthClientConstructor(`localhost:${port}`, grpc.credentials.createInsecure()) as unknown as HealthClient;
+        largeServer.start();
+        largeClient.list({}, (error, response) => {
+          assert(error);
+          assert.strictEqual(error.code, grpc.status.RESOURCE_EXHAUSTED);
+          assert.strictEqual(response, undefined);
+          largeClient.close();
+          largeServer.tryShutdown(done);
+        });
+      });
+    });
+  });
+
 });
