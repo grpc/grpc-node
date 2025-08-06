@@ -16,7 +16,7 @@
  *
  */
 
-import camelCase = require('lodash.camelcase');
+import { camelCase } from 'es-toolkit/compat';
 import * as Protobuf from 'protobufjs';
 import * as descriptor from 'protobufjs/ext/descriptor';
 

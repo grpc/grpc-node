@@ -18,7 +18,7 @@
 
 'use strict';
 
-var _ = require('lodash');
+var _ = require('es-toolkit/compat');
 
 // TODO(murgatroid99): use multiple grpc implementations
 var grpc = require('grpc');
