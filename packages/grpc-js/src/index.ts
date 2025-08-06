@@ -296,6 +296,7 @@ import * as resolver_ip from './resolver-ip';
 import * as load_balancer_pick_first from './load-balancer-pick-first';
 import * as load_balancer_round_robin from './load-balancer-round-robin';
 import * as load_balancer_outlier_detection from './load-balancer-outlier-detection';
+import * as load_balancer_weighted_round_robin from './load-balancer-weighted-round-robin';
 import * as channelz from './channelz';
 import { Deadline } from './deadline';
 
@@ -306,5 +307,6 @@ import { Deadline } from './deadline';
   load_balancer_pick_first.setup();
   load_balancer_round_robin.setup();
   load_balancer_outlier_detection.setup();
+  load_balancer_weighted_round_robin.setup();
   channelz.setup();
 })();
