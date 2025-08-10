@@ -719,7 +719,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
         settings: {
           initialWindowSize:
             options['grpc-node.flow_control_window'] ??
-            http2.getDefaultSettings().initialWindowSize,
+            http2.getDefaultSettings().initialWindowSize ?? 65535,
         }
       });
 
