@@ -588,6 +588,11 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   destroy() {
     this.resetSubchannelList();
     this.removeCurrentPick();
+    this.metricsCall?.cancel();
+    this.metricsCall = null;
+    this.orcaClient?.close();
+    this.orcaClient = null;
+    this.metricsBackoffTimer.stop();
   }
 
   getTypeName(): string {

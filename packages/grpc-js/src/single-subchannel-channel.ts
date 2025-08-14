@@ -22,10 +22,12 @@ import { getNextCallNumber } from "./call-number";
 import { Channel } from "./channel";
 import { ChannelOptions } from "./channel-options";
 import { ChannelRef, ChannelzCallTracker, ChannelzChildrenTracker, ChannelzTrace, registerChannelzChannel, unregisterChannelzRef } from "./channelz";
+import { CompressionFilterFactory } from "./compression-filter";
 import { ConnectivityState } from "./connectivity-state";
 import { Propagate, Status } from "./constants";
 import { restrictControlPlaneStatusCode } from "./control-plane-status";
 import { Deadline, getRelativeTimeout } from "./deadline";
+import { FilterStack, FilterStackFactory } from "./filter-stack";
 import { Metadata } from "./metadata";
 import { getDefaultAuthority } from "./resolver";
 import { Subchannel } from "./subchannel";
@@ -40,7 +42,10 @@ class SubchannelCallWrapper implements Call {
   private halfClosePending = false;
   private pendingStatus: StatusObject | null = null;
   private serviceUrl: string;
-  constructor(private subchannel: Subchannel, private method: string, private options: CallStreamOptions, private callNumber: number) {
+  private filterStack: FilterStack;
+  private readFilterPending = false;
+  private writeFilterPending = false;
+  constructor(private subchannel: Subchannel, private method: string, filterStackFactory: FilterStackFactory, private options: CallStreamOptions, private callNumber: number) {
     const splitPath: string[] = this.method.split('/');
     let serviceName = '';
     /* The standard path format is "/{serviceName}/{methodName}", so if we split
@@ -63,6 +68,7 @@ class SubchannelCallWrapper implements Call {
         }, timeout);
       }
     }
+    this.filterStack = filterStackFactory.createFilter();
   }
 
   cancelWithStatus(status: Status, details: string): void {
@@ -80,7 +86,7 @@ class SubchannelCallWrapper implements Call {
   getPeer(): string {
     return this.childCall?.getPeer() ?? this.subchannel.getAddress();
   }
-  start(metadata: Metadata, listener: InterceptingListener): void {
+  async start(metadata: Metadata, listener: InterceptingListener): Promise<void> {
     if (this.pendingStatus) {
       listener.onReceiveStatus(this.pendingStatus);
       return;
@@ -93,38 +99,71 @@ class SubchannelCallWrapper implements Call {
       });
       return;
     }
-    this.subchannel.getCallCredentials()
-      .generateMetadata({method_name: this.method, service_url: this.serviceUrl})
-      .then(credsMetadata => {
-        this.childCall = this.subchannel.createCall(credsMetadata, this.options.host, this.method, listener);
-        if (this.readPending) {
-          this.childCall.startRead();
+    const filteredMetadata = await this.filterStack.sendMetadata(Promise.resolve(metadata));
+    let credsMetadata: Metadata;
+    try {
+      credsMetadata = await this.subchannel.getCallCredentials()
+        .generateMetadata({method_name: this.method, service_url: this.serviceUrl});
+    } catch (e) {
+      const error = e as (Error & { code: number });
+      const { code, details } = restrictControlPlaneStatusCode(
+        typeof error.code === 'number' ? error.code : Status.UNKNOWN,
+        `Getting metadata from plugin failed with error: ${error.message}`
+      );
+      listener.onReceiveStatus(
+        {
+          code: code,
+          details: details,
+          metadata: new Metadata(),
         }
-        if (this.pendingMessage) {
-          this.childCall.sendMessageWithContext(this.pendingMessage.context, this.pendingMessage.message);
+      );
+      return;
+    }
+    credsMetadata.merge(filteredMetadata);
+    const childListener: InterceptingListener = {
+      onReceiveMetadata: async metadata => {
+        listener.onReceiveMetadata(await this.filterStack.receiveMetadata(metadata));
+      },
+      onReceiveMessage: async message => {
+        this.readFilterPending = true;
+        const filteredMessage = await this.filterStack.receiveMessage(message);
+        this.readFilterPending = false;
+        listener.onReceiveMessage(filteredMessage);
+        if (this.pendingStatus) {
+          listener.onReceiveStatus(this.pendingStatus);
         }
-        if (this.halfClosePending) {
-          this.childCall.halfClose();
+      },
+      onReceiveStatus: async status => {
+        const filteredStatus = await this.filterStack.receiveTrailers(status);
+        if (this.readFilterPending) {
+          this.pendingStatus = filteredStatus;
+        } else {
+          listener.onReceiveStatus(filteredStatus);
         }
-      }, (error: Error & { code: number }) => {
-        const { code, details } = restrictControlPlaneStatusCode(
-          typeof error.code === 'number' ? error.code : Status.UNKNOWN,
-          `Getting metadata from plugin failed with error: ${error.message}`
-        );
-        listener.onReceiveStatus(
-          {
-            code: code,
-            details: details,
-            metadata: new Metadata(),
-          }
-        );
-      });
+      }
+    }
+    this.childCall = this.subchannel.createCall(credsMetadata, this.options.host, this.method, childListener);
+    if (this.readPending) {
+      this.childCall.startRead();
+    }
+    if (this.pendingMessage) {
+      this.childCall.sendMessageWithContext(this.pendingMessage.context, this.pendingMessage.message);
+    }
+    if (this.halfClosePending && !this.writeFilterPending) {
+      this.childCall.halfClose();
+    }
   }
-  sendMessageWithContext(context: MessageContext, message: Buffer): void {
+  async sendMessageWithContext(context: MessageContext, message: Buffer): Promise<void> {
+    this.writeFilterPending = true;
+    const filteredMessage = await this.filterStack.sendMessage(Promise.resolve({message: message, flags: context.flags}));
+    this.writeFilterPending = false;
     if (this.childCall) {
-      this.childCall.sendMessageWithContext(context, message);
+      this.childCall.sendMessageWithContext(context, filteredMessage.message);
+      if (this.halfClosePending) {
+        this.childCall.halfClose();
+      }
     } else {
-      this.pendingMessage = { context, message };
+      this.pendingMessage = { context, message: filteredMessage.message };
     }
   }
   startRead(): void {
@@ -135,7 +174,7 @@ class SubchannelCallWrapper implements Call {
     }
   }
   halfClose(): void {
-    if (this.childCall) {
+    if (this.childCall && !this.writeFilterPending) {
       this.childCall.halfClose();
     } else {
       this.halfClosePending = true;
@@ -162,6 +201,7 @@ export class SingleSubchannelChannel implements Channel {
   private channelzTrace = new ChannelzTrace();
   private callTracker = new ChannelzCallTracker();
   private childrenTracker = new ChannelzChildrenTracker();
+  private filterStackFactory: FilterStackFactory;
   constructor(private subchannel: Subchannel, private target: GrpcUri, options: ChannelOptions) {
     this.channelzEnabled = options['grpc.enable_channelz'] !== 0;
     this.channelzRef = registerChannelzChannel(uriToString(target),  () => ({
@@ -174,6 +214,7 @@ export class SingleSubchannelChannel implements Channel {
     if (this.channelzEnabled) {
       this.childrenTracker.refChild(subchannel.getChannelzRef());
     }
+    this.filterStackFactory = new FilterStackFactory([new CompressionFilterFactory(this, options)]);
   }
 
   close(): void {
@@ -202,6 +243,6 @@ export class SingleSubchannelChannel implements Channel {
       flags: Propagate.DEFAULTS,
       parentCall: null
     };
-    return new SubchannelCallWrapper(this.subchannel, method, callOptions, getNextCallNumber());
+    return new SubchannelCallWrapper(this.subchannel, method, this.filterStackFactory, callOptions, getNextCallNumber());
   }
 }

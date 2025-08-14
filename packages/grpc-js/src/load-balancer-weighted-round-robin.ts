@@ -71,22 +71,24 @@ function validateFieldType(
 
 function parseDurationField(obj: any, fieldName: string): number | null {
   if (fieldName in obj && obj[fieldName] !== undefined) {
-    let durationObject: Duration | null;
+    let durationObject: Duration;
     if (isDuration(obj[fieldName])) {
       durationObject = obj[fieldName];
     } else if (typeof obj[fieldName] === 'string') {
-      durationObject = parseDuration(obj[fieldName]);
+      const parsedDuration = parseDuration(obj[fieldName]);
+      if (!parsedDuration) {
+        throw new Error(`weighted round robin config ${fieldName}: failed to parse duration string ${obj[fieldName]}`);
+      }
+      durationObject = parsedDuration;
     } else {
-      durationObject = null;
+      throw new Error(`weighted round robin config ${fieldName}: expected duration, got ${typeof obj[fieldName]}`);
     }
-    if (durationObject) {
-      return durationToMs(durationObject);
-    }
+    return durationToMs(durationObject);
   }
   return null;
 }
 
-class WeightedRoundRobinLoadBalancingConfig implements TypedLoadBalancingConfig {
+export class WeightedRoundRobinLoadBalancingConfig implements TypedLoadBalancingConfig {
   private readonly enableOobLoadReport: boolean;
   private readonly oobLoadReportingPeriodMs: number;
   private readonly blackoutPeriodMs: number;
@@ -106,7 +108,7 @@ class WeightedRoundRobinLoadBalancingConfig implements TypedLoadBalancingConfig 
     this.oobLoadReportingPeriodMs = oobLoadReportingPeriodMs ?? DEFAULT_OOB_REPORTING_PERIOD_MS;
     this.blackoutPeriodMs = blackoutPeriodMs ?? DEFAULT_BLACKOUT_PERIOD_MS;
     this.weightExpirationPeriodMs = weightExpirationPeriodMs ?? DEFAULT_WEIGHT_EXPIRATION_PERIOD_MS;
-    this.weightUpdatePeriodMs = Math.min(weightUpdatePeriodMs ?? DEFAULT_WEIGHT_UPDATE_PERIOD_MS, 100);
+    this.weightUpdatePeriodMs = Math.max(weightUpdatePeriodMs ?? DEFAULT_WEIGHT_UPDATE_PERIOD_MS, 100);
     this.errorUtilizationPenalty = errorUtilizationPenalty ?? DEFAULT_ERROR_UTILIZATION_PENALTY;
   }
 
@@ -177,8 +179,19 @@ type MetricsHandler = (loadReport: OrcaLoadReport__Output, endpointName: string)
 class WeightedRoundRobinPicker implements Picker {
   private queue: PriorityQueue<QueueEntry> = new PriorityQueue((a, b) => a.deadline < b.deadline);
   constructor(children: WeightedPicker[], private readonly metricsHandler: MetricsHandler | null) {
+    const positiveWeight = children.filter(picker => picker.weight > 0);
+    let averageWeight: number;
+    if (positiveWeight.length < 2) {
+      averageWeight = 1;
+    } else {
+      let weightSum: number = 0;
+      for (const { weight } of positiveWeight) {
+        weightSum += weight;
+      }
+      averageWeight = weightSum / positiveWeight.length;
+    }
     for (const child of children) {
-      const period = 1 / child.weight;
+      const period = child.weight > 0 ? 1 / child.weight : averageWeight;
       this.queue.push({
         endpointName: child.endpointName,
         picker: child.picker,
@@ -188,7 +201,7 @@ class WeightedRoundRobinPicker implements Picker {
     }
   }
   pick(pickArgs: PickArgs): PickResult {
-    const entry = this.queue.pop();
+    const entry = this.queue.pop()!;
     this.queue.push({
       ...entry,
       deadline: entry.deadline + entry.period
@@ -223,6 +236,8 @@ class WeightedRoundRobinLoadBalancer implements LoadBalancer {
   private updatesPaused = false;
 
   private lastError: string | null = null;
+
+  private weightUpdateTimer: NodeJS.Timeout | null = null;
 
   constructor(private readonly channelControlHelper: ChannelControlHelper) {}
 
@@ -280,16 +295,15 @@ class WeightedRoundRobinLoadBalancer implements LoadBalancer {
         if (entry.child.getConnectivityState() !== ConnectivityState.READY) {
           continue;
         }
-        if (entry.weight > 0) {
-          weightedPickers.push({
-            endpointName: endpoint,
-            picker: entry.child.getPicker(),
-            weight: this.getWeight(entry)
-          });
-        }
+        weightedPickers.push({
+          endpointName: endpoint,
+          picker: entry.child.getPicker(),
+          weight: this.getWeight(entry)
+        });
       }
+      trace('Created picker with weights: ' + weightedPickers.map(entry => entry.endpointName + ':' + entry.weight).join(','));
       let metricsHandler: MetricsHandler | null;
-      if (this.latestConfig.getEnableOobLoadReport()) {
+      if (!this.latestConfig.getEnableOobLoadReport()) {
         metricsHandler = (loadReport, endpointName) => {
           const childEntry = this.children.get(endpointName);
           if (childEntry) {
@@ -358,6 +372,16 @@ class WeightedRoundRobinLoadBalancer implements LoadBalancer {
       }
       return true;
     }
+    if (maybeEndpointList.value.length === 0) {
+      const errorMessage = `No addresses resolved. Resolution note: ${resolutionNote}`;
+      this.updateState(
+        ConnectivityState.TRANSIENT_FAILURE,
+        new UnavailablePicker({details: errorMessage}),
+        errorMessage
+      );
+      return false;
+    }
+    trace('Connect to endpoint list ' + maybeEndpointList.value.map(endpointToString));
     const now = new Date();
     const seenEndpointNames = new Set<string>();
     this.updatesPaused = true;
@@ -412,16 +436,28 @@ class WeightedRoundRobinLoadBalancer implements LoadBalancer {
           };
           entry.child.addMetricsSubscription(entry.oobMetricsListener, lbConfig.getOobLoadReportingPeriodMs());
         }
+        this.children.set(name, entry);
       }
     }
     for (const [endpointName, entry] of this.children) {
-      if (!seenEndpointNames.has(endpointName)) {
+      if (seenEndpointNames.has(endpointName)) {
+        entry.child.startConnecting();
+      } else {
         entry.child.destroy();
         this.children.delete(endpointName);
       }
     }
+    this.latestConfig = lbConfig;
     this.updatesPaused = false;
     this.calculateAndUpdateState();
+    if (this.weightUpdateTimer) {
+      clearInterval(this.weightUpdateTimer);
+    }
+    this.weightUpdateTimer = setInterval(() => {
+      if (this.currentState === ConnectivityState.READY) {
+        this.calculateAndUpdateState();
+      }
+    }, lbConfig.getWeightUpdatePeriodMs()).unref?.();
     return true;
   }
   exitIdle(): void {
@@ -437,6 +473,9 @@ class WeightedRoundRobinLoadBalancer implements LoadBalancer {
       entry.child.destroy();
     }
     this.children.clear();
+    if (this.weightUpdateTimer) {
+      clearInterval(this.weightUpdateTimer);
+    }
   }
   getTypeName(): string {
     return TYPE_NAME;
