@@ -58,3 +58,18 @@ export function parseDuration(value: string): Duration | null {
     nanos: match[2] ? Number.parseInt(match[2].padEnd(9, '0'), 10) : 0
   };
 }
+
+export function durationToString(duration: Duration): string {
+  if (duration.nanos === 0) {
+    return `${duration.seconds}s`;
+  }
+  let scaleFactor: number;
+  if (duration.nanos % 1_000_000 === 0) {
+    scaleFactor = 1_000_000;
+  } else if (duration.nanos % 1_000 === 0) {
+    scaleFactor = 1_000;
+  } else {
+    scaleFactor = 1;
+  }
+  return `${duration.seconds}.${duration.nanos/scaleFactor}s`;
+}
