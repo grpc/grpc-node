@@ -16,7 +16,7 @@
  *
  */
 
-var _ = require('lodash');
+var _ = require('es-toolkit/compat');
 
 module.exports = {
   'unaryCall' : {
