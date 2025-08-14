@@ -276,7 +276,7 @@ describe('Weighted round robin LB policy', () => {
       server2Metrics.qps = 1;
       server2Metrics.utilization = 1;
       await makeNCalls(client, 10);
-      await asyncTimeout(100);
+      await asyncTimeout(200);
       const result = await makeNCalls(client, 40);
       assert(Math.abs(result['1'] - 30) < 2, `server1: ${result['1']}, server2: ${result['2']}`);
     });
@@ -428,7 +428,7 @@ describe('Weighted round robin LB policy', () => {
       server2MetricRecorder.setQpsMetric(1);
       server2MetricRecorder.setApplicationUtilizationMetric(1);
       await makeNCalls(client, 10);
-      await asyncTimeout(100);
+      await asyncTimeout(200);
       const result = await makeNCalls(client, 40);
       assert(Math.abs(result['1'] - 30) < 2, `server1: ${result['1']}, server2: ${result['2']}`);
     });
