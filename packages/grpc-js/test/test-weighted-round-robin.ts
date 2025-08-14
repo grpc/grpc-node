@@ -297,7 +297,7 @@ describe('Weighted round robin LB policy', () => {
       await asyncTimeout(400);
       const result2 = await makeNCalls(client, 40);
       assert(Math.abs(result2['1'] - 30) < 2, `result2: server1: ${result2['1']}, server2: ${result2['2']}`);
-    }).timeout(3000);
+    })
     // Calls aren't fast enough for this to work consistently
     it.skip('Should wait for the weight update period to apply weights', async () => {
       const serviceConfig = createServiceConfig({
@@ -316,7 +316,7 @@ describe('Weighted round robin LB policy', () => {
       await asyncTimeout(400);
       const result2 = await makeNCalls(client, 40);
       assert(Math.abs(result2['1'] - 30) < 2, `result2: server1: ${result2['1']}, server2: ${result2['2']}`);
-    }).timeout(3000);
+    })
     it('Should send more requests to endpoints with lower EPS', async () => {
       const serviceConfig = createServiceConfig({
         blackout_period: '0.01s',
