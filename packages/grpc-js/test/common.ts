@@ -30,6 +30,7 @@ import {
 } from '../src/make-client';
 import { readFileSync } from 'fs';
 import {
+  DataWatcher,
   HealthListener,
   SubchannelInterface,
 } from '../src/subchannel-interface';
@@ -204,6 +205,9 @@ export class MockSubchannel implements SubchannelInterface {
     initialState: grpc.connectivityState = grpc.connectivityState.IDLE
   ) {
     this.state = initialState;
+  }
+  addDataWatcher(dataWatcher: DataWatcher): void {
+    throw new Error('Method not implemented.');
   }
   getConnectivityState(): grpc.connectivityState {
     return this.state;

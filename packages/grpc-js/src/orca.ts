@@ -21,11 +21,17 @@ import type { loadSync } from '@grpc/proto-loader';
 import { ProtoGrpcType as OrcaProtoGrpcType } from "./generated/orca";
 import { loadPackageDefinition } from "./make-client";
 import { OpenRcaServiceClient, OpenRcaServiceHandlers } from "./generated/xds/service/orca/v3/OpenRcaService";
-import { durationMessageToDuration, durationToMs } from "./duration";
+import { durationMessageToDuration, durationToMs, msToDuration } from "./duration";
 import { Server } from "./server";
 import { ChannelCredentials } from "./channel-credentials";
 import { Channel } from "./channel";
 import { OnCallEnded } from "./picker";
+import { DataProducer, Subchannel } from "./subchannel";
+import { BaseSubchannelWrapper, DataWatcher, SubchannelInterface } from "./subchannel-interface";
+import { ClientReadableStream, ServiceError } from "./call";
+import { Status } from "./constants";
+import { BackoffTimeout } from "./backoff-timeout";
+import { ConnectivityState } from "./connectivity-state";
 
 const loadedOrcaProto: OrcaProtoGrpcType | null = null;
 function loadOrcaProto(): OrcaProtoGrpcType {
@@ -245,4 +251,95 @@ export function createMetricsReader(listener: MetricsListener, previousOnCallEnd
       previousOnCallEnded(code, details, metadata);
     }
   }
+}
+
+const DATA_PRODUCER_KEY = 'orca_oob_metrics';
+
+class OobMetricsDataWatcher implements DataWatcher {
+  private dataProducer: DataProducer | null = null;
+  constructor(private metricsListener: MetricsListener, private intervalMs: number) {}
+  setSubchannel(subchannel: Subchannel): void {
+    const producer = subchannel.getOrCreateDataProducer(DATA_PRODUCER_KEY, createOobMetricsDataProducer);
+    this.dataProducer = producer;
+    producer.addDataWatcher(this);
+  }
+  destroy(): void {
+    this.dataProducer?.removeDataWatcher(this);
+  }
+  getInterval(): number {
+    return this.intervalMs;
+  }
+  onMetricsUpdate(metrics: OrcaLoadReport__Output) {
+    this.metricsListener(metrics);
+  }
+}
+
+class OobMetricsDataProducer implements DataProducer {
+  private dataWatchers: Set<OobMetricsDataWatcher> = new Set();
+  private orcaSupported = true;
+  private client: OpenRcaServiceClient;
+  private metricsCall: ClientReadableStream<OrcaLoadReport__Output> | null = null;
+  private currentInterval = Infinity;
+  private backoffTimer = new BackoffTimeout(() => this.updateMetricsSubscription());
+  private subchannelStateListener = () => this.updateMetricsSubscription();
+  constructor(private subchannel: Subchannel) {
+    const channel = subchannel.getChannel();
+    this.client = createOrcaClient(channel);
+    subchannel.addConnectivityStateListener(this.subchannelStateListener);
+  }
+  addDataWatcher(dataWatcher: OobMetricsDataWatcher): void {
+    this.dataWatchers.add(dataWatcher);
+    this.updateMetricsSubscription();
+  }
+  removeDataWatcher(dataWatcher: OobMetricsDataWatcher): void {
+    this.dataWatchers.delete(dataWatcher);
+    if (this.dataWatchers.size === 0) {
+      this.subchannel.removeDataProducer(DATA_PRODUCER_KEY);
+      this.metricsCall?.cancel();
+      this.metricsCall = null;
+      this.client.close();
+      this.subchannel.removeConnectivityStateListener(this.subchannelStateListener);
+    } else {
+      this.updateMetricsSubscription();
+    }
+  }
+  private updateMetricsSubscription() {
+    if (this.dataWatchers.size === 0 || !this.orcaSupported || this.subchannel.getConnectivityState() !== ConnectivityState.READY) {
+      return;
+    }
+    const newInterval = Math.min(...Array.from(this.dataWatchers).map(watcher => watcher.getInterval()));
+    if (!this.metricsCall || newInterval !== this.currentInterval) {
+      this.metricsCall?.cancel();
+      this.currentInterval = newInterval;
+      const metricsCall = this.client.streamCoreMetrics({report_interval: msToDuration(newInterval)});
+      this.metricsCall = metricsCall;
+      metricsCall.on('data', (report: OrcaLoadReport__Output) => {
+        this.dataWatchers.forEach(watcher => {
+          watcher.onMetricsUpdate(report);
+        });
+      });
+      metricsCall.on('error', (error: ServiceError) => {
+        this.metricsCall = null;
+        if (error.code === Status.UNIMPLEMENTED) {
+          this.orcaSupported = false;
+          return;
+        }
+        if (error.code === Status.CANCELLED) {
+          return;
+        }
+        this.backoffTimer.runOnce();
+      });
+    }
+  }
+}
+
+export class OrcaOobMetricsSubchannelWrapper extends BaseSubchannelWrapper {
+  constructor(child: SubchannelInterface, metricsListener: MetricsListener, intervalMs: number) {
+    super(child);
+    this.addDataWatcher(new OobMetricsDataWatcher(metricsListener, intervalMs));
+  }
+}
+
+function createOobMetricsDataProducer(subchannel: Subchannel) {
+  return new OobMetricsDataProducer(subchannel);
 }
