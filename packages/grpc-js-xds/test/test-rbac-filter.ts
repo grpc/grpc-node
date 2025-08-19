@@ -24,7 +24,7 @@ import { AnyExtension } from '@grpc/proto-loader';
 import { RBAC } from '../src/generated/envoy/extensions/filters/http/rbac/v3/RBAC';
 import { status } from '@grpc/grpc-js';
 
-describe.only('RBAC HTTP filter', () => {
+describe('RBAC HTTP filter', () => {
   let xdsServer: ControlPlaneServer;
   let client: XdsTestClient;
   beforeEach(done => {
