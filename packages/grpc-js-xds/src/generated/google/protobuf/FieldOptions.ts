@@ -3,8 +3,6 @@
 import type { FeatureSet as _google_protobuf_FeatureSet, FeatureSet__Output as _google_protobuf_FeatureSet__Output } from '../../google/protobuf/FeatureSet';
 import type { UninterpretedOption as _google_protobuf_UninterpretedOption, UninterpretedOption__Output as _google_protobuf_UninterpretedOption__Output } from '../../google/protobuf/UninterpretedOption';
 import type { FieldRules as _validate_FieldRules, FieldRules__Output as _validate_FieldRules__Output } from '../../validate/FieldRules';
-import type { FieldMigrateAnnotation as _udpa_annotations_FieldMigrateAnnotation, FieldMigrateAnnotation__Output as _udpa_annotations_FieldMigrateAnnotation__Output } from '../../udpa/annotations/FieldMigrateAnnotation';
-import type { FieldStatusAnnotation as _xds_annotations_v3_FieldStatusAnnotation, FieldStatusAnnotation__Output as _xds_annotations_v3_FieldStatusAnnotation__Output } from '../../xds/annotations/v3/FieldStatusAnnotation';
 import type { Edition as _google_protobuf_Edition, Edition__Output as _google_protobuf_Edition__Output } from '../../google/protobuf/Edition';
 
 // Original file: null
@@ -143,10 +141,6 @@ export interface FieldOptions {
   'featureSupport'?: (_google_protobuf_FieldOptions_FeatureSupport | null);
   'uninterpretedOption'?: (_google_protobuf_UninterpretedOption)[];
   '.validate.rules'?: (_validate_FieldRules | null);
-  '.envoy.annotations.deprecated_at_minor_version'?: (string);
-  '.udpa.annotations.field_migrate'?: (_udpa_annotations_FieldMigrateAnnotation | null);
-  '.envoy.annotations.disallowed_by_default'?: (boolean);
-  '.xds.annotations.v3.field_status'?: (_xds_annotations_v3_FieldStatusAnnotation | null);
 }
 
 export interface FieldOptions__Output {
@@ -168,8 +162,4 @@ export interface FieldOptions__Output {
   'featureSupport': (_google_protobuf_FieldOptions_FeatureSupport__Output | null);
   'uninterpretedOption': (_google_protobuf_UninterpretedOption__Output)[];
   '.validate.rules': (_validate_FieldRules__Output | null);
-  '.envoy.annotations.deprecated_at_minor_version': (string);
-  '.udpa.annotations.field_migrate': (_udpa_annotations_FieldMigrateAnnotation__Output | null);
-  '.envoy.annotations.disallowed_by_default': (boolean);
-  '.xds.annotations.v3.field_status': (_xds_annotations_v3_FieldStatusAnnotation__Output | null);
 }

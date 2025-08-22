@@ -19,7 +19,7 @@ import { StatusOr } from './call-interface';
 import { ChannelOptions } from './channel-options';
 import { ConnectivityState } from './connectivity-state';
 import { LogVerbosity } from './constants';
-import { Duration, durationToMs, durationToString, isDuration, msToDuration, parseDuration } from './duration';
+import { Duration, durationMessageToDuration, durationToMs, durationToString, isDuration, isDurationMessage, msToDuration, parseDuration } from './duration';
 import { OrcaLoadReport__Output } from './generated/xds/data/orca/v3/OrcaLoadReport';
 import { ChannelControlHelper, createChildChannelControlHelper, LoadBalancer, registerLoadBalancerType, TypedLoadBalancingConfig } from './load-balancer';
 import { LeafLoadBalancer } from './load-balancer-pick-first';
@@ -70,10 +70,12 @@ function validateFieldType(
 }
 
 function parseDurationField(obj: any, fieldName: string): number | null {
-  if (fieldName in obj && obj[fieldName] !== undefined) {
+  if (fieldName in obj && obj[fieldName] !== undefined && obj[fieldName] !== null) {
     let durationObject: Duration;
     if (isDuration(obj[fieldName])) {
       durationObject = obj[fieldName];
+    } else if (isDurationMessage(obj[fieldName])) {
+      durationObject = durationMessageToDuration(obj[fieldName]);
     } else if (typeof obj[fieldName] === 'string') {
       const parsedDuration = parseDuration(obj[fieldName]);
       if (!parsedDuration) {
