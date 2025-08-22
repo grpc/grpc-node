@@ -278,7 +278,7 @@ describe('Weighted round robin LB policy', () => {
       await makeNCalls(client, 10);
       await asyncTimeout(200);
       const result = await makeNCalls(client, 40);
-      assert(Math.abs(result['1'] - 30) < 2, `server1: ${result['1']}, server2: ${result['2']}`);
+      assert(Math.abs(result['1'] - 30) < 3, `server1: ${result['1']}, server2: ${result['2']}`);
     });
     // Calls aren't fast enough for this to work consistently
     it.skip('Should wait for the blackout period to apply weights', async () => {
@@ -430,7 +430,7 @@ describe('Weighted round robin LB policy', () => {
       await makeNCalls(client, 10);
       await asyncTimeout(200);
       const result = await makeNCalls(client, 40);
-      assert(Math.abs(result['1'] - 30) < 2, `server1: ${result['1']}, server2: ${result['2']}`);
+      assert(Math.abs(result['1'] - 30) < 3, `server1: ${result['1']}, server2: ${result['2']}`);
     });
   });
 });

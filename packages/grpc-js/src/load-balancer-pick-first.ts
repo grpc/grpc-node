@@ -34,7 +34,7 @@ import {
 } from './picker';
 import { Endpoint, SubchannelAddress, subchannelAddressToString } from './subchannel-address';
 import * as logging from './logging';
-import { LogVerbosity, Status } from './constants';
+import { LogVerbosity } from './constants';
 import {
   SubchannelInterface,
   ConnectivityStateListener,
@@ -44,12 +44,6 @@ import { isTcpSubchannelAddress } from './subchannel-address';
 import { isIPv6 } from 'net';
 import { ChannelOptions } from './channel-options';
 import { StatusOr, statusOrFromValue } from './call-interface';
-import { OrcaLoadReport__Output } from './generated/xds/data/orca/v3/OrcaLoadReport';
-import { OpenRcaServiceClient } from './generated/xds/service/orca/v3/OpenRcaService';
-import { ClientReadableStream, ServiceError } from './call';
-import { createOrcaClient, MetricsListener } from './orca';
-import { msToDuration } from './duration';
-import { BackoffTimeout } from './backoff-timeout';
 
 const TRACER_NAME = 'pick_first';
 
@@ -245,13 +239,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
 
   private latestResolutionNote: string = '';
 
-  private metricsListeners: Map<MetricsListener, number> = new Map();
-  private orcaClient: OpenRcaServiceClient | null = null;
-  private metricsCall: ClientReadableStream<OrcaLoadReport__Output> | null = null;
-  private currentMetricsIntervalMs: number = Infinity;
-  private orcaUnsupported = false;
-  private metricsBackoffTimer = new BackoffTimeout(() => this.updateMetricsSubscription());
-
   /**
    * Load balancer that attempts to connect to each backend in the address list
    * in order, and picks the first one that connects, using it for every
@@ -349,12 +336,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
       this.currentPick.removeHealthStateWatcher(
         this.pickedSubchannelHealthListener
       );
-      this.orcaClient?.close();
-      this.orcaClient = null;
-      this.metricsCall?.cancel();
-      this.metricsCall = null;
-      this.metricsBackoffTimer.stop();
-      this.metricsBackoffTimer.reset();
       // Unref last, to avoid triggering listeners
       this.currentPick.unref();
       this.currentPick = null;
@@ -458,7 +439,6 @@ export class PickFirstLoadBalancer implements LoadBalancer {
     this.currentPick = subchannel;
     clearTimeout(this.connectionDelayTimeout);
     this.calculateAndReportNewState();
-    this.updateMetricsSubscription();
   }
 
   private updateState(newState: ConnectivityState, picker: Picker, errorMessage: string | null) {
@@ -588,76 +568,10 @@ export class PickFirstLoadBalancer implements LoadBalancer {
   destroy() {
     this.resetSubchannelList();
     this.removeCurrentPick();
-    this.metricsCall?.cancel();
-    this.metricsCall = null;
-    this.orcaClient?.close();
-    this.orcaClient = null;
-    this.metricsBackoffTimer.stop();
   }
 
   getTypeName(): string {
     return TYPE_NAME;
-  }
-
-  private getOrCreateOrcaClient(): OpenRcaServiceClient | null {
-    if (this.orcaClient) {
-      return this.orcaClient;
-    }
-    if (this.currentPick) {
-      const channel = this.currentPick.getChannel();
-      this.orcaClient = createOrcaClient(channel);
-      return this.orcaClient;
-    }
-    return null;
-  }
-
-  private updateMetricsSubscription() {
-    if (this.orcaUnsupported) {
-      return;
-    }
-    if (this.metricsListeners.size > 0) {
-      const newInterval = Math.min(...Array.from(this.metricsListeners.values()));
-      if (!this.metricsCall || newInterval !== this.currentMetricsIntervalMs) {
-        const orcaClient = this.getOrCreateOrcaClient();
-        if (!orcaClient) {
-          return;
-        }
-        this.metricsCall?.cancel();
-        this.currentMetricsIntervalMs = newInterval;
-        const metricsCall = orcaClient.streamCoreMetrics({report_interval: msToDuration(newInterval)});
-        this.metricsCall = metricsCall;
-        metricsCall.on('data', (report: OrcaLoadReport__Output) => {
-          this.metricsListeners.forEach((interval, listener) => {
-            listener(report);
-          });
-        });
-        metricsCall.on('error', (error: ServiceError) => {
-          this.metricsCall = null;
-          if (error.code === Status.UNIMPLEMENTED) {
-            this.orcaUnsupported = true;
-            return;
-          }
-          if (error.code === Status.CANCELLED) {
-            return;
-          }
-          this.metricsBackoffTimer.runOnce();
-        });
-      }
-    } else {
-      this.metricsCall?.cancel();
-      this.metricsCall = null;
-      this.currentMetricsIntervalMs = Infinity;
-    }
-  }
-
-  addMetricsSubscription(listener: MetricsListener, intervalMs: number): void {
-    this.metricsListeners.set(listener, intervalMs);
-    this.updateMetricsSubscription();
-  }
-
-  removeMetricsSubscription(listener: MetricsListener): void {
-    this.metricsListeners.delete(listener);
-    this.updateMetricsSubscription();
   }
 }
 
@@ -735,14 +649,6 @@ export class LeafLoadBalancer {
 
   destroy() {
     this.pickFirstBalancer.destroy();
-  }
-
-  addMetricsSubscription(listener: MetricsListener, intervalMs: number): void {
-    this.pickFirstBalancer.addMetricsSubscription(listener, intervalMs);
-  }
-
-  removeMetricsSubscription(listener: MetricsListener): void {
-    this.pickFirstBalancer.removeMetricsSubscription(listener);
   }
 }
 

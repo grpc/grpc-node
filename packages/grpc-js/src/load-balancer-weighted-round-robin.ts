@@ -24,7 +24,7 @@ import { OrcaLoadReport__Output } from './generated/xds/data/orca/v3/OrcaLoadRep
 import { ChannelControlHelper, createChildChannelControlHelper, LoadBalancer, registerLoadBalancerType, TypedLoadBalancingConfig } from './load-balancer';
 import { LeafLoadBalancer } from './load-balancer-pick-first';
 import * as logging from './logging';
-import { createMetricsReader, MetricsListener } from './orca';
+import { createMetricsReader, MetricsListener, OrcaOobMetricsSubchannelWrapper } from './orca';
 import { PickArgs, Picker, PickResult, QueuePicker, UnavailablePicker } from './picker';
 import { PriorityQueue } from './priority-queue';
 import { Endpoint, endpointToString } from './subchannel-address';
@@ -387,27 +387,12 @@ class WeightedRoundRobinLoadBalancer implements LoadBalancer {
     const now = new Date();
     const seenEndpointNames = new Set<string>();
     this.updatesPaused = true;
+    this.latestConfig = lbConfig;
     for (const endpoint of maybeEndpointList.value) {
       const name = endpointToString(endpoint);
       seenEndpointNames.add(name);
       let entry = this.children.get(name);
-      if (entry) {
-        if (lbConfig.getEnableOobLoadReport()) {
-          if (!this.latestConfig || !this.latestConfig.getEnableOobLoadReport() || lbConfig.getOobLoadReportingPeriodMs() !== this.latestConfig.getOobLoadReportingPeriodMs()) {
-            if (!entry.oobMetricsListener) {
-              entry.oobMetricsListener = loadReport => {
-                this.updateWeight(entry!, loadReport);
-              };
-            }
-            entry.child.addMetricsSubscription(entry.oobMetricsListener, lbConfig.getOobLoadReportingPeriodMs());
-          }
-        } else {
-          if (entry.oobMetricsListener) {
-            entry.child.removeMetricsSubscription(entry.oobMetricsListener);
-            entry.oobMetricsListener = null;
-          }
-        }
-      } else {
+      if (!entry) {
         entry = {
           child: new LeafLoadBalancer(endpoint, createChildChannelControlHelper(this.channelControlHelper, {
             updateState: (connectivityState, picker, errorMessage) => {
@@ -426,19 +411,28 @@ class WeightedRoundRobinLoadBalancer implements LoadBalancer {
               }
               this.calculateAndUpdateState();
             },
+            createSubchannel: (subchannelAddress, subchannelArgs) => {
+              const subchannel = this.channelControlHelper.createSubchannel(subchannelAddress, subchannelArgs);
+              if (entry?.oobMetricsListener) {
+                return new OrcaOobMetricsSubchannelWrapper(subchannel, entry.oobMetricsListener, this.latestConfig!.getOobLoadReportingPeriodMs());
+              } else {
+                return subchannel;
+              }
+            }
           }), options, resolutionNote),
           lastUpdated: now,
           nonEmptySince: null,
           weight: 0,
           oobMetricsListener: null
         };
-        if (lbConfig.getEnableOobLoadReport()) {
-          entry.oobMetricsListener = loadReport => {
-            this.updateWeight(entry!, loadReport);
-          };
-          entry.child.addMetricsSubscription(entry.oobMetricsListener, lbConfig.getOobLoadReportingPeriodMs());
-        }
         this.children.set(name, entry);
+      }
+      if (lbConfig.getEnableOobLoadReport()) {
+        entry.oobMetricsListener = loadReport => {
+          this.updateWeight(entry!, loadReport);
+        };
+      } else {
+        entry.oobMetricsListener = null;
       }
     }
     for (const [endpointName, entry] of this.children) {
@@ -449,7 +443,6 @@ class WeightedRoundRobinLoadBalancer implements LoadBalancer {
         this.children.delete(endpointName);
       }
     }
-    this.latestConfig = lbConfig;
     this.updatesPaused = false;
     this.calculateAndUpdateState();
     if (this.weightUpdateTimer) {

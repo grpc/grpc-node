@@ -21,11 +21,9 @@ import { ProtoGrpcType } from "./generated/echo";
 import { EchoRequest__Output } from "./generated/grpc/testing/EchoRequest";
 import { EchoResponse } from "./generated/grpc/testing/EchoResponse";
 
-import * as net from 'net';
 import { XdsServer } from "../src";
 import { ControlPlaneServer } from "./xds-server";
-import { findFreePorts } from 'find-free-ports';
-import { XdsServerCredentials } from "../src/xds-credentials";
+import { getPortsPromise } from 'portfinder';
 
 const loadedProtos = loadPackageDefinition(loadSync(
   [
@@ -148,6 +146,6 @@ export class Backend {
 }
 
 export async function createBackends(count: number, useXdsServer?: boolean, creds?: ServerCredentials | undefined, serverOptions?: ServerOptions): Promise<Backend[]> {
-  const ports = await findFreePorts(count);
+  const ports = await getPortsPromise(count);
   return ports.map(port => new Backend(port, useXdsServer ?? true, creds, serverOptions));
 }
