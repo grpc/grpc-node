@@ -338,6 +338,10 @@ export class OrcaOobMetricsSubchannelWrapper extends BaseSubchannelWrapper {
     super(child);
     this.addDataWatcher(new OobMetricsDataWatcher(metricsListener, intervalMs));
   }
+
+  getWrappedSubchannel(): SubchannelInterface {
+    return this.child;
+  }
 }
 
 function createOobMetricsDataProducer(subchannel: Subchannel) {
