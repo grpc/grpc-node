@@ -237,7 +237,6 @@ if (require.main === module) {
     fs.readFile(path.resolve(argv.db_path), function(err, data) {
       if (err) throw err;
       feature_list = JSON.parse(data);
-      routeServer.start();
     });
   });
 }
