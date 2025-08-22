@@ -28,3 +28,4 @@ export const EXPERIMENTAL_PICK_FIRST = (process.env.GRPC_EXPERIMENTAL_PICKFIRST_
 export const EXPERIMENTAL_DUALSTACK_ENDPOINTS = (process.env.GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS ?? 'true') === 'true';
 export const AGGREGATE_CLUSTER_BACKWARDS_COMPAT = (process.env.GRPC_XDS_AGGREGATE_CLUSTER_BACKWARD_COMPAT ?? 'false') === 'true';
 export const EXPERIMENTAL_RBAC = (process.env.GRPC_XDS_EXPERIMENTAL_RBAC ?? 'false') === 'true';
+export const EXPERIMENTAL_WRR_LB = (process.env.GRPC_EXPERIMENTAL_XDS_WRR_LB ?? 'false') === 'true';

@@ -47,6 +47,10 @@ export function isDuration(value: any): value is Duration {
   return typeof value.seconds === 'number' && typeof value.nanos === 'number';
 }
 
+export function isDurationMessage(value: any): value is DurationMessage {
+  return typeof value.seconds === 'string' && typeof value.nanos === 'number';
+}
+
 const durationRegex = /^(\d+)(?:\.(\d+))?s$/;
 export function parseDuration(value: string): Duration | null {
   const match = value.match(durationRegex);

@@ -40,6 +40,7 @@ import parseLoadBalancingConfig = experimental.parseLoadBalancingConfig;
 import registerLoadBalancerType = experimental.registerLoadBalancerType;
 import StatusOr = experimental.StatusOr;
 import { PickFirst } from "../src/generated/envoy/extensions/load_balancing_policies/pick_first/v3/PickFirst";
+import { ClientSideWeightedRoundRobin } from "../src/generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/ClientSideWeightedRoundRobin";
 
 const LB_POLICY_NAME = 'test.RpcBehaviorLoadBalancer';
 
@@ -344,5 +345,70 @@ describe('Custom LB policies', () => {
     const error = await client.sendOneCallAsync();
     assert.strictEqual(error, null);
   });
-
+  it('Should handle weighted_round_robin', async () => {
+    const lbPolicy: ClientSideWeightedRoundRobin & AnyExtension = {
+      '@type': 'type.googleapis.com/envoy.extensions.load_balancing_policies.client_side_weighted_round_robin.v3.ClientSideWeightedRoundRobin',
+      enable_oob_load_report: { value: true },
+      oob_reporting_period: { seconds: 1 },
+      blackout_period: { seconds: 1 },
+      weight_expiration_period: { seconds: 1 },
+      weight_update_period: { seconds: 1 },
+      error_utilization_penalty: { value: 0.5 }
+    };
+    xdsServer.addResponseListener((typeUrl, responseState) => {
+      if (responseState.state === 'NACKED') {
+        client?.stopCalls();
+        assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
+      }
+    });
+    const [backend] = await createBackends(1);
+    const serverRoute = new FakeServerRoute(backend.getPort(), 'serverRoute');
+    xdsServer.setRdsResource(serverRoute.getRouteConfiguration());
+    xdsServer.setLdsResource(serverRoute.getListener());
+    const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [backend], locality:{region: 'region1'}}], lbPolicy);
+    const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
+    xdsServer.setEdsResource(cluster.getEndpointConfig());
+    xdsServer.setCdsResource(cluster.getClusterConfig());
+    xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
+    xdsServer.setLdsResource(routeGroup.getListener());
+    await routeGroup.startAllBackends(xdsServer);
+    client = XdsTestClient.createFromServer('listener1', xdsServer);
+    const error = await client.sendOneCallAsync();
+    assert.strictEqual(error, null);
+  });
+  it('Should distribute traffic among backends with weighted_round_robin', async () => {
+    const lbPolicy: ClientSideWeightedRoundRobin & AnyExtension = {
+      '@type': 'type.googleapis.com/envoy.extensions.load_balancing_policies.client_side_weighted_round_robin.v3.ClientSideWeightedRoundRobin',
+      enable_oob_load_report: { value: true },
+      oob_reporting_period: { seconds: 1 },
+      blackout_period: { seconds: 1 },
+      weight_expiration_period: { seconds: 1 },
+      weight_update_period: { seconds: 1 },
+      error_utilization_penalty: { value: 0.5 }
+    };
+    xdsServer.addResponseListener((typeUrl, responseState) => {
+      if (responseState.state === 'NACKED') {
+        client?.stopCalls();
+        assert.fail(`Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`);
+      }
+    });
+    const [backend1, backend2] = await createBackends(2);
+    const serverRoute1 = new FakeServerRoute(backend1.getPort(), 'serverRoute');
+    const serverRoute2 = new FakeServerRoute(backend2.getPort(), 'serverRoute2');
+    xdsServer.setRdsResource(serverRoute1.getRouteConfiguration());
+    xdsServer.setLdsResource(serverRoute1.getListener());
+    xdsServer.setRdsResource(serverRoute2.getRouteConfiguration());
+    xdsServer.setLdsResource(serverRoute2.getListener());
+    const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [{backends: [backend1, backend2], locality:{region: 'region1'}}], lbPolicy);
+    const routeGroup = new FakeRouteGroup('listener1', 'route1', [{cluster: cluster}]);
+    xdsServer.setEdsResource(cluster.getEndpointConfig());
+    xdsServer.setCdsResource(cluster.getClusterConfig());
+    xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
+    xdsServer.setLdsResource(routeGroup.getListener());
+    await routeGroup.startAllBackends(xdsServer);
+    client = XdsTestClient.createFromServer('listener1', xdsServer);
+    client.startCalls(100);
+    await routeGroup.waitForAllBackendsToReceiveTraffic();
+    client.stopCalls();
+  });
 });

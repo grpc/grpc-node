@@ -173,7 +173,7 @@ class XdsClusterImplPicker implements Picker {
       return {
         pickResultType: originalPick.pickResultType,
         status: originalPick.status,
-        subchannel: pickSubchannel?.getWrappedSubchannel() ?? null,
+        subchannel: pickSubchannel?.getWrappedSubchannel?.() ?? null,
         onCallStarted: () => {
           originalPick.onCallStarted?.();
           pickSubchannel?.getStatsObject()?.addCallStarted();

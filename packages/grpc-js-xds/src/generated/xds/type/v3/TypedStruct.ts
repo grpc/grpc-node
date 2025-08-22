@@ -13,6 +13,7 @@ import type { Struct as _google_protobuf_Struct, Struct__Output as _google_proto
  * When packing an opaque extension config, packing the expected type into Any is preferred
  * wherever possible for its efficiency. TypedStruct should be used only if a proto descriptor
  * is not available, for example if:
+ * 
  * - A control plane sends opaque message that is originally from external source in human readable
  * format such as JSON or YAML.
  * - The control plane doesn't have the knowledge of the protocol buffer schema hence it cannot
@@ -23,6 +24,7 @@ import type { Struct as _google_protobuf_Struct, Struct__Output as _google_proto
  * When a DPLB receives a TypedStruct in Any, it should:
  * - Check if the type_url of the TypedStruct matches the type the extension expects.
  * - Convert value to the type described in type_url and perform validation.
+ * 
  * TODO(lizan): Figure out how TypeStruct should be used with DPLB extensions that doesn't link
  * protobuf descriptor with DPLB itself, (e.g. gRPC LB Plugin, Envoy WASM extensions).
  */
@@ -50,6 +52,7 @@ export interface TypedStruct {
  * When packing an opaque extension config, packing the expected type into Any is preferred
  * wherever possible for its efficiency. TypedStruct should be used only if a proto descriptor
  * is not available, for example if:
+ * 
  * - A control plane sends opaque message that is originally from external source in human readable
  * format such as JSON or YAML.
  * - The control plane doesn't have the knowledge of the protocol buffer schema hence it cannot
@@ -60,6 +63,7 @@ export interface TypedStruct {
  * When a DPLB receives a TypedStruct in Any, it should:
  * - Check if the type_url of the TypedStruct matches the type the extension expects.
  * - Convert value to the type described in type_url and perform validation.
+ * 
  * TODO(lizan): Figure out how TypeStruct should be used with DPLB extensions that doesn't link
  * protobuf descriptor with DPLB itself, (e.g. gRPC LB Plugin, Envoy WASM extensions).
  */

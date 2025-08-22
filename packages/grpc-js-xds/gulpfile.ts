@@ -72,6 +72,7 @@ const runTests = checkTask(() => {
   process.env.GRPC_EXPERIMENTAL_XDS_FEDERATION = 'true';
   process.env.GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG = 'true';
   process.env.GRPC_XDS_EXPERIMENTAL_RBAC = 'true';
+  process.env.GRPC_EXPERIMENTAL_XDS_WRR_LB = 'true';
   if (Number(process.versions.node.split('.')[0]) <= 14) {
     process.env.GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH = 'false';
   }
