@@ -2,9 +2,7 @@
 
 import type { FeatureSet as _google_protobuf_FeatureSet, FeatureSet__Output as _google_protobuf_FeatureSet__Output } from '../../google/protobuf/FeatureSet';
 import type { UninterpretedOption as _google_protobuf_UninterpretedOption, UninterpretedOption__Output as _google_protobuf_UninterpretedOption__Output } from '../../google/protobuf/UninterpretedOption';
-import type { FileMigrateAnnotation as _udpa_annotations_FileMigrateAnnotation, FileMigrateAnnotation__Output as _udpa_annotations_FileMigrateAnnotation__Output } from '../../udpa/annotations/FileMigrateAnnotation';
 import type { StatusAnnotation as _udpa_annotations_StatusAnnotation, StatusAnnotation__Output as _udpa_annotations_StatusAnnotation__Output } from '../../udpa/annotations/StatusAnnotation';
-import type { FileStatusAnnotation as _xds_annotations_v3_FileStatusAnnotation, FileStatusAnnotation__Output as _xds_annotations_v3_FileStatusAnnotation__Output } from '../../xds/annotations/v3/FileStatusAnnotation';
 
 // Original file: null
 
@@ -49,9 +47,7 @@ export interface FileOptions {
   'rubyPackage'?: (string);
   'features'?: (_google_protobuf_FeatureSet | null);
   'uninterpretedOption'?: (_google_protobuf_UninterpretedOption)[];
-  '.udpa.annotations.file_migrate'?: (_udpa_annotations_FileMigrateAnnotation | null);
   '.udpa.annotations.file_status'?: (_udpa_annotations_StatusAnnotation | null);
-  '.xds.annotations.v3.file_status'?: (_xds_annotations_v3_FileStatusAnnotation | null);
 }
 
 export interface FileOptions__Output {
@@ -79,7 +75,5 @@ export interface FileOptions__Output {
   'rubyPackage': (string);
   'features': (_google_protobuf_FeatureSet__Output | null);
   'uninterpretedOption': (_google_protobuf_UninterpretedOption__Output)[];
-  '.udpa.annotations.file_migrate': (_udpa_annotations_FileMigrateAnnotation__Output | null);
   '.udpa.annotations.file_status': (_udpa_annotations_StatusAnnotation__Output | null);
-  '.xds.annotations.v3.file_status': (_xds_annotations_v3_FileStatusAnnotation__Output | null);
 }

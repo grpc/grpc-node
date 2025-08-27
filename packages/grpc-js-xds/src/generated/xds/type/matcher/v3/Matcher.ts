@@ -271,10 +271,9 @@ export interface Matcher {
    */
   'matcher_tree'?: (_xds_type_matcher_v3_Matcher_MatcherTree | null);
   /**
-   * Optional OnMatch to use if the matcher failed.
-   * If specified, the OnMatch is used, and the matcher is considered
-   * to have matched.
-   * If not specified, the matcher is considered not to have matched.
+   * Optional OnMatch to use if no matcher above matched (e.g., if there are no matchers specified
+   * above, or if none of the matches specified above succeeded).
+   * If no matcher above matched and this field is not populated, the match will be considered unsuccessful.
    */
   'on_no_match'?: (_xds_type_matcher_v3_Matcher_OnMatch | null);
   'matcher_type'?: "matcher_list"|"matcher_tree";
@@ -297,10 +296,9 @@ export interface Matcher__Output {
    */
   'matcher_tree'?: (_xds_type_matcher_v3_Matcher_MatcherTree__Output | null);
   /**
-   * Optional OnMatch to use if the matcher failed.
-   * If specified, the OnMatch is used, and the matcher is considered
-   * to have matched.
-   * If not specified, the matcher is considered not to have matched.
+   * Optional OnMatch to use if no matcher above matched (e.g., if there are no matchers specified
+   * above, or if none of the matches specified above succeeded).
+   * If no matcher above matched and this field is not populated, the match will be considered unsuccessful.
    */
   'on_no_match': (_xds_type_matcher_v3_Matcher_OnMatch__Output | null);
   'matcher_type'?: "matcher_list"|"matcher_tree";

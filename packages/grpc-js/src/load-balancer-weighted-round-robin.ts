@@ -19,13 +19,13 @@ import { StatusOr } from './call-interface';
 import { ChannelOptions } from './channel-options';
 import { ConnectivityState } from './connectivity-state';
 import { LogVerbosity } from './constants';
-import { Duration, durationToMs, durationToString, isDuration, msToDuration, parseDuration } from './duration';
+import { Duration, durationMessageToDuration, durationToMs, durationToString, isDuration, isDurationMessage, msToDuration, parseDuration } from './duration';
 import { OrcaLoadReport__Output } from './generated/xds/data/orca/v3/OrcaLoadReport';
 import { ChannelControlHelper, createChildChannelControlHelper, LoadBalancer, registerLoadBalancerType, TypedLoadBalancingConfig } from './load-balancer';
 import { LeafLoadBalancer } from './load-balancer-pick-first';
 import * as logging from './logging';
 import { createMetricsReader, MetricsListener, OrcaOobMetricsSubchannelWrapper } from './orca';
-import { PickArgs, Picker, PickResult, QueuePicker, UnavailablePicker } from './picker';
+import { PickArgs, Picker, PickResult, PickResultType, QueuePicker, UnavailablePicker } from './picker';
 import { PriorityQueue } from './priority-queue';
 import { Endpoint, endpointToString } from './subchannel-address';
 
@@ -70,10 +70,12 @@ function validateFieldType(
 }
 
 function parseDurationField(obj: any, fieldName: string): number | null {
-  if (fieldName in obj && obj[fieldName] !== undefined) {
+  if (fieldName in obj && obj[fieldName] !== undefined && obj[fieldName] !== null) {
     let durationObject: Duration;
     if (isDuration(obj[fieldName])) {
       durationObject = obj[fieldName];
+    } else if (isDurationMessage(obj[fieldName])) {
+      durationObject = durationMessageToDuration(obj[fieldName]);
     } else if (typeof obj[fieldName] === 'string') {
       const parsedDuration = parseDuration(obj[fieldName]);
       if (!parsedDuration) {
@@ -207,11 +209,19 @@ class WeightedRoundRobinPicker implements Picker {
       deadline: entry.deadline + entry.period
     })
     const childPick = entry.picker.pick(pickArgs);
-    if (this.metricsHandler) {
-      return {
-        ...childPick,
-        onCallEnded: createMetricsReader(loadReport => this.metricsHandler!(loadReport, entry.endpointName), childPick.onCallEnded)
-      };
+    if (childPick.pickResultType === PickResultType.COMPLETE) {
+      if (this.metricsHandler) {
+        return {
+          ...childPick,
+          onCallEnded: createMetricsReader(loadReport => this.metricsHandler!(loadReport, entry.endpointName), childPick.onCallEnded)
+        };
+      } else {
+        const subchannelWrapper = childPick.subchannel as OrcaOobMetricsSubchannelWrapper;
+        return {
+          ...childPick,
+          subchannel: subchannelWrapper.getWrappedSubchannel()
+        }
+      }
     } else {
       return childPick;
     }
