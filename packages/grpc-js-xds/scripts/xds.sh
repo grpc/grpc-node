@@ -34,6 +34,9 @@ echo "source $NVM_DIR/nvm.sh" > ~/.profile
 echo "source $NVM_DIR/nvm.sh" > ~/.shrc
 export ENV=~/.shrc
 
+cd $base
+git submodule update --init --recursive
+
 cd $base/../proto-loader
 npm install
 
@@ -47,8 +50,6 @@ cd $base/../grpc-reflection
 npm install
 
 # grpc-js-xds has a dev dependency on "../grpc-js", so it should pull that in automatically
-cd $base
-git submodule update --init --recursive
 npm install
 
 cd ../../..
