@@ -31,6 +31,7 @@ import * as round_robin_lb from './lb-policy-registry/round-robin';
 import * as typed_struct_lb from './lb-policy-registry/typed-struct';
 import * as pick_first_lb from './lb-policy-registry/pick-first';
 import * as weighted_round_robin_lb from './lb-policy-registry/weighted-round-robin';
+import * as wrr_locality from './lb-policy-registry/wrr-locality';
 
 export { XdsServer } from './server';
 export { XdsChannelCredentials, XdsServerCredentials } from './xds-credentials';
@@ -61,4 +62,5 @@ export function register() {
   typed_struct_lb.setup();
   pick_first_lb.setup();
   weighted_round_robin_lb.setup();
+  wrr_locality.setup();
 }
