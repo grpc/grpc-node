@@ -112,21 +112,27 @@ grpc::string MessageIdentifierName(const grpc::string& name) {
   return grpc_generator::StringReplace(name, ".", "_");
 }
 
-grpc::string NodeObjectPath(const Descriptor* descriptor) {
+grpc::string NodeObjectPath(const Descriptor* descriptor, const grpc::string& runtime) {  
   grpc::string module_alias = ModuleAlias(descriptor->file()->name());
+  if (runtime == "es" && descriptor->file()->name().find("google/protobuf") == 0) {
+    module_alias = "wkt";
+  }
   grpc::string name = descriptor->full_name();
   grpc_generator::StripPrefix(&name, descriptor->file()->package() + ".");
+  if (runtime == "es") {
+    name += "Schema";
+  }
   return module_alias + "." + name;
 }
 
-// Prints out the message serializer and deserializer functions
-void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
+// Prints out the message serializer and deserializer functions for google-protobuf.
+void PrintGoogleProtobufMessageTransformer(const Descriptor* descriptor, Printer* out,
                              const Parameters& params) {
   map<grpc::string, grpc::string> template_vars;
   grpc::string full_name = descriptor->full_name();
   template_vars["identifier_name"] = MessageIdentifierName(full_name);
   template_vars["name"] = full_name;
-  template_vars["node_name"] = NodeObjectPath(descriptor);
+  template_vars["node_name"] = NodeObjectPath(descriptor, params.runtime);
   // Print the serializer
   out->Print(template_vars, "function serialize_$identifier_name$(arg) {\n");
   out->Indent();
@@ -153,15 +159,59 @@ void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
   out->Print("}\n\n");
 }
 
-void PrintMethod(const MethodDescriptor* method, Printer* out) {
+// Prints out the message serializer and deserializer functions for bufbuild-protobuf.
+void PrintBufbuildProtobufMessageTransformer(const Descriptor* descriptor, Printer* out,
+                             const Parameters& params) {
+  map<grpc::string, grpc::string> template_vars;
+  grpc::string full_name = descriptor->full_name();
+  template_vars["identifier_name"] = MessageIdentifierName(full_name);
+  template_vars["name"] = full_name;
+  template_vars["node_name"] = NodeObjectPath(descriptor, params.runtime);
+  // Print the serializer
+  out->Print(template_vars, "function serialize_$identifier_name$(arg) {\n");
+  out->Indent();
+  if (!params.omit_serialize_instanceof) {
+    out->Print(template_vars, "if (!proto.isMessage(arg, $node_name$)) {\n");
+    out->Indent();
+    out->Print(template_vars,
+               "throw new Error('Expected argument of type $name$');\n");
+    out->Outdent();
+    out->Print("}\n");
+  }
+  out->Print(template_vars, "return Buffer.from(proto.toBinary($node_name$, arg));\n");
+  out->Outdent();
+  out->Print("}\n\n");
+
+  // Print the deserializer
+  out->Print(template_vars,
+             "function deserialize_$identifier_name$(buffer_arg) {\n");
+  out->Indent();
+  out->Print(
+      template_vars,
+      "return proto.fromBinary($node_name$, new Uint8Array(buffer_arg));\n");
+  out->Outdent();
+  out->Print("}\n\n");
+}
+
+// Prints out the message serializer and deserializer functions
+void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
+                             const Parameters& params) {
+   if (params.runtime == "es") {
+      PrintBufbuildProtobufMessageTransformer(descriptor, out, params);
+   } else {
+      PrintGoogleProtobufMessageTransformer(descriptor, out, params);
+   }
+}
+
+void PrintMethod(const MethodDescriptor* method, Printer* out, const Parameters& params) {
   const Descriptor* input_type = method->input_type();
   const Descriptor* output_type = method->output_type();
   map<grpc::string, grpc::string> vars;
   vars["service_name"] = method->service()->full_name();
   vars["name"] = method->name();
-  vars["input_type"] = NodeObjectPath(input_type);
+  vars["input_type"] = NodeObjectPath(input_type, params.runtime);
   vars["input_type_id"] = MessageIdentifierName(input_type->full_name());
-  vars["output_type"] = NodeObjectPath(output_type);
+  vars["output_type"] = NodeObjectPath(output_type, params.runtime);
   vars["output_type_id"] = MessageIdentifierName(output_type->full_name());
   vars["client_stream"] = method->client_streaming() ? "true" : "false";
   vars["server_stream"] = method->server_streaming() ? "true" : "false";
@@ -198,7 +248,7 @@ void PrintService(const ServiceDescriptor* service, Printer* out,
         grpc_generator::LowercaseFirstLetter(service->method(i)->name());
     out->PrintRaw(GetNodeComments(service->method(i), true).c_str());
     out->Print("$method_name$: ", "method_name", method_name);
-    PrintMethod(service->method(i), out);
+    PrintMethod(service->method(i), out, params);
     out->Print(",\n");
     out->PrintRaw(GetNodeComments(service->method(i), false).c_str());
   }
@@ -218,14 +268,25 @@ void PrintImports(const FileDescriptor* file, Printer* out,
     grpc::string package = params.grpc_js ? "@grpc/grpc-js" : "grpc";
     out->Print("var grpc = require('$package$');\n", "package", package);
   }
+  if (params.runtime == "es") {
+    out->Print("var proto = require('@bufbuild/protobuf');\n");
+  }
   if (file->message_type_count() > 0) {
     grpc::string file_path =
         GetRelativePath(file->name(), GetJSMessageFilename(file->name()));
     out->Print("var $module_alias$ = require('$file_path$');\n", "module_alias",
                ModuleAlias(file->name()), "file_path", file_path);
   }
-
+  bool imports_wkt = false;
   for (int i = 0; i < file->dependency_count(); i++) {
+    if (params.runtime == "es" && file->dependency(i)->name().find("google/protobuf") == 0) {
+      // WKTs are provided by the runtime from a single location.
+      if (!imports_wkt) {
+        out->Print("var wkt = require('@bufbuild/protobuf/wkt');");
+        imports_wkt = true;
+      }
+      continue;
+    }
     grpc::string file_path = GetRelativePath(
         file->name(), GetJSMessageFilename(file->dependency(i)->name()));
     out->Print("var $module_alias$ = require('$file_path$');\n", "module_alias",
