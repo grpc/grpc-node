@@ -20,13 +20,15 @@ var messages = require('./helloworld_pb');
 var services = require('./helloworld_grpc_pb');
 
 var grpc = require('@grpc/grpc-js');
+var { create } = require('@bufbuild/protobuf');
 
 /**
  * Implements the SayHello RPC method.
  */
 function sayHello(call, callback) {
-  var reply = new messages.HelloReply();
-  reply.setMessage('Hello ' + call.request.getName());
+  var reply = create(messages.HelloReplySchema, {
+    message: 'Hello ' + call.request.name,
+  });
   callback(null, reply);
 }
 
