@@ -21,6 +21,7 @@ var messages = require('./helloworld_pb');
 var services = require('./helloworld_grpc_pb');
 
 var grpc = require('@grpc/grpc-js');
+var { create } = require('@bufbuild/protobuf');
 
 function main() {
   var argv = parseArgs(process.argv.slice(2), {
@@ -34,16 +35,17 @@ function main() {
   }
   var client = new services.GreeterClient(target,
                                           grpc.credentials.createInsecure());
-  var request = new messages.HelloRequest();
   var user;
   if (argv._.length > 0) {
-    user = argv._[0]; 
+    user = argv._[0];
   } else {
     user = 'world';
   }
-  request.setName(user);
+  var request = create(messages.HelloRequestSchema, {
+    name: user,
+  });
   client.sayHello(request, function(err, response) {
-    console.log('Greeting:', response.getMessage());
+    console.log('Greeting:', response.message);
   });
 }
 
