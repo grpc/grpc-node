@@ -15,6 +15,11 @@
  *
  */
 
+import { LogVerbosity } from './constants';
+import * as logging from './logging';
+
+const TRACER_NAME = 'backoff';
+
 const INITIAL_BACKOFF_MS = 1000;
 const BACKOFF_MULTIPLIER = 1.6;
 const MAX_BACKOFF_MS = 120000;
@@ -84,7 +89,12 @@ export class BackoffTimeout {
    */
   private endTime: Date = new Date();
 
+  private id: number;
+
+  private static nextId = 0;
+
   constructor(private callback: () => void, options?: BackoffOptions) {
+    this.id = BackoffTimeout.getNextId();
     if (options) {
       if (options.initialDelay) {
         this.initialDelay = options.initialDelay;
@@ -99,20 +109,31 @@ export class BackoffTimeout {
         this.maxDelay = options.maxDelay;
       }
     }
+    this.trace('constructed initialDelay=' + this.initialDelay + ' multiplier=' + this.multiplier + ' jitter=' + this.jitter + ' maxDelay=' + this.maxDelay);
     this.nextDelay = this.initialDelay;
     this.timerId = setTimeout(() => {}, 0);
     clearTimeout(this.timerId);
   }
 
+  private static getNextId() {
+    return this.nextId++;
+  }
+
+  private trace(text: string) {
+    logging.trace(LogVerbosity.DEBUG, TRACER_NAME, '{' + this.id + '} ' + text);
+  }
+
   private runTimer(delay: number) {
+    this.trace('runTimer(delay=' + delay + ')');
     this.endTime = this.startTime;
     this.endTime.setMilliseconds(
       this.endTime.getMilliseconds() + delay
     );
     clearTimeout(this.timerId);
     this.timerId = setTimeout(() => {
-      this.callback();
+      this.trace('timer fired');
       this.running = false;
+      this.callback();
     }, delay);
     if (!this.hasRef) {
       this.timerId.unref?.();
@@ -123,6 +144,7 @@ export class BackoffTimeout {
    * Call the callback after the current amount of delay time
    */
   runOnce() {
+    this.trace('runOnce()');
     this.running = true;
     this.startTime = new Date();
     this.runTimer(this.nextDelay);
@@ -140,6 +162,7 @@ export class BackoffTimeout {
    * again.
    */
   stop() {
+    this.trace('stop()');
     clearTimeout(this.timerId);
     this.running = false;
   }
@@ -149,6 +172,7 @@ export class BackoffTimeout {
    * retroactively apply that reset to the current timer.
    */
   reset() {
+    this.trace('reset() running=' + this.running);
     this.nextDelay = this.initialDelay;
     if (this.running) {
       const now = new Date();
