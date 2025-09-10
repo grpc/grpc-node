@@ -3,5 +3,5 @@ This is the static code generation variant of the Hello World. Code in these exa
 ```sh
 cd ../protos
 npm install -g grpc-tools @bufbuild/protoc-gen-es
-grpc_tools_node_protoc --es_out=target=js,js_import_style=legacy_commonjs:../helloworld/static_codegen_es/ --grpc_out=grpc_js,runtime=es:../helloworld/static_codegen_es/ helloworld.proto
+grpc_tools_node_protoc --es_out=target=js,js_import_style=legacy_commonjs:../helloworld/static_codegen_es/ --grpc_out=grpc_js,runtime=bufbuild-protobuf:../helloworld/static_codegen_es/ helloworld.proto
 ```
