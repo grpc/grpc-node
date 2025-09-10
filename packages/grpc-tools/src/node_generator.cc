@@ -114,12 +114,12 @@ grpc::string MessageIdentifierName(const grpc::string& name) {
 
 grpc::string NodeObjectPath(const Descriptor* descriptor, const grpc::string& runtime) {  
   grpc::string module_alias = ModuleAlias(descriptor->file()->name());
-  if (runtime == "es" && descriptor->file()->name().find("google/protobuf") == 0) {
+  if (runtime == "bufbuild-protobuf" && descriptor->file()->name().find("google/protobuf") == 0) {
     module_alias = "wkt";
   }
   grpc::string name = descriptor->full_name();
   grpc_generator::StripPrefix(&name, descriptor->file()->package() + ".");
-  if (runtime == "es") {
+  if (runtime == "bufbuild-protobuf") {
     name += "Schema";
   }
   return module_alias + "." + name;
@@ -196,7 +196,7 @@ void PrintBufbuildProtobufMessageTransformer(const Descriptor* descriptor, Print
 // Prints out the message serializer and deserializer functions
 void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
                              const Parameters& params) {
-   if (params.runtime == "es") {
+   if (params.runtime == "bufbuild-protobuf") {
       PrintBufbuildProtobufMessageTransformer(descriptor, out, params);
    } else {
       PrintGoogleProtobufMessageTransformer(descriptor, out, params);
@@ -268,7 +268,7 @@ void PrintImports(const FileDescriptor* file, Printer* out,
     grpc::string package = params.grpc_js ? "@grpc/grpc-js" : "grpc";
     out->Print("var grpc = require('$package$');\n", "package", package);
   }
-  if (params.runtime == "es") {
+  if (params.runtime == "bufbuild-protobuf") {
     out->Print("var proto = require('@bufbuild/protobuf');\n");
   }
   if (file->message_type_count() > 0) {
@@ -279,7 +279,7 @@ void PrintImports(const FileDescriptor* file, Printer* out,
   }
   bool imports_wkt = false;
   for (int i = 0; i < file->dependency_count(); i++) {
-    if (params.runtime == "es" && file->dependency(i)->name().find("google/protobuf") == 0) {
+    if (params.runtime == "bufbuild-protobuf" && file->dependency(i)->name().find("google/protobuf") == 0) {
       // WKTs are provided by the runtime from a single location.
       if (!imports_wkt) {
         out->Print("var wkt = require('@bufbuild/protobuf/wkt');");
