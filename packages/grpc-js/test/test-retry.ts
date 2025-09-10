@@ -175,6 +175,10 @@ describe('Retries', () => {
             },
           },
         ],
+        retryThrottling: {
+          maxTokens: 1000,
+          tokenRatio: 0.1,
+        },
       };
       client = new EchoService(
         `localhost:${port}`,

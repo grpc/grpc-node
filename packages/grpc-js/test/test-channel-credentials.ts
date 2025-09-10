@@ -228,6 +228,15 @@ describe('ChannelCredentials usage', () => {
       done();
     });
   })
+  it('Should accept self-signed certs with acceptUnauthorized', done => {
+    const client = new echoService(`localhost:${portNum}`, grpc.credentials.createSsl(null, null, null, {rejectUnauthorized: false}));
+    client.echo({ value: 'test value', value2: 3 }, (error: ServiceError | null, response: any) => {
+      client.close();
+      assert.ifError(error);
+      assert.deepStrictEqual(response, { value: 'test value', value2: 3 });
+      done();
+    });
+  });
 });
 
 describe('Channel credentials mtls', () => {

@@ -297,16 +297,16 @@ export class InternalChannel {
     /* The global boolean parameter to getSubchannelPool has the inverse meaning to what
      * the grpc.use_local_subchannel_pool channel option means. */
     this.subchannelPool = getSubchannelPool(
-      (options['grpc.use_local_subchannel_pool'] ?? 0) === 0
+      (this.options['grpc.use_local_subchannel_pool'] ?? 0) === 0
     );
     this.retryBufferTracker = new MessageBufferTracker(
-      options['grpc.retry_buffer_size'] ?? DEFAULT_RETRY_BUFFER_SIZE_BYTES,
-      options['grpc.per_rpc_retry_buffer_size'] ??
+      this.options['grpc.retry_buffer_size'] ?? DEFAULT_RETRY_BUFFER_SIZE_BYTES,
+      this.options['grpc.per_rpc_retry_buffer_size'] ??
         DEFAULT_PER_RPC_RETRY_BUFFER_SIZE_BYTES
     );
-    this.keepaliveTime = options['grpc.keepalive_time_ms'] ?? -1;
+    this.keepaliveTime = this.options['grpc.keepalive_time_ms'] ?? -1;
     this.idleTimeoutMs = Math.max(
-      options['grpc.client_idle_timeout_ms'] ?? DEFAULT_IDLE_TIMEOUT_MS,
+      this.options['grpc.client_idle_timeout_ms'] ?? DEFAULT_IDLE_TIMEOUT_MS,
       MIN_IDLE_TIMEOUT_MS
     );
     const channelControlHelper: ChannelControlHelper = {
@@ -372,7 +372,7 @@ export class InternalChannel {
     this.resolvingLoadBalancer = new ResolvingLoadBalancer(
       this.target,
       channelControlHelper,
-      options,
+      this.options,
       (serviceConfig, configSelector) => {
         if (serviceConfig.retryThrottling) {
           RETRY_THROTTLER_MAP.set(

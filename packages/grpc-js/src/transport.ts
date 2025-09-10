@@ -712,19 +712,19 @@ export class Http2SubchannelConnector implements SubchannelConnector {
           reject(`${errorMessage} (${new Date().toISOString()})`);
         }
       };
-      const session = http2.connect(`${scheme}://${targetPath}`, {
+      const sessionOptions: http2.ClientSessionOptions = {
         createConnection: (authority, option) => {
           return secureConnectResult.socket;
         },
         settings: {
           initialWindowSize:
             options['grpc-node.flow_control_window'] ??
-            http2.getDefaultSettings().initialWindowSize ?? 65535,
+            http2.getDefaultSettings?.()?.initialWindowSize ?? 65535,
         }
-      });
-
+      };
+      const session = http2.connect(`${scheme}://${targetPath}`, sessionOptions);
       // Prepare window size configuration for remoteSettings handler
-      const defaultWin = http2.getDefaultSettings().initialWindowSize ?? 65535; // 65 535 B
+      const defaultWin = http2.getDefaultSettings?.()?.initialWindowSize ?? 65535; // 65 535 B
       const connWin = options[
         'grpc-node.flow_control_window'
       ] as number | undefined;
@@ -745,7 +745,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
             if (delta > 0) (session as any).incrementWindowSize(delta);
           }
         }
-        
+
         session.removeAllListeners();
         secureConnectResult.socket.removeListener('close', closeHandler);
         secureConnectResult.socket.removeListener('error', errorHandler);
@@ -799,6 +799,7 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       await secureConnector.waitForReady();
       this.trace(addressString + ' secureConnector is ready');
       tcpConnection = await this.tcpConnect(address, options);
+      tcpConnection.setNoDelay();
       this.trace(addressString + ' Established TCP connection');
       secureConnectResult = await secureConnector.connect(tcpConnection);
       this.trace(addressString + ' Established secure connection');
