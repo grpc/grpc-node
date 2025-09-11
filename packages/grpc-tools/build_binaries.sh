@@ -36,7 +36,8 @@ build() {
   rm -f "$protobuf_base/CMakeCache.txt"
   rm -rf "$protobuf_base/CMakeFiles"
 
-  cmake -DCMAKE_TOOLCHAIN_FILE=linux.toolchain.cmake $cmake_flag . && cmake --build . --target clean && cmake --build . -- -j 12
+  # CMAKE_POLICY_VERSION_MINIMUM option is needed until the protobuf dependency is updated
+  cmake -DCMAKE_TOOLCHAIN_FILE=linux.toolchain.cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 $cmake_flag . && cmake --build . --target clean && cmake --build . -- -j 12
 
   mkdir -p "$base/build/bin"
 
