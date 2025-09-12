@@ -23,7 +23,7 @@ import * as path from 'path';
 import * as Protobuf from 'protobufjs';
 import * as yargs from 'yargs';
 
-import camelCase = require('lodash.camelcase');
+import { camelCase } from 'es-toolkit/compat';
 import { loadProtosWithOptions, addCommonProtos } from '../src/util';
 
 const templateStr = "%s";

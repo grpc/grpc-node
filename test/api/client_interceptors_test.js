@@ -25,7 +25,7 @@ const options = {
   defaults: true,
   oneofs: true
 };
-var _ = require('lodash');
+var _ = require('es-toolkit/compat');
 var assert = require('assert');
 const anyGrpc = require('../any_grpc');
 const clientGrpc = anyGrpc.client
