@@ -245,15 +245,30 @@ export class Http2SubchannelCall implements SubchannelCall {
             if (this.finalStatus !== null) {
               return;
             }
-            if (this.httpStatusCode && this.httpStatusCode !== 200) {
-              const mappedStatus = mapHttpStatusCode(this.httpStatusCode);
-              code = mappedStatus.code;
-              details = mappedStatus.details;
-            } else {
-              code = Status.INTERNAL;
-              details = `Received RST_STREAM with code ${http2Stream.rstCode} (Call ended without gRPC status)`;
-            }
-            break;
+
+            // Give trailers one more event loop cycle to arrive
+            setImmediate(() => {
+              if (this.finalStatus !== null) {
+                // Trailers finally arrived
+                return;
+              }
+              if (this.httpStatusCode && this.httpStatusCode !== 200) {
+                const mappedStatus = mapHttpStatusCode(this.httpStatusCode);
+                code = mappedStatus.code;
+                details = mappedStatus.details;
+              } else {
+                code = Status.INTERNAL;
+                details = `Received RST_STREAM with code ${http2Stream.rstCode} (Call ended without gRPC status)`;
+              }
+              this.endCall({
+                code,
+                details,
+                metadata: new Metadata(),
+                rstCode: http2Stream.rstCode,
+              });
+            });
+            // Exit the switch early
+            return;
           case http2.constants.NGHTTP2_REFUSED_STREAM:
             code = Status.UNAVAILABLE;
             details = 'Stream refused by server';
