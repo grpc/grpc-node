@@ -720,7 +720,13 @@ export class Http2SubchannelConnector implements SubchannelConnector {
           initialWindowSize:
             options['grpc-node.flow_control_window'] ??
             http2.getDefaultSettings?.()?.initialWindowSize ?? 65535,
-        }
+        },
+        maxSendHeaderBlockLength: Number.MAX_SAFE_INTEGER,
+        /* By default, set a very large max session memory limit, to effectively
+         * disable enforcement of the limit. Some testing indicates that Node's
+         * behavior degrades badly when this limit is reached, so we solve that
+         * by disabling the check entirely. */
+        maxSessionMemory: options['grpc-node.max_session_memory'] ?? Number.MAX_SAFE_INTEGER
       };
       const session = http2.connect(`${scheme}://${targetPath}`, sessionOptions);
       // Prepare window size configuration for remoteSettings handler
