@@ -41,7 +41,7 @@ interface ProxyInfo {
   creds?: string;
 }
 
-function getProxyInfo(): ProxyInfo {
+function getProxyInfo(proxy?: string): ProxyInfo {
   let proxyEnv = '';
   let envVar = '';
   /* Prefer using 'grpc_proxy'. Fallback on 'http_proxy' if it is not set.
@@ -57,6 +57,9 @@ function getProxyInfo(): ProxyInfo {
   } else if (process.env.http_proxy) {
     envVar = 'http_proxy';
     proxyEnv = process.env.http_proxy;
+  } else if(proxy) {
+    envVar = 'proxy';
+    proxyEnv = proxy
   } else {
     return {};
   }
@@ -190,7 +193,7 @@ export function mapProxyName(
   if (target.scheme === 'unix') {
     return noProxyResult;
   }
-  const proxyInfo = getProxyInfo();
+  const proxyInfo = getProxyInfo(options['grpc.http_proxy']);
   if (!proxyInfo.address) {
     return noProxyResult;
   }
