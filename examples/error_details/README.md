@@ -18,7 +18,7 @@ Run the client in another terminal. It will make two calls: first, a successful 
 node client.js
 ```
 
-## EWxpected Output
+## Expected Output
 ```
 Greeting: Hello World
 
@@ -26,4 +26,12 @@ Greeting: Hello World
 Code: 3
 Status: INVALID_ARGUMENT
 Message: 3 INVALID_ARGUMENT: Simple Error: The name field was empty.
+
+--- Rich Error Details---
+Violation: [
+  {
+    "field": "name",
+    "description": "Name field is required"
+  }
+]
 ```

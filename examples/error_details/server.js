@@ -31,14 +31,43 @@ var packageDefinition = protoLoader.loadSync(
   });
 var hello_proto = grpc.loadPackageDefinition(packageDefinition).helloworld;
 
+// Extract Serializers
+var serviceDef = hello_proto.Greeter.service;
+var encodeStatus = serviceDef['_EncodeStatus'].requestSerialize;
+var encodeBadRequest = serviceDef['_EncodeBadRequest'].requestSerialize;
+
 /**
  * Implements the SayHello RPC method.
  */
 function sayHello(call, callback) {
   if (call.request.name === '') {
+    //Serialize the BadRequest detail
+    var badRequestBuffer = encodeBadRequest({
+      field_violations: [
+        { field: 'name', description: 'Name field is required' }
+      ]
+    });
+
+    //Create and Serialize the Status Message
+    var statusBuffer = encodeStatus({
+      code: 3,
+      message: 'Request argument invalid',
+      details: [
+        {
+          type_url: 'type.googleapis.com/google.rpc.BadRequest',
+          value: badRequestBuffer
+        }
+      ]
+    });
+
+    // Attach Metadata
+    var metadata = new grpc.Metadata();
+    metadata.add('grpc-status-details-bin', statusBuffer);
+
     callback({
       code: grpc.status.INVALID_ARGUMENT,
-      details: 'Simple Error: The name field was empty.'
+      details: 'Simple Error: The name field was empty.',
+      metadata: metadata
     });
     return;
   }

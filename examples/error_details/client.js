@@ -31,6 +31,11 @@ var packageDefinition = protoLoader.loadSync(
   });
 var hello_proto = grpc.loadPackageDefinition(packageDefinition).helloworld;
 
+// Extract Deserializers from the service definition
+var serviceDef = hello_proto.Greeter.service;
+var decodeStatus = serviceDef['_DecodeStatus'].responseDeserialize;
+var decodeBadRequest = serviceDef['_DecodeBadRequest'].responseDeserialize;
+
 var client = new hello_proto.Greeter('localhost:50051', grpc.credentials.createInsecure());
 
 function main() {
@@ -43,10 +48,27 @@ function main() {
 
     client.sayHello({ name: '' }, function (err, response) {
       if (err) {
-        console.log('--- Standard gRPC Error Received ---');
+        console.log('\n--- Standard gRPC Error Received ---');
         console.log(`Code: ${err.code}`);
         console.log(`Status: ${grpc.status[err.code]}`);
         console.log(`Message: ${err.message}`);
+
+        // Rich Error Decoding
+        const [statusBuffer] = err.metadata?.get('grpc-status-details-bin') || [];
+        if (statusBuffer) {
+          console.log('\n--- Rich Error Details---');
+          var statusObj = decodeStatus(statusBuffer);
+
+          if (statusObj.details) {
+            statusObj.details.forEach(detail => {
+              if (detail.type_url === 'type.googleapis.com/google.rpc.BadRequest') {
+                var badRequestObj = decodeBadRequest(detail.value);
+                console.log('Violation:', JSON.stringify(badRequestObj.field_violations, null, 2));
+              }
+            });
+          }
+        }
+        
       } else {
         console.log('Failing call unexpectedly succeeded:', response.message);
       }
