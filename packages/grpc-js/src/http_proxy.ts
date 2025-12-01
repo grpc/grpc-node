@@ -41,30 +41,36 @@ interface ProxyInfo {
   creds?: string;
 }
 
-function getProxyInfo(): ProxyInfo {
-  let proxyEnv = '';
+function getProxyInfo(options: ChannelOptions): ProxyInfo {
+  let proxyUrlString = '';
   let envVar = '';
-  /* Prefer using 'grpc_proxy'. Fallback on 'http_proxy' if it is not set.
+  /* Prefer using 'grpc.http_proxy' option. Fallback on 'grpc_proxy' env var if it is not set.
    * Also prefer using 'https_proxy' with fallback on 'http_proxy'. The
    * fallback behavior can be removed if there's a demand for it.
    */
-  if (process.env.grpc_proxy) {
+  if (options['grpc.http_proxy']) {
+    proxyUrlString = options['grpc.http_proxy'];
+  } else if (process.env.grpc_proxy) {
     envVar = 'grpc_proxy';
-    proxyEnv = process.env.grpc_proxy;
+    proxyUrlString = process.env.grpc_proxy;
   } else if (process.env.https_proxy) {
     envVar = 'https_proxy';
-    proxyEnv = process.env.https_proxy;
+    proxyUrlString = process.env.https_proxy;
   } else if (process.env.http_proxy) {
     envVar = 'http_proxy';
-    proxyEnv = process.env.http_proxy;
+    proxyUrlString = process.env.http_proxy;
   } else {
     return {};
   }
   let proxyUrl: URL;
   try {
-    proxyUrl = new URL(proxyEnv);
+    proxyUrl = new URL(proxyUrlString);
   } catch (e) {
-    log(LogVerbosity.ERROR, `cannot parse value of "${envVar}" env var`);
+    if (envVar) {
+      log(LogVerbosity.ERROR, `cannot parse value of "${envVar}" env var`);
+    } else {
+      log(LogVerbosity.ERROR, `cannot parse value of "grpc.http_proxy" channel option`);
+    }
     return {};
   }
   if (proxyUrl.protocol !== 'http:') {
@@ -97,9 +103,15 @@ function getProxyInfo(): ProxyInfo {
   if (userCred) {
     result.creds = userCred;
   }
-  trace(
-    'Proxy server ' + result.address + ' set by environment variable ' + envVar
-  );
+  if (envVar) {
+    trace(
+      'Proxy server ' + result.address + ' set by environment variable ' + envVar
+    );
+  } else {
+    trace(
+      'Proxy server ' + result.address + ' set by channel option grpc.http_proxy'
+    );
+  }
   return result;
 }
 
@@ -190,7 +202,7 @@ export function mapProxyName(
   if (target.scheme === 'unix') {
     return noProxyResult;
   }
-  const proxyInfo = getProxyInfo();
+  const proxyInfo = getProxyInfo(options);
   if (!proxyInfo.address) {
     return noProxyResult;
   }
