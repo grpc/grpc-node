@@ -40,6 +40,7 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     generator_parameters.generate_package_definition = false;
     generator_parameters.grpc_js = false;
     generator_parameters.omit_serialize_instanceof = false;
+    generator_parameters.runtime = "google-protobuf";
     if (!parameter.empty()) {
       std::vector<grpc::string> parameters_list =
           grpc_generator::tokenize(parameter, ",");
@@ -51,6 +52,8 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
           generator_parameters.grpc_js = true;
         } else if (*parameter_string == "omit_serialize_instanceof") {
           generator_parameters.omit_serialize_instanceof = true;
+        } else if (parameter_string->find("runtime=") == 0) {
+          generator_parameters.runtime = parameter_string->substr(8);
         }
       }
     }
