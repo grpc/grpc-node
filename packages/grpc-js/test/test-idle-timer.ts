@@ -132,7 +132,15 @@ describe('Channel idle timer', () => {
 describe('Channel idle timer with UDS', () => {
   let server: TestServer;
   let client: TestClient | null = null;
-  before(() => {
+  before(function() {
+    if (process.platform === 'win32') {
+      /* The Node API that creates a UDS on Linux actually creates a named
+       * pipe on Windows, and those have a different naming scheme than UDS
+       * so the test setup doesn't work on Windows. */
+      this.skip();
+      // @ts-ignore: Unreachable code error
+      return;
+    }
     server = new TestServer(false);
     return server.startUds();
   });
