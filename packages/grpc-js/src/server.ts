@@ -1609,7 +1609,7 @@ export class Server {
               if (err) {
                 this.keepaliveTrace('Ping failed with error: ' + err.message);
                 sessionClosedByServer = true;
-                session.close();
+                session.destroy();
               } else {
                 this.keepaliveTrace('Received ping response');
                 maybeStartKeepalivePingTimer();
@@ -1631,7 +1631,7 @@ export class Server {
             'Connection dropped due to ping send error: ' + pingSendError
           );
           sessionClosedByServer = true;
-          session.close();
+          session.destroy();
           return;
         }
 
@@ -1640,7 +1640,7 @@ export class Server {
           this.keepaliveTrace('Ping timeout passed without response');
           this.trace('Connection dropped by keepalive timeout');
           sessionClosedByServer = true;
-          session.close();
+          session.destroy();
         }, this.keepaliveTimeoutMs);
         keepaliveTimer.unref?.();
       };
@@ -1803,7 +1803,7 @@ export class Server {
                     duration
                 );
                 sessionClosedByServer = true;
-                session.close();
+                session.destroy();
               } else {
                 this.keepaliveTrace('Received ping response');
                 maybeStartKeepalivePingTimer();
@@ -1826,7 +1826,7 @@ export class Server {
             'Connection dropped due to ping send error: ' + pingSendError
           );
           sessionClosedByServer = true;
-          session.close();
+          session.destroy();
           return;
         }
 
@@ -1840,7 +1840,7 @@ export class Server {
             'Connection dropped by keepalive timeout from ' + clientAddress
           );
           sessionClosedByServer = true;
-          session.close();
+          session.destroy();
         }, this.keepaliveTimeoutMs);
         keepaliveTimeout.unref?.();
       };
