@@ -211,7 +211,6 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
   private nextRetryBackoffSec = 0;
   private startTime: Date;
   private maxAttempts: number;
-  private halfClosed: boolean = false;
   constructor(
     private readonly channel: InternalChannel,
     private readonly callConfig: CallConfig,
@@ -790,11 +789,8 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
           );
           break;
         case 'HALF_CLOSE':
-          if (this.halfClosed !== true) {
-            childCall.nextMessageToSend += 1;
-            childCall.call.halfClose();
-            this.halfClosed = true;
-          }
+          childCall.nextMessageToSend += 1;
+          childCall.call.halfClose();
           break;
         case 'FREED':
           // Should not be possible
@@ -872,13 +868,12 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
       allocated: false,
     });
     for (const call of this.underlyingCalls) {
-      if (call?.state === 'ACTIVE' && this.halfClosed !== true) {
-        // || call.nextMessageToSend === halfCloseIndex - 1 added to not wait for write callback
-        if (call.nextMessageToSend === halfCloseIndex || call.nextMessageToSend === halfCloseIndex - 1) {
-          call.nextMessageToSend += 1;
-          call.call.halfClose();
-          this.halfClosed = true;
-        }
+      if (
+        call?.state === 'ACTIVE' &&
+        call.nextMessageToSend === halfCloseIndex
+      ) {
+        call.nextMessageToSend += 1;
+        call.call.halfClose();
       }
     }
   }
