@@ -18,7 +18,7 @@
 import * as assert from 'assert';
 import * as path from 'path';
 import { loadProtoFile } from './common';
-import { Metadata, Server, ServerDuplexStream, ServerUnaryCall, ServiceClientConstructor, ServiceError, experimental, sendUnaryData } from '../src';
+import { Metadata, Server, ServerCredentials, ServerDuplexStream, ServerReadableStream, ServerUnaryCall, ServiceClientConstructor, ServiceError, credentials, experimental, sendUnaryData } from '../src';
 import { ServiceClient } from '../src/make-client';
 
 const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
@@ -34,6 +34,15 @@ const echoServiceImplementation = {
     });
     call.on('end', () => {
       call.end();
+    });
+  },
+  echoClientStream(call: ServerReadableStream<any, any>, callback: sendUnaryData<any>) {
+    const messages: any[] = [];
+    call.on('data', (message: any) => {
+      messages.push(message);
+    });
+    call.on('end', () => {
+      callback(null, { value: messages.map(m => m.value).join(','), value2: messages.length });
     });
   },
 };
@@ -77,4 +86,20 @@ describe('Client should successfully communicate with server', () => {
       });
     });
   }).timeout(5000);
+
+  it('Client streaming with one message should work', done => {
+    server = new Server();
+    server.addService(EchoService.service, echoServiceImplementation);
+    server.bindAsync('localhost:0', ServerCredentials.createInsecure(), (error, port) => {
+      assert.ifError(error);
+      client = new EchoService(`localhost:${port}`, credentials.createInsecure());
+      const call = client.echoClientStream((error: ServiceError, response: any) => {
+        assert.ifError(error);
+        assert.deepStrictEqual(response, { value: 'test value', value2: 1 });
+        done();
+      });
+      call.write({ value: 'test value', value2: 42 });
+      call.end();
+    });
+  });
 });

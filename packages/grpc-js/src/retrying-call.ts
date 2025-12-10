@@ -123,11 +123,6 @@ interface UnderlyingCall {
   state: UnderlyingCallState;
   call: LoadBalancingCall;
   nextMessageToSend: number;
-  /**
-   * Tracks the highest message index that has been sent to the underlying call.
-   * This is different from nextMessageToSend which tracks completion/acknowledgment.
-   */
-  highestSentMessageIndex: number;
   startTime: Date;
 }
 
@@ -700,7 +695,6 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
       state: 'ACTIVE',
       call: child,
       nextMessageToSend: 0,
-      highestSentMessageIndex: -1,
       startTime: new Date(),
     });
     const previousAttempts = this.attempts - 1;
@@ -793,7 +787,6 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
             },
             bufferEntry.message!.message
           );
-          childCall.highestSentMessageIndex = messageIndex;
           // Optimization: if the next entry is HALF_CLOSE, send it immediately
           // without waiting for the message callback. This is safe because the message
           // has already been passed to the underlying transport.
@@ -833,7 +826,11 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     };
     this.writeBuffer.push(bufferEntry);
     if (bufferEntry.allocated) {
-      context.callback?.();
+      // Run this in next tick to avoid suspending the current execution context
+      // otherwise it might cause half closing the call before sending message
+      process.nextTick(() => {
+        context.callback?.();
+      });
       for (const [callIndex, call] of this.underlyingCalls.entries()) {
         if (
           call.state === 'ACTIVE' &&
@@ -848,7 +845,6 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
             },
             message
           );
-          call.highestSentMessageIndex = messageIndex;
         }
       }
     } else {
@@ -860,7 +856,6 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
       const call = this.underlyingCalls[this.committedCallIndex];
       bufferEntry.callback = context.callback;
       if (call.state === 'ACTIVE' && call.nextMessageToSend === messageIndex) {
-        call.highestSentMessageIndex = messageIndex;
         call.call.sendMessageWithContext(
           {
             callback: error => {
@@ -891,11 +886,11 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     });
     for (const call of this.underlyingCalls) {
       if (call?.state === 'ACTIVE') {
-        // Send halfClose immediately if all messages have been sent to this call
-        // We check highestSentMessageIndex >= halfCloseIndex - 1 because:
-        // - If halfCloseIndex is N, the last message is at index N-1
-        // - If highestSentMessageIndex >= N-1, all messages have been sent
-        if (call.highestSentMessageIndex >= halfCloseIndex - 1) {
+        // Send halfClose to call when either:
+        // - nextMessageToSend === halfCloseIndex - 1: last message sent, callback pending (optimization)
+        // - nextMessageToSend === halfCloseIndex: all messages sent and acknowledged
+        if (call.nextMessageToSend === halfCloseIndex 
+          || call.nextMessageToSend === halfCloseIndex - 1) {
           this.trace(
             'Sending halfClose immediately to child [' +
               call.call.getCallNumber() +
@@ -904,7 +899,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
           call.nextMessageToSend += 1;
           call.call.halfClose();
         }
-        // Otherwise, halfClose will be sent by sendNextChildMessage when messages complete
+        // Otherwise, halfClose will be sent by sendNextChildMessage when message callbacks complete
       }
     }
   }
