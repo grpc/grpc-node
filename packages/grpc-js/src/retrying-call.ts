@@ -760,11 +760,10 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     this.maybeStartHedgingTimer();
   }
 
-  private handleChildWriteCompleted(childIndex: number) {
-    const childCall = this.underlyingCalls[childIndex];
-    const messageIndex = childCall.nextMessageToSend;
+  private handleChildWriteCompleted(childIndex: number, messageIndex: number) {
     this.getBufferEntry(messageIndex).callback?.();
     this.clearSentMessages();
+    const childCall = this.underlyingCalls[childIndex];
     childCall.nextMessageToSend += 1;
     this.sendNextChildMessage(childIndex);
   }
@@ -774,19 +773,33 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     if (childCall.state === 'COMPLETED') {
       return;
     }
-    if (this.getBufferEntry(childCall.nextMessageToSend)) {
-      const bufferEntry = this.getBufferEntry(childCall.nextMessageToSend);
+    const messageIndex = childCall.nextMessageToSend;
+    if (this.getBufferEntry(messageIndex)) {
+      const bufferEntry = this.getBufferEntry(messageIndex);
       switch (bufferEntry.entryType) {
         case 'MESSAGE':
           childCall.call.sendMessageWithContext(
             {
               callback: error => {
                 // Ignore error
-                this.handleChildWriteCompleted(childIndex);
+                this.handleChildWriteCompleted(childIndex, messageIndex);
               },
             },
             bufferEntry.message!.message
           );
+          // Optimization: if the next entry is HALF_CLOSE, send it immediately
+          // without waiting for the message callback. This is safe because the message
+          // has already been passed to the underlying transport.
+          const nextEntry = this.getBufferEntry(messageIndex + 1);
+          if (nextEntry.entryType === 'HALF_CLOSE') {
+            this.trace(
+              'Sending halfClose immediately after message to child [' +
+                childCall.call.getCallNumber() +
+                '] - optimizing for unary/final message'
+            );
+            childCall.nextMessageToSend += 1;
+            childCall.call.halfClose();
+          }
           break;
         case 'HALF_CLOSE':
           childCall.nextMessageToSend += 1;
@@ -813,7 +826,11 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     };
     this.writeBuffer.push(bufferEntry);
     if (bufferEntry.allocated) {
-      context.callback?.();
+      // Run this in next tick to avoid suspending the current execution context
+      // otherwise it might cause half closing the call before sending message
+      process.nextTick(() => {
+        context.callback?.();
+      });
       for (const [callIndex, call] of this.underlyingCalls.entries()) {
         if (
           call.state === 'ACTIVE' &&
@@ -823,7 +840,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
             {
               callback: error => {
                 // Ignore error
-                this.handleChildWriteCompleted(callIndex);
+                this.handleChildWriteCompleted(callIndex, messageIndex);
               },
             },
             message
@@ -843,7 +860,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
           {
             callback: error => {
               // Ignore error
-              this.handleChildWriteCompleted(this.committedCallIndex!);
+              this.handleChildWriteCompleted(this.committedCallIndex!, messageIndex);
             },
           },
           message
@@ -868,12 +885,21 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
       allocated: false,
     });
     for (const call of this.underlyingCalls) {
-      if (
-        call?.state === 'ACTIVE' &&
-        call.nextMessageToSend === halfCloseIndex
-      ) {
-        call.nextMessageToSend += 1;
-        call.call.halfClose();
+      if (call?.state === 'ACTIVE') {
+        // Send halfClose to call when either:
+        // - nextMessageToSend === halfCloseIndex - 1: last message sent, callback pending (optimization)
+        // - nextMessageToSend === halfCloseIndex: all messages sent and acknowledged
+        if (call.nextMessageToSend === halfCloseIndex 
+          || call.nextMessageToSend === halfCloseIndex - 1) {
+          this.trace(
+            'Sending halfClose immediately to child [' +
+              call.call.getCallNumber() +
+              '] - all messages already sent'
+          );
+          call.nextMessageToSend += 1;
+          call.call.halfClose();
+        }
+        // Otherwise, halfClose will be sent by sendNextChildMessage when message callbacks complete
       }
     }
   }
