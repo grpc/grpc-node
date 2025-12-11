@@ -23,7 +23,7 @@ const options = {
   oneofs: true
 };
 const assert = require('assert');
-const _ = require('lodash');
+const _ = require('es-toolkit/compat');
 const anyGrpc = require('../any_grpc');
 const clientGrpc = anyGrpc.client;
 const serverGrpc = anyGrpc.server;

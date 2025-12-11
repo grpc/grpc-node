@@ -19,7 +19,7 @@
 // a single object, the tests should be re-written in a way that makes it clear
 // that two separate implementations are being tested against one another.
 
-const _ = require('lodash');
+const _ = require('es-toolkit/compat');
 
 function getImplementation(globalField) {
   const impl = global[globalField] ?? 'js';
