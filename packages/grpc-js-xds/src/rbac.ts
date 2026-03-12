@@ -225,7 +225,14 @@ export class AuthenticatedPrincipal implements PrincipalRule {
         }
       }
     }
-    return this.nameMatcher.apply(info.peerCertificate.subject.CN);
+    if (info.peerCertificate.subject.CN) {
+      if (Array.isArray(info.peerCertificate.subject.CN)) {
+        return info.peerCertificate.subject.CN.some(entry => this.nameMatcher!.apply(entry));
+      } else {
+        return this.nameMatcher.apply(info.peerCertificate.subject.CN);
+      }
+    }
+    return false;
   }
   toString(): string {
     return `Authenticated(principal=${this.nameMatcher?.toString() ?? null})`;
