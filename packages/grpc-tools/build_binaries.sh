@@ -75,8 +75,12 @@ Darwin)
 
   for arch in "x64" "arm64"; do
     mkdir "$base/build/bin/$arch"
+    case "$arch" in
+      x64) lipo_arch=x86_64 ;;
+      arm64) lipo_arch=arm64 ;;
+    esac
     for bin in protoc grpc_node_plugin; do
-      lipo -extract x86_64 "$base/build/bin/$bin" -o "$base/build/bin/$arch/$bin"
+      lipo -extract $lipo_arch "$base/build/bin/$bin" -o "$base/build/bin/$arch/$bin"
       otool -l "$base/build/bin/$arch/$bin" | grep minos
     done
     artifacts darwin $arch "$base/build/bin/$arch/"
