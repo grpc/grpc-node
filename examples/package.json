@@ -8,6 +8,7 @@
     "@grpc/grpc-js": "^1.10.2",
     "@grpc/grpc-js-xds": "^1.10.0",
     "@grpc/reflection": "^1.0.0",
+    "grpc-health-check": "^2.1.0",
     "@q42philips/node-grpc-error-details": "^2.1.0",
     "lodash": "^4.6.1",
     "minimist": "^1.2.0"
