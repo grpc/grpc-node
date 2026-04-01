@@ -73,13 +73,13 @@ Linux)
 Darwin)
   build -DGRPC_TOOLS_TARGET=x86_64 -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
 
-  for arch in "x64" "arm64"; do
-    mkdir "$base/build/bin/$arch"
-    for bin in protoc grpc_node_plugin; do
-      lipo -extract x86_64 "$base/build/bin/$bin" -o "$base/build/bin/$arch/$bin"
-      otool -l "$base/build/bin/$arch/$bin" | grep minos
-    done
-    artifacts darwin $arch "$base/build/bin/$arch/"
+  mkdir "$base/build/bin/x64"
+  mkdir "$base/build/bin/arm64"
+  for bin in protoc grpc_node_plugin; do
+    lipo -extract x86_64 "$base/build/bin/$bin" -o "$base/build/bin/x64/$bin"
+    lipo -extract arm64 "$base/build/bin/$bin" -o "$base/build/bin/arm64/$bin"
   done
+  artifacts darwin x64 "$base/build/bin/x64/"
+  artifacts darwin arm64 "$base/build/bin/arm64/"
   ;;
 esac
