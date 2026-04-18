@@ -47,7 +47,7 @@
   "dependencies": {
     "lodash.camelcase": "^4.3.0",
     "long": "^5.0.0",
-    "protobufjs": "^7.5.3",
+    "protobufjs": "^7.5.5",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
