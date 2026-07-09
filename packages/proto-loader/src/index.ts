@@ -59,40 +59,6 @@ export function isAnyExtension(obj: object): obj is AnyExtension {
   return ('@type' in obj) && (typeof (obj as AnyExtension)['@type'] === 'string');
 }
 
-declare module 'protobufjs' {
-  interface Type {
-    toDescriptor(
-      protoVersion: string
-    ): Protobuf.Message<descriptor.IDescriptorProto> &
-      descriptor.IDescriptorProto;
-  }
-
-  interface RootConstructor {
-    new (options?: Options): Root;
-    fromDescriptor(
-      descriptorSet:
-        | descriptor.IFileDescriptorSet
-        | Protobuf.Reader
-        | Uint8Array
-    ): Root;
-    fromJSON(json: Protobuf.INamespace, root?: Root): Root;
-  }
-
-  interface Root {
-    toDescriptor(
-      protoVersion: string
-    ): Protobuf.Message<descriptor.IFileDescriptorSet> &
-      descriptor.IFileDescriptorSet;
-  }
-
-  interface Enum {
-    toDescriptor(
-      protoVersion: string
-    ): Protobuf.Message<descriptor.IEnumDescriptorProto> &
-      descriptor.IEnumDescriptorProto;
-  }
-}
-
 export interface Serialize<T> {
   (value: T): Buffer;
 }
@@ -342,7 +308,7 @@ function createEnumDefinition(
 ): EnumTypeDefinition {
   const enumDescriptor: protobuf.Message<
     descriptor.IEnumDescriptorProto
-  > = enumType.toDescriptor('proto3');
+  > = enumType.toDescriptor();
   return {
     format: 'Protocol Buffer 3 EnumDescriptorProto',
     type: enumDescriptor.$type.toObject(enumDescriptor, descriptorOptions),
@@ -398,8 +364,8 @@ function createPackageDefinitionFromDescriptorSet(
 ) {
   options = options || {};
 
-  const root = (Protobuf.Root as Protobuf.RootConstructor).fromDescriptor(
-    decodedDescriptorSet
+  const root = Protobuf.Root.fromDescriptor(
+    decodedDescriptorSet,
   );
   root.resolveAll();
   return createPackageDefinition(root, options);
