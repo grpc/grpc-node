@@ -366,6 +366,7 @@ function createPackageDefinitionFromDescriptorSet(
 
   const root = Protobuf.Root.fromDescriptor(
     decodedDescriptorSet,
+    {keepCase: options.keepCase}
   );
   root.resolveAll();
   return createPackageDefinition(root, options);
