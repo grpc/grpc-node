@@ -3,7 +3,7 @@
 import type { Long } from '@grpc/proto-loader';
 
 export interface ITimestamp {
-  'seconds'?: (number | string | Long);
+  'seconds'?: (number | string | Long | bigint);
   'nanos'?: (number);
 }
 
