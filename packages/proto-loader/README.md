@@ -31,7 +31,7 @@ The options parameter is an object that can have the following optional properti
 | Field name | Valid values | Description
 |------------|--------------|------------
 | `keepCase` | `true` or `false` | Preserve field names. The default is to change them to camel case.
-| `longs` | `String` or `Number` | The type to use to represent `long` values. Defaults to a `Long` object type.
+| `longs` | `String`, `Number`, or `BigInt` | The type to use to represent `long` values. Defaults to a `Long` object type. Requires `protobufjs` >= 7.6.0 when using `BigInt`.
 | `enums` | `String` | The type to use to represent `enum` values. Defaults to the numeric value.
 | `bytes` | `Array` or `String` | The type to use to represent `bytes` values. Defaults to `Buffer`.
 | `defaults` | `true` or `false` | Set default values on output objects. Defaults to `false`.
@@ -66,7 +66,7 @@ Options:
       --keepCase             Preserve the case of field names
                                                       [boolean] [default: false]
       --longs                The type that should be used to output 64 bit
-                             integer values. Can be String, Number
+                             integer values. Can be String, Number, BigInt
                                                       [string] [default: "Long"]
       --enums                The type that should be used to output enum fields.
                              Can be String          [string] [default: "number"]
