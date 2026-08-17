@@ -215,7 +215,7 @@ export class PathExactValueMatcher {
 
   apply(value: string) {
     if (this.caseInsensitive) {
-      return value.toLowerCase().startsWith(this.targetValue.toLowerCase());
+      return value.toLowerCase() === this.targetValue.toLowerCase();
     } else {
       return value === this.targetValue;
     }
