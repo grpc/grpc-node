@@ -88,6 +88,7 @@ import { PartialStatusObject } from './call-interface';
 import { CallEventTracker } from './transport';
 import { Socket } from 'net';
 import { Duplex } from 'stream';
+import { GRPC_NODE_DEBUG_SEND_ERROR_DETAILS } from './environment';
 
 const UNLIMITED_CONNECTION_AGE_MS = ~(1 << 31);
 const KEEPALIVE_MAX_TIME_MS = ~(1 << 31);
@@ -2038,11 +2039,17 @@ async function handleUnary<RequestType, ResponseType>(
       try {
         handler.func(stream, respond);
       } catch (err) {
+        let details: string;
+        if (GRPC_NODE_DEBUG_SEND_ERROR_DETAILS) {
+          details = `Server method handler threw error ${
+            (err as Error).message
+          }`;
+        } else {
+          details = 'Unknown error';
+        }
         call.sendStatus({
           code: Status.UNKNOWN,
-          details: `Server method handler threw error ${
-            (err as Error).message
-          }`,
+          details: details,
           metadata: null,
         });
       }
@@ -2087,11 +2094,17 @@ function handleClientStreaming<RequestType, ResponseType>(
       try {
         handler.func(stream, respond);
       } catch (err) {
+        let details: string;
+        if (GRPC_NODE_DEBUG_SEND_ERROR_DETAILS) {
+          details = `Server method handler threw error ${
+            (err as Error).message
+          }`;
+        } else {
+          details = 'Unknown error';
+        }
         call.sendStatus({
           code: Status.UNKNOWN,
-          details: `Server method handler threw error ${
-            (err as Error).message
-          }`,
+          details: details,
           metadata: null,
         });
       }
@@ -2155,11 +2168,17 @@ function handleServerStreaming<RequestType, ResponseType>(
       try {
         handler.func(stream);
       } catch (err) {
+        let details: string;
+        if (GRPC_NODE_DEBUG_SEND_ERROR_DETAILS) {
+          details = `Server method handler threw error ${
+            (err as Error).message
+          }`;
+        } else {
+          details = 'Unknown error';
+        }
         call.sendStatus({
           code: Status.UNKNOWN,
-          details: `Server method handler threw error ${
-            (err as Error).message
-          }`,
+          details: details,
           metadata: null,
         });
       }
@@ -2186,11 +2205,17 @@ function handleBidiStreaming<RequestType, ResponseType>(
       try {
         handler.func(stream);
       } catch (err) {
+        let details: string;
+        if (GRPC_NODE_DEBUG_SEND_ERROR_DETAILS) {
+          details = `Server method handler threw error ${
+            (err as Error).message
+          }`;
+        } else {
+          details = 'Unknown error';
+        }
         call.sendStatus({
           code: Status.UNKNOWN,
-          details: `Server method handler threw error ${
-            (err as Error).message
-          }`,
+          details: details,
           metadata: null,
         });
       }
