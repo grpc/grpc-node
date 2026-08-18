@@ -1,9 +1,9 @@
 {
-  "name": "@grpc/grpc-js",
-  "version": "1.14.4",
-  "description": "gRPC Library for Node - pure JS implementation",
+  "name": "@wingspanhq/grpc-js",
+  "version": "1.14.4-wingspan.1",
+  "description": "Wingspan fork of @grpc/grpc-js carrying the GOAWAY/keepalive drain fix (grpc/grpc-node#3068)",
   "homepage": "https://grpc.io/",
-  "repository": "https://github.com/grpc/grpc-node/tree/master/packages/grpc-js",
+  "repository": "git+https://github.com/wingspanHQ/grpc-node.git",
   "main": "build/src/index.js",
   "engines": {
     "node": ">=12.10.0"
@@ -85,5 +85,9 @@
     "deps/googleapis/google/api/*.proto",
     "deps/googleapis/google/rpc/*.proto",
     "deps/protoc-gen-validate/validate/**/*.proto"
-  ]
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/",
+    "access": "restricted"
+  }
 }

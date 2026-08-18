@@ -1,0 +1,53 @@
+name: Publish @wingspanhq/grpc-js
+
+on:
+  push:
+    branches:
+      - 'wingspan/**'
+    paths:
+      - 'packages/grpc-js/**'
+      - '.github/workflows/publish-wingspan-grpc-js.yml'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: build and publish to GitHub Packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Init proto submodules
+        run: git submodule update --init packages/grpc-js-xds/deps/xds packages/grpc-js-xds/deps/protoc-gen-validate
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@wingspanhq'
+      # --ignore-scripts everywhere: the sibling packages' prepare scripts do
+      # not build in isolation, and generated proto types are checked in, so
+      # nothing needs regenerating. proto-loader is built explicitly because
+      # grpc-js consumes it as a file: devDependency (a symlink) and needs its
+      # build/ output for type resolution.
+      - name: Build proto-loader (sibling devDependency)
+        run: |
+          npm install --ignore-scripts
+          ./node_modules/.bin/tsc -p .
+        working-directory: packages/proto-loader
+      - name: Install grpc-js dependencies
+        run: npm install --ignore-scripts
+        working-directory: packages/grpc-js
+      - name: Copy ORCA protos
+        run: node copy-protos.js
+        working-directory: packages/grpc-js
+      - name: Compile
+        run: ./node_modules/.bin/tsc -p tsconfig.publish.json
+        working-directory: packages/grpc-js
+      - name: Publish
+        run: npm publish --ignore-scripts
+        working-directory: packages/grpc-js
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
