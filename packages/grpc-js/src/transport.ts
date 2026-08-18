@@ -121,6 +121,12 @@ class Http2Transport implements Transport {
    */
   private pendingSendKeepalivePing = false;
 
+  /**
+   * Indicates that the peer sent a GOAWAY, so this connection is draining and
+   * must not be probed with further keepalive pings.
+   */
+  private isDraining = false;
+
   private userAgent: string;
 
   private activeCalls: Set<Http2SubchannelCall> = new Set();
@@ -214,6 +220,8 @@ class Http2Transport implements Transport {
         ) {
           tooManyPings = true;
         }
+        this.isDraining = true;
+        this.clearKeepaliveTimeout();
         this.trace(
           'connection closed by GOAWAY with code ' +
             errorCode +
@@ -415,6 +423,7 @@ class Http2Transport implements Transport {
 
   private canSendPing() {
     return (
+      !this.isDraining &&
       !this.session.destroyed &&
       this.keepaliveTimeMs > 0 &&
       (this.keepaliveWithoutCalls || this.activeCalls.size > 0)
@@ -422,6 +431,9 @@ class Http2Transport implements Transport {
   }
 
   private maybeSendPing() {
+    if (this.isDraining) {
+      return;
+    }
     if (!this.canSendPing()) {
       this.pendingSendKeepalivePing = true;
       return;
@@ -447,6 +459,10 @@ class Http2Transport implements Transport {
       const pingSentSuccessfully = this.session.ping(
         (err: Error | null, duration: number, payload: Buffer) => {
           this.clearKeepaliveTimeout();
+          if (this.isDraining) {
+            this.keepaliveTrace('Ignoring ping result on draining transport');
+            return;
+          }
           if (err) {
             this.keepaliveTrace('Ping failed with error ' + err.message);
             this.handleDisconnect();

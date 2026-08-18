@@ -279,6 +279,11 @@ export class Server {
     UntypedHandler
   >();
   private sessions = new Map<http2.ServerHttp2Session, ChannelzSessionInfo>();
+  private drainingSessions = new WeakSet<http2.ServerHttp2Session>();
+  private sessionDrainHandlers = new WeakMap<
+    http2.ServerHttp2Session,
+    () => void
+  >();
   /**
    * This field only exists to ensure that the start method throws an error if
    * it is called twice, as it did previously.
@@ -1034,11 +1039,20 @@ export class Server {
     });
   }
 
+  private beginSessionDrain(session: http2.ServerHttp2Session) {
+    /* A PING on a locally closing session bypasses graceful drain by
+     * destroying active streams, so disable keepalive before close. */
+    this.drainingSessions.add(session);
+    const drainHandler = this.sessionDrainHandlers.get(session);
+    drainHandler?.();
+  }
+
   private closeSession(
     session: http2.ServerHttp2Session,
     callback?: () => void
   ) {
     this.trace('Closing session initiated by ' + session.socket?.remoteAddress);
+    this.beginSessionDrain(session);
     const sessionInfo = this.sessions.get(session);
     const closeCallback = () => {
       if (sessionInfo) {
@@ -1545,6 +1559,7 @@ export class Server {
 
         connectionAgeTimer = setTimeout(() => {
           sessionClosedByServer = true;
+          this.beginSessionDrain(session);
 
           this.trace(
             'Connection dropped by max connection age: ' +
@@ -1583,8 +1598,14 @@ export class Server {
         }
       };
 
+      this.sessionDrainHandlers.set(session, clearKeepaliveTimeout);
+      session.once('goaway', () => {
+        this.beginSessionDrain(session);
+      });
+
       const canSendPing = () => {
         return (
+          !this.drainingSessions.has(session) &&
           !session.destroyed &&
           this.keepaliveTimeMs < KEEPALIVE_MAX_TIME_MS &&
           this.keepaliveTimeMs > 0
@@ -1620,6 +1641,12 @@ export class Server {
           const pingSentSuccessfully = session.ping(
             (err: Error | null, duration: number, payload: Buffer) => {
               clearKeepaliveTimeout();
+              if (this.drainingSessions.has(session)) {
+                this.keepaliveTrace(
+                  'Ignoring ping result on draining server session'
+                );
+                return;
+              }
               if (err) {
                 this.keepaliveTrace('Ping failed with error: ' + err.message);
                 sessionClosedByServer = true;
@@ -1677,6 +1704,7 @@ export class Server {
         }
 
         clearKeepaliveTimeout();
+        this.sessionDrainHandlers.delete(session);
 
         if (idleTimeoutObj !== null) {
           clearTimeout(idleTimeoutObj.timeout);
@@ -1733,6 +1761,7 @@ export class Server {
 
         connectionAgeTimer = setTimeout(() => {
           sessionClosedByServer = true;
+          this.beginSessionDrain(session);
           this.channelzTrace.addTrace(
             'CT_INFO',
             'Connection dropped by max connection age from ' + clientAddress
@@ -1770,8 +1799,14 @@ export class Server {
         }
       };
 
+      this.sessionDrainHandlers.set(session, clearKeepaliveTimeout);
+      session.once('goaway', () => {
+        this.beginSessionDrain(session);
+      });
+
       const canSendPing = () => {
         return (
+          !this.drainingSessions.has(session) &&
           !session.destroyed &&
           this.keepaliveTimeMs < KEEPALIVE_MAX_TIME_MS &&
           this.keepaliveTimeMs > 0
@@ -1807,6 +1842,12 @@ export class Server {
           const pingSentSuccessfully = session.ping(
             (err: Error | null, duration: number, payload: Buffer) => {
               clearKeepaliveTimeout();
+              if (this.drainingSessions.has(session)) {
+                this.keepaliveTrace(
+                  'Ignoring ping result on draining server session'
+                );
+                return;
+              }
               if (err) {
                 this.keepaliveTrace('Ping failed with error: ' + err.message);
                 this.channelzTrace.addTrace(
@@ -1881,6 +1922,7 @@ export class Server {
         }
 
         clearKeepaliveTimeout();
+        this.sessionDrainHandlers.delete(session);
 
         if (idleTimeoutObj !== null) {
           clearTimeout(idleTimeoutObj.timeout);
