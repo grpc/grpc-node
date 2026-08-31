@@ -105,6 +105,11 @@ function serverCallTrace(text: string) {
 
 type AnyHttp2Server = http2.Http2Server | http2.Http2SecureServer;
 
+/* incrementWindowSize exists at runtime but is absent from the http2 typings. */
+interface IncrementWindowSize {
+  incrementWindowSize(delta: number): void;
+}
+
 interface BindResult {
   port: number;
   count: number;
@@ -365,7 +370,14 @@ export class Server {
     }
     if ('grpc.max_concurrent_streams' in this.options) {
       this.commonServerOptions.settings = {
+        ...this.commonServerOptions.settings,
         maxConcurrentStreams: this.options['grpc.max_concurrent_streams'],
+      };
+    }
+    if ('grpc-node.flow_control_window' in this.options) {
+      this.commonServerOptions.settings = {
+        ...this.commonServerOptions.settings,
+        initialWindowSize: this.options['grpc-node.flow_control_window'],
       };
     }
     this.interceptors = this.options.interceptors ?? [];
@@ -1516,6 +1528,31 @@ export class Server {
   ) {
     return (session: http2.ServerHttp2Session) => {
       this.http2Servers.get(http2Server)?.sessions.add(session);
+
+      const flowControlWindow = this.options['grpc-node.flow_control_window'];
+      if (flowControlWindow !== undefined) {
+        const defaultWindow =
+          http2.getDefaultSettings?.()?.initialWindowSize ?? 65535;
+        if (flowControlWindow > defaultWindow) {
+          /* The settings.initialWindowSize above sets the per-stream window.
+           * Also raise the connection-level window so a large multi-stream
+           * transfer is not throttled by the default 64 KB connection window. */
+          try {
+            session.setLocalWindowSize(flowControlWindow);
+          } catch {
+            /* Fallback for older Node, where setLocalWindowSize is unavailable:
+             * bump the window by the delta. incrementWindowSize is not in the
+             * http2 typings, so it is referenced through a narrow interface. */
+            const delta =
+              flowControlWindow - (session.state.localWindowSize ?? defaultWindow);
+            if (delta > 0) {
+              (session as unknown as IncrementWindowSize).incrementWindowSize(
+                delta
+              );
+            }
+          }
+        }
+      }
 
       let connectionAgeTimer: NodeJS.Timeout | null = null;
       let connectionAgeGraceTimer: NodeJS.Timeout | null = null;
