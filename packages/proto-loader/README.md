@@ -33,7 +33,7 @@ The options parameter is an object that can have the following optional properti
 | `keepCase` | `true` or `false` | Preserve field names. The default is to change them to camel case.
 | `longs` | `String` or `Number` | The type to use to represent `long` values. Defaults to a `Long` object type.
 | `enums` | `String` | The type to use to represent `enum` values. Defaults to the numeric value.
-| `bytes` | `Array` or `String` | The type to use to represent `bytes` values. Defaults to `Buffer`.
+| `bytes` | `Array`, `String` or `Buffer` | The type to use to represent `bytes` values. Defaults to `Buffer`.
 | `defaults` | `true` or `false` | Set default values on output objects. Defaults to `false`.
 | `arrays` | `true` or `false` | Set empty arrays for missing array values even if `defaults` is `false` Defaults to `false`.
 | `objects` | `true` or `false` | Set empty objects for missing object values even if `defaults` is `false` Defaults to `false`.
