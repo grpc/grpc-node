@@ -124,6 +124,12 @@ describe('Client with a nonexistent target domain', () => {
     client.close();
   });
   it('should fail multiple calls', function (done) {
+    if (process.platform === 'win32') {
+      // DNS has some weird behavior on Windows
+      this.skip();
+      // @ts-ignore: Unreachable code error
+      return;
+    }
     this.timeout(5000);
     // Regression test for https://github.com/grpc/grpc-node/issues/1411
     client.makeUnaryRequest(
