@@ -30,6 +30,8 @@ struct Parameters {
   bool grpc_js;
   // Omit instanceof check for messages in serialize methods
   bool omit_serialize_instanceof;
+  // Runtime to use for protobuf serialization (default: "google-protobuf", "bufbuild-protobuf" for @bufbuild/protobuf)
+  grpc::string runtime;
 };
 
 grpc::string GenerateFile(const grpc::protobuf::FileDescriptor* file,
