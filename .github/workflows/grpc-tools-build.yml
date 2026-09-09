@@ -42,7 +42,7 @@ jobs:
           path: artifacts/
   windows_build:
     name: Windows grpc-tools Build
-    runs-on: windows-latest
+    runs-on: windows-2022
     strategy:
       matrix:
         arch: [ia32, x64]
