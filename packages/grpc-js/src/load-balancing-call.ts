@@ -128,6 +128,7 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
       const finalStatus = { ...status, progress };
       this.listener?.onReceiveStatus(finalStatus);
       this.onCallEnded?.(finalStatus.code, finalStatus.details, finalStatus.metadata);
+      this.channel.removeCallFromPickQueue(this);
     }
   }
 

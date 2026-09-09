@@ -193,7 +193,7 @@ export class InternalChannel {
    * first time the resolver returns a result, which includes the ConfigSelector.
    */
   private configSelectionQueue: ResolvingCall[] = [];
-  private pickQueue: LoadBalancingCall[] = [];
+  private pickQueue: Set<LoadBalancingCall> = new Set();
   private connectivityStateWatchers: ConnectivityStateWatcher[] = [];
   private readonly defaultAuthority: string;
   private readonly filterStackFactory: FilterStackFactory;
@@ -342,9 +342,9 @@ export class InternalChannel {
       },
       updateState: (connectivityState: ConnectivityState, picker: Picker) => {
         this.currentPicker = picker;
-        const queueCopy = this.pickQueue.slice();
-        this.pickQueue = [];
-        if (queueCopy.length > 0) {
+        const queueCopy = {...this.pickQueue};
+        this.pickQueue = new Set();
+        if (queueCopy.size > 0) {
           this.callRefTimerUnref();
         }
         for (const call of queueCopy) {
@@ -479,8 +479,8 @@ export class InternalChannel {
       this.trace(
         'callRefTimer.ref | configSelectionQueue.length=' +
           this.configSelectionQueue.length +
-          ' pickQueue.length=' +
-          this.pickQueue.length
+          ' pickQueue.size=' +
+          this.pickQueue.size
       );
       this.callRefTimer.ref?.();
     }
@@ -492,8 +492,8 @@ export class InternalChannel {
       this.trace(
         'callRefTimer.unref | configSelectionQueue.length=' +
           this.configSelectionQueue.length +
-          ' pickQueue.length=' +
-          this.pickQueue.length
+          ' pickQueue.size=' +
+          this.pickQueue.size
       );
       this.callRefTimer?.unref?.();
     }
@@ -571,8 +571,15 @@ export class InternalChannel {
   }
 
   queueCallForPick(call: LoadBalancingCall) {
-    this.pickQueue.push(call);
+    this.pickQueue.add(call);
     this.callRefTimerRef();
+  }
+
+  removeCallFromPickQueue(call: LoadBalancingCall) {
+    this.pickQueue.delete(call);
+    if (this.pickQueue.size === 0) {
+      this.callRefTimerUnref();
+    }
   }
 
   getConfig(method: string, metadata: Metadata): GetConfigResult {
@@ -771,7 +778,7 @@ export class InternalChannel {
     for (const call of this.pickQueue) {
       call.cancelWithStatus(Status.UNAVAILABLE, 'Channel closed before call started');
     }
-    this.pickQueue = [];
+    this.pickQueue.clear();
     if (this.callRefTimer) {
       clearInterval(this.callRefTimer);
     }
