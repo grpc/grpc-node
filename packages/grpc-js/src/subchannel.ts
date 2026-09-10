@@ -58,6 +58,10 @@ const TRACER_NAME = 'subchannel';
  * to calculate it */
 const KEEPALIVE_MAX_TIME_MS = ~(1 << 31);
 
+/* Default MIN_CONNECT_TIMEOUT of 20 seconds in accordance with
+ * https://github.com/grpc/grpc/blob/master/doc/connection-backoff.md */
+const DEFAULT_MIN_CONNECT_TIMEOUT_MS = 20_000;
+
 export interface DataProducer {
   addDataWatcher(dataWatcher: DataWatcher): void;
   removeDataWatcher(dataWatcher: DataWatcher): void;
@@ -86,6 +90,9 @@ export class Subchannel implements SubchannelInterface {
   private stateListeners: Set<ConnectivityStateListener> = new Set();
 
   private backoffTimeout: BackoffTimeout;
+
+  private minConnectTimeoutMs: number;
+  private connectionTimer: NodeJS.Timeout | null = null;
 
   private keepaliveTime: number;
   /**
@@ -145,6 +152,8 @@ export class Subchannel implements SubchannelInterface {
     this.subchannelAddressString = subchannelAddressToString(subchannelAddress);
 
     this.keepaliveTime = options['grpc.keepalive_time_ms'] ?? -1;
+
+    this.minConnectTimeoutMs = options['grpc.min_reconnect_backoff_ms'] ?? DEFAULT_MIN_CONNECT_TIMEOUT_MS;
 
     if (options['grpc.enable_channelz'] === 0) {
       this.channelzEnabled = false;
@@ -233,6 +242,27 @@ export class Subchannel implements SubchannelInterface {
   private stopBackoff() {
     this.backoffTimeout.stop();
     this.backoffTimeout.reset();
+  }
+
+  private startConnectionTimer() {
+    if (this.connectionTimer) {
+      clearTimeout(this.connectionTimer);
+    }
+    const connectionTimeout = Math.max(this.backoffTimeout.getEndTime().getTime() - Date.now(), this.minConnectTimeoutMs);
+    this.connectionTimer = setTimeout(() => {
+      this.transitionToState(
+        [ConnectivityState.CONNECTING],
+        ConnectivityState.TRANSIENT_FAILURE
+      );
+    }, connectionTimeout);
+    this.connectionTimer.unref?.();
+  }
+
+  private stopConnectionTimer() {
+    if (this.connectionTimer) {
+      clearTimeout(this.connectionTimer);
+      this.connectionTimer = null;
+    }
   }
 
   private startConnectingInternal() {
@@ -332,9 +362,11 @@ export class Subchannel implements SubchannelInterface {
     switch (newState) {
       case ConnectivityState.READY:
         this.stopBackoff();
+        this.stopConnectionTimer();
         break;
       case ConnectivityState.CONNECTING:
         this.startBackoff();
+        this.startConnectionTimer();
         this.startConnectingInternal();
         this.continueConnecting = false;
         break;
@@ -344,6 +376,7 @@ export class Subchannel implements SubchannelInterface {
         }
         this.transport?.shutdown();
         this.transport = null;
+        this.stopConnectionTimer();
         /* If the backoff timer has already ended by the time we get to the
          * TRANSIENT_FAILURE state, we want to immediately transition out of
          * TRANSIENT_FAILURE as though the backoff timer is ending right now */
@@ -359,6 +392,7 @@ export class Subchannel implements SubchannelInterface {
         }
         this.transport?.shutdown();
         this.transport = null;
+        this.stopConnectionTimer();
         break;
       default:
         throw new Error(`Invalid state: unknown ConnectivityState ${newState}`);
