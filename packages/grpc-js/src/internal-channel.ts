@@ -342,7 +342,7 @@ export class InternalChannel {
       },
       updateState: (connectivityState: ConnectivityState, picker: Picker) => {
         this.currentPicker = picker;
-        const queueCopy = {...this.pickQueue};
+        const queueCopy = this.pickQueue;
         this.pickQueue = new Set();
         if (queueCopy.size > 0) {
           this.callRefTimerUnref();
