@@ -189,7 +189,7 @@ export class ResolvingCall implements Call {
         }
       },
       (status: StatusObject) => {
-        this.cancelWithStatus(status.code, status.details);
+        this.cancelWithStatus(status.code ?? Status.INTERNAL, status.details ?? 'Failed to write message');
       }
     );
   }
