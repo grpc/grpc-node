@@ -62,6 +62,49 @@ describe('core xDS functionality', () => {
     await routeGroup.waitForAllBackendsToReceiveTraffic();
     client.stopCalls();
   });
+  it('should use the cluster weight sum when total_weight is omitted', async () => {
+    const [backend] = await createBackends(1);
+    const serverRoute = new FakeServerRoute(backend.getPort(), 'serverRoute');
+    xdsServer.setRdsResource(serverRoute.getRouteConfiguration());
+    xdsServer.setLdsResource(serverRoute.getListener());
+    xdsServer.addResponseListener((typeUrl, responseState) => {
+      if (responseState.state === 'NACKED') {
+        assert.fail(
+          `Client NACKED ${typeUrl} resource with message ${responseState.errorMessage}`
+        );
+      }
+    });
+    const cluster = new FakeEdsCluster('cluster1', 'endpoint1', [
+      {backends: [backend], locality: {region: 'region1'}},
+    ]);
+    const routeGroup = new FakeRouteGroup('listener1', 'route1', [
+      {
+        weightedClusters: [{cluster: cluster, weight: 1}],
+      },
+    ]);
+    await routeGroup.startAllBackends(xdsServer);
+    xdsServer.setEdsResource(cluster.getEndpointConfig());
+    xdsServer.setCdsResource(cluster.getClusterConfig());
+    xdsServer.setRdsResource(routeGroup.getRouteConfiguration());
+    xdsServer.setLdsResource(routeGroup.getListener());
+    client = XdsTestClient.createFromServer('listener1', xdsServer);
+    const originalRandom = Math.random;
+    // With the old denominator of 100, this value selected no cluster.
+    Math.random = () => 0.5;
+    try {
+      await new Promise<void>((resolve, reject) => {
+        client.sendOneCall(error => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve();
+          }
+        });
+      });
+    } finally {
+      Math.random = originalRandom;
+    }
+  });
   it('should be able to enter and exit idle', function(done) {
     this.timeout(5000);
     createBackends(1).then(([backend]) => {
