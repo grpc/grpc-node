@@ -16,11 +16,14 @@
  */
 
 import * as assert from 'assert';
+import { EventEmitter } from 'events';
+import * as http2 from 'http2';
 
 import * as grpc from '../src';
 import { Server, ServerCredentials } from '../src';
 import { Client } from '../src';
 import { ConnectivityState } from '../src/connectivity-state';
+import { Http2SubchannelCall } from '../src/subchannel-call';
 
 const clientInsecureCreds = grpc.credentials.createInsecure();
 const serverInsecureCreds = ServerCredentials.createInsecure();
@@ -60,6 +63,178 @@ describe('Client', () => {
       assert.equal(calledTimes, 1);
       done();
     }, deadline - Date.now());
+  });
+});
+
+describe('Client HTTP/2 stream lifecycle', () => {
+  let originalConnect: typeof http2.connect;
+  let testServer: Server | null = null;
+  let testClient: Client | null = null;
+
+  beforeEach(() => {
+    originalConnect = http2.connect;
+  });
+
+  afterEach(done => {
+    (http2 as any).connect = originalConnect;
+    testClient?.close();
+    testClient = null;
+    if (testServer) {
+      testServer.forceShutdown();
+      testServer = null;
+    }
+    done();
+  });
+
+  it('should not redundantly call http2Stream.end when stream is already ended', done => {
+    let streamEndCount = 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (http2 as any).connect = function (
+      this: unknown,
+      ...connectArguments: any[]
+    ) {
+      const session = Reflect.apply(originalConnect, this, connectArguments);
+      const originalRequest = session.request;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      session.request = function (this: unknown, ...requestArguments: any[]) {
+        const stream = Reflect.apply(originalRequest, this, requestArguments);
+        const originalEnd = stream.end;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        stream.end = function (this: unknown, ...endArguments: any[]) {
+          streamEndCount++;
+          return Reflect.apply(originalEnd, this, endArguments);
+        };
+        return stream;
+      };
+      return session;
+    };
+    testServer = new Server();
+    testServer.bindAsync(
+      'localhost:0',
+      serverInsecureCreds,
+      (bindError, port) => {
+        assert.ifError(bindError);
+        testClient = new Client(
+          `localhost:${port}`,
+          clientInsecureCreds
+        );
+        testServer!.start();
+        testClient.makeUnaryRequest(
+          '/service/method',
+          message => message,
+          message => message,
+          Buffer.from([]),
+          () => {
+            assert.strictEqual(streamEndCount, 1);
+            done();
+          }
+        );
+      }
+    );
+  });
+
+  it('should call http2Stream.end when server ends call early on an un-ended client stream', done => {
+    let streamEndCount = 0;
+    let writableEndedBeforeEndCall: boolean | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (http2 as any).connect = function (
+      this: unknown,
+      ...connectArguments: any[]
+    ) {
+      const session = Reflect.apply(originalConnect, this, connectArguments);
+      const originalRequest = session.request;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      session.request = function (this: unknown, ...requestArguments: any[]) {
+        const stream = Reflect.apply(originalRequest, this, requestArguments);
+        const originalEnd = stream.end;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        stream.end = function (this: unknown, ...endArguments: any[]) {
+          streamEndCount++;
+          writableEndedBeforeEndCall = (this as {writableEnded?: boolean})
+            .writableEnded;
+          return Reflect.apply(originalEnd, this, endArguments);
+        };
+        return stream;
+      };
+      return session;
+    };
+    testServer = new Server();
+    testServer.bindAsync(
+      'localhost:0',
+      serverInsecureCreds,
+      (bindError, port) => {
+        assert.ifError(bindError);
+        testClient = new Client(
+          `localhost:${port}`,
+          clientInsecureCreds
+        );
+        testServer!.start();
+        const clientStream = testClient.makeClientStreamRequest(
+          '/service/method',
+          message => message,
+          message => message,
+          callError => {
+            assert(callError);
+            assert.strictEqual(streamEndCount, 1);
+            assert.strictEqual(writableEndedBeforeEndCall, false);
+            done();
+          }
+        );
+        // Write data without ending the client stream so that writableEnded remains false
+        clientStream.write(Buffer.from('hello'));
+      }
+    );
+  });
+
+  it('should not call http2Stream.end when halfClose is called on an ended or destroyed stream', () => {
+    let streamEndCount = 0;
+    const mockHttp2Stream = Object.assign(new EventEmitter(), {
+      destroyed: false,
+      writableEnded: false,
+      end() {
+        streamEndCount++;
+        this.writableEnded = true;
+      },
+      rstCode: 0,
+    });
+    const mockTransport = {
+      getOptions: () => ({}),
+      getPeerName: () => 'localhost',
+      getAuthContext: () => null,
+    };
+    const mockTracker = {
+      addMessageReceived: () => {},
+      addMessageSent: () => {},
+      onStreamEnd: () => {},
+    };
+    const mockListener = {
+      onReceiveMetadata: () => {},
+      onReceiveMessage: () => {},
+      onReceiveStatus: () => {},
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const subchannelCall = new Http2SubchannelCall(
+      mockHttp2Stream as any,
+      mockTracker as any,
+      mockListener as any,
+      mockTransport as any,
+      1
+    );
+
+    // Initial halfClose calls http2Stream.end()
+    subchannelCall.halfClose();
+    assert.strictEqual(streamEndCount, 1);
+
+    // Subsequent halfClose when writableEnded is true is a no-op
+    subchannelCall.halfClose();
+    assert.strictEqual(streamEndCount, 1);
+
+    // halfClose when destroyed is true is a no-op even if writableEnded were false
+    mockHttp2Stream.destroyed = true;
+    mockHttp2Stream.writableEnded = false;
+    subchannelCall.halfClose();
+    assert.strictEqual(streamEndCount, 1);
   });
 });
 

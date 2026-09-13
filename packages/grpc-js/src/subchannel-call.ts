@@ -549,9 +549,20 @@ export class Http2SubchannelCall implements SubchannelCall {
     }
     /* If the server ended the call, sending an RST_STREAM is redundant, so we
      * just half close on the client side instead to finish closing the stream.
+     *
+     * Only call end() if writableEnded is false. For unary and server-streaming
+     * calls (and client streams where the client already finished sending),
+     * halfClose() has already called http2Stream.end(). Calling end() again on
+     * an already finished Node stream causes Node core stream internals to
+     * construct an ERR_STREAM_ALREADY_FINISHED Error (which synchronously captures
+     * a full native V8 stack trace) and immediately discard it because no callback
+     * is passed. On high-throughput workloads, this causes unnecessary CPU
+     * overhead and garbage collection pressure.
      */
     if (this.serverEndedCall) {
-      this.http2Stream.end();
+      if (!this.http2Stream.writableEnded) {
+        this.http2Stream.end();
+      }
     } else {
       /* If the call has ended with an OK status, communicate that when closing
        * the stream, partly to avoid a situation in which we detect an error
@@ -652,6 +663,14 @@ export class Http2SubchannelCall implements SubchannelCall {
 
   halfClose() {
     this.trace('end() called');
+    /* Calling end() on a stream that is already ended or destroyed causes Node
+     * core stream internals to construct ERR_STREAM_ALREADY_FINISHED or
+     * ERR_STREAM_DESTROYED Error instances with synchronous native V8 stack traces,
+     * which are immediately discarded when no callback is passed.
+     */
+    if (this.http2Stream.destroyed || this.http2Stream.writableEnded) {
+      return;
+    }
     this.trace('calling end() on HTTP/2 stream');
     this.http2Stream.end();
   }
