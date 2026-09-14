@@ -412,8 +412,8 @@ function createPackageDefinitionFromDescriptorSet(
  * @param options.keepCase Preserve field names. The default is to change them
  *     to camel case.
  * @param options.longs The type that should be used to represent `long` values.
- *     Valid options are `Number` and `String`. Defaults to a `Long` object type
- *     from a library.
+ *     Valid options are `Number`, `String`, and `BigInt`. Defaults to a `Long`
+ *     object type from a library.
  * @param options.enums The type that should be used to represent `enum` values.
  *     The only valid option is `String`. Defaults to the numeric value.
  * @param options.bytes The type that should be used to represent `bytes`
