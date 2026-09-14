@@ -332,7 +332,16 @@ class XdsResolver implements Resolver {
             }
             weightedClusters.push({name: clusterWeight.name, weight: clusterWeight.weight?.value ?? 0, dynamicFilterFactories: extraFilterFactories});
           }
-          routeAction = new WeightedClusterRouteAction(weightedClusters, route.route!.weighted_clusters!.total_weight?.value ?? 100, {name: [], timeout: timeout, retryPolicy: retryPolicy}, hashPolicies);
+          const totalWeight = weightedClusters.reduce(
+            (sum, cluster) => sum + cluster.weight,
+            0
+          );
+          routeAction = new WeightedClusterRouteAction(
+            weightedClusters,
+            totalWeight,
+            {name: [], timeout: timeout, retryPolicy: retryPolicy},
+            hashPolicies
+          );
           break;
         }
         default:
@@ -356,7 +365,15 @@ class XdsResolver implements Resolver {
         for (const {matcher, action} of matchList) {
           if (matcher.apply(methodName, metadata)) {
             const clusterResult = action.getCluster();
-            const clusterRef = this.clusterRefs.get(clusterResult.name)!;
+            const clusterRef = this.clusterRefs.get(clusterResult.name);
+            if (!clusterRef) {
+              return {
+                methodConfig: clusterResult.methodConfig,
+                pickInformation: {cluster: '', hash: ''},
+                status: status.UNAVAILABLE,
+                dynamicFilterFactories: clusterResult.dynamicFilterFactories,
+              };
+            }
             clusterRef.ref();
             const onCommitted = () => {
               clusterRef.unref();
