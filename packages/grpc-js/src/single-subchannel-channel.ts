@@ -142,7 +142,13 @@ class SubchannelCallWrapper implements Call {
         }
       }
     }
-    this.childCall = this.subchannel.createCall(credsMetadata, this.options.host, this.method, childListener);
+    this.childCall = this.subchannel.createCall(
+      credsMetadata,
+      this.options.host,
+      this.method,
+      childListener,
+      this.callNumber
+    );
     if (this.readPending) {
       this.childCall.startRead();
     }

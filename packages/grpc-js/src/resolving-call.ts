@@ -86,10 +86,12 @@ export class ResolvingCall implements Call {
         });
       }
       if (options.flags & Propagate.DEADLINE) {
-        this.trace(
-          'Propagating deadline from parent: ' +
-            options.parentCall.getDeadline()
-        );
+        if (this.traceEnabled) {
+          this.trace(
+            'Propagating deadline from parent: ' +
+              options.parentCall.getDeadline()
+          );
+        }
         this.deadline = minDeadline(
           this.deadline,
           options.parentCall.getDeadline()
@@ -100,21 +102,31 @@ export class ResolvingCall implements Call {
     this.runDeadlineTimer();
   }
 
+  private get traceEnabled(): boolean {
+    return logging.isTracerEnabled(TRACER_NAME);
+  }
+
   private trace(text: string): void {
-    logging.trace(
-      LogVerbosity.DEBUG,
-      TRACER_NAME,
-      '[' + this.callNumber + '] ' + text
-    );
+    if (this.traceEnabled) {
+      logging.trace(
+        LogVerbosity.DEBUG,
+        TRACER_NAME,
+        '[' + this.callNumber + '] ' + text
+      );
+    }
   }
 
   private runDeadlineTimer() {
     clearTimeout(this.deadlineTimer);
     this.deadlineStartTime = new Date();
-    this.trace('Deadline: ' + deadlineToString(this.deadline));
+    if (this.traceEnabled) {
+      this.trace('Deadline: ' + deadlineToString(this.deadline));
+    }
     const timeout = getRelativeTimeout(this.deadline);
     if (timeout !== Infinity) {
-      this.trace('Deadline will be reached in ' + timeout + 'ms');
+      if (this.traceEnabled) {
+        this.trace('Deadline will be reached in ' + timeout + 'ms');
+      }
       const handleDeadline = () => {
         if (!this.deadlineStartTime) {
           this.cancelWithStatus(Status.DEADLINE_EXCEEDED, 'Deadline exceeded');
@@ -158,13 +170,15 @@ export class ResolvingCall implements Call {
       }
       clearTimeout(this.deadlineTimer);
       const filteredStatus = this.filterStack.receiveTrailers(status);
-      this.trace(
-        'ended with status: code=' +
-          filteredStatus.code +
-          ' details="' +
-          filteredStatus.details +
-          '"'
-      );
+      if (this.traceEnabled) {
+        this.trace(
+          'ended with status: code=' +
+            filteredStatus.code +
+            ' details="' +
+            filteredStatus.details +
+            '"'
+        );
+      }
       this.statusWatchers.forEach(watcher => watcher(filteredStatus));
       process.nextTick(() => {
         this.listener?.onReceiveStatus(filteredStatus);
@@ -251,9 +265,12 @@ export class ResolvingCall implements Call {
           this.method,
           this.host,
           this.credentials,
-          this.deadline
+          this.deadline,
+          this.callNumber
         );
-        this.trace('Created child [' + this.child.getCallNumber() + ']');
+        if (this.traceEnabled) {
+          this.trace('Created child [' + this.child.getCallNumber() + ']');
+        }
         this.childStartTime = new Date();
         this.child.start(filteredMetadata, {
           onReceiveMetadata: metadata => {
@@ -314,9 +331,11 @@ export class ResolvingCall implements Call {
     }
   }
   cancelWithStatus(status: Status, details: string): void {
-    this.trace(
-      'cancelWithStatus code: ' + status + ' details: "' + details + '"'
-    );
+    if (this.traceEnabled) {
+      this.trace(
+        'cancelWithStatus code: ' + status + ' details: "' + details + '"'
+      );
+    }
     this.child?.cancelWithStatus(status, details);
     this.outputStatus({
       code: status,
@@ -334,7 +353,9 @@ export class ResolvingCall implements Call {
     this.getConfig();
   }
   sendMessageWithContext(context: MessageContext, message: Buffer): void {
-    this.trace('write() called with message of length ' + message.length);
+    if (this.traceEnabled) {
+      this.trace('write() called with message of length ' + message.length);
+    }
     if (this.child) {
       this.sendMessageOnChild(context, message);
     } else {
