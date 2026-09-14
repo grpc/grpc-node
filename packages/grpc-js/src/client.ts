@@ -16,6 +16,7 @@
  */
 
 import {
+  callErrorFromStatus,
   ClientDuplexStream,
   ClientDuplexStreamImpl,
   ClientReadableStream,
@@ -25,37 +26,37 @@ import {
   ClientWritableStream,
   ClientWritableStreamImpl,
   ServiceError,
-  callErrorFromStatus,
   SurfaceCall,
 } from './call';
 import { CallCredentials } from './call-credentials';
 import { StatusObject } from './call-interface';
 import { Channel, ChannelImplementation } from './channel';
-import { ConnectivityState } from './connectivity-state';
 import { ChannelCredentials } from './channel-credentials';
 import { ChannelOptions } from './channel-options';
-import { Status } from './constants';
-import { Metadata } from './metadata';
-import { ClientMethodDefinition } from './make-client';
 import {
   getInterceptingCall,
-  Interceptor,
-  InterceptorProvider,
-  InterceptorArguments,
   InterceptingCallInterface,
+  Interceptor,
+  InterceptorArguments,
+  InterceptorProvider,
 } from './client-interceptors';
-import {
-  ServerUnaryCall,
-  ServerReadableStream,
-  ServerWritableStream,
-  ServerDuplexStream,
-} from './server-call';
+import { ConnectivityState } from './connectivity-state';
+import { Status } from './constants';
 import { Deadline } from './deadline';
+import { ClientMethodDefinition } from './make-client';
+import { Metadata } from './metadata';
+import {
+  ServerDuplexStream,
+  ServerReadableStream,
+  ServerUnaryCall,
+  ServerWritableStream,
+} from './server-call';
 
 const CHANNEL_SYMBOL = Symbol();
 const INTERCEPTOR_SYMBOL = Symbol();
 const INTERCEPTOR_PROVIDER_SYMBOL = Symbol();
 const CALL_INVOCATION_TRANSFORMER_SYMBOL = Symbol();
+const ENABLE_CALLER_STACK_TRACES_SYMBOL = Symbol();
 
 function isFunction<ResponseType>(
   arg: Metadata | CallOptions | UnaryCallback<ResponseType> | undefined
@@ -109,8 +110,10 @@ export type ClientOptions = Partial<ChannelOptions> & {
   callInvocationTransformer?: CallInvocationTransformer;
 };
 
-function getErrorStackString(error: Error): string {
-  return error.stack?.split('\n').slice(1).join('\n') || 'no stack trace available';
+function getErrorStackString(error: Error | null): string {
+  return (
+    error?.stack?.split('\n').slice(1).join('\n') || 'no stack trace available'
+  );
 }
 
 /**
@@ -122,12 +125,16 @@ export class Client {
   private readonly [INTERCEPTOR_SYMBOL]: Interceptor[];
   private readonly [INTERCEPTOR_PROVIDER_SYMBOL]: InterceptorProvider[];
   private readonly [CALL_INVOCATION_TRANSFORMER_SYMBOL]?: CallInvocationTransformer;
+  private readonly [ENABLE_CALLER_STACK_TRACES_SYMBOL]: boolean;
   constructor(
     address: string,
     credentials: ChannelCredentials,
     options: ClientOptions = {}
   ) {
     options = Object.assign({}, options);
+    this[ENABLE_CALLER_STACK_TRACES_SYMBOL] =
+      options['grpc.enable_caller_stack_traces'] !== 0 &&
+      (options['grpc.enable_caller_stack_traces'] as any) !== false;
     this[INTERCEPTOR_SYMBOL] = options.interceptors ?? [];
     delete options.interceptors;
     this[INTERCEPTOR_PROVIDER_SYMBOL] = options.interceptor_providers ?? [];
@@ -322,7 +329,9 @@ export class Client {
     emitter.call = call;
     let responseMessage: ResponseType | null = null;
     let receivedStatus = false;
-    let callerStackError: Error | null = new Error();
+    let callerStackError: Error | null = this[ENABLE_CALLER_STACK_TRACES_SYMBOL]
+      ? new Error()
+      : null;
     call.start(callProperties.metadata, {
       onReceiveMetadata: metadata => {
         emitter.emit('metadata', metadata);
@@ -330,7 +339,10 @@ export class Client {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onReceiveMessage(message: any) {
         if (responseMessage !== null) {
-          call.cancelWithStatus(Status.UNIMPLEMENTED, 'Too many responses received');
+          call.cancelWithStatus(
+            Status.UNIMPLEMENTED,
+            'Too many responses received'
+          );
         }
         responseMessage = message;
       },
@@ -341,7 +353,7 @@ export class Client {
         receivedStatus = true;
         if (status.code === Status.OK) {
           if (responseMessage === null) {
-            const callerStack = getErrorStackString(callerStackError!);
+            const callerStack = getErrorStackString(callerStackError);
             callProperties.callback!(
               callErrorFromStatus(
                 {
@@ -356,7 +368,7 @@ export class Client {
             callProperties.callback!(null, responseMessage);
           }
         } else {
-          const callerStack = getErrorStackString(callerStackError!);
+          const callerStack = getErrorStackString(callerStackError);
           callProperties.callback!(callErrorFromStatus(status, callerStack));
         }
         /* Avoid retaining the callerStackError object in the call context of
@@ -455,7 +467,9 @@ export class Client {
     emitter.call = call;
     let responseMessage: ResponseType | null = null;
     let receivedStatus = false;
-    let callerStackError: Error | null = new Error();
+    let callerStackError: Error | null = this[ENABLE_CALLER_STACK_TRACES_SYMBOL]
+      ? new Error()
+      : null;
     call.start(callProperties.metadata, {
       onReceiveMetadata: metadata => {
         emitter.emit('metadata', metadata);
@@ -463,7 +477,10 @@ export class Client {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onReceiveMessage(message: any) {
         if (responseMessage !== null) {
-          call.cancelWithStatus(Status.UNIMPLEMENTED, 'Too many responses received');
+          call.cancelWithStatus(
+            Status.UNIMPLEMENTED,
+            'Too many responses received'
+          );
         }
         responseMessage = message;
         call.startRead();
@@ -475,7 +492,7 @@ export class Client {
         receivedStatus = true;
         if (status.code === Status.OK) {
           if (responseMessage === null) {
-            const callerStack = getErrorStackString(callerStackError!);
+            const callerStack = getErrorStackString(callerStackError);
             callProperties.callback!(
               callErrorFromStatus(
                 {
@@ -490,7 +507,7 @@ export class Client {
             callProperties.callback!(null, responseMessage);
           }
         } else {
-          const callerStack = getErrorStackString(callerStackError!);
+          const callerStack = getErrorStackString(callerStackError);
           callProperties.callback!(callErrorFromStatus(status, callerStack));
         }
         /* Avoid retaining the callerStackError object in the call context of
@@ -592,7 +609,9 @@ export class Client {
      * call after that. */
     stream.call = call;
     let receivedStatus = false;
-    let callerStackError: Error | null = new Error();
+    let callerStackError: Error | null = this[ENABLE_CALLER_STACK_TRACES_SYMBOL]
+      ? new Error()
+      : null;
     call.start(callProperties.metadata, {
       onReceiveMetadata(metadata: Metadata) {
         stream.emit('metadata', metadata);
@@ -608,7 +627,7 @@ export class Client {
         receivedStatus = true;
         stream.push(null);
         if (status.code !== Status.OK) {
-          const callerStack = getErrorStackString(callerStackError!);
+          const callerStack = getErrorStackString(callerStackError);
           stream.emit('error', callErrorFromStatus(status, callerStack));
         }
         /* Avoid retaining the callerStackError object in the call context of
@@ -687,7 +706,9 @@ export class Client {
      * call after that. */
     stream.call = call;
     let receivedStatus = false;
-    let callerStackError: Error | null = new Error();
+    let callerStackError: Error | null = this[ENABLE_CALLER_STACK_TRACES_SYMBOL]
+      ? new Error()
+      : null;
     call.start(callProperties.metadata, {
       onReceiveMetadata(metadata: Metadata) {
         stream.emit('metadata', metadata);
@@ -702,7 +723,7 @@ export class Client {
         receivedStatus = true;
         stream.push(null);
         if (status.code !== Status.OK) {
-          const callerStack = getErrorStackString(callerStackError!);
+          const callerStack = getErrorStackString(callerStackError);
           stream.emit('error', callErrorFromStatus(status, callerStack));
         }
         /* Avoid retaining the callerStackError object in the call context of
