@@ -21,15 +21,16 @@ powershell -c "[System.Environment]::OSVersion"
 powershell -c "Get-WmiObject -Class Win32_ComputerSystem"
 powershell -c "(Get-WmiObject -Class Win32_ComputerSystem).SystemType"
 
-powershell -c "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; & { iwr https://raw.githubusercontent.com/grumpycoders/nvm-ps/master/nvm.ps1 | iex }"
+SET NVS_HOME=%APPDATA%\nvs
+powershell -c "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; git clone https://github.com/jasongin/nvs '%NVS_HOME%'; . '%NVS_HOME%\nvs.ps1' install"
 
-SET PATH=%APPDATA%\nvm-ps;%APPDATA%\nvm-ps\nodejs;%PATH%
+SET PATH=%NVS_HOME%;%PATH%
 SET JOBS=8
 
-call nvm version
+call nvs --version
 
-call nvm install 22
-call nvm use 22
+call nvs add 22
+call nvs use 22
 
 git submodule update --init --recursive
 
@@ -41,8 +42,8 @@ SET JUNIT_REPORT_STACK=1
 SET FAILED=0
 
 for %%v in (20 22) do (
-  call nvm install %%v
-  call nvm use %%v
+  call nvs add %%v
+  call nvs use %%v
   if "%%v"=="4" (
     call npm install -g npm@5
   )
