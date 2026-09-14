@@ -443,12 +443,14 @@ export class InternalChannel {
     this.filterStackFactory = new FilterStackFactory([
       new CompressionFilterFactory(this, this.options),
     ]);
-    this.trace(
-      'Channel constructed with options ' +
-        JSON.stringify(options, undefined, 2)
-    );
-    const error = new Error();
-    if (isTracerEnabled('channel_stacktrace')){
+    if (this.traceEnabled) {
+      this.trace(
+        'Channel constructed with options ' +
+          JSON.stringify(options, undefined, 2)
+      );
+    }
+    if (isTracerEnabled('channel_stacktrace')) {
+      const error = new Error();
       trace(
         LogVerbosity.DEBUG,
         'channel_stacktrace',
@@ -462,12 +464,18 @@ export class InternalChannel {
     this.lastActivityTimestamp = new Date();
   }
 
+  private get traceEnabled(): boolean {
+    return isTracerEnabled('channel');
+  }
+
   private trace(text: string, verbosityOverride?: LogVerbosity) {
-    trace(
-      verbosityOverride ?? LogVerbosity.DEBUG,
-      'channel',
-      '(' + this.channelzRef.id + ') ' + uriToString(this.target) + ' ' + text
-    );
+    if (this.traceEnabled) {
+      trace(
+        verbosityOverride ?? LogVerbosity.DEBUG,
+        'channel',
+        '(' + this.channelzRef.id + ') ' + uriToString(this.target) + ' ' + text
+      );
+    }
   }
 
   private callRefTimerRef() {
@@ -476,12 +484,14 @@ export class InternalChannel {
     }
     // If the hasRef function does not exist, always run the code
     if (!this.callRefTimer.hasRef?.()) {
-      this.trace(
-        'callRefTimer.ref | configSelectionQueue.length=' +
-          this.configSelectionQueue.length +
-          ' pickQueue.size=' +
-          this.pickQueue.size
-      );
+      if (this.traceEnabled) {
+        this.trace(
+          'callRefTimer.ref | configSelectionQueue.length=' +
+            this.configSelectionQueue.length +
+            ' pickQueue.length=' +
+            this.pickQueue.size
+        );
+      }
       this.callRefTimer.ref?.();
     }
   }
@@ -489,12 +499,14 @@ export class InternalChannel {
   private callRefTimerUnref() {
     // If the timer or the hasRef function does not exist, always run the code
     if (!this.callRefTimer?.hasRef || this.callRefTimer.hasRef()) {
-      this.trace(
-        'callRefTimer.unref | configSelectionQueue.length=' +
-          this.configSelectionQueue.length +
-          ' pickQueue.size=' +
-          this.pickQueue.size
-      );
+      if (this.traceEnabled) {
+        this.trace(
+          'callRefTimer.unref | configSelectionQueue.length=' +
+            this.configSelectionQueue.length +
+            ' pickQueue.length=' +
+            this.pickQueue.size
+        );
+      }
       this.callRefTimer?.unref?.();
     }
   }
@@ -688,12 +700,19 @@ export class InternalChannel {
     method: string,
     host: string,
     credentials: CallCredentials,
-    deadline: Deadline
+    deadline: Deadline,
+    callNumber?: number
   ): LoadBalancingCall {
-    const callNumber = getNextCallNumber();
-    this.trace(
-      'createLoadBalancingCall [' + callNumber + '] method="' + method + '"'
-    );
+    const finalCallNumber = callNumber ?? getNextCallNumber();
+    if (this.traceEnabled) {
+      this.trace(
+        'createLoadBalancingCall [' +
+          finalCallNumber +
+          '] method="' +
+          method +
+          '"'
+      );
+    }
     return new LoadBalancingCall(
       this,
       callConfig,
@@ -701,7 +720,7 @@ export class InternalChannel {
       host,
       credentials,
       deadline,
-      callNumber
+      finalCallNumber
     );
   }
 
@@ -710,12 +729,19 @@ export class InternalChannel {
     method: string,
     host: string,
     credentials: CallCredentials,
-    deadline: Deadline
+    deadline: Deadline,
+    callNumber?: number
   ): RetryingCall {
-    const callNumber = getNextCallNumber();
-    this.trace(
-      'createRetryingCall [' + callNumber + '] method="' + method + '"'
-    );
+    const finalCallNumber = callNumber ?? getNextCallNumber();
+    if (this.traceEnabled) {
+      this.trace(
+        'createRetryingCall [' +
+          finalCallNumber +
+          '] method="' +
+          method +
+          '"'
+      );
+    }
     return new RetryingCall(
       this,
       callConfig,
@@ -723,7 +749,7 @@ export class InternalChannel {
       host,
       credentials,
       deadline,
-      callNumber,
+      finalCallNumber,
       this.retryBufferTracker,
       RETRY_THROTTLER_MAP.get(this.getTarget())
     );
@@ -737,14 +763,16 @@ export class InternalChannel {
     propagateFlags: number | null | undefined
   ): ResolvingCall {
     const callNumber = getNextCallNumber();
-    this.trace(
-      'createResolvingCall [' +
-        callNumber +
-        '] method="' +
-        method +
-        '", deadline=' +
-        deadlineToString(deadline)
-    );
+    if (this.traceEnabled) {
+      this.trace(
+        'createResolvingCall [' +
+          callNumber +
+          '] method="' +
+          method +
+          '", deadline=' +
+          deadlineToString(deadline)
+      );
+    }
     const finalOptions: CallStreamOptions = {
       deadline: deadline,
       flags: propagateFlags ?? Propagate.DEFAULTS,

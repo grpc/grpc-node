@@ -90,7 +90,8 @@ export interface Transport {
     host: string,
     method: string,
     listener: SubchannelCallInterceptingListener,
-    subchannelCallStatsTracker: Partial<CallEventTracker>
+    subchannelCallStatsTracker: Partial<CallEventTracker>,
+    callId?: number
   ): SubchannelCall;
   addDisconnectListener(listener: TransportDisconnectListener): void;
   shutdown(): void;
@@ -214,27 +215,33 @@ class Http2Transport implements Transport {
         ) {
           tooManyPings = true;
         }
-        this.trace(
-          'connection closed by GOAWAY with code ' +
-            errorCode +
-            ' and data ' +
-            opaqueData?.toString()
-        );
+        if (this.traceEnabled) {
+          this.trace(
+            'connection closed by GOAWAY with code ' +
+              errorCode +
+              ' and data ' +
+              opaqueData?.toString()
+          );
+        }
         this.reportDisconnectToOwner(tooManyPings);
       }
     );
 
     session.once('error', error => {
-      this.trace('connection closed with error ' + (error as Error).message);
+      if (this.traceEnabled) {
+        this.trace('connection closed with error ' + (error as Error).message);
+      }
       this.handleDisconnect();
     });
 
     session.socket.once('close', (hadError) => {
-      this.trace('connection closed. hadError=' + hadError);
+      if (this.traceEnabled) {
+        this.trace('connection closed. hadError=' + hadError);
+      }
       this.handleDisconnect();
     });
 
-    if (logging.isTracerEnabled(TRACER_NAME)) {
+    if (this.traceEnabled) {
       session.on('remoteSettings', (settings: http2.Settings) => {
         this.trace(
           'new settings received' +
@@ -325,56 +332,80 @@ class Http2Transport implements Transport {
     return socketInfo;
   }
 
+  private get traceEnabled(): boolean {
+    return logging.isTracerEnabled(TRACER_NAME);
+  }
+
+  private get keepaliveTraceEnabled(): boolean {
+    return logging.isTracerEnabled('keepalive');
+  }
+
+  private get flowControlTraceEnabled(): boolean {
+    return logging.isTracerEnabled(FLOW_CONTROL_TRACER_NAME);
+  }
+
+  private get internalsTraceEnabled(): boolean {
+    return logging.isTracerEnabled('transport_internals');
+  }
+
   private trace(text: string): void {
-    logging.trace(
-      LogVerbosity.DEBUG,
-      TRACER_NAME,
-      '(' +
-        this.channelzRef.id +
-        ') ' +
-        this.subchannelAddressString +
-        ' ' +
-        text
-    );
+    if (this.traceEnabled) {
+      logging.trace(
+        LogVerbosity.DEBUG,
+        TRACER_NAME,
+        '(' +
+          this.channelzRef.id +
+          ') ' +
+          this.subchannelAddressString +
+          ' ' +
+          text
+      );
+    }
   }
 
   private keepaliveTrace(text: string): void {
-    logging.trace(
-      LogVerbosity.DEBUG,
-      'keepalive',
-      '(' +
-        this.channelzRef.id +
-        ') ' +
-        this.subchannelAddressString +
-        ' ' +
-        text
-    );
+    if (this.keepaliveTraceEnabled) {
+      logging.trace(
+        LogVerbosity.DEBUG,
+        'keepalive',
+        '(' +
+          this.channelzRef.id +
+          ') ' +
+          this.subchannelAddressString +
+          ' ' +
+          text
+      );
+    }
   }
 
   private flowControlTrace(text: string): void {
-    logging.trace(
-      LogVerbosity.DEBUG,
-      FLOW_CONTROL_TRACER_NAME,
-      '(' +
-        this.channelzRef.id +
-        ') ' +
-        this.subchannelAddressString +
-        ' ' +
-        text
-    );
+    if (this.flowControlTraceEnabled) {
+      logging.trace(
+        LogVerbosity.DEBUG,
+        FLOW_CONTROL_TRACER_NAME,
+        '(' +
+          this.channelzRef.id +
+          ') ' +
+          this.subchannelAddressString +
+          ' ' +
+          text
+      );
+    }
   }
 
   private internalsTrace(text: string): void {
-    logging.trace(
-      LogVerbosity.DEBUG,
-      'transport_internals',
-      '(' +
-        this.channelzRef.id +
-        ') ' +
-        this.subchannelAddressString +
-        ' ' +
-        text
-    );
+    if (this.internalsTraceEnabled) {
+      logging.trace(
+        LogVerbosity.DEBUG,
+        'transport_internals',
+        '(' +
+          this.channelzRef.id +
+          ') ' +
+          this.subchannelAddressString +
+          ' ' +
+          text
+      );
+    }
   }
 
   /**
@@ -433,9 +464,11 @@ class Http2Transport implements Transport {
     if (this.channelzEnabled) {
       this.keepalivesSent += 1;
     }
-    this.keepaliveTrace(
-      'Sending ping with timeout ' + this.keepaliveTimeoutMs + 'ms'
-    );
+    if (this.keepaliveTraceEnabled) {
+      this.keepaliveTrace(
+        'Sending ping with timeout ' + this.keepaliveTimeoutMs + 'ms'
+      );
+    }
     this.keepaliveTimer = setTimeout(() => {
       this.keepaliveTimer = null;
       this.keepaliveTrace('Ping timeout passed without response');
@@ -448,7 +481,9 @@ class Http2Transport implements Transport {
         (err: Error | null, duration: number, payload: Buffer) => {
           this.clearKeepaliveTimeout();
           if (err) {
-            this.keepaliveTrace('Ping failed with error ' + err.message);
+            if (this.keepaliveTraceEnabled) {
+              this.keepaliveTrace('Ping failed with error ' + err.message);
+            }
             this.handleDisconnect();
           } else {
             this.keepaliveTrace('Received ping response');
@@ -464,7 +499,9 @@ class Http2Transport implements Transport {
       pingSendError = (e instanceof Error ? e.message : '') || 'Unknown error';
     }
     if (pingSendError) {
-      this.keepaliveTrace('Ping send failed: ' + pingSendError);
+      if (this.keepaliveTraceEnabled) {
+        this.keepaliveTrace('Ping send failed: ' + pingSendError);
+      }
       this.handleDisconnect();
     }
   }
@@ -528,7 +565,8 @@ class Http2Transport implements Transport {
     host: string,
     method: string,
     listener: SubchannelCallInterceptingListener,
-    subchannelCallStatsTracker: Partial<CallEventTracker>
+    subchannelCallStatsTracker: Partial<CallEventTracker>,
+    callId?: number
   ): Http2SubchannelCall {
     const headers = metadata.toHttp2Headers();
     headers[HTTP2_HEADER_AUTHORITY] = host;
@@ -552,20 +590,24 @@ class Http2Transport implements Transport {
       this.handleDisconnect();
       throw e;
     }
-    this.flowControlTrace(
-      'local window size: ' +
-        this.session.state.localWindowSize +
-        ' remote window size: ' +
-        this.session.state.remoteWindowSize
-    );
-    this.internalsTrace(
-      'session.closed=' +
-        this.session.closed +
-        ' session.destroyed=' +
-        this.session.destroyed +
-        ' session.socket.destroyed=' +
-        this.session.socket.destroyed
-    );
+    if (this.flowControlTraceEnabled) {
+      this.flowControlTrace(
+        'local window size: ' +
+          this.session.state.localWindowSize +
+          ' remote window size: ' +
+          this.session.state.remoteWindowSize
+      );
+    }
+    if (this.internalsTraceEnabled) {
+      this.internalsTrace(
+        'session.closed=' +
+          this.session.closed +
+          ' session.destroyed=' +
+          this.session.destroyed +
+          ' session.socket.destroyed=' +
+          this.session.socket.destroyed
+      );
+    }
     let eventTracker: CallEventTracker;
     // eslint-disable-next-line prefer-const
     let call: Http2SubchannelCall;
@@ -617,7 +659,7 @@ class Http2Transport implements Transport {
       eventTracker,
       listener,
       this,
-      getNextCallNumber()
+      callId ?? getNextCallNumber()
     );
     this.addActiveCall(call);
     return call;
@@ -659,12 +701,18 @@ export class Http2SubchannelConnector implements SubchannelConnector {
   private isShutdown = false;
   constructor(private channelTarget: GrpcUri) {}
 
+  private get traceEnabled(): boolean {
+    return logging.isTracerEnabled(TRACER_NAME);
+  }
+
   private trace(text: string) {
-    logging.trace(
-      LogVerbosity.DEBUG,
-      TRACER_NAME,
-      uriToString(this.channelTarget) + ' ' + text
-    );
+    if (this.traceEnabled) {
+      logging.trace(
+        LogVerbosity.DEBUG,
+        TRACER_NAME,
+        uriToString(this.channelTarget) + ' ' + text
+      );
+    }
   }
 
   private createSession(
@@ -706,7 +754,9 @@ export class Http2SubchannelConnector implements SubchannelConnector {
       const errorHandler = (error: Error) => {
         this.session?.destroy();
         errorMessage = (error as Error).message;
-        this.trace('connection failed with error ' + errorMessage);
+        if (this.traceEnabled) {
+          this.trace('connection failed with error ' + errorMessage);
+        }
         if (!reportedError) {
           reportedError = true;
           reject(`${errorMessage} (${new Date().toISOString()})`);
@@ -801,14 +851,22 @@ export class Http2SubchannelConnector implements SubchannelConnector {
     let secureConnectResult: SecureConnectResult | null  = null;
     const addressString = subchannelAddressToString(address);
     try {
-      this.trace(addressString + ' Waiting for secureConnector to be ready');
+      if (this.traceEnabled) {
+        this.trace(addressString + ' Waiting for secureConnector to be ready');
+      }
       await secureConnector.waitForReady();
-      this.trace(addressString + ' secureConnector is ready');
+      if (this.traceEnabled) {
+        this.trace(addressString + ' secureConnector is ready');
+      }
       tcpConnection = await this.tcpConnect(address, options);
       tcpConnection.setNoDelay();
-      this.trace(addressString + ' Established TCP connection');
+      if (this.traceEnabled) {
+        this.trace(addressString + ' Established TCP connection');
+      }
       secureConnectResult = await secureConnector.connect(tcpConnection);
-      this.trace(addressString + ' Established secure connection');
+      if (this.traceEnabled) {
+        this.trace(addressString + ' Established secure connection');
+      }
       return this.createSession(secureConnectResult, address, options);
     } catch (e) {
       tcpConnection?.destroy();
