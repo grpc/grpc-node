@@ -1020,14 +1020,16 @@ export class BaseServerInterceptingCall
     return this.host;
   }
   getAuthContext(): AuthContext {
-    if (this.stream.session?.socket instanceof TLSSocket) {
-      const peerCertificate = this.stream.session.socket.getPeerCertificate();
-      return {
-        transportSecurityType: 'ssl',
-        sslPeerCertificate: peerCertificate.raw ? peerCertificate : undefined
-      }
-    } else {
+    if (!(this.stream.session?.socket instanceof TLSSocket)) {
       return {};
+    }
+    if (!this.stream.session.socket.authorized) {
+      return {};
+    }
+    const peerCertificate = this.stream.session.socket.getPeerCertificate();
+    return {
+      transportSecurityType: 'ssl',
+      sslPeerCertificate: peerCertificate.raw ? peerCertificate : undefined
     }
   }
   getConnectionInfo(): ConnectionInfo {

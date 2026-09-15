@@ -259,7 +259,7 @@ class Http2Transport implements Transport {
       this.maybeStartKeepalivePingTimer();
     }
 
-    if (session.socket instanceof TLSSocket) {
+    if (session.socket instanceof TLSSocket && session.socket.authorized) {
       this.authContext = {
         transportSecurityType: 'ssl',
         sslPeerCertificate: session.socket.getPeerCertificate()
