@@ -97,7 +97,11 @@ describe('Client HTTP/2 stream lifecycle', () => {
       const originalRequest = session.request;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       session.request = function (this: unknown, ...requestArguments: any[]) {
-        const stream = Reflect.apply(originalRequest, this, requestArguments);
+        const stream = Reflect.apply(
+          originalRequest,
+          this,
+          requestArguments
+        ) as http2.ClientHttp2Stream;
         const originalEnd = stream.end;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         stream.end = function (this: unknown, ...endArguments: any[]) {
@@ -114,10 +118,7 @@ describe('Client HTTP/2 stream lifecycle', () => {
       serverInsecureCreds,
       (bindError, port) => {
         assert.ifError(bindError);
-        testClient = new Client(
-          `localhost:${port}`,
-          clientInsecureCreds
-        );
+        testClient = new Client(`localhost:${port}`, clientInsecureCreds);
         testServer!.start();
         testClient.makeUnaryRequest(
           '/service/method',
@@ -145,12 +146,16 @@ describe('Client HTTP/2 stream lifecycle', () => {
       const originalRequest = session.request;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       session.request = function (this: unknown, ...requestArguments: any[]) {
-        const stream = Reflect.apply(originalRequest, this, requestArguments);
+        const stream = Reflect.apply(
+          originalRequest,
+          this,
+          requestArguments
+        ) as http2.ClientHttp2Stream;
         const originalEnd = stream.end;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         stream.end = function (this: unknown, ...endArguments: any[]) {
           streamEndCount++;
-          writableEndedBeforeEndCall = (this as {writableEnded?: boolean})
+          writableEndedBeforeEndCall = (this as { writableEnded?: boolean })
             .writableEnded;
           return Reflect.apply(originalEnd, this, endArguments);
         };
@@ -164,12 +169,9 @@ describe('Client HTTP/2 stream lifecycle', () => {
       serverInsecureCreds,
       (bindError, port) => {
         assert.ifError(bindError);
-        testClient = new Client(
-          `localhost:${port}`,
-          clientInsecureCreds
-        );
+        testClient = new Client(`localhost:${port}`, clientInsecureCreds);
         testServer!.start();
-        const clientStream = testClient.makeClientStreamRequest(
+        const clientStream = testClient.makeClientStreamRequest<Buffer, Buffer>(
           '/service/method',
           message => message,
           message => message,
