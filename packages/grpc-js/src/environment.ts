@@ -17,3 +17,5 @@
 
 export const GRPC_NODE_USE_ALTERNATIVE_RESOLVER =
   (process.env.GRPC_NODE_USE_ALTERNATIVE_RESOLVER ?? 'false') === 'true';
+export const GRPC_NODE_DEBUG_SEND_ERROR_DETAILS =
+  (process.env.GRPC_NODE_DEBUG_SEND_ERROR_DETAILS ?? 'false') === 'true';

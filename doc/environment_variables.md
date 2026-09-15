@@ -69,3 +69,8 @@ can be set.
   Allows changing dns resolve behavior and parse DNS server authority as described in https://github.com/grpc/grpc/blob/master/doc/naming.md
   - true - use alternative resolver
   - false - use default resolver (default)
+
+* GRPC_NODE_DEBUG_SEND_ERROR_DETAILS
+  Enable sending thrown method handlers to the client for debugging
+  - true - Send error messages
+  - false - Send a generic error (default)
