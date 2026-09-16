@@ -98,6 +98,9 @@ const tracersString =
 const enabledTracers = new Set<string>();
 const disabledTracers = new Set<string>();
 for (const tracerName of tracersString.split(',')) {
+  if (tracerName.length === 0) {
+    continue;
+  }
   if (tracerName.startsWith('-')) {
     disabledTracers.add(tracerName.substring(1));
   } else {
@@ -105,6 +108,7 @@ for (const tracerName of tracersString.split(',')) {
   }
 }
 const allEnabled = enabledTracers.has('all');
+const anyTracerEnabled = allEnabled || enabledTracers.size > 0;
 
 export function trace(
   severity: LogVerbosity,
@@ -128,6 +132,9 @@ export function trace(
 }
 
 export function isTracerEnabled(tracer: string): boolean {
+  if (!anyTracerEnabled) {
+    return false;
+  }
   return (
     !disabledTracers.has(tracer) && (allEnabled || enabledTracers.has(tracer))
   );

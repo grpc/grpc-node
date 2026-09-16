@@ -21,6 +21,7 @@ import { Deadline, formatDateDifference } from './deadline';
 import { Metadata } from './metadata';
 import { CallConfig } from './resolver';
 import * as logging from './logging';
+import { getNextCallNumber } from './call-number';
 import {
   Call,
   DeadlineInfoProvider,
@@ -276,23 +277,31 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     return this.callNumber;
   }
 
+  private get traceEnabled(): boolean {
+    return logging.isTracerEnabled(TRACER_NAME);
+  }
+
   private trace(text: string): void {
-    logging.trace(
-      LogVerbosity.DEBUG,
-      TRACER_NAME,
-      '[' + this.callNumber + '] ' + text
-    );
+    if (this.traceEnabled) {
+      logging.trace(
+        LogVerbosity.DEBUG,
+        TRACER_NAME,
+        '[' + this.callNumber + '] ' + text
+      );
+    }
   }
 
   private reportStatus(statusObject: StatusObject) {
-    this.trace(
-      'ended with status: code=' +
-        statusObject.code +
-        ' details="' +
-        statusObject.details +
-        '" start time=' +
-        this.startTime.toISOString()
-    );
+    if (this.traceEnabled) {
+      this.trace(
+        'ended with status: code=' +
+          statusObject.code +
+          ' details="' +
+          statusObject.details +
+          '" start time=' +
+          this.startTime.toISOString()
+      );
+    }
     this.bufferTracker.freeAll(this.callNumber);
     this.writeBufferOffset = this.writeBufferOffset + this.writeBuffer.length;
     this.writeBuffer = [];
@@ -307,9 +316,11 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
   }
 
   cancelWithStatus(status: Status, details: string): void {
-    this.trace(
-      'cancelWithStatus code: ' + status + ' details: "' + details + '"'
-    );
+    if (this.traceEnabled) {
+      this.trace(
+        'cancelWithStatus code: ' + status + ' details: "' + details + '"'
+      );
+    }
     this.reportStatus({ code: status, details, metadata: new Metadata() });
     for (const { call } of this.underlyingCalls) {
       call.cancelWithStatus(status, details);
@@ -372,12 +383,14 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     if (this.state === 'COMMITTED') {
       return;
     }
-    this.trace(
-      'Committing call [' +
-        this.underlyingCalls[index].call.getCallNumber() +
-        '] at index ' +
-        index
-    );
+    if (this.traceEnabled) {
+      this.trace(
+        'Committing call [' +
+          this.underlyingCalls[index].call.getCallNumber() +
+          '] at index ' +
+          index
+      );
+    }
     this.state = 'COMMITTED';
     this.callConfig.onCommitted?.();
     this.committedCallIndex = index;
@@ -586,16 +599,18 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     if (this.underlyingCalls[callIndex].state === 'COMPLETED') {
       return;
     }
-    this.trace(
-      'state=' +
-        this.state +
-        ' handling status with progress ' +
-        status.progress +
-        ' from child [' +
-        this.underlyingCalls[callIndex].call.getCallNumber() +
-        '] in state ' +
-        this.underlyingCalls[callIndex].state
-    );
+    if (this.traceEnabled) {
+      this.trace(
+        'state=' +
+          this.state +
+          ' handling status with progress ' +
+          status.progress +
+          ' from child [' +
+          this.underlyingCalls[callIndex].call.getCallNumber() +
+          '] in state ' +
+          this.underlyingCalls[callIndex].state
+      );
+    }
     this.underlyingCalls[callIndex].state = 'COMPLETED';
     if (status.code === Status.OK) {
       this.retryThrottler?.addCallSucceeded();
@@ -677,19 +692,24 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
   }
 
   private startNewAttempt() {
+    const childCallNumber =
+      this.underlyingCalls.length > 0 ? getNextCallNumber() : this.callNumber;
     const child = this.channel.createLoadBalancingCall(
       this.callConfig,
       this.methodName,
       this.host,
       this.credentials,
-      this.deadline
+      this.deadline,
+      childCallNumber
     );
-    this.trace(
-      'Created child call [' +
-        child.getCallNumber() +
-        '] for attempt ' +
-        this.attempts
-    );
+    if (this.traceEnabled) {
+      this.trace(
+        'Created child call [' +
+          child.getCallNumber() +
+          '] for attempt ' +
+          this.attempts
+      );
+    }
     const index = this.underlyingCalls.length;
     this.underlyingCalls.push({
       state: 'ACTIVE',
@@ -708,9 +728,11 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     let receivedMetadata = false;
     child.start(initialMetadata, {
       onReceiveMetadata: metadata => {
-        this.trace(
-          'Received metadata from child [' + child.getCallNumber() + ']'
-        );
+        if (this.traceEnabled) {
+          this.trace(
+            'Received metadata from child [' + child.getCallNumber() + ']'
+          );
+        }
         this.commitCall(index);
         receivedMetadata = true;
         if (previousAttempts > 0) {
@@ -724,18 +746,22 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
         }
       },
       onReceiveMessage: message => {
-        this.trace(
-          'Received message from child [' + child.getCallNumber() + ']'
-        );
+        if (this.traceEnabled) {
+          this.trace(
+            'Received message from child [' + child.getCallNumber() + ']'
+          );
+        }
         this.commitCall(index);
         if (this.underlyingCalls[index].state === 'ACTIVE') {
           this.listener!.onReceiveMessage(message);
         }
       },
       onReceiveStatus: status => {
-        this.trace(
-          'Received status from child [' + child.getCallNumber() + ']'
-        );
+        if (this.traceEnabled) {
+          this.trace(
+            'Received status from child [' + child.getCallNumber() + ']'
+          );
+        }
         if (!receivedMetadata && previousAttempts > 0) {
           status.metadata.set(
             PREVIONS_RPC_ATTEMPTS_METADATA_KEY,
@@ -792,11 +818,13 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
           // has already been passed to the underlying transport.
           const nextEntry = this.getBufferEntry(messageIndex + 1);
           if (nextEntry.entryType === 'HALF_CLOSE') {
-            this.trace(
-              'Sending halfClose immediately after message to child [' +
-                childCall.call.getCallNumber() +
-                '] - optimizing for unary/final message'
-            );
+            if (this.traceEnabled) {
+              this.trace(
+                'Sending halfClose immediately after message to child [' +
+                  childCall.call.getCallNumber() +
+                  '] - optimizing for unary/final message'
+              );
+            }
             childCall.nextMessageToSend += 1;
             childCall.call.halfClose();
           }
@@ -813,7 +841,9 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
   }
 
   sendMessageWithContext(context: MessageContext, message: Buffer): void {
-    this.trace('write() called with message of length ' + message.length);
+    if (this.traceEnabled) {
+      this.trace('write() called with message of length ' + message.length);
+    }
     const writeObj: WriteObject = {
       message,
       flags: context.flags,
@@ -891,11 +921,13 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
         // - nextMessageToSend === halfCloseIndex: all messages sent and acknowledged
         if (call.nextMessageToSend === halfCloseIndex 
           || call.nextMessageToSend === halfCloseIndex - 1) {
-          this.trace(
-            'Sending halfClose immediately to child [' +
-              call.call.getCallNumber() +
-              '] - all messages already sent'
-          );
+          if (this.traceEnabled) {
+            this.trace(
+              'Sending halfClose immediately to child [' +
+                call.call.getCallNumber() +
+                '] - all messages already sent'
+            );
+          }
           call.nextMessageToSend += 1;
           call.call.halfClose();
         }
