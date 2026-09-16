@@ -166,10 +166,12 @@ export class Subchannel implements SubchannelInterface {
     );
 
     this.channelzTrace.addTrace('CT_INFO', 'Subchannel created');
-    this.trace(
-      'Subchannel constructed with options ' +
-        JSON.stringify(options, undefined, 2)
-    );
+    if (this.traceEnabled) {
+      this.trace(
+        'Subchannel constructed with options ' +
+          JSON.stringify(options, undefined, 2)
+      );
+    }
     this.secureConnector = credentials._createSecureConnector(channelTarget, options);
   }
 
@@ -183,30 +185,42 @@ export class Subchannel implements SubchannelInterface {
     };
   }
 
+  private get traceEnabled(): boolean {
+    return logging.isTracerEnabled(TRACER_NAME);
+  }
+
+  private get refTraceEnabled(): boolean {
+    return logging.isTracerEnabled('subchannel_refcount');
+  }
+
   private trace(text: string): void {
-    logging.trace(
-      LogVerbosity.DEBUG,
-      TRACER_NAME,
-      '(' +
-        this.channelzRef.id +
-        ') ' +
-        this.subchannelAddressString +
-        ' ' +
-        text
-    );
+    if (this.traceEnabled) {
+      logging.trace(
+        LogVerbosity.DEBUG,
+        TRACER_NAME,
+        '(' +
+          this.channelzRef.id +
+          ') ' +
+          this.subchannelAddressString +
+          ' ' +
+          text
+      );
+    }
   }
 
   private refTrace(text: string): void {
-    logging.trace(
-      LogVerbosity.DEBUG,
-      'subchannel_refcount',
-      '(' +
-        this.channelzRef.id +
-        ') ' +
-        this.subchannelAddressString +
-        ' ' +
-        text
-    );
+    if (this.refTraceEnabled) {
+      logging.trace(
+        LogVerbosity.DEBUG,
+        'subchannel_refcount',
+        '(' +
+          this.channelzRef.id +
+          ') ' +
+          this.subchannelAddressString +
+          ' ' +
+          text
+      );
+    }
   }
 
   private handleBackoffTimer() {
@@ -306,20 +320,23 @@ export class Subchannel implements SubchannelInterface {
     if (oldStates.indexOf(this.connectivityState) === -1) {
       return false;
     }
-    if (errorMessage) {
-      this.trace(
-        ConnectivityState[this.connectivityState] +
-          ' -> ' +
-          ConnectivityState[newState] +
-          ' with error "' + errorMessage + '"'
-      );
-
-    } else {
-      this.trace(
-        ConnectivityState[this.connectivityState] +
-          ' -> ' +
-          ConnectivityState[newState]
-      );
+    if (this.traceEnabled) {
+      if (errorMessage) {
+        this.trace(
+          ConnectivityState[this.connectivityState] +
+            ' -> ' +
+            ConnectivityState[newState] +
+            ' with error "' +
+            errorMessage +
+            '"'
+        );
+      } else {
+        this.trace(
+          ConnectivityState[this.connectivityState] +
+            ' -> ' +
+            ConnectivityState[newState]
+        );
+      }
     }
     if (this.channelzEnabled) {
       this.channelzTrace.addTrace(
@@ -370,12 +387,16 @@ export class Subchannel implements SubchannelInterface {
   }
 
   ref() {
-    this.refTrace('refcount ' + this.refcount + ' -> ' + (this.refcount + 1));
+    if (this.refTraceEnabled) {
+      this.refTrace('refcount ' + this.refcount + ' -> ' + (this.refcount + 1));
+    }
     this.refcount += 1;
   }
 
   unref() {
-    this.refTrace('refcount ' + this.refcount + ' -> ' + (this.refcount - 1));
+    if (this.refTraceEnabled) {
+      this.refTrace('refcount ' + this.refcount + ' -> ' + (this.refcount - 1));
+    }
     this.refcount -= 1;
     if (this.refcount === 0) {
       this.channelzTrace.addTrace('CT_INFO', 'Shutting down');
@@ -402,7 +423,8 @@ export class Subchannel implements SubchannelInterface {
     metadata: Metadata,
     host: string,
     method: string,
-    listener: SubchannelCallInterceptingListener
+    listener: SubchannelCallInterceptingListener,
+    callId?: number
   ): SubchannelCall {
     if (!this.transport) {
       throw new Error('Cannot create call, subchannel not READY');
@@ -428,7 +450,8 @@ export class Subchannel implements SubchannelInterface {
       host,
       method,
       listener,
-      statsTracker
+      statsTracker,
+      callId
     );
   }
 

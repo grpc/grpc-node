@@ -154,11 +154,13 @@ export class Http2SubchannelCall implements SubchannelCall {
     const maxReceiveMessageLength = transport.getOptions()['grpc.max_receive_message_length'] ?? DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH;
     this.decoder = new StreamDecoder(maxReceiveMessageLength);
     http2Stream.on('response', (headers, flags) => {
-      let headersString = '';
-      for (const header of Object.keys(headers)) {
-        headersString += '\t\t' + header + ': ' + headers[header] + '\n';
+      if (this.traceEnabled) {
+        let headersString = '';
+        for (const header of Object.keys(headers)) {
+          headersString += '\t\t' + header + ': ' + headers[header] + '\n';
+        }
+        this.trace('Received server headers:\n' + headersString);
       }
-      this.trace('Received server headers:\n' + headersString);
       this.httpStatusCode = headers[':status'];
 
       if (flags & http2.constants.NGHTTP2_FLAG_END_STREAM) {
@@ -187,7 +189,9 @@ export class Http2SubchannelCall implements SubchannelCall {
       if (this.statusOutput) {
         return;
       }
-      this.trace('receive HTTP/2 data frame of length ' + data.length);
+      if (this.traceEnabled) {
+        this.trace('receive HTTP/2 data frame of length ' + data.length);
+      }
       let messages: Buffer[];
       try {
         messages = this.decoder.write(data);
@@ -212,7 +216,9 @@ export class Http2SubchannelCall implements SubchannelCall {
       }
 
       for (const message of messages) {
-        this.trace('parsed message of length ' + message.length);
+        if (this.traceEnabled) {
+          this.trace('parsed message of length ' + message.length);
+        }
         this.callEventTracker!.addMessageReceived();
         this.tryPush(message);
       }
@@ -227,7 +233,9 @@ export class Http2SubchannelCall implements SubchannelCall {
        * "error" event that may be emitted at about the same time, so that
        * we can bubble up the error message from that event. */
       process.nextTick(() => {
-        this.trace('HTTP/2 stream closed with code ' + http2Stream.rstCode);
+        if (this.traceEnabled) {
+          this.trace('HTTP/2 stream closed with code ' + http2Stream.rstCode);
+        }
         /* If we have a final status with an OK status code, that means that
          * we have received all of the messages and we have processed the
          * trailers and the call completed successfully, so it doesn't matter
@@ -328,16 +336,18 @@ export class Http2SubchannelCall implements SubchannelCall {
        * https://github.com/nodejs/node/blob/8b8620d580314050175983402dfddf2674e8e22a/lib/internal/http2/core.js#L2267
        */
       if (err.code !== 'ERR_HTTP2_STREAM_ERROR') {
-        this.trace(
-          'Node error event: message=' +
-            err.message +
-            ' code=' +
-            err.code +
-            ' errno=' +
-            getSystemErrorName(err.errno) +
-            ' syscall=' +
-            err.syscall
-        );
+        if (this.traceEnabled) {
+          this.trace(
+            'Node error event: message=' +
+              err.message +
+              ' code=' +
+              err.code +
+              ' errno=' +
+              getSystemErrorName(err.errno) +
+              ' syscall=' +
+              err.syscall
+          );
+        }
         this.internalError = err;
       }
       this.callEventTracker.onStreamEnd(false);
@@ -364,13 +374,15 @@ export class Http2SubchannelCall implements SubchannelCall {
     /* Precondition: this.finalStatus !== null */
     if (!this.statusOutput) {
       this.statusOutput = true;
-      this.trace(
-        'ended with status: code=' +
-          this.finalStatus!.code +
-          ' details="' +
-          this.finalStatus!.details +
-          '"'
-      );
+      if (this.traceEnabled) {
+        this.trace(
+          'ended with status: code=' +
+            this.finalStatus!.code +
+            ' details="' +
+            this.finalStatus!.details +
+            '"'
+        );
+      }
       this.callEventTracker.onCallEnd(this.finalStatus!);
       /* We delay the actual action of bubbling up the status to insulate the
        * cleanup code in this class from any errors that may be thrown in the
@@ -389,12 +401,18 @@ export class Http2SubchannelCall implements SubchannelCall {
     }
   }
 
+  private get traceEnabled(): boolean {
+    return logging.isTracerEnabled(TRACER_NAME);
+  }
+
   private trace(text: string): void {
-    logging.trace(
-      LogVerbosity.DEBUG,
-      TRACER_NAME,
-      '[' + this.callId + '] ' + text
-    );
+    if (this.traceEnabled) {
+      logging.trace(
+        LogVerbosity.DEBUG,
+        TRACER_NAME,
+        '[' + this.callId + '] ' + text
+      );
+    }
   }
 
   /**
@@ -430,10 +448,12 @@ export class Http2SubchannelCall implements SubchannelCall {
   }
 
   private push(message: Buffer): void {
-    this.trace(
-      'pushing to reader message of length ' +
-        (message instanceof Buffer ? message.length : null)
-    );
+    if (this.traceEnabled) {
+      this.trace(
+        'pushing to reader message of length ' +
+          (message instanceof Buffer ? message.length : null)
+      );
+    }
     this.canPush = false;
     this.isPushPending = true;
     process.nextTick(() => {
@@ -455,9 +475,11 @@ export class Http2SubchannelCall implements SubchannelCall {
       this.http2Stream!.pause();
       this.push(messageBytes);
     } else {
-      this.trace(
-        'unpushedReadMessages.push message of length ' + messageBytes.length
-      );
+      if (this.traceEnabled) {
+        this.trace(
+          'unpushedReadMessages.push message of length ' + messageBytes.length
+        );
+      }
       this.unpushedReadMessages.push(messageBytes);
     }
   }
@@ -465,11 +487,13 @@ export class Http2SubchannelCall implements SubchannelCall {
   private handleTrailers(headers: http2.IncomingHttpHeaders) {
     this.serverEndedCall = true;
     this.callEventTracker.onStreamEnd(true);
-    let headersString = '';
-    for (const header of Object.keys(headers)) {
-      headersString += '\t\t' + header + ': ' + headers[header] + '\n';
+    if (this.traceEnabled) {
+      let headersString = '';
+      for (const header of Object.keys(headers)) {
+        headersString += '\t\t' + header + ': ' + headers[header] + '\n';
+      }
+      this.trace('Received server trailers:\n' + headersString);
     }
-    this.trace('Received server trailers:\n' + headersString);
     let metadata: Metadata;
     try {
       metadata = Metadata.fromHttp2Headers(headers);
@@ -480,7 +504,9 @@ export class Http2SubchannelCall implements SubchannelCall {
     let status: StatusObject;
     if (typeof metadataMap['grpc-status'] === 'string') {
       const receivedStatus: Status = Number(metadataMap['grpc-status']);
-      this.trace('received status code ' + receivedStatus + ' from server');
+      if (this.traceEnabled) {
+        this.trace('received status code ' + receivedStatus + ' from server');
+      }
       metadata.remove('grpc-status');
       let details = '';
       if (typeof metadataMap['grpc-message'] === 'string') {
@@ -490,9 +516,11 @@ export class Http2SubchannelCall implements SubchannelCall {
           details = metadataMap['grpc-message'];
         }
         metadata.remove('grpc-message');
-        this.trace(
-          'received status details string "' + details + '" from server'
-        );
+        if (this.traceEnabled) {
+          this.trace(
+            'received status details string "' + details + '" from server'
+          );
+        }
       }
       status = {
         code: receivedStatus,
@@ -521,9 +549,20 @@ export class Http2SubchannelCall implements SubchannelCall {
     }
     /* If the server ended the call, sending an RST_STREAM is redundant, so we
      * just half close on the client side instead to finish closing the stream.
+     *
+     * Only call end() if writableEnded is false. For unary and server-streaming
+     * calls (and client streams where the client already finished sending),
+     * halfClose() has already called http2Stream.end(). Calling end() again on
+     * an already finished Node stream causes Node core stream internals to
+     * construct an ERR_STREAM_ALREADY_FINISHED Error (which synchronously captures
+     * a full native V8 stack trace) and immediately discard it because no callback
+     * is passed. On high-throughput workloads, this causes unnecessary CPU
+     * overhead and garbage collection pressure.
      */
     if (this.serverEndedCall) {
-      this.http2Stream.end();
+      if (!this.http2Stream.writableEnded) {
+        this.http2Stream.end();
+      }
     } else {
       /* If the call has ended with an OK status, communicate that when closing
        * the stream, partly to avoid a situation in which we detect an error
@@ -534,15 +573,19 @@ export class Http2SubchannelCall implements SubchannelCall {
       } else {
         code = http2.constants.NGHTTP2_CANCEL;
       }
-      this.trace('close http2 stream with code ' + code);
+      if (this.traceEnabled) {
+        this.trace('close http2 stream with code ' + code);
+      }
       this.http2Stream.close(code);
     }
   }
 
   cancelWithStatus(status: Status, details: string): void {
-    this.trace(
-      'cancelWithStatus code: ' + status + ' details: "' + details + '"'
-    );
+    if (this.traceEnabled) {
+      this.trace(
+        'cancelWithStatus code: ' + status + ' details: "' + details + '"'
+      );
+    }
     this.endCall({ code: status, details, metadata: new Metadata() });
   }
 
@@ -582,7 +625,9 @@ export class Http2SubchannelCall implements SubchannelCall {
   }
 
   sendMessageWithContext(context: MessageContext, message: Buffer) {
-    this.trace('write() called with message of length ' + message.length);
+    if (this.traceEnabled) {
+      this.trace('write() called with message of length ' + message.length);
+    }
     const cb: WriteCallback = (error?: Error | null) => {
       /* nextTick here ensures that no stream action can be taken in the call
        * stack of the write callback, in order to hopefully work around
@@ -601,7 +646,9 @@ export class Http2SubchannelCall implements SubchannelCall {
         context.callback?.();
       });
     };
-    this.trace('sending data chunk of length ' + message.length);
+    if (this.traceEnabled) {
+      this.trace('sending data chunk of length ' + message.length);
+    }
     this.callEventTracker.addMessageSent();
     try {
       this.http2Stream!.write(message, cb);
@@ -616,6 +663,14 @@ export class Http2SubchannelCall implements SubchannelCall {
 
   halfClose() {
     this.trace('end() called');
+    /* Calling end() on a stream that is already ended or destroyed causes Node
+     * core stream internals to construct ERR_STREAM_ALREADY_FINISHED or
+     * ERR_STREAM_DESTROYED Error instances with synchronous native V8 stack traces,
+     * which are immediately discarded when no callback is passed.
+     */
+    if (this.http2Stream.destroyed || this.http2Stream.writableEnded) {
+      return;
+    }
     this.trace('calling end() on HTTP/2 stream');
     this.http2Stream.end();
   }
