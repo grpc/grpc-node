@@ -20,8 +20,9 @@ import { EventEmitter } from 'events';
 import * as http2 from 'http2';
 
 import * as grpc from '../src';
-import { Server, ServerCredentials } from '../src';
-import { Client } from '../src';
+import { Client, Server, ServerCredentials } from '../src';
+import { callErrorFromStatus } from '../src/call';
+import { recognizedOptions } from '../src/channel-options';
 import { ConnectivityState } from '../src/connectivity-state';
 import { Http2SubchannelCall } from '../src/subchannel-call';
 
@@ -339,5 +340,240 @@ describe('Client with a nonexistent target domain', () => {
       }
     );
     client.close();
+  });
+});
+
+describe('Client caller stack traces opt-out', () => {
+  it('should have grpc.enable_caller_stack_traces in recognizedOptions', () => {
+    assert.strictEqual(
+      recognizedOptions['grpc.enable_caller_stack_traces'],
+      true
+    );
+  });
+
+  describe('callErrorFromStatus', () => {
+    it('should construct a ServiceError with status and caller stack', () => {
+      const status = {
+        code: grpc.status.INTERNAL,
+        details: 'Internal error details',
+        metadata: new grpc.Metadata(),
+      };
+      const error = callErrorFromStatus(status, 'test-caller-stack');
+      assert.strictEqual(error.code, grpc.status.INTERNAL);
+      assert.strictEqual(error.details, 'Internal error details');
+      assert.strictEqual(error.metadata, status.metadata);
+      assert.ok(error.stack);
+      assert.ok(error.stack.includes('for call at\ntest-caller-stack'));
+    });
+  });
+
+  describe('unary calls', () => {
+    it('should include caller stack trace by default', done => {
+      const client = new Client('localhost:1', clientInsecureCreds);
+      client.makeUnaryRequest(
+        '/service/method',
+        x => x,
+        x => x,
+        Buffer.from([]),
+        error => {
+          assert(error);
+          assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
+          assert.ok(error?.stack?.includes('for call at'));
+          assert.ok(
+            !error?.stack?.includes('for call at\nno stack trace available')
+          );
+          client.close();
+          done();
+        }
+      );
+    });
+
+    it('should include caller stack trace when explicitly enabled', done => {
+      const client = new Client('localhost:1', clientInsecureCreds, {
+        'grpc.enable_caller_stack_traces': 1,
+      });
+      client.makeUnaryRequest(
+        '/service/method',
+        x => x,
+        x => x,
+        Buffer.from([]),
+        error => {
+          assert(error);
+          assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
+          assert.ok(error?.stack?.includes('for call at'));
+          assert.ok(
+            !error?.stack?.includes('for call at\nno stack trace available')
+          );
+          client.close();
+          done();
+        }
+      );
+    });
+
+    it('should omit caller stack trace when disabled with 0', done => {
+      const client = new Client('localhost:1', clientInsecureCreds, {
+        'grpc.enable_caller_stack_traces': 0,
+      });
+      client.makeUnaryRequest(
+        '/service/method',
+        x => x,
+        x => x,
+        Buffer.from([]),
+        error => {
+          assert(error);
+          assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
+          assert.ok(
+            error?.stack?.includes('for call at\nno stack trace available')
+          );
+          client.close();
+          done();
+        }
+      );
+    });
+
+    it('should omit caller stack trace when disabled with false', done => {
+      const client = new Client('localhost:1', clientInsecureCreds, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        'grpc.enable_caller_stack_traces': false as any,
+      });
+      client.makeUnaryRequest(
+        '/service/method',
+        x => x,
+        x => x,
+        Buffer.from([]),
+        error => {
+          assert(error);
+          assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
+          assert.ok(
+            error?.stack?.includes('for call at\nno stack trace available')
+          );
+          client.close();
+          done();
+        }
+      );
+    });
+  });
+
+  describe('streaming calls', () => {
+    it('should include caller stack trace on client-streaming error by default', done => {
+      const client = new Client('localhost:1', clientInsecureCreds);
+      const stream = client.makeClientStreamRequest(
+        '/service/method',
+        (x: Buffer) => x,
+        x => x,
+        error => {
+          assert(error);
+          assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
+          assert.ok(error?.stack?.includes('for call at'));
+          assert.ok(
+            !error?.stack?.includes('for call at\nno stack trace available')
+          );
+          client.close();
+          done();
+        }
+      );
+      stream.write(Buffer.from([]));
+    });
+
+    it('should omit caller stack trace on client-streaming error when disabled', done => {
+      const client = new Client('localhost:1', clientInsecureCreds, {
+        'grpc.enable_caller_stack_traces': 0,
+      });
+      const stream = client.makeClientStreamRequest(
+        '/service/method',
+        (x: Buffer) => x,
+        x => x,
+        error => {
+          assert(error);
+          assert.strictEqual(error?.code, grpc.status.UNAVAILABLE);
+          assert.ok(
+            error?.stack?.includes('for call at\nno stack trace available')
+          );
+          client.close();
+          done();
+        }
+      );
+      stream.write(Buffer.from([]));
+    });
+
+    it('should include caller stack trace on server-streaming error by default', done => {
+      const client = new Client('localhost:1', clientInsecureCreds);
+      const stream = client.makeServerStreamRequest(
+        '/service/method',
+        x => x,
+        x => x,
+        Buffer.from([])
+      );
+      stream.on('error', (error: grpc.ServiceError) => {
+        assert(error);
+        assert.strictEqual(error.code, grpc.status.UNAVAILABLE);
+        assert.ok(error.stack?.includes('for call at'));
+        assert.ok(
+          !error.stack?.includes('for call at\nno stack trace available')
+        );
+        client.close();
+        done();
+      });
+    });
+
+    it('should omit caller stack trace on server-streaming error when disabled', done => {
+      const client = new Client('localhost:1', clientInsecureCreds, {
+        'grpc.enable_caller_stack_traces': 0,
+      });
+      const stream = client.makeServerStreamRequest(
+        '/service/method',
+        x => x,
+        x => x,
+        Buffer.from([])
+      );
+      stream.on('error', (error: grpc.ServiceError) => {
+        assert(error);
+        assert.strictEqual(error.code, grpc.status.UNAVAILABLE);
+        assert.ok(
+          error.stack?.includes('for call at\nno stack trace available')
+        );
+        client.close();
+        done();
+      });
+    });
+
+    it('should include caller stack trace on bidi-streaming error by default', done => {
+      const client = new Client('localhost:1', clientInsecureCreds);
+      const stream = client.makeBidiStreamRequest(
+        '/service/method',
+        (x: Buffer) => x,
+        x => x
+      );
+      stream.on('error', (error: grpc.ServiceError) => {
+        assert(error);
+        assert.strictEqual(error.code, grpc.status.UNAVAILABLE);
+        assert.ok(error.stack?.includes('for call at'));
+        assert.ok(
+          !error.stack?.includes('for call at\nno stack trace available')
+        );
+        client.close();
+        done();
+      });
+    });
+
+    it('should omit caller stack trace on bidi-streaming error when disabled', done => {
+      const client = new Client('localhost:1', clientInsecureCreds, {
+        'grpc.enable_caller_stack_traces': 0,
+      });
+      const stream = client.makeBidiStreamRequest(
+        '/service/method',
+        (x: Buffer) => x,
+        x => x
+      );
+      stream.on('error', (error: grpc.ServiceError) => {
+        assert(error);
+        assert.strictEqual(error.code, grpc.status.UNAVAILABLE);
+        assert.ok(
+          error.stack?.includes('for call at\nno stack trace available')
+        );
+        client.close();
+        done();
+      });
+    });
   });
 });
