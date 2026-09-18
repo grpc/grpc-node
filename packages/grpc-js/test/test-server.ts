@@ -331,6 +331,58 @@ describe('Server', () => {
     });
   });
 
+  describe('flow control window', () => {
+    let server: Server;
+    let client: ServiceClient;
+    const protoFile = path.join(__dirname, 'fixtures', 'echo_service.proto');
+    const echoService = loadProtoFile(protoFile)
+      .EchoService as ServiceClientConstructor;
+
+    const serviceImplementation = {
+      echo(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
+        callback(null, call.request);
+      },
+    };
+
+    afterEach(done => {
+      client.close();
+      server.tryShutdown(done);
+    });
+
+    it('Should accept grpc-node.flow_control_window and round-trip a large message', done => {
+      const flowControlWindow = 4 * 1024 * 1024;
+      server = new Server({
+        'grpc-node.flow_control_window': flowControlWindow,
+        'grpc.max_receive_message_length': -1,
+        'grpc.max_send_message_length': -1,
+      });
+      server.addService(echoService.service, serviceImplementation);
+      server.bindAsync(
+        'localhost:0',
+        ServerCredentials.createInsecure(),
+        (err, port) => {
+          assert.ifError(err);
+          client = new echoService(
+            `localhost:${port}`,
+            grpc.credentials.createInsecure(),
+            {
+              'grpc.max_receive_message_length': -1,
+              'grpc.max_send_message_length': -1,
+            }
+          );
+          // Larger than the default 64 KB window, so the transfer exercises
+          // the raised connection window rather than stalling on it.
+          const value = 'a'.repeat(2 * 1024 * 1024);
+          client.echo({ value }, (error: ServiceError, response: any) => {
+            assert.ifError(error);
+            assert.strictEqual(response.value, value);
+            done();
+          });
+        }
+      );
+    });
+  });
+
   describe('start', () => {
     let server: Server;
 
