@@ -273,6 +273,84 @@ describe('Server', () => {
     });
   });
 
+  describe('keepalive during graceful shutdown', () => {
+    const echoService = loadProtoFile(
+      path.join(__dirname, 'fixtures', 'echo_service.proto')
+    ).EchoService as ServiceClientConstructor;
+    let client: ServiceClient;
+    let responseTimer: NodeJS.Timeout;
+
+    afterEach(() => {
+      client?.close();
+      clearTimeout(responseTimer);
+    });
+
+    for (const channelz of [0, 1]) {
+      for (const keepaliveSide of ['client', 'server']) {
+        for (const shutdown of ['max age', 'tryShutdown']) {
+          it(`preserves calls with ${keepaliveSide} keepalive during ${shutdown} (channelz=${channelz})`, done => {
+            const keepaliveOptions = {
+              'grpc.keepalive_time_ms': 200,
+              'grpc.keepalive_timeout_ms': 200,
+            };
+            server = new Server({
+              'grpc.enable_channelz': channelz,
+              ...(keepaliveSide === 'server' ? keepaliveOptions : {}),
+              ...(shutdown === 'max age'
+                ? {
+                    'grpc.max_connection_age_ms': 100,
+                    'grpc.max_connection_age_grace_ms': 2000,
+                  }
+                : {}),
+            });
+            server.addService(echoService.service, {
+              echo(
+                call: ServerUnaryCall<any, any>,
+                callback: sendUnaryData<any>
+              ) {
+                if (shutdown === 'tryShutdown') {
+                  server.tryShutdown(noop);
+                }
+                // Keep the accepted call alive past keepalive and its timeout.
+                responseTimer = setTimeout(
+                  () => callback(null, call.request),
+                  600
+                );
+              },
+            });
+            server.bindAsync(
+              '127.0.0.1:0',
+              ServerCredentials.createInsecure(),
+              (error, port) => {
+                if (error) {
+                  done(error);
+                  return;
+                }
+                client = new echoService(
+                  `127.0.0.1:${port}`,
+                  grpc.credentials.createInsecure(),
+                  keepaliveSide === 'client' ? keepaliveOptions : {}
+                );
+                client.echo(
+                  { value: 'test value', value2: 3 },
+                  { deadline: Date.now() + 5000 },
+                  (error: ServiceError | null, response: any) => {
+                    assert.ifError(error);
+                    assert.deepStrictEqual(response, {
+                      value: 'test value',
+                      value2: 3,
+                    });
+                    done();
+                  }
+                );
+              }
+            );
+          }).timeout(10000);
+        }
+      }
+    }
+  });
+
   describe('drain', () => {
     let client: ServiceClient;
     let portNumber: number;
