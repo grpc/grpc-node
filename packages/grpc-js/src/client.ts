@@ -133,8 +133,8 @@ export class Client {
   ) {
     options = Object.assign({}, options);
     this[ENABLE_CALLER_STACK_TRACES_SYMBOL] =
-      options['grpc.enable_caller_stack_traces'] !== 0 &&
-      (options['grpc.enable_caller_stack_traces'] as any) !== false;
+      options['grpc-node.enable_caller_stack_traces'] !== 0 &&
+      (options['grpc-node.enable_caller_stack_traces'] as any) !== false;
     this[INTERCEPTOR_SYMBOL] = options.interceptors ?? [];
     delete options.interceptors;
     this[INTERCEPTOR_PROVIDER_SYMBOL] = options.interceptor_providers ?? [];

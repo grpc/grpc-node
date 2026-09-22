@@ -72,7 +72,7 @@ export interface ChannelOptions {
    * stack trace. Enabled by default (1). Can be set to 0 to disable and avoid
    * stack trace capture overhead for every RPC.
    */
-  'grpc.enable_caller_stack_traces'?: number;
+  'grpc-node.enable_caller_stack_traces'?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
@@ -112,7 +112,7 @@ export const recognizedOptions = {
   'grpc-node.retry_max_attempts_limit': true,
   'grpc-node.flow_control_window': true,
   'grpc.server_call_metric_recording': true,
-  'grpc.enable_caller_stack_traces': true,
+  'grpc-node.enable_caller_stack_traces': true,
 };
 
 export function channelOptionsEqual(

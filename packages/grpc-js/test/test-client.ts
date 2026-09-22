@@ -167,9 +167,9 @@ describe('Client with a nonexistent target domain', () => {
 });
 
 describe('Client caller stack traces opt-out', () => {
-  it('should have grpc.enable_caller_stack_traces in recognizedOptions', () => {
+  it('should have grpc-node.enable_caller_stack_traces in recognizedOptions', () => {
     assert.strictEqual(
-      recognizedOptions['grpc.enable_caller_stack_traces'],
+      recognizedOptions['grpc-node.enable_caller_stack_traces'],
       true
     );
   });
@@ -213,7 +213,7 @@ describe('Client caller stack traces opt-out', () => {
 
     it('should include caller stack trace when explicitly enabled', done => {
       const client = new Client('localhost:1', clientInsecureCreds, {
-        'grpc.enable_caller_stack_traces': 1,
+        'grpc-node.enable_caller_stack_traces': 1,
       });
       client.makeUnaryRequest(
         '/service/method',
@@ -235,7 +235,7 @@ describe('Client caller stack traces opt-out', () => {
 
     it('should omit caller stack trace when disabled with 0', done => {
       const client = new Client('localhost:1', clientInsecureCreds, {
-        'grpc.enable_caller_stack_traces': 0,
+        'grpc-node.enable_caller_stack_traces': 0,
       });
       client.makeUnaryRequest(
         '/service/method',
@@ -257,7 +257,7 @@ describe('Client caller stack traces opt-out', () => {
     it('should omit caller stack trace when disabled with false', done => {
       const client = new Client('localhost:1', clientInsecureCreds, {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        'grpc.enable_caller_stack_traces': false as any,
+        'grpc-node.enable_caller_stack_traces': false as any,
       });
       client.makeUnaryRequest(
         '/service/method',
@@ -300,7 +300,7 @@ describe('Client caller stack traces opt-out', () => {
 
     it('should omit caller stack trace on client-streaming error when disabled', done => {
       const client = new Client('localhost:1', clientInsecureCreds, {
-        'grpc.enable_caller_stack_traces': 0,
+        'grpc-node.enable_caller_stack_traces': 0,
       });
       const stream = client.makeClientStreamRequest(
         '/service/method',
@@ -341,7 +341,7 @@ describe('Client caller stack traces opt-out', () => {
 
     it('should omit caller stack trace on server-streaming error when disabled', done => {
       const client = new Client('localhost:1', clientInsecureCreds, {
-        'grpc.enable_caller_stack_traces': 0,
+        'grpc-node.enable_caller_stack_traces': 0,
       });
       const stream = client.makeServerStreamRequest(
         '/service/method',
@@ -381,7 +381,7 @@ describe('Client caller stack traces opt-out', () => {
 
     it('should omit caller stack trace on bidi-streaming error when disabled', done => {
       const client = new Client('localhost:1', clientInsecureCreds, {
-        'grpc.enable_caller_stack_traces': 0,
+        'grpc-node.enable_caller_stack_traces': 0,
       });
       const stream = client.makeBidiStreamRequest(
         '/service/method',
