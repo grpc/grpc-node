@@ -37,7 +37,7 @@ const units: Array<[string, number]> = [
 ];
 
 export function getDeadlineTimeoutString(deadline: Deadline) {
-  const now = new Date().getTime();
+  const now = Date.now();
   if (deadline instanceof Date) {
     deadline = deadline.getTime();
   }
@@ -70,7 +70,7 @@ const MAX_TIMEOUT_TIME = 2147483647;
  */
 export function getRelativeTimeout(deadline: Deadline) {
   const deadlineMs = deadline instanceof Date ? deadline.getTime() : deadline;
-  const now = new Date().getTime();
+  const now = Date.now();
   const timeout = deadlineMs - now;
   if (timeout < 0) {
     return 0;
@@ -101,6 +101,12 @@ export function deadlineToString(deadline: Deadline): string {
  * @param endDate
  * @returns
  */
-export function formatDateDifference(startDate: Date, endDate: Date): string {
-  return ((endDate.getTime() - startDate.getTime()) / 1000).toFixed(3) + 's';
+export function formatDateDifference(
+  startDate: Date | number,
+  endDate: Date | number
+): string {
+  const startMs =
+    typeof startDate === 'number' ? startDate : startDate.getTime();
+  const endMs = typeof endDate === 'number' ? endDate : endDate.getTime();
+  return ((endMs - startMs) / 1000).toFixed(3) + 's';
 }
