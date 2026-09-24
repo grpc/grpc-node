@@ -56,7 +56,7 @@ export class ResolvingCall implements Call {
   private deadline: Deadline;
   private host: string;
   private statusWatchers: ((status: StatusObject) => void)[] = [];
-  private deadlineTimer: NodeJS.Timeout = setTimeout(() => {}, 0);
+  private deadlineTimer: NodeJS.Timeout | null = null;
   private filterStack: FilterStack | null = null;
 
   private deadlineStartTime: Date | null = null;
@@ -117,7 +117,10 @@ export class ResolvingCall implements Call {
   }
 
   private runDeadlineTimer() {
-    clearTimeout(this.deadlineTimer);
+    if (this.deadlineTimer) {
+      clearTimeout(this.deadlineTimer);
+      this.deadlineTimer = null;
+    }
     this.deadlineStartTime = new Date();
     if (this.traceEnabled) {
       this.trace('Deadline: ' + deadlineToString(this.deadline));
@@ -128,6 +131,7 @@ export class ResolvingCall implements Call {
         this.trace('Deadline will be reached in ' + timeout + 'ms');
       }
       const handleDeadline = () => {
+        this.deadlineTimer = null;
         if (!this.deadlineStartTime) {
           this.cancelWithStatus(Status.DEADLINE_EXCEEDED, 'Deadline exceeded');
           return;
@@ -168,7 +172,10 @@ export class ResolvingCall implements Call {
       if (!this.filterStack) {
         this.filterStack = this.filterStackFactory.createFilter();
       }
-      clearTimeout(this.deadlineTimer);
+      if (this.deadlineTimer) {
+        clearTimeout(this.deadlineTimer);
+        this.deadlineTimer = null;
+      }
       const filteredStatus = this.filterStack.receiveTrailers(status);
       if (this.traceEnabled) {
         this.trace(
