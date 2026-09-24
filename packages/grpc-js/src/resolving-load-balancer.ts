@@ -27,7 +27,7 @@ import {
   validateServiceConfig,
 } from './service-config';
 import { ConnectivityState } from './connectivity-state';
-import { CHANNEL_ARGS_CONFIG_SELECTOR_KEY, ConfigSelector, createResolver, Resolver } from './resolver';
+import { CallConfig, CHANNEL_ARGS_CONFIG_SELECTOR_KEY, ConfigSelector, createResolver, Resolver } from './resolver';
 import { Picker, UnavailablePicker, QueuePicker } from './picker';
 import { BackoffOptions, BackoffTimeout } from './backoff-timeout';
 import { Status } from './constants';
@@ -99,49 +99,58 @@ function findMatchingConfig(
   return null;
 }
 
-function getDefaultConfigSelector(
+const MAX_CACHED_METHOD_CONFIGS = 100;
+
+export function getDefaultConfigSelector(
   serviceConfig: ServiceConfig | null
 ): ConfigSelector {
+  const methodConfigCache = new Map<string, MethodConfig>();
   return {
-      invoke(
+    invoke(
       methodName: string,
-      metadata: Metadata
-    ) {
-      const splitName = methodName.split('/').filter(x => x.length > 0);
-      const service = splitName[0] ?? '';
-      const method = splitName[1] ?? '';
-      if (serviceConfig && serviceConfig.methodConfig) {
-        /* Check for the following in order, and return the first method
-        * config that matches:
-        * 1. A name that exactly matches the service and method
-        * 2. A name with no method set that matches the service
-        * 3. An empty name
-        */
-        for (const matchLevel of NAME_MATCH_LEVEL_ORDER) {
-          const matchingConfig = findMatchingConfig(
-            service,
-            method,
-            serviceConfig.methodConfig,
-            matchLevel
-          );
-          if (matchingConfig) {
-            return {
-              methodConfig: matchingConfig,
-              pickInformation: {},
-              status: Status.OK,
-              dynamicFilterFactories: [],
-            };
+      metadata: Metadata,
+      channelId: number
+    ): CallConfig {
+      let matchingConfig = methodConfigCache.get(methodName);
+      if (matchingConfig === undefined) {
+        const splitName = methodName.split('/').filter(x => x.length > 0);
+        const service = splitName[0] ?? '';
+        const method = splitName[1] ?? '';
+        matchingConfig = { name: [] };
+        if (serviceConfig && serviceConfig.methodConfig) {
+          /* Check for the following in order, and return the first method
+           * config that matches:
+           * 1. A name that exactly matches the service and method
+           * 2. A name with no method set that matches the service
+           * 3. An empty name
+           */
+          for (const matchLevel of NAME_MATCH_LEVEL_ORDER) {
+            const foundConfig = findMatchingConfig(
+              service,
+              method,
+              serviceConfig.methodConfig,
+              matchLevel
+            );
+            if (foundConfig) {
+              matchingConfig = foundConfig;
+              break;
+            }
           }
+        }
+        if (methodConfigCache.size < MAX_CACHED_METHOD_CONFIGS) {
+          methodConfigCache.set(methodName, matchingConfig);
         }
       }
       return {
-        methodConfig: { name: [] },
+        methodConfig: matchingConfig,
         pickInformation: {},
         status: Status.OK,
         dynamicFilterFactories: [],
       };
     },
-    unref() {}
+    unref() {
+      methodConfigCache.clear();
+    }
   };
 }
 
