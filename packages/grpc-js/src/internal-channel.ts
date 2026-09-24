@@ -34,7 +34,7 @@ import {
 import { trace, isTracerEnabled } from './logging';
 import { SubchannelAddress } from './subchannel-address';
 import { mapProxyName } from './http_proxy';
-import { GrpcUri, parseUri, uriToString } from './uri-parser';
+import { GrpcUri, computeServiceUrl, parseUri, uriToString } from './uri-parser';
 import { ServerSurfaceCall } from './server-call';
 
 import { ConnectivityState } from './connectivity-state';
@@ -239,6 +239,21 @@ export class InternalChannel {
   private readonly randomChannelId = Math.floor(
     Math.random() * Number.MAX_SAFE_INTEGER
   );
+
+  /**
+   * Maximum number of distinct hosts to cache service URLs for on this channel.
+   */
+  private static readonly MAX_CACHED_HOSTS = 5;
+  /**
+   * Maximum number of distinct method paths to cache per host.
+   */
+  private static readonly MAX_METHODS_PER_HOST = 100;
+  /**
+   * Two-level cache mapping host to method name to precomputed service URL
+   * (`https://${hostname}/${serviceName}`) used by call credentials. Nested
+   * maps avoid intermediate composite key string allocations on the hot path.
+   */
+  private readonly serviceUrlCache = new Map<string, Map<string, string>>();
 
   constructor(
     target: string,
@@ -688,6 +703,33 @@ export class InternalChannel {
     this.maybeStartIdleTimer();
   }
 
+  /**
+   * Returns the precomputed service URL (`https://${hostname}/${serviceName}`)
+   * for the given host and method, using a bounded cache to avoid parsing on
+   * every RPC.
+   */
+  getServiceUrl(host: string, methodName: string): string {
+    let methodMap = this.serviceUrlCache.get(host);
+    if (methodMap === undefined) {
+      if (this.serviceUrlCache.size < InternalChannel.MAX_CACHED_HOSTS) {
+        methodMap = new Map<string, string>();
+        this.serviceUrlCache.set(host, methodMap);
+      }
+    }
+    if (methodMap !== undefined) {
+      const serviceUrl = methodMap.get(methodName);
+      if (serviceUrl !== undefined) {
+        return serviceUrl;
+      }
+      const computedServiceUrl = computeServiceUrl(host, methodName);
+      if (methodMap.size < InternalChannel.MAX_METHODS_PER_HOST) {
+        methodMap.set(methodName, computedServiceUrl);
+      }
+      return computedServiceUrl;
+    }
+    return computeServiceUrl(host, methodName);
+  }
+
   createLoadBalancingCall(
     callConfig: CallConfig,
     method: string,
@@ -813,6 +855,7 @@ export class InternalChannel {
     this.subchannelPool.unrefUnusedSubchannels();
     this.configSelector?.unref();
     this.configSelector = null;
+    this.serviceUrlCache.clear();
   }
 
   getTarget() {

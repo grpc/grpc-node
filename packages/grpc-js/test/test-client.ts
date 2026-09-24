@@ -22,6 +22,7 @@ import * as http2 from 'http2';
 import * as grpc from '../src';
 import { Server, ServerCredentials } from '../src';
 import { Client } from '../src';
+import { InternalChannel } from '../src/internal-channel';
 import { ConnectivityState } from '../src/connectivity-state';
 import { Http2SubchannelCall } from '../src/subchannel-call';
 
@@ -339,5 +340,120 @@ describe('Client with a nonexistent target domain', () => {
       }
     );
     client.close();
+  });
+});
+
+describe('InternalChannel serviceUrl cache', () => {
+  it('returns and caches serviceUrl for a given host and method', () => {
+    const channel = new InternalChannel(
+      'localhost:1234',
+      grpc.credentials.createInsecure(),
+      {}
+    );
+    const firstServiceUrl = channel.getServiceUrl(
+      'spanner.googleapis.com:443',
+      '/google.spanner.v1.Spanner/ExecuteSql'
+    );
+    assert.strictEqual(
+      firstServiceUrl,
+      'https://spanner.googleapis.com/google.spanner.v1.Spanner'
+    );
+    const cache = (
+      channel as unknown as {
+        serviceUrlCache: Map<string, Map<string, string>>;
+      }
+    ).serviceUrlCache;
+    const cachedServiceUrl = cache
+      .get('spanner.googleapis.com:443')
+      ?.get('/google.spanner.v1.Spanner/ExecuteSql');
+    assert.strictEqual(firstServiceUrl, cachedServiceUrl);
+
+    const secondServiceUrl = channel.getServiceUrl(
+      'spanner.googleapis.com:443',
+      '/google.spanner.v1.Spanner/ExecuteSql'
+    );
+    assert.strictEqual(secondServiceUrl, cachedServiceUrl);
+    channel.close();
+  });
+
+  it('bounds the number of cached hosts', () => {
+    const channel = new InternalChannel(
+      'localhost:1234',
+      grpc.credentials.createInsecure(),
+      {}
+    );
+    for (let hostIndex = 0; hostIndex < 10; hostIndex++) {
+      const serviceUrl = channel.getServiceUrl(
+        `host${hostIndex}.example.com:443`,
+        '/service/method'
+      );
+      assert.strictEqual(
+        serviceUrl,
+        `https://host${hostIndex}.example.com/service`
+      );
+    }
+    const cache = (
+      channel as unknown as {
+        serviceUrlCache: Map<string, Map<string, string>>;
+      }
+    ).serviceUrlCache;
+    assert.strictEqual(cache.size, 5);
+    assert.strictEqual(cache.has('host0.example.com:443'), true);
+    assert.strictEqual(cache.has('host4.example.com:443'), true);
+    assert.strictEqual(cache.has('host5.example.com:443'), false);
+    assert.strictEqual(cache.has('host9.example.com:443'), false);
+
+    // Calling an uncached host still computes the correct URL
+    const uncachedHostServiceUrl = channel.getServiceUrl(
+      'host5.example.com:443',
+      '/service/method'
+    );
+    assert.strictEqual(
+      uncachedHostServiceUrl,
+      'https://host5.example.com/service'
+    );
+    assert.strictEqual(cache.size, 5);
+    channel.close();
+    assert.strictEqual(cache.size, 0);
+  });
+
+  it('bounds the number of cached methods per host', () => {
+    const channel = new InternalChannel(
+      'localhost:1234',
+      grpc.credentials.createInsecure(),
+      {}
+    );
+    for (let methodIndex = 0; methodIndex < 150; methodIndex++) {
+      const serviceUrl = channel.getServiceUrl(
+        'localhost:50051',
+        `/service${methodIndex}/method`
+      );
+      assert.strictEqual(serviceUrl, `https://localhost/service${methodIndex}`);
+    }
+    const cache = (
+      channel as unknown as {
+        serviceUrlCache: Map<string, Map<string, string>>;
+      }
+    ).serviceUrlCache;
+    const hostMethodMap = cache.get('localhost:50051');
+    assert(hostMethodMap !== undefined);
+    assert.strictEqual(hostMethodMap.size, 100);
+    assert.strictEqual(hostMethodMap.has('/service0/method'), true);
+    assert.strictEqual(hostMethodMap.has('/service99/method'), true);
+    assert.strictEqual(hostMethodMap.has('/service100/method'), false);
+
+    // Calling an uncached method still computes the correct URL
+    const uncachedMethodServiceUrl = channel.getServiceUrl(
+      'localhost:50051',
+      '/service100/method'
+    );
+    assert.strictEqual(
+      uncachedMethodServiceUrl,
+      'https://localhost/service100'
+    );
+    assert.strictEqual(hostMethodMap.size, 100);
+
+    channel.close();
+    assert.strictEqual(cache.size, 0);
   });
 });

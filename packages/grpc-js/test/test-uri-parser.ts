@@ -144,4 +144,68 @@ describe('URI Parser', function () {
       });
     }
   });
+
+  describe('extractServiceName', function () {
+    const expectationList: { methodName: string; expected: string }[] = [
+      {
+        methodName: '/google.spanner.v1.Spanner/ExecuteSql',
+        expected: 'google.spanner.v1.Spanner',
+      },
+      { methodName: '/EchoService/Echo', expected: 'EchoService' },
+      { methodName: '/serviceOnly', expected: 'serviceOnly' },
+      { methodName: '/a/b/c', expected: 'a' },
+      { methodName: 'noLeading/second/third', expected: 'second' },
+      { methodName: 'noSlash', expected: '' },
+      { methodName: '', expected: '' },
+      { methodName: '/', expected: '' },
+      { methodName: '//', expected: '' },
+    ];
+    for (const { methodName, expected } of expectationList) {
+      it(methodName, function () {
+        assert.strictEqual(uriParser.extractServiceName(methodName), expected);
+      });
+    }
+  });
+
+  describe('computeServiceUrl', function () {
+    const expectationList: {
+      host: string;
+      methodName: string;
+      expected: string;
+    }[] = [
+      {
+        host: 'spanner.googleapis.com:443',
+        methodName: '/google.spanner.v1.Spanner/ExecuteSql',
+        expected: 'https://spanner.googleapis.com/google.spanner.v1.Spanner',
+      },
+      {
+        host: 'localhost:50051',
+        methodName: '/EchoService/Echo',
+        expected: 'https://localhost/EchoService',
+      },
+      {
+        host: '[::1]:50051',
+        methodName: '/EchoService/Echo',
+        expected: 'https://::1/EchoService',
+      },
+      {
+        host: '127.0.0.1:8080',
+        methodName: '/EchoService/Echo',
+        expected: 'https://127.0.0.1/EchoService',
+      },
+      {
+        host: '[',
+        methodName: '/EchoService/Echo',
+        expected: 'https://localhost/EchoService',
+      },
+    ];
+    for (const { host, methodName, expected } of expectationList) {
+      it(`${host} + ${methodName}`, function () {
+        assert.strictEqual(
+          uriParser.computeServiceUrl(host, methodName),
+          expected
+        );
+      });
+    }
+  });
 });

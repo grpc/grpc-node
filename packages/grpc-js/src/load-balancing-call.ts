@@ -31,7 +31,6 @@ import { InternalChannel } from './internal-channel';
 import { Metadata } from './metadata';
 import { OnCallEnded, PickResultType } from './picker';
 import { CallConfig } from './resolver';
-import { splitHostPort } from './uri-parser';
 import * as logging from './logging';
 import { restrictControlPlaneStatusCode } from './control-plane-status';
 import * as http2 from 'http2';
@@ -73,18 +72,7 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
     private readonly deadline: Deadline,
     private readonly callNumber: number
   ) {
-    const splitPath: string[] = this.methodName.split('/');
-    let serviceName = '';
-    /* The standard path format is "/{serviceName}/{methodName}", so if we split
-     * by '/', the first item should be empty and the second should be the
-     * service name */
-    if (splitPath.length >= 2) {
-      serviceName = splitPath[1];
-    }
-    const hostname = splitHostPort(this.host)?.host ?? 'localhost';
-    /* Currently, call credentials are only allowed on HTTPS connections, so we
-     * can assume that the scheme is "https" */
-    this.serviceUrl = `https://${hostname}/${serviceName}`;
+    this.serviceUrl = this.channel.getServiceUrl(this.host, this.methodName);
     this.startTime = new Date();
   }
   getDeadlineInfo(): string[] {
