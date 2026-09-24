@@ -11,7 +11,7 @@
   "devDependencies": {
     "@types/execa": "^0.8.0",
     "@types/gulp": "^4.0.5",
-    "@types/gulp-mocha": "0.0.31",
+    "@types/gulp-mocha": "0.0.37",
     "@types/ncp": "^2.0.1",
     "@types/node": "^8.0.32",
     "@types/pify": "^3.0.0",
@@ -21,7 +21,7 @@
     "execa": "^0.8.0",
     "gulp": "^4.0.1",
     "gulp-jshint": "^2.0.4",
-    "gulp-mocha": "^4.3.1",
+    "gulp-mocha": "9.0.0",
     "gulp-sourcemaps": "^2.6.1",
     "gulp-tslint": "^8.1.1",
     "gulp-typescript": "^3.2.2",
@@ -30,8 +30,8 @@
     "jshint": "^2.9.5",
     "make-dir": "^1.1.0",
     "merge2": "^1.1.0",
-    "mocha": "^3.5.3",
-    "mocha-jenkins-reporter": "^0.3.9",
+    "mocha": "^10.8.2",
+    "mocha-jenkins-reporter": "^0.4.8",
     "ncp": "^2.0.0",
     "nyc": "^11.7.2",
     "pify": "^3.0.0",
@@ -58,6 +58,14 @@
     ],
     "cache": true,
     "all": true
+  },
+  "overrides": {
+    "mocha": {
+      "serialize-javascript": "^7.0.5"
+    },
+    "mocha-jenkins-reporter": {
+      "diff": "^4.0.4"
+    }
   },
   "scripts": {
     "test": "nyc gulp test",
