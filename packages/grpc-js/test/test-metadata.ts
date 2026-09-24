@@ -25,6 +25,11 @@ class TestMetadata extends Metadata {
     return this.internalRepr;
   }
 
+  getOpaqueData() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (this as any).opaqueData;
+  }
+
   static fromHttp2Headers(headers: http2.IncomingHttpHeaders): TestMetadata {
     const result = Metadata.fromHttp2Headers(headers) as TestMetadata;
     result.getInternalRepresentation =
@@ -325,6 +330,85 @@ describe('Metadata', () => {
       const metadataFromHeaders = TestMetadata.fromHttp2Headers({});
       const internalRepr = metadataFromHeaders.getInternalRepresentation();
       assert.deepStrictEqual(internalRepr, new Map<string, MetadataValue[]>());
+    });
+  });
+
+  describe('opaqueData', () => {
+    it('does not allocate opaqueData map until setOpaque is called', () => {
+      const testMetadata = new TestMetadata();
+      assert.strictEqual(testMetadata.getOpaqueData(), undefined);
+      assert.strictEqual(testMetadata.getOpaque('key'), undefined);
+
+      testMetadata.setOpaque('key', 'value');
+      assert.notStrictEqual(testMetadata.getOpaqueData(), undefined);
+      assert.strictEqual(testMetadata.getOpaque('key'), 'value');
+      assert.strictEqual(testMetadata.getOpaque('missing'), undefined);
+    });
+
+    it('handles multiple keys, key overwrite, and various value types without reallocating map', () => {
+      const testMetadata = new TestMetadata();
+      testMetadata.setOpaque('stringKey', 'firstValue');
+      const initialMap = testMetadata.getOpaqueData();
+
+      // Subsequent setOpaque calls exercise the existing map branch
+      testMetadata.setOpaque('stringKey', 'overwrittenValue');
+      testMetadata.setOpaque('numberKey', 42);
+      testMetadata.setOpaque('objectKey', { metric: 123 });
+      testMetadata.setOpaque('undefinedKey', undefined);
+
+      // Map reference remains identical (no reallocation)
+      assert.strictEqual(testMetadata.getOpaqueData(), initialMap);
+      assert.strictEqual(
+        testMetadata.getOpaque('stringKey'),
+        'overwrittenValue'
+      );
+      assert.strictEqual(testMetadata.getOpaque('numberKey'), 42);
+      assert.deepStrictEqual(testMetadata.getOpaque('objectKey'), {
+        metric: 123,
+      });
+      assert.strictEqual(testMetadata.getOpaque('undefinedKey'), undefined);
+    });
+
+    it('does not copy opaqueData to cloned instances', () => {
+      const originalMetadata = new TestMetadata();
+      originalMetadata.setOpaque('key', 'value');
+      const clonedMetadata = originalMetadata.clone();
+
+      assert.strictEqual(clonedMetadata.getOpaque('key'), undefined);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      assert.strictEqual((clonedMetadata as any).opaqueData, undefined);
+    });
+
+    it('does not allocate opaqueData on clone if original has no opaqueData', () => {
+      const originalMetadata = new Metadata();
+      const clonedMetadata = originalMetadata.clone();
+
+      assert.strictEqual(clonedMetadata.getOpaque('key'), undefined);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      assert.strictEqual((clonedMetadata as any).opaqueData, undefined);
+    });
+  });
+
+  describe('options', () => {
+    it('defaults to empty options object when none are passed', () => {
+      const defaultMetadata = new Metadata();
+      assert.deepStrictEqual(defaultMetadata.getOptions(), {});
+    });
+
+    it('preserves custom options passed to constructor', () => {
+      const customMetadata = new Metadata({ waitForReady: true, corked: true });
+      assert.deepStrictEqual(customMetadata.getOptions(), {
+        waitForReady: true,
+        corked: true,
+      });
+    });
+
+    it('allows updating options via setOptions', () => {
+      const customMetadata = new Metadata();
+      customMetadata.setOptions({ cacheableRequest: true });
+      assert.deepStrictEqual(customMetadata.getOptions(), {
+        cacheableRequest: true,
+      });
     });
   });
 });
