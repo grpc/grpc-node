@@ -248,3 +248,70 @@ describe('deadline utility functions', () => {
     });
   });
 });
+
+describe('Calls without deadlines', () => {
+  let server: grpc.Server;
+  let Client: ServiceClientConstructor;
+  let client: ServiceClient;
+  let originalSetTimeout: typeof setTimeout;
+
+  before(done => {
+    Client = loadProtoFile(__dirname + '/fixtures/test_service.proto')
+      .TestService as ServiceClientConstructor;
+    server = new grpc.Server();
+    server.addService(Client.service, {
+      unary: (
+        call: grpc.ServerUnaryCall<unknown, unknown>,
+        callback: grpc.sendUnaryData<Record<string, unknown>>
+      ) => {
+        callback(null, {});
+      },
+    });
+    server.bindAsync(
+      'localhost:0',
+      grpc.ServerCredentials.createInsecure(),
+      (error, port) => {
+        if (error) {
+          done(error);
+          return;
+        }
+        server.start();
+        client = new Client(
+          `localhost:${port}`,
+          grpc.credentials.createInsecure()
+        );
+        client.waitForReady(Date.now() + 2000, done);
+      }
+    );
+  });
+
+  after(done => {
+    client.close();
+    server.tryShutdown(done);
+  });
+
+  afterEach(() => {
+    if (originalSetTimeout) {
+      global.setTimeout = originalSetTimeout;
+    }
+  });
+
+  it('Should not schedule any timer for calls with infinite deadline', done => {
+    let timerCount = 0;
+    originalSetTimeout = global.setTimeout;
+    global.setTimeout = ((
+      handler: (...args: any[]) => void,
+      timeout?: number,
+      ...args: any[]
+    ) => {
+      timerCount++;
+      return originalSetTimeout(handler as any, timeout, ...args);
+    }) as any;
+
+    client.unary({}, (error: grpc.ServiceError | null) => {
+      assert.ifError(error);
+      assert.strictEqual(timerCount, 0);
+      done();
+    });
+  });
+});
