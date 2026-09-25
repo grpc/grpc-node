@@ -23,3 +23,7 @@ coverage
 
 # Node's bash completion file
 .node_bash_completion
+
+# Copied proto dependencies
+packages/grpc-js/proto/protoc-gen-validate/
+packages/grpc-js/proto/xds/
