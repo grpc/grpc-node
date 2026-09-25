@@ -1572,6 +1572,7 @@ export class Server {
 
       const canSendPing = () => {
         return (
+          !session.closed &&
           !session.destroyed &&
           this.keepaliveTimeMs < KEEPALIVE_MAX_TIME_MS &&
           this.keepaliveTimeMs > 0
@@ -1607,6 +1608,9 @@ export class Server {
           const pingSentSuccessfully = session.ping(
             (err: Error | null, duration: number, payload: Buffer) => {
               clearKeepaliveTimeout();
+              if (session.closed) {
+                return;
+              }
               if (err) {
                 this.keepaliveTrace('Ping failed with error: ' + err.message);
                 sessionClosedByServer = true;
@@ -1638,6 +1642,9 @@ export class Server {
 
         keepaliveTimer = setTimeout(() => {
           clearKeepaliveTimeout();
+          if (session.closed) {
+            return;
+          }
           this.keepaliveTrace('Ping timeout passed without response');
           this.trace('Connection dropped by keepalive timeout');
           sessionClosedByServer = true;
@@ -1759,6 +1766,7 @@ export class Server {
 
       const canSendPing = () => {
         return (
+          !session.closed &&
           !session.destroyed &&
           this.keepaliveTimeMs < KEEPALIVE_MAX_TIME_MS &&
           this.keepaliveTimeMs > 0
@@ -1794,6 +1802,9 @@ export class Server {
           const pingSentSuccessfully = session.ping(
             (err: Error | null, duration: number, payload: Buffer) => {
               clearKeepaliveTimeout();
+              if (session.closed) {
+                return;
+              }
               if (err) {
                 this.keepaliveTrace('Ping failed with error: ' + err.message);
                 this.channelzTrace.addTrace(
@@ -1835,6 +1846,9 @@ export class Server {
 
         keepaliveTimeout = setTimeout(() => {
           clearKeepaliveTimeout();
+          if (session.closed) {
+            return;
+          }
           this.keepaliveTrace('Ping timeout passed without response');
           this.channelzTrace.addTrace(
             'CT_INFO',
