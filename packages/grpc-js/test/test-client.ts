@@ -413,7 +413,7 @@ describe('Client with a nonexistent target domain', () => {
     client.close();
   });
   it('should fail multiple calls', function (done) {
-    this.timeout(5000);
+    this.timeout(process.platform === 'win32' ? 15000 : 5000);
     // Regression test for https://github.com/grpc/grpc-node/issues/1411
     client.makeUnaryRequest(
       '/service/method',
