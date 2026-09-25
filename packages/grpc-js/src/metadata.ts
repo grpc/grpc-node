@@ -89,7 +89,7 @@ export interface MetadataOptions {
 export class Metadata {
   protected internalRepr: MetadataObject = new Map<string, MetadataValue[]>();
   private options: MetadataOptions;
-  private opaqueData: Map<string, unknown> = new Map();
+  private opaqueData?: Map<string, unknown>;
 
   constructor(options: MetadataOptions = {}) {
     this.options = options;
@@ -256,6 +256,9 @@ export class Metadata {
    * @param value
    */
   setOpaque(key: string, value: unknown) {
+    if (!this.opaqueData) {
+      this.opaqueData = new Map();
+    }
     this.opaqueData.set(key, value);
   }
 
@@ -265,7 +268,7 @@ export class Metadata {
    * @returns
    */
   getOpaque(key: string) {
-    return this.opaqueData.get(key);
+    return this.opaqueData?.get(key);
   }
 
   /**

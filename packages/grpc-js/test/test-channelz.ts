@@ -18,6 +18,7 @@
 import * as assert from 'assert';
 import * as protoLoader from '@grpc/proto-loader';
 import * as grpc from '../src';
+import { dateToProtoTimestamp } from '../src/channelz';
 
 import { ProtoGrpcType } from '../src/generated/channelz';
 import { ChannelzClient } from '../src/generated/grpc/channelz/v1/Channelz';
@@ -57,6 +58,25 @@ const testServiceImpl: grpc.UntypedServiceImplementation = {
     }
   },
 };
+
+function assertValidTimestamp(
+  timestamp:
+    | { seconds?: string | number | null; nanos?: number | null }
+    | null
+    | undefined,
+  expectedTimeMs: number
+) {
+  assert(timestamp, 'Timestamp should be defined');
+  const expectedSeconds = Math.floor(expectedTimeMs / 1000);
+  assert(
+    Math.abs(+timestamp.seconds! - expectedSeconds) <= 10,
+    `Timestamp seconds (${timestamp.seconds}) should be close to expected (${expectedSeconds})`
+  );
+  assert(
+    +timestamp.nanos! >= 0 && +timestamp.nanos! < 1e9,
+    `Timestamp nanos (${timestamp.nanos}) should be in range [0, 1e9)`
+  );
+}
 
 describe('Channelz', () => {
   let channelzServer: grpc.Server;
@@ -132,6 +152,10 @@ describe('Channelz', () => {
           +result.channel.ref.channel_id,
           testClient.getChannel().getChannelzRef().id
         );
+        assert.strictEqual(
+          result.channel.data?.last_call_started_timestamp,
+          null
+        );
         // Test that the channel is in the list of top channels
         channelzClient.getTopChannels(
           {
@@ -167,6 +191,10 @@ describe('Channelz', () => {
           +result.server.ref.server_id,
           testServer.getChannelzRef().id
         );
+        assert.strictEqual(
+          result.server.data?.last_call_started_timestamp,
+          null
+        );
         // Test that the server is in the list of servers
         channelzClient.getServers(
           { start_server_id: testServer.getChannelzRef().id, max_results: 1 },
@@ -187,6 +215,7 @@ describe('Channelz', () => {
   });
 
   it('should count successful calls', done => {
+    const callStartTimeMs = Date.now();
     testClient.unary({}, (error: grpc.ServiceError, value: unknown) => {
       assert.ifError(error);
       // Channel data tests
@@ -201,6 +230,10 @@ describe('Channelz', () => {
           assert.strictEqual(+channelResult.channel.data.calls_started, 1);
           assert.strictEqual(+channelResult.channel.data.calls_succeeded, 1);
           assert.strictEqual(+channelResult.channel.data.calls_failed, 0);
+          assertValidTimestamp(
+            channelResult.channel.data.last_call_started_timestamp,
+            callStartTimeMs
+          );
           assert.strictEqual(channelResult.channel.subchannel_ref.length, 1);
           channelzClient.getSubchannel(
             {
@@ -228,6 +261,10 @@ describe('Channelz', () => {
               assert.strictEqual(
                 +subchannelResult.subchannel.data.calls_failed,
                 0
+              );
+              assertValidTimestamp(
+                subchannelResult.subchannel.data.last_call_started_timestamp,
+                callStartTimeMs
               );
               assert.strictEqual(
                 subchannelResult.subchannel.socket_ref.length,
@@ -268,6 +305,19 @@ describe('Channelz', () => {
                     +socketResult.socket.data.messages_sent,
                     1
                   );
+                  assertValidTimestamp(
+                    socketResult.socket.data
+                      .last_local_stream_created_timestamp,
+                    callStartTimeMs
+                  );
+                  assertValidTimestamp(
+                    socketResult.socket.data.last_message_sent_timestamp,
+                    callStartTimeMs
+                  );
+                  assertValidTimestamp(
+                    socketResult.socket.data.last_message_received_timestamp,
+                    callStartTimeMs
+                  );
                   // Server data tests
                   channelzClient.getServer(
                     { server_id: testServer.getChannelzRef().id },
@@ -292,6 +342,10 @@ describe('Channelz', () => {
                       assert.strictEqual(
                         +serverResult.server.data.calls_failed,
                         0
+                      );
+                      assertValidTimestamp(
+                        serverResult.server.data.last_call_started_timestamp,
+                        callStartTimeMs
                       );
                       channelzClient.getServerSockets(
                         { server_id: testServer.getChannelzRef().id },
@@ -337,6 +391,21 @@ describe('Channelz', () => {
                               assert.strictEqual(
                                 +serverSocketResult.socket.data.messages_sent,
                                 1
+                              );
+                              assertValidTimestamp(
+                                serverSocketResult.socket.data
+                                  .last_remote_stream_created_timestamp,
+                                callStartTimeMs
+                              );
+                              assertValidTimestamp(
+                                serverSocketResult.socket.data
+                                  .last_message_sent_timestamp,
+                                callStartTimeMs
+                              );
+                              assertValidTimestamp(
+                                serverSocketResult.socket.data
+                                  .last_message_received_timestamp,
+                                callStartTimeMs
                               );
                               done();
                             }
@@ -570,5 +639,39 @@ describe('Disabling channelz', () => {
         done();
       }
     );
+  });
+});
+
+describe('dateToProtoTimestamp', () => {
+  it('returns null for null or undefined', () => {
+    assert.strictEqual(dateToProtoTimestamp(null), null);
+    assert.strictEqual(dateToProtoTimestamp(undefined), null);
+  });
+
+  it('correctly serializes epoch 0 numbers and Dates', () => {
+    assert.deepStrictEqual(dateToProtoTimestamp(0), { seconds: 0, nanos: 0 });
+    assert.deepStrictEqual(dateToProtoTimestamp(new Date(0)), {
+      seconds: 0,
+      nanos: 0,
+    });
+  });
+
+  it('correctly serializes millisecond numbers and Date objects', () => {
+    const timestampMs = 1_500_250;
+    const expected = { seconds: 1500, nanos: 250_000_000 };
+    assert.deepStrictEqual(dateToProtoTimestamp(timestampMs), expected);
+    assert.deepStrictEqual(
+      dateToProtoTimestamp(new Date(timestampMs)),
+      expected
+    );
+  });
+
+  it('handles post-2038 timestamps without 32-bit integer overflow', () => {
+    // 2040-01-01T00:00:00.123Z => seconds: 2208988800 (exceeds 2^31 - 1)
+    const post2038Ms = 2_208_988_800_123;
+    const result = dateToProtoTimestamp(post2038Ms);
+    assert(result !== null);
+    assert.strictEqual(result.seconds, 2_208_988_800);
+    assert.strictEqual(result.nanos, 123_000_000);
   });
 });

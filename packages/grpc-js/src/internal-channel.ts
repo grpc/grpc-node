@@ -224,7 +224,7 @@ export class InternalChannel {
   private callCount = 0;
   private idleTimer: NodeJS.Timeout | null = null;
   private readonly idleTimeoutMs: number;
-  private lastActivityTimestamp: Date;
+  private lastActivityTimestamp: number;
 
   // Channelz info
   private readonly channelzEnabled: boolean = true;
@@ -476,7 +476,7 @@ export class InternalChannel {
           error.stack?.substring(error.stack.indexOf('\n') + 1)
       );
     }
-    this.lastActivityTimestamp = new Date();
+    this.lastActivityTimestamp = Date.now();
   }
 
   private get traceEnabled(): boolean {
@@ -653,9 +653,8 @@ export class InternalChannel {
         this.startIdleTimeout(this.idleTimeoutMs);
         return;
       }
-      const now = new Date();
-      const timeSinceLastActivity =
-        now.valueOf() - this.lastActivityTimestamp.valueOf();
+      const now = Date.now();
+      const timeSinceLastActivity = now - this.lastActivityTimestamp;
       if (timeSinceLastActivity >= this.idleTimeoutMs) {
         this.trace(
           'Idle timer triggered after ' +
@@ -699,7 +698,7 @@ export class InternalChannel {
       }
     }
     this.callCount -= 1;
-    this.lastActivityTimestamp = new Date();
+    this.lastActivityTimestamp = Date.now();
     this.maybeStartIdleTimer();
   }
 
@@ -866,7 +865,7 @@ export class InternalChannel {
     const connectivityState = this.connectivityState;
     if (tryToConnect) {
       this.resolvingLoadBalancer.exitIdle();
-      this.lastActivityTimestamp = new Date();
+      this.lastActivityTimestamp = Date.now();
       this.maybeStartIdleTimer();
     }
     return connectivityState;
