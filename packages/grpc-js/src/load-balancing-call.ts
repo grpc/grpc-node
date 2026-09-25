@@ -62,8 +62,8 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
   private metadata: Metadata | null = null;
   private listener: InterceptingListener | null = null;
   private onCallEnded: OnCallEnded | null = null;
-  private startTime: Date;
-  private childStartTime: Date | null = null;
+  private startTime: number;
+  private childStartTime: number | null = null;
   constructor(
     private readonly channel: InternalChannel,
     private readonly callConfig: CallConfig,
@@ -85,11 +85,11 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
     /* Currently, call credentials are only allowed on HTTPS connections, so we
      * can assume that the scheme is "https" */
     this.serviceUrl = `https://${hostname}/${serviceName}`;
-    this.startTime = new Date();
+    this.startTime = Date.now();
   }
   getDeadlineInfo(): string[] {
     const deadlineInfo: string[] = [];
-    if (this.childStartTime) {
+    if (this.childStartTime !== null) {
       if (this.childStartTime > this.startTime) {
         if (this.metadata?.getOptions().waitForReady) {
           deadlineInfo.push('wait_for_ready');
@@ -142,7 +142,7 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
             ' details="' +
             status.details +
             '" start time=' +
-            this.startTime.toISOString()
+            new Date(this.startTime).toISOString()
         );
       }
       const finalStatus = { ...status, progress };
@@ -260,7 +260,7 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
                     },
                     this.callNumber
                   );
-                this.childStartTime = new Date();
+                this.childStartTime = Date.now();
               } catch (error) {
                 if (this.traceEnabled) {
                   this.trace(
