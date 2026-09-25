@@ -25,7 +25,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "compile": "tsc -p .",
-    "postcompile": "copyfiles './proto/**/*.proto' build/",
+    "postcompile": "copyfiles \"./proto/**/*.proto\" build/",
     "prepare": "npm run generate-types && npm run compile",
     "test": "mocha --require ts-node/register test/**.ts",
     "generate-types": "proto-loader-gen-types --longs String --enums String --bytes Array --defaults --oneofs --includeComments --includeDirs proto/ -O src/generated grpc/reflection/v1/reflection.proto grpc/reflection/v1alpha/reflection.proto"
