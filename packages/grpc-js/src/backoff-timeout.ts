@@ -109,7 +109,18 @@ export class BackoffTimeout {
         this.maxDelay = options.maxDelay;
       }
     }
-    this.trace('constructed initialDelay=' + this.initialDelay + ' multiplier=' + this.multiplier + ' jitter=' + this.jitter + ' maxDelay=' + this.maxDelay);
+    if (this.traceEnabled) {
+      this.trace(
+        'constructed initialDelay=' +
+          this.initialDelay +
+          ' multiplier=' +
+          this.multiplier +
+          ' jitter=' +
+          this.jitter +
+          ' maxDelay=' +
+          this.maxDelay
+      );
+    }
     this.nextDelay = this.initialDelay;
     this.timerId = setTimeout(() => {}, 0);
     clearTimeout(this.timerId);
@@ -119,12 +130,24 @@ export class BackoffTimeout {
     return this.nextId++;
   }
 
+  private get traceEnabled(): boolean {
+    return logging.isTracerEnabled(TRACER_NAME);
+  }
+
   private trace(text: string) {
-    logging.trace(LogVerbosity.DEBUG, TRACER_NAME, '{' + this.id + '} ' + text);
+    if (this.traceEnabled) {
+      logging.trace(
+        LogVerbosity.DEBUG,
+        TRACER_NAME,
+        '{' + this.id + '} ' + text
+      );
+    }
   }
 
   private runTimer(delay: number) {
-    this.trace('runTimer(delay=' + delay + ')');
+    if (this.traceEnabled) {
+      this.trace('runTimer(delay=' + delay + ')');
+    }
     this.endTime = this.startTime;
     this.endTime.setMilliseconds(
       this.endTime.getMilliseconds() + delay
@@ -172,7 +195,9 @@ export class BackoffTimeout {
    * retroactively apply that reset to the current timer.
    */
   reset() {
-    this.trace('reset() running=' + this.running);
+    if (this.traceEnabled) {
+      this.trace('reset() running=' + this.running);
+    }
     this.nextDelay = this.initialDelay;
     if (this.running) {
       const now = new Date();

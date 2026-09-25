@@ -36,6 +36,7 @@ import * as logging from './logging';
 import { restrictControlPlaneStatusCode } from './control-plane-status';
 import * as http2 from 'http2';
 import { AuthContext } from './auth-context';
+import { SubchannelInterface } from './subchannel-interface';
 
 const TRACER_NAME = 'load_balancing_call';
 
@@ -106,25 +107,44 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
     return deadlineInfo;
   }
 
+  private get traceEnabled(): boolean {
+    return logging.isTracerEnabled(TRACER_NAME);
+  }
+
   private trace(text: string): void {
-    logging.trace(
-      LogVerbosity.DEBUG,
-      TRACER_NAME,
-      '[' + this.callNumber + '] ' + text
-    );
+    if (this.traceEnabled) {
+      logging.trace(
+        LogVerbosity.DEBUG,
+        TRACER_NAME,
+        '[' + this.callNumber + '] ' + text
+      );
+    }
+  }
+
+  private getSubchannelString(
+    subchannel: SubchannelInterface | null | undefined
+  ): string {
+    return subchannel
+      ? '(' +
+        subchannel.getChannelzRef().id +
+        ') ' +
+        subchannel.getAddress()
+      : '' + subchannel;
   }
 
   private outputStatus(status: StatusObject, progress: RpcProgress) {
     if (!this.ended) {
       this.ended = true;
-      this.trace(
-        'ended with status: code=' +
-          status.code +
-          ' details="' +
-          status.details +
-          '" start time=' +
-          this.startTime.toISOString()
-      );
+      if (this.traceEnabled) {
+        this.trace(
+          'ended with status: code=' +
+            status.code +
+            ' details="' +
+            status.details +
+            '" start time=' +
+            this.startTime.toISOString()
+        );
+      }
       const finalStatus = { ...status, progress };
       this.listener?.onReceiveStatus(finalStatus);
       this.onCallEnded?.(finalStatus.code, finalStatus.details, finalStatus.metadata);
@@ -144,22 +164,19 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
       finalMetadata,
       this.callConfig.pickInformation
     );
-    const subchannelString = pickResult.subchannel
-      ? '(' +
-        pickResult.subchannel.getChannelzRef().id +
-        ') ' +
-        pickResult.subchannel.getAddress()
-      : '' + pickResult.subchannel;
-    this.trace(
-      'Pick result: ' +
-        PickResultType[pickResult.pickResultType] +
-        ' subchannel: ' +
-        subchannelString +
-        ' status: ' +
-        pickResult.status?.code +
-        ' ' +
-        pickResult.status?.details
-    );
+
+    if (this.traceEnabled) {
+      this.trace(
+        'Pick result: ' +
+          PickResultType[pickResult.pickResultType] +
+          ' subchannel: ' +
+          this.getSubchannelString(pickResult.subchannel) +
+          ' status: ' +
+          pickResult.status?.code +
+          ' ' +
+          pickResult.status?.details
+      );
+    }
     switch (pickResult.pickResultType) {
       case PickResultType.COMPLETE:
         const combinedCallCredentials = this.credentials.compose(pickResult.subchannel!.getCallCredentials());
@@ -192,15 +209,17 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
                 pickResult.subchannel!.getConnectivityState() !==
                 ConnectivityState.READY
               ) {
-                this.trace(
-                  'Picked subchannel ' +
-                    subchannelString +
-                    ' has state ' +
-                    ConnectivityState[
-                      pickResult.subchannel!.getConnectivityState()
-                    ] +
-                    ' after getting credentials metadata. Retrying pick'
-                );
+                if (this.traceEnabled) {
+                  this.trace(
+                    'Picked subchannel ' +
+                      this.getSubchannelString(pickResult.subchannel) +
+                      ' has state ' +
+                      ConnectivityState[
+                        pickResult.subchannel!.getConnectivityState()
+                      ] +
+                      ' after getting credentials metadata. Retrying pick'
+                  );
+                }
                 this.doPick();
                 return;
               }
@@ -214,35 +233,43 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
               try {
                 this.child = pickResult
                   .subchannel!.getRealSubchannel()
-                  .createCall(finalMetadata, this.host, this.methodName, {
-                    onReceiveMetadata: metadata => {
-                      this.trace('Received metadata');
-                      this.listener!.onReceiveMetadata(metadata);
+                  .createCall(
+                    finalMetadata,
+                    this.host,
+                    this.methodName,
+                    {
+                      onReceiveMetadata: metadata => {
+                        this.trace('Received metadata');
+                        this.listener!.onReceiveMetadata(metadata);
+                      },
+                      onReceiveMessage: message => {
+                        this.trace('Received message');
+                        this.listener!.onReceiveMessage(message);
+                      },
+                      onReceiveStatus: status => {
+                        this.trace('Received status');
+                        if (
+                          status.rstCode ===
+                          http2.constants.NGHTTP2_REFUSED_STREAM
+                        ) {
+                          this.outputStatus(status, 'REFUSED');
+                        } else {
+                          this.outputStatus(status, 'PROCESSED');
+                        }
+                      },
                     },
-                    onReceiveMessage: message => {
-                      this.trace('Received message');
-                      this.listener!.onReceiveMessage(message);
-                    },
-                    onReceiveStatus: status => {
-                      this.trace('Received status');
-                      if (
-                        status.rstCode ===
-                        http2.constants.NGHTTP2_REFUSED_STREAM
-                      ) {
-                        this.outputStatus(status, 'REFUSED');
-                      } else {
-                        this.outputStatus(status, 'PROCESSED');
-                      }
-                    },
-                  });
+                    this.callNumber
+                  );
                 this.childStartTime = new Date();
               } catch (error) {
-                this.trace(
-                  'Failed to start call on picked subchannel ' +
-                    subchannelString +
-                    ' with error ' +
-                    (error as Error).message
-                );
+                if (this.traceEnabled) {
+                  this.trace(
+                    'Failed to start call on picked subchannel ' +
+                      this.getSubchannelString(pickResult.subchannel) +
+                      ' with error ' +
+                      (error as Error).message
+                  );
+                }
                 this.outputStatus(
                   {
                     code: Status.INTERNAL,
@@ -257,9 +284,11 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
               }
               pickResult.onCallStarted?.();
               this.onCallEnded = pickResult.onCallEnded;
-              this.trace(
-                'Created child call [' + this.child.getCallNumber() + ']'
-              );
+              if (this.traceEnabled) {
+                this.trace(
+                  'Created child call [' + this.child.getCallNumber() + ']'
+                );
+              }
               if (this.readPending) {
                 this.child.startRead();
               }
@@ -324,9 +353,11 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
   }
 
   cancelWithStatus(status: Status, details: string): void {
-    this.trace(
-      'cancelWithStatus code: ' + status + ' details: "' + details + '"'
-    );
+    if (this.traceEnabled) {
+      this.trace(
+        'cancelWithStatus code: ' + status + ' details: "' + details + '"'
+      );
+    }
     this.child?.cancelWithStatus(status, details);
     this.outputStatus(
       { code: status, details: details, metadata: new Metadata() },
@@ -346,7 +377,9 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
     this.doPick();
   }
   sendMessageWithContext(context: MessageContext, message: Buffer): void {
-    this.trace('write() called with message of length ' + message.length);
+    if (this.traceEnabled) {
+      this.trace('write() called with message of length ' + message.length);
+    }
     if (this.child) {
       this.child.sendMessageWithContext(context, message);
     } else {
