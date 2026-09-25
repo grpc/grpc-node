@@ -273,20 +273,39 @@ describe('Metadata', () => {
       metadata.add('Key2', 'value2');
       metadata.add('KEY3', 'value3a');
       metadata.add('key3', 'value3b');
+      metadata.add('single-bin', Buffer.from('hello'));
       metadata.add('key-bin', Buffer.from(range(0, 16)));
       metadata.add('key-bin', Buffer.from(range(16, 32)));
       metadata.add('key-bin', Buffer.from(range(0, 32)));
       const headers = metadata.toHttp2Headers();
       assert.deepStrictEqual(headers, {
-        key1: ['value1'],
-        key2: ['value2'],
+        key1: 'value1',
+        key2: 'value2',
         key3: ['value3a', 'value3b'],
+        'single-bin': Buffer.from('hello').toString('base64'),
         'key-bin': [
           'AAECAwQFBgcICQoLDA0ODw==',
           'EBESExQVFhcYGRobHB0eHw==',
           'AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=',
         ],
       });
+    });
+
+    it('omits pseudo-headers starting with colon', () => {
+      metadata.getInternalRepresentation().set(':path', ['/service/method']);
+      metadata.getInternalRepresentation().set(':status', ['200']);
+      metadata.add('custom-key', 'custom-value');
+      assert.deepStrictEqual(metadata.toHttp2Headers(), {
+        'custom-key': 'custom-value',
+      });
+    });
+
+    it('handles empty strings and strings with commas', () => {
+      metadata.add('empty', '');
+      metadata.add('comma-str', 'a, b, c');
+      const headers = metadata.toHttp2Headers();
+      assert.strictEqual(headers['empty'], '');
+      assert.strictEqual(headers['comma-str'], 'a, b, c');
     });
 
     it('creates an empty header object from empty Metadata', () => {
@@ -301,6 +320,7 @@ describe('Metadata', () => {
         key2: ['value2'],
         key3: ['value3a', 'value3b'],
         key4: ['part1, part2'],
+        'single-bin': Buffer.from('hello').toString('base64'),
         'key-bin': [
           'AAECAwQFBgcICQoLDA0ODw==',
           'EBESExQVFhcYGRobHB0eHw==',
@@ -314,6 +334,7 @@ describe('Metadata', () => {
         ['key2', ['value2']],
         ['key3', ['value3a', 'value3b']],
         ['key4', ['part1, part2']],
+        ['single-bin', [Buffer.from('hello')]],
         [
           'key-bin',
           [
@@ -409,6 +430,38 @@ describe('Metadata', () => {
       assert.deepStrictEqual(customMetadata.getOptions(), {
         cacheableRequest: true,
       });
+    });
+  });
+
+  describe('roundtrip toHttp2Headers and fromHttp2Headers', () => {
+    it('preserves single and multi-value string and binary metadata', () => {
+      const originalMetadata = new Metadata();
+      originalMetadata.add('single-str', 'value1');
+      originalMetadata.add('multi-str', 'value2a');
+      originalMetadata.add('multi-str', 'value2b');
+      originalMetadata.add('single-bin', Buffer.from('hello'));
+      originalMetadata.add('multi-bin', Buffer.from([1, 2, 3]));
+      originalMetadata.add('multi-bin', Buffer.from([4, 5, 6]));
+
+      const roundtripMetadata = Metadata.fromHttp2Headers(
+        originalMetadata.toHttp2Headers() as http2.IncomingHttpHeaders
+      );
+      assert.deepStrictEqual(
+        roundtripMetadata.getMap(),
+        originalMetadata.getMap()
+      );
+      assert.deepStrictEqual(roundtripMetadata.get('single-str'), ['value1']);
+      assert.deepStrictEqual(roundtripMetadata.get('single-bin'), [
+        Buffer.from('hello'),
+      ]);
+      assert.deepStrictEqual(roundtripMetadata.get('multi-str'), [
+        'value2a',
+        'value2b',
+      ]);
+      assert.deepStrictEqual(roundtripMetadata.get('multi-bin'), [
+        Buffer.from([1, 2, 3]),
+        Buffer.from([4, 5, 6]),
+      ]);
     });
   });
 });

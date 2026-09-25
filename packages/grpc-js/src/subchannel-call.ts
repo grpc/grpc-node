@@ -500,20 +500,22 @@ export class Http2SubchannelCall implements SubchannelCall {
     } catch (e) {
       metadata = new Metadata();
     }
-    const metadataMap = metadata.getMap();
+    const statusValues = metadata.get('grpc-status');
     let status: StatusObject;
-    if (typeof metadataMap['grpc-status'] === 'string') {
-      const receivedStatus: Status = Number(metadataMap['grpc-status']);
+    if (statusValues.length > 0 && typeof statusValues[0] === 'string') {
+      const receivedStatus: Status = Number(statusValues[0]);
       if (this.traceEnabled) {
         this.trace('received status code ' + receivedStatus + ' from server');
       }
       metadata.remove('grpc-status');
       let details = '';
-      if (typeof metadataMap['grpc-message'] === 'string') {
+      const messageValues = metadata.get('grpc-message');
+      if (messageValues.length > 0 && typeof messageValues[0] === 'string') {
+        const messageString = messageValues[0];
         try {
-          details = decodeURI(metadataMap['grpc-message']);
-        } catch (e) {
-          details = metadataMap['grpc-message'];
+          details = decodeURI(messageString);
+        } catch (error) {
+          details = messageString;
         }
         metadata.remove('grpc-message');
         if (this.traceEnabled) {
@@ -525,7 +527,7 @@ export class Http2SubchannelCall implements SubchannelCall {
       status = {
         code: receivedStatus,
         details: details,
-        metadata: metadata
+        metadata: metadata,
       };
     } else if (this.httpStatusCode) {
       status = mapHttpStatusCode(this.httpStatusCode);
@@ -534,7 +536,7 @@ export class Http2SubchannelCall implements SubchannelCall {
       status = {
         code: Status.UNKNOWN,
         details: 'No status information received',
-        metadata: metadata
+        metadata: metadata,
       };
     }
     // This is a no-op if the call was already ended when handling headers.
