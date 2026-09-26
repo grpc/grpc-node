@@ -67,6 +67,12 @@ export interface ChannelOptions {
   'grpc-node.retry_max_attempts_limit'?: number;
   'grpc-node.flow_control_window'?: number;
   'grpc.server_call_metric_recording'?: number;
+  /**
+   * Whether to construct an Error object on every call to capture the caller's
+   * stack trace. Enabled by default (1). Can be set to 0 to disable and avoid
+   * stack trace capture overhead for every RPC.
+   */
+  'grpc-node.enable_caller_stack_traces'?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
@@ -105,7 +111,8 @@ export const recognizedOptions = {
   'grpc.lb.ring_hash.ring_size_cap': true,
   'grpc-node.retry_max_attempts_limit': true,
   'grpc-node.flow_control_window': true,
-  'grpc.server_call_metric_recording': true
+  'grpc.server_call_metric_recording': true,
+  'grpc-node.enable_caller_stack_traces': true,
 };
 
 export function channelOptionsEqual(
