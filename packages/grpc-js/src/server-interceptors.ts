@@ -662,8 +662,7 @@ export class BaseServerInterceptingCall
 
     const timeout = (+match[1] * deadlineUnitsToMs[match[2]]) | 0;
 
-    const now = new Date();
-    this.deadline = now.setMilliseconds(now.getMilliseconds() + timeout);
+    this.deadline = Date.now() + timeout;
     this.deadlineTimer = setTimeout(() => {
       const status: PartialStatusObject = {
         code: Status.DEADLINE_EXCEEDED,

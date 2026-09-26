@@ -193,8 +193,8 @@ interface ChannelzSessionInfo {
   messagesSent: number;
   messagesReceived: number;
   keepAlivesSent: number;
-  lastMessageSentTimestamp: Date | null;
-  lastMessageReceivedTimestamp: Date | null;
+  lastMessageSentTimestamp: number | null;
+  lastMessageReceivedTimestamp: number | null;
 }
 
 /**
@@ -1369,13 +1369,13 @@ export class Server {
       addMessageSent: () => {
         if (channelzSessionInfo) {
           channelzSessionInfo.messagesSent += 1;
-          channelzSessionInfo.lastMessageSentTimestamp = new Date();
+          channelzSessionInfo.lastMessageSentTimestamp = Date.now();
         }
       },
       addMessageReceived: () => {
         if (channelzSessionInfo) {
           channelzSessionInfo.messagesReceived += 1;
-          channelzSessionInfo.lastMessageReceivedTimestamp = new Date();
+          channelzSessionInfo.lastMessageReceivedTimestamp = Date.now();
         }
       },
       onCallEnd: status => {
