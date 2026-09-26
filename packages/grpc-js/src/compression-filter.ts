@@ -56,7 +56,7 @@ abstract class CompressionHandler {
     const output = Buffer.allocUnsafe(messageBuffer.length + 5);
     output.writeUInt8(compress ? 1 : 0, 0);
     output.writeUInt32BE(messageBuffer.length, 1);
-    messageBuffer.copy(output, 5);
+    output.set(messageBuffer, 5);
     return output;
   }
   /**
@@ -84,7 +84,7 @@ class IdentityHandler extends CompressionHandler {
      * uncompressed */
     output.writeUInt8(0, 0);
     output.writeUInt32BE(message.length, 1);
-    message.copy(output, 5);
+    output.set(message, 5);
     return output;
   }
 
