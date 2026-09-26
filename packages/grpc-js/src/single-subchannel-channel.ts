@@ -32,7 +32,7 @@ import { Metadata } from "./metadata";
 import { getDefaultAuthority } from "./resolver";
 import { Subchannel } from "./subchannel";
 import { SubchannelCall } from "./subchannel-call";
-import { GrpcUri, splitHostPort, uriToString } from "./uri-parser";
+import { GrpcUri, computeServiceUrl, uriToString } from "./uri-parser";
 
 class SubchannelCallWrapper implements Call {
   private childCall: SubchannelCall | null = null;
@@ -46,18 +46,7 @@ class SubchannelCallWrapper implements Call {
   private readFilterPending = false;
   private writeFilterPending = false;
   constructor(private subchannel: Subchannel, private method: string, filterStackFactory: FilterStackFactory, private options: CallStreamOptions, private callNumber: number) {
-    const splitPath: string[] = this.method.split('/');
-    let serviceName = '';
-    /* The standard path format is "/{serviceName}/{methodName}", so if we split
-      * by '/', the first item should be empty and the second should be the
-      * service name */
-    if (splitPath.length >= 2) {
-      serviceName = splitPath[1];
-    }
-    const hostname = splitHostPort(this.options.host)?.host ?? 'localhost';
-    /* Currently, call credentials are only allowed on HTTPS connections, so we
-      * can assume that the scheme is "https" */
-    this.serviceUrl = `https://${hostname}/${serviceName}`;
+    this.serviceUrl = computeServiceUrl(this.options.host, this.method);
     const timeout = getRelativeTimeout(options.deadline);
     if (timeout !== Infinity) {
       if (timeout <= 0) {
