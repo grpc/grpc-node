@@ -162,6 +162,9 @@ class ComposedCallCredentials extends CallCredentials {
   }
 
   compose(other: CallCredentials): CallCredentials {
+    if (other instanceof EmptyCallCredentials) {
+      return this;
+    }
     return new ComposedCallCredentials(this.creds.concat([other]));
   }
 
@@ -197,6 +200,9 @@ class SingleCallCredentials extends CallCredentials {
   }
 
   compose(other: CallCredentials): CallCredentials {
+    if (other instanceof EmptyCallCredentials) {
+      return this;
+    }
     return new ComposedCallCredentials([this, other]);
   }
 
@@ -224,4 +230,10 @@ class EmptyCallCredentials extends CallCredentials {
   _equals(other: CallCredentials): boolean {
     return other instanceof EmptyCallCredentials;
   }
+}
+
+export function isEmptyCallCredentials(
+  callCredentials: CallCredentials
+): boolean {
+  return callCredentials instanceof EmptyCallCredentials;
 }
