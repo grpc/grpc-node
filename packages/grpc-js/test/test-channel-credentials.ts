@@ -91,6 +91,35 @@ describe('ChannelCredentials Implementation', () => {
       const composedChannelCreds = channelCreds.compose(callCreds);
       assert.ok(composedChannelCreds instanceof ChannelCredentials);
     });
+
+    it('should preserve unwrapped CallCredentials when creating a connector', () => {
+      const channelCreds = ChannelCredentials.createSsl();
+      const callCreds = CallCredentials.createFromMetadataGenerator(
+        (options, cb) => cb(null, new grpc.Metadata())
+      );
+      const composedChannelCreds = channelCreds.compose(callCreds);
+      const connector = composedChannelCreds._createSecureConnector(
+        { scheme: 'dns', path: 'localhost' },
+        {}
+      );
+      assert.strictEqual(connector.getCallCredentials(), callCreds);
+      connector.destroy();
+    });
+  });
+
+  describe('createInsecure', () => {
+    it('should return the same default CallCredentials instance from a connector', () => {
+      const insecureCreds = ChannelCredentials.createInsecure();
+      const connector = insecureCreds._createSecureConnector(
+        { scheme: 'dns', path: 'localhost' },
+        {}
+      );
+      assert.strictEqual(
+        connector.getCallCredentials(),
+        connector.getCallCredentials()
+      );
+      connector.destroy();
+    });
   });
 });
 
