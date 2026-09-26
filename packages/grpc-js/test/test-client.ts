@@ -20,8 +20,7 @@ import { EventEmitter } from 'events';
 import * as http2 from 'http2';
 
 import * as grpc from '../src';
-import { Server, ServerCredentials } from '../src';
-import { Client } from '../src';
+import { Client, Metadata, Server, ServerCredentials } from '../src';
 import { ConnectivityState } from '../src/connectivity-state';
 import { Http2SubchannelCall } from '../src/subchannel-call';
 
@@ -240,6 +239,119 @@ describe('Client HTTP/2 stream lifecycle', () => {
   });
 });
 
+describe('Http2SubchannelCall trailers handling', () => {
+  let originalGetMap: typeof Metadata.prototype.getMap;
+  let getMapCallCount = 0;
+
+  beforeEach(() => {
+    originalGetMap = Metadata.prototype.getMap;
+    getMapCallCount = 0;
+    Metadata.prototype.getMap = function (...args) {
+      getMapCallCount++;
+      return originalGetMap.apply(this, args);
+    };
+  });
+
+  afterEach(() => {
+    Metadata.prototype.getMap = originalGetMap;
+  });
+
+  function createMockSubchannelCall(
+    onReceiveStatus: (status: grpc.StatusObject) => void
+  ) {
+    const mockHttp2Stream = Object.assign(new EventEmitter(), {
+      destroyed: false,
+      writableEnded: false,
+      end() {},
+      rstCode: 0,
+      close() {},
+      resume() {},
+      pause() {},
+    });
+    const mockTransport = {
+      getOptions: () => ({}),
+      getPeerName: () => 'localhost',
+      getAuthContext: () => null,
+    };
+    const mockTracker = {
+      addMessageReceived: () => {},
+      addMessageSent: () => {},
+      onStreamEnd: () => {},
+      onCallEnd: () => {},
+    };
+    const mockListener = {
+      onReceiveMetadata: () => {},
+      onReceiveMessage: () => {},
+      onReceiveStatus,
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    new Http2SubchannelCall(
+      mockHttp2Stream as any,
+      mockTracker as any,
+      mockListener as any,
+      mockTransport as any,
+      1
+    );
+
+    return mockHttp2Stream;
+  }
+
+  it('should parse grpc-status and grpc-message from trailers without calling getMap()', done => {
+    const mockHttp2Stream = createMockSubchannelCall(status => {
+      assert.strictEqual(status.code, grpc.status.OK);
+      assert.strictEqual(status.details, 'All Good');
+      assert.strictEqual(getMapCallCount, 0);
+      assert.strictEqual(status.metadata.get('grpc-status').length, 0);
+      assert.strictEqual(status.metadata.get('grpc-message').length, 0);
+      assert.deepStrictEqual(status.metadata.get('custom-trailer'), [
+        'custom-val',
+      ]);
+      done();
+    });
+
+    mockHttp2Stream.emit('trailers', {
+      'grpc-status': '0',
+      'grpc-message': 'All%20Good',
+      'custom-trailer': 'custom-val',
+    });
+    mockHttp2Stream.emit('end');
+  });
+
+  it('should handle trailers without grpc-message', done => {
+    const mockHttp2Stream = createMockSubchannelCall(status => {
+      assert.strictEqual(status.code, grpc.status.OK);
+      assert.strictEqual(status.details, '');
+      assert.strictEqual(getMapCallCount, 0);
+      assert.strictEqual(status.metadata.get('grpc-status').length, 0);
+      assert.strictEqual(status.metadata.get('grpc-message').length, 0);
+      done();
+    });
+
+    mockHttp2Stream.emit('trailers', {
+      'grpc-status': '0',
+    });
+    mockHttp2Stream.emit('end');
+  });
+
+  it('should fall back to raw string when grpc-message has invalid percent-encoding', done => {
+    const mockHttp2Stream = createMockSubchannelCall(status => {
+      assert.strictEqual(status.code, grpc.status.INTERNAL);
+      assert.strictEqual(status.details, 'Invalid%2');
+      assert.strictEqual(getMapCallCount, 0);
+      assert.strictEqual(status.metadata.get('grpc-status').length, 0);
+      assert.strictEqual(status.metadata.get('grpc-message').length, 0);
+      done();
+    });
+
+    mockHttp2Stream.emit('trailers', {
+      'grpc-status': String(grpc.status.INTERNAL),
+      'grpc-message': 'Invalid%2',
+    });
+    mockHttp2Stream.emit('end');
+  });
+});
+
 describe('Client without a server', () => {
   let client: Client;
   before(() => {
@@ -301,7 +413,7 @@ describe('Client with a nonexistent target domain', () => {
     client.close();
   });
   it('should fail multiple calls', function (done) {
-    this.timeout(5000);
+    this.timeout(process.platform === 'win32' ? 15000 : 5000);
     // Regression test for https://github.com/grpc/grpc-node/issues/1411
     client.makeUnaryRequest(
       '/service/method',

@@ -89,7 +89,7 @@ export interface MetadataOptions {
 export class Metadata {
   protected internalRepr: MetadataObject = new Map<string, MetadataValue[]>();
   private options: MetadataOptions;
-  private opaqueData: Map<string, unknown> = new Map();
+  private opaqueData?: Map<string, unknown>;
 
   constructor(options: MetadataOptions = {}) {
     this.options = options;
@@ -219,16 +219,17 @@ export class Metadata {
    * Creates an OutgoingHttpHeaders object that can be used with the http2 API.
    */
   toHttp2Headers(): http2.OutgoingHttpHeaders {
-    // NOTE: Node <8.9 formats http2 headers incorrectly.
     const result: http2.OutgoingHttpHeaders = {};
 
     for (const [key, values] of this.internalRepr) {
       if (key.startsWith(':')) {
         continue;
       }
-      // We assume that the user's interaction with this object is limited to
-      // through its public API (i.e. keys and values are already validated).
-      result[key] = values.map(bufToString);
+      if (values.length === 1) {
+        result[key] = bufToString(values[0]);
+      } else {
+        result[key] = values.map(bufToString);
+      }
     }
 
     return result;
@@ -255,6 +256,9 @@ export class Metadata {
    * @param value
    */
   setOpaque(key: string, value: unknown) {
+    if (!this.opaqueData) {
+      this.opaqueData = new Map();
+    }
     this.opaqueData.set(key, value);
   }
 
@@ -264,7 +268,7 @@ export class Metadata {
    * @returns
    */
   getOpaque(key: string) {
-    return this.opaqueData.get(key);
+    return this.opaqueData?.get(key);
   }
 
   /**

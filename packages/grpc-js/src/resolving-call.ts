@@ -56,12 +56,12 @@ export class ResolvingCall implements Call {
   private deadline: Deadline;
   private host: string;
   private statusWatchers: ((status: StatusObject) => void)[] = [];
-  private deadlineTimer: NodeJS.Timeout = setTimeout(() => {}, 0);
+  private deadlineTimer: NodeJS.Timeout | null = null;
   private filterStack: FilterStack | null = null;
 
-  private deadlineStartTime: Date | null = null;
-  private configReceivedTime: Date | null = null;
-  private childStartTime: Date | null = null;
+  private deadlineStartTime: number | null = null;
+  private configReceivedTime: number | null = null;
+  private childStartTime: number | null = null;
 
   /**
    * Credentials configured for this specific call. Does not include
@@ -117,8 +117,11 @@ export class ResolvingCall implements Call {
   }
 
   private runDeadlineTimer() {
-    clearTimeout(this.deadlineTimer);
-    this.deadlineStartTime = new Date();
+    if (this.deadlineTimer) {
+      clearTimeout(this.deadlineTimer);
+      this.deadlineTimer = null;
+    }
+    this.deadlineStartTime = Date.now();
     if (this.traceEnabled) {
       this.trace('Deadline: ' + deadlineToString(this.deadline));
     }
@@ -128,20 +131,36 @@ export class ResolvingCall implements Call {
         this.trace('Deadline will be reached in ' + timeout + 'ms');
       }
       const handleDeadline = () => {
-        if (!this.deadlineStartTime) {
+        this.deadlineTimer = null;
+        if (this.deadlineStartTime === null) {
           this.cancelWithStatus(Status.DEADLINE_EXCEEDED, 'Deadline exceeded');
           return;
         }
         const deadlineInfo: string[] = [];
-        const deadlineEndTime = new Date();
-        deadlineInfo.push(`Deadline exceeded after ${formatDateDifference(this.deadlineStartTime, deadlineEndTime)}`);
-        if (this.configReceivedTime) {
+        const deadlineEndTime = Date.now();
+        deadlineInfo.push(
+          `Deadline exceeded after ${formatDateDifference(
+            this.deadlineStartTime,
+            deadlineEndTime
+          )}`
+        );
+        if (this.configReceivedTime !== null) {
           if (this.configReceivedTime > this.deadlineStartTime) {
-            deadlineInfo.push(`name resolution: ${formatDateDifference(this.deadlineStartTime, this.configReceivedTime)}`);
+            deadlineInfo.push(
+              `name resolution: ${formatDateDifference(
+                this.deadlineStartTime,
+                this.configReceivedTime
+              )}`
+            );
           }
-          if (this.childStartTime) {
+          if (this.childStartTime !== null) {
             if (this.childStartTime > this.configReceivedTime) {
-              deadlineInfo.push(`metadata filters: ${formatDateDifference(this.configReceivedTime, this.childStartTime)}`);
+              deadlineInfo.push(
+                `metadata filters: ${formatDateDifference(
+                  this.configReceivedTime,
+                  this.childStartTime
+                )}`
+              );
             }
           } else {
             deadlineInfo.push('waiting for metadata filters');
@@ -168,7 +187,10 @@ export class ResolvingCall implements Call {
       if (!this.filterStack) {
         this.filterStack = this.filterStackFactory.createFilter();
       }
-      clearTimeout(this.deadlineTimer);
+      if (this.deadlineTimer) {
+        clearTimeout(this.deadlineTimer);
+        this.deadlineTimer = null;
+      }
       const filteredStatus = this.filterStack.receiveTrailers(status);
       if (this.traceEnabled) {
         this.trace(
@@ -228,7 +250,7 @@ export class ResolvingCall implements Call {
       return;
     }
     // configResult.type === 'SUCCESS'
-    this.configReceivedTime = new Date();
+    this.configReceivedTime = Date.now();
     const config = configResult.config;
     if (config.status !== Status.OK) {
       const { code, details } = restrictControlPlaneStatusCode(
@@ -244,14 +266,11 @@ export class ResolvingCall implements Call {
     }
 
     if (config.methodConfig.timeout) {
-      const configDeadline = new Date();
-      configDeadline.setSeconds(
-        configDeadline.getSeconds() + config.methodConfig.timeout.seconds
-      );
-      configDeadline.setMilliseconds(
-        configDeadline.getMilliseconds() +
+      const timeoutMs = Math.floor(
+        config.methodConfig.timeout.seconds * 1000 +
           config.methodConfig.timeout.nanos / 1_000_000
       );
+      const configDeadline = Date.now() + timeoutMs;
       this.deadline = minDeadline(this.deadline, configDeadline);
       this.runDeadlineTimer();
     }
@@ -271,7 +290,7 @@ export class ResolvingCall implements Call {
         if (this.traceEnabled) {
           this.trace('Created child [' + this.child.getCallNumber() + ']');
         }
-        this.childStartTime = new Date();
+        this.childStartTime = Date.now();
         this.child.start(filteredMetadata, {
           onReceiveMetadata: metadata => {
             this.trace('Received metadata');
