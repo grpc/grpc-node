@@ -214,7 +214,7 @@ function getTypeNamePermissive(fieldType: string, resolvedType: Protobuf.Type | 
     case 'sint64':
     case 'fixed64':
     case 'sfixed64':
-      return 'number | string | Long';
+      return 'number | string | Long | bigint';
     case 'bool':
       return 'boolean';
     case 'string':
@@ -312,6 +312,8 @@ function getTypeNameRestricted(fieldType: string, resolvedType: Protobuf.Type | 
         return 'number';
       } else if (options.longs === String) {
         return 'string';
+      } else if (options.longs === BigInt) {
+        return 'bigint';
       } else {
         return 'Long';
       }
@@ -887,6 +889,7 @@ async function runScript() {
       switch (value) {
         case 'String': return String;
         case 'Number': return Number;
+        case 'BigInt': return BigInt;
         default: return undefined;
       }
     }).coerce('enums', value => {
@@ -906,7 +909,7 @@ async function runScript() {
       verbose: 'v'
     }).describe({
       keepCase: 'Preserve the case of field names',
-      longs: 'The type that should be used to output 64 bit integer values. Can be String, Number',
+      longs: 'The type that should be used to output 64 bit integer values. Can be String, Number, BigInt',
       enums: 'The type that should be used to output enum fields. Can be String',
       bytes: 'The type that should be used to output bytes fields. Can be String, Array',
       defaults: 'Output default values for omitted fields',
