@@ -16,7 +16,7 @@
  */
 
 import { StatusObject, WriteObject } from './call-interface';
-import { Filter, FilterFactory } from './filter';
+import { BaseFilter, Filter, FilterFactory } from './filter';
 import { Metadata } from './metadata';
 
 export class FilterStack implements Filter {
@@ -27,6 +27,34 @@ export class FilterStack implements Filter {
 
     for (let i = 0; i < this.filters.length; i++) {
       result = this.filters[i].sendMetadata(result);
+    }
+
+    return result;
+  }
+
+  /* Note: sendMetadataMaybeSync, sendMessageMaybeSync, and
+   * receiveMessageMaybeSync are intentionally kept as separate methods rather
+   * than sharing a dynamic helper so that property accesses on each filter
+   * remain monomorphic in V8 inline caches. */
+  sendMetadataMaybeSync(metadata: Metadata): Metadata | Promise<Metadata> {
+    let result: Metadata | Promise<Metadata> = metadata;
+
+    for (let i = 0; i < this.filters.length; i++) {
+      const filter = this.filters[i];
+      if (filter.sendMetadataMaybeSync) {
+        result =
+          result instanceof Promise
+            ? result.then(resolvedMetadata =>
+                filter.sendMetadataMaybeSync!(resolvedMetadata)
+              )
+            : filter.sendMetadataMaybeSync(result);
+      } else if (filter.sendMetadata === BaseFilter.prototype.sendMetadata) {
+        // Default pass-through: no-op for both sync and Promise values
+      } else {
+        /* Normalize custom thenables or cross-realm promises into a native
+         * Promise so downstream `instanceof Promise` checks remain valid. */
+        result = Promise.resolve(filter.sendMetadata(Promise.resolve(result)));
+      }
     }
 
     return result;
@@ -52,11 +80,61 @@ export class FilterStack implements Filter {
     return result;
   }
 
+  sendMessageMaybeSync(
+    message: WriteObject
+  ): WriteObject | Promise<WriteObject> {
+    let result: WriteObject | Promise<WriteObject> = message;
+
+    for (let i = 0; i < this.filters.length; i++) {
+      const filter = this.filters[i];
+      if (filter.sendMessageMaybeSync) {
+        result =
+          result instanceof Promise
+            ? result.then(resolvedMessage =>
+                filter.sendMessageMaybeSync!(resolvedMessage)
+              )
+            : filter.sendMessageMaybeSync(result);
+      } else if (filter.sendMessage === BaseFilter.prototype.sendMessage) {
+        // Default pass-through: no-op for both sync and Promise values
+      } else {
+        result = Promise.resolve(filter.sendMessage(Promise.resolve(result)));
+      }
+    }
+
+    return result;
+  }
+
   receiveMessage(message: Promise<Buffer>): Promise<Buffer> {
     let result: Promise<Buffer> = message;
 
     for (let i = this.filters.length - 1; i >= 0; i--) {
       result = this.filters[i].receiveMessage(result);
+    }
+
+    return result;
+  }
+
+  receiveMessageMaybeSync(message: Buffer): Buffer | Promise<Buffer> {
+    let result: Buffer | Promise<Buffer> = message;
+
+    for (let i = this.filters.length - 1; i >= 0; i--) {
+      const filter = this.filters[i];
+      if (filter.receiveMessageMaybeSync) {
+        result =
+          result instanceof Promise
+            ? result.then(resolvedMessage =>
+                filter.receiveMessageMaybeSync!(resolvedMessage)
+              )
+            : filter.receiveMessageMaybeSync(result);
+      } else if (
+        filter.receiveMessage === BaseFilter.prototype.receiveMessage
+      ) {
+        // Default pass-through: no-op for both sync and Promise values
+      } else {
+        result = Promise.resolve(
+          filter.receiveMessage(Promise.resolve(result))
+        );
+      }
     }
 
     return result;

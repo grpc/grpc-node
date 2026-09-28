@@ -34,11 +34,58 @@ export interface Filter {
   receiveMessage(message: Promise<Buffer>): Promise<Buffer>;
 
   receiveTrailers(status: StatusObject): StatusObject;
+
+  /**
+   * Optional synchronous fast path for sendMetadata. When present, FilterStack
+   * calls this method instead of sendMetadata, so both must behave identically.
+   * Return the Metadata directly when no asynchronous work is needed, or a
+   * Promise (checked via `instanceof Promise`) otherwise. Report failures by
+   * returning a rejected Promise whose reason is a StatusObject rather than
+   * throwing synchronously.
+   */
+  sendMetadataMaybeSync?(metadata: Metadata): Metadata | Promise<Metadata>;
+
+  /**
+   * Optional synchronous fast path for sendMessage. When present, FilterStack
+   * calls this method instead of sendMessage, so both must behave identically.
+   * Return the WriteObject directly when no asynchronous work is needed, or a
+   * Promise (checked via `instanceof Promise`) otherwise. Report failures by
+   * returning a rejected Promise whose reason is a StatusObject rather than
+   * throwing synchronously.
+   */
+  sendMessageMaybeSync?(
+    message: WriteObject
+  ): WriteObject | Promise<WriteObject>;
+
+  /**
+   * Optional synchronous fast path for receiveMessage. When present,
+   * FilterStack calls this method instead of receiveMessage, so both must
+   * behave identically. Return the Buffer directly when no asynchronous work is
+   * needed, or a Promise (checked via `instanceof Promise`) otherwise. Report
+   * failures by returning a rejected Promise whose reason is a StatusObject
+   * rather than throwing synchronously.
+   */
+  receiveMessageMaybeSync?(message: Buffer): Buffer | Promise<Buffer>;
 }
 
+/**
+ * Base class for filters with no-op default implementations. FilterStack's
+ * synchronous fast-path methods detect and skip methods inherited unchanged
+ * from BaseFilter without allocating a Promise.
+ */
 export abstract class BaseFilter implements Filter {
+  sendMetadataMaybeSync?(metadata: Metadata): Metadata | Promise<Metadata>;
+
+  sendMessageMaybeSync?(
+    message: WriteObject
+  ): WriteObject | Promise<WriteObject>;
+
+  receiveMessageMaybeSync?(message: Buffer): Buffer | Promise<Buffer>;
+
   async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    return metadata;
+    return this.sendMetadataMaybeSync
+      ? this.sendMetadataMaybeSync(await metadata)
+      : metadata;
   }
 
   receiveMetadata(metadata: Metadata): Metadata {
@@ -46,11 +93,15 @@ export abstract class BaseFilter implements Filter {
   }
 
   async sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
-    return message;
+    return this.sendMessageMaybeSync
+      ? this.sendMessageMaybeSync(await message)
+      : message;
   }
 
   async receiveMessage(message: Promise<Buffer>): Promise<Buffer> {
-    return message;
+    return this.receiveMessageMaybeSync
+      ? this.receiveMessageMaybeSync(await message)
+      : message;
   }
 
   receiveTrailers(status: StatusObject): StatusObject {
