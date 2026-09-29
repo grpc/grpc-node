@@ -125,3 +125,29 @@ export function uriToString(uri: GrpcUri): string {
   result += uri.path;
   return result;
 }
+
+/**
+ * Extracts the service name from a gRPC method path (e.g.
+ * "/package.Service/Method" -> "package.Service").
+ */
+export function extractServiceName(methodName: string): string {
+  const firstSlashIndex = methodName.indexOf('/');
+  if (firstSlashIndex === -1) {
+    return '';
+  }
+  const secondSlashIndex = methodName.indexOf('/', firstSlashIndex + 1);
+  if (secondSlashIndex === -1) {
+    return methodName.substring(firstSlashIndex + 1);
+  }
+  return methodName.substring(firstSlashIndex + 1, secondSlashIndex);
+}
+
+/**
+ * Computes the service URL used by call credentials (e.g.
+ * "https://hostname/serviceName").
+ */
+export function computeServiceUrl(host: string, methodName: string): string {
+  const serviceName = extractServiceName(methodName);
+  const hostname = splitHostPort(host)?.host ?? 'localhost';
+  return `https://${hostname}/${serviceName}`;
+}
