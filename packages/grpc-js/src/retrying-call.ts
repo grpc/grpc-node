@@ -718,8 +718,9 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
       startTime: Date.now(),
     });
     const previousAttempts = this.attempts - 1;
-    const initialMetadata = this.initialMetadata!.clone();
+    let initialMetadata = this.initialMetadata!;
     if (previousAttempts > 0) {
+      initialMetadata = initialMetadata.clone();
       initialMetadata.set(
         PREVIONS_RPC_ATTEMPTS_METADATA_KEY,
         `${previousAttempts}`
