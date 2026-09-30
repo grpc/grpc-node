@@ -53,6 +53,8 @@ const serviceImpl = {
 describe('Retries', () => {
   let server: grpc.Server;
   let port: number;
+  const originalClone = grpc.Metadata.prototype.clone;
+
   before(done => {
     server = new grpc.Server();
     server.addService(EchoService.service, serviceImpl);
@@ -69,6 +71,10 @@ describe('Retries', () => {
         done();
       }
     );
+  });
+
+  afterEach(() => {
+    grpc.Metadata.prototype.clone = originalClone;
   });
 
   after(() => {
@@ -343,6 +349,108 @@ describe('Retries', () => {
         }
       );
     });
+
+    it('Should not clone metadata in RetryingCall on the initial attempt', done => {
+      const metadata = new grpc.Metadata();
+      metadata.set('custom-header', 'custom-value');
+      const clonedInstances: grpc.Metadata[] = [];
+      grpc.Metadata.prototype.clone = function (this: grpc.Metadata) {
+        const cloned = originalClone.call(this);
+        clonedInstances.push(cloned);
+        return cloned;
+      };
+      client.echo(
+        { value: 'test value', value2: 3 },
+        metadata,
+        { deadline: Date.now() + 10000 },
+        (error: grpc.ServiceError, response: any) => {
+          grpc.Metadata.prototype.clone = originalClone;
+          assert.ifError(error);
+          assert.deepStrictEqual(response, { value: 'test value', value2: 3 });
+          // Cloned only in ResolvingCall.start and LoadBalancingCall.doPick
+          assert.strictEqual(clonedInstances.length, 2);
+          // Caller metadata remains unmutated
+          assert.deepStrictEqual(metadata.getMap(), {
+            'custom-header': 'custom-value',
+          });
+          // First clone (RetryingCall.initialMetadata / LoadBalancingCall.metadata)
+          // must not be mutated by LoadBalancingCall.doPick (e.g. grpc-timeout)
+          const retryingCallInitialMetadata = clonedInstances[0];
+          assert.strictEqual(
+            retryingCallInitialMetadata.get('grpc-timeout').length,
+            0
+          );
+          // Second clone (finalMetadata in LoadBalancingCall.doPick) receives grpc-timeout
+          const loadBalancingFinalMetadata = clonedInstances[1];
+          assert.strictEqual(
+            loadBalancingFinalMetadata.get('grpc-timeout').length,
+            1
+          );
+          done();
+        }
+      );
+    });
+
+    it('Should clone metadata on retry attempts without mutating RetryingCall initialMetadata', done => {
+      const metadata = new grpc.Metadata();
+      metadata.set('succeed-on-retry-attempt', '2');
+      metadata.set('respond-with-status', `${grpc.status.RESOURCE_EXHAUSTED}`);
+      const callCredentials = grpc.credentials.createFromMetadataGenerator(
+        (_options, callback) => {
+          const credentialsMetadata = new grpc.Metadata();
+          credentialsMetadata.set('authorization', 'Bearer test-token');
+          callback(null, credentialsMetadata);
+        }
+      );
+      const clonedInstances: grpc.Metadata[] = [];
+      grpc.Metadata.prototype.clone = function (this: grpc.Metadata) {
+        const cloned = originalClone.call(this);
+        clonedInstances.push(cloned);
+        return cloned;
+      };
+      client.echo(
+        { value: 'test value', value2: 3 },
+        metadata,
+        { credentials: callCredentials, deadline: Date.now() + 10000 },
+        (error: grpc.ServiceError, response: any) => {
+          grpc.Metadata.prototype.clone = originalClone;
+          assert.ifError(error);
+          assert.deepStrictEqual(response, { value: 'test value', value2: 3 });
+          // 1 in ResolvingCall.start + 2 in RetryingCall (attempts 2 & 3) + 3 in LoadBalancingCall.doPick
+          assert.strictEqual(clonedInstances.length, 6);
+          assert.strictEqual(
+            metadata.get('grpc-previous-rpc-attempts').length,
+            0
+          );
+          assert.strictEqual(metadata.get('authorization').length, 0);
+          assert.strictEqual(metadata.get('grpc-timeout').length, 0);
+          // First clone (RetryingCall.initialMetadata, passed uncloned to LoadBalancingCall on attempt 1)
+          // must not be polluted by RetryingCall, LoadBalancingCall, or post-start caller mutations
+          const retryingCallInitialMetadata = clonedInstances[0];
+          assert.strictEqual(
+            retryingCallInitialMetadata.get('grpc-previous-rpc-attempts')
+              .length,
+            0
+          );
+          assert.strictEqual(
+            retryingCallInitialMetadata.get('authorization').length,
+            0
+          );
+          assert.strictEqual(
+            retryingCallInitialMetadata.get('grpc-timeout').length,
+            0
+          );
+          assert.strictEqual(
+            retryingCallInitialMetadata.get('mutated-after-start').length,
+            0
+          );
+          done();
+        }
+      );
+      // Mutate caller metadata while the RPC and its retry attempts are in flight
+      metadata.set('mutated-after-start', 'true');
+      metadata.set('succeed-on-retry-attempt', '99');
+    });
   });
 
   describe('Client with hedging configured', () => {
@@ -462,6 +570,52 @@ describe('Retries', () => {
         (error: grpc.ServiceError, response: any) => {
           assert(error);
           assert(error.details.startsWith('Failed on retry'));
+          done();
+        }
+      );
+    });
+
+    it('Should clone metadata on hedged attempts without mutating RetryingCall initialMetadata', done => {
+      const metadata = new grpc.Metadata();
+      metadata.set('succeed-on-retry-attempt', '2');
+      metadata.set('respond-with-status', `${grpc.status.RESOURCE_EXHAUSTED}`);
+      const callCredentials = grpc.credentials.createFromMetadataGenerator(
+        (_options, callback) => {
+          const credentialsMetadata = new grpc.Metadata();
+          credentialsMetadata.set('authorization', 'Bearer test-token');
+          callback(null, credentialsMetadata);
+        }
+      );
+      const clonedInstances: grpc.Metadata[] = [];
+      grpc.Metadata.prototype.clone = function (this: grpc.Metadata) {
+        const cloned = originalClone.call(this);
+        clonedInstances.push(cloned);
+        return cloned;
+      };
+      client.echo(
+        { value: 'test value', value2: 3 },
+        metadata,
+        { credentials: callCredentials, deadline: Date.now() + 10000 },
+        (error: grpc.ServiceError, response: any) => {
+          grpc.Metadata.prototype.clone = originalClone;
+          assert.ifError(error);
+          assert.deepStrictEqual(response, { value: 'test value', value2: 3 });
+          // 1 in ResolvingCall.start + 2 in RetryingCall (hedged attempts 2 & 3) + 3 in LoadBalancingCall.doPick
+          assert.strictEqual(clonedInstances.length, 6);
+          const retryingCallInitialMetadata = clonedInstances[0];
+          assert.strictEqual(
+            retryingCallInitialMetadata.get('grpc-previous-rpc-attempts')
+              .length,
+            0
+          );
+          assert.strictEqual(
+            retryingCallInitialMetadata.get('authorization').length,
+            0
+          );
+          assert.strictEqual(
+            retryingCallInitialMetadata.get('grpc-timeout').length,
+            0
+          );
           done();
         }
       );
