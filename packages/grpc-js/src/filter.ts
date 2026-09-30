@@ -20,88 +20,39 @@ import { Metadata } from './metadata';
 
 /**
  * Filter classes represent related per-call logic and state that is primarily
- * used to modify incoming and outgoing data. All async filters can be
- * rejected. The rejection error must be a StatusObject, and a rejection will
- * cause the call to end with that status.
+ * used to modify incoming and outgoing data. The sendMetadata, sendMessage,
+ * and receiveMessage methods may return their result directly when no
+ * asynchronous work is needed, or a thenable otherwise. All async filters can
+ * be rejected. The rejection error must be a StatusObject, and a rejection
+ * will cause the call to end with that status.
  */
 export interface Filter {
-  sendMetadata(metadata: Promise<Metadata>): Promise<Metadata>;
+  sendMetadata(metadata: Metadata): Metadata | PromiseLike<Metadata>;
 
   receiveMetadata(metadata: Metadata): Metadata;
 
-  sendMessage(message: Promise<WriteObject>): Promise<WriteObject>;
+  sendMessage(message: WriteObject): WriteObject | PromiseLike<WriteObject>;
 
-  receiveMessage(message: Promise<Buffer>): Promise<Buffer>;
+  receiveMessage(message: Buffer): Buffer | PromiseLike<Buffer>;
 
   receiveTrailers(status: StatusObject): StatusObject;
-
-  /**
-   * Optional synchronous fast path for sendMetadata. When present, FilterStack
-   * calls this method instead of sendMetadata, so both must behave identically.
-   * Return the Metadata directly when no asynchronous work is needed, or a
-   * Promise (checked via `instanceof Promise`) otherwise. Report failures by
-   * returning a rejected Promise whose reason is a StatusObject rather than
-   * throwing synchronously.
-   */
-  sendMetadataMaybeSync?(metadata: Metadata): Metadata | Promise<Metadata>;
-
-  /**
-   * Optional synchronous fast path for sendMessage. When present, FilterStack
-   * calls this method instead of sendMessage, so both must behave identically.
-   * Return the WriteObject directly when no asynchronous work is needed, or a
-   * Promise (checked via `instanceof Promise`) otherwise. Report failures by
-   * returning a rejected Promise whose reason is a StatusObject rather than
-   * throwing synchronously.
-   */
-  sendMessageMaybeSync?(
-    message: WriteObject
-  ): WriteObject | Promise<WriteObject>;
-
-  /**
-   * Optional synchronous fast path for receiveMessage. When present,
-   * FilterStack calls this method instead of receiveMessage, so both must
-   * behave identically. Return the Buffer directly when no asynchronous work is
-   * needed, or a Promise (checked via `instanceof Promise`) otherwise. Report
-   * failures by returning a rejected Promise whose reason is a StatusObject
-   * rather than throwing synchronously.
-   */
-  receiveMessageMaybeSync?(message: Buffer): Buffer | Promise<Buffer>;
 }
 
-/**
- * Base class for filters with no-op default implementations. FilterStack's
- * synchronous fast-path methods detect and skip methods inherited unchanged
- * from BaseFilter without allocating a Promise.
- */
 export abstract class BaseFilter implements Filter {
-  sendMetadataMaybeSync?(metadata: Metadata): Metadata | Promise<Metadata>;
-
-  sendMessageMaybeSync?(
-    message: WriteObject
-  ): WriteObject | Promise<WriteObject>;
-
-  receiveMessageMaybeSync?(message: Buffer): Buffer | Promise<Buffer>;
-
-  async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    return this.sendMetadataMaybeSync
-      ? this.sendMetadataMaybeSync(await metadata)
-      : metadata;
+  sendMetadata(metadata: Metadata): Metadata | PromiseLike<Metadata> {
+    return metadata;
   }
 
   receiveMetadata(metadata: Metadata): Metadata {
     return metadata;
   }
 
-  async sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
-    return this.sendMessageMaybeSync
-      ? this.sendMessageMaybeSync(await message)
-      : message;
+  sendMessage(message: WriteObject): WriteObject | PromiseLike<WriteObject> {
+    return message;
   }
 
-  async receiveMessage(message: Promise<Buffer>): Promise<Buffer> {
-    return this.receiveMessageMaybeSync
-      ? this.receiveMessageMaybeSync(await message)
-      : message;
+  receiveMessage(message: Buffer): Buffer | PromiseLike<Buffer> {
+    return message;
   }
 
   receiveTrailers(status: StatusObject): StatusObject {
@@ -111,4 +62,16 @@ export abstract class BaseFilter implements Filter {
 
 export interface FilterFactory<T extends Filter> {
   createFilter(): T;
+}
+
+/**
+ * Checks whether a filter result is a thenable that must be awaited, rather
+ * than a value that is already available. This is used instead of
+ * `instanceof Promise` so that promises from other realms and custom
+ * thenables are also recognized.
+ */
+export function isThenable<T>(
+  value: T | PromiseLike<T>
+): value is PromiseLike<T> {
+  return typeof (value as PromiseLike<T>)?.then === 'function';
 }

@@ -33,7 +33,7 @@ import {
 } from '../src/compression-filter';
 import { ConnectivityState } from '../src/connectivity-state';
 import { Status } from '../src/constants';
-import { BaseFilter, Filter, FilterFactory } from '../src/filter';
+import { BaseFilter, Filter, FilterFactory, isThenable } from '../src/filter';
 import { FilterStack, FilterStackFactory } from '../src/filter-stack';
 import { InternalChannel } from '../src/internal-channel';
 import { LoadBalancingCall } from '../src/load-balancing-call';
@@ -59,26 +59,23 @@ class AsyncHeaderFilter extends BaseFilter implements Filter {
     super();
   }
 
-  async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    const resolvedMetadata = await metadata;
+  async sendMetadata(metadata: Metadata): Promise<Metadata> {
     await Promise.resolve();
-    resolvedMetadata.set(this.headerKey, this.headerValue);
-    return resolvedMetadata;
+    metadata.set(this.headerKey, this.headerValue);
+    return metadata;
   }
 
-  async sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
-    const resolvedMessage = await message;
+  async sendMessage(message: WriteObject): Promise<WriteObject> {
     await Promise.resolve();
     return {
-      message: Buffer.concat([Buffer.from('prefix:'), resolvedMessage.message]),
-      flags: resolvedMessage.flags,
+      message: Buffer.concat([Buffer.from('prefix:'), message.message]),
+      flags: message.flags,
     };
   }
 
-  async receiveMessage(message: Promise<Buffer>): Promise<Buffer> {
-    const resolvedMessage = await message;
+  async receiveMessage(message: Buffer): Promise<Buffer> {
     await Promise.resolve();
-    return Buffer.concat([resolvedMessage, Buffer.from(':suffix')]);
+    return Buffer.concat([message, Buffer.from(':suffix')]);
   }
 }
 
@@ -93,88 +90,80 @@ class AsyncHeaderFilterFactory implements FilterFactory<AsyncHeaderFilter> {
   }
 }
 
-function createCustomThenable<T>(promise: Promise<T>): Promise<T> {
+/**
+ * Returns a minimal thenable that resolves to the given value and is not an
+ * instance of Promise, to simulate promises from other realms or custom
+ * promise implementations.
+ */
+function createCustomThenable<T>(value: T): PromiseLike<T> {
+  const promise = Promise.resolve(value);
   return {
     then<TResult1 = T, TResult2 = never>(
       onFulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null,
       onRejected?:
         | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
         | null
-    ) {
+    ): PromiseLike<TResult1 | TResult2> {
       return promise.then(onFulfilled, onRejected);
     },
-  } as unknown as Promise<T>;
+  };
 }
 
-class ThenableLegacyFilter extends BaseFilter implements Filter {
-  sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    return createCustomThenable(
-      metadata.then(resolvedMetadata => {
-        resolvedMetadata.set('x-thenable', 'true');
-        return resolvedMetadata;
-      })
-    );
+class ThenableFilter extends BaseFilter implements Filter {
+  sendMetadata(metadata: Metadata): PromiseLike<Metadata> {
+    metadata.set('x-thenable', 'true');
+    return createCustomThenable(metadata);
   }
 
-  sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
-    return createCustomThenable(
-      message.then(resolvedMessage => ({
-        message: Buffer.concat([
-          Buffer.from('thenable:'),
-          resolvedMessage.message,
-        ]),
-        flags: resolvedMessage.flags,
-      }))
-    );
+  sendMessage(message: WriteObject): PromiseLike<WriteObject> {
+    return createCustomThenable({
+      message: Buffer.concat([Buffer.from('thenable:'), message.message]),
+      flags: message.flags,
+    });
   }
 
-  receiveMessage(message: Promise<Buffer>): Promise<Buffer> {
+  receiveMessage(message: Buffer): PromiseLike<Buffer> {
     return createCustomThenable(
-      message.then(resolvedMessage =>
-        Buffer.concat([resolvedMessage, Buffer.from(':thenable')])
-      )
+      Buffer.concat([message, Buffer.from(':thenable')])
     );
   }
 }
 
-class ThenableLegacyFilterFactory
-  implements FilterFactory<ThenableLegacyFilter>
-{
-  createFilter(): ThenableLegacyFilter {
-    return new ThenableLegacyFilter();
+class ThenableFilterFactory implements FilterFactory<ThenableFilter> {
+  createFilter(): ThenableFilter {
+    return new ThenableFilter();
   }
 }
 
-class MaybeSyncOnlyFilter extends BaseFilter implements Filter {
-  sendMetadataMaybeSync(metadata: Metadata): Metadata {
-    metadata.set('x-maybe-sync-only', 'true');
+class SyncFilter extends BaseFilter implements Filter {
+  sendMetadata(metadata: Metadata): Metadata {
+    metadata.set('x-sync', 'true');
     return metadata;
   }
 
-  sendMessageMaybeSync(message: WriteObject): WriteObject {
+  sendMessage(message: WriteObject): WriteObject {
     return {
       message: Buffer.concat([Buffer.from('sync:'), message.message]),
       flags: message.flags,
     };
   }
 
-  receiveMessageMaybeSync(message: Buffer): Buffer {
+  receiveMessage(message: Buffer): Buffer {
     return Buffer.concat([message, Buffer.from(':sync')]);
   }
 }
 
-class MaybeSyncOnlyFilterFactory implements FilterFactory<MaybeSyncOnlyFilter> {
-  createFilter(): MaybeSyncOnlyFilter {
-    return new MaybeSyncOnlyFilter();
+class SyncFilterFactory implements FilterFactory<SyncFilter> {
+  createFilter(): SyncFilter {
+    return new SyncFilter();
   }
 }
 
 class AsyncMetadataOnlyFilter extends BaseFilter implements Filter {
-  async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    const resolvedMetadata = await metadata;
+  async sendMetadata(metadata: Metadata): Promise<Metadata> {
     await Promise.resolve();
-    resolvedMetadata.set('x-metadata-only-async', 'true');
-    return resolvedMetadata;
+    metadata.set('x-metadata-only-async', 'true');
+    return metadata;
   }
 }
 
@@ -187,7 +176,7 @@ class AsyncMetadataOnlyFilterFactory
 }
 
 class RejectingMetadataFilter extends BaseFilter implements Filter {
-  sendMetadata(_metadata: Promise<Metadata>): Promise<Metadata> {
+  sendMetadata(_metadata: Metadata): Promise<Metadata> {
     return Promise.reject({
       code: Status.PERMISSION_DENIED,
       details: 'Rejected by metadata filter',
@@ -216,14 +205,14 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
   const dummyChannel = {} as Channel;
 
   describe('CompressionFilter', () => {
-    it('executes sendMetadataMaybeSync synchronously', () => {
+    it('executes sendMetadata synchronously', () => {
       const factory = new CompressionFilterFactory(dummyChannel, {});
       const filter: CompressionFilter = factory.createFilter();
       const metadata = new Metadata();
       metadata.set('grpc-encoding', 'gzip');
 
-      const result = filter.sendMetadataMaybeSync(metadata);
-      assert(!(result instanceof Promise));
+      const result = filter.sendMetadata(metadata);
+      assert(!isThenable(result));
       assert.strictEqual(result, metadata);
       assert.deepStrictEqual(result.get('grpc-accept-encoding'), [
         'identity,deflate,gzip',
@@ -239,54 +228,54 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
       const filter = factory.createFilter();
       const metadata = new Metadata();
 
-      const result = filter.sendMetadataMaybeSync(metadata);
-      assert(!(result instanceof Promise));
+      const result = filter.sendMetadata(metadata);
+      assert(!isThenable(result));
       assert.deepStrictEqual(result.get('grpc-encoding'), ['gzip']);
     });
 
-    it('executes sendMessageMaybeSync synchronously for identity compression', () => {
+    it('executes sendMessage synchronously for identity compression', () => {
       const factory = new CompressionFilterFactory(dummyChannel, {});
       const filter = factory.createFilter();
       const payload = Buffer.from('hello world');
 
-      const result = filter.sendMessageMaybeSync({ message: payload });
-      assert(!(result instanceof Promise));
+      const result = filter.sendMessage({ message: payload });
+      assert(!isThenable(result));
       assert.strictEqual(result.flags, undefined);
       assert.strictEqual(result.message.readUInt8(0), 0);
       assert.strictEqual(result.message.readUInt32BE(1), payload.length);
       assert.deepStrictEqual(result.message.subarray(5), payload);
     });
 
-    it('executes sendMessageMaybeSync synchronously when WriteFlags.NoCompress is set with gzip', () => {
+    it('executes sendMessage synchronously when WriteFlags.NoCompress is set with gzip', () => {
       const factory = new CompressionFilterFactory(dummyChannel, {
         'grpc.default_compression_algorithm': CompressionAlgorithms.gzip,
       });
       const filter = factory.createFilter();
       const payload = Buffer.from('hello uncompressed');
 
-      const result = filter.sendMessageMaybeSync({
+      const result = filter.sendMessage({
         message: payload,
         flags: WriteFlags.NoCompress,
       });
-      assert(!(result instanceof Promise));
+      assert(!isThenable(result));
       assert.strictEqual(result.flags, WriteFlags.NoCompress);
       assert.strictEqual(result.message.readUInt8(0), 0);
       assert.strictEqual(result.message.readUInt32BE(1), payload.length);
       assert.deepStrictEqual(result.message.subarray(5), payload);
     });
 
-    it('returns a Promise from sendMessageMaybeSync when compressing with gzip', async () => {
+    it('returns a Promise from sendMessage when compressing with gzip', async () => {
       const factory = new CompressionFilterFactory(dummyChannel, {
         'grpc.default_compression_algorithm': CompressionAlgorithms.gzip,
       });
       const filter = factory.createFilter();
       const payload = Buffer.from('hello compressed world');
 
-      const result = filter.sendMessageMaybeSync({
+      const result = filter.sendMessage({
         message: payload,
         flags: 0,
       });
-      assert(result instanceof Promise);
+      assert(isThenable(result));
       const resolved = await result;
       assert.strictEqual(resolved.flags, 0);
       assert.strictEqual(resolved.message.readUInt8(0), 1);
@@ -298,33 +287,33 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
       assert.deepStrictEqual(zlib.gunzipSync(compressedBytes), payload);
     });
 
-    it('returns a rejected Promise from sendMessageMaybeSync when maxSendMessageLength is exceeded', async () => {
+    it('returns a rejected Promise from sendMessage when maxSendMessageLength is exceeded', async () => {
       const factory = new CompressionFilterFactory(dummyChannel, {
         'grpc.max_send_message_length': 5,
       });
       const filter = factory.createFilter();
       const payload = Buffer.from('message longer than 5 bytes');
 
-      const result = filter.sendMessageMaybeSync({ message: payload });
-      assert(result instanceof Promise);
+      const result = filter.sendMessage({ message: payload });
+      assert(isThenable(result));
       await assert.rejects(result, (error: StatusObject) => {
         assert.strictEqual(error.code, Status.RESOURCE_EXHAUSTED);
         return true;
       });
     });
 
-    it('executes receiveMessageMaybeSync synchronously for uncompressed messages', () => {
+    it('executes receiveMessage synchronously for uncompressed messages', () => {
       const factory = new CompressionFilterFactory(dummyChannel, {});
       const filter = factory.createFilter();
       const payload = Buffer.from('response payload');
       const framed = frameMessage(payload, false);
 
-      const result = filter.receiveMessageMaybeSync(framed);
-      assert(!(result instanceof Promise));
+      const result = filter.receiveMessage(framed);
+      assert(!isThenable(result));
       assert.deepStrictEqual(result, payload);
     });
 
-    it('returns a Promise from receiveMessageMaybeSync for compressed messages', async () => {
+    it('returns a Promise from receiveMessage for compressed messages', async () => {
       const factory = new CompressionFilterFactory(dummyChannel, {});
       const filter = factory.createFilter();
       const responseMetadata = new Metadata();
@@ -334,8 +323,8 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
       const payload = Buffer.from('compressed response payload');
       const framed = frameMessage(zlib.gzipSync(payload), true);
 
-      const result = filter.receiveMessageMaybeSync(framed);
-      assert(result instanceof Promise);
+      const result = filter.receiveMessage(framed);
+      assert(isThenable(result));
       const decompressed = await result;
       assert.deepStrictEqual(decompressed, payload);
     });
@@ -346,8 +335,8 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
       });
       const filter = factory.createFilter();
 
-      // Before receiveMetadata, sendMetadataMaybeSync sets grpc-encoding: gzip
-      const initialMetadata = filter.sendMetadataMaybeSync(new Metadata());
+      // Before receiveMetadata, sendMetadata sets grpc-encoding: gzip
+      const initialMetadata = filter.sendMetadata(new Metadata());
       assert.deepStrictEqual(initialMetadata.get('grpc-encoding'), ['gzip']);
 
       // Server responds with grpc-accept-encoding that only supports identity
@@ -361,52 +350,52 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
 
       // Current filter now frames messages synchronously with identity (uncompressed)
       const payload = Buffer.from('fallback to identity');
-      const sendResult = filter.sendMessageMaybeSync({ message: payload });
-      assert(!(sendResult instanceof Promise));
+      const sendResult = filter.sendMessage({ message: payload });
+      assert(!isThenable(sendResult));
       assert.strictEqual(sendResult.message.readUInt8(0), 0);
       assert.strictEqual(sendResult.message.readUInt32BE(1), payload.length);
       assert.deepStrictEqual(sendResult.message.subarray(5), payload);
 
       // Subsequent filters created by the same factory also default to identity
       const nextFilter = factory.createFilter();
-      const nextMetadata = nextFilter.sendMetadataMaybeSync(new Metadata());
+      const nextMetadata = nextFilter.sendMetadata(new Metadata());
       assert.deepStrictEqual(nextMetadata.get('grpc-encoding'), []);
-      const nextSendResult = nextFilter.sendMessageMaybeSync({
+      const nextSendResult = nextFilter.sendMessage({
         message: payload,
       });
-      assert(!(nextSendResult instanceof Promise));
+      assert(!isThenable(nextSendResult));
       assert.strictEqual(nextSendResult.message.readUInt8(0), 0);
     });
   });
 
   describe('FilterStack', () => {
-    it('executes synchronously with CompressionFilter, MaybeSyncOnlyFilter, and BaseFilter pass-throughs', () => {
+    it('executes synchronously with CompressionFilter, SyncFilter, and BaseFilter pass-throughs', () => {
       const stackFactory = new FilterStackFactory([
         new NoopPassThroughFilterFactory(),
-        new MaybeSyncOnlyFilterFactory(),
+        new SyncFilterFactory(),
         new CompressionFilterFactory(dummyChannel, {}),
       ]);
       const stack: FilterStack = stackFactory.createFilter();
 
       const metadata = new Metadata();
-      const metadataResult = stack.sendMetadataMaybeSync(metadata);
-      assert(!(metadataResult instanceof Promise));
-      assert.deepStrictEqual(metadataResult.get('x-maybe-sync-only'), ['true']);
+      const metadataResult = stack.sendMetadata(metadata);
+      assert(!isThenable(metadataResult));
+      assert.deepStrictEqual(metadataResult.get('x-sync'), ['true']);
       assert.deepStrictEqual(metadataResult.get('grpc-accept-encoding'), [
         'identity,deflate,gzip',
       ]);
 
       const payload = Buffer.from('sync stack message');
-      const sendResult = stack.sendMessageMaybeSync({ message: payload });
-      assert(!(sendResult instanceof Promise));
+      const sendResult = stack.sendMessage({ message: payload });
+      assert(!isThenable(sendResult));
       assert.strictEqual(sendResult.message.readUInt8(0), 0);
       assert.deepStrictEqual(
         sendResult.message.subarray(5),
         Buffer.from('sync:sync stack message')
       );
 
-      const receiveResult = stack.receiveMessageMaybeSync(sendResult.message);
-      assert(!(receiveResult instanceof Promise));
+      const receiveResult = stack.receiveMessage(sendResult.message);
+      assert(!isThenable(receiveResult));
       assert.deepStrictEqual(
         receiveResult,
         Buffer.from('sync:sync stack message:sync')
@@ -416,29 +405,27 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
     it('transitions to Promise chaining when an async filter is in the stack', async () => {
       const stackFactory = new FilterStackFactory([
         new AsyncHeaderFilterFactory('x-custom-async', 'enabled'),
-        new MaybeSyncOnlyFilterFactory(),
+        new SyncFilterFactory(),
         new NoopPassThroughFilterFactory(),
         new CompressionFilterFactory(dummyChannel, {}),
       ]);
       const stack: FilterStack = stackFactory.createFilter();
 
       const metadata = new Metadata();
-      const metadataResult = stack.sendMetadataMaybeSync(metadata);
-      assert(metadataResult instanceof Promise);
+      const metadataResult = stack.sendMetadata(metadata);
+      assert(isThenable(metadataResult));
       const resolvedMetadata = await metadataResult;
       assert.deepStrictEqual(resolvedMetadata.get('x-custom-async'), [
         'enabled',
       ]);
-      assert.deepStrictEqual(resolvedMetadata.get('x-maybe-sync-only'), [
-        'true',
-      ]);
+      assert.deepStrictEqual(resolvedMetadata.get('x-sync'), ['true']);
       assert.deepStrictEqual(resolvedMetadata.get('grpc-accept-encoding'), [
         'identity,deflate,gzip',
       ]);
 
       const payload = Buffer.from('body');
-      const sendResult = stack.sendMessageMaybeSync({ message: payload });
-      assert(sendResult instanceof Promise);
+      const sendResult = stack.sendMessage({ message: payload });
+      assert(isThenable(sendResult));
       const resolvedSend = await sendResult;
       const expectedSentPayload = Buffer.from('sync:prefix:body');
       assert.deepStrictEqual(
@@ -446,18 +433,18 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
         expectedSentPayload
       );
 
-      // Test receiveMessageMaybeSync when inner CompressionFilter and MaybeSyncOnlyFilter are synchronous
+      // Test receiveMessage when inner CompressionFilter and SyncFilter are synchronous
       // and outer AsyncHeaderFilter transitions to a Promise
-      const receiveResult = stack.receiveMessageMaybeSync(resolvedSend.message);
-      assert(receiveResult instanceof Promise);
+      const receiveResult = stack.receiveMessage(resolvedSend.message);
+      assert(isThenable(receiveResult));
       const resolvedReceive = await receiveResult;
       assert.deepStrictEqual(
         resolvedReceive,
         Buffer.from('sync:prefix:body:sync:suffix')
       );
 
-      // Test receiveMessageMaybeSync when inner CompressionFilter returns a Promise (gzip),
-      // MaybeSyncOnlyFilter chains via result.then(...), and outer AsyncHeaderFilter chains onto that Promise
+      // Test receiveMessage when inner CompressionFilter returns a Promise (gzip),
+      // SyncFilter chains via result.then(...), and outer AsyncHeaderFilter chains onto that Promise
       const gzipResponseMetadata = new Metadata();
       gzipResponseMetadata.set('grpc-encoding', 'gzip');
       stack.receiveMetadata(gzipResponseMetadata);
@@ -467,9 +454,8 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
         true
       );
 
-      const compressedReceiveResult =
-        stack.receiveMessageMaybeSync(framedCompressed);
-      assert(compressedReceiveResult instanceof Promise);
+      const compressedReceiveResult = stack.receiveMessage(framedCompressed);
+      assert(isThenable(compressedReceiveResult));
       const resolvedCompressedReceive = await compressedReceiveResult;
       assert.deepStrictEqual(
         resolvedCompressedReceive,
@@ -477,72 +463,82 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
       );
     });
 
-    it('normalizes non-native thenables returned by legacy filters into Promises', async () => {
+    it('chains custom thenables returned by filters in the middle of the stack', async () => {
       const stackFactory = new FilterStackFactory([
-        new ThenableLegacyFilterFactory(),
+        new SyncFilterFactory(),
+        new ThenableFilterFactory(),
         new CompressionFilterFactory(dummyChannel, {}),
       ]);
       const stack: FilterStack = stackFactory.createFilter();
 
-      const metadataResult = stack.sendMetadataMaybeSync(new Metadata());
-      assert(metadataResult instanceof Promise);
+      // SyncFilter -> ThenableFilter -> CompressionFilter
+      const metadataResult = stack.sendMetadata(new Metadata());
+      assert(isThenable(metadataResult));
       const resolvedMetadata = await metadataResult;
+      assert.deepStrictEqual(resolvedMetadata.get('x-sync'), ['true']);
       assert.deepStrictEqual(resolvedMetadata.get('x-thenable'), ['true']);
       assert.deepStrictEqual(resolvedMetadata.get('grpc-accept-encoding'), [
         'identity,deflate,gzip',
       ]);
 
-      const sendResult = stack.sendMessageMaybeSync({
+      const sendResult = stack.sendMessage({
         message: Buffer.from('msg'),
         flags: WriteFlags.NoCompress,
       });
-      assert(sendResult instanceof Promise);
+      assert(isThenable(sendResult));
       const resolvedSend = await sendResult;
       assert.strictEqual(resolvedSend.flags, WriteFlags.NoCompress);
+      assert.strictEqual(resolvedSend.message.readUInt8(0), 0);
       assert.deepStrictEqual(
         resolvedSend.message.subarray(5),
-        Buffer.from('thenable:msg')
+        Buffer.from('thenable:sync:msg')
       );
 
-      const receiveResult = stack.receiveMessageMaybeSync(resolvedSend.message);
-      assert(receiveResult instanceof Promise);
+      // CompressionFilter -> ThenableFilter -> SyncFilter
+      const receiveResult = stack.receiveMessage(resolvedSend.message);
+      assert(isThenable(receiveResult));
       const resolvedReceive = await receiveResult;
       assert.deepStrictEqual(
         resolvedReceive,
-        Buffer.from('thenable:msg:thenable')
+        Buffer.from('thenable:sync:msg:thenable:sync')
       );
     });
 
-    it('preserves legacy async FilterStack and BaseFilter methods', async () => {
-      const noopFilter = new NoopPassThroughFilter();
-      // Verify BaseFilter methods always return a Promise even if called with a raw value
-      const rawBufferPromise = noopFilter.receiveMessage(
-        Buffer.from('raw') as unknown as Promise<Buffer>
-      );
-      assert(rawBufferPromise instanceof Promise);
-      assert.deepStrictEqual(await rawBufferPromise, Buffer.from('raw'));
+    it('returns a custom thenable from the last filter without wrapping it', async () => {
+      const stack: FilterStack = new FilterStackFactory([
+        new ThenableFilterFactory(),
+      ]).createFilter();
 
-      const stackFactory = new FilterStackFactory([
-        new NoopPassThroughFilterFactory(),
-        new MaybeSyncOnlyFilterFactory(),
-        new CompressionFilterFactory(dummyChannel, {}),
+      const metadataResult = stack.sendMetadata(new Metadata());
+      assert(isThenable(metadataResult));
+      assert(!(metadataResult instanceof Promise));
+      assert.deepStrictEqual((await metadataResult).get('x-thenable'), [
+        'true',
       ]);
-      const stack: FilterStack = stackFactory.createFilter();
+    });
 
-      const metadata = await stack.sendMetadata(
-        Promise.resolve(new Metadata())
-      );
-      assert.deepStrictEqual(metadata.get('accept-encoding'), ['identity']);
-      assert.deepStrictEqual(metadata.get('x-maybe-sync-only'), ['true']);
+    it('BaseFilter pass-through methods return their input synchronously', () => {
+      const filter = new NoopPassThroughFilter();
+      const metadata = new Metadata();
+      const writeObject: WriteObject = { message: Buffer.from('out') };
+      const buffer = Buffer.from('in');
+      const status: StatusObject = {
+        code: Status.OK,
+        details: '',
+        metadata: new Metadata(),
+      };
 
-      const payload = Buffer.from('legacy test');
-      const framed = await stack.sendMessage(
-        Promise.resolve({ message: payload })
-      );
-      const deframed = await stack.receiveMessage(
-        Promise.resolve(framed.message)
-      );
-      assert.deepStrictEqual(deframed, Buffer.from('sync:legacy test:sync'));
+      assert.strictEqual(filter.sendMetadata(metadata), metadata);
+      assert.strictEqual(filter.receiveMetadata(metadata), metadata);
+      assert.strictEqual(filter.sendMessage(writeObject), writeObject);
+      assert.strictEqual(filter.receiveMessage(buffer), buffer);
+      assert.strictEqual(filter.receiveTrailers(status), status);
+    });
+
+    it('isThenable returns false for null, undefined and non-function then properties', () => {
+      assert.strictEqual(isThenable(null), false);
+      assert.strictEqual(isThenable(undefined), false);
+      assert.strictEqual(isThenable({ then: 'not a function' }), false);
     });
   });
 
@@ -721,7 +717,7 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
       });
     });
 
-    it('handles sync sendMetadataMaybeSync with async gzip sendMessageMaybeSync and receiveMessageMaybeSync', async () => {
+    it('handles sync sendMetadata with async gzip sendMessage and receiveMessage', async () => {
       const {
         mockChannel,
         getChildStartedMetadata,
@@ -778,7 +774,7 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
         },
       });
 
-      // sendMetadataMaybeSync is still synchronous even when gzip compression is configured
+      // sendMetadata is still synchronous even when gzip compression is configured
       assert(getChildStartedMetadata() !== null);
       assert.deepStrictEqual(getChildStartedMetadata()!.get('grpc-encoding'), [
         'gzip',
@@ -1024,18 +1020,86 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
       assert.strictEqual(isHalfClosed(), true);
     });
 
-    it('does not start child if call is cancelled while sendMetadataMaybeSync is pending', async () => {
+    it('handles custom thenables returned by the filter stack for metadata, sent messages and received messages', async () => {
+      const {
+        mockChannel,
+        getChildStartedMetadata,
+        getChildListener,
+        sentMessages,
+        isHalfClosed,
+        halfClosePromise,
+      } = createMockChannel([new ThenableFilterFactory()]);
+      // No CompressionFilter, so that the custom thenable returned by
+      // ThenableFilter is the final result of the filter stack and reaches
+      // ResolvingCall without being chained onto a native Promise.
+      const stackFactory = new FilterStackFactory([]);
+
+      const call = new ResolvingCall(
+        mockChannel,
+        '/test.Service/Unary',
+        { deadline: Infinity, flags: 0, host: 'localhost', parentCall: null },
+        stackFactory,
+        17
+      );
+
+      const events: string[] = [];
+      let receivedMessage: Buffer | null = null;
+      let resolveStatus!: (status: StatusObject) => void;
+      const statusPromise = new Promise<StatusObject>(resolve => {
+        resolveStatus = resolve;
+      });
+
+      call.start(new Metadata(), {
+        onReceiveMetadata() {
+          events.push('metadata');
+        },
+        onReceiveMessage(message) {
+          events.push('message');
+          receivedMessage = message;
+        },
+        onReceiveStatus(status) {
+          events.push('status');
+          resolveStatus(status);
+        },
+      });
+      assert.strictEqual(getChildStartedMetadata(), null);
+
+      call.sendMessageWithContext({}, Buffer.from('req'));
+      call.halfClose();
+      await halfClosePromise;
+
+      assert.deepStrictEqual(getChildStartedMetadata()!.get('x-thenable'), [
+        'true',
+      ]);
+      assert.strictEqual(sentMessages.length, 1);
+      assert.deepStrictEqual(sentMessages[0], Buffer.from('thenable:req'));
+      assert.strictEqual(isHalfClosed(), true);
+
+      const childListener = getChildListener()!;
+      childListener.onReceiveMetadata(new Metadata());
+      childListener.onReceiveMessage(Buffer.from('resp'));
+      childListener.onReceiveStatus({
+        code: Status.OK,
+        details: 'OK',
+        metadata: new Metadata(),
+      });
+
+      const status = await statusPromise;
+      assert.strictEqual(status.code, Status.OK);
+      assert.deepStrictEqual(events, ['metadata', 'message', 'status']);
+      assert.deepStrictEqual(receivedMessage, Buffer.from('resp:thenable'));
+    });
+
+    it('does not start child if call is cancelled while sendMetadata is pending', async () => {
       let releaseMetadataFilter!: () => void;
       const metadataFilterGate = new Promise<void>(resolve => {
         releaseMetadataFilter = resolve;
       });
 
       class GatedMetadataFilter extends BaseFilter implements Filter {
-        sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-          return metadata.then(async resolvedMetadata => {
-            await metadataFilterGate;
-            return resolvedMetadata;
-          });
+        async sendMetadata(metadata: Metadata): Promise<Metadata> {
+          await metadataFilterGate;
+          return metadata;
         }
       }
 
@@ -1094,17 +1158,13 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
       });
 
       class GatedMessageFilter extends BaseFilter implements Filter {
-        sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
-          return message.then(async resolvedMessage => {
-            await sendFilterGate;
-            return resolvedMessage;
-          });
+        async sendMessage(message: WriteObject): Promise<WriteObject> {
+          await sendFilterGate;
+          return message;
         }
-        receiveMessage(message: Promise<Buffer>): Promise<Buffer> {
-          return message.then(async resolvedMessage => {
-            await receiveFilterGate;
-            return resolvedMessage;
-          });
+        async receiveMessage(message: Buffer): Promise<Buffer> {
+          await receiveFilterGate;
+          return message;
         }
       }
 
@@ -1165,7 +1225,7 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
       assert.strictEqual(receivedMessages.length, 0);
     });
 
-    it('outputs status when sendMetadataMaybeSync rejects', async () => {
+    it('outputs status when sendMetadata rejects', async () => {
       const { mockChannel, getChildStartedMetadata } = createMockChannel([
         new RejectingMetadataFilterFactory(),
       ]);
@@ -1205,7 +1265,7 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
       assert.strictEqual(getChildStartedMetadata(), null);
     });
 
-    it('cancels call with status when sendMessageMaybeSync rejects', async () => {
+    it('cancels call with status when sendMessage rejects', async () => {
       const { mockChannel, getCancelledStatus } = createMockChannel();
       const stackFactory = new FilterStackFactory([
         new CompressionFilterFactory(dummyChannel, {
@@ -1245,7 +1305,7 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
       assert.strictEqual(getCancelledStatus()?.code, Status.RESOURCE_EXHAUSTED);
     });
 
-    it('cancels call with status when receiveMessageMaybeSync rejects', async () => {
+    it('cancels call with status when receiveMessage rejects', async () => {
       const { mockChannel, getChildListener, getCancelledStatus } =
         createMockChannel();
       const stackFactory = new FilterStackFactory([
@@ -1297,7 +1357,7 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
       assert.strictEqual(getCancelledStatus()?.code, Status.RESOURCE_EXHAUSTED);
     });
 
-    it('converts synchronous exceptions in MaybeSync filters into INTERNAL call status without throwing', async () => {
+    it('converts synchronous exceptions in filters into INTERNAL call status without throwing', async () => {
       class ThrowingSyncFilter extends BaseFilter implements Filter {
         constructor(
           private readonly throwOn:
@@ -1307,7 +1367,7 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
         ) {
           super();
         }
-        sendMetadataMaybeSync(metadata: Metadata): Metadata {
+        sendMetadata(metadata: Metadata): Metadata {
           if (this.throwOn === 'metadata') {
             throw Object.assign(new Error('sync metadata boom'), {
               code: 'ERR_SYNC_FILTER',
@@ -1315,7 +1375,7 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
           }
           return metadata;
         }
-        sendMessageMaybeSync(message: WriteObject): WriteObject {
+        sendMessage(message: WriteObject): WriteObject {
           if (this.throwOn === 'sendMessage') {
             throw Object.assign(new Error('sync send boom'), {
               code: 'ERR_SYNC_FILTER',
@@ -1323,7 +1383,7 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
           }
           return message;
         }
-        receiveMessageMaybeSync(message: Buffer): Buffer {
+        receiveMessage(message: Buffer): Buffer {
           if (this.throwOn === 'receiveMessage') {
             throw Object.assign(new Error('sync receive boom'), {
               code: 'ERR_SYNC_FILTER',
@@ -1333,7 +1393,7 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
         }
       }
 
-      // 1. Synchronous throw in sendMetadataMaybeSync
+      // 1. Synchronous throw in sendMetadata
       {
         const { mockChannel, getChildStartedMetadata } = createMockChannel([
           { createFilter: () => new ThrowingSyncFilter('metadata') },
@@ -1364,7 +1424,7 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
         assert.strictEqual(getChildStartedMetadata(), null);
       }
 
-      // 2. Synchronous throw in sendMessageMaybeSync
+      // 2. Synchronous throw in sendMessage
       {
         const { mockChannel, getCancelledStatus } = createMockChannel([
           { createFilter: () => new ThrowingSyncFilter('sendMessage') },
@@ -1396,7 +1456,7 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
         assert.strictEqual(getCancelledStatus()?.code, Status.INTERNAL);
       }
 
-      // 3. Synchronous throw in receiveMessageMaybeSync
+      // 3. Synchronous throw in receiveMessage
       {
         const { mockChannel, getChildListener, getCancelledStatus } =
           createMockChannel([
@@ -1431,7 +1491,7 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
         assert.strictEqual(getCancelledStatus()?.code, Status.INTERNAL);
       }
 
-      // 4. Synchronous throw in sendMessageMaybeSync when flushing a queued message inside getConfig()
+      // 4. Synchronous throw in sendMessage when flushing a queued message inside getConfig()
       {
         let configResolved = false;
         const queuedCalls: ResolvingCall[] = [];
@@ -1490,7 +1550,7 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
         );
       }
 
-      // 5. Synchronous throw in MaybeSync filter preceded by an async filter (Error rejection normalization)
+      // 5. Synchronous throw in filter preceded by an async filter (Error rejection normalization)
       for (const stage of [
         'metadata',
         'sendMessage',
@@ -1656,6 +1716,7 @@ describe('CompressionFilter and FilterStack synchronous fast paths', () => {
       };
 
       const mockInternalChannel = {
+        getServiceUrl: () => 'https://localhost/test.Service',
         doPick: () => ({
           pickResultType: PickResultType.COMPLETE,
           subchannel: mockSubchannel,

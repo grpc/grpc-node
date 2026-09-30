@@ -27,7 +27,7 @@ import {
   LogVerbosity,
   Status,
 } from './constants';
-import { BaseFilter, Filter, FilterFactory } from './filter';
+import { BaseFilter, Filter, FilterFactory, isThenable } from './filter';
 import * as logging from './logging';
 import { Metadata, MetadataValue } from './metadata';
 
@@ -296,7 +296,7 @@ export class CompressionFilter extends BaseFilter implements Filter {
     }
   }
 
-  sendMetadataMaybeSync(headers: Metadata): Metadata {
+  sendMetadata(headers: Metadata): Metadata {
     headers.set('grpc-accept-encoding', 'identity,deflate,gzip');
     headers.set('accept-encoding', 'identity');
 
@@ -345,7 +345,7 @@ export class CompressionFilter extends BaseFilter implements Filter {
     return metadata;
   }
 
-  sendMessageMaybeSync(
+  sendMessage(
     resolvedMessage: WriteObject
   ): WriteObject | Promise<WriteObject> {
     /* This filter is special. The input message is the bare message bytes,
@@ -371,7 +371,7 @@ export class CompressionFilter extends BaseFilter implements Filter {
       resolvedMessage.message,
       compress
     );
-    if (writeResult instanceof Promise) {
+    if (isThenable(writeResult)) {
       return writeResult.then(message => ({
         message,
         flags: resolvedMessage.flags,
@@ -383,7 +383,7 @@ export class CompressionFilter extends BaseFilter implements Filter {
     };
   }
 
-  receiveMessageMaybeSync(message: Buffer): Buffer | Promise<Buffer> {
+  receiveMessage(message: Buffer): Buffer | Promise<Buffer> {
     /* This filter is also special. The input message is framed and possibly
      * compressed, and the output message is deframed and uncompressed. So
      * this is another reason that this filter should be at the bottom of the

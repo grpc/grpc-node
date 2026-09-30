@@ -16,45 +16,25 @@
  */
 
 import { StatusObject, WriteObject } from './call-interface';
-import { BaseFilter, Filter, FilterFactory } from './filter';
+import { Filter, FilterFactory, isThenable } from './filter';
 import { Metadata } from './metadata';
 
+/**
+ * Runs a list of filters in order. Each filter is called synchronously as long
+ * as every previous filter returned its result synchronously. Once a filter
+ * returns a thenable, the remaining filters are chained onto it.
+ */
 export class FilterStack implements Filter {
   constructor(private readonly filters: Filter[]) {}
 
-  sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    let result: Promise<Metadata> = metadata;
-
-    for (let i = 0; i < this.filters.length; i++) {
-      result = this.filters[i].sendMetadata(result);
-    }
-
-    return result;
-  }
-
-  /* Note: sendMetadataMaybeSync, sendMessageMaybeSync, and
-   * receiveMessageMaybeSync are intentionally kept as separate methods rather
-   * than sharing a dynamic helper so that property accesses on each filter
-   * remain monomorphic in V8 inline caches. */
-  sendMetadataMaybeSync(metadata: Metadata): Metadata | Promise<Metadata> {
-    let result: Metadata | Promise<Metadata> = metadata;
+  sendMetadata(metadata: Metadata): Metadata | PromiseLike<Metadata> {
+    let result: Metadata | PromiseLike<Metadata> = metadata;
 
     for (let i = 0; i < this.filters.length; i++) {
       const filter = this.filters[i];
-      if (filter.sendMetadataMaybeSync) {
-        result =
-          result instanceof Promise
-            ? result.then(resolvedMetadata =>
-                filter.sendMetadataMaybeSync!(resolvedMetadata)
-              )
-            : filter.sendMetadataMaybeSync(result);
-      } else if (filter.sendMetadata === BaseFilter.prototype.sendMetadata) {
-        // Default pass-through: no-op for both sync and Promise values
-      } else {
-        /* Normalize custom thenables or cross-realm promises into a native
-         * Promise so downstream `instanceof Promise` checks remain valid. */
-        result = Promise.resolve(filter.sendMetadata(Promise.resolve(result)));
-      }
+      result = isThenable(result)
+        ? result.then(resolvedMetadata => filter.sendMetadata(resolvedMetadata))
+        : filter.sendMetadata(result);
     }
 
     return result;
@@ -70,71 +50,27 @@ export class FilterStack implements Filter {
     return result;
   }
 
-  sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
-    let result: Promise<WriteObject> = message;
-
-    for (let i = 0; i < this.filters.length; i++) {
-      result = this.filters[i].sendMessage(result);
-    }
-
-    return result;
-  }
-
-  sendMessageMaybeSync(
-    message: WriteObject
-  ): WriteObject | Promise<WriteObject> {
-    let result: WriteObject | Promise<WriteObject> = message;
+  sendMessage(message: WriteObject): WriteObject | PromiseLike<WriteObject> {
+    let result: WriteObject | PromiseLike<WriteObject> = message;
 
     for (let i = 0; i < this.filters.length; i++) {
       const filter = this.filters[i];
-      if (filter.sendMessageMaybeSync) {
-        result =
-          result instanceof Promise
-            ? result.then(resolvedMessage =>
-                filter.sendMessageMaybeSync!(resolvedMessage)
-              )
-            : filter.sendMessageMaybeSync(result);
-      } else if (filter.sendMessage === BaseFilter.prototype.sendMessage) {
-        // Default pass-through: no-op for both sync and Promise values
-      } else {
-        result = Promise.resolve(filter.sendMessage(Promise.resolve(result)));
-      }
+      result = isThenable(result)
+        ? result.then(resolvedMessage => filter.sendMessage(resolvedMessage))
+        : filter.sendMessage(result);
     }
 
     return result;
   }
 
-  receiveMessage(message: Promise<Buffer>): Promise<Buffer> {
-    let result: Promise<Buffer> = message;
-
-    for (let i = this.filters.length - 1; i >= 0; i--) {
-      result = this.filters[i].receiveMessage(result);
-    }
-
-    return result;
-  }
-
-  receiveMessageMaybeSync(message: Buffer): Buffer | Promise<Buffer> {
-    let result: Buffer | Promise<Buffer> = message;
+  receiveMessage(message: Buffer): Buffer | PromiseLike<Buffer> {
+    let result: Buffer | PromiseLike<Buffer> = message;
 
     for (let i = this.filters.length - 1; i >= 0; i--) {
       const filter = this.filters[i];
-      if (filter.receiveMessageMaybeSync) {
-        result =
-          result instanceof Promise
-            ? result.then(resolvedMessage =>
-                filter.receiveMessageMaybeSync!(resolvedMessage)
-              )
-            : filter.receiveMessageMaybeSync(result);
-      } else if (
-        filter.receiveMessage === BaseFilter.prototype.receiveMessage
-      ) {
-        // Default pass-through: no-op for both sync and Promise values
-      } else {
-        result = Promise.resolve(
-          filter.receiveMessage(Promise.resolve(result))
-        );
-      }
+      result = isThenable(result)
+        ? result.then(resolvedMessage => filter.receiveMessage(resolvedMessage))
+        : filter.receiveMessage(result);
     }
 
     return result;

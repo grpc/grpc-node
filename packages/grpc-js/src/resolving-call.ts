@@ -34,6 +34,7 @@ import {
   minDeadline,
 } from './deadline';
 import { getErrorMessage } from './error';
+import { isThenable } from './filter';
 import { FilterStack, FilterStackFactory } from './filter-stack';
 import { InternalChannel } from './internal-channel';
 import { Metadata } from './metadata';
@@ -216,10 +217,10 @@ export class ResolvingCall implements Call {
       throw new Error('sendMessageonChild called with child not populated');
     }
     const child = this.child;
-    let filterResult: WriteObject | Promise<WriteObject>;
+    let filterResult: WriteObject | PromiseLike<WriteObject>;
     try {
       // Attempt synchronous filtering to bypass microtask deferral and promise allocations on the hot path.
-      filterResult = this.filterStack!.sendMessageMaybeSync({
+      filterResult = this.filterStack!.sendMessage({
         message: message,
         flags: context.flags,
       });
@@ -230,7 +231,7 @@ export class ResolvingCall implements Call {
       );
       return;
     }
-    if (filterResult instanceof Promise) {
+    if (isThenable(filterResult)) {
       // Slow path: asynchronous filter. Pause new writes and forward when resolved.
       this.writeFilterPending = true;
       filterResult.then(
@@ -264,10 +265,10 @@ export class ResolvingCall implements Call {
 
   private handleChildReceiveMessage(message: Buffer): void {
     this.trace('Received message');
-    let filterResult: Buffer | Promise<Buffer>;
+    let filterResult: Buffer | PromiseLike<Buffer>;
     try {
       // Attempt synchronous filtering to bypass microtask deferral and promise allocations on the hot path.
-      filterResult = this.filterStack!.receiveMessageMaybeSync(message);
+      filterResult = this.filterStack!.receiveMessage(message);
     } catch (error) {
       this.cancelWithStatus(
         Status.INTERNAL,
@@ -275,7 +276,7 @@ export class ResolvingCall implements Call {
       );
       return;
     }
-    if (filterResult instanceof Promise) {
+    if (isThenable(filterResult)) {
       // Slow path: asynchronous filter. Pause reading and forward when resolved.
       this.readFilterPending = true;
       filterResult.then(
@@ -406,10 +407,8 @@ export class ResolvingCall implements Call {
     this.filterStackFactory.push(config.dynamicFilterFactories);
     this.filterStack = this.filterStackFactory.createFilter();
     try {
-      const filterResult = this.filterStack.sendMetadataMaybeSync(
-        this.metadata
-      );
-      if (filterResult instanceof Promise) {
+      const filterResult = this.filterStack.sendMetadata(this.metadata);
+      if (isThenable(filterResult)) {
         filterResult.then(
           filteredMetadata => {
             this.startChild(config, filteredMetadata);
