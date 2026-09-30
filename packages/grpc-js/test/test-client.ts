@@ -496,6 +496,8 @@ describe('Client caller stack traces opt-out', () => {
           assert.ok(
             !error?.stack?.includes('for call at\nno stack trace available')
           );
+          assert.ok(error?.stack?.includes('makeUnaryRequest'));
+          assert.ok(error?.stack?.includes('test-client'));
           client.close();
           done();
         }
@@ -518,6 +520,8 @@ describe('Client caller stack traces opt-out', () => {
           assert.ok(
             !error?.stack?.includes('for call at\nno stack trace available')
           );
+          assert.ok(error?.stack?.includes('makeUnaryRequest'));
+          assert.ok(error?.stack?.includes('test-client'));
           client.close();
           done();
         }
@@ -566,6 +570,50 @@ describe('Client caller stack traces opt-out', () => {
         }
       );
     });
+
+    it('should successfully complete an RPC when caller stack trace is disabled', done => {
+      const server = new Server();
+      server.addService(
+        {
+          testMethod: {
+            path: '/service/method',
+            requestStream: false,
+            responseStream: false,
+            requestSerialize: (x: Buffer) => x,
+            requestDeserialize: (x: Buffer) => x,
+            responseSerialize: (x: Buffer) => x,
+            responseDeserialize: (x: Buffer) => x,
+          },
+        },
+        {
+          testMethod(
+            call: grpc.ServerUnaryCall<Buffer, Buffer>,
+            callback: grpc.sendUnaryData<Buffer>
+          ) {
+            callback(null, call.request);
+          },
+        }
+      );
+      server.bindAsync('localhost:0', serverInsecureCreds, (err, port) => {
+        assert.ifError(err);
+        const client = new Client(`localhost:${port}`, clientInsecureCreds, {
+          'grpc-node.enable_caller_stack_traces': 0,
+        });
+        const requestData = Buffer.from('test-payload');
+        client.makeUnaryRequest(
+          '/service/method',
+          x => x,
+          x => x,
+          requestData,
+          (error, response) => {
+            assert.ifError(error);
+            assert.deepStrictEqual(response, requestData);
+            client.close();
+            server.tryShutdown(done);
+          }
+        );
+      });
+    });
   });
 
   describe('streaming calls', () => {
@@ -582,6 +630,8 @@ describe('Client caller stack traces opt-out', () => {
           assert.ok(
             !error?.stack?.includes('for call at\nno stack trace available')
           );
+          assert.ok(error?.stack?.includes('makeClientStreamRequest'));
+          assert.ok(error?.stack?.includes('test-client'));
           client.close();
           done();
         }
@@ -625,6 +675,8 @@ describe('Client caller stack traces opt-out', () => {
         assert.ok(
           !error.stack?.includes('for call at\nno stack trace available')
         );
+        assert.ok(error.stack?.includes('makeServerStreamRequest'));
+        assert.ok(error.stack?.includes('test-client'));
         client.close();
         done();
       });
@@ -665,6 +717,8 @@ describe('Client caller stack traces opt-out', () => {
         assert.ok(
           !error.stack?.includes('for call at\nno stack trace available')
         );
+        assert.ok(error.stack?.includes('makeBidiStreamRequest'));
+        assert.ok(error.stack?.includes('test-client'));
         client.close();
         done();
       });
