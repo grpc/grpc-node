@@ -27,6 +27,7 @@ import { Status } from '../src/constants';
 import { LoadBalancingCall } from '../src/load-balancing-call';
 import { Metadata } from '../src/metadata';
 import { PickResultType } from '../src/picker';
+import { computeServiceUrl } from '../src/uri-parser';
 
 // Metadata generators
 
@@ -249,6 +250,8 @@ describe('CallCredentials', () => {
           },
         };
         const mockChannel: any = {
+          getServiceUrl: (host: string, methodName: string) =>
+            computeServiceUrl(host, methodName),
           doPick: () => ({
             pickResultType: PickResultType.COMPLETE,
             subchannel: mockSubchannel,
