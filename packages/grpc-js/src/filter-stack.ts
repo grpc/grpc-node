@@ -16,17 +16,25 @@
  */
 
 import { StatusObject, WriteObject } from './call-interface';
-import { Filter, FilterFactory } from './filter';
+import { Filter, FilterFactory, isThenable } from './filter';
 import { Metadata } from './metadata';
 
+/**
+ * Runs a list of filters in order. Each filter is called synchronously as long
+ * as every previous filter returned its result synchronously. Once a filter
+ * returns a thenable, the remaining filters are chained onto it.
+ */
 export class FilterStack implements Filter {
   constructor(private readonly filters: Filter[]) {}
 
-  sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    let result: Promise<Metadata> = metadata;
+  sendMetadata(metadata: Metadata): Metadata | PromiseLike<Metadata> {
+    let result: Metadata | PromiseLike<Metadata> = metadata;
 
     for (let i = 0; i < this.filters.length; i++) {
-      result = this.filters[i].sendMetadata(result);
+      const filter = this.filters[i];
+      result = isThenable(result)
+        ? result.then(resolvedMetadata => filter.sendMetadata(resolvedMetadata))
+        : filter.sendMetadata(result);
     }
 
     return result;
@@ -42,21 +50,27 @@ export class FilterStack implements Filter {
     return result;
   }
 
-  sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
-    let result: Promise<WriteObject> = message;
+  sendMessage(message: WriteObject): WriteObject | PromiseLike<WriteObject> {
+    let result: WriteObject | PromiseLike<WriteObject> = message;
 
     for (let i = 0; i < this.filters.length; i++) {
-      result = this.filters[i].sendMessage(result);
+      const filter = this.filters[i];
+      result = isThenable(result)
+        ? result.then(resolvedMessage => filter.sendMessage(resolvedMessage))
+        : filter.sendMessage(result);
     }
 
     return result;
   }
 
-  receiveMessage(message: Promise<Buffer>): Promise<Buffer> {
-    let result: Promise<Buffer> = message;
+  receiveMessage(message: Buffer): Buffer | PromiseLike<Buffer> {
+    let result: Buffer | PromiseLike<Buffer> = message;
 
     for (let i = this.filters.length - 1; i >= 0; i--) {
-      result = this.filters[i].receiveMessage(result);
+      const filter = this.filters[i];
+      result = isThenable(result)
+        ? result.then(resolvedMessage => filter.receiveMessage(resolvedMessage))
+        : filter.receiveMessage(result);
     }
 
     return result;

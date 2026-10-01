@@ -21,8 +21,13 @@ import { WriteObject, WriteFlags } from './call-interface';
 import { Channel } from './channel';
 import { ChannelOptions } from './channel-options';
 import { CompressionAlgorithms } from './compression-algorithms';
-import { DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH, DEFAULT_MAX_SEND_MESSAGE_LENGTH, LogVerbosity, Status } from './constants';
-import { BaseFilter, Filter, FilterFactory } from './filter';
+import {
+  DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
+  DEFAULT_MAX_SEND_MESSAGE_LENGTH,
+  LogVerbosity,
+  Status,
+} from './constants';
+import { BaseFilter, Filter, FilterFactory, isThenable } from './filter';
 import * as logging from './logging';
 import { Metadata, MetadataValue } from './metadata';
 
@@ -43,33 +48,45 @@ type SharedCompressionFilterConfig = {
 abstract class CompressionHandler {
   protected abstract compressMessage(message: Buffer): Promise<Buffer>;
   protected abstract decompressMessage(data: Buffer): Promise<Buffer>;
+
   /**
    * @param message Raw uncompressed message bytes
    * @param compress Indicates whether the message should be compressed
    * @return Framed message, compressed if applicable
    */
-  async writeMessage(message: Buffer, compress: boolean): Promise<Buffer> {
-    let messageBuffer = message;
-    if (compress) {
-      messageBuffer = await this.compressMessage(messageBuffer);
+  writeMessage(message: Buffer, compress: boolean): Buffer | Promise<Buffer> {
+    if (!compress) {
+      return this.frameMessage(message, false);
     }
-    const output = Buffer.allocUnsafe(messageBuffer.length + 5);
-    output.writeUInt8(compress ? 1 : 0, 0);
-    output.writeUInt32BE(messageBuffer.length, 1);
-    messageBuffer.copy(output, 5);
-    return output;
+    return this.compressMessage(message).then(messageBuffer =>
+      this.frameMessage(messageBuffer, true)
+    );
   }
   /**
    * @param data Framed message, possibly compressed
    * @return Uncompressed message
    */
-  async readMessage(data: Buffer): Promise<Buffer> {
+  readMessage(data: Buffer): Buffer | Promise<Buffer> {
     const compressed = data.readUInt8(0) === 1;
-    let messageBuffer: Buffer<ArrayBufferLike> = data.slice(5);
+    const messageBuffer: Buffer<ArrayBufferLike> = data.slice(5);
     if (compressed) {
-      messageBuffer = await this.decompressMessage(messageBuffer);
+      return this.decompressMessage(messageBuffer);
     }
     return messageBuffer;
+  }
+
+  /**
+   * Frames a message by prepending the 1-byte compression flag and 4-byte big-endian length prefix.
+   * @param message Message payload bytes
+   * @param compressed Indicates whether the message payload is compressed
+   * @return 5-byte framed message buffer
+   */
+  protected frameMessage(message: Buffer, compressed: boolean): Buffer {
+    const output = Buffer.allocUnsafe(message.length + 5);
+    output.writeUInt8(compressed ? 1 : 0, 0);
+    output.writeUInt32BE(message.length, 1);
+    message.copy(output, 5);
+    return output;
   }
 }
 
@@ -78,14 +95,10 @@ class IdentityHandler extends CompressionHandler {
     return message;
   }
 
-  async writeMessage(message: Buffer, compress: boolean): Promise<Buffer> {
-    const output = Buffer.allocUnsafe(message.length + 5);
+  writeMessage(message: Buffer, compress: boolean): Buffer {
     /* With "identity" compression, messages should always be marked as
      * uncompressed */
-    output.writeUInt8(0, 0);
-    output.writeUInt32BE(message.length, 1);
-    message.copy(output, 5);
-    return output;
+    return this.frameMessage(message, false);
   }
 
   decompressMessage(message: Buffer): Promise<Buffer> {
@@ -122,11 +135,14 @@ class DeflateHandler extends CompressionHandler {
       decompresser.on('data', (chunk: Buffer) => {
         messageParts.push(chunk);
         totalLength += chunk.byteLength;
-        if (this.maxRecvMessageLength !== -1 && totalLength > this.maxRecvMessageLength) {
+        if (
+          this.maxRecvMessageLength !== -1 &&
+          totalLength > this.maxRecvMessageLength
+        ) {
           decompresser.destroy();
           reject({
             code: Status.RESOURCE_EXHAUSTED,
-            details: `Received message that decompresses to a size larger than ${this.maxRecvMessageLength}`
+            details: `Received message that decompresses to a size larger than ${this.maxRecvMessageLength}`,
           });
         }
       });
@@ -164,11 +180,14 @@ class GzipHandler extends CompressionHandler {
       decompresser.on('data', (chunk: Buffer) => {
         messageParts.push(chunk);
         totalLength += chunk.byteLength;
-        if (this.maxRecvMessageLength !== -1 && totalLength > this.maxRecvMessageLength) {
+        if (
+          this.maxRecvMessageLength !== -1 &&
+          totalLength > this.maxRecvMessageLength
+        ) {
           decompresser.destroy();
           reject({
             code: Status.RESOURCE_EXHAUSTED,
-            details: `Received message that decompresses to a size larger than ${this.maxRecvMessageLength}`
+            details: `Received message that decompresses to a size larger than ${this.maxRecvMessageLength}`,
           });
         }
       });
@@ -201,10 +220,19 @@ class UnknownHandler extends CompressionHandler {
   }
 }
 
-function getCompressionHandler(compressionName: string, maxReceiveMessageSize: number): CompressionHandler {
+/**
+ * IdentityHandler is completely stateless and immutable, so a single instance
+ * can safely be shared across all channels, filters, and concurrent calls.
+ */
+const IDENTITY_HANDLER = new IdentityHandler();
+
+function getCompressionHandler(
+  compressionName: string,
+  maxReceiveMessageSize: number
+): CompressionHandler {
   switch (compressionName) {
     case 'identity':
-      return new IdentityHandler();
+      return IDENTITY_HANDLER;
     case 'deflate':
       return new DeflateHandler(maxReceiveMessageSize);
     case 'gzip':
@@ -215,8 +243,8 @@ function getCompressionHandler(compressionName: string, maxReceiveMessageSize: n
 }
 
 export class CompressionFilter extends BaseFilter implements Filter {
-  private sendCompression: CompressionHandler = new IdentityHandler();
-  private receiveCompression: CompressionHandler = new IdentityHandler();
+  private sendCompression: CompressionHandler = IDENTITY_HANDLER;
+  private receiveCompression: CompressionHandler = IDENTITY_HANDLER;
   private currentCompressionAlgorithm: CompressionAlgorithm = 'identity';
   private maxReceiveMessageLength: number;
   private maxSendMessageLength: number;
@@ -229,8 +257,12 @@ export class CompressionFilter extends BaseFilter implements Filter {
 
     const compressionAlgorithmKey =
       channelOptions['grpc.default_compression_algorithm'];
-    this.maxReceiveMessageLength = channelOptions['grpc.max_receive_message_length'] ?? DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH;
-    this.maxSendMessageLength = channelOptions['grpc.max_send_message_length'] ?? DEFAULT_MAX_SEND_MESSAGE_LENGTH;
+    this.maxReceiveMessageLength =
+      channelOptions['grpc.max_receive_message_length'] ??
+      DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH;
+    this.maxSendMessageLength =
+      channelOptions['grpc.max_send_message_length'] ??
+      DEFAULT_MAX_SEND_MESSAGE_LENGTH;
     if (compressionAlgorithmKey !== undefined) {
       if (isCompressionAlgorithmKey(compressionAlgorithmKey)) {
         const clientSelectedEncoding = CompressionAlgorithms[
@@ -264,8 +296,7 @@ export class CompressionFilter extends BaseFilter implements Filter {
     }
   }
 
-  async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
-    const headers: Metadata = await metadata;
+  sendMetadata(headers: Metadata): Metadata {
     headers.set('grpc-accept-encoding', 'identity,deflate,gzip');
     headers.set('accept-encoding', 'identity');
 
@@ -284,7 +315,10 @@ export class CompressionFilter extends BaseFilter implements Filter {
     if (receiveEncoding.length > 0) {
       const encoding: MetadataValue = receiveEncoding[0];
       if (typeof encoding === 'string') {
-        this.receiveCompression = getCompressionHandler(encoding, this.maxReceiveMessageLength);
+        this.receiveCompression = getCompressionHandler(
+          encoding,
+          this.maxReceiveMessageLength
+        );
       }
     }
     metadata.remove('grpc-encoding');
@@ -303,7 +337,7 @@ export class CompressionFilter extends BaseFilter implements Filter {
       if (
         !serverSupportedEncodings.includes(this.currentCompressionAlgorithm)
       ) {
-        this.sendCompression = new IdentityHandler();
+        this.sendCompression = IDENTITY_HANDLER;
         this.currentCompressionAlgorithm = 'identity';
       }
     }
@@ -311,16 +345,20 @@ export class CompressionFilter extends BaseFilter implements Filter {
     return metadata;
   }
 
-  async sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
+  sendMessage(
+    resolvedMessage: WriteObject
+  ): WriteObject | Promise<WriteObject> {
     /* This filter is special. The input message is the bare message bytes,
      * and the output is a framed and possibly compressed message. For this
      * reason, this filter should be at the bottom of the filter stack */
-    const resolvedMessage: WriteObject = await message;
-    if (this.maxSendMessageLength !== -1 && resolvedMessage.message.length > this.maxSendMessageLength) {
-      throw {
+    if (
+      this.maxSendMessageLength !== -1 &&
+      resolvedMessage.message.length > this.maxSendMessageLength
+    ) {
+      return Promise.reject({
         code: Status.RESOURCE_EXHAUSTED,
-        details: `Attempted to send message with a size larger than ${this.maxSendMessageLength}`
-      };
+        details: `Attempted to send message with a size larger than ${this.maxSendMessageLength}`,
+      });
     }
     let compress: boolean;
     if (this.sendCompression instanceof IdentityHandler) {
@@ -329,21 +367,28 @@ export class CompressionFilter extends BaseFilter implements Filter {
       compress = ((resolvedMessage.flags ?? 0) & WriteFlags.NoCompress) === 0;
     }
 
+    const writeResult = this.sendCompression.writeMessage(
+      resolvedMessage.message,
+      compress
+    );
+    if (isThenable(writeResult)) {
+      return writeResult.then(message => ({
+        message,
+        flags: resolvedMessage.flags,
+      }));
+    }
     return {
-      message: await this.sendCompression.writeMessage(
-        resolvedMessage.message,
-        compress
-      ),
+      message: writeResult,
       flags: resolvedMessage.flags,
     };
   }
 
-  async receiveMessage(message: Promise<Buffer>) {
+  receiveMessage(message: Buffer): Buffer | Promise<Buffer> {
     /* This filter is also special. The input message is framed and possibly
      * compressed, and the output message is deframed and uncompressed. So
      * this is another reason that this filter should be at the bottom of the
      * filter stack. */
-    return this.receiveCompression.readMessage(await message);
+    return this.receiveCompression.readMessage(message);
   }
 }
 

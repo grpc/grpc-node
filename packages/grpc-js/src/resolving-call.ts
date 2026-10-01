@@ -23,6 +23,7 @@ import {
   InterceptingListener,
   MessageContext,
   StatusObject,
+  WriteObject,
 } from './call-interface';
 import { LogVerbosity, Propagate, Status } from './constants';
 import {
@@ -32,12 +33,15 @@ import {
   getRelativeTimeout,
   minDeadline,
 } from './deadline';
+import { getErrorMessage } from './error';
+import { isThenable } from './filter';
 import { FilterStack, FilterStackFactory } from './filter-stack';
 import { InternalChannel } from './internal-channel';
 import { Metadata } from './metadata';
 import * as logging from './logging';
 import { restrictControlPlaneStatusCode } from './control-plane-status';
 import { AuthContext } from './auth-context';
+import { CallConfig } from './resolver';
 
 const TRACER_NAME = 'resolving_call';
 
@@ -213,21 +217,141 @@ export class ResolvingCall implements Call {
       throw new Error('sendMessageonChild called with child not populated');
     }
     const child = this.child;
-    this.writeFilterPending = true;
-    this.filterStack!.sendMessage(
-      Promise.resolve({ message: message, flags: context.flags })
-    ).then(
-      filteredMessage => {
-        this.writeFilterPending = false;
-        child.sendMessageWithContext(context, filteredMessage.message);
-        if (this.pendingHalfClose) {
-          child.halfClose();
+    let filterResult: WriteObject | PromiseLike<WriteObject>;
+    try {
+      // Attempt synchronous filtering to bypass microtask deferral and promise allocations on the hot path.
+      filterResult = this.filterStack!.sendMessage({
+        message: message,
+        flags: context.flags,
+      });
+    } catch (error) {
+      this.cancelWithStatus(
+        Status.INTERNAL,
+        `Failed to filter outgoing message: ${getErrorMessage(error)}`
+      );
+      return;
+    }
+    if (isThenable(filterResult)) {
+      // Slow path: asynchronous filter. Pause new writes and forward when resolved.
+      this.writeFilterPending = true;
+      filterResult.then(
+        filteredMessage => {
+          this.writeFilterPending = false;
+          if (this.ended) {
+            return;
+          }
+          child.sendMessageWithContext(context, filteredMessage.message);
+          if (this.pendingHalfClose) {
+            child.halfClose();
+          }
+        },
+        (status: StatusObject) => {
+          this.cancelWithStatus(
+            typeof status.code === 'number' ? status.code : Status.INTERNAL,
+            typeof status.details === 'string'
+              ? status.details
+              : `Failed to filter outgoing message: ${getErrorMessage(status)}`
+          );
+        }
+      );
+    } else {
+      // Fast path: synchronous filter completion. Forward immediately.
+      child.sendMessageWithContext(context, filterResult.message);
+      if (this.pendingHalfClose) {
+        child.halfClose();
+      }
+    }
+  }
+
+  private handleChildReceiveMessage(message: Buffer): void {
+    this.trace('Received message');
+    let filterResult: Buffer | PromiseLike<Buffer>;
+    try {
+      // Attempt synchronous filtering to bypass microtask deferral and promise allocations on the hot path.
+      filterResult = this.filterStack!.receiveMessage(message);
+    } catch (error) {
+      this.cancelWithStatus(
+        Status.INTERNAL,
+        `Failed to filter incoming message: ${getErrorMessage(error)}`
+      );
+      return;
+    }
+    if (isThenable(filterResult)) {
+      // Slow path: asynchronous filter. Pause reading and forward when resolved.
+      this.readFilterPending = true;
+      filterResult.then(
+        filteredMessage => {
+          this.trace('Finished filtering received message');
+          this.readFilterPending = false;
+          if (this.ended) {
+            return;
+          }
+          this.listener!.onReceiveMessage(filteredMessage);
+          if (this.pendingChildStatus) {
+            this.outputStatus(this.pendingChildStatus);
+          }
+        },
+        (status: StatusObject) => {
+          this.cancelWithStatus(
+            typeof status.code === 'number' ? status.code : Status.INTERNAL,
+            typeof status.details === 'string'
+              ? status.details
+              : `Failed to filter incoming message: ${getErrorMessage(status)}`
+          );
+        }
+      );
+    } else {
+      // Fast path: synchronous filter completion. Forward immediately.
+      this.trace('Finished filtering received message');
+      this.listener!.onReceiveMessage(filterResult);
+    }
+  }
+
+  private startChild(config: CallConfig, filteredMetadata: Metadata): void {
+    if (this.ended) {
+      return;
+    }
+    this.child = this.channel.createRetryingCall(
+      config,
+      this.method,
+      this.host,
+      this.credentials,
+      this.deadline,
+      this.callNumber
+    );
+    if (this.traceEnabled) {
+      this.trace('Created child [' + this.child.getCallNumber() + ']');
+    }
+    this.childStartTime = Date.now();
+    this.child.start(filteredMetadata, {
+      onReceiveMetadata: metadata => {
+        this.trace('Received metadata');
+        this.listener!.onReceiveMetadata(
+          this.filterStack!.receiveMetadata(metadata)
+        );
+      },
+      onReceiveMessage: message => {
+        this.handleChildReceiveMessage(message);
+      },
+      onReceiveStatus: status => {
+        this.trace('Received status');
+        if (this.readFilterPending) {
+          this.pendingChildStatus = status;
+        } else {
+          this.outputStatus(status);
         }
       },
-      (status: StatusObject) => {
-        this.cancelWithStatus(status.code, status.details);
-      }
-    );
+    });
+    if (this.readPending) {
+      this.child.startRead();
+    }
+    if (this.pendingMessage) {
+      const pendingMessage = this.pendingMessage;
+      this.pendingMessage = null;
+      this.sendMessageOnChild(pendingMessage.context, pendingMessage.message);
+    } else if (this.pendingHalfClose) {
+      this.child.halfClose();
+    }
   }
 
   getConfig(): void {
@@ -275,71 +399,40 @@ export class ResolvingCall implements Call {
       this.runDeadlineTimer();
     }
 
+    /* Create the filterStack before entering the try block so that:
+     * 1. A synchronous throw in createFilter() does not enter catch ->
+     *    cancelWithStatus() -> outputStatus(), which would otherwise call
+     *    createFilter() a second time while this.filterStack is still null.
+     * 2. V8 does not allocate an extra context object per call in getConfig(). */
     this.filterStackFactory.push(config.dynamicFilterFactories);
     this.filterStack = this.filterStackFactory.createFilter();
-    this.filterStack.sendMetadata(Promise.resolve(this.metadata)).then(
-      filteredMetadata => {
-        this.child = this.channel.createRetryingCall(
-          config,
-          this.method,
-          this.host,
-          this.credentials,
-          this.deadline,
-          this.callNumber
-        );
-        if (this.traceEnabled) {
-          this.trace('Created child [' + this.child.getCallNumber() + ']');
-        }
-        this.childStartTime = Date.now();
-        this.child.start(filteredMetadata, {
-          onReceiveMetadata: metadata => {
-            this.trace('Received metadata');
-            this.listener!.onReceiveMetadata(
-              this.filterStack!.receiveMetadata(metadata)
-            );
+    try {
+      const filterResult = this.filterStack.sendMetadata(this.metadata);
+      if (isThenable(filterResult)) {
+        filterResult.then(
+          filteredMetadata => {
+            this.startChild(config, filteredMetadata);
           },
-          onReceiveMessage: message => {
-            this.trace('Received message');
-            this.readFilterPending = true;
-            this.filterStack!.receiveMessage(message).then(
-              filteredMesssage => {
-                this.trace('Finished filtering received message');
-                this.readFilterPending = false;
-                this.listener!.onReceiveMessage(filteredMesssage);
-                if (this.pendingChildStatus) {
-                  this.outputStatus(this.pendingChildStatus);
-                }
-              },
-              (status: StatusObject) => {
-                this.cancelWithStatus(status.code, status.details);
-              }
-            );
-          },
-          onReceiveStatus: status => {
-            this.trace('Received status');
-            if (this.readFilterPending) {
-              this.pendingChildStatus = status;
-            } else {
+          (status: StatusObject) => {
+            if (typeof status.code === 'number') {
               this.outputStatus(status);
+            } else {
+              this.cancelWithStatus(
+                Status.INTERNAL,
+                `Failed to start call: ${getErrorMessage(status)}`
+              );
             }
-          },
-        });
-        if (this.readPending) {
-          this.child.startRead();
-        }
-        if (this.pendingMessage) {
-          this.sendMessageOnChild(
-            this.pendingMessage.context,
-            this.pendingMessage.message
-          );
-        } else if (this.pendingHalfClose) {
-          this.child.halfClose();
-        }
-      },
-      (status: StatusObject) => {
-        this.outputStatus(status);
+          }
+        );
+      } else {
+        this.startChild(config, filterResult);
       }
-    );
+    } catch (error) {
+      this.cancelWithStatus(
+        Status.INTERNAL,
+        `Failed to start call: ${getErrorMessage(error)}`
+      );
+    }
   }
 
   reportResolverError(status: StatusObject) {
@@ -363,6 +456,11 @@ export class ResolvingCall implements Call {
     });
   }
   getPeer(): string {
+    /* While waiting for channel config resolution or an async metadata filter,
+     * this.child is null and getPeer() falls back to the channel target. Once
+     * this.child (RetryingCall) is created, it delegates to child.getPeer(),
+     * which returns 'unknown' until a call attempt commits and then returns the
+     * connected subchannel peer address. */
     return this.child?.getPeer() ?? this.channel.getTarget();
   }
   start(metadata: Metadata, listener: InterceptingListener): void {

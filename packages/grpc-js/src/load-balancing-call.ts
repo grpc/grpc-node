@@ -296,9 +296,11 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
                 this.child.startRead();
               }
               if (this.pendingMessage) {
+                const pendingMessage = this.pendingMessage;
+                this.pendingMessage = null;
                 this.child.sendMessageWithContext(
-                  this.pendingMessage.context,
-                  this.pendingMessage.message
+                  pendingMessage.context,
+                  pendingMessage.message
                 );
               }
               if (this.pendingHalfClose) {

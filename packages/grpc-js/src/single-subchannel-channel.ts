@@ -88,7 +88,7 @@ class SubchannelCallWrapper implements Call {
       });
       return;
     }
-    const filteredMetadata = await this.filterStack.sendMetadata(Promise.resolve(metadata));
+    const filteredMetadata = await this.filterStack.sendMetadata(metadata);
     let credsMetadata: Metadata;
     try {
       credsMetadata = await this.subchannel.getCallCredentials()
@@ -150,7 +150,7 @@ class SubchannelCallWrapper implements Call {
   }
   async sendMessageWithContext(context: MessageContext, message: Buffer): Promise<void> {
     this.writeFilterPending = true;
-    const filteredMessage = await this.filterStack.sendMessage(Promise.resolve({message: message, flags: context.flags}));
+    const filteredMessage = await this.filterStack.sendMessage({message: message, flags: context.flags});
     this.writeFilterPending = false;
     if (this.childCall) {
       this.childCall.sendMessageWithContext(context, filteredMessage.message);

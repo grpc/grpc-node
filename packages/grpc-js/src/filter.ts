@@ -20,24 +20,26 @@ import { Metadata } from './metadata';
 
 /**
  * Filter classes represent related per-call logic and state that is primarily
- * used to modify incoming and outgoing data. All async filters can be
- * rejected. The rejection error must be a StatusObject, and a rejection will
- * cause the call to end with that status.
+ * used to modify incoming and outgoing data. The sendMetadata, sendMessage,
+ * and receiveMessage methods may return their result directly when no
+ * asynchronous work is needed, or a thenable otherwise. All async filters can
+ * be rejected. The rejection error must be a StatusObject, and a rejection
+ * will cause the call to end with that status.
  */
 export interface Filter {
-  sendMetadata(metadata: Promise<Metadata>): Promise<Metadata>;
+  sendMetadata(metadata: Metadata): Metadata | PromiseLike<Metadata>;
 
   receiveMetadata(metadata: Metadata): Metadata;
 
-  sendMessage(message: Promise<WriteObject>): Promise<WriteObject>;
+  sendMessage(message: WriteObject): WriteObject | PromiseLike<WriteObject>;
 
-  receiveMessage(message: Promise<Buffer>): Promise<Buffer>;
+  receiveMessage(message: Buffer): Buffer | PromiseLike<Buffer>;
 
   receiveTrailers(status: StatusObject): StatusObject;
 }
 
 export abstract class BaseFilter implements Filter {
-  async sendMetadata(metadata: Promise<Metadata>): Promise<Metadata> {
+  sendMetadata(metadata: Metadata): Metadata | PromiseLike<Metadata> {
     return metadata;
   }
 
@@ -45,11 +47,11 @@ export abstract class BaseFilter implements Filter {
     return metadata;
   }
 
-  async sendMessage(message: Promise<WriteObject>): Promise<WriteObject> {
+  sendMessage(message: WriteObject): WriteObject | PromiseLike<WriteObject> {
     return message;
   }
 
-  async receiveMessage(message: Promise<Buffer>): Promise<Buffer> {
+  receiveMessage(message: Buffer): Buffer | PromiseLike<Buffer> {
     return message;
   }
 
@@ -60,4 +62,16 @@ export abstract class BaseFilter implements Filter {
 
 export interface FilterFactory<T extends Filter> {
   createFilter(): T;
+}
+
+/**
+ * Checks whether a filter result is a thenable that must be awaited, rather
+ * than a value that is already available. This is used instead of
+ * `instanceof Promise` so that promises from other realms and custom
+ * thenables are also recognized.
+ */
+export function isThenable<T>(
+  value: T | PromiseLike<T>
+): value is PromiseLike<T> {
+  return typeof (value as PromiseLike<T>)?.then === 'function';
 }
