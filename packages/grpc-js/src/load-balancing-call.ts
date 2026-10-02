@@ -15,7 +15,7 @@
  *
  */
 
-import { CallCredentials } from './call-credentials';
+import { CallCredentials, isEmptyCallCredentials } from './call-credentials';
 import {
   Call,
   DeadlineInfoProvider,
@@ -38,6 +38,8 @@ import { AuthContext } from './auth-context';
 import { SubchannelInterface } from './subchannel-interface';
 
 const TRACER_NAME = 'load_balancing_call';
+const RESOLVED_EMPTY_METADATA: Promise<Metadata | undefined> =
+  Promise.resolve(undefined);
 
 export type RpcProgress = 'NOT_STARTED' | 'DROP' | 'REFUSED' | 'PROCESSED';
 
@@ -139,6 +141,17 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
     }
   }
 
+  private generateCallCredentialsMetadata(
+    callCredentials: CallCredentials
+  ): Promise<Metadata | undefined> {
+    return isEmptyCallCredentials(callCredentials)
+      ? RESOLVED_EMPTY_METADATA
+      : callCredentials.generateMetadata({
+          method_name: this.methodName,
+          service_url: this.serviceUrl,
+        });
+  }
+
   doPick() {
     if (this.ended) {
       return;
@@ -167,9 +180,9 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
     }
     switch (pickResult.pickResultType) {
       case PickResultType.COMPLETE:
-        const combinedCallCredentials = this.credentials.compose(pickResult.subchannel!.getCallCredentials());
-        combinedCallCredentials
-          .generateMetadata({ method_name: this.methodName, service_url: this.serviceUrl })
+        this.generateCallCredentialsMetadata(
+          this.credentials.compose(pickResult.subchannel!.getCallCredentials())
+        )
           .then(
             credsMetadata => {
               /* If this call was cancelled (e.g. by the deadline) before
@@ -181,7 +194,9 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
                 );
                 return;
               }
-              finalMetadata.merge(credsMetadata);
+              if (credsMetadata) {
+                finalMetadata.merge(credsMetadata);
+              }
               if (finalMetadata.get('authorization').length > 1) {
                 this.outputStatus(
                   {
