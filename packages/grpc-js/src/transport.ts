@@ -215,6 +215,7 @@ class Http2Transport implements Transport {
         ) {
           tooManyPings = true;
         }
+        this.clearKeepaliveTimeout();
         if (this.traceEnabled) {
           this.trace(
             'connection closed by GOAWAY with code ' +
@@ -446,6 +447,7 @@ class Http2Transport implements Transport {
 
   private canSendPing() {
     return (
+      !this.session.closed &&
       !this.session.destroyed &&
       this.keepaliveTimeMs > 0 &&
       (this.keepaliveWithoutCalls || this.activeCalls.size > 0)
@@ -471,6 +473,9 @@ class Http2Transport implements Transport {
     }
     this.keepaliveTimer = setTimeout(() => {
       this.keepaliveTimer = null;
+      if (this.session.closed) {
+        return;
+      }
       this.keepaliveTrace('Ping timeout passed without response');
       this.handleDisconnect();
     }, this.keepaliveTimeoutMs);
@@ -480,6 +485,10 @@ class Http2Transport implements Transport {
       const pingSentSuccessfully = this.session.ping(
         (err: Error | null, duration: number, payload: Buffer) => {
           this.clearKeepaliveTimeout();
+          // Node cancels PINGs locally on closing sessions; calls may still drain.
+          if (this.session.closed) {
+            return;
+          }
           if (err) {
             if (this.keepaliveTraceEnabled) {
               this.keepaliveTrace('Ping failed with error ' + err.message);
