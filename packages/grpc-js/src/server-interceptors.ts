@@ -36,6 +36,7 @@ import * as logging from './logging';
 import { AuthContext } from './auth-context';
 import { TLSSocket } from 'tls';
 import { GRPC_METRICS_HEADER, PerRequestMetricRecorder } from './orca';
+import { GRPC_NODE_DEBUG_SEND_ERROR_DETAILS } from './environment';
 
 const TRACER_NAME = 'server_call';
 
@@ -789,9 +790,15 @@ export class BaseServerInterceptingCall
     try {
       queueEntry.parsedMessage = this.handler.deserialize(decompressedMessage);
     } catch (err) {
+      let details: string;
+      if (GRPC_NODE_DEBUG_SEND_ERROR_DETAILS) {
+        details = `Error deserializing request: ${(err as Error).message}`;
+      } else {
+        details = 'Error deserializing request';
+      }
       this.sendStatus({
         code: Status.INTERNAL,
-        details: `Error deserializing request: ${(err as Error).message}`,
+        details: details,
       });
       return;
     }
@@ -890,9 +897,15 @@ export class BaseServerInterceptingCall
     try {
       response = this.serializeMessage(message);
     } catch (e) {
+      let details: string;
+      if (GRPC_NODE_DEBUG_SEND_ERROR_DETAILS) {
+        details = `Error serializing response: ${getErrorMessage(e)}`;
+      } else {
+        details = 'Error serializing response';
+      }
       this.sendStatus({
         code: Status.INTERNAL,
-        details: `Error serializing response: ${getErrorMessage(e)}`,
+        details: details,
         metadata: null,
       });
       return;
@@ -918,9 +931,15 @@ export class BaseServerInterceptingCall
     );
     this.stream.write(response, error => {
       if (error) {
+        let details: string;
+        if (GRPC_NODE_DEBUG_SEND_ERROR_DETAILS) {
+          details = `Error writing message: ${getErrorMessage(error)}`;
+        } else {
+          details = 'Internal server error';
+        }
         this.sendStatus({
           code: Status.INTERNAL,
-          details: `Error writing message: ${getErrorMessage(error)}`,
+          details: details,
           metadata: null,
         });
         return;
