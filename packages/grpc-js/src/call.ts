@@ -18,13 +18,13 @@
 import { EventEmitter } from 'events';
 import { Duplex, Readable, Writable } from 'stream';
 
-import { StatusObject, MessageContext } from './call-interface';
+import { AuthContext } from './auth-context';
+import { MessageContext, StatusObject } from './call-interface';
+import { InterceptingCallInterface } from './client-interceptors';
 import { Status } from './constants';
 import { EmitterAugmentation1 } from './events';
 import { Metadata } from './metadata';
 import { ObjectReadable, ObjectWritable, WriteCallback } from './object-stream';
-import { InterceptingCallInterface } from './client-interceptors';
-import { AuthContext } from './auth-context';
 
 /**
  * A type extending the built-in Error object with additional fields.
@@ -83,7 +83,7 @@ export function callErrorFromStatus(
   const message = `${status.code} ${Status[status.code]}: ${status.details}`;
   const error = new Error(message);
   const stack = `${error.stack}\nfor call at\n${callerStack}`;
-  return Object.assign(new Error(message), status, { stack });
+  return Object.assign(error, status, { stack });
 }
 
 export class ClientUnaryCallImpl
