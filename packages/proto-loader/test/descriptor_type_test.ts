@@ -178,4 +178,47 @@ describe('Descriptor types', () => {
       },
     })
   })
+
+  it('Can deserialize int64 values as BigInt', () => {
+    const wideValue = '9223372036854775807';
+    const encodedDef = proto_loader.loadSync(
+      `${TEST_PROTO_DIR}/messages.proto`,
+      { keepCase: true }
+    ).LongValues;
+    assert(isTypeObject(encodedDef));
+    const longValuesDef = encodedDef as proto_loader.MessageTypeDefinition<
+      object,
+      object
+    >;
+    const encoded = longValuesDef.serialize({
+      int_64: wideValue,
+      uint_64: wideValue,
+      sint_64: wideValue,
+      fixed_64: wideValue,
+      sfixed_64: wideValue,
+    });
+    const decodedDef = proto_loader.loadSync(
+      `${TEST_PROTO_DIR}/messages.proto`,
+      {
+        keepCase: true,
+        longs: BigInt,
+      }
+    ).LongValues;
+    assert(isTypeObject(decodedDef));
+    const decoded = (
+      decodedDef as proto_loader.MessageTypeDefinition<object, object>
+    ).deserialize(encoded) as {
+      int_64: bigint;
+      uint_64: bigint;
+      sint_64: bigint;
+      fixed_64: bigint;
+      sfixed_64: bigint;
+    };
+    assert.strictEqual(typeof decoded.int_64, 'bigint');
+    assert.strictEqual(decoded.int_64, BigInt(wideValue));
+    assert.strictEqual(decoded.uint_64, BigInt(wideValue));
+    assert.strictEqual(decoded.sint_64, BigInt(wideValue));
+    assert.strictEqual(decoded.fixed_64, BigInt(wideValue));
+    assert.strictEqual(decoded.sfixed_64, BigInt(wideValue));
+  });
 });
