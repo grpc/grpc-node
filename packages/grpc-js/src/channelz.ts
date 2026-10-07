@@ -263,11 +263,11 @@ export class ChannelzCallTracker {
   callsStarted = 0;
   callsSucceeded = 0;
   callsFailed = 0;
-  lastCallStartedTimestamp: Date | null = null;
+  lastCallStartedTimestamp: Date | number | null = null;
 
   addCallStarted() {
     this.callsStarted += 1;
-    this.lastCallStartedTimestamp = new Date();
+    this.lastCallStartedTimestamp = Date.now();
   }
   addCallSucceeded() {
     this.callsSucceeded += 1;
@@ -324,10 +324,10 @@ export interface SocketInfo {
   messagesSent: number;
   messagesReceived: number;
   keepAlivesSent: number;
-  lastLocalStreamCreatedTimestamp: Date | null;
-  lastRemoteStreamCreatedTimestamp: Date | null;
-  lastMessageSentTimestamp: Date | null;
-  lastMessageReceivedTimestamp: Date | null;
+  lastLocalStreamCreatedTimestamp: Date | number | null;
+  lastRemoteStreamCreatedTimestamp: Date | number | null;
+  lastMessageSentTimestamp: Date | number | null;
+  lastMessageReceivedTimestamp: Date | number | null;
   localFlowControlWindow: number | null;
   remoteFlowControlWindow: number | null;
 }
@@ -542,13 +542,15 @@ function connectivityStateToMessage(
   }
 }
 
-function dateToProtoTimestamp(date?: Date | null): Timestamp | null {
-  if (!date) {
+export function dateToProtoTimestamp(
+  date?: Date | number | null
+): Timestamp | null {
+  if (date === null || date === undefined) {
     return null;
   }
-  const millisSinceEpoch = date.getTime();
+  const millisSinceEpoch = typeof date === 'number' ? date : date.getTime();
   return {
-    seconds: (millisSinceEpoch / 1000) | 0,
+    seconds: Math.floor(millisSinceEpoch / 1000),
     nanos: (millisSinceEpoch % 1000) * 1_000_000,
   };
 }

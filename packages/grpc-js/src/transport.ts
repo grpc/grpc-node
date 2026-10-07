@@ -141,8 +141,8 @@ class Http2Transport implements Transport {
   private keepalivesSent = 0;
   private messagesSent = 0;
   private messagesReceived = 0;
-  private lastMessageSentTimestamp: Date | null = null;
-  private lastMessageReceivedTimestamp: Date | null = null;
+  private lastMessageSentTimestamp: number | null = null;
+  private lastMessageReceivedTimestamp: number | null = null;
 
   constructor(
     private session: http2.ClientHttp2Session,
@@ -616,12 +616,12 @@ class Http2Transport implements Transport {
       eventTracker = {
         addMessageSent: () => {
           this.messagesSent += 1;
-          this.lastMessageSentTimestamp = new Date();
+          this.lastMessageSentTimestamp = Date.now();
           subchannelCallStatsTracker.addMessageSent?.();
         },
         addMessageReceived: () => {
           this.messagesReceived += 1;
-          this.lastMessageReceivedTimestamp = new Date();
+          this.lastMessageReceivedTimestamp = Date.now();
           subchannelCallStatsTracker.addMessageReceived?.();
         },
         onCallEnd: status => {

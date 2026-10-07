@@ -15,7 +15,7 @@
  *
  */
 
-import { CallCredentials } from './call-credentials';
+import { CallCredentials, isEmptyCallCredentials } from './call-credentials';
 import {
   Call,
   DeadlineInfoProvider,
@@ -31,7 +31,6 @@ import { InternalChannel } from './internal-channel';
 import { Metadata } from './metadata';
 import { OnCallEnded, PickResultType } from './picker';
 import { CallConfig } from './resolver';
-import { splitHostPort } from './uri-parser';
 import * as logging from './logging';
 import { restrictControlPlaneStatusCode } from './control-plane-status';
 import * as http2 from 'http2';
@@ -39,6 +38,8 @@ import { AuthContext } from './auth-context';
 import { SubchannelInterface } from './subchannel-interface';
 
 const TRACER_NAME = 'load_balancing_call';
+const RESOLVED_EMPTY_METADATA: Promise<Metadata | undefined> =
+  Promise.resolve(undefined);
 
 export type RpcProgress = 'NOT_STARTED' | 'DROP' | 'REFUSED' | 'PROCESSED';
 
@@ -62,8 +63,8 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
   private metadata: Metadata | null = null;
   private listener: InterceptingListener | null = null;
   private onCallEnded: OnCallEnded | null = null;
-  private startTime: Date;
-  private childStartTime: Date | null = null;
+  private startTime: number;
+  private childStartTime: number | null = null;
   constructor(
     private readonly channel: InternalChannel,
     private readonly callConfig: CallConfig,
@@ -73,23 +74,12 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
     private readonly deadline: Deadline,
     private readonly callNumber: number
   ) {
-    const splitPath: string[] = this.methodName.split('/');
-    let serviceName = '';
-    /* The standard path format is "/{serviceName}/{methodName}", so if we split
-     * by '/', the first item should be empty and the second should be the
-     * service name */
-    if (splitPath.length >= 2) {
-      serviceName = splitPath[1];
-    }
-    const hostname = splitHostPort(this.host)?.host ?? 'localhost';
-    /* Currently, call credentials are only allowed on HTTPS connections, so we
-     * can assume that the scheme is "https" */
-    this.serviceUrl = `https://${hostname}/${serviceName}`;
-    this.startTime = new Date();
+    this.serviceUrl = this.channel.getServiceUrl(this.host, this.methodName);
+    this.startTime = Date.now();
   }
   getDeadlineInfo(): string[] {
     const deadlineInfo: string[] = [];
-    if (this.childStartTime) {
+    if (this.childStartTime !== null) {
       if (this.childStartTime > this.startTime) {
         if (this.metadata?.getOptions().waitForReady) {
           deadlineInfo.push('wait_for_ready');
@@ -142,7 +132,7 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
             ' details="' +
             status.details +
             '" start time=' +
-            this.startTime.toISOString()
+            new Date(this.startTime).toISOString()
         );
       }
       const finalStatus = { ...status, progress };
@@ -150,6 +140,17 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
       this.onCallEnded?.(finalStatus.code, finalStatus.details, finalStatus.metadata);
       this.channel.removeCallFromPickQueue(this);
     }
+  }
+
+  private generateCallCredentialsMetadata(
+    callCredentials: CallCredentials
+  ): Promise<Metadata | undefined> {
+    return isEmptyCallCredentials(callCredentials)
+      ? RESOLVED_EMPTY_METADATA
+      : callCredentials.generateMetadata({
+          method_name: this.methodName,
+          service_url: this.serviceUrl,
+        });
   }
 
   doPick() {
@@ -180,9 +181,9 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
     }
     switch (pickResult.pickResultType) {
       case PickResultType.COMPLETE:
-        const combinedCallCredentials = this.credentials.compose(pickResult.subchannel!.getCallCredentials());
-        combinedCallCredentials
-          .generateMetadata({ method_name: this.methodName, service_url: this.serviceUrl })
+        this.generateCallCredentialsMetadata(
+          this.credentials.compose(pickResult.subchannel!.getCallCredentials())
+        )
           .then(
             credsMetadata => {
               /* If this call was cancelled (e.g. by the deadline) before
@@ -194,7 +195,9 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
                 );
                 return;
               }
-              finalMetadata.merge(credsMetadata);
+              if (credsMetadata) {
+                finalMetadata.merge(credsMetadata);
+              }
               if (finalMetadata.get('authorization').length > 1) {
                 this.outputStatus(
                   {
@@ -261,7 +264,7 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
                     },
                     this.callNumber
                   );
-                this.childStartTime = new Date();
+                this.childStartTime = Date.now();
               } catch (error) {
                 if (this.traceEnabled) {
                   this.trace(

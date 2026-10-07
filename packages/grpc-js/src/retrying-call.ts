@@ -124,7 +124,7 @@ interface UnderlyingCall {
   state: UnderlyingCallState;
   call: LoadBalancingCall;
   nextMessageToSend: number;
-  startTime: Date;
+  startTime: number;
 }
 
 /**
@@ -210,7 +210,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
   private committedCallIndex: number | null = null;
   private initialRetryBackoffSec = 0;
   private nextRetryBackoffSec = 0;
-  private startTime: Date;
+  private startTime: number;
   private maxAttempts: number;
   constructor(
     private readonly channel: InternalChannel,
@@ -249,7 +249,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
       this.state = 'TRANSPARENT_ONLY';
       this.maxAttempts = 1;
     }
-    this.startTime = new Date();
+    this.startTime = Date.now();
   }
   getDeadlineInfo(): string[] {
     if (this.underlyingCalls.length === 0) {
@@ -299,7 +299,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
           ' details="' +
           statusObject.details +
           '" start time=' +
-          this.startTime.toISOString()
+          new Date(this.startTime).toISOString()
       );
     }
     this.bufferTracker.freeAll(this.callNumber);
@@ -715,11 +715,12 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
       state: 'ACTIVE',
       call: child,
       nextMessageToSend: 0,
-      startTime: new Date(),
+      startTime: Date.now(),
     });
     const previousAttempts = this.attempts - 1;
-    const initialMetadata = this.initialMetadata!.clone();
+    let initialMetadata = this.initialMetadata!;
     if (previousAttempts > 0) {
+      initialMetadata = initialMetadata.clone();
       initialMetadata.set(
         PREVIONS_RPC_ATTEMPTS_METADATA_KEY,
         `${previousAttempts}`

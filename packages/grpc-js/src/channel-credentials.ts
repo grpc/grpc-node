@@ -184,6 +184,7 @@ class InsecureChannelCredentialsImpl extends ChannelCredentials {
     return other instanceof InsecureChannelCredentialsImpl;
   }
   _createSecureConnector(channelTarget: GrpcUri, options: ChannelOptions, callCredentials?: CallCredentials): SecureConnector {
+    const credentials = callCredentials ?? CallCredentials.createEmpty();
     return {
       connect(socket) {
         return Promise.resolve({
@@ -195,7 +196,7 @@ class InsecureChannelCredentialsImpl extends ChannelCredentials {
         return Promise.resolve();
       },
       getCallCredentials: () => {
-        return callCredentials ?? CallCredentials.createEmpty();
+        return credentials;
       },
       destroy() {}
     }
