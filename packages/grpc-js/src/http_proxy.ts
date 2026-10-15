@@ -17,7 +17,7 @@
 
 import { log } from './logging';
 import { LogVerbosity } from './constants';
-import { isIPv4, Socket } from 'net';
+import { isIP, isIPv4, Socket } from 'net';
 import * as http from 'http';
 import * as logging from './logging';
 import {
@@ -169,13 +169,25 @@ function isIpInCIDR(cidr: CIDRNotation, serverHost: string) {
   return (hostIP & mask) === (ip & mask);
 }
 
+function hostMatchesNoProxyEntry(serverHost: string, entry: string): boolean {
+  const domain = entry.startsWith('.') ? entry.substring(1) : entry;
+  if (serverHost === domain) {
+    return true;
+  }
+  return !isIP(serverHost) && serverHost.endsWith('.' + domain);
+}
+
 function hostMatchesNoProxyList(serverHost: string): boolean {
-  for (const host of getNoProxyHostList()) {
+  for (const entry of getNoProxyHostList()) {
+    const host = entry.trim();
+    if (!host) {
+      continue;
+    }
     const parsedCIDR = parseCIDR(host);
     // host is a CIDR and serverHost is an IP address
     if (isIPv4(serverHost) && parsedCIDR && isIpInCIDR(parsedCIDR, serverHost)) {
       return true;
-    } else if (serverHost.endsWith(host)) {
+    } else if (hostMatchesNoProxyEntry(serverHost, host)) {
       // host is a single IP or a domain name suffix
       return true;
     }
