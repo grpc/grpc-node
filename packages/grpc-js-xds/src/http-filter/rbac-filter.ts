@@ -171,5 +171,10 @@ export function setup() {
       parseOverrideFilterConfig: parseOverrideRbacConfig,
       createServerFilter: createRbacServerFilter
     });
+    registerHttpFilter(RBAC_FILTER_OVERRIDE_URL, {
+      parseTopLevelFilterConfig: parseTopLevelRbacConfig,
+      parseOverrideFilterConfig: parseOverrideRbacConfig,
+      createServerFilter: createRbacServerFilter
+    });
   }
 }

@@ -170,7 +170,7 @@ class FilterChainEntry {
       const filterConfig = parseTopLevelFilterConfig(filter.typed_config!, false);
       if (filterConfig) {
         const filterOverrideConfigMap = new Map<string, HttpFilterConfig>();
-        this.overrideConfigMaps.set(filterConfig.typeUrl, filterOverrideConfigMap);
+        this.overrideConfigMaps.set(filter.name, filterOverrideConfigMap);
         const filterInterceptor = createServerHttpFilter(filterConfig, filterOverrideConfigMap);
         if (filterInterceptor) {
           httpFilterInterceptors.push(filterInterceptor);
@@ -227,6 +227,14 @@ class FilterChainEntry {
         domains: virtualHost.domains,
         routes: []
       };
+      // filter name -> config
+      const virtualHostOverrideConfigs = new Map<string, HttpFilterConfig>()
+      for (const [filterName, overrideConfig] of Object.entries(virtualHost.typed_per_filter_config)) {
+        const parsedConfig = parseOverrideFilterConfig(overrideConfig);
+        if (parsedConfig) {
+          virtualHostOverrideConfigs.set(filterName, parsedConfig);
+        }
+      }
       for (const [routeIndex, route] of virtualHost.routes.entries()) {
         const routeEntry: RouteEntry = {
           id: `virtualhost=${virtualHostIndex} route=${routeIndex}`,
@@ -238,10 +246,19 @@ class FilterChainEntry {
           this.logConfigurationError('For domains matching [' + virtualHostEntry.domains + '] requests will be rejected for routes matching ' + routeEntry.matcher.toString());
         }
         virtualHostEntry.routes.push(routeEntry);
-        for (const [filterName, overrideConfig] of Object.entries(route.typed_per_filter_config)) {
-          const parsedConfig = parseOverrideFilterConfig(overrideConfig);
-          if (parsedConfig) {
-            this.overrideConfigMaps.get(filterName)?.set(routeEntry.id, parsedConfig);
+        for (const filterName of this.overrideConfigMaps.keys()) {
+          // Use the virtual host override by default
+          let routeOverrideConfig = virtualHostOverrideConfigs.get(filterName);
+          if (filterName in route.typed_per_filter_config) {
+            const parsedConfig = parseOverrideFilterConfig(route.typed_per_filter_config[filterName]);
+            if (parsedConfig) {
+              /* If the route has an override config and it parses successfully,
+               * use it instead because it is more specific. */
+              routeOverrideConfig = parsedConfig;
+            }
+          }
+          if (routeOverrideConfig) {
+            this.overrideConfigMaps.get(filterName)!.set(routeEntry.id, routeOverrideConfig);
           }
         }
       }
