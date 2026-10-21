@@ -273,6 +273,61 @@ describe('Server', () => {
     });
   });
 
+  describe('keepalive during graceful shutdown', () => {
+    const echoService = loadProtoFile(
+      path.join(__dirname, 'fixtures', 'echo_service.proto')
+    ).EchoService as ServiceClientConstructor;
+    let client: ServiceClient;
+    let responseTimer: NodeJS.Timeout;
+
+    afterEach(() => {
+      client?.close();
+      clearTimeout(responseTimer);
+    });
+
+    it('preserves an active call with client and server keepalive', done => {
+      const keepaliveOptions = {
+        'grpc.keepalive_time_ms': 200,
+        'grpc.keepalive_timeout_ms': 200,
+      };
+      server = new Server(keepaliveOptions);
+      server.addService(echoService.service, {
+        echo(call: ServerUnaryCall<any, any>, callback: sendUnaryData<any>) {
+          server.tryShutdown(noop);
+          // Keep the accepted call alive past keepalive and its timeout.
+          responseTimer = setTimeout(() => callback(null, call.request), 600);
+        },
+      });
+      server.bindAsync(
+        '127.0.0.1:0',
+        ServerCredentials.createInsecure(),
+        (error, port) => {
+          if (error) {
+            done(error);
+            return;
+          }
+          client = new echoService(
+            `127.0.0.1:${port}`,
+            grpc.credentials.createInsecure(),
+            keepaliveOptions
+          );
+          client.echo(
+            { value: 'test value', value2: 3 },
+            { deadline: Date.now() + 5000 },
+            (error: ServiceError | null, response: any) => {
+              assert.ifError(error);
+              assert.deepStrictEqual(response, {
+                value: 'test value',
+                value2: 3,
+              });
+              done();
+            }
+          );
+        }
+      );
+    }).timeout(10000);
+  });
+
   describe('drain', () => {
     let client: ServiceClient;
     let portNumber: number;
