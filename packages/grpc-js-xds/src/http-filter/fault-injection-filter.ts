@@ -235,8 +235,7 @@ class FaultInjectionFilter extends BaseFilter implements Filter {
     super();
   }
 
-  async sendMetadata(metadataPromise: Promise<Metadata>): Promise<Metadata> {
-    const metadata = await metadataPromise;
+  async sendMetadata(metadata: Metadata): Promise<Metadata> {
     // Handle delay
     if (totalActiveFaults < this.config.maxActiveFaults && this.config.delay) {
       let duration = 0;
