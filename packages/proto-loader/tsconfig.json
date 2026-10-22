@@ -3,7 +3,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "build",
-    "lib": ["es2017"],
+    "lib": ["es2017", "ES2020.BigInt"],
     "target": "es2017"
   },
   "include": [
