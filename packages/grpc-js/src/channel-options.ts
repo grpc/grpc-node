@@ -67,6 +67,7 @@ export interface ChannelOptions {
   'grpc-node.retry_max_attempts_limit'?: number;
   'grpc-node.flow_control_window'?: number;
   'grpc.server_call_metric_recording'?: number;
+  'grpc.min_reconnect_backoff_ms'?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
