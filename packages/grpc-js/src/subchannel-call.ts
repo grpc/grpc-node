@@ -643,7 +643,12 @@ export class Http2SubchannelCall implements SubchannelCall {
           code = Status.INTERNAL;
         }
         if (error) {
-          this.cancelWithStatus(code, `Write error: ${error.message}`);
+          this.endCall({
+            code,
+            details: `Write error: ${error.message}`,
+            metadata: new Metadata(),
+            rstCode: this.http2Stream.rstCode,
+          });
         }
         context.callback?.();
       });
