@@ -16,6 +16,8 @@
  */
 
 import * as assert from 'assert';
+import * as http2 from 'http2';
+import { AddressInfo } from 'net';
 import * as path from 'path';
 import * as grpc from '../src';
 import { loadProtoFile } from './common';
@@ -762,5 +764,157 @@ describe('Retries after cancellation', () => {
         }, 500);
       });
     }
+  });
+});
+
+describe('Transparent retries for queued HTTP/2 streams', function () {
+  this.timeout(5000);
+
+  let server: http2.Http2Server;
+  let client: InstanceType<grpc.ServiceClientConstructor>;
+  let sessions: Set<http2.ServerHttp2Session>;
+  let settingsAcknowledged: Promise<void>;
+
+  beforeEach(done => {
+    sessions = new Set();
+    server = http2.createServer({ settings: { maxConcurrentStreams: 1 } });
+    settingsAcknowledged = new Promise(resolve => {
+      server.once('session', session => {
+        session.once('localSettings', () => resolve());
+      });
+    });
+    server.on('session', session => {
+      sessions.add(session);
+      session.on('close', () => sessions.delete(session));
+    });
+    server.listen(0, '127.0.0.1', () => {
+      const port = (server.address() as AddressInfo).port;
+      client = new EchoService(
+        `127.0.0.1:${port}`,
+        grpc.credentials.createInsecure()
+      );
+      done();
+    });
+  });
+
+  afterEach(done => {
+    client.close();
+    for (const session of sessions) {
+      session.destroy();
+    }
+    server.close(done);
+  });
+
+  function respond(stream: http2.ServerHttp2Stream, body: Buffer) {
+    stream.respond(
+      { ':status': 200, 'content-type': 'application/grpc' },
+      { waitForTrailers: true }
+    );
+    stream.on('wantTrailers', () => {
+      stream.sendTrailers({ 'grpc-status': '0' });
+    });
+    stream.end(body);
+  }
+
+  function request(id: string) {
+    const metadata = new grpc.Metadata();
+    metadata.set('request-id', id);
+    return new Promise<{ error: grpc.ServiceError | null; response: any }>(
+      resolve => {
+        client.echo(
+          { value: id, value2: 3 },
+          metadata,
+          { deadline: Date.now() + 2000 },
+          (error: grpc.ServiceError | null, response: any) => {
+            resolve({ error, response });
+          }
+        );
+      }
+    );
+  }
+
+  async function startQueuedCalls() {
+    const receivedRequests = new Map<string, number>();
+    let firstStream!: http2.ServerHttp2Stream;
+    let firstBody!: Buffer;
+    let resolveFirstRequest!: () => void;
+    const firstRequest = new Promise<void>(resolve => {
+      resolveFirstRequest = resolve;
+    });
+    server.on('stream', (stream: http2.ServerHttp2Stream, headers) => {
+      const chunks: Buffer[] = [];
+      stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+      stream.on('end', () => {
+        const id = headers['request-id'] as string;
+        receivedRequests.set(id, (receivedRequests.get(id) ?? 0) + 1);
+        const body = Buffer.concat(chunks);
+        if (id === 'first') {
+          firstStream = stream;
+          firstBody = body;
+          resolveFirstRequest();
+        } else {
+          respond(stream, body);
+        }
+      });
+    });
+    const first = request('first');
+    await firstRequest;
+    await settingsAcknowledged;
+    const queued = request('queued');
+    // Let the second request reach the HTTP/2 queue while the first is open.
+    await new Promise<void>(resolve => setImmediate(resolve));
+    return { first, queued, firstStream, firstBody, receivedRequests };
+  }
+
+  it('Should transparently retry a queued request refused by GOAWAY', async () => {
+    const calls = await startQueuedCalls();
+    // The first GOAWAY of graceful shutdown uses the maximum stream ID.
+    calls.firstStream.session!.goaway(
+      http2.constants.NGHTTP2_NO_ERROR,
+      0x7fffffff
+    );
+    respond(calls.firstStream, calls.firstBody);
+
+    const [first, queued] = await Promise.all([calls.first, calls.queued]);
+    assert.ifError(first.error);
+    assert.ifError(queued.error);
+    assert.deepStrictEqual(first.response, { value: 'first', value2: 3 });
+    assert.deepStrictEqual(queued.response, { value: 'queued', value2: 3 });
+    assert.strictEqual(calls.receivedRequests.get('first'), 1);
+    assert.strictEqual(calls.receivedRequests.get('queued'), 1);
+  });
+
+  it('Should respect disabled retries for a queued request refused by GOAWAY', async () => {
+    client.close();
+    const port = (server.address() as AddressInfo).port;
+    client = new EchoService(
+      `127.0.0.1:${port}`,
+      grpc.credentials.createInsecure(),
+      { 'grpc.enable_retries': 0 }
+    );
+    const calls = await startQueuedCalls();
+    calls.firstStream.session!.goaway(
+      http2.constants.NGHTTP2_NO_ERROR,
+      0x7fffffff
+    );
+    respond(calls.firstStream, calls.firstBody);
+
+    const [first, queued] = await Promise.all([calls.first, calls.queued]);
+    assert.ifError(first.error);
+    assert(queued.error);
+    assert.strictEqual(queued.error.code, grpc.status.UNAVAILABLE);
+    assert.strictEqual(calls.receivedRequests.get('first'), 1);
+    assert.strictEqual(calls.receivedRequests.has('queued'), false);
+  });
+
+  it('Should not retry processed requests when the connection drops', async () => {
+    const calls = await startQueuedCalls();
+    calls.firstStream.session!.destroy();
+
+    const [first, queued] = await Promise.all([calls.first, calls.queued]);
+    assert(first.error);
+    assert(queued.error);
+    assert.strictEqual(calls.receivedRequests.get('first'), 1);
+    assert.strictEqual(calls.receivedRequests.has('queued'), false);
   });
 });
