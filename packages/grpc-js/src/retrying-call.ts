@@ -207,6 +207,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
    */
   private attempts = 0;
   private hedgingTimer: NodeJS.Timeout | null = null;
+  private retryTimer: NodeJS.Timeout | null = null;
   private committedCallIndex: number | null = null;
   private initialRetryBackoffSec = 0;
   private nextRetryBackoffSec = 0;
@@ -320,6 +321,18 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
       this.trace(
         'cancelWithStatus code: ' + status + ' details: "' + details + '"'
       );
+    }
+    /* No new attempt may start after cancellation. Otherwise a pending retry
+     * or hedging timer would start one, opening a stream that nothing will
+     * ever end. */
+    this.state = 'NO_RETRY';
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
+    if (this.hedgingTimer) {
+      clearTimeout(this.hedgingTimer);
+      this.hedgingTimer = null;
     }
     this.reportStatus({ code: status, details, metadata: new Metadata() });
     for (const { call } of this.underlyingCalls) {
@@ -487,7 +500,8 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
       retryDelayMs = pushback;
       this.nextRetryBackoffSec = this.initialRetryBackoffSec;
     }
-    setTimeout(() => {
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null;
       if (this.state !== 'RETRY') {
         callback(false);
         return;
