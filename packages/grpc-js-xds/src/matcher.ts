@@ -56,7 +56,7 @@ export class ExactValueMatcher implements ValueMatcher {
 export class SafeRegexValueMatcher implements ValueMatcher {
   private targetRegexImpl: RE2;
   constructor(targetRegex: string) {
-    this.targetRegexImpl = new RE2(`^${targetRegex}$`, 'u');
+    this.targetRegexImpl = new RE2(`^(${targetRegex})$`, 'u');
   }
 
   apply(value: string) {
@@ -229,7 +229,7 @@ export class PathExactValueMatcher {
 export class PathSafeRegexValueMatcher {
   private targetRegexImpl: RE2;
   constructor(targetRegex: string) {
-    this.targetRegexImpl = new RE2(`^${targetRegex}$`, 'u');
+    this.targetRegexImpl = new RE2(`^(${targetRegex})$`, 'u');
   }
 
   apply(value: string) {

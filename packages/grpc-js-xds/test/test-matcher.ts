@@ -80,6 +80,22 @@ const stringValueMatcherTestCases: StringValueMatcherGroup[] = [{
     value: 'no',
     result: true
   }, {
+    target: 'yes|no|maybe',
+    value: 'yes_',
+    result: false
+  }, {
+    target: 'yes|no|maybe',
+    value: 'no_',
+    result: false
+  }, {
+    target: 'yes|no|maybe',
+    value: '_no',
+    result: false
+  }, {
+    target: 'yes|no|maybe',
+    value: '_maybe',
+    result: false
+  }, {
     target: '[abc]',
     value: 'd',
     result: false
@@ -212,6 +228,22 @@ const stringValueMatcherTestCases: StringValueMatcherGroup[] = [{
     target: 'yes|no',
     value: 'no',
     result: true
+  }, {
+    target: 'yes|no|maybe',
+    value: 'yes_',
+    result: false
+  }, {
+    target: 'yes|no|maybe',
+    value: 'no_',
+    result: false
+  }, {
+    target: 'yes|no|maybe',
+    value: '_no',
+    result: false
+  }, {
+    target: 'yes|no|maybe',
+    value: '_maybe',
+    result: false
   }, {
     target: '[abc]',
     value: 'd',
