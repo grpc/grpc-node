@@ -222,6 +222,10 @@ class AdsResponseParser {
       this.result.errors.push(`${errorPrefix} ${(e as Error).message}`);
       return;
     }
+    if (!this.adsCallState.client.authorities.has(parsedName.authority)) {
+      this.adsCallState.client.trace('Received resource of type ' + this.result.type.getTypeUrl() + ' named ' + decodeResult.name + ' owned by another authority');
+      return;
+    }
     this.adsCallState.typeStates.get(this.result.type!)?.subscribedResources.get(parsedName.authority)?.get(parsedName.key)?.markSeen();
     if (this.result.type.allResourcesRequiredInSotW()) {
       if (!this.result.resourcesSeen.has(parsedName.authority)) {
@@ -841,6 +845,10 @@ class XdsSingleServerClient {
    * Map of type to latest accepted version string for that type
    */
   public resourceTypeVersionMap: Map<XdsResourceType, string> = new Map();
+  /**
+   * The set of authorities that this client has been used for
+   */
+  public authorities: Set<string> = new Set();
   constructor(public xdsClient: XdsClient, bootstrapNode: Node, public xdsServerConfig: XdsServerConfig) {
     this.adsBackoff = new BackoffTimeout(() => {
       this.maybeStartAdsStream();
@@ -1196,10 +1204,12 @@ export class XdsClient {
     }
     for (const entry of this.clients) {
       if (serverConfigEqual(serverConfig, entry.serverConfig)) {
+        entry.client.authorities.add(authority);
         return entry.client;
       }
     }
     const client = new XdsSingleServerClient(this, bootstrapInfo.node, serverConfig);
+    client.authorities.add(authority);
     this.clients.push({client, serverConfig});
     return client;
   }
