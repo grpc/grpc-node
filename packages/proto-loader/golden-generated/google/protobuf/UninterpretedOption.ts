@@ -15,8 +15,8 @@ export interface O_google_protobuf_UninterpretedOption_NamePart {
 export interface IUninterpretedOption {
   'name'?: (I_google_protobuf_UninterpretedOption_NamePart)[];
   'identifierValue'?: (string);
-  'positiveIntValue'?: (number | string | Long);
-  'negativeIntValue'?: (number | string | Long);
+  'positiveIntValue'?: (number | string | Long | bigint);
+  'negativeIntValue'?: (number | string | Long | bigint);
   'doubleValue'?: (number | string);
   'stringValue'?: (Buffer | Uint8Array | string);
   'aggregateValue'?: (string);
