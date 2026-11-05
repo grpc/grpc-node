@@ -18,7 +18,15 @@
 import { ChannelOptions } from './channel-options';
 import { ConnectivityState } from './connectivity-state';
 import { LogVerbosity, Status } from './constants';
-import { Duration, durationToMs, isDuration, msToDuration } from './duration';
+import {
+  Duration,
+  durationMessageToDuration,
+  durationToMs,
+  isDuration,
+  isDurationMessage,
+  msToDuration,
+  parseDuration,
+} from './duration';
 import {
   ChannelControlHelper,
   createChildChannelControlHelper,
@@ -123,33 +131,50 @@ function validateFieldType(
   }
 }
 
+function parseDurationValue(value: any, fullFieldName: string): Duration {
+  if (isDuration(value)) {
+    return value;
+  }
+  if (isDurationMessage(value)) {
+    return durationMessageToDuration(value);
+  }
+  if (typeof value === 'string') {
+    const parsedDuration = parseDuration(value);
+    if (!parsedDuration) {
+      throw new Error(
+        `outlier detection config ${fullFieldName} parse error: failed to parse duration string ${value}`
+      );
+    }
+    return parsedDuration;
+  }
+  throw new Error(
+    `outlier detection config ${fullFieldName} parse error: expected Duration, got ${typeof value}`
+  );
+}
+
 function validatePositiveDuration(
   obj: any,
   fieldName: string,
   objectName?: string
-) {
+): Duration | null {
   const fullFieldName = objectName ? `${objectName}.${fieldName}` : fieldName;
   if (fieldName in obj && obj[fieldName] !== undefined) {
-    if (!isDuration(obj[fieldName])) {
-      throw new Error(
-        `outlier detection config ${fullFieldName} parse error: expected Duration, got ${typeof obj[
-          fieldName
-        ]}`
-      );
-    }
+    const duration = parseDurationValue(obj[fieldName], fullFieldName);
     if (
       !(
-        obj[fieldName].seconds >= 0 &&
-        obj[fieldName].seconds <= 315_576_000_000 &&
-        obj[fieldName].nanos >= 0 &&
-        obj[fieldName].nanos <= 999_999_999
+        duration.seconds >= 0 &&
+        duration.seconds <= 315_576_000_000 &&
+        duration.nanos >= 0 &&
+        duration.nanos <= 999_999_999
       )
     ) {
       throw new Error(
         `outlier detection config ${fullFieldName} parse error: values out of range for non-negative Duaration`
       );
     }
+    return duration;
   }
+  return null;
 }
 
 function validatePercentage(obj: any, fieldName: string, objectName?: string) {
@@ -245,9 +270,9 @@ export class OutlierDetectionLoadBalancingConfig
   }
 
   static createFromJson(obj: any): OutlierDetectionLoadBalancingConfig {
-    validatePositiveDuration(obj, 'interval');
-    validatePositiveDuration(obj, 'base_ejection_time');
-    validatePositiveDuration(obj, 'max_ejection_time');
+    const interval = validatePositiveDuration(obj, 'interval');
+    const baseEjectionTime = validatePositiveDuration(obj, 'base_ejection_time');
+    const maxEjectionTime = validatePositiveDuration(obj, 'max_ejection_time');
     validatePercentage(obj, 'max_ejection_percent');
     if (
       'success_rate_ejection' in obj &&
@@ -326,9 +351,9 @@ export class OutlierDetectionLoadBalancingConfig
     }
 
     return new OutlierDetectionLoadBalancingConfig(
-      obj.interval ? durationToMs(obj.interval) : null,
-      obj.base_ejection_time ? durationToMs(obj.base_ejection_time) : null,
-      obj.max_ejection_time ? durationToMs(obj.max_ejection_time) : null,
+      interval ? durationToMs(interval) : null,
+      baseEjectionTime ? durationToMs(baseEjectionTime) : null,
+      maxEjectionTime ? durationToMs(maxEjectionTime) : null,
       obj.max_ejection_percent ?? null,
       obj.success_rate_ejection,
       obj.failure_percentage_ejection,

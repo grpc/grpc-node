@@ -590,3 +590,73 @@ describe('Outlier detection', () => {
     });
   });
 });
+
+describe('Outlier detection config duration parsing', () => {
+  it('Should accept a canonical Duration string for interval', () => {
+    const loadBalancingConfig = {
+      interval: '10s',
+      child_policy: [{ round_robin: {} }],
+    };
+    const config = OutlierDetectionLoadBalancingConfig.createFromJson(
+      loadBalancingConfig
+    );
+    assert.strictEqual(config.getIntervalMs(), 10_000);
+  });
+  it('Should accept a canonical Duration string with fractional seconds', () => {
+    const loadBalancingConfig = {
+      interval: '1.5s',
+      child_policy: [{ round_robin: {} }],
+    };
+    const config = OutlierDetectionLoadBalancingConfig.createFromJson(
+      loadBalancingConfig
+    );
+    assert.strictEqual(config.getIntervalMs(), 1_500);
+  });
+  it('Should accept a canonical Duration string for base_ejection_time and max_ejection_time', () => {
+    const loadBalancingConfig = {
+      base_ejection_time: '30s',
+      max_ejection_time: '300s',
+      child_policy: [{ round_robin: {} }],
+    };
+    const config = OutlierDetectionLoadBalancingConfig.createFromJson(
+      loadBalancingConfig
+    );
+    assert.strictEqual(config.getBaseEjectionTimeMs(), 30_000);
+    assert.strictEqual(config.getMaxEjectionTimeMs(), 300_000);
+  });
+  it('Should accept a Duration message for interval', () => {
+    const loadBalancingConfig = {
+      interval: {
+        seconds: '10',
+        nanos: 0,
+      },
+      child_policy: [{ round_robin: {} }],
+    };
+    const config = OutlierDetectionLoadBalancingConfig.createFromJson(
+      loadBalancingConfig
+    );
+    assert.strictEqual(config.getIntervalMs(), 10_000);
+  });
+  it('Should still accept the existing object form for interval', () => {
+    const loadBalancingConfig = {
+      interval: {
+        seconds: 10,
+        nanos: 0,
+      },
+      child_policy: [{ round_robin: {} }],
+    };
+    const config = OutlierDetectionLoadBalancingConfig.createFromJson(
+      loadBalancingConfig
+    );
+    assert.strictEqual(config.getIntervalMs(), 10_000);
+  });
+  it('Should reject an unparseable Duration string', () => {
+    const loadBalancingConfig = {
+      interval: '10 seconds',
+      child_policy: [{ round_robin: {} }],
+    };
+    assert.throws(() => {
+      OutlierDetectionLoadBalancingConfig.createFromJson(loadBalancingConfig);
+    }, /interval parse error: failed to parse duration string/);
+  });
+});
