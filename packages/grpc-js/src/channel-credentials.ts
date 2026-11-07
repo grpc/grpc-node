@@ -27,7 +27,7 @@ import {
 import { CallCredentials } from './call-credentials';
 import { CIPHER_SUITES, getDefaultRootsData } from './tls-helpers';
 import { CaCertificateUpdate, CaCertificateUpdateListener, CertificateProvider, IdentityCertificateUpdate, IdentityCertificateUpdateListener } from './certificate-provider';
-import { Socket } from 'net';
+import { isIP, Socket } from 'net';
 import { ChannelOptions } from './channel-options';
 import { GrpcUri, parseUri, splitHostPort } from './uri-parser';
 import { getDefaultAuthority } from './resolver';
@@ -237,7 +237,8 @@ function getConnectionOptions(secureContext: SecureContext, verifyOptions: Verif
       return originalCheckServerIdentity(sslTargetNameOverride, cert);
     };
     connectionOptions.servername = sslTargetNameOverride;
-  } else {
+  } else if (!isIP(remoteHost)) {
+    // Node.js 25+ throws if servername is an IP address (DEP0123)
     connectionOptions.servername = remoteHost;
   }
   if (options['grpc-node.tls_enable_trace']) {
