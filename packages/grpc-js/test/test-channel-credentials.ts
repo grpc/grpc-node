@@ -209,6 +209,24 @@ describe('ChannelCredentials usage', () => {
     );
     assert2.afterMustCallsSatisfied(done);
   });
+  it('Should connect to an IP address target', done => {
+    const channelCreds = ChannelCredentials.createSsl(caCert, null, null, {
+      checkServerIdentity: assert2.mustCall((hostname, cert) => {
+        assert.strictEqual(hostname, '127.0.0.1');
+        return undefined;
+      }),
+    });
+    const client = new echoService(`127.0.0.1:${portNum}`, channelCreds);
+    client.echo(
+      { value: 'test value', value2: 3 },
+      assert2.mustCall((error: ServiceError, response: any) => {
+        client.close();
+        assert.ifError(error);
+        assert.deepStrictEqual(response, { value: 'test value', value2: 3 });
+      })
+    );
+    assert2.afterMustCallsSatisfied(done);
+  });
   it('Should handle certificate providers', done => {
     const certificateProvider = new FileWatcherCertificateProvider({
       caCertificateFile: `${__dirname}/fixtures/ca.pem`,
