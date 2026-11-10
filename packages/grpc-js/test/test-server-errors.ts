@@ -888,6 +888,129 @@ describe('Other conditions', () => {
   });
 });
 
+describe('Handler returning error with code OK', () => {
+  let server: Server;
+  let client: ServiceClient;
+
+  before(done => {
+    server = new Server();
+
+    server.addService(testServiceClient.service, {
+      unary(call: ServerUnaryCall<any, any>, cb: sendUnaryData<any>) {
+        cb({
+          code: grpc.status.OK,
+          details: 'Error with OK status',
+        } as ServiceError);
+      },
+
+      clientStream(
+        stream: ServerReadableStream<any, any>,
+        cb: sendUnaryData<any>
+      ) {
+        stream.on('data', () => {});
+        stream.on('end', () => {
+          cb({
+            code: grpc.status.OK,
+            details: 'Error with OK status',
+          } as ServiceError);
+        });
+      },
+
+      serverStream(stream: ServerWritableStream<any, any>) {
+        stream.emit('error', {
+          code: grpc.status.OK,
+          details: 'Error with OK status',
+        });
+      },
+
+      bidiStream(stream: ServerDuplexStream<any, any>) {
+        stream.on('data', () => {});
+        stream.on('end', () => {
+          stream.emit('error', {
+            code: grpc.status.OK,
+            details: 'Error with OK status',
+          });
+        });
+      },
+    });
+
+    server.bindAsync('localhost:0', serverInsecureCreds, (err, port) => {
+      assert.ifError(err);
+      client = new testServiceClient(`localhost:${port}`, clientInsecureCreds);
+      server.start();
+      done();
+    });
+  });
+
+  after(done => {
+    client.close();
+    server.tryShutdown(done);
+  });
+
+  it('should receive UNKNOWN for unary call when handler sends error with code OK', done => {
+    client.unary({}, (err: ServiceError, data: any) => {
+      assert(err, 'Expected an error but got success');
+      assert.strictEqual(
+        err.code,
+        grpc.status.UNKNOWN,
+        `Expected UNKNOWN status but got ${err.code}`
+      );
+      assert.strictEqual(err.details, 'Error with OK status');
+      done();
+    });
+  });
+
+  it('should receive UNKNOWN for client stream call when handler sends error with code OK', done => {
+    const call = client.clientStream((err: ServiceError, data: any) => {
+      assert(err, 'Expected an error but got success');
+      assert.strictEqual(
+        err.code,
+        grpc.status.UNKNOWN,
+        `Expected UNKNOWN status but got ${err.code}`
+      );
+      assert.strictEqual(err.details, 'Error with OK status');
+      done();
+    });
+
+    call.write({});
+    call.end();
+  });
+
+  it('should receive UNKNOWN for server stream call when handler emits error with code OK', done => {
+    const call = client.serverStream({});
+
+    call.on('data', noop);
+    call.on('error', (err: ServiceError) => {
+      assert(err, 'Expected an error but got success');
+      assert.strictEqual(
+        err.code,
+        grpc.status.UNKNOWN,
+        `Expected UNKNOWN status but got ${err.code}`
+      );
+      assert.strictEqual(err.details, 'Error with OK status');
+      done();
+    });
+  });
+
+  it('should receive UNKNOWN for bidi stream call when handler emits error with code OK', done => {
+    const call = client.bidiStream();
+
+    call.write({});
+    call.end();
+    call.on('data', noop);
+    call.on('error', (err: ServiceError) => {
+      assert(err, 'Expected an error but got success');
+      assert.strictEqual(
+        err.code,
+        grpc.status.UNKNOWN,
+        `Expected UNKNOWN status but got ${err.code}`
+      );
+      assert.strictEqual(err.details, 'Error with OK status');
+      done();
+    });
+  });
+});
+
 function identity(arg: any): any {
   return arg;
 }

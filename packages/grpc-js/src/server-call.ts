@@ -74,7 +74,14 @@ export function serverErrorToStatus(
     typeof error.code === 'number' &&
     Number.isInteger(error.code)
   ) {
-    status.code = error.code;
+    if (error.code === Status.OK) {
+      // An error with code OK is contradictory. Sending it as-is would turn
+      // an error into a success status, so map it to UNKNOWN instead.
+      // This matches grpc-go behavior (see grpc/grpc-go#6430).
+      status.code = Status.UNKNOWN;
+    } else {
+      status.code = error.code;
+    }
 
     if ('details' in error && typeof error.details === 'string') {
       status.details = error.details!;
