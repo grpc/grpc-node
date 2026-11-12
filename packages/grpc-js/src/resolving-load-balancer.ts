@@ -294,6 +294,8 @@ export class ResolvingLoadBalancer implements LoadBalancer {
     } else {
       if (this.previousServiceConfig !== null) {
         workingServiceConfig = this.previousServiceConfig;
+      } else if (this.channelOptions['grpc.service_config']) {
+        workingServiceConfig = this.defaultServiceConfig;
       } else {
         resultAccepted = false;
         this.handleResolutionFailure(serviceConfig.error);
