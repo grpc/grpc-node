@@ -863,7 +863,11 @@ export class InternalChannel {
 
   getConnectivityState(tryToConnect: boolean) {
     const connectivityState = this.connectivityState;
-    if (tryToConnect) {
+    /* close() reports SHUTDOWN before returning, and it does so
+     * synchronously. Watchers such as Client.waitForReady call back into
+     * getConnectivityState(true) from that notification. exitIdle() after
+     * destroy() would start a new resolver on a closed channel (#3128). */
+    if (tryToConnect && connectivityState !== ConnectivityState.SHUTDOWN) {
       this.resolvingLoadBalancer.exitIdle();
       this.lastActivityTimestamp = Date.now();
       this.maybeStartIdleTimer();

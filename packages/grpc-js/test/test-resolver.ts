@@ -18,6 +18,7 @@
 // Allow `any` data type for testing runtime type checking.
 // tslint:disable no-any
 import * as assert from 'assert';
+import { promises as dnsPromises } from 'dns';
 import * as resolverManager from '../src/resolver';
 import * as resolver_dns from '../src/resolver-dns';
 import * as resolver_uds from '../src/resolver-uds';
@@ -470,36 +471,145 @@ describe('Name Resolver', () => {
         done();
       }, 10_000);
     }).timeout(15_000);
-    it('should not keep repeating failed resolutions', done => {
+    /* #2105 pinned "don't repeat failed resolutions" after the #2080
+     * double-scheduling leak. #3128 reverses that: a failed lookup retries
+     * on the existing backoff until destroy(). #2098 still guarantees one
+     * timer per attempt, including when updateResolution() is repeated. */
+    describe('failed lookup backoff', () => {
+      let originalLookup: typeof dnsPromises.lookup | null = null;
+      beforeEach(function () {
+        if (GRPC_NODE_USE_ALTERNATIVE_RESOLVER) {
+          this.skip();
+        }
+        originalLookup = dnsPromises.lookup;
+      });
+      afterEach(() => {
+        if (originalLookup) {
+          dnsPromises.lookup = originalLookup;
+          originalLookup = null;
+        }
+      });
+      it('retries failed DNS lookups with backoff until destroyed', done => {
+        const target = resolverManager.mapUriDefaultScheme(
+          parseUri('late.invalid')!
+        )!;
+        let resultCount = 0;
+        let inFlight = 0;
+        let maxInFlight = 0;
+        dnsPromises.lookup = ((hostname: string) => {
+          inFlight += 1;
+          maxInFlight = Math.max(maxInFlight, inFlight);
+          return new Promise<never>((_resolve, reject) => {
+            setImmediate(() => {
+              inFlight -= 1;
+              reject(new Error(`ENOTFOUND ${hostname}`));
+            });
+          });
+        }) as typeof dnsPromises.lookup;
+        const resolver = resolverManager.createResolver(
+          target,
+          (maybeEndpointList: StatusOr<Endpoint[]>) => {
+            assert.strictEqual(maybeEndpointList.ok, false);
+            resultCount += 1;
+            if (resultCount === 1) {
+              process.nextTick(() => resolver.updateResolution());
+            }
+            /* Accepting the error must not cancel the backoff. */
+            return true;
+          },
+          {
+            'grpc.initial_reconnect_backoff_ms': 30,
+            'grpc.max_reconnect_backoff_ms': 30,
+            'grpc.service_config_disable_resolution': 1,
+          }
+        );
+        resolver.updateResolution();
+        const hammer = setInterval(() => {
+          resolver.updateResolution();
+        }, 5);
+        setTimeout(() => {
+          clearInterval(hammer);
+          const settledCount = resultCount;
+          resolver.destroy();
+          setTimeout(() => {
+            try {
+              assert.ok(
+                settledCount >= 4,
+                `expected retries, resultCount=${settledCount}`
+              );
+              assert.ok(
+                settledCount <= 40,
+                `retries were not backed off, resultCount=${settledCount}`
+              );
+              assert.strictEqual(maxInFlight, 1);
+              assert.strictEqual(resultCount, settledCount);
+              done();
+            } catch (error) {
+              done(error);
+            }
+          }, 200);
+        }, 700);
+      }).timeout(3000);
+      it('does not report a lookup that settles after destroy', done => {
+        const target = resolverManager.mapUriDefaultScheme(
+          parseUri('late.invalid')!
+        )!;
+        let resultCount = 0;
+        dnsPromises.lookup = (() => {
+          return new Promise<never>((_resolve, reject) => {
+            setTimeout(() => {
+              reject(new Error('ENOTFOUND late.invalid'));
+            }, 40);
+          });
+        }) as typeof dnsPromises.lookup;
+        const resolver = resolverManager.createResolver(
+          target,
+          () => {
+            resultCount += 1;
+            return false;
+          },
+          {
+            'grpc.initial_reconnect_backoff_ms': 10,
+            'grpc.max_reconnect_backoff_ms': 10,
+            'grpc.service_config_disable_resolution': 1,
+          }
+        );
+        resolver.updateResolution();
+        setTimeout(() => resolver.destroy(), 10);
+        setTimeout(() => {
+          try {
+            assert.strictEqual(resultCount, 0);
+            done();
+          } catch (error) {
+            done(error);
+          }
+        }, 120);
+      }).timeout(2000);
+    });
+    it('does not retry an unparseable DNS target', function (done) {
       const target = resolverManager.mapUriDefaultScheme(
-        parseUri('host.invalid')!
+        parseUri('dns:bad:port')!
       )!;
       let resultCount = 0;
       const resolver = resolverManager.createResolver(
         target,
-        (
-          maybeEndpointList: StatusOr<Endpoint[]>,
-          attributes: { [key: string]: unknown},
-          serviceConfig: StatusOr<ServiceConfig> | null,
-          resolutionNote: string
-        ) => {
-          console.log(`Enpoint list: ${JSON.stringify(maybeEndpointList)}`);
-          assert(!maybeEndpointList.ok);
+        (maybeEndpointList: StatusOr<Endpoint[]>) => {
+          assert.strictEqual(maybeEndpointList.ok, false);
           resultCount += 1;
-          console.log(`resultCount: ${resultCount}`);
-          if (resultCount === 1) {
-            process.nextTick(() => resolver.updateResolution());
-          }
-          return true;
+          return false;
         },
-        {}
+        {
+          'grpc.initial_reconnect_backoff_ms': 20,
+          'grpc.max_reconnect_backoff_ms': 20,
+        }
       );
       resolver.updateResolution();
       setTimeout(() => {
-        assert.strictEqual(resultCount, 2, `resultCount ${resultCount} !== 2`);
+        resolver.destroy();
+        assert.strictEqual(resultCount, 1);
         done();
-      }, 10_000);
-    }).timeout(15_000);
+      }, 200);
+    }).timeout(2000);
   });
   describe('UDS Names', () => {
     it('Should handle a relative Unix Domain Socket name', done => {
