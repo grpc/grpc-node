@@ -68,6 +68,12 @@ class DnsResolver implements Resolver {
   private defaultResolutionError: StatusObject;
   private backoff: BackoffTimeout;
   private continueResolving = false;
+  /**
+   * Set false by destroy(). updateResolution() sets it true again.
+   * In-flight lookups that settle after destroy, including a listener
+   * that destroys the resolver, must not arm another attempt.
+   */
+  private resolutionEnabled = true;
   private nextResolutionTimer: NodeJS.Timeout;
   private isNextResolutionTimerRunning = false;
   private isServiceConfigEnabled = true;
@@ -189,10 +195,14 @@ class DnsResolver implements Resolver {
        * revert to an effectively blank one. */
       this.latestLookupResult = null;
       const hostname: string = this.dnsHostname;
-      this.pendingLookupPromise = this.lookup(hostname);
-      this.pendingLookupPromise.then(
+      const lookupPromise = this.lookup(hostname);
+      this.pendingLookupPromise = lookupPromise;
+      lookupPromise.then(
         addressList => {
-          if (this.pendingLookupPromise === null) {
+          /* Compare identity, not just null. destroy() clears the field,
+           * and a later updateResolution() may already have stored a new
+           * promise. A superseded lookup must not report or retry. */
+          if (this.pendingLookupPromise !== lookupPromise) {
             return;
           }
           this.pendingLookupPromise = null;
@@ -222,7 +232,7 @@ class DnsResolver implements Resolver {
           this.handleHealthStatus(healthStatus);
         },
         err => {
-          if (this.pendingLookupPromise === null) {
+          if (this.pendingLookupPromise !== lookupPromise) {
             return;
           }
           trace(
@@ -232,13 +242,16 @@ class DnsResolver implements Resolver {
               (err as Error).message
           );
           this.pendingLookupPromise = null;
+          /* The min-interval timer applies only to successful resolutions.
+           * Leaving it armed here would race the backoff timer. */
           this.stopNextResolutionTimer();
-          this.listener(
+          const healthStatus = this.listener(
             statusOrFromError(this.defaultResolutionError),
             {},
             this.latestServiceConfigResult,
             ''
-          )
+          );
+          this.onLookupFailure(healthStatus);
         }
       );
       /* If there already is a still-pending TXT resolution, we can just use
@@ -311,8 +324,53 @@ class DnsResolver implements Resolver {
       this.backoff.stop();
       this.backoff.reset();
     } else {
-      this.continueResolving = true;
+      this.requestAnotherResolution();
     }
+  }
+
+  /**
+   * A lookup rejection is a resolution failure even when the listener
+   * accepts it. pick_first accepts an error endpoint list by entering
+   * TRANSIENT_FAILURE and returning true. handleHealthStatus(true) would
+   * stop the backoff, so the name would never be tried again (#3128).
+   * A false result uses the same retry as a rejected successful result.
+   * An unparseable target never reaches this path.
+   */
+  private onLookupFailure(healthStatus: boolean) {
+    if (!this.resolutionEnabled) {
+      return;
+    }
+    trace(
+      'Retrying failed DNS resolution for target ' +
+        uriToString(this.target) +
+        ' (listener accepted=' +
+        healthStatus +
+        ')'
+    );
+    if (healthStatus) {
+      this.requestAnotherResolution();
+    } else {
+      this.handleHealthStatus(healthStatus);
+    }
+  }
+
+  /**
+   * Schedule exactly one follow-up attempt on the backoff timer that
+   * startResolutionWithBackoff already armed. If that timer already
+   * fired (the lookup outlived it), start the next attempt now. A second
+   * call while a timer or a lookup is in flight only sets
+   * continueResolving, so repeated updateResolution calls cannot pile up
+   * timers (#2080 / #2098).
+   */
+  private requestAnotherResolution() {
+    if (!this.resolutionEnabled || this.pendingLookupPromise !== null) {
+      return;
+    }
+    if (this.backoff.isRunning() || this.isNextResolutionTimerRunning) {
+      this.continueResolving = true;
+      return;
+    }
+    this.startResolutionWithBackoff();
   }
 
   private async lookup(hostname: string): Promise<TcpSubchannelAddress[]> {
@@ -375,15 +433,20 @@ class DnsResolver implements Resolver {
   }
 
   private startResolutionWithBackoff() {
-    if (this.pendingLookupPromise === null) {
-      this.continueResolving = false;
-      this.backoff.runOnce();
-      this.startNextResolutionTimer();
-      this.startResolution();
+    if (!this.resolutionEnabled || this.pendingLookupPromise !== null) {
+      return;
     }
+    /* Clear per attempt so a timer that fires during this attempt does
+     * not start another one unless a new request arrives (#2098). */
+    this.continueResolving = false;
+    this.backoff.runOnce();
+    this.startNextResolutionTimer();
+    this.startResolution();
   }
 
   updateResolution() {
+    /* destroy() is a reset. The next request must be able to resolve. */
+    this.resolutionEnabled = true;
     /* If there is a pending lookup, just let it finish. Otherwise, if the
      * nextResolutionTimer or backoff timer is running, set the
      * continueResolving flag to resolve when whichever of those timers
@@ -413,6 +476,7 @@ class DnsResolver implements Resolver {
    * will be ignored.
    */
   destroy() {
+    this.resolutionEnabled = false;
     this.continueResolving = false;
     this.backoff.reset();
     this.backoff.stop();
