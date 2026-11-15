@@ -24,6 +24,7 @@ import * as logging from './logging';
 import { getNextCallNumber } from './call-number';
 import {
   Call,
+  createWriteFailure,
   DeadlineInfoProvider,
   InterceptingListener,
   MessageContext,
@@ -165,9 +166,10 @@ interface WriteBufferEntry {
    */
   message?: WriteObject;
   /**
-   * Callback to call after sending the message.
-   * Only populated if entryType is MESSAGE and the call is in the COMMITTED
-   * state.
+   * Callback to call after this message is accepted by a subchannel, or with
+   * an error when the call ends first. Unset once invoked. Populated when the
+   * message could not be buffered, or when every attempt that received it is
+   * still waiting for a subchannel.
    */
   callback?: WriteCallback;
   /**
@@ -209,6 +211,12 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
   private hedgingTimer: NodeJS.Timeout | null = null;
   private retryTimer: NodeJS.Timeout | null = null;
   private committedCallIndex: number | null = null;
+  /**
+   * Set once the call has a final status. Pending write callbacks have been
+   * invoked, and later writes fail immediately instead of being buffered.
+   */
+  private writesFailed = false;
+  private writeFailure: Error | null = null;
   private initialRetryBackoffSec = 0;
   private nextRetryBackoffSec = 0;
   private startTime: number;
@@ -303,6 +311,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
           new Date(this.startTime).toISOString()
       );
     }
+    this.failPendingWrites(statusObject);
     this.bufferTracker.freeAll(this.callNumber);
     this.writeBufferOffset = this.writeBufferOffset + this.writeBuffer.length;
     this.writeBuffer = [];
@@ -345,6 +354,57 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     } else {
       return 'unknown';
     }
+  }
+
+  /**
+   * Invoke each stored write callback once. A single attempt failing before
+   * commitment does not do this; the messages are replayed on the next
+   * attempt. `callback` is cleared before it is called so a transport
+   * completion that arrives later cannot call it again.
+   */
+  private failPendingWrites(statusObject: StatusObject): void {
+    if (this.writesFailed) {
+      return;
+    }
+    this.writesFailed = true;
+    this.writeFailure = createWriteFailure(statusObject);
+    for (const entry of this.writeBuffer) {
+      const callback = entry.callback;
+      entry.callback = undefined;
+      callback?.(this.writeFailure);
+    }
+  }
+
+  private childWriteCallback(
+    childIndex: number,
+    messageIndex: number
+  ): WriteCallback {
+    return error => {
+      /* A failed attempt must not acknowledge the write. The callback stays
+       * stored so a later attempt can succeed it, or reportStatus can fail
+       * it when the call itself is over. */
+      if (error || this.writesFailed) {
+        return;
+      }
+      this.handleChildWriteCompleted(childIndex, messageIndex);
+    };
+  }
+
+  /**
+   * Half-close entries have no callback, so this looks at every earlier
+   * message rather than only the previous slot. While one of those callbacks
+   * is set, a later message must not be success-acked: the earlier write can
+   * still fail. After that callback is cleared, `sendNextChildMessage` sends
+   * the later message and its stored callback runs when the child completes.
+   */
+  private earlierWriteStillPending(messageIndex: number): boolean {
+    for (let index = this.writeBufferOffset; index < messageIndex; index++) {
+      const entry = this.getBufferEntry(index);
+      if (entry.entryType === 'MESSAGE' && entry.callback !== undefined) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private getBufferEntry(messageIndex: number): WriteBufferEntry {
@@ -802,7 +862,10 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
   }
 
   private handleChildWriteCompleted(childIndex: number, messageIndex: number) {
-    this.getBufferEntry(messageIndex).callback?.();
+    const entry = this.getBufferEntry(messageIndex);
+    const callback = entry.callback;
+    entry.callback = undefined;
+    callback?.();
     this.clearSentMessages();
     const childCall = this.underlyingCalls[childIndex];
     childCall.nextMessageToSend += 1;
@@ -821,10 +884,7 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
         case 'MESSAGE':
           childCall.call.sendMessageWithContext(
             {
-              callback: error => {
-                // Ignore error
-                this.handleChildWriteCompleted(childIndex, messageIndex);
-              },
+              callback: this.childWriteCallback(childIndex, messageIndex),
             },
             bufferEntry.message!.message
           );
@@ -859,6 +919,13 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     if (this.traceEnabled) {
       this.trace('write() called with message of length ' + message.length);
     }
+    if (this.writesFailed) {
+      const error = this.writeFailure!;
+      process.nextTick(() => {
+        context.callback?.(error);
+      });
+      return;
+    }
     const writeObj: WriteObject = {
       message,
       flags: context.flags,
@@ -871,42 +938,62 @@ export class RetryingCall implements Call, DeadlineInfoProvider {
     };
     this.writeBuffer.push(bufferEntry);
     if (bufferEntry.allocated) {
-      // Run this in next tick to avoid suspending the current execution context
-      // otherwise it might cause half closing the call before sending message
-      process.nextTick(() => {
-        context.callback?.();
-      });
+      /* The public callback stays pending when every attempt that took this
+       * message queued it until a subchannel is picked, and when an earlier
+       * buffered message is still holding its callback. A message accepted
+       * onto a subchannel, or not yet sent because an earlier write is in
+       * flight but already acknowledged, is acknowledged on the next tick. */
+      let handedToAttempt = false;
+      let acceptedBySubchannel = false;
       for (const [callIndex, call] of this.underlyingCalls.entries()) {
         if (
           call.state === 'ACTIVE' &&
           call.nextMessageToSend === messageIndex
         ) {
-          call.call.sendMessageWithContext(
+          handedToAttempt = true;
+          const held = call.call.sendMessageWithContext(
             {
-              callback: error => {
-                // Ignore error
-                this.handleChildWriteCompleted(callIndex, messageIndex);
-              },
+              callback: this.childWriteCallback(callIndex, messageIndex),
             },
             message
           );
+          if (!held) {
+            acceptedBySubchannel = true;
+          }
         }
+      }
+      if (
+        (handedToAttempt && !acceptedBySubchannel) ||
+        this.earlierWriteStillPending(messageIndex)
+      ) {
+        bufferEntry.callback = context.callback;
+      } else {
+        // Run this in next tick to avoid suspending the current execution context
+        // otherwise it might cause half closing the call before sending message
+        process.nextTick(() => {
+          if (this.writesFailed) {
+            context.callback?.(this.writeFailure!);
+            return;
+          }
+          context.callback?.();
+        });
       }
     } else {
       this.commitCallWithMostMessages();
-      // commitCallWithMostMessages can fail if we are between ping attempts
+      /* The callback is retained even between attempts. Previously a write
+       * that arrived with no committed call dropped it. */
+      bufferEntry.callback = context.callback;
       if (this.committedCallIndex === null) {
         return;
       }
       const call = this.underlyingCalls[this.committedCallIndex];
-      bufferEntry.callback = context.callback;
       if (call.state === 'ACTIVE' && call.nextMessageToSend === messageIndex) {
         call.call.sendMessageWithContext(
           {
-            callback: error => {
-              // Ignore error
-              this.handleChildWriteCompleted(this.committedCallIndex!, messageIndex);
-            },
+            callback: this.childWriteCallback(
+              this.committedCallIndex,
+              messageIndex
+            ),
           },
           message
         );

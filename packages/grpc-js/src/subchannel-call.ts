@@ -24,6 +24,7 @@ import { StreamDecoder } from './stream-decoder';
 import * as logging from './logging';
 import { LogVerbosity } from './constants';
 import {
+  createWriteFailure,
   InterceptingListener,
   MessageContext,
   StatusObject,
@@ -137,6 +138,14 @@ export class Http2SubchannelCall implements SubchannelCall {
 
   // This is populated (non-null) if and only if the call has ended
   private finalStatus: StatusObject | null = null;
+
+  /**
+   * The write passed to Node's HTTP/2 stream and not yet completed. `endCall`
+   * and the stream's write callback both settle it, and only the first one
+   * invokes the callback.
+   */
+  private activeWrite: { callback?: WriteCallback; settled: boolean } | null =
+    null;
 
   private internalError: SystemError | null = null;
 
@@ -420,6 +429,29 @@ export class Http2SubchannelCall implements SubchannelCall {
    * Subsequent calls are no-ops.
    * @param status The status of the call.
    */
+  /**
+   * Invoke the in-flight write callback at most once. A later HTTP/2
+   * `stream.write` completion, including one caused by closing the stream,
+   * must not call it again.
+   */
+  private settleActiveWrite(error?: Error | null): void {
+    const active = this.activeWrite;
+    if (!active || active.settled) {
+      return;
+    }
+    active.settled = true;
+    const callback = active.callback;
+    active.callback = undefined;
+    if (!callback) {
+      return;
+    }
+    /* Same nextTick split as a normal write completion: the callback must not
+     * run in the stack that is ending the HTTP/2 stream. */
+    process.nextTick(() => {
+      callback(error);
+    });
+  }
+
   private endCall(status: StatusObjectWithRstCode): void {
     /* If the status is OK and a new status comes in (e.g. from a
      * deserialization failure), that new status takes priority */
@@ -427,6 +459,7 @@ export class Http2SubchannelCall implements SubchannelCall {
       this.finalStatus = status;
       this.maybeOutputStatus();
     }
+    this.settleActiveWrite(createWriteFailure(this.finalStatus!));
     this.destroyHttp2Stream();
   }
 
@@ -630,27 +663,57 @@ export class Http2SubchannelCall implements SubchannelCall {
     if (this.traceEnabled) {
       this.trace('write() called with message of length ' + message.length);
     }
+    if (this.finalStatus !== null) {
+      process.nextTick(() => {
+        context.callback?.(createWriteFailure(this.finalStatus!));
+      });
+      return;
+    }
+    const active = { callback: context.callback, settled: false };
+    this.activeWrite = active;
     const cb: WriteCallback = (error?: Error | null) => {
       /* nextTick here ensures that no stream action can be taken in the call
        * stack of the write callback, in order to hopefully work around
        * https://github.com/nodejs/node/issues/49147 */
       process.nextTick(() => {
-        let code: Status = Status.UNAVAILABLE;
-        if (
-          (error as NodeJS.ErrnoException)?.code ===
-          'ERR_STREAM_WRITE_AFTER_END'
-        ) {
-          code = Status.INTERNAL;
+        if (active.settled) {
+          return;
         }
-        if (error) {
+        if (!error) {
+          this.settleActiveWrite();
+          return;
+        }
+        /* A write failure must not replace a status that is already decided.
+         * Replacing OK drops buffered responses and can hide a REFUSED_STREAM
+         * code that transparent retry depends on. Defer the fallback status
+         * so trailers and the stream close handler, which run on nextTick,
+         * get to record the real status and rstCode first. */
+        if (this.finalStatus !== null) {
+          this.settleActiveWrite(error);
+          return;
+        }
+        setImmediate(() => {
+          if (active.settled) {
+            return;
+          }
+          if (this.finalStatus !== null) {
+            this.settleActiveWrite(error);
+            return;
+          }
+          let code: Status = Status.UNAVAILABLE;
+          if (
+            (error as NodeJS.ErrnoException)?.code ===
+            'ERR_STREAM_WRITE_AFTER_END'
+          ) {
+            code = Status.INTERNAL;
+          }
           this.endCall({
             code,
             details: `Write error: ${error.message}`,
             metadata: new Metadata(),
             rstCode: this.http2Stream.rstCode,
           });
-        }
-        context.callback?.();
+        });
       });
     };
     if (this.traceEnabled) {

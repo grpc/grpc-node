@@ -28,6 +28,7 @@ import {
   isInterceptingListener,
   MessageContext,
   Call,
+  createWriteFailure,
 } from './call-interface';
 import { Status } from './constants';
 import { Channel } from './channel';
@@ -213,20 +214,26 @@ export class InterceptingCall implements InterceptingCallInterface {
    */
   private processingMetadata = false;
   /**
-   * Message context for a pending message that is waiting for
+   * Messages waiting for start() metadata processing to complete.
    */
-  private pendingMessageContext: MessageContext | null = null;
-  private pendingMessage: any;
+  private pendingMessages: Array<{
+    context: MessageContext;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    message: any;
+  }> = [];
+  private forwardedContexts = new WeakSet<MessageContext>();
   /**
-   * Indicates that a message has been passed to the requester's sendMessage
-   * method but it has not been passed to the corresponding next callback
+   * Number of messages passed to the requester's sendMessage method that have
+   * not yet invoked their corresponding next callback.
    */
-  private processingMessage = false;
+  private processingMessages = 0;
   /**
-   * Indicates that a status was received but could not be propagated because
-   * a message was still being processed.
+   * Indicates that halfClose was requested while metadata or a message was
+   * still being processed.
    */
   private pendingHalfClose = false;
+  private cancelled = false;
+  private cancelStatus: StatusObject | null = null;
   constructor(
     private nextCall: InterceptingCallInterface,
     requester?: Requester
@@ -243,7 +250,23 @@ export class InterceptingCall implements InterceptingCallInterface {
     }
   }
 
+  private rejectPendingMessages(status: StatusObject): void {
+    const pending = this.pendingMessages.splice(0);
+    for (const entry of pending) {
+      const callback = entry.context.callback;
+      entry.context.callback = undefined;
+      callback?.(createWriteFailure(status));
+    }
+  }
+
   cancelWithStatus(status: Status, details: string) {
+    this.cancelled = true;
+    this.cancelStatus = {
+      code: status,
+      details,
+      metadata: new Metadata(),
+    };
+    this.rejectPendingMessages(this.cancelStatus);
     this.requester.cancel(() => {
       this.nextCall.cancelWithStatus(status, details);
     });
@@ -253,19 +276,29 @@ export class InterceptingCall implements InterceptingCallInterface {
     return this.nextCall.getPeer();
   }
 
-  private processPendingMessage() {
-    if (this.pendingMessageContext) {
-      this.nextCall.sendMessageWithContext(
-        this.pendingMessageContext,
-        this.pendingMessage
-      );
-      this.pendingMessageContext = null;
-      this.pendingMessage = null;
+  private processPendingMessages() {
+    if (this.pendingMessages.length === 0) {
+      return;
+    }
+    if (this.cancelled) {
+      this.rejectPendingMessages(this.cancelStatus!);
+      return;
+    }
+    const pending = this.pendingMessages.splice(0);
+    for (const entry of pending) {
+      this.forwardedContexts.add(entry.context);
+      this.nextCall.sendMessageWithContext(entry.context, entry.message);
     }
   }
 
   private processPendingHalfClose() {
-    if (this.pendingHalfClose) {
+    if (
+      this.pendingHalfClose &&
+      !this.processingMetadata &&
+      this.processingMessages === 0 &&
+      this.pendingMessages.length === 0
+    ) {
+      this.pendingHalfClose = false;
       this.nextCall.halfClose();
     }
   }
@@ -288,6 +321,10 @@ export class InterceptingCall implements InterceptingCallInterface {
     this.processingMetadata = true;
     this.requester.start(metadata, fullInterceptingListener, (md, listener) => {
       this.processingMetadata = false;
+      if (this.cancelled) {
+        this.rejectPendingMessages(this.cancelStatus!);
+        return;
+      }
       let finalInterceptingListener: InterceptingListener;
       if (isInterceptingListener(listener)) {
         finalInterceptingListener = listener;
@@ -306,19 +343,33 @@ export class InterceptingCall implements InterceptingCallInterface {
         );
       }
       this.nextCall.start(md, finalInterceptingListener);
-      this.processPendingMessage();
+      this.processPendingMessages();
       this.processPendingHalfClose();
     });
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendMessageWithContext(context: MessageContext, message: any): void {
-    this.processingMessage = true;
+    this.processingMessages += 1;
+    let nextCalled = false;
     this.requester.sendMessage(message, finalMessage => {
-      this.processingMessage = false;
+      if (!nextCalled) {
+        nextCalled = true;
+        this.processingMessages -= 1;
+      }
+      if (this.cancelled) {
+        // The child already owns this context if it was handed off directly or
+        // flushed by processPendingMessages. Calling it again would double-fire.
+        if (!this.forwardedContexts.has(context)) {
+          const callback = context.callback;
+          context.callback = undefined;
+          callback?.(createWriteFailure(this.cancelStatus!));
+        }
+        return;
+      }
       if (this.processingMetadata) {
-        this.pendingMessageContext = context;
-        this.pendingMessage = message;
+        this.pendingMessages.push({ context, message: finalMessage });
       } else {
+        this.forwardedContexts.add(context);
         this.nextCall.sendMessageWithContext(context, finalMessage);
         this.processPendingHalfClose();
       }
@@ -333,7 +384,11 @@ export class InterceptingCall implements InterceptingCallInterface {
   }
   halfClose(): void {
     this.requester.halfClose(() => {
-      if (this.processingMetadata || this.processingMessage) {
+      if (
+        this.processingMetadata ||
+        this.processingMessages > 0 ||
+        this.pendingMessages.length > 0
+      ) {
         this.pendingHalfClose = true;
       } else {
         this.nextCall.halfClose();
