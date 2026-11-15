@@ -19,6 +19,7 @@ import { CallCredentials } from './call-credentials';
 import {
   Call,
   CallStreamOptions,
+  createWriteFailure,
   DeadlineInfoProvider,
   InterceptingListener,
   MessageContext,
@@ -44,10 +45,11 @@ const TRACER_NAME = 'resolving_call';
 export class ResolvingCall implements Call {
   private child: (Call & DeadlineInfoProvider) | null = null;
   private readPending = false;
-  private pendingMessage: { context: MessageContext; message: Buffer } | null =
-    null;
+  private pendingMessages: Array<{ context: MessageContext; message: Buffer }> =
+    [];
   private pendingHalfClose = false;
   private ended = false;
+  private finalStatus: StatusObject | null = null;
   private readFilterPending = false;
   private writeFilterPending = false;
   private pendingChildStatus: StatusObject | null = null;
@@ -181,6 +183,31 @@ export class ResolvingCall implements Call {
     }
   }
 
+  private rejectPendingMessages(status: StatusObject): void {
+    const pending = this.pendingMessages;
+    this.pendingMessages = [];
+    for (const entry of pending) {
+      const callback = entry.context.callback;
+      entry.context.callback = undefined;
+      callback?.(createWriteFailure(status));
+    }
+  }
+
+  private dequeuePendingMessage(): void {
+    if (!this.child || this.ended || this.writeFilterPending) {
+      return;
+    }
+    const pending = this.pendingMessages.shift();
+    if (!pending) {
+      if (this.pendingHalfClose) {
+        this.pendingHalfClose = false;
+        this.child.halfClose();
+      }
+      return;
+    }
+    this.sendMessageOnChild(pending.context, pending.message);
+  }
+
   private outputStatus(status: StatusObject) {
     if (!this.ended) {
       this.ended = true;
@@ -192,6 +219,8 @@ export class ResolvingCall implements Call {
         this.deadlineTimer = null;
       }
       const filteredStatus = this.filterStack.receiveTrailers(status);
+      this.finalStatus = filteredStatus;
+      this.rejectPendingMessages(filteredStatus);
       if (this.traceEnabled) {
         this.trace(
           'ended with status: code=' +
@@ -219,12 +248,25 @@ export class ResolvingCall implements Call {
     ).then(
       filteredMessage => {
         this.writeFilterPending = false;
-        child.sendMessageWithContext(context, filteredMessage.message);
-        if (this.pendingHalfClose) {
-          child.halfClose();
+        if (this.ended) {
+          const status = this.finalStatus ?? {
+            code: Status.CANCELLED,
+            details: 'Call ended before write could be completed',
+            metadata: new Metadata(),
+          };
+          const callback = context.callback;
+          context.callback = undefined;
+          callback?.(createWriteFailure(status));
+          this.rejectPendingMessages(status);
+          return;
         }
+        child.sendMessageWithContext(context, filteredMessage.message);
+        this.dequeuePendingMessage();
       },
       (status: StatusObject) => {
+        const callback = context.callback;
+        context.callback = undefined;
+        callback?.(createWriteFailure(status));
         this.cancelWithStatus(status.code, status.details);
       }
     );
@@ -327,14 +369,7 @@ export class ResolvingCall implements Call {
         if (this.readPending) {
           this.child.startRead();
         }
-        if (this.pendingMessage) {
-          this.sendMessageOnChild(
-            this.pendingMessage.context,
-            this.pendingMessage.message
-          );
-        } else if (this.pendingHalfClose) {
-          this.child.halfClose();
-        }
+        this.dequeuePendingMessage();
       },
       (status: StatusObject) => {
         this.outputStatus(status);
@@ -375,11 +410,29 @@ export class ResolvingCall implements Call {
     if (this.traceEnabled) {
       this.trace('write() called with message of length ' + message.length);
     }
-    if (this.child) {
-      this.sendMessageOnChild(context, message);
-    } else {
-      this.pendingMessage = { context, message };
+    if (this.ended) {
+      const status = this.finalStatus ?? {
+        code: Status.CANCELLED,
+        details: 'Call ended before write could be completed',
+        metadata: new Metadata(),
+      };
+      process.nextTick(() => {
+        context.callback?.(createWriteFailure(status));
+      });
+      return;
     }
+    if (
+      !this.child ||
+      this.writeFilterPending ||
+      this.pendingMessages.length > 0
+    ) {
+      this.pendingMessages.push({ context, message });
+      if (this.child) {
+        this.dequeuePendingMessage();
+      }
+      return;
+    }
+    this.sendMessageOnChild(context, message);
   }
   startRead(): void {
     this.trace('startRead called');

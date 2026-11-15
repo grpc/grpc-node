@@ -23,6 +23,49 @@ import { Status } from './constants';
 import { EmitterAugmentation1 } from './events';
 import { Metadata } from './metadata';
 import { ObjectReadable, ObjectWritable, WriteCallback } from './object-stream';
+
+/**
+ * Node invokes `_write` with `state.onwrite`, then calls the user's write
+ * callback from there. Passing an error through `onwrite` destroys a duplex
+ * and drops responses that have not been read. The user's callback is queued
+ * here and completed on its own; `onwrite` is always completed without an
+ * error so the readable side stays intact.
+ */
+function queueUserWriteCallback(
+  callbacks: Array<WriteCallback | undefined>,
+  encodingOrCallback?: unknown,
+  cb?: unknown
+): string | number | undefined {
+  if (typeof encodingOrCallback === 'function') {
+    callbacks.push(encodingOrCallback as WriteCallback);
+    return undefined;
+  }
+  callbacks.push(typeof cb === 'function' ? (cb as WriteCallback) : undefined);
+  return encodingOrCallback as string | number | undefined;
+}
+
+/**
+ * Completes the caller's write callback and Node's `_write` callback.
+ * `nodeCallback` is always invoked without an error so a duplex is not
+ * destroyed. `finish` and `end(cb)` can run after the user write callback
+ * has already received an error, because `nodeCallback(undefined)` keeps the
+ * readable side alive so buffered bidi responses and `end` are not destroyed.
+ *
+ * The caller must store `failure` on the stream before calling this. Node
+ * flushes the next buffered `_write` synchronously from `nodeCallback`.
+ */
+function settleSurfaceWrite(
+  failure: Error | null,
+  userCallback: WriteCallback | undefined,
+  nodeCallback: WriteCallback
+): void {
+  if (failure) {
+    userCallback?.(failure);
+  } else {
+    userCallback?.(undefined);
+  }
+  nodeCallback(undefined);
+}
 import { InterceptingCallInterface } from './client-interceptors';
 import { AuthContext } from './auth-context';
 
@@ -139,8 +182,33 @@ export class ClientWritableStreamImpl<RequestType>
   implements ClientWritableStream<RequestType>
 {
   public call?: InterceptingCallInterface;
+  private userWriteCallbacks: Array<WriteCallback | undefined> = [];
+  private terminalWriteError: Error | null = null;
   constructor(readonly serialize: (value: RequestType) => Buffer) {
     super({ objectMode: true });
+  }
+
+  write(chunk: RequestType, encoding?: unknown, cb?: unknown): boolean {
+    // After end() or destroy(), Node emits the error and never calls _write.
+    // Queueing the callback here would leave it pending forever.
+    if (this.writableEnded || this.destroyed) {
+      return super.write(chunk as never, encoding as never, cb as never);
+    }
+    const queued = this.userWriteCallbacks.length;
+    const encodingArg = queueUserWriteCallback(
+      this.userWriteCallbacks,
+      encoding,
+      cb
+    );
+    try {
+      if (encodingArg === undefined) {
+        return super.write(chunk);
+      }
+      return super.write(chunk, encodingArg as BufferEncoding);
+    } catch (err) {
+      this.userWriteCallbacks.length = queued;
+      throw err;
+    }
   }
 
   cancel(): void {
@@ -156,8 +224,25 @@ export class ClientWritableStreamImpl<RequestType>
   }
 
   _write(chunk: RequestType, encoding: string, cb: WriteCallback) {
+    const userCallback = this.userWriteCallbacks.shift();
+    if (this.terminalWriteError) {
+      userCallback?.(this.terminalWriteError);
+      cb(undefined);
+      return;
+    }
+    let invoked = false;
     const context: MessageContext = {
-      callback: cb,
+      callback: (error?: Error | null) => {
+        if (invoked) {
+          return;
+        }
+        invoked = true;
+        const failure = error ?? this.terminalWriteError;
+        if (failure) {
+          this.terminalWriteError = failure;
+        }
+        settleSurfaceWrite(failure, userCallback, cb);
+      },
     };
     const flags = Number(encoding);
     if (!Number.isNaN(flags)) {
@@ -177,11 +262,36 @@ export class ClientDuplexStreamImpl<RequestType, ResponseType>
   implements ClientDuplexStream<RequestType, ResponseType>
 {
   public call?: InterceptingCallInterface;
+  private userWriteCallbacks: Array<WriteCallback | undefined> = [];
+  private terminalWriteError: Error | null = null;
   constructor(
     readonly serialize: (value: RequestType) => Buffer,
     readonly deserialize: (chunk: Buffer) => ResponseType
   ) {
     super({ objectMode: true });
+  }
+
+  write(chunk: RequestType, encoding?: unknown, cb?: unknown): boolean {
+    // After end() or destroy(), Node emits the error and never calls _write.
+    // Queueing the callback here would leave it pending forever.
+    if (this.writableEnded || this.destroyed) {
+      return super.write(chunk as never, encoding as never, cb as never);
+    }
+    const queued = this.userWriteCallbacks.length;
+    const encodingArg = queueUserWriteCallback(
+      this.userWriteCallbacks,
+      encoding,
+      cb
+    );
+    try {
+      if (encodingArg === undefined) {
+        return super.write(chunk);
+      }
+      return super.write(chunk, encodingArg as BufferEncoding);
+    } catch (err) {
+      this.userWriteCallbacks.length = queued;
+      throw err;
+    }
   }
 
   cancel(): void {
@@ -201,8 +311,25 @@ export class ClientDuplexStreamImpl<RequestType, ResponseType>
   }
 
   _write(chunk: RequestType, encoding: string, cb: WriteCallback) {
+    const userCallback = this.userWriteCallbacks.shift();
+    if (this.terminalWriteError) {
+      userCallback?.(this.terminalWriteError);
+      cb(undefined);
+      return;
+    }
+    let invoked = false;
     const context: MessageContext = {
-      callback: cb,
+      callback: (error?: Error | null) => {
+        if (invoked) {
+          return;
+        }
+        invoked = true;
+        const failure = error ?? this.terminalWriteError;
+        if (failure) {
+          this.terminalWriteError = failure;
+        }
+        settleSurfaceWrite(failure, userCallback, cb);
+      },
     };
     const flags = Number(encoding);
     if (!Number.isNaN(flags)) {

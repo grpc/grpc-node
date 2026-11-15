@@ -191,6 +191,24 @@ export interface MessageContext {
   flags?: number;
 }
 
+/**
+ * Error passed to a write callback when the call ends before that write is
+ * accepted by the transport. Status.OK still fails the write: the RPC
+ * succeeded, but this message was not written. Callers must invoke a stored
+ * callback at most once; this helper does not do that bookkeeping.
+ */
+export function createWriteFailure(
+  status: StatusObject
+): Error & { code: Status } {
+  const message =
+    status.code === Status.OK
+      ? 'The call ended before the write could be completed'
+      : `${status.code} ${Status[status.code]}: ${status.details}`;
+  const error = new Error(message) as Error & { code: Status };
+  error.code = status.code;
+  return error;
+}
+
 export interface Call {
   cancelWithStatus(status: Status, details: string): void;
   getPeer(): string;

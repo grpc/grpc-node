@@ -17,7 +17,14 @@
 
 import { AuthContext } from "./auth-context";
 import { CallCredentials } from "./call-credentials";
-import { Call, CallStreamOptions, InterceptingListener, MessageContext, StatusObject } from "./call-interface";
+import {
+  Call,
+  CallStreamOptions,
+  createWriteFailure,
+  InterceptingListener,
+  MessageContext,
+  StatusObject,
+} from "./call-interface";
 import { getNextCallNumber } from "./call-number";
 import { Channel } from "./channel";
 import { ChannelOptions } from "./channel-options";
@@ -36,11 +43,12 @@ import { GrpcUri, computeServiceUrl, uriToString } from "./uri-parser";
 
 class SubchannelCallWrapper implements Call {
   private childCall: SubchannelCall | null = null;
-  private pendingMessage: { context: MessageContext; message: Buffer } | null =
-    null;
+  private pendingMessages: Array<{ context: MessageContext; message: Buffer }> =
+    [];
   private readPending = false;
   private halfClosePending = false;
   private pendingStatus: StatusObject | null = null;
+  private endedStatus: StatusObject | null = null;
   private serviceUrl: string;
   private filterStack: FilterStack;
   private readFilterPending = false;
@@ -60,32 +68,91 @@ class SubchannelCallWrapper implements Call {
     this.filterStack = filterStackFactory.createFilter();
   }
 
+  private rejectPendingMessages(status: StatusObject): void {
+    const pending = this.pendingMessages.splice(0);
+    for (const entry of pending) {
+      const callback = entry.context.callback;
+      entry.context.callback = undefined;
+      callback?.(createWriteFailure(status));
+    }
+  }
+
+  private dequeuePendingMessage(): void {
+    if (!this.childCall || this.writeFilterPending) {
+      return;
+    }
+    const pending = this.pendingMessages.shift();
+    if (!pending) {
+      if (this.halfClosePending) {
+        this.halfClosePending = false;
+        this.childCall.halfClose();
+      }
+      return;
+    }
+    this.sendMessageOnChild(pending.context, pending.message);
+  }
+
+  private sendMessageOnChild(context: MessageContext, message: Buffer): void {
+    const childCall = this.childCall!;
+    this.writeFilterPending = true;
+    this.filterStack
+      .sendMessage(Promise.resolve({ message: message, flags: context.flags }))
+      .then(
+        filteredMessage => {
+          this.writeFilterPending = false;
+          if (this.endedStatus) {
+            const callback = context.callback;
+            context.callback = undefined;
+            callback?.(createWriteFailure(this.endedStatus));
+            this.rejectPendingMessages(this.endedStatus);
+            return;
+          }
+          childCall.sendMessageWithContext(context, filteredMessage.message);
+          this.dequeuePendingMessage();
+        },
+        (status: StatusObject) => {
+          this.writeFilterPending = false;
+          const callback = context.callback;
+          context.callback = undefined;
+          callback?.(createWriteFailure(status));
+          this.cancelWithStatus(status.code, status.details);
+        }
+      );
+  }
+
   cancelWithStatus(status: Status, details: string): void {
+    const endedStatus = {
+      code: status,
+      details: details,
+      metadata: new Metadata(),
+    };
+    this.endedStatus = endedStatus;
     if (this.childCall) {
       this.childCall.cancelWithStatus(status, details);
     } else {
-      this.pendingStatus = {
-        code: status,
-        details: details,
-        metadata: new Metadata()
-      };
+      this.pendingStatus = endedStatus;
     }
-
+    this.rejectPendingMessages(endedStatus);
   }
   getPeer(): string {
     return this.childCall?.getPeer() ?? this.subchannel.getAddress();
   }
   async start(metadata: Metadata, listener: InterceptingListener): Promise<void> {
     if (this.pendingStatus) {
+      this.endedStatus = this.pendingStatus;
       listener.onReceiveStatus(this.pendingStatus);
+      this.rejectPendingMessages(this.pendingStatus);
       return;
     }
     if (this.subchannel.getConnectivityState() !== ConnectivityState.READY) {
-      listener.onReceiveStatus({
+      const status = {
         code: Status.UNAVAILABLE,
         details: 'Subchannel not ready',
         metadata: new Metadata()
-      });
+      };
+      this.endedStatus = status;
+      listener.onReceiveStatus(status);
+      this.rejectPendingMessages(status);
       return;
     }
     const filteredMetadata = await this.filterStack.sendMetadata(Promise.resolve(metadata));
@@ -99,13 +166,18 @@ class SubchannelCallWrapper implements Call {
         typeof error.code === 'number' ? error.code : Status.UNKNOWN,
         `Getting metadata from plugin failed with error: ${error.message}`
       );
-      listener.onReceiveStatus(
-        {
-          code: code,
-          details: details,
-          metadata: new Metadata(),
-        }
-      );
+      const status = {
+        code: code,
+        details: details,
+        metadata: new Metadata(),
+      };
+      this.endedStatus = status;
+      listener.onReceiveStatus(status);
+      this.rejectPendingMessages(status);
+      return;
+    }
+    if (this.endedStatus) {
+      this.rejectPendingMessages(this.endedStatus);
       return;
     }
     credsMetadata.merge(filteredMetadata);
@@ -141,25 +213,28 @@ class SubchannelCallWrapper implements Call {
     if (this.readPending) {
       this.childCall.startRead();
     }
-    if (this.pendingMessage) {
-      this.childCall.sendMessageWithContext(this.pendingMessage.context, this.pendingMessage.message);
-    }
-    if (this.halfClosePending && !this.writeFilterPending) {
-      this.childCall.halfClose();
-    }
+    this.dequeuePendingMessage();
   }
-  async sendMessageWithContext(context: MessageContext, message: Buffer): Promise<void> {
-    this.writeFilterPending = true;
-    const filteredMessage = await this.filterStack.sendMessage(Promise.resolve({message: message, flags: context.flags}));
-    this.writeFilterPending = false;
-    if (this.childCall) {
-      this.childCall.sendMessageWithContext(context, filteredMessage.message);
-      if (this.halfClosePending) {
-        this.childCall.halfClose();
-      }
-    } else {
-      this.pendingMessage = { context, message: filteredMessage.message };
+  sendMessageWithContext(context: MessageContext, message: Buffer): void {
+    if (this.endedStatus) {
+      const status = this.endedStatus;
+      process.nextTick(() => {
+        context.callback?.(createWriteFailure(status));
+      });
+      return;
     }
+    if (
+      !this.childCall ||
+      this.writeFilterPending ||
+      this.pendingMessages.length > 0
+    ) {
+      this.pendingMessages.push({ context, message });
+      if (this.childCall && !this.writeFilterPending) {
+        this.dequeuePendingMessage();
+      }
+      return;
+    }
+    this.sendMessageOnChild(context, message);
   }
   startRead(): void {
     if (this.childCall) {
@@ -169,7 +244,11 @@ class SubchannelCallWrapper implements Call {
     }
   }
   halfClose(): void {
-    if (this.childCall && !this.writeFilterPending) {
+    if (
+      this.childCall &&
+      !this.writeFilterPending &&
+      this.pendingMessages.length === 0
+    ) {
       this.childCall.halfClose();
     } else {
       this.halfClosePending = true;

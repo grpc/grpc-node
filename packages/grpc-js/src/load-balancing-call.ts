@@ -18,6 +18,7 @@
 import { CallCredentials, isEmptyCallCredentials } from './call-credentials';
 import {
   Call,
+  createWriteFailure,
   DeadlineInfoProvider,
   InterceptingListener,
   MessageContext,
@@ -55,6 +56,10 @@ export interface LoadBalancingCallInterceptingListener
 export class LoadBalancingCall implements Call, DeadlineInfoProvider {
   private child: SubchannelCall | null = null;
   private readPending = false;
+  /* One slot. RetryingCall does not send message N+1 until message N's child
+   * callback, so a second write does not arrive while this one is queued.
+   * Flushing a queue into Http2SubchannelCall would overwrite its single
+   * activeWrite. */
   private pendingMessage: { context: MessageContext; message: Buffer } | null =
     null;
   private pendingHalfClose = false;
@@ -122,6 +127,17 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
       : '' + subchannel;
   }
 
+  private rejectPendingMessage(status: StatusObject): void {
+    const pending = this.pendingMessage;
+    if (!pending) {
+      return;
+    }
+    this.pendingMessage = null;
+    const callback = pending.context.callback;
+    pending.context.callback = undefined;
+    callback?.(createWriteFailure(status));
+  }
+
   private outputStatus(status: StatusObject, progress: RpcProgress) {
     if (!this.ended) {
       this.ended = true;
@@ -135,6 +151,10 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
             new Date(this.startTime).toISOString()
         );
       }
+      /* Fail a write queued before the pick before the listener runs. The
+       * callback here belongs to RetryingCall, which ignores an error from a
+       * single attempt and keeps the public callback until the call is done. */
+      this.rejectPendingMessage(status);
       const finalStatus = { ...status, progress };
       this.listener?.onReceiveStatus(finalStatus);
       this.onCallEnded?.(finalStatus.code, finalStatus.details, finalStatus.metadata);
@@ -296,9 +316,11 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
                 this.child.startRead();
               }
               if (this.pendingMessage) {
+                const pending = this.pendingMessage;
+                this.pendingMessage = null;
                 this.child.sendMessageWithContext(
-                  this.pendingMessage.context,
-                  this.pendingMessage.message
+                  pending.context,
+                  pending.message
                 );
               }
               if (this.pendingHalfClose) {
@@ -379,15 +401,26 @@ export class LoadBalancingCall implements Call, DeadlineInfoProvider {
     this.metadata = metadata;
     this.doPick();
   }
-  sendMessageWithContext(context: MessageContext, message: Buffer): void {
+  /**
+   * @returns true when the message is held until a subchannel is picked.
+   * RetryingCall uses that to keep the public write callback pending.
+   */
+  sendMessageWithContext(context: MessageContext, message: Buffer): boolean {
     if (this.traceEnabled) {
       this.trace('write() called with message of length ' + message.length);
     }
+    if (this.ended) {
+      /* `false` means a subchannel accepted the message, and RetryingCall
+       * would success-ack it. Returning true leaves the callback stored for
+       * failPendingWrites. Invoking it here as well would run it twice. */
+      return true;
+    }
     if (this.child) {
       this.child.sendMessageWithContext(context, message);
-    } else {
-      this.pendingMessage = { context, message };
+      return false;
     }
+    this.pendingMessage = { context, message };
+    return true;
   }
   startRead(): void {
     this.trace('startRead called');
