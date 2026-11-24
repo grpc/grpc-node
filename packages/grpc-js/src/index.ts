@@ -249,6 +249,7 @@ export {
   Interceptor,
   InterceptorOptions,
   InterceptorProvider,
+  InterceptingCallInterface,
   InterceptingCall,
   InterceptorConfigurationError,
   NextCall,
