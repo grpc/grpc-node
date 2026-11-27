@@ -58,13 +58,13 @@ if ($Arch -eq "x64") {
 if ($LASTEXITCODE -ne 0) {
   throw "cmake failed"
 }
-& cmake.exe --build .
+& cmake.exe --build . --config Release
 if ($LASTEXITCODE -ne 0) {
   throw "cmake build failed"
 }
 
-Copy-Item ($ProtobufBase + "/Debug/protoc.exe") -Destination ($Base + "/build/bin/protoc.exe")
-Copy-Item ($Base + "/Debug/grpc_node_plugin.exe") -Destination ($Base + "/build/bin/grpc_node_plugin.exe")
+Copy-Item ($ProtobufBase + "/Release/protoc.exe") -Destination ($Base + "/build/bin/protoc.exe")
+Copy-Item ($Base + "/Release/grpc_node_plugin.exe") -Destination ($Base + "/build/bin/grpc_node_plugin.exe")
 
 Compress-7Zip -Path ($Base + "/build") -Format Tar -ArchiveFileName ($Base + "/Archive.tar")
 Compress-7Zip -Path ($Base + "/Archive.tar") -Format GZip -ArchiveFileName ($OutDir + "/win32-" + $Arch + ".tar.gz")
